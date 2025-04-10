@@ -27,7 +27,7 @@ public class BoneMassRecord(
     override val zoneOffset: ZoneOffset?,
     /** Mass in [Mass] unit. Required field. Valid range: 0-1000 kilograms. */
     public val mass: Mass,
-    override val metadata: Metadata = Metadata.EMPTY,
+    override val metadata: Metadata,
 ) : InstantaneousRecord {
 
     init {
@@ -59,6 +59,10 @@ public class BoneMassRecord(
         result = 31 * result + (zoneOffset?.hashCode() ?: 0)
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "BoneMassRecord(time=$time, zoneOffset=$zoneOffset, mass=$mass, metadata=$metadata)"
     }
 
     private companion object {

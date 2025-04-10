@@ -20,19 +20,20 @@ import static androidx.car.app.CarToast.LENGTH_LONG;
 import static androidx.car.app.model.Action.BACK;
 import static androidx.car.app.model.Action.FLAG_PRIMARY;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
 import androidx.car.app.model.Action;
-import androidx.car.app.model.ActionStrip;
 import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.MessageTemplate;
 import androidx.car.app.model.Template;
 import androidx.car.app.sample.showcase.common.R;
 import androidx.car.app.versioning.CarAppApiLevels;
 import androidx.core.graphics.drawable.IconCompat;
+
+import org.jspecify.annotations.NonNull;
 
 /** A screen that demonstrates the message template. */
 public class ShortMessageTemplateDemoScreen extends Screen {
@@ -41,9 +42,8 @@ public class ShortMessageTemplateDemoScreen extends Screen {
         super(carContext);
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
         Action.Builder primaryActionBuilder = new Action.Builder()
                 .setOnClickListener(() -> {
                     CarToast.makeText(
@@ -71,7 +71,10 @@ public class ShortMessageTemplateDemoScreen extends Screen {
 
         return new MessageTemplate.Builder(
                 getCarContext().getString(R.string.msg_template_demo_text))
-                .setTitle(getCarContext().getString(R.string.msg_template_demo_title))
+                .setHeader(new Header.Builder().setTitle(getCarContext()
+                                .getString(R.string.msg_template_demo_title))
+                        .setStartHeaderAction(BACK)
+                        .addEndHeaderAction(settings).build())
                 .setIcon(
                         new CarIcon.Builder(
                                 IconCompat.createWithResource(
@@ -79,7 +82,6 @@ public class ShortMessageTemplateDemoScreen extends Screen {
                                         R.drawable.ic_emoji_food_beverage_white_48dp))
                                 .setTint(CarColor.GREEN)
                                 .build())
-                .setHeaderAction(BACK)
                 .addAction(primaryActionBuilder.build())
                 .addAction(
                         new Action.Builder()
@@ -89,11 +91,6 @@ public class ShortMessageTemplateDemoScreen extends Screen {
                                         () -> {
                                             throw new RuntimeException("Error");
                                         })
-                                .build())
-
-                .setActionStrip(
-                        new ActionStrip.Builder()
-                                .addAction(settings)
                                 .build())
                 .build();
     }

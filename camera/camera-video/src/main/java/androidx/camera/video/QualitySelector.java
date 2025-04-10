@@ -21,18 +21,19 @@ import static androidx.camera.core.DynamicRange.SDR;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.SuppressLint;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.Logger;
-import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy;
 import androidx.camera.video.internal.VideoValidatedEncoderProfilesProxy;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -80,7 +81,6 @@ import java.util.Set;
  * is closest to and lower than FHD. If no lower quality is supported, the quality that is
  * closest to and higher than FHD will be selected.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class QualitySelector {
     private static final String TAG = "QualitySelector";
 
@@ -100,8 +100,7 @@ public final class QualitySelector {
      * @deprecated use {@link VideoCapabilities#getSupportedQualities(DynamicRange)} instead.
      */
     @Deprecated
-    @NonNull
-    public static List<Quality> getSupportedQualities(@NonNull CameraInfo cameraInfo) {
+    public static @NonNull List<Quality> getSupportedQualities(@NonNull CameraInfo cameraInfo) {
         return Recorder.getVideoCapabilities(cameraInfo).getSupportedQualities(SDR);
     }
 
@@ -146,8 +145,8 @@ public final class QualitySelector {
      * @throws IllegalArgumentException if quality is not one of the possible values.
      * @see #isQualitySupported
      */
-    @Nullable
-    public static Size getResolution(@NonNull CameraInfo cameraInfo, @NonNull Quality quality) {
+    public static @Nullable Size getResolution(@NonNull CameraInfo cameraInfo,
+            @NonNull Quality quality) {
         checkQualityConstantsOrThrow(quality);
         VideoCapabilities videoCapabilities = Recorder.getVideoCapabilities(cameraInfo);
         VideoValidatedEncoderProfilesProxy profiles = videoCapabilities.getProfiles(quality, SDR);
@@ -161,8 +160,7 @@ public final class QualitySelector {
      * @param dynamicRange the dynamicRange to query the supported qualities.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @NonNull
-    public static Map<Quality, Size> getQualityToResolutionMap(
+    public static @NonNull Map<Quality, Size> getQualityToResolutionMap(
             @NonNull VideoCapabilities videoCapabilities, @NonNull DynamicRange dynamicRange) {
         Map<Quality, Size> map = new HashMap<>();
         for (Quality supportedQuality : videoCapabilities.getSupportedQualities(dynamicRange)) {
@@ -194,8 +192,7 @@ public final class QualitySelector {
      * @throws NullPointerException if {@code quality} is {@code null}.
      * @throws IllegalArgumentException if {@code quality} is not one of the possible values.
      */
-    @NonNull
-    public static QualitySelector from(@NonNull Quality quality) {
+    public static @NonNull QualitySelector from(@NonNull Quality quality) {
         return from(quality, FallbackStrategy.NONE);
     }
 
@@ -216,8 +213,7 @@ public final class QualitySelector {
      * is {@code null}.
      * @throws IllegalArgumentException if {@code quality} is not one of the possible values.
      */
-    @NonNull
-    public static QualitySelector from(@NonNull Quality quality,
+    public static @NonNull QualitySelector from(@NonNull Quality quality,
             @NonNull FallbackStrategy fallbackStrategy) {
         Preconditions.checkNotNull(quality, "quality cannot be null");
         Preconditions.checkNotNull(fallbackStrategy, "fallbackStrategy cannot be null");
@@ -238,8 +234,7 @@ public final class QualitySelector {
      * @throws IllegalArgumentException if {@code qualities} is empty or contains a quality that is
      * not one of the possible values, including a {@code null} value.
      */
-    @NonNull
-    public static QualitySelector fromOrderedList(@NonNull List<Quality> qualities) {
+    public static @NonNull QualitySelector fromOrderedList(@NonNull List<Quality> qualities) {
         return fromOrderedList(qualities, FallbackStrategy.NONE);
     }
 
@@ -261,8 +256,7 @@ public final class QualitySelector {
      * @throws IllegalArgumentException if {@code qualities} is empty or contains a quality that is
      * not one of the possible values, including a {@code null} value.
      */
-    @NonNull
-    public static QualitySelector fromOrderedList(@NonNull List<Quality> qualities,
+    public static @NonNull QualitySelector fromOrderedList(@NonNull List<Quality> qualities,
             @NonNull FallbackStrategy fallbackStrategy) {
         Preconditions.checkNotNull(qualities, "qualities cannot be null");
         Preconditions.checkNotNull(fallbackStrategy, "fallbackStrategy cannot be null");
@@ -282,8 +276,11 @@ public final class QualitySelector {
      * @param supportedQualities the supported qualities.
      * @return a sorted supported quality list according to the desired quality settings.
      */
-    @NonNull
-    List<Quality> getPrioritizedQualities(@NonNull List<Quality> supportedQualities) {
+    @SuppressLint("UsesNonDefaultVisibleForTesting")
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public @NonNull List<Quality> getPrioritizedQualities(
+            @NonNull List<Quality> supportedQualities) {
         if (supportedQualities.isEmpty()) {
             Logger.w(TAG, "No supported quality on the device.");
             return new ArrayList<>();
@@ -320,9 +317,8 @@ public final class QualitySelector {
         return new ArrayList<>(sortedQualities);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "QualitySelector{"
                 + "preferredQualities=" + mPreferredQualityList
                 + ", fallbackStrategy=" + mFallbackStrategy
@@ -411,10 +407,9 @@ public final class QualitySelector {
         }
     }
 
-    @NonNull
-    private static Size getProfileVideoSize(@NonNull VideoValidatedEncoderProfilesProxy profiles) {
-        VideoProfileProxy videoProfile = profiles.getDefaultVideoProfile();
-        return new Size(videoProfile.getWidth(), videoProfile.getHeight());
+    private static @NonNull Size getProfileVideoSize(
+            @NonNull VideoValidatedEncoderProfilesProxy profiles) {
+        return profiles.getDefaultVideoProfile().getResolution();
     }
 
     private static void checkQualityConstantsOrThrow(@NonNull List<Quality> qualities) {

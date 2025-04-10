@@ -16,6 +16,7 @@
 
 package androidx.build.clang
 
+import androidx.build.ProjectLayoutType
 import java.io.File
 import org.gradle.api.Named
 import org.gradle.api.Project
@@ -31,16 +32,18 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
  * @param konanTarget Target host for the compilation.
  * @param compileTask The task that compiles the sources and build .o file for each source file.
  * @param archiveTask The task that will archive the output of the [compileTask] into a single .a
- *        file.
+ *   file.
  * @param sharedLibTask The task that will created a shared library from the output of [compileTask]
- *        that also optionally links with [linkedObjects]
+ *   that also optionally links with [linkedObjects]
  * @param sources List of source files for the compilation.
  * @param includes List of include directories containing .h files for the compilation.
  * @param linkedObjects List of object files that should be dynamically linked in the final shared
- *        object output.
+ *   object output.
+ * @param linkerArgs Arguments that will be passed into linker when creating a shared library.
  * @param freeArgs Arguments that will be passed into clang for compilation.
  */
-class NativeTargetCompilation internal constructor(
+class NativeTargetCompilation
+internal constructor(
     val project: Project,
     val konanTarget: KonanTarget,
     internal val compileTask: TaskProvider<ClangCompileTask>,
@@ -50,24 +53,31 @@ class NativeTargetCompilation internal constructor(
     val includes: ConfigurableFileCollection,
     val linkedObjects: ConfigurableFileCollection,
     @Suppress("unused") // used via build.gradle
+    val linkerArgs: ListProperty<String>,
+    @Suppress("unused") // used via build.gradle
     val freeArgs: ListProperty<String>
 ) : Named {
     override fun getName(): String = konanTarget.name
 
     /**
      * Dynamically links the shared library output of this target with the given [dependency]'s
-     * shared library output.
+     * object library output.
      */
     @Suppress("unused") // used from build.gradle
     fun linkWith(dependency: MultiTargetNativeCompilation) {
-        linkedObjects.from(
-            dependency.sharedObjectOutputFor(konanTarget)
-        )
+        linkedObjects.from(dependency.sharedObjectOutputFor(konanTarget))
     }
 
     /**
-     * Convenience method to add jni headers to the compilation.
+     * Statically include the shared library output of this target with the given [dependency]'s
+     * archive library output.
      */
+    @Suppress("unused") // used from build.gradle
+    fun include(dependency: MultiTargetNativeCompilation) {
+        linkedObjects.from(dependency.sharedArchiveOutputFor(konanTarget))
+    }
+
+    /** Convenience method to add jni headers to the compilation. */
     @Suppress("unused") // used from build.gradle
     fun addJniHeaders() {
         if (konanTarget.family == Family.ANDROID) {
@@ -75,9 +85,7 @@ class NativeTargetCompilation internal constructor(
             return
         }
 
-        includes.from(project.provider {
-            findJniHeaderDirectories()
-        })
+        includes.from(project.provider { findJniHeaderDirectories() })
     }
 
     private fun findJniHeaderDirectories(): List<File> {
@@ -87,43 +95,57 @@ class NativeTargetCompilation internal constructor(
         // jni_md.h -> Includes machine dependant definitions.
         // Internal Devs: You can read more about it here:  http://go/androidx-jni-cross-compilation
         val javaHome = File(System.getProperty("java.home"))
-
+        if (ProjectLayoutType.isPlayground(project)) {
+            return findJniHeadersInPlayground(javaHome)
+        }
         // for jni_md, we need to find the prebuilts because each jdk ships with jni_md only for
         // its own target family.
         val jdkPrebuiltsRoot = javaHome.parentFile
 
-        val relativeHeaderPaths = when (konanTarget.family) {
-            Family.MINGW -> {
-                listOf(
-                    "/windows-x86/include",
-                    "/windows-x86/include/win32"
-                )
+        val relativeHeaderPaths =
+            when (konanTarget.family) {
+                Family.MINGW -> {
+                    listOf("windows-x86/include", "windows-x86/include/win32")
+                }
+                Family.OSX -> {
+                    // it is OK that we are using x86 here, they are the same files (openjdk only
+                    // distinguishes between unix and windows).
+                    listOf("darwin-x86/include", "darwin-x86/include/darwin")
+                }
+                Family.LINUX -> {
+                    listOf(
+                        "linux-x86/include",
+                        "linux-x86/include/linux",
+                    )
+                }
+                else -> error("unsupported family ($konanTarget) for JNI compilation")
             }
-
-            Family.OSX -> {
-                // it is OK that we are using x86 here, they are the same files (openjdk only
-                // distinguishes between unix and windows).
-                listOf(
-                    "darwin-x86/include",
-                    "darwin-x86/include/darwin"
-                )
+        return relativeHeaderPaths
+            .map { jdkPrebuiltsRoot.resolve(it) }
+            .onEach {
+                check(it.exists()) {
+                    "Cannot find header directory (${it.name}) in ${it.canonicalPath}"
+                }
             }
+    }
 
-            Family.LINUX -> {
-                listOf(
-                    "linux-x86/include",
-                    "linux-x86/include/linux",
-                )
-            }
-
-            else -> error("unsupported family ($konanTarget) for JNI compilation")
+    /**
+     * JDK ships with JNI headers only for the current platform. As a result, we don't have access
+     * to cross-platform jni headers. They are mostly the same and we don't ship cross compiled code
+     * from GitHub so it is acceptable to use local JNI headers for cross platform compilation on
+     * GitHub.
+     */
+    private fun findJniHeadersInPlayground(javaHome: File): List<File> {
+        val include = File(javaHome, "include")
+        if (!include.exists()) {
+            error("Cannot find header directory in $javaHome")
         }
-        return relativeHeaderPaths.map {
-            jdkPrebuiltsRoot.resolve(it)
-        }.onEach {
-            check(it.exists()) {
-                "Cannot find header directory (${it.name}) in ${it.canonicalPath}"
-            }
-        }
+        return listOf(
+                include,
+                File(include, "darwin"),
+                File(include, "linux"),
+                File(include, "win32"),
+            )
+            .filter { it.exists() }
     }
 }

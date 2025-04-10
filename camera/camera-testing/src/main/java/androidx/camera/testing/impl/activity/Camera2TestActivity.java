@@ -34,9 +34,6 @@ import android.util.Size;
 import android.view.Surface;
 import android.view.TextureView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Logger;
@@ -44,12 +41,14 @@ import androidx.camera.testing.R;
 import androidx.core.util.Preconditions;
 import androidx.test.espresso.idling.CountingIdlingResource;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.Collections;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /** An activity which opens the camera via Camera2 API for testing. */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class Camera2TestActivity extends Activity {
 
     private static final String TAG = "Camera2TestActivity";
@@ -61,19 +60,13 @@ public class Camera2TestActivity extends Activity {
      * A {@link Semaphore} to prevent the app from exiting before closing the camera.
      */
     final Semaphore mCameraOpenCloseLock = new Semaphore(1);
-    @Nullable
-    CameraDevice mCameraDevice;
-    @Nullable
-    CameraCaptureSession mCaptureSession;
-    @Nullable
-    Handler mBackgroundHandler;
-    @Nullable
-    CaptureRequest.Builder mPreviewRequestBuilder;
+    @Nullable CameraDevice mCameraDevice;
+    @Nullable CameraCaptureSession mCaptureSession;
+    @Nullable Handler mBackgroundHandler;
+    CaptureRequest.@Nullable Builder mPreviewRequestBuilder;
     private TextureView mTextureView;
-    @Nullable
-    private String mCameraId;
-    @Nullable
-    private HandlerThread mBackgroundThread;
+    private @Nullable String mCameraId;
+    private @Nullable HandlerThread mBackgroundThread;
 
     private final TextureView.SurfaceTextureListener mSurfaceTextureListener =
             new TextureView.SurfaceTextureListener() {
@@ -262,7 +255,6 @@ public class Camera2TestActivity extends Activity {
         }
     }
 
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     final class DeviceStateCallbackImpl extends CameraDevice.StateCallback {
 
         @Override
@@ -293,7 +285,6 @@ public class Camera2TestActivity extends Activity {
         }
     }
 
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     final class SessionStateCallbackImpl extends CameraCaptureSession.StateCallback {
 
         @Override

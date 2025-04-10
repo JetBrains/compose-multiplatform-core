@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -24,7 +31,9 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.1.0")
+    api(libs.kotlinCoroutinesCore)
+    api("androidx.annotation:annotation:1.8.1")
+    api("androidx.core:core:1.13.0")
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
@@ -35,19 +44,17 @@ dependencies {
 }
 
 android {
-    namespace "androidx.privacysandbox.ui.core"
+    namespace = "androidx.privacysandbox.ui.core"
     buildFeatures {
         aidl = true
     }
-    defaultConfig {
-        minSdk 21
-    }
+    compileSdk = 35
 }
 
 androidx {
     name = "androidx.privacysandbox.ui:ui-core"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "contains core definitions for the privacysandbox ui library."
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

@@ -37,7 +37,8 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -49,7 +50,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class AppWidgetSessionTest {
 
@@ -63,16 +63,15 @@ class AppWidgetSessionTest {
 
     @Before
     fun setUp() {
-        val appWidgetManager = Shadows.shadowOf(
-            context.getSystemService(Context.APPWIDGET_SERVICE) as AppWidgetManager
-        )
+        val appWidgetManager =
+            Shadows.shadowOf(
+                context.getSystemService(Context.APPWIDGET_SERVICE) as AppWidgetManager
+            )
         appWidgetManager.addBoundWidget(id.appWidgetId, AppWidgetProviderInfo())
     }
 
     @Test
-    fun createRootEmittable() = runTest {
-        assertIs<RemoteViewsRoot>(session.createRootEmittable())
-    }
+    fun createRootEmittable() = runTest { assertIs<RemoteViewsRoot>(session.createRootEmittable()) }
 
     @Test
     fun provideGlanceRunsGlance() = runTest {
@@ -84,80 +83,88 @@ class AppWidgetSessionTest {
     fun provideGlanceEmitsIgnoreResultForNullContent() = runTest {
         // Create a widget that never calls provideContent, which means the session never produces
         // a valid result.
-        val widget = object : GlanceAppWidget() {
-            override suspend fun provideGlance(context: Context, id: GlanceId) {}
-        }
+        val widget =
+            object : GlanceAppWidget() {
+                override suspend fun provideGlance(context: Context, id: GlanceId) {}
+            }
         val session = AppWidgetSession(widget, id, defaultOptions, testState)
-        val root = runCompositionUntil(
-            { state, _ -> state == Recomposer.State.Idle },
-            session.provideGlance(context)
-        )
+        val root =
+            runCompositionUntil(
+                { state, _ -> state == Recomposer.State.Idle },
+                session.provideGlance(context)
+            )
         assertThat(root.shouldIgnoreResult()).isTrue()
     }
 
+    @OptIn(ExperimentalTime::class)
     @Test
-    fun processEmittableTree() = runTest {
-        val root = RemoteViewsRoot(maxDepth = 1).apply {
-            children += EmittableText().apply {
-                text = "hello"
-            }
-        }
+    fun processEmittableTree() = runMediumTest {
+        measureTime {
+                val root =
+                    RemoteViewsRoot(maxDepth = 1).apply {
+                        children += EmittableText().apply { text = "hello" }
+                    }
 
-        session.processEmittableTree(context, root)
-        context.applyRemoteViews(session.lastRemoteViews.value!!).let {
-            val text = assertIs<TextView>(it)
-            assertThat(text.text).isEqualTo("hello")
-        }
+                session.processEmittableTree(context, root)
+                context.applyRemoteViews(session.lastRemoteViews.value!!).let {
+                    val text = assertIs<TextView>(it)
+                    assertThat(text.text).isEqualTo("hello")
+                }
+            }
+            .also { println("processEmittableTree test took: $it") }
     }
 
     @Test
-    fun processEmittableTree_ignoresResult() = runTest {
-        val root = RemoteViewsRoot(maxDepth = 1).apply {
-            children += EmittableIgnoreResult()
-        }
+    fun processEmittableTree_ignoresResult() = runMediumTest {
+        val root = RemoteViewsRoot(maxDepth = 1).apply { children += EmittableIgnoreResult() }
 
         session.processEmittableTree(context, root)
         assertThat(session.lastRemoteViews.value).isNull()
     }
 
     @Test
-    fun processEvent_unknownAction() = runTest {
+    fun processEvent_unknownAction() = runMediumTest {
         assertThrows(IllegalArgumentException::class.java) {
             runBlocking { session.processEvent(context, Any()) }
         }
     }
 
     @Test
-    fun processEvent_updateGlance() = runTest {
+    fun processEvent_updateGlance() = runMediumTest {
         session.processEvent(context, AppWidgetSession.UpdateGlanceState)
         assertThat(testState.getValueCalls).containsExactly(id.toSessionKey())
     }
 
     @Test
-    fun updateGlance() = runTest {
+    fun updateGlance() = runMediumTest {
         session.updateGlance()
-        session.receiveEvents(context) {
-            this@runTest.launch { session.close() }
-        }
+        session.receiveEvents(context) { this@runMediumTest.launch { session.close() } }
         assertThat(testState.getValueCalls).containsExactly(id.toSessionKey())
     }
 
     @Test
-    fun processEvent_runLambda() = runTest {
+    fun processEvent_runLambda() = runMediumTest {
         var didRunFirst = false
         var didRunSecond = false
-        session.processEmittableTree(context, RemoteViewsRoot(1).apply {
-            children += EmittableBox().apply {
-                modifier = GlanceModifier.then(ActionModifier(LambdaAction("123") {
-                    didRunFirst = true
-                }))
+        session.processEmittableTree(
+            context,
+            RemoteViewsRoot(1).apply {
+                children +=
+                    EmittableBox().apply {
+                        modifier =
+                            GlanceModifier.then(
+                                ActionModifier(LambdaAction("123") { didRunFirst = true })
+                            )
+                    }
+                children +=
+                    EmittableBox().apply {
+                        modifier =
+                            GlanceModifier.then(
+                                ActionModifier(LambdaAction("123") { didRunSecond = true })
+                            )
+                    }
             }
-            children += EmittableBox().apply {
-                modifier = GlanceModifier.then(ActionModifier(LambdaAction("123") {
-                    didRunSecond = true
-                }))
-            }
-        })
+        )
         session.processEvent(context, AppWidgetSession.RunLambda("123+0"))
         assertTrue(didRunFirst)
         assertFalse(didRunSecond)
@@ -169,22 +176,33 @@ class AppWidgetSessionTest {
     }
 
     @Test
-    fun runLambda() = runTest {
+    fun runLambda() = runMediumTest {
         var didRunFirst = false
         var didRunSecond = false
-        session.processEmittableTree(context, RemoteViewsRoot(1).apply {
-            children += EmittableBox().apply {
-                modifier = GlanceModifier.then(ActionModifier(LambdaAction("123") {
-                    didRunFirst = true
-                }))
+        session.processEmittableTree(
+            context,
+            RemoteViewsRoot(1).apply {
+                children +=
+                    EmittableBox().apply {
+                        modifier =
+                            GlanceModifier.then(
+                                ActionModifier(LambdaAction("123") { didRunFirst = true })
+                            )
+                    }
+                children +=
+                    EmittableBox().apply {
+                        modifier =
+                            GlanceModifier.then(
+                                ActionModifier(
+                                    LambdaAction("123") {
+                                        didRunSecond = true
+                                        this@runMediumTest.launch { session.close() }
+                                    }
+                                )
+                            )
+                    }
             }
-            children += EmittableBox().apply {
-                modifier = GlanceModifier.then(ActionModifier(LambdaAction("123") {
-                    didRunSecond = true
-                    this@runTest.launch { session.close() }
-                }))
-            }
-        })
+        )
 
         session.runLambda("123+0")
         session.runLambda("123+1")
@@ -194,7 +212,7 @@ class AppWidgetSessionTest {
     }
 
     @Test
-    fun onCompositionError_throws_whenErrorUiLayoutNotSet() = runTest {
+    fun onCompositionError_throws_whenErrorUiLayoutNotSet() = runMediumTest {
         // GlanceAppWidget.onCompositionError rethrows error when widget.errorUiLayout == 0
         val throwable = Exception("error")
         var caught: Throwable? = null
@@ -207,7 +225,7 @@ class AppWidgetSessionTest {
     }
 
     @Test
-    fun onCompositionError_noThrow_whenErrorUiLayoutIsSet() = runTest {
+    fun onCompositionError_noThrow_whenErrorUiLayoutIsSet() = runMediumTest {
         val throwable = Exception("error")
         var caught: Throwable? = null
         widget.errorUiLayout = R.layout.glance_error_layout
@@ -220,7 +238,7 @@ class AppWidgetSessionTest {
     }
 
     @Test
-    fun waitForReadyResumesWhenEventIsReceived() = runTest {
+    fun waitForReadyResumesWhenEventIsReceived() = runMediumTest {
         launch {
             session.waitForReady().join()
             session.close()
@@ -229,10 +247,8 @@ class AppWidgetSessionTest {
     }
 
     @Test
-    fun waitForReadyResumesWhenSessionIsClosed() = runTest {
-        launch {
-            session.waitForReady().join()
-        }
+    fun waitForReadyResumesWhenSessionIsClosed() = runMediumTest {
+        launch { session.waitForReady().join() }
         // Advance until waitForReady suspends.
         this.testScheduler.advanceUntilIdle()
         session.close()
@@ -250,9 +266,11 @@ class AppWidgetSessionTest {
         ): T {
             assertIs<PreferencesGlanceStateDefinition>(definition)
             getValueCalls.add(fileKey)
-            return definition.getDataStore(context, fileKey).also {
-                definition.getLocation(context, fileKey).delete()
-            }.data.first() as T
+            return definition
+                .getDataStore(context, fileKey)
+                .also { definition.getLocation(context, fileKey).delete() }
+                .data
+                .first() as T
         }
 
         override suspend fun <T> updateValue(

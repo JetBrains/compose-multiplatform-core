@@ -19,67 +19,66 @@ package androidx.compose.foundation.demos.text
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.UrlAnnotation
 import androidx.compose.ui.text.VerbatimTtsAnnotation
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.intl.LocaleList
-import androidx.compose.ui.text.withAnnotation
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.tooling.preview.Preview
 
-@OptIn(ExperimentalTextApi::class)
 @Preview
 @Composable
 fun TextAccessibilityDemo() {
     Column {
         TagLine("Text to speech with different locales.")
         Text(
-            text = buildAnnotatedString {
-                pushStyle(SpanStyle(localeList = LocaleList("en-us")))
-                append("Hello!\n")
-                pop()
-                pushStyle(SpanStyle(localeList = LocaleList("en-gb")))
-                append("Hello!\n")
-                pop()
-                pushStyle(SpanStyle(localeList = LocaleList("fr")))
-                append("Bonjour!\n")
-                pop()
-                pushStyle(SpanStyle(localeList = LocaleList("tr-TR")))
-                append("Merhaba!\n")
-                pop()
-                pushStyle(SpanStyle(localeList = LocaleList("ja-JP")))
-                append("こんにちは!\n")
-                pop()
-                pushStyle(SpanStyle(localeList = LocaleList("zh")))
-                append("你好!")
-                pop()
-            },
+            text =
+                buildAnnotatedString {
+                    pushStyle(SpanStyle(localeList = LocaleList("en-us")))
+                    append("Hello!\n")
+                    pop()
+                    pushStyle(SpanStyle(localeList = LocaleList("en-gb")))
+                    append("Hello!\n")
+                    pop()
+                    pushStyle(SpanStyle(localeList = LocaleList("fr")))
+                    append("Bonjour!\n")
+                    pop()
+                    pushStyle(SpanStyle(localeList = LocaleList("tr-TR")))
+                    append("Merhaba!\n")
+                    pop()
+                    pushStyle(SpanStyle(localeList = LocaleList("ja-JP")))
+                    append("こんにちは!\n")
+                    pop()
+                    pushStyle(SpanStyle(localeList = LocaleList("zh")))
+                    append("你好!")
+                    pop()
+                },
             style = TextStyle(fontSize = fontSize8)
         )
 
         TagLine("VerbatimTtsAnnotation ")
         Text(
-            text = buildAnnotatedString {
-                append("This word is read verbatim: ")
-                pushTtsAnnotation(VerbatimTtsAnnotation(verbatim = "hello"))
-                append("hello\n")
-                pop()
-                append("This word is read normally: hello")
-            },
+            text =
+                buildAnnotatedString {
+                    append("This word is read verbatim: ")
+                    pushTtsAnnotation(VerbatimTtsAnnotation(verbatim = "hello"))
+                    append("hello\n")
+                    pop()
+                    append("This word is read normally: hello")
+                },
             style = TextStyle(fontSize = fontSize8)
         )
 
-        TagLine("UrlAnnotation")
+        TagLine("LinkAnnotation")
         Text(
-            text = buildAnnotatedString {
-                append("This word is a link: ")
-                withAnnotation(UrlAnnotation("https://google.com")) {
-                    append("Google")
-                }
-                append("\nThis word is not a link: google.com")
-            },
+            text =
+                buildAnnotatedString {
+                    append("This word is a link: ")
+                    withLink(LinkAnnotation.Url("https://google.com")) { append("Google") }
+                    append("\nThis word is not a link: google.com")
+                },
             style = TextStyle(fontSize = fontSize8)
         )
     }

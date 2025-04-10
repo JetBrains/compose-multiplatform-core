@@ -30,9 +30,10 @@ import android.view.View;
 import android.view.animation.Animation;
 import android.widget.ImageView;
 
-import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
 import androidx.swiperefreshlayout.R;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Private class created to work around issues with AnimationListeners being
@@ -87,7 +88,7 @@ class CircleImageView extends ImageView {
             setPadding(padding, padding, padding, padding);
         }
         circle.getPaint().setColor(mBackgroundColor);
-        ViewCompat.setBackground(this, circle);
+        setBackground(circle);
     }
 
     private boolean elevationSupported() {

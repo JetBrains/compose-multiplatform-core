@@ -2,6 +2,7 @@ package com.example.appsearch;
 
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.DocumentClassFactory;
+import androidx.appsearch.app.DocumentClassMappingContext;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.exceptions.AppSearchException;
 import java.lang.Class;
@@ -9,7 +10,6 @@ import java.lang.Override;
 import java.lang.String;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import javax.annotation.processing.Generated;
 
 @Generated("androidx.appsearch.compiler.AppSearchCompiler")
@@ -46,7 +46,7 @@ public final class $$__AppSearch__AutoValue_Gift implements DocumentClassFactory
 
   @Override
   public Gift fromGenericDocument(GenericDocument genericDoc,
-      Map<String, List<String>> documentClassMap) throws AppSearchException {
+      DocumentClassMappingContext documentClassMappingContext) throws AppSearchException {
     String idConv = genericDoc.getId();
     String namespaceConv = genericDoc.getNamespace();
     int priceConv = (int) genericDoc.getPropertyLong("price");

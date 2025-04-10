@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 @file:JvmName("FileUtil")
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 
 package androidx.room.util
 
@@ -29,7 +29,7 @@ import java.nio.channels.ReadableByteChannel
 /**
  * Copies data from the input channel to the output file channel.
  *
- * @param input  the input channel to copy.
+ * @param input the input channel to copy.
  * @param output the output channel to copy.
  * @throws IOException if there is an I/O error.
  */

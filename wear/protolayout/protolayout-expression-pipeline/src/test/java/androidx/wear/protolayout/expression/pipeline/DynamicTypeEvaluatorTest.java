@@ -26,8 +26,8 @@ import static java.lang.Integer.MAX_VALUE;
 
 import android.icu.util.ULocale;
 
-import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.wear.protolayout.expression.AppDataKey;
 import androidx.wear.protolayout.expression.DynamicBuilders;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool;
 import androidx.wear.protolayout.expression.PlatformDataKey;
@@ -36,6 +36,7 @@ import androidx.wear.protolayout.expression.pipeline.DynamicTypeEvaluator.Evalua
 import androidx.wear.protolayout.expression.proto.DynamicProto;
 import androidx.wear.protolayout.expression.proto.FixedProto;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -54,7 +55,7 @@ public class DynamicTypeEvaluatorTest {
         ArrayList<Boolean> results = new ArrayList<>();
         DynamicTypeBindingRequest request = createSingleNodeDynamicBoolRequest(results);
         BoundDynamicType boundDynamicType = evaluator.bind(request);
-        assertThat(boundDynamicType.getDynamicNodeCount()).isEqualTo(1);
+        assertThat(boundDynamicType.getDynamicNodeCost()).isEqualTo(1);
     }
 
     @Test
@@ -114,7 +115,7 @@ public class DynamicTypeEvaluatorTest {
         boundDynamicType1.close();
         // Retry binding request2
         BoundDynamicType boundDynamicType2 = evaluator.bind(request2);
-        assertThat(boundDynamicType2.getDynamicNodeCount()).isEqualTo(1);
+        assertThat(boundDynamicType2.getDynamicNodeCost()).isEqualTo(1);
     }
 
     @Test
@@ -152,17 +153,18 @@ public class DynamicTypeEvaluatorTest {
         }
     }
 
-    @NonNull
-    private static DynamicTypeBindingRequest createSingleNodeDynamicBoolRequest(
+    private static @NonNull DynamicTypeBindingRequest createSingleNodeDynamicBoolRequest(
             ArrayList<Boolean> results) {
-        return DynamicTypeBindingRequest.forDynamicBool(
-                DynamicBool.constant(false),
-                new MainThreadExecutor(),
-                new AddToListCallback<>(results));
+        return createDynamicBoolRequest(DynamicBool.from(new AppDataKey<>("key")), results);
     }
 
-    @NonNull
-    private static DynamicTypeBindingRequest createExpressionWithUnrecognizedEnum(
+    private static @NonNull DynamicTypeBindingRequest createDynamicBoolRequest(
+            DynamicBuilders.DynamicBool dynamicBool, ArrayList<Boolean> results) {
+        return DynamicTypeBindingRequest.forDynamicBool(
+                dynamicBool, new MainThreadExecutor(), new AddToListCallback<>(results));
+    }
+
+    private static @NonNull DynamicTypeBindingRequest createExpressionWithUnrecognizedEnum(
             ArrayList<Integer> results) {
         return DynamicTypeBindingRequest.forDynamicInt32Internal(
                 DynamicProto.DynamicInt32.newBuilder()
@@ -180,8 +182,8 @@ public class DynamicTypeEvaluatorTest {
                 new AddToListCallback<Integer>(results));
     }
 
-    @NonNull
-    private static DynamicTypeBindingRequest createSingleNodeDynamicStringFromTimePlatformRequest(
+    private static @NonNull DynamicTypeBindingRequest
+                createSingleNodeDynamicStringFromTimePlatformRequest(
             ArrayList<String> results) {
         return DynamicTypeBindingRequest.forDynamicString(
                 DynamicBuilders.DynamicInstant.platformTimeWithSecondsPrecision()

@@ -19,9 +19,6 @@ package androidx.camera.core.impl;
 import android.os.SystemClock;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.util.Preconditions;
@@ -29,6 +26,9 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +48,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @param <T> The data type used for
  *            {@link Observable.Observer#onNewData(Object)}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class LiveDataObservable<T> implements Observable<T> {
 
 
@@ -74,15 +73,13 @@ public final class LiveDataObservable<T> implements Observable<T> {
     /**
      * Returns the underlying {@link LiveData} used to store and update {@link Result Results}.
      */
-    @NonNull
-    public LiveData<Result<T>> getLiveData() {
+    public @NonNull LiveData<Result<T>> getLiveData() {
         return mLiveData;
     }
 
-    @NonNull
     @Override
     @SuppressWarnings("ObjectToString")
-    public ListenableFuture<T> fetchData() {
+    public @NonNull ListenableFuture<T> fetchData() {
         return CallbackToFutureAdapter.getFuture(completer -> {
             CameraXExecutors.mainThreadExecutor().execute(() -> {
                 Result<T> result = mLiveData.getValue();
@@ -144,10 +141,8 @@ public final class LiveDataObservable<T> implements Observable<T> {
      *            {@link Observable.Observer#onNewData(Object)}.
      */
     public static final class Result<T> {
-        @Nullable
-        private final T mValue;
-        @Nullable
-        private final Throwable mError;
+        private final @Nullable T mValue;
+        private final @Nullable Throwable mError;
 
         private Result(@Nullable T value, @Nullable Throwable error) {
             mValue = value;
@@ -182,8 +177,7 @@ public final class LiveDataObservable<T> implements Observable<T> {
          *
          * @throws IllegalStateException if the result contains an error rather than a value.
          */
-        @Nullable
-        public T getValue() {
+        public @Nullable T getValue() {
             if (!completedSuccessfully()) {
                 throw new IllegalStateException(
                         "Result contains an error. Does not contain a value.");
@@ -196,14 +190,12 @@ public final class LiveDataObservable<T> implements Observable<T> {
          * Returns the error contained within this result, or {@code null} if the result contains
          * a value.
          */
-        @Nullable
-        public Throwable getError() {
+        public @Nullable Throwable getError() {
             return mError;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "[Result: <" + (completedSuccessfully() ? "Value: " + mValue :
                     "Error: " + mError) + ">]";
         }
@@ -226,7 +218,7 @@ public final class LiveDataObservable<T> implements Observable<T> {
         }
 
         @Override
-        public void onChanged(@NonNull final Result<T> result) {
+        public void onChanged(final @NonNull Result<T> result) {
             mExecutor.execute(() -> {
                 if (!mActive.get()) {
                     // Observer has been disabled.

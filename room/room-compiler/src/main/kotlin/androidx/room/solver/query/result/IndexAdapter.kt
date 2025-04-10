@@ -20,17 +20,15 @@ import androidx.room.solver.CodeGenScope
 import androidx.room.vo.ColumnIndexVar
 
 /**
- * Creates the index variables used by [RowAdapter]s from a cursor.
+ * Creates the index variables used by [RowAdapter]s from a statement.
  *
  * Most row adapters know how to find the indices needed and provide an implementation of this
  * interface via [RowAdapter.getDefaultIndexAdapter].
  */
 interface IndexAdapter {
 
-    /**
-     * Called when the cursor variable is ready.
-     */
-    fun onCursorReady(cursorVarName: String, scope: CodeGenScope)
+    /** Called when the statement variable is ready. */
+    fun onStatementReady(stmtVarName: String, scope: CodeGenScope)
 
     fun getIndexVars(): List<ColumnIndexVar>
 }

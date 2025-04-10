@@ -19,9 +19,10 @@ package androidx.work.worker;
 import android.content.Context;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Random;
 
@@ -35,9 +36,8 @@ public class RandomSleepTestWorker extends Worker {
         super(context, workerParams);
     }
 
-    @NonNull
     @Override
-    public Result doWork() {
+    public @NonNull Result doWork() {
         int sleepDuration = new Random().nextInt(MAX_SLEEP_DURATION_MS);
         try {
             Log.d("RandomSleepTestWorker", "Sleeping : " + sleepDuration);

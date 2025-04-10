@@ -26,10 +26,8 @@ import com.google.common.util.concurrent.ListenableFuture
  * Interface to access health and fitness records.
  *
  * Like [HealthConnectClient] but expose ListenableFuture instead of kotlin coroutines.
- *
- * @suppress
  */
-interface HealthDataAsyncClient {
+internal interface HealthDataAsyncClient {
     /**
      * Returns a set of [Permission] granted by the user to this app, out of the input [Permission]
      * set.
@@ -75,6 +73,7 @@ interface HealthDataAsyncClient {
     fun getChangesToken(
         request: RequestProto.GetChangesTokenRequest
     ): ListenableFuture<ResponseProto.GetChangesTokenResponse>
+
     fun getChanges(
         request: RequestProto.GetChangesRequest
     ): ListenableFuture<ResponseProto.GetChangesResponse>

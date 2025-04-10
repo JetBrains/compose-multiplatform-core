@@ -24,12 +24,9 @@ import org.junit.Rule
 import org.junit.Test
 
 class ConstraintTest {
-    @get:Rule
-    val projectSetup = ProjectSetupRule()
+    @get:Rule val projectSetup = ProjectSetupRule()
 
-    /**
-     * Test for matching constraint versions in Gradle metadata.
-     */
+    /** Test for matching constraint versions in Gradle metadata. */
     @Test
     fun mavenMetadataRequiresVersion() {
         val baseMavenMetadata = getPublishedFile("androidx/core/core/maven-metadata.xml")
@@ -56,31 +53,48 @@ class ConstraintTest {
         assertEquals(ktxVersion, baseRequiresKtxVersion)
     }
 
-    /**
-     * Unit test for the constraint version extraction function.
-     */
+    /** Unit test for the constraint version extraction function. */
     @Test
     fun getConstraintVersionTest() {
-        val metadata = """
+        val metadata =
+            """
               "version": {
                 "requires": "1.0.0"
               }
             }
           ],
-          "dependencyConstraints": [
+          variants: [
             {
-              "group": "androidx.preference",
-              "module": "preference-ktx",
-              "version": {
-                "requires": "1.3.0-alpha01"
-              }
-            }
-          ],
+              "name": "releaseVariantReleaseApiPublication",
+              "dependencyConstraints": [
+                {
+                   "group": "org.jetbrains.kotlin",
+                   "module": "kotlin-stdlib",
+                   "version": {
+                     "requires": "1.8.22"
+                   }
+                }
+              ],
+             },
+             {
+              "name": "releaseVariantReleaseRuntimePublication",
+              "dependencyConstraints": [
+                {
+                  "group": "androidx.preference",
+                  "module": "preference-ktx",
+                  "version": {
+                    "requires": "1.3.0-alpha01"
+                  }
+                }
+              ],
+             }
+          ]
           "files": [
             {
               "name": "preference-1.3.0-alpha01.aar",
               "url": "preference-1.3.0-alpha01.aar",
-        """.trimIndent()
+        """
+                .trimIndent()
 
         val requiresVersion =
             getConstraintVersion(metadata, "androidx.preference", "preference-ktx")
@@ -88,20 +102,28 @@ class ConstraintTest {
     }
 
     private fun getConstraintVersion(metadata: String, groupId: String, artifact: String): String? =
-        getDependencyConstraints(metadata)?.let {
+        getDependencyConstraints(metadata).let {
             Regex(
-                "\"group\": \"$groupId\",\\s+\"module\": " +
-                    "\"$artifact\",\\s+\"version\": \\{\\s+\"requires\": \"(.+?)\""
-            ).find(it)?.groups?.get(1)?.value
+                    "\"group\": \"$groupId\",\\s+\"module\": " +
+                        "\"$artifact\",\\s+\"version\": \\{\\s+\"requires\": \"(.+?)\""
+                )
+                .find(it)
+                ?.groups
+                ?.get(1)
+                ?.value
         }
 
-    private fun getDependencyConstraints(moduleJson: String) = moduleJson.let {
-        Regex("(?s)\"dependencyConstraints\": \\[(.+?)]").find(it)?.groups?.get(1)?.value
-    }
+    private fun getDependencyConstraints(moduleJson: String) =
+        Regex("(?s)\"dependencyConstraints\": \\[(.+?)]").findAll(moduleJson).joinToString("\n") {
+            it.groups.get(1)?.value.orEmpty()
+        }
 
     // Yes, I know https://stackoverflow.com/a/1732454/258688, but it's just a test...
-    private fun getLatestVersion(metadataFile: File) = metadataFile.readLines()
-        .mapNotNull { Regex(".*<latest>(.*?)</latest>.*").find(it)?.groups?.get(1)?.value }.first()
+    private fun getLatestVersion(metadataFile: File) =
+        metadataFile
+            .readLines()
+            .mapNotNull { Regex(".*<latest>(.*?)</latest>.*").find(it)?.groups?.get(1)?.value }
+            .first()
 
     private fun getPublishedFile(name: String) =
         File(projectSetup.props.tipOfTreeMavenRepoPath).resolve(name).check { it.exists() }

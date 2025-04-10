@@ -27,10 +27,11 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -135,8 +136,7 @@ class RoundedDrawable extends Drawable {
     }
 
     /** Converts a drawable to a bitmap of specified width and height. */
-    @NonNull
-    private Bitmap drawableToBitmap(@NonNull Drawable drawable, int width, int height) {
+    private @NonNull Bitmap drawableToBitmap(@NonNull Drawable drawable, int width, int height) {
         Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 
         Canvas canvas = new Canvas(bitmap);
@@ -159,9 +159,8 @@ class RoundedDrawable extends Drawable {
         return bitmap;
     }
 
-    @Nullable
     @VisibleForTesting
-    Drawable getDrawable() {
+    @Nullable Drawable getDrawable() {
         return mDrawable;
     }
 }

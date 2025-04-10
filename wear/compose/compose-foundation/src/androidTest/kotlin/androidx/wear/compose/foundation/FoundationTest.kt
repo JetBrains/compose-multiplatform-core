@@ -16,11 +16,17 @@
 
 package androidx.wear.compose.foundation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.semantics
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.min
@@ -36,12 +42,10 @@ internal const val FLOAT_TOLERANCE = 1f
 /**
  * Checks whether [expectedColor] does not exist in current [ImageBitmap]
  *
-fun ImageBitmap.assertDoesNotContainColor(expectedColor: Color) {
-    val histogram = histogram()
-    if (histogram.containsKey(expectedColor)) {
-        throw AssertionError("Expected color $expectedColor exists in current bitmap")
-    }
-}*/
+ * fun ImageBitmap.assertDoesNotContainColor(expectedColor: Color) { val histogram = histogram() if
+ * (histogram.containsKey(expectedColor)) { throw AssertionError("Expected color $expectedColor
+ * exists in current bitmap") } }
+ */
 
 /**
  * Checks whether [expectedColor] exist in current [ImageBitmap], covering at least the given ratio
@@ -51,8 +55,9 @@ fun ImageBitmap.assertDoesContainColor(expectedColor: Color, expectedRatio: Floa
     val histogram = histogram()
     val ratio = (histogram.getOrDefault(expectedColor, 0L)).toFloat() / (width * height)
     if (ratio < expectedRatio) {
-        throw AssertionError("Expected color $expectedColor with ratio $expectedRatio." +
-            " Actual ratio = $ratio")
+        throw AssertionError(
+            "Expected color $expectedColor with ratio $expectedRatio." + " Actual ratio = $ratio"
+        )
     }
 }
 
@@ -66,6 +71,26 @@ private fun ImageBitmap.histogram(): MutableMap<Color, Long> {
         }
     }
     return histogram
+}
+
+/**
+ * Applies a tag to allow modified curved container element to be found in tests. This is similar to
+ * [Modifier.testTag], but specifically for curved containers.
+ *
+ * This is a convenience method for a [semantics] that sets [SemanticsPropertyReceiver.testTag].
+ * Currently, this supports basic assert operations only.
+ *
+ * @param tag The tag to apply to the curved container.
+ */
+public fun CurvedModifier.testTag(tag: String) = this.then { child -> TestTagWrapper(child, tag) }
+
+private class TestTagWrapper(val child: CurvedChild, val tag: String) :
+    BaseCurvedChildWrapper(child) {
+
+    @Composable
+    override fun SubComposition(semanticProperties: CurvedSemanticProperties) {
+        Box(modifier = Modifier.testTag(tag)) { super.SubComposition(semanticProperties) }
+    }
 }
 
 internal fun checkSpy(dimensions: RadialDimensions, capturedInfo: CapturedInfo) =
@@ -99,6 +124,7 @@ internal class RadialDimensions(
     val outerRadius: Float
     val centerRadius
         get() = (innerRadius + outerRadius) / 2
+
     val sweep: Float
     val startAngle: Float
     val middleAngle: Float
@@ -109,9 +135,7 @@ internal class RadialDimensions(
         // Find the radius and center of the CurvedRow, all radial coordinates are relative to this
         // center
         rowRadius = min(rowCoords.size.width, rowCoords.size.height) / 2f
-        rowCenter = rowCoords.localToRoot(
-            Offset(rowRadius, rowRadius)
-        )
+        rowCenter = rowCoords.localToRoot(Offset(rowRadius, rowRadius))
 
         // Compute the radial coordinates (relative to the center of the CurvedRow) of the found
         // corners of the component's box and its center
@@ -145,19 +169,17 @@ internal class RadialDimensions(
         }
 
         middleAngle = center.angle.toDegrees()
-        sweep = if (endAngle > startAngle) {
-            endAngle - startAngle
-        } else {
-            endAngle + 360f - startAngle
-        }
+        sweep =
+            if (endAngle > startAngle) {
+                endAngle - startAngle
+            } else {
+                endAngle + 360f - startAngle
+            }
 
         thickness = outerRadius - innerRadius
 
         // All sweep angles are well between 0 and 90
-        assertTrue(
-            (FLOAT_TOLERANCE..90f - FLOAT_TOLERANCE).contains(sweep),
-            "sweep = $sweep"
-        )
+        assertTrue((FLOAT_TOLERANCE..90f - FLOAT_TOLERANCE).contains(sweep), "sweep = $sweep")
 
         // The outerRadius is greater than the innerRadius
         assertTrue(
@@ -168,14 +190,15 @@ internal class RadialDimensions(
 
     // TODO: When we finalize CurvedLayoutInfo's API, eliminate the RadialDimensions class and
     // inline this function to directly convert between LayoutCoordinates and CurvedLayoutInfo.
-    fun asCurvedLayoutInfo() = CurvedLayoutInfo(
-        sweepRadians = sweep.toRadians(),
-        outerRadius = outerRadius,
-        thickness = outerRadius - innerRadius,
-        centerOffset = rowCenter,
-        measureRadius = (outerRadius + innerRadius) / 2,
-        startAngleRadians = startAngle.toRadians()
-    )
+    fun asCurvedLayoutInfo() =
+        CurvedLayoutInfo(
+            sweepRadians = sweep.toRadians(),
+            outerRadius = outerRadius,
+            thickness = outerRadius - innerRadius,
+            centerOffset = rowCenter,
+            measureRadius = (outerRadius + innerRadius) / 2,
+            startAngleRadians = startAngle.toRadians()
+        )
 
     fun toRadialCoordinates(coords: LayoutCoordinates, x: Float, y: Float): RadialPoint {
         val vector = coords.localToRoot(Offset(x, y)) - rowCenter

@@ -17,7 +17,6 @@
 package androidx.room.compiler.processing.javac
 
 import androidx.room.compiler.processing.InternalXAnnotation
-import androidx.room.compiler.processing.XAnnotationBox
 import androidx.room.compiler.processing.XAnnotationValue
 import androidx.room.compiler.processing.XNullability
 import androidx.room.compiler.processing.XType
@@ -25,10 +24,8 @@ import com.google.auto.common.AnnotationMirrors
 import com.google.auto.common.MoreTypes
 import javax.lang.model.element.AnnotationMirror
 
-internal class JavacAnnotation(
-    val env: JavacProcessingEnv,
-    val mirror: AnnotationMirror
-) : InternalXAnnotation() {
+internal class JavacAnnotation(val env: JavacProcessingEnv, val mirror: AnnotationMirror) :
+    InternalXAnnotation() {
 
     override val name: String
         get() = mirror.annotationType.asElement().simpleName.toString()
@@ -58,17 +55,13 @@ internal class JavacAnnotation(
     }
 
     override val annotationValues: List<XAnnotationValue> by lazy {
-        AnnotationMirrors.getAnnotationValuesWithDefaults(mirror)
-            .map { (executableElement, annotationValue) ->
-                JavacAnnotationValue(
-                    env,
-                    env.wrapExecutableElement(executableElement) as JavacMethodElement,
-                    annotationValue
-                )
-            }
-    }
-
-    override fun <T : Annotation> asAnnotationBox(annotationClass: Class<T>): XAnnotationBox<T> {
-        return mirror.box(env, annotationClass)
+        AnnotationMirrors.getAnnotationValuesWithDefaults(mirror).map {
+            (executableElement, annotationValue) ->
+            JavacAnnotationValue(
+                env,
+                env.wrapExecutableElement(executableElement) as JavacMethodElement,
+                annotationValue
+            )
+        }
     }
 }

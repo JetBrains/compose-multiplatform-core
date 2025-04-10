@@ -23,8 +23,6 @@ import static androidx.work.impl.utils.PackageManagerHelper.setComponentEnabled;
 import android.content.Context;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.work.Clock;
 import androidx.work.Configuration;
@@ -35,6 +33,9 @@ import androidx.work.impl.background.systemjob.SystemJobScheduler;
 import androidx.work.impl.background.systemjob.SystemJobService;
 import androidx.work.impl.model.WorkSpec;
 import androidx.work.impl.model.WorkSpecDao;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -147,8 +148,7 @@ public class Schedulers {
         }
     }
 
-    @NonNull
-    static Scheduler createBestAvailableBackgroundScheduler(@NonNull Context context,
+    static @NonNull Scheduler createBestAvailableBackgroundScheduler(@NonNull Context context,
             @NonNull WorkDatabase workDatabase, Configuration configuration) {
 
         Scheduler scheduler;
@@ -168,8 +168,8 @@ public class Schedulers {
         return scheduler;
     }
 
-    @Nullable
-    private static Scheduler tryCreateGcmBasedScheduler(@NonNull Context context, Clock clock) {
+    private static @Nullable Scheduler tryCreateGcmBasedScheduler(@NonNull Context context,
+            Clock clock) {
         try {
             Class<?> klass = Class.forName(GCM_SCHEDULER);
             Scheduler scheduler =

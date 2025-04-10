@@ -30,18 +30,18 @@ import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.impl.utils.Exif
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.impl.utils.futures.FutureCallback
 import androidx.camera.core.impl.utils.futures.Futures
+import androidx.camera.integration.view.util.takePictureOnDisk
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.AndroidUtil.isEmulator
-import androidx.camera.testing.impl.AndroidUtil.skipVideoRecordingTestIfNotSupportedByEmulator
+import androidx.camera.testing.impl.CameraAvailabilityUtil.assumeDeviceHasFrontCamera
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.IgnoreVideoRecordingProblematicDeviceRule.Companion.skipVideoRecordingTestIfNotSupportedByEmulator
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.view.CameraController.TAP_TO_FOCUS_FAILED
 import androidx.camera.view.CameraController.TAP_TO_FOCUS_FOCUSED
@@ -81,9 +81,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-/**
- * Instrument tests for [CameraControllerFragment].
- */
+/** Instrument tests for [CameraControllerFragment]. */
 @LargeTest
 @RunWith(Parameterized::class)
 class CameraControllerFragmentTest(
@@ -91,21 +89,24 @@ class CameraControllerFragmentTest(
     private val cameraConfig: CameraXConfig
 ) {
     @get:Rule
-    val cameraPipeConfigTestRule = CameraPipeConfigTestRule(
-        active = implName == CameraPipeConfig::class.simpleName,
-    )
+    val cameraPipeConfigTestRule =
+        CameraPipeConfigTestRule(
+            active = implName == CameraPipeConfig::class.simpleName,
+        )
 
     @get:Rule
-    val useCameraRule = CameraUtil.grantCameraPermissionAndPreTest(
-        testCameraRule,
-        CameraUtil.PreTestCameraIdList(cameraConfig)
-    )
+    val useCameraRule =
+        CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
+            testCameraRule,
+            CameraUtil.PreTestCameraIdList(cameraConfig)
+        )
 
     @get:Rule
-    val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(
-        android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-        android.Manifest.permission.RECORD_AUDIO
-    )
+    val grantPermissionRule: GrantPermissionRule =
+        GrantPermissionRule.grant(
+            android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            android.Manifest.permission.RECORD_AUDIO
+        )
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private lateinit var cameraProvider: ProcessCameraProvider
@@ -120,9 +121,9 @@ class CameraControllerFragmentTest(
         // window before start the test.
         CoreAppTestUtil.prepareDeviceUI(instrumentation)
         ProcessCameraProvider.configureInstance(cameraConfig)
-        cameraProvider = ProcessCameraProvider.getInstance(
-            ApplicationProvider.getApplicationContext()
-        )[10000, TimeUnit.MILLISECONDS]
+        cameraProvider =
+            ProcessCameraProvider.getInstance(ApplicationProvider.getApplicationContext())[
+                    10000, TimeUnit.MILLISECONDS]
         fragmentScenario = createFragmentScenario()
         fragment = fragmentScenario.getFragment()
         uiDevice = UiDevice.getInstance(instrumentation)
@@ -157,20 +158,22 @@ class CameraControllerFragmentTest(
         var started = false
         var finalState = TAP_TO_FOCUS_NOT_STARTED
         instrumentation.runOnMainSync {
-            fragment.cameraController.tapToFocusState.observe(
-                fragment
-            ) {
+            fragment.cameraController.tapToFocusInfoState.observe(fragment) {
                 // Make sure the LiveData receives STARTED first and then another update.
-                if (it == TAP_TO_FOCUS_STARTED) {
+                if (it.focusState == TAP_TO_FOCUS_STARTED) {
                     started = true
                     return@observe
                 }
                 if (started) {
-                    finalState = it
+                    finalState = it.focusState
                     focused.release()
                 }
             }
         }
+
+        // Disables auto-cancellation as that would reset the focus state and interfere with the
+        // the test in timeout cases.
+        fragment.cameraController.setTapToFocusAutoCancelDuration(0, TimeUnit.SECONDS)
 
         // Act: click PreviewView.
         val previewViewId = "androidx.camera.integration.view:id/preview_view"
@@ -178,11 +181,8 @@ class CameraControllerFragmentTest(
 
         // Assert: got a LiveData update
         assertThat(focused.tryAcquire(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
-        assertThat(finalState).isAnyOf(
-            TAP_TO_FOCUS_FOCUSED,
-            TAP_TO_FOCUS_FAILED,
-            TAP_TO_FOCUS_NOT_FOCUSED
-        )
+        assertThat(finalState)
+            .isAnyOf(TAP_TO_FOCUS_FOCUSED, TAP_TO_FOCUS_FAILED, TAP_TO_FOCUS_NOT_FOCUSED)
     }
 
     @Test
@@ -259,9 +259,7 @@ class CameraControllerFragmentTest(
     fun analyzerCleared_isNotStreaming() {
         fragment.assertAnalysisStreaming(true)
 
-        instrumentation.runOnMainSync {
-            fragment.cameraController.clearImageAnalysisAnalyzer()
-        }
+        instrumentation.runOnMainSync { fragment.cameraController.clearImageAnalysisAnalyzer() }
 
         fragment.assertAnalysisStreaming(false)
     }
@@ -325,9 +323,7 @@ class CameraControllerFragmentTest(
             rotationValueToRotationDegrees(fragment.previewView.display.rotation)
 
         lateinit var previewBitmap: Bitmap
-        instrumentation.runOnMainSync {
-            previewBitmap = fragment.previewView.bitmap!!
-        }
+        instrumentation.runOnMainSync { previewBitmap = fragment.previewView.bitmap!! }
         previewBitmap = Bitmap.createScaledBitmap(previewBitmap, width, height, true)
 
         // Rotate capture bitmap to match preview orientation
@@ -365,12 +361,18 @@ class CameraControllerFragmentTest(
         // tolerance is purposely high to avoid false positive.
         val errorTolerance = 1F
         for ((i, colorShift) in RGB_SHIFTS.withIndex()) {
-            val errorMsg = "Color $i Capture\n" +
-                colorComponentToReadableString(captureBitmap, colorShift) + "Preview\n" +
-                colorComponentToReadableString(previewBitmap, colorShift)
-            assertWithMessage(errorMsg).that(captureMoment[i].x).isWithin(errorTolerance)
+            val errorMsg =
+                "Color $i Capture\n" +
+                    colorComponentToReadableString(captureBitmap, colorShift) +
+                    "Preview\n" +
+                    colorComponentToReadableString(previewBitmap, colorShift)
+            assertWithMessage(errorMsg)
+                .that(captureMoment[i].x)
+                .isWithin(errorTolerance)
                 .of(previewMoment[i].x)
-            assertWithMessage(errorMsg).that(captureMoment[i].y).isWithin(errorTolerance)
+            assertWithMessage(errorMsg)
+                .that(captureMoment[i].y)
+                .isWithin(errorTolerance)
                 .of(previewMoment[i].y)
         }
     }
@@ -387,9 +389,10 @@ class CameraControllerFragmentTest(
         onView(withId(R.id.capture_enabled)).perform(click())
 
         // Act and assert.
-        val exception = Assert.assertThrows(IllegalStateException::class.java) {
-            fragment.assertCanTakePicture()
-        }
+        val exception =
+            Assert.assertThrows(IllegalStateException::class.java) {
+                fragment.assertCanTakePicture()
+            }
         assertThat(exception).hasMessageThat().isEqualTo("ImageCapture disabled.")
     }
 
@@ -422,12 +425,16 @@ class CameraControllerFragmentTest(
 
     @Test
     fun cameraToggled_previewIsStreaming() {
+        assumeDeviceHasFrontCamera()
+
         onView(withId(R.id.camera_toggle)).perform(click())
         fragment.assertPreviewIsStreaming()
     }
 
     @Test
     fun cameraToggled_canTakePicture() {
+        assumeDeviceHasFrontCamera()
+
         onView(withId(R.id.camera_toggle)).perform(click())
         fragment.assertPreviewIsStreaming()
         fragment.assertCanTakePicture()
@@ -442,9 +449,10 @@ class CameraControllerFragmentTest(
         fragment.assertPreviewIsStreaming()
 
         // Assert.
-        val exception = Assert.assertThrows(IllegalStateException::class.java) {
-            fragment.assertCanRecordVideo()
-        }
+        val exception =
+            Assert.assertThrows(IllegalStateException::class.java) {
+                fragment.assertCanRecordVideo()
+            }
         assertThat(exception).hasMessageThat().isEqualTo("VideoCapture disabled.")
     }
 
@@ -466,6 +474,8 @@ class CameraControllerFragmentTest(
 
     @Test
     fun cameraToggled_canRecordVideo() {
+        assumeDeviceHasFrontCamera()
+
         skipVideoRecordingTestIfNotSupportedByEmulator()
         skipTestWithSurfaceProcessingOnCuttlefishApi30()
 
@@ -517,9 +527,7 @@ class CameraControllerFragmentTest(
         )
     }
 
-    /**
-     * Calculates the 1st order moment (center of mass) of the R, G and B of the bitmap.
-     */
+    /** Calculates the 1st order moment (center of mass) of the R, G and B of the bitmap. */
     private fun getLuminance(bitmap: Bitmap): Float {
         var totals = 0F
         for (colorShift in RGB_SHIFTS) {
@@ -534,9 +542,7 @@ class CameraControllerFragmentTest(
         return totals / bitmap.width / bitmap.height / RGB_SHIFTS.size
     }
 
-    /**
-     * Calculates the 1st order moment (center of mass) of the R, G and B of the bitmap.
-     */
+    /** Calculates the 1st order moment (center of mass) of the R, G and B of the bitmap. */
     private fun getRgbMoments(bitmap: Bitmap): Array<PointF> {
         val rgbMoments = arrayOf(PointF(0F, 0F), PointF(0F, 0F), PointF(0F, 0F))
         val totals = arrayOf(0F, 0F, 0F)
@@ -563,8 +569,8 @@ class CameraControllerFragmentTest(
     }
 
     /**
-     * Converts the R, G or B component of the bitmap to a readable string table with fixed
-     * column width.
+     * Converts the R, G or B component of the bitmap to a readable string table with fixed column
+     * width.
      *
      * <p> Example:
      * <pre>
@@ -606,36 +612,43 @@ class CameraControllerFragmentTest(
      */
     private fun CameraControllerFragment.assertCanTakePicture(): CaptureResult {
         val imageCallbackSemaphore = Semaphore(0)
+        var error: Exception? = null
         var uri: Uri? = null
         instrumentation.runOnMainSync {
-            this.takePicture(object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+            this.cameraController.takePictureOnDisk(
+                requireContext(),
+                executorService,
+                toastMessenger = this::toast,
+                onImageSaved = { outputFileResults ->
                     uri = outputFileResults.savedUri
                     imageCallbackSemaphore.release()
-                }
-
-                override fun onError(exception: ImageCaptureException) {
-                    throw exception
-                }
-            })
+                },
+                onError = { exception ->
+                    error = exception
+                    imageCallbackSemaphore.release()
+                },
+            )
         }
         assertThat(imageCallbackSemaphore.tryAcquire(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+        assertWithMessage("ImageCapture error: $error").that(error).isNull()
         assertThat(uri).isNotNull()
         val contentResolver: ContentResolver = this.activity!!.contentResolver
 
         // Read bitmap and exif rotation to return.
-        val bitmap = contentResolver.openInputStream(uri!!)!!.use {
-            BitmapFactory.decodeStream(it)
-        }
-        val rotationAndFlip = contentResolver.openInputStream(uri!!)!!.use {
-            val exif = Exif.createFromInputStream(it)
-            Triple(exif.rotation, exif.isFlippedHorizontally, exif.isFlippedVertically)
-        }
+        val bitmap = contentResolver.openInputStream(uri!!)!!.use { BitmapFactory.decodeStream(it) }
+        val rotationAndFlip =
+            contentResolver.openInputStream(uri!!)!!.use {
+                val exif = Exif.createFromInputStream(it)
+                Triple(exif.rotation, exif.isFlippedHorizontally, exif.isFlippedVertically)
+            }
 
         // Delete the saved picture. Assert 1 row was deleted.
         assertThat(this.activity!!.contentResolver.delete(uri!!, null, null)).isEqualTo(1)
         return CaptureResult(
-            bitmap, rotationAndFlip.first, rotationAndFlip.second, rotationAndFlip.third
+            bitmap,
+            rotationAndFlip.first,
+            rotationAndFlip.second,
+            rotationAndFlip.third
         )
     }
 
@@ -658,17 +671,14 @@ class CameraControllerFragmentTest(
                         finalize = it
                         videoSavedSemaphore.release()
                     }
-
                     is VideoRecordEvent.Status -> {
                         videoRecordingSemaphore.release()
                     }
-
                     is VideoRecordEvent.Start,
                     is VideoRecordEvent.Pause,
                     is VideoRecordEvent.Resume -> {
                         // no op for this test, skip these event now.
                     }
-
                     else -> {
                         throw IllegalStateException()
                     }
@@ -678,12 +688,15 @@ class CameraControllerFragmentTest(
 
         // Wait for status event to proceed recording for a while.
         assertThat(
-            videoRecordingSemaphore.tryAcquire(RECORDING_COUNT, TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        ).isTrue()
+                videoRecordingSemaphore.tryAcquire(
+                    RECORDING_COUNT,
+                    TIMEOUT_SECONDS,
+                    TimeUnit.SECONDS
+                )
+            )
+            .isTrue()
 
-        instrumentation.runOnMainSync {
-            this.stopRecording()
-        }
+        instrumentation.runOnMainSync { this.stopRecording() }
 
         // Wait for finalize event to saved file.
         assertThat(videoSavedSemaphore.tryAcquire(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
@@ -711,7 +724,9 @@ class CameraControllerFragmentTest(
 
     private fun createFragmentScenario(): FragmentScenario<CameraControllerFragment> {
         return FragmentScenario.launchInContainer(
-            CameraControllerFragment::class.java, null, R.style.AppTheme,
+            CameraControllerFragment::class.java,
+            null,
+            R.style.AppTheme,
             null
         )
     }
@@ -733,9 +748,7 @@ class CameraControllerFragmentTest(
     private fun CameraControllerFragment.assertPreviewState(state: PreviewView.StreamState) {
         val previewStreaming = Semaphore(0)
         instrumentation.runOnMainSync {
-            previewView.previewStreamState.observe(
-                this
-            ) {
+            previewView.previewStreamState.observe(this) {
                 if (it == state) {
                     previewStreaming.release()
                 }
@@ -746,18 +759,13 @@ class CameraControllerFragmentTest(
 
     private fun CameraControllerFragment.assertAnalysisStreaming(streaming: Boolean) {
         val analysisStreaming = Semaphore(0)
-        instrumentation.runOnMainSync {
-            setWrappedAnalyzer {
-                analysisStreaming.release()
-            }
-        }
+        instrumentation.runOnMainSync { setWrappedAnalyzer { analysisStreaming.release() } }
         // Wait for 2 analysis frames. It's necessary because even after the analyzer is removed on
         // the main thread, there could already be a frame posted on user call back thread. For the
         // default non-blocking mode, the max number of frame posted on user thread at the same
         // time is 1. So we wait for one additional frame to make sure the analyzer has stopped.
-        assertThat(analysisStreaming.tryAcquire(2, TIMEOUT_SECONDS, TimeUnit.SECONDS)).isEqualTo(
-            streaming
-        )
+        assertThat(analysisStreaming.tryAcquire(2, TIMEOUT_SECONDS, TimeUnit.SECONDS))
+            .isEqualTo(streaming)
     }
 
     private fun assumeObjectCanBeFound(uiSelector: UiSelector): UiObject {
@@ -768,9 +776,7 @@ class CameraControllerFragmentTest(
         }
     }
 
-    /**
-     * Return value of [CameraControllerFragment.assertCanTakePicture].
-     */
+    /** Return value of [CameraControllerFragment.assertCanTakePicture]. */
     private data class CaptureResult(
         val bitmap: Bitmap,
         val rotationDegrees: Int,
@@ -781,23 +787,23 @@ class CameraControllerFragmentTest(
     companion object {
         // The right shift needed to get color component from a Int color, in the order of R, G
         // and B.
-        private val RGB_SHIFTS = ImmutableList.of(/*R*/16, /*G*/ 8, /*B*/0)
+        private val RGB_SHIFTS = ImmutableList.of(/*R*/ 16, /*G*/ 8, /*B*/ 0)
         private const val COLOR_MASK = 0xFF
 
         // The minimum luminance for comparing pictures. Arbitrarily chosen.
         private const val MIN_LUMINANCE = 50F
 
-        @JvmField
-        val testCameraRule = CameraUtil.PreTestCamera()
+        @JvmField val testCameraRule = CameraUtil.PreTestCamera()
 
         const val TIMEOUT_SECONDS = 10L
         const val RECORDING_COUNT = 5
 
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() = listOf(
-            arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-            arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
-        )
+        fun data() =
+            listOf(
+                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+            )
     }
 }

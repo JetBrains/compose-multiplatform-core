@@ -21,13 +21,14 @@ import android.graphics.RectF;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -51,8 +52,7 @@ public class ComplicationOverlayWireFormat implements VersionedParcelable, Parce
     public int mEnabled;
 
     @ParcelField(3)
-    @Nullable
-    public Map<Integer, RectF> mPerComplicationTypeBounds;
+    public @Nullable Map<Integer, RectF> mPerComplicationTypeBounds;
 
     /** Ideally this would be Integer but VersionedParcelable doesn't support that. */
     @ParcelField(4)
@@ -91,8 +91,7 @@ public class ComplicationOverlayWireFormat implements VersionedParcelable, Parce
      * Returns the optional override to the accessibilityTraversalIndex used for sorting
      * ContentDescriptionLabels. See ComplicationOverlay for details.
      */
-    @Nullable
-    public Integer getAccessibilityTraversalIndex() {
+    public @Nullable Integer getAccessibilityTraversalIndex() {
         if (mAccessibilityTraversalIndex == NULL_ACCESSIBILITY_TRAVERSAL_INDEX) {
             return null;
         } else {

@@ -18,7 +18,7 @@ package androidx.camera.camera2.pipe.integration.compat.quirk
 
 import android.annotation.SuppressLint
 import android.os.Build
-import androidx.annotation.RequiresApi
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isSamsungDevice
 import androidx.camera.core.impl.Quirk
 
 /**
@@ -27,19 +27,17 @@ import androidx.camera.core.impl.Quirk
  *
  * QuirkSummary
  * - Bug Id: 172036589
- * - Description: On some devices like Samsung SM-A716B, it could lead to CaptureRequest not
- *                being completed when taking photos in dark environment with flash on/auto.
- *                Calling stopRepeating ahead of still capture and setRepeating again after
- *                capture is done can fix the issue.
+ * - Description: On some devices like Samsung SM-A716B, it could lead to CaptureRequest not being
+ *   completed when taking photos in dark environment with flash on/auto. Calling stopRepeating
+ *   ahead of still capture and setRepeating again after capture is done can fix the issue.
  * - Device(s): Samsung SM-A716
  */
-@SuppressLint("CameraXQuirksClassDetector") // TODO(b/270421716): enable when kotlin is supported.
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-class StillCaptureFlashStopRepeatingQuirk : Quirk {
-    companion object {
-        fun isEnabled(): Boolean {
-            return Build.MANUFACTURER.equals("SAMSUNG", ignoreCase = true) &&
-                Build.MODEL.uppercase().startsWith("SM-A716")
+@SuppressLint("CameraXQuirksClassDetector")
+// TODO(b/270421716): enable when kotlin is supported.
+public class StillCaptureFlashStopRepeatingQuirk : Quirk {
+    public companion object {
+        public fun isEnabled(): Boolean {
+            return isSamsungDevice() && Build.MODEL.uppercase().startsWith("SM-A716")
         }
     }
 }

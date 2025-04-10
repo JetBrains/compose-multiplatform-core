@@ -27,44 +27,39 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.tv.material3.tokens.SurfaceScaleTokens
 
-@ExperimentalTvMaterial3Api
 @Composable
 internal fun Modifier.tvSurfaceScale(
     scale: Float,
     interactionSource: MutableInteractionSource,
 ): Modifier {
-    val interaction by interactionSource.interactions.collectAsState(
-        initial = FocusInteraction.Focus()
-    )
+    val interaction by
+        interactionSource.interactions.collectAsState(initial = FocusInteraction.Focus())
 
     val animationSpec = defaultScaleAnimationSpec(interaction)
 
-    val animatedScale by animateFloatAsState(
-        targetValue = scale,
-        animationSpec = animationSpec,
-        label = "tv-surface-scale"
-    )
+    val animatedScale by
+        animateFloatAsState(
+            targetValue = scale,
+            animationSpec = animationSpec,
+            label = "tv-surface-scale"
+        )
 
-    return drawWithContent {
-        scale(animatedScale) {
-            this@drawWithContent.drawContent()
-        }
-    }
+    return this.graphicsLayer(scaleX = animatedScale, scaleY = animatedScale)
 }
 
 private fun defaultScaleAnimationSpec(interaction: Interaction): TweenSpec<Float> =
     tween(
-        durationMillis = when (interaction) {
-            is FocusInteraction.Focus -> SurfaceScaleTokens.focusDuration
-            is FocusInteraction.Unfocus -> SurfaceScaleTokens.unFocusDuration
-            is PressInteraction.Press -> SurfaceScaleTokens.pressedDuration
-            is PressInteraction.Release -> SurfaceScaleTokens.releaseDuration
-            is PressInteraction.Cancel -> SurfaceScaleTokens.releaseDuration
-            else -> SurfaceScaleTokens.releaseDuration
-        },
+        durationMillis =
+            when (interaction) {
+                is FocusInteraction.Focus -> SurfaceScaleTokens.focusDuration
+                is FocusInteraction.Unfocus -> SurfaceScaleTokens.unFocusDuration
+                is PressInteraction.Press -> SurfaceScaleTokens.pressedDuration
+                is PressInteraction.Release -> SurfaceScaleTokens.releaseDuration
+                is PressInteraction.Cancel -> SurfaceScaleTokens.releaseDuration
+                else -> SurfaceScaleTokens.releaseDuration
+            },
         easing = SurfaceScaleTokens.enterEasing
     )

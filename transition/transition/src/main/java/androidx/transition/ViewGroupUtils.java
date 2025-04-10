@@ -20,9 +20,9 @@ import android.annotation.SuppressLint;
 import android.os.Build;
 import android.view.ViewGroup;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -103,12 +103,10 @@ class ViewGroupUtils {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void suppressLayout(ViewGroup viewGroup, boolean suppress) {
             viewGroup.suppressLayout(suppress);
         }
 
-        @DoNotInline
         static int getChildDrawingOrder(ViewGroup viewGroup, int drawingPosition) {
             return viewGroup.getChildDrawingOrder(drawingPosition);
         }

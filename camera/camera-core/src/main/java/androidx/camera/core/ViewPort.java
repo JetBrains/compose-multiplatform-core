@@ -22,13 +22,13 @@ import android.view.SurfaceView;
 import android.view.View;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.resolutionselector.AspectRatioStrategy;
 import androidx.camera.core.resolutionselector.ResolutionSelector;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -57,7 +57,6 @@ import java.util.concurrent.Executor;
  * a way that only the area defined by the crop rect is visible to end users. Once the crop rect
  * is applied, all the use cases will produce the same image with possibly different resolutions.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class ViewPort {
 
     /**
@@ -149,8 +148,7 @@ public final class ViewPort {
     @ScaleType
     private int mScaleType;
 
-    @NonNull
-    private Rational mAspectRatio;
+    private @NonNull Rational mAspectRatio;
 
     @ImageOutputConfig.RotationValue
     private int mRotation;
@@ -169,8 +167,7 @@ public final class ViewPort {
     /**
      * Gets the aspect ratio of the {@link ViewPort}.
      */
-    @NonNull
-    public Rational getAspectRatio() {
+    public @NonNull Rational getAspectRatio() {
         return mAspectRatio;
     }
 
@@ -280,8 +277,7 @@ public final class ViewPort {
          *
          * <p> The default value is {@link #FILL_CENTER} if not set.
          */
-        @NonNull
-        public Builder setScaleType(@ScaleType int scaleType) {
+        public @NonNull Builder setScaleType(@ScaleType int scaleType) {
             mScaleType = scaleType;
             return this;
         }
@@ -294,8 +290,7 @@ public final class ViewPort {
          *
          * <p> The default value is {@link android.util.LayoutDirection#LTR} if not set.
          */
-        @NonNull
-        public Builder setLayoutDirection(@LayoutDirection int layoutDirection) {
+        public @NonNull Builder setLayoutDirection(@LayoutDirection int layoutDirection) {
             mLayoutDirection = layoutDirection;
             return this;
         }
@@ -303,8 +298,7 @@ public final class ViewPort {
         /**
          * Builds the {@link ViewPort}.
          */
-        @NonNull
-        public ViewPort build() {
+        public @NonNull ViewPort build() {
             Preconditions.checkNotNull(mAspectRatio, "The crop aspect ratio must be set.");
             return new ViewPort(mScaleType, mAspectRatio, mRotation, mLayoutDirection);
         }

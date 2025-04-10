@@ -20,9 +20,10 @@ import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Creates a view for a media item row in a playlist

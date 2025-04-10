@@ -26,8 +26,12 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.Network;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.LocaleList;
@@ -35,6 +39,7 @@ import android.provider.Browser;
 
 import androidx.annotation.ColorRes;
 import androidx.test.core.app.ApplicationProvider;
+import androidx.test.filters.SdkSuppress;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -826,11 +831,11 @@ public class CustomTabsIntentTest {
         Intent intent = new CustomTabsIntent.Builder().build().intent;
         assertFalse(CustomTabsIntent.isActivitySideSheetMaximizationEnabled(intent));
 
-        intent = new CustomTabsIntent.Builder().setActivitySideSheetEnableMaximization(
+        intent = new CustomTabsIntent.Builder().setActivitySideSheetMaximizationEnabled(
                 true).build().intent;
         assertTrue(CustomTabsIntent.isActivitySideSheetMaximizationEnabled(intent));
 
-        intent = new CustomTabsIntent.Builder().setActivitySideSheetEnableMaximization(
+        intent = new CustomTabsIntent.Builder().setActivitySideSheetMaximizationEnabled(
                 false).build().intent;
         assertFalse(CustomTabsIntent.isActivitySideSheetMaximizationEnabled(intent));
     }
@@ -838,5 +843,68 @@ public class CustomTabsIntentTest {
     private void assertNullSessionInExtras(Intent intent) {
         assertTrue(intent.hasExtra(CustomTabsIntent.EXTRA_SESSION));
         assertNull(intent.getExtras().getBinder(CustomTabsIntent.EXTRA_SESSION));
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M /* getActiveNetwork requires api>=23 */)
+    public void testBindNetworkToCustomTabs() {
+        ConnectivityManager cm =
+                (ConnectivityManager) ApplicationProvider.getApplicationContext()
+                        .getSystemService(Context.CONNECTIVITY_SERVICE);
+        Network network = cm.getActiveNetwork();
+        long expectedNetworkHandle = network.getNetworkHandle();
+        Intent intent = new CustomTabsIntent.Builder()
+                .setNetwork(network)
+                .build()
+                .intent;
+        assertNotNull(intent);
+        assertTrue(intent.hasExtra(CustomTabsIntent.EXTRA_NETWORK));
+        assertNotNull(CustomTabsIntent.getNetwork(intent));
+        assertEquals(expectedNetworkHandle,
+                CustomTabsIntent.getNetwork(intent).getNetworkHandle());
+    }
+
+    @Test
+    public void testPutsEphemeralBrowsing() {
+        Intent intent = new CustomTabsIntent.Builder()
+                .setEphemeralBrowsingEnabled(true)
+                .build()
+                .intent;
+        assertTrue(intent.getBooleanExtra(CustomTabsIntent.EXTRA_ENABLE_EPHEMERAL_BROWSING, false));
+    }
+
+    @Test
+    public void testEnableCloseButtonInCustomTab() {
+        Intent intent = new CustomTabsIntent.Builder()
+                .setCloseButtonEnabled(true)
+                .build()
+                .intent;
+        assertTrue(CustomTabsIntent.isCloseButtonEnabled(intent));
+    }
+
+    @Test
+    public void testDisableCloseButtonInCustomTab() {
+        Intent intent = new CustomTabsIntent.Builder()
+                .setCloseButtonEnabled(false)
+                .build()
+                .intent;
+        assertFalse(CustomTabsIntent.isCloseButtonEnabled(intent));
+    }
+
+    @Test
+    public void testCloseButtonByDefaultInCustomTab() {
+        Bitmap icon = Bitmap.createBitmap(/* width= */ 16, /* height= */ 16,
+                    Bitmap.Config.ARGB_8888);
+        Intent intent = new CustomTabsIntent.Builder()
+                .setCloseButtonPosition(CustomTabsIntent.CLOSE_BUTTON_POSITION_START)
+                .setCloseButtonIcon(icon)
+                .build()
+                .intent;
+        assertTrue(CustomTabsIntent.isCloseButtonEnabled(intent));
+        assertEquals(CustomTabsIntent.CLOSE_BUTTON_POSITION_START,
+                intent.getIntExtra(CustomTabsIntent.EXTRA_CLOSE_BUTTON_POSITION,
+                        CustomTabsIntent.CLOSE_BUTTON_POSITION_DEFAULT));
+        Bundle extras = intent.getExtras();
+        assertEquals(icon, (Bitmap) extras.getParcelable(CustomTabsIntent.EXTRA_CLOSE_BUTTON_ICON));
     }
 }

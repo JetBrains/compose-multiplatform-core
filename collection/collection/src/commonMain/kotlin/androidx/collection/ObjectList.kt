@@ -13,34 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("NOTHING_TO_INLINE", "RedundantVisibilityModifier", "UNCHECKED_CAST")
+@file:Suppress(
+    "NOTHING_TO_INLINE",
+    "RedundantVisibilityModifier",
+    "UNCHECKED_CAST",
+    "KotlinRedundantDiagnosticSuppress"
+)
 @file:OptIn(ExperimentalContracts::class)
 
 package androidx.collection
 
+import androidx.collection.internal.throwIllegalArgumentException
+import androidx.collection.internal.throwIndexOutOfBoundsException
+import androidx.collection.internal.throwNoSuchElementException
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
+import kotlin.math.max
 
 /**
- * [ObjectList] is a [List]-like collection for reference types. It is optimized for fast
- * access, avoiding virtual and interface method access. Methods avoid allocation whenever
- * possible. For example [forEach] does not need allocate an [Iterator].
+ * [ObjectList] is a [List]-like collection for reference types. It is optimized for fast access,
+ * avoiding virtual and interface method access. Methods avoid allocation whenever possible. For
+ * example [forEach] does not need allocate an [Iterator].
  *
- * This implementation is not thread-safe: if multiple threads access this
- * container concurrently, and one or more threads modify the structure of
- * the list (insertion or removal for instance), the calling code must provide
- * the appropriate synchronization. It is also not safe to mutate during reentrancy --
- * in the middle of a [forEach], for example. However, concurrent reads are safe.
+ * This implementation is not thread-safe: if multiple threads access this container concurrently,
+ * and one or more threads modify the structure of the list (insertion or removal for instance), the
+ * calling code must provide the appropriate synchronization. It is also not safe to mutate during
+ * reentrancy -- in the middle of a [forEach], for example. However, concurrent reads are safe.
  *
- * **Note** [List] access is available through [asList] when developers need access to the
- * common API.
+ * **Note** [List] access is available through [asList] when developers need access to the common
+ * API.
  *
- * It is best to use this for all internal implementations where a list of reference types
- * is needed. Use [List] in public API to take advantage of the commonly-used interface.
- * It is common to use [ObjectList] internally and use [asList] to get a [List] interface
- * for interacting with public APIs.
+ * It is best to use this for all internal implementations where a list of reference types is
+ * needed. Use [List] in public API to take advantage of the commonly-used interface. It is common
+ * to use [ObjectList] internally and use [asList] to get a [List] interface for interacting with
+ * public APIs.
  *
  * @see MutableObjectList
  * @see FloatList
@@ -50,20 +58,16 @@ import kotlin.jvm.JvmOverloads
 public sealed class ObjectList<E>(initialCapacity: Int) {
     @JvmField
     @PublishedApi
-    internal var content: Array<Any?> = if (initialCapacity == 0) {
-        EmptyArray
-    } else {
-        arrayOfNulls(initialCapacity)
-    }
+    internal var content: Array<Any?> =
+        if (initialCapacity == 0) {
+            EmptyArray
+        } else {
+            arrayOfNulls(initialCapacity)
+        }
 
-    @Suppress("PropertyName")
-    @JvmField
-    @PublishedApi
-    internal var _size: Int = 0
+    @Suppress("PropertyName") @JvmField @PublishedApi internal var _size: Int = 0
 
-    /**
-     * The number of elements in the [ObjectList].
-     */
+    /** The number of elements in the [ObjectList]. */
     @get:androidx.annotation.IntRange(from = 0)
     public val size: Int
         get() = _size
@@ -72,30 +76,24 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
      * Returns the last valid index in the [ObjectList]. This can be `-1` when the list is empty.
      */
     @get:androidx.annotation.IntRange(from = -1)
-    public inline val lastIndex: Int get() = _size - 1
+    public inline val lastIndex: Int
+        get() = _size - 1
 
-    /**
-     * Returns an [IntRange] of the valid indices for this [ObjectList].
-     */
-    public inline val indices: IntRange get() = 0 until _size
+    /** Returns an [IntRange] of the valid indices for this [ObjectList]. */
+    public inline val indices: IntRange
+        get() = 0 until _size
 
-    /**
-     * Returns `true` if the collection has no elements in it.
-     */
+    /** Returns `true` if the collection has no elements in it. */
     public fun none(): Boolean {
         return isEmpty()
     }
 
-    /**
-     * Returns `true` if there's at least one element in the collection.
-     */
+    /** Returns `true` if there's at least one element in the collection. */
     public fun any(): Boolean {
         return isNotEmpty()
     }
 
-    /**
-     * Returns `true` if any of the elements give a `true` return value for [predicate].
-     */
+    /** Returns `true` if any of the elements give a `true` return value for [predicate]. */
     public inline fun any(predicate: (element: E) -> Boolean): Boolean {
         contract { callsInPlace(predicate) }
         forEach {
@@ -120,16 +118,14 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
         return false
     }
 
-    /**
-     * Returns `true` if the [ObjectList] contains [element] or `false` otherwise.
-     */
+    /** Returns `true` if the [ObjectList] contains [element] or `false` otherwise. */
     public operator fun contains(element: E): Boolean {
         return indexOf(element) >= 0
     }
 
     /**
-     * Returns `true` if the [ObjectList] contains all elements in [elements] or `false` if
-     * one or more are missing.
+     * Returns `true` if the [ObjectList] contains all elements in [elements] or `false` if one or
+     * more are missing.
      */
     public fun containsAll(@Suppress("ArrayReturn") elements: Array<E>): Boolean {
         for (i in elements.indices) {
@@ -139,8 +135,8 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
     }
 
     /**
-     * Returns `true` if the [ObjectList] contains all elements in [elements] or `false` if
-     * one or more are missing.
+     * Returns `true` if the [ObjectList] contains all elements in [elements] or `false` if one or
+     * more are missing.
      */
     public fun containsAll(elements: List<E>): Boolean {
         for (i in elements.indices) {
@@ -150,34 +146,29 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
     }
 
     /**
-     * Returns `true` if the [ObjectList] contains all elements in [elements] or `false` if
-     * one or more are missing.
+     * Returns `true` if the [ObjectList] contains all elements in [elements] or `false` if one or
+     * more are missing.
      */
     public fun containsAll(elements: Iterable<E>): Boolean {
-        elements.forEach { element ->
-            if (!contains(element)) return false
-        }
+        elements.forEach { element -> if (!contains(element)) return false }
         return true
     }
 
     /**
-     * Returns `true` if the [ObjectList] contains all elements in [elements] or `false` if
-     * one or more are missing.
+     * Returns `true` if the [ObjectList] contains all elements in [elements] or `false` if one or
+     * more are missing.
      */
     public fun containsAll(elements: ObjectList<E>): Boolean {
-        elements.forEach { element ->
-            if (!contains(element)) return false
-        }
+        elements.forEach { element -> if (!contains(element)) return false }
         return true
     }
 
-    /**
-     * Returns the number of elements in this list.
-     */
+    /** Returns the number of elements in this list. */
     public fun count(): Int = _size
 
     /**
      * Counts the number of elements matching [predicate].
+     *
      * @return The number of elements in this list for which [predicate] returns true.
      */
     public inline fun count(predicate: (element: E) -> Boolean): Int {
@@ -188,68 +179,63 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
     }
 
     /**
-     * Returns the first element in the [ObjectList] or throws a [NoSuchElementException] if
-     * it [isEmpty].
+     * Returns the first element in the [ObjectList] or throws a [NoSuchElementException] if it
+     * [isEmpty].
      */
     public fun first(): E {
         if (isEmpty()) {
-            throw NoSuchElementException("ObjectList is empty.")
+            throwNoSuchElementException("ObjectList is empty.")
         }
         return content[0] as E
     }
 
     /**
-     * Returns the first element in the [ObjectList] for which [predicate] returns `true` or
-     * throws [NoSuchElementException] if nothing matches.
+     * Returns the first element in the [ObjectList] for which [predicate] returns `true` or throws
+     * [NoSuchElementException] if nothing matches.
+     *
      * @see indexOfFirst
      * @see firstOrNull
      */
     public inline fun first(predicate: (element: E) -> Boolean): E {
         contract { callsInPlace(predicate) }
-        forEach { element ->
-            if (predicate(element)) return element
-        }
+        forEach { element -> if (predicate(element)) return element }
         throw NoSuchElementException("ObjectList contains no element matching the predicate.")
     }
 
-    /**
-     * Returns the first element in the [ObjectList] or `null` if it [isEmpty].
-     */
+    /** Returns the first element in the [ObjectList] or `null` if it [isEmpty]. */
     public inline fun firstOrNull(): E? = if (isEmpty()) null else get(0)
 
     /**
-     * Returns the first element in the [ObjectList] for which [predicate] returns `true` or
-     * `null` if nothing matches.
+     * Returns the first element in the [ObjectList] for which [predicate] returns `true` or `null`
+     * if nothing matches.
+     *
      * @see indexOfFirst
      */
     public inline fun firstOrNull(predicate: (element: E) -> Boolean): E? {
         contract { callsInPlace(predicate) }
-        forEach { element ->
-            if (predicate(element)) return element
-        }
+        forEach { element -> if (predicate(element)) return element }
         return null
     }
 
     /**
-     * Accumulates values, starting with [initial], and applying [operation] to each element
-     * in the [ObjectList] in order.
-     * @param initial The value of `acc` for the first call to [operation] or return value if
-     * there are no elements in this list.
-     * @param operation function that takes current accumulator value and an element, and
-     * calculates the next accumulator value.
+     * Accumulates values, starting with [initial], and applying [operation] to each element in the
+     * [ObjectList] in order.
+     *
+     * @param initial The value of `acc` for the first call to [operation] or return value if there
+     *   are no elements in this list.
+     * @param operation function that takes current accumulator value and an element, and calculates
+     *   the next accumulator value.
      */
     public inline fun <R> fold(initial: R, operation: (acc: R, element: E) -> R): R {
         contract { callsInPlace(operation) }
         var acc = initial
-        forEach { element ->
-            acc = operation(acc, element)
-        }
+        forEach { element -> acc = operation(acc, element) }
         return acc
     }
 
     /**
-     * Accumulates values, starting with [initial], and applying [operation] to each element
-     * in the [ObjectList] in order.
+     * Accumulates values, starting with [initial], and applying [operation] to each element in the
+     * [ObjectList] in order.
      */
     public inline fun <R> foldIndexed(
         initial: R,
@@ -257,32 +243,29 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
     ): R {
         contract { callsInPlace(operation) }
         var acc = initial
-        forEachIndexed { i, element ->
-            acc = operation(i, acc, element)
-        }
+        forEachIndexed { i, element -> acc = operation(i, acc, element) }
         return acc
     }
 
     /**
-     * Accumulates values, starting with [initial], and applying [operation] to each element
-     * in the [ObjectList] in reverse order.
-     * @param initial The value of `acc` for the first call to [operation] or return value if
-     * there are no elements in this list.
+     * Accumulates values, starting with [initial], and applying [operation] to each element in the
+     * [ObjectList] in reverse order.
+     *
+     * @param initial The value of `acc` for the first call to [operation] or return value if there
+     *   are no elements in this list.
      * @param operation function that takes an element and the current accumulator value, and
-     * calculates the next accumulator value.
+     *   calculates the next accumulator value.
      */
     public inline fun <R> foldRight(initial: R, operation: (element: E, acc: R) -> R): R {
         contract { callsInPlace(operation) }
         var acc = initial
-        forEachReversed { element ->
-            acc = operation(element, acc)
-        }
+        forEachReversed { element -> acc = operation(element, acc) }
         return acc
     }
 
     /**
-     * Accumulates values, starting with [initial], and applying [operation] to each element
-     * in the [ObjectList] in reverse order.
+     * Accumulates values, starting with [initial], and applying [operation] to each element in the
+     * [ObjectList] in reverse order.
      */
     public inline fun <R> foldRightIndexed(
         initial: R,
@@ -290,16 +273,15 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
     ): R {
         contract { callsInPlace(operation) }
         var acc = initial
-        forEachReversedIndexed { i, element ->
-            acc = operation(i, element, acc)
-        }
+        forEachReversedIndexed { i, element -> acc = operation(i, element, acc) }
         return acc
     }
 
     /**
      * Calls [block] for each element in the [ObjectList], in order.
-     * @param block will be executed for every element in the list, accepting an element from
-     * the list
+     *
+     * @param block will be executed for every element in the list, accepting an element from the
+     *   list
      */
     public inline fun forEach(block: (element: E) -> Unit) {
         contract { callsInPlace(block) }
@@ -311,8 +293,9 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
 
     /**
      * Calls [block] for each element in the [ObjectList] along with its index, in order.
-     * @param block will be executed for every element in the list, accepting the index and
-     * the element at that index.
+     *
+     * @param block will be executed for every element in the list, accepting the index and the
+     *   element at that index.
      */
     public inline fun forEachIndexed(block: (index: Int, element: E) -> Unit) {
         contract { callsInPlace(block) }
@@ -324,8 +307,9 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
 
     /**
      * Calls [block] for each element in the [ObjectList] in reverse order.
-     * @param block will be executed for every element in the list, accepting an element from
-     * the list
+     *
+     * @param block will be executed for every element in the list, accepting an element from the
+     *   list
      */
     public inline fun forEachReversed(block: (element: E) -> Unit) {
         contract { callsInPlace(block) }
@@ -336,10 +320,10 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
     }
 
     /**
-     * Calls [block] for each element in the [ObjectList] along with its index, in reverse
-     * order.
-     * @param block will be executed for every element in the list, accepting the index and
-     * the element at that index.
+     * Calls [block] for each element in the [ObjectList] along with its index, in reverse order.
+     *
+     * @param block will be executed for every element in the list, accepting the index and the
+     *   element at that index.
      */
     public inline fun forEachReversedIndexed(block: (index: Int, element: E) -> Unit) {
         contract { callsInPlace(block) }
@@ -350,33 +334,38 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
     }
 
     /**
-     * Returns the element at the given [index] or throws [IndexOutOfBoundsException] if
-     * the [index] is out of bounds of this collection.
+     * Returns the element at the given [index] or throws [IndexOutOfBoundsException] if the [index]
+     * is out of bounds of this collection.
      */
     public operator fun get(@androidx.annotation.IntRange(from = 0) index: Int): E {
         if (index !in 0 until _size) {
-            throw IndexOutOfBoundsException("Index $index must be in 0..$lastIndex")
+            throwIndexOutOfBoundsExclusiveException(index)
         }
         return content[index] as E
     }
 
     /**
-     * Returns the element at the given [index] or throws [IndexOutOfBoundsException] if
-     * the [index] is out of bounds of this collection.
+     * Returns the element at the given [index] or throws [IndexOutOfBoundsException] if the [index]
+     * is out of bounds of this collection.
      */
     public fun elementAt(@androidx.annotation.IntRange(from = 0) index: Int): E {
         if (index !in 0 until _size) {
-            throw IndexOutOfBoundsException("Index $index must be in 0..$lastIndex")
+            throwIndexOutOfBoundsExclusiveException(index)
         }
         return content[index] as E
     }
 
+    internal fun throwIndexOutOfBoundsExclusiveException(index: Int) {
+        throwIndexOutOfBoundsException("Index $index must be in 0..$lastIndex")
+    }
+
     /**
-     * Returns the element at the given [index] or [defaultValue] if [index] is out of bounds
-     * of the collection.
+     * Returns the element at the given [index] or [defaultValue] if [index] is out of bounds of the
+     * collection.
+     *
      * @param index The index of the element whose value should be returned
-     * @param defaultValue A lambda to call with [index] as a parameter to return a value at
-     * an index not in the list.
+     * @param defaultValue A lambda to call with [index] as a parameter to return a value at an
+     *   index not in the list.
      */
     public inline fun elementAtOrElse(
         @androidx.annotation.IntRange(from = 0) index: Int,
@@ -388,9 +377,7 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
         return content[index] as E
     }
 
-    /**
-     * Returns the index of [element] in the [ObjectList] or `-1` if [element] is not there.
-     */
+    /** Returns the index of [element] in the [ObjectList] or `-1` if [element] is not there. */
     public fun indexOf(element: E): Int {
         // Comparing with == for each element is slower than comparing with .equals().
         // We split the iteration for null and for non-null to speed it up.
@@ -413,8 +400,8 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
     }
 
     /**
-     * Returns the index if the first element in the [ObjectList] for which [predicate]
-     * returns `true` or -1 if there was no element for which predicate returned `true`.
+     * Returns the index if the first element in the [ObjectList] for which [predicate] returns
+     * `true` or -1 if there was no element for which predicate returned `true`.
      */
     public inline fun indexOfFirst(predicate: (element: E) -> Boolean): Int {
         contract { callsInPlace(predicate) }
@@ -427,8 +414,8 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
     }
 
     /**
-     * Returns the index if the last element in the [ObjectList] for which [predicate]
-     * returns `true` or -1 if there was no element for which predicate returned `true`.
+     * Returns the index if the last element in the [ObjectList] for which [predicate] returns
+     * `true` or -1 if there was no element for which predicate returned `true`.
      */
     public inline fun indexOfLast(predicate: (element: E) -> Boolean): Int {
         contract { callsInPlace(predicate) }
@@ -440,30 +427,27 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
         return -1
     }
 
-    /**
-     * Returns `true` if the [ObjectList] has no elements in it or `false` otherwise.
-     */
+    /** Returns `true` if the [ObjectList] has no elements in it or `false` otherwise. */
     public fun isEmpty(): Boolean = _size == 0
 
-    /**
-     * Returns `true` if there are elements in the [ObjectList] or `false` if it is empty.
-     */
+    /** Returns `true` if there are elements in the [ObjectList] or `false` if it is empty. */
     public fun isNotEmpty(): Boolean = _size != 0
 
     /**
-     * Returns the last element in the [ObjectList] or throws a [NoSuchElementException] if
-     * it [isEmpty].
+     * Returns the last element in the [ObjectList] or throws a [NoSuchElementException] if it
+     * [isEmpty].
      */
     public fun last(): E {
         if (isEmpty()) {
-            throw NoSuchElementException("ObjectList is empty.")
+            throwNoSuchElementException("ObjectList is empty.")
         }
         return content[lastIndex] as E
     }
 
     /**
-     * Returns the last element in the [ObjectList] for which [predicate] returns `true` or
-     * throws [NoSuchElementException] if nothing matches.
+     * Returns the last element in the [ObjectList] for which [predicate] returns `true` or throws
+     * [NoSuchElementException] if nothing matches.
+     *
      * @see indexOfLast
      * @see lastOrNull
      */
@@ -477,14 +461,13 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
         throw NoSuchElementException("ObjectList contains no element matching the predicate.")
     }
 
-    /**
-     * Returns the last element in the [ObjectList] or `null` if it [isEmpty].
-     */
+    /** Returns the last element in the [ObjectList] or `null` if it [isEmpty]. */
     public inline fun lastOrNull(): E? = if (isEmpty()) null else content[lastIndex] as E
 
     /**
-     * Returns the last element in the [ObjectList] for which [predicate] returns `true` or
-     * `null` if nothing matches.
+     * Returns the last element in the [ObjectList] for which [predicate] returns `true` or `null`
+     * if nothing matches.
+     *
      * @see indexOfLast
      */
     public inline fun lastOrNull(predicate: (element: E) -> Boolean): E? {
@@ -498,8 +481,8 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
     }
 
     /**
-     * Returns the index of the last element in the [ObjectList] that is the same as
-     * [element] or `-1` if no elements match.
+     * Returns the index of the last element in the [ObjectList] that is the same as [element] or
+     * `-1` if no elements match.
      */
     public fun lastIndexOf(element: E): Int {
         // Comparing with == for each element is slower than comparing with .equals().
@@ -523,12 +506,12 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
     }
 
     /**
-     * Creates a String from the elements separated by [separator] and using [prefix] before
-     * and [postfix] after, if supplied.
+     * Creates a String from the elements separated by [separator] and using [prefix] before and
+     * [postfix] after, if supplied.
      *
-     * When a non-negative value of [limit] is provided, a maximum of [limit] items are used
-     * to generate the string. If the collection holds more than [limit] items, the string
-     * is terminated with [truncated].
+     * When a non-negative value of [limit] is provided, a maximum of [limit] items are used to
+     * generate the string. If the collection holds more than [limit] items, the string is
+     * terminated with [truncated].
      *
      * [transform] may be supplied to convert each element to a custom String.
      */
@@ -560,22 +543,18 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
     }
 
     /**
-     * Returns a [List] view into the [ObjectList]. All access to the collection will be
-     * less efficient and abides by the allocation requirements of the [List]. For example,
+     * Returns a [List] view into the [ObjectList]. All access to the collection will be less
+     * efficient and abides by the allocation requirements of the [List]. For example,
      * [List.forEach] will allocate an iterator. All access will go through the more expensive
      * interface calls. Critical performance areas should use the [ObjectList] API rather than
      * [List] API, when possible.
      */
     public abstract fun asList(): List<E>
 
-    /**
-     * Returns a hash code based on the contents of the [ObjectList].
-     */
+    /** Returns a hash code based on the contents of the [ObjectList]. */
     override fun hashCode(): Int {
         var hashCode = 0
-        forEach { element ->
-            hashCode += 31 * element.hashCode()
-        }
+        forEach { element -> hashCode += 31 * element.hashCode() }
         return hashCode
     }
 
@@ -598,48 +577,46 @@ public sealed class ObjectList<E>(initialCapacity: Int) {
     }
 
     /**
-     * Returns a String representation of the list, surrounded by "[]" and each element
-     * separated by ", ".
+     * Returns a String representation of the list, surrounded by "[]" and each element separated by
+     * ", ".
      */
-    override fun toString(): String = joinToString(prefix = "[", postfix = "]") { element ->
-        if (element === this) {
-            "(this)"
-        } else {
-            element.toString()
+    override fun toString(): String =
+        joinToString(prefix = "[", postfix = "]") { element ->
+            if (element === this) {
+                "(this)"
+            } else {
+                element.toString()
+            }
         }
-    }
 }
 
 /**
- * [MutableObjectList] is a [MutableList]-like collection for reference types. It is optimized
- * for fast access, avoiding virtual and interface method access. Methods avoid allocation
- * whenever possible. For example [forEach] does not need allocate an [Iterator].
+ * [MutableObjectList] is a [MutableList]-like collection for reference types. It is optimized for
+ * fast access, avoiding virtual and interface method access. Methods avoid allocation whenever
+ * possible. For example [forEach] does not need allocate an [Iterator].
  *
- * This implementation is not thread-safe: if multiple threads access this
- * container concurrently, and one or more threads modify the structure of
- * the list (insertion or removal for instance), the calling code must provide
- * the appropriate synchronization. It is also not safe to mutate during reentrancy --
- * in the middle of a [forEach], for example. However, concurrent reads are safe.
+ * This implementation is not thread-safe: if multiple threads access this container concurrently,
+ * and one or more threads modify the structure of the list (insertion or removal for instance), the
+ * calling code must provide the appropriate synchronization. It is also not safe to mutate during
+ * reentrancy -- in the middle of a [forEach], for example. However, concurrent reads are safe.
  *
- * **Note** [List] access is available through [asList] when developers need access to the
- * common API.
-
- * **Note** [MutableList] access is available through [asMutableList] when developers need
- * access to the common API.
+ * **Note** [List] access is available through [asList] when developers need access to the common
+ * API.
  *
- * It is best to use this for all internal implementations where a list of reference types
- * is needed. Use [MutableList] in public API to take advantage of the commonly-used interface.
- * It is common to use [MutableObjectList] internally and use [asMutableList] or [asList]
- * to get a [MutableList] or [List] interface for interacting with public APIs.
+ * **Note** [MutableList] access is available through [asMutableList] when developers need access to
+ * the common API.
+ *
+ * It is best to use this for all internal implementations where a list of reference types is
+ * needed. Use [MutableList] in public API to take advantage of the commonly-used interface. It is
+ * common to use [MutableObjectList] internally and use [asMutableList] or [asList] to get a
+ * [MutableList] or [List] interface for interacting with public APIs.
  *
  * @see ObjectList
  * @see MutableFloatList
  * @see MutableIntList
  * @eee MutableLongList
  */
-public class MutableObjectList<E>(
-    initialCapacity: Int = 16
-) : ObjectList<E>(initialCapacity) {
+public class MutableObjectList<E>(initialCapacity: Int = 16) : ObjectList<E>(initialCapacity) {
     private var list: ObjectListMutableList<E>? = null
 
     /**
@@ -651,9 +628,7 @@ public class MutableObjectList<E>(
     public inline val capacity: Int
         get() = content.size
 
-    /**
-     * Adds [element] to the [MutableObjectList] and returns `true`.
-     */
+    /** Adds [element] to the [MutableObjectList] and returns `true`. */
     public fun add(element: E): Boolean {
         ensureCapacity(_size + 1)
         content[_size] = element
@@ -662,13 +637,14 @@ public class MutableObjectList<E>(
     }
 
     /**
-     * Adds [element] to the [MutableObjectList] at the given [index], shifting over any
-     * elements at [index] and after, if any.
+     * Adds [element] to the [MutableObjectList] at the given [index], shifting over any elements at
+     * [index] and after, if any.
+     *
      * @throws IndexOutOfBoundsException if [index] isn't between 0 and [size], inclusive
      */
     public fun add(@androidx.annotation.IntRange(from = 0) index: Int, element: E) {
         if (index !in 0.._size) {
-            throw IndexOutOfBoundsException("Index $index must be in 0..$_size")
+            throwIndexOutOfBoundsInclusiveException(index)
         }
         ensureCapacity(_size + 1)
         val content = content
@@ -687,6 +663,7 @@ public class MutableObjectList<E>(
     /**
      * Adds all [elements] to the [MutableObjectList] at the given [index], shifting over any
      * elements at [index] and after, if any.
+     *
      * @return `true` if the [MutableObjectList] was changed or `false` if [elements] was empty
      * @throws IndexOutOfBoundsException if [index] isn't between 0 and [size], inclusive.
      */
@@ -695,7 +672,7 @@ public class MutableObjectList<E>(
         @Suppress("ArrayReturn") elements: Array<E>
     ): Boolean {
         if (index !in 0.._size) {
-            throw IndexOutOfBoundsException("Index $index must be in 0..$_size")
+            throwIndexOutOfBoundsInclusiveException(index)
         }
         if (elements.isEmpty()) return false
         ensureCapacity(_size + elements.size)
@@ -716,6 +693,7 @@ public class MutableObjectList<E>(
     /**
      * Adds all [elements] to the [MutableObjectList] at the given [index], shifting over any
      * elements at [index] and after, if any.
+     *
      * @return `true` if the [MutableObjectList] was changed or `false` if [elements] was empty
      * @throws IndexOutOfBoundsException if [index] isn't between 0 and [size], inclusive.
      */
@@ -724,7 +702,7 @@ public class MutableObjectList<E>(
         elements: Collection<E>
     ): Boolean {
         if (index !in 0.._size) {
-            throw IndexOutOfBoundsException("Index $index must be in 0..$_size")
+            throwIndexOutOfBoundsInclusiveException(index)
         }
         if (elements.isEmpty()) return false
         ensureCapacity(_size + elements.size)
@@ -737,9 +715,7 @@ public class MutableObjectList<E>(
                 endIndex = _size
             )
         }
-        elements.forEachIndexed { i, element ->
-            content[index + i] = element
-        }
+        elements.forEachIndexed { i, element -> content[index + i] = element }
         _size += elements.size
         return true
     }
@@ -747,6 +723,7 @@ public class MutableObjectList<E>(
     /**
      * Adds all [elements] to the [MutableObjectList] at the given [index], shifting over any
      * elements at [index] and after, if any.
+     *
      * @return `true` if the [MutableObjectList] was changed or `false` if [elements] was empty
      * @throws IndexOutOfBoundsException if [index] isn't between 0 and [size], inclusive
      */
@@ -755,7 +732,7 @@ public class MutableObjectList<E>(
         elements: ObjectList<E>
     ): Boolean {
         if (index !in 0.._size) {
-            throw IndexOutOfBoundsException("Index $index must be in 0..$_size")
+            throwIndexOutOfBoundsInclusiveException(index)
         }
         if (elements.isEmpty()) return false
         ensureCapacity(_size + elements._size)
@@ -776,6 +753,10 @@ public class MutableObjectList<E>(
         )
         _size += elements._size
         return true
+    }
+
+    private fun throwIndexOutOfBoundsInclusiveException(index: Int) {
+        throwIndexOutOfBoundsException("Index $index must be in 0..$_size")
     }
 
     /**
@@ -838,9 +819,7 @@ public class MutableObjectList<E>(
         return oldSize != _size
     }
 
-    /**
-     * Adds all [elements] to the end of the [MutableObjectList].
-     */
+    /** Adds all [elements] to the end of the [MutableObjectList]. */
     public operator fun plusAssign(elements: ObjectList<E>) {
         if (elements.isEmpty()) return
         ensureCapacity(_size + elements._size)
@@ -854,20 +833,14 @@ public class MutableObjectList<E>(
         _size += elements._size
     }
 
-    /**
-     * Adds all [elements] to the end of the [MutableObjectList].
-     */
+    /** Adds all [elements] to the end of the [MutableObjectList]. */
     public operator fun plusAssign(elements: ScatterSet<E>) {
         if (elements.isEmpty()) return
         ensureCapacity(_size + elements.size)
-        elements.forEach { element ->
-            plusAssign(element)
-        }
+        elements.forEach { element -> plusAssign(element) }
     }
 
-    /**
-     * Adds all [elements] to the end of the [MutableObjectList].
-     */
+    /** Adds all [elements] to the end of the [MutableObjectList]. */
     public operator fun plusAssign(@Suppress("ArrayReturn") elements: Array<E>) {
         if (elements.isEmpty()) return
         ensureCapacity(_size + elements.size)
@@ -876,9 +849,7 @@ public class MutableObjectList<E>(
         _size += elements.size
     }
 
-    /**
-     * Adds all [elements] to the end of the [MutableObjectList].
-     */
+    /** Adds all [elements] to the end of the [MutableObjectList]. */
     public operator fun plusAssign(elements: List<E>) {
         if (elements.isEmpty()) return
         val size = _size
@@ -890,26 +861,19 @@ public class MutableObjectList<E>(
         _size += elements.size
     }
 
-    /**
-     * Adds all [elements] to the end of the [MutableObjectList].
-     */
+    /** Adds all [elements] to the end of the [MutableObjectList]. */
     public operator fun plusAssign(elements: Iterable<E>) {
-        elements.forEach { element ->
-            plusAssign(element)
-        }
+        elements.forEach { element -> plusAssign(element) }
     }
 
-    /**
-     * Adds all [elements] to the end of the [MutableObjectList].
-     */
+    /** Adds all [elements] to the end of the [MutableObjectList]. */
     public operator fun plusAssign(elements: Sequence<E>) {
-        elements.forEach { element ->
-            plusAssign(element)
-        }
+        elements.forEach { element -> plusAssign(element) }
     }
 
     /**
      * Removes all elements in the [MutableObjectList]. The storage isn't released.
+     *
      * @see trim
      */
     public fun clear() {
@@ -920,6 +884,7 @@ public class MutableObjectList<E>(
     /**
      * Reduces the internal storage. If [capacity] is greater than [minCapacity] and [size], the
      * internal storage is reduced to the maximum of [size] and [minCapacity].
+     *
      * @see ensureCapacity
      */
     public fun trim(minCapacity: Int = _size) {
@@ -931,34 +896,38 @@ public class MutableObjectList<E>(
 
     /**
      * Ensures that there is enough space to store [capacity] elements in the [MutableObjectList].
+     *
      * @see trim
      */
-    public fun ensureCapacity(capacity: Int) {
+    public inline fun ensureCapacity(capacity: Int) {
         val oldContent = content
         if (oldContent.size < capacity) {
-            val newSize = maxOf(capacity, oldContent.size * 3 / 2)
-            content = oldContent.copyOf(newSize)
+            resizeStorage(capacity, oldContent)
         }
     }
 
-    /**
-     * [add] [element] to the [MutableObjectList].
-     */
+    @PublishedApi
+    internal fun resizeStorage(capacity: Int, oldContent: Array<Any?>) {
+        val oldSize = oldContent.size
+        val newSize = max(capacity, oldSize * 3 / 2)
+        val newContent = arrayOfNulls<Any?>(newSize)
+        content = oldContent.copyInto(newContent, 0, 0, oldSize)
+    }
+
+    /** [add] [element] to the [MutableObjectList]. */
     public inline operator fun plusAssign(element: E) {
         add(element)
     }
 
-    /**
-     * [remove] [element] from the [MutableObjectList]
-     */
+    /** [remove] [element] from the [MutableObjectList] */
     public inline operator fun minusAssign(element: E) {
         remove(element)
     }
 
     /**
      * Removes [element] from the [MutableObjectList]. If [element] was in the [MutableObjectList]
-     * and was removed, `true` will be returned, or `false` will be returned if the element
-     * was not found.
+     * and was removed, `true` will be returned, or `false` will be returned if the element was not
+     * found.
      */
     public fun remove(element: E): Boolean {
         val index = indexOf(element)
@@ -969,9 +938,7 @@ public class MutableObjectList<E>(
         return false
     }
 
-    /**
-     * Removes all elements in this list for which [predicate] returns `true`.
-     */
+    /** Removes all elements in this list for which [predicate] returns `true`. */
     public inline fun removeIf(predicate: (element: E) -> Boolean) {
         var gap = 0
         val size = _size
@@ -987,7 +954,8 @@ public class MutableObjectList<E>(
     }
 
     /**
-     * Removes all [elements] from the [MutableObjectList] and returns `true` if anything was removed.
+     * Removes all [elements] from the [MutableObjectList] and returns `true` if anything was
+     * removed.
      */
     public fun removeAll(@Suppress("ArrayReturn") elements: Array<E>): Boolean {
         val initialSize = _size
@@ -998,7 +966,8 @@ public class MutableObjectList<E>(
     }
 
     /**
-     * Removes all [elements] from the [MutableObjectList] and returns `true` if anything was removed.
+     * Removes all [elements] from the [MutableObjectList] and returns `true` if anything was
+     * removed.
      */
     public fun removeAll(elements: ObjectList<E>): Boolean {
         val initialSize = _size
@@ -1007,7 +976,8 @@ public class MutableObjectList<E>(
     }
 
     /**
-     * Removes all [elements] from the [MutableObjectList] and returns `true` if anything was removed.
+     * Removes all [elements] from the [MutableObjectList] and returns `true` if anything was
+     * removed.
      */
     public fun removeAll(elements: ScatterSet<E>): Boolean {
         val initialSize = _size
@@ -1016,7 +986,8 @@ public class MutableObjectList<E>(
     }
 
     /**
-     * Removes all [elements] from the [MutableObjectList] and returns `true` if anything was removed.
+     * Removes all [elements] from the [MutableObjectList] and returns `true` if anything was
+     * removed.
      */
     public fun removeAll(elements: List<E>): Boolean {
         val initialSize = _size
@@ -1025,7 +996,8 @@ public class MutableObjectList<E>(
     }
 
     /**
-     * Removes all [elements] from the [MutableObjectList] and returns `true` if anything was removed.
+     * Removes all [elements] from the [MutableObjectList] and returns `true` if anything was
+     * removed.
      */
     public fun removeAll(elements: Iterable<E>): Boolean {
         val initialSize = _size
@@ -1034,7 +1006,8 @@ public class MutableObjectList<E>(
     }
 
     /**
-     * Removes all [elements] from the [MutableObjectList] and returns `true` if anything was removed.
+     * Removes all [elements] from the [MutableObjectList] and returns `true` if anything was
+     * removed.
      */
     public fun removeAll(elements: Sequence<E>): Boolean {
         val initialSize = _size
@@ -1042,67 +1015,46 @@ public class MutableObjectList<E>(
         return initialSize != _size
     }
 
-    /**
-     * Removes all [elements] from the [MutableObjectList].
-     */
+    /** Removes all [elements] from the [MutableObjectList]. */
     public operator fun minusAssign(@Suppress("ArrayReturn") elements: Array<E>) {
-        elements.forEach { element ->
-            minusAssign(element)
-        }
+        elements.forEach { element -> minusAssign(element) }
     }
 
-    /**
-     * Removes all [elements] from the [MutableObjectList].
-     */
+    /** Removes all [elements] from the [MutableObjectList]. */
     public operator fun minusAssign(elements: ObjectList<E>) {
-        elements.forEach { element ->
-            minusAssign(element)
-        }
+        elements.forEach { element -> minusAssign(element) }
     }
 
-    /**
-     * Removes all [elements] from the [MutableObjectList].
-     */
+    /** Removes all [elements] from the [MutableObjectList]. */
     public operator fun minusAssign(elements: ScatterSet<E>) {
-        elements.forEach { element ->
-            minusAssign(element)
-        }
+        elements.forEach { element -> minusAssign(element) }
     }
 
-    /**
-     * Removes all [elements] from the [MutableObjectList].
-     */
+    /** Removes all [elements] from the [MutableObjectList]. */
     public operator fun minusAssign(elements: List<E>) {
         for (i in elements.indices) {
             minusAssign(elements[i])
         }
     }
 
-    /**
-     * Removes all [elements] from the [MutableObjectList].
-     */
+    /** Removes all [elements] from the [MutableObjectList]. */
     public operator fun minusAssign(elements: Iterable<E>) {
-        elements.forEach { element ->
-            minusAssign(element)
-        }
+        elements.forEach { element -> minusAssign(element) }
     }
 
-    /**
-     * Removes all [elements] from the [MutableObjectList].
-     */
+    /** Removes all [elements] from the [MutableObjectList]. */
     public operator fun minusAssign(elements: Sequence<E>) {
-        elements.forEach { element ->
-            minusAssign(element)
-        }
+        elements.forEach { element -> minusAssign(element) }
     }
 
     /**
      * Removes the element at the given [index] and returns it.
+     *
      * @throws IndexOutOfBoundsException if [index] isn't between 0 and [lastIndex], inclusive
      */
     public fun removeAt(@androidx.annotation.IntRange(from = 0) index: Int): E {
         if (index !in 0 until _size) {
-            throw IndexOutOfBoundsException("Index $index must be in 0..$lastIndex")
+            throwIndexOutOfBoundsExclusiveException(index)
         }
         val content = content
         val element = content[index]
@@ -1121,6 +1073,7 @@ public class MutableObjectList<E>(
 
     /**
      * Removes elements from index [start] (inclusive) to [end] (exclusive).
+     *
      * @throws IndexOutOfBoundsException if [start] or [end] isn't between 0 and [size], inclusive
      * @throws IllegalArgumentException if [start] is greater than [end]
      */
@@ -1129,10 +1082,10 @@ public class MutableObjectList<E>(
         @androidx.annotation.IntRange(from = 0) end: Int
     ) {
         if (start !in 0.._size || end !in 0.._size) {
-            throw IndexOutOfBoundsException("Start ($start) and end ($end) must be in 0..$_size")
+            throwIndexOutOfBoundsException("Start ($start) and end ($end) must be in 0..$_size")
         }
         if (end < start) {
-            throw IllegalArgumentException("Start ($start) is more than end ($end)")
+            throwIllegalArgumentException("Start ($start) is more than end ($end)")
         }
         if (end != start) {
             if (end < _size) {
@@ -1151,6 +1104,7 @@ public class MutableObjectList<E>(
 
     /**
      * Keeps only [elements] in the [MutableObjectList] and removes all other values.
+     *
      * @return `true` if the [MutableObjectList] has changed.
      */
     public fun retainAll(@Suppress("ArrayReturn") elements: Array<E>): Boolean {
@@ -1167,6 +1121,7 @@ public class MutableObjectList<E>(
 
     /**
      * Keeps only [elements] in the [MutableObjectList] and removes all other values.
+     *
      * @return `true` if the [MutableObjectList] has changed.
      */
     public fun retainAll(elements: ObjectList<E>): Boolean {
@@ -1183,6 +1138,7 @@ public class MutableObjectList<E>(
 
     /**
      * Keeps only [elements] in the [MutableObjectList] and removes all other values.
+     *
      * @return `true` if the [MutableObjectList] has changed.
      */
     public fun retainAll(elements: Collection<E>): Boolean {
@@ -1199,6 +1155,7 @@ public class MutableObjectList<E>(
 
     /**
      * Keeps only [elements] in the [MutableObjectList] and removes all other values.
+     *
      * @return `true` if the [MutableObjectList] has changed.
      */
     public fun retainAll(elements: Iterable<E>): Boolean {
@@ -1215,6 +1172,7 @@ public class MutableObjectList<E>(
 
     /**
      * Keeps only [elements] in the [MutableObjectList] and removes all other values.
+     *
      * @return `true` if the [MutableObjectList] has changed.
      */
     public fun retainAll(elements: Sequence<E>): Boolean {
@@ -1231,15 +1189,13 @@ public class MutableObjectList<E>(
 
     /**
      * Sets the value at [index] to [element].
+     *
      * @return the previous value set at [index]
      * @throws IndexOutOfBoundsException if [index] isn't between 0 and [lastIndex], inclusive
      */
-    public operator fun set(
-        @androidx.annotation.IntRange(from = 0) index: Int,
-        element: E
-    ): E {
+    public operator fun set(@androidx.annotation.IntRange(from = 0) index: Int, element: E): E {
         if (index !in 0 until _size) {
-            throw IndexOutOfBoundsException("set index $index must be between 0 .. $lastIndex")
+            throwIndexOutOfBoundsExclusiveException(index)
         }
         val content = content
         val old = content[index]
@@ -1250,20 +1206,17 @@ public class MutableObjectList<E>(
     override fun asList(): List<E> = asMutableList()
 
     /**
-     * Returns a [MutableList] view into the [MutableObjectList]. All access to the collection
-     * will be less efficient and abides by the allocation requirements of the
-     * [MutableList]. For example, [MutableList.forEach] will allocate an iterator.
-     * All access will go through the more expensive interface calls. Critical performance
-     * areas should use the [MutableObjectList] API rather than [MutableList] API, when possible.
+     * Returns a [MutableList] view into the [MutableObjectList]. All access to the collection will
+     * be less efficient and abides by the allocation requirements of the [MutableList]. For
+     * example, [MutableList.forEach] will allocate an iterator. All access will go through the more
+     * expensive interface calls. Critical performance areas should use the [MutableObjectList] API
+     * rather than [MutableList] API, when possible.
      */
-    public fun asMutableList(): MutableList<E> = list ?: ObjectListMutableList(this).also {
-        list = it
-    }
+    public fun asMutableList(): MutableList<E> =
+        list ?: ObjectListMutableList(this).also { list = it }
 
-    private class MutableObjectListIterator<T>(
-        private val list: MutableList<T>,
-        index: Int
-    ) : MutableListIterator<T> {
+    private class MutableObjectListIterator<T>(private val list: MutableList<T>, index: Int) :
+        MutableListIterator<T> {
         private var prevIndex = index - 1
 
         override fun hasNext(): Boolean {
@@ -1304,12 +1257,9 @@ public class MutableObjectList<E>(
         }
     }
 
-    /**
-     * [MutableList] implementation for a [MutableObjectList], used in [asMutableList].
-     */
-    private class ObjectListMutableList<T>(
-        private val objectList: MutableObjectList<T>
-    ) : MutableList<T> {
+    /** [MutableList] implementation for a [MutableObjectList], used in [asMutableList]. */
+    private class ObjectListMutableList<T>(private val objectList: MutableObjectList<T>) :
+        MutableList<T> {
         override val size: Int
             get() = objectList.size
 
@@ -1371,8 +1321,8 @@ public class MutableObjectList<E>(
 
     /**
      * A view into an underlying [MutableList] that directly accesses the underlying [MutableList].
-     * This is important for the implementation of [List.subList]. A change to the [SubList]
-     * also changes the referenced [MutableList].
+     * This is important for the implementation of [List.subList]. A change to the [SubList] also
+     * changes the referenced [MutableList].
      */
     private class SubList<T>(
         private val list: MutableList<T>,
@@ -1474,9 +1424,7 @@ public class MutableObjectList<E>(
 
         override fun removeAll(elements: Collection<T>): Boolean {
             val originalEnd = end
-            elements.forEach {
-                remove(it)
-            }
+            elements.forEach { remove(it) }
             return originalEnd != end
         }
 
@@ -1514,24 +1462,24 @@ public class MutableObjectList<E>(
 private fun List<*>.checkIndex(index: Int) {
     val size = size
     if (index < 0 || index >= size) {
-        throw IndexOutOfBoundsException("Index $index is out of bounds. " +
-            "The list has $size elements.")
+        throwIndexOutOfBoundsException(
+            "Index $index is out of bounds. The list has $size elements."
+        )
     }
 }
 
 private fun List<*>.checkSubIndex(fromIndex: Int, toIndex: Int) {
     val size = size
     if (fromIndex > toIndex) {
-        throw IllegalArgumentException("Indices are out of order. fromIndex ($fromIndex) is " +
-            "greater than toIndex ($toIndex).")
+        throwIllegalArgumentException(
+            "Indices are out of order. fromIndex ($fromIndex) is greater than toIndex ($toIndex)."
+        )
     }
     if (fromIndex < 0) {
-        throw IndexOutOfBoundsException("fromIndex ($fromIndex) is less than 0.")
+        throwIndexOutOfBoundsException("fromIndex ($fromIndex) is less than 0.")
     }
     if (toIndex > size) {
-        throw IndexOutOfBoundsException(
-            "toIndex ($toIndex) is more than than the list size ($size)"
-        )
+        throwIndexOutOfBoundsException("toIndex ($toIndex) is more than than the list size ($size)")
     }
 }
 
@@ -1540,57 +1488,41 @@ private val EmptyArray = arrayOfNulls<Any>(0)
 
 private val EmptyObjectList: ObjectList<Any?> = MutableObjectList(0)
 
-/**
- * @return a read-only [ObjectList] with nothing in it.
- */
+/** @return a read-only [ObjectList] with nothing in it. */
 public fun <E> emptyObjectList(): ObjectList<E> = EmptyObjectList as ObjectList<E>
 
-/**
- * @return a read-only [ObjectList] with nothing in it.
- */
+/** @return a read-only [ObjectList] with nothing in it. */
 public fun <E> objectListOf(): ObjectList<E> = EmptyObjectList as ObjectList<E>
 
-/**
- * @return a new read-only [ObjectList] with [element1] as the only element in the list.
- */
+/** @return a new read-only [ObjectList] with [element1] as the only element in the list. */
 public fun <E> objectListOf(element1: E): ObjectList<E> = mutableObjectListOf(element1)
 
-/**
- * @return a new read-only [ObjectList] with 2 elements, [element1] and [element2], in order.
- */
+/** @return a new read-only [ObjectList] with 2 elements, [element1] and [element2], in order. */
 public fun <E> objectListOf(element1: E, element2: E): ObjectList<E> =
     mutableObjectListOf(element1, element2)
 
 /**
- * @return a new read-only [ObjectList] with 3 elements, [element1], [element2], and [element3],
- * in order.
+ * @return a new read-only [ObjectList] with 3 elements, [element1], [element2], and [element3], in
+ *   order.
  */
 public fun <E> objectListOf(element1: E, element2: E, element3: E): ObjectList<E> =
     mutableObjectListOf(element1, element2, element3)
 
-/**
- * @return a new read-only [ObjectList] with [elements] in order.
- */
+/** @return a new read-only [ObjectList] with [elements] in order. */
 public fun <E> objectListOf(vararg elements: E): ObjectList<E> =
     MutableObjectList<E>(elements.size).apply { plusAssign(elements as Array<E>) }
 
-/**
- * @return a new empty [MutableObjectList] with the default capacity.
- */
+/** @return a new empty [MutableObjectList] with the default capacity. */
 public inline fun <E> mutableObjectListOf(): MutableObjectList<E> = MutableObjectList()
 
-/**
- * @return a new [MutableObjectList] with [element1] as the only element in the list.
- */
+/** @return a new [MutableObjectList] with [element1] as the only element in the list. */
 public fun <E> mutableObjectListOf(element1: E): MutableObjectList<E> {
     val list = MutableObjectList<E>(1)
     list += element1
     return list
 }
 
-/**
- * @return a new [MutableObjectList] with 2 elements, [element1] and [element2], in order.
- */
+/** @return a new [MutableObjectList] with 2 elements, [element1] and [element2], in order. */
 public fun <E> mutableObjectListOf(element1: E, element2: E): MutableObjectList<E> {
     val list = MutableObjectList<E>(2)
     list += element1
@@ -1599,8 +1531,8 @@ public fun <E> mutableObjectListOf(element1: E, element2: E): MutableObjectList<
 }
 
 /**
- * @return a new [MutableObjectList] with 3 elements, [element1], [element2], and [element3],
- * in order.
+ * @return a new [MutableObjectList] with 3 elements, [element1], [element2], and [element3], in
+ *   order.
  */
 public fun <E> mutableObjectListOf(element1: E, element2: E, element3: E): MutableObjectList<E> {
     val list = MutableObjectList<E>(3)
@@ -1610,8 +1542,6 @@ public fun <E> mutableObjectListOf(element1: E, element2: E, element3: E): Mutab
     return list
 }
 
-/**
- * @return a new [MutableObjectList] with the given elements, in order.
- */
+/** @return a new [MutableObjectList] with the given elements, in order. */
 public inline fun <E> mutableObjectListOf(vararg elements: E): MutableObjectList<E> =
     MutableObjectList<E>(elements.size).apply { plusAssign(elements as Array<E>) }

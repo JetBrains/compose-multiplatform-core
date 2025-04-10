@@ -16,17 +16,20 @@
 
 package androidx.build.metalava
 
+import androidx.build.checkapi.ApiBaselinesLocation
+import androidx.build.checkapi.SourceSetInputs
+import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
@@ -45,15 +48,8 @@ constructor(@Internal protected val workerExecutor: WorkerExecutor) : DefaultTas
     /** Android's boot classpath */
     @get:Classpath lateinit var bootClasspath: FileCollection
 
-    /** Dependencies of [sourcePaths]. */
+    /** Dependencies (compiled classes) of the project. */
     @get:Classpath lateinit var dependencyClasspath: FileCollection
-
-    /** Source files against which API signatures will be validated. */
-    @get:[InputFiles PathSensitive(PathSensitivity.RELATIVE)]
-    var sourcePaths: FileCollection = project.files()
-
-    @get:[Optional InputFile PathSensitive(PathSensitivity.NONE)]
-    abstract val manifestPath: RegularFileProperty
 
     @get:Input abstract val k2UastEnabled: Property<Boolean>
 
@@ -61,7 +57,82 @@ constructor(@Internal protected val workerExecutor: WorkerExecutor) : DefaultTas
 
     fun runWithArgs(args: List<String>) {
         runMetalavaWithArgs(
-            metalavaClasspath, args, k2UastEnabled.get(), kotlinSourceLevel.get(), workerExecutor
+            metalavaClasspath,
+            args,
+            k2UastEnabled.get(),
+            kotlinSourceLevel.get(),
+            workerExecutor
         )
+    }
+}
+
+/** A metalava task that takes source code as input (other tasks take signature files). */
+@CacheableTask
+internal abstract class SourceMetalavaTask(workerExecutor: WorkerExecutor) :
+    MetalavaTask(workerExecutor) {
+    /**
+     * Specifies both the source files and their corresponding compiled class files
+     *
+     * We specify the source files to pass to Metalava because that's the format that Metalava
+     * needs.
+     *
+     * However, Metalava is only supposed to read the public API, so we don't need to rerun Metalava
+     * if no API changes occurred.
+     *
+     * Gradle doesn't offer all of the same abilities as Metalava for writing a signature file and
+     * validating its compatibility, but Gradle does offer the ability to check whether two sets of
+     * classes have the same API.
+     *
+     * So, we ask Gradle to rerun this task only if the public API changes, which we implement by
+     * declaring the compiled classes as inputs rather than the sources
+     */
+    /** Source files against which API signatures will be validated. */
+    @get:Internal // UP-TO-DATE checking is done based on the compiled classes
+    var sourcePaths: FileCollection = project.files()
+
+    /** Class files compiled from sourcePaths */
+    @get:Classpath var compiledSources: FileCollection = project.files()
+
+    @get:[Optional InputFile PathSensitive(PathSensitivity.NONE)]
+    abstract val manifestPath: RegularFileProperty
+
+    @get:Internal // already expressed by getApiLintBaseline()
+    abstract val baselines: Property<ApiBaselinesLocation>
+
+    @Optional
+    @PathSensitive(PathSensitivity.NONE)
+    @InputFile
+    fun getInputApiLintBaseline(): File? {
+        val baseline = baselines.get().apiLintFile
+        return if (baseline.exists()) baseline else null
+    }
+
+    @get:Input abstract val targetsJavaConsumers: Property<Boolean>
+
+    /**
+     * Information about all source sets for multiplatform projects. Non-multiplatform projects
+     * should be represented as a list with one source set.
+     *
+     * This is marked as [Internal] because [compiledSources] is what should determine whether to
+     * rerun metalava.
+     */
+    @get:Internal abstract val sourceSets: ListProperty<SourceSetInputs>
+
+    /**
+     * Creates an XML file representing the project structure.
+     *
+     * This should only be called during task execution.
+     */
+    protected fun createProjectXmlFile(): File {
+        val sourceSets = sourceSets.get()
+        check(sourceSets.isNotEmpty()) { "Project must have at least one source set." }
+        val outputFile = File(temporaryDir, "project.xml")
+        ProjectXml.create(
+            sourceSets,
+            bootClasspath.files,
+            compiledSources.singleFile,
+            outputFile,
+        )
+        return outputFile
     }
 }

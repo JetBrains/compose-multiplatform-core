@@ -23,16 +23,18 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.Screen;
 import androidx.car.app.model.Action;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.MessageTemplate;
 import androidx.car.app.model.Template;
 import androidx.car.app.sample.showcase.common.R;
 import androidx.car.app.sample.showcase.common.ShowcaseService;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
+
+import org.jspecify.annotations.NonNull;
 
 /** A screen that demonstrates the message template. */
 public class LatestFeatures extends Screen implements DefaultLifecycleObserver {
@@ -65,16 +67,16 @@ public class LatestFeatures extends Screen implements DefaultLifecycleObserver {
         }
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
         if (!mIsFinishedLoading && mShouldLoadScreens) {
             return loadingScreenTemplate(getCarContext());
         } else {
             return new MessageTemplate.Builder(
                     getCarContext().getString(R.string.latest_feature_details))
-                    .setTitle(getCarContext().getString(R.string.latest_feature_title))
-                    .setHeaderAction(Action.BACK)
+                    .setHeader(new Header.Builder().setTitle(getCarContext()
+                            .getString(R.string.latest_feature_title))
+                            .setStartHeaderAction(Action.BACK).build())
                     .build();
         }
 

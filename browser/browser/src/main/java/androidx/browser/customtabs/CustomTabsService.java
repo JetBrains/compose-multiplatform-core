@@ -25,14 +25,17 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.IBinder.DeathRecipient;
 import android.os.RemoteException;
+import android.support.customtabs.IAuthTabCallback;
 import android.support.customtabs.ICustomTabsCallback;
 import android.support.customtabs.ICustomTabsService;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+import androidx.browser.auth.AuthTabSessionToken;
 import androidx.collection.SimpleArrayMap;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -66,6 +69,13 @@ public abstract class CustomTabsService extends Service {
      */
     public static final String CATEGORY_COLOR_SCHEME_CUSTOMIZATION =
             "androidx.browser.customtabs.category.ColorSchemeCustomization";
+
+    /**
+     * An Intent filter category to signify that the Custom Tabs provider supports multi-network,
+     * bind a custom tab to a particular network via {@link CustomTabsIntent.Builder#setNetwork}.
+     */
+    public static final String CATEGORY_SET_NETWORK =
+            "androidx.browser.customtabs.category.SetNetwork";
 
     /**
      * An Intent filter category to signify that the Custom Tabs provider supports Trusted Web
@@ -209,6 +219,24 @@ public abstract class CustomTabsService extends Service {
                     url, extras, otherLikelyBundles);
         }
 
+        @Override
+        @ExperimentalPrefetch
+        public void prefetch(@NonNull ICustomTabsCallback callback, @NonNull Uri url,
+                @NonNull Bundle options) {
+            CustomTabsService.this.prefetch(
+                new CustomTabsSessionToken(callback, getSessionIdFromBundle(options)), List.of(url),
+                    PrefetchOptions.fromBundle(options));
+        }
+
+        @Override
+        @ExperimentalPrefetch
+        public void prefetchWithMultipleUrls(@NonNull ICustomTabsCallback callback,
+                @NonNull List<Uri> urls, @NonNull Bundle options) {
+            CustomTabsService.this.prefetch(
+                new CustomTabsSessionToken(callback, getSessionIdFromBundle(options)), urls,
+                    PrefetchOptions.fromBundle(options));
+        }
+
         @SuppressWarnings("NullAway")  // TODO: b/142938599
         @Override
         public Bundle extraCommand(@NonNull String commandName, @Nullable Bundle args) {
@@ -282,6 +310,12 @@ public abstract class CustomTabsService extends Service {
                     remote, extras);
         }
 
+        @Override
+        @ExperimentalEphemeralBrowsing
+        public boolean isEphemeralBrowsingSupported(@NonNull Bundle extras) {
+            return CustomTabsService.this.isEphemeralBrowsingSupported(extras);
+        }
+
         @SuppressWarnings("deprecation")
         private @Nullable PendingIntent getSessionIdFromBundle(@Nullable Bundle bundle) {
             if (bundle == null) return null;
@@ -301,11 +335,26 @@ public abstract class CustomTabsService extends Service {
                 return bundle.getParcelable(CustomTabsSession.TARGET_ORIGIN_KEY);
             }
         }
+
+        @Override
+        public boolean newAuthTabSession(IAuthTabCallback callback, Bundle extras) {
+            PendingIntent sessionId = getSessionIdFromBundle(extras);
+            AuthTabSessionToken sessionToken = new AuthTabSessionToken(callback, sessionId);
+            try {
+                DeathRecipient deathRecipient = () -> cleanUpSession(sessionToken);
+                synchronized (mDeathRecipientMap) {
+                    callback.asBinder().linkToDeath(deathRecipient, 0);
+                    mDeathRecipientMap.put(callback.asBinder(), deathRecipient);
+                }
+                return CustomTabsService.this.registerAuthTabSession(sessionToken);
+            } catch (RemoteException e) {
+                return false;
+            }
+        }
     };
 
     @Override
-    @NonNull
-    public IBinder onBind(@Nullable Intent intent) {
+    public @NonNull IBinder onBind(@Nullable Intent intent) {
         return mBinder;
     }
 
@@ -319,6 +368,30 @@ public abstract class CustomTabsService extends Service {
      * same binder will return false.
      */
     protected boolean cleanUpSession(@NonNull CustomTabsSessionToken sessionToken) {
+        try {
+            synchronized (mDeathRecipientMap) {
+                IBinder binder = sessionToken.getCallbackBinder();
+                if (binder == null) return false;
+                DeathRecipient deathRecipient = mDeathRecipientMap.get(binder);
+                binder.unlinkToDeath(deathRecipient, 0);
+                mDeathRecipientMap.remove(binder);
+            }
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Called when the client side {@link IBinder} for this {@link AuthTabSessionToken} is dead.
+     * Can also be used to clean up {@link DeathRecipient} instances allocated for the given token.
+     *
+     * @param sessionToken The session token for which the {@link DeathRecipient} call has been
+     *                     received.
+     * @return True if the provided session was cleaned up as a result of this call, false if the
+     * session doesn't exist or has already been cleaned up.
+     */
+    protected boolean cleanUpSession(@NonNull AuthTabSessionToken sessionToken) {
         try {
             synchronized (mDeathRecipientMap) {
                 IBinder binder = sessionToken.getCallbackBinder();
@@ -376,6 +449,37 @@ public abstract class CustomTabsService extends Service {
             @Nullable Uri url, @Nullable Bundle extras, @Nullable List<Bundle> otherLikelyBundles);
 
     /**
+     * Request the browser to start navigational prefetch to the page that will be used for future
+     * navigations.
+     * {@link CustomTabsService#warmup(long)} is required to be called before using this method.
+     * TODO(crbug.com/40288091): Currently, there is no caller of this API and can be removed.
+     * <p>
+     * @param sessionToken       The unique identifier for the session.
+     * @param url                The url to be prefetched for future navigations.
+     * @param options            The option used for prefetch request. Please see
+     *                           {@link PrefetchOptions}.
+     */
+    @ExperimentalPrefetch
+    protected void prefetch(@NonNull CustomTabsSessionToken sessionToken,
+            @NonNull Uri url, @NonNull PrefetchOptions options) {
+    }
+
+     /**
+     * Request the browser to start navigational prefetch to the page that will be used for future
+     * navigations.
+     * {@link CustomTabsService#warmup(long)} is required to be called before using this method.
+     * <p>
+     * @param sessionToken       The unique identifier for the session.
+     * @param urls               The urls to be prefetched for future navigations.
+     * @param options            The option used for prefetch request. Please see
+     *                           {@link PrefetchOptions}.
+     */
+    @ExperimentalPrefetch
+    protected void prefetch(@NonNull CustomTabsSessionToken sessionToken,
+            @NonNull List<Uri> urls, @NonNull PrefetchOptions options) {
+    }
+
+    /**
      * Unsupported commands that may be provided by the implementation.
      * <p>
      * <p>
@@ -409,8 +513,8 @@ public abstract class CustomTabsService extends Service {
      * @param args        Arguments for the command
      * @return The result {@link Bundle}, or {@code null}.
      */
-    @Nullable
-    protected abstract Bundle extraCommand(@NonNull String commandName, @Nullable Bundle args);
+    protected abstract @Nullable Bundle extraCommand(@NonNull String commandName,
+            @Nullable Bundle args);
 
     /**
      * Updates the visuals of custom tabs for the given session. Will only succeed if the given
@@ -543,6 +647,35 @@ public abstract class CustomTabsService extends Service {
     protected boolean setEngagementSignalsCallback(
             @NonNull CustomTabsSessionToken sessionToken,
             @NonNull EngagementSignalsCallback callback, @NonNull Bundle extras) {
+        return false;
+    }
+
+    /**
+     * Returns whether ephemeral browsing is supported.
+     *
+     * Ephemeral browsing allows apps to open Custom Tab that does not share cookies or other
+     * data with the browser that handles the Custom Tab.
+     *
+     * @param extras Reserved for future use.
+     * @return Whether ephemeral browsing is supported.
+     */
+    @ExperimentalEphemeralBrowsing
+    protected boolean isEphemeralBrowsingSupported(@NonNull Bundle extras) {
+        return false;
+    }
+
+    /**
+     * Creates a new Auth Tab session through an ICustomTabsService with the optional callback. This
+     * session can be used to associate any related communication through the service with an intent
+     * and then later with an Auth Tab. The client can then send later service calls or intents
+     * through the same session-intent-Auth Tab association.
+     *
+     * @param sessionToken Session token to be used as a unique identifier. This also has access
+     *                     to the {@link AuthTabCallback} passed from the client side through
+     *                     {@link AuthTabSessionToken#getCallback()}.
+     * @return Whether a new session was successfully created.
+     */
+    protected boolean registerAuthTabSession(@NonNull AuthTabSessionToken sessionToken) {
         return false;
     }
 }

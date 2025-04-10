@@ -16,6 +16,8 @@
 
 package androidx.compose.material
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -62,13 +64,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@OptIn(ExperimentalMaterialApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalMaterialApi::class)
 class BackdropScaffoldTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private val peekHeight = 75.dp
     private val headerHeight = 100.dp
@@ -89,15 +90,11 @@ class BackdropScaffoldTest {
                 headerHeight = headerHeight,
                 appBar = { Box(Modifier.height(peekHeight)) },
                 backLayerContent = { Box(Modifier.height(contentHeight)) },
-                frontLayerContent = { Box(
-                    Modifier
-                        .fillMaxSize()
-                        .testTag(frontLayer)) }
+                frontLayerContent = { Box(Modifier.fillMaxSize().testTag(frontLayer)) }
             )
         }
 
-        rule.onNodeWithTag(frontLayer)
-            .assertTopPositionInRootIsEqualTo(peekHeight)
+        rule.onNodeWithTag(frontLayer).assertTopPositionInRootIsEqualTo(peekHeight)
     }
 
     @Test
@@ -110,22 +107,20 @@ class BackdropScaffoldTest {
                 headerHeight = headerHeight,
                 appBar = { Box(Modifier.height(peekHeight)) },
                 backLayerContent = { Box(Modifier.height(contentHeight)) },
-                frontLayerContent = { Box(
-                    Modifier
-                        .fillMaxSize()
-                        .testTag(frontLayer)) }
+                frontLayerContent = { Box(Modifier.fillMaxSize().testTag(frontLayer)) }
             )
         }
 
-        rule.onNodeWithTag(frontLayer).onParent()
+        rule
+            .onNodeWithTag(frontLayer)
+            .onParent()
             .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.Expand))
             .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Collapse))
             .performSemanticsAction(SemanticsActions.Collapse)
 
         advanceClock()
 
-        rule.onNodeWithTag(frontLayer)
-            .assertTopPositionInRootIsEqualTo(peekHeight + contentHeight)
+        rule.onNodeWithTag(frontLayer).assertTopPositionInRootIsEqualTo(peekHeight + contentHeight)
     }
 
     @Test
@@ -137,15 +132,11 @@ class BackdropScaffoldTest {
                 headerHeight = headerHeight,
                 appBar = { Box(Modifier.height(peekHeight)) },
                 backLayerContent = { Box(Modifier.height(contentHeight)) },
-                frontLayerContent = { Box(
-                    Modifier
-                        .fillMaxSize()
-                        .testTag(frontLayer)) }
+                frontLayerContent = { Box(Modifier.fillMaxSize().testTag(frontLayer)) }
             )
         }
 
-        rule.onNodeWithTag(frontLayer)
-            .assertTopPositionInRootIsEqualTo(peekHeight + contentHeight)
+        rule.onNodeWithTag(frontLayer).assertTopPositionInRootIsEqualTo(peekHeight + contentHeight)
     }
 
     @Test
@@ -158,22 +149,20 @@ class BackdropScaffoldTest {
                 headerHeight = headerHeight,
                 appBar = { Box(Modifier.height(peekHeight)) },
                 backLayerContent = { Box(Modifier.height(contentHeight)) },
-                frontLayerContent = { Box(
-                    Modifier
-                        .fillMaxSize()
-                        .testTag(frontLayer)) }
+                frontLayerContent = { Box(Modifier.fillMaxSize().testTag(frontLayer)) }
             )
         }
 
-        rule.onNodeWithTag(frontLayer).onParent()
+        rule
+            .onNodeWithTag(frontLayer)
+            .onParent()
             .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.Collapse))
             .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Expand))
             .performSemanticsAction(SemanticsActions.Expand)
 
         advanceClock()
 
-        rule.onNodeWithTag(frontLayer)
-            .assertTopPositionInRootIsEqualTo(peekHeight)
+        rule.onNodeWithTag(frontLayer).assertTopPositionInRootIsEqualTo(peekHeight)
     }
 
     @Test
@@ -185,14 +174,12 @@ class BackdropScaffoldTest {
                 headerHeight = headerHeight,
                 appBar = { Box(Modifier.height(peekHeight)) },
                 backLayerContent = { Box(Modifier.fillMaxHeight()) },
-                frontLayerContent = { Box(
-                    Modifier
-                        .fillMaxSize()
-                        .testTag(frontLayer)) }
+                frontLayerContent = { Box(Modifier.fillMaxSize().testTag(frontLayer)) }
             )
         }
 
-        rule.onNodeWithTag(frontLayer)
+        rule
+            .onNodeWithTag(frontLayer)
             .assertTopPositionInRootIsEqualTo(rule.rootHeight() - headerHeight)
     }
 
@@ -206,15 +193,11 @@ class BackdropScaffoldTest {
                 persistentAppBar = false,
                 appBar = { Box(Modifier.height(peekHeight)) },
                 backLayerContent = { Box(Modifier.height(contentHeight)) },
-                frontLayerContent = { Box(
-                    Modifier
-                        .fillMaxSize()
-                        .testTag(frontLayer)) }
+                frontLayerContent = { Box(Modifier.fillMaxSize().testTag(frontLayer)) }
             )
         }
 
-        rule.onNodeWithTag(frontLayer)
-            .assertTopPositionInRootIsEqualTo(contentHeight)
+        rule.onNodeWithTag(frontLayer).assertTopPositionInRootIsEqualTo(contentHeight)
     }
 
     @Test
@@ -227,53 +210,48 @@ class BackdropScaffoldTest {
                 stickyFrontLayer = false,
                 appBar = { Box(Modifier.height(peekHeight)) },
                 backLayerContent = { Box(Modifier.height(contentHeight)) },
-                frontLayerContent = { Box(
-                    Modifier
-                        .fillMaxSize()
-                        .testTag(frontLayer)) }
+                frontLayerContent = { Box(Modifier.fillMaxSize().testTag(frontLayer)) }
             )
         }
 
-        rule.onNodeWithTag(frontLayer)
+        rule
+            .onNodeWithTag(frontLayer)
             .assertTopPositionInRootIsEqualTo(rule.rootHeight() - headerHeight)
     }
 
     @Test
     @LargeTest
-    fun backdropScaffold_revealAndConceal_manually(): Unit = runBlocking(AutoTestFrameClock()) {
-        lateinit var scaffoldState: BackdropScaffoldState
-        rule.setContent {
-            scaffoldState = rememberBackdropScaffoldState(Concealed)
-            BackdropScaffold(
-                scaffoldState = scaffoldState,
-                peekHeight = peekHeight,
-                headerHeight = headerHeight,
-                appBar = { Box(Modifier.height(peekHeight)) },
-                backLayerContent = { Box(Modifier.height(contentHeight)) },
-                frontLayerContent = { Box(
-                    Modifier
-                        .fillMaxSize()
-                        .testTag(frontLayer)) }
-            )
+    fun backdropScaffold_revealAndConceal_manually(): Unit =
+        runBlocking(AutoTestFrameClock()) {
+            lateinit var scaffoldState: BackdropScaffoldState
+            rule.setContent {
+                scaffoldState = rememberBackdropScaffoldState(Concealed)
+                BackdropScaffold(
+                    scaffoldState = scaffoldState,
+                    peekHeight = peekHeight,
+                    headerHeight = headerHeight,
+                    appBar = { Box(Modifier.height(peekHeight)) },
+                    backLayerContent = { Box(Modifier.height(contentHeight)) },
+                    frontLayerContent = { Box(Modifier.fillMaxSize().testTag(frontLayer)) }
+                )
+            }
+
+            rule.onNodeWithTag(frontLayer).assertTopPositionInRootIsEqualTo(peekHeight)
+
+            scaffoldState.reveal()
+
+            advanceClock()
+
+            rule
+                .onNodeWithTag(frontLayer)
+                .assertTopPositionInRootIsEqualTo(peekHeight + contentHeight)
+
+            scaffoldState.conceal()
+
+            advanceClock()
+
+            rule.onNodeWithTag(frontLayer).assertTopPositionInRootIsEqualTo(peekHeight)
         }
-
-        rule.onNodeWithTag(frontLayer)
-            .assertTopPositionInRootIsEqualTo(peekHeight)
-
-        scaffoldState.reveal()
-
-        advanceClock()
-
-        rule.onNodeWithTag(frontLayer)
-            .assertTopPositionInRootIsEqualTo(peekHeight + contentHeight)
-
-        scaffoldState.conceal()
-
-        advanceClock()
-
-        rule.onNodeWithTag(frontLayer)
-            .assertTopPositionInRootIsEqualTo(peekHeight)
-    }
 
     @Test
     fun backdropScaffold_revealBySwiping() {
@@ -286,62 +264,42 @@ class BackdropScaffoldTest {
                 headerHeight = headerHeight,
                 appBar = { Box(Modifier.height(peekHeight)) },
                 backLayerContent = { Box(Modifier.height(contentHeight)) },
-                frontLayerContent = { Box(
-                    Modifier
-                        .fillMaxSize()
-                        .testTag(frontLayer)) }
+                frontLayerContent = { Box(Modifier.fillMaxSize().testTag(frontLayer)) }
             )
         }
 
-        rule.runOnIdle {
-            assertThat(scaffoldState.currentValue).isEqualTo(Concealed)
-        }
+        rule.runOnIdle { assertThat(scaffoldState.currentValue).isEqualTo(Concealed) }
 
-        rule.onNodeWithTag(frontLayer)
-            .performTouchInput { swipeDown() }
+        rule.onNodeWithTag(frontLayer).performTouchInput { swipeDown() }
 
         advanceClock()
 
-        rule.runOnIdle {
-            assertThat(scaffoldState.currentValue).isEqualTo(Revealed)
-        }
+        rule.runOnIdle { assertThat(scaffoldState.currentValue).isEqualTo(Revealed) }
     }
 
     @Test
     fun backdropScaffold_respectsConfirmStateChange() {
         lateinit var scaffoldState: BackdropScaffoldState
         rule.setContent {
-            scaffoldState = rememberBackdropScaffoldState(
-                Concealed,
-                confirmStateChange = {
-                    it != Revealed
-                }
-            )
+            scaffoldState =
+                rememberBackdropScaffoldState(Concealed, confirmStateChange = { it != Revealed })
             BackdropScaffold(
                 scaffoldState = scaffoldState,
                 peekHeight = peekHeight,
                 headerHeight = headerHeight,
                 appBar = { Box(Modifier.height(peekHeight)) },
                 backLayerContent = { Box(Modifier.height(contentHeight)) },
-                frontLayerContent = { Box(
-                    Modifier
-                        .fillMaxSize()
-                        .testTag(frontLayer)) }
+                frontLayerContent = { Box(Modifier.fillMaxSize().testTag(frontLayer)) }
             )
         }
 
-        rule.runOnIdle {
-            assertThat(scaffoldState.currentValue).isEqualTo(Concealed)
-        }
+        rule.runOnIdle { assertThat(scaffoldState.currentValue).isEqualTo(Concealed) }
 
-        rule.onNodeWithTag(frontLayer)
-            .performTouchInput { swipeDown() }
+        rule.onNodeWithTag(frontLayer).performTouchInput { swipeDown() }
 
         advanceClock()
 
-        rule.runOnIdle {
-            assertThat(scaffoldState.currentValue).isEqualTo(Concealed)
-        }
+        rule.runOnIdle { assertThat(scaffoldState.currentValue).isEqualTo(Concealed) }
     }
 
     @Suppress("DEPRECATION")
@@ -349,30 +307,21 @@ class BackdropScaffoldTest {
     fun backdropScaffold_deprecateScaffoldState_doesNotCrash() {
         lateinit var scaffoldState: BackdropScaffoldState
         rule.setContent {
-            scaffoldState = BackdropScaffoldState(
-                initialValue = Revealed
-            )
+            scaffoldState = BackdropScaffoldState(initialValue = Revealed)
             BackdropScaffold(
                 scaffoldState = scaffoldState,
                 peekHeight = peekHeight,
                 headerHeight = headerHeight,
                 appBar = { Box(Modifier.height(peekHeight)) },
                 backLayerContent = { Box(Modifier.height(contentHeight)) },
-                frontLayerContent = { Box(
-                    Modifier
-                        .fillMaxSize()
-                        .testTag(frontLayer)) }
+                frontLayerContent = { Box(Modifier.fillMaxSize().testTag(frontLayer)) }
             )
         }
 
-        rule.runOnIdle {
-            assertThat(scaffoldState.currentValue).isEqualTo(Revealed)
-        }
+        rule.runOnIdle { assertThat(scaffoldState.currentValue).isEqualTo(Revealed) }
     }
 
-    /**
-     * Tests that the state and offset of [swipeable] are updated when swiping.
-     */
+    /** Tests that the state and offset of [swipeable] are updated when swiping. */
     @Test
     fun backdropScaffold_syncThresholdUpdate() {
         val increasedAnchor = mutableStateOf(false)
@@ -382,30 +331,26 @@ class BackdropScaffoldTest {
             BackdropScaffold(
                 scaffoldState = scaffoldState!!,
                 frontLayerScrimColor = Color.Red,
-                appBar = { },
+                appBar = {},
                 backLayerContent = {
                     Box(
-                        Modifier
-                            .height(if (increasedAnchor.value) 400.dp else 200.dp)
+                        Modifier.height(if (increasedAnchor.value) 400.dp else 200.dp)
                             .background(Color.Blue)
                     )
                 },
                 frontLayerContent = {
-                    Box(
-                        Modifier
-                            .height(1000.dp)
-                            .testTag(frontLayer)
-                            .background(Color.Yellow))
+                    Box(Modifier.height(1000.dp).testTag(frontLayer).background(Color.Yellow))
                 }
             )
         }
 
-        val revealedOffset = rule.runOnIdle {
-            assertThat(scaffoldState?.currentValue).isEqualTo(BackdropValue.Revealed)
-            // state change changes the anchors, causing the recalculation
-            increasedAnchor.value = true
-            scaffoldState?.requireOffset()
-        }
+        val revealedOffset =
+            rule.runOnIdle {
+                assertThat(scaffoldState?.currentValue).isEqualTo(Revealed)
+                // state change changes the anchors, causing the recalculation
+                increasedAnchor.value = true
+                scaffoldState?.requireOffset()
+            }
 
         rule.runOnIdle {
             assertThat(scaffoldState?.requireOffset()).isNotEqualTo(revealedOffset)
@@ -422,19 +367,20 @@ class BackdropScaffoldTest {
     @Test
     fun backdropScaffold_animatesAsSideEffect() {
         lateinit var scope: CoroutineScope
-        val bottomSheetState = ModalBottomSheetState(
-            initialValue = ModalBottomSheetValue.Hidden,
-            density = rule.density
-        )
+        val bottomSheetState =
+            ModalBottomSheetState(
+                initialValue = ModalBottomSheetValue.Hidden,
+                density = rule.density
+            )
 
         @Composable
         fun BottomSheet(message: String?) {
             Text(
                 text = message ?: "",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(color = MaterialTheme.colors.primary)
-                    .padding(vertical = 50.dp),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .background(color = MaterialTheme.colors.primary)
+                        .padding(vertical = 50.dp),
                 color = MaterialTheme.colors.onPrimary
             )
         }
@@ -443,9 +389,7 @@ class BackdropScaffoldTest {
         fun BottomSheetScreen(message: String?) {
             ModalBottomSheetLayout(
                 modifier = Modifier.fillMaxSize(),
-                sheetContent = {
-                    BottomSheet(message = message)
-                },
+                sheetContent = { BottomSheet(message = message) },
                 sheetState = bottomSheetState
             ) {
                 Column(
@@ -483,10 +427,10 @@ class BackdropScaffoldTest {
         fun BottomSheet(message: String?) {
             Text(
                 text = message ?: "",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(color = MaterialTheme.colors.primary)
-                    .padding(vertical = 50.dp),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .background(color = MaterialTheme.colors.primary)
+                        .padding(vertical = 50.dp),
                 color = MaterialTheme.colors.onPrimary
             )
         }
@@ -508,9 +452,7 @@ class BackdropScaffoldTest {
 
             ModalBottomSheetLayout(
                 modifier = Modifier.fillMaxSize(),
-                sheetContent = {
-                    BottomSheet(message = message)
-                },
+                sheetContent = { BottomSheet(message = message) },
                 sheetState = bottomSheetState
             ) {
                 Column(
@@ -525,13 +467,9 @@ class BackdropScaffoldTest {
 
         val stringState = mutableStateOf<String?>(null)
 
-        rule.setContent {
-            BottomSheetScreen(message = stringState.value)
-        }
+        rule.setContent { BottomSheetScreen(message = stringState.value) }
 
-        rule.runOnIdle {
-            stringState.value = "line 1 \n line2 \n line 3"
-        }
+        rule.runOnIdle { stringState.value = "line 1 \n line2 \n line 3" }
         rule.waitForIdle()
     }
 
@@ -547,25 +485,17 @@ class BackdropScaffoldTest {
                 frontLayerScrimColor = Color.Red,
                 appBar = { Box(Modifier.height(peekHeight)) },
                 backLayerContent = { Box(Modifier.height(contentHeight)) },
-                frontLayerContent = { Box(
-                    Modifier
-                        .fillMaxSize()
-                        .testTag(frontLayer)) }
+                frontLayerContent = { Box(Modifier.fillMaxSize().testTag(frontLayer)) }
             )
         }
 
-        rule.runOnIdle {
-            assertThat(scaffoldState.currentValue).isEqualTo(Revealed)
-        }
+        rule.runOnIdle { assertThat(scaffoldState.currentValue).isEqualTo(Revealed) }
 
-        rule.onNodeWithTag(frontLayer)
-            .performTouchInput { click() }
+        rule.onNodeWithTag(frontLayer).performTouchInput { click() }
 
         advanceClock()
 
-        rule.runOnIdle {
-            assertThat(scaffoldState.currentValue).isEqualTo(Concealed)
-        }
+        rule.runOnIdle { assertThat(scaffoldState.currentValue).isEqualTo(Concealed) }
     }
 
     @Test
@@ -580,38 +510,26 @@ class BackdropScaffoldTest {
                 frontLayerScrimColor = Color.Unspecified,
                 appBar = { Box(Modifier.height(peekHeight)) },
                 backLayerContent = { Box(Modifier.height(contentHeight)) },
-                frontLayerContent = { Box(
-                    Modifier
-                        .fillMaxSize()
-                        .testTag(frontLayer)) }
+                frontLayerContent = { Box(Modifier.fillMaxSize().testTag(frontLayer)) }
             )
         }
 
-        rule.runOnIdle {
-            assertThat(scaffoldState.currentValue).isEqualTo(Revealed)
-        }
+        rule.runOnIdle { assertThat(scaffoldState.currentValue).isEqualTo(Revealed) }
 
-        rule.onNodeWithTag(frontLayer)
-            .performTouchInput { click() }
+        rule.onNodeWithTag(frontLayer).performTouchInput { click() }
 
         advanceClock()
 
         // still revealed if the color is unspecified
-        rule.runOnIdle {
-            assertThat(scaffoldState.currentValue).isEqualTo(Revealed)
-        }
+        rule.runOnIdle { assertThat(scaffoldState.currentValue).isEqualTo(Revealed) }
     }
 
     @Test
     fun backdropScaffold_tapOnFrontLayerScrim_respectsVeto() {
         lateinit var scaffoldState: BackdropScaffoldState
         rule.setContent {
-            scaffoldState = rememberBackdropScaffoldState(
-                Revealed,
-                confirmStateChange = {
-                    it != Concealed
-                }
-            )
+            scaffoldState =
+                rememberBackdropScaffoldState(Revealed, confirmStateChange = { it != Concealed })
             BackdropScaffold(
                 scaffoldState = scaffoldState,
                 peekHeight = peekHeight,
@@ -619,25 +537,17 @@ class BackdropScaffoldTest {
                 frontLayerScrimColor = Color.Red,
                 appBar = { Box(Modifier.height(peekHeight)) },
                 backLayerContent = { Box(Modifier.height(contentHeight)) },
-                frontLayerContent = { Box(
-                    Modifier
-                        .fillMaxSize()
-                        .testTag(frontLayer)) }
+                frontLayerContent = { Box(Modifier.fillMaxSize().testTag(frontLayer)) }
             )
         }
 
-        rule.runOnIdle {
-            assertThat(scaffoldState.currentValue).isEqualTo(Revealed)
-        }
+        rule.runOnIdle { assertThat(scaffoldState.currentValue).isEqualTo(Revealed) }
 
-        rule.onNodeWithTag(frontLayer)
-            .performTouchInput { click() }
+        rule.onNodeWithTag(frontLayer).performTouchInput { click() }
 
         advanceClock()
 
-        rule.runOnIdle {
-            assertThat(scaffoldState.currentValue).isEqualTo(Revealed)
-        }
+        rule.runOnIdle { assertThat(scaffoldState.currentValue).isEqualTo(Revealed) }
     }
 
     @Test
@@ -655,12 +565,9 @@ class BackdropScaffoldTest {
                 backLayerContent = { Box(Modifier.height(contentHeight)) },
                 frontLayerContent = {
                     Box(
-                        Modifier
-                            .fillMaxSize()
-                            .testTag(frontLayer)
-                            .clickable {
-                                frontLayerClicks += 1
-                            }
+                        Modifier.fillMaxSize().testTag(frontLayer).clickable {
+                            frontLayerClicks += 1
+                        }
                     )
                 }
             )
@@ -671,8 +578,7 @@ class BackdropScaffoldTest {
             assertThat(scaffoldState.currentValue).isEqualTo(Revealed)
         }
 
-        rule.onNodeWithTag(frontLayer)
-            .performTouchInput { click() }
+        rule.onNodeWithTag(frontLayer).performTouchInput { click() }
 
         advanceClock()
 
@@ -697,12 +603,9 @@ class BackdropScaffoldTest {
                 backLayerContent = { Box(Modifier.height(contentHeight)) },
                 frontLayerContent = {
                     Box(
-                        Modifier
-                            .fillMaxSize()
-                            .testTag(frontLayer)
-                            .clickable {
-                                frontLayerClicks += 1
-                            }
+                        Modifier.fillMaxSize().testTag(frontLayer).clickable {
+                            frontLayerClicks += 1
+                        }
                     )
                 }
             )
@@ -713,14 +616,74 @@ class BackdropScaffoldTest {
             assertThat(scaffoldState.currentValue).isEqualTo(Revealed)
         }
 
-        rule.onNodeWithTag(frontLayer)
-            .performTouchInput { click() }
+        rule.onNodeWithTag(frontLayer).performTouchInput { click() }
 
         advanceClock()
 
         rule.runOnIdle {
             // still revealed
             assertThat(scaffoldState.currentValue).isEqualTo(Revealed)
+        }
+    }
+
+    @Test
+    fun backdropScaffold_progress() {
+        rule.mainClock.autoAdvance = false
+        lateinit var backdropScaffoldState: BackdropScaffoldState
+        lateinit var scope: CoroutineScope
+        val animationLengthMillis = 192
+        val amountOfFramesForAnimation = animationLengthMillis / 16
+        rule.setContent {
+            backdropScaffoldState =
+                rememberBackdropScaffoldState(
+                    initialValue = Concealed,
+                    animationSpec = tween(animationLengthMillis, easing = LinearEasing)
+                )
+            scope = rememberCoroutineScope()
+            BackdropScaffold(
+                scaffoldState = backdropScaffoldState,
+                peekHeight = peekHeight,
+                headerHeight = headerHeight,
+                appBar = { Box(Modifier.height(peekHeight)) },
+                backLayerContent = { Box(Modifier.height(contentHeight)) },
+                frontLayerContent = { Box(Modifier.fillMaxSize().testTag(frontLayer)) }
+            )
+        }
+
+        assertThat(backdropScaffoldState.currentValue).isEqualTo(Concealed)
+        assertThat(backdropScaffoldState.targetValue).isEqualTo(Concealed)
+        assertThat(backdropScaffoldState.progress(from = Concealed, to = Revealed)).isEqualTo(0f)
+
+        scope.launch { backdropScaffoldState.reveal() }
+        rule.mainClock.advanceTimeByFrame() // Start dispatching and running the animation
+
+        repeat(amountOfFramesForAnimation) { frame ->
+            val frameFraction = (frame / amountOfFramesForAnimation.toFloat())
+            val concealedToRevealedProgress =
+                backdropScaffoldState.progress(from = Concealed, to = Revealed)
+            val revealedToConcealedProgress =
+                backdropScaffoldState.progress(from = Revealed, to = Concealed)
+            assertThat(concealedToRevealedProgress).isWithin(0.001f).of(frameFraction)
+            assertThat(revealedToConcealedProgress).isWithin(0.001f).of(1 - frameFraction)
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+
+        scope.launch { backdropScaffoldState.conceal() }
+        rule.mainClock.advanceTimeByFrame() // Start dispatching and running the animation
+
+        repeat(amountOfFramesForAnimation) { frame ->
+            val frameFraction = (frame / amountOfFramesForAnimation.toFloat())
+            val concealedToRevealedProgress =
+                backdropScaffoldState.progress(from = Concealed, to = Revealed)
+            val revealedToConcealedProgress =
+                backdropScaffoldState.progress(from = Revealed, to = Concealed)
+            assertThat(concealedToRevealedProgress).isWithin(0.001f).of(1 - frameFraction)
+            assertThat(revealedToConcealedProgress).isWithin(0.001f).of(frameFraction)
+            rule.mainClock.advanceTimeByFrame()
         }
     }
 }

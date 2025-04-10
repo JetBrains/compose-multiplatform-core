@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.layout.LazyLayoutMeasureScope
 import androidx.compose.foundation.lazy.layout.calculateLazyLayoutPinnedIndices
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -45,84 +46,93 @@ internal fun rememberStaggeredGridMeasurePolicy(
     mainAxisSpacing: Dp,
     crossAxisSpacing: Dp,
     coroutineScope: CoroutineScope,
-    slots: LazyGridStaggeredGridSlotsProvider
-): LazyLayoutMeasureScope.(Constraints) -> LazyStaggeredGridMeasureResult = remember(
-    state,
-    itemProviderLambda,
-    contentPadding,
-    reverseLayout,
-    orientation,
-    mainAxisSpacing,
-    crossAxisSpacing,
-    slots
-) {
-    { constraints ->
-        checkScrollableContainerConstraints(
-            constraints,
-            orientation
-        )
-        val resolvedSlots = slots.invoke(density = this, constraints = constraints)
-        val isVertical = orientation == Orientation.Vertical
-        val itemProvider = itemProviderLambda()
+    slots: LazyGridStaggeredGridSlotsProvider,
+    graphicsContext: GraphicsContext
+): LazyLayoutMeasureScope.(Constraints) -> LazyStaggeredGridMeasureResult =
+    remember(
+        state,
+        itemProviderLambda,
+        contentPadding,
+        reverseLayout,
+        orientation,
+        mainAxisSpacing,
+        crossAxisSpacing,
+        slots,
+        graphicsContext
+    ) {
+        { constraints ->
+            state.measurementScopeInvalidator.attachToScope()
+            // Tracks if the lookahead pass has occurred
+            val isInLookaheadScope = state.hasLookaheadOccurred || isLookingAhead
+            checkScrollableContainerConstraints(constraints, orientation)
+            val resolvedSlots = slots.invoke(density = this, constraints = constraints)
+            val isVertical = orientation == Orientation.Vertical
+            val itemProvider = itemProviderLambda()
 
-        // setup information for prefetch
-        state.slots = resolvedSlots
-        state.isVertical = isVertical
-        state.spanProvider = itemProvider.spanProvider
+            // setup measure
+            val beforeContentPadding =
+                contentPadding
+                    .beforePadding(orientation, reverseLayout, layoutDirection)
+                    .roundToPx()
+            val afterContentPadding =
+                contentPadding.afterPadding(orientation, reverseLayout, layoutDirection).roundToPx()
+            val startContentPadding =
+                contentPadding.startPadding(orientation, layoutDirection).roundToPx()
 
-        // setup measure
-        val beforeContentPadding = contentPadding.beforePadding(
-            orientation, reverseLayout, layoutDirection
-        ).roundToPx()
-        val afterContentPadding = contentPadding.afterPadding(
-            orientation, reverseLayout, layoutDirection
-        ).roundToPx()
-        val startContentPadding = contentPadding.startPadding(
-            orientation, layoutDirection
-        ).roundToPx()
+            val maxMainAxisSize = if (isVertical) constraints.maxHeight else constraints.maxWidth
+            val mainAxisAvailableSize = maxMainAxisSize - beforeContentPadding - afterContentPadding
+            val contentOffset =
+                if (isVertical) {
+                    IntOffset(startContentPadding, beforeContentPadding)
+                } else {
+                    IntOffset(beforeContentPadding, startContentPadding)
+                }
 
-        val maxMainAxisSize = if (isVertical) constraints.maxHeight else constraints.maxWidth
-        val mainAxisAvailableSize = maxMainAxisSize - beforeContentPadding - afterContentPadding
-        val contentOffset = if (isVertical) {
-            IntOffset(startContentPadding, beforeContentPadding)
-        } else {
-            IntOffset(beforeContentPadding, startContentPadding)
-        }
+            val horizontalPadding =
+                contentPadding
+                    .run {
+                        calculateStartPadding(layoutDirection) +
+                            calculateEndPadding(layoutDirection)
+                    }
+                    .roundToPx()
+            val verticalPadding =
+                contentPadding.run { calculateTopPadding() + calculateBottomPadding() }.roundToPx()
 
-        val horizontalPadding = contentPadding.run {
-            calculateStartPadding(layoutDirection) + calculateEndPadding(layoutDirection)
-        }.roundToPx()
-        val verticalPadding = contentPadding.run {
-            calculateTopPadding() + calculateBottomPadding()
-        }.roundToPx()
+            val pinnedItems =
+                itemProvider.calculateLazyLayoutPinnedIndices(
+                    state.pinnedItems,
+                    state.beyondBoundsInfo
+                )
 
-        val pinnedItems = itemProvider.calculateLazyLayoutPinnedIndices(
-            state.pinnedItems,
-            state.beyondBoundsInfo
-        )
-
-        measureStaggeredGrid(
-            state = state,
-            pinnedItems = pinnedItems,
-            itemProvider = itemProvider,
-            resolvedSlots = resolvedSlots,
-            constraints = constraints.copy(
-                minWidth = constraints.constrainWidth(horizontalPadding),
-                minHeight = constraints.constrainHeight(verticalPadding)
-            ),
-            mainAxisSpacing = mainAxisSpacing.roundToPx(),
-            contentOffset = contentOffset,
-            mainAxisAvailableSize = mainAxisAvailableSize,
-            isVertical = isVertical,
-            reverseLayout = reverseLayout,
-            beforeContentPadding = beforeContentPadding,
-            afterContentPadding = afterContentPadding,
-            coroutineScope = coroutineScope
-        ).also {
-            state.applyMeasureResult(it)
+            // todo: wrap with snapshot when b/341782245 is resolved
+            val measureResult =
+                measureStaggeredGrid(
+                    state = state,
+                    pinnedItems = pinnedItems,
+                    itemProvider = itemProvider,
+                    resolvedSlots = resolvedSlots,
+                    constraints =
+                        constraints.copy(
+                            minWidth = constraints.constrainWidth(horizontalPadding),
+                            minHeight = constraints.constrainHeight(verticalPadding)
+                        ),
+                    mainAxisSpacing = mainAxisSpacing.roundToPx(),
+                    contentOffset = contentOffset,
+                    mainAxisAvailableSize = mainAxisAvailableSize,
+                    isVertical = isVertical,
+                    reverseLayout = reverseLayout,
+                    beforeContentPadding = beforeContentPadding,
+                    afterContentPadding = afterContentPadding,
+                    coroutineScope = coroutineScope,
+                    isInLookaheadScope = isInLookaheadScope,
+                    isLookingAhead = isLookingAhead,
+                    approachLayoutInfo = state.approachLayoutInfo,
+                    graphicsContext = graphicsContext
+                )
+            state.applyMeasureResult(measureResult, isLookingAhead = isLookingAhead)
+            measureResult
         }
     }
-}
 
 private fun PaddingValues.startPadding(
     orientation: Orientation,

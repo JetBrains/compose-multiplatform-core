@@ -32,11 +32,12 @@ import android.os.Bundle;
 import android.provider.BaseColumns;
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StringDef;
 import androidx.tvprovider.media.tv.TvContractCompat.Programs.Genres;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -1874,8 +1875,7 @@ public final class TvContractCompat {
          *         is not defined for the given video format.
          * @see #COLUMN_VIDEO_FORMAT
          */
-        @Nullable
-        public static String getVideoResolution(@VideoFormat String videoFormat) {
+        public static @Nullable String getVideoResolution(@VideoFormat String videoFormat) {
             return VIDEO_FORMAT_TO_RESOLUTION_MAP.get(videoFormat);
         }
 
@@ -2384,6 +2384,7 @@ public final class TvContractCompat {
      * <p>By default, the query results will be sorted by
      * {@link Programs#COLUMN_START_TIME_UTC_MILLIS} in ascending order.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public static final class Programs implements BaseTvColumns, ProgramColumns {
 
         /**
@@ -2635,7 +2636,7 @@ public final class TvContractCompat {
              * @return an encoded genre string that can be inserted into the
              *         {@link #COLUMN_BROADCAST_GENRE} or {@link #COLUMN_CANONICAL_GENRE} column.
              */
-            public static String encode(@NonNull @Genre String... genres) {
+            public static String encode(@Genre String @NonNull ... genres) {
                 if (genres == null) {
                     // MNC and before will throw a NPE.
                     return null;
@@ -2734,6 +2735,7 @@ public final class TvContractCompat {
      * <p>By default, the query results will be sorted by {@link #COLUMN_START_TIME_UTC_MILLIS} in
      * ascending order.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public static final class RecordedPrograms implements BaseTvColumns, ProgramColumns {
 
         /**
@@ -2861,6 +2863,7 @@ public final class TvContractCompat {
     /**
      * Column definitions for the preview TV programs table.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public static final class PreviewPrograms implements BaseTvColumns, ProgramColumns,
             PreviewProgramColumns {
 
@@ -2910,6 +2913,7 @@ public final class TvContractCompat {
     /**
      * Column definitions for the "watch next" TV programs table.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public static final class WatchNextPrograms implements BaseTvColumns, ProgramColumns,
             PreviewProgramColumns {
 

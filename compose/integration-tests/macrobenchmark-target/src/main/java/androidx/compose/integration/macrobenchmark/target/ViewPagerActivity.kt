@@ -43,9 +43,8 @@ class ViewPagerActivity : AppCompatActivity() {
 
 private class PagerAdapter(val items: Int) : RecyclerView.Adapter<PagerViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PagerViewHolder {
-        val view = LayoutInflater
-            .from(parent.context)
-            .inflate(R.layout.view_pager_item, parent, false)
+        val view =
+            LayoutInflater.from(parent.context).inflate(R.layout.view_pager_item, parent, false)
 
         return PagerViewHolder(view)
     }
@@ -57,6 +56,7 @@ private class PagerAdapter(val items: Int) : RecyclerView.Adapter<PagerViewHolde
     override fun getItemCount(): Int = items
 }
 
+@Suppress("PROPERTY_HIDES_JAVA_FIELD")
 private class PagerViewHolder(val itemView: View) : RecyclerView.ViewHolder(itemView) {
     fun bind(item: String) {
         itemView.findViewById<TextView>(R.id.view_pager_item).text = item

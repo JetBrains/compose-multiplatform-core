@@ -18,10 +18,12 @@ package androidx.testutils
 
 import android.app.Activity
 import android.os.Looper
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
- * Wait for execution, by default waiting 2 cycles to ensure that posted transitions are
- * executed and have had a chance to run.
+ * Wait for execution, by default waiting 2 cycles to ensure that posted transitions are executed
+ * and have had a chance to run.
  */
 @Suppress("DEPRECATION")
 fun androidx.test.rule.ActivityTestRule<out Activity>.waitForExecution(cycles: Int = 2) {
@@ -38,15 +40,28 @@ fun androidx.test.rule.ActivityTestRule<out Activity>.waitForExecution(cycles: I
     }
 }
 
+/**
+ * Delay execution to future frames. This is important for something like pointer input where there
+ * can be a delayed post to push event to future frame (see AndroidComposeView). We need to be able
+ * to test that without sleeping the thread.
+ */
+@Suppress("DEPRECATION")
+fun androidx.test.rule.ActivityTestRule<out Activity>.waitForFutureFrame(frames: Int = 1) {
+    repeat(frames) {
+        val countDownLatch = CountDownLatch(1)
+        activity.window.decorView.postOnAnimation { countDownLatch.countDown() }
+        countDownLatch.await(1L, TimeUnit.SECONDS)
+        runOnUiThreadRethrow {}
+    }
+}
+
 @Suppress("DEPRECATION")
 fun androidx.test.rule.ActivityTestRule<out Activity>.runOnUiThreadRethrow(block: () -> Unit) {
     if (Looper.getMainLooper() == Looper.myLooper()) {
         block()
     } else {
         try {
-            runOnUiThread {
-                block()
-            }
+            runOnUiThread { block() }
         } catch (t: Throwable) {
             throw RuntimeException(t)
         }

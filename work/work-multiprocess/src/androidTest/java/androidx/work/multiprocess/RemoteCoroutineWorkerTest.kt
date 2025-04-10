@@ -16,6 +16,7 @@
 
 package androidx.work.multiprocess
 
+import android.content.ComponentName
 import android.content.Context
 import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -23,9 +24,11 @@ import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.work.Configuration
 import androidx.work.Data
+import androidx.work.ListenableWorker
 import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkInfo
 import androidx.work.WorkRequest
+import androidx.work.buildDelegatedRemoteRequestData
 import androidx.work.impl.Processor
 import androidx.work.impl.Scheduler
 import androidx.work.impl.WorkDatabase
@@ -34,6 +37,8 @@ import androidx.work.impl.WorkerWrapper
 import androidx.work.impl.foreground.ForegroundProcessor
 import androidx.work.impl.utils.SerialExecutorImpl
 import androidx.work.impl.utils.taskexecutor.TaskExecutor
+import androidx.work.isRemoteWorkRequest
+import androidx.work.multiprocess.RemoteListenableDelegatingWorker.Companion.ARGUMENT_REMOTE_LISTENABLE_WORKER_NAME
 import java.util.concurrent.Executor
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -64,16 +69,15 @@ public class RemoteCoroutineWorkerTest {
         }
 
         mContext = InstrumentationRegistry.getInstrumentation().context
-        mExecutor = Executor {
-            it.run()
-        }
-        mConfiguration = Configuration.Builder()
-            .setExecutor(mExecutor)
-            .setTaskExecutor(mExecutor)
-            .build()
-        mTaskExecutor = mock(TaskExecutor::class.java)
-        `when`(mTaskExecutor.serialTaskExecutor).thenReturn(SerialExecutorImpl(mExecutor))
-        `when`(mTaskExecutor.mainThreadExecutor).thenReturn(mExecutor)
+        mExecutor = Executor { it.run() }
+        mConfiguration =
+            Configuration.Builder().setExecutor(mExecutor).setTaskExecutor(mExecutor).build()
+        mTaskExecutor =
+            object : TaskExecutor {
+                override fun getMainThreadExecutor() = mExecutor
+
+                override fun getSerialTaskExecutor() = SerialExecutorImpl(mExecutor)
+            }
         mScheduler = mock(Scheduler::class.java)
         mForegroundProcessor = mock(ForegroundProcessor::class.java)
         mWorkManager = mock(WorkManagerImpl::class.java)
@@ -101,8 +105,22 @@ public class RemoteCoroutineWorkerTest {
 
         val request = buildRequest<RemoteSuccessWorker>()
         val wrapper = buildWrapper(request)
-        wrapper.run()
-        wrapper.future.get()
+        wrapper.launch().get()
+        val workSpec = mDatabase.workSpecDao().getWorkSpec(request.stringId)!!
+        assertEquals(workSpec.state, WorkInfo.State.SUCCEEDED)
+    }
+
+    @Test
+    @MediumTest
+    public fun testSuccessWorker() {
+        if (Build.VERSION.SDK_INT <= 27) {
+            // Exclude <= API 27, from tests because it causes a SIGSEGV.
+            return
+        }
+
+        val request = buildRequest<TestWorker>()
+        val wrapper = buildWrapper(request)
+        wrapper.launch().get()
         val workSpec = mDatabase.workSpecDao().getWorkSpec(request.stringId)!!
         assertEquals(workSpec.state, WorkInfo.State.SUCCEEDED)
     }
@@ -117,8 +135,7 @@ public class RemoteCoroutineWorkerTest {
 
         val request = buildRequest<RemoteFailureWorker>()
         val wrapper = buildWrapper(request)
-        wrapper.run()
-        wrapper.future.get()
+        wrapper.launch().get()
         val workSpec = mDatabase.workSpecDao().getWorkSpec(request.stringId)!!
         assertEquals(workSpec.state, WorkInfo.State.FAILED)
     }
@@ -133,24 +150,55 @@ public class RemoteCoroutineWorkerTest {
 
         val request = buildRequest<RemoteRetryWorker>()
         val wrapper = buildWrapper(request)
-        wrapper.run()
-        wrapper.future.get()
+        wrapper.launch().get()
         val workSpec = mDatabase.workSpecDao().getWorkSpec(request.stringId)!!
         assertEquals(workSpec.state, WorkInfo.State.ENQUEUED)
     }
 
-    private inline fun <reified T : RemoteCoroutineWorker> buildRequest(): OneTimeWorkRequest {
-        val inputData = Data.Builder()
-            .putString(RemoteListenableWorker.ARGUMENT_PACKAGE_NAME, mContext.packageName)
-            .putString(
-                RemoteListenableWorker.ARGUMENT_CLASS_NAME,
-                RemoteWorkerService::class.java.name
-            )
-            .build()
+    @Test
+    @MediumTest
+    public fun testSwitchRemoteProcess() {
+        if (Build.VERSION.SDK_INT <= 27) {
+            // Exclude <= API 27, from tests because it causes a SIGSEGV.
+            return
+        }
 
-        val request = OneTimeWorkRequest.Builder(T::class.java)
-            .setInputData(inputData)
-            .build()
+        val packageName = "PACKAGE_NAME"
+        val className = "CLASS_NAME"
+        val inputKey = "INPUT_KEY"
+        val inputValue = "InputValue"
+        val inputData = Data.Builder().putString(inputKey, inputValue).build()
+        val data =
+            buildDelegatedRemoteRequestData(
+                delegatedWorkerName = RemoteSuccessWorker::class.java.name,
+                componentName = ComponentName(packageName, className),
+                inputData
+            )
+        assertEquals(data.isRemoteWorkRequest(), true)
+        assertEquals(
+            data.getString(ARGUMENT_REMOTE_LISTENABLE_WORKER_NAME),
+            RemoteSuccessWorker::class.java.name
+        )
+        assertEquals(data.getString(RemoteListenableWorker.ARGUMENT_PACKAGE_NAME), packageName)
+        assertEquals(data.getString(RemoteListenableWorker.ARGUMENT_CLASS_NAME), className)
+        assertEquals(data.getString(inputKey), inputValue)
+    }
+
+    private inline fun <reified T : ListenableWorker> buildRequest(): OneTimeWorkRequest {
+        val inputData =
+            Data.Builder()
+                .putString(RemoteListenableWorker.ARGUMENT_PACKAGE_NAME, mContext.packageName)
+                .putString(
+                    RemoteListenableWorker.ARGUMENT_CLASS_NAME,
+                    RemoteWorkerService::class.java.name
+                )
+                .putString(ARGUMENT_REMOTE_LISTENABLE_WORKER_NAME, T::class.java.name)
+                .build()
+
+        val request =
+            OneTimeWorkRequest.Builder(RemoteListenableDelegatingWorker::class.java)
+                .setInputData(inputData)
+                .build()
 
         mDatabase.workSpecDao().insertWorkSpec(request.workSpec)
         return request
@@ -158,13 +206,14 @@ public class RemoteCoroutineWorkerTest {
 
     private fun buildWrapper(request: WorkRequest): WorkerWrapper {
         return WorkerWrapper.Builder(
-            mContext,
-            mConfiguration,
-            mTaskExecutor,
-            mForegroundProcessor,
-            mDatabase,
-            mDatabase.workSpecDao().getWorkSpec(request.stringId)!!,
-            emptyList()
-        ).build()
+                mContext,
+                mConfiguration,
+                mTaskExecutor,
+                mForegroundProcessor,
+                mDatabase,
+                mDatabase.workSpecDao().getWorkSpec(request.stringId)!!,
+                emptyList()
+            )
+            .build()
     }
 }

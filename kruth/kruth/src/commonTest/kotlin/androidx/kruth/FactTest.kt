@@ -34,87 +34,58 @@ class FactTest {
 
     @Test
     fun oneFacts() {
-        assertThat(
-            makeMessage(
-                emptyList(),
-                listOf(fact("foo", "bar"))
-            )
-        )
-            .isEqualTo("foo: bar")
+        assertThat(makeMessage(emptyList(), listOf(fact("foo", "bar")))).isEqualTo("foo: bar")
     }
 
     @Test
     fun twoFacts() {
         assertThat(
-            makeMessage(
-                emptyList(),
-                listOf(fact("foo", "bar"), fact("longer name", "other value"))
+                makeMessage(
+                    emptyList(),
+                    listOf(fact("foo", "bar"), fact("longer name", "other value"))
+                )
             )
-        )
             .isEqualTo("foo        : bar\nlonger name: other value")
     }
 
     @Test
     fun oneFactWithoutValue() {
-        assertThat(
-            makeMessage(
-                emptyList(),
-                listOf(simpleFact("foo"))
-            )
-        )
-            .isEqualTo("foo")
+        assertThat(makeMessage(emptyList(), listOf(simpleFact("foo")))).isEqualTo("foo")
     }
 
     @Test
     fun twoFactsOneWithoutValue() {
-        assertThat(
-            makeMessage(
-                emptyList(),
-                listOf(fact("hello", "there"), simpleFact("foo"))
-            )
-        )
+        assertThat(makeMessage(emptyList(), listOf(fact("hello", "there"), simpleFact("foo"))))
             .isEqualTo("hello: there\nfoo")
     }
 
     @Test
     fun newline() {
-        assertThat(
-            makeMessage(
-                emptyList(),
-                listOf(fact("foo", "bar\nbaz"))
-            )
-        )
+        assertThat(makeMessage(emptyList(), listOf(fact("foo", "bar\nbaz"))))
             .isEqualTo("foo:\n    bar\n    baz")
     }
 
     @Test
     fun newlineWithoutValue() {
         assertThat(
-            makeMessage(
-                emptyList(),
-                listOf(fact("hello", "there\neveryone"), simpleFact("xyz"))
+                makeMessage(
+                    emptyList(),
+                    listOf(fact("hello", "there\neveryone"), simpleFact("xyz"))
+                )
             )
-        )
             .isEqualTo("hello:\n    there\n    everyone\nxyz")
     }
 
     @Test
     fun withMessage() {
-        assertThat(
-            makeMessage(
-                listOf("hello"),
-                listOf(fact("foo", "bar"))
-            )
-        )
+        assertThat(makeMessage(listOf("hello"), listOf(fact("foo", "bar"))))
             .isEqualTo("hello\nfoo: bar")
     }
 
     @Test
     fun failWithActual_simpleFact() {
         val subject =
-            object : Subject<Int>(
-                actual = 0,
-            ) {
+            object : Subject<Int>(actual = 0, metadata = FailureMetadata()) {
                 fun fail() {
                     failWithActual(simpleFact("Expected something else"))
                 }
@@ -124,16 +95,17 @@ class FactTest {
             """
                 Expected something else
                 but was: 0
-            """.trimIndent()
-        ) { subject.fail() }
+            """
+                .trimIndent()
+        ) {
+            subject.fail()
+        }
     }
 
     @Test
     fun failWithActual_multipleFacts() {
         val subject =
-            object : Subject<Int>(
-                actual = 0,
-            ) {
+            object : Subject<Int>(actual = 0, metadata = FailureMetadata()) {
                 fun fail() {
                     failWithActual(
                         simpleFact("Expected something else"),
@@ -147,16 +119,17 @@ class FactTest {
                 Expected something else
                 expected: 1
                 but was : 0
-            """.trimIndent()
-        ) { subject.fail() }
+            """
+                .trimIndent()
+        ) {
+            subject.fail()
+        }
     }
 
     @Test
     fun failWithoutActual_simpleFact() {
         val subject =
-            object : Subject<Int>(
-                actual = 0,
-            ) {
+            object : Subject<Int>(actual = 0, metadata = FailureMetadata()) {
                 fun fail() {
                     failWithoutActual(simpleFact("Expected something else"))
                 }
@@ -165,16 +138,17 @@ class FactTest {
         assertFailsWithMessage(
             """
                 Expected something else
-            """.trimIndent()
-        ) { subject.fail() }
+            """
+                .trimIndent()
+        ) {
+            subject.fail()
+        }
     }
 
     @Test
     fun failWithoutActual_multipleFacts() {
         val subject =
-            object : Subject<Int>(
-                actual = 0,
-            ) {
+            object : Subject<Int>(actual = 0, metadata = FailureMetadata()) {
                 fun fail() {
                     failWithoutActual(
                         simpleFact("Expected something else"),
@@ -187,7 +161,10 @@ class FactTest {
             """
                 Expected something else
                 Found: 0
-            """.trimIndent()
-        ) { subject.fail() }
+            """
+                .trimIndent()
+        ) {
+            subject.fail()
+        }
     }
 }

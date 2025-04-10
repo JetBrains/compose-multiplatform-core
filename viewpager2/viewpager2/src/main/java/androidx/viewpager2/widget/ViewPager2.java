@@ -175,7 +175,6 @@ public final class ViewPager2 extends ViewGroup {
     }
 
     @RequiresApi(21)
-    @SuppressLint("ClassVerificationFailure")
     public ViewPager2(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr,
             int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
@@ -188,7 +187,7 @@ public final class ViewPager2 extends ViewGroup {
                 : new BasicAccessibilityProvider();
 
         mRecyclerView = new RecyclerViewImpl(context);
-        mRecyclerView.setId(ViewCompat.generateViewId());
+        mRecyclerView.setId(View.generateViewId());
         mRecyclerView.setDescendantFocusability(FOCUS_BEFORE_DESCENDANTS);
 
         mLayoutManager = new LinearLayoutManagerImpl(context);
@@ -210,6 +209,9 @@ public final class ViewPager2 extends ViewGroup {
         // Add mScrollEventAdapter after attaching mPagerSnapHelper to mRecyclerView, because we
         // don't want to respond on the events sent out during the attach process
         mRecyclerView.addOnScrollListener(mScrollEventAdapter);
+
+        // Pass-through ViewPager's overScrollMode settings to its impl
+        mRecyclerView.setOverScrollMode(getOverScrollMode());
 
         mPageChangeEventDispatcher = new CompositeOnPageChangeCallback(3);
         mScrollEventAdapter.setOnPageChangeCallback(mPageChangeEventDispatcher);
@@ -387,7 +389,6 @@ public final class ViewPager2 extends ViewGroup {
         Parcelable mAdapterState;
 
         @RequiresApi(24)
-        @SuppressLint("ClassVerificationFailure")
         SavedState(Parcel source, ClassLoader loader) {
             super(source, loader);
             readValues(source, loader);
@@ -540,6 +541,15 @@ public final class ViewPager2 extends ViewGroup {
         }
     }
 
+    @Override
+    public void setOverScrollMode(int overScrollMode) {
+        // Skip calling mRecyclerView when it is not initialized
+        if (mRecyclerView != null) {
+            mRecyclerView.setOverScrollMode(overScrollMode);
+        }
+        super.setOverScrollMode(overScrollMode);
+    }
+
     /** Updates {@link #mCurrentItem} based on what is currently visible in the viewport. */
     void updateCurrentItem() {
         if (mPagerSnapHelper == null) {
@@ -583,7 +593,7 @@ public final class ViewPager2 extends ViewGroup {
     }
 
     boolean isRtl() {
-        return mLayoutManager.getLayoutDirection() == ViewCompat.LAYOUT_DIRECTION_RTL;
+        return mLayoutManager.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
     }
 
     /**
@@ -1370,8 +1380,7 @@ public final class ViewPager2 extends ViewGroup {
         @Override
         public void onInitialize(@NonNull CompositeOnPageChangeCallback pageChangeEventDispatcher,
                 @NonNull RecyclerView recyclerView) {
-            ViewCompat.setImportantForAccessibility(recyclerView,
-                    ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            recyclerView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
 
             mAdapterDataObserver = new DataSetChangeObserver() {
                 @Override
@@ -1380,10 +1389,9 @@ public final class ViewPager2 extends ViewGroup {
                 }
             };
 
-            if (ViewCompat.getImportantForAccessibility(ViewPager2.this)
-                    == ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_AUTO) {
-                ViewCompat.setImportantForAccessibility(ViewPager2.this,
-                        ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_YES);
+            if (ViewPager2.this.getImportantForAccessibility()
+                    == View.IMPORTANT_FOR_ACCESSIBILITY_AUTO) {
+                ViewPager2.this.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
             }
         }
 

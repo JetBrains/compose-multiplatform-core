@@ -34,12 +34,13 @@ import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Px;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.core.view.ViewCompat;
 import androidx.wear.R;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 

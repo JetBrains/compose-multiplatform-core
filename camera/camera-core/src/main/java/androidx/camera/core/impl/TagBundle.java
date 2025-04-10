@@ -20,9 +20,8 @@ import android.hardware.camera2.CaptureRequest;
 import android.util.ArrayMap;
 import android.util.Pair;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 import java.util.Set;
@@ -30,7 +29,6 @@ import java.util.Set;
 /**
  * A TagBundle is an immutable tags collection which does not allow insertion/removal.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class TagBundle {
     /** It is used to store all the keys and Tags */
     protected final Map<String, Object> mTagMap;
@@ -43,14 +41,13 @@ public class TagBundle {
 
     private static final String USER_TAG_PREFIX = "android.hardware.camera2.CaptureRequest.setTag.";
 
-    private static final String CAMERAX_USER_TAG_PREFIX = USER_TAG_PREFIX + "CX";
+    public static final String CAMERAX_USER_TAG_PREFIX = USER_TAG_PREFIX + "CX";
     /**
      * Creates an empty TagBundle.
      *
      * @return an empty TagBundle containing no tag.
      */
-    @NonNull
-    public static TagBundle emptyBundle() {
+    public static @NonNull TagBundle emptyBundle() {
         return EMPTY_TAGBUNDLE;
     }
 
@@ -59,8 +56,7 @@ public class TagBundle {
      *
      * @return a TagBundle containing one tag.
      */
-    @NonNull
-    public static TagBundle create(@NonNull Pair<String, Object> source) {
+    public static @NonNull TagBundle create(@NonNull Pair<String, Object> source) {
         Map<String, Object> map = new ArrayMap<>();
         map.put(source.first, source.second);
         return new TagBundle(map);
@@ -74,8 +70,7 @@ public class TagBundle {
      * @param otherTagBundle TagBundle containing keys/values to be copied.
      * @return A new TagBundle pre-populated with keys/values.
      */
-    @NonNull
-    public static TagBundle from(@NonNull TagBundle otherTagBundle) {
+    public static @NonNull TagBundle from(@NonNull TagBundle otherTagBundle) {
         Map<String, Object> tags = new ArrayMap<>();
         for (String key: otherTagBundle.listKeys()) {
             tags.put(key, otherTagBundle.getTag(key));
@@ -90,8 +85,7 @@ public class TagBundle {
      * @param key      The key for query.
      * @return The tag associated with the key.
      */
-    @Nullable
-    public Object getTag(@NonNull String key) {
+    public @Nullable Object getTag(@NonNull String key) {
         return mTagMap.get(key);
     }
 
@@ -101,8 +95,7 @@ public class TagBundle {
      * @return A {@link Set} of keys contained within this configuration. It returns an empty set
      * if there are no keys in this TagBundle.
      */
-    @NonNull
-    public Set<String> listKeys() {
+    public @NonNull Set<String> listKeys() {
         return mTagMap.keySet();
     }
 
@@ -120,9 +113,8 @@ public class TagBundle {
      *
      * @return Returns a constant string value used to identify usage of CameraX.
      */
-    @NonNull
     @Override
-    public final String toString() {
+    public final @NonNull String toString() {
         return CAMERAX_USER_TAG_PREFIX;
     }
 }

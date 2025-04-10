@@ -27,12 +27,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-/* ktlint-disable max-line-length */
 @RunWith(JUnit4::class)
 
-/**
- * Test for [CrossfadeDetector].
- */
+/** Test for [CrossfadeDetector]. */
 class CrossfadeDetectorTest : LintDetectorTest() {
     override fun getDetector(): Detector = CrossfadeDetector()
 
@@ -40,11 +37,12 @@ class CrossfadeDetectorTest : LintDetectorTest() {
         mutableListOf(CrossfadeDetector.UnusedCrossfadeTargetStateParameter)
 
     // Simplified Transition.kt stubs
-    private val CrossfadeStub = bytecodeStub(
-        filename = "Transition.kt",
-        filepath = "androidx/compose/animation",
-        checksum = 0x15a87088,
-        """
+    private val CrossfadeStub =
+        bytecodeStub(
+            filename = "Transition.kt",
+            filepath = "androidx/compose/animation",
+            checksum = 0x15a87088,
+            """
             package androidx.compose.animation
 
             import androidx.compose.runtime.Composable
@@ -55,13 +53,13 @@ class CrossfadeDetectorTest : LintDetectorTest() {
                 content: @Composable (T) -> Unit
             ) {}
         """,
-"""
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijg0uKSSsxLKcrPTKnQS87PLcgvTtVL
         zMvMTSzJzM8T4gkpSswrzgSxvUu4eLmY0/LzhdhCUotLvEuUGLQYAEjDUx5T
         AAAA
         """,
-        """
+            """
         androidx/compose/animation/TransitionKt.class:
         H4sIAAAAAAAA/4VSW08TQRT+Zlq67QKylHvxglwERNxC8MUSE9OE0FjB2MoL
         T9PtUqeXWbM7bXjsb/Ef+GZ8MI2P/ijjmW0VBBMe5syZ73znmzPnzM9f374D
@@ -79,14 +77,15 @@ class CrossfadeDetectorTest : LintDetectorTest() {
         nyNRwkIJiyWqJlfCMu6X8AAPz8EiPMLKOdIRxiI8jrAaIRvBjrAWGTD1G1Xc
         nh8uBAAA
         """
-    )
+        )
 
     @Test
     fun unreferencedParameters() {
-        lint().files(
-            kotlin(
-                """
-                package foo
+        lint()
+            .files(
+                kotlin(
+                    """
+                package test.foo
 
                 import androidx.compose.animation.*
                 import androidx.compose.runtime.*
@@ -103,29 +102,29 @@ class CrossfadeDetectorTest : LintDetectorTest() {
                     Crossfade(foo, content = { _ -> if (foo) { /**/ } else { /**/ } })
                 }
             """
-            ),
-            CrossfadeStub,
-            Stubs.Composable
-        )
+                ),
+                CrossfadeStub,
+                Stubs.Composable
+            )
             .run()
             .expect(
                 """
-src/foo/test.kt:11: Error: Target state parameter it is not used [UnusedCrossfadeTargetStateParameter]
+src/test/foo/test.kt:11: Error: Target state parameter it is not used [UnusedCrossfadeTargetStateParameter]
                     Crossfade(foo) { if (foo) { /**/ } else { /**/ } }
                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-src/foo/test.kt:12: Error: Target state parameter it is not used [UnusedCrossfadeTargetStateParameter]
+src/test/foo/test.kt:12: Error: Target state parameter it is not used [UnusedCrossfadeTargetStateParameter]
                     Crossfade(foo, content = { if (foo) { /**/ } else { /**/ } })
                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-src/foo/test.kt:13: Error: Target state parameter param is not used [UnusedCrossfadeTargetStateParameter]
+src/test/foo/test.kt:13: Error: Target state parameter param is not used [UnusedCrossfadeTargetStateParameter]
                     Crossfade(foo) { param -> if (foo) { /**/ } else { /**/ } }
                                      ~~~~~
-src/foo/test.kt:14: Error: Target state parameter param is not used [UnusedCrossfadeTargetStateParameter]
+src/test/foo/test.kt:14: Error: Target state parameter param is not used [UnusedCrossfadeTargetStateParameter]
                     Crossfade(foo, content = { param -> if (foo) { /**/ } else { /**/ } })
                                                ~~~~~
-src/foo/test.kt:15: Error: Target state parameter _ is not used [UnusedCrossfadeTargetStateParameter]
+src/test/foo/test.kt:15: Error: Target state parameter _ is not used [UnusedCrossfadeTargetStateParameter]
                     Crossfade(foo) { _ -> if (foo) { /**/ } else { /**/ } }
                                      ~
-src/foo/test.kt:16: Error: Target state parameter _ is not used [UnusedCrossfadeTargetStateParameter]
+src/test/foo/test.kt:16: Error: Target state parameter _ is not used [UnusedCrossfadeTargetStateParameter]
                     Crossfade(foo, content = { _ -> if (foo) { /**/ } else { /**/ } })
                                                ~
 6 errors, 0 warnings
@@ -135,10 +134,11 @@ src/foo/test.kt:16: Error: Target state parameter _ is not used [UnusedCrossfade
 
     @Test
     fun unreferencedParameter_shadowedNames() {
-        lint().files(
-            kotlin(
-                """
-                package foo
+        lint()
+            .files(
+                kotlin(
+                    """
+                package test.foo
 
                 import androidx.compose.animation.*
                 import androidx.compose.runtime.*
@@ -165,17 +165,17 @@ src/foo/test.kt:16: Error: Target state parameter _ is not used [UnusedCrossfade
                     }
                 }
             """
-            ),
-            CrossfadeStub,
-            Stubs.Composable
-        )
+                ),
+                CrossfadeStub,
+                Stubs.Composable
+            )
             .run()
             .expect(
                 """
-src/foo/test.kt:11: Error: Target state parameter it is not used [UnusedCrossfadeTargetStateParameter]
+src/test/foo/test.kt:11: Error: Target state parameter it is not used [UnusedCrossfadeTargetStateParameter]
                     Crossfade(foo) {
                                    ^
-src/foo/test.kt:20: Error: Target state parameter param is not used [UnusedCrossfadeTargetStateParameter]
+src/test/foo/test.kt:20: Error: Target state parameter param is not used [UnusedCrossfadeTargetStateParameter]
                     Crossfade(foo) { param ->
                                      ~~~~~
 2 errors, 0 warnings
@@ -185,10 +185,11 @@ src/foo/test.kt:20: Error: Target state parameter param is not used [UnusedCross
 
     @Test
     fun noErrors() {
-        lint().files(
-            kotlin(
-                """
-            package foo
+        lint()
+            .files(
+                kotlin(
+                    """
+            package test.foo
 
             import androidx.compose.animation.*
             import androidx.compose.runtime.*
@@ -240,12 +241,11 @@ src/foo/test.kt:20: Error: Target state parameter param is not used [UnusedCross
                 }
             }
         """
-            ),
-            CrossfadeStub,
-            Stubs.Composable
-        )
+                ),
+                CrossfadeStub,
+                Stubs.Composable
+            )
             .run()
             .expectClean()
     }
 }
-/* ktlint-enable max-line-length */

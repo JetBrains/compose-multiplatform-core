@@ -23,13 +23,14 @@ import android.annotation.SuppressLint;
 import androidx.annotation.Dimension;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.proto.ResourceProto;
 import androidx.wear.protolayout.protobuf.ByteString;
 import androidx.wear.protolayout.protobuf.InvalidProtocolBufferException;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -79,14 +80,12 @@ public final class ResourceBuilders {
             return mImpl.getResourceId();
         }
 
-        @NonNull
-        static AndroidImageResourceByResId fromProto(
-                @NonNull ResourceProto.AndroidImageResourceByResId proto) {
+        static @NonNull AndroidImageResourceByResId fromProto(
+                ResourceProto.@NonNull AndroidImageResourceByResId proto) {
             return new AndroidImageResourceByResId(proto);
         }
 
-        @NonNull
-        ResourceProto.AndroidImageResourceByResId toProto() {
+        ResourceProto.@NonNull AndroidImageResourceByResId toProto() {
             return mImpl;
         }
 
@@ -101,15 +100,13 @@ public final class ResourceBuilders {
              * Sets the Android resource ID of this image. This must refer to a drawable under
              * R.drawable.
              */
-            @NonNull
-            public Builder setResourceId(@DrawableRes int resourceId) {
+            public @NonNull Builder setResourceId(@DrawableRes int resourceId) {
                 mImpl.setResourceId(resourceId);
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public AndroidImageResourceByResId build() {
+            public @NonNull AndroidImageResourceByResId build() {
                 return AndroidImageResourceByResId.fromProto(mImpl.build());
             }
         }
@@ -127,8 +124,7 @@ public final class ResourceBuilders {
         }
 
         /** Gets the byte array representing the image. Intended for testing purposes only. */
-        @NonNull
-        public byte[] getData() {
+        public byte @NonNull [] getData() {
             return mImpl.getData().toByteArray();
         }
 
@@ -163,13 +159,12 @@ public final class ResourceBuilders {
             return mImpl.getFormat().getNumber();
         }
 
-        @NonNull
-        static InlineImageResource fromProto(@NonNull ResourceProto.InlineImageResource proto) {
+        static @NonNull InlineImageResource fromProto(
+                ResourceProto.@NonNull InlineImageResource proto) {
             return new InlineImageResource(proto);
         }
 
-        @NonNull
-        ResourceProto.InlineImageResource toProto() {
+        ResourceProto.@NonNull InlineImageResource toProto() {
             return mImpl;
         }
 
@@ -181,8 +176,7 @@ public final class ResourceBuilders {
             public Builder() {}
 
             /** Sets the byte array representing the image. */
-            @NonNull
-            public Builder setData(@NonNull byte[] data) {
+            public @NonNull Builder setData(byte @NonNull [] data) {
                 mImpl.setData(ByteString.copyFrom(data));
                 return this;
             }
@@ -191,8 +185,7 @@ public final class ResourceBuilders {
              * Sets the native width of the image, in pixels. Only required for formats (e.g.
              * IMAGE_FORMAT_RGB_565) where the image data does not include size.
              */
-            @NonNull
-            public Builder setWidthPx(@Dimension(unit = PX) int widthPx) {
+            public @NonNull Builder setWidthPx(@Dimension(unit = PX) int widthPx) {
                 mImpl.setWidthPx(widthPx);
                 return this;
             }
@@ -201,8 +194,7 @@ public final class ResourceBuilders {
              * Sets the native height of the image, in pixels. Only required for formats (e.g.
              * IMAGE_FORMAT_RGB_565) where the image data does not include size.
              */
-            @NonNull
-            public Builder setHeightPx(@Dimension(unit = PX) int heightPx) {
+            public @NonNull Builder setHeightPx(@Dimension(unit = PX) int heightPx) {
                 mImpl.setHeightPx(heightPx);
                 return this;
             }
@@ -213,15 +205,13 @@ public final class ResourceBuilders {
              * to extract this from the raw image data. If the platform does not support the format,
              * the image will not be decoded or displayed.
              */
-            @NonNull
-            public Builder setFormat(@ImageFormat int format) {
+            public @NonNull Builder setFormat(@ImageFormat int format) {
                 mImpl.setFormat(ResourceProto.ImageFormat.forNumber(format));
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public InlineImageResource build() {
+            public @NonNull InlineImageResource build() {
                 return InlineImageResource.fromProto(mImpl.build());
             }
         }
@@ -242,8 +232,7 @@ public final class ResourceBuilders {
          * Gets an image resource that maps to an Android drawable by resource ID. Intended for
          * testing purposes only.
          */
-        @Nullable
-        public AndroidImageResourceByResId getAndroidResourceByResId() {
+        public @Nullable AndroidImageResourceByResId getAndroidResourceByResId() {
             if (mImpl.hasAndroidResourceByResId()) {
                 return AndroidImageResourceByResId.fromProto(mImpl.getAndroidResourceByResId());
             } else {
@@ -255,8 +244,7 @@ public final class ResourceBuilders {
          * Gets an image resource that contains the image data inline. Intended for testing purposes
          * only.
          */
-        @Nullable
-        public InlineImageResource getInlineResource() {
+        public @Nullable InlineImageResource getInlineResource() {
             if (mImpl.hasInlineResource()) {
                 return InlineImageResource.fromProto(mImpl.getInlineResource());
             } else {
@@ -264,13 +252,11 @@ public final class ResourceBuilders {
             }
         }
 
-        @NonNull
-        static ImageResource fromProto(@NonNull ResourceProto.ImageResource proto) {
+        static @NonNull ImageResource fromProto(ResourceProto.@NonNull ImageResource proto) {
             return new ImageResource(proto);
         }
 
-        @NonNull
-        ResourceProto.ImageResource toProto() {
+        ResourceProto.@NonNull ImageResource toProto() {
             return mImpl;
         }
 
@@ -282,23 +268,20 @@ public final class ResourceBuilders {
             public Builder() {}
 
             /** Sets an image resource that maps to an Android drawable by resource ID. */
-            @NonNull
-            public Builder setAndroidResourceByResId(
+            public @NonNull Builder setAndroidResourceByResId(
                     @NonNull AndroidImageResourceByResId androidResourceByResId) {
                 mImpl.setAndroidResourceByResId(androidResourceByResId.toProto());
                 return this;
             }
 
             /** Sets an image resource that contains the image data inline. */
-            @NonNull
-            public Builder setInlineResource(@NonNull InlineImageResource inlineResource) {
+            public @NonNull Builder setInlineResource(@NonNull InlineImageResource inlineResource) {
                 mImpl.setInlineResource(inlineResource.toProto());
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public ImageResource build() {
+            public @NonNull ImageResource build() {
                 return ImageResource.fromProto(mImpl.build());
             }
         }
@@ -324,8 +307,7 @@ public final class ResourceBuilders {
          * androidx.wear.tiles.RequestBuilders.ResourcesRequest} which triggered this request.
          * Intended for testing purposes only.
          */
-        @NonNull
-        public String getVersion() {
+        public @NonNull String getVersion() {
             return mImpl.getVersion();
         }
 
@@ -333,8 +315,7 @@ public final class ResourceBuilders {
          * Gets a map of resource_ids to images, which can be used by layouts. Intended for testing
          * purposes only.
          */
-        @NonNull
-        public Map<String, ImageResource> getIdToImageMapping() {
+        public @NonNull Map<String, ImageResource> getIdToImageMapping() {
             Map<String, ImageResource> map = new HashMap<>();
             for (Entry<String, ResourceProto.ImageResource> entry :
                     mImpl.getIdToImageMap().entrySet()) {
@@ -344,17 +325,15 @@ public final class ResourceBuilders {
         }
 
         /** Converts to byte array representation. */
-        @NonNull
         @TilesExperimental
-        public byte[] toByteArray() {
+        public byte @NonNull [] toByteArray() {
             return mImpl.toByteArray();
         }
 
         /** Converts from byte array representation. */
         @SuppressWarnings("ProtoParseWithRegistry")
-        @Nullable
         @TilesExperimental
-        public static Resources fromByteArray(@NonNull byte[] byteArray) {
+        public static @Nullable Resources fromByteArray(byte @NonNull [] byteArray) {
             try {
                 return fromProto(ResourceProto.Resources.parseFrom(byteArray));
             } catch (InvalidProtocolBufferException e) {
@@ -363,15 +342,13 @@ public final class ResourceBuilders {
         }
 
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static Resources fromProto(@NonNull ResourceProto.Resources proto) {
+        public static @NonNull Resources fromProto(ResourceProto.@NonNull Resources proto) {
             return new Resources(proto);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ResourceProto.Resources toProto() {
+        public ResourceProto.@NonNull Resources toProto() {
             return mImpl;
         }
 
@@ -393,23 +370,21 @@ public final class ResourceBuilders {
              * tile to render successfully, and must match the resource version specified in {@link
              * androidx.wear.tiles.RequestBuilders.ResourcesRequest} which triggered this request.
              */
-            @NonNull
-            public Builder setVersion(@NonNull String version) {
+            public @NonNull Builder setVersion(@NonNull String version) {
                 mImpl.setVersion(version);
                 return this;
             }
 
             /** Adds an entry into a map of resource_ids to images, which can be used by layouts. */
             @SuppressLint("MissingGetterMatchingBuilder")
-            @NonNull
-            public Builder addIdToImageMapping(@NonNull String id, @NonNull ImageResource image) {
+            public @NonNull Builder addIdToImageMapping(@NonNull String id,
+                    @NonNull ImageResource image) {
                 mImpl.putIdToImage(id, image.toProto());
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public Resources build() {
+            public @NonNull Resources build() {
                 return Resources.fromProto(mImpl.build());
             }
         }

@@ -18,6 +18,7 @@ package androidx.privacysandbox.tools.testing
 
 import androidx.room.compiler.processing.util.DiagnosticLocation
 import androidx.room.compiler.processing.util.DiagnosticMessage
+import androidx.room.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.compiler.TestCompilationArguments
 import androidx.room.compiler.processing.util.compiler.TestCompilationResult
@@ -32,7 +33,7 @@ import javax.tools.Diagnostic
 object CompilationTestHelper {
     fun assertCompiles(sources: List<Source>): TestCompilationResult {
         val result = compileAll(sources)
-        assertThat(result).succeeds()
+        assertThat(result).succeedsExcludingOptInWarnings()
         return result
     }
 
@@ -50,6 +51,7 @@ object CompilationTestHelper {
                 classpath = extraClasspath,
                 symbolProcessorProviders = symbolProcessorProviders,
                 processorOptions = processorOptions,
+                kotlincArguments = KOTLINC_LANGUAGE_1_9_ARGS
             )
         )
     }
@@ -73,20 +75,37 @@ fun hasAllExpectedGeneratedSourceFilesAndContent(
     val actualRelativePathMap = actualKotlinSources.associateBy(Source::relativePath)
     for (expectedKotlinSource in expectedKotlinSources) {
         assertWithMessage(
-            "Contents of generated file ${expectedKotlinSource.relativePath} don't " +
-                "match golden."
-        ).that(actualRelativePathMap[expectedKotlinSource.relativePath]?.contents)
+                "Contents of generated file ${expectedKotlinSource.relativePath} don't " +
+                    "match golden."
+            )
+            .that(actualRelativePathMap[expectedKotlinSource.relativePath]?.contents)
             .isEqualTo(expectedKotlinSource.contents)
     }
 }
 
 class CompilationResultSubject(private val result: TestCompilationResult) {
     fun succeeds() {
-        assertWithMessage(
-            "Unexpected errors:\n${getFullErrorMessages().joinToString("\n")}"
-        ).that(
-            result.success && getRawErrorMessages().isEmpty()
-        ).isTrue()
+        assertWithMessage("Unexpected errors:\n${getFullErrorMessages().joinToString("\n")}")
+            .that(result.success && getRawErrorMessages().isEmpty())
+            .isTrue()
+    }
+
+    // TODO(b/388455777): remove and switch back to using 'succeeds()' once annotation generation is
+    // added to the library.
+    fun succeedsExcludingOptInWarnings() {
+        assertWithMessage("Unexpected errors:\n${getFullErrorMessages().joinToString("\n")}")
+            .that(
+                result.success &&
+                    getRawErrorMessages()
+                        .filterNot { message ->
+                            message.kind == Diagnostic.Kind.WARNING &&
+                                message.msg.contains(
+                                    "This API is experimental. It may be changed in the future without notice."
+                                )
+                        }
+                        .isEmpty()
+            )
+            .isTrue()
     }
 
     fun hasAllExpectedGeneratedSourceFilesAndContent(
@@ -117,33 +136,22 @@ class CompilationResultSubject(private val result: TestCompilationResult) {
     }
 
     private fun getRawErrorMessages(): List<DiagnosticMessage> {
-        // Filter SdkActivityLauncher deprecation warnings. Our tests currently use the old version
-        // so the warnings are expected.
-        // TODO(b/307696996) - Remove this once the generator uses the new version exclusively.
-        val warningsToIgnore = listOf(
-            "'SdkActivityLauncher' is deprecated.",
-            "'SdkActivityLauncherFactory' is deprecated.",
-            "'toLauncherInfo(): Bundle' is deprecated.",
-        )
-        val filteredWarnings = result.diagnostics[Diagnostic.Kind.WARNING]?.filter { warning ->
-            !warningsToIgnore.any { warning.msg.contains(it) }
-        } ?: emptyList()
-
         return (result.diagnostics[Diagnostic.Kind.ERROR] ?: emptyList()) +
-            filteredWarnings +
+            (result.diagnostics[Diagnostic.Kind.WARNING] ?: emptyList()) +
             (result.diagnostics[Diagnostic.Kind.MANDATORY_WARNING] ?: emptyList())
     }
 
     private fun getShortErrorMessages() =
         result.diagnostics[Diagnostic.Kind.ERROR]?.map(DiagnosticMessage::msg)
 
-    private fun getFullErrorMessages() =
-        getRawErrorMessages().map { it.toFormattedMessage() }
+    private fun getFullErrorMessages() = getRawErrorMessages().map { it.toFormattedMessage() }
 
-    private fun DiagnosticMessage.toFormattedMessage() = """
+    private fun DiagnosticMessage.toFormattedMessage() =
+        """
             |$kind: $msg
             |${location?.toFormattedLocation()}$
-        """.trimMargin()
+        """
+            .trimMargin()
 
     private fun DiagnosticLocation.toFormattedLocation(): String {
         if (source == null) return "Location information missing"
@@ -151,7 +159,8 @@ class CompilationResultSubject(private val result: TestCompilationResult) {
             |Location: ${source!!.relativePath}:$line
             |File:
             |${contentsHighlightingLine(source!!.contents, line)}
-        """.trimMargin()
+        """
+            .trimMargin()
     }
 
     private fun contentsHighlightingLine(contents: String, line: Int): String {

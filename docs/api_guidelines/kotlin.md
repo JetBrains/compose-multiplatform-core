@@ -145,6 +145,23 @@ See Jake Wharton's article on
 [Public API challenges in Kotlin](https://jakewharton.com/public-api-challenges-in-kotlin/)
 for more details.
 
+### Flow return type {#flow-return-type}
+
+Always prefer non-null for `Flow` objects, return a Flow that does not emit
+items as a default. One option is `emptyFlow()` which will complete. Another
+option is `flow { awaitCancellation() }` which will not emit and not complete.
+Choose the option that best suites the use-case.
+
+```kotlin
+fun myFlowFunction(): Flow<Data> {
+    return if (canCreateFlow()) {
+        createFlow()
+    } else {
+        emptyFlow()
+    }
+}
+```
+
 ### Exhaustive `when` and `sealed class`/`enum class` {#exhaustive-when}
 
 A key feature of Kotlin's `sealed class` and `enum class` declarations is that
@@ -233,7 +250,7 @@ libraries may also be used, but type checking of constants will only be
 performed by lint, and functions overloaded with parameters of different value
 class types are not supported. Prefer the `@JvmInline value class` solution for
 new code unless it would break local consistency with other API in the same
-module that already uses `@IntDef`.
+module that already uses `@IntDef` or compatibility with Java is required.
 
 #### Non-exhaustive alternatives to `sealed class`
 
@@ -334,6 +351,52 @@ Even when an extension function on a platform class does not collide with an
 existing API *yet*, there is a possibility that a conflicting API with a
 matching signature will be added in the future. As such, Jetpack libraries
 should avoid adding extension functions on platform classes.
+
+### Extension functions related to classes in the same module or file
+
+When the core type is in Java, one good use for extension functions is to create
+more Kotlin friendly versions of the API.
+
+```java
+public class MyClass {
+    public void addMyListener(Executor e, Consumer<Data> listener) { ... }
+    public void removeMyListener(Consumer<Data> listener) { ... }
+}
+```
+
+```kotlin
+fun MyClass.dataFlow(): Flow<Data>
+```
+
+When the core type is in Kotlin, extension functions may or may not be a good
+fit for the API. Ask if the extension is part of the core abstraction or a new
+layer of abstraction. One example of a new layer of abstraction is using a new
+dependency that does not otherwise interact with the core class. Another example
+is an abstraction that stands on its own such as a `Comparator` that implements
+a non-canonical ordering.
+
+In general when adding extension functions, consider splitting them across
+different files and naming the Java version of the files related to the use case
+as opposed to putting everything in one file and using a `Util` suffix.
+
+```kotlin {.bad}
+@file:JvmName("WindowSizeClassUtil")
+
+fun Set<WindowSizeClass>.widestClass() : WindowSizeClass { ... }
+
+fun WindowSizeClass.scoreWithinWidthDp(widthDp: Int) { ... }
+```
+
+```kotlin
+@file:JvmName("WindowSizeClassSelector")
+
+fun Set<WindowSizeClass>.widestClass() : WindowSizeClass { ... }
+
+// In another file
+@file:JvmName("WindowSizeClassScoreCalculator")
+
+fun WindowSizeClass.scoreWithinWidthDp(widthDp: Int) { ... }
+```
 
 ### Function parameters order {#kotlin-params-order}
 

@@ -16,8 +16,7 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,7 +29,6 @@ import java.util.Set;
  *
  * @param <C> The type of the parameter.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public abstract class MultiValueSet<C> {
 
     private Set<C> mSet = new HashSet<>();
@@ -48,8 +46,7 @@ public abstract class MultiValueSet<C> {
     /**
      * Returns the list of {@link C} which containing all the elements were added to this value set.
      */
-    @NonNull
-    public List<C> getAllItems() {
+    public @NonNull List<C> getAllItems() {
         return Collections.unmodifiableList(new ArrayList<>(mSet));
     }
 

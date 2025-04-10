@@ -16,6 +16,8 @@
 
 package androidx.camera.integration.core;
 
+import static android.os.Environment.getExternalStoragePublicDirectory;
+
 import static androidx.camera.core.ImageCapture.ERROR_CAMERA_CLOSED;
 import static androidx.camera.core.ImageCapture.ERROR_CAPTURE_FAILED;
 import static androidx.camera.core.ImageCapture.ERROR_FILE_IO;
@@ -25,13 +27,22 @@ import static androidx.camera.core.ImageCapture.FLASH_MODE_AUTO;
 import static androidx.camera.core.ImageCapture.FLASH_MODE_OFF;
 import static androidx.camera.core.ImageCapture.FLASH_MODE_ON;
 import static androidx.camera.core.ImageCapture.FLASH_MODE_SCREEN;
+import static androidx.camera.core.ImageCapture.FLASH_TYPE_ONE_SHOT_FLASH;
+import static androidx.camera.core.ImageCapture.FLASH_TYPE_USE_TORCH_AS_FLASH;
+import static androidx.camera.core.ImageCapture.OUTPUT_FORMAT_JPEG;
+import static androidx.camera.core.ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR;
+import static androidx.camera.core.ImageCapture.OUTPUT_FORMAT_RAW;
+import static androidx.camera.core.ImageCapture.OUTPUT_FORMAT_RAW_JPEG;
+import static androidx.camera.core.ImageCapture.getImageCaptureCapabilities;
 import static androidx.camera.core.MirrorMode.MIRROR_MODE_ON_FRONT_ONLY;
+import static androidx.camera.integration.core.CameraXViewModel.getConfiguredCameraXCameraImplementation;
 import static androidx.camera.testing.impl.FileUtil.canDeviceWriteToMediaStore;
 import static androidx.camera.testing.impl.FileUtil.createFolder;
 import static androidx.camera.testing.impl.FileUtil.createParentFolder;
 import static androidx.camera.testing.impl.FileUtil.generateVideoFileOutputOptions;
 import static androidx.camera.testing.impl.FileUtil.generateVideoMediaStoreOptions;
 import static androidx.camera.testing.impl.FileUtil.getAbsolutePathFromUri;
+import static androidx.camera.testing.impl.FileUtil.writeTextToExternalFile;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_FILE_SIZE_LIMIT_REACHED;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_INSUFFICIENT_STORAGE;
@@ -47,6 +58,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Rect;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.display.DisplayManager;
 import android.media.MediaScannerConnection;
@@ -66,8 +78,8 @@ import android.util.Rational;
 import android.view.Display;
 import android.view.GestureDetector;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
-import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewStub;
@@ -83,10 +95,7 @@ import android.widget.ToggleButton;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.DoNotInline;
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
@@ -97,6 +106,7 @@ import androidx.camera.camera2.internal.compat.quirk.ImageCaptureFailWithAutoFla
 import androidx.camera.camera2.internal.compat.quirk.ImageCaptureFlashNotFireQuirk;
 import androidx.camera.camera2.interop.Camera2CameraInfo;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
+import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
@@ -110,8 +120,10 @@ import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.FocusMeteringResult;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
+import androidx.camera.core.ImageCaptureCapabilities;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.ImageProxy;
+import androidx.camera.core.LowLightBoostState;
 import androidx.camera.core.MeteringPointFactory;
 import androidx.camera.core.Preview;
 import androidx.camera.core.TorchState;
@@ -120,9 +132,11 @@ import androidx.camera.core.UseCaseGroup;
 import androidx.camera.core.ViewPort;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.Quirks;
+import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.utils.AspectRatioUtil;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.testing.impl.StreamSharingForceEnabledEffect;
 import androidx.camera.video.ExperimentalPersistentRecording;
 import androidx.camera.video.FileOutputOptions;
 import androidx.camera.video.MediaStoreOutputOptions;
@@ -137,6 +151,7 @@ import androidx.camera.video.VideoCapabilities;
 import androidx.camera.video.VideoCapture;
 import androidx.camera.video.VideoRecordEvent;
 import androidx.camera.view.ScreenFlashView;
+import androidx.camera.view.impl.ZoomGestureDetector;
 import androidx.core.content.ContextCompat;
 import androidx.core.math.MathUtils;
 import androidx.core.util.Consumer;
@@ -149,16 +164,21 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.io.File;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -176,10 +196,17 @@ import java.util.concurrent.atomic.AtomicLong;
  * resumed and when the device is rotated. The complex interactions between the camera and these
  * lifecycle events are handled internally by CameraX.
  */
+@SuppressLint("NullAnnotationGroup")
 public class CameraXActivity extends AppCompatActivity {
     private static final String TAG = "CameraXActivity";
     private static final String[] REQUIRED_PERMISSIONS;
     private static final List<DynamicRangeUiData> DYNAMIC_RANGE_UI_DATA = new ArrayList<>();
+
+    // StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED is not public
+    @SuppressLint("RestrictedApiAndroidX")
+    private static final Range<Integer> FPS_UNSPECIFIED = StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
+    private static final Map<Integer, Range<Integer>> ID_TO_FPS_RANGE_MAP = new HashMap<>();
+    private static final Map<Integer, Integer> ID_TO_ASPECT_RATIO_MAP = new HashMap<>();
 
     static {
         // From Android T, skips the permission check of WRITE_EXTERNAL_STORAGE since it won't be
@@ -225,6 +252,19 @@ public class CameraXActivity extends AppCompatActivity {
                 DynamicRange.DOLBY_VISION_10_BIT,
                 "HDR (Dolby Vision, 10-bit)",
                 R.string.toggle_video_dyn_rng_hdr_dolby_vision_10));
+
+        // TODO - Indicate whether the FPS ranges are supported with
+        //  `CameraInfo.getSupportedFrameRateRanges()`, but we may want to try unsupported cases too
+        //  sometimes for testing, so the unsupported ones still should be options (perhaps greyed
+        //  out or struck-through).
+        ID_TO_FPS_RANGE_MAP.put(R.id.fps_unspecified, FPS_UNSPECIFIED);
+        ID_TO_FPS_RANGE_MAP.put(R.id.fps_15, new Range<>(15, 15));
+        ID_TO_FPS_RANGE_MAP.put(R.id.fps_30, new Range<>(30, 30));
+        ID_TO_FPS_RANGE_MAP.put(R.id.fps_60, new Range<>(60, 60));
+
+        ID_TO_ASPECT_RATIO_MAP.put(R.id.aspect_ratio_default, AspectRatio.RATIO_DEFAULT);
+        ID_TO_ASPECT_RATIO_MAP.put(R.id.aspect_ratio_4_3, AspectRatio.RATIO_4_3);
+        ID_TO_ASPECT_RATIO_MAP.put(R.id.aspect_ratio_16_9, AspectRatio.RATIO_16_9);
     }
 
     //Use this activity title when Camera Pipe configuration is used by core test app
@@ -237,6 +277,8 @@ public class CameraXActivity extends AppCompatActivity {
     private static final String INTENT_EXTRA_E2E_TEST_CASE = "e2e_test_case";
     // Launch the activity with the specified video quality.
     private static final String INTENT_EXTRA_VIDEO_QUALITY = "video_quality";
+    // Launch the activity with the view finder position log into a text file.
+    private static final String INTENT_EXTRA_LOG_VIEWFINDER_POSITION = "log_view_finder_position";
     // Launch the activity with the specified video mirror mode.
     private static final String INTENT_EXTRA_VIDEO_MIRROR_MODE = "video_mirror_mode";
     public static final String INTENT_EXTRA_CAMERA_IMPLEMENTATION = "camera_implementation";
@@ -269,6 +311,11 @@ public class CameraXActivity extends AppCompatActivity {
     @VisibleForTesting
     // Sets this bit to bind ImageAnalysis when using INTENT_EXTRA_USE_CASE_COMBINATION
     public static final int BIND_IMAGE_ANALYSIS = 0x8;
+    // Launch the activity with the specified stream sharing force enable settings. Note that
+    // StreamSharing will only take effect when both Preview and VideoCapture are bound.
+    @VisibleForTesting
+    public static final String INTENT_EXTRA_FORCE_ENABLE_STREAM_SHARING =
+            "force_enable_stream_sharing";
 
     static final CameraSelector BACK_SELECTOR =
             new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
@@ -311,6 +358,7 @@ public class CameraXActivity extends AppCompatActivity {
     // there is smaller impact on the preview.
     View mViewFinder;
     private List<UseCase> mUseCases;
+    ExecutorService mFileWriterExecutorService;
     ExecutorService mImageCaptureExecutorService;
     private VideoCapture<Recorder> mVideoCapture;
     private Recorder mRecorder;
@@ -330,6 +378,8 @@ public class CameraXActivity extends AppCompatActivity {
     private ScreenFlashView mScreenFlashView;
     private TextView mTextView;
     private ImageButton mTorchButton;
+    private TextView mTorchStrengthText;
+    private SeekBar mTorchStrengthSeekBar;
     private ToggleButton mCaptureQualityToggle;
     private Button mPlusEV;
     private Button mDecEV;
@@ -338,20 +388,29 @@ public class CameraXActivity extends AppCompatActivity {
     private SeekBar mZoomSeekBar;
     private Button mZoomIn2XToggle;
     private Button mZoomResetToggle;
+    private Button mButtonImageOutputFormat;
     private Toast mEvToast = null;
     private Toast mPSToast = null;
     private ToggleButton mPreviewStabilizationToggle;
+    private ToggleButton mLowLightBoostToggle;
 
     private OpenGLRenderer mPreviewRenderer;
     private DisplayManager.DisplayListener mDisplayListener;
     private RecordUi mRecordUi;
     private DynamicRangeUi mDynamicRangeUi;
     private Quality mVideoQuality;
+    private boolean mAudioMuted = false;
     private DynamicRange mDynamicRange = DynamicRange.SDR;
+    private @ImageCapture.OutputFormat int mImageOutputFormat = OUTPUT_FORMAT_JPEG;
     private Set<DynamicRange> mDisplaySupportedHighDynamicRanges = Collections.emptySet();
     private final Set<DynamicRange> mSelectableDynamicRanges = new HashSet<>();
     private int mVideoMirrorMode = MIRROR_MODE_ON_FRONT_ONLY;
     private boolean mIsPreviewStabilizationOn = false;
+    private boolean mIsLowLightBoostOn = false;
+    private Range<Integer> mFpsRange = FPS_UNSPECIFIED;
+    private boolean mForceEnableStreamSharing;
+    private boolean mDisableViewPort;
+    private boolean mEnableTorchAsFlash;
 
     SessionMediaUriSet mSessionImagesUriSet = new SessionMediaUriSet();
     SessionMediaUriSet mSessionVideosUriSet = new SessionMediaUriSet();
@@ -436,15 +495,13 @@ public class CameraXActivity extends AppCompatActivity {
      * Saves the error message of the last take picture action if any error occurs. This will be
      * null which means no error occurs.
      */
-    @Nullable
-    private String mLastTakePictureErrorMessage = null;
+    private @Nullable String mLastTakePictureErrorMessage = null;
 
     /**
      * Retrieve idling resource that waits for image received by analyzer).
      */
     @VisibleForTesting
-    @NonNull
-    public IdlingResource getAnalysisIdlingResource() {
+    public @NonNull IdlingResource getAnalysisIdlingResource() {
         return mAnalysisIdlingResource;
     }
 
@@ -452,8 +509,7 @@ public class CameraXActivity extends AppCompatActivity {
      * Retrieve idling resource that waits view to get texture update.
      */
     @VisibleForTesting
-    @NonNull
-    public IdlingResource getViewIdlingResource() {
+    public @NonNull IdlingResource getViewIdlingResource() {
         return mViewIdlingResource;
     }
 
@@ -461,8 +517,7 @@ public class CameraXActivity extends AppCompatActivity {
      * Retrieve idling resource that waits for capture to complete (save or error).
      */
     @VisibleForTesting
-    @NonNull
-    public IdlingResource getImageSavedIdlingResource() {
+    public @NonNull IdlingResource getImageSavedIdlingResource() {
         return mImageSavedIdlingResource;
     }
 
@@ -470,8 +525,7 @@ public class CameraXActivity extends AppCompatActivity {
      * Retrieve idling resource that waits for a video being recorded and saved.
      */
     @VisibleForTesting
-    @NonNull
-    public IdlingResource getVideoSavedIdlingResource() {
+    public @NonNull IdlingResource getVideoSavedIdlingResource() {
         return mVideoSavedIdlingResource;
     }
 
@@ -479,8 +533,7 @@ public class CameraXActivity extends AppCompatActivity {
      * Retrieve idling resource that waits for initialization to finish.
      */
     @VisibleForTesting
-    @NonNull
-    public IdlingResource getInitializationIdlingResource() {
+    public @NonNull IdlingResource getInitializationIdlingResource() {
         return mInitializationIdlingResource;
     }
 
@@ -494,8 +547,7 @@ public class CameraXActivity extends AppCompatActivity {
      */
     @VisibleForTesting
     @MainThread
-    @Nullable
-    public CameraXViewModel.CameraProviderResult getCameraProviderResult() {
+    public CameraXViewModel.@Nullable CameraProviderResult getCameraProviderResult() {
         return mCameraProviderResult;
     }
 
@@ -587,12 +639,24 @@ public class CameraXActivity extends AppCompatActivity {
             case FLASH_MODE_AUTO:
                 CameraInfo cameraInfo = getCameraInfo();
                 if (cameraInfo instanceof CameraInfoInternal) {
-                    Quirks deviceQuirks =
-                            androidx.camera.camera2.internal.compat.quirk.DeviceQuirks.getAll();
+
+                    Quirks deviceQuirks = CameraXViewModel.CAMERA_PIPE_IMPLEMENTATION_OPTION.equals(
+                            getConfiguredCameraXCameraImplementation()) ? DeviceQuirks.all
+                            : androidx.camera.camera2.internal.compat.quirk.DeviceQuirks.getAll();
                     Quirks cameraQuirks = ((CameraInfoInternal) cameraInfo).getCameraQuirks();
+
                     if (deviceQuirks.contains(CrashWhenTakingPhotoWithAutoFlashAEModeQuirk.class)
                             || cameraQuirks.contains(ImageCaptureFailWithAutoFlashQuirk.class)
-                            || cameraQuirks.contains(ImageCaptureFlashNotFireQuirk.class)) {
+                            || cameraQuirks.contains(ImageCaptureFlashNotFireQuirk.class)
+                            || deviceQuirks.contains(
+                            androidx.camera.camera2.pipe.integration.compat.quirk
+                                    .CrashWhenTakingPhotoWithAutoFlashAEModeQuirk.class)
+                            || cameraQuirks.contains(
+                            androidx.camera.camera2.pipe.integration.compat.quirk
+                                    .ImageCaptureFailWithAutoFlashQuirk.class)
+                            || cameraQuirks.contains(
+                            androidx.camera.camera2.pipe.integration.compat.quirk
+                                    .ImageCaptureFlashNotFireQuirk.class)) {
 
                         Toast.makeText(this, DESCRIPTION_FLASH_MODE_NOT_SUPPORTED,
                                 Toast.LENGTH_SHORT).show();
@@ -645,8 +709,8 @@ public class CameraXActivity extends AppCompatActivity {
         }
 
         mScreenFlashView.setScreenFlashWindow(getWindow());
-        getImageCapture().setScreenFlashUiControl(
-                mScreenFlashView.getScreenFlashUiControl());
+        getImageCapture().setScreenFlash(
+                mScreenFlashView.getScreenFlash());
         getImageCapture().setFlashMode(FLASH_MODE_SCREEN);
     }
 
@@ -678,7 +742,7 @@ public class CameraXActivity extends AppCompatActivity {
                         pendingRecording.asPersistentRecording();
                     }
                     mActiveRecording = pendingRecording
-                            .withAudioEnabled()
+                            .withAudioEnabled(mAudioMuted)
                             .start(ContextCompat.getMainExecutor(CameraXActivity.this),
                                     mVideoRecordEventListener);
                     mRecordUi.setState(RecordUi.State.RECORDING);
@@ -763,6 +827,17 @@ public class CameraXActivity extends AppCompatActivity {
 
             popup.show();
         });
+
+        Runnable buttonMuteUpdater = () -> mRecordUi.getButtonMute().setImageResource(
+                mAudioMuted ? R.drawable.ic_mic_off : R.drawable.ic_mic_on);
+        buttonMuteUpdater.run();
+        mRecordUi.getButtonMute().setOnClickListener(view -> {
+            mAudioMuted = !mAudioMuted;
+            if (mActiveRecording != null) {
+                mActiveRecording.mute(mAudioMuted);
+            }
+            buttonMuteUpdater.run();
+        });
     }
 
     private void setUpDynamicRangeButton() {
@@ -789,6 +864,50 @@ public class CameraXActivity extends AppCompatActivity {
                 if (!Objects.equals(dynamicRange, mDynamicRange)) {
                     setSelectedDynamicRange(dynamicRange);
                     // Dynamic range changed, rebind UseCases
+                    tryBindUseCases();
+                }
+                return true;
+            });
+
+            popup.show();
+        });
+    }
+
+    private void setUpImageOutputFormatButton() {
+        mButtonImageOutputFormat.setText(getImageOutputFormatIconName(mImageOutputFormat));
+        mButtonImageOutputFormat.setOnClickListener(view -> {
+            PopupMenu popup = new PopupMenu(this, view);
+            Menu menu = popup.getMenu();
+            final int groupId = Menu.NONE;
+
+            // Add device supported output formats.
+            ImageCaptureCapabilities capabilities = getImageCaptureCapabilities(
+                    mCamera.getCameraInfo());
+            Set<Integer> supportedOutputFormats = capabilities.getSupportedOutputFormats();
+            for (int supportedOutputFormat : supportedOutputFormats) {
+                // Add output format item to menu.
+                final int menuItemId = imageOutputFormatToItemId(supportedOutputFormat);
+                final int order = menu.size();
+                final String menuItemName = getImageOutputFormatMenuItemName(supportedOutputFormat);
+
+                menu.add(groupId, menuItemId, order, menuItemName);
+                if (mImageOutputFormat == supportedOutputFormat) {
+                    menu.findItem(menuItemId).setChecked(true);
+                }
+            }
+
+            // Make menu single checkable.
+            menu.setGroupCheckable(groupId, true, true);
+
+            // Set item click listener.
+            popup.setOnMenuItemClickListener(item -> {
+                int outputFormat = itemIdToImageOutputFormat(item.getItemId());
+                if (outputFormat != mImageOutputFormat) {
+                    mImageOutputFormat = outputFormat;
+                    final String newIconName = getImageOutputFormatIconName(mImageOutputFormat);
+                    mButtonImageOutputFormat.setText(newIconName);
+
+                    // Output format changed, rebind UseCases.
                     tryBindUseCases();
                 }
                 return true;
@@ -911,61 +1030,102 @@ public class CameraXActivity extends AppCompatActivity {
                     public void onClick(View view) {
                         mImageSavedIdlingResource.increment();
                         mStartCaptureTime = SystemClock.elapsedRealtime();
-                        createDefaultPictureFolderIfNotExist();
-                        Format formatter = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS",
-                                Locale.US);
-                        String fileName = "CoreTestApp-" + formatter.format(
-                                Calendar.getInstance().getTime()) + ".jpg";
-                        ContentValues contentValues = new ContentValues();
-                        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
-                        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
-                        ImageCapture.OutputFileOptions outputFileOptions =
-                                new ImageCapture.OutputFileOptions.Builder(
-                                        getContentResolver(),
-                                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                        contentValues).build();
-                        getImageCapture().takePicture(outputFileOptions,
-                                mImageCaptureExecutorService,
-                                new ImageCapture.OnImageSavedCallback() {
-                                    @Override
-                                    public void onImageSaved(
-                                            @NonNull ImageCapture.OutputFileResults
-                                                    outputFileResults) {
-                                        Log.d(TAG, "Saved image to "
-                                                + outputFileResults.getSavedUri());
-                                        try {
-                                            mImageSavedIdlingResource.decrement();
-                                        } catch (IllegalStateException e) {
-                                            Log.e(TAG, "Error: unexpected onImageSaved "
-                                                    + "callback received. Continuing.");
-                                        }
 
-                                        long duration =
-                                                SystemClock.elapsedRealtime() - mStartCaptureTime;
-                                        runOnUiThread(() -> Toast.makeText(CameraXActivity.this,
-                                                "Image captured in " + duration + " ms",
-                                                Toast.LENGTH_SHORT).show());
-                                        if (mSessionImagesUriSet != null) {
-                                            mSessionImagesUriSet.add(
-                                                    requireNonNull(
-                                                            outputFileResults.getSavedUri()));
-                                        }
-                                    }
+                        ImageCapture.OnImageSavedCallback callback = new ImageCapture
+                                .OnImageSavedCallback() {
+                            @Override
+                            public void onImageSaved(
+                                    ImageCapture.@NonNull OutputFileResults
+                                            outputFileResults) {
+                                Log.d(TAG, "Saved image to "
+                                        + outputFileResults.getSavedUri());
+                                try {
+                                    mImageSavedIdlingResource.decrement();
+                                } catch (IllegalStateException e) {
+                                    Log.e(TAG, "Error: unexpected onImageSaved "
+                                            + "callback received. Continuing.");
+                                }
 
-                                    @Override
-                                    public void onError(@NonNull ImageCaptureException exception) {
-                                        Log.e(TAG, "Failed to save image.", exception);
+                                long duration =
+                                        SystemClock.elapsedRealtime()
+                                                - mStartCaptureTime;
+                                runOnUiThread(() -> Toast.makeText(CameraXActivity.this,
+                                        "Image captured in " + duration + " ms",
+                                        Toast.LENGTH_SHORT).show());
+                                if (mSessionImagesUriSet != null) {
+                                    mSessionImagesUriSet.add(
+                                            requireNonNull(
+                                                    outputFileResults.getSavedUri()));
+                                }
+                            }
 
-                                        mLastTakePictureErrorMessage =
-                                                getImageCaptureErrorMessage(exception);
-                                        if (!mImageSavedIdlingResource.isIdleNow()) {
-                                            mImageSavedIdlingResource.decrement();
-                                        }
-                                    }
-                                });
+                            @Override
+                            public void onError(
+                                    @NonNull ImageCaptureException exception) {
+                                Log.e(TAG, "Failed to save image.", exception);
+
+                                mLastTakePictureErrorMessage =
+                                        getImageCaptureErrorMessage(exception);
+                                if (!mImageSavedIdlingResource.isIdleNow()) {
+                                    mImageSavedIdlingResource.decrement();
+                                }
+                            }
+                        };
+
+                        if (mImageOutputFormat == OUTPUT_FORMAT_RAW_JPEG) {
+                            ImageCapture.OutputFileOptions rawOutputFileOptions =
+                                    createOutputFileOptions(OUTPUT_FORMAT_RAW);
+                            ImageCapture.OutputFileOptions jpegOutputFileOptions =
+                                    createOutputFileOptions(OUTPUT_FORMAT_JPEG);
+                            getImageCapture().takePicture(
+                                    rawOutputFileOptions,
+                                    jpegOutputFileOptions,
+                                    mImageCaptureExecutorService,
+                                    callback);
+                        } else {
+                            ImageCapture.OutputFileOptions outputFileOptions =
+                                    createOutputFileOptions(mImageOutputFormat);
+                            getImageCapture().takePicture(
+                                    outputFileOptions,
+                                    mImageCaptureExecutorService,
+                                    callback);
+                        }
                     }
                 });
     }
+
+    @SuppressLint("RestrictedApiAndroidX")
+    private ImageCapture.@NonNull OutputFileOptions createOutputFileOptions(
+            @ImageCapture.OutputFormat int imageOutputFormat) {
+        createDefaultPictureFolderIfNotExist();
+        Format formatter = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS",
+                Locale.US);
+
+        String suffix = "";
+        String mimetype = "";
+        switch (imageOutputFormat) {
+            case OUTPUT_FORMAT_RAW:
+                suffix = ".dng";
+                mimetype = "image/x-adobe-dng";
+                break;
+            case OUTPUT_FORMAT_JPEG_ULTRA_HDR:
+            case OUTPUT_FORMAT_JPEG:
+                suffix = ".jpg";
+                mimetype = "image/jpeg";
+                break;
+        }
+        String fileName = "CoreTestApp-" + formatter.format(
+                Calendar.getInstance().getTime()) + suffix;
+
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, mimetype);
+        return new ImageCapture.OutputFileOptions.Builder(
+                getContentResolver(),
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                contentValues).build();
+    }
+
 
     private String getImageCaptureErrorMessage(@NonNull ImageCaptureException exception) {
         String errorCodeString;
@@ -1019,8 +1179,7 @@ public class CameraXActivity extends AppCompatActivity {
         });
     }
 
-    @NonNull
-    private CameraSelector getSwitchedCameraSelector(
+    private @NonNull CameraSelector getSwitchedCameraSelector(
             @NonNull CameraSelector currentCameraSelector) {
         CameraSelector switchedCameraSelector;
         // When the activity is launched with a specific camera id, camera switch function
@@ -1140,7 +1299,17 @@ public class CameraXActivity extends AppCompatActivity {
         mPSToast.show();
     }
 
-    private void updateAppUIForE2ETest(@NonNull String testCase) {
+    private void updateAppUIForE2ETest() {
+        Bundle bundle = getIntent().getExtras();
+        if (bundle == null) {
+            return;
+        }
+
+        String testCase = bundle.getString(INTENT_EXTRA_E2E_TEST_CASE);
+        if (testCase == null) {
+            return;
+        }
+
         if (getSupportActionBar() != null) {
             getSupportActionBar().hide();
         }
@@ -1163,7 +1332,10 @@ public class CameraXActivity extends AppCompatActivity {
             mPreviewToggle.setVisibility(View.GONE);
             mAnalysisToggle.setVisibility(View.GONE);
             mDynamicRangeUi.getButton().setVisibility(View.GONE);
+            mButtonImageOutputFormat.setVisibility(View.GONE);
             mRecordUi.hideUi();
+            mPreviewStabilizationToggle.setVisibility(View.GONE);
+            mLowLightBoostToggle.setVisibility(View.GONE);
             if (!testCase.equals(SWITCH_TEST_CASE)) {
                 mCameraDirectionButton.setVisibility(View.GONE);
             }
@@ -1174,7 +1346,7 @@ public class CameraXActivity extends AppCompatActivity {
         Bundle bundle = this.getIntent().getExtras();
         if (bundle != null) {
             mTargetAspectRatio = bundle.getInt(INTENT_EXTRA_TARGET_ASPECT_RATIO,
-                    AspectRatio.RATIO_4_3);
+                    AspectRatio.RATIO_DEFAULT);
             int scaleType = bundle.getInt(INTENT_EXTRA_SCALE_TYPE, INTENT_EXTRA_FILL_CENTER);
             if (scaleType == INTENT_EXTRA_FIT_CENTER) {
                 // Scale the view according to the target aspect ratio, display size and device
@@ -1216,11 +1388,17 @@ public class CameraXActivity extends AppCompatActivity {
         }
     }
 
+    private void updateImageOutputFormatUiState() {
+        int visible = mPhotoToggle.isChecked() ? View.VISIBLE : View.GONE;
+        mButtonImageOutputFormat.setVisibility(visible);
+    }
+
     @SuppressLint({"NullAnnotationGroup", "RestrictedApiAndroidX"})
     @OptIn(markerClass = androidx.camera.core.ExperimentalZeroShutterLag.class)
     private void updateButtonsUi() {
         mRecordUi.setEnabled(mVideoToggle.isChecked());
         updateDynamicRangeUiState();
+        updateImageOutputFormatUiState();
 
         mTakePicture.setEnabled(mPhotoToggle.isChecked());
         mCaptureQualityToggle.setEnabled(mPhotoToggle.isChecked());
@@ -1230,6 +1408,8 @@ public class CameraXActivity extends AppCompatActivity {
         mCameraDirectionButton.setEnabled(getCameraInfo() != null);
         mPreviewStabilizationToggle.setEnabled(mCamera != null
                 && Preview.getPreviewCapabilities(getCameraInfo()).isStabilizationSupported());
+        mLowLightBoostToggle.setEnabled(
+                mCamera != null && mCamera.getCameraInfo().isLowLightBoostSupported());
         mTorchButton.setEnabled(isFlashUnitAvailable());
         // Flash button
         mFlashButton.setEnabled(isFlashAvailable());
@@ -1255,6 +1435,11 @@ public class CameraXActivity extends AppCompatActivity {
         mPlusEV.setEnabled(isExposureCompensationSupported());
         mDecEV.setEnabled(isExposureCompensationSupported());
         mZoomIn2XToggle.setEnabled(is2XZoomSupported());
+
+        // this function may make some view visible again, so need to update for E2E tests again
+        updateAppUIForE2ETest();
+
+        invalidateOptionsMenu();
     }
 
     // Set or reset content description for e2e testing.
@@ -1305,6 +1490,7 @@ public class CameraXActivity extends AppCompatActivity {
 
         setUpRecordButton();
         setUpDynamicRangeButton();
+        setUpImageOutputFormatButton();
         setUpFlashButton();
         setUpTakePictureButton();
         setUpCameraDirectionButton();
@@ -1333,6 +1519,16 @@ public class CameraXActivity extends AppCompatActivity {
         mPhotoToggle.setChecked((useCaseCombination & BIND_IMAGE_CAPTURE) != 0L);
         mVideoToggle.setChecked((useCaseCombination & BIND_VIDEO_CAPTURE) != 0L);
         mAnalysisToggle.setChecked((useCaseCombination & BIND_IMAGE_ANALYSIS) != 0L);
+    }
+
+    private void updateStreamSharingForceEnableStateByIntent(@NonNull Intent intent) {
+        Bundle bundle = intent.getExtras();
+        if (bundle == null) {
+            return;
+        }
+
+        mForceEnableStreamSharing = bundle.getBoolean(INTENT_EXTRA_FORCE_ENABLE_STREAM_SHARING,
+                false);
     }
 
     private void updateVideoMirrorModeByIntent(@NonNull Intent intent) {
@@ -1380,6 +1576,7 @@ public class CameraXActivity extends AppCompatActivity {
         closeAppIfCameraProviderMismatch(this.getIntent());
 
         setContentView(R.layout.activity_camera_xmain);
+        mFileWriterExecutorService = Executors.newSingleThreadExecutor();
         mImageCaptureExecutorService = Executors.newSingleThreadExecutor();
         mDisplaySupportedHighDynamicRanges = Collections.emptySet();
         if (Build.VERSION.SDK_INT >= 30) {
@@ -1393,11 +1590,31 @@ public class CameraXActivity extends AppCompatActivity {
         updatePreviewRatioAndScaleTypeByIntent(viewFinderStub);
         updateVideoMirrorModeByIntent(getIntent());
 
+        Bundle bundle = this.getIntent().getExtras();
+
         mViewFinder = OpenGLActivity.chooseViewFinder(getIntent().getExtras(), viewFinderStub,
                 previewRenderer);
         mViewFinder.addOnLayoutChangeListener(
                 (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom)
-                        -> tryBindUseCases());
+                        -> {
+                    tryBindUseCases();
+
+                    if (bundle == null) {
+                        return;
+                    }
+
+                    if (!bundle.getBoolean(INTENT_EXTRA_LOG_VIEWFINDER_POSITION)) {
+                        return;
+                    }
+
+                    Rect rect = new Rect();
+                    v.getGlobalVisibleRect(rect);
+
+                    String viewFinderPositionText =
+                            rect.left + "," + rect.top + "," + rect.right + "," + rect.bottom;
+                    String fileName = "camerax_view_finder_position_" + System.currentTimeMillis();
+                    writeTextToExternalStorage(viewFinderPositionText, fileName, "txt");
+                });
 
         mVideoToggle = findViewById(R.id.VideoToggle);
         mPhotoToggle = findViewById(R.id.PhotoToggle);
@@ -1405,17 +1622,21 @@ public class CameraXActivity extends AppCompatActivity {
         mPreviewToggle = findViewById(R.id.PreviewToggle);
 
         updateUseCaseCombinationByIntent(getIntent());
+        updateStreamSharingForceEnableStateByIntent(getIntent());
 
         mTakePicture = findViewById(R.id.Picture);
         mFlashButton = findViewById(R.id.flash_toggle);
         mScreenFlashView = findViewById(R.id.screen_flash_view);
         mCameraDirectionButton = findViewById(R.id.direction_toggle);
         mTorchButton = findViewById(R.id.torch_toggle);
+        mTorchStrengthText = findViewById(R.id.torchStrength);
+        mTorchStrengthSeekBar = findViewById(R.id.torchStrengthBar);
         mCaptureQualityToggle = findViewById(R.id.capture_quality);
         mPlusEV = findViewById(R.id.plus_ev_toggle);
         mDecEV = findViewById(R.id.dec_ev_toggle);
         mZslToggle = findViewById(R.id.zsl_toggle);
         mPreviewStabilizationToggle = findViewById(R.id.preview_stabilization);
+        mLowLightBoostToggle = findViewById(R.id.low_light_boost);
         mZoomSeekBar = findViewById(R.id.seekBar);
         mZoomRatioLabel = findViewById(R.id.zoomRatio);
         mZoomIn2XToggle = findViewById(R.id.zoom_in_2x_toggle);
@@ -1423,12 +1644,14 @@ public class CameraXActivity extends AppCompatActivity {
 
         mTextView = findViewById(R.id.textView);
         mDynamicRangeUi = new DynamicRangeUi(findViewById(R.id.dynamic_range));
+        mButtonImageOutputFormat = findViewById(R.id.image_output_format);
         mRecordUi = new RecordUi(
                 findViewById(R.id.Video),
                 findViewById(R.id.video_pause),
                 findViewById(R.id.video_stats),
                 findViewById(R.id.video_quality),
                 findViewById(R.id.video_persistent),
+                findViewById(R.id.video_mute),
                 (newState) -> updateDynamicRangeUiState()
         );
 
@@ -1478,7 +1701,6 @@ public class CameraXActivity extends AppCompatActivity {
         StrictMode.setThreadPolicy(threadPolicy);
 
         // Get params from adb extra string
-        Bundle bundle = this.getIntent().getExtras();
         if (bundle != null) {
             String launchingCameraId = bundle.getString(INTENT_EXTRA_CAMERA_ID, null);
 
@@ -1516,10 +1738,7 @@ public class CameraXActivity extends AppCompatActivity {
             }
 
             // Update the app UI according to the e2e test case.
-            String testCase = bundle.getString(INTENT_EXTRA_E2E_TEST_CASE);
-            if (testCase != null) {
-                updateAppUIForE2ETest(testCase);
-            }
+            updateAppUIForE2ETest();
         }
 
         mInitializationIdlingResource.increment();
@@ -1550,6 +1769,96 @@ public class CameraXActivity extends AppCompatActivity {
         });
 
         setupPermissions();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.actionbar_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        updateMenuItems(menu);
+        return true;
+    }
+
+    private void updateMenuItems(Menu menu) {
+        menu.findItem(requireNonNull(getKeyByValue(ID_TO_FPS_RANGE_MAP, mFpsRange))).setChecked(
+                true);
+        menu.findItem(R.id.fps).setEnabled(mPreviewToggle.isChecked() || mVideoToggle.isChecked());
+
+        menu.findItem(requireNonNull(
+                getKeyByValue(ID_TO_ASPECT_RATIO_MAP, mTargetAspectRatio))).setChecked(true);
+
+        menu.findItem(R.id.stream_sharing).setChecked(mForceEnableStreamSharing);
+        // StreamSharing requires both Preview & VideoCapture use cases in core-test-app
+        // (since ImageCapture can't be added due to lack of effect)
+        menu.findItem(R.id.stream_sharing).setEnabled(
+                mPreviewToggle.isChecked() && mVideoToggle.isChecked());
+
+        menu.findItem(R.id.view_port).setChecked(mDisableViewPort);
+        menu.findItem(R.id.torch_as_flash).setChecked(mEnableTorchAsFlash);
+    }
+
+    private static <T, E> T getKeyByValue(Map<T, E> map, E value) {
+        for (Map.Entry<T, E> entry : map.entrySet()) {
+            if (Objects.equals(value, entry.getValue())) {
+                return entry.getKey();
+            }
+        }
+        return null; // No key found for the given value
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        // Handle item selection.
+        Log.d(TAG, "onOptionsItemSelected: item = " + item);
+
+        int groupId = item.getGroupId();
+        int itemId = item.getItemId();
+
+        if (groupId == R.id.fps_group) {
+            if (ID_TO_FPS_RANGE_MAP.containsKey(itemId)) {
+                mFpsRange = ID_TO_FPS_RANGE_MAP.get(itemId);
+            } else {
+                Log.e(TAG, "Unknown item " + item.getTitle());
+                return super.onOptionsItemSelected(item);
+            }
+        } else if (groupId == R.id.aspect_ratio_group) {
+            if (ID_TO_ASPECT_RATIO_MAP.containsKey(itemId)) {
+                mTargetAspectRatio = requireNonNull(ID_TO_ASPECT_RATIO_MAP.get(itemId));
+            } else {
+                Log.e(TAG, "Unknown item " + item.getTitle());
+                return super.onOptionsItemSelected(item);
+            }
+        } else if (itemId == R.id.stream_sharing) {
+            mForceEnableStreamSharing = !mForceEnableStreamSharing;
+        } else if (itemId == R.id.view_port) {
+            mDisableViewPort = !mDisableViewPort;
+        } else if (itemId == R.id.torch_as_flash) {
+            mEnableTorchAsFlash = !mEnableTorchAsFlash;
+        } else {
+            Log.d(TAG, "Not handling item " + item.getTitle());
+            return super.onOptionsItemSelected(item);
+        }
+
+        item.setChecked(!item.isChecked());
+
+        // Some configuration option may be changed, rebind UseCases
+        tryBindUseCases();
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * Writes text data to a file in public external directory for reading during tests.
+     */
+    private void writeTextToExternalStorage(@NonNull String text, @NonNull String filename,
+            @NonNull String extension) {
+        mFileWriterExecutorService.execute(() -> {
+            writeTextToExternalFile(text, filename, extension);
+        });
     }
 
     /**
@@ -1587,6 +1896,7 @@ public class CameraXActivity extends AppCompatActivity {
                 requireNonNull(ContextCompat.getSystemService(this, DisplayManager.class));
         dpyMgr.unregisterDisplayListener(mDisplayListener);
         mPreviewRenderer.shutdown();
+        mFileWriterExecutorService.shutdown();
         mImageCaptureExecutorService.shutdown();
     }
 
@@ -1642,14 +1952,7 @@ public class CameraXActivity extends AppCompatActivity {
             // Set the use cases after a successful binding.
             mUseCases = useCases;
         } catch (IllegalArgumentException ex) {
-            String msg;
-            if (mVideoQuality != QUALITY_AUTO) {
-                msg = "Bind too many use cases or video quality is too large.";
-            } else if (!Objects.equals(mDynamicRange, DynamicRange.SDR)) {
-                msg = "Bind too many use cases or unsupported dynamic range combination.";
-            } else {
-                msg = "Bind too many use cases.";
-            }
+            String msg = getBindFailedErrorMessage();
             Log.e(TAG, "bindToLifecycle() failed. " + msg, ex);
             Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
 
@@ -1673,6 +1976,18 @@ public class CameraXActivity extends AppCompatActivity {
             }
         }
         updateButtonsUi();
+    }
+
+    private @NonNull String getBindFailedErrorMessage() {
+        if (mVideoQuality != QUALITY_AUTO) {
+            return "Bind too many use cases or video quality is too large.";
+        } else if (mImageOutputFormat == OUTPUT_FORMAT_JPEG_ULTRA_HDR
+                && Objects.equals(mDynamicRange, DynamicRange.SDR)) {
+            return "Bind too many use cases or device does not support concurrent SDR and HDR.";
+        } else if (!Objects.equals(mDynamicRange, DynamicRange.SDR)) {
+            return "Bind too many use cases or unsupported dynamic range combination.";
+        }
+        return "Bind too many use cases.";
     }
 
     private boolean hasRunningRecording() {
@@ -1737,6 +2052,7 @@ public class CameraXActivity extends AppCompatActivity {
                     .setPreviewStabilizationEnabled(mIsPreviewStabilizationOn)
                     .setDynamicRange(
                             mVideoToggle.isChecked() ? DynamicRange.UNSPECIFIED : mDynamicRange)
+                    .setTargetFrameRate(mFpsRange)
                     .build();
             resetViewIdlingResource();
             // Use the listener of the future to make sure the Preview setup the new surface.
@@ -1751,9 +2067,16 @@ public class CameraXActivity extends AppCompatActivity {
         }
 
         if (mPhotoToggle.isChecked()) {
+            int flashType = FLASH_TYPE_ONE_SHOT_FLASH;
+            if (mEnableTorchAsFlash) {
+                flashType = FLASH_TYPE_USE_TORCH_AS_FLASH;
+            }
+
             ImageCapture imageCapture = new ImageCapture.Builder()
+                    .setFlashType(flashType)
                     .setCaptureMode(getCaptureMode())
                     .setTargetAspectRatio(mTargetAspectRatio)
+                    .setOutputFormat(mImageOutputFormat)
                     .setTargetName("ImageCapture")
                     .build();
             useCases.add(imageCapture);
@@ -1762,6 +2085,7 @@ public class CameraXActivity extends AppCompatActivity {
         if (mAnalysisToggle.isChecked()) {
             ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
                     .setTargetName("ImageAnalysis")
+                    .setTargetAspectRatio(mTargetAspectRatio)
                     .build();
             useCases.add(imageAnalysis);
             // Make the analysis idling resource non-idle, until the required frames received.
@@ -1780,10 +2104,11 @@ public class CameraXActivity extends AppCompatActivity {
                 if (mVideoQuality != QUALITY_AUTO) {
                     builder.setQualitySelector(QualitySelector.from(mVideoQuality));
                 }
-                mRecorder = builder.build();
+                mRecorder = builder.setAspectRatio(mTargetAspectRatio).build();
                 mVideoCapture = new VideoCapture.Builder<>(mRecorder)
                         .setMirrorMode(mVideoMirrorMode)
                         .setDynamicRange(mDynamicRange)
+                        .setTargetFrameRate(mFpsRange)
                         .build();
             }
             useCases.add(mVideoCapture);
@@ -1791,14 +2116,18 @@ public class CameraXActivity extends AppCompatActivity {
         return useCases;
     }
 
-    @SuppressLint("RestrictedApiAndroidX")
     private void updateDynamicRangeConfiguration() {
         mSelectableDynamicRanges.clear();
 
         Set<DynamicRange> supportedDynamicRanges = Collections.singleton(DynamicRange.SDR);
-        // ImageCapture and ImageAnalysis currently only support SDR, so only update supported
-        // ranges if they're not enabled
-        if (!mAnalysisToggle.isChecked() && !mPhotoToggle.isChecked()) {
+        // The dynamic range here (mDynamicRange) is considered the dynamic range for
+        // Preview/VideoCapture for following reasons:
+        // 1. ImageAnalysis currently only support SDR, so only update supported ranges if
+        // ImageAnalysis is not enabled.
+        // 2. ImageCapture's dynamic range is determined by its output format (JPEG -> SDR,
+        // Ultra HDR -> HDR unspecified), so mDynamicRange can be updated but does not affect
+        // ImageCapture's configuration.
+        if (!mAnalysisToggle.isChecked()) {
             if (mVideoToggle.isChecked()) {
                 // Get the list of available dynamic ranges for the current quality
                 VideoCapabilities videoCapabilities = Recorder.getVideoCapabilities(
@@ -1872,8 +2201,7 @@ public class CameraXActivity extends AppCompatActivity {
     }
 
     void createDefaultPictureFolderIfNotExist() {
-        File pictureFolder = Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES);
+        File pictureFolder = getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
         if (createFolder(pictureFolder)) {
             Log.e(TAG, "Failed to create directory: " + pictureFolder);
         }
@@ -1893,18 +2221,34 @@ public class CameraXActivity extends AppCompatActivity {
      * Binds use cases to the current lifecycle.
      */
     private Camera bindToLifecycleSafely(List<UseCase> useCases) {
-        ViewPort viewPort = new ViewPort.Builder(new Rational(mViewFinder.getWidth(),
-                mViewFinder.getHeight()),
-                mViewFinder.getDisplay().getRotation())
-                .setScaleType(ViewPort.FILL_CENTER).build();
-        UseCaseGroup.Builder useCaseGroupBuilder = new UseCaseGroup.Builder().setViewPort(
-                viewPort);
+        Log.d(TAG, "bindToLifecycleSafely: mDisableViewPort = " + mDisableViewPort
+                + ", mForceEnableStreamSharing = " + mForceEnableStreamSharing);
+
+        UseCaseGroup.Builder useCaseGroupBuilder = new UseCaseGroup.Builder();
         for (UseCase useCase : useCases) {
             useCaseGroupBuilder.addUseCase(useCase);
         }
+
+        if (!mDisableViewPort) {
+            ViewPort viewPort = new ViewPort.Builder(new Rational(mViewFinder.getWidth(),
+                    mViewFinder.getHeight()),
+                    mViewFinder.getDisplay().getRotation())
+                    .setScaleType(ViewPort.FILL_CENTER).build();
+            useCaseGroupBuilder.setViewPort(viewPort);
+        }
+
+        // Force-enable stream sharing
+        if (mForceEnableStreamSharing) {
+            @SuppressLint("RestrictedApiAndroidX")
+            StreamSharingForceEnabledEffect effect = new StreamSharingForceEnabledEffect();
+            useCaseGroupBuilder.addEffect(effect);
+        }
+
         mCamera = mCameraProvider.bindToLifecycle(this, mCurrentCameraSelector,
                 useCaseGroupBuilder.build());
         setupZoomSeeker();
+        setupTorchStrengthSeeker();
+        setUpLowLightBoostButton();
         return mCamera;
     }
 
@@ -1918,22 +2262,18 @@ public class CameraXActivity extends AppCompatActivity {
         mZoomRatioLabel.setTextColor(getResources().getColor(R.color.zoom_ratio_set));
     }
 
-    ScaleGestureDetector.SimpleOnScaleGestureListener mScaleGestureListener =
-            new ScaleGestureDetector.SimpleOnScaleGestureListener() {
-                @Override
-                public boolean onScale(@NonNull ScaleGestureDetector detector) {
-                    if (mCamera == null) {
-                        return true;
-                    }
-
-                    CameraInfo cameraInfo = mCamera.getCameraInfo();
-                    float newZoom =
-                            requireNonNull(cameraInfo.getZoomState().getValue()).getZoomRatio()
-                            * detector.getScaleFactor();
-                    setZoomRatio(newZoom);
-                    return true;
-                }
-            };
+    @SuppressLint("RestrictedApiAndroidX")
+    ZoomGestureDetector.OnZoomGestureListener mZoomGestureListener = zoomEvent -> {
+        if (mCamera != null && zoomEvent instanceof ZoomGestureDetector.ZoomEvent.Move) {
+            CameraInfo cameraInfo = mCamera.getCameraInfo();
+            float newZoom =
+                    requireNonNull(cameraInfo.getZoomState().getValue()).getZoomRatio()
+                            * ((ZoomGestureDetector.ZoomEvent.Move) zoomEvent)
+                            .getIncrementalScaleFactor();
+            setZoomRatio(newZoom);
+        }
+        return true;
+    };
 
     GestureDetector.OnGestureListener onTapGestureListener =
             new GestureDetector.SimpleOnGestureListener() {
@@ -1971,6 +2311,44 @@ public class CameraXActivity extends AppCompatActivity {
                     return true;
                 }
             };
+
+    @SuppressLint("NewApi")
+    private void setupTorchStrengthSeeker() {
+        if (mCamera.getCameraInfo().isTorchStrengthSupported()) {
+            mTorchStrengthText.setVisibility(View.VISIBLE);
+            mTorchStrengthText.setText(
+                    "L" + (mCamera.getCameraInfo().getTorchStrengthLevel().getValue()));
+
+            mTorchStrengthSeekBar.setVisibility(View.VISIBLE);
+            mTorchStrengthSeekBar.setMin(1);
+            mTorchStrengthSeekBar.setMax(mCamera.getCameraInfo().getMaxTorchStrengthLevel());
+            mTorchStrengthSeekBar.setProgress(
+                    mCamera.getCameraInfo().getTorchStrengthLevel().getValue());
+            mTorchStrengthSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    if (!fromUser) {
+                        return;
+                    }
+                    mCamera.getCameraControl().setTorchStrengthLevel(progress);
+                    mTorchStrengthText.setText("L" + progress);
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+                    // No-op
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+                    // No-op
+                }
+            });
+        } else {
+            mTorchStrengthText.setVisibility(View.GONE);
+            mTorchStrengthSeekBar.setVisibility(View.GONE);
+        }
+    }
 
     private void setupZoomSeeker() {
         CameraControl cameraControl = mCamera.getCameraControl();
@@ -2048,6 +2426,44 @@ public class CameraXActivity extends AppCompatActivity {
         });
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
+    private void setUpLowLightBoostButton() {
+        mIsLowLightBoostOn = false;
+        mLowLightBoostToggle.setVisibility(
+                mCamera == null || !mCamera.getCameraInfo().isLowLightBoostSupported() ? View.GONE
+                        : View.VISIBLE);
+        if (mLowLightBoostToggle.hasOnClickListeners()) {
+            return;
+        }
+        mLowLightBoostToggle.setOnClickListener(v -> {
+            mIsLowLightBoostOn = !mIsLowLightBoostOn;
+            if (mCamera == null) {
+                return;
+            }
+            if (!mCamera.getCameraInfo().getLowLightBoostState().hasObservers()) {
+                // Show the low-light boost state to the toggle button text for easy observation.
+                mCamera.getCameraInfo().getLowLightBoostState().observe(
+                        this,
+                        state -> {
+                            int resId;
+                            switch (state) {
+                                case LowLightBoostState.INACTIVE:
+                                    resId = R.string.toggle_low_light_boost_inactive;
+                                    break;
+                                case LowLightBoostState.ACTIVE:
+                                    resId = R.string.toggle_low_light_boost_active;
+                                    break;
+                                default:
+                                    resId = R.string.toggle_low_light_boost_off;
+                            }
+                            mLowLightBoostToggle.setText(resId);
+                        }
+                );
+            }
+            mCamera.getCameraControl().enableLowLightBoostAsync(mIsLowLightBoostOn);
+        });
+    }
+
     void setZoomRatio(float newZoom) {
         if (mCamera == null) {
             return;
@@ -2077,9 +2493,10 @@ public class CameraXActivity extends AppCompatActivity {
         }, ContextCompat.getMainExecutor(CameraXActivity.this));
     }
 
+    @SuppressLint("RestrictedApiAndroidX")
     private void setupViewFinderGestureControls() {
         GestureDetector tapGestureDetector = new GestureDetector(this, onTapGestureListener);
-        ScaleGestureDetector scaleDetector = new ScaleGestureDetector(this, mScaleGestureListener);
+        ZoomGestureDetector scaleDetector = new ZoomGestureDetector(this, mZoomGestureListener);
         mViewFinder.setOnTouchListener((view, e) -> {
             boolean tapEventProcessed = tapGestureDetector.onTouchEvent(e);
             boolean scaleEventProcessed = scaleDetector.onTouchEvent(e);
@@ -2155,8 +2572,7 @@ public class CameraXActivity extends AppCompatActivity {
             }
         }
 
-        @NonNull
-        Button getButton() {
+        @NonNull Button getButton() {
             return mButtonDynamicRange;
         }
 
@@ -2184,19 +2600,21 @@ public class CameraXActivity extends AppCompatActivity {
         private final TextView mTextStats;
         private final Button mButtonQuality;
         private final ToggleButton mButtonPersistent;
+        private final ImageButton mButtonMute;
         private boolean mEnabled = false;
         private State mState = State.IDLE;
         private final Consumer<State> mNewStateConsumer;
 
         RecordUi(@NonNull Button buttonRecord, @NonNull Button buttonPause,
                 @NonNull TextView textStats, @NonNull Button buttonQuality,
-                @NonNull ToggleButton buttonPersistent,
+                @NonNull ToggleButton buttonPersistent, @NonNull ImageButton buttonMute,
                 @NonNull Consumer<State> onNewState) {
             mButtonRecord = buttonRecord;
             mButtonPause = buttonPause;
             mTextStats = textStats;
             mButtonQuality = buttonQuality;
             mButtonPersistent = buttonPersistent;
+            mButtonMute = buttonMute;
             mNewStateConsumer = onNewState;
         }
 
@@ -2207,6 +2625,7 @@ public class CameraXActivity extends AppCompatActivity {
                 mTextStats.setVisibility(View.VISIBLE);
                 mButtonQuality.setVisibility(View.VISIBLE);
                 mButtonPersistent.setVisibility(View.VISIBLE);
+                mButtonMute.setVisibility(View.VISIBLE);
                 updateUi();
             } else {
                 mButtonRecord.setText("Record");
@@ -2215,6 +2634,7 @@ public class CameraXActivity extends AppCompatActivity {
                 mButtonQuality.setVisibility(View.INVISIBLE);
                 mTextStats.setVisibility(View.GONE);
                 mButtonPersistent.setVisibility(View.INVISIBLE);
+                mButtonMute.setVisibility(View.INVISIBLE);
             }
         }
 
@@ -2226,8 +2646,7 @@ public class CameraXActivity extends AppCompatActivity {
             }
         }
 
-        @NonNull
-        State getState() {
+        @NonNull State getState() {
             return mState;
         }
 
@@ -2236,6 +2655,7 @@ public class CameraXActivity extends AppCompatActivity {
             mButtonPause.setVisibility(View.GONE);
             mTextStats.setVisibility(View.GONE);
             mButtonPersistent.setVisibility(View.GONE);
+            mButtonMute.setVisibility(View.GONE);
         }
 
         private void updateUi() {
@@ -2249,6 +2669,7 @@ public class CameraXActivity extends AppCompatActivity {
                     mButtonPause.setText("Pause");
                     mButtonPause.setVisibility(View.INVISIBLE);
                     mButtonPersistent.setEnabled(true);
+                    mButtonMute.setEnabled(true);
                     mButtonQuality.setEnabled(true);
                     break;
                 case RECORDING:
@@ -2257,6 +2678,7 @@ public class CameraXActivity extends AppCompatActivity {
                     mButtonPause.setText("Pause");
                     mButtonPause.setVisibility(View.VISIBLE);
                     mButtonPersistent.setEnabled(false);
+                    mButtonMute.setEnabled(true);
                     mButtonQuality.setEnabled(false);
                     break;
                 case STOPPING:
@@ -2265,6 +2687,7 @@ public class CameraXActivity extends AppCompatActivity {
                     mButtonPause.setText("Pause");
                     mButtonPause.setVisibility(View.INVISIBLE);
                     mButtonPersistent.setEnabled(false);
+                    mButtonMute.setEnabled(false);
                     mButtonQuality.setEnabled(true);
                     break;
                 case PAUSED:
@@ -2273,6 +2696,7 @@ public class CameraXActivity extends AppCompatActivity {
                     mButtonPause.setText("Resume");
                     mButtonPause.setVisibility(View.VISIBLE);
                     mButtonPersistent.setEnabled(false);
+                    mButtonMute.setEnabled(true);
                     mButtonQuality.setEnabled(true);
                     break;
             }
@@ -2290,13 +2714,16 @@ public class CameraXActivity extends AppCompatActivity {
             return mTextStats;
         }
 
-        @NonNull
-        Button getButtonQuality() {
+        @NonNull Button getButtonQuality() {
             return mButtonQuality;
         }
 
         ToggleButton getButtonPersistent() {
             return mButtonPersistent;
+        }
+
+        ImageButton getButtonMute() {
+            return mButtonMute;
         }
     }
 
@@ -2312,8 +2739,7 @@ public class CameraXActivity extends AppCompatActivity {
         return findUseCase(ImageCapture.class);
     }
 
-    @Nullable
-    View getViewFinder() {
+    @Nullable View getViewFinder() {
         return mViewFinder;
     }
 
@@ -2322,8 +2748,7 @@ public class CameraXActivity extends AppCompatActivity {
      * null if no error occurs.
      */
     @VisibleForTesting
-    @Nullable
-    String getLastTakePictureErrorMessage() {
+    @Nullable String getLastTakePictureErrorMessage() {
         return mLastTakePictureErrorMessage;
     }
 
@@ -2345,8 +2770,7 @@ public class CameraXActivity extends AppCompatActivity {
     /**
      * Finds the use case by the given class.
      */
-    @Nullable
-    private <T extends UseCase> T findUseCase(Class<T> useCaseSubclass) {
+    private <T extends UseCase> @Nullable T findUseCase(Class<T> useCaseSubclass) {
         if (mUseCases != null) {
             for (UseCase useCase : mUseCases) {
                 if (useCaseSubclass.isInstance(useCase)) {
@@ -2358,25 +2782,21 @@ public class CameraXActivity extends AppCompatActivity {
     }
 
     @VisibleForTesting
-    @Nullable
-    public Camera getCamera() {
+    public @Nullable Camera getCamera() {
         return mCamera;
     }
 
     @VisibleForTesting
-    @Nullable
-    CameraInfo getCameraInfo() {
+    @Nullable CameraInfo getCameraInfo() {
         return mCamera != null ? mCamera.getCameraInfo() : null;
     }
 
     @VisibleForTesting
-    @Nullable
-    CameraControl getCameraControl() {
+    @Nullable CameraControl getCameraControl() {
         return mCamera != null ? mCamera.getCameraControl() : null;
     }
 
-    @NonNull
-    private static String getQualityIconName(@Nullable Quality quality) {
+    private static @NonNull String getQualityIconName(@Nullable Quality quality) {
         if (quality == QUALITY_AUTO) {
             return "Auto";
         } else if (quality == Quality.UHD) {
@@ -2391,8 +2811,7 @@ public class CameraXActivity extends AppCompatActivity {
         return "?";
     }
 
-    @NonNull
-    private static String getQualityMenuItemName(@Nullable Quality quality) {
+    private static @NonNull String getQualityMenuItemName(@Nullable Quality quality) {
         if (quality == QUALITY_AUTO) {
             return "Auto";
         } else if (quality == Quality.UHD) {
@@ -2423,8 +2842,7 @@ public class CameraXActivity extends AppCompatActivity {
         }
     }
 
-    @Nullable
-    private static Quality itemIdToQuality(int itemId) {
+    private static @Nullable Quality itemIdToQuality(int itemId) {
         switch (itemId) {
             case 0:
                 return QUALITY_AUTO;
@@ -2441,8 +2859,7 @@ public class CameraXActivity extends AppCompatActivity {
         }
     }
 
-    @NonNull
-    private static String getDynamicRangeMenuItemName(@NonNull DynamicRange dynamicRange) {
+    private static @NonNull String getDynamicRangeMenuItemName(@NonNull DynamicRange dynamicRange) {
         String menuItemName = dynamicRange.toString();
         for (DynamicRangeUiData uiData : DYNAMIC_RANGE_UI_DATA) {
             if (Objects.equals(dynamicRange, uiData.mDynamicRange)) {
@@ -2468,12 +2885,73 @@ public class CameraXActivity extends AppCompatActivity {
         return itemId;
     }
 
-    @NonNull
-    private static DynamicRange itemIdToDynamicRange(int itemId) {
+    private static @NonNull DynamicRange itemIdToDynamicRange(int itemId) {
         if (itemId < 0 || itemId >= DYNAMIC_RANGE_UI_DATA.size()) {
             throw new IllegalArgumentException("Undefined item id: " + itemId);
         }
         return DYNAMIC_RANGE_UI_DATA.get(itemId).mDynamicRange;
+    }
+
+    @SuppressLint("RestrictedApiAndroidX")
+    private static @NonNull String getImageOutputFormatIconName(
+            @ImageCapture.OutputFormat int format) {
+        if (format == OUTPUT_FORMAT_JPEG) {
+            return "Jpeg";
+        } else if (format == OUTPUT_FORMAT_JPEG_ULTRA_HDR) {
+            return "Ultra HDR";
+        } else if (format == OUTPUT_FORMAT_RAW) {
+            return "Raw";
+        } else if (format == OUTPUT_FORMAT_RAW_JPEG) {
+            return "Raw + Jpeg";
+        }
+        return "?";
+    }
+
+    @SuppressLint("RestrictedApiAndroidX")
+    private static @NonNull String getImageOutputFormatMenuItemName(
+            @ImageCapture.OutputFormat int format) {
+        if (format == OUTPUT_FORMAT_JPEG) {
+            return "Jpeg";
+        } else if (format == OUTPUT_FORMAT_JPEG_ULTRA_HDR) {
+            return "Ultra HDR";
+        } else if (format == OUTPUT_FORMAT_RAW) {
+            return "Raw";
+        } else if (format == OUTPUT_FORMAT_RAW_JPEG) {
+            return "Raw + Jpeg";
+        }
+        return "Unknown format";
+    }
+
+    @SuppressLint("RestrictedApiAndroidX")
+    private static int imageOutputFormatToItemId(@ImageCapture.OutputFormat int format) {
+        if (format == OUTPUT_FORMAT_JPEG) {
+            return 0;
+        } else if (format == OUTPUT_FORMAT_JPEG_ULTRA_HDR) {
+            return 1;
+        } else if (format == OUTPUT_FORMAT_RAW) {
+            return 2;
+        } else if (format == OUTPUT_FORMAT_RAW_JPEG) {
+            return 3;
+        } else {
+            throw new IllegalArgumentException("Undefined output format: " + format);
+        }
+    }
+
+    @SuppressLint("RestrictedApiAndroidX")
+    @ImageCapture.OutputFormat
+    private static int itemIdToImageOutputFormat(int itemId) {
+        switch (itemId) {
+            case 0:
+                return OUTPUT_FORMAT_JPEG;
+            case 1:
+                return OUTPUT_FORMAT_JPEG_ULTRA_HDR;
+            case 2:
+                return OUTPUT_FORMAT_RAW;
+            case 3:
+                return OUTPUT_FORMAT_RAW_JPEG;
+            default:
+                throw new IllegalArgumentException("Undefined item id: " + itemId);
+        }
     }
 
     private static CameraSelector createCameraSelectorById(@Nullable String cameraId) {
@@ -2505,7 +2983,7 @@ public class CameraXActivity extends AppCompatActivity {
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
     private static int getCamera2LensFacing(@NonNull CameraInfo cameraInfo) {
         Integer lensFacing = Camera2CameraInfo.from(cameraInfo).getCameraCharacteristic(
-                    CameraCharacteristics.LENS_FACING);
+                CameraCharacteristics.LENS_FACING);
 
         return lensFacing == null ? CameraCharacteristics.LENS_FACING_BACK : lensFacing;
     }
@@ -2521,16 +2999,33 @@ public class CameraXActivity extends AppCompatActivity {
         return lensFacing == null ? CameraCharacteristics.LENS_FACING_BACK : lensFacing;
     }
 
+    private static boolean isLegacyDevice(@NonNull CameraInfo cameraInfo) {
+        if (CameraXViewModel.CAMERA_PIPE_IMPLEMENTATION_OPTION.equals(
+                getConfiguredCameraXCameraImplementation())) {
+            return isCameraPipeLegacyDevice(cameraInfo);
+        }
+        return isCamera2LegacyDevice(cameraInfo);
+    }
+
     @SuppressLint("NullAnnotationGroup")
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
-    private static boolean isLegacyDevice(@NonNull CameraInfo cameraInfo) {
+    private static boolean isCamera2LegacyDevice(@NonNull CameraInfo cameraInfo) {
         return Camera2CameraInfo.from(cameraInfo).getCameraCharacteristic(
                 CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
         ) == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY;
     }
 
-    @NonNull
-    private static String getCameraId(@NonNull CameraInfo cameraInfo) {
+    @SuppressLint("NullAnnotationGroup")
+    @OptIn(markerClass =
+            androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop.class)
+    private static boolean isCameraPipeLegacyDevice(@NonNull CameraInfo cameraInfo) {
+        return androidx.camera.camera2.pipe.integration.interop.Camera2CameraInfo.from(cameraInfo)
+                .getCameraCharacteristic(
+                        CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
+                ) == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY;
+    }
+
+    private static @NonNull String getCameraId(@NonNull CameraInfo cameraInfo) {
         try {
             return getCamera2CameraId(cameraInfo);
         } catch (IllegalArgumentException e) {
@@ -2540,16 +3035,14 @@ public class CameraXActivity extends AppCompatActivity {
 
     @SuppressLint("NullAnnotationGroup")
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
-    @NonNull
-    private static String getCamera2CameraId(@NonNull CameraInfo cameraInfo) {
+    private static @NonNull String getCamera2CameraId(@NonNull CameraInfo cameraInfo) {
         return Camera2CameraInfo.from(cameraInfo).getCameraId();
     }
 
     @SuppressLint("NullAnnotationGroup")
     @OptIn(markerClass =
             androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop.class)
-    @NonNull
-    private static String getCameraPipeCameraId(@NonNull CameraInfo cameraInfo) {
+    private static @NonNull String getCameraPipeCameraId(@NonNull CameraInfo cameraInfo) {
         return androidx.camera.camera2.pipe.integration.interop.Camera2CameraInfo.from(
                 cameraInfo).getCameraId();
     }
@@ -2568,13 +3061,13 @@ public class CameraXActivity extends AppCompatActivity {
         String mMenuItemName;
         int mToggleLabelRes;
     }
+
     @RequiresApi(26)
     static class Api26Impl {
         private Api26Impl() {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setColorMode(@NonNull Window window, int colorMode) {
             window.setColorMode(colorMode);
         }

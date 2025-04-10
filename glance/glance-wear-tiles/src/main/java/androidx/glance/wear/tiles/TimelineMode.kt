@@ -24,21 +24,20 @@ import java.time.Instant
  * @param start The start time of the time interval
  * @param end The end time of the time interval
  */
+@Suppress("DataClassDefinition")
 public data class TimeInterval(
     val start: Instant = Instant.ofEpochMilli(0),
     val end: Instant = Instant.ofEpochMilli(Long.MAX_VALUE)
 ) {
     init {
-        require(end > start) {
-            "End time shall come after start time to form a valid interval"
-        }
+        require(end > start) { "End time shall come after start time to form a valid interval" }
     }
 }
 
 public sealed interface TimelineMode {
     /**
-     * The [GlanceTileService] provides a single UI.
-     * The layout is fixed, and only the information inside the layout changes.
+     * The [GlanceTileService] provides a single UI. The layout is fixed, and only the information
+     * inside the layout changes.
      */
     public object SingleEntry : TimelineMode {
         public override fun toString(): String = "TimelineMode: SingleEntry"

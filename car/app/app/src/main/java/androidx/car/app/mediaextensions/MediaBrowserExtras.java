@@ -37,6 +37,17 @@ public final class MediaBrowserExtras {
 
     /**
      * {@link Bundle} key used in the rootHints bundle passed to
+     * {@link androidx.media.MediaBrowserServiceCompat#onGetRoot(String, int, Bundle)}
+     * to indicate the version of the caller. Note that this should only be used for analytics and
+     * is different than {@link #KEY_ROOT_HINT_MEDIA_SESSION_API}.
+     *
+     * <p>TYPE: string - the version info.
+     */
+    public static final String KEY_ROOT_HINT_MEDIA_HOST_VERSION =
+            "androidx.car.app.mediaextensions.KEY_ROOT_HINT_MEDIA_HOST_VERSION";
+
+    /**
+     * {@link Bundle} key used in the rootHints bundle passed to
      * {@link androidx.media.MediaBrowserServiceCompat#onGetRoot(String, int, Bundle)} to indicate
      * which version of the media api is used by the caller
      *
@@ -55,44 +66,6 @@ public final class MediaBrowserExtras {
      */
     public static final String KEY_ROOT_HINT_MAX_QUEUE_ITEMS_WHILE_RESTRICTED =
             "androidx.car.app.mediaextensions.KEY_ROOT_HINT_MAX_QUEUE_ITEMS_WHILE_RESTRICTED";
-
-    /**
-     * {@link Bundle} key used in the options bundle passed to
-     * {@link androidx.media.MediaBrowserServiceCompat#onLoadChildren(String,
-     * MediaBrowserServiceCompat.Result, Bundle)} or to
-     * {@link androidx.media.MediaBrowserServiceCompat#onSearch(String, Bundle,
-     * MediaBrowserServiceCompat.Result)} to indicate the package name reported by the caller.
-     *
-     * <p>TYPE: String - the <b>unverified</b> caller's package name
-     */
-    public static final String KEY_HINT_HOST_PACKAGE_NAME =
-            "androidx.car.app.mediaextensions.KEY_HINT_HOST_PACKAGE_NAME";
-
-    /**
-     * {@link Bundle} key used in the options bundle passed to
-     * {@link androidx.media.MediaBrowserServiceCompat#onLoadChildren(String,
-     * MediaBrowserServiceCompat.Result, Bundle)} or to
-     * {@link androidx.media.MediaBrowserServiceCompat#onSearch(String, Bundle,
-     * MediaBrowserServiceCompat.Result)} to indicate the width of the view that will show the
-     * returned media items.
-     *
-     * <p>TYPE: int - width of the view in pixels
-     */
-    public static final String KEY_HINT_VIEW_WIDTH_PIXELS =
-            "androidx.car.app.mediaextensions.KEY_HINT_VIEW_WIDTH_PIXELS";
-
-    /**
-     * {@link Bundle} key used in the options bundle passed to
-     * {@link androidx.media.MediaBrowserServiceCompat#onLoadChildren(String,
-     * MediaBrowserServiceCompat.Result, Bundle)} or to
-     * {@link androidx.media.MediaBrowserServiceCompat#onSearch(String, Bundle,
-     * MediaBrowserServiceCompat.Result)} to indicate the height of the view that will show the
-     * returned media items.
-     *
-     * <p>TYPE: int - height of the view in pixels
-     */
-    public static final String KEY_HINT_VIEW_HEIGHT_PIXELS =
-            "androidx.car.app.mediaextensions.KEY_HINT_VIEW_HEIGHT_PIXELS";
 
     /**
      * {@link Bundle} key used in the options bundle passed to

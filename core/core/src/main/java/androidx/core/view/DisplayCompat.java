@@ -27,11 +27,11 @@ import android.os.Build;
 import android.text.TextUtils;
 import android.view.Display;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Method;
 
@@ -56,8 +56,7 @@ public final class DisplayCompat {
      * Gets the current display mode of the given display, where the size can be relied on to
      * determine support for 4k on Android TV devices.
      */
-    @NonNull
-    public static ModeCompat getMode(@NonNull Context context, @NonNull Display display) {
+    public static @NonNull ModeCompat getMode(@NonNull Context context, @NonNull Display display) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             return Api23Impl.getMode(context, display);
         }
@@ -66,8 +65,8 @@ public final class DisplayCompat {
         return new ModeCompat(getDisplaySize(context, display));
     }
 
-    @NonNull
-    private static Point getDisplaySize(@NonNull Context context, @NonNull Display display) {
+    private static @NonNull Point getDisplaySize(@NonNull Context context,
+            @NonNull Display display) {
         // If a workaround for the display size is present, use it.
         Point displaySize = getCurrentDisplaySizeFromWorkarounds(context, display);
         if (displaySize != null) {
@@ -75,11 +74,7 @@ public final class DisplayCompat {
         }
 
         displaySize = new Point();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            Api17Impl.getRealSize(display, displaySize);
-        } else {
-            display.getSize(displaySize);
-        }
+        display.getRealSize(displaySize);
         return displaySize;
     }
 
@@ -87,9 +82,8 @@ public final class DisplayCompat {
      * Gets the supported modes of the given display where any mode with the same size as the
      * current mode can be relied on to determine support for 4k on Android TV devices.
      */
-    @NonNull
     @SuppressLint("ArrayReturn")
-    public static ModeCompat[] getSupportedModes(
+    public static ModeCompat @NonNull [] getSupportedModes(
                 @NonNull Context context, @NonNull Display display) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             return Api23Impl.getSupportedModes(context, display);
@@ -127,8 +121,7 @@ public final class DisplayCompat {
      * @param name the name of the system property
      * @return the result string or null if an exception occurred
      */
-    @Nullable
-    private static String getSystemProperty(String name) {
+    private static @Nullable String getSystemProperty(String name) {
         try {
             @SuppressLint("PrivateApi")
             Class<?> systemProperties = Class.forName("android.os.SystemProperties");
@@ -158,9 +151,8 @@ public final class DisplayCompat {
      *
      * @return the physical display size, in pixels or null if the information is not available
      */
-    @Nullable
-    private static Point parsePhysicalDisplaySizeFromSystemProperties(@NonNull String property,
-            @NonNull Display display) {
+    private static @Nullable Point parsePhysicalDisplaySizeFromSystemProperties(
+            @NonNull String property, @NonNull Display display) {
         // System properties are only relevant for the default display.
         if (display.getDisplayId() != Display.DEFAULT_DISPLAY) {
             return null;
@@ -233,8 +225,7 @@ public final class DisplayCompat {
     static class Api23Impl {
         private Api23Impl() {}
 
-        @NonNull
-        static ModeCompat getMode(@NonNull Context context, @NonNull Display display) {
+        static @NonNull ModeCompat getMode(@NonNull Context context, @NonNull Display display) {
             Display.Mode currentMode = display.getMode();
             Point workaroundSize = getCurrentDisplaySizeFromWorkarounds(context, display);
             // If the current mode has the wrong physical size, then correct it with the
@@ -244,9 +235,8 @@ public final class DisplayCompat {
                     : new ModeCompat(currentMode, workaroundSize);
         }
 
-        @NonNull
         @SuppressLint("ArrayReturn")
-        public static ModeCompat[] getSupportedModes(
+        public static ModeCompat @NonNull [] getSupportedModes(
                     @NonNull Context context, @NonNull Display display) {
             Display.Mode[] supportedModes = display.getSupportedModes();
             ModeCompat[] supportedModesCompat = new ModeCompat[supportedModes.length];
@@ -304,15 +294,6 @@ public final class DisplayCompat {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-    static class Api17Impl {
-        private Api17Impl() {}
-
-        static void getRealSize(Display display, Point displaySize) {
-            display.getRealSize(displaySize);
-        }
-    }
-
     /**
      * Compat class which provides access to the underlying display mode, if there is one, and
      * a more reliable display mode size.
@@ -341,7 +322,7 @@ public final class DisplayCompat {
          * @param mode the wrapped Display.Mode object
          */
         @RequiresApi(Build.VERSION_CODES.M)
-        ModeCompat(@NonNull Display.Mode mode, boolean isNative) {
+        ModeCompat(Display.@NonNull Mode mode, boolean isNative) {
             Preconditions.checkNotNull(mode, "mode == null, can't wrap a null reference");
             // This simplifies the getPhysicalWidth() / getPhysicalHeight functions below
             mPhysicalSize = new Point(Api23Impl.getPhysicalWidth(mode),
@@ -359,7 +340,7 @@ public final class DisplayCompat {
          *
          */
         @RequiresApi(Build.VERSION_CODES.M)
-        ModeCompat(@NonNull Display.Mode mode, @NonNull Point physicalSize) {
+        ModeCompat(Display.@NonNull Mode mode, @NonNull Point physicalSize) {
             Preconditions.checkNotNull(mode, "mode == null, can't wrap a null reference");
             Preconditions.checkNotNull(physicalSize, "physicalSize == null");
             mPhysicalSize = physicalSize;
@@ -399,8 +380,7 @@ public final class DisplayCompat {
          * Returns the wrapped object Display.Mode, which may be null if no mode is available.
          */
         @RequiresApi(Build.VERSION_CODES.M)
-        @Nullable
-        public Display.Mode toMode() {
+        public Display.@Nullable Mode toMode() {
             return mMode;
         }
 
@@ -410,12 +390,10 @@ public final class DisplayCompat {
                 // This class is not instantiable.
             }
 
-            @DoNotInline
             static int getPhysicalWidth(Display.Mode mode) {
                 return mode.getPhysicalWidth();
             }
 
-            @DoNotInline
             static int getPhysicalHeight(Display.Mode mode) {
                 return mode.getPhysicalHeight();
             }

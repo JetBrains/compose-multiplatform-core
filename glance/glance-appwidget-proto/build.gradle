@@ -14,48 +14,43 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
-import androidx.build.RunApiTasks
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
+    id("AndroidXRepackagePlugin")
     id("kotlin")
     id("com.google.protobuf")
 }
 
+repackage {
+    // Must match what is in glance/glance-appwidget-external-protobuf/build.gradle
+    addRelocation {
+        sourcePackage = "com.google.protobuf"
+        targetPackage = "androidx.glance.appwidget.protobuf"
+    }
+}
+
 dependencies {
-    implementation(libs.protobufLite)
+    api(project(":glance:glance-appwidget-external-protobuf"))
+    // Must be compileOnly to not bring in protobufLite in runtime
+    // Repackaged protobufLite brought in by
+    // project(":glance:glance-appwidget-external-protobuf") and used at runtime
+    compileOnly(libs.protobufLite)
     compileOnly(libs.kotlinStdlib)
     compileOnly("androidx.datastore:datastore-core:1.0.0")
 }
 
-protobuf {
-    protoc {
-        artifact = libs.protobufCompiler.get()
-    }
-    generateProtoTasks {
-        all().each { task ->
-            task.builtins {
-                java {
-                    option "lite"
-                }
-            }
-        }
-    }
-}
-
-afterEvaluate {
-    lint {
-        lintOptions {
-            // protobuf generates unannotated methods
-            disable("UnknownNullness")
-        }
-    }
-}
-
 androidx {
     name = "Glance AppWidget Protos"
-    publish = Publish.NONE
+    type = SoftwareType.PUBLISHED_PROTO_LIBRARY
     inceptionYear = "2021"
     description = "Protos for use with glance app widgets."
 }

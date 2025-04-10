@@ -22,13 +22,15 @@ import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.RestrictTo;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.processing.Operation;
 import androidx.camera.core.processing.Packet;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.ByteArrayOutputStream;
 
@@ -37,19 +39,18 @@ import java.io.ByteArrayOutputStream;
  *
  * <p>The {@link Bitmap} will be recycled and should not be used after the processing.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-class Bitmap2JpegBytes implements Operation<Bitmap2JpegBytes.In, Packet<byte[]>> {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class Bitmap2JpegBytes implements Operation<Bitmap2JpegBytes.In, Packet<byte[]>> {
 
-    @NonNull
     @Override
-    public Packet<byte[]> apply(@NonNull In in) throws ImageCaptureException {
+    public @NonNull Packet<byte[]> apply(@NonNull In in) throws ImageCaptureException {
         Packet<Bitmap> packet = in.getPacket();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         packet.getData().compress(Bitmap.CompressFormat.JPEG, in.getJpegQuality(), outputStream);
         //packet.getData().recycle();
         return Packet.of(outputStream.toByteArray(),
                 requireNonNull(packet.getExif()),
-                ImageFormat.JPEG,
+                getOutputFormat(packet.getData()),
                 packet.getSize(),
                 packet.getCropRect(),
                 packet.getRotationDegrees(),
@@ -57,20 +58,38 @@ class Bitmap2JpegBytes implements Operation<Bitmap2JpegBytes.In, Packet<byte[]>>
                 packet.getCameraCaptureResult());
     }
 
+    private static int getOutputFormat(@NonNull Bitmap bitmap) {
+        if (Build.VERSION.SDK_INT >= 34 && Api34Impl.hasGainmap(bitmap)) {
+            return ImageFormat.JPEG_R;
+        } else {
+            return ImageFormat.JPEG;
+        }
+    }
+
+    @RequiresApi(34)
+    private static class Api34Impl {
+        static boolean hasGainmap(@NonNull Bitmap bitmap) {
+            return bitmap.hasGainmap();
+        }
+
+        // This class is not instantiable.
+        private Api34Impl() {
+        }
+    }
+
     /**
      * Input of {@link Bitmap2JpegBytes} processor.
      */
     @AutoValue
-    abstract static class In {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public abstract static class In {
 
         abstract Packet<Bitmap> getPacket();
 
         abstract int getJpegQuality();
 
-        @NonNull
-        static In of(@NonNull Packet<Bitmap> imagePacket, int jpegQuality) {
+        public static @NonNull In of(@NonNull Packet<Bitmap> imagePacket, int jpegQuality) {
             return new AutoValue_Bitmap2JpegBytes_In(imagePacket, jpegQuality);
         }
     }
 }
-

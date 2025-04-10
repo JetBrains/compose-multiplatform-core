@@ -21,90 +21,177 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
+import androidx.credentials.ClearCredentialStateRequest.Companion.TYPE_CLEAR_RESTORE_CREDENTIAL
+import androidx.credentials.internal.FormFactorHelper
 
-/**
- * Factory that returns the credential provider to be used by Credential Manager.
- */
-internal class CredentialProviderFactory {
+/** Factory that returns the credential provider to be used by Credential Manager. */
+@OptIn(ExperimentalDigitalCredentialApi::class)
+internal class CredentialProviderFactory(val context: Context) {
+
+    @set:VisibleForTesting
+    @get:VisibleForTesting
+    @set:RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    var testMode = false
+
+    @set:VisibleForTesting
+    @get:VisibleForTesting
+    @set:RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    var testPostUProvider: CredentialProvider? = null
+
+    @set:VisibleForTesting
+    @get:VisibleForTesting
+    @set:RestrictTo(RestrictTo.Scope.LIBRARY)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    var testPreUProvider: CredentialProvider? = null
+
     companion object {
         private const val TAG = "CredProviderFactory"
         private const val MAX_CRED_MAN_PRE_FRAMEWORK_API_LEVEL = Build.VERSION_CODES.TIRAMISU
 
-        /** The metadata key to be used when specifying the provider class name in the
-         * android manifest file. */
-        private const val CREDENTIAL_PROVIDER_KEY = "androidx.credentials.CREDENTIAL_PROVIDER_KEY"
-
         /**
-         * Returns the best available provider.
-         * Pre-U, the provider is determined by the provider library that the developer includes in
-         * the app. Developer must not add more than one provider library.
-         * Post-U, providers will be registered with the framework, and enabled by the user.
+         * The metadata key to be used when specifying the provider class name in the android
+         * manifest file.
          */
-        fun getBestAvailableProvider(context: Context): CredentialProvider? {
-            return if (Build.VERSION.SDK_INT >= 34) { // Android U
-                CredentialProviderFrameworkImpl(context)
-            } else if (Build.VERSION.SDK_INT <= MAX_CRED_MAN_PRE_FRAMEWORK_API_LEVEL) {
-                tryCreatePreUOemProvider(context)
-            } else {
-                null
-            }
-        }
+        private const val CREDENTIAL_PROVIDER_KEY = "androidx.credentials.CREDENTIAL_PROVIDER_KEY"
+    }
 
-        @RequiresApi(34)
-        fun getUAndAboveProvider(context: Context): CredentialProvider {
-            return CredentialProviderFrameworkImpl(context)
-        }
-
-        private fun tryCreatePreUOemProvider(context: Context): CredentialProvider? {
-            val classNames = getAllowedProvidersFromManifest(context)
-            if (classNames.isEmpty()) {
-                return null
-            } else {
-                return instantiatePreUProvider(classNames, context)
-            }
-        }
-
-        private fun instantiatePreUProvider(classNames: List<String>, context: Context):
-            CredentialProvider? {
-            var provider: CredentialProvider? = null
-            for (className in classNames) {
-                try {
-                    val klass = Class.forName(className)
-                    val p = klass.getConstructor(Context::class.java).newInstance(context) as
-                        CredentialProvider
-                    if (p.isAvailableOnDevice()) {
-                        if (provider != null) {
-                            Log.i(TAG, "Only one active OEM CredentialProvider allowed")
-                            return null
-                        }
-                        provider = p
-                    }
-                } catch (_: Throwable) {
+    /**
+     * Returns the best available provider. The best available provider is determined by the
+     * provided [request]. If the provided request is for the use-case of [RestoreCredential], then
+     * the pre-U provider is used. If not, then the provider is determined by the API level.
+     *
+     * @param request is a credential request of either [CreateRestoreCredentialRequest],
+     *   [TYPE_CLEAR_RESTORE_CREDENTIAL], or [GetCredentialRequest] that can determine
+     *   [CredentialProvider] type.
+     * @return the best available provider, or null if no provider is available.
+     */
+    fun getBestAvailableProvider(
+        request: Any,
+        shouldFallbackToPreU: Boolean = true
+    ): CredentialProvider? {
+        if (request is CreateRestoreCredentialRequest || request == TYPE_CLEAR_RESTORE_CREDENTIAL) {
+            return tryCreateClosedSourceProviderFromManifest()
+        } else if (request is GetCredentialRequest) {
+            for (option in request.credentialOptions) {
+                if (option is GetRestoreCredentialOption || option is GetDigitalCredentialOption) {
+                    return tryCreateClosedSourceProviderFromManifest()
                 }
             }
+        } else if (request is CreatePublicKeyCredentialRequest && request.isConditional) {
+            return tryCreateClosedSourceProviderFromManifest()
+        }
+        return getBestAvailableProvider(shouldFallbackToPreU)
+    }
+
+    /**
+     * Returns the best available provider. Pre-U, the provider is determined by the provider
+     * library that the developer includes in the app. Developer must not add more than one provider
+     * library. Post-U, providers will be registered with the framework, and enabled by the user.
+     */
+    fun getBestAvailableProvider(shouldFallbackToPreU: Boolean = true): CredentialProvider? {
+        if (FormFactorHelper.isTV(context) || FormFactorHelper.isAuto(context)) {
+            return tryCreateClosedSourceProviderFromManifest()
+        }
+
+        if (Build.VERSION.SDK_INT >= 34) { // Android U
+            val postUProvider = tryCreatePostUProvider()
+            if (postUProvider == null && shouldFallbackToPreU) {
+                return tryCreateClosedSourceProviderFromManifest()
+            }
+            return postUProvider
+        } else if (Build.VERSION.SDK_INT <= MAX_CRED_MAN_PRE_FRAMEWORK_API_LEVEL) {
+            return tryCreateClosedSourceProviderFromManifest()
+        } else {
+            return null
+        }
+    }
+
+    private fun tryCreateClosedSourceProviderFromManifest(): CredentialProvider? {
+        if (testMode) {
+            if (testPreUProvider == null) {
+                return null
+            }
+            val isAvailable = testPreUProvider!!.isAvailableOnDevice()
+            if (isAvailable) {
+                return testPreUProvider
+            }
+            return null
+        }
+
+        val classNames = getAllowedProvidersFromManifest(context)
+        return if (classNames.isEmpty()) {
+            null
+        } else {
+            instantiatePreUProvider(classNames, context)
+        }
+    }
+
+    @RequiresApi(34)
+    private fun tryCreatePostUProvider(): CredentialProvider? {
+        if (testMode) {
+            if (testPostUProvider == null) {
+                return null
+            }
+            val isAvailable = testPostUProvider!!.isAvailableOnDevice()
+            if (isAvailable) {
+                return testPostUProvider
+            }
+            return null
+        }
+
+        val provider = CredentialProviderFrameworkImpl(context)
+        if (provider.isAvailableOnDevice()) {
             return provider
         }
+        return null
+    }
 
-        @Suppress("deprecation")
-        private fun getAllowedProvidersFromManifest(context: Context): List<String> {
-            val packageInfo = context.packageManager
-                .getPackageInfo(
-                    context.packageName, PackageManager.GET_META_DATA or
-                        PackageManager.GET_SERVICES
-                )
+    private fun instantiatePreUProvider(
+        classNames: List<String>,
+        context: Context
+    ): CredentialProvider? {
+        var provider: CredentialProvider? = null
+        for (className in classNames) {
+            try {
+                val klass = Class.forName(className)
+                val p =
+                    klass.getConstructor(Context::class.java).newInstance(context)
+                        as CredentialProvider
+                if (p.isAvailableOnDevice()) {
+                    if (provider != null) {
+                        Log.i(TAG, "Only one active OEM CredentialProvider allowed")
+                        return null
+                    }
+                    provider = p
+                }
+            } catch (_: Throwable) {}
+        }
+        return provider
+    }
 
-            val classNames = mutableListOf<String>()
-            if (packageInfo.services != null) {
-                for (serviceInfo in packageInfo.services) {
-                    if (serviceInfo.metaData != null) {
-                        val className = serviceInfo.metaData.getString(CREDENTIAL_PROVIDER_KEY)
-                        if (className != null) {
-                            classNames.add(className)
-                        }
+    @Suppress("deprecation")
+    private fun getAllowedProvidersFromManifest(context: Context): List<String> {
+        val packageInfo =
+            context.packageManager.getPackageInfo(
+                context.packageName,
+                PackageManager.GET_META_DATA or PackageManager.GET_SERVICES
+            )
+
+        val classNames = mutableListOf<String>()
+        if (packageInfo.services != null) {
+            for (serviceInfo in packageInfo.services!!) {
+                if (serviceInfo.metaData != null) {
+                    val className = serviceInfo.metaData.getString(CREDENTIAL_PROVIDER_KEY)
+                    if (className != null) {
+                        classNames.add(className)
                     }
                 }
             }
-            return classNames.toList()
         }
+        return classNames.toList()
     }
 }

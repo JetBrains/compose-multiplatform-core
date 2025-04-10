@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.compose.foundation.text.selection.gestures
 
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.internal.readText
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +28,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.Handle
+import androidx.compose.foundation.text.contextmenu.internal.ProvidePlatformTextContextMenuToolbar
+import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
+import androidx.compose.foundation.text.contextmenu.test.SpyTextActionModeCallback
 import androidx.compose.foundation.text.selection.Selection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.selection.SelectionHandleInfoKey
@@ -34,6 +42,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.testutils.TestViewConfiguration
 import androidx.compose.ui.Alignment
@@ -41,7 +50,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.LocalViewConfiguration
@@ -63,16 +74,21 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Subject
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(ContextMenuFlagFlipperRunner::class)
 class LazyColumnMultiTextRegressionTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
     private val stateRestorationTester = StateRestorationTester(rule)
     private val textCount = 20
 
@@ -155,6 +171,7 @@ class LazyColumnMultiTextRegressionTest {
         updateHandlePositions()
     }
 
+    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun whenScrollingTextOutOfViewUpwards_textToolbarCoercedToTop() = runTest {
         assertThat(textToolbarShown).isFalse()
@@ -168,7 +185,7 @@ class LazyColumnMultiTextRegressionTest {
         assertTextToolbarTopAt(pointerAreaRect.top)
 
         scrollLines(fromLine = 5, toLine = 3)
-        assertThat(textToolbarShown).isFalse()
+        assertTextToolbarTopAt(pointerAreaRect.top)
 
         scrollLines(fromLine = 5, toLine = 7)
         assertThat(textToolbarShown).isTrue()
@@ -191,19 +208,37 @@ class LazyColumnMultiTextRegressionTest {
         assertSelection().isNull()
     }
 
+    @Suppress("DEPRECATION")
     private inner class TestScope(
         private val pointerAreaTag: String,
         private val selectionState: MutableState<Selection?>,
         private val clipboardManager: ClipboardManager,
+        private val clipboard: Clipboard,
         private val textToolbar: TextToolbarWrapper,
+        private val coroutineScope: CoroutineScope,
+        private val spyTextActionModeCallback: SpyTextActionModeCallback,
     ) {
         val initialText = "Initial text"
-        val selection: Selection? get() = Snapshot.withoutReadObservation { selectionState.value }
-        val textToolbarRect: Rect? get() = textToolbar.mostRecentRect
-        val textToolbarShown: Boolean get() = textToolbar.shown
+        val selection: Selection?
+            get() = Snapshot.withoutReadObservation { selectionState.value }
 
-        val startHandlePosition get() = handlePosition(Handle.SelectionStart)
-        val endHandlePosition get() = handlePosition(Handle.SelectionEnd)
+        val textToolbarRect: Rect?
+            get() = textToolbar.mostRecentRect
+
+        @OptIn(ExperimentalFoundationApi::class)
+        val textToolbarShown: Boolean
+            get() =
+                if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+                    spyTextActionModeCallback.menu != null
+                } else {
+                    textToolbar.shown
+                }
+
+        val startHandlePosition
+            get() = handlePosition(Handle.SelectionStart)
+
+        val endHandlePosition
+            get() = handlePosition(Handle.SelectionEnd)
 
         fun createSelection(startLine: Int, endLine: Int) {
             performTouchInput {
@@ -214,9 +249,7 @@ class LazyColumnMultiTextRegressionTest {
         }
 
         fun createSelection(line: Int) {
-            performTouchInput {
-                longClick(positionForLineInPointerArea(line))
-            }
+            performTouchInput { longClick(positionForLineInPointerArea(line)) }
         }
 
         private fun performTouchInput(block: TouchInjectionScope.() -> Unit) {
@@ -225,8 +258,8 @@ class LazyColumnMultiTextRegressionTest {
         }
 
         fun boundingBoxForLineInPointerArea(lineNumber: Int): Rect {
-            val containerPosition = rule.onNodeWithTag(pointerAreaTag).fetchSemanticsNode()
-                .positionInRoot
+            val containerPosition =
+                rule.onNodeWithTag(pointerAreaTag).fetchSemanticsNode().positionInRoot
             return boundingBoxForLineInRoot(lineNumber).translate(-containerPosition)
         }
 
@@ -237,18 +270,19 @@ class LazyColumnMultiTextRegressionTest {
             val lineStart = textLayoutResult.getLineStart(0)
             val lineEnd = textLayoutResult.getLineEnd(0)
 
-            val rect = if (lineStart == lineEnd - 1) {
-                textLayoutResult.getBoundingBox(lineStart)
-            } else {
-                val startRect = textLayoutResult.getBoundingBox(lineStart)
-                val endRect = textLayoutResult.getBoundingBox(lineEnd - 1)
-                Rect(
-                    left = minOf(startRect.left, endRect.left),
-                    top = minOf(startRect.top, endRect.top),
-                    right = maxOf(startRect.right, endRect.right),
-                    bottom = maxOf(startRect.bottom, endRect.bottom),
-                )
-            }
+            val rect =
+                if (lineStart == lineEnd - 1) {
+                    textLayoutResult.getBoundingBox(lineStart)
+                } else {
+                    val startRect = textLayoutResult.getBoundingBox(lineStart)
+                    val endRect = textLayoutResult.getBoundingBox(lineEnd - 1)
+                    Rect(
+                        left = minOf(startRect.left, endRect.left),
+                        top = minOf(startRect.top, endRect.top),
+                        right = maxOf(startRect.right, endRect.right),
+                        bottom = maxOf(startRect.bottom, endRect.bottom),
+                    )
+                }
 
             return rect.translate(textPosition)
         }
@@ -279,21 +313,36 @@ class LazyColumnMultiTextRegressionTest {
             assertWithMessage("""Clipboard set to incorrect content: "$actualClipboardText".""")
                 .that(actualClipboardText)
                 .isEqualTo(text)
+
+            var actualSuspendClipboardText: String? = null
+            rule.waitUntil {
+                coroutineScope
+                    .launch(start = CoroutineStart.UNDISPATCHED) {
+                        actualSuspendClipboardText = clipboard.getClipEntry()?.readText()
+                    }
+                    .isCompleted
+            }
+
+            assertWithMessage("Clipboard contents was not changed.")
+                .that(actualSuspendClipboardText)
+                .isNotEqualTo(initialText)
+            assertWithMessage(
+                    """Clipboard set to incorrect content: "$actualSuspendClipboardText"."""
+                )
+                .that(actualSuspendClipboardText)
+                .isEqualTo(text)
+
             resetClipboard()
         }
 
         fun assertSelection(): Subject = assertThat(selection)
 
         fun scrollDown() {
-            performTouchInput {
-                swipe(bottomCenter - Offset(0f, 1f), topCenter + Offset(0f, 1f))
-            }
+            performTouchInput { swipe(bottomCenter - Offset(0f, 1f), topCenter + Offset(0f, 1f)) }
         }
 
         fun scrollUp() {
-            performTouchInput {
-                swipe(topCenter + Offset(0f, 1f), bottomCenter - Offset(0f, 1f))
-            }
+            performTouchInput { swipe(topCenter + Offset(0f, 1f), bottomCenter - Offset(0f, 1f)) }
         }
 
         fun scrollLines(fromLine: Int, toLine: Int) {
@@ -322,77 +371,81 @@ class LazyColumnMultiTextRegressionTest {
             val (x, y) = current!!
             val (prevX, prevY) = previous!!
 
-            assertWithMessage("x should not change")
-                .that(x)
-                .isWithin(0.1f)
-                .of(prevX)
+            assertWithMessage("x should not change").that(x).isWithin(0.1f).of(prevX)
 
-            assertWithMessage("y should have moved ${if (up) "up" else "down"}")
-                .that(y)
-                .run {
-                    if (up) isLessThan(prevY) else isGreaterThan(prevY)
-                }
+            assertWithMessage("y should have moved ${if (up) "up" else "down"}").that(y).run {
+                if (up) isLessThan(prevY) else isGreaterThan(prevY)
+            }
         }
 
         private fun handlePosition(handle: Handle): Offset? =
-            rule.onAllNodes(isSelectionHandle(handle))
+            rule
+                .onAllNodes(isSelectionHandle(handle))
                 .fetchSemanticsNodes()
                 .singleOrNull()
                 ?.config
                 ?.get(SelectionHandleInfoKey)
                 ?.position
 
+        @OptIn(ExperimentalFoundationApi::class)
         fun assertTextToolbarTopAt(y: Float) {
-            assertThat(textToolbarRect?.top)
-                .isWithin(0.1f)
-                .of(y)
+            val top =
+                if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+                    spyTextActionModeCallback.contentRect?.top
+                } else {
+                    textToolbarRect?.top
+                }
+            assertThat(top).isWithin(0.1f).of(y)
         }
 
         val pointerAreaRect: Rect
             get() = rule.onNodeWithTag(pointerAreaTag).fetchSemanticsNode().boundsInRoot
     }
 
+    @Suppress("DEPRECATION")
     private fun runTest(block: TestScope.() -> Unit) {
         val tag = "tag"
         val selection = mutableStateOf<Selection?>(null)
-        val testViewConfiguration = TestViewConfiguration(
-            minimumTouchTargetSize = DpSize.Zero
-        )
+        val testViewConfiguration = TestViewConfiguration(minimumTouchTargetSize = DpSize.Zero)
+        val spyTextActionModeCallback = SpyTextActionModeCallback()
         lateinit var clipboardManager: ClipboardManager
+        lateinit var clipboard: Clipboard
         lateinit var textToolbar: TextToolbarWrapper
+        lateinit var coroutineScope: CoroutineScope
         stateRestorationTester.setContent {
             clipboardManager = LocalClipboardManager.current
+            clipboard = LocalClipboard.current
             val originalTextToolbar = LocalTextToolbar.current
-            textToolbar = remember(originalTextToolbar) {
-                TextToolbarWrapper(originalTextToolbar)
-            }
-            CompositionLocalProvider(
-                LocalTextToolbar provides textToolbar,
-                LocalViewConfiguration provides testViewConfiguration,
+            textToolbar = remember(originalTextToolbar) { TextToolbarWrapper(originalTextToolbar) }
+            coroutineScope = rememberCoroutineScope()
+            ProvidePlatformTextContextMenuToolbar(
+                callbackInjector = { spyTextActionModeCallback.apply { delegate = it } }
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
+                CompositionLocalProvider(
+                    LocalTextToolbar provides textToolbar,
+                    LocalViewConfiguration provides testViewConfiguration,
                 ) {
-                    SelectionContainer(
-                        modifier = Modifier.height(100.dp),
-                        selection = selection.value,
-                        onSelectionChange = { selection.value = it },
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        LazyColumn(
-                            modifier = Modifier.testTag(tag)
+                        SelectionContainer(
+                            modifier = Modifier.height(100.dp),
+                            selection = selection.value,
+                            onSelectionChange = { selection.value = it },
                         ) {
-                            items(count = textCount) {
-                                BasicText(
-                                    text = it.toString(),
-                                    style = TextStyle(
-                                        fontSize = 15.sp,
-                                        textAlign = TextAlign.Center
-                                    ),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .testTag(it.toString())
-                                )
+                            LazyColumn(modifier = Modifier.testTag(tag)) {
+                                items(count = textCount) {
+                                    BasicText(
+                                        text = it.toString(),
+                                        style =
+                                            TextStyle(
+                                                fontSize = 15.sp,
+                                                textAlign = TextAlign.Center
+                                            ),
+                                        modifier = Modifier.fillMaxWidth().testTag(it.toString())
+                                    )
+                                }
                             }
                         }
                     }
@@ -400,7 +453,16 @@ class LazyColumnMultiTextRegressionTest {
             }
         }
 
-        val scope = TestScope(tag, selection, clipboardManager, textToolbar)
+        val scope =
+            TestScope(
+                tag,
+                selection,
+                clipboardManager,
+                clipboard,
+                textToolbar,
+                coroutineScope,
+                spyTextActionModeCallback
+            )
         scope.resetClipboard()
         scope.block()
     }
@@ -408,10 +470,32 @@ class LazyColumnMultiTextRegressionTest {
 
 private class TextToolbarWrapper(private val delegate: TextToolbar) : TextToolbar {
     private var _shown: Boolean = false
-    val shown: Boolean get() = _shown
+    val shown: Boolean
+        get() = _shown
 
     private var _mostRecentRect: Rect? = null
-    val mostRecentRect: Rect? get() = _mostRecentRect
+    val mostRecentRect: Rect?
+        get() = _mostRecentRect
+
+    override fun showMenu(
+        rect: Rect,
+        onCopyRequested: (() -> Unit)?,
+        onPasteRequested: (() -> Unit)?,
+        onCutRequested: (() -> Unit)?,
+        onSelectAllRequested: (() -> Unit)?,
+        onAutofillRequested: (() -> Unit)?
+    ) {
+        _shown = true
+        _mostRecentRect = rect
+        delegate.showMenu(
+            rect,
+            onCopyRequested,
+            onPasteRequested,
+            onCutRequested,
+            onSelectAllRequested,
+            onAutofillRequested
+        )
+    }
 
     override fun showMenu(
         rect: Rect,

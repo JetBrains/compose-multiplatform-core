@@ -24,9 +24,10 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.os.Build;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.ApiCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,7 +41,6 @@ import java.util.Map;
  * <p>Note this class is not thread-safe and its methods should only be invoked from the single
  * thread.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 class CameraBurstCaptureCallback extends CameraCaptureSession.CaptureCallback {
 
     final Map<CaptureRequest, List<CameraCaptureSession.CaptureCallback>> mCallbackMap;
@@ -78,9 +78,8 @@ class CameraBurstCaptureCallback extends CameraCaptureSession.CaptureCallback {
 
     @Override
     public void onCaptureProgressed(
-            @NonNull  CameraCaptureSession session,
-            @NonNull CaptureRequest request, @NonNull
-            CaptureResult partialResult) {
+             @NonNull CameraCaptureSession session,
+            @NonNull CaptureRequest request,             @NonNull CaptureResult partialResult) {
         for (CameraCaptureSession.CaptureCallback callback : getCallbacks(request)) {
             callback.onCaptureProgressed(session, request, partialResult);
         }

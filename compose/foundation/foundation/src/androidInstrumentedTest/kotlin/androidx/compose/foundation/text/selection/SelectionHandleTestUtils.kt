@@ -22,6 +22,7 @@ import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.geometry.isUnspecified
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.TouchInjectionScope
@@ -49,27 +50,21 @@ internal fun isSelectionHandle(handle: Handle? = null) =
  * the handle's _anchor_, not the position of the popup itself. E.g. for a cursor handle this is the
  * position of the bottom of the cursor, which will be in the center of the popup.
  */
-internal fun SemanticsNodeInteraction.assertHandlePositionMatches(
-    expectedX: Dp,
-    expectedY: Dp
-) {
+internal fun SemanticsNodeInteraction.assertHandlePositionMatches(expectedX: Dp, expectedY: Dp) {
     val node = fetchSemanticsNode()
     with(node.layoutInfo.density) {
         val positionFound = node.getSelectionHandleInfo().position
         val positionFoundX = positionFound.x.toDp()
         val positionFoundY = positionFound.y.toDp()
-        val message = "Expected position ($expectedX, $expectedY), " +
-            "but found ($positionFoundX, $positionFoundY)"
-        assertWithMessage(message).that(positionFoundX.value)
-            .isWithin(5f).of(expectedX.value)
-        assertWithMessage(message).that(positionFoundY.value)
-            .isWithin(5f).of(expectedY.value)
+        val message =
+            "Expected position ($expectedX, $expectedY), " +
+                "but found ($positionFoundX, $positionFoundY)"
+        assertWithMessage(message).that(positionFoundX.value).isWithin(5f).of(expectedX.value)
+        assertWithMessage(message).that(positionFoundY.value).isWithin(5f).of(expectedY.value)
     }
 }
 
-internal fun SemanticsNodeInteraction.assertHandleAnchorMatches(
-    anchor: SelectionHandleAnchor
-) {
+internal fun SemanticsNodeInteraction.assertHandleAnchorMatches(anchor: SelectionHandleAnchor) {
     val actualAnchor = fetchSemanticsNode().getSelectionHandleInfo().anchor
     val message = "Expected anchor ($anchor), but found ($actualAnchor)"
     assertWithMessage(message).that(actualAnchor).isEqualTo(anchor)
@@ -81,12 +76,14 @@ internal fun SemanticsNode.getSelectionHandleInfo(): SelectionHandleInfo {
     return config[SelectionHandleInfoKey]
 }
 
+@OptIn(ExperimentalTestApi::class)
 internal fun ComposeTestRule.withHandlePressed(
     handle: Handle,
     block: HandlePressedScope.() -> Unit
 ) {
-    onNode(isSelectionHandle(handle)).run {
-        assertExists()
+    val matcher = isSelectionHandle(handle)
+    onNode(matcher).run {
+        waitUntilExactlyOneExists(matcher)
         performTouchInput { down(center) }
         HandlePressedScope(this@withHandlePressed, this@run).block()
         performTouchInput { up() }

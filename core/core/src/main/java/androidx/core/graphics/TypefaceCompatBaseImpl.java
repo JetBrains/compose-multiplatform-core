@@ -25,17 +25,20 @@ import android.graphics.Typeface;
 import android.os.CancellationSignal;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.res.FontResourcesParserCompat.FontFamilyFilesResourceEntry;
 import androidx.core.content.res.FontResourcesParserCompat.FontFileResourceEntry;
 import androidx.core.provider.FontsContractCompat.FontInfo;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.util.List;
 
 /**
  * Implementation of the Typeface compat methods for API 14 and above.
@@ -54,6 +57,7 @@ class TypefaceCompatBaseImpl {
 
     private interface StyleExtractor<T> {
         int getWeight(T t);
+
         boolean isItalic(T t);
     }
 
@@ -80,7 +84,7 @@ class TypefaceCompatBaseImpl {
         return best;
     }
 
-    private static long getUniqueKey(@Nullable final Typeface typeface) {
+    private static long getUniqueKey(final @Nullable Typeface typeface) {
         if (typeface == null) {
             return INVALID_KEY;
         }
@@ -134,9 +138,9 @@ class TypefaceCompatBaseImpl {
         }
     }
 
-    @Nullable
-    public Typeface createFromFontInfo(Context context,
-            @Nullable CancellationSignal cancellationSignal, @NonNull FontInfo[] fonts, int style) {
+    public @Nullable Typeface createFromFontInfo(Context context,
+            @Nullable CancellationSignal cancellationSignal, FontInfo @NonNull [] fonts,
+            int style) {
         // When we load from file, we can only load one font so just take the first one.
         if (fonts.length < 1) {
             return null;
@@ -151,6 +155,14 @@ class TypefaceCompatBaseImpl {
         } finally {
             TypefaceCompatUtil.closeQuietly(is);
         }
+    }
+
+    @RequiresApi(29)
+    public @Nullable Typeface createFromFontInfoWithFallback(@NonNull Context context,
+            @Nullable CancellationSignal cancellationSignal,
+            @NonNull List<FontInfo[]> fonts, int style) {
+        throw new IllegalStateException(
+                "createFromFontInfoWithFallback must only be called on API 29+");
     }
 
     private FontFileResourceEntry findBestEntry(FontFamilyFilesResourceEntry entry, int style) {
@@ -183,8 +195,7 @@ class TypefaceCompatBaseImpl {
                 });
     }
 
-    @Nullable
-    public Typeface createFromFontFamilyFilesResourceEntry(Context context,
+    public @Nullable Typeface createFromFontFamilyFilesResourceEntry(Context context,
             FontFamilyFilesResourceEntry entry, Resources resources, int style) {
         FontFileResourceEntry best = findBestEntry(entry, style);
         if (best == null) {
@@ -198,8 +209,7 @@ class TypefaceCompatBaseImpl {
         return typeface;
     }
 
-    @Nullable
-    Typeface createFromFontFamilyFilesResourceEntry(Context context,
+    @Nullable Typeface createFromFontFamilyFilesResourceEntry(Context context,
             FontFamilyFilesResourceEntry entry, Resources resources, int weight, boolean italic) {
         FontFileResourceEntry best = findBestEntry(entry, weight, italic);
         if (best == null) {
@@ -216,8 +226,7 @@ class TypefaceCompatBaseImpl {
     /**
      * Used by Resources to load a font resource of type font file.
      */
-    @Nullable
-    public Typeface createFromResourcesFontFile(
+    public @Nullable Typeface createFromResourcesFontFile(
             Context context, Resources resources, int id, String path, int style) {
         final File tmpFile = TypefaceCompatUtil.getTempFile(context);
         if (tmpFile == null) {
@@ -238,8 +247,7 @@ class TypefaceCompatBaseImpl {
         }
     }
 
-    @NonNull
-    Typeface createWeightStyle(@NonNull Context context, @NonNull Typeface base,
+    @NonNull Typeface createWeightStyle(@NonNull Context context, @NonNull Typeface base,
             int weight, boolean italic) {
         Typeface out = null;
         try {
@@ -256,8 +264,7 @@ class TypefaceCompatBaseImpl {
     /**
      * Retrieves the font family resource entries given a unique identifier for a Typeface
      */
-    @Nullable
-    FontFamilyFilesResourceEntry getFontFamily(final Typeface typeface) {
+    @Nullable FontFamilyFilesResourceEntry getFontFamily(final Typeface typeface) {
         final long key = getUniqueKey(typeface);
         if (key == INVALID_KEY) {
             return null;

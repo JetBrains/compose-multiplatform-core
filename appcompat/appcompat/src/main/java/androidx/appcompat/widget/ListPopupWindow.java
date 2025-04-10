@@ -45,16 +45,15 @@ import android.widget.ListView;
 import android.widget.PopupWindow;
 
 import androidx.annotation.AttrRes;
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StyleRes;
 import androidx.appcompat.R;
 import androidx.appcompat.view.menu.ShowableListMenu;
-import androidx.core.view.ViewCompat;
 import androidx.core.widget.PopupWindowCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Method;
 
@@ -523,8 +522,7 @@ public class ListPopupWindow implements ShowableListMenu {
      * @return anchor-relative bounds, or @{@code null} if not set
      * @see #setEpicenterBounds(Rect)
      */
-    @Nullable
-    public Rect getEpicenterBounds() {
+    public @Nullable Rect getEpicenterBounds() {
         return mEpicenterBounds != null ? new Rect(mEpicenterBounds) : null;
     }
 
@@ -615,7 +613,7 @@ public class ListPopupWindow implements ShowableListMenu {
      *
      * @see ListView#setOnItemClickListener(AdapterView.OnItemClickListener)
      */
-    public void setOnItemClickListener(@Nullable AdapterView.OnItemClickListener clickListener) {
+    public void setOnItemClickListener(AdapterView.@Nullable OnItemClickListener clickListener) {
         mItemClickListener = clickListener;
     }
 
@@ -666,7 +664,7 @@ public class ListPopupWindow implements ShowableListMenu {
         PopupWindowCompat.setWindowLayoutType(mPopup, mDropDownWindowLayoutType);
 
         if (mPopup.isShowing()) {
-            if (!ViewCompat.isAttachedToWindow(getAnchorView())) {
+            if (!getAnchorView().isAttachedToWindow()) {
                 //Don't update position if the anchor view is detached from window.
                 return;
             }
@@ -781,7 +779,7 @@ public class ListPopupWindow implements ShowableListMenu {
      *
      * @param listener Listener that will be notified when the popup is dismissed.
      */
-    public void setOnDismissListener(@Nullable PopupWindow.OnDismissListener listener) {
+    public void setOnDismissListener(PopupWindow.@Nullable OnDismissListener listener) {
         mPopup.setOnDismissListener(listener);
     }
 
@@ -1372,7 +1370,7 @@ public class ListPopupWindow implements ShowableListMenu {
 
         @Override
         public void run() {
-            if (mDropDownList != null && ViewCompat.isAttachedToWindow(mDropDownList)
+            if (mDropDownList != null && mDropDownList.isAttachedToWindow()
                     && mDropDownList.getCount() > mDropDownList.getChildCount()
                     && mDropDownList.getChildCount() <= mListItemExpandMaximum) {
                 mPopup.setInputMethodMode(PopupWindow.INPUT_METHOD_NOT_NEEDED);
@@ -1464,12 +1462,10 @@ public class ListPopupWindow implements ShowableListMenu {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setEpicenterBounds(PopupWindow popupWindow, Rect bounds) {
             popupWindow.setEpicenterBounds(bounds);
         }
 
-        @DoNotInline
         static void setIsClippedToScreen(PopupWindow popupWindow, boolean enabled) {
             popupWindow.setIsClippedToScreen(enabled);
         }
@@ -1481,7 +1477,6 @@ public class ListPopupWindow implements ShowableListMenu {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static int getMaxAvailableHeight(PopupWindow popupWindow, View anchor, int yOffset,
                 boolean ignoreBottomDecorations) {
             return popupWindow.getMaxAvailableHeight(anchor, yOffset, ignoreBottomDecorations);

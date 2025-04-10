@@ -18,13 +18,11 @@ package androidx.camera.core.impl.utils;
 
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Comparator;
 
 /** Comparator based on area of the given {@link Size} objects. */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class CompareSizesByArea implements Comparator<Size> {
     private boolean mReverse = false;
 

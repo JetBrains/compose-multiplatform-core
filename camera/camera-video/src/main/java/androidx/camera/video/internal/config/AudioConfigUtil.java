@@ -16,12 +16,12 @@
 
 package androidx.camera.video.internal.config;
 
+import static androidx.camera.video.internal.config.CaptureEncodeRatesKt.toEncodeRate;
+import static androidx.camera.video.internal.config.CaptureEncodeRatesKt.toCaptureRate;
+
 import android.util.Range;
 import android.util.Rational;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.EncoderProfilesProxy.AudioProfileProxy;
 import androidx.camera.core.impl.Timebase;
@@ -33,15 +33,18 @@ import androidx.camera.video.internal.audio.AudioSource;
 import androidx.camera.video.internal.encoder.AudioEncoderConfig;
 import androidx.core.util.Supplier;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
  * A collection of utilities used for resolving and debugging audio configurations.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class AudioConfigUtil {
     private static final String TAG = "AudioConfigUtil";
 
@@ -66,8 +69,7 @@ public final class AudioConfigUtil {
      *                         there is no relevant encoder profiles.
      * @return the audio MimeInfo.
      */
-    @NonNull
-    public static AudioMimeInfo resolveAudioMimeInfo(@NonNull MediaSpec mediaSpec,
+    public static @NonNull AudioMimeInfo resolveAudioMimeInfo(@NonNull MediaSpec mediaSpec,
             @Nullable VideoValidatedEncoderProfilesProxy encoderProfiles) {
         String mediaSpecAudioMime = MediaSpec.outputFormatToAudioMime(mediaSpec.getOutputFormat());
         int mediaSpecAudioProfile =
@@ -123,18 +125,18 @@ public final class AudioConfigUtil {
      *
      * @param audioMimeInfo the audio mime info.
      * @param audioSpec     the audio spec.
+     * @param captureToEncodeRatio the capture to encode sample rate ratio.
      * @return an AudioSettings.
      */
-    @NonNull
-    public static AudioSettings resolveAudioSettings(@NonNull AudioMimeInfo audioMimeInfo,
-            @NonNull AudioSpec audioSpec) {
+    public static @NonNull AudioSettings resolveAudioSettings(@NonNull AudioMimeInfo audioMimeInfo,
+            @NonNull AudioSpec audioSpec, @Nullable Rational captureToEncodeRatio) {
         Supplier<AudioSettings> settingsSupplier;
         AudioProfileProxy compatibleAudioProfile = audioMimeInfo.getCompatibleAudioProfile();
         if (compatibleAudioProfile != null) {
             settingsSupplier = new AudioSettingsAudioProfileResolver(audioSpec,
-                    compatibleAudioProfile);
+                    compatibleAudioProfile, captureToEncodeRatio);
         } else {
-            settingsSupplier = new AudioSettingsDefaultResolver(audioSpec);
+            settingsSupplier = new AudioSettingsDefaultResolver(audioSpec, captureToEncodeRatio);
         }
 
         return settingsSupplier.get();
@@ -149,10 +151,9 @@ public final class AudioConfigUtil {
      * @param audioSpec           the audio spec.
      * @return a AudioEncoderConfig.
      */
-    @NonNull
-    public static AudioEncoderConfig resolveAudioEncoderConfig(@NonNull AudioMimeInfo audioMimeInfo,
-            @NonNull Timebase inputTimebase, @NonNull AudioSettings audioSettings,
-            @NonNull AudioSpec audioSpec) {
+    public static @NonNull AudioEncoderConfig resolveAudioEncoderConfig(
+            @NonNull AudioMimeInfo audioMimeInfo, @NonNull Timebase inputTimebase,
+            @NonNull AudioSettings audioSettings, @NonNull AudioSpec audioSpec) {
         Supplier<AudioEncoderConfig> configSupplier;
         AudioProfileProxy compatibleAudioProfile = audioMimeInfo.getCompatibleAudioProfile();
         if (compatibleAudioProfile != null) {
@@ -279,5 +280,49 @@ public final class AudioConfigUtil {
         }
         Logger.d(TAG, debugString);
         return resolvedBitrate;
+    }
+
+    @NonNull
+    static CaptureEncodeRates resolveSampleRates(
+            @NonNull Range<Integer> targetEncodeSampeRateRange,
+            int initialTargetEncodeSampleRate,
+            int channelCount,
+            int sourceFormat,
+            @Nullable Rational captureToEncodeRatio) {
+        int resolvedCaptureSampleRate;
+        int resolvedEncodeSampleRate;
+        if (captureToEncodeRatio == null) {
+            resolvedCaptureSampleRate = selectSampleRateOrNearestSupported(
+                    targetEncodeSampeRateRange, channelCount, sourceFormat,
+                    initialTargetEncodeSampleRate);
+            resolvedEncodeSampleRate = resolvedCaptureSampleRate;
+        } else {
+            Range<Integer> scaledTargetEncodeSampleRateRange;
+            if (targetEncodeSampeRateRange.equals(AudioSpec.SAMPLE_RATE_RANGE_AUTO)) {
+                scaledTargetEncodeSampleRateRange = AudioSpec.SAMPLE_RATE_RANGE_AUTO;
+            } else {
+                scaledTargetEncodeSampleRateRange = Range.create(
+                        toCaptureRate(targetEncodeSampeRateRange.getLower(), captureToEncodeRatio),
+                        toCaptureRate(targetEncodeSampeRateRange.getUpper(), captureToEncodeRatio)
+                );
+            }
+            int scaledInitialTargetEncodeSampleRate = toCaptureRate(
+                    initialTargetEncodeSampleRate, captureToEncodeRatio);
+            resolvedCaptureSampleRate = selectSampleRateOrNearestSupported(
+                    scaledTargetEncodeSampleRateRange, channelCount, sourceFormat,
+                    scaledInitialTargetEncodeSampleRate);
+            resolvedEncodeSampleRate = toEncodeRate(resolvedCaptureSampleRate,
+                    captureToEncodeRatio);
+        }
+
+        Logger.d(TAG, String.format(Locale.ENGLISH,
+                "Resolved capture/encode sample rate %dHz/%dHz, [target sample rate range: %s, "
+                        + "target sample rate: %d, channel count: %d, source format: %d, "
+                        + "capture to encode sample rate ratio: %s]",
+                resolvedCaptureSampleRate, resolvedEncodeSampleRate, targetEncodeSampeRateRange,
+                initialTargetEncodeSampleRate, channelCount, sourceFormat,
+                captureToEncodeRatio));
+
+        return new CaptureEncodeRates(resolvedCaptureSampleRate, resolvedEncodeSampleRate);
     }
 }

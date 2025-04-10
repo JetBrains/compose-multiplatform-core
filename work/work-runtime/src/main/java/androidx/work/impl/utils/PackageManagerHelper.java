@@ -19,8 +19,9 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.PackageManager;
 
-import androidx.annotation.NonNull;
 import androidx.work.Logger;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper class for common {@link PackageManager} functions

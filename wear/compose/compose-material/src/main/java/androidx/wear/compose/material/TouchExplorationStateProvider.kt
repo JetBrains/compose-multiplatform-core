@@ -28,9 +28,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 
 /**
  * A functional interface for providing the state of touch exploration services. It is strongly
@@ -44,8 +44,7 @@ public fun interface TouchExplorationStateProvider {
      * attach the state to itself. This will allow composables to react to change in service state,
      * if required.
      */
-    @Composable
-    fun touchExplorationState(): State<Boolean>
+    @Composable public fun touchExplorationState(): State<Boolean>
 }
 
 /**
@@ -87,9 +86,7 @@ internal class DefaultTouchExplorationStateProvider : TouchExplorationStateProvi
         onDispose: () -> Unit = {}
     ) {
         DisposableEffect(this) {
-            val observer = LifecycleEventObserver { _, event ->
-                handleEvent(event)
-            }
+            val observer = LifecycleEventObserver { _, event -> handleEvent(event) }
             this@ObserveState.addObserver(observer)
             onDispose {
                 onDispose()
@@ -98,14 +95,14 @@ internal class DefaultTouchExplorationStateProvider : TouchExplorationStateProvi
         }
     }
 
-    private class Listener constructor(
+    private class Listener
+    constructor(
         private val accessibilityManager: AccessibilityManager,
     ) : AccessibilityStateChangeListener, TouchExplorationStateChangeListener, State<Boolean> {
 
         private var accessibilityEnabled by mutableStateOf(accessibilityManager.isEnabled)
-        private var touchExplorationEnabled by mutableStateOf(
-            accessibilityManager.isTouchExplorationEnabled
-        )
+        private var touchExplorationEnabled by
+            mutableStateOf(accessibilityManager.isTouchExplorationEnabled)
 
         override val value: Boolean
             get() = accessibilityEnabled && touchExplorationEnabled

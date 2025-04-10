@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -24,8 +31,7 @@ plugins {
 }
 
 dependencies {
-
-    api("androidx.annotation:annotation:1.2.0")
+    api("androidx.annotation:annotation:1.8.1")
     api("androidx.compose.runtime:runtime:1.2.1")
     api("androidx.compose.ui:ui-graphics:1.1.1")
     api("androidx.compose.ui:ui-unit:1.1.1")
@@ -33,13 +39,14 @@ dependencies {
     api("androidx.datastore:datastore-preferences-core:1.0.0")
     api("androidx.datastore:datastore-preferences:1.0.0")
 
-    implementation("androidx.annotation:annotation:1.1.0")
     implementation("androidx.work:work-runtime:2.7.1")
     implementation("androidx.work:work-runtime-ktx:2.7.1")
+    implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
+    implementation("androidx.compose.ui:ui-util:1.6.8")
     implementation(libs.kotlinStdlib)
 
     // Force upgrade since 1.2.0 is not compatible with latest lint.
-    implementation("androidx.annotation:annotation-experimental:1.3.0")
+    implementation("androidx.annotation:annotation-experimental:1.4.1")
 
     testImplementation(libs.robolectric)
     testImplementation(libs.testCore)
@@ -59,8 +66,8 @@ dependencies {
     testImplementation("androidx.work:work-testing:2.7.1")
     testImplementation("com.google.android.material:material:1.6.0")
 
-    androidTestImplementation('androidx.test:monitor:1.5.0')
-    androidTestImplementation('androidx.core:core-ktx:1.7.0')
+    androidTestImplementation("androidx.test:monitor:1.5.0")
+    androidTestImplementation("androidx.core:core-ktx:1.7.0")
     androidTestImplementation("androidx.room:room-runtime:2.4.3")
     androidTestImplementation("androidx.work:work-testing:2.7.1")
     androidTestImplementation("androidx.test.uiautomator:uiautomator:2.2.0")
@@ -80,14 +87,17 @@ android {
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
     resourcePrefix "glance_"
-    namespace "androidx.glance"
+    namespace = "androidx.glance"
+    // TODO(b/313699418): need to update compose.runtime version to 1.6.0+
+    experimentalProperties["android.lint.useK2Uast"] = false
 }
 
 androidx {
     name = "Glance"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2021"
     description = "Glance allows developers to build layouts for remote surfaces using a Jetpack " +
             "Compose-style API."
-    targetsJavaConsumers = false
+    legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
 }

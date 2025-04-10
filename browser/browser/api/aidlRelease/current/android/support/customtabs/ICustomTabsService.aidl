@@ -38,6 +38,8 @@ interface ICustomTabsService {
   boolean newSession(in android.support.customtabs.ICustomTabsCallback callback) = 2;
   boolean newSessionWithExtras(in android.support.customtabs.ICustomTabsCallback callback, in android.os.Bundle extras) = 9;
   boolean mayLaunchUrl(in android.support.customtabs.ICustomTabsCallback callback, in android.net.Uri url, in android.os.Bundle extras, in List<android.os.Bundle> otherLikelyBundles) = 3;
+  void prefetch(in android.support.customtabs.ICustomTabsCallback callback, in android.net.Uri url, in android.os.Bundle options) = 14;
+  void prefetchWithMultipleUrls(in android.support.customtabs.ICustomTabsCallback callback, in List<android.net.Uri> urls, in android.os.Bundle options) = 15;
   android.os.Bundle extraCommand(String commandName, in android.os.Bundle args) = 4;
   boolean updateVisuals(in android.support.customtabs.ICustomTabsCallback callback, in android.os.Bundle bundle) = 5;
   boolean requestPostMessageChannel(in android.support.customtabs.ICustomTabsCallback callback, in android.net.Uri postMessageOrigin) = 6;
@@ -47,4 +49,6 @@ interface ICustomTabsService {
   boolean receiveFile(in android.support.customtabs.ICustomTabsCallback callback, in android.net.Uri uri, int purpose, in android.os.Bundle extras) = 11;
   boolean isEngagementSignalsApiAvailable(in android.support.customtabs.ICustomTabsCallback customTabsCallback, in android.os.Bundle extras) = 12;
   boolean setEngagementSignalsCallback(in android.support.customtabs.ICustomTabsCallback customTabsCallback, in IBinder callback, in android.os.Bundle extras) = 13;
+  boolean isEphemeralBrowsingSupported(in android.os.Bundle extras) = 16;
+  boolean newAuthTabSession(in android.support.customtabs.IAuthTabCallback callback, in android.os.Bundle extras) = 17;
 }

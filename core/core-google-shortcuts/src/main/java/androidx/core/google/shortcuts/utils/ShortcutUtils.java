@@ -23,8 +23,6 @@ import android.content.Intent;
 import android.util.Base64;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.google.shortcuts.TrampolineActivity;
 
@@ -33,6 +31,9 @@ import com.google.crypto.tink.Mac;
 import com.google.crypto.tink.integration.android.AndroidKeysetManager;
 import com.google.crypto.tink.mac.HmacKeyManager;
 import com.google.crypto.tink.mac.MacConfig;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -66,8 +67,8 @@ public class ShortcutUtils {
      * @param shortcutId the shortcut id used to generate the url.
      * @return the indexable url.
      */
-    @NonNull
-    public static String getIndexableUrl(@NonNull Context context, @NonNull String shortcutId) {
+    public static @NonNull String getIndexableUrl(@NonNull Context context,
+            @NonNull String shortcutId) {
         Intent intent = new Intent(context, TrampolineActivity.class);
         intent.setAction(SHORTCUT_LISTENER_INTENT_FILTER_ACTION);
         intent.putExtra(ID_KEY, shortcutId);
@@ -85,8 +86,7 @@ public class ShortcutUtils {
      * @return the shortcut url wrapped inside an intent that opens the Trampoline Activity if
      * the shortcut can be signed. Otherwise return just the shortcut url.
      */
-    @NonNull
-    public static String getIndexableShortcutUrl(@NonNull Context context,
+    public static @NonNull String getIndexableShortcutUrl(@NonNull Context context,
             @NonNull Intent shortcutIntent, @Nullable KeysetHandle keysetHandle) {
         String shortcutUrl = shortcutIntent.toUri(Intent.URI_INTENT_SCHEME);
         if (keysetHandle == null) {
@@ -122,13 +122,12 @@ public class ShortcutUtils {
     }
 
     /** Returns whether or not the capability is a App Actions BII. */
-    public static boolean isAppActionCapability(@NonNull final String capability) {
+    public static boolean isAppActionCapability(final @NonNull String capability) {
         return capability.startsWith(APP_ACTION_CAPABILITY_PREFIX);
     }
 
     /** Creates the {@link KeysetHandle} used to compute security MAC for Shortcut Urls. */
-    @Nullable
-    public static KeysetHandle getOrCreateShortcutKeysetHandle(@NonNull Context context) {
+    public static @Nullable KeysetHandle getOrCreateShortcutKeysetHandle(@NonNull Context context) {
         try {
             MacConfig.register();
 

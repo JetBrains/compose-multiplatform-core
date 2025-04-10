@@ -18,12 +18,15 @@ package androidx.activity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.core.viewtree.setViewTreeDisjointParent
 import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import com.google.common.truth.Truth.assertWithMessage
 import leakcanary.DetectLeaksAfterTestSuccess
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,12 +35,9 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ViewTreeOnBackPressedDispatcherTest {
 
-    @get:Rule
-    val rule = DetectLeaksAfterTestSuccess()
+    @get:Rule val rule = DetectLeaksAfterTestSuccess()
 
-    /**
-     * Tests that a direct set/get on a single view survives a round trip
-     */
+    /** Tests that a direct set/get on a single view survives a round trip */
     @Test
     fun setGetSameView() {
         val v = View(InstrumentationRegistry.getInstrumentation().context)
@@ -53,8 +53,8 @@ class ViewTreeOnBackPressedDispatcherTest {
     }
 
     /**
-     * Tests that the owner set on a root of a subhierarchy is seen by both direct children
-     * and other descendants
+     * Tests that the owner set on a root of a subhierarchy is seen by both direct children and
+     * other descendants
      */
     @Test
     fun ancestorOwner() {
@@ -83,8 +83,8 @@ class ViewTreeOnBackPressedDispatcherTest {
     }
 
     /**
-     * Tests that a new owner set between a root and a descendant is seen by the descendant
-     * instead of the root value
+     * Tests that a new owner set between a root and a descendant is seen by the descendant instead
+     * of the root value
      */
     @Test
     fun shadowedOwner() {
@@ -112,6 +112,57 @@ class ViewTreeOnBackPressedDispatcherTest {
         assertWithMessage("Get on grandchild returns the OnBackPressedDispatcherOwner")
             .that(child.findViewTreeOnBackPressedDispatcherOwner())
             .isSameInstanceAs(parentFakeOwner)
+    }
+
+    @Test
+    fun disjointParentOwner() {
+        val context = getInstrumentation().context
+        val root = FrameLayout(context)
+        val disjointParent = FrameLayout(context)
+        val parent = FrameLayout(context)
+        val child = View(context)
+
+        root.addView(disjointParent)
+        parent.addView(child)
+        parent.setViewTreeDisjointParent(disjointParent)
+
+        val rootFakeOwner = FakeOnBackPressedDispatcherOwner()
+        root.setViewTreeOnBackPressedDispatcherOwner(rootFakeOwner)
+
+        assertEquals(
+            "disjoint parent sees owner",
+            rootFakeOwner,
+            parent.findViewTreeOnBackPressedDispatcherOwner()
+        )
+        assertEquals(
+            "disjoint child sees owner",
+            rootFakeOwner,
+            child.findViewTreeOnBackPressedDispatcherOwner()
+        )
+    }
+
+    @Test
+    fun shadowedDisjointParentOwner() {
+        val context = getInstrumentation().context
+        val root = FrameLayout(context)
+        val disjointParent = FrameLayout(context)
+        val parent = FrameLayout(context)
+        val child = View(context)
+
+        root.addView(disjointParent)
+        parent.addView(child)
+        parent.setViewTreeDisjointParent(disjointParent)
+
+        val rootFakeOwner = FakeOnBackPressedDispatcherOwner()
+        val parentFakeOwner = FakeOnBackPressedDispatcherOwner()
+        root.setViewTreeOnBackPressedDispatcherOwner(rootFakeOwner)
+        parent.setViewTreeOnBackPressedDispatcherOwner(parentFakeOwner)
+
+        assertEquals(
+            "child sees owner",
+            parentFakeOwner,
+            child.findViewTreeOnBackPressedDispatcherOwner()
+        )
     }
 
     private class FakeOnBackPressedDispatcherOwner : OnBackPressedDispatcherOwner {

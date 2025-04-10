@@ -17,7 +17,6 @@
 package androidx.compose.ui.input.pointer
 
 import androidx.collection.LongSparseArray
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.node.InternalCoreApi
 
@@ -39,7 +38,6 @@ internal expect class PointerInputEvent {
  * @param positionOnScreen The position of the event relative to the device screen.
  * @param position The position of the event relative to the owner.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 internal data class PointerInputEventData(
     val id: PointerId,
     val uptime: Long,
@@ -48,7 +46,7 @@ internal data class PointerInputEventData(
     val down: Boolean,
     val pressure: Float,
     val type: PointerType,
-    val issuesEnterExit: Boolean = false,
+    val activeHover: Boolean = false,
     val historical: List<HistoricalChange> = mutableListOf(),
     val scrollDelta: Offset = Offset.Zero,
     val originalEventPosition: Offset = Offset.Zero,
@@ -57,9 +55,9 @@ internal data class PointerInputEventData(
 /**
  * Represents a pointer input event internally.
  *
- * [PointerInputChange]s are stored in a map so that as this internal event traverses the tree,
- * it is efficient to split the changes between those that are relevant to the sub tree and those
- * that are not.
+ * [PointerInputChange]s are stored in a map so that as this internal event traverses the tree, it
+ * is efficient to split the changes between those that are relevant to the sub tree and those that
+ * are not.
  */
 @OptIn(InternalCoreApi::class)
 internal expect class InternalPointerEvent(
@@ -69,9 +67,10 @@ internal expect class InternalPointerEvent(
     val changes: LongSparseArray<PointerInputChange>
 
     /**
-     * Embedded Android Views may consume an event and [ProcessResult] should not
-     * return that the position change was consumed because of this.
+     * Embedded Android Views may consume an event and [ProcessResult] should not return that the
+     * position change was consumed because of this.
      */
     var suppressMovementConsumption: Boolean
-    fun issuesEnterExitEvent(pointerId: PointerId): Boolean
+
+    fun activeHoverEvent(pointerId: PointerId): Boolean
 }

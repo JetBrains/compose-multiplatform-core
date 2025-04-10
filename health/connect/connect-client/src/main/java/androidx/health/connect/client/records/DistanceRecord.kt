@@ -38,7 +38,7 @@ public class DistanceRecord(
     override val endZoneOffset: ZoneOffset?,
     /** Distance in [Length] unit. Required field. Valid range: 0-1000000 meters. */
     public val distance: Length,
-    override val metadata: Metadata = Metadata.EMPTY,
+    override val metadata: Metadata,
 ) : IntervalRecord {
 
     init {
@@ -77,6 +77,10 @@ public class DistanceRecord(
         result = 31 * result + metadata.hashCode()
         result = 31 * result + distance.inMeters.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "DistanceRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, distance=$distance, metadata=$metadata)"
     }
 
     companion object {

@@ -14,7 +14,16 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.KotlinTarget
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -23,7 +32,8 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api(libs.jspecify)
+    api("androidx.annotation:annotation:1.8.1")
     api(project(":wear:watchface:watchface-complications"))
     api(project(":wear:watchface:watchface-complications-data"))
 
@@ -38,6 +48,10 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinTest)
+    testImplementation(libs.kotlinCoroutinesTest)
+
+    compileOnly files("../../wear_sdk/wear-sdk.jar")
+    testImplementation files("../../wear_sdk/wear-sdk.jar")
 }
 
 android {
@@ -45,18 +59,20 @@ android {
         aidl = true
     }
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
 
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.wear.watchface.complications.datasource"
+    namespace = "androidx.wear.watchface.complications.datasource"
 }
 
 androidx {
     name = "Android Wear Complications Data Source"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
+    //TODO(b/407632515): Target Kotlin 2. Fails :wear:watchface:watchface-complications-data-source-ktx:generateApi
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
     inceptionYear = "2020"
     description = "Android Wear Complications Data Source"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

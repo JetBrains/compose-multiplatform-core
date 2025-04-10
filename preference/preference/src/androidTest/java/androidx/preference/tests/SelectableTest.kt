@@ -19,7 +19,6 @@ package androidx.preference.tests
 import android.content.Context
 import android.graphics.drawable.StateListDrawable
 import android.os.Build
-import androidx.core.view.ViewCompat
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
@@ -45,9 +44,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Test for selectable [Preference] logic.
- */
+/** Test for selectable [Preference] logic. */
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
 @RunWith(AndroidJUnit4::class)
 @LargeTest
@@ -65,9 +62,7 @@ class SelectableTest {
     @Before
     @UiThreadTest
     fun setUp() {
-        fragment = activityRule.activity.setupPreferenceHierarchy(
-            R.xml.test_selectable
-        )
+        fragment = activityRule.activity.setupPreferenceHierarchy(R.xml.test_selectable)
         preference = fragment.preferenceScreen.findPreference("preference")!!
         category = fragment.preferenceScreen.findPreference("category")!!
     }
@@ -85,9 +80,7 @@ class SelectableTest {
         }
         // We should receive one click
         onView(withText("Preference")).perform(click())
-        activityRule.runOnUiThread {
-            assertEquals(1, clicks)
-        }
+        activityRule.runOnUiThread { assertEquals(1, clicks) }
     }
 
     @Test
@@ -102,9 +95,7 @@ class SelectableTest {
         }
         // No clicks should occur
         onView(withText("Preference")).perform(click())
-        activityRule.runOnUiThread {
-            assertEquals(0, clicks)
-        }
+        activityRule.runOnUiThread { assertEquals(0, clicks) }
     }
 
     @Test
@@ -120,9 +111,7 @@ class SelectableTest {
         }
         // No clicks should occur
         onView(withText("Category")).perform(click())
-        activityRule.runOnUiThread {
-            assertEquals(0, clicks)
-        }
+        activityRule.runOnUiThread { assertEquals(0, clicks) }
     }
 
     @Test
@@ -177,7 +166,7 @@ class SelectableTest {
             super.onBindViewHolder(holder)
             // If there's no background, no ripple effect will play regardless.
             if (holder.itemView.background != null) {
-                ViewCompat.setBackground(holder.itemView, TestDrawable())
+                holder.itemView.setBackground(TestDrawable())
             }
         }
     }

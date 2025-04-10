@@ -49,15 +49,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Benchmark for Wear Compose ScalingLazyColumn.
- */
+/** Benchmark for Wear Compose ScalingLazyColumn. */
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class ScalingLazyColumnBenchmark {
 
-    @get:Rule
-    val benchmarkRule = ComposeBenchmarkRule()
+    @get:Rule val benchmarkRule = ComposeBenchmarkRule()
 
     private val scalingLazyColumnCaseFactory = { ScalingLazyColumnTestCase() }
 
@@ -100,16 +97,13 @@ internal class ScalingLazyColumnTestCase : LayeredComposeTestCase() {
     override fun MeasuredContent() {
         ScalingLazyColumn(
             state = rememberScalingLazyListState(),
-            modifier = Modifier.requiredSize(
-                itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
-            ),
+            modifier = Modifier.requiredSize(itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f),
         ) {
             items(10) { it ->
                 Box(Modifier.requiredSize(itemSizeDp)) {
-                    BasicText(text = "Item $it",
-                        Modifier
-                            .background(Color.White)
-                            .padding(2.dp),
+                    BasicText(
+                        text = "Item $it",
+                        Modifier.background(Color.White).padding(2.dp),
                         TextStyle(
                             color = Color.Black,
                             fontSize = 16.sp,
@@ -129,7 +123,7 @@ fun ComposeBenchmarkRule.benchmarkFirstScalingLazyColumnMeasure(
 ) {
     runBenchmarkFor(LayeredCaseAdapter.of(caseFactory)) {
         measureRepeatedOnUiThread {
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 doFramesUntilNoChangesPending()
                 // Add the content to benchmark
                 getTestCase().addMeasuredContent()
@@ -140,7 +134,7 @@ fun ComposeBenchmarkRule.benchmarkFirstScalingLazyColumnMeasure(
             measure()
             recomposeUntilNoChangesPending()
 
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 assertNoPendingChanges()
                 disposeContent()
             }
@@ -156,7 +150,7 @@ fun ComposeBenchmarkRule.benchmarkFirstScalingLazyColumnLayout(
 ) {
     runBenchmarkFor(LayeredCaseAdapter.of(caseFactory)) {
         measureRepeatedOnUiThread {
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 doFramesUntilNoChangesPending()
                 // Add the content to benchmark
                 getTestCase().addMeasuredContent()
@@ -168,7 +162,7 @@ fun ComposeBenchmarkRule.benchmarkFirstScalingLazyColumnLayout(
             layout()
             recomposeUntilNoChangesPending()
 
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 assertNoPendingChanges()
                 disposeContent()
             }
@@ -184,7 +178,7 @@ fun ComposeBenchmarkRule.benchmarkFirstScalingLazyColumnDraw(
 ) {
     runBenchmarkFor(LayeredCaseAdapter.of(caseFactory)) {
         measureRepeatedOnUiThread {
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 doFramesUntilNoChangesPending()
                 // Add the content to benchmark
                 getTestCase().addMeasuredContent()
@@ -199,7 +193,7 @@ fun ComposeBenchmarkRule.benchmarkFirstScalingLazyColumnDraw(
             drawFinish()
             recomposeUntilNoChangesPending()
 
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 assertNoPendingChanges()
                 disposeContent()
             }

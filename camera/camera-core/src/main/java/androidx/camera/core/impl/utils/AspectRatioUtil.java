@@ -22,18 +22,17 @@ import android.graphics.RectF;
 import android.util.Rational;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.internal.utils.SizeUtil;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Comparator;
 
 /**
  * Utility class for aspect ratio related operations.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class AspectRatioUtil {
     public static final Rational ASPECT_RATIO_4_3 = new Rational(4, 3);
     public static final Rational ASPECT_RATIO_3_4 = new Rational(3, 4);
@@ -125,7 +124,6 @@ public final class AspectRatioUtil {
      * from the full FOV images. Therefore, we can compare the mapping areas to know which one is
      * closer to the mapping area of the target aspect ratio setting.
      */
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     public static final class CompareAspectRatiosByMappingAreaInFullFovAspectRatioSpace implements
             Comparator<Rational> {
         private final Rational mTargetRatio;

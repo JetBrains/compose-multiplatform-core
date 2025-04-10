@@ -21,9 +21,6 @@ import android.hardware.camera2.CameraDevice;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.StreamConfigurationMapCompat;
 import androidx.camera.camera2.internal.compat.workaround.SupportedRepeatingSurfaceSize;
@@ -41,6 +38,9 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.FutureCallback;
 import androidx.camera.core.impl.utils.futures.Futures;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -53,7 +53,6 @@ import java.util.UUID;
  * created in Camera2 layer to make Camera2 have the repeating surface to metering the auto 3A or
  * wait for 3A converged.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 class MeteringRepeatingSession {
     private static final String TAG = "MeteringRepeating";
 
@@ -62,25 +61,21 @@ class MeteringRepeatingSession {
 
     private DeferrableSurface mDeferrableSurface;
 
-    @NonNull
-    private SessionConfig mSessionConfig;
+    private @NonNull SessionConfig mSessionConfig;
 
-    @NonNull
-    private final MeteringRepeatingConfig mConfigWithDefaults;
+    private final @NonNull MeteringRepeatingConfig mConfigWithDefaults;
 
-    @NonNull
-    private final Size mMeteringRepeatingSize;
+    private final @NonNull Size mMeteringRepeatingSize;
 
-    @NonNull
-    private final SupportedRepeatingSurfaceSize mSupportedRepeatingSurfaceSize =
+    private final @NonNull SupportedRepeatingSurfaceSize mSupportedRepeatingSurfaceSize =
             new SupportedRepeatingSurfaceSize();
 
     interface SurfaceResetCallback {
         void onSurfaceReset();
     }
 
-    @Nullable
-    private final SurfaceResetCallback mSurfaceResetCallback;
+    private final @Nullable SurfaceResetCallback mSurfaceResetCallback;
+    private SessionConfig.@Nullable CloseableErrorListener mCloseableErrorListener = null;
 
     /** Creates a new instance of a {@link MeteringRepeatingSession}. */
     MeteringRepeatingSession(@NonNull CameraCharacteristicsCompat cameraCharacteristicsCompat,
@@ -96,8 +91,7 @@ class MeteringRepeatingSession {
         mSessionConfig = createSessionConfig();
     }
 
-    @NonNull
-    SessionConfig createSessionConfig() {
+    @NonNull SessionConfig createSessionConfig() {
         // Create the metering DeferrableSurface
         SurfaceTexture surfaceTexture = new SurfaceTexture(0);
 
@@ -127,33 +121,37 @@ class MeteringRepeatingSession {
 
         builder.addSurface(mDeferrableSurface);
 
-        builder.addErrorListener((sessionConfig, error) -> {
-            mSessionConfig = createSessionConfig();
-            if (mSurfaceResetCallback != null) {
-                mSurfaceResetCallback.onSurfaceReset();
-            }
-        });
+        // Closes old error listener
+        if (mCloseableErrorListener != null) {
+            mCloseableErrorListener.close();
+        }
+
+        mCloseableErrorListener = new SessionConfig.CloseableErrorListener(
+                (sessionConfig, error) -> {
+                    mSessionConfig = createSessionConfig();
+                    if (mSurfaceResetCallback != null) {
+                        mSurfaceResetCallback.onSurfaceReset();
+                    }
+                });
+
+        builder.setErrorListener(mCloseableErrorListener);
 
         return builder.build();
     }
 
-    @NonNull
-    UseCaseConfig<?> getUseCaseConfig() {
+    @NonNull UseCaseConfig<?> getUseCaseConfig() {
         return mConfigWithDefaults;
     }
 
-    @NonNull
-    SessionConfig getSessionConfig() {
+    @NonNull SessionConfig getSessionConfig() {
         return mSessionConfig;
     }
 
-    @NonNull
-    Size getMeteringRepeatingSize() {
+    @NonNull Size getMeteringRepeatingSize() {
         return mMeteringRepeatingSize;
     }
 
-    @NonNull
-    String getName() {
+    @NonNull String getName() {
         return "MeteringRepeating";
     }
 
@@ -174,8 +172,7 @@ class MeteringRepeatingSession {
      * the camera2 related options.
      */
     private static class MeteringRepeatingConfig implements UseCaseConfig<UseCase> {
-        @NonNull
-        private final Config mConfig;
+        private final @NonNull Config mConfig;
 
         MeteringRepeatingConfig() {
             MutableOptionsBundle mutableOptionsBundle = MutableOptionsBundle.create();
@@ -186,15 +183,13 @@ class MeteringRepeatingSession {
             mConfig = mutableOptionsBundle;
         }
 
-        @NonNull
         @Override
-        public Config getConfig() {
+        public @NonNull Config getConfig() {
             return mConfig;
         }
 
-        @NonNull
         @Override
-        public UseCaseConfigFactory.CaptureType getCaptureType() {
+        public UseCaseConfigFactory.@NonNull CaptureType getCaptureType() {
             return UseCaseConfigFactory.CaptureType.METERING_REPEATING;
         }
 
@@ -207,8 +202,7 @@ class MeteringRepeatingSession {
         }
     }
 
-    @NonNull
-    private Size getProperPreviewSize(@NonNull CameraCharacteristicsCompat
+    private @NonNull Size getProperPreviewSize(@NonNull CameraCharacteristicsCompat
             cameraCharacteristicsCompat, @NonNull DisplayInfoManager displayInfoManager) {
         StreamConfigurationMapCompat mapCompat =
                 cameraCharacteristicsCompat.getStreamConfigurationMapCompat();

@@ -16,13 +16,14 @@
 
 package androidx.compose.material3.benchmark
 
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.testutils.LayeredComposeTestCase
 import androidx.compose.testutils.ToggleableTestCase
 import androidx.compose.testutils.benchmark.ComposeBenchmarkRule
@@ -38,13 +39,10 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class TextFieldBenchmark(private val type: TextFieldType) {
     companion object {
-        @Parameterized.Parameters(name = "{0}")
-        @JvmStatic
-        fun parameters() = TextFieldType.values()
+        @Parameterized.Parameters(name = "{0}") @JvmStatic fun parameters() = TextFieldType.values()
     }
 
-    @get:Rule
-    val benchmarkRule = ComposeBenchmarkRule()
+    @get:Rule val benchmarkRule = ComposeBenchmarkRule()
 
     private val textFieldTestCaseFactory = { TextFieldTestCase(type) }
 
@@ -62,41 +60,35 @@ class TextFieldBenchmark(private val type: TextFieldType) {
     }
 }
 
-internal class TextFieldTestCase(
-    private val type: TextFieldType
-) : LayeredComposeTestCase(), ToggleableTestCase {
-    private lateinit var state: MutableState<String>
+internal class TextFieldTestCase(private val type: TextFieldType) :
+    LayeredComposeTestCase(), ToggleableTestCase {
+    private lateinit var state: TextFieldState
 
     @Composable
     override fun MeasuredContent() {
-        state = remember { mutableStateOf("") }
+        state = rememberTextFieldState()
 
         when (type) {
-            TextFieldType.Filled ->
-                TextField(
-                    value = state.value,
-                    onValueChange = {},
-                )
-            TextFieldType.Outlined ->
-                OutlinedTextField(
-                    value = state.value,
-                    onValueChange = {},
-                )
+            TextFieldType.Filled -> TextField(state)
+            TextFieldType.Outlined -> OutlinedTextField(state)
         }
     }
 
     @Composable
     override fun ContentWrappers(content: @Composable () -> Unit) {
-        MaterialTheme {
-            content()
-        }
+        MaterialTheme { content() }
     }
 
     override fun toggleState() {
-        state.value = if (state.value.isEmpty()) "Lorem ipsum" else ""
+        if (state.text.isEmpty()) {
+            state.setTextAndPlaceCursorAtEnd("Lorem ipsum")
+        } else {
+            state.clearText()
+        }
     }
 }
 
 enum class TextFieldType {
-    Filled, Outlined
+    Filled,
+    Outlined
 }

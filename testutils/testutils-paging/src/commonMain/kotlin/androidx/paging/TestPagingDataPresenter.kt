@@ -20,27 +20,10 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.Dispatchers
 
 class TestPagingDataPresenter<T : Any>(mainContext: CoroutineContext = Dispatchers.Main) :
-    PagingDataPresenter<T>(noopDifferCallback, mainContext) {
+    PagingDataPresenter<T>(mainContext) {
 
-    val currentList: List<T> get() = List(size) { i -> get(i)!! }
+    val currentList: List<T>
+        get() = List(size) { i -> get(i)!! }
 
-    override suspend fun presentNewList(
-        previousList: NullPaddedList<T>,
-        newList: NullPaddedList<T>,
-        lastAccessedIndex: Int,
-        onListPresentable: () -> Unit,
-    ): Int? {
-        onListPresentable()
-        return null
-    }
-
-    companion object {
-        private val noopDifferCallback = object : DifferCallback {
-            override fun onChanged(position: Int, count: Int) {}
-            override fun onInserted(position: Int, count: Int) {}
-            override fun onRemoved(position: Int, count: Int) {}
-        }
-    }
-
-    override suspend fun presentPagingDataEvent(event: PagingDataEvent<T>) { }
+    override suspend fun presentPagingDataEvent(event: PagingDataEvent<T>) {}
 }

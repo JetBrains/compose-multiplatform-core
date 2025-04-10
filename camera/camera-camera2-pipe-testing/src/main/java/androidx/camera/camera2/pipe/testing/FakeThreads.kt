@@ -17,39 +17,49 @@
 package androidx.camera.camera2.pipe.testing
 
 import android.os.Handler
-import androidx.annotation.RequiresApi
+import android.os.HandlerThread
 import androidx.camera.camera2.pipe.core.Threads
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 
-@RequiresApi(21)
-object FakeThreads {
-    fun fromDispatcher(dispatcher: CoroutineDispatcher): Threads {
-        val scope = CoroutineScope(dispatcher.plus(CoroutineName("CXCP-TestScope")))
-        return create(scope, dispatcher)
+public object FakeThreads {
+    public fun fromDispatcher(
+        dispatcher: CoroutineDispatcher,
+        blockingDispatcher: CoroutineDispatcher? = null,
+    ): Threads {
+        val scope = CoroutineScope(dispatcher + CoroutineName("CXCP-TestScope"))
+        return create(scope, dispatcher, blockingDispatcher)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    fun fromTestScope(scope: TestScope): Threads {
-        val dispatcher = StandardTestDispatcher(scope.testScheduler)
-        return create(scope, dispatcher)
+    public fun fromTestScope(
+        scope: TestScope,
+        blockingDispatcher: CoroutineDispatcher? = null,
+    ): Threads {
+        val dispatcher = StandardTestDispatcher(scope.testScheduler, "CXCP-TestScope")
+        return create(scope, dispatcher, blockingDispatcher)
     }
 
-    private fun create(scope: CoroutineScope, dispatcher: CoroutineDispatcher): Threads {
+    private fun create(
+        scope: CoroutineScope,
+        dispatcher: CoroutineDispatcher,
+        blockingDispatcher: CoroutineDispatcher?,
+    ): Threads {
         val executor = dispatcher.asExecutor()
 
         @Suppress("deprecation")
-        val fakeHandler = { Handler() }
+        val fakeHandler = {
+            val handlerThread = HandlerThread("FakeHandlerThread").apply { start() }
+            Handler(handlerThread.looper)
+        }
 
         return Threads(
             scope,
-            blockingExecutor = executor,
-            blockingDispatcher = dispatcher,
+            blockingExecutor = blockingDispatcher?.asExecutor() ?: executor,
+            blockingDispatcher = blockingDispatcher ?: dispatcher,
             backgroundExecutor = executor,
             backgroundDispatcher = dispatcher,
             lightweightExecutor = executor,

@@ -20,7 +20,7 @@ import android.os.Build
 import android.util.Pair
 import androidx.camera.core.impl.CameraCaptureMetaData
 import androidx.camera.core.impl.TagBundle
-import androidx.camera.testing.impl.fakes.FakeCameraCaptureResult
+import androidx.camera.testing.fakes.FakeCameraCaptureResult
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,9 +28,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
-/**
- * Unit tests for [VirtualCameraCaptureResult].
- */
+/** Unit tests for [VirtualCameraCaptureResult]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
@@ -59,8 +57,8 @@ class VirtualCameraCaptureResultTest {
     @Test
     fun metadataWithBaseValue_returnBaseValue() {
         // Arrange.
-        val baseCameraCaptureResult = FakeCameraCaptureResult()
-            .apply {
+        val baseCameraCaptureResult =
+            FakeCameraCaptureResult().apply {
                 timestamp = 2L
                 aeState = CameraCaptureMetaData.AeState.CONVERGED
                 afState = CameraCaptureMetaData.AfState.LOCKED_FOCUSED

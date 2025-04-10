@@ -27,13 +27,14 @@ import android.support.wearable.complications.ComplicationData;
 import android.support.wearable.complications.ComplicationProviderInfo;
 
 import androidx.activity.ComponentActivity;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.app.ActivityCompat;
 import androidx.wear.watchface.complications.ComplicationDataSourceUpdateRequesterConstants;
 import androidx.wear.watchface.complications.data.ComplicationType;
 import androidx.wear.watchface.style.UserStyleData;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -113,7 +114,7 @@ public final class ComplicationHelperActivity extends ComponentActivity
     @Nullable ComponentName mWatchFace;
     int mWfComplicationId;
     @Nullable Bundle mAdditionalExtras;
-    @Nullable @ComplicationData.ComplicationType int[] mTypes;
+    @ComplicationData.ComplicationType int @Nullable [] mTypes;
     Delegate mDelegate = new DelegateImpl(this);
 
     /** Allows the logic to be tested. */
@@ -296,7 +297,7 @@ public final class ComplicationHelperActivity extends ComponentActivity
     @Override
     @SuppressWarnings("deprecation") //TODO: Use ActivityResultContract
     public void onRequestPermissionsResult(
-            int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+            int requestCode, String @NonNull [] permissions, int @NonNull [] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (grantResults.length == 0) {
             // Request was cancelled.
@@ -376,8 +377,7 @@ public final class ComplicationHelperActivity extends ComponentActivity
      * @param complicationDenied Intent to launch the complication permission denied dialog.
      * @param complicationRationale Intent to launch the complication permission rationale dialog.
      */
-    @NonNull
-    public static Intent createComplicationDataSourceChooserHelperIntent(
+    public static @NonNull Intent createComplicationDataSourceChooserHelperIntent(
             @NonNull Context context,
             @NonNull ComponentName watchFace,
             int watchFaceComplicationId,
@@ -443,8 +443,7 @@ public final class ComplicationHelperActivity extends ComponentActivity
      * @param complicationDenied Intent to launch the complication permission denied dialog.
      * @param complicationRationale Intent to launch the complication permission rationale dialog.
      */
-    @NonNull
-    public static Intent createPermissionRequestHelperIntent(
+    public static @NonNull Intent createPermissionRequestHelperIntent(
             @NonNull Context context,
             @NonNull ComponentName watchFace,
             @Nullable Intent complicationDenied,

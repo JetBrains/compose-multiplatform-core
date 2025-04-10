@@ -14,16 +14,23 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api(libs.kotlinStdlib)
     api(project(":wear:wear-input"))
 
@@ -32,14 +39,14 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
-    namespace "androidx.wear.input.samples"
+    namespace = "androidx.wear.input.samples"
 }
 
 androidx {
     name = "Android Wear Input Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     mavenVersion = LibraryVersions.WEAR_INPUT
     inceptionYear = "2021"
     description = "Contains the sample code for the Android Wear Input Classes"

@@ -22,9 +22,10 @@ import android.database.Cursor;
 import android.os.Build;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.tvprovider.media.tv.TvContractCompat.WatchNextPrograms;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -78,6 +79,7 @@ import java.util.Set;
  *         null, null);
  * </pre>
  */
+@SuppressWarnings("HiddenSuperclass")
 public final class WatchNextProgram extends BasePreviewProgram {
     /**
      * The projection for a {@link WatchNextProgram} query.
@@ -85,8 +87,7 @@ public final class WatchNextProgram extends BasePreviewProgram {
      * query and in creating a Cursor object, which is used to iterate through the rows in the
      * table.
      */
-    @NonNull
-    public static final String[] PROJECTION = getProjection();
+    public static final String @NonNull [] PROJECTION = getProjection();
 
     private static final long INVALID_LONG_VALUE = -1;
 
@@ -220,6 +221,7 @@ public final class WatchNextProgram extends BasePreviewProgram {
     /**
      * This Builder class simplifies the creation of a {@link WatchNextProgram} object.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public static final class Builder extends BasePreviewProgram.Builder<Builder> {
 
         /**

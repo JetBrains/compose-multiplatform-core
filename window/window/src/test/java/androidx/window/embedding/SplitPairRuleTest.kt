@@ -17,11 +17,17 @@
 package androidx.window.embedding
 
 import android.content.ComponentName
+import android.graphics.Color
 import android.graphics.Rect
 import androidx.window.core.ActivityComponentInfo
+import androidx.window.embedding.DividerAttributes.Companion.NO_DIVIDER
+import androidx.window.embedding.EmbeddingAspectRatio.Companion.ALWAYS_ALLOW
+import androidx.window.embedding.SplitAttributes.SplitType.Companion.SPLIT_TYPE_HINGE
+import androidx.window.embedding.SplitAttributes.SplitType.Companion.ratio
 import androidx.window.embedding.SplitRule.Companion.SPLIT_MAX_ASPECT_RATIO_LANDSCAPE_DEFAULT
 import androidx.window.embedding.SplitRule.Companion.SPLIT_MAX_ASPECT_RATIO_PORTRAIT_DEFAULT
 import androidx.window.embedding.SplitRule.Companion.SPLIT_MIN_DIMENSION_DP_DEFAULT
+import androidx.window.embedding.SplitRule.FinishBehavior.Companion.ADJACENT
 import androidx.window.embedding.SplitRule.FinishBehavior.Companion.ALWAYS
 import androidx.window.embedding.SplitRule.FinishBehavior.Companion.NEVER
 import junit.framework.TestCase
@@ -33,20 +39,15 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-/**
- * Unit test for [SplitPairRule] to check the construction is correct by using it's builder.
- */
+/** Unit test for [SplitPairRule] to check the construction is correct by using it's builder. */
 @RunWith(RobolectricTestRunner::class)
 internal class SplitPairRuleTest {
 
     @Test
     fun test_builderMatchesConstruction() {
-        val splitAttributes = SplitAttributes()
+        val splitAttributes = SplitAttributes.Builder().build()
         val filterSet = setOf(createSplitPairFilter())
-        val expected = SplitPairRule(
-            filterSet,
-            splitAttributes
-        )
+        val expected = SplitPairRule(filterSet, splitAttributes)
 
         val actual = SplitPairRule.Builder(filterSet).build()
 
@@ -62,34 +63,67 @@ internal class SplitPairRuleTest {
     }
 
     /*------------------------------Class Test------------------------------*/
-    /**
-     * Test hashcode and equals are properly calculated for 2 equal [SplitPairRule]
-     */
+    /** Test hashcode and equals are properly calculated for 2 equal [SplitPairRule] */
     @Test
     fun equalsImpliesHashCode() {
-        val filter = SplitPairFilter(
-            ComponentName("a", "b"),
-            ComponentName("c", "d"),
-            "ACTION"
-        )
-        val firstRule = SplitPairRule.Builder(setOf(filter)).build()
-        val secondRule = SplitPairRule.Builder(setOf(filter)).build()
+        val filter = SplitPairFilter(ComponentName("a", "b"), ComponentName("c", "d"), "ACTION")
+        val firstRule =
+            SplitPairRule.Builder(setOf(filter))
+                .setClearTop(true)
+                .setDefaultSplitAttributes(
+                    SplitAttributes.Builder()
+                        .setSplitType(SPLIT_TYPE_HINGE)
+                        .setDividerAttributes(NO_DIVIDER)
+                        .setAnimationParams(EmbeddingAnimationParams.Builder().build())
+                        .build()
+                )
+                .setMinWidthDp(100)
+                .setMinHeightDp(100)
+                .setMinSmallestWidthDp(100)
+                .setFinishPrimaryWithSecondary(ADJACENT)
+                .setFinishSecondaryWithPrimary(ADJACENT)
+                .setMaxAspectRatioInLandscape(ALWAYS_ALLOW)
+                .setMaxAspectRatioInPortrait(ALWAYS_ALLOW)
+                .build()
+        val secondRule =
+            SplitPairRule.Builder(setOf(filter))
+                .setClearTop(true)
+                .setDefaultSplitAttributes(
+                    SplitAttributes.Builder()
+                        .setSplitType(SPLIT_TYPE_HINGE)
+                        .setDividerAttributes(NO_DIVIDER)
+                        .setAnimationParams(EmbeddingAnimationParams.Builder().build())
+                        .build()
+                )
+                .setMinWidthDp(100)
+                .setMinHeightDp(100)
+                .setMinSmallestWidthDp(100)
+                .setFinishPrimaryWithSecondary(ADJACENT)
+                .setFinishSecondaryWithPrimary(ADJACENT)
+                .setMaxAspectRatioInLandscape(ALWAYS_ALLOW)
+                .setMaxAspectRatioInPortrait(ALWAYS_ALLOW)
+                .build()
         assertEquals(firstRule, secondRule)
         assertEquals(firstRule.hashCode(), secondRule.hashCode())
+
+        // The hashCode should be consistent to the predetermined value.
+        // Note that the value should be updated whenever hashCode calculation is changed.
+        assertEquals(-1740043078, firstRule.hashCode())
     }
 
     /*------------------------------Builder Test------------------------------*/
     /**
-     * Verifies that default params are set correctly when creating [SplitPairRule] with a
-     * builder.
+     * Verifies that default params are set correctly when creating [SplitPairRule] with a builder.
      */
     @Test
     fun testDefaults_SplitPairRule_Builder() {
         val rule = SplitPairRule.Builder(HashSet()).build()
-        val expectedSplitLayout = SplitAttributes.Builder()
-            .setSplitType(SplitAttributes.SplitType.ratio(0.5f))
-            .setLayoutDirection(SplitAttributes.LayoutDirection.LOCALE)
-            .build()
+        val expectedSplitLayout =
+            SplitAttributes.Builder()
+                .setSplitType(SplitAttributes.SplitType.ratio(0.5f))
+                .setLayoutDirection(SplitAttributes.LayoutDirection.LOCALE)
+                .setAnimationParams(EmbeddingAnimationParams.Builder().build())
+                .build()
         TestCase.assertNull(rule.tag)
         assertEquals(SPLIT_MIN_DIMENSION_DP_DEFAULT, rule.minWidthDp)
         assertEquals(SPLIT_MIN_DIMENSION_DP_DEFAULT, rule.minHeightDp)
@@ -104,36 +138,37 @@ internal class SplitPairRuleTest {
         assertFalse(rule.checkParentBounds(density, invalidBounds))
     }
 
-    /**
-     * Verifies that the params are set correctly when creating [SplitPairRule] with a
-     * builder.
-     */
+    /** Verifies that the params are set correctly when creating [SplitPairRule] with a builder. */
     @Test
     fun test_SplitPairRule_Builder() {
         val filters = HashSet<SplitPairFilter>()
-        val expectedSplitLayout = SplitAttributes.Builder()
-            .setSplitType(SplitAttributes.SplitType.ratio(0.3f))
-            .setLayoutDirection(SplitAttributes.LayoutDirection.LEFT_TO_RIGHT)
-            .build()
-        filters.add(
-            SplitPairFilter(
-                ComponentName("a", "b"),
-                ComponentName("c", "d"),
-                "ACTION"
-            )
-        )
-        val rule = SplitPairRule.Builder(filters)
-            .setMinWidthDp(123)
-            .setMinHeightDp(456)
-            .setMinSmallestWidthDp(789)
-            .setMaxAspectRatioInPortrait(EmbeddingAspectRatio.ratio(1.23f))
-            .setMaxAspectRatioInLandscape(EmbeddingAspectRatio.ratio(4.56f))
-            .setFinishPrimaryWithSecondary(SplitRule.FinishBehavior.ADJACENT)
-            .setFinishSecondaryWithPrimary(SplitRule.FinishBehavior.ADJACENT)
-            .setClearTop(true)
-            .setDefaultSplitAttributes(expectedSplitLayout)
-            .setTag(TEST_TAG)
-            .build()
+        val expectedSplitLayout =
+            SplitAttributes.Builder()
+                .setSplitType(SplitAttributes.SplitType.ratio(0.3f))
+                .setLayoutDirection(SplitAttributes.LayoutDirection.LEFT_TO_RIGHT)
+                .setAnimationParams(
+                    EmbeddingAnimationParams.Builder()
+                        .setAnimationBackground(
+                            EmbeddingAnimationBackground.createColorBackground(Color.GREEN)
+                        )
+                        .setCloseAnimation(EmbeddingAnimationParams.AnimationSpec.JUMP_CUT)
+                        .build()
+                )
+                .build()
+        filters.add(SplitPairFilter(ComponentName("a", "b"), ComponentName("c", "d"), "ACTION"))
+        val rule =
+            SplitPairRule.Builder(filters)
+                .setMinWidthDp(123)
+                .setMinHeightDp(456)
+                .setMinSmallestWidthDp(789)
+                .setMaxAspectRatioInPortrait(EmbeddingAspectRatio.ratio(1.23f))
+                .setMaxAspectRatioInLandscape(EmbeddingAspectRatio.ratio(4.56f))
+                .setFinishPrimaryWithSecondary(SplitRule.FinishBehavior.ADJACENT)
+                .setFinishSecondaryWithPrimary(SplitRule.FinishBehavior.ADJACENT)
+                .setClearTop(true)
+                .setDefaultSplitAttributes(expectedSplitLayout)
+                .setTag(TEST_TAG)
+                .build()
         assertEquals(SplitRule.FinishBehavior.ADJACENT, rule.finishPrimaryWithSecondary)
         assertEquals(SplitRule.FinishBehavior.ADJACENT, rule.finishSecondaryWithPrimary)
         assertEquals(true, rule.clearTop)
@@ -149,8 +184,8 @@ internal class SplitPairRuleTest {
 
     /*------------------------------Functional Test------------------------------*/
     /**
-     * Verifies that illegal parameter values are not allowed when creating [SplitPairRule]
-     * with a builder.
+     * Verifies that illegal parameter values are not allowed when creating [SplitPairRule] with a
+     * builder.
      */
     @Test
     fun test_SplitPairRule_Builder_illegalArguments() {
@@ -194,26 +229,28 @@ internal class SplitPairRuleTest {
     @Test
     fun testSplitPairRule_maxAspectRatioInPortrait() {
         // Always allow split
-        var rule = SplitPairRule.Builder(HashSet())
-            .setMinWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMinHeightDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMinSmallestWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMaxAspectRatioInLandscape(EmbeddingAspectRatio.ALWAYS_ALLOW)
-            .setMaxAspectRatioInPortrait(EmbeddingAspectRatio.ALWAYS_ALLOW)
-            .build()
+        var rule =
+            SplitPairRule.Builder(HashSet())
+                .setMinWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMinHeightDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMinSmallestWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMaxAspectRatioInLandscape(EmbeddingAspectRatio.ALWAYS_ALLOW)
+                .setMaxAspectRatioInPortrait(EmbeddingAspectRatio.ALWAYS_ALLOW)
+                .build()
         var width = 100
         var height = 1000
         var bounds = Rect(0, 0, width, height)
         assertTrue(rule.checkParentBounds(density, bounds))
 
         // Always disallow split in portrait
-        rule = SplitPairRule.Builder(HashSet())
-            .setMinWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMinHeightDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMinSmallestWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMaxAspectRatioInLandscape(EmbeddingAspectRatio.ALWAYS_ALLOW)
-            .setMaxAspectRatioInPortrait(EmbeddingAspectRatio.ALWAYS_DISALLOW)
-            .build()
+        rule =
+            SplitPairRule.Builder(HashSet())
+                .setMinWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMinHeightDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMinSmallestWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMaxAspectRatioInLandscape(EmbeddingAspectRatio.ALWAYS_ALLOW)
+                .setMaxAspectRatioInPortrait(EmbeddingAspectRatio.ALWAYS_DISALLOW)
+                .build()
         width = 100
         height = 101
         bounds = Rect(0, 0, width, height)
@@ -223,13 +260,14 @@ internal class SplitPairRuleTest {
         assertTrue(rule.checkParentBounds(density, bounds))
 
         // Compare the aspect ratio in portrait
-        rule = SplitPairRule.Builder(HashSet())
-            .setMinWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMinHeightDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMinSmallestWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMaxAspectRatioInLandscape(EmbeddingAspectRatio.ALWAYS_ALLOW)
-            .setMaxAspectRatioInPortrait(EmbeddingAspectRatio.ratio(1.1f))
-            .build()
+        rule =
+            SplitPairRule.Builder(HashSet())
+                .setMinWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMinHeightDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMinSmallestWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMaxAspectRatioInLandscape(EmbeddingAspectRatio.ALWAYS_ALLOW)
+                .setMaxAspectRatioInPortrait(EmbeddingAspectRatio.ratio(1.1f))
+                .build()
         // Equals to the max aspect ratio
         width = 100
         height = 110
@@ -252,26 +290,28 @@ internal class SplitPairRuleTest {
     @Test
     fun testSplitPairRule_maxAspectRatioInLandscape() {
         // Always allow split
-        var rule = SplitPairRule.Builder(HashSet())
-            .setMinWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMinHeightDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMinSmallestWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMaxAspectRatioInPortrait(EmbeddingAspectRatio.ALWAYS_ALLOW)
-            .setMaxAspectRatioInLandscape(EmbeddingAspectRatio.ALWAYS_ALLOW)
-            .build()
+        var rule =
+            SplitPairRule.Builder(HashSet())
+                .setMinWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMinHeightDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMinSmallestWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMaxAspectRatioInPortrait(EmbeddingAspectRatio.ALWAYS_ALLOW)
+                .setMaxAspectRatioInLandscape(EmbeddingAspectRatio.ALWAYS_ALLOW)
+                .build()
         var width = 1000
         var height = 100
         var bounds = Rect(0, 0, width, height)
         assertTrue(rule.checkParentBounds(density, bounds))
 
         // Always disallow split in landscape
-        rule = SplitPairRule.Builder(HashSet())
-            .setMinWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMinHeightDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMinSmallestWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMaxAspectRatioInPortrait(EmbeddingAspectRatio.ALWAYS_ALLOW)
-            .setMaxAspectRatioInLandscape(EmbeddingAspectRatio.ALWAYS_DISALLOW)
-            .build()
+        rule =
+            SplitPairRule.Builder(HashSet())
+                .setMinWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMinHeightDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMinSmallestWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMaxAspectRatioInPortrait(EmbeddingAspectRatio.ALWAYS_ALLOW)
+                .setMaxAspectRatioInLandscape(EmbeddingAspectRatio.ALWAYS_DISALLOW)
+                .build()
         width = 101
         height = 100
         bounds = Rect(0, 0, width, height)
@@ -281,13 +321,14 @@ internal class SplitPairRuleTest {
         assertTrue(rule.checkParentBounds(density, bounds))
 
         // Compare the aspect ratio in landscape
-        rule = SplitPairRule.Builder(HashSet())
-            .setMinWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMinHeightDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMinSmallestWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
-            .setMaxAspectRatioInPortrait(EmbeddingAspectRatio.ALWAYS_ALLOW)
-            .setMaxAspectRatioInLandscape(EmbeddingAspectRatio.ratio(1.1f))
-            .build()
+        rule =
+            SplitPairRule.Builder(HashSet())
+                .setMinWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMinHeightDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMinSmallestWidthDp(SplitRule.SPLIT_MIN_DIMENSION_ALWAYS_ALLOW)
+                .setMaxAspectRatioInPortrait(EmbeddingAspectRatio.ALWAYS_ALLOW)
+                .setMaxAspectRatioInLandscape(EmbeddingAspectRatio.ratio(1.1f))
+                .build()
         // Equals to the max aspect ratio
         width = 110
         height = 100
@@ -314,10 +355,11 @@ internal class SplitPairRuleTest {
         val finishPrimaryWithSecondary = SplitRule.FinishBehavior.ADJACENT
         val finishSecondaryWithPrimary = SplitRule.FinishBehavior.ADJACENT
         val clearTop = true
-        val expectedSplitAttributes = SplitAttributes.Builder()
-            .setSplitType(SplitAttributes.SplitType.ratio(0.3f))
-            .setLayoutDirection(SplitAttributes.LayoutDirection.LEFT_TO_RIGHT)
-            .build()
+        val expectedSplitAttributes =
+            SplitAttributes.Builder()
+                .setSplitType(SplitAttributes.SplitType.ratio(0.3f))
+                .setLayoutDirection(SplitAttributes.LayoutDirection.LEFT_TO_RIGHT)
+                .build()
         filters.add(
             SplitPairFilter(
                 ActivityComponentInfo("a", "b"),
@@ -325,19 +367,20 @@ internal class SplitPairRuleTest {
                 "ACTION"
             )
         )
-        val ruleString = SplitPairRule.Builder(filters)
-            .setMinWidthDp(minWidthDp)
-            .setMinHeightDp(minHeightDp)
-            .setMinSmallestWidthDp(minSmallestMinWidthDp)
-            .setMaxAspectRatioInPortrait(maxAspectRatioInPortrait)
-            .setMaxAspectRatioInLandscape(maxAspectRatioInLandscape)
-            .setFinishPrimaryWithSecondary(finishPrimaryWithSecondary)
-            .setFinishSecondaryWithPrimary(finishSecondaryWithPrimary)
-            .setClearTop(clearTop)
-            .setDefaultSplitAttributes(expectedSplitAttributes)
-            .setTag(TEST_TAG)
-            .build()
-            .toString()
+        val ruleString =
+            SplitPairRule.Builder(filters)
+                .setMinWidthDp(minWidthDp)
+                .setMinHeightDp(minHeightDp)
+                .setMinSmallestWidthDp(minSmallestMinWidthDp)
+                .setMaxAspectRatioInPortrait(maxAspectRatioInPortrait)
+                .setMaxAspectRatioInLandscape(maxAspectRatioInLandscape)
+                .setFinishPrimaryWithSecondary(finishPrimaryWithSecondary)
+                .setFinishSecondaryWithPrimary(finishSecondaryWithPrimary)
+                .setClearTop(clearTop)
+                .setDefaultSplitAttributes(expectedSplitAttributes)
+                .setTag(TEST_TAG)
+                .build()
+                .toString()
 
         assertTrue(ruleString.contains(filters.toString()))
         assertTrue(ruleString.contains(minHeightDp.toString()))

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // TODO(): Remove when migrating away from RequiresDevice
+
 package androidx.compose.foundation.text
 
 import android.app.Activity
@@ -82,15 +84,15 @@ class CoreTextFieldKeyboardScrollableInteractionTest(
     companion object {
         @JvmStatic
         @Parameters(name = "scrollableType={0}, softInputMode={1}, withDecorationPadding={2}")
-        fun parameters(): Iterable<Array<*>> = crossProductOf(
-            ScrollableType.values(),
-            SoftInputMode.values(),
-            arrayOf(false, true), // withDecorationPadding
-        )
+        fun parameters(): Iterable<Array<*>> =
+            crossProductOf(
+                ScrollableType.values(),
+                SoftInputMode.values(),
+                arrayOf(false, true), // withDecorationPadding
+            )
     }
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private val ListTag = "list"
     private val keyboardHelper = KeyboardHelper(rule)
@@ -106,11 +108,10 @@ class CoreTextFieldKeyboardScrollableInteractionTest(
         // This test is all about the keyboard going from hidden to shown, so hide it to start.
         keyboardHelper.hideKeyboardIfShown()
 
-        rule.onNodeWithTag(ListTag)
-            .performTouchInput {
-                // Click one pixel above the bottom of the list.
-                click(bottomCenter - Offset(0f, 1f))
-            }
+        rule.onNodeWithTag(ListTag).performTouchInput {
+            // Click one pixel above the bottom of the list.
+            click(bottomCenter - Offset(0f, 1f))
+        }
         keyboardHelper.waitForKeyboardVisibility(visible = true)
 
         rule.onNode(isFocused()).assertIsDisplayed()
@@ -129,21 +130,13 @@ class CoreTextFieldKeyboardScrollableInteractionTest(
         val itemCount = 100
         when (scrollableType) {
             ScrollableColumn -> {
-                Column(
-                    Modifier
-                        .testTag(ListTag)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    repeat(itemCount) { index ->
-                        TestTextField(index)
-                    }
+                Column(Modifier.testTag(ListTag).verticalScroll(rememberScrollState())) {
+                    repeat(itemCount) { index -> TestTextField(index) }
                 }
             }
             LazyList -> {
                 LazyColumn(Modifier.testTag(ListTag)) {
-                    items(itemCount) { index ->
-                        TestTextField(index)
-                    }
+                    items(itemCount) { index -> TestTextField(index) }
                 }
             }
         }
@@ -155,21 +148,19 @@ class CoreTextFieldKeyboardScrollableInteractionTest(
         CoreTextField(
             value = TextFieldValue(text = index.toString()),
             onValueChange = {},
-            modifier = Modifier
-                .fillMaxWidth()
-                .drawWithContent {
-                    drawContent()
-                    if (isFocused) {
-                        drawRect(Color.Blue, style = Stroke(2.dp.toPx()))
+            modifier =
+                Modifier.fillMaxWidth()
+                    .drawWithContent {
+                        drawContent()
+                        if (isFocused) {
+                            drawRect(Color.Blue, style = Stroke(2.dp.toPx()))
+                        }
                     }
-                }
-                .onFocusChanged { isFocused = it.isFocused }
-                .testTag(index.toString()),
+                    .onFocusChanged { isFocused = it.isFocused }
+                    .testTag(index.toString()),
             decorationBox = { inner ->
                 if (withDecorationPadding) {
-                    Box(Modifier.padding(vertical = 24.dp)) {
-                        inner()
-                    }
+                    Box(Modifier.padding(vertical = 24.dp)) { inner() }
                 } else {
                     inner()
                 }
@@ -184,31 +175,28 @@ class CoreTextFieldKeyboardScrollableInteractionTest(
             val activity = context.findActivityOrNull() ?: return@DisposableEffect onDispose {}
             val originalMode = activity.window.attributes.softInputMode
             activity.window.setSoftInputMode(mode)
-            onDispose {
-                activity.window.setSoftInputMode(originalMode)
-            }
+            onDispose { activity.window.setSoftInputMode(originalMode) }
         }
     }
 
+    @Suppress("NO_TAIL_CALLS_FOUND", "NON_TAIL_RECURSIVE_CALL")
     private tailrec fun Context.findActivityOrNull(): Activity? {
-        return (this as? Activity)
-            ?: (this as? ContextWrapper)?.baseContext?.findActivityOrNull()
+        return (this as? Activity) ?: (this as? ContextWrapper)?.baseContext?.findActivityOrNull()
     }
 }
 
 private fun crossProductOf(vararg values: Array<*>): List<Array<*>> =
-    crossProductOf(values.map { it.asSequence() })
-        .map { it.toList().toTypedArray() }
-        .toList()
+    crossProductOf(values.map { it.asSequence() }).map { it.toList().toTypedArray() }.toList()
 
 private fun crossProductOf(values: List<Sequence<*>>): Sequence<Sequence<*>> =
     when (values.size) {
         0 -> emptySequence()
         1 -> values[0].map { sequenceOf(it) }
-        else -> sequence {
-            for (subProduct in crossProductOf(values.subList(1, values.size)))
-                for (firstValue in values[0]) {
+        else ->
+            sequence {
+                for (subProduct in
+                    crossProductOf(values.subList(1, values.size))) for (firstValue in values[0]) {
                     yield(sequenceOf(firstValue) + subProduct)
                 }
-        }
+            }
     }

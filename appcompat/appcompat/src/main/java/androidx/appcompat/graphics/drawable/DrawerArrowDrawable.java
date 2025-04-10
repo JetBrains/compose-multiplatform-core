@@ -27,15 +27,17 @@ import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.view.View;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.R;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.view.ViewCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -335,12 +337,12 @@ public class DrawerArrowDrawable extends Drawable {
                 break;
             case ARROW_DIRECTION_END:
                 flipToPointRight = DrawableCompat.getLayoutDirection(this)
-                        == ViewCompat.LAYOUT_DIRECTION_LTR;
+                        == View.LAYOUT_DIRECTION_LTR;
                 break;
             case ARROW_DIRECTION_START:
             default:
                 flipToPointRight = DrawableCompat.getLayoutDirection(this)
-                        == ViewCompat.LAYOUT_DIRECTION_RTL;
+                        == View.LAYOUT_DIRECTION_RTL;
                 break;
         }
 

@@ -17,18 +17,25 @@
 package androidx.wear.protolayout.material;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.util.DisplayMetrics;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.screenshot.AndroidXScreenshotTestRule;
 import androidx.test.screenshot.matchers.MSSIMMatcher;
-import androidx.wear.protolayout.LayoutElementBuilders;
+import androidx.wear.protolayout.LayoutElementBuilders.Layout;
 import androidx.wear.protolayout.material.test.GoldenTestActivity;
+
+import org.jspecify.annotations.NonNull;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class RunnerUtils {
     // This isn't totally ideal right now. The screenshot tests run on a phone, so emulate some
@@ -40,10 +47,22 @@ public class RunnerUtils {
 
     public static void runSingleScreenshotTest(
             @NonNull AndroidXScreenshotTestRule rule,
-            @NonNull LayoutElementBuilders.LayoutElement layoutElement,
+            @NonNull TestCase testCase,
             @NonNull String expected) {
-        LayoutElementBuilders.Layout layout =
-                LayoutElementBuilders.Layout.fromLayoutElement(layoutElement);
+        if (testCase.isForLtr) {
+            runSingleScreenshotTest(rule, testCase.mLayout, expected, /* isRtlDirection= */ false);
+        }
+        if (testCase.isForRtl) {
+            runSingleScreenshotTest(
+                    rule, testCase.mLayout, expected + "_rtl", /* isRtlDirection= */ true);
+        }
+    }
+
+    public static void runSingleScreenshotTest(
+            @NonNull AndroidXScreenshotTestRule rule,
+            @NonNull Layout layout,
+            @NonNull String expected,
+            boolean isRtlDirection) {
         byte[] layoutPayload = layout.toByteArray();
 
         Intent startIntent =
@@ -51,45 +70,41 @@ public class RunnerUtils {
                         InstrumentationRegistry.getInstrumentation().getTargetContext(),
                         GoldenTestActivity.class);
         startIntent.putExtra("layout", layoutPayload);
+        startIntent.putExtra(GoldenTestActivity.USE_RTL_DIRECTION, isRtlDirection);
 
-        ActivityScenario<GoldenTestActivity> scenario = ActivityScenario.launch(startIntent);
-        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+        try (ActivityScenario<GoldenTestActivity> scenario = ActivityScenario.launch(startIntent)) {
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
 
-        try {
-            // Wait 1s after launching the activity. This allows for the old white layout in the
-            // bootstrap activity to fully go away before proceeding.
-            Thread.sleep(1000);
-        } catch (Exception ex) {
-            if (ex instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
+            try {
+                // Wait 1s after launching the activity. This allows for the old white layout in the
+                // bootstrap activity to fully go away before proceeding.
+                Thread.sleep(100);
+            } catch (Exception ex) {
+                if (ex instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                Log.e("MaterialGoldenTest", "Error sleeping", ex);
             }
-            Log.e("MaterialGoldenTest", "Error sleeping", ex);
-        }
 
-        Bitmap bitmap =
-                Bitmap.createBitmap(
-                        InstrumentationRegistry.getInstrumentation()
-                                .getUiAutomation()
-                                .takeScreenshot(),
-                        0,
-                        0,
-                        SCREEN_WIDTH,
-                        SCREEN_HEIGHT);
-        rule.assertBitmapAgainstGolden(bitmap, expected, new MSSIMMatcher());
+            DisplayMetrics displayMetrics =
+                    InstrumentationRegistry.getInstrumentation()
+                            .getTargetContext()
+                            .getResources()
+                            .getDisplayMetrics();
 
-        // There's a weird bug (related to b/159805732) where, when calling .close() on
-        // ActivityScenario or calling finish() and immediately exiting the test, the test can hang
-        // on a white screen for 45s. Closing the activity here and waiting for 1s seems to fix
-        // this.
-        scenario.onActivity(Activity::finish);
+            // RTL will put the View on the right side.
+            int screenWidthStart = isRtlDirection ? displayMetrics.widthPixels - SCREEN_WIDTH : 0;
 
-        try {
-            Thread.sleep(1000);
-        } catch (Exception ex) {
-            if (ex instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
-            Log.e("MaterialGoldenTest", "Error sleeping", ex);
+            Bitmap bitmap =
+                    Bitmap.createBitmap(
+                            InstrumentationRegistry.getInstrumentation()
+                                    .getUiAutomation()
+                                    .takeScreenshot(),
+                            screenWidthStart,
+                            0,
+                            SCREEN_WIDTH,
+                            SCREEN_HEIGHT);
+            rule.assertBitmapAgainstGolden(bitmap, expected, new MSSIMMatcher());
         }
     }
 
@@ -101,5 +116,42 @@ public class RunnerUtils {
         } catch (InterruptedException e) {
             Log.e("MaterialGoldenTest", "Error sleeping", e);
         }
+    }
+
+    public static List<Object[]> convertToTestParameters(
+            Map<String, Layout> testCases, boolean isForRtr, boolean isForLtr) {
+        return testCases.entrySet().stream()
+                .map(
+                        test ->
+                                new Object[] {
+                                    test.getKey(), new TestCase(test.getValue(), isForRtr, isForLtr)
+                                })
+                .collect(Collectors.toList());
+    }
+
+    /** Holds testcase parameters. */
+    public static final class TestCase {
+        final Layout mLayout;
+        final boolean isForRtl;
+        final boolean isForLtr;
+
+        public TestCase(Layout layout, boolean isForRtl, boolean isForLtr) {
+            mLayout = layout;
+            this.isForRtl = isForRtl;
+            this.isForLtr = isForLtr;
+        }
+    }
+
+    public static float getFontScale(Context context) {
+        return context.getResources().getConfiguration().fontScale;
+    }
+
+    @SuppressWarnings("deprecation")
+    public static void setFontScale(Context context, float fontScale) {
+        Configuration newConfiguration =
+                new Configuration(context.getResources().getConfiguration());
+        newConfiguration.fontScale = fontScale;
+        context.getResources()
+                .updateConfiguration(newConfiguration, context.getResources().getDisplayMetrics());
     }
 }

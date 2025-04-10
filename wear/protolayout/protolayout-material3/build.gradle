@@ -1,0 +1,87 @@
+/*
+ * Copyright (C) 2024 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
+
+plugins {
+    id("AndroidXPlugin")
+    id("com.android.library")
+    id("org.jetbrains.kotlin.android")
+}
+
+dependencies {
+    api(libs.jspecify)
+    annotationProcessor(libs.nullaway)
+    api(project(":wear:protolayout:protolayout"))
+    api(project(":wear:protolayout:protolayout-expression"))
+    api(libs.kotlinStdlib)
+    implementation(project(":wear:protolayout:protolayout-material-core"))
+    lintChecks(project(":wear:protolayout:protolayout-lint"))
+    lintPublish(project(":wear:protolayout:protolayout-lint"))
+    compileOnly(project(":annotation:annotation-sampled"))
+    implementation("androidx.annotation:annotation-experimental:1.4.1")
+    implementation("androidx.core:core:1.15.0")
+
+    testImplementation(libs.junit)
+    testImplementation(libs.mockitoCore4)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.testExtJunit)
+    testImplementation(libs.testExtTruth)
+    testImplementation(libs.testCore)
+    testImplementation(libs.testRunner)
+    testImplementation(libs.testRules)
+    testImplementation(libs.truth)
+    testImplementation(project(":wear:protolayout:protolayout-proto"))
+    testImplementation(project(":wear:protolayout:protolayout-testing"))
+    testImplementation(project(":wear:protolayout:protolayout"))
+
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.testCore)
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(project(":test:screenshot:screenshot"))
+    androidTestImplementation("androidx.core:core:1.7.0")
+    androidTestImplementation(project(":test:screenshot:screenshot"))
+    androidTestImplementation(project(":wear:protolayout:protolayout-renderer"))
+    androidTestImplementation(project(":wear:protolayout:protolayout-proto"))
+}
+
+android {
+    compileSdk = 35
+
+    defaultConfig {
+        minSdk = 26
+    }
+    namespace = "androidx.wear.protolayout.material3"
+}
+
+androidx {
+    name = "androidx.wear.protolayout:protolayout-material3"
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    samples(project(":wear:protolayout:protolayout-material3-samples"))
+    inceptionYear = "2024"
+    description = "Material3 components library for ProtoLayout."
+    samples(project(":wear:protolayout:protolayout-material3-samples"))
+    addGoldenImageAssets()
+}

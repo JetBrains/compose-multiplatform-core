@@ -1,0 +1,98 @@
+// Signature format: 4.0
+package androidx.wear.watchface.push {
+
+  public final class WatchFacePushManager {
+    ctor public WatchFacePushManager(android.content.Context context);
+    method public suspend Object? addWatchFace(android.os.ParcelFileDescriptor apkFd, String validationToken, kotlin.coroutines.Continuation<? super androidx.wear.watchface.push.WatchFacePushManager.WatchFaceDetails>);
+    method public suspend Object? isWatchFaceActive(String watchfacePackageName, kotlin.coroutines.Continuation<? super java.lang.Boolean>);
+    method public suspend Object? listWatchFaces(kotlin.coroutines.Continuation<? super androidx.wear.watchface.push.WatchFacePushManager.ListWatchFacesResponse>);
+    method public suspend Object? removeWatchFace(String slotId, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? setWatchFaceAsActive(String slotId, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? updateWatchFace(String slotId, android.os.ParcelFileDescriptor apkFd, String validationToken, kotlin.coroutines.Continuation<? super androidx.wear.watchface.push.WatchFacePushManager.WatchFaceDetails>);
+  }
+
+  public static final class WatchFacePushManager.AddWatchFaceException extends java.lang.Exception {
+    ctor public WatchFacePushManager.AddWatchFaceException(com.google.wear.services.watchfaces.watchfacepush.WatchFacePushManager.AddException rootCause);
+    method public int getErrorCode();
+    property public int errorCode;
+    property public String? message;
+    field public static final int ERROR_INVALID_PACKAGE_NAME = 3; // 0x3
+    field public static final int ERROR_INVALID_VALIDATION_TOKEN = 6; // 0x6
+    field public static final int ERROR_MALFORMED_WATCHFACE_APK = 4; // 0x4
+    field public static final int ERROR_SLOT_LIMIT_REACHED = 5; // 0x5
+    field public static final int ERROR_UNEXPECTED_CONTENT = 2; // 0x2
+    field public static final int ERROR_UNKNOWN = 1; // 0x1
+  }
+
+  public static final class WatchFacePushManager.IsWatchFaceActiveException extends java.lang.Exception {
+    ctor public WatchFacePushManager.IsWatchFaceActiveException(com.google.wear.services.watchfaces.watchfacepush.WatchFacePushManager.IsActiveException rootCause);
+    method public int getErrorCode();
+    property public int errorCode;
+    property public String? message;
+    field public static final int ERROR_INVALID_PACKAGE_NAME = 2; // 0x2
+    field public static final int ERROR_UNKNOWN = 1; // 0x1
+  }
+
+  public static final class WatchFacePushManager.ListWatchFacesException extends java.lang.Exception {
+    ctor public WatchFacePushManager.ListWatchFacesException(com.google.wear.services.watchfaces.watchfacepush.WatchFacePushManager.ListException rootCause);
+    method public int getErrorCode();
+    property public int errorCode;
+    property public String? message;
+    field public static final int ERROR_UNKNOWN = 1; // 0x1
+  }
+
+  public static final class WatchFacePushManager.ListWatchFacesResponse {
+    ctor public WatchFacePushManager.ListWatchFacesResponse(java.util.List<androidx.wear.watchface.push.WatchFacePushManager.WatchFaceDetails> installedWatchFaceDetails, int remainingSlotCount);
+    method public java.util.List<androidx.wear.watchface.push.WatchFacePushManager.WatchFaceDetails> getInstalledWatchFaceDetails();
+    method public int getRemainingSlotCount();
+    property public java.util.List<androidx.wear.watchface.push.WatchFacePushManager.WatchFaceDetails> installedWatchFaceDetails;
+    property public int remainingSlotCount;
+  }
+
+  public static final class WatchFacePushManager.RemoveWatchFaceException extends java.lang.Exception {
+    ctor public WatchFacePushManager.RemoveWatchFaceException(com.google.wear.services.watchfaces.watchfacepush.WatchFacePushManager.RemoveException rootCause);
+    method public int getErrorCode();
+    property public int errorCode;
+    property public String? message;
+    field public static final int ERROR_INVALID_SLOT_ID = 2; // 0x2
+    field public static final int ERROR_UNKNOWN = 1; // 0x1
+  }
+
+  public static final class WatchFacePushManager.SetWatchFaceAsActiveException extends java.lang.Exception {
+    ctor public WatchFacePushManager.SetWatchFaceAsActiveException(com.google.wear.services.watchfaces.watchfacepush.WatchFacePushManager.SetActiveException? rootCause);
+    ctor public WatchFacePushManager.SetWatchFaceAsActiveException(int errorCode);
+    method public int getErrorCode();
+    property public int errorCode;
+    property public String? message;
+    field public static final int ERROR_INVALID_SLOT_ID = 3; // 0x3
+    field public static final int ERROR_MAXIMUM_ATTEMPTS_REACHED = 2; // 0x2
+    field public static final int ERROR_MISSING_PERMISSION = 1000; // 0x3e8
+    field public static final int ERROR_UNKNOWN = 1; // 0x1
+  }
+
+  public static final class WatchFacePushManager.UpdateWatchFaceException extends java.lang.Exception {
+    ctor public WatchFacePushManager.UpdateWatchFaceException(com.google.wear.services.watchfaces.watchfacepush.WatchFacePushManager.UpdateException rootCause);
+    method public int getErrorCode();
+    property public int errorCode;
+    property public String? message;
+    field public static final int ERROR_INVALID_PACKAGE_NAME = 3; // 0x3
+    field public static final int ERROR_INVALID_SLOT_ID = 5; // 0x5
+    field public static final int ERROR_INVALID_VALIDATION_TOKEN = 6; // 0x6
+    field public static final int ERROR_MALFORMED_WATCHFACE_APK = 4; // 0x4
+    field public static final int ERROR_UNEXPECTED_CONTENT = 2; // 0x2
+    field public static final int ERROR_UNKNOWN = 1; // 0x1
+  }
+
+  public static final class WatchFacePushManager.WatchFaceDetails {
+    ctor public WatchFacePushManager.WatchFaceDetails(com.google.wear.services.watchfaces.watchfacepush.WatchFaceSlot slot);
+    method public kotlin.jvm.functions.Function0<java.util.List<java.lang.String>> getMetaData(String key);
+    method public String getPackageName();
+    method public String getSlotId();
+    method public long getVersionCode();
+    property public String packageName;
+    property public String slotId;
+    property public long versionCode;
+  }
+
+}
+

@@ -18,6 +18,7 @@ package androidx.glance.appwidget.demos
 
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetProviderInfo
+import android.content.ComponentName
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -44,40 +45,40 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.glance.ExperimentalGlanceApi
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.UnmanagedSessionReceiver
 import androidx.glance.appwidget.runComposition
 import kotlinx.coroutines.Dispatchers
 
 /**
- * Activity that displays Glance widgets using `GlanceAppWidget.runComposition`
- * to output RemoteViews without having a bound widget.
+ * Activity that displays Glance widgets using `GlanceAppWidget.runComposition` to output
+ * RemoteViews without having a bound widget.
  */
 class SimpleWidgetViewer : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val widgets = listOf(
-                ActionAppWidget(),
-                BackgroundTintWidget(),
-                ButtonsWidget(),
-                CompoundButtonAppWidget(),
-                DefaultColorsAppWidget(),
-                DefaultStateAppWidget(),
-                ErrorUiAppWidget(),
-                ExactAppWidget(),
-                FontDemoWidget(),
-                ImageAppWidget(),
-                ProgressIndicatorAppWidget(),
-                RemoteViewsWidget(),
-                ResizingAppWidget(),
-                ResponsiveAppWidget(),
-                RippleAppWidget(),
-                ScrollableAppWidget(),
-                TypographyDemoAppWidget(),
-                VerticalGridAppWidget(),
-            )
-            var selectedWidget by remember {
-                mutableStateOf(widgets.random())
-            }
+            val widgets =
+                listOf(
+                    ActionAppWidget(),
+                    BackgroundTintWidget(),
+                    ButtonsWidget(),
+                    CompoundButtonAppWidget(),
+                    DefaultColorsAppWidget(),
+                    DefaultStateAppWidget(),
+                    ErrorUiAppWidget(),
+                    ExactAppWidget(),
+                    FontDemoWidget(),
+                    ImageAppWidget(),
+                    ProgressIndicatorAppWidget(),
+                    RemoteViewsWidget(),
+                    ResizingAppWidget(),
+                    ResponsiveAppWidget(),
+                    RippleAppWidget(),
+                    ScrollableAppWidget(),
+                    TypographyDemoAppWidget(),
+                    VerticalGridAppWidget(),
+                )
+            var selectedWidget by remember { mutableStateOf(widgets.random()) }
             Column(Modifier.fillMaxSize()) {
                 LazyColumn(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.3F)) {
                     widgets.forEach { widget ->
@@ -102,7 +103,14 @@ class SimpleWidgetViewer : ComponentActivity() {
 fun WidgetView(widget: GlanceAppWidget, size: DpSize = DpSize(200.dp, 200.dp)) {
     val context = LocalContext.current
     val remoteViews by
-        remember(widget, size) { widget.runComposition(context, sizes = listOf(size)) }
+        remember(widget, size) {
+                widget.runComposition(
+                    context = context,
+                    sizes = listOf(size),
+                    lambdaReceiver =
+                        ComponentName(context, CustomUnmanagedSessionReceiver::class.java),
+                )
+            }
             .collectAsState(null, Dispatchers.Default)
     AndroidView(
         factory = {
@@ -122,15 +130,17 @@ fun WidgetView(widget: GlanceAppWidget, size: DpSize = DpSize(200.dp, 200.dp)) {
  */
 private fun AppWidgetHostView.setFakeAppWidget() {
     val context = context
-    val info = AppWidgetProviderInfo().apply {
-        initialLayout = androidx.glance.appwidget.R.layout.glance_default_loading_layout
-    }
-    try {
-        val activityInfo = ActivityInfo().apply {
-            applicationInfo = context.applicationInfo
-            packageName = context.packageName
-            labelRes = applicationInfo.labelRes
+    val info =
+        AppWidgetProviderInfo().apply {
+            initialLayout = androidx.glance.appwidget.R.layout.glance_default_loading_layout
         }
+    try {
+        val activityInfo =
+            ActivityInfo().apply {
+                applicationInfo = context.applicationInfo
+                packageName = context.packageName
+                labelRes = applicationInfo.labelRes
+            }
 
         info::class.java.getDeclaredField("providerInfo").run {
             isAccessible = true
@@ -145,3 +155,5 @@ private fun AppWidgetHostView.setFakeAppWidget() {
         throw IllegalStateException("Couldn't set fake provider", e)
     }
 }
+
+class CustomUnmanagedSessionReceiver : UnmanagedSessionReceiver()

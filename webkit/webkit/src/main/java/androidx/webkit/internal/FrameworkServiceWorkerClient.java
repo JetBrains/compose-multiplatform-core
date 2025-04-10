@@ -21,10 +21,11 @@ import android.webkit.ServiceWorkerClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.webkit.ServiceWorkerClientCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A shim class that implements {@link ServiceWorkerClient} by delegating to a
@@ -40,8 +41,8 @@ public class FrameworkServiceWorkerClient extends ServiceWorkerClient {
     }
 
     @Override
-    @Nullable
-    public WebResourceResponse shouldInterceptRequest(@NonNull WebResourceRequest request) {
+    public @Nullable WebResourceResponse shouldInterceptRequest(
+            @NonNull WebResourceRequest request) {
         return mImpl.shouldInterceptRequest(request);
     }
 }

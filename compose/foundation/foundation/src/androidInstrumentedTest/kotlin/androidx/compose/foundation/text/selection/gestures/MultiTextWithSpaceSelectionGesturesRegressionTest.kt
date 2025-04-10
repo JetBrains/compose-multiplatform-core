@@ -18,6 +18,7 @@ package androidx.compose.foundation.text.selection.gestures
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
 import androidx.compose.foundation.text.selection.Selection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.selection.fetchTextLayoutResult
@@ -33,27 +34,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.util.fastForEach
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalTestApi::class)
 @MediumTest
-@RunWith(AndroidJUnit4::class)
+@RunWith(ContextMenuFlagFlipperRunner::class)
 internal class MultiTextWithSpaceSelectionGesturesRegressionTest : AbstractSelectionGesturesTest() {
     private val textContent = "line1\nline2 text1 text2!\nline3"
 
-    private val texts = textContent
-        .split("\n")
-        .withIndex()
-        .map { (index, str) -> str to "testTag$index" }
+    private val texts =
+        textContent.split("\n").withIndex().map { (index, str) -> str to "testTag$index" }
 
     private val textContentIndices = texts.textContentIndices()
 
@@ -74,10 +70,11 @@ internal class MultiTextWithSpaceSelectionGesturesRegressionTest : AbstractSelec
                 texts.fastForEach { (str, tag) ->
                     BasicText(
                         text = str,
-                        style = TextStyle(
-                            fontFamily = fontFamily,
-                            fontSize = fontSize,
-                        ),
+                        style =
+                            TextStyle(
+                                fontFamily = fontFamily,
+                                fontSize = fontSize,
+                            ),
                         modifier = Modifier.testTag(tag),
                     )
                 }
@@ -87,23 +84,26 @@ internal class MultiTextWithSpaceSelectionGesturesRegressionTest : AbstractSelec
 
     @Before
     fun setupAsserter() {
-        asserter = object : TextSelectionAsserter(
-            textContent = textContent,
-            rule = rule,
-            textToolbar = textToolbar,
-            hapticFeedback = hapticFeedback,
-            getActual = { selection.value }
-        ) {
-            override fun subAssert() {
-                Truth.assertAbout(MultiSelectionSubject.withContent(texts))
-                    .that(getActual())
-                    .hasSelection(
-                        expected = selection,
-                        startTextDirection = startLayoutDirection,
-                        endTextDirection = endLayoutDirection,
-                    )
+        asserter =
+            object :
+                TextSelectionAsserter(
+                    textContent = textContent,
+                    rule = rule,
+                    textToolbar = textToolbar,
+                    spyTextActionModeCallback = spyTextActionModeCallback,
+                    hapticFeedback = hapticFeedback,
+                    getActual = { selection.value }
+                ) {
+                override fun subAssert() {
+                    Truth.assertAbout(MultiSelectionSubject.withContent(texts))
+                        .that(getActual())
+                        .hasSelection(
+                            expected = selection,
+                            startTextDirection = startLayoutDirection,
+                            endTextDirection = endLayoutDirection,
+                        )
+                }
             }
-        }
     }
 
     @Suppress("SameParameterValue")
@@ -115,7 +115,8 @@ internal class MultiTextWithSpaceSelectionGesturesRegressionTest : AbstractSelec
             rule.onNodeWithTag(pointerAreaTag).fetchSemanticsNode().positionInRoot
         val nodePosition = rule.onNodeWithTag(tag).fetchSemanticsNode().positionInRoot
         val textLayoutResult = rule.onNodeWithTag(tag).fetchTextLayoutResult()
-        return textLayoutResult.getBoundingBox(localOffset)
+        return textLayoutResult
+            .getBoundingBox(localOffset)
             .translate(nodePosition - pointerAreaPosition)
             .centerLeft
     }
@@ -135,25 +136,17 @@ internal class MultiTextWithSpaceSelectionGesturesRegressionTest : AbstractSelec
             press()
         }
 
-        asserter.applyAndAssert {
-            selection = 18 to 23
-        }
+        asserter.applyAndAssert { selection = 18 to 23 }
 
         mouseDragTo(topEnd)
 
-        asserter.applyAndAssert {
-            selection = 24 to 6
-        }
+        asserter.applyAndAssert { selection = 24 to 6 }
 
         mouseDragTo(bottomEnd)
 
-        asserter.applyAndAssert {
-            selection = 18 to 30
-        }
+        asserter.applyAndAssert { selection = 18 to 30 }
 
-        performMouseGesture {
-            release()
-        }
+        performMouseGesture { release() }
 
         asserter.assert()
     }

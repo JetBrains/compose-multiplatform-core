@@ -46,6 +46,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@OptIn(ExperimentalComposeUiApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class MoveWithHistoryTest {
@@ -53,17 +54,13 @@ class MoveWithHistoryTest {
         private const val tag = "widget"
     }
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private val recorder = SinglePointerInputRecorder()
 
     @Composable
     fun Ui(alignment: Alignment) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .wrapContentSize(alignment)) {
+        Box(Modifier.fillMaxSize().wrapContentSize(alignment)) {
             ClickableTestBox(modifier = recorder, tag = tag)
         }
     }
@@ -91,7 +88,6 @@ class MoveWithHistoryTest {
         Truth.assertThat(scrollState.value).isLessThan(101)
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     fun flingScrollableImpl(scrollState: ScrollState, useHistoricalEvents: Boolean) {
         val touchSlop = 18f
         rule.setContent {
@@ -99,14 +95,11 @@ class MoveWithHistoryTest {
                 with(LocalDensity.current) {
                     // Scrollable with a viewport the size of 10 boxes
                     Column(
-                        Modifier
-                            .testTag("scrollable")
+                        Modifier.testTag("scrollable")
                             .requiredSize(100.toDp(), 1000.toDp())
                             .verticalScroll(scrollState)
                     ) {
-                        repeat(100) {
-                            ClickableTestBox()
-                        }
+                        repeat(100) { ClickableTestBox() }
                     }
                 }
             }
@@ -124,16 +117,18 @@ class MoveWithHistoryTest {
             val from = topCenter + Offset(0f, 120f)
             val to = topCenter + Offset(0f, 100f)
 
-            val historicalTimes = if (VelocityTrackerAddPointsFix) {
-                listOf(-16L, -12L, -8L)
-            } else {
-                listOf(-16L, -8L)
-            }
-            val historicalCoordinates = if (VelocityTrackerAddPointsFix) {
-                listOf(to + Offset(0f, 70f), to + Offset(0f, 55f), to + Offset(0f, 35f))
-            } else {
-                listOf(to + Offset(0f, 70f), to + Offset(0f, 35f))
-            }
+            val historicalTimes =
+                if (VelocityTrackerAddPointsFix) {
+                    listOf(-16L, -12L, -8L)
+                } else {
+                    listOf(-16L, -8L)
+                }
+            val historicalCoordinates =
+                if (VelocityTrackerAddPointsFix) {
+                    listOf(to + Offset(0f, 70f), to + Offset(0f, 55f), to + Offset(0f, 35f))
+                } else {
+                    listOf(to + Offset(0f, 70f), to + Offset(0f, 35f))
+                }
             val delayMillis = 100L
 
             down(from)

@@ -18,10 +18,9 @@ package androidx.camera.video.internal.encoder;
 
 import android.media.MediaFormat;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
-
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Defines the three components of colors used by an encoder.
@@ -29,7 +28,6 @@ import com.google.auto.value.AutoValue;
  * <p>This is the encoder equivalent of {@link android.hardware.DataSpace}, and should be used to
  * communicate the {@link MediaFormat} keys needed by the encoder.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @AutoValue
 public abstract class VideoEncoderDataSpace {
 
@@ -59,6 +57,21 @@ public abstract class VideoEncoderDataSpace {
                     MediaFormat.COLOR_RANGE_LIMITED);
 
     /**
+     * Data space with sRGB gamma encoding.
+     *
+     * <p>This references the data space from {@link android.hardware.DataSpace#DATASPACE_SRGB}.
+     *
+     * <p>Use {@link MediaFormat#COLOR_TRANSFER_SDR_VIDEO} as the transfer function for sRGB. In
+     * theory, {@link MediaFormat#COLOR_TRANSFER_SDR_VIDEO} is different from the sRGB transfer
+     * function. But in practice, both transfer functions approximate the "gamma 2.2" power
+     * function. In most Android displays, sRGB and BT.709 are treated the same.
+     */
+    public static final VideoEncoderDataSpace ENCODER_DATA_SPACE_SRGB =
+            create(MediaFormat.COLOR_STANDARD_BT709,
+                    MediaFormat.COLOR_TRANSFER_SDR_VIDEO,
+                    MediaFormat.COLOR_RANGE_FULL);
+
+    /**
      * Color standard BT.2020 with HLG transfer function.
      *
      * <p>This mirrors the data space from {@link android.hardware.DataSpace#DATASPACE_BT2020_HLG}.
@@ -83,8 +96,7 @@ public abstract class VideoEncoderDataSpace {
     }
 
     /** Creates a data space from the three primaries. */
-    @NonNull
-    public static VideoEncoderDataSpace create(int standard, int transfer, int range) {
+    public static @NonNull VideoEncoderDataSpace create(int standard, int transfer, int range) {
         return new AutoValue_VideoEncoderDataSpace(standard, transfer, range);
     }
 

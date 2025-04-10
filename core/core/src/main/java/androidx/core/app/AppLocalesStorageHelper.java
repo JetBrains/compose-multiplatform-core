@@ -22,9 +22,9 @@ import android.content.Context;
 import android.util.Log;
 import android.util.Xml;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 
+import org.jspecify.annotations.NonNull;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlSerializer;
@@ -54,8 +54,7 @@ public class AppLocalesStorageHelper {
     /**
      * Returns app locales after reading from storage, fetched using the application context.
      */
-    @NonNull
-    public static String readLocales(@NonNull Context context) {
+    public static @NonNull String readLocales(@NonNull Context context) {
         synchronized (sAppLocaleStorageSync) {
             String appLocales = "";
 

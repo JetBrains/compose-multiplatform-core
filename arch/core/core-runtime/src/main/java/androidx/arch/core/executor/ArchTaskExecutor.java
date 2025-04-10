@@ -16,9 +16,10 @@
 
 package androidx.arch.core.executor;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 
@@ -31,18 +32,14 @@ import java.util.concurrent.Executor;
 public class ArchTaskExecutor extends TaskExecutor {
     private static volatile ArchTaskExecutor sInstance;
 
-    @NonNull
-    private TaskExecutor mDelegate;
+    private @NonNull TaskExecutor mDelegate;
 
-    @NonNull
-    private final TaskExecutor mDefaultTaskExecutor;
+    private final @NonNull TaskExecutor mDefaultTaskExecutor;
 
-    @NonNull
-    private static final Executor sMainThreadExecutor =
+    private static final @NonNull Executor sMainThreadExecutor =
             command -> getInstance().postToMainThread(command);
 
-    @NonNull
-    private static final Executor sIOThreadExecutor =
+    private static final @NonNull Executor sIOThreadExecutor =
             command -> getInstance().executeOnDiskIO(command);
 
     private ArchTaskExecutor() {
@@ -55,8 +52,7 @@ public class ArchTaskExecutor extends TaskExecutor {
      *
      * @return The singleton ArchTaskExecutor.
      */
-    @NonNull
-    public static ArchTaskExecutor getInstance() {
+    public static @NonNull ArchTaskExecutor getInstance() {
         if (sInstance != null) {
             return sInstance;
         }
@@ -92,13 +88,11 @@ public class ArchTaskExecutor extends TaskExecutor {
         mDelegate.postToMainThread(runnable);
     }
 
-    @NonNull
-    public static Executor getMainThreadExecutor() {
+    public static @NonNull Executor getMainThreadExecutor() {
         return sMainThreadExecutor;
     }
 
-    @NonNull
-    public static Executor getIOThreadExecutor() {
+    public static @NonNull Executor getIOThreadExecutor() {
         return sIOThreadExecutor;
     }
 

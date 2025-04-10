@@ -15,13 +15,13 @@
  */
 
 @file:JvmName("MigrationUtil")
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.room.util
 
 import androidx.annotation.RestrictTo
 import androidx.room.DatabaseConfiguration
-import androidx.room.RoomDatabase
+import androidx.room.RoomDatabase.MigrationContainer
 import androidx.room.migration.Migration
 import kotlin.jvm.JvmName
 
@@ -33,39 +33,50 @@ import kotlin.jvm.JvmName
  * @return True if a valid migration is required, false otherwise.
  */
 @Suppress("EXTENSION_SHADOWED_BY_MEMBER") // On purpose and only in Android source set.
-internal fun DatabaseConfiguration.isMigrationRequired(
-    fromVersion: Int,
-    toVersion: Int
-): Boolean {
+internal fun DatabaseConfiguration.isMigrationRequired(fromVersion: Int, toVersion: Int): Boolean {
     // Migrations are not required if it is a downgrade AND destructive migration during downgrade
     // has been allowed.
     val isDowngrade = fromVersion > toVersion
     return if (isDowngrade && this.allowDestructiveMigrationOnDowngrade) {
         false
     } else {
+        val migrationNotRequiredFrom = this.migrationNotRequiredFrom
         // Migrations are required between the two versions if we generally require migrations
         // AND EITHER there are no exceptions OR the supplied fromVersion is not one of the
         // exceptions.
         this.requireMigration &&
-            (this.migrationNotRequiredFrom == null ||
-                !this.migrationNotRequiredFrom.contains(fromVersion))
+            (migrationNotRequiredFrom == null || !migrationNotRequiredFrom.contains(fromVersion))
     }
 }
 
 /**
- * Finds the list of migrations that should be run to move from `start` version to
- * `end` version.
+ * Indicates if the given migration is contained within the [MigrationContainer] based on its
+ * start-end versions.
+ *
+ * @param startVersion Start version of the migration.
+ * @param endVersion End version of the migration
+ * @return True if it contains a migration with the same start-end version, false otherwise.
+ */
+@Suppress("EXTENSION_SHADOWED_BY_MEMBER") // On purpose in non-common platforms source sets.
+internal fun MigrationContainer.contains(startVersion: Int, endVersion: Int): Boolean {
+    val migrations = getMigrations()
+    if (migrations.containsKey(startVersion)) {
+        val startVersionMatches = migrations[startVersion] ?: emptyMap()
+        return startVersionMatches.containsKey(endVersion)
+    }
+    return false
+}
+
+/**
+ * Finds the list of migrations that should be run to move from `start` version to `end` version.
  *
  * @param start The current database version
  * @param end The target database version
- * @return An ordered list of [Migration] objects that should be run to migrate
- * between the given versions. If a migration path cannot be found, `null` is returned.
+ * @return An ordered list of [Migration] objects that should be run to migrate between the given
+ *   versions. If a migration path cannot be found, `null` is returned.
  */
 @Suppress("EXTENSION_SHADOWED_BY_MEMBER") // On purpose and only in Android source set.
-internal fun RoomDatabase.MigrationContainer.findMigrationPath(
-    start: Int,
-    end: Int
-): List<Migration>? {
+internal fun MigrationContainer.findMigrationPath(start: Int, end: Int): List<Migration>? {
     if (start == end) {
         return emptyList()
     }
@@ -74,7 +85,7 @@ internal fun RoomDatabase.MigrationContainer.findMigrationPath(
     return findUpMigrationPath(result, migrateUp, start, end)
 }
 
-private fun RoomDatabase.MigrationContainer.findUpMigrationPath(
+private fun MigrationContainer.findUpMigrationPath(
     result: MutableList<Migration>,
     upgrade: Boolean,
     start: Int,
@@ -83,18 +94,20 @@ private fun RoomDatabase.MigrationContainer.findUpMigrationPath(
     var migrationStart = start
     while (if (upgrade) migrationStart < end else migrationStart > end) {
         // Use ordered keys and start searching from one end of them.
-        val (targetNodes, keySet) = if (upgrade) {
-            getSortedDescendingNodes(migrationStart)
-        } else {
-            getSortedNodes(migrationStart)
-        } ?: return null
+        val (targetNodes, keySet) =
+            if (upgrade) {
+                getSortedDescendingNodes(migrationStart)
+            } else {
+                getSortedNodes(migrationStart)
+            } ?: return null
         var found = false
         for (targetVersion in keySet) {
-            val shouldAddToPath = if (upgrade) {
-                targetVersion in (migrationStart + 1)..end
-            } else {
-                targetVersion in end until migrationStart
-            }
+            val shouldAddToPath =
+                if (upgrade) {
+                    targetVersion in (migrationStart + 1)..end
+                } else {
+                    targetVersion in end until migrationStart
+                }
             if (shouldAddToPath) {
                 // We are iterating over the key set of targetNodes, so we can assume it
                 // won't return a null value.

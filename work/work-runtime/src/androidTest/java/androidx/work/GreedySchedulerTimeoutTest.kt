@@ -41,16 +41,18 @@ import org.junit.runner.RunWith
 class GreedySchedulerTimeoutTest {
     val workerFactory = TrackingWorkerFactory()
     private val runnableScheduler = ManualDefaultRunnableScheduler()
-    val configuration = Configuration.Builder()
-        .setRunnableScheduler(runnableScheduler)
-        .setWorkerFactory(workerFactory)
-        .setTaskExecutor(Executors.newSingleThreadExecutor())
-        .build()
+    val configuration =
+        Configuration.Builder()
+            .setRunnableScheduler(runnableScheduler)
+            .setWorkerFactory(workerFactory)
+            .setTaskExecutor(Executors.newSingleThreadExecutor())
+            .build()
     val env = TestEnv(configuration)
-    val trackers = Trackers(
-        context = env.context,
-        taskExecutor = env.taskExecutor,
-    )
+    val trackers =
+        Trackers(
+            context = env.context,
+            taskExecutor = env.taskExecutor,
+        )
     val workManager = WorkManager(env, listOf(GreedyScheduler(env, trackers)), trackers)
 
     init {
@@ -64,10 +66,10 @@ class GreedySchedulerTimeoutTest {
         val worker = workerFactory.await(request.id)
         val tester = launchTester(workManager.getWorkInfoByIdFlow(request.id))
         val runningWorkInfo = tester.awaitNext()
-        assertThat(runningWorkInfo.state).isEqualTo(WorkInfo.State.RUNNING)
+        assertThat(runningWorkInfo!!.state).isEqualTo(WorkInfo.State.RUNNING)
         runnableScheduler.executedFutureRunnables(TimeUnit.HOURS.toMillis(2))
         val stopInfo = tester.awaitNext()
-        assertThat(stopInfo.state).isEqualTo(WorkInfo.State.ENQUEUED)
+        assertThat(stopInfo!!.state).isEqualTo(WorkInfo.State.ENQUEUED)
         assertThat(worker.stopReason).isEqualTo(STOP_REASON_TIMEOUT)
     }
 

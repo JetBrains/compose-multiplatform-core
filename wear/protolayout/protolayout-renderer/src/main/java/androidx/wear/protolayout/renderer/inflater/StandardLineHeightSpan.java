@@ -19,8 +19,9 @@ package androidx.wear.protolayout.renderer.inflater;
 import android.graphics.Paint.FontMetricsInt;
 import android.text.style.LineHeightSpan;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Px;
+
+import org.jspecify.annotations.NonNull;
 
 // LineHeightSpan.Standard is only available on API 29+, but the implementation is trivial. Just
 // re-implement it here.
@@ -47,9 +48,5 @@ class StandardLineHeightSpan implements LineHeightSpan {
         final float ratio = mLineHeightPx * 1.0f / originHeight;
         fm.descent = Math.round(fm.descent * ratio);
         fm.ascent = fm.descent - mLineHeightPx;
-    }
-
-    public int getLineHeight() {
-        return mLineHeightPx;
     }
 }

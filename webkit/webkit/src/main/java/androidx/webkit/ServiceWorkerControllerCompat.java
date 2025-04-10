@@ -16,11 +16,13 @@
 
 package androidx.webkit;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.AnyThread;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
 import androidx.webkit.internal.ServiceWorkerControllerImpl;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Manages Service Workers used by WebView.
@@ -38,6 +40,7 @@ import androidx.webkit.internal.ServiceWorkerControllerImpl;
  * });
  * </pre>
  */
+@AnyThread
 public abstract class ServiceWorkerControllerCompat {
     /**
      *
@@ -57,10 +60,9 @@ public abstract class ServiceWorkerControllerCompat {
      *
      * @return the default ServiceWorkerController instance
      */
-    @NonNull
     @RequiresFeature(name = WebViewFeature.SERVICE_WORKER_BASIC_USAGE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public static ServiceWorkerControllerCompat getInstance() {
+    public static @NonNull ServiceWorkerControllerCompat getInstance() {
         return LAZY_HOLDER.INSTANCE;
     }
 
@@ -75,13 +77,12 @@ public abstract class ServiceWorkerControllerCompat {
      * @return the current {@link ServiceWorkerWebSettingsCompat}
      *
      */
-    @NonNull
-    public abstract ServiceWorkerWebSettingsCompat getServiceWorkerWebSettings();
+    public abstract @NonNull ServiceWorkerWebSettingsCompat getServiceWorkerWebSettings();
 
     /**
      *
      * Sets the client to capture service worker related callbacks.
-     *
+     * <p>
      * A {@link ServiceWorkerClientCompat} should be set before any service workers are
      * active, e.g. a safe place is before any WebView instances are created or
      * pages loaded.

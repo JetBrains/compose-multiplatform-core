@@ -18,21 +18,29 @@ package androidx.camera.view
 
 import android.content.Context
 import android.graphics.Matrix
+import android.graphics.PointF
 import android.os.Build
 import android.os.Looper.getMainLooper
 import android.util.Range
 import android.util.Rational
 import android.util.Size
 import android.view.Surface
-import androidx.camera.core.AspectRatio
+import androidx.camera.core.AspectRatio.RATIO_16_9
+import androidx.camera.core.AspectRatio.RATIO_4_3
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange
+import androidx.camera.core.FocusMeteringAction
+import androidx.camera.core.FocusMeteringResult
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageAnalysis.COORDINATE_SYSTEM_ORIGINAL
+import androidx.camera.core.ImageAnalysis.COORDINATE_SYSTEM_VIEW_REFERENCED
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCapture.ScreenFlashUiControl
+import androidx.camera.core.ImageCapture.FLASH_MODE_ON
+import androidx.camera.core.ImageCapture.ScreenFlash
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.MirrorMode
+import androidx.camera.core.Preview.SurfaceProvider
+import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.core.TorchState
 import androidx.camera.core.ViewPort
 import androidx.camera.core.impl.ImageAnalysisConfig
@@ -49,7 +57,10 @@ import androidx.camera.testing.impl.fakes.FakeSurfaceEffect
 import androidx.camera.testing.impl.fakes.FakeSurfaceProcessor
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
-import androidx.camera.view.CameraController.COORDINATE_SYSTEM_VIEW_REFERENCED
+import androidx.camera.view.CameraController.TAP_TO_FOCUS_FOCUSED
+import androidx.camera.view.CameraController.TAP_TO_FOCUS_NOT_FOCUSED
+import androidx.camera.view.CameraController.TAP_TO_FOCUS_NOT_STARTED
+import androidx.camera.view.CameraController.TAP_TO_FOCUS_STARTED
 import androidx.camera.view.internal.ScreenFlashUiInfo
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.test.annotation.UiThreadTest
@@ -57,7 +68,9 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import org.junit.Assert
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -65,18 +78,24 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
+import org.robolectric.shadows.ShadowSystemClock
 
-/**
- * Unit tests for [CameraController].
- */
+/** Unit tests for [CameraController]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(
+    minSdk = Build.VERSION_CODES.LOLLIPOP,
+    instrumentedPackages = ["androidx.camera.view"], // required for shadow clock to work
+)
 class CameraControllerTest {
     companion object {
         const val LINEAR_ZOOM = .1F
         const val ZOOM_RATIO = .5F
         const val TORCH_ENABLED = true
+        const val FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS =
+            FocusMeteringAction.DEFAULT_AUTO_CANCEL_DURATION_MILLIS
+        val TAP_POINT_1 = PointF(0F, 0F)
+        val TAP_POINT_2 = PointF(1F, 2F)
     }
 
     private val previewViewTransform = Matrix().also { it.postRotate(90F) }
@@ -84,31 +103,34 @@ class CameraControllerTest {
     private lateinit var controller: LifecycleCameraController
 
     @Suppress("deprecation")
-    private val targetSizeWithAspectRatio =
-        CameraController.OutputSize(AspectRatio.RATIO_16_9)
-    private val resolutionSelector = ResolutionSelector.Builder()
-        .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY).build()
+    private val targetSizeWithAspectRatio = CameraController.OutputSize(RATIO_16_9)
+    private val resolutionSelector =
+        ResolutionSelector.Builder()
+            .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+            .build()
 
     @Suppress("deprecation")
-    private val targetSizeWithResolution =
-        CameraController.OutputSize(Size(1080, 1960))
+    private val targetSizeWithResolution = CameraController.OutputSize(Size(1080, 1960))
     private val targetVideoQuality = Quality.HIGHEST
-    private val fakeViewPort = ViewPort.Builder(Rational(1, 1), 0).build()
+    private val fakeViewPort = ViewPort.Builder(Rational(1, 1), Surface.ROTATION_0).build()
     private val fakeCameraControl = FakeCameraControl()
     private val fakeCamera = FakeCamera(fakeCameraControl)
     private val processCameraProviderWrapper = FakeProcessCameraProviderWrapper(fakeCamera)
     private lateinit var lifecycleCameraProviderCompleter:
         CallbackToFutureAdapter.Completer<ProcessCameraProviderWrapper>
 
+    private val pointFactory = SurfaceOrientedMeteringPointFactory(1f, 1f)
+
     @Before
     fun setUp() {
-        val lifecycleCameraProviderFuture = CallbackToFutureAdapter.getFuture { completer ->
-            lifecycleCameraProviderCompleter = completer
-            "CameraControllerTest.lifecycleCameraProviderFuture"
-        }
+        val lifecycleCameraProviderFuture =
+            CallbackToFutureAdapter.getFuture { completer ->
+                lifecycleCameraProviderCompleter = completer
+                "CameraControllerTest.lifecycleCameraProviderFuture"
+            }
         controller = LifecycleCameraController(context, lifecycleCameraProviderFuture)
         controller.bindToLifecycle(FakeLifecycleOwner())
-        controller.attachPreviewSurface({ }, fakeViewPort)
+        controller.attachPreviewSurface({}, fakeViewPort)
     }
 
     @Test
@@ -118,12 +140,7 @@ class CameraControllerTest {
         assertThat(processCameraProviderWrapper.unbindInvoked()).isFalse()
         // Act.
         controller.setEffects(
-            setOf(
-                FakeSurfaceEffect(
-                    directExecutor(),
-                    FakeSurfaceProcessor(directExecutor())
-                )
-            )
+            setOf(FakeSurfaceEffect(directExecutor(), FakeSurfaceProcessor(directExecutor())))
         )
         // Assert.
         assertThat(processCameraProviderWrapper.unbindInvoked()).isTrue()
@@ -259,9 +276,7 @@ class CameraControllerTest {
             .isEqualTo(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
     }
 
-    /**
-     * Creates a [ImageAnalysis.Analyzer] with the given resolution override.
-     */
+    /** Creates a [ImageAnalysis.Analyzer] with the given resolution override. */
     private fun createAnalyzer(size: Size?): ImageAnalysis.Analyzer {
         return object : ImageAnalysis.Analyzer {
             override fun analyze(image: ImageProxy) {
@@ -278,19 +293,16 @@ class CameraControllerTest {
     fun viewTransform_valueIsPassedToAnalyzer() {
         // Non-null value passed to analyzer.
         assertThat(
-            getPreviewTransformPassedToAnalyzer(
-                COORDINATE_SYSTEM_VIEW_REFERENCED,
-                previewViewTransform
+                getPreviewTransformPassedToAnalyzer(
+                    COORDINATE_SYSTEM_VIEW_REFERENCED,
+                    previewViewTransform
+                )
             )
-        ).isEqualTo(previewViewTransform)
+            .isEqualTo(previewViewTransform)
 
         // Null value passed to analyzer.
-        assertThat(
-            getPreviewTransformPassedToAnalyzer(
-                COORDINATE_SYSTEM_VIEW_REFERENCED,
-                null
-            )
-        ).isEqualTo(null)
+        assertThat(getPreviewTransformPassedToAnalyzer(COORDINATE_SYSTEM_VIEW_REFERENCED, null))
+            .isEqualTo(null)
     }
 
     @Test
@@ -298,11 +310,13 @@ class CameraControllerTest {
         // Value not passed to analyzer. Analyzer still has it's original value which is identity
         // matrix.
         assertThat(
-            getPreviewTransformPassedToAnalyzer(
-                COORDINATE_SYSTEM_ORIGINAL,
-                previewViewTransform
-            )!!.isIdentity
-        ).isTrue()
+                getPreviewTransformPassedToAnalyzer(
+                        COORDINATE_SYSTEM_ORIGINAL,
+                        previewViewTransform
+                    )!!
+                    .isIdentity
+            )
+            .isTrue()
     }
 
     private fun getPreviewTransformPassedToAnalyzer(
@@ -310,19 +324,20 @@ class CameraControllerTest {
         previewTransform: Matrix?
     ): Matrix? {
         var matrix: Matrix? = Matrix()
-        val analyzer = object : ImageAnalysis.Analyzer {
-            override fun analyze(image: ImageProxy) {
-                // no-op
-            }
+        val analyzer =
+            object : ImageAnalysis.Analyzer {
+                override fun analyze(image: ImageProxy) {
+                    // no-op
+                }
 
-            override fun updateTransform(newMatrix: Matrix?) {
-                matrix = newMatrix
-            }
+                override fun updateTransform(newMatrix: Matrix?) {
+                    matrix = newMatrix
+                }
 
-            override fun getTargetCoordinateSystem(): Int {
-                return coordinateSystem
+                override fun getTargetCoordinateSystem(): Int {
+                    return coordinateSystem
+                }
             }
-        }
         controller.setImageAnalysisAnalyzer(mainThreadExecutor(), analyzer)
         controller.updatePreviewViewTransform(previewTransform)
         return matrix
@@ -489,6 +504,14 @@ class CameraControllerTest {
 
     @UiThreadTest
     @Test
+    fun setPreviewDynamicRange() {
+        controller.previewDynamicRange = DynamicRange.HDR10_10_BIT
+        assertThat(controller.previewDynamicRange).isEqualTo(DynamicRange.HDR10_10_BIT)
+        assertThat(controller.mPreview.dynamicRange).isEqualTo(DynamicRange.HDR10_10_BIT)
+    }
+
+    @UiThreadTest
+    @Test
     fun setVideoCaptureFrameRate() {
         controller.videoCaptureTargetFrameRate = Range.create(60, 120)
         assertThat(controller.videoCaptureTargetFrameRate).isEqualTo(Range.create(60, 120))
@@ -544,15 +567,15 @@ class CameraControllerTest {
         controller.setScreenFlashUiInfo(
             ScreenFlashUiInfo(
                 ScreenFlashUiInfo.ProviderType.SCREEN_FLASH_VIEW,
-                object : ScreenFlashUiControl {
-                    override fun applyScreenFlashUi(
-                        screenFlashUiCompleter: ImageCapture.ScreenFlashUiCompleter
+                object : ScreenFlash {
+                    override fun apply(
+                        expirationTimeMillis: Long,
+                        screenFlashListener: ImageCapture.ScreenFlashListener,
                     ) {
-                        screenFlashUiCompleter.complete()
+                        screenFlashListener.onCompleted()
                     }
 
-                    override fun clearScreenFlashUi() {
-                    }
+                    override fun clear() {}
                 }
             )
         )
@@ -591,5 +614,463 @@ class CameraControllerTest {
         Assert.assertThrows(IllegalStateException::class.java) {
             controller.cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
         }
+    }
+
+    @UiThreadTest
+    @Test
+    fun preview_surfaceProviderIsPreserved_afterRebind() {
+        // Arrange.
+        val surfaceProvider = SurfaceProvider {}
+        controller.attachPreviewSurface(surfaceProvider, fakeViewPort)
+
+        // Act: Setting a different resolution selector triggers a rebinding.
+        controller.previewResolutionSelector = resolutionSelector
+
+        // Assert.
+        assertThat(controller.mPreview.surfaceProvider).isSameInstanceAs(surfaceProvider)
+    }
+
+    @UiThreadTest
+    @Test
+    fun imageCapture_flashModeIsPreserved_afterRebind() {
+        // Arrange.
+        controller.imageCaptureFlashMode = FLASH_MODE_ON
+
+        // Act: Setting a different resolution selector triggers a rebinding.
+        controller.imageCaptureResolutionSelector = resolutionSelector
+
+        // Assert.
+        assertThat(controller.imageCaptureFlashMode).isEqualTo(FLASH_MODE_ON)
+    }
+
+    @Suppress("deprecation")
+    @Test
+    fun setResolutionSelectorAndOutputSizeAtTheSameTime() {
+        // Arrange & Act: Set resolution selector and target size together.
+        controller.previewResolutionSelector = resolutionSelector
+        controller.imageCaptureResolutionSelector = resolutionSelector
+        controller.imageAnalysisResolutionSelector = resolutionSelector
+        controller.previewTargetSize = targetSizeWithResolution
+        controller.imageCaptureTargetSize = targetSizeWithResolution
+        controller.imageAnalysisTargetSize = targetSizeWithResolution
+
+        // Assert: The resolution selector should be set, while the target resolution should not.
+        val previewConfig = controller.mPreview.currentConfig as ImageOutputConfig
+        assertThat(previewConfig.resolutionSelector).isEqualTo(resolutionSelector)
+        assertThat(previewConfig.getTargetResolution(null)).isNull()
+        val imageCaptureConfig = controller.mImageCapture.currentConfig as ImageOutputConfig
+        assertThat(imageCaptureConfig.resolutionSelector).isEqualTo(resolutionSelector)
+        assertThat(imageCaptureConfig.getTargetResolution(null)).isNull()
+        val imageAnalysisConfig = controller.mImageAnalysis.currentConfig as ImageOutputConfig
+        assertThat(imageAnalysisConfig.resolutionSelector).isEqualTo(resolutionSelector)
+        assertThat(imageAnalysisConfig.getTargetResolution(null)).isNull()
+    }
+
+    @Test
+    fun setViewport_overrideUseCasesAspectRatio() {
+        // Arrange & Act: Set a 16:9 viewport.
+        controller.attachPreviewSurface(
+            {},
+            ViewPort.Builder(Rational(9, 16), Surface.ROTATION_90).build()
+        )
+
+        // Assert: The aspect ratio of the use case configs should be override by viewport,
+        // which should be 16:9.
+        val previewConfig = controller.mPreview.currentConfig as ImageOutputConfig
+        assertThat(previewConfig.resolutionSelector.aspectRatioStrategy.preferredAspectRatio)
+            .isEqualTo(RATIO_16_9)
+        val imageCaptureConfig = controller.mImageCapture.currentConfig as ImageOutputConfig
+        assertThat(imageCaptureConfig.resolutionSelector.aspectRatioStrategy.preferredAspectRatio)
+            .isEqualTo(RATIO_16_9)
+        val imageAnalysisConfig = controller.mImageAnalysis.currentConfig as ImageOutputConfig
+        assertThat(imageAnalysisConfig.resolutionSelector.aspectRatioStrategy.preferredAspectRatio)
+            .isEqualTo(RATIO_16_9)
+        assertThat(controller.mVideoCapture.output.aspectRatio).isEqualTo(RATIO_16_9)
+    }
+
+    @Test
+    fun setViewport_notOverrideUseCasesAspectRatioIfResolutionSelectorAlreadySet() {
+        // Arrange: Set a 4:3 viewport.
+        controller.attachPreviewSurface(
+            {},
+            ViewPort.Builder(Rational(4, 3), Surface.ROTATION_0).build()
+        )
+
+        // Act: Explicitly set a 16:9 resolution selector.
+        controller.previewResolutionSelector = resolutionSelector
+        controller.imageCaptureResolutionSelector = resolutionSelector
+        controller.imageAnalysisResolutionSelector = resolutionSelector
+        controller.videoCaptureQualitySelector = QualitySelector.from(targetVideoQuality)
+
+        // Assert: The aspect ratio of the use case configs should not be override.
+        val previewConfig = controller.mPreview.currentConfig as ImageOutputConfig
+        assertThat(previewConfig.resolutionSelector.aspectRatioStrategy.preferredAspectRatio)
+            .isNotEqualTo(RATIO_4_3)
+        val imageCaptureConfig = controller.mImageCapture.currentConfig as ImageOutputConfig
+        assertThat(imageCaptureConfig.resolutionSelector.aspectRatioStrategy.preferredAspectRatio)
+            .isNotEqualTo(RATIO_4_3)
+        val imageAnalysisConfig = controller.mImageAnalysis.currentConfig as ImageOutputConfig
+        assertThat(imageAnalysisConfig.resolutionSelector.aspectRatioStrategy.preferredAspectRatio)
+            .isNotEqualTo(RATIO_4_3)
+        assertThat(controller.mVideoCapture.output.aspectRatio).isNotEqualTo(RATIO_4_3)
+    }
+
+    @Suppress("deprecation")
+    @Test
+    fun setViewport_notOverrideUseCasesAspectRatioIfOutputSizeAlreadySet() {
+        // Arrange: Set a 4:3 viewport.
+        controller.attachPreviewSurface(
+            {},
+            ViewPort.Builder(Rational(4, 3), Surface.ROTATION_0).build()
+        )
+
+        // Act: Explicitly set a 16:9 target size.
+        controller.previewTargetSize = targetSizeWithAspectRatio
+        controller.imageCaptureTargetSize = targetSizeWithAspectRatio
+        controller.imageAnalysisTargetSize = targetSizeWithAspectRatio
+
+        // Assert: The resolution selector should not exist in the config.
+        val previewConfig = controller.mPreview.currentConfig as ImageOutputConfig
+        assertThat(previewConfig.getResolutionSelector(null)).isNull()
+        val imageCaptureConfig = controller.mImageCapture.currentConfig as ImageOutputConfig
+        assertThat(imageCaptureConfig.getResolutionSelector(null)).isNull()
+        val imageAnalysisConfig = controller.mImageAnalysis.currentConfig as ImageOutputConfig
+        assertThat(imageAnalysisConfig.getResolutionSelector(null)).isNull()
+    }
+
+    @Test
+    fun onTapToFocus_focusMeteringActionSubmittedToCamera() {
+        completeCameraInitialization()
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+        assertThat(fakeCameraControl.lastSubmittedFocusMeteringAction).isNotNull()
+    }
+
+    @Test
+    fun getTapToFocusInfoState_defaultStateIsTapToFocusNotStarted() {
+        assertThat(controller.tapToFocusInfoState.value?.focusState)
+            .isEqualTo(TAP_TO_FOCUS_NOT_STARTED)
+    }
+
+    @Test
+    fun getTapToFocusInfoState_tapPointIsSameAsOriginal_whenOnTapToFocusIsCalled() {
+        val tapPoint = PointF(1F, 2F)
+        completeCameraInitialization()
+
+        controller.onTapToFocus(pointFactory, tapPoint.x, tapPoint.y)
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusInfoState.value?.tapPoint).isEqualTo(tapPoint)
+    }
+
+    @Test
+    fun getTapToFocusInfoState_tapPointIsSameAsLastOne_whenOnTapToFocusIsCalledTwice() {
+        completeCameraInitialization()
+
+        controller.onTapToFocus(pointFactory, TAP_POINT_1.x, TAP_POINT_1.y)
+        controller.onTapToFocus(pointFactory, TAP_POINT_2.x, TAP_POINT_2.y)
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusInfoState.value?.tapPoint).isEqualTo(TAP_POINT_2)
+    }
+
+    @Test
+    fun getTapToFocusInfoState_stateIsTapToFocusStarted_whenOnTapToFocusIsCalled() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusInfoState.value?.focusState).isEqualTo(TAP_TO_FOCUS_STARTED)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun getTapToFocusState_stateIsTapToFocusStarted_whenOnTapToFocusIsCalled() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusState.value).isEqualTo(TAP_TO_FOCUS_STARTED)
+    }
+
+    @Test
+    fun getTapToFocusInfoState_stateIsTapToFocusFocused_whenSuccessfulResultIsSubmitted() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+        fakeCameraControl.submitFocusMeteringResult(FocusMeteringResult.create(true))
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusInfoState.value?.focusState).isEqualTo(TAP_TO_FOCUS_FOCUSED)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun getTapToFocusState_stateIsTapToFocusFocused_whenSuccessfulResultIsSubmitted() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+        fakeCameraControl.submitFocusMeteringResult(FocusMeteringResult.create(true))
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusState.value).isEqualTo(TAP_TO_FOCUS_FOCUSED)
+    }
+
+    @Test
+    fun getTapToFocusInfoState_stateIsTapToFocusNotFocused_whenUnsuccessfulResultIsSubmitted() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+        fakeCameraControl.submitFocusMeteringResult(FocusMeteringResult.create(false))
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusInfoState.value?.focusState)
+            .isEqualTo(TAP_TO_FOCUS_NOT_FOCUSED)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun getTapToFocusState_stateIsTapToFocusNotFocused_whenUnsuccessfulResultIsSubmitted() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+        fakeCameraControl.submitFocusMeteringResult(FocusMeteringResult.create(false))
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusState.value).isEqualTo(TAP_TO_FOCUS_NOT_FOCUSED)
+    }
+
+    @Test
+    fun getTapToFocusInfoState_stateIsTapToFocusStarted_beforeAutoCancelDurationIsElapsed() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+        ShadowSystemClock.advanceBy(
+            FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS - 1,
+            TimeUnit.MILLISECONDS
+        )
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusInfoState.value?.focusState).isEqualTo(TAP_TO_FOCUS_STARTED)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun getTapToFocusState_stateIsTapToFocusStarted_beforeAutoCancelDurationIsElapsed() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+        ShadowSystemClock.advanceBy(
+            FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS - 1,
+            TimeUnit.MILLISECONDS
+        )
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusState.value).isEqualTo(TAP_TO_FOCUS_STARTED)
+    }
+
+    @Test
+    fun getTapToFocusInfoState_stateIsNotStarted_whenAutoCancelDurationIsElapsedAfterStarted() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+
+        shadowOf(getMainLooper()).idle()
+        assumeTrue(controller.tapToFocusInfoState.value?.focusState == TAP_TO_FOCUS_STARTED)
+
+        ShadowSystemClock.advanceBy(FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusInfoState.value?.focusState)
+            .isEqualTo(TAP_TO_FOCUS_NOT_STARTED)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun getTapToFocusState_stateIsNotStarted_whenAutoCancelDurationIsElapsedAfterStarted() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+
+        shadowOf(getMainLooper()).idle()
+        assumeTrue(controller.tapToFocusState.value == TAP_TO_FOCUS_STARTED)
+
+        ShadowSystemClock.advanceBy(FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusState.value).isEqualTo(TAP_TO_FOCUS_NOT_STARTED)
+    }
+
+    @Test
+    fun getTapToFocusInfoState_stateIsNotStarted_whenAutoCancelDurationIsElapsedAfterFocused() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+        fakeCameraControl.submitFocusMeteringResult(FocusMeteringResult.create(true))
+        shadowOf(getMainLooper()).idle()
+        assumeTrue(controller.tapToFocusInfoState.value?.focusState == TAP_TO_FOCUS_FOCUSED)
+
+        ShadowSystemClock.advanceBy(FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusInfoState.value?.focusState)
+            .isEqualTo(TAP_TO_FOCUS_NOT_STARTED)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun getTapToFocusState_stateIsNotStarted_whenAutoCancelDurationIsElapsedAfterFocused() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+        fakeCameraControl.submitFocusMeteringResult(FocusMeteringResult.create(true))
+        shadowOf(getMainLooper()).idle()
+        assumeTrue(controller.tapToFocusState.value == TAP_TO_FOCUS_FOCUSED)
+
+        ShadowSystemClock.advanceBy(FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusState.value).isEqualTo(TAP_TO_FOCUS_NOT_STARTED)
+    }
+
+    @Test
+    fun getTapToFocusInfoState_stateIsNotStarted_whenAutoCancelDurationIsElapsedAfterNotFocused() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+        fakeCameraControl.submitFocusMeteringResult(FocusMeteringResult.create(false))
+        shadowOf(getMainLooper()).idle()
+        assumeTrue(controller.tapToFocusInfoState.value?.focusState == TAP_TO_FOCUS_NOT_FOCUSED)
+
+        ShadowSystemClock.advanceBy(FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusInfoState.value?.focusState)
+            .isEqualTo(TAP_TO_FOCUS_NOT_STARTED)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun getTapToFocusState_stateIsNotStarted_whenAutoCancelDurationIsElapsedAfterNotFocused() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+        fakeCameraControl.submitFocusMeteringResult(FocusMeteringResult.create(false))
+        shadowOf(getMainLooper()).idle()
+        assumeTrue(controller.tapToFocusState.value == TAP_TO_FOCUS_NOT_FOCUSED)
+
+        ShadowSystemClock.advanceBy(FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusState.value).isEqualTo(TAP_TO_FOCUS_NOT_STARTED)
+    }
+
+    @Test
+    fun setTapToFocusAutoCancelDuration_stateIsNotStarted_whenSetDurationIsElapsedAfterStarted() {
+        val autoCancelDurationSeconds = 2L
+
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+
+        controller.setTapToFocusAutoCancelDuration(autoCancelDurationSeconds, TimeUnit.SECONDS)
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+
+        // Ensure focus state has is not the initial NOT_STARTED state.
+        shadowOf(getMainLooper()).idle()
+        assumeTrue(controller.tapToFocusInfoState.value?.focusState == TAP_TO_FOCUS_STARTED)
+
+        ShadowSystemClock.advanceBy(autoCancelDurationSeconds, TimeUnit.SECONDS)
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusInfoState.value?.focusState)
+            .isEqualTo(TAP_TO_FOCUS_NOT_STARTED)
+    }
+
+    @Test
+    fun setTapToFocusAutoCancelDuration_stateNeverResetsToNotStarted_whenDurationIsZero() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+
+        controller.setTapToFocusAutoCancelDuration(0, TimeUnit.SECONDS)
+
+        controller.onTapToFocus(pointFactory, 0f, 0f)
+
+        // Ensure focus state has is not the initial NOT_STARTED state.
+        shadowOf(getMainLooper()).idle()
+        assumeTrue(controller.tapToFocusInfoState.value?.focusState == TAP_TO_FOCUS_STARTED)
+
+        // Advance to end of time
+        ShadowSystemClock.advanceBy(Long.MAX_VALUE, TimeUnit.SECONDS)
+
+        // State is still the previous STARTED state
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusInfoState.value?.focusState).isEqualTo(TAP_TO_FOCUS_STARTED)
+    }
+
+    @Test
+    fun getTapToFocusInfoState_stateIsStartedAfterAutoCancelTimeOfFirstTap_whenTappedTwice() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+        val tapInterval = FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS / 2
+
+        controller.onTapToFocus(pointFactory, TAP_POINT_1.x, TAP_POINT_1.y)
+
+        // Advance the clock by `tapInterval` to that first tap is supposed to be auto-canceled at
+        // FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS while 2nd tap is supposed to be canceled at
+        // FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS + tapInterval
+        ShadowSystemClock.advanceBy(tapInterval, TimeUnit.MILLISECONDS)
+        controller.onTapToFocus(pointFactory, TAP_POINT_2.x, TAP_POINT_2.y)
+
+        // Advance the clock to the 1st tap cancellation time by advancing by the remaining time.
+        ShadowSystemClock.advanceBy(
+            FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS - tapInterval,
+            TimeUnit.MILLISECONDS
+        )
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusInfoState.value?.focusState).isEqualTo(TAP_TO_FOCUS_STARTED)
+    }
+
+    @Test
+    fun getTapToFocusInfoState_stateIsNotStartedAfterAutoCancelTimeOfSecondTap_whenTappedTwice() {
+        completeCameraInitialization()
+        fakeCameraControl.disableFocusMeteringAutoComplete(true)
+        val tapInterval = FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS / 2
+
+        controller.onTapToFocus(pointFactory, TAP_POINT_1.x, TAP_POINT_1.y)
+
+        // Ensure focus state has is not the initial NOT_STARTED state.
+        shadowOf(getMainLooper()).idle()
+        assumeTrue(controller.tapToFocusInfoState.value?.focusState == TAP_TO_FOCUS_STARTED)
+
+        // Advance the clock by `tapInterval` to that first tap is supposed to be auto-canceled at
+        // FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS while 2nd tap is supposed to be canceled at
+        // FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS + tapInterval
+        ShadowSystemClock.advanceBy(tapInterval, TimeUnit.MILLISECONDS)
+        controller.onTapToFocus(pointFactory, TAP_POINT_2.x, TAP_POINT_2.y)
+
+        // Advance the clock to the 2nd tap cancellation time.
+        ShadowSystemClock.advanceBy(FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+
+        shadowOf(getMainLooper()).idle()
+        assertThat(controller.tapToFocusInfoState.value?.focusState)
+            .isEqualTo(TAP_TO_FOCUS_NOT_STARTED)
     }
 }

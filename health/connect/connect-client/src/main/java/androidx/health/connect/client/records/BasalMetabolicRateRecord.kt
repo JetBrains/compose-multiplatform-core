@@ -32,7 +32,7 @@ public class BasalMetabolicRateRecord(
     override val zoneOffset: ZoneOffset?,
     /** Basal metabolic rate, in [Power] unit. Required field. Valid range: 0-10000 kcal/day. */
     public val basalMetabolicRate: Power,
-    override val metadata: Metadata = Metadata.EMPTY,
+    override val metadata: Metadata,
 ) : InstantaneousRecord {
 
     init {
@@ -58,6 +58,10 @@ public class BasalMetabolicRateRecord(
         result = 31 * result + (zoneOffset?.hashCode() ?: 0)
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "BasalMetabolicRateRecord(time=$time, zoneOffset=$zoneOffset, basalMetabolicRate=$basalMetabolicRate, metadata=$metadata)"
     }
 
     companion object {

@@ -17,18 +17,40 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("AndroidXComposePlugin")
 }
 
 dependencies {
-    implementation("androidx.annotation:annotation:1.4.0")
+    api(libs.jspecify)
+    implementation(libs.kotlinStdlib)
+    implementation(libs.androidx.annotation)
     implementation("androidx.core:core:1.6.0")
+
+    implementation("androidx.activity:activity-compose:1.10.1")
+    implementation(project(":compose:foundation:foundation"))
+    implementation(project(":compose:foundation:foundation-layout"))
+    implementation(project(":compose:material:material"))
+    implementation(project(":compose:runtime:runtime"))
+    implementation(project(":compose:ui:ui"))
+    implementation(project(":compose:ui:ui-graphics"))
+    implementation(project(":compose:ui:ui-text"))
+    implementation(project(":compose:ui:ui-unit"))
 
     androidTestImplementation(project(":test:uiautomator:uiautomator"))
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
+    androidTestImplementation(project(":kruth:kruth"))
+
+    // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.
+
+    androidTestImplementation(project(":lifecycle:lifecycle-common"))
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.testMonitor)
 }
 
 android {
-    namespace "androidx.test.uiautomator.testapp"
+    compileSdk = 35
+    namespace = "androidx.test.uiautomator.testapp"
 }

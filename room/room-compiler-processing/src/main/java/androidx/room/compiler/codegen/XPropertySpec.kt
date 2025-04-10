@@ -16,6 +16,7 @@
 
 package androidx.room.compiler.codegen
 
+import androidx.room.compiler.codegen.impl.XPropertySpecImpl
 import androidx.room.compiler.codegen.java.JavaPropertySpec
 import androidx.room.compiler.codegen.java.NONNULL_ANNOTATION
 import androidx.room.compiler.codegen.java.NULLABLE_ANNOTATION
@@ -23,71 +24,82 @@ import androidx.room.compiler.codegen.java.toJavaVisibilityModifier
 import androidx.room.compiler.codegen.kotlin.KotlinPropertySpec
 import androidx.room.compiler.codegen.kotlin.toKotlinVisibilityModifier
 import androidx.room.compiler.processing.XNullability
-import com.squareup.javapoet.FieldSpec
-import com.squareup.kotlinpoet.PropertySpec
-import javax.lang.model.element.Modifier
 
-interface XPropertySpec : TargetLanguage {
+interface XPropertySpec {
 
     val name: String
 
-    interface Builder : TargetLanguage {
+    val type: XTypeName
+
+    interface Builder {
         fun addAnnotation(annotation: XAnnotationSpec): Builder
+
         fun initializer(initExpr: XCodeBlock): Builder
+
         fun build(): XPropertySpec
+
+        companion object {
+            fun Builder.applyTo(block: Builder.(CodeLanguage) -> Unit) = apply {
+                when (this) {
+                    is XPropertySpecImpl.Builder -> {
+                        this.java.block(CodeLanguage.JAVA)
+                        this.kotlin.block(CodeLanguage.KOTLIN)
+                    }
+                    is JavaPropertySpec.Builder -> block(CodeLanguage.JAVA)
+                    is KotlinPropertySpec.Builder -> block(CodeLanguage.KOTLIN)
+                }
+            }
+
+            fun Builder.applyTo(language: CodeLanguage, block: Builder.() -> Unit) =
+                applyTo { codeLanguage ->
+                    if (codeLanguage == language) {
+                        block()
+                    }
+                }
+        }
     }
 
     companion object {
+        @JvmStatic
         fun builder(
-            language: CodeLanguage,
             name: String,
             typeName: XTypeName,
             visibility: VisibilityModifier,
             isMutable: Boolean = false,
-        ): Builder {
-            return when (language) {
-                CodeLanguage.JAVA -> JavaPropertySpec.Builder(
+            addJavaNullabilityAnnotation: Boolean = true
+        ): Builder =
+            XPropertySpecImpl.Builder(
+                name,
+                typeName,
+                JavaPropertySpec.Builder(
                     name,
-                    FieldSpec.builder(typeName.java, name).apply {
+                    typeName,
+                    JPropertySpec.builder(typeName.java, name).apply {
                         val visibilityModifier = visibility.toJavaVisibilityModifier()
-                        // TODO(b/247242374) Add nullability annotations for non-private fields
-                        if (visibilityModifier != Modifier.PRIVATE) {
-                            if (typeName.nullability == XNullability.NULLABLE) {
-                                addAnnotation(NULLABLE_ANNOTATION)
-                            } else if (typeName.nullability == XNullability.NONNULL) {
-                                addAnnotation(NONNULL_ANNOTATION)
+                        addModifiers(visibilityModifier)
+                        if (addJavaNullabilityAnnotation) {
+                            // TODO(b/247242374) Add nullability annotations for private fields
+                            if (visibilityModifier != JModifier.PRIVATE) {
+                                if (typeName.nullability == XNullability.NULLABLE) {
+                                    addAnnotation(NULLABLE_ANNOTATION)
+                                } else if (typeName.nullability == XNullability.NONNULL) {
+                                    addAnnotation(NONNULL_ANNOTATION)
+                                }
                             }
                         }
-                        addModifiers(visibilityModifier)
                         if (!isMutable) {
-                            addModifiers(Modifier.FINAL)
+                            addModifiers(JModifier.FINAL)
                         }
                     }
-                )
-                CodeLanguage.KOTLIN -> KotlinPropertySpec.Builder(
+                ),
+                KotlinPropertySpec.Builder(
                     name,
-                    PropertySpec.builder(name, typeName.kotlin).apply {
+                    typeName,
+                    KPropertySpec.builder(name, typeName.kotlin).apply {
                         mutable(isMutable)
                         addModifiers(visibility.toKotlinVisibilityModifier())
                     }
                 )
-            }
-        }
-
-        fun XPropertySpec.Builder.apply(
-            javaFieldBuilder: com.squareup.javapoet.FieldSpec.Builder.() -> Unit,
-            kotlinPropertyBuilder: com.squareup.kotlinpoet.PropertySpec.Builder.() -> Unit,
-        ): XPropertySpec.Builder = apply {
-            when (language) {
-                CodeLanguage.JAVA -> {
-                    check(this is JavaPropertySpec.Builder)
-                    this.actual.javaFieldBuilder()
-                }
-                CodeLanguage.KOTLIN -> {
-                    check(this is KotlinPropertySpec.Builder)
-                    this.actual.kotlinPropertyBuilder()
-                }
-            }
-        }
+            )
     }
 }

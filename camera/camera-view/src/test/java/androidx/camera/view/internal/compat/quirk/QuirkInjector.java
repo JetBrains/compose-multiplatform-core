@@ -16,8 +16,9 @@
 
 package androidx.camera.view.internal.compat.quirk;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -18,7 +18,7 @@ package androidx.camera.core.impl.utils;
 
 import android.opengl.Matrix;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Locale;
 
@@ -44,7 +44,7 @@ public final class MatrixExt {
      * @param px      px of pivot point at (px, py)
      * @param py      py of pivot point at (px, py)
      */
-    public static void setRotate(@NonNull float[] matrix, float degrees, float px, float py) {
+    public static void setRotate(float @NonNull [] matrix, float degrees, float px, float py) {
         Matrix.setIdentityM(matrix, 0);
         preRotate(matrix, degrees, px, py);
     }
@@ -60,7 +60,7 @@ public final class MatrixExt {
      * @param px      px of pivot point at (px, py)
      * @param py      py of pivot point at (px, py)
      */
-    public static void preRotate(@NonNull float[] matrix, float degrees, float px, float py) {
+    public static void preRotate(float @NonNull [] matrix, float degrees, float px, float py) {
         normalize(matrix, px, py);
         Matrix.rotateM(matrix, 0, degrees, 0, 0, 1);
         denormalize(matrix, px, py);
@@ -77,7 +77,7 @@ public final class MatrixExt {
      * @param px      px of pivot point at (px, py)
      * @param py      py of pivot point at (px, py)
      */
-    public static void postRotate(@NonNull float[] matrix, float degrees, float px, float py) {
+    public static void postRotate(float @NonNull [] matrix, float degrees, float px, float py) {
         synchronized (sTemp) {
             Matrix.setIdentityM(sTemp, 0);
             normalize(sTemp, px, py);
@@ -93,7 +93,7 @@ public final class MatrixExt {
      * @param matrix the matrix to flip
      * @param y      the horizontal line to flip along
      */
-    public static void preVerticalFlip(@NonNull float[] matrix, float y) {
+    public static void preVerticalFlip(float @NonNull [] matrix, float y) {
         normalize(matrix, 0, y);
         Matrix.scaleM(matrix, 0, 1f, -1f, 1f);
         denormalize(matrix, 0, y);
@@ -107,8 +107,7 @@ public final class MatrixExt {
      * @param matrix the matrix to convert
      * @param offset the offset of the matrix
      */
-    @NonNull
-    public static String toString(@NonNull float[] matrix, int offset) {
+    public static @NonNull String toString(float @NonNull [] matrix, int offset) {
         return String.format(Locale.US, "Matrix:\n"
                         + "%2.1f %2.1f %2.1f %2.1f\n"
                         + "%2.1f %2.1f %2.1f %2.1f\n"

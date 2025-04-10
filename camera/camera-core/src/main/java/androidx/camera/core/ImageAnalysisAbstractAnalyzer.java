@@ -16,10 +16,12 @@
 
 package androidx.camera.core;
 
+import static androidx.camera.core.ImageAnalysis.OUTPUT_IMAGE_FORMAT_NV21;
 import static androidx.camera.core.ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888;
 import static androidx.camera.core.ImageProcessingUtil.applyPixelShiftForYUV;
 import static androidx.camera.core.ImageProcessingUtil.convertYUVToRGB;
 import static androidx.camera.core.ImageProcessingUtil.rotateYUV;
+import static androidx.camera.core.ImageProcessingUtil.rotateYUVAndConvertToNV21;
 import static androidx.camera.core.impl.utils.TransformUtils.NORMALIZED_RECT;
 import static androidx.camera.core.impl.utils.TransformUtils.getNormalizedToBuffer;
 
@@ -31,9 +33,6 @@ import android.os.Build;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.impl.ImageReaderProxy;
 import androidx.camera.core.impl.utils.futures.Futures;
@@ -42,6 +41,9 @@ import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.os.OperationCanceledException;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
@@ -53,7 +55,6 @@ import java.util.concurrent.Executor;
  * This is an extension of {@link ImageAnalysis}. It has the same lifecycle and share part of the
  * states.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImageAvailableListener {
 
     private static final String TAG = "ImageAnalysisAnalyzer";
@@ -81,12 +82,10 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
     private Executor mUserExecutor;
 
     @GuardedBy("mAnalyzerLock")
-    @Nullable
-    private SafeCloseImageReaderProxy mProcessedImageReaderProxy;
+    private @Nullable SafeCloseImageReaderProxy mProcessedImageReaderProxy;
 
     @GuardedBy("mAnalyzerLock")
-    @Nullable
-    private ImageWriter mProcessedImageWriter;
+    private @Nullable ImageWriter mProcessedImageWriter;
 
     @GuardedBy("mAnalyzerLock")
     private Rect mOriginalViewPortCropRect = new Rect();
@@ -101,20 +100,22 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
     private Matrix mUpdatedSensorToBufferTransformMatrix = new Matrix();
 
     @GuardedBy("mAnalyzerLock")
-    @Nullable
-    @VisibleForTesting ByteBuffer mRGBConvertedBuffer;
+    @VisibleForTesting @Nullable ByteBuffer mRGBConvertedBuffer;
 
     @GuardedBy("mAnalyzerLock")
-    @Nullable
-    @VisibleForTesting ByteBuffer mYRotatedBuffer;
+    @VisibleForTesting @Nullable ByteBuffer mYRotatedBuffer;
 
     @GuardedBy("mAnalyzerLock")
-    @Nullable
-    @VisibleForTesting ByteBuffer mURotatedBuffer;
+    @VisibleForTesting @Nullable ByteBuffer mURotatedBuffer;
 
     @GuardedBy("mAnalyzerLock")
-    @Nullable
-    @VisibleForTesting ByteBuffer mVRotatedBuffer;
+    @VisibleForTesting @Nullable ByteBuffer mVRotatedBuffer;
+
+    @GuardedBy("mAnalyzerLock")
+    @VisibleForTesting @Nullable ByteBuffer mNV21YDelegatedBuffer;
+
+    @GuardedBy("mAnalyzerLock")
+    @VisibleForTesting @Nullable ByteBuffer mNV21UVDelegatedBuffer;
 
     // Lock that synchronizes the access to mSubscribedAnalyzer/mUserExecutor to prevent mismatch.
     private final Object mAnalyzerLock = new Object();
@@ -143,8 +144,7 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
      * Implemented by children to acquireImage via {@link ImageReaderProxy#acquireLatestImage()} or
      * {@link ImageReaderProxy#acquireNextImage()}.
      */
-    @Nullable
-    abstract ImageProxy acquireImage(@NonNull ImageReaderProxy imageReaderProxy);
+    abstract @Nullable ImageProxy acquireImage(@NonNull ImageReaderProxy imageReaderProxy);
 
     /**
      * Called when a new valid {@link ImageProxy} becomes available via
@@ -176,6 +176,8 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
         ByteBuffer yRotatedBuffer;
         ByteBuffer uRotatedBuffer;
         ByteBuffer vRotatedBuffer;
+        ByteBuffer nv21YDelegatedBuffer;
+        ByteBuffer nv21UVDelegatedBuffer;
         int currentBufferRotationDegrees = mOutputImageRotationEnabled ? mRelativeRotation : 0;
         boolean outputImageDirty;
 
@@ -195,7 +197,7 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
             }
 
             // Cache memory buffer for image rotation
-            if (mOutputImageRotationEnabled) {
+            if (mOutputImageRotationEnabled || mOutputImageFormat == OUTPUT_IMAGE_FORMAT_NV21) {
                 createHelperBuffer(imageProxy);
             }
 
@@ -205,6 +207,8 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
             yRotatedBuffer = mYRotatedBuffer;
             uRotatedBuffer = mURotatedBuffer;
             vRotatedBuffer = mVRotatedBuffer;
+            nv21YDelegatedBuffer = mNV21YDelegatedBuffer;
+            nv21UVDelegatedBuffer = mNV21UVDelegatedBuffer;
         }
 
         ListenableFuture<Void> future;
@@ -239,6 +243,25 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
                                 vRotatedBuffer,
                                 currentBufferRotationDegrees);
                     }
+                }
+            } else if (mOutputImageFormat == OUTPUT_IMAGE_FORMAT_NV21) {
+                // Apply one pixel shift before other processing, e.g. rotation.
+                if (mOnePixelShiftEnabled) {
+                    applyPixelShiftForYUV(imageProxy);
+                }
+                if (yRotatedBuffer != null
+                        && uRotatedBuffer != null
+                        && vRotatedBuffer != null
+                        && nv21YDelegatedBuffer != null
+                        && nv21UVDelegatedBuffer != null) {
+                    processedImageProxy = rotateYUVAndConvertToNV21(
+                            imageProxy,
+                            yRotatedBuffer,
+                            uRotatedBuffer,
+                            vRotatedBuffer,
+                            nv21YDelegatedBuffer,
+                            nv21UVDelegatedBuffer,
+                            currentBufferRotationDegrees);
                 }
             }
 
@@ -276,7 +299,8 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
                                         imageProxy.getImageInfo().getTimestamp(),
                                         mOutputImageRotationEnabled ? 0
                                                 : mRelativeRotation,
-                                        transformMatrix);
+                                        transformMatrix,
+                                        imageProxy.getImageInfo().getFlashState());
 
                                 ImageProxy outputSettableImageProxy = new SettableImageProxy(
                                         outputImageProxy, imageInfo);
@@ -300,8 +324,7 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
         return future;
     }
 
-    @NonNull
-    private static SafeCloseImageReaderProxy createImageReaderProxy(
+    private static @NonNull SafeCloseImageReaderProxy createImageReaderProxy(
             int imageWidth,
             int imageHeight,
             int rotation,
@@ -355,11 +378,10 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
         synchronized (mAnalyzerLock) {
             mProcessedImageReaderProxy = processedImageReaderProxy;
         }
-
     }
 
     void setAnalyzer(@Nullable Executor userExecutor,
-            @Nullable ImageAnalysis.Analyzer subscribedAnalyzer) {
+            ImageAnalysis.@Nullable Analyzer subscribedAnalyzer) {
         // Keep clearCache out of mAnalyzerLock critical section to avoid deadlock.
         if (subscribedAnalyzer == null) {
             clearCache();
@@ -387,7 +409,8 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
 
     @GuardedBy("mAnalyzerLock")
     private void createHelperBuffer(@NonNull ImageProxy imageProxy) {
-        if (mOutputImageFormat == ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888) {
+        if (mOutputImageFormat == ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888
+                || mOutputImageFormat == OUTPUT_IMAGE_FORMAT_NV21) {
             if (mYRotatedBuffer == null) {
                 mYRotatedBuffer = ByteBuffer.allocateDirect(
                         imageProxy.getWidth() * imageProxy.getHeight());
@@ -405,6 +428,20 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
                         imageProxy.getWidth() * imageProxy.getHeight() / 4);
             }
             mVRotatedBuffer.position(0);
+            if (mOutputImageFormat == OUTPUT_IMAGE_FORMAT_NV21) {
+                if (mNV21YDelegatedBuffer == null) {
+                    mNV21YDelegatedBuffer = ByteBuffer.allocateDirect(
+                            imageProxy.getWidth() * imageProxy.getHeight());
+                }
+                mNV21YDelegatedBuffer.position(0);
+                if (mNV21UVDelegatedBuffer == null) {
+                    // This will be converted into U, V child ByteBuffers for NV21 format
+                    // conversion process
+                    mNV21UVDelegatedBuffer = ByteBuffer.allocateDirect(
+                            imageProxy.getWidth() * imageProxy.getHeight() / 2);
+                }
+                mNV21UVDelegatedBuffer.position(0);
+            }
         } else if (mOutputImageFormat == OUTPUT_IMAGE_FORMAT_RGBA_8888) {
             if (mRGBConvertedBuffer == null) {
                 mRGBConvertedBuffer = ByteBuffer.allocateDirect(
@@ -460,8 +497,7 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
                 additionalTransformMatrix);
     }
 
-    @NonNull
-    static Rect getUpdatedCropRect(
+    static @NonNull Rect getUpdatedCropRect(
             @NonNull Rect originalCropRect,
             @NonNull Matrix additionalTransformMatrix) {
         RectF rectF = new RectF(originalCropRect);
@@ -472,8 +508,7 @@ abstract class ImageAnalysisAbstractAnalyzer implements ImageReaderProxy.OnImage
     }
 
     @VisibleForTesting
-    @NonNull
-    static Matrix getAdditionalTransformMatrixAppliedByProcessor(
+    static @NonNull Matrix getAdditionalTransformMatrixAppliedByProcessor(
             int originalWidth,
             int originalHeight,
             int rotatedWidth,

@@ -17,13 +17,15 @@
 package androidx.appsearch.localstorage.stats;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
 import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.app.RemoveByDocumentIdRequest;
 import androidx.appsearch.app.SearchSpec;
+import androidx.appsearch.stats.BaseStats;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -36,7 +38,8 @@ import java.lang.annotation.RetentionPolicy;
  * @exportToFramework:hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public final class RemoveStats {
+public final class RemoveStats extends BaseStats {
+    /** Types of stats available for remove API. */
     @IntDef(value = {
             // It needs to be sync with DeleteType.Code in
             // external/icing/proto/icing/proto/logging.proto#DeleteStatsProto
@@ -62,10 +65,8 @@ public final class RemoveStats {
     /** Delete by schema type. */
     public static final int SCHEMA_TYPE = 4;
 
-    @NonNull
-    private final String mPackageName;
-    @NonNull
-    private final String mDatabase;
+    private final @NonNull String mPackageName;
+    private final @NonNull String mDatabase;
     /**
      * The status code returned by {@link AppSearchResult#getResultCode()} for the call or
      * internal state.
@@ -77,9 +78,16 @@ public final class RemoveStats {
     @DeleteType
     private final int mNativeDeleteType;
     private final int mNativeNumDocumentsDeleted;
+    private final int mQueryLength;
+    private final int mNumTerms;
+    private final int mNumNamespacesFiltered;
+    private final int mNumSchemaTypesFiltered;
+    private final int mParseQueryLatencyMillis;
+    private final int mDocumentRemovalLatencyMillis;
+
 
     RemoveStats(@NonNull Builder builder) {
-        Preconditions.checkNotNull(builder);
+        super(builder);
         mPackageName = builder.mPackageName;
         mDatabase = builder.mDatabase;
         mStatusCode = builder.mStatusCode;
@@ -87,17 +95,21 @@ public final class RemoveStats {
         mNativeLatencyMillis = builder.mNativeLatencyMillis;
         mNativeDeleteType = builder.mNativeDeleteType;
         mNativeNumDocumentsDeleted = builder.mNativeNumDocumentsDeleted;
+        mQueryLength = builder.mQueryLength;
+        mNumTerms = builder.mNumTerms;
+        mNumNamespacesFiltered = builder.mNumNamespacesFiltered;
+        mNumSchemaTypesFiltered = builder.mNumSchemaTypesFiltered;
+        mParseQueryLatencyMillis = builder.mParseQueryLatencyMillis;
+        mDocumentRemovalLatencyMillis = builder.mDocumentRemovalLatencyMillis;
     }
 
     /** Returns calling package name. */
-    @NonNull
-    public String getPackageName() {
+    public @NonNull String getPackageName() {
         return mPackageName;
     }
 
     /** Returns calling database name. */
-    @NonNull
-    public String getDatabase() {
+    public @NonNull String getDatabase() {
         return mDatabase;
     }
 
@@ -128,12 +140,43 @@ public final class RemoveStats {
         return mNativeNumDocumentsDeleted;
     }
 
+    /** The UTF-8 length of the query string. */
+    public int getQueryLength() {
+        return mQueryLength;
+    }
+
+    /** Number of terms in the query string. */
+    public int getNumTerms() {
+        return mNumTerms;
+    }
+
+    /** Number of namespaces filtered. */
+    public int getNumNamespacesFiltered() {
+        return mNumNamespacesFiltered;
+    }
+
+    /** Number of schema types filtered.. */
+    public int getNumSchemaTypesFiltered() {
+        return mNumSchemaTypesFiltered;
+    }
+
+    /**
+     *  Returns the time used to parse the query, including 2 parts: tokenizing and transforming
+     *  tokens into an iterator tree.
+     */
+    public int getParseQueryLatencyMillis() {
+        return mParseQueryLatencyMillis;
+    }
+
+    /** Returns the time used to delete each document */
+    public int getDocumentRemovalLatencyMillis() {
+        return mDocumentRemovalLatencyMillis;
+    }
+
     /** Builder for {@link RemoveStats}. */
-    public static class Builder {
-        @NonNull
-        final String mPackageName;
-        @NonNull
-        final String mDatabase;
+    public static class Builder extends BaseStats.Builder<RemoveStats.Builder> {
+        final @NonNull String mPackageName;
+        final @NonNull String mDatabase;
         @AppSearchResult.ResultCode
         int mStatusCode;
         int mTotalLatencyMillis;
@@ -141,6 +184,12 @@ public final class RemoveStats {
         @DeleteType
         int mNativeDeleteType;
         int mNativeNumDocumentsDeleted;
+        int mQueryLength;
+        int mNumTerms;
+        int mNumNamespacesFiltered;
+        int mNumSchemaTypesFiltered;
+        int mParseQueryLatencyMillis;
+        int mDocumentRemovalLatencyMillis;
 
         /** Constructor for the {@link Builder}. */
         public Builder(@NonNull String packageName, @NonNull String database) {
@@ -150,47 +199,87 @@ public final class RemoveStats {
 
         /** Sets the status code. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setStatusCode(@AppSearchResult.ResultCode int statusCode) {
+        public @NonNull Builder setStatusCode(@AppSearchResult.ResultCode int statusCode) {
             mStatusCode = statusCode;
             return this;
         }
 
         /** Sets total latency in millis. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setTotalLatencyMillis(int totalLatencyMillis) {
+        public @NonNull Builder setTotalLatencyMillis(int totalLatencyMillis) {
             mTotalLatencyMillis = totalLatencyMillis;
             return this;
         }
 
         /** Sets native latency in millis. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setNativeLatencyMillis(int nativeLatencyMillis) {
+        public @NonNull Builder setNativeLatencyMillis(int nativeLatencyMillis) {
             mNativeLatencyMillis = nativeLatencyMillis;
             return this;
         }
 
         /** Sets delete type for this call. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setDeleteType(@DeleteType int nativeDeleteType) {
+        public @NonNull Builder setDeleteType(@DeleteType int nativeDeleteType) {
             mNativeDeleteType = nativeDeleteType;
             return this;
         }
 
         /** Sets how many documents get deleted for this call. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setDeletedDocumentCount(int nativeNumDocumentsDeleted) {
+        public @NonNull Builder setDeletedDocumentCount(int nativeNumDocumentsDeleted) {
             mNativeNumDocumentsDeleted = nativeNumDocumentsDeleted;
             return this;
         }
 
+        /** Sets the UTF-8 length of the query string. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setQueryLength(int queryLength) {
+            mQueryLength = queryLength;
+            return this;
+        }
+
+        /** Sets number of terms in the query string. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNumTerms(int numTerms) {
+            mNumTerms = numTerms;
+            return this;
+        }
+
+        /** Sets number of namespaces filtered. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNumNamespacesFiltered(int numNamespacesFiltered) {
+            mNumNamespacesFiltered = numNamespacesFiltered;
+            return this;
+        }
+
+        /** Sets number of schema types filtered. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNumSchemaTypesFiltered(int numSchemaTypesFiltered) {
+            mNumSchemaTypesFiltered = numSchemaTypesFiltered;
+            return this;
+        }
+
+        /**
+         * Sets time used to parse the query, including 2 parts: tokenizing and transforming tokens
+         * into an iterator tree.
+         */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setParseQueryLatencyMillis(int parseQueryLatencyMillis) {
+            mParseQueryLatencyMillis = parseQueryLatencyMillis;
+            return this;
+        }
+
+        /** Sets Time used to delete each document. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setDocumentRemovalLatencyMillis(int documentRemovalLatencyMillis) {
+            mDocumentRemovalLatencyMillis = documentRemovalLatencyMillis;
+            return this;
+        }
+
         /** Creates a {@link RemoveStats}. */
-        @NonNull
-        public RemoveStats build() {
+        @Override
+        public @NonNull RemoveStats build() {
             return new RemoveStats(/* builder= */ this);
         }
     }

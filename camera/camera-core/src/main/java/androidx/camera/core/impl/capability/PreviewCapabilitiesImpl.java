@@ -16,20 +16,19 @@
 
 package androidx.camera.core.impl.capability;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.Preview;
 import androidx.camera.core.PreviewCapabilities;
 import androidx.camera.core.impl.CameraInfoInternal;
 
+import org.jspecify.annotations.NonNull;
+
 /**
  * Implementation of {@link PreviewCapabilities}. It delegates to {@link CameraInfoInternal} to
  * retrieve {@link Preview} related capabilities.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@RequiresApi(21)
 public class PreviewCapabilitiesImpl implements PreviewCapabilities {
 
     private boolean mIsStabilizationSupported;
@@ -41,8 +40,7 @@ public class PreviewCapabilitiesImpl implements PreviewCapabilities {
     /**
      * Gets {@link PreviewCapabilities} by the {@link CameraInfo}.
      */
-    @NonNull
-    public static PreviewCapabilities from(@NonNull CameraInfo cameraInfo) {
+    public static @NonNull PreviewCapabilities from(@NonNull CameraInfo cameraInfo) {
         return new PreviewCapabilitiesImpl((CameraInfoInternal) cameraInfo);
     }
 

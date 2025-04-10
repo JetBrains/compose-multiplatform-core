@@ -22,8 +22,9 @@ import android.os.IBinder;
 import android.os.IInterface;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -74,21 +75,18 @@ public @interface VersionedParcelize {
      * This can be filled with any ids that used to be contained within this VersionedParcelable,
      * but are no longer present. Ids listed here cannot be used by any fields within this class.
      */
-    @NonNull
-    int[] deprecatedIds() default {};
+    int @NonNull [] deprecatedIds() default {};
 
     /**
      * An alternate classname to also generate serialization for to support jetifier androidx
      * migration.
      */
-    @NonNull
-    String jetifyAs() default "";
+    @NonNull String jetifyAs() default "";
 
     /**
      * Specifies a class to use to get objects for instantiation rather than creating them
      * directly. The class must have an accessible empty constructor, and a get() method that
      * returns an instance of the class this annotation is on.
      */
-    @NonNull
-    Class<?> factory() default void.class;
+    @NonNull Class<?> factory() default void.class;
 }

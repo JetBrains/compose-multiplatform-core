@@ -17,7 +17,6 @@
 package androidx.camera.core.internal.compat.workaround
 
 import android.os.Build
-import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -28,10 +27,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.util.ReflectionHelpers
 
-/**
- * Unit test for [CaptureFailedRetryEnabler]
- */
-@SmallTest
+/** Unit test for [CaptureFailedRetryEnabler] */
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
@@ -44,14 +40,15 @@ class CaptureFailedRetryEnablerTest(
     companion object {
         @JvmStatic
         @Parameters(name = "brand={0}, model={1}, expectedResult={2}")
-        fun data() = mutableListOf<Array<Any?>>().apply {
-            add(arrayOf("SAMSUNG", "SM-G981U1", 1))
-            add(arrayOf("samsung", "sm-g981u1", 1))
-            add(arrayOf("samsung", "sm-g981u10", 0))
-            add(arrayOf("samsung", "sm-g981u", 0))
-            add(arrayOf("fakeBrand", "sm-g981u1", 0))
-            add(arrayOf("", "", 0))
-        }
+        fun data() =
+            mutableListOf<Array<Any?>>().apply {
+                add(arrayOf("SAMSUNG", "SM-G981U1", 1))
+                add(arrayOf("samsung", "sm-g981u1", 1))
+                add(arrayOf("samsung", "sm-g981u10", 0))
+                add(arrayOf("samsung", "sm-g981u", 0))
+                add(arrayOf("fakeBrand", "sm-g981u1", 0))
+                add(arrayOf("", "", 0))
+            }
     }
 
     @Before

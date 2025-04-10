@@ -25,10 +25,10 @@ import static androidx.camera.core.impl.utils.ExifData.IFD_TYPE_GPS;
 import static androidx.camera.core.impl.utils.ExifData.IFD_TYPE_INTEROPERABILITY;
 import static androidx.camera.core.impl.utils.ExifData.IFD_TYPE_PRIMARY;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.Logger;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.BufferedOutputStream;
 import java.io.FilterOutputStream;
@@ -69,7 +69,6 @@ import java.util.Map;
  * }
  * </pre>
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class ExifOutputStream extends FilterOutputStream {
     private static final String TAG = "ExifOutputStream";
     private static final boolean DEBUG = false;
@@ -120,7 +119,7 @@ public final class ExifOutputStream extends FilterOutputStream {
      * writing, it's Exif header will be replaced by the given header.
      */
     @Override
-    public void write(@NonNull byte[] buffer, int offset, int length) throws IOException {
+    public void write(byte @NonNull [] buffer, int offset, int length) throws IOException {
         while ((mByteToSkip > 0 || mByteToCopy > 0 || mState != STATE_JPEG_DATA)
                 && length > 0) {
             if (mByteToSkip > 0) {
@@ -210,7 +209,7 @@ public final class ExifOutputStream extends FilterOutputStream {
      * Equivalent to calling write(buffer, 0, buffer.length).
      */
     @Override
-    public void write(@NonNull byte[] buffer) throws IOException {
+    public void write(byte @NonNull [] buffer) throws IOException {
         write(buffer, 0, buffer.length);
     }
 

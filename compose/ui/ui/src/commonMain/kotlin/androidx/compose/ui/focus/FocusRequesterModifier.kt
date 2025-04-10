@@ -17,6 +17,7 @@
 package androidx.compose.ui.focus
 
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.internal.JvmDefaultWithCompatibility
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
 
@@ -25,7 +26,6 @@ import androidx.compose.ui.platform.InspectorInfo
  * request focus state changes.
  *
  * @sample androidx.compose.ui.samples.RequestFocusSample
- *
  * @see FocusRequester
  * @see Modifier.focusRequester
  */
@@ -48,9 +48,8 @@ interface FocusRequesterModifier : Modifier.Element {
 fun Modifier.focusRequester(focusRequester: FocusRequester): Modifier =
     this then FocusRequesterElement(focusRequester)
 
-private data class FocusRequesterElement(
-    val focusRequester: FocusRequester
-) : ModifierNodeElement<FocusRequesterNode>() {
+private data class FocusRequesterElement(val focusRequester: FocusRequester) :
+    ModifierNodeElement<FocusRequesterNode>() {
     override fun create() = FocusRequesterNode(focusRequester)
 
     override fun update(node: FocusRequesterNode) {
@@ -65,9 +64,8 @@ private data class FocusRequesterElement(
     }
 }
 
-private class FocusRequesterNode(
-    var focusRequester: FocusRequester
-) : FocusRequesterModifierNode, Modifier.Node() {
+private class FocusRequesterNode(var focusRequester: FocusRequester) :
+    FocusRequesterModifierNode, Modifier.Node() {
     override fun onAttach() {
         super.onAttach()
         focusRequester.focusRequesterNodes += this

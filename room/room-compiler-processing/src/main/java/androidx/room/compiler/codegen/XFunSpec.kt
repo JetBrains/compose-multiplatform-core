@@ -16,6 +16,7 @@
 
 package androidx.room.compiler.codegen
 
+import androidx.room.compiler.codegen.impl.XFunSpecImpl
 import androidx.room.compiler.codegen.java.JavaFunSpec
 import androidx.room.compiler.codegen.java.toJavaVisibilityModifier
 import androidx.room.compiler.codegen.kotlin.KotlinFunSpec
@@ -24,32 +25,39 @@ import androidx.room.compiler.processing.FunSpecHelper
 import androidx.room.compiler.processing.MethodSpecHelper
 import androidx.room.compiler.processing.XMethodElement
 import androidx.room.compiler.processing.XType
-import com.squareup.javapoet.MethodSpec
-import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 
-interface XFunSpec : TargetLanguage {
+interface XFunSpec {
 
-    val name: String
+    val name: XName
 
-    interface Builder : TargetLanguage {
-
-        val name: String
+    interface Builder {
 
         fun addAnnotation(annotation: XAnnotationSpec): Builder
 
+        fun addTypeVariable(typeVariable: XTypeName): Builder
+
+        fun addTypeVariables(typeVariables: List<XTypeName>) = apply {
+            typeVariables.forEach { addTypeVariable(it) }
+        }
+
         fun addAbstractModifier(): Builder
 
-        // TODO(b/247247442): Maybe make a XParameterSpec ?
-        fun addParameter(
-            typeName: XTypeName,
-            name: String,
-            annotations: List<XAnnotationSpec> = emptyList()
-        ): Builder
+        fun addParameter(parameter: XParameterSpec): Builder
 
-        fun addCode(
-            code: XCodeBlock
-        ): Builder
+        fun addParameter(name: String, typeName: XTypeName): Builder
+
+        fun addParameters(parameters: List<XParameterSpec>) = apply {
+            parameters.forEach { addParameter(it) }
+        }
+
+        fun addCode(code: XCodeBlock): Builder
+
+        fun addCode(format: String, vararg args: Any?) =
+            addCode(XCodeBlock.builder().add(format, *args).build())
+
+        fun addStatement(format: String, vararg args: Any?) =
+            addCode(XCodeBlock.builder().addStatement(format, *args).build())
 
         fun callSuperConstructor(vararg args: XCodeBlock): Builder
 
@@ -58,113 +66,106 @@ interface XFunSpec : TargetLanguage {
         fun build(): XFunSpec
 
         companion object {
-            fun Builder.addStatement(format: String, vararg args: Any?) = addCode(
-                XCodeBlock.builder(language).addStatement(format, *args).build()
-            )
-
-            fun Builder.apply(
-                javaMethodBuilder: MethodSpec.Builder.() -> Unit,
-                kotlinFunctionBuilder: FunSpec.Builder.() -> Unit,
-            ): Builder = apply {
-                when (language) {
-                    CodeLanguage.JAVA -> {
-                        check(this is JavaFunSpec.Builder)
-                        this.actual.javaMethodBuilder()
+            fun Builder.applyTo(block: Builder.(CodeLanguage) -> Unit) = apply {
+                when (this) {
+                    is XFunSpecImpl.Builder -> {
+                        this.java.block(CodeLanguage.JAVA)
+                        this.kotlin.block(CodeLanguage.KOTLIN)
                     }
-                    CodeLanguage.KOTLIN -> {
-                        check(this is KotlinFunSpec.Builder)
-                        this.actual.kotlinFunctionBuilder()
-                    }
+                    is JavaFunSpec.Builder -> block(CodeLanguage.JAVA)
+                    is KotlinFunSpec.Builder -> block(CodeLanguage.KOTLIN)
                 }
             }
+
+            fun Builder.applyTo(language: CodeLanguage, block: Builder.() -> Unit) =
+                applyTo { codeLanguage ->
+                    if (codeLanguage == language) {
+                        block()
+                    }
+                }
         }
     }
 
     companion object {
+        @JvmStatic
         fun builder(
-            language: CodeLanguage,
             name: String,
             visibility: VisibilityModifier,
             isOpen: Boolean = false,
-            isOverride: Boolean = false
-        ): Builder {
-            return when (language) {
-                CodeLanguage.JAVA -> {
-                    JavaFunSpec.Builder(
-                        name,
-                        MethodSpec.methodBuilder(name).apply {
-                            addModifiers(visibility.toJavaVisibilityModifier())
-                            // TODO(b/247242374) Add nullability annotations for non-private params
-                            // if (!isOpen) {
-                            //    addModifiers(Modifier.FINAL)
-                            // }
-                            if (isOverride) {
-                                addAnnotation(Override::class.java)
-                            }
-                        }
-                    )
-                }
-                CodeLanguage.KOTLIN -> {
-                    KotlinFunSpec.Builder(
-                        name,
-                        FunSpec.builder(name).apply {
-                            addModifiers(visibility.toKotlinVisibilityModifier())
-                            if (isOpen) {
-                                addModifiers(KModifier.OPEN)
-                            }
-                            if (isOverride) {
-                                addModifiers(KModifier.OVERRIDE)
-                            }
-                        }
-                    )
-                }
-            }
-        }
+            isOverride: Boolean = false,
+            addJavaNullabilityAnnotation: Boolean = true
+        ) = builder(XName.of(name), visibility, isOpen, isOverride, addJavaNullabilityAnnotation)
 
+        @JvmStatic
+        fun builder(
+            name: XName,
+            visibility: VisibilityModifier,
+            isOpen: Boolean = false,
+            isOverride: Boolean = false,
+            addJavaNullabilityAnnotation: Boolean = true
+        ): Builder =
+            XFunSpecImpl.Builder(
+                JavaFunSpec.Builder(
+                    addJavaNullabilityAnnotation,
+                    JFunSpec.methodBuilder(name.java).apply {
+                        addModifiers(visibility.toJavaVisibilityModifier())
+                        // TODO(b/247242374) Add nullability annotations for non-private params
+                        // if (!isOpen) {
+                        //    addModifiers(Modifier.FINAL)
+                        // }
+                        if (isOverride) {
+                            addAnnotation(Override::class.java)
+                        }
+                    }
+                ),
+                KotlinFunSpec.Builder(
+                    KFunSpec.builder(name.kotlin).apply {
+                        addModifiers(visibility.toKotlinVisibilityModifier())
+                        if (isOpen) {
+                            addModifiers(KModifier.OPEN)
+                        }
+                        if (isOverride) {
+                            addModifiers(KModifier.OVERRIDE)
+                        }
+                    }
+                )
+            )
+
+        @JvmStatic
         fun constructorBuilder(
-            language: CodeLanguage,
-            visibility: VisibilityModifier
-        ): Builder {
-            val name = "<init>"
-            return when (language) {
-                CodeLanguage.JAVA -> {
-                    JavaFunSpec.Builder(
-                        name,
-                        MethodSpec.constructorBuilder().apply {
-                            addModifiers(visibility.toJavaVisibilityModifier())
+            visibility: VisibilityModifier,
+            addJavaNullabilityAnnotation: Boolean = true
+        ): Builder =
+            XFunSpecImpl.Builder(
+                JavaFunSpec.Builder(
+                    addJavaNullabilityAnnotation,
+                    JFunSpec.constructorBuilder().apply {
+                        addModifiers(visibility.toJavaVisibilityModifier())
+                    }
+                ),
+                KotlinFunSpec.Builder(
+                    KFunSpec.constructorBuilder().apply {
+                        // Workaround for the unreleased fix in
+                        // https://github.com/square/kotlinpoet/pull/1342
+                        if (visibility != VisibilityModifier.PUBLIC) {
+                            addModifiers(visibility.toKotlinVisibilityModifier())
                         }
-                    )
-                }
-                CodeLanguage.KOTLIN -> {
-                    KotlinFunSpec.Builder(
-                        name,
-                        FunSpec.constructorBuilder().apply {
-                            // Workaround for the unreleased fix in
-                            // https://github.com/square/kotlinpoet/pull/1342
-                            if (visibility != VisibilityModifier.PUBLIC) {
-                                addModifiers(visibility.toKotlinVisibilityModifier())
-                            }
-                        }
-                    )
-                }
-            }
-        }
+                    }
+                )
+            )
 
+        @JvmStatic
         fun overridingBuilder(
-            language: CodeLanguage,
             element: XMethodElement,
-            owner: XType
-        ): Builder {
-            return when (language) {
-                CodeLanguage.JAVA -> JavaFunSpec.Builder(
-                    name = element.jvmName,
-                    actual = MethodSpecHelper.overridingWithFinalParams(element, owner)
-                )
-                CodeLanguage.KOTLIN -> KotlinFunSpec.Builder(
-                    name = element.name,
-                    actual = FunSpecHelper.overriding(element, owner)
-                )
-            }
-        }
+            owner: XType,
+            addJavaNullabilityAnnotation: Boolean = true
+        ): Builder =
+            XFunSpecImpl.Builder(
+                JavaFunSpec.Builder(
+                    addJavaNullabilityAnnotation,
+                    MethodSpecHelper.overridingWithFinalParams(element, owner)
+                ),
+                KotlinFunSpec.Builder(FunSpecHelper.overriding(element, owner))
+            )
     }
 }

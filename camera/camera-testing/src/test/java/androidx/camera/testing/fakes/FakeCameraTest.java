@@ -21,19 +21,25 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static java.util.Collections.singletonList;
 
+import android.graphics.SurfaceTexture;
+import android.hardware.camera2.CameraDevice;
 import android.os.Build;
+import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.CameraConfig;
 import androidx.camera.core.impl.CameraInternal;
+import androidx.camera.core.impl.DeferrableSurface;
 import androidx.camera.core.impl.Identifier;
+import androidx.camera.core.impl.ImmediateSurface;
 import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.Observable;
+import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.testing.impl.fakes.FakeUseCase;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,7 +59,7 @@ public final class FakeCameraTest {
     private Observable.Observer<CameraInternal.State> mStateObserver =
             new Observable.Observer<CameraInternal.State>() {
                 @Override
-                public void onNewData(@Nullable CameraInternal.State value) {
+                public void onNewData(CameraInternal.@Nullable State value) {
                     mLatestState = value;
                 }
 
@@ -80,6 +86,33 @@ public final class FakeCameraTest {
         mCamera.open();
         ShadowLooper.runUiThreadTasks();
         assertThat(mLatestState).isEqualTo(CameraInternal.State.OPEN);
+    }
+
+    @Test
+    public void closeCameraInReconfiguredState_deferrableSurfaceTerminated() {
+        // Arrange: create UseCase with ImmediateSurface
+        SurfaceTexture surfaceTexture = new SurfaceTexture(1);
+        Surface surface = new Surface(surfaceTexture);
+        DeferrableSurface immediateSurface = new ImmediateSurface(surface);
+        FakeUseCase fakeUseCase = new FakeUseCase();
+        SessionConfig sessionConfig = new SessionConfig.Builder()
+                .setTemplateType(CameraDevice.TEMPLATE_PREVIEW)
+                .addSurface(immediateSurface)
+                .build();
+        fakeUseCase.updateSessionConfigForTesting(sessionConfig);
+
+        // Act: attach/detach UseCase
+        mCamera.attachUseCases(singletonList(fakeUseCase));
+        mCamera.onUseCaseActive(fakeUseCase);
+        mCamera.detachUseCases(singletonList(fakeUseCase));
+
+        // Assert: immediateSurface is terminated
+        immediateSurface.close();
+        assertThat(immediateSurface.getTerminationFuture().isDone()).isTrue();
+
+        // Cleanup surface
+        surface.release();
+        surfaceTexture.release();
     }
 
     @Test
@@ -223,15 +256,13 @@ public final class FakeCameraTest {
     @Test
     public void canUpdateExtendedConfig() {
         CameraConfig config = new CameraConfig() {
-            @NonNull
             @Override
-            public androidx.camera.core.impl.Config getConfig() {
+            public androidx.camera.core.impl.@NonNull Config getConfig() {
                 return MutableOptionsBundle.create();
             }
 
-            @NonNull
             @Override
-            public Identifier getCompatibilityId() {
+            public @NonNull Identifier getCompatibilityId() {
                 return Identifier.create(0);
             }
         };

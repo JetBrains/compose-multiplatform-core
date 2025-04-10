@@ -19,12 +19,12 @@ package androidx.emoji2.bundled;
 import android.content.Context;
 import android.content.res.AssetManager;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.core.util.Preconditions;
 import androidx.emoji2.text.EmojiCompat;
 import androidx.emoji2.text.MetadataRepo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 
@@ -65,11 +65,9 @@ public class BundledEmojiCompatConfig extends EmojiCompat.Config {
     }
 
     private static class BundledMetadataLoader implements EmojiCompat.MetadataRepoLoader {
-        @NonNull
-        private final Context mContext;
+        private final @NonNull Context mContext;
 
-        @Nullable
-        private final Executor mExecutor;
+        private final @Nullable Executor mExecutor;
 
         BundledMetadataLoader(@NonNull Context context, @Nullable Executor executor) {
             mContext = context.getApplicationContext();
@@ -77,8 +75,7 @@ public class BundledEmojiCompatConfig extends EmojiCompat.Config {
         }
 
         @Override
-        @RequiresApi(19)
-        public void load(@NonNull EmojiCompat.MetadataRepoLoaderCallback loaderCallback) {
+        public void load(EmojiCompat.@NonNull MetadataRepoLoaderCallback loaderCallback) {
             Preconditions.checkNotNull(loaderCallback, "loaderCallback cannot be null");
             final InitRunnable runnable = new InitRunnable(mContext, loaderCallback);
             if (mExecutor != null) {
@@ -91,7 +88,6 @@ public class BundledEmojiCompatConfig extends EmojiCompat.Config {
         }
     }
 
-    @RequiresApi(19)
     private static class InitRunnable implements Runnable {
         private static final String FONT_NAME = "NotoColorEmojiCompat.ttf";
         private final EmojiCompat.MetadataRepoLoaderCallback mLoaderCallback;

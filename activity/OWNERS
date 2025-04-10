@@ -2,7 +2,10 @@
 jbwoods@google.com
 ilake@google.com
 clarafok@google.com
-sanura@google.com
+
+# For insets related files
+rgl@google.com
+tigerhuang@google.com
 
 per-file settings.gradle = dustinlam@google.com, rahulrav@google.com
 

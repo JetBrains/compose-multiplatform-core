@@ -16,35 +16,40 @@
 
 package androidx.compose.foundation.pager
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.lazy.layout.LazyLayoutSemanticState
 import androidx.compose.ui.semantics.CollectionInfo
 
-@OptIn(ExperimentalFoundationApi::class)
 internal fun LazyLayoutSemanticState(
     state: PagerState,
     isVertical: Boolean
-): LazyLayoutSemanticState = object : LazyLayoutSemanticState {
-    override val firstVisibleItemScrollOffset: Int
-        get() = state.firstVisiblePageOffset
-    override val firstVisibleItemIndex: Int
-        get() = state.firstVisiblePage
-    override val canScrollForward: Boolean
-        get() = state.canScrollForward
+): LazyLayoutSemanticState =
+    object : LazyLayoutSemanticState {
+        override val scrollOffset: Float
+            get() = state.currentAbsoluteScrollOffset().toFloat()
 
-    override suspend fun animateScrollBy(delta: Float) {
-        state.animateScrollBy(delta)
-    }
+        override val maxScrollOffset: Float
+            get() = state.layoutInfo.calculateNewMaxScrollOffset(state.pageCount).toFloat()
 
-    override suspend fun scrollToItem(index: Int) {
-        state.scrollToPage(index)
-    }
-
-    override fun collectionInfo(): CollectionInfo =
-        if (isVertical) {
-            CollectionInfo(rowCount = state.pageCount, columnCount = 1)
-        } else {
-            CollectionInfo(rowCount = 1, columnCount = state.pageCount)
+        override suspend fun scrollToItem(index: Int) {
+            state.scrollToPage(index)
         }
-}
+
+        override fun collectionInfo(): CollectionInfo =
+            if (isVertical) {
+                CollectionInfo(rowCount = state.pageCount, columnCount = 1)
+            } else {
+                CollectionInfo(rowCount = 1, columnCount = state.pageCount)
+            }
+
+        override val viewport: Int
+            get() =
+                if (state.layoutInfo.orientation == Orientation.Vertical) {
+                    state.layoutInfo.viewportSize.height
+                } else {
+                    state.layoutInfo.viewportSize.width
+                }
+
+        override val contentPadding: Int
+            get() = state.layoutInfo.beforeContentPadding + state.layoutInfo.afterContentPadding
+    }

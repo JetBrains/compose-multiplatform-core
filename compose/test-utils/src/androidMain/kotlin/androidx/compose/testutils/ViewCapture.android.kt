@@ -29,7 +29,6 @@ import android.view.PixelCopy.OnPixelCopyFinishedListener
 import android.view.View
 import android.view.ViewTreeObserver
 import android.view.Window
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -39,9 +38,9 @@ import java.util.concurrent.TimeUnit
 /**
  * Captures the underlying view's surface into bitmap.
  *
- * This has currently several limitations. Currently we assume that the view is hosted in
- * Activity's window. Also if there is another window covering part of the component if won't occur
- * in the bitmap as this is taken from the component's window surface.
+ * This has currently several limitations. Currently we assume that the view is hosted in Activity's
+ * window. Also if there is another window covering part of the component if won't occur in the
+ * bitmap as this is taken from the component's window surface.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 fun View.captureToImage(): ImageBitmap {
@@ -71,18 +70,21 @@ fun View.captureToImage(): ImageBitmap {
                 drawLatch.countDown()
             }
         } else {
-            decorView.viewTreeObserver.addOnDrawListener(object : ViewTreeObserver.OnDrawListener {
-                var handled = false
-                override fun onDraw() {
-                    if (!handled) {
-                        handled = true
-                        handler.post {
-                            drawLatch.countDown()
-                            decorView.viewTreeObserver.removeOnDrawListener(this)
+            decorView.viewTreeObserver.addOnDrawListener(
+                object : ViewTreeObserver.OnDrawListener {
+                    var handled = false
+
+                    override fun onDraw() {
+                        if (!handled) {
+                            handled = true
+                            handler.post {
+                                drawLatch.countDown()
+                                decorView.viewTreeObserver.removeOnDrawListener(this)
+                            }
                         }
                     }
                 }
-            })
+            )
         }
         decorView.invalidate()
     }
@@ -91,11 +93,12 @@ fun View.captureToImage(): ImageBitmap {
     }
 
     // and then request the pixel copy of the drawn buffer
-    val destBitmap = Bitmap.createBitmap(
-        boundsInWindow.width(),
-        boundsInWindow.height(),
-        Bitmap.Config.ARGB_8888
-    )
+    val destBitmap =
+        Bitmap.createBitmap(
+            boundsInWindow.width(),
+            boundsInWindow.height(),
+            Bitmap.Config.ARGB_8888
+        )
 
     val latch = CountDownLatch(1)
     var copyResult = 0
@@ -116,7 +119,6 @@ fun View.captureToImage(): ImageBitmap {
 
 @RequiresApi(29)
 private object FrameCommitCallbackHelper {
-    @DoNotInline
     fun registerFrameCommitCallback(viewTreeObserver: ViewTreeObserver, runnable: Runnable) {
         viewTreeObserver.registerFrameCommitCallback(runnable)
     }
@@ -124,7 +126,6 @@ private object FrameCommitCallbackHelper {
 
 @RequiresApi(Build.VERSION_CODES.O)
 private object PixelCopyHelper {
-    @DoNotInline
     fun request(
         source: Window,
         srcRect: Rect?,

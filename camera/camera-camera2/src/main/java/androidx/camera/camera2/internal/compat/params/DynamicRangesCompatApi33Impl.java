@@ -18,11 +18,12 @@ package androidx.camera.camera2.internal.compat.params;
 
 import android.hardware.camera2.params.DynamicRangeProfiles;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.camera.core.DynamicRange;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -36,9 +37,8 @@ class DynamicRangesCompatApi33Impl implements DynamicRangesCompat.DynamicRangePr
         mDynamicRangeProfiles = (DynamicRangeProfiles) dynamicRangeProfiles;
     }
 
-    @NonNull
     @Override
-    public Set<DynamicRange> getDynamicRangeCaptureRequestConstraints(
+    public @NonNull Set<DynamicRange> getDynamicRangeCaptureRequestConstraints(
             @NonNull DynamicRange dynamicRange) {
         Long dynamicRangeProfile = dynamicRangeToFirstSupportedProfile(dynamicRange);
         Preconditions.checkArgument(dynamicRangeProfile != null,
@@ -47,9 +47,8 @@ class DynamicRangesCompatApi33Impl implements DynamicRangesCompat.DynamicRangePr
                 mDynamicRangeProfiles.getProfileCaptureRequestConstraints(dynamicRangeProfile));
     }
 
-    @NonNull
     @Override
-    public Set<DynamicRange> getSupportedDynamicRanges() {
+    public @NonNull Set<DynamicRange> getSupportedDynamicRanges() {
         return profileSetToDynamicRangeSet(mDynamicRangeProfiles.getSupportedProfiles());
     }
 
@@ -61,26 +60,23 @@ class DynamicRangesCompatApi33Impl implements DynamicRangesCompat.DynamicRangePr
         return mDynamicRangeProfiles.isExtraLatencyPresent(dynamicRangeProfile);
     }
 
-    @Nullable
     @Override
-    public DynamicRangeProfiles unwrap() {
+    public @Nullable DynamicRangeProfiles unwrap() {
         return mDynamicRangeProfiles;
     }
 
-    @NonNull
-    private static DynamicRange profileToDynamicRange(long profile) {
+    private static @NonNull DynamicRange profileToDynamicRange(long profile) {
         return Preconditions.checkNotNull(DynamicRangeConversions.profileToDynamicRange(profile),
                 "Dynamic range profile cannot be converted to a DynamicRange object: " + profile);
     }
 
-    @Nullable
-    private Long dynamicRangeToFirstSupportedProfile(@NonNull DynamicRange dynamicRange) {
+    private @Nullable Long dynamicRangeToFirstSupportedProfile(@NonNull DynamicRange dynamicRange) {
         return DynamicRangeConversions.dynamicRangeToFirstSupportedProfile(dynamicRange,
                 mDynamicRangeProfiles);
     }
 
-    @NonNull
-    private static Set<DynamicRange> profileSetToDynamicRangeSet(@NonNull Set<Long> profileSet) {
+    private static @NonNull Set<DynamicRange> profileSetToDynamicRangeSet(
+            @NonNull Set<Long> profileSet) {
         if (profileSet.isEmpty()) {
             return Collections.emptySet();
         }

@@ -1,6 +1,11 @@
-import androidx.build.KmpPlatformsKt
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile
@@ -11,13 +16,15 @@ plugins {
 
 androidXMultiplatform {
     androidNative()
-    jvm()
-    mac()
-    linux()
-    linuxArm64()
     ios()
-    watchos()
+    js()
+    jvm()
+    linux()
+    mac()
+    mingwX64()
     tvos()
+    wasmJs()
+    watchos()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -28,16 +35,28 @@ androidXMultiplatform {
             }
         }
 
-        if (KmpPlatformsKt.enableNative(project)) {
-            nonJvmMain {
-                dependsOn commonMain
-            }
+        nonJvmMain {
+            dependsOn(commonMain)
+        }
 
-            targets.all { target ->
-                if (target.platformType !in [KotlinPlatformType.jvm, KotlinPlatformType.common]) {
-                    target.compilations["main"].defaultSourceSet {
-                        dependsOn(nonJvmMain)
-                    }
+        wasmJsMain {
+            dependsOn(nonJvmMain)
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
+        }
+
+        jsMain {
+            dependsOn(nonJvmMain)
+            dependencies {
+                implementation(libs.kotlinStdlibJs)
+            }
+        }
+
+        targets.configureEach { target ->
+            if (target.platformType !in [KotlinPlatformType.jvm, KotlinPlatformType.common]) {
+                target.compilations["main"].defaultSourceSet {
+                    dependsOn(nonJvmMain)
                 }
             }
         }
@@ -74,9 +93,8 @@ artifacts {
 
 androidx {
     name = "Annotation"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.ANNOTATION
-    kotlinTarget = KotlinTarget.KOTLIN_1_7
     inceptionYear = "2013"
     description = "Provides source annotations for tooling and readability."
 }

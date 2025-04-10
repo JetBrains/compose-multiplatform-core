@@ -18,7 +18,7 @@ package androidx.work;
 
 import android.app.Notification;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * The information required when a {@link ListenableWorker} runs in the context of a foreground
@@ -84,8 +84,7 @@ public final class ForegroundInfo {
     /**
      * @return The user visible {@link Notification}
      */
-    @NonNull
-    public Notification getNotification() {
+    public @NonNull Notification getNotification() {
         return mNotification;
     }
 

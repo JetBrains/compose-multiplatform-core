@@ -16,17 +16,18 @@
 
 package androidx.car.app.sample.showcase.common.screens.userinteractions;
 
-import static androidx.car.app.model.Action.BACK;
-
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.Screen;
+import androidx.car.app.model.Action;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.ListTemplate;
 import androidx.car.app.model.Row;
 import androidx.car.app.model.Template;
 import androidx.car.app.sample.showcase.common.R;
 import androidx.lifecycle.DefaultLifecycleObserver;
+
+import org.jspecify.annotations.NonNull;
 
 /** Screen to list different permission demos */
 public final class RequestPermissionMenuDemoScreen extends Screen
@@ -37,9 +38,8 @@ public final class RequestPermissionMenuDemoScreen extends Screen
         getLifecycle().addObserver(this);
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
         ItemList.Builder listBuilder = new ItemList.Builder();
 
         listBuilder.addItem(
@@ -60,8 +60,11 @@ public final class RequestPermissionMenuDemoScreen extends Screen
                         .build());
         return new ListTemplate.Builder()
                 .setSingleList(listBuilder.build())
-                .setTitle(getCarContext().getString(R.string.request_permission_menu_demo_title))
-                .setHeaderAction(BACK)
+                .setHeader(new Header.Builder()
+                        .setTitle(getCarContext()
+                                .getString(R.string.request_permission_menu_demo_title))
+                        .setStartHeaderAction(Action.BACK)
+                        .build())
                 .build();
     }
 }

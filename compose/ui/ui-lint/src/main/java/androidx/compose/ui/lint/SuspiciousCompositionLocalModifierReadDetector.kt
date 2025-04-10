@@ -30,11 +30,11 @@ import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import java.util.EnumSet
+import org.jetbrains.uast.UBlockExpression
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
+import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.UMethod
-import org.jetbrains.uast.kotlin.KotlinUFunctionCallExpression
-import org.jetbrains.uast.kotlin.KotlinULambdaExpression
 
 @Suppress("UnstableApiUsage")
 class SuspiciousCompositionLocalModifierReadDetector : Detector(), SourceCodeScanner {
@@ -61,8 +61,8 @@ class SuspiciousCompositionLocalModifierReadDetector : Detector(), SourceCodeSca
             if (node.containingClass.isClConsumerNode()) {
                 if (node.name in NodeLifecycleCallbacks) {
                     report(context, usage) { localBeingRead ->
-                        val action = node.name.removePrefix("on")
-                            .replaceFirstChar { it.lowercase() }
+                        val action =
+                            node.name.removePrefix("on").replaceFirstChar { it.lowercase() }
 
                         "Reading $localBeingRead in ${node.name} will only access the " +
                             "CompositionLocal's value when the modifier is ${action}ed. " +
@@ -76,7 +76,7 @@ class SuspiciousCompositionLocalModifierReadDetector : Detector(), SourceCodeSca
                 }
             }
             return
-        } else if (node is KotlinULambdaExpression.Body) {
+        } else if (node is UBlockExpression && node.uastParent is ULambdaExpression) {
             return
         }
 
@@ -90,7 +90,7 @@ class SuspiciousCompositionLocalModifierReadDetector : Detector(), SourceCodeSca
     ) {
         if (node == null) {
             return
-        } else if (node is KotlinUFunctionCallExpression && node.isLazyDelegate()) {
+        } else if (node is UCallExpression && node.isLazyDelegate()) {
             report(context, usage) { localBeingRead ->
                 "Reading $localBeingRead lazily will only access the CompositionLocal's value " +
                     "once. To be notified of the latest value of the CompositionLocal, read " +
@@ -107,8 +107,8 @@ class SuspiciousCompositionLocalModifierReadDetector : Detector(), SourceCodeSca
         usage: UCallExpression,
         message: (compositionLocalName: String) -> String
     ) {
-        val localBeingRead = usage.getArgumentForParameter(1)?.sourcePsi?.text
-            ?: "a composition local"
+        val localBeingRead =
+            usage.getArgumentForParameter(1)?.sourcePsi?.text ?: "a composition local"
 
         context.report(
             SuspiciousCompositionLocalModifierRead,
@@ -118,36 +118,38 @@ class SuspiciousCompositionLocalModifierReadDetector : Detector(), SourceCodeSca
     }
 
     private fun PsiClass?.isClConsumerNode(): Boolean =
-        this?.implementsListTypes
-            ?.any { it.canonicalText == ClConsumerModifierNode } == true
+        this?.implementsListTypes?.any { it.canonicalText == ClConsumerModifierNode } == true
 
-    private fun KotlinUFunctionCallExpression.isLazyDelegate(): Boolean =
+    private fun UCallExpression.isLazyDelegate(): Boolean =
         resolve()?.run { isInPackageName(Package("kotlin")) && name == "lazy" } == true
 
     companion object {
         private const val ClConsumerModifierNode =
             "androidx.compose.ui.node.CompositionLocalConsumerModifierNode"
 
-        val SuspiciousCompositionLocalModifierRead = Issue.create(
-            "SuspiciousCompositionLocalModifierRead",
-            "CompositionLocals should not be read in Modifier.onAttach() or Modifier.onDetach()",
-            "Jetpack Compose is unable to send updated values of a CompositionLocal when it's " +
-                "read in a Modifier.Node's initializer and onAttach() or onDetach() callbacks. " +
-                "Modifier.Node's callbacks are not aware of snapshot reads, and their lifecycle " +
-                "callbacks are not invoked on every recomposition. If you read a " +
-                "CompositionLocal in onAttach() or onDetach(), you will only get the " +
-                "CompositionLocal's value once at the moment of the read, which may lead to " +
-                "unexpected behaviors. We recommend instead reading CompositionLocals at " +
-                "time-of-use in callbacks that apply your Modifier's behavior, like measure() " +
-                "for LayoutModifierNode, draw() for DrawModifierNode, and so on. To observe the " +
-                "value of the CompositionLocal manually, extend from the ObserverNode interface " +
-                "and place the read inside an observeReads {} block within the " +
-                "onObservedReadsChanged() callback.",
-            Category.CORRECTNESS, 3, Severity.ERROR,
-            Implementation(
-                SuspiciousCompositionLocalModifierReadDetector::class.java,
-                EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
+        val SuspiciousCompositionLocalModifierRead =
+            Issue.create(
+                "SuspiciousCompositionLocalModifierRead",
+                "CompositionLocals should not be read in Modifier.onAttach() or Modifier.onDetach()",
+                "Jetpack Compose is unable to send updated values of a CompositionLocal when it's " +
+                    "read in a Modifier.Node's initializer and onAttach() or onDetach() callbacks. " +
+                    "Modifier.Node's callbacks are not aware of snapshot reads, and their lifecycle " +
+                    "callbacks are not invoked on every recomposition. If you read a " +
+                    "CompositionLocal in onAttach() or onDetach(), you will only get the " +
+                    "CompositionLocal's value once at the moment of the read, which may lead to " +
+                    "unexpected behaviors. We recommend instead reading CompositionLocals at " +
+                    "time-of-use in callbacks that apply your Modifier's behavior, like measure() " +
+                    "for LayoutModifierNode, draw() for DrawModifierNode, and so on. To observe the " +
+                    "value of the CompositionLocal manually, extend from the ObserverNode interface " +
+                    "and place the read inside an observeReads {} block within the " +
+                    "onObservedReadsChanged() callback.",
+                Category.CORRECTNESS,
+                3,
+                Severity.ERROR,
+                Implementation(
+                    SuspiciousCompositionLocalModifierReadDetector::class.java,
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
+                )
             )
-        )
     }
 }

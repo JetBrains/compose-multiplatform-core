@@ -20,9 +20,10 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  */
@@ -30,8 +31,7 @@ import androidx.annotation.RestrictTo;
 @SuppressLint("BanParcelableUsage")
 public class ParcelImpl implements Parcelable {
 
-    @Nullable
-    private final VersionedParcelable mParcel;
+    private final @Nullable VersionedParcelable mParcel;
 
     public ParcelImpl(@Nullable VersionedParcelable parcel) {
         mParcel = parcel;
@@ -44,8 +44,7 @@ public class ParcelImpl implements Parcelable {
     /**
      */
     @SuppressWarnings({"TypeParameterUnusedInFormals", "unchecked"})
-    @Nullable
-    public <T extends VersionedParcelable> T getVersionedParcel() {
+    public <T extends VersionedParcelable> @Nullable T getVersionedParcel() {
         return (T) mParcel;
     }
 
@@ -62,14 +61,12 @@ public class ParcelImpl implements Parcelable {
 
     public static final Creator<ParcelImpl> CREATOR = new Creator<ParcelImpl>() {
         @Override
-        @NonNull
-        public ParcelImpl createFromParcel(@NonNull Parcel in) {
+        public @NonNull ParcelImpl createFromParcel(@NonNull Parcel in) {
             return new ParcelImpl(in);
         }
 
         @Override
-        @NonNull
-        public ParcelImpl[] newArray(int size) {
+        public ParcelImpl @NonNull [] newArray(int size) {
             return new ParcelImpl[size];
         }
     };

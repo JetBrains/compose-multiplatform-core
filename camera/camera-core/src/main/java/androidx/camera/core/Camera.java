@@ -16,15 +16,12 @@
 
 package androidx.camera.core;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.impl.CameraConfig;
-import androidx.camera.core.impl.CameraInternal;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
-import java.util.LinkedHashSet;
+import org.jspecify.annotations.NonNull;
 
 /**
  * The camera interface is used to control the flow of data to use cases, control the
@@ -34,7 +31,6 @@ import java.util.LinkedHashSet;
  *androidx.lifecycle.LifecycleOwner, CameraSelector, UseCase...) An example} of how to obtain an
  * instance of this class can be found in the {@link androidx.camera.lifecycle} package.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public interface Camera {
 
     /**
@@ -51,8 +47,7 @@ public interface Camera {
      * the returned {@link ListenableFuture} will fail immediately with
      * {@link CameraControl.OperationCanceledException}.
      */
-    @NonNull
-    CameraControl getCameraControl();
+    @NonNull CameraControl getCameraControl();
 
     /**
      * Returns information about this camera.
@@ -62,33 +57,13 @@ public interface Camera {
      *
      * @return the {@link CameraInfo}.
      */
-    @NonNull
-    CameraInfo getCameraInfo();
-
-    /**
-     * Returns all of the {@link CameraInternal} instances represented by this Camera.
-     *
-     * <p> A {@link Camera} is a logical camera which wraps one or more {@link CameraInternal}.
-     * At any time, only one of the CameraInternal is actually being used, and it is up to the
-     * implementation to determine which {@link CameraInternal} will be used. Certain
-     * reconfigurations of the camera will cause the current CameraInternal camera to change.
-     * However, it will be transparent to the {@link CameraControl} and {@link CameraInfo}
-     * retrieved from {@link #getCameraControl()} and {@link #getCameraInfo()}.
-     *
-     * <p> The set of CameraInternal should be static for the lifetime of the Camera.
-     *
-     */
-    @NonNull
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    LinkedHashSet<CameraInternal> getCameraInternals();
+    @NonNull CameraInfo getCameraInfo();
 
     /**
      * Get the currently set extended config of the Camera.
-     *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    CameraConfig getExtendedConfig();
+    @NonNull CameraConfig getExtendedConfig();
 
     /**
      * Checks whether the use cases combination is supported.
@@ -97,7 +72,7 @@ public interface Camera {
      * @return whether the use cases combination is supported by the camera.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    default boolean isUseCasesCombinationSupported(@NonNull UseCase... useCases) {
+    default boolean isUseCasesCombinationSupported(UseCase @NonNull ... useCases) {
         return isUseCasesCombinationSupported(true, useCases);
     }
 
@@ -112,7 +87,7 @@ public interface Camera {
      * @return whether the use cases combination is supported by the camera.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    default boolean isUseCasesCombinationSupportedByFramework(@NonNull UseCase... useCases) {
+    default boolean isUseCasesCombinationSupportedByFramework(UseCase @NonNull ... useCases) {
         return isUseCasesCombinationSupported(false, useCases);
     }
 
@@ -127,7 +102,7 @@ public interface Camera {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     default boolean isUseCasesCombinationSupported(boolean withStreamSharing,
-            @NonNull UseCase... useCases) {
+            UseCase @NonNull ... useCases) {
         return true;
     }
 }

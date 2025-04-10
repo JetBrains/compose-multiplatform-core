@@ -18,20 +18,24 @@
 
 package androidx.compose.ui.node
 
+import androidx.collection.IntObjectMap
+import androidx.collection.intObjectMapOf
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.Autofill
+import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.autofill.AutofillTree
 import androidx.compose.ui.draganddrop.DragAndDropManager
 import androidx.compose.ui.focus.FocusOwner
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
-import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.GraphicsContext
+import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.KeyEvent
@@ -41,18 +45,23 @@ import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.modifier.modifierLocalOf
 import androidx.compose.ui.modifier.modifierLocalProvider
 import androidx.compose.ui.platform.AccessibilityManager
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
+import androidx.compose.ui.semantics.EmptySemanticsModifier
+import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextInputService
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.viewinterop.InteropView
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Executors
 import kotlin.coroutines.CoroutineContext
@@ -61,7 +70,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(ExperimentalComposeUiApi::class)
 @RunWith(JUnit4::class)
 class ModifierLocalConsumerEntityTest {
 
@@ -103,9 +111,9 @@ class ModifierLocalConsumerEntityTest {
         receivedValue = ""
 
         // Act.
-        changeModifier(Modifier.modifierLocalConsumer {
-            receivedValue = ModifierLocalString.current
-        })
+        changeModifier(
+            Modifier.modifierLocalConsumer { receivedValue = ModifierLocalString.current }
+        )
 
         // Assert.
         assertThat(receivedValue).isEqualTo(default)
@@ -131,9 +139,9 @@ class ModifierLocalConsumerEntityTest {
         // Arrange.
         var receivedValue = ""
         TestBox(
-            modifier = Modifier
-                .modifierLocalProvider(ModifierLocalString) { "Initial Value" }
-                .modifierLocalConsumer { receivedValue = ModifierLocalString.current }
+            modifier =
+                Modifier.modifierLocalProvider(ModifierLocalString) { "Initial Value" }
+                    .modifierLocalConsumer { receivedValue = ModifierLocalString.current }
         )
 
         // Assert.
@@ -146,9 +154,9 @@ class ModifierLocalConsumerEntityTest {
         val providedValue = "Provided Value"
         lateinit var receivedValue: String
         TestBox(
-            modifier = Modifier
-                .modifierLocalProvider(ModifierLocalString) { providedValue }
-                .modifierLocalConsumer { receivedValue = ModifierLocalString.current }
+            modifier =
+                Modifier.modifierLocalProvider(ModifierLocalString) { providedValue }
+                    .modifierLocalConsumer { receivedValue = ModifierLocalString.current }
         )
         // Act.
         attach()
@@ -165,16 +173,14 @@ class ModifierLocalConsumerEntityTest {
         var providedValue by mutableStateOf(initialValue)
         lateinit var receivedValue: String
         TestBox(
-            modifier = Modifier
-                .modifierLocalProvider(ModifierLocalString) { providedValue }
-                .modifierLocalConsumer { receivedValue = ModifierLocalString.current }
+            modifier =
+                Modifier.modifierLocalProvider(ModifierLocalString) { providedValue }
+                    .modifierLocalConsumer { receivedValue = ModifierLocalString.current }
         )
         attach()
 
         // Act.
-        Snapshot.withMutableSnapshot {
-            providedValue = finalValue
-        }
+        Snapshot.withMutableSnapshot { providedValue = finalValue }
 
         // Assert.
         assertThat(receivedValue).isEqualTo(finalValue)
@@ -188,18 +194,16 @@ class ModifierLocalConsumerEntityTest {
         var providedValue by mutableStateOf(initialValue)
         lateinit var receivedValue: String
         TestBox(
-            modifier = Modifier
-                .modifierLocalProvider(ModifierLocalString) { providedValue }
-                .modifierLocalConsumer { receivedValue = ModifierLocalString.current }
+            modifier =
+                Modifier.modifierLocalProvider(ModifierLocalString) { providedValue }
+                    .modifierLocalConsumer { receivedValue = ModifierLocalString.current }
         )
         attach()
         detach()
         receivedValue = ""
 
         // Act.
-        Snapshot.withMutableSnapshot {
-            providedValue = finalValue
-        }
+        Snapshot.withMutableSnapshot { providedValue = finalValue }
 
         // Assert.
         assertThat(receivedValue).isEmpty()
@@ -210,18 +214,18 @@ class ModifierLocalConsumerEntityTest {
         // Arrange.
         lateinit var receivedValue: String
         TestBox(
-            modifier = Modifier
-                .modifierLocalProvider(ModifierLocalString) { "Provided Value" }
-                .modifierLocalConsumer { receivedValue = ModifierLocalString.current }
+            modifier =
+                Modifier.modifierLocalProvider(ModifierLocalString) { "Provided Value" }
+                    .modifierLocalConsumer { receivedValue = ModifierLocalString.current }
         )
         attach()
         detach()
         receivedValue = ""
 
         // Act.
-        changeModifier(Modifier.modifierLocalConsumer {
-            receivedValue = ModifierLocalString.current
-        })
+        changeModifier(
+            Modifier.modifierLocalConsumer { receivedValue = ModifierLocalString.current }
+        )
 
         // Assert.
         assertThat(receivedValue).isEmpty()
@@ -233,17 +237,16 @@ class ModifierLocalConsumerEntityTest {
         val providedValue = "Provided Value"
         lateinit var receivedValue: String
         TestBox(
-            modifier = Modifier
-                .modifierLocalProvider(ModifierLocalString) { providedValue }
-                .modifierLocalConsumer { receivedValue = ModifierLocalString.current }
+            modifier =
+                Modifier.modifierLocalProvider(ModifierLocalString) { providedValue }
+                    .modifierLocalConsumer { receivedValue = ModifierLocalString.current }
         )
         attach()
         receivedValue = ""
 
         // Act.
         changeModifier(
-            Modifier
-                .modifierLocalProvider(ModifierLocalString) { providedValue }
+            Modifier.modifierLocalProvider(ModifierLocalString) { providedValue }
                 .modifierLocalConsumer { receivedValue = ModifierLocalString.current }
         )
 
@@ -256,9 +259,9 @@ class ModifierLocalConsumerEntityTest {
         // Arrange.
         lateinit var receivedValue: String
         TestBox(
-            modifier = Modifier
-                .modifierLocalProvider(ModifierLocalString) { "Provided Value" }
-                .modifierLocalConsumer { receivedValue = ModifierLocalString.current }
+            modifier =
+                Modifier.modifierLocalProvider(ModifierLocalString) { "Provided Value" }
+                    .modifierLocalConsumer { receivedValue = ModifierLocalString.current }
         )
         attach()
         receivedValue = ""
@@ -294,16 +297,17 @@ class ModifierLocalConsumerEntityTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
+    @OptIn(InternalComposeUiApi::class)
     private class FakeOwner : Owner {
         val listeners = mutableVectorOf<() -> Unit>()
 
-        @OptIn(InternalCoreApi::class)
-        override var showLayoutBounds: Boolean = false
+        @OptIn(InternalCoreApi::class) override var showLayoutBounds: Boolean = false
         override val snapshotObserver: OwnerSnapshotObserver = OwnerSnapshotObserver { it.invoke() }
 
         override val modifierLocalManager: ModifierLocalManager = ModifierLocalManager(this)
-        override val dragAndDropManager: DragAndDropManager get() = TODO("Not yet implemented")
+        override val dragAndDropManager: DragAndDropManager
+            get() = TODO("Not yet implemented")
+
         override val coroutineContext: CoroutineContext =
             Executors.newFixedThreadPool(3).asCoroutineDispatcher()
 
@@ -326,42 +330,69 @@ class ModifierLocalConsumerEntityTest {
             affectsLookahead: Boolean,
             forceRequest: Boolean,
             scheduleMeasureAndLayout: Boolean
-        ) {
-        }
+        ) {}
 
-        override fun onAttach(node: LayoutNode) =
+        override fun onPreAttach(node: LayoutNode) =
             node.forEachNodeCoordinator { it.onLayoutNodeAttach() }
+
+        override fun onPostAttach(node: LayoutNode) {}
 
         override fun onDetach(node: LayoutNode) {}
 
-        override val root: LayoutNode
+        override val root: LayoutNode = LayoutNode()
+
+        override val semanticsOwner: SemanticsOwner =
+            SemanticsOwner(root, EmptySemanticsModifier(), intObjectMapOf())
+
+        override val layoutNodes: IntObjectMap<LayoutNode>
             get() = TODO("Not yet implemented")
+
         override val sharedDrawScope: LayoutNodeDrawScope
             get() = TODO("Not yet implemented")
+
         override val rootForTest: RootForTest
             get() = TODO("Not yet implemented")
+
         override val hapticFeedBack: HapticFeedback
             get() = TODO("Not yet implemented")
+
         override val inputModeManager: InputModeManager
             get() = TODO("Not yet implemented")
+
         override val clipboardManager: ClipboardManager
             get() = TODO("Not yet implemented")
+
+        override val clipboard: Clipboard
+            get() = TODO("Not yet implemented")
+
         override val accessibilityManager: AccessibilityManager
             get() = TODO("Not yet implemented")
+
+        override val graphicsContext: GraphicsContext
+            get() = TODO("Not yet implemented")
+
         override val textToolbar: TextToolbar
             get() = TODO("Not yet implemented")
+
         override val density: Density
             get() = TODO("Not yet implemented")
+
         override val textInputService: TextInputService
             get() = TODO("Not yet implemented")
+
         override val softwareKeyboardController: SoftwareKeyboardController
             get() = TODO("Not yet implemented")
+
         override val pointerIconService: PointerIconService
             get() = TODO("Not yet implemented")
+
         override val focusOwner: FocusOwner
             get() = TODO("Not yet implemented")
+
         override val windowInfo: WindowInfo
             get() = TODO("Not yet implemented")
+
+        override val rectManager: RectManager = RectManager()
 
         @Deprecated(
             "fontLoader is deprecated, use fontFamilyResolver",
@@ -370,21 +401,34 @@ class ModifierLocalConsumerEntityTest {
         @Suppress("DEPRECATION")
         override val fontLoader: Font.ResourceLoader
             get() = TODO("Not yet implemented")
+
         override val fontFamilyResolver: FontFamily.Resolver
             get() = TODO("Not yet implemented")
+
         override val layoutDirection: LayoutDirection
             get() = TODO("Not yet implemented")
+
         override val measureIteration: Long
             get() = TODO("Not yet implemented")
+
         override val viewConfiguration: ViewConfiguration
             get() = TODO("Not yet implemented")
+
         override val autofillTree: AutofillTree
             get() = TODO("Not yet implemented")
+
         override val autofill: Autofill
             get() = TODO("Not yet implemented")
 
-        override fun createLayer(drawBlock: (Canvas) -> Unit, invalidateParentLayer: () -> Unit) =
-            TODO("Not yet implemented")
+        override val autofillManager: AutofillManager
+            get() = TODO("Not yet implemented")
+
+        override fun createLayer(
+            drawBlock: (Canvas, GraphicsLayer?) -> Unit,
+            invalidateParentLayer: () -> Unit,
+            explicitLayer: GraphicsLayer?,
+            forceUseOldLayers: Boolean
+        ) = TODO("Not yet implemented")
 
         override fun onRequestRelayout(
             layoutNode: LayoutNode,
@@ -396,17 +440,17 @@ class ModifierLocalConsumerEntityTest {
             TODO("Not yet implemented")
         }
 
-        override fun calculatePositionInWindow(localPosition: Offset) =
-            TODO("Not yet implemented")
+        override fun calculatePositionInWindow(localPosition: Offset) = TODO("Not yet implemented")
 
-        override fun calculateLocalPosition(positionInWindow: Offset) =
-            TODO("Not yet implemented")
+        override fun calculateLocalPosition(positionInWindow: Offset) = TODO("Not yet implemented")
 
-        override fun requestFocus() =
-            TODO("Not yet implemented")
+        override fun requestFocus() = TODO("Not yet implemented")
 
-        override fun measureAndLayout(sendPointerUpdate: Boolean) =
+        override fun requestAutofill(node: LayoutNode) {
             TODO("Not yet implemented")
+        }
+
+        override fun measureAndLayout(sendPointerUpdate: Boolean) = TODO("Not yet implemented")
 
         override fun measureAndLayout(layoutNode: LayoutNode, constraints: Constraints) {
             TODO("Not yet implemented")
@@ -415,14 +459,15 @@ class ModifierLocalConsumerEntityTest {
         override fun forceMeasureTheSubtree(layoutNode: LayoutNode, affectsLookahead: Boolean) =
             TODO("Not yet implemented")
 
-        override fun onSemanticsChange() =
-            TODO("Not yet implemented")
+        override fun onSemanticsChange() {}
 
-        override fun onLayoutChange(layoutNode: LayoutNode) =
-            TODO("Not yet implemented")
+        override fun onLayoutChange(layoutNode: LayoutNode) = TODO("Not yet implemented")
 
-        override fun getFocusDirection(keyEvent: KeyEvent) =
-            TODO("Not yet implemented")
+        override fun onLayoutNodeDeactivated(layoutNode: LayoutNode) {}
+
+        override fun onInteropViewLayoutChange(view: InteropView) = TODO("Not yet implemented")
+
+        override fun getFocusDirection(keyEvent: KeyEvent) = TODO("Not yet implemented")
 
         override suspend fun textInputSession(
             session: suspend PlatformTextInputSessionScope.() -> Nothing
@@ -435,10 +480,6 @@ class ModifierLocalConsumerEntityTest {
         }
 
         override fun localToScreen(localPosition: Offset): Offset {
-            TODO("Not yet implemented")
-        }
-
-        override fun localToScreen(localTransform: Matrix) {
             TODO("Not yet implemented")
         }
     }

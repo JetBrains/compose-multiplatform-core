@@ -23,6 +23,10 @@ import androidx.work.impl.background.greedy.GreedyScheduler
 import androidx.work.impl.constraints.trackers.Trackers
 import androidx.work.impl.utils.taskexecutor.TaskExecutor
 import androidx.work.impl.utils.taskexecutor.WorkManagerTaskExecutor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.runBlocking
 
 @JvmName("createWorkManager")
 @JvmOverloads
@@ -32,23 +36,33 @@ fun WorkManagerImpl(
     workTaskExecutor: TaskExecutor = WorkManagerTaskExecutor(configuration.taskExecutor),
     workDatabase: WorkDatabase =
         WorkDatabase.create(
-            context.applicationContext, workTaskExecutor.serialTaskExecutor,
+            context.applicationContext,
+            workTaskExecutor.serialTaskExecutor,
             configuration.clock,
             context.resources.getBoolean(R.bool.workmanager_test_configuration)
         ),
     trackers: Trackers = Trackers(context.applicationContext, workTaskExecutor),
-    processor: Processor = Processor(
-        context.applicationContext, configuration, workTaskExecutor, workDatabase
-    ),
+    processor: Processor =
+        Processor(context.applicationContext, configuration, workTaskExecutor, workDatabase),
     schedulersCreator: SchedulersCreator = ::createSchedulers
 ): WorkManagerImpl {
-    val schedulers = schedulersCreator(
-        context, configuration,
-        workTaskExecutor, workDatabase, trackers, processor
-    )
+    val schedulers =
+        schedulersCreator(
+            context,
+            configuration,
+            workTaskExecutor,
+            workDatabase,
+            trackers,
+            processor
+        )
     return WorkManagerImpl(
-        context.applicationContext, configuration, workTaskExecutor, workDatabase,
-        schedulers, processor, trackers
+        context.applicationContext,
+        configuration,
+        workTaskExecutor,
+        workDatabase,
+        schedulers,
+        processor,
+        trackers
     )
 }
 
@@ -57,22 +71,27 @@ fun TestWorkManagerImpl(
     context: Context,
     configuration: Configuration,
     workTaskExecutor: TaskExecutor,
-) = WorkManagerImpl(
-    context, configuration, workTaskExecutor,
-    WorkDatabase.create(context, workTaskExecutor.serialTaskExecutor, configuration.clock, true)
-)
+) =
+    WorkManagerImpl(
+        context,
+        configuration,
+        workTaskExecutor,
+        WorkDatabase.create(context, workTaskExecutor.serialTaskExecutor, configuration.clock, true)
+    )
 
-typealias SchedulersCreator = (
-    context: Context,
-    configuration: Configuration,
-    workTaskExecutor: TaskExecutor,
-    workDatabase: WorkDatabase,
-    trackers: Trackers,
-    processor: Processor
-) -> List<Scheduler>
+typealias SchedulersCreator =
+    (
+        context: Context,
+        configuration: Configuration,
+        workTaskExecutor: TaskExecutor,
+        workDatabase: WorkDatabase,
+        trackers: Trackers,
+        processor: Processor
+    ) -> List<Scheduler>
 
-fun schedulers(vararg schedulers: Scheduler): SchedulersCreator =
-    { _, _, _, _, _, _ -> schedulers.toList() }
+fun schedulers(vararg schedulers: Scheduler): SchedulersCreator = { _, _, _, _, _, _ ->
+    schedulers.toList()
+}
 
 private fun createSchedulers(
     context: Context,
@@ -85,8 +104,20 @@ private fun createSchedulers(
     listOf(
         Schedulers.createBestAvailableBackgroundScheduler(context, workDatabase, configuration),
         GreedyScheduler(
-            context, configuration, trackers, processor,
+            context,
+            configuration,
+            trackers,
+            processor,
             WorkLauncherImpl(processor, workTaskExecutor),
             workTaskExecutor
         ),
     )
+
+@JvmName("createWorkManagerScope")
+internal fun WorkManagerScope(taskExecutor: TaskExecutor) =
+    CoroutineScope(taskExecutor.taskCoroutineDispatcher)
+
+fun WorkManagerImpl.close() {
+    runBlocking { workManagerScope.coroutineContext[Job]!!.cancelAndJoin() }
+    workDatabase.close()
+}

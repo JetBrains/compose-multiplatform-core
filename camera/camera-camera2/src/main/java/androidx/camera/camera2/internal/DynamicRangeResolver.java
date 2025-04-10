@@ -27,9 +27,6 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.os.Build;
 import android.text.TextUtils;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.params.DynamicRangeConversions;
@@ -39,6 +36,9 @@ import androidx.camera.core.Logger;
 import androidx.camera.core.impl.AttachedSurfaceInfo;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,7 +53,6 @@ import java.util.Set;
 /**
  * Resolves and validates dynamic ranges based on device capabilities and constraints.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class DynamicRangeResolver {
     private static final String TAG = "DynamicRangeResolver";
     private final CameraCharacteristicsCompat mCharacteristics;
@@ -212,8 +211,7 @@ final class DynamicRangeResolver {
      *
      * <p>If no suitable dynamic range can be found, returns {@code null}.
      */
-    @Nullable
-    private DynamicRange resolveDynamicRange(
+    private @Nullable DynamicRange resolveDynamicRange(
             @NonNull DynamicRange requestedDynamicRange,
             @NonNull Set<DynamicRange> combinedConstraints,
             @NonNull Set<DynamicRange> orderedExistingDynamicRanges,
@@ -377,8 +375,7 @@ final class DynamicRangeResolver {
         }
     }
 
-    @Nullable
-    private static DynamicRange findSupportedHdrMatch(@NonNull DynamicRange rangeToMatch,
+    private static @Nullable DynamicRange findSupportedHdrMatch(@NonNull DynamicRange rangeToMatch,
             @NonNull Collection<DynamicRange> fullySpecifiedCandidateRanges,
             @NonNull Set<DynamicRange> constraints) {
         // SDR can never match with HDR
@@ -410,9 +407,7 @@ final class DynamicRangeResolver {
             // This class is not instantiable.
         }
 
-        @DoNotInline
-        @Nullable
-        static DynamicRange getRecommended10BitDynamicRange(
+        static @Nullable DynamicRange getRecommended10BitDynamicRange(
                 @NonNull CameraCharacteristicsCompat characteristics) {
             Long recommendedProfile =
                     characteristics.get(REQUEST_RECOMMENDED_TEN_BIT_DYNAMIC_RANGE_PROFILE);

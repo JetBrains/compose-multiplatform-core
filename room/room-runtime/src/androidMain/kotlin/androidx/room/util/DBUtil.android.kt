@@ -21,36 +21,139 @@ package androidx.room.util
 
 import android.database.AbstractWindowedCursor
 import android.database.Cursor
-import android.database.sqlite.SQLiteConstraintException
 import android.os.Build
 import android.os.CancellationSignal
 import androidx.annotation.RestrictTo
 import androidx.room.RoomDatabase
+import androidx.room.TransactionElement
+import androidx.room.coroutines.RawConnectionAccessor
+import androidx.room.coroutines.runBlockingUninterruptible
 import androidx.room.driver.SupportSQLiteConnection
+import androidx.room.withTransactionContext
+import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteQuery
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.nio.ByteBuffer
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.withContext
+
+/** Performs a database operation. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
+actual suspend fun <R> performSuspending(
+    db: RoomDatabase,
+    isReadOnly: Boolean,
+    inTransaction: Boolean,
+    block: (SQLiteConnection) -> R
+): R =
+    db.compatCoroutineExecute(inTransaction) {
+        db.internalPerform(isReadOnly, inTransaction) { connection ->
+            val rawConnection = (connection as RawConnectionAccessor).rawConnection
+            block.invoke(rawConnection)
+        }
+    }
+
+/**
+ * The thread transaction coroutine context is set by the SupportSQLite wrapper when there is an
+ * active transaction so DAO function can interop with the active transaction.
+ */
+@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+val activeThreadTransactionContext = ThreadLocal<CoroutineContext>()
+
+/** Blocking version of [performSuspending] */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
+fun <R> performBlocking(
+    db: RoomDatabase,
+    isReadOnly: Boolean,
+    inTransaction: Boolean,
+    block: (SQLiteConnection) -> R
+): R {
+    db.assertNotMainThread()
+    db.assertNotSuspendingTransaction()
+    val context = activeThreadTransactionContext.get() ?: EmptyCoroutineContext
+    return runBlockingUninterruptible {
+        withContext(context) {
+            // If in compatibility mode and the database is already in a transaction, then do not
+            // start a nested transaction to avoid the overhead and because the SupportSQLite APIs
+            // do not support real SAVEPOINT-based nested transactions.
+            val inTransaction = !(db.inCompatibilityMode() && db.inTransaction()) && inTransaction
+            db.internalPerform(isReadOnly, inTransaction) { connection ->
+                val rawConnection = (connection as RawConnectionAccessor).rawConnection
+                block.invoke(rawConnection)
+            }
+        }
+    }
+}
+
+/**
+ * Utility function to wrap a suspend block in Room's transaction coroutine.
+ *
+ * This function should only be invoked from generated code and is needed to support `@Transaction`
+ * delegates in Java and Kotlin. It is preferred to use the other 'perform' functions.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
+actual suspend fun <R> performInTransactionSuspending(db: RoomDatabase, block: suspend () -> R): R =
+    if (db.inCompatibilityMode()) {
+        db.withTransactionContext {
+            db.internalPerform(isReadOnly = false, inTransaction = true) { block.invoke() }
+        }
+    } else {
+        withContext(db.getCoroutineScope().coroutineContext) {
+            db.internalPerform(isReadOnly = false, inTransaction = true) { block.invoke() }
+        }
+    }
+
+/**
+ * Compatibility suspend function execution with driver usage. This will maintain the dispatcher
+ * behaviour in [androidx.room.CoroutinesRoom.execute] when Room is in compatibility mode executing
+ * driver codegen utility functions.
+ */
+private suspend inline fun <R> RoomDatabase.compatCoroutineExecute(
+    inTransaction: Boolean,
+    crossinline block: suspend () -> R
+): R {
+    if (inCompatibilityMode() && isOpenInternal && inTransaction()) {
+        return block.invoke()
+    }
+    return withContext(getCoroutineContext(inTransaction)) { block.invoke() }
+}
+
+/**
+ * Gets the database [CoroutineContext] to perform database operation on utility functions. Prefer
+ * using this function over directly accessing [RoomDatabase.getCoroutineScope] as it has platform
+ * compatibility behaviour.
+ */
+internal actual suspend fun RoomDatabase.getCoroutineContext(
+    inTransaction: Boolean
+): CoroutineContext {
+    return if (inCompatibilityMode()) {
+        // If in compatibility mode check if we are on a transaction coroutine, if so combine
+        // it with the database context, otherwise use the database dispatchers.
+        coroutineContext[TransactionElement]?.transactionDispatcher?.let { getQueryContext() + it }
+            ?: if (inTransaction) getTransactionContext() else getQueryContext()
+    } else {
+        getCoroutineScope().coroutineContext
+    }
+}
 
 /**
  * Performs the SQLiteQuery on the given database.
  *
- * This util method encapsulates copying the cursor if the `maybeCopy` parameter is
- * `true` and either the api level is below a certain threshold or the full result of the
- * query does not fit in a single window.
+ * This util method encapsulates copying the cursor if the `maybeCopy` parameter is `true` and
+ * either the api level is below a certain threshold or the full result of the query does not fit in
+ * a single window.
  *
- * @param db          The database to perform the query on.
+ * @param db The database to perform the query on.
  * @param sqLiteQuery The query to perform.
- * @param maybeCopy   True if the result cursor should maybe be copied, false otherwise.
+ * @param maybeCopy True if the result cursor should maybe be copied, false otherwise.
  * @return Result of the query.
- *
  */
-@Deprecated(
-    "This is only used in the generated code and shouldn't be called directly."
-)
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@Deprecated("This is only used in the generated code and shouldn't be called directly.")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 fun query(db: RoomDatabase, sqLiteQuery: SupportSQLiteQuery, maybeCopy: Boolean): Cursor {
     return query(db, sqLiteQuery, maybeCopy, null)
 }
@@ -58,17 +161,17 @@ fun query(db: RoomDatabase, sqLiteQuery: SupportSQLiteQuery, maybeCopy: Boolean)
 /**
  * Performs the SQLiteQuery on the given database.
  *
- * This util method encapsulates copying the cursor if the `maybeCopy` parameter is
- * `true` and either the api level is below a certain threshold or the full result of the
- * query does not fit in a single window.
+ * This util method encapsulates copying the cursor if the `maybeCopy` parameter is `true` and
+ * either the api level is below a certain threshold or the full result of the query does not fit in
+ * a single window.
  *
- * @param db          The database to perform the query on.
+ * @param db The database to perform the query on.
  * @param sqLiteQuery The query to perform.
- * @param maybeCopy   True if the result cursor should maybe be copied, false otherwise.
- * @param signal      The cancellation signal to be attached to the query.
+ * @param maybeCopy True if the result cursor should maybe be copied, false otherwise.
+ * @param signal The cancellation signal to be attached to the query.
  * @return Result of the query.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 fun query(
     db: RoomDatabase,
     sqLiteQuery: SupportSQLiteQuery,
@@ -78,11 +181,12 @@ fun query(
     val cursor = db.query(sqLiteQuery, signal)
     if (maybeCopy && cursor is AbstractWindowedCursor) {
         val rowsInCursor = cursor.count // Should fill the window.
-        val rowsInWindow = if (cursor.hasWindow()) {
-            cursor.window.numRows
-        } else {
-            rowsInCursor
-        }
+        val rowsInWindow =
+            if (cursor.hasWindow()) {
+                cursor.window.numRows
+            } else {
+                rowsInCursor
+            }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || rowsInWindow < rowsInCursor) {
             return copyAndClose(cursor)
         }
@@ -99,25 +203,15 @@ fun query(
  * @param db The database.
  */
 @Deprecated("Replaced by dropFtsSyncTriggers(connection: SQLiteConnection)")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 fun dropFtsSyncTriggers(db: SupportSQLiteDatabase) {
     dropFtsSyncTriggers(SupportSQLiteConnection(db))
 }
 
-/**
- * Checks for foreign key violations by executing a PRAGMA foreign_key_check.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-fun foreignKeyCheck(
-    db: SupportSQLiteDatabase,
-    tableName: String
-) {
-    db.query("PRAGMA foreign_key_check(`$tableName`)").useCursor { cursor ->
-        if (cursor.count > 0) {
-            val errorMsg = processForeignKeyCheckFailure(cursor)
-            throw SQLiteConstraintException(errorMsg)
-        }
-    }
+/** Checks for foreign key violations by executing a PRAGMA foreign_key_check. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
+fun foreignKeyCheck(db: SupportSQLiteDatabase, tableName: String) {
+    foreignKeyCheck(SupportSQLiteConnection(db), tableName)
 }
 
 /**
@@ -126,12 +220,10 @@ fun foreignKeyCheck(
  * @param databaseFile the database file.
  * @return the database version
  * @throws IOException if something goes wrong reading the file, such as bad database header or
- * missing permissions.
- *
- * @see [User Version
- * Number](https://www.sqlite.org/fileformat.html.user_version_number).
+ *   missing permissions.
+ * @see [User Version Number](https://www.sqlite.org/fileformat.html.user_version_number).
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 @Throws(IOException::class)
 fun readVersion(databaseFile: File): Int {
     FileInputStream(databaseFile).channel.use { input ->
@@ -153,53 +245,12 @@ fun readVersion(databaseFile: File): Int {
  * @return A new instance of CancellationSignal.
  */
 @Deprecated("Use constructor", ReplaceWith("CancellationSignal()", "android.os.CancellationSignal"))
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 fun createCancellationSignal(): CancellationSignal {
     return CancellationSignal()
 }
 
-/**
- * Converts the [Cursor] returned in case of a foreign key violation into a detailed
- * error message for debugging.
- *
- * The foreign_key_check pragma returns one row output for each foreign key violation.
- *
- * The cursor received has four columns for each row output. The first column is the name of
- * the child table. The second column is the rowId of the row that contains the foreign key
- * violation (or NULL if the child table is a WITHOUT ROWID table). The third column is the
- * name of the parent table. The fourth column is the index of the specific foreign key
- * constraint that failed.
- *
- * @param cursor Cursor containing information regarding the FK violation
- * @return Error message generated containing debugging information
- */
-private fun processForeignKeyCheckFailure(cursor: Cursor): String {
-    return buildString {
-        val rowCount = cursor.count
-        val fkParentTables = mutableMapOf<String, String>()
-
-        while (cursor.moveToNext()) {
-            if (cursor.isFirst) {
-                append("Foreign key violation(s) detected in '")
-                append(cursor.getString(0)).append("'.\n")
-            }
-            val constraintIndex = cursor.getString(3)
-            if (!fkParentTables.containsKey(constraintIndex)) {
-                fkParentTables[constraintIndex] = cursor.getString(2)
-            }
-        }
-
-        append("Number of different violations discovered: ")
-        append(fkParentTables.keys.size).append("\n")
-        append("Number of rows in violation: ")
-        append(rowCount).append("\n")
-        append("Violation(s) detected in the following constraint(s):\n")
-
-        for ((key, value) in fkParentTables) {
-            append("\tParent Table = ")
-            append(value)
-            append(", Foreign Key Constraint Index = ")
-            append(key).append("\n")
-        }
-    }
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
+fun toSQLiteConnection(db: SupportSQLiteDatabase): SQLiteConnection {
+    return SupportSQLiteConnection(db)
 }

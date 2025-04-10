@@ -27,5 +27,5 @@ dependencies {
 }
 
 android {
-    namespace "androidx.core.remoteviews.demos"
+    namespace = "androidx.core.remoteviews.demos"
 }

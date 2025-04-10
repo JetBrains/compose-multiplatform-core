@@ -31,7 +31,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color.Companion.Blue
@@ -45,7 +44,6 @@ import kotlinx.coroutines.launch
 
 val ModifierLocalColor = modifierLocalOf { "Unspecified" }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun CommunicatingModifierDemo() {
     val scaffoldState = rememberScaffoldState()
@@ -53,8 +51,7 @@ fun CommunicatingModifierDemo() {
     fun Modifier.clickToRead() = composed {
         var name by remember { mutableStateOf("Unknown") }
         val coroutineScope = rememberCoroutineScope()
-        Modifier
-            .modifierLocalConsumer { name = ModifierLocalColor.current }
+        Modifier.modifierLocalConsumer { name = ModifierLocalColor.current }
             .clickable {
                 coroutineScope.launch {
                     scaffoldState.snackbarHostState.showSnackbar(
@@ -66,23 +63,17 @@ fun CommunicatingModifierDemo() {
 
     Scaffold(scaffoldState = scaffoldState) { innerPadding ->
         Column(
-            Modifier
-                .background(Gray)
-                .padding(innerPadding)
-                .modifierLocalProvider(ModifierLocalColor) { "Gray" }
+            Modifier.background(Gray).padding(innerPadding).modifierLocalProvider(
+                ModifierLocalColor
+            ) {
+                "Gray"
+            }
         ) {
             Text("Click the red box to read the parent's ModifierLocalColor")
-            Box(
-                Modifier
-                    .size(100.dp)
-                    .padding(5.dp)
-                    .background(Red)
-                    .clickToRead()
-            )
+            Box(Modifier.size(100.dp).padding(5.dp).background(Red).clickToRead())
             Text("Click the blue box to read its ModifierLocalColor")
             Box(
-                Modifier
-                    .size(100.dp)
+                Modifier.size(100.dp)
                     .padding(5.dp)
                     .modifierLocalProvider(ModifierLocalColor) { "Blue" }
                     .background(Blue)
@@ -90,31 +81,24 @@ fun CommunicatingModifierDemo() {
             )
             Text("Click the blue box to read the red box's ModifierLocalColor")
             Box(
-                Modifier
-                    .size(100.dp)
-                    .padding(5.dp)
-                    .background(Red)
-                    .modifierLocalProvider(ModifierLocalColor) { "Red" }
+                Modifier.size(100.dp).padding(5.dp).background(Red).modifierLocalProvider(
+                    ModifierLocalColor
+                ) {
+                    "Red"
+                }
             ) {
-                Box(
-                    Modifier
-                        .size(50.dp)
-                        .padding(5.dp)
-                        .background(Blue)
-                        .clickToRead()
-                )
+                Box(Modifier.size(50.dp).padding(5.dp).background(Blue).clickToRead())
             }
             Text("Click the blue box to read its ModifierLocalColor")
             Box(
-                Modifier
-                    .size(100.dp)
-                    .padding(5.dp)
-                    .background(Red)
-                    .modifierLocalProvider(ModifierLocalColor) { "Red" }
+                Modifier.size(100.dp).padding(5.dp).background(Red).modifierLocalProvider(
+                    ModifierLocalColor
+                ) {
+                    "Red"
+                }
             ) {
                 Box(
-                    Modifier
-                        .size(50.dp)
+                    Modifier.size(50.dp)
                         .padding(5.dp)
                         .background(Blue)
                         .modifierLocalProvider(ModifierLocalColor) { "Blue" }

@@ -27,11 +27,12 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.autofill.AutofillValue;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.widget.AppCompatEditText;
 import androidx.core.widget.TextViewCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A custom EditText that satisfies the IME key monitoring requirements of GuidedStepFragment.
@@ -127,7 +128,7 @@ public class GuidedActionAppCompatEditText extends AppCompatEditText implements 
      */
     @Override
     public void setCustomSelectionActionModeCallback(
-            @Nullable ActionMode.Callback actionModeCallback) {
+            ActionMode.@Nullable Callback actionModeCallback) {
         super.setCustomSelectionActionModeCallback(TextViewCompat
                 .wrapCustomSelectionActionModeCallback(this, actionModeCallback));
     }

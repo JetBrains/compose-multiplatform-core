@@ -33,11 +33,11 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.filters.SmallTest;
 import androidx.transition.test.R;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -270,9 +270,8 @@ public class TransitionSetTest extends BaseTest {
         public void captureValues(@NonNull TransitionValues transitionValues) {
         }
 
-        @Nullable
         @Override
-        public String[] getPropagationProperties() {
+        public String @Nullable [] getPropagationProperties() {
             return new String[] { };
         }
     }

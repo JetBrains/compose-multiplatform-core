@@ -57,8 +57,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AndroidComposeViewScreenCoordinatesTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var windowManager: WindowManager
     private lateinit var view: TestView
@@ -73,21 +72,21 @@ class AndroidComposeViewScreenCoordinatesTest {
                     hostView.context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
                 view = TestView(hostView)
                 @Suppress("DEPRECATION")
-                val layoutParams = LayoutParams().also {
-                    it.x = 0
-                    it.y = 0
-                    it.width = LayoutParams.WRAP_CONTENT
-                    it.height = LayoutParams.WRAP_CONTENT
-                    it.type = LayoutParams.TYPE_APPLICATION
-                    // Fullscreen to avoid accounting for system decorations.
-                    it.flags = LayoutParams.FLAG_LAYOUT_NO_LIMITS or LayoutParams.FLAG_FULLSCREEN
-                    it.gravity = Gravity.LEFT or Gravity.TOP
-                }
+                val layoutParams =
+                    LayoutParams().also {
+                        it.x = 0
+                        it.y = 0
+                        it.width = LayoutParams.WRAP_CONTENT
+                        it.height = LayoutParams.WRAP_CONTENT
+                        it.type = LayoutParams.TYPE_APPLICATION
+                        // Fullscreen to avoid accounting for system decorations.
+                        it.flags =
+                            LayoutParams.FLAG_LAYOUT_NO_LIMITS or LayoutParams.FLAG_FULLSCREEN
+                        it.gravity = Gravity.LEFT or Gravity.TOP
+                    }
                 windowManager.addView(view, layoutParams)
 
-                onDispose {
-                    windowManager.removeView(view)
-                }
+                onDispose { windowManager.removeView(view) }
             }
         }
     }
@@ -103,7 +102,7 @@ class AndroidComposeViewScreenCoordinatesTest {
 
         rule.waitUntil {
             val coordinates = assertNotNull(view.coordinates)
-            coordinates.positionOnScreen() == Offset(10f, 20f)
+            coordinates.positionOnScreen() == view.locationOnScreen
         }
     }
 
@@ -119,7 +118,7 @@ class AndroidComposeViewScreenCoordinatesTest {
 
         rule.waitUntil {
             val coordinates = assertNotNull(view.coordinates)
-            coordinates.positionOnScreen() == Offset(40f, 60f)
+            coordinates.positionOnScreen() == view.locationOnScreen + Offset(30f, 40f)
         }
     }
 
@@ -134,7 +133,7 @@ class AndroidComposeViewScreenCoordinatesTest {
 
         rule.waitUntil {
             val coordinates = assertNotNull(view.coordinates)
-            coordinates.positionOnScreen() == Offset(10f, 20f)
+            coordinates.positionOnScreen() == view.locationOnScreen
         }
 
         rule.runOnIdle {
@@ -146,7 +145,7 @@ class AndroidComposeViewScreenCoordinatesTest {
 
         rule.waitUntil {
             val coordinates = assertNotNull(view.coordinates)
-            coordinates.positionOnScreen() == Offset(30f, 40f)
+            coordinates.positionOnScreen() == view.locationOnScreen
         }
     }
 
@@ -161,7 +160,7 @@ class AndroidComposeViewScreenCoordinatesTest {
 
         rule.runOnIdle {
             val coordinates = assertNotNull(view.coordinates)
-            assertThat(coordinates.screenToLocal(Offset.Zero)).isEqualTo(Offset(-10f, -20f))
+            assertThat(coordinates.screenToLocal(view.locationOnScreen)).isEqualTo(Offset.Zero)
         }
     }
 
@@ -177,9 +176,17 @@ class AndroidComposeViewScreenCoordinatesTest {
 
         rule.runOnIdle {
             val coordinates = assertNotNull(view.coordinates)
-            assertThat(coordinates.screenToLocal(Offset.Zero)).isEqualTo(Offset(-40f, -60f))
+            assertThat(coordinates.screenToLocal(view.locationOnScreen))
+                .isEqualTo(Offset(-30f, -40f))
         }
     }
+
+    private val View.locationOnScreen: Offset
+        get() {
+            val array = IntArray(2)
+            getLocationOnScreen(array)
+            return Offset(array[0].toFloat(), array[1].toFloat())
+        }
 
     @Test
     fun transformToScreen_fromIdentity_withNoComposableOffset() {
@@ -194,7 +201,7 @@ class AndroidComposeViewScreenCoordinatesTest {
         rule.runOnIdle {
             val coordinates = assertNotNull(view.coordinates)
             coordinates.transformToScreen(matrix)
-            assertThat(matrix.map(Offset.Zero)).isEqualTo(Offset(10f, 20f))
+            assertThat(matrix.map(Offset.Zero)).isEqualTo(view.locationOnScreen + Offset.Zero)
         }
     }
 
@@ -212,7 +219,7 @@ class AndroidComposeViewScreenCoordinatesTest {
         rule.runOnIdle {
             val coordinates = assertNotNull(view.coordinates)
             coordinates.transformToScreen(matrix)
-            assertThat(matrix.map(Offset.Zero)).isEqualTo(Offset(40f, 60f))
+            assertThat(matrix.map(Offset.Zero)).isEqualTo(view.locationOnScreen + Offset(30f, 40f))
         }
     }
 
@@ -229,7 +236,7 @@ class AndroidComposeViewScreenCoordinatesTest {
         rule.runOnIdle {
             val coordinates = assertNotNull(view.coordinates)
             coordinates.transformToScreen(matrix)
-            assertThat(matrix.map(Offset.Zero)).isEqualTo(Offset(10f, 20f))
+            assertThat(matrix.map(Offset.Zero)).isEqualTo(view.locationOnScreen + Offset.Zero)
 
             updateLayoutParams {
                 it.x = 30
@@ -241,7 +248,7 @@ class AndroidComposeViewScreenCoordinatesTest {
             val coordinates = assertNotNull(view.coordinates)
             matrix.reset()
             coordinates.transformToScreen(matrix)
-            assertThat(matrix.map(Offset.Zero)).isEqualTo(Offset(30f, 40f))
+            assertThat(matrix.map(Offset.Zero)).isEqualTo(view.locationOnScreen + Offset.Zero)
         }
     }
 
@@ -259,7 +266,7 @@ class AndroidComposeViewScreenCoordinatesTest {
         rule.runOnIdle {
             val coordinates = assertNotNull(view.coordinates)
             coordinates.transformToScreen(matrix)
-            assertThat(matrix.map(Offset.Zero)).isEqualTo(Offset(40f, 60f))
+            assertThat(matrix.map(Offset.Zero)).isEqualTo(view.locationOnScreen + Offset(30f, 40f))
         }
     }
 
@@ -280,8 +287,7 @@ class AndroidComposeViewScreenCoordinatesTest {
         @Composable
         override fun Content() {
             Box(
-                Modifier
-                    .background(Color.Blue)
+                Modifier.background(Color.Blue)
                     .layout { measurable, _ ->
                         val placeable = measurable.measure(Constraints.fixed(10, 10))
                         layout(

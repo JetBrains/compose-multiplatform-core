@@ -18,20 +18,15 @@ package androidx.room.integration.kotlintestapp
 
 import org.junit.AssumptionViolatedException
 
-/**
- * Helper class to read test configuration via BuildConfig.
- */
+/** Helper class to read test configuration via BuildConfig. */
 object RoomTestConfig {
-    /**
-     * true if the test code is built by ksp
-     * This can help enable/disable certain tests for ksp
-     */
+    /** true if the test code is built by ksp This can help enable/disable certain tests for ksp */
     val isKsp
         get() = BuildConfig.FLAVOR.startsWith("withKsp")
 }
 
 /**
- * Helper method to check if the test was compiled with KSP, and if not, throw an assumption
+ * Helper function to check if the test was compiled with KSP, and if not, throw an assumption
  * violation exception to skip the test.
  */
 fun assumeKsp() {

@@ -17,10 +17,11 @@
 package androidx.appsearch.app;
 
 import androidx.annotation.AnyThread;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,8 +42,7 @@ public final class DocumentClassFactoryRegistry {
     private DocumentClassFactoryRegistry() {}
 
     /** Returns the singleton instance of {@link DocumentClassFactoryRegistry}. */
-    @NonNull
-    public static DocumentClassFactoryRegistry getInstance() {
+    public static @NonNull DocumentClassFactoryRegistry getInstance() {
         if (sInstance == null) {
             synchronized (DocumentClassFactoryRegistry.class) {
                 if (sInstance == null) {
@@ -60,9 +60,8 @@ public final class DocumentClassFactoryRegistry {
      * @throws AppSearchException if no factory for this document class could be found on the
      * classpath
      */
-    @NonNull
     @SuppressWarnings("unchecked")
-    public <T> DocumentClassFactory<T> getOrCreateFactory(@NonNull Class<T> documentClass)
+    public <T> @NonNull DocumentClassFactory<T> getOrCreateFactory(@NonNull Class<T> documentClass)
             throws AppSearchException {
         Preconditions.checkNotNull(documentClass);
         DocumentClassFactory<?> factory;
@@ -91,9 +90,8 @@ public final class DocumentClassFactoryRegistry {
      * @throws AppSearchException if no factory for this document class could be found on the
      * classpath
      */
-    @NonNull
     @SuppressWarnings("unchecked")
-    public <T> DocumentClassFactory<T> getOrCreateFactory(@NonNull T documentClass)
+    public <T> @NonNull DocumentClassFactory<T> getOrCreateFactory(@NonNull T documentClass)
             throws AppSearchException {
         Preconditions.checkNotNull(documentClass);
         Class<?> clazz = documentClass.getClass();

@@ -312,14 +312,34 @@ public abstract class MediaRouteProvider {
 
     /**
      * Creates a {@link DynamicGroupRouteController}.
-     * <p>
-     * It will be called from an app or {@link MediaRouter} when a single route or a single static
-     * group is selected.
-     * </p>
+     *
+     * <p>It will be called from an app or {@link MediaRouter} when a single route or a single
+     * static group is selected.
      *
      * @param initialMemberRouteId initially selected route's id.
-     * @return {@link DynamicGroupRouteController}. Returns null if there is no such route or
-     * if the route cannot be controlled using the {@link DynamicGroupRouteController} interface.
+     * @param routeControllerOptions the parameters to be used to create the route controller.
+     * @return {@link DynamicGroupRouteController}. Returns null if there is no such route or if the
+     *     route cannot be controlled using the {@link DynamicGroupRouteController} interface.
+     */
+    @Nullable
+    public DynamicGroupRouteController onCreateDynamicGroupRouteController(
+            @NonNull String initialMemberRouteId,
+            @NonNull RouteControllerOptions routeControllerOptions) {
+        return onCreateDynamicGroupRouteController(initialMemberRouteId);
+    }
+
+    /**
+     * Creates a {@link DynamicGroupRouteController}.
+     *
+     * <p>It is equivalent to {@link #onCreateDynamicGroupRouteController(String,
+     * RouteControllerOptions)}, except it doesn't take {@code RouteControllerOptions}.
+     *
+     * <p>This method is only called when the subclass doesn't implement {@link
+     * #onCreateDynamicGroupRouteController(String, RouteControllerOptions)}.
+     *
+     * @param initialMemberRouteId initially selected route's id.
+     * @return {@link DynamicGroupRouteController}. Returns null if there is no such route or if the
+     *     route cannot be controlled using the {@link DynamicGroupRouteController} interface.
      */
     @Nullable
     public DynamicGroupRouteController onCreateDynamicGroupRouteController(
@@ -540,14 +560,10 @@ public abstract class MediaRouteProvider {
                     Collection<DynamicRouteDescriptor> routes = mPendingRoutes;
                     mPendingGroupRoute = null;
                     mPendingRoutes = null;
-                    mExecutor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            listener.onRoutesChanged(DynamicGroupRouteController.this,
-                                    groupRoute,
-                                    routes);
-                        }
-                    });
+                    mExecutor.execute(
+                            () ->
+                                    listener.onRoutesChanged(
+                                            DynamicGroupRouteController.this, groupRoute, routes));
                 }
             }
         }
@@ -572,15 +588,12 @@ public abstract class MediaRouteProvider {
             synchronized (mLock) {
                 if (mExecutor != null) {
                     final OnDynamicRoutesChangedListener listener = mListener;
-                    mExecutor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            listener.onRoutesChanged(
-                                    DynamicGroupRouteController.this,
-                                    null,
-                                    routes);
-                        }
-                    });
+                    mExecutor.execute(
+                            () ->
+                                    listener.onRoutesChanged(
+                                            DynamicGroupRouteController.this,
+                                            /* groupRoute= */ null,
+                                            routes));
                 } else {
                     mPendingRoutes = new ArrayList<>(routes);
                 }
@@ -614,15 +627,12 @@ public abstract class MediaRouteProvider {
             synchronized (mLock) {
                 if (mExecutor != null) {
                     final OnDynamicRoutesChangedListener listener = mListener;
-                    mExecutor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            listener.onRoutesChanged(
-                                    DynamicGroupRouteController.this,
-                                    groupRoute,
-                                    dynamicRoutes);
-                        }
-                    });
+                    mExecutor.execute(
+                            () ->
+                                    listener.onRoutesChanged(
+                                            DynamicGroupRouteController.this,
+                                            groupRoute,
+                                            dynamicRoutes));
                 } else {
                     mPendingGroupRoute = groupRoute;
                     mPendingRoutes = new ArrayList<>(dynamicRoutes);
@@ -647,19 +657,19 @@ public abstract class MediaRouteProvider {
          */
         interface OnDynamicRoutesChangedListener {
             /**
-             * The provider should call this method when routes' properties change.
-             * (e.g. when a route becomes ungroupable)
+             * The provider should call this method when routes' properties change (for example,
+             * when a route becomes ungroupable).
              *
              * @param controller the {@link DynamicGroupRouteController} which keeps this listener.
-             * @param groupRoute the route descriptor about the dynamic group.
-             * @param routes the collection of routes contains selected routes.
-             *               (can be unselectable or not)
-             *               and unselected routes (can be groupable or transferable or not).
+             * @param groupRoute the route descriptor about the dynamic group. May be null if the
+             *     provider notified the update via {@link #notifyDynamicRoutesChanged(Collection)}.
+             * @param routes the collection of routes contains selected routes. (can be unselectable
+             *     or not) and unselected routes (can be groupable or transferable or not).
              */
             void onRoutesChanged(
-                    DynamicGroupRouteController controller,
-                    MediaRouteDescriptor groupRoute,
-                    Collection<DynamicRouteDescriptor> routes);
+                    @NonNull DynamicGroupRouteController controller,
+                    @Nullable MediaRouteDescriptor groupRoute,
+                    @NonNull Collection<DynamicRouteDescriptor> routes);
         }
 
         /**
@@ -672,21 +682,16 @@ public abstract class MediaRouteProvider {
             static final String KEY_IS_GROUPABLE = "isGroupable";
             static final String KEY_IS_TRANSFERABLE = "isTransferable";
 
-            /**
-             */
+            /** */
             @RestrictTo(LIBRARY)
-            @IntDef({
-                    UNSELECTING,
-                    UNSELECTED,
-                    SELECTING,
-                    SELECTED
-            })
+            @IntDef({UNSELECTING, UNSELECTED, SELECTING, SELECTED, NOT_IN_GROUP})
             @Retention(RetentionPolicy.SOURCE)
             public @interface SelectionState {}
+
             /**
              * After a user unselects a route, it might take some time for a provider to complete
-             * the operation. This state is used in this between time. MediaRouter can either
-             * block the UI or show the route as unchecked.
+             * the operation. This state is used in this between time. MediaRouter can either block
+             * the UI or show the route as unchecked.
              */
             public static final int UNSELECTING = 0;
 
@@ -712,6 +717,17 @@ public abstract class MediaRouteProvider {
              * </p>
              */
             public static final int SELECTED = 3;
+
+            /**
+             * The route is not in a dynamic group.
+             *
+             * <p>The NOT_IN_GROUP selection state is different from the UNSELECTED state. The
+             * former represents a route that is not in a dynamic group. The latter represents an
+             * unselected route which could be selected to be part of the dynamic group.
+             *
+             * @see MediaRouter.GroupRouteInfo#getSelectionState(MediaRouter.RouteInfo)
+             */
+            public static final int NOT_IN_GROUP = 4;
 
             //TODO: mMediaRouteDescriptor could have an old info. We should provide a way to
             // update it or use only the route ID.
@@ -894,19 +910,62 @@ public abstract class MediaRouteProvider {
         }
     }
 
-    /**
-     * Callback which is invoked when route information becomes available or changes.
-     */
-    public static abstract class Callback {
+    /** Holds parameters for creating {@link RouteController}. */
+    public static final class RouteControllerOptions {
+        static final RouteControllerOptions EMPTY = new RouteControllerOptions.Builder().build();
+        private static final String KEY_CONTROL_HINTS = "controlHints";
+        private final Bundle mBundle;
+        // The controlHints is passed by the client application for creating the route controller,
+        // or {@code null} if the client has not provided control hints. The controlHints may be
+        // provided by {@link android.media.MediaRouter2.OnGetControllerHintsListener}.
+        private final Bundle mControlHints;
+
+        /* package */ RouteControllerOptions(Bundle bundle) {
+            mBundle = new Bundle(bundle);
+            Bundle controlHints = mBundle.getParcelable(KEY_CONTROL_HINTS);
+            mControlHints = (controlHints != null) ? controlHints : Bundle.EMPTY;
+        }
+
+        /** Returns the contents of this object represented as a bundle. */
+        /* package */ @NonNull Bundle asBundle() {
+            return mBundle;
+        }
+
+        @NonNull
+        public Bundle getControlHints() {
+            return mControlHints;
+        }
+
+        /** Builder for {@link RouteControllerOptions}. */
+        public static final class Builder {
+            private final Bundle mBundle = new Bundle();
+
+            /** Sets controlHints passed by the client application. */
+            @NonNull
+            public Builder setControlHints(@Nullable Bundle controlHints) {
+                mBundle.putParcelable(KEY_CONTROL_HINTS, controlHints);
+                return this;
+            }
+
+            /** Builds the {@link RouteControllerOptions}. */
+            @NonNull
+            public  RouteControllerOptions build() {
+                return new RouteControllerOptions(mBundle);
+            }
+        }
+    }
+
+    /** Callback which is invoked when route information becomes available or changes. */
+    public abstract static class Callback {
         /**
          * Called when information about a route provider and its routes change.
          *
          * @param provider The media route provider that changed, never null.
          * @param descriptor The new media route provider descriptor, or null if none.
          */
-        public void onDescriptorChanged(@NonNull MediaRouteProvider provider,
-                @Nullable MediaRouteProviderDescriptor descriptor) {
-        }
+        public void onDescriptorChanged(
+                @NonNull MediaRouteProvider provider,
+                @Nullable MediaRouteProviderDescriptor descriptor) {}
     }
 
     private final class ProviderHandler extends Handler {

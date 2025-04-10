@@ -16,13 +16,12 @@
 
 package androidx.benchmark.macro.perfetto
 
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
-import androidx.benchmark.perfetto.Slice
-import org.intellij.lang.annotations.Language
+import androidx.benchmark.traceprocessor.Slice
+import androidx.benchmark.traceprocessor.TraceProcessor
 
 internal object BatteryDischargeQuery {
-    @Language("sql")
-    private fun getFullQuery(slice: Slice) = """
+    private fun getFullQuery(slice: Slice) =
+        """
         SELECT
             max(c.value)/1000 AS startMah,
             min(c.value)/1000 AS endMah,
@@ -31,20 +30,16 @@ internal object BatteryDischargeQuery {
         JOIN counter_track t ON c.track_id = t.id
         WHERE t.name = 'batt.charge_uah'
         AND c.ts >= ${slice.ts} AND c.ts <= ${slice.endTs}
-    """.trimIndent()
+    """
+            .trimIndent()
 
-    data class BatteryDischargeMeasurement(
-        var name: String,
-        var chargeMah: Double
-    )
+    data class BatteryDischargeMeasurement(var name: String, var chargeMah: Double)
 
     fun getBatteryDischargeMetrics(
-    session: PerfettoTraceProcessor.Session,
+        session: TraceProcessor.Session,
         slice: Slice
     ): List<BatteryDischargeMeasurement> {
-        val queryResult = session.query(
-            query = getFullQuery(slice)
-        ).toList()
+        val queryResult = session.query(query = getFullQuery(slice)).toList()
 
         if (queryResult.isEmpty()) {
             return emptyList()
@@ -60,14 +55,8 @@ internal object BatteryDischargeQuery {
                 name = "Start",
                 chargeMah = row["startMah"] as Double,
             ),
-            BatteryDischargeMeasurement(
-                name = "End",
-                chargeMah = row["endMah"] as Double
-            ),
-            BatteryDischargeMeasurement(
-                name = "Diff",
-                chargeMah = row["diffMah"] as Double
-            )
+            BatteryDischargeMeasurement(name = "End", chargeMah = row["endMah"] as Double),
+            BatteryDischargeMeasurement(name = "Diff", chargeMah = row["diffMah"] as Double)
         )
     }
 }

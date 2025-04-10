@@ -17,25 +17,23 @@
 package androidx.work.multiprocess
 
 import android.content.Context
+import androidx.concurrent.futures.SuspendToFutureAdapter.launchFuture
+import androidx.concurrent.futures.await
 import androidx.work.Data
 import androidx.work.WorkerParameters
-import androidx.work.await
-import androidx.work.impl.utils.futures.SettableFuture
 import com.google.common.util.concurrent.ListenableFuture
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 
 /**
  * An implementation of [RemoteListenableWorker] that can bind to a remote process.
  *
- * To be able to bind to a remote process, A [RemoteCoroutineWorker] needs additional
- * arguments as part of its input [androidx.work.Data].
+ * To be able to bind to a remote process, A [RemoteCoroutineWorker] needs additional arguments as
+ * part of its input [androidx.work.Data].
  *
  * The arguments [RemoteListenableWorker.ARGUMENT_PACKAGE_NAME],
- * [RemoteListenableWorker.ARGUMENT_CLASS_NAME] are used to determine the [android.app.Service]
- * that the [RemoteCoroutineWorker] can bind to.
+ * [RemoteListenableWorker.ARGUMENT_CLASS_NAME] are used to determine the [android.app.Service] that
+ * the [RemoteCoroutineWorker] can bind to.
  *
  * [doRemoteWork] is then subsequently called in the process that the [android.app.Service] is
  * running in.
@@ -43,42 +41,21 @@ import kotlinx.coroutines.launch
 public abstract class RemoteCoroutineWorker(context: Context, parameters: WorkerParameters) :
     RemoteListenableWorker(context, parameters) {
 
-    private val job = Job()
-    private val future: SettableFuture<Result> = SettableFuture.create()
-
-    init {
-        future.addListener(
-            Runnable {
-                if (future.isCancelled) {
-                    job.cancel()
-                }
-            },
-            taskExecutor.serialTaskExecutor
-        )
-    }
-
     /**
      * Override this method to define the work that needs to run in the remote process.
      * [Dispatchers.Default] is the coroutine dispatcher being used when this method is called.
      *
      * A [RemoteCoroutineWorker] has a well defined
      * [execution window](https://d.android.com/reference/android/app/job/JobScheduler) to finish
-     * its execution and return a [androidx.work.ListenableWorker.Result]. Note that the
-     * execution window also includes the cost of binding to the remote process.
+     * its execution and return a [androidx.work.ListenableWorker.Result]. Note that the execution
+     * window also includes the cost of binding to the remote process.
      */
     public abstract suspend fun doRemoteWork(): Result
 
     override fun startRemoteWork(): ListenableFuture<Result> {
-        val scope = CoroutineScope(Dispatchers.Default + job)
-        scope.launch {
-            try {
-                val result = doRemoteWork()
-                future.set(result)
-            } catch (exception: Throwable) {
-                future.setException(exception)
-            }
+        return launchFuture(Dispatchers.Default + Job(), launchUndispatched = false) {
+            doRemoteWork()
         }
-        return future
     }
 
     /**
@@ -93,6 +70,5 @@ public abstract class RemoteCoroutineWorker(context: Context, parameters: Worker
 
     public final override fun onStopped() {
         super.onStopped()
-        future.cancel(true)
     }
 }

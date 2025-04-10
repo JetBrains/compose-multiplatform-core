@@ -28,8 +28,8 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 24
+        minSdk = 24
     }
 
-    namespace "androidx.core.performance.testlib"
+    namespace = "androidx.core.performance.testlib"
 }

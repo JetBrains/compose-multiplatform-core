@@ -19,10 +19,10 @@ package androidx.core.graphics;
 import android.graphics.BlendMode;
 import android.graphics.PorterDuff;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utility class used to map BlendModeCompat parameters to the corresponding
@@ -39,9 +39,8 @@ class BlendModeUtils {
             // This class is not instantiable.
         }
 
-        @DoNotInline
-        @Nullable
-        static Object obtainBlendModeFromCompat(@NonNull BlendModeCompat blendModeCompat) {
+        static @Nullable Object obtainBlendModeFromCompat(
+                @NonNull BlendModeCompat blendModeCompat) {
             switch (blendModeCompat) {
                 case CLEAR:
                     return BlendMode.CLEAR;
@@ -107,7 +106,7 @@ class BlendModeUtils {
         }
     }
 
-    static @Nullable PorterDuff.Mode obtainPorterDuffFromCompat(
+    static PorterDuff.@Nullable Mode obtainPorterDuffFromCompat(
             @Nullable BlendModeCompat blendModeCompat) {
         if (blendModeCompat == null) {
             return null;

@@ -23,8 +23,8 @@ import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public class ClickAndWaitTestActivity extends Activity {
 

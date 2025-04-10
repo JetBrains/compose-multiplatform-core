@@ -20,7 +20,7 @@ import android.graphics.Rect;
 import android.util.Log;
 import android.view.accessibility.AccessibilityNodeInfo;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * UiScrollable is a {@link UiCollection} and provides support for searching
@@ -64,8 +64,7 @@ public class UiScrollable extends UiCollection {
      * Set the direction of swipes to be vertical when performing scroll actions.
      * @return reference to itself
      */
-    @NonNull
-    public UiScrollable setAsVerticalList() {
+    public @NonNull UiScrollable setAsVerticalList() {
         mIsVerticalList = true;
         return this;
     }
@@ -74,8 +73,7 @@ public class UiScrollable extends UiCollection {
      * Set the direction of swipes to be horizontal when performing scroll actions.
      * @return reference to itself
      */
-    @NonNull
-    public UiScrollable setAsHorizontalList() {
+    public @NonNull UiScrollable setAsHorizontalList() {
         mIsVerticalList = false;
         return this;
     }
@@ -107,9 +105,8 @@ public class UiScrollable extends UiCollection {
      * @return {@link UiObject} representing the child element that matches the search conditions
      * @throws UiObjectNotFoundException
      */
-    @NonNull
     @Override
-    public UiObject getChildByDescription(
+    public @NonNull UiObject getChildByDescription(
             @NonNull UiSelector childPattern, @NonNull String text)
             throws UiObjectNotFoundException {
         return getChildByDescription(childPattern, text, true);
@@ -130,9 +127,8 @@ public class UiScrollable extends UiCollection {
      * @return {@link UiObject} representing the child element that matches the search conditions
      * @throws UiObjectNotFoundException
      */
-    @NonNull
-    public UiObject getChildByDescription(@NonNull UiSelector childPattern, @NonNull String text,
-            boolean allowScrollSearch) throws UiObjectNotFoundException {
+    public @NonNull UiObject getChildByDescription(@NonNull UiSelector childPattern,
+            @NonNull String text, boolean allowScrollSearch) throws UiObjectNotFoundException {
         if (text != null) {
             if (allowScrollSearch) {
                 scrollIntoView(new UiSelector().descriptionContains(text));
@@ -152,9 +148,8 @@ public class UiScrollable extends UiCollection {
      * a <code>childPattern</code> match
      * @return {@link UiObject} representing the child element that matches the search conditions
      */
-    @NonNull
     @Override
-    public UiObject getChildByInstance(@NonNull UiSelector childPattern, int instance)
+    public @NonNull UiObject getChildByInstance(@NonNull UiSelector childPattern, int instance)
             throws UiObjectNotFoundException {
         UiSelector patternSelector = UiSelector.patternBuilder(getSelector(),
                 UiSelector.patternBuilder(childPattern).instance(instance));
@@ -176,9 +171,8 @@ public class UiScrollable extends UiCollection {
      * @return {@link UiObject} representing the child element that matches the search conditions
      * @throws UiObjectNotFoundException
      */
-    @NonNull
     @Override
-    public UiObject getChildByText(@NonNull UiSelector childPattern, @NonNull String text)
+    public @NonNull UiObject getChildByText(@NonNull UiSelector childPattern, @NonNull String text)
             throws UiObjectNotFoundException {
         return getChildByText(childPattern, text, true);
     }
@@ -197,8 +191,7 @@ public class UiScrollable extends UiCollection {
      * @return {@link UiObject} representing the child element that matches the search conditions
      * @throws UiObjectNotFoundException
      */
-    @NonNull
-    public UiObject getChildByText(@NonNull UiSelector childPattern,
+    public @NonNull UiObject getChildByText(@NonNull UiSelector childPattern,
             @NonNull String text,
             boolean allowScrollSearch) throws UiObjectNotFoundException {
         if (text != null) {
@@ -290,8 +283,7 @@ public class UiScrollable extends UiCollection {
      * @param swipes the number of search swipes to perform until giving up
      * @return reference to itself
      */
-    @NonNull
-    public UiScrollable setMaxSearchSwipes(int swipes) {
+    public @NonNull UiScrollable setMaxSearchSwipes(int swipes) {
         mMaxSearchSwipes = swipes;
         return this;
     }
@@ -574,8 +566,7 @@ public class UiScrollable extends UiCollection {
      * @param swipeDeadZonePercentage is a value between 0 and 1
      * @return reference to itself
      */
-    @NonNull
-    public UiScrollable setSwipeDeadZonePercentage(double swipeDeadZonePercentage) {
+    public @NonNull UiScrollable setSwipeDeadZonePercentage(double swipeDeadZonePercentage) {
         mSwipeDeadZonePercentage = swipeDeadZonePercentage;
         return this;
     }

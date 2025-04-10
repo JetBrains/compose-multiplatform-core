@@ -19,9 +19,9 @@ package androidx.camera.camera2.internal.compat.quirk;
 import android.os.Build;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -36,7 +36,6 @@ import java.util.Map;
  *                  filtered out.
  *     Device(s): Redmi Note8, Redmi Note 7, SM-A207M (see b/287341266 for the devices list)
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class SmallDisplaySizeQuirk implements Quirk {
 
     private static final String TAG = "SmallDisplaySizeQuirk";
@@ -76,8 +75,7 @@ public class SmallDisplaySizeQuirk implements Quirk {
         return MODEL_TO_DISPLAY_SIZE_MAP.containsKey(Build.MODEL.toUpperCase(Locale.US));
     }
 
-    @NonNull
-    public Size getDisplaySize() {
+    public @NonNull Size getDisplaySize() {
         return MODEL_TO_DISPLAY_SIZE_MAP.get(Build.MODEL.toUpperCase(Locale.US));
     }
 }

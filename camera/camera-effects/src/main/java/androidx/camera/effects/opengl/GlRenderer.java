@@ -25,13 +25,12 @@ import static androidx.core.util.Preconditions.checkState;
 import android.graphics.Bitmap;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
-import android.os.Build;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A OpenGL render with a buffer queue and overlay support.
@@ -45,7 +44,6 @@ import androidx.annotation.RestrictTo;
  *
  * <p>It also allows the caller to overlay a texture when rendering to Surface.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public final class GlRenderer {
 
@@ -62,8 +60,7 @@ public final class GlRenderer {
     // Texture IDs.
     private int mInputTextureId = -1;
     private int mOverlayTextureId = -1;
-    @NonNull
-    private int[] mQueueTextureIds = new int[0];
+    private int @NonNull [] mQueueTextureIds = new int[0];
     private int mQueueTextureWidth = -1;
     private int mQueueTextureHeight = -1;
 
@@ -157,8 +154,7 @@ public final class GlRenderer {
      * @param size the size of the texture in this queue. The size usually matches the size
      *             of the input texture.
      */
-    @NonNull
-    public int[] createBufferTextureIds(@NonNull Size size) {
+    public int @NonNull [] createBufferTextureIds(@NonNull Size size) {
         checkGlThreadAndInitialized();
         // Delete the current buffer if it exists.
         if (mQueueTextureIds.length > 0) {
@@ -217,7 +213,7 @@ public final class GlRenderer {
      * <p>This is used when the queue depth is 0 and no buffer copy is needed. The surface must
      * be registered via {@link #registerOutputSurface}.
      */
-    public void renderInputToSurface(long timestampNs, @NonNull float[] textureTransform,
+    public void renderInputToSurface(long timestampNs, float @NonNull [] textureTransform,
             @NonNull Surface surface) {
         checkGlThreadAndInitialized();
         checkState(mQueueDepth == 0, "Queue depth must be zero");
@@ -233,7 +229,7 @@ public final class GlRenderer {
      * {@link #createBufferTextureIds}.
      */
     public void renderQueueTextureToSurface(int textureId, long timestampNs,
-            @NonNull float[] textureTransform, @NonNull Surface surface) {
+            float @NonNull [] textureTransform, @NonNull Surface surface) {
         checkGlThreadAndInitialized();
         checkState(mQueueDepth > 0, "Queue depth must be non-zero");
         mGlProgramOverlay.draw(GLES20.GL_TEXTURE_2D, textureId, mOverlayTextureId,
@@ -253,9 +249,8 @@ public final class GlRenderer {
     /**
      * Renders a queued texture to a Bitmap and returns.
      */
-    @NonNull
-    public Bitmap renderQueueTextureToBitmap(int textureId, int width, int height,
-            @NonNull float[] textureTransform) {
+    public @NonNull Bitmap renderQueueTextureToBitmap(int textureId, int width, int height,
+            float @NonNull [] textureTransform) {
         checkGlThreadAndInitialized();
         checkState(mQueueDepth > 0, "Queue depth must be non-zero");
         return mGlProgramOverlay.snapshot(GLES20.GL_TEXTURE_2D, textureId, mOverlayTextureId,
@@ -265,8 +260,8 @@ public final class GlRenderer {
     /**
      * Renders the input texture to a Bitmap and returns.
      */
-    @NonNull
-    public Bitmap renderInputToBitmap(int width, int height, @NonNull float[] textureTransform) {
+    public @NonNull Bitmap renderInputToBitmap(int width, int height,
+            float @NonNull [] textureTransform) {
         checkGlThreadAndInitialized();
         checkState(mQueueDepth == 0, "Queue depth must be zero");
         return mGlProgramOverlay.snapshot(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mInputTextureId,

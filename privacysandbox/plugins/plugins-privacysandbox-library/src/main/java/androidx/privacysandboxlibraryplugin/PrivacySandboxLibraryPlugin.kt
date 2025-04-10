@@ -22,13 +22,12 @@ import com.google.devtools.ksp.gradle.KspExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.StopExecutionException
-import org.gradle.kotlin.dsl.dependencies
 
 /*
-* For modules that are used by a privacy sandbox sdk module using Androidx, we need to configure
-* KSP code generation. This plugin intends to apply KSP with the required dependencies and arguments
-* such as the AIDL compiler path.
-*/
+ * For modules that are used by a privacy sandbox sdk module using Androidx, we need to configure
+ * KSP code generation. This plugin intends to apply KSP with the required dependencies and arguments
+ * such as the AIDL compiler path.
+ */
 abstract class PrivacySandboxLibraryPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
@@ -56,20 +55,24 @@ abstract class PrivacySandboxLibraryPlugin : Plugin<Project> {
                     }
                 )
                 frameworkAidlInputs.platformSdk.set(
-                    frameworkAidlInputs.frameworkAidl.map { it.asFile.parentFile.absolutePath })
-                val aidlFile = sdkDirectory.map {
-                    it.dir("build-tools").dir(libraryExtension.buildToolsVersion)
-                        .file(
-                            if (System.getProperty("os.name").startsWith("Windows")) {
-                                "aidl.exe"
-                            } else {
-                                "aidl"
-                            }
-                        )
-                }
+                    frameworkAidlInputs.frameworkAidl.map { it.asFile.parentFile.absolutePath }
+                )
+                val aidlFile =
+                    sdkDirectory.map {
+                        it.dir("build-tools")
+                            .dir(libraryExtension.buildToolsVersion)
+                            .file(
+                                if (System.getProperty("os.name").startsWith("Windows")) {
+                                    "aidl.exe"
+                                } else {
+                                    "aidl"
+                                }
+                            )
+                    }
                 aidlExecutableInputs.aidl.set(aidlFile)
                 aidlExecutableInputs.buildToolsVersion.set(
-                    aidlExecutableInputs.aidl.map { it.asFile.parentFile.name })
+                    aidlExecutableInputs.aidl.map { it.asFile.parentFile.name }
+                )
                 val kspExtension = project.extensions.getByType(KspExtension::class.java)
                 kspExtension.arg(aidlExecutableInputs)
                 kspExtension.arg(frameworkAidlInputs)
@@ -77,27 +80,23 @@ abstract class PrivacySandboxLibraryPlugin : Plugin<Project> {
 
             // Add additional dependencies required for KSP outputs
 
-            val toolsVersion = "1.0.0-alpha04"
-            project.dependencies {
+            val toolsVersion = "1.0.0-alpha13"
+            val sdkRuntimeVersion = "1.0.0-alpha17"
+            project.dependencies.apply {
+                add("ksp", "androidx.privacysandbox.tools:tools-apicompiler:$toolsVersion")
+                add("implementation", "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
+                add("implementation", "androidx.privacysandbox.tools:tools:$toolsVersion")
                 add(
-                    "ksp",
-                    "androidx.privacysandbox.tools:tools-apicompiler:$toolsVersion"
+                    "implementation",
+                    "androidx.privacysandbox.sdkruntime:sdkruntime-core:$sdkRuntimeVersion"
                 )
                 add(
                     "implementation",
-                    "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4"
+                    "androidx.privacysandbox.sdkruntime:sdkruntime-client:$sdkRuntimeVersion"
                 )
                 add(
                     "implementation",
-                    "androidx.privacysandbox.tools:tools:$toolsVersion"
-                )
-                add(
-                    "implementation",
-                    "androidx.privacysandbox.sdkruntime:sdkruntime-core:1.0.0-alpha06"
-                )
-                add(
-                    "implementation",
-                    "androidx.privacysandbox.sdkruntime:sdkruntime-client:1.0.0-alpha06"
+                    "androidx.privacysandbox.sdkruntime:sdkruntime-provider:$sdkRuntimeVersion"
                 )
             }
             project.afterEvaluate {

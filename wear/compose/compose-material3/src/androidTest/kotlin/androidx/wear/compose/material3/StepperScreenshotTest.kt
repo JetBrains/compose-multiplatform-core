@@ -21,8 +21,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.runtime.Composable
@@ -33,116 +35,108 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
-import androidx.wear.compose.material3.ExperimentalWearMaterial3Api
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.SCREENSHOT_GOLDEN_PATH
+import androidx.wear.compose.material3.ScreenConfiguration
+import androidx.wear.compose.material3.ScreenSize
 import androidx.wear.compose.material3.Stepper
 import androidx.wear.compose.material3.StepperDefaults
+import androidx.wear.compose.material3.StepperDefaults.IconSize
 import androidx.wear.compose.material3.TEST_TAG
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.goldenIdentifier
 import androidx.wear.compose.material3.setContentWithTheme
+import androidx.wear.compose.materialcore.RangeIcons
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
 import org.junit.runner.RunWith
 
 @MediumTest
-@RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-@OptIn(ExperimentalWearMaterial3Api::class)
-public class StepperScreenshotTest {
-    @get:Rule
-    public val rule = createComposeRule()
+@RunWith(TestParameterInjector::class)
+class StepperScreenshotTest {
+    @get:Rule val rule = createComposeRule()
 
-    @get:Rule
-    public val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
+    @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
-    @get:Rule
-    public val testName = TestName()
+    @get:Rule val testName = TestName()
 
     @Test
-    public fun stepper_no_content() {
-        verifyScreenshot {
-            Stepper(
-                modifier = Modifier.testTag(TEST_TAG),
-                value = 2f,
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
-                steps = 3,
-                onValueChange = {}
-            ) {}
-        }
-    }
-
-    @Test
-    public fun stepper_custom_icons() {
-        verifyScreenshot {
+    fun stepper_no_content(@TestParameter screenSize: ScreenSize) {
+        verifyScreenshot(screenSize = screenSize) {
             Stepper(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = 2f,
                 steps = 3,
                 onValueChange = {},
-                decreaseIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = ""
-                    )
-                },
+                increaseIcon = { IncreaseIcon() },
+                decreaseIcon = { DecreaseIcon() },
+            ) {}
+        }
+    }
+
+    @Test
+    fun stepper_custom_icons(@TestParameter screenSize: ScreenSize) {
+        verifyScreenshot(screenSize = screenSize) {
+            Stepper(
+                modifier = Modifier.testTag(TEST_TAG),
+                value = 2f,
+                steps = 3,
+                onValueChange = {},
+                decreaseIcon = { Icon(imageVector = Icons.Default.Star, contentDescription = "") },
                 increaseIcon = {
-                    Icon(
-                        imageVector = Icons.Filled.ThumbUp,
-                        contentDescription = ""
-                    )
+                    Icon(imageVector = Icons.Filled.ThumbUp, contentDescription = "")
                 },
             ) {}
         }
     }
 
     @Test
-    public fun stepper_with_content() {
-        verifyScreenshot {
+    fun stepper_with_content(@TestParameter screenSize: ScreenSize) {
+        verifyScreenshot(screenSize = screenSize) {
             Stepper(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = 2f,
                 steps = 3,
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
-                onValueChange = {}
+                onValueChange = {},
+                increaseIcon = { IncreaseIcon() },
+                decreaseIcon = { DecreaseIcon() },
             ) {
                 FilledTonalButton(
                     onClick = {},
                     modifier = Modifier.width(146.dp),
-                    label = {
-                        Text(
-                            text = "Demo",
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
+                    label = { Text(text = "Demo", modifier = Modifier.fillMaxWidth()) }
                 )
             }
         }
     }
 
     @Test
-    public fun stepper_with_custom_colors() {
-        verifyScreenshot {
+    fun stepper_with_custom_colors(@TestParameter screenSize: ScreenSize) {
+        verifyScreenshot(screenSize = screenSize) {
             Stepper(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = 2f,
                 steps = 3,
                 onValueChange = {},
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
-                backgroundColor = Color.Green,
-                contentColor = Color.Yellow,
-                iconColor = Color.Magenta,
+                increaseIcon = { IncreaseIcon() },
+                decreaseIcon = { DecreaseIcon() },
+                colors =
+                    StepperDefaults.colors(
+                        buttonContainerColor = Color.Green,
+                        contentColor = Color.Yellow,
+                        buttonIconColor = Color.Magenta,
+                    )
             ) {
                 Text("Demo")
             }
@@ -150,50 +144,152 @@ public class StepperScreenshotTest {
     }
 
     @Test
-    public fun stepper_with_increase_button_disabled() {
-        verifyScreenshot {
+    fun stepper_with_increase_button_disabled(@TestParameter screenSize: ScreenSize) {
+        verifyScreenshot(screenSize = screenSize) {
             Stepper(
                 modifier = Modifier.testTag(TEST_TAG),
                 valueRange = 0f..4f,
                 value = 4f,
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
                 steps = 3,
+                increaseIcon = { IncreaseIcon() },
+                decreaseIcon = { DecreaseIcon() },
                 onValueChange = {}
             ) {}
         }
     }
 
     @Test
-    public fun stepper_with_decrease_button_disabled() {
-        verifyScreenshot {
+    fun stepper_with_decrease_button_disabled(@TestParameter screenSize: ScreenSize) {
+        verifyScreenshot(screenSize = screenSize) {
             Stepper(
                 modifier = Modifier.testTag(TEST_TAG),
                 valueRange = 0f..4f,
                 value = 0f,
-                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
-                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
                 steps = 3,
+                increaseIcon = { IncreaseIcon() },
+                decreaseIcon = { DecreaseIcon() },
                 onValueChange = {}
             ) {}
         }
     }
 
-    private fun verifyScreenshot(
-        content: @Composable () -> Unit
-    ) {
+    @Test
+    fun stepper_disabled(@TestParameter screenSize: ScreenSize) {
+        verifyScreenshot(screenSize = screenSize) {
+            Stepper(
+                modifier = Modifier.testTag(TEST_TAG),
+                valueRange = 0f..4f,
+                value = 1f,
+                steps = 3,
+                onValueChange = {},
+                enabled = false,
+                increaseIcon = { IncreaseIcon() },
+                decreaseIcon = { DecreaseIcon() },
+            ) {}
+        }
+    }
+
+    @Test
+    fun stepper_increase_button_morphs_when_pressed(@TestParameter screenSize: ScreenSize) {
         rule.setContentWithTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                content()
+            ScreenConfiguration(screenSize.size) {
+                Box(
+                    modifier =
+                        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+                ) {
+                    Stepper(
+                        modifier = Modifier.testTag(TEST_TAG),
+                        value = 2f,
+                        steps = 3,
+                        onValueChange = {},
+                        increaseIcon = {
+                            Icon(
+                                modifier = Modifier.testTag("increase_icon"),
+                                imageVector = Icons.Filled.Add,
+                                contentDescription = "Increase"
+                            )
+                        },
+                        decreaseIcon = { DecreaseIcon() },
+                    ) {}
+                }
             }
         }
 
-        rule.onNodeWithTag(TEST_TAG)
+        rule.onNodeWithTag("increase_icon", true).performTouchInput { down(center) }
+        rule.waitForIdle()
+
+        rule
+            .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertAgainstGolden(screenshotRule, testName.methodName)
+            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
+    }
+
+    @Test
+    fun stepper_decrease_button_morphs_when_pressed(@TestParameter screenSize: ScreenSize) {
+        rule.setContentWithTheme {
+            ScreenConfiguration(screenSize.size) {
+                Box(
+                    modifier =
+                        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+                ) {
+                    Stepper(
+                        modifier = Modifier.testTag(TEST_TAG),
+                        value = 2f,
+                        steps = 3,
+                        onValueChange = {},
+                        increaseIcon = { IncreaseIcon() },
+                        decreaseIcon = {
+                            Icon(
+                                modifier = Modifier.testTag("decrease_icon"),
+                                imageVector = RangeIcons.Minus,
+                                contentDescription = "Decrease"
+                            )
+                        },
+                    ) {}
+                }
+            }
+        }
+
+        rule.onNodeWithTag("decrease_icon", true).performTouchInput { down(center) }
+        rule.waitForIdle()
+
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
+    }
+
+    private fun verifyScreenshot(screenSize: ScreenSize, content: @Composable () -> Unit) {
+        rule.setContentWithTheme {
+            ScreenConfiguration(screenSize.size) {
+                Box(
+                    modifier =
+                        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+                ) {
+                    content()
+                }
+            }
+        }
+
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
     }
 }
+
+@Composable
+private fun IncreaseIcon() =
+    Icon(
+        imageVector = Icons.Filled.Add,
+        contentDescription = "Increase",
+        modifier = Modifier.size(IconSize)
+    )
+
+@Composable
+private fun DecreaseIcon() =
+    Icon(
+        imageVector = RangeIcons.Minus,
+        contentDescription = "Decrease",
+        modifier = Modifier.size(IconSize)
+    )

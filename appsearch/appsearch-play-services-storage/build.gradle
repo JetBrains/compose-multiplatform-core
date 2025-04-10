@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -22,12 +29,12 @@ plugins {
 }
 
 dependencies {
-    implementation project(":appsearch:appsearch")
-    // TODO(b/278583111) Swap with the core library version in which Function gets added.
-    implementation project(":core:core")
+    api(libs.jspecify)
+    implementation(project(":appsearch:appsearch"))
+    implementation("androidx.core:core:1.12.0")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
-    implementation('androidx.collection:collection:1.2.0')
-    implementation("com.google.android.gms:play-services-appsearch:16.0.0", {
+    implementation("androidx.collection:collection:1.4.2")
+    implementation("com.google.android.gms:play-services-appsearch:16.0.1", {
         exclude group: "androidx.fragment", module: "fragment"
         exclude group: "androidx.core", module: "core"
     })
@@ -40,17 +47,16 @@ dependencies {
 
 androidx {
     name = "AppSearch Play Services Storage"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2023"
     description =
             "An implementation of AppSearchSession and GlobalSearchSession on pre-S devices using " +
                     "play-services-appsearch SDK with Gogle Play Services as storage backend."
-    metalavaK2UastEnabled = true
 }
 
 android {
-    namespace "androidx.appsearch.playservicesstorage"
+    compileSdk = 36
+    namespace = "androidx.appsearch.playservicesstorage"
      defaultConfig {
-        minSdkVersion 19
     }
 }

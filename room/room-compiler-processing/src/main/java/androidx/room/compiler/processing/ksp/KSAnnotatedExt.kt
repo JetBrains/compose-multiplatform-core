@@ -18,11 +18,9 @@ package androidx.room.compiler.processing.ksp
 
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSDeclaration
 
-private fun KSAnnotated.hasAnnotationWithQName(qName: String) = annotations.any {
-    it.annotationType.resolve().declaration.qualifiedName?.asString() == qName
-}
+private fun KSAnnotated.hasAnnotationWithQName(qName: String) =
+    annotations.any { it.annotationType.resolve().declaration.qualifiedName?.asString() == qName }
 
 internal fun KSAnnotated.hasJvmStaticAnnotation() = hasAnnotationWithQName("kotlin.jvm.JvmStatic")
 
@@ -37,12 +35,9 @@ internal fun KSAnnotated.hasJvmDefaultAnnotation() = hasAnnotationWithQName("kot
  * Return a reference to the containing file or class declaration via a wrapper that implements the
  * [javax.lang.model.element.Element] API so that we can report it to JavaPoet.
  */
-internal fun KSAnnotated.wrapAsOriginatingElement(): OriginatingElementWrapper? {
-    val ksDeclaration = this as? KSDeclaration ?: return null
-
-    return ksDeclaration.containingFile?.let {
-        KSFileAsOriginatingElement(it)
-    } ?: (ksDeclaration as? KSClassDeclaration)?.let {
-        KSClassDeclarationAsOriginatingElement(it)
-    }
+internal fun KSClassDeclaration.wrapAsOriginatingElement(): OriginatingElementWrapper {
+    // Use the source file as originating element if the KSClassDeclaration is from a source file,
+    // and use the class declaration if it's from a compiled class file.
+    return containingFile?.let { KSFileAsOriginatingElement(it) }
+        ?: KSClassDeclarationAsOriginatingElement(this)
 }

@@ -20,17 +20,16 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 import android.graphics.Paint;
 import android.text.style.ReplacementSpan;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Base span class for the emoji replacement. When an emoji is found and needs to be replaced in a
  * CharSequence, an instance of this class is added to the CharSequence.
  */
-@RequiresApi(19)
 public abstract class EmojiSpan extends ReplacementSpan {
 
     /**
@@ -67,13 +66,13 @@ public abstract class EmojiSpan extends ReplacementSpan {
      *
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    EmojiSpan(@NonNull final EmojiMetadata metadata) {
+    EmojiSpan(final @NonNull EmojiMetadata metadata) {
         Preconditions.checkNotNull(metadata, "metadata cannot be null");
         mMetadata = metadata;
     }
 
     @Override
-    public int getSize(@NonNull final Paint paint, final CharSequence text, final int start,
+    public int getSize(final @NonNull Paint paint, final CharSequence text, final int start,
             final int end, final Paint.FontMetricsInt fm) {
         paint.getFontMetricsInt(mTmpFontMetrics);
         final int fontHeight = Math.abs(mTmpFontMetrics.descent - mTmpFontMetrics.ascent);

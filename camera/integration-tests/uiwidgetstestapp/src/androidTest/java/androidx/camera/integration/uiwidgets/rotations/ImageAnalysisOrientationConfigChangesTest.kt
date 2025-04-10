@@ -21,6 +21,7 @@ import android.view.Surface
 import android.view.View
 import androidx.test.core.app.ActivityScenario
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.withActivity
 import com.google.common.truth.Truth.assertThat
@@ -43,24 +44,26 @@ class ImageAnalysisOrientationConfigChangesTest(
 
     companion object {
         @JvmStatic
-        private val rotations = arrayOf(
-            Surface.ROTATION_0,
-            Surface.ROTATION_90,
-            Surface.ROTATION_180,
-            Surface.ROTATION_270
-        )
+        private val rotations =
+            arrayOf(
+                Surface.ROTATION_0,
+                Surface.ROTATION_90,
+                Surface.ROTATION_180,
+                Surface.ROTATION_270
+            )
 
         @JvmStatic
         @Parameterized.Parameters(name = "lensFacing={0}, rotation={1}, cameraXConfig={2}")
-        fun data() = mutableListOf<Array<Any?>>().apply {
-            lensFacingList.forEach { lens ->
-                rotations.forEach { rotation ->
-                    cameraXConfigList.forEach { cameraXConfig ->
-                        add(arrayOf(lens, rotation, cameraXConfig))
+        fun data() =
+            mutableListOf<Array<Any?>>().apply {
+                lensFacingList.forEach { lens ->
+                    rotations.forEach { rotation ->
+                        cameraXConfigList.forEach { cameraXConfig ->
+                            add(arrayOf(lens, rotation, cameraXConfig))
+                        }
                     }
                 }
             }
-        }
     }
 
     @Before
@@ -68,12 +71,13 @@ class ImageAnalysisOrientationConfigChangesTest(
         Assume.assumeFalse(
             "Known issue on this device. Please see b/198744779",
             listOf(
-                "redmi note 9s",
-                "redmi note 8",
-                "m2003j15sc", // Redmi Note 9
-                "m2006c3lg", // Redmi 9A
-                "m2006c3mg" // Redmi 9C
-            ).contains(Build.MODEL.lowercase(Locale.US)) && rotation == Surface.ROTATION_180
+                    "redmi note 9s",
+                    "redmi note 8",
+                    "m2003j15sc", // Redmi Note 9
+                    "m2006c3lg", // Redmi 9A
+                    "m2006c3mg" // Redmi 9C
+                )
+                .contains(Build.MODEL.lowercase(Locale.US)) && rotation == Surface.ROTATION_180
         )
         setUp(lensFacing)
     }
@@ -84,6 +88,7 @@ class ImageAnalysisOrientationConfigChangesTest(
     }
 
     @Test
+    @SdkSuppress(maxSdkVersion = 33) // b/360867144: Module crashes on API34
     fun verifyRotation() {
         verifyRotation<OrientationConfigChangesOverriddenActivity>(lensFacing, cameraXConfig) {
             if (rotate(rotation)) {
@@ -94,15 +99,16 @@ class ImageAnalysisOrientationConfigChangesTest(
         }
     }
 
-    private fun ActivityScenario<OrientationConfigChangesOverriddenActivity>.rotate(rotation: Int):
-        Boolean {
-            val currentRotation = withActivity {
-                val root = findViewById<View>(android.R.id.content)
-                root.display.rotation
-            }
-            InstrumentationRegistry.getInstrumentation().uiAutomation.setRotation(rotation)
-            return currentRotation != rotation
+    private fun ActivityScenario<OrientationConfigChangesOverriddenActivity>.rotate(
+        rotation: Int
+    ): Boolean {
+        val currentRotation = withActivity {
+            val root = findViewById<View>(android.R.id.content)
+            root.display.rotation
         }
+        InstrumentationRegistry.getInstrumentation().uiAutomation.setRotation(rotation)
+        return currentRotation != rotation
+    }
 
     private fun ActivityScenario<OrientationConfigChangesOverriddenActivity>.waitForRotation() {
         val displayChanged = withActivity { mDisplayChanged }

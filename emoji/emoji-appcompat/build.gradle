@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -22,19 +29,19 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     api(project(":emoji:emoji"))
     api("androidx.appcompat:appcompat:1.1.0")
 }
 
 androidx {
     name = "Emoji AppCompat"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.EMOJI
     inceptionYear = "2017"
     description = "EmojiCompat Widgets for AppCompat integration"
-    metalavaK2UastEnabled = true
 }
 
 android {
-    namespace "androidx.emoji.appcompat"
+    namespace = "androidx.emoji.appcompat"
 }

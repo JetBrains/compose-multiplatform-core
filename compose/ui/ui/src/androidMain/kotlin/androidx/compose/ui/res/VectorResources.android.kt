@@ -31,15 +31,16 @@ import androidx.compose.ui.graphics.vector.compat.isAtEnd
 import androidx.compose.ui.graphics.vector.compat.parseCurrentVectorNode
 import androidx.compose.ui.graphics.vector.compat.seekToStartTag
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import java.lang.ref.WeakReference
 import org.xmlpull.v1.XmlPullParserException
 
 /**
  * Load an ImageVector from a vector resource.
  *
- * This function is intended to be used for when low-level ImageVector-specific
- * functionality is required.  For simply displaying onscreen, the vector/bitmap-agnostic
- * [painterResource] is recommended instead.
+ * This function is intended to be used for when low-level ImageVector-specific functionality is
+ * required. For simply displaying onscreen, the vector/bitmap-agnostic [painterResource] is
+ * recommended instead.
  *
  * @param id the resource identifier
  * @return the vector data associated with the resource
@@ -47,12 +48,10 @@ import org.xmlpull.v1.XmlPullParserException
 @Composable
 fun ImageVector.Companion.vectorResource(@DrawableRes id: Int): ImageVector {
     val context = LocalContext.current
-    val res = resources()
+    val res = LocalResources.current
     val theme = context.theme
 
-    return remember(id, res, theme, res.configuration) {
-        vectorResource(theme, res, id)
-    }
+    return remember(id, res, theme, res.configuration) { vectorResource(theme, res, id) }
 }
 
 @Throws(XmlPullParserException::class)
@@ -65,19 +64,19 @@ fun ImageVector.Companion.vectorResource(
     res.getValue(resId, value, true)
 
     return loadVectorResourceInner(
-        theme,
-        res,
-        res.getXml(resId).apply { seekToStartTag() },
-        value.changingConfigurations
-    ).imageVector
+            theme,
+            res,
+            res.getXml(resId).apply { seekToStartTag() },
+            value.changingConfigurations
+        )
+        .imageVector
 }
 
 /**
- * Helper method that parses a vector asset from the given [XmlResourceParser] position.
- * This method assumes the parser is already been positioned to the start tag
+ * Helper method that parses a vector asset from the given [XmlResourceParser] position. This method
+ * assumes the parser is already been positioned to the start tag
  */
 @Throws(XmlPullParserException::class)
-@SuppressWarnings("RestrictedApi")
 internal fun loadVectorResourceInner(
     theme: Resources.Theme? = null,
     res: Resources,
@@ -90,41 +89,28 @@ internal fun loadVectorResourceInner(
 
     var nestedGroups = 0
     while (!parser.isAtEnd()) {
-        nestedGroups = resourceParser.parseCurrentVectorNode(
-            res,
-            attrs,
-            theme,
-            builder,
-            nestedGroups
-        )
+        nestedGroups =
+            resourceParser.parseCurrentVectorNode(res, attrs, theme, builder, nestedGroups)
         parser.next()
     }
     return ImageVectorCache.ImageVectorEntry(builder.build(), changingConfigurations)
 }
 
 /**
- * Object responsible for caching [ImageVector] instances
- * based on the given theme and drawable resource identifier
+ * Object responsible for caching [ImageVector] instances based on the given theme and drawable
+ * resource identifier
  */
 internal class ImageVectorCache {
 
-    /**
-     * Key that binds the corresponding theme with the resource identifier for the vector asset
-     */
-    data class Key(
-        val theme: Resources.Theme,
-        val id: Int
-    )
+    /** Key that binds the corresponding theme with the resource identifier for the vector asset */
+    data class Key(val theme: Resources.Theme, val id: Int)
 
     /**
-     * Tuple that contains the [ImageVector] as well as the corresponding configuration flags
-     * that the [ImageVector] depends on. That is if there is a configuration change that updates
-     * the parameters in the flag, this vector should be regenerated from the current configuration
+     * Tuple that contains the [ImageVector] as well as the corresponding configuration flags that
+     * the [ImageVector] depends on. That is if there is a configuration change that updates the
+     * parameters in the flag, this vector should be regenerated from the current configuration
      */
-    data class ImageVectorEntry(
-        val imageVector: ImageVector,
-        val configFlags: Int
-    )
+    data class ImageVectorEntry(val imageVector: ImageVector, val configFlags: Int)
 
     private val map = HashMap<Key, WeakReference<ImageVectorEntry>>()
 
@@ -135,8 +121,9 @@ internal class ImageVectorCache {
         while (it.hasNext()) {
             val entry = it.next()
             val imageVectorEntry = entry.value.get()
-            if (imageVectorEntry == null ||
-                Configuration.needNewResources(configChanges, imageVectorEntry.configFlags)
+            if (
+                imageVectorEntry == null ||
+                    Configuration.needNewResources(configChanges, imageVectorEntry.configFlags)
             ) {
                 it.remove()
             }

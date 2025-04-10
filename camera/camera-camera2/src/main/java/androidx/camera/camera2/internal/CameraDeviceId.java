@@ -16,15 +16,13 @@
 
 package androidx.camera.camera2.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
-
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Camera device id that is composed by Brand, Device, Model and CameraId.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @AutoValue
 abstract class CameraDeviceId {
     CameraDeviceId() {
@@ -35,26 +33,21 @@ abstract class CameraDeviceId {
      *
      * <p>Be noticed that all CameraDeviceId related info will be stored in lower case.
      */
-    @NonNull
-    public static CameraDeviceId create(@NonNull String brand, @NonNull String device,
+    public static @NonNull CameraDeviceId create(@NonNull String brand, @NonNull String device,
             @NonNull String model, @NonNull String cameraId) {
         return new AutoValue_CameraDeviceId(brand.toLowerCase(), device.toLowerCase(),
                 model.toLowerCase(), cameraId.toLowerCase());
     }
 
     /** Returns the brand. */
-    @NonNull
-    public abstract String getBrand();
+    public abstract @NonNull String getBrand();
 
     /** Returns the device. */
-    @NonNull
-    public abstract String getDevice();
+    public abstract @NonNull String getDevice();
 
     /** Returns the model. */
-    @NonNull
-    public abstract String getModel();
+    public abstract @NonNull String getModel();
 
     /** Returns the camera id. */
-    @NonNull
-    public abstract String getCameraId();
+    public abstract @NonNull String getCameraId();
 }

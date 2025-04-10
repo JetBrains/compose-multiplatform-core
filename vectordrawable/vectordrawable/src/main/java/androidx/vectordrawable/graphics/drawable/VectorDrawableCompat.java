@@ -50,11 +50,10 @@ import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Xml;
+import android.view.View;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.collection.ArrayMap;
@@ -63,8 +62,9 @@ import androidx.core.content.res.ResourcesCompat;
 import androidx.core.content.res.TypedArrayUtils;
 import androidx.core.graphics.PathParser;
 import androidx.core.graphics.drawable.DrawableCompat;
-import androidx.core.view.ViewCompat;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -325,9 +325,8 @@ public class VectorDrawableCompat extends VectorDrawableCommon {
         mTintFilter = updateTintFilter(mTintFilter, state.mTint, state.mTintMode);
     }
 
-    @NonNull
     @Override
-    public Drawable mutate() {
+    public @NonNull Drawable mutate() {
         if (mDelegateDrawable != null) {
             mDelegateDrawable.mutate();
             return this;
@@ -344,9 +343,8 @@ public class VectorDrawableCompat extends VectorDrawableCommon {
         return mVectorState.mVPathRenderer.mVGTargetsMap.get(name);
     }
 
-    @NonNull
     @Override
-    public ConstantState getConstantState() {
+    public @NonNull ConstantState getConstantState() {
         if (mDelegateDrawable != null && Build.VERSION.SDK_INT >= 24) {
             // Such that the configuration can be refreshed.
             return new VectorDrawableDelegateState(mDelegateDrawable.getConstantState());
@@ -460,9 +458,8 @@ public class VectorDrawableCompat extends VectorDrawableCommon {
         invalidateSelf();
     }
 
-    @Nullable
     @Override
-    public ColorFilter getColorFilter() {
+    public @Nullable ColorFilter getColorFilter() {
         if (mDelegateDrawable != null) {
             return DrawableCompat.getColorFilter(mDelegateDrawable);
         }
@@ -641,9 +638,8 @@ public class VectorDrawableCompat extends VectorDrawableCommon {
      * @param theme the theme of this vector drawable, it can be null.
      * @return a new VectorDrawableCompat or null if parsing error is found.
      */
-    @Nullable
-    public static VectorDrawableCompat create(@NonNull Resources res, @DrawableRes int resId,
-                                              @Nullable Theme theme) {
+    public static @Nullable VectorDrawableCompat create(@NonNull Resources res,
+            @DrawableRes int resId, @Nullable Theme theme) {
         if (Build.VERSION.SDK_INT >= 24) {
             final VectorDrawableCompat drawable = new VectorDrawableCompat();
             drawable.mDelegateDrawable = ResourcesCompat.getDrawable(res, resId, theme);
@@ -684,8 +680,7 @@ public class VectorDrawableCompat extends VectorDrawableCommon {
      * document, tries to create a Drawable from that tag. Returns {@code null}
      * if the tag is not a valid drawable.
      */
-    @NonNull
-    public static VectorDrawableCompat createFromXmlInner(@NonNull Resources r,
+    public static @NonNull VectorDrawableCompat createFromXmlInner(@NonNull Resources r,
             @NonNull XmlPullParser parser, @NonNull AttributeSet attrs, @Nullable Theme theme)
             throws XmlPullParserException, IOException {
         final VectorDrawableCompat drawable = new VectorDrawableCompat();
@@ -919,7 +914,7 @@ public class VectorDrawableCompat extends VectorDrawableCommon {
     // We don't support RTL auto mirroring since the getLayoutDirection() is for API 17+.
     private boolean needMirroring() {
         return isAutoMirrored()
-                && DrawableCompat.getLayoutDirection(this) == ViewCompat.LAYOUT_DIRECTION_RTL;
+                && DrawableCompat.getLayoutDirection(this) == View.LAYOUT_DIRECTION_RTL;
     }
 
     // Extra override functions for delegation for SDK >= 7.
@@ -1129,15 +1124,13 @@ public class VectorDrawableCompat extends VectorDrawableCommon {
             mVPathRenderer = new VPathRenderer();
         }
 
-        @NonNull
         @Override
-        public Drawable newDrawable() {
+        public @NonNull Drawable newDrawable() {
             return new VectorDrawableCompat(this);
         }
 
-        @NonNull
         @Override
-        public Drawable newDrawable(Resources res) {
+        public @NonNull Drawable newDrawable(Resources res) {
             return new VectorDrawableCompat(this);
         }
 
@@ -1738,7 +1731,7 @@ public class VectorDrawableCompat extends VectorDrawableCommon {
         public void toPath(Path path) {
             path.reset();
             if (mNodes != null) {
-                PathParser.PathDataNode.nodesToPath(mNodes, path);
+                PathParser.nodesToPath(mNodes, path);
             }
         }
 

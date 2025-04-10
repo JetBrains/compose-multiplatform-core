@@ -24,11 +24,12 @@ import android.util.Log;
 import android.util.SparseArray;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.collection.LongSparseArray;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -99,8 +100,8 @@ final class WeightTypefaceApi21 {
     /**
      * @return Valid typeface, or {@code null} if private API is not available
      */
-    @Nullable
-    static Typeface createWeightStyle(@NonNull Typeface base, int weight, boolean italic) {
+    static @Nullable Typeface createWeightStyle(@NonNull Typeface base, int weight,
+            boolean italic) {
         if (!isPrivateApiAvailable()) {
             return null;
         }
@@ -170,8 +171,7 @@ final class WeightTypefaceApi21 {
         }
     }
 
-    @Nullable
-    private static Typeface create(long nativeInstance) {
+    private static @Nullable Typeface create(long nativeInstance) {
         try {
             return sConstructor.newInstance(nativeInstance);
         } catch (IllegalAccessException e) {

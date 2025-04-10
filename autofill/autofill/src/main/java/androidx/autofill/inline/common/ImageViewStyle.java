@@ -22,10 +22,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Specifies the style for an  {@link ImageView}.
@@ -54,9 +55,8 @@ public final class ImageViewStyle extends ViewStyle {
     /**
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @NonNull
     @Override
-    protected String getStyleKey() {
+    protected @NonNull String getStyleKey() {
         return KEY_IMAGE_VIEW_STYLE;
     }
 
@@ -100,6 +100,7 @@ public final class ImageViewStyle extends ViewStyle {
     /**
      * Builder for the {@link ImageViewStyle}.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public static final class Builder extends BaseBuilder<ImageViewStyle, Builder> {
 
         public Builder() {
@@ -109,9 +110,8 @@ public final class ImageViewStyle extends ViewStyle {
         /**
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        @NonNull
         @Override
-        protected Builder getThis() {
+        protected @NonNull Builder getThis() {
             return this;
         }
 
@@ -121,8 +121,7 @@ public final class ImageViewStyle extends ViewStyle {
          * @param scaleType The desired scaling mode.
          * @see ImageView#setScaleType(ImageView.ScaleType)
          */
-        @NonNull
-        public Builder setScaleType(@NonNull ImageView.ScaleType scaleType) {
+        public @NonNull Builder setScaleType(ImageView.@NonNull ScaleType scaleType) {
             Preconditions.checkNotNull(scaleType, "scaleType should not be null");
             mBundle.putString(KEY_IMAGE_SCALE_TYPE, scaleType.name());
             return this;
@@ -134,8 +133,7 @@ public final class ImageViewStyle extends ViewStyle {
          * @param maxWidth maximum width for this view
          * @see ImageView#setMaxWidth(int)
          */
-        @NonNull
-        public Builder setMaxWidth(int maxWidth) {
+        public @NonNull Builder setMaxWidth(int maxWidth) {
             mBundle.putInt(KEY_IMAGE_MAX_WIDTH, maxWidth);
             return this;
         }
@@ -146,8 +144,7 @@ public final class ImageViewStyle extends ViewStyle {
          * @param maxHeight maximum height for this view
          * @see ImageView#setMaxHeight(int)
          */
-        @NonNull
-        public Builder setMaxHeight(int maxHeight) {
+        public @NonNull Builder setMaxHeight(int maxHeight) {
             mBundle.putInt(KEY_IMAGE_MAX_HEIGHT, maxHeight);
             return this;
         }
@@ -158,16 +155,14 @@ public final class ImageViewStyle extends ViewStyle {
          * @param imageTintList the tint color to apply to the image
          * @see ImageView#setImageTintList(ColorStateList)
          */
-        @NonNull
-        public Builder setTintList(@NonNull ColorStateList imageTintList) {
+        public @NonNull Builder setTintList(@NonNull ColorStateList imageTintList) {
             Preconditions.checkNotNull(imageTintList, "imageTintList should not be null");
             mBundle.putParcelable(KEY_IMAGE_TINT_LIST, imageTintList);
             return this;
         }
 
-        @NonNull
         @Override
-        public ImageViewStyle build() {
+        public @NonNull ImageViewStyle build() {
             return new ImageViewStyle(mBundle);
         }
     }

@@ -16,15 +16,19 @@
 
 package androidx.camera.core.impl;
 
-import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraExtensionSession;
 import android.media.ImageReader;
+import android.os.Build;
 import android.util.Pair;
+import android.util.Range;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import androidx.annotation.IntRange;
 import androidx.camera.core.CameraInfo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -46,8 +50,19 @@ import java.util.Set;
  * <p>The SessionProcessor is expected to release all intermediate {@link ImageReader}s when
  * {@link #deInitSession()} is called.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public interface SessionProcessor {
+    /**
+     * The session processor is used for CameraX extension modes that will directly access the
+     * vendor library implementation.
+     */
+    int TYPE_VENDOR_LIBRARY = 0;
+
+    /**
+     * The session processor is used for Camera2 extension modes that should create the capture
+     * session via Camera2 Extensions API.
+     */
+    int TYPE_CAMERA2_EXTENSION = 1;
+
     /**
      * Initializes the session and returns a transformed {@link SessionConfig} which should be
      * used to configure the camera instead of original one.
@@ -57,13 +72,15 @@ public interface SessionProcessor {
      *
      * @param cameraInfo                 cameraInfo for querying the camera info
      * @param outputSurfaceConfig output surface configuration for preview, image capture,
-     *                                  image analysis and the postview.
+     *                                  image analysis and the postview. This can be null under
+     *                                  Camera2 Extensions implementation mode. In that case, this
+     *                                  function is invoked to setup the necessary stuffs only.
      * @return a {@link SessionConfig} that contains the surfaces and the session parameters and
-     * should be used to configure the camera session.
+     * should be used to configure the camera session. Return null when the input
+     * <code>outputSurfaceConfig</code> is null.
      */
-    @NonNull
-    SessionConfig initSession(@NonNull CameraInfo cameraInfo,
-            @NonNull OutputSurfaceConfiguration outputSurfaceConfig);
+    @Nullable SessionConfig initSession(@NonNull CameraInfo cameraInfo,
+            @Nullable OutputSurfaceConfiguration outputSurfaceConfig);
 
     /**
      * De-initializes the session. This is called after the camera session is closed.
@@ -93,11 +110,12 @@ public interface SessionProcessor {
      * Requests the SessionProcessor to start the repeating request that enables
      * preview and image analysis.
      *
+     * @param tagBundle the {@link TagBundle} to be attached to the {@link CameraCaptureResult} in
+     *                  {@link CaptureCallback#onCaptureCompleted(long, int, CameraCaptureResult)}.
      * @param callback callback to notify the status.
      * @return the id of the capture sequence.
      */
-    int startRepeating(@NonNull CaptureCallback callback);
-
+    int startRepeating(@NonNull TagBundle tagBundle, @NonNull CaptureCallback callback);
 
     /**
      * Stop the repeating request.
@@ -109,10 +127,13 @@ public interface SessionProcessor {
      * perform one at a time.
      *
      * @param postviewEnabled if postview is enabled or not.
+     * @param tagBundle the {@link TagBundle} to be attached to the {@link CameraCaptureResult} in
+     *                  {@link CaptureCallback#onCaptureCompleted(long, int, CameraCaptureResult)}.
      * @param callback callback to notify the status.
      * @return the id of the capture sequence.
      */
-    int startCapture(boolean postviewEnabled, @NonNull CaptureCallback callback);
+    int startCapture(boolean postviewEnabled, @NonNull TagBundle tagBundle,
+            @NonNull CaptureCallback callback);
 
     /**
      * Aborts the pending capture.
@@ -121,8 +142,14 @@ public interface SessionProcessor {
 
     /**
      * Sends trigger-type single request such as AF/AE triggers.
+     * @param config the {@link Config} that contains the parameters to be set in the trigger.
+     * @param tagBundle the {@link TagBundle} to be attached to the {@link CameraCaptureResult} in
+     *                  {@link CaptureCallback#onCaptureCompleted(long, int, CameraCaptureResult)}.
+     * @param callback callback to notify the status
+     * @return the id of the capture sequence.
      */
-    default int startTrigger(@NonNull Config config, @NonNull CaptureCallback callback) {
+    default int startTrigger(@NonNull Config config,  @NonNull TagBundle tagBundle,
+            @NonNull CaptureCallback callback) {
         return -1;
     }
 
@@ -130,17 +157,54 @@ public interface SessionProcessor {
      * Returns supported output format/size map for postview image. The API is provided
      * for camera-core to query the supported postview sizes from SessionProcessor.
      */
-    @NonNull
-    default Map<Integer, List<Size>> getSupportedPostviewSize(@NonNull Size captureSize) {
+    default @NonNull Map<Integer, List<Size>> getSupportedPostviewSize(@NonNull Size captureSize) {
         return Collections.emptyMap();
     }
 
     /**
      * Returns the supported camera operations when the SessionProcessor is enabled.
      */
-    @NonNull
-    default @RestrictedCameraControl.CameraOperation Set<Integer> getSupportedCameraOperations() {
+    default @AdapterCameraInfo.CameraOperation @NonNull Set<Integer>
+            getSupportedCameraOperations() {
         return Collections.emptySet();
+    }
+
+    default @NonNull List<Pair<CameraCharacteristics.Key, Object>>
+            getAvailableCharacteristicsKeyValues() {
+        return Collections.emptyList();
+    }
+
+    /**
+     * Returns the extensions-specific zoom range
+     */
+    @SuppressWarnings("unchecked")
+    default @Nullable Range<Float> getExtensionZoomRange() {
+        if (Build.VERSION.SDK_INT >= 30) {
+            List<Pair<CameraCharacteristics.Key, Object>> keyValues =
+                    getAvailableCharacteristicsKeyValues();
+            for (Pair<CameraCharacteristics.Key, Object> keyValue : keyValues) {
+                if (keyValue.first.equals(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE)) {
+                    return (Range<Float>) keyValue.second;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns the extensions-specific available stabilization modes.
+     */
+    @SuppressWarnings("unchecked")
+    default int @Nullable [] getExtensionAvailableStabilizationModes() {
+        List<Pair<CameraCharacteristics.Key, Object>> keyValues =
+                getAvailableCharacteristicsKeyValues();
+        for (Pair<CameraCharacteristics.Key, Object> keyValue : keyValues) {
+            if (keyValue.first.equals(
+                    CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES)) {
+                return (int[]) keyValue.second;
+            }
+        }
+        return null;
     }
 
     /**
@@ -162,9 +226,38 @@ public interface SessionProcessor {
      * If clients have not configured a still capture output, then this method can also return a
      * null pair.
      */
-    @Nullable
-    default Pair<Long, Long> getRealtimeCaptureLatency() {
+    default @Nullable Pair<Long, Long> getRealtimeCaptureLatency() {
         return null;
+    }
+
+    /**
+     * Returns the implementation type info composited by the extension impl type and the
+     * extension mode.
+     *
+     * <p>The first value of the returned {@link Pair} can be {@link #TYPE_VENDOR_LIBRARY} or
+     * {@link #TYPE_CAMERA2_EXTENSION} that can let the caller know how to use the
+     * SessionProcessor to create the capture session. The second value is the mode under the impl
+     * type.
+     *
+     * @return a {@link Pair} composited by the extension impl type and the extension mode.
+     */
+    @NonNull
+    default Pair<Integer, Integer> getImplementationType() {
+        return Pair.create(TYPE_VENDOR_LIBRARY, 0 /* ExtensionMode.None */);
+    }
+
+    /**
+     * Sets a {@link CaptureSessionRequestProcessor} for retrieving specific information from the
+     * camera capture session or submitting requests.
+     *
+     * <p>This is used for the SessionProcessor implementation that needs to directly interact
+     * with the camera capture session to retrieve specific information or submit requests.
+     *
+     * <p>Callers should clear this by calling with null to avoid the session processor to hold
+     * the camera capture session related resources.
+     */
+    default void setCaptureSessionRequestProcessor(
+            @Nullable CaptureSessionRequestProcessor processor) {
     }
 
     /**
@@ -237,16 +330,11 @@ public interface SessionProcessor {
          * @param captureSequenceId    the capture id of the request that generated the capture
          *                             results. This is the return value of either
          *                             {@link #startRepeating} or {@link #startCapture}.
-         * @param result               Map containing the supported capture results. Do note
-         *                             that if results 'android.jpeg.quality' and
-         *                             'android.jpeg.orientation' are present in the process
-         *                             capture input results, then the values must also be passed
-         *                             as part of this callback. Both Camera2 and CameraX guarantee
-         *                             that those two settings and results are always supported and
-         *                             applied by the corresponding framework.
+         * @param captureResult        the capture result that contains the metadata and the
+         *                             timestamp of the capture.
          */
         default void onCaptureCompleted(long timestamp, int captureSequenceId,
-                @NonNull Map<CaptureResult.Key, Object> result) {}
+                @NonNull CameraCaptureResult captureResult) {}
 
         /**
          * Capture progress callback that needs to be called when the process capture is
@@ -261,5 +349,27 @@ public interface SessionProcessor {
          * @param progress             Value between 0 and 100.
          */
         default void onCaptureProcessProgressed(int progress) {}
+    }
+
+    /**
+     * An interface for retrieving specific information from the camera capture session or
+     * submitting requests.
+     */
+    interface CaptureSessionRequestProcessor {
+        /**
+         * Returns the realtime still capture latency information.
+         *
+         * @see CameraExtensionSession#getRealtimeStillCaptureLatency()
+         */
+        @Nullable
+        Pair<Long, Long> getRealtimeStillCaptureLatency();
+
+        /**
+         * Sets the strength of the extension post-processing effect.
+         *
+         * @param strength the new extension strength value
+         * @see android.hardware.camera2.CaptureRequest#EXTENSION_STRENGTH
+         */
+        void setExtensionStrength(@IntRange(from = 0, to = 100) int strength);
     }
 }

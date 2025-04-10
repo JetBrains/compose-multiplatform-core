@@ -19,7 +19,6 @@ import android.annotation.SuppressLint
 import android.hardware.camera2.CameraCharacteristics.LENS_FACING
 import android.hardware.camera2.CameraMetadata.LENS_FACING_FRONT
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraMetadata
 
 /**
@@ -33,20 +32,21 @@ import androidx.camera.camera2.pipe.CameraMetadata
  * TODO(b/270421716): enable CameraXQuirksClassDetector lint check when kotlin is supported.
  */
 @SuppressLint("CameraXQuirksClassDetector")
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-class ImageCaptureFlashNotFireQuirk : UseTorchAsFlashQuirk {
+public class ImageCaptureFlashNotFireQuirk : UseTorchAsFlashQuirk {
 
-    companion object {
+    public companion object {
         // List of devices with the issue. See b/228800360.
-        private val BUILD_MODELS = listOf(
-            "itel w6004" // Itel W6004
-        )
-        private val BUILD_MODELS_FRONT_CAMERA = listOf(
-            "sm-j700f", // Samsung Galaxy J7
-            "sm-j710f", // Samsung Galaxy J7
-        )
+        private val BUILD_MODELS =
+            listOf(
+                "itel w6004" // Itel W6004
+            )
+        private val BUILD_MODELS_FRONT_CAMERA =
+            listOf(
+                "sm-j700f", // Samsung Galaxy J7
+                "sm-j710f", // Samsung Galaxy J7
+            )
 
-        fun isEnabled(cameraMetadata: CameraMetadata): Boolean {
+        public fun isEnabled(cameraMetadata: CameraMetadata): Boolean {
             val isFrontCameraAffected =
                 BUILD_MODELS_FRONT_CAMERA.contains(Build.MODEL.lowercase()) &&
                     cameraMetadata[LENS_FACING] == LENS_FACING_FRONT

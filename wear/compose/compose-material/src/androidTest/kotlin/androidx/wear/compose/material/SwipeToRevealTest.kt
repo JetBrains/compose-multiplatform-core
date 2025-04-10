@@ -17,7 +17,6 @@
 package androidx.wear.compose.material
 
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,9 +31,8 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
+import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.foundation.RevealActionType
-import androidx.wear.compose.foundation.RevealScope
 import androidx.wear.compose.foundation.RevealState
 import androidx.wear.compose.foundation.RevealValue
 import androidx.wear.compose.foundation.rememberRevealState
@@ -43,52 +41,41 @@ import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
 
-@OptIn(ExperimentalWearFoundationApi::class, ExperimentalWearMaterialApi::class)
+@OptIn(ExperimentalWearMaterialApi::class)
 class SwipeToRevealTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun supports_testTag_onChip() {
-        rule.setContentWithTheme {
-            swipeToRevealChipDefault(modifier = Modifier.testTag(TEST_TAG))
-        }
+        rule.setContentWithTheme { swipeToRevealChipDefault(modifier = Modifier.testTag(TEST_TAG)) }
 
         rule.onNodeWithTag(TEST_TAG).assertExists()
     }
 
     @Test
     fun supports_testTag_onCard() {
-        rule.setContentWithTheme {
-            swipeToRevealCardDefault(modifier = Modifier.testTag(TEST_TAG))
-        }
+        rule.setContentWithTheme { swipeToRevealCardDefault(modifier = Modifier.testTag(TEST_TAG)) }
 
         rule.onNodeWithTag(TEST_TAG).assertExists()
     }
 
     @Test
     fun supports_testTag_onContent_onChip() {
-        rule.setContentWithTheme {
-            swipeToRevealChipDefault()
-        }
+        rule.setContentWithTheme { swipeToRevealChipDefault() }
 
         rule.onNodeWithTag(CONTENT_TAG).assertExists()
     }
 
     @Test
     fun supports_testTag_onContent_onCard() {
-        rule.setContentWithTheme {
-            swipeToRevealCardDefault()
-        }
+        rule.setContentWithTheme { swipeToRevealCardDefault() }
 
         rule.onNodeWithTag(CONTENT_TAG).assertExists()
     }
 
     @Test
     fun whenNotRevealed_actionsDoNotExist_inChip() {
-        rule.setContentWithTheme {
-            swipeToRevealChipDefault()
-        }
+        rule.setContentWithTheme { swipeToRevealChipDefault() }
 
         rule.onNodeWithTag(PRIMARY_ACTION_TAG).assertDoesNotExist()
         rule.onNodeWithTag(SECONDARY_ACTION_TAG).assertDoesNotExist()
@@ -97,9 +84,7 @@ class SwipeToRevealTest {
 
     @Test
     fun whenNotRevealed_actionsDoNotExist_inCard() {
-        rule.setContentWithTheme {
-            swipeToRevealCardDefault()
-        }
+        rule.setContentWithTheme { swipeToRevealCardDefault() }
 
         rule.onNodeWithTag(PRIMARY_ACTION_TAG).assertDoesNotExist()
         rule.onNodeWithTag(SECONDARY_ACTION_TAG).assertDoesNotExist()
@@ -110,7 +95,7 @@ class SwipeToRevealTest {
     fun whenRevealing_actionsExist_inChip() {
         rule.setContentWithTheme {
             swipeToRevealChipDefault(
-                revealState = rememberRevealState(initialValue = RevealValue.Revealing)
+                revealState = rememberRevealState(initialValue = RevealValue.RightRevealing)
             )
         }
         rule.onNodeWithTag(PRIMARY_ACTION_TAG).assertExists()
@@ -121,7 +106,7 @@ class SwipeToRevealTest {
     fun whenRevealing_actionsExist_inCard() {
         rule.setContentWithTheme {
             swipeToRevealCardDefault(
-                revealState = rememberRevealState(initialValue = RevealValue.Revealing)
+                revealState = rememberRevealState(initialValue = RevealValue.RightRevealing)
             )
         }
         rule.onNodeWithTag(PRIMARY_ACTION_TAG).assertExists()
@@ -132,7 +117,7 @@ class SwipeToRevealTest {
     fun whenRevealed_undoActionExists_inChip() {
         rule.setContentWithTheme {
             swipeToRevealChipDefault(
-                revealState = rememberRevealState(initialValue = RevealValue.Revealed)
+                revealState = rememberRevealState(initialValue = RevealValue.RightRevealed)
             )
         }
 
@@ -143,7 +128,7 @@ class SwipeToRevealTest {
     fun whenRevealed_undoActionExists_inCard() {
         rule.setContentWithTheme {
             swipeToRevealChipDefault(
-                revealState = rememberRevealState(initialValue = RevealValue.Revealed)
+                revealState = rememberRevealState(initialValue = RevealValue.RightRevealed)
             )
         }
 
@@ -154,7 +139,7 @@ class SwipeToRevealTest {
     fun whenRevealed_actionsDoNotExist_inChip() {
         rule.setContentWithTheme {
             swipeToRevealChipDefault(
-                revealState = rememberRevealState(initialValue = RevealValue.Revealed)
+                revealState = rememberRevealState(initialValue = RevealValue.RightRevealed)
             )
         }
 
@@ -166,7 +151,7 @@ class SwipeToRevealTest {
     fun whenRevealed_actionsDoNotExist_inCard() {
         rule.setContentWithTheme {
             swipeToRevealCardDefault(
-                revealState = rememberRevealState(initialValue = RevealValue.Revealed)
+                revealState = rememberRevealState(initialValue = RevealValue.RightRevealed)
             )
         }
 
@@ -178,14 +163,11 @@ class SwipeToRevealTest {
     fun onPrimaryActionClick_triggersOnClick_forChip() {
         var clicked = false
         rule.setContentWithTheme {
-            val revealState = rememberRevealState(initialValue = RevealValue.Revealing)
+            val revealState = rememberRevealState(initialValue = RevealValue.RightRevealing)
             swipeToRevealChipDefault(
                 revealState = revealState,
                 primaryAction = {
-                    createPrimaryAction(
-                        revealState = revealState,
-                        onClick = { clicked = true }
-                    )
+                    createPrimaryAction(revealState = revealState, onClick = { clicked = true })
                 }
             )
         }
@@ -198,14 +180,11 @@ class SwipeToRevealTest {
     fun onSecondaryActionClick_triggersOnClick_forChip() {
         var clicked = false
         rule.setContentWithTheme {
-            val revealState = rememberRevealState(initialValue = RevealValue.Revealing)
+            val revealState = rememberRevealState(initialValue = RevealValue.RightRevealing)
             swipeToRevealChipDefault(
                 revealState = revealState,
                 secondaryAction = {
-                    createSecondaryAction(
-                        revealState = revealState,
-                        onClick = { clicked = true }
-                    )
+                    createSecondaryAction(revealState = revealState, onClick = { clicked = true })
                 }
             )
         }
@@ -217,7 +196,7 @@ class SwipeToRevealTest {
     @Test
     fun onPrimaryActionClickWithStateToRevealed_undoPrimaryActionCanBeClicked() {
         rule.setContentWithTheme {
-            val revealState = rememberRevealState(initialValue = RevealValue.Revealing)
+            val revealState = rememberRevealState(initialValue = RevealValue.RightRevealing)
             val coroutineScope = rememberCoroutineScope()
             swipeToRevealCardDefault(
                 revealState = revealState,
@@ -225,7 +204,9 @@ class SwipeToRevealTest {
                     createPrimaryAction(
                         revealState = revealState,
                         onClick = {
-                            coroutineScope.launch { revealState.animateTo(RevealValue.Revealed) }
+                            coroutineScope.launch {
+                                revealState.animateTo(RevealValue.RightRevealed)
+                            }
                         }
                     )
                 },
@@ -244,7 +225,7 @@ class SwipeToRevealTest {
     fun onPrimaryActionClickAndPrimaryUndoClicked_stateChangesToCovered() {
         lateinit var revealState: RevealState
         rule.setContentWithTheme {
-            revealState = rememberRevealState(initialValue = RevealValue.Revealing)
+            revealState = rememberRevealState(initialValue = RevealValue.RightRevealing)
             val coroutineScope = rememberCoroutineScope()
             swipeToRevealCardDefault(
                 revealState = revealState,
@@ -252,7 +233,9 @@ class SwipeToRevealTest {
                     createPrimaryAction(
                         revealState = revealState,
                         onClick = {
-                            coroutineScope.launch { revealState.animateTo(RevealValue.Revealed) }
+                            coroutineScope.launch {
+                                revealState.animateTo(RevealValue.RightRevealed)
+                            }
                         }
                     )
                 },
@@ -285,7 +268,7 @@ class SwipeToRevealTest {
     @Test
     fun onSecondaryActionClickWithStateToRevealed_undoSecondaryActionCanBeClicked() {
         rule.setContentWithTheme {
-            val revealState = rememberRevealState(initialValue = RevealValue.Revealing)
+            val revealState = rememberRevealState(initialValue = RevealValue.RightRevealing)
             val coroutineScope = rememberCoroutineScope()
             swipeToRevealCardDefault(
                 revealState = revealState,
@@ -293,7 +276,9 @@ class SwipeToRevealTest {
                     createSecondaryAction(
                         revealState = revealState,
                         onClick = {
-                            coroutineScope.launch { revealState.animateTo(RevealValue.Revealed) }
+                            coroutineScope.launch {
+                                revealState.animateTo(RevealValue.RightRevealed)
+                            }
                         }
                     )
                 },
@@ -312,7 +297,7 @@ class SwipeToRevealTest {
     fun onSecondaryActionClickAndUndoSecondaryClicked_stateChangesToCovered() {
         lateinit var revealState: RevealState
         rule.setContentWithTheme {
-            revealState = rememberRevealState(initialValue = RevealValue.Revealing)
+            revealState = rememberRevealState(initialValue = RevealValue.RightRevealing)
             val coroutineScope = rememberCoroutineScope()
             swipeToRevealCardDefault(
                 revealState = revealState,
@@ -321,7 +306,7 @@ class SwipeToRevealTest {
                         revealState = revealState,
                         onClick = {
                             coroutineScope.launch {
-                                revealState.animateTo(RevealValue.Revealed)
+                                revealState.animateTo(RevealValue.RightRevealed)
                             }
                         }
                     )
@@ -353,7 +338,7 @@ class SwipeToRevealTest {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun verifyActionColors() {
         var primaryActionColor = Color.Yellow
@@ -362,37 +347,42 @@ class SwipeToRevealTest {
             primaryActionColor = MaterialTheme.colors.error
             secondaryActionColor = MaterialTheme.colors.surface
             swipeToRevealChipDefault(
-                revealState = rememberRevealState(initialValue = RevealValue.Revealing)
+                revealState = rememberRevealState(initialValue = RevealValue.RightRevealing)
             )
         }
 
-        rule.onNodeWithTag(PRIMARY_ACTION_TAG)
+        rule
+            .onNodeWithTag(PRIMARY_ACTION_TAG)
             .captureToImage()
             .assertContainsColor(primaryActionColor, 50.0f)
-        rule.onNodeWithTag(SECONDARY_ACTION_TAG)
+        rule
+            .onNodeWithTag(SECONDARY_ACTION_TAG)
             .captureToImage()
             .assertContainsColor(secondaryActionColor)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun canOverrideActionColors() {
         val overridePrimaryActionColor = Color.Yellow
         val overrideSecondaryActionColor = Color.Green
         rule.setContentWithTheme {
             swipeToRevealChipDefault(
-                revealState = rememberRevealState(initialValue = RevealValue.Revealing),
-                colors = SwipeToRevealDefaults.actionColors(
-                    primaryActionBackgroundColor = overridePrimaryActionColor,
-                    secondaryActionBackgroundColor = overrideSecondaryActionColor
-                )
+                revealState = rememberRevealState(initialValue = RevealValue.RightRevealing),
+                colors =
+                    SwipeToRevealDefaults.actionColors(
+                        primaryActionBackgroundColor = overridePrimaryActionColor,
+                        secondaryActionBackgroundColor = overrideSecondaryActionColor
+                    )
             )
         }
 
-        rule.onNodeWithTag(PRIMARY_ACTION_TAG)
+        rule
+            .onNodeWithTag(PRIMARY_ACTION_TAG)
             .captureToImage()
             .assertContainsColor(overridePrimaryActionColor, 50.0f)
-        rule.onNodeWithTag(SECONDARY_ACTION_TAG)
+        rule
+            .onNodeWithTag(SECONDARY_ACTION_TAG)
             .captureToImage()
             .assertContainsColor(overrideSecondaryActionColor, 50.0f)
     }
@@ -401,16 +391,11 @@ class SwipeToRevealTest {
     private fun swipeToRevealChipDefault(
         modifier: Modifier = Modifier,
         revealState: RevealState = rememberRevealState(),
-        primaryAction: @Composable RevealScope.() -> Unit = { createPrimaryAction(revealState) },
-        secondaryAction: @Composable RevealScope.() -> Unit =
-            { createSecondaryAction(revealState) },
-        undoPrimaryAction: (@Composable RevealScope.() -> Unit)? =
-            { createUndoAction(revealState) },
-        undoSecondaryAction: (@Composable RevealScope.() -> Unit)? = {
-            createUndoAction(
-                revealState,
-                modifier = Modifier.testTag(UNDO_SECONDARY_ACTION_TAG)
-            )
+        primaryAction: @Composable () -> Unit = { createPrimaryAction(revealState) },
+        secondaryAction: @Composable () -> Unit = { createSecondaryAction(revealState) },
+        undoPrimaryAction: (@Composable () -> Unit)? = { createUndoAction(revealState) },
+        undoSecondaryAction: (@Composable () -> Unit)? = {
+            createUndoAction(revealState, modifier = Modifier.testTag(UNDO_SECONDARY_ACTION_TAG))
         },
         onFullSwipe: () -> Unit = {},
         colors: SwipeToRevealActionColors = SwipeToRevealDefaults.actionColors(),
@@ -433,16 +418,11 @@ class SwipeToRevealTest {
     private fun swipeToRevealCardDefault(
         modifier: Modifier = Modifier,
         revealState: RevealState = rememberRevealState(),
-        primaryAction: @Composable RevealScope.() -> Unit = { createPrimaryAction(revealState) },
-        secondaryAction: @Composable RevealScope.() -> Unit =
-            { createSecondaryAction(revealState) },
-        undoPrimaryAction: (@Composable RevealScope.() -> Unit)? =
-            { createUndoAction(revealState) },
-        undoSecondaryAction: (@Composable RevealScope.() -> Unit)? = {
-            createUndoAction(
-                revealState,
-                modifier = Modifier.testTag(UNDO_SECONDARY_ACTION_TAG)
-            )
+        primaryAction: @Composable () -> Unit = { createPrimaryAction(revealState) },
+        secondaryAction: @Composable () -> Unit = { createSecondaryAction(revealState) },
+        undoPrimaryAction: (@Composable () -> Unit)? = { createUndoAction(revealState) },
+        undoSecondaryAction: (@Composable () -> Unit)? = {
+            createUndoAction(revealState, modifier = Modifier.testTag(UNDO_SECONDARY_ACTION_TAG))
         },
         onFullSwipe: () -> Unit = {},
         colors: SwipeToRevealActionColors = SwipeToRevealDefaults.actionColors(),
@@ -462,7 +442,7 @@ class SwipeToRevealTest {
     }
 
     @Composable
-    private fun RevealScope.createPrimaryAction(
+    private fun createPrimaryAction(
         revealState: RevealState,
         icon: @Composable () -> Unit = { Icon(SwipeToRevealDefaults.Delete, "Delete") },
         label: @Composable () -> Unit = { Text("Clear") },
@@ -479,7 +459,7 @@ class SwipeToRevealTest {
     }
 
     @Composable
-    private fun RevealScope.createSecondaryAction(
+    private fun createSecondaryAction(
         revealState: RevealState,
         icon: @Composable () -> Unit = { Icon(SwipeToRevealDefaults.MoreOptions, "More Options") },
         modifier: Modifier = Modifier,
@@ -494,7 +474,7 @@ class SwipeToRevealTest {
     }
 
     @Composable
-    private fun RevealScope.createUndoAction(
+    private fun createUndoAction(
         revealState: RevealState,
         label: @Composable () -> Unit = { Text("Undo") },
         modifier: Modifier = Modifier,
@@ -509,12 +489,8 @@ class SwipeToRevealTest {
     }
 
     @Composable
-    private fun createContent(
-        modifier: Modifier = Modifier
-    ) = Box(modifier = modifier
-        .fillMaxWidth()
-        .height(50.dp)
-        .testTag(CONTENT_TAG))
+    private fun createContent(modifier: Modifier = Modifier) =
+        Box(modifier = modifier.fillMaxWidth().height(50.dp).testTag(CONTENT_TAG))
 
     private val CONTENT_TAG = "Content"
     private val PRIMARY_ACTION_TAG = "Action"

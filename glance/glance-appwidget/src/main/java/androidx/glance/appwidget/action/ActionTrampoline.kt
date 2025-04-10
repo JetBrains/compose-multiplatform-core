@@ -24,12 +24,15 @@ import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
 import android.widget.RemoteViews
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.glance.appwidget.TranslationContext
 
 internal enum class ActionTrampolineType {
-    ACTIVITY, BROADCAST, SERVICE, FOREGROUND_SERVICE, CALLBACK
+    ACTIVITY,
+    BROADCAST,
+    SERVICE,
+    FOREGROUND_SERVICE,
+    CALLBACK
 }
 
 private const val ActionTrampolineScheme = "glance-action"
@@ -46,12 +49,13 @@ internal fun Intent.applyTrampolineIntent(
     type: ActionTrampolineType,
     activityOptions: Bundle? = null,
 ): Intent {
-    val target = if (type == ActionTrampolineType.ACTIVITY) {
-        ActionTrampolineActivity::class.java
-    } else {
-        InvisibleActionTrampolineActivity::class.java
-    }
-    return Intent(translationContext.context, target).also { intent ->
+    return Intent().also { intent ->
+        intent.component =
+            if (type == ActionTrampolineType.ACTIVITY) {
+                translationContext.glanceComponents.actionTrampolineActivity
+            } else {
+                translationContext.glanceComponents.invisibleActionTrampolineActivity
+            }
         intent.data = createUniqueUri(translationContext, viewId, type)
         intent.putExtra(ActionTypeKey, type.name)
         intent.putExtra(ActionIntentKey, this)
@@ -64,24 +68,27 @@ internal fun createUniqueUri(
     viewId: Int,
     type: ActionTrampolineType,
     extraData: String = "",
-): Uri = Uri.Builder().apply {
-    scheme(ActionTrampolineScheme)
-    path(type.name)
-    appendQueryParameter("appWidgetId", translationContext.appWidgetId.toString())
-    appendQueryParameter("viewId", viewId.toString())
-    appendQueryParameter("viewSize", translationContext.layoutSize.toString())
-    appendQueryParameter("extraData", extraData)
-    if (translationContext.isLazyCollectionDescendant) {
-        appendQueryParameter(
-            "lazyCollection",
-            translationContext.layoutCollectionViewId.toString()
-        )
-        appendQueryParameter(
-            "lazeViewItem",
-            translationContext.layoutCollectionItemId.toString()
-        )
-    }
-}.build()
+): Uri =
+    Uri.Builder()
+        .apply {
+            scheme(ActionTrampolineScheme)
+            path(type.name)
+            appendQueryParameter("appWidgetId", translationContext.appWidgetId.toString())
+            appendQueryParameter("viewId", viewId.toString())
+            appendQueryParameter("viewSize", translationContext.layoutSize.toString())
+            appendQueryParameter("extraData", extraData)
+            if (translationContext.isLazyCollectionDescendant) {
+                appendQueryParameter(
+                    "lazyCollection",
+                    translationContext.layoutCollectionViewId.toString()
+                )
+                appendQueryParameter(
+                    "lazeViewItem",
+                    translationContext.layoutCollectionItemId.toString()
+                )
+            }
+        }
+        .build()
 
 /**
  * Unwraps and launches the action intent based on its type.
@@ -90,24 +97,26 @@ internal fun createUniqueUri(
  */
 @Suppress("DEPRECATION")
 internal fun Activity.launchTrampolineAction(intent: Intent) {
-    val actionIntent = requireNotNull(intent.getParcelableExtra<Intent>(ActionIntentKey)) {
-        "List adapter activity trampoline invoked without specifying target intent."
-    }
+    val actionIntent =
+        requireNotNull(intent.getParcelableExtra<Intent>(ActionIntentKey)) {
+            "List adapter activity trampoline invoked without specifying target intent."
+        }
     if (intent.hasExtra(RemoteViews.EXTRA_CHECKED)) {
         actionIntent.putExtra(
             RemoteViews.EXTRA_CHECKED,
             intent.getBooleanExtra(RemoteViews.EXTRA_CHECKED, false)
         )
     }
-    val type = requireNotNull(intent.getStringExtra(ActionTypeKey)) {
-        "List adapter activity trampoline invoked without trampoline type"
-    }
+    val type =
+        requireNotNull(intent.getStringExtra(ActionTypeKey)) {
+            "List adapter activity trampoline invoked without trampoline type"
+        }
     val activityOptions = intent.getBundleExtra(ActivityOptionsKey)
     allowUnsafeIntentLaunch {
         when (ActionTrampolineType.valueOf(type)) {
             ActionTrampolineType.ACTIVITY -> startActivity(actionIntent, activityOptions)
-            ActionTrampolineType.BROADCAST, ActionTrampolineType.CALLBACK ->
-                sendBroadcast(actionIntent)
+            ActionTrampolineType.BROADCAST,
+            ActionTrampolineType.CALLBACK -> sendBroadcast(actionIntent)
             ActionTrampolineType.SERVICE -> startService(actionIntent)
             ActionTrampolineType.FOREGROUND_SERVICE -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -126,13 +135,15 @@ internal fun Activity.launchTrampolineAction(intent: Intent) {
 
 internal fun allowUnsafeIntentLaunch(block: () -> Unit) {
     val previous = StrictMode.getVmPolicy()
-    val newPolicy = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        StrictModeVmPolicyApi31Impl.permitUnsafeIntentLaunch(
-            StrictMode.VmPolicy.Builder(previous)
-        ).build()
-    } else {
-        StrictMode.VmPolicy.Builder().build()
-    }
+    val newPolicy =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            StrictModeVmPolicyApi31Impl.permitUnsafeIntentLaunch(
+                    StrictMode.VmPolicy.Builder(previous)
+                )
+                .build()
+        } else {
+            StrictMode.VmPolicy.Builder().build()
+        }
     StrictMode.setVmPolicy(newPolicy)
     block()
     StrictMode.setVmPolicy(previous)
@@ -144,7 +155,6 @@ private const val ActivityOptionsKey = "ACTIVITY_OPTIONS"
 
 @RequiresApi(Build.VERSION_CODES.O)
 private object ListAdapterTrampolineApi26Impl {
-    @DoNotInline
     fun startForegroundService(context: Context, intent: Intent) {
         context.startForegroundService(intent)
     }
@@ -152,7 +162,6 @@ private object ListAdapterTrampolineApi26Impl {
 
 @RequiresApi(Build.VERSION_CODES.S)
 private object StrictModeVmPolicyApi31Impl {
-    @DoNotInline
     fun permitUnsafeIntentLaunch(builder: StrictMode.VmPolicy.Builder) =
         builder.permitUnsafeIntentLaunch()
 }

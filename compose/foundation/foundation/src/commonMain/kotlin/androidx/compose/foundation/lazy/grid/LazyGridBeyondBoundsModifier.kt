@@ -16,31 +16,37 @@
 
 package androidx.compose.foundation.lazy.grid
 
+import androidx.compose.foundation.gestures.snapping.singleAxisViewportSize
 import androidx.compose.foundation.lazy.layout.LazyLayoutBeyondBoundsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 
 @Composable
 internal fun rememberLazyGridBeyondBoundsState(state: LazyGridState): LazyLayoutBeyondBoundsState {
-    return remember(state) {
-        LazyGridBeyondBoundsState(state)
-    }
+    return remember(state) { LazyGridBeyondBoundsState(state) }
 }
 
 internal class LazyGridBeyondBoundsState(
     val state: LazyGridState,
 ) : LazyLayoutBeyondBoundsState {
 
-    override fun remeasure() {
-        state.remeasurement?.forceRemeasure()
-    }
-
     override val itemCount: Int
         get() = state.layoutInfo.totalItemsCount
+
     override val hasVisibleItems: Boolean
         get() = state.layoutInfo.visibleItemsInfo.isNotEmpty()
+
     override val firstPlacedIndex: Int
         get() = state.firstVisibleItemIndex
+
     override val lastPlacedIndex: Int
         get() = state.layoutInfo.visibleItemsInfo.last().index
+
+    /** In grids this is lines per viewport */
+    override fun itemsPerViewport(): Int {
+        if (state.layoutInfo.visibleItemsInfo.isEmpty()) return 0
+        val viewportSize = state.layoutInfo.singleAxisViewportSize
+        val lineAverageSize = state.layoutInfo.visibleLinesAverageMainAxisSize()
+        return (viewportSize / lineAverageSize).coerceAtLeast(1)
+    }
 }

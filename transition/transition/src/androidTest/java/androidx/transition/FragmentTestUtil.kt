@@ -25,21 +25,24 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import androidx.fragment.app.TargetTracking
+import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.runOnUiThreadRethrow
+import androidx.testutils.withActivity
 import androidx.transition.test.R
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.lang.ref.WeakReference
 
-fun FragmentTransaction.setReorderingAllowed(
-    reorderingAllowed: ReorderingAllowed
-) = setReorderingAllowed(reorderingAllowed is Reordered)
+fun FragmentTransaction.setReorderingAllowed(reorderingAllowed: ReorderingAllowed) =
+    setReorderingAllowed(reorderingAllowed is Reordered)
 
 sealed class ReorderingAllowed {
     override fun toString(): String = this.javaClass.simpleName
 }
+
 object Reordered : ReorderingAllowed()
+
 object Ordered : ReorderingAllowed()
 
 @Suppress("DEPRECATION")
@@ -51,13 +54,17 @@ fun androidx.test.rule.ActivityTestRule<out FragmentActivity>.executePendingTran
     return ret
 }
 
+inline fun <reified A : FragmentActivity> ActivityScenario<A>.executePendingTransactions(
+    fm: FragmentManager = withActivity { supportFragmentManager }
+) {
+    onActivity { fm.executePendingTransactions() }
+}
+
 @Suppress("DEPRECATION")
 fun androidx.test.rule.ActivityTestRule<out FragmentActivity>.popBackStackImmediate(): Boolean {
     val instrumentation = InstrumentationRegistry.getInstrumentation()
     var ret = false
-    instrumentation.runOnMainSync {
-        ret = activity.supportFragmentManager.popBackStackImmediate()
-    }
+    instrumentation.runOnMainSync { ret = activity.supportFragmentManager.popBackStackImmediate() }
     return ret
 }
 
@@ -165,11 +172,10 @@ fun verifyNoOtherTransitions(fragment: TransitionFragment) {
     assertThat(fragment.sharedElementReturn.enteringTargets).isEmpty()
     assertThat(fragment.sharedElementReturn.exitingTargets).isEmpty()
 }
+
 // Transition test methods end
 
-/**
- * Allocates until a garbage collection occurs.
- */
+/** Allocates until a garbage collection occurs. */
 fun forceGC() {
     if (Build.VERSION.SDK_INT > Build.VERSION_CODES.N_MR1) {
         // The following works on O+

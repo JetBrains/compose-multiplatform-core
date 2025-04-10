@@ -19,7 +19,6 @@ package androidx.compose.ui.focus
 import android.view.KeyEvent as AndroidKeyEvent
 import android.view.KeyEvent.ACTION_DOWN as KeyDown
 import android.view.KeyEvent.META_SHIFT_ON as Shift
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.focus.FocusDirection.Companion.Down
 import androidx.compose.ui.focus.FocusDirection.Companion.Enter
 import androidx.compose.ui.focus.FocusDirection.Companion.Exit
@@ -44,18 +43,14 @@ import org.junit.runner.RunWith
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalComposeUiApi::class)
 class KeyEventToFocusDirectionTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var owner: Owner
 
     @Before
     fun setup() {
-        rule.setContent {
-            owner = LocalView.current as Owner
-        }
+        rule.setContent { owner = LocalView.current as Owner }
     }
 
     @Test
@@ -163,7 +158,6 @@ class KeyEventToFocusDirectionTest {
         val focusDirection = owner.getFocusDirection(keyEvent)
 
         // Assert.
-        @OptIn(ExperimentalComposeUiApi::class)
         assertThat(focusDirection).isEqualTo(Enter)
     }
 
@@ -176,7 +170,6 @@ class KeyEventToFocusDirectionTest {
         val focusDirection = owner.getFocusDirection(keyEvent)
 
         // Assert.
-        @OptIn(ExperimentalComposeUiApi::class)
         assertThat(focusDirection).isEqualTo(Enter)
     }
 
@@ -189,7 +182,6 @@ class KeyEventToFocusDirectionTest {
         val focusDirection = owner.getFocusDirection(keyEvent)
 
         // Assert.
-        @OptIn(ExperimentalComposeUiApi::class)
         assertThat(focusDirection).isEqualTo(Enter)
     }
 
@@ -202,7 +194,6 @@ class KeyEventToFocusDirectionTest {
         val focusDirection = owner.getFocusDirection(keyEvent)
 
         // Assert.
-        @OptIn(ExperimentalComposeUiApi::class)
         assertThat(focusDirection).isEqualTo(Exit)
     }
 
@@ -215,7 +206,6 @@ class KeyEventToFocusDirectionTest {
         val focusDirection = owner.getFocusDirection(keyEvent)
 
         // Assert.
-        @OptIn(ExperimentalComposeUiApi::class)
         assertThat(focusDirection).isEqualTo(Exit)
     }
 }

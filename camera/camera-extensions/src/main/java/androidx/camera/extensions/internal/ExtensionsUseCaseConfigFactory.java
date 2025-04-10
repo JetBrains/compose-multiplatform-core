@@ -22,9 +22,6 @@ import android.graphics.ImageFormat;
 import android.util.Pair;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.ImageCapture.CaptureMode;
 import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.ImageAnalysisConfig;
@@ -32,13 +29,15 @@ import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.OptionsBundle;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.List;
 
 /**
  * Implementation of UseCaseConfigFactory to provide the default extensions configurations for use
  * cases.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class ExtensionsUseCaseConfigFactory implements UseCaseConfigFactory {
     private final ImageCaptureConfigProvider mImageCaptureConfigProvider;
     private final PreviewConfigProvider mPreviewConfigProvider;
@@ -73,9 +72,8 @@ public final class ExtensionsUseCaseConfigFactory implements UseCaseConfigFactor
      * Returns the configuration for the given capture type, or <code>null</code> if the
      * configuration cannot be produced.
      */
-    @Nullable
     @Override
-    public Config getConfig(
+    public @Nullable Config getConfig(
             @NonNull CaptureType captureType,
             @CaptureMode int captureMode
     ) {

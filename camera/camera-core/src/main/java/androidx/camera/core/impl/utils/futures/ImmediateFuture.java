@@ -16,13 +16,13 @@
 
 package androidx.camera.core.impl.utils.futures;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.Logger;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
@@ -36,7 +36,6 @@ import java.util.concurrent.TimeUnit;
  * <p>This implementation is based off of the Guava ImmediateSuccessfulFuture class.
  * @param <V> The type of the value stored in the future.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 abstract class ImmediateFuture<V> implements ListenableFuture<V> {
 
     private static final String TAG = "ImmediateFuture";
@@ -85,12 +84,10 @@ abstract class ImmediateFuture<V> implements ListenableFuture<V> {
     }
 
     @Override
-    @Nullable
-    public abstract V get() throws ExecutionException;
+    public abstract @Nullable V get() throws ExecutionException;
 
     @Override
-    @Nullable
-    public V get(long timeout, @NonNull TimeUnit unit) throws ExecutionException {
+    public @Nullable V get(long timeout, @NonNull TimeUnit unit) throws ExecutionException {
         Preconditions.checkNotNull(unit);
         return get();
     }
@@ -100,17 +97,15 @@ abstract class ImmediateFuture<V> implements ListenableFuture<V> {
         static final ImmediateFuture<Object> NULL_FUTURE =
                 new ImmediateSuccessfulFuture<>(null);
 
-        @Nullable
-        private final V mValue;
+        private final @Nullable V mValue;
 
         ImmediateSuccessfulFuture(@Nullable V value) {
             mValue = value;
         }
 
 
-        @Nullable
         @Override
-        public V get() {
+        public @Nullable V get() {
             return mValue;
         }
 
@@ -123,22 +118,19 @@ abstract class ImmediateFuture<V> implements ListenableFuture<V> {
 
     static class ImmediateFailedFuture<V> extends ImmediateFuture<V> {
 
-        @NonNull
-        private final Throwable mCause;
+        private final @NonNull Throwable mCause;
 
         ImmediateFailedFuture(@NonNull Throwable cause) {
             mCause = cause;
         }
 
-        @Nullable
         @Override
-        public V get() throws ExecutionException {
+        public @Nullable V get() throws ExecutionException {
             throw new ExecutionException(mCause);
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             // Behaviour analogous to AbstractResolvableFuture#toString().
             return super.toString() + "[status=FAILURE, cause=[" + mCause + "]]";
         }

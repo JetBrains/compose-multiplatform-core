@@ -18,37 +18,33 @@ package androidx.camera.extensions.internal;
 
 import android.hardware.camera2.CaptureRequest;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.OptionsBundle;
 import androidx.camera.core.impl.ReadableConfig;
 
+import org.jspecify.annotations.NonNull;
+
 /**
  * Builder for creating {@link Config} that contains capture request options.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class RequestOptionConfig implements ReadableConfig {
     static final String CAPTURE_REQUEST_ID_STEM = "camera2.captureRequest.option.";
 
-    @NonNull
-    private Config mConfig;
+    private @NonNull Config mConfig;
 
     private RequestOptionConfig(@NonNull Config config) {
         mConfig = config;
     }
 
-    @NonNull
     @Override
-    public Config getConfig() {
+    public @NonNull Config getConfig() {
         return mConfig;
     }
 
     @VisibleForTesting
-    @NonNull
-    static Option<Object> createOptionFromKey(@NonNull CaptureRequest.Key<?> key) {
+    static @NonNull Option<Object> createOptionFromKey(CaptureRequest.@NonNull Key<?> key) {
         return Option.create(CAPTURE_REQUEST_ID_STEM + key.getName(),
                 Object.class,
                 key);
@@ -64,8 +60,7 @@ public class RequestOptionConfig implements ReadableConfig {
          * Extract the capture request options from the given {@link Config} and create a
          * {@link Builder} consisting of these capture request options.
          */
-        @NonNull
-        public static Builder from(@NonNull Config config) {
+        public static @NonNull Builder from(@NonNull Config config) {
             Builder builder = new Builder();
             config.findOptions(
                     CAPTURE_REQUEST_ID_STEM,
@@ -83,9 +78,8 @@ public class RequestOptionConfig implements ReadableConfig {
         /**
          * Sets the capture request option.
          */
-        @NonNull
-        public <ValueT> Builder setCaptureRequestOption(
-                @NonNull CaptureRequest.Key<ValueT> key, @NonNull ValueT value) {
+        public <ValueT> @NonNull Builder setCaptureRequestOption(
+                CaptureRequest.@NonNull Key<ValueT> key, @NonNull ValueT value) {
             Option<Object> option = createOptionFromKey(key);
             mMutableOptionsBundle.insertOption(option, value);
             return this;
@@ -94,8 +88,7 @@ public class RequestOptionConfig implements ReadableConfig {
         /**
          * Construct the instance.
          */
-        @NonNull
-        public RequestOptionConfig build() {
+        public @NonNull RequestOptionConfig build() {
             return new RequestOptionConfig(OptionsBundle.from(mMutableOptionsBundle));
         }
     }

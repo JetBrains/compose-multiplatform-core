@@ -29,10 +29,10 @@ import android.view.InflateException;
 
 import androidx.annotation.AnimatorRes;
 import androidx.annotation.InterpolatorRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.graphics.PathParser;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -76,8 +76,7 @@ public class AnimatorInflater {
      * @return The animator object reference by the specified id
      * @throws NotFoundException when the animation cannot be loaded
      */
-    @NonNull
-    public static Animator loadAnimator(@NonNull Context context, @AnimatorRes int id)
+    public static @NonNull Animator loadAnimator(@NonNull Context context, @AnimatorRes int id)
             throws NotFoundException {
         return loadAnimator(context.getResources(), context.getTheme(), id);
     }
@@ -91,9 +90,8 @@ public class AnimatorInflater {
      * @return The animator object reference by the specified id
      * @throws NotFoundException when the animation cannot be loaded
      */
-    @NonNull
-    public static Animator loadAnimator(@NonNull Resources resources, @Nullable Theme theme,
-            @AnimatorRes int id) throws NotFoundException {
+    public static @NonNull Animator loadAnimator(@NonNull Resources resources,
+            @Nullable Theme theme, @AnimatorRes int id) throws NotFoundException {
         return loadAnimator(resources, theme, id, 1);
     }
 
@@ -134,20 +132,15 @@ public class AnimatorInflater {
     static class PathDataEvaluator implements TypeEvaluator<PathParser.PathDataNode[]> {
         private PathParser.PathDataNode[] mPathData;
 
-        @NonNull
         @Override
-        public PathParser.PathDataNode[] evaluate(
-                float fraction, @NonNull PathParser.PathDataNode[] startPathData,
-                @NonNull PathParser.PathDataNode[] endPathData) {
+        public PathParser.PathDataNode @NonNull [] evaluate(
+                float fraction, PathParser.PathDataNode @NonNull [] startPathData,
+                PathParser.PathDataNode @NonNull [] endPathData) {
             if (mPathData == null) {
                 // This path buffer has to have the same size and structure as the morphing path.
                 mPathData = PathParser.deepCopyNodes(endPathData);
             }
-            if (!PathParser.interpolatePathDataNodes(
-                    mPathData, startPathData, endPathData, fraction)) {
-                throw new IllegalArgumentException("Can't interpolate between"
-                        + " two incompatible pathData");
-            }
+            PathParser.interpolatePathDataNodes(mPathData, fraction, startPathData, endPathData);
             return mPathData;
         }
     }
@@ -849,8 +842,7 @@ public class AnimatorInflater {
      * @return The animation object reference by the specified id
      * @throws NotFoundException when interpolator resources cannot be loaded
      */
-    @NonNull
-    public static Interpolator loadInterpolator(@NonNull Context context,
+    public static @NonNull Interpolator loadInterpolator(@NonNull Context context,
             @AnimatorRes @InterpolatorRes int id) throws NotFoundException {
         XmlResourceParser parser = null;
         try {

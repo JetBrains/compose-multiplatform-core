@@ -22,9 +22,7 @@ import android.view.MenuInflater
 import androidx.fragment.app.Fragment
 import androidx.fragment.testing.test.R
 
-/**
- * A minimum example Fragment with options menu for testing.
- */
+/** A minimum example Fragment with options menu for testing. */
 @Suppress("DEPRECATION")
 class OptionsMenuFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,6 +30,7 @@ class OptionsMenuFragment : Fragment() {
         setHasOptionsMenu(true)
     }
 
+    @Suppress("OVERRIDE_DEPRECATION") // b/407500169
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.example_menu, menu)

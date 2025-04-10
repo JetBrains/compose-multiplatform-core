@@ -21,22 +21,21 @@ import static com.google.common.truth.Truth.assertThat;
 import android.content.Intent;
 import android.os.IBinder;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.concurrent.futures.ResolvableFuture;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.ResourceBuilders;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
-import java.util.List;
-
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 @DoNotInstrument
 public class CompositeTileUpdateRequesterTest {
     private FakeUpdateRequester mFakeUpdateRequester1;
@@ -51,7 +50,7 @@ public class CompositeTileUpdateRequesterTest {
 
         mCompositeTileUpdateRequesterUnderTest =
                 new CompositeTileUpdateRequester(
-                        List.of(mFakeUpdateRequester1, mFakeUpdateRequester2));
+                    ImmutableList.of(mFakeUpdateRequester1, mFakeUpdateRequester2));
     }
 
     @Test
@@ -62,7 +61,7 @@ public class CompositeTileUpdateRequesterTest {
         assertThat(mFakeUpdateRequester2.mCalledService).isEqualTo(FakeService.class);
     }
 
-    private class FakeUpdateRequester implements TileUpdateRequester {
+    private static class FakeUpdateRequester implements TileUpdateRequester {
         @Nullable Class<? extends TileService> mCalledService = null;
 
         @Override
@@ -71,28 +70,25 @@ public class CompositeTileUpdateRequesterTest {
         }
     }
 
-    private class FakeService extends TileService {
-        @NonNull
+    private static class FakeService extends TileService {
         @Override
-        protected ListenableFuture<TileBuilders.Tile> onTileRequest(
-                @NonNull RequestBuilders.TileRequest requestParams) {
+        protected @NonNull ListenableFuture<TileBuilders.Tile> onTileRequest(
+                RequestBuilders.@NonNull TileRequest requestParams) {
             ResolvableFuture<TileBuilders.Tile> f = ResolvableFuture.create();
             f.set(null);
             return f;
         }
 
-        @NonNull
         @Override
-        protected ListenableFuture<ResourceBuilders.Resources> onTileResourcesRequest(
-                @NonNull RequestBuilders.ResourcesRequest requestParams) {
+        protected @NonNull ListenableFuture<ResourceBuilders.Resources> onTileResourcesRequest(
+                RequestBuilders.@NonNull ResourcesRequest requestParams) {
             ResolvableFuture<ResourceBuilders.Resources> f = ResolvableFuture.create();
             f.set(null);
             return f;
         }
 
-        @Nullable
         @Override
-        public IBinder onBind(Intent intent) {
+        public @Nullable IBinder onBind(Intent intent) {
             return null;
         }
     }

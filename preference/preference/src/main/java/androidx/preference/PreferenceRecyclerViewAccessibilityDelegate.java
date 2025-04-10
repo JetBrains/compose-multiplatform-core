@@ -21,12 +21,13 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 import android.os.Bundle;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.core.view.AccessibilityDelegateCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerViewAccessibilityDelegate;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * The accessibility delegate used by the {@link RecyclerView} that displays views for
@@ -51,9 +52,8 @@ public class PreferenceRecyclerViewAccessibilityDelegate
         mRecyclerView = recyclerView;
     }
 
-    @NonNull
     @Override
-    public AccessibilityDelegateCompat getItemDelegate() {
+    public @NonNull AccessibilityDelegateCompat getItemDelegate() {
         return mItemDelegate;
     }
     @SuppressWarnings("WeakerAccess") /* synthetic access */

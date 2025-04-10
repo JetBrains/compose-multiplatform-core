@@ -18,7 +18,6 @@ package androidx.fragment.app
 
 import android.os.Build
 import androidx.activity.BackEventCompat
-import androidx.annotation.RequiresApi
 import androidx.fragment.app.FragmentManager.OnBackStackChangedListener
 import androidx.fragment.app.test.FragmentTestActivity
 import androidx.fragment.test.R
@@ -28,6 +27,8 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.testutils.withActivity
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import leakcanary.DetectLeaksAfterTestSuccess
 import org.junit.Rule
 import org.junit.Test
@@ -36,8 +37,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class OnBackStackChangedListenerTest {
-    @get:Rule
-    val rule = DetectLeaksAfterTestSuccess()
+    @get:Rule val rule = DetectLeaksAfterTestSuccess()
 
     @Test
     fun testOnBackChangeStartedAdd() {
@@ -48,18 +48,22 @@ class OnBackStackChangedListenerTest {
             lateinit var innerFragment: Fragment
             var innerPop = false
             var count = 0
-            fragmentManager.addOnBackStackChangedListener(object : OnBackStackChangedListener {
-                override fun onBackStackChanged() { /* nothing */
-                }
+            fragmentManager.addOnBackStackChangedListener(
+                object : OnBackStackChangedListener {
+                    override fun onBackStackChanged() {
+                        /* nothing */
+                    }
 
-                override fun onBackStackChangeStarted(fragment: Fragment, pop: Boolean) {
-                    innerFragment = fragment
-                    innerPop = pop
-                    count++
+                    override fun onBackStackChangeStarted(fragment: Fragment, pop: Boolean) {
+                        innerFragment = fragment
+                        innerPop = pop
+                        count++
+                    }
                 }
-            })
+            )
 
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(true)
                 .add(R.id.content, fragment1)
                 .addToBackStack(null)
@@ -79,7 +83,8 @@ class OnBackStackChangedListenerTest {
 
             val fragment1 = StrictFragment()
 
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(true)
                 .add(R.id.content, fragment1)
                 .addToBackStack(null)
@@ -91,20 +96,24 @@ class OnBackStackChangedListenerTest {
 
             val incomingFragments = mutableListOf<Fragment>()
 
-            fragmentManager.addOnBackStackChangedListener(object : OnBackStackChangedListener {
-                override fun onBackStackChanged() { /* nothing */
-                }
+            fragmentManager.addOnBackStackChangedListener(
+                object : OnBackStackChangedListener {
+                    override fun onBackStackChanged() {
+                        /* nothing */
+                    }
 
-                override fun onBackStackChangeStarted(fragment: Fragment, pop: Boolean) {
-                    incomingFragments.add(fragment)
-                    innerPop = pop
-                    count++
+                    override fun onBackStackChangeStarted(fragment: Fragment, pop: Boolean) {
+                        incomingFragments.add(fragment)
+                        innerPop = pop
+                        count++
+                    }
                 }
-            })
+            )
 
             val fragment2 = StrictFragment()
 
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(true)
                 .replace(R.id.content, fragment2)
                 .addToBackStack(null)
@@ -124,7 +133,8 @@ class OnBackStackChangedListenerTest {
 
             val fragment1 = StrictFragment()
 
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(true)
                 .add(R.id.content, fragment1)
                 .addToBackStack(null)
@@ -133,7 +143,8 @@ class OnBackStackChangedListenerTest {
 
             val fragment2 = StrictFragment()
 
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(true)
                 .replace(R.id.content, fragment2)
                 .addToBackStack(null)
@@ -145,16 +156,19 @@ class OnBackStackChangedListenerTest {
 
             val incomingFragments = mutableListOf<Fragment>()
 
-            fragmentManager.addOnBackStackChangedListener(object : OnBackStackChangedListener {
-                override fun onBackStackChanged() { /* nothing */
-                }
+            fragmentManager.addOnBackStackChangedListener(
+                object : OnBackStackChangedListener {
+                    override fun onBackStackChanged() {
+                        /* nothing */
+                    }
 
-                override fun onBackStackChangeStarted(fragment: Fragment, pop: Boolean) {
-                    incomingFragments.add(fragment)
-                    innerPop = pop
-                    count++
+                    override fun onBackStackChangeStarted(fragment: Fragment, pop: Boolean) {
+                        incomingFragments.add(fragment)
+                        innerPop = pop
+                        count++
+                    }
                 }
-            })
+            )
 
             fragmentManager.popBackStack()
             executePendingTransactions()
@@ -176,18 +190,22 @@ class OnBackStackChangedListenerTest {
             lateinit var innerFragment: Fragment
             var innerPop = false
             var count = 0
-            fragmentManager.addOnBackStackChangedListener(object : OnBackStackChangedListener {
-                override fun onBackStackChanged() { /* nothing */
-                }
+            fragmentManager.addOnBackStackChangedListener(
+                object : OnBackStackChangedListener {
+                    override fun onBackStackChanged() {
+                        /* nothing */
+                    }
 
-                override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
-                    innerFragment = fragment
-                    innerPop = pop
-                    count++
+                    override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
+                        innerFragment = fragment
+                        innerPop = pop
+                        count++
+                    }
                 }
-            })
+            )
 
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(true)
                 .add(R.id.content, fragment1)
                 .addToBackStack(null)
@@ -207,7 +225,8 @@ class OnBackStackChangedListenerTest {
 
             val fragment1 = StrictFragment()
 
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(true)
                 .add(R.id.content, fragment1)
                 .addToBackStack(null)
@@ -219,20 +238,24 @@ class OnBackStackChangedListenerTest {
 
             val incomingFragments = mutableListOf<Fragment>()
 
-            fragmentManager.addOnBackStackChangedListener(object : OnBackStackChangedListener {
-                override fun onBackStackChanged() { /* nothing */
-                }
+            fragmentManager.addOnBackStackChangedListener(
+                object : OnBackStackChangedListener {
+                    override fun onBackStackChanged() {
+                        /* nothing */
+                    }
 
-                override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
-                    incomingFragments.add(fragment)
-                    innerPop = pop
-                    count++
+                    override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
+                        incomingFragments.add(fragment)
+                        innerPop = pop
+                        count++
+                    }
                 }
-            })
+            )
 
             val fragment2 = StrictFragment()
 
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(true)
                 .replace(R.id.content, fragment2)
                 .addToBackStack(null)
@@ -252,7 +275,8 @@ class OnBackStackChangedListenerTest {
 
             val fragment1 = StrictFragment()
 
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(true)
                 .add(R.id.content, fragment1)
                 .addToBackStack(null)
@@ -261,7 +285,8 @@ class OnBackStackChangedListenerTest {
 
             val fragment2 = StrictFragment()
 
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(true)
                 .replace(R.id.content, fragment2)
                 .addToBackStack(null)
@@ -273,16 +298,19 @@ class OnBackStackChangedListenerTest {
 
             val incomingFragments = mutableListOf<Fragment>()
 
-            fragmentManager.addOnBackStackChangedListener(object : OnBackStackChangedListener {
-                override fun onBackStackChanged() { /* nothing */
-                }
+            fragmentManager.addOnBackStackChangedListener(
+                object : OnBackStackChangedListener {
+                    override fun onBackStackChanged() {
+                        /* nothing */
+                    }
 
-                override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
-                    incomingFragments.add(fragment)
-                    innerPop = pop
-                    count++
+                    override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
+                        incomingFragments.add(fragment)
+                        innerPop = pop
+                        count++
+                    }
                 }
-            })
+            )
 
             fragmentManager.popBackStack()
             executePendingTransactions()
@@ -302,7 +330,8 @@ class OnBackStackChangedListenerTest {
 
             val fragment1 = StrictFragment()
 
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(true)
                 .add(R.id.content, fragment1)
                 .addToBackStack(null)
@@ -314,21 +343,25 @@ class OnBackStackChangedListenerTest {
 
             val incomingFragments = mutableListOf<Fragment>()
 
-            fragmentManager.addOnBackStackChangedListener(object : OnBackStackChangedListener {
-                override fun onBackStackChanged() { /* nothing */
-                }
+            fragmentManager.addOnBackStackChangedListener(
+                object : OnBackStackChangedListener {
+                    override fun onBackStackChanged() {
+                        /* nothing */
+                    }
 
-                override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
-                    incomingFragments.add(fragment)
-                    innerPop = pop
-                    count++
+                    override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
+                        incomingFragments.add(fragment)
+                        innerPop = pop
+                        count++
+                    }
                 }
-            })
+            )
 
             val fragment2 = StrictFragment()
 
             withActivity {
-                fragmentManager.beginTransaction()
+                fragmentManager
+                    .beginTransaction()
                     .setReorderingAllowed(true)
                     .replace(R.id.content, fragment2)
                     .addToBackStack(null)
@@ -351,20 +384,24 @@ class OnBackStackChangedListenerTest {
             val fragment = StrictFragment()
             var startedCount = 0
             var committedCount = 0
-            val listener = object : OnBackStackChangedListener {
-                override fun onBackStackChanged() { /* nothing */ }
+            val listener =
+                object : OnBackStackChangedListener {
+                    override fun onBackStackChanged() {
+                        /* nothing */
+                    }
 
-                override fun onBackStackChangeStarted(fragment: Fragment, pop: Boolean) {
-                    startedCount++
-                }
+                    override fun onBackStackChangeStarted(fragment: Fragment, pop: Boolean) {
+                        startedCount++
+                    }
 
-                override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
-                    committedCount++
+                    override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
+                        committedCount++
+                    }
                 }
-            }
             fragmentManager.addOnBackStackChangedListener(listener)
 
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(true)
                 .add(R.id.content, fragment)
                 .addToBackStack(null)
@@ -384,21 +421,25 @@ class OnBackStackChangedListenerTest {
             val fragment = StrictFragment()
             var startedCount = 0
             var committedCount = 0
-            val listener = object : OnBackStackChangedListener {
-                override fun onBackStackChanged() { /* nothing */ }
+            val listener =
+                object : OnBackStackChangedListener {
+                    override fun onBackStackChanged() {
+                        /* nothing */
+                    }
 
-                override fun onBackStackChangeStarted(fragment: Fragment, pop: Boolean) {
-                    startedCount++
-                }
+                    override fun onBackStackChangeStarted(fragment: Fragment, pop: Boolean) {
+                        startedCount++
+                    }
 
-                override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
-                    committedCount++
+                    override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
+                        committedCount++
+                    }
                 }
-            }
             fragmentManager.addOnBackStackChangedListener(listener)
 
             withActivity {
-                fragmentManager.beginTransaction()
+                fragmentManager
+                    .beginTransaction()
                     .setReorderingAllowed(true)
                     .add(R.id.content, fragment)
                     .commitNow()
@@ -418,26 +459,31 @@ class OnBackStackChangedListenerTest {
             val fragment2 = StrictFragment()
             var startedCount = 0
             var committedCount = 0
-            val listener = object : OnBackStackChangedListener {
-                override fun onBackStackChanged() { /* nothing */ }
+            val listener =
+                object : OnBackStackChangedListener {
+                    override fun onBackStackChanged() {
+                        /* nothing */
+                    }
 
-                override fun onBackStackChangeStarted(fragment: Fragment, pop: Boolean) {
-                    startedCount++
-                }
+                    override fun onBackStackChangeStarted(fragment: Fragment, pop: Boolean) {
+                        startedCount++
+                    }
 
-                override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
-                    committedCount++
+                    override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
+                        committedCount++
+                    }
                 }
-            }
             fragmentManager.addOnBackStackChangedListener(listener)
 
             withActivity {
-                fragmentManager.beginTransaction()
+                fragmentManager
+                    .beginTransaction()
                     .setReorderingAllowed(true)
                     .add(R.id.content, fragment)
                     .commit()
 
-                fragmentManager.beginTransaction()
+                fragmentManager
+                    .beginTransaction()
                     .setReorderingAllowed(true)
                     .add(R.id.content, fragment2)
                     .addToBackStack(null)
@@ -450,7 +496,6 @@ class OnBackStackChangedListenerTest {
         }
     }
 
-    @RequiresApi(34)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @Test
     fun testBackStackHandledOnBackChange() {
@@ -461,9 +506,11 @@ class OnBackStackChangedListenerTest {
             val fragment2 = StrictFragment()
             var startedCount = 0
             var committedCount = 0
+            var progress = 0f
 
             withActivity {
-                fragmentManager.beginTransaction()
+                fragmentManager
+                    .beginTransaction()
                     .setReorderingAllowed(true)
                     .add(R.id.content, fragment)
                     .addToBackStack(null)
@@ -472,7 +519,8 @@ class OnBackStackChangedListenerTest {
             }
 
             withActivity {
-                fragmentManager.beginTransaction()
+                fragmentManager
+                    .beginTransaction()
                     .setReorderingAllowed(true)
                     .add(R.id.content, fragment2)
                     .addToBackStack(null)
@@ -480,34 +528,43 @@ class OnBackStackChangedListenerTest {
                 executePendingTransactions()
             }
 
-            val listener = object : OnBackStackChangedListener {
-                override fun onBackStackChanged() { /* nothing */ }
+            val listener =
+                object : OnBackStackChangedListener {
+                    override fun onBackStackChanged() {
+                        /* nothing */
+                    }
 
-                override fun onBackStackChangeStarted(fragment: Fragment, pop: Boolean) {
-                    startedCount++
-                }
+                    override fun onBackStackChangeStarted(fragment: Fragment, pop: Boolean) {
+                        startedCount++
+                    }
 
-                override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
-                    committedCount++
+                    override fun onBackStackChangeProgressed(backEventCompat: BackEventCompat) {
+                        progress = backEventCompat.progress
+                    }
+
+                    override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
+                        committedCount++
+                    }
                 }
-            }
             fragmentManager.addOnBackStackChangedListener(listener)
 
             withActivity {
                 onBackPressedDispatcher.dispatchOnBackStarted(BackEventCompat(0f, 0f, 0f, 0))
-                executePendingTransactions()
+            }
+
+            withActivity {
+                onBackPressedDispatcher.dispatchOnBackProgressed(BackEventCompat(0f, 0f, 0.5f, 0))
             }
 
             if (FragmentManager.USE_PREDICTIVE_BACK) {
                 assertThat(startedCount).isEqualTo(1)
+                assertThat(progress).isEqualTo(0.5f)
             } else {
                 assertThat(startedCount).isEqualTo(0)
             }
             assertThat(committedCount).isEqualTo(0)
 
-            withActivity {
-                onBackPressedDispatcher.onBackPressed()
-            }
+            withActivity { onBackPressedDispatcher.onBackPressed() }
 
             assertThat(startedCount).isEqualTo(1)
             assertThat(committedCount).isEqualTo(1)
@@ -516,7 +573,6 @@ class OnBackStackChangedListenerTest {
         }
     }
 
-    @RequiresApi(34)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @Test
     fun testBackStackCancelledOnBackChange() {
@@ -527,9 +583,16 @@ class OnBackStackChangedListenerTest {
             val fragment2 = StrictFragment()
             var startedCount = 0
             var committedCount = 0
+            var cancelledCount = 0
+            var backStackChangedCount = 0
+
+            val startedLatch = CountDownLatch(1)
+            val cancelLatch = CountDownLatch(1)
+            val changedLatch = CountDownLatch(1)
 
             withActivity {
-                fragmentManager.beginTransaction()
+                fragmentManager
+                    .beginTransaction()
                     .setReorderingAllowed(true)
                     .add(R.id.content, fragment)
                     .addToBackStack(null)
@@ -538,7 +601,8 @@ class OnBackStackChangedListenerTest {
             }
 
             withActivity {
-                fragmentManager.beginTransaction()
+                fragmentManager
+                    .beginTransaction()
                     .setReorderingAllowed(true)
                     .add(R.id.content, fragment2)
                     .addToBackStack(null)
@@ -546,41 +610,58 @@ class OnBackStackChangedListenerTest {
                 executePendingTransactions()
             }
 
-            val listener = object : OnBackStackChangedListener {
-                override fun onBackStackChanged() { /* nothing */ }
+            val listener =
+                object : OnBackStackChangedListener {
+                    override fun onBackStackChanged() {
+                        backStackChangedCount++
+                        changedLatch.countDown()
+                    }
 
-                override fun onBackStackChangeStarted(fragment: Fragment, pop: Boolean) {
-                    startedCount++
-                }
+                    override fun onBackStackChangeStarted(fragment: Fragment, pop: Boolean) {
+                        startedCount++
+                        startedLatch.countDown()
+                    }
 
-                override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
-                    committedCount++
+                    override fun onBackStackChangeCommitted(fragment: Fragment, pop: Boolean) {
+                        committedCount++
+                    }
+
+                    override fun onBackStackChangeCancelled() {
+                        if (backStackChangedCount == 1) {
+                            cancelledCount++
+                            cancelLatch.countDown()
+                        }
+                    }
                 }
-            }
             fragmentManager.addOnBackStackChangedListener(listener)
 
             withActivity {
                 onBackPressedDispatcher.dispatchOnBackStarted(BackEventCompat(0f, 0f, 0f, 0))
-                executePendingTransactions()
             }
 
             if (FragmentManager.USE_PREDICTIVE_BACK) {
+                assertThat(startedLatch.await(1000, TimeUnit.MILLISECONDS)).isTrue()
                 assertThat(startedCount).isEqualTo(1)
             } else {
                 assertThat(startedCount).isEqualTo(0)
             }
+
+            assertThat(changedLatch.await(1000, TimeUnit.MILLISECONDS)).isTrue()
+            assertThat(backStackChangedCount).isEqualTo(1)
+
             assertThat(committedCount).isEqualTo(0)
 
-            withActivity {
-                onBackPressedDispatcher.dispatchOnBackCancelled()
-            }
+            withActivity { onBackPressedDispatcher.dispatchOnBackCancelled() }
 
             if (FragmentManager.USE_PREDICTIVE_BACK) {
                 assertThat(startedCount).isEqualTo(1)
+                assertThat(cancelLatch.await(1000, TimeUnit.MILLISECONDS)).isTrue()
+                assertThat(cancelledCount).isEqualTo(1)
             } else {
                 assertThat(startedCount).isEqualTo(0)
             }
             assertThat(committedCount).isEqualTo(0)
+            assertThat(backStackChangedCount).isEqualTo(2)
 
             assertThat(fragment2).isSameInstanceAs(fragmentManager.findFragmentById(R.id.content))
         }

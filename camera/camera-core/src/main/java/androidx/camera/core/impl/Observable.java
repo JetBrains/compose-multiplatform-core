@@ -16,11 +16,10 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 
@@ -29,7 +28,6 @@ import java.util.concurrent.Executor;
  *
  * @param <T> The type of the data in the stream.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public interface Observable<T> {
 
     /**
@@ -42,8 +40,7 @@ public interface Observable<T> {
      *
      * @return A future which will contain the latest value or an error.
      */
-    @NonNull
-    ListenableFuture<T> fetchData();
+    @NonNull ListenableFuture<T> fetchData();
 
     /**
      * Adds an observer which will receive the stream of data.

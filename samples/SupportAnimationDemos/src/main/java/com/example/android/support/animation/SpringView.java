@@ -22,7 +22,7 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * The view that draws the spring as it reacts (i.e. expands/compresses) to the user touch.

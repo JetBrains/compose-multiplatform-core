@@ -20,9 +20,9 @@ import android.content.Context;
 import android.os.Build;
 import android.os.UserManager;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing features in {@link android.os.UserManager} in a backwards compatible
@@ -53,7 +53,6 @@ public class UserManagerCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean isUserUnlocked(Context context) {
             return context.getSystemService(UserManager.class).isUserUnlocked();
         }

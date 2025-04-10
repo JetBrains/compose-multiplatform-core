@@ -21,12 +21,12 @@ import android.util.Size;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.SurfaceRequest;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 
@@ -35,24 +35,19 @@ import java.util.concurrent.Executor;
  * done using either a {@link android.view.TextureView} (see {@link TextureViewImplementation})
  * or a {@link android.view.SurfaceView} (see {@link SurfaceViewImplementation}).
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 abstract class PreviewViewImplementation {
 
-    @Nullable
-    Size mResolution;
+    @Nullable Size mResolution;
 
-    @NonNull
-    FrameLayout mParent;
+    @NonNull FrameLayout mParent;
 
-    @NonNull
-    private final PreviewTransformation mPreviewTransform;
+    private final @NonNull PreviewTransformation mPreviewTransform;
 
     private boolean mWasSurfaceProvided = false;
 
     abstract void initializePreview();
 
-    @Nullable
-    abstract View getPreview();
+    abstract @Nullable View getPreview();
 
     PreviewViewImplementation(@NonNull FrameLayout parent,
             @NonNull PreviewTransformation previewTransform) {
@@ -109,11 +104,9 @@ abstract class PreviewViewImplementation {
      * <p>For implementation that does not support frame update event, the returned future will
      * complete immediately.
      */
-    @NonNull
-    abstract ListenableFuture<Void> waitForNextFrame();
+    abstract @NonNull ListenableFuture<Void> waitForNextFrame();
 
-    @Nullable
-    Bitmap getBitmap() {
+    @Nullable Bitmap getBitmap() {
         final Bitmap bitmap = getPreviewBitmap();
         if (bitmap == null) {
             return null;
@@ -123,11 +116,10 @@ abstract class PreviewViewImplementation {
                 mParent.getLayoutDirection());
     }
 
-    @Nullable
-    abstract Bitmap getPreviewBitmap();
+    abstract @Nullable Bitmap getPreviewBitmap();
 
     void setFrameUpdateListener(
-            @NonNull Executor executor, @NonNull PreviewView.OnFrameUpdateListener listener) {}
+            @NonNull Executor executor, PreviewView.@NonNull OnFrameUpdateListener listener) {}
 
     /**
      * Listener to be notified when the provided Surface is no longer in use or the request is

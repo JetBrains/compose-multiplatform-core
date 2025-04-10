@@ -36,6 +36,7 @@ import static junit.framework.TestCase.fail;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.timeout;
@@ -64,8 +65,6 @@ import android.os.Looper;
 import android.util.Range;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.Camera2Config;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
@@ -105,6 +104,8 @@ import androidx.test.filters.SdkSuppress;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.AssumptionViolatedException;
@@ -145,7 +146,6 @@ import java.util.concurrent.atomic.AtomicLong;
 @LargeTest
 @RunWith(AndroidJUnit4.class)
 @SdkSuppress(minSdkVersion = 21)
-@RequiresApi(21)
 public final class CaptureSessionTest {
 
     // Enumerate possible SDR transfer functions. This may need to be updated if more transfer
@@ -186,12 +186,14 @@ public final class CaptureSessionTest {
 
     private DynamicRangesCompat mDynamicRangesCompat;
 
+    private Quirks mCameraQuirks;
+
     @Rule
     public TestRule wakelockEmptyActivityRule = new WakelockEmptyActivityRule();
 
     @Rule
     public TestRule getUseCameraRule() {
-        return CameraUtil.grantCameraPermissionAndPreTest(
+        return CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
                 new CameraUtil.PreTestCameraIdList(Camera2Config.defaultConfig())
         );
     }
@@ -228,6 +230,8 @@ public final class CaptureSessionTest {
         } catch (CameraAccessExceptionCompat e) {
             throw new AssumptionViolatedException("Could not retrieve camera characteristics", e);
         }
+
+        mCameraQuirks = CameraQuirks.get(cameraId, mCameraCharacteristics);
 
         mCaptureSessionOpenerBuilder = new SynchronizedCaptureSession.OpenerBuilder(mExecutor,
                 mScheduledExecutor, mHandler, mCaptureSessionRepository,
@@ -312,7 +316,7 @@ public final class CaptureSessionTest {
 
         // CameraCaptureCallback.onCaptureCompleted() should be called to signal a capture attempt.
         verify(mTestParameters0.mSessionCameraCaptureCallback, timeout(3000).atLeastOnce())
-                .onCaptureCompleted(any(CameraCaptureResult.class));
+                .onCaptureCompleted(anyInt(), any(CameraCaptureResult.class));
     }
 
     private boolean isLegacyCamera() {
@@ -441,7 +445,7 @@ public final class CaptureSessionTest {
         FakeOpener fakeOpener = new FakeOpener();
 
         // 2. Act
-        CaptureSession captureSession = new CaptureSession(mDynamicRangesCompat);
+        CaptureSession captureSession = new CaptureSession(mDynamicRangesCompat, mCameraQuirks);
         captureSession.setSessionConfig(sessionConfig); // set repeating request
         captureSession.open(sessionConfig,
                 mCameraDeviceHolder.get(), fakeOpener);
@@ -647,8 +651,7 @@ public final class CaptureSessionTest {
         assertThat(useCountAfterNewCaptureSessionConfigured).isEqualTo(useCountBeforeOpen);
     }
 
-    @NonNull
-    private CaptureSession createSessionAndWaitOpened(
+    private @NonNull CaptureSession createSessionAndWaitOpened(
             @NonNull CaptureSessionTestParameters parameters, long waitTimeout) {
         CaptureSession captureSession = createCaptureSession();
         captureSession.setSessionConfig(parameters.mSessionConfig);
@@ -684,7 +687,7 @@ public final class CaptureSessionTest {
 
         // CameraCaptureCallback.onCaptureCompleted() should be called to signal a capture attempt.
         verify(mTestParameters0.mSessionCameraCaptureCallback, timeout(3000).atLeastOnce())
-                .onCaptureCompleted(captureResultCaptor.capture());
+                .onCaptureCompleted(anyInt(), captureResultCaptor.capture());
 
         CameraCaptureResult cameraCaptureResult = captureResultCaptor.getValue();
         assertThat(cameraCaptureResult).isInstanceOf(Camera2CameraCaptureResult.class);
@@ -804,7 +807,7 @@ public final class CaptureSessionTest {
 
         // Second session should have CameraCaptureCallback.onCaptureCompleted() call.
         verify(mTestParameters1.mSessionCameraCaptureCallback, timeout(3000).atLeastOnce())
-                .onCaptureCompleted(any(CameraCaptureResult.class));
+                .onCaptureCompleted(anyInt(), any(CameraCaptureResult.class));
     }
 
     @Test
@@ -824,9 +827,17 @@ public final class CaptureSessionTest {
 
         assertTrue(mTestParameters0.waitForCameraCaptureCallback());
 
-        // CameraCaptureCallback.onCaptureCompleted() should be called to signal a capture attempt.
+        int expectedCaptureConfigId = mTestParameters0.mCaptureConfig.getId();
+        ArgumentCaptor<Integer> captureConfigIdCaptor1 = ArgumentCaptor.forClass(Integer.class);
         verify(mTestParameters0.mCameraCaptureCallback, timeout(3000).times(1))
-                .onCaptureCompleted(any(CameraCaptureResult.class));
+                .onCaptureStarted(captureConfigIdCaptor1.capture());
+        assertThat(captureConfigIdCaptor1.getValue()).isEqualTo(expectedCaptureConfigId);
+
+        ArgumentCaptor<Integer> captureConfigIdCaptor2 = ArgumentCaptor.forClass(Integer.class);
+        verify(mTestParameters0.mCameraCaptureCallback, timeout(3000).times(1))
+                .onCaptureCompleted(captureConfigIdCaptor2.capture(),
+                        any(CameraCaptureResult.class));
+        assertThat(captureConfigIdCaptor2.getValue()).isEqualTo(expectedCaptureConfigId);
     }
 
     @Test
@@ -851,7 +862,7 @@ public final class CaptureSessionTest {
 
         // CameraCaptureCallback.onCaptureCompleted() should be called to signal a capture attempt.
         verify(mTestParameters0.mCameraCaptureCallback, timeout(3000).times(1))
-                .onCaptureCompleted(captureResultCaptor.capture());
+                .onCaptureCompleted(anyInt(), captureResultCaptor.capture());
 
         CameraCaptureResult cameraCaptureResult = captureResultCaptor.getValue();
         assertThat(cameraCaptureResult).isInstanceOf(Camera2CameraCaptureResult.class);
@@ -899,7 +910,7 @@ public final class CaptureSessionTest {
 
         // CameraCaptureCallback.onCaptureCompleted() should be called to signal a capture attempt.
         verify(mTestParameters0.mCameraCaptureCallback, timeout(3000).times(1))
-                .onCaptureCompleted(any(CameraCaptureResult.class));
+                .onCaptureCompleted(anyInt(), any(CameraCaptureResult.class));
     }
 
     @Test
@@ -917,7 +928,7 @@ public final class CaptureSessionTest {
 
         // CameraCaptureCallback.onCaptureCompleted() should be called to signal a capture attempt.
         verify(mTestParameters0.mCameraCaptureCallback, timeout(3000).times(1))
-                .onCaptureCompleted(any(CameraCaptureResult.class));
+                .onCaptureCompleted(anyInt(), any(CameraCaptureResult.class));
     }
 
     @Test(expected = IllegalStateException.class)
@@ -1113,13 +1124,12 @@ public final class CaptureSessionTest {
     }
 
     private CaptureSession createCaptureSession() {
-        CaptureSession captureSession = new CaptureSession(mDynamicRangesCompat);
+        CaptureSession captureSession = new CaptureSession(mDynamicRangesCompat, mCameraQuirks);
         mCaptureSessions.add(captureSession);
         return captureSession;
     }
 
-    @NonNull
-    private DeferrableSurface createSurfaceTextureDeferrableSurface() {
+    private @NonNull DeferrableSurface createSurfaceTextureDeferrableSurface() {
         SurfaceTexture surfaceTexture = new SurfaceTexture(0);
         surfaceTexture.setDefaultBufferSize(640, 480);
         surfaceTexture.detachFromGLContext();
@@ -1142,8 +1152,12 @@ public final class CaptureSessionTest {
 
         captureSession.cancelIssuedCaptureRequests();
 
+        ArgumentCaptor<Integer> captureConfigIdCaptor = ArgumentCaptor.forClass(Integer.class);
         verify(mTestParameters0.mCameraCaptureCallback, timeout(3000).times(1))
-                .onCaptureCancelled();
+                .onCaptureCancelled(captureConfigIdCaptor.capture());
+
+        int expectedCaptureConfigId = mTestParameters0.mCaptureConfig.getId();
+        assertThat(captureConfigIdCaptor.getValue()).isEqualTo(expectedCaptureConfigId);
     }
 
     @Test
@@ -1396,7 +1410,7 @@ public final class CaptureSessionTest {
         FakeOpener fakeOpener = new FakeOpener();
         // Don't use #createCaptureSession since FakeOpenerImpl won't create CameraCaptureSession
         // so no need to be released.
-        CaptureSession captureSession = new CaptureSession(mDynamicRangesCompat);
+        CaptureSession captureSession = new CaptureSession(mDynamicRangesCompat, mCameraQuirks);
         captureSession.open(sessionConfigBuilder.build(), mCameraDeviceHolder.get(), fakeOpener);
 
         ArgumentCaptor<SessionConfigurationCompat> captor =
@@ -1554,7 +1568,7 @@ public final class CaptureSessionTest {
 
         // Activate repeating request
         captureSession.setSessionConfig(sessionConfigWithSurface);
-        verify(captureCallback, timeout(3000L).atLeast(3)).onCaptureCompleted(any());
+        verify(captureCallback, timeout(3000L).atLeast(3)).onCaptureCompleted(anyInt(), any());
 
         // Deactivate repeating request
         isStartMonitor.set(true);
@@ -1584,16 +1598,15 @@ public final class CaptureSessionTest {
         CountDownLatch latch0 = new CountDownLatch(1);
         AtomicInteger dataSpace = new AtomicInteger(DataSpace.DATASPACE_UNKNOWN);
         ListenableFuture<SurfaceTextureProvider.SurfaceTextureHolder> surfaceTextureHolderFuture =
-                SurfaceTextureProvider.createAutoDrainingSurfaceTextureAsync(mExecutor, 640, 480,
+                SurfaceTextureProvider.createAutoDrainingSurfaceTextureAsync(640, 480,
                         surfaceTexture -> {
                             dataSpace.set(surfaceTexture.getDataSpace());
                             latch0.countDown();
-                        }, /* onClosed= */null);
+                        });
 
         DeferrableSurface deferrableSurface = new DeferrableSurface() {
-            @NonNull
             @Override
-            protected ListenableFuture<Surface> provideSurface() {
+            protected @NonNull ListenableFuture<Surface> provideSurface() {
                 return Futures.transform(surfaceTextureHolderFuture,
                         surfaceTextureHolder -> {
                             Surface surface = new Surface(surfaceTextureHolder.getSurfaceTexture());
@@ -1609,7 +1622,7 @@ public final class CaptureSessionTest {
                         new FutureCallback<SurfaceTextureProvider.SurfaceTextureHolder>() {
                             @Override
                             public void onSuccess(
-                                    @Nullable SurfaceTextureProvider.SurfaceTextureHolder result) {
+                                    SurfaceTextureProvider.@Nullable SurfaceTextureHolder result) {
                                 try {
                                     Preconditions.checkNotNull(result).close();
                                 } catch (Exception e) {
@@ -1673,35 +1686,32 @@ public final class CaptureSessionTest {
         final SynchronizedCaptureSession.Opener mMock = mock(
                 SynchronizedCaptureSession.Opener.class);
 
-        @NonNull
         @Override
-        public ListenableFuture<Void> openCaptureSession(@NonNull CameraDevice cameraDevice,
+        public @NonNull ListenableFuture<Void> openCaptureSession(
+                @NonNull CameraDevice cameraDevice,
                 @NonNull SessionConfigurationCompat sessionConfigurationCompat,
                 @NonNull List<DeferrableSurface> deferrableSurfaces) {
             mMock.openCaptureSession(cameraDevice, sessionConfigurationCompat, deferrableSurfaces);
             return Futures.immediateFuture(null);
         }
 
-        @NonNull
         @Override
-        public SessionConfigurationCompat createSessionConfigurationCompat(int sessionType,
+        public @NonNull SessionConfigurationCompat createSessionConfigurationCompat(int sessionType,
                 @NonNull List<OutputConfigurationCompat> outputsCompat,
-                @NonNull SynchronizedCaptureSession.StateCallback stateCallback) {
+                SynchronizedCaptureSession.@NonNull StateCallback stateCallback) {
             mMock.createSessionConfigurationCompat(sessionType, outputsCompat, stateCallback);
             return new SessionConfigurationCompat(sessionType, outputsCompat, getExecutor(),
                     mock(CameraCaptureSession.StateCallback.class));
         }
 
-        @NonNull
         @Override
-        public Executor getExecutor() {
+        public @NonNull Executor getExecutor() {
             mMock.getExecutor();
             return CameraXExecutors.directExecutor();
         }
 
-        @NonNull
         @Override
-        public ListenableFuture<List<Surface>> startWithDeferrableSurface(
+        public @NonNull ListenableFuture<List<Surface>> startWithDeferrableSurface(
                 @NonNull List<DeferrableSurface> deferrableSurfaces, long timeout) {
             mMock.startWithDeferrableSurface(deferrableSurfaces, timeout);
             List<ListenableFuture<Surface>> listenableFutureSurfaces = new ArrayList<>();
@@ -1750,6 +1760,7 @@ public final class CaptureSessionTest {
         private final ImageReader mImageReader;
         private final SessionConfig mSessionConfig;
         private final CaptureConfig mCaptureConfig;
+        private static final int CAPTURE_CONFIG_ID = 110;
 
         private final CameraCaptureSession.StateCallback mSessionStateCallback =
                 Mockito.mock(CameraCaptureSession.StateCallback.class);
@@ -1772,7 +1783,8 @@ public final class CaptureSessionTest {
                         mCameraCaptureCallback,
                         new CameraCaptureCallback() {
                             @Override
-                            public void onCaptureCompleted(@NonNull CameraCaptureResult result) {
+                            public void onCaptureCompleted(int captureConfigId,
+                                    @NonNull CameraCaptureResult result) {
                                 mCameraCaptureCallbackLatch.countDown();
                             }
                         });
@@ -1824,6 +1836,7 @@ public final class CaptureSessionTest {
             mSessionConfig = builder.build();
 
             CaptureConfig.Builder captureConfigBuilder = new CaptureConfig.Builder();
+            captureConfigBuilder.setId(CAPTURE_CONFIG_ID);
             captureConfigBuilder.setTemplateType(CameraDevice.TEMPLATE_PREVIEW);
             captureConfigBuilder.addSurface(mDeferrableSurface);
             captureConfigBuilder.addCameraCaptureCallback(mComboCameraCaptureCallback);

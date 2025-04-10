@@ -16,21 +16,25 @@
 
 package androidx.wear.protolayout;
 
+import static androidx.wear.protolayout.DimensionBuilders.dp;
 import static androidx.wear.protolayout.expression.Preconditions.checkNotNull;
 
 import android.annotation.SuppressLint;
 
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.ActionBuilders.Action;
+import androidx.wear.protolayout.ColorBuilders.Brush;
 import androidx.wear.protolayout.ColorBuilders.ColorProp;
+import androidx.wear.protolayout.ColorBuilders.LinearGradient;
+import androidx.wear.protolayout.DimensionBuilders.DegreesProp;
 import androidx.wear.protolayout.DimensionBuilders.DpProp;
+import androidx.wear.protolayout.DimensionBuilders.PivotDimension;
 import androidx.wear.protolayout.TypeBuilders.BoolProp;
+import androidx.wear.protolayout.TypeBuilders.FloatProp;
 import androidx.wear.protolayout.TypeBuilders.StringProp;
 import androidx.wear.protolayout.expression.AnimationParameterBuilders.AnimationSpec;
 import androidx.wear.protolayout.expression.Fingerprint;
@@ -38,6 +42,9 @@ import androidx.wear.protolayout.expression.ProtoLayoutExperimental;
 import androidx.wear.protolayout.expression.RequiresSchemaVersion;
 import androidx.wear.protolayout.proto.ModifiersProto;
 import androidx.wear.protolayout.protobuf.ByteString;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -81,8 +88,7 @@ public final class ModifiersBuilders {
          * fully invisible to fully visible.
          */
         @RequiresSchemaVersion(major = 1, minor = 200)
-        @NonNull
-        public static EnterTransition fadeIn() {
+        public static @NonNull EnterTransition fadeIn() {
             return FADE_IN_ENTER_TRANSITION;
         }
 
@@ -91,8 +97,7 @@ public final class ModifiersBuilders {
          * its position from the parent edge in the given direction.
          */
         @RequiresSchemaVersion(major = 1, minor = 200)
-        @NonNull
-        public static EnterTransition slideIn(@SlideDirection int slideDirection) {
+        public static @NonNull EnterTransition slideIn(@SlideDirection int slideDirection) {
             return new EnterTransition.Builder()
                     .setSlideIn(slideInTransition(slideDirection))
                     .build();
@@ -106,8 +111,7 @@ public final class ModifiersBuilders {
          * @param slideDirection The direction for sliding in part of transition.
          */
         @RequiresSchemaVersion(major = 1, minor = 200)
-        @NonNull
-        public static EnterTransition fadeInSlideIn(@SlideDirection int slideDirection) {
+        public static @NonNull EnterTransition fadeInSlideIn(@SlideDirection int slideDirection) {
             return new EnterTransition.Builder()
                     .setFadeIn(FADE_IN_TRANSITION)
                     .setSlideIn(slideInTransition(slideDirection))
@@ -145,8 +149,7 @@ public final class ModifiersBuilders {
          * fully visible to fully invisible.
          */
         @RequiresSchemaVersion(major = 1, minor = 200)
-        @NonNull
-        public static ExitTransition fadeOut() {
+        public static @NonNull ExitTransition fadeOut() {
             return FADE_OUT_EXIT_TRANSITION;
         }
 
@@ -155,8 +158,7 @@ public final class ModifiersBuilders {
          * its position to the parent edge in the given direction.
          */
         @RequiresSchemaVersion(major = 1, minor = 200)
-        @NonNull
-        public static ExitTransition slideOut(@SlideDirection int slideDirection) {
+        public static @NonNull ExitTransition slideOut(@SlideDirection int slideDirection) {
             return new ExitTransition.Builder()
                     .setSlideOut(slideOutTransition(slideDirection))
                     .build();
@@ -170,8 +172,7 @@ public final class ModifiersBuilders {
          * @param slideDirection The direction for sliding in part of transition.
          */
         @RequiresSchemaVersion(major = 1, minor = 200)
-        @NonNull
-        public static ExitTransition fadeOutSlideOut(@SlideDirection int slideDirection) {
+        public static @NonNull ExitTransition fadeOutSlideOut(@SlideDirection int slideDirection) {
             return new ExitTransition.Builder()
                     .setFadeOut(FADE_OUT_TRANSITION)
                     .setSlideOut(slideOutTransition(slideDirection))
@@ -307,7 +308,7 @@ public final class ModifiersBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class Clickable {
         private final ModifiersProto.Clickable mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         Clickable(ModifiersProto.Clickable impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -315,14 +316,12 @@ public final class ModifiersBuilders {
         }
 
         /** Gets the ID associated with this action. */
-        @NonNull
-        public String getId() {
+        public @NonNull String getId() {
             return mImpl.getId();
         }
 
         /** Gets the action to perform when the element this modifier is attached to is clicked. */
-        @Nullable
-        public Action getOnClick() {
+        public @Nullable Action getOnClick() {
             if (mImpl.hasOnClick()) {
                 return ActionBuilders.actionFromProto(mImpl.getOnClick());
             } else {
@@ -337,8 +336,7 @@ public final class ModifiersBuilders {
          * that this value does not affect the layout, so the minimum clickable width is not
          * guaranteed unless there is enough space around the element within its parent bounds.
          */
-        @NonNull
-        public DpProp getMinimumClickableWidth() {
+        public @NonNull DpProp getMinimumClickableWidth() {
             if (mImpl.hasMinimumClickableWidth()) {
                 return DpProp.fromProto(mImpl.getMinimumClickableWidth());
             } else {
@@ -353,8 +351,7 @@ public final class ModifiersBuilders {
          * that this value does not affect the layout, so the minimum clickable height is not
          * guaranteed unless there is enough space around the element within its parent bounds.
          */
-        @NonNull
-        public DpProp getMinimumClickableHeight() {
+        public @NonNull DpProp getMinimumClickableHeight() {
             if (mImpl.hasMinimumClickableHeight()) {
                 return DpProp.fromProto(mImpl.getMinimumClickableHeight());
             } else {
@@ -362,37 +359,55 @@ public final class ModifiersBuilders {
             }
         }
 
+        /**
+         * Gets whether the click visual feedback (such as a ripple) should be enabled. Defaults to
+         * true.
+         */
+        public boolean isVisualFeedbackEnabled() {
+            if (mImpl.hasVisualFeedbackEnabled()) {
+                return mImpl.getVisualFeedbackEnabled();
+            } else {
+                return true;
+            }
+        }
+
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static Clickable fromProto(
-                @NonNull ModifiersProto.Clickable proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull Clickable fromProto(
+                ModifiersProto.@NonNull Clickable proto, @Nullable Fingerprint fingerprint) {
             return new Clickable(proto, fingerprint);
         }
 
-        @NonNull
-        static Clickable fromProto(@NonNull ModifiersProto.Clickable proto) {
+        static @NonNull Clickable fromProto(ModifiersProto.@NonNull Clickable proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.Clickable toProto() {
+        public ModifiersProto.@NonNull Clickable toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
-            return "Clickable{" + "id=" + getId() + ", onClick=" + getOnClick() + "}";
+        public @NonNull String toString() {
+            return "Clickable{"
+                    + "id="
+                    + getId()
+                    + ", onClick="
+                    + getOnClick()
+                    + ", minimumClickableWidth="
+                    + getMinimumClickableWidth()
+                    + ", minimumClickableHeight="
+                    + getMinimumClickableHeight()
+                    + ", disableVisualFeedback="
+                    + isVisualFeedbackEnabled()
+                    + "}";
         }
 
         /** Builder for {@link Clickable} */
@@ -406,8 +421,7 @@ public final class ModifiersBuilders {
 
             /** Sets the ID associated with this action. */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setId(@NonNull String id) {
+            public @NonNull Builder setId(@NonNull String id) {
                 mImpl.setId(id);
                 mFingerprint.recordPropertyUpdate(1, id.hashCode());
                 return this;
@@ -417,8 +431,7 @@ public final class ModifiersBuilders {
              * Sets the action to perform when the element this modifier is attached to is clicked.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setOnClick(@NonNull Action onClick) {
+            public @NonNull Builder setOnClick(@NonNull Action onClick) {
                 mImpl.setOnClick(onClick.toActionProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(onClick.getFingerprint()).aggregateValueAsInt());
@@ -436,8 +449,8 @@ public final class ModifiersBuilders {
              * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 300)
-            @NonNull
-            public Builder setMinimumClickableWidth(@NonNull DpProp minimumClickableWidth) {
+            public @NonNull Builder setMinimumClickableWidth(
+                    @NonNull DpProp minimumClickableWidth) {
                 if (minimumClickableWidth.getDynamicValue() != null) {
                     throw new IllegalArgumentException(
                             "Clickable.Builder.setMinimumClickableWidth doesn't support dynamic"
@@ -461,8 +474,8 @@ public final class ModifiersBuilders {
              * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 300)
-            @NonNull
-            public Builder setMinimumClickableHeight(@NonNull DpProp minimumClickableHeight) {
+            public @NonNull Builder setMinimumClickableHeight(
+                    @NonNull DpProp minimumClickableHeight) {
                 if (minimumClickableHeight.getDynamicValue() != null) {
                     throw new IllegalArgumentException(
                             "Clickable.Builder.setMinimumClickableHeight doesn't support dynamic"
@@ -476,9 +489,19 @@ public final class ModifiersBuilders {
                 return this;
             }
 
+            /**
+             * Sets whether the click visual feedback (such as a ripple) should be enabled. Defaults
+             * to true.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setVisualFeedbackEnabled(boolean visualFeedbackEnabled) {
+                mImpl.setVisualFeedbackEnabled(visualFeedbackEnabled);
+                mFingerprint.recordPropertyUpdate(5, Boolean.hashCode(visualFeedbackEnabled));
+                return this;
+            }
+
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public Clickable build() {
+            public @NonNull Clickable build() {
                 return new Clickable(mImpl.build(), mFingerprint);
             }
         }
@@ -492,7 +515,7 @@ public final class ModifiersBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class Semantics {
         private final ModifiersProto.Semantics mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         Semantics(ModifiersProto.Semantics impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -506,8 +529,7 @@ public final class ModifiersBuilders {
          * <p>While this field is statically accessible from 1.0, it's only bindable since version
          * 1.2 and renderers supporting version 1.2 will use the dynamic value (if set).
          */
-        @Nullable
-        public StringProp getContentDescription() {
+        public @Nullable StringProp getContentDescription() {
             if (mImpl.hasContentDescription()) {
                 return StringProp.fromProto(mImpl.getContentDescription());
             } else {
@@ -530,8 +552,7 @@ public final class ModifiersBuilders {
          *
          * <p>This field is bindable and will use the dynamic value (if set).
          */
-        @Nullable
-        public StringProp getStateDescription() {
+        public @Nullable StringProp getStateDescription() {
             if (mImpl.hasStateDescription()) {
                 return StringProp.fromProto(mImpl.getStateDescription());
             } else {
@@ -541,34 +562,29 @@ public final class ModifiersBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static Semantics fromProto(
-                @NonNull ModifiersProto.Semantics proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull Semantics fromProto(
+                ModifiersProto.@NonNull Semantics proto, @Nullable Fingerprint fingerprint) {
             return new Semantics(proto, fingerprint);
         }
 
-        @NonNull
-        static Semantics fromProto(@NonNull ModifiersProto.Semantics proto) {
+        static @NonNull Semantics fromProto(ModifiersProto.@NonNull Semantics proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.Semantics toProto() {
+        public ModifiersProto.@NonNull Semantics toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "Semantics{"
                     + "contentDescription="
                     + getContentDescription()
@@ -593,8 +609,7 @@ public final class ModifiersBuilders {
              * describe the element or do customizations.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setRole(@SemanticsRole int role) {
+            public @NonNull Builder setRole(@SemanticsRole int role) {
                 mImpl.setRole(ModifiersProto.SemanticsRole.forNumber(role));
                 mFingerprint.recordPropertyUpdate(2, role);
                 return this;
@@ -607,8 +622,7 @@ public final class ModifiersBuilders {
              * <p>This field is bindable and will use the dynamic value (if set).
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setStateDescription(@NonNull StringProp stateDescription) {
+            public @NonNull Builder setStateDescription(@NonNull StringProp stateDescription) {
                 mImpl.setStateDescription(stateDescription.toProto());
                 mFingerprint.recordPropertyUpdate(
                         3, checkNotNull(stateDescription.getFingerprint()).aggregateValueAsInt());
@@ -620,10 +634,9 @@ public final class ModifiersBuilders {
              * the element is focused by the screen reader.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
             @SuppressWarnings(
                     "deprecation") // Updating a deprecated field for backward compatibility
-            public Builder setContentDescription(@NonNull String contentDescription) {
+            public @NonNull Builder setContentDescription(@NonNull String contentDescription) {
                 return setContentDescription(new StringProp.Builder(contentDescription).build());
             }
 
@@ -635,10 +648,9 @@ public final class ModifiersBuilders {
              * version 1.2 and renderers supporting version 1.2 will use the dynamic value (if set).
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
             @SuppressWarnings(
                     "deprecation") // Updating a deprecated field for backward compatibility
-            public Builder setContentDescription(@NonNull StringProp contentDescription) {
+            public @NonNull Builder setContentDescription(@NonNull StringProp contentDescription) {
                 mImpl.setObsoleteContentDescription(contentDescription.getValue());
                 mImpl.setContentDescription(contentDescription.toProto());
                 mFingerprint.recordPropertyUpdate(
@@ -647,8 +659,7 @@ public final class ModifiersBuilders {
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public Semantics build() {
+            public @NonNull Semantics build() {
                 return new Semantics(mImpl.build(), mFingerprint);
             }
         }
@@ -658,7 +669,7 @@ public final class ModifiersBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class Padding {
         private final ModifiersProto.Padding mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         Padding(ModifiersProto.Padding impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -669,8 +680,7 @@ public final class ModifiersBuilders {
          * Gets the padding on the end of the content, depending on the layout direction, in DP and
          * the value of "rtl_aware".
          */
-        @Nullable
-        public DpProp getEnd() {
+        public @Nullable DpProp getEnd() {
             if (mImpl.hasEnd()) {
                 return DpProp.fromProto(mImpl.getEnd());
             } else {
@@ -682,8 +692,7 @@ public final class ModifiersBuilders {
          * Gets the padding on the start of the content, depending on the layout direction, in DP
          * and the value of "rtl_aware".
          */
-        @Nullable
-        public DpProp getStart() {
+        public @Nullable DpProp getStart() {
             if (mImpl.hasStart()) {
                 return DpProp.fromProto(mImpl.getStart());
             } else {
@@ -692,8 +701,7 @@ public final class ModifiersBuilders {
         }
 
         /** Gets the padding at the top, in DP. */
-        @Nullable
-        public DpProp getTop() {
+        public @Nullable DpProp getTop() {
             if (mImpl.hasTop()) {
                 return DpProp.fromProto(mImpl.getTop());
             } else {
@@ -702,8 +710,7 @@ public final class ModifiersBuilders {
         }
 
         /** Gets the padding at the bottom, in DP. */
-        @Nullable
-        public DpProp getBottom() {
+        public @Nullable DpProp getBottom() {
             if (mImpl.hasBottom()) {
                 return DpProp.fromProto(mImpl.getBottom());
             } else {
@@ -717,8 +724,7 @@ public final class ModifiersBuilders {
          * of the container if the device is using an RTL locale). If false, start/end will always
          * map to left/right, accordingly.
          */
-        @Nullable
-        public BoolProp getRtlAware() {
+        @Nullable BoolProp isRtlAware() {
             if (mImpl.hasRtlAware()) {
                 return BoolProp.fromProto(mImpl.getRtlAware());
             } else {
@@ -726,36 +732,41 @@ public final class ModifiersBuilders {
             }
         }
 
+        /**
+         * Gets whether the start/end padding is aware of RTL support. If true, the values for
+         * start/end will follow the layout direction (i.e. start will refer to the right hand side
+         * of the container if the device is using an RTL locale). If false, start/end will always
+         * map to left/right, accordingly.
+         */
+        public @Nullable BoolProp getRtlAware() {
+            return isRtlAware();
+        }
+
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static Padding fromProto(
-                @NonNull ModifiersProto.Padding proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull Padding fromProto(
+                ModifiersProto.@NonNull Padding proto, @Nullable Fingerprint fingerprint) {
             return new Padding(proto, fingerprint);
         }
 
-        @NonNull
-        static Padding fromProto(@NonNull ModifiersProto.Padding proto) {
+        static @NonNull Padding fromProto(ModifiersProto.@NonNull Padding proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.Padding toProto() {
+        public ModifiersProto.@NonNull Padding toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "Padding{"
                     + "end="
                     + getEnd()
@@ -786,8 +797,7 @@ public final class ModifiersBuilders {
              * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setEnd(@NonNull DpProp end) {
+            public @NonNull Builder setEnd(@NonNull DpProp end) {
                 if (end.getDynamicValue() != null) {
                     throw new IllegalArgumentException(
                             "Padding.Builder.setEnd doesn't support dynamic values.");
@@ -805,8 +815,7 @@ public final class ModifiersBuilders {
              * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setStart(@NonNull DpProp start) {
+            public @NonNull Builder setStart(@NonNull DpProp start) {
                 if (start.getDynamicValue() != null) {
                     throw new IllegalArgumentException(
                             "Padding.Builder.setStart doesn't support dynamic values.");
@@ -823,8 +832,7 @@ public final class ModifiersBuilders {
              * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setTop(@NonNull DpProp top) {
+            public @NonNull Builder setTop(@NonNull DpProp top) {
                 if (top.getDynamicValue() != null) {
                     throw new IllegalArgumentException(
                             "Padding.Builder.setTop doesn't support dynamic values.");
@@ -841,8 +849,7 @@ public final class ModifiersBuilders {
              * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setBottom(@NonNull DpProp bottom) {
+            public @NonNull Builder setBottom(@NonNull DpProp bottom) {
                 if (bottom.getDynamicValue() != null) {
                     throw new IllegalArgumentException(
                             "Padding.Builder.setBottom doesn't support dynamic values.");
@@ -862,8 +869,7 @@ public final class ModifiersBuilders {
              * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setRtlAware(@NonNull BoolProp rtlAware) {
+            public @NonNull Builder setRtlAware(@NonNull BoolProp rtlAware) {
                 if (rtlAware.getDynamicValue() != null) {
                     throw new IllegalArgumentException(
                             "Padding.Builder.setRtlAware doesn't support dynamic values.");
@@ -882,22 +888,19 @@ public final class ModifiersBuilders {
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
             @SuppressLint("MissingGetterMatchingBuilder")
-            @NonNull
-            public Builder setRtlAware(boolean rtlAware) {
+            public @NonNull Builder setRtlAware(boolean rtlAware) {
                 return setRtlAware(new BoolProp.Builder(rtlAware).build());
             }
 
             /** Sets the padding for all sides of the content, in DP. */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
             @SuppressLint("MissingGetterMatchingBuilder")
-            public Builder setAll(@NonNull DpProp value) {
+            public @NonNull Builder setAll(@NonNull DpProp value) {
                 return setStart(value).setEnd(value).setTop(value).setBottom(value);
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public Padding build() {
+            public @NonNull Padding build() {
                 return new Padding(mImpl.build(), mFingerprint);
             }
         }
@@ -907,7 +910,7 @@ public final class ModifiersBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class Border {
         private final ModifiersProto.Border mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         Border(ModifiersProto.Border impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -915,8 +918,7 @@ public final class ModifiersBuilders {
         }
 
         /** Gets the width of the border, in DP. */
-        @Nullable
-        public DpProp getWidth() {
+        public @Nullable DpProp getWidth() {
             if (mImpl.hasWidth()) {
                 return DpProp.fromProto(mImpl.getWidth());
             } else {
@@ -930,8 +932,7 @@ public final class ModifiersBuilders {
          * <p>While this field is statically accessible from 1.0, it's only bindable since version
          * 1.2 and renderers supporting version 1.2 will use the dynamic value (if set).
          */
-        @Nullable
-        public ColorProp getColor() {
+        public @Nullable ColorProp getColor() {
             if (mImpl.hasColor()) {
                 return ColorProp.fromProto(mImpl.getColor());
             } else {
@@ -941,34 +942,29 @@ public final class ModifiersBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static Border fromProto(
-                @NonNull ModifiersProto.Border proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull Border fromProto(
+                ModifiersProto.@NonNull Border proto, @Nullable Fingerprint fingerprint) {
             return new Border(proto, fingerprint);
         }
 
-        @NonNull
-        static Border fromProto(@NonNull ModifiersProto.Border proto) {
+        static @NonNull Border fromProto(ModifiersProto.@NonNull Border proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.Border toProto() {
+        public ModifiersProto.@NonNull Border toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "Border{" + "width=" + getWidth() + ", color=" + getColor() + "}";
         }
 
@@ -986,8 +982,7 @@ public final class ModifiersBuilders {
              * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setWidth(@NonNull DpProp width) {
+            public @NonNull Builder setWidth(@NonNull DpProp width) {
                 if (width.getDynamicValue() != null) {
                     throw new IllegalArgumentException(
                             "Border.Builder.setWidth doesn't support dynamic values.");
@@ -1005,8 +1000,7 @@ public final class ModifiersBuilders {
              * version 1.2 and renderers supporting version 1.2 will use the dynamic value (if set).
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setColor(@NonNull ColorProp color) {
+            public @NonNull Builder setColor(@NonNull ColorProp color) {
                 mImpl.setColor(color.toProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(color.getFingerprint()).aggregateValueAsInt());
@@ -1014,9 +1008,130 @@ public final class ModifiersBuilders {
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public Border build() {
+            public @NonNull Border build() {
                 return new Border(mImpl.build(), mFingerprint);
+            }
+        }
+    }
+
+    /** A radius for either circular or elliptical shapes. */
+    @RequiresSchemaVersion(major = 1, minor = 400)
+    public static final class CornerRadius {
+        private final ModifiersProto.CornerRadius mImpl;
+        private final @Nullable Fingerprint mFingerprint;
+
+        CornerRadius(ModifiersProto.CornerRadius impl, @Nullable Fingerprint fingerprint) {
+            this.mImpl = impl;
+            this.mFingerprint = fingerprint;
+        }
+
+        /** Gets the radius value in dp on the horizontal axis. */
+        public @NonNull DpProp getX() {
+            return DpProp.fromProto(mImpl.getX());
+        }
+
+        /** Gets the radius value in dp on the vertical axis. */
+        public @NonNull DpProp getY() {
+            return DpProp.fromProto(mImpl.getY());
+        }
+
+        /**
+         * A radius with values on both horizontal and vertical axes set to zero. It can be used to
+         * have right-angle corners.
+         */
+        @RequiresSchemaVersion(major = 1, minor = 400)
+        private static final CornerRadius ZERO =
+                new CornerRadius.Builder(
+                                new DpProp.Builder(0f).build(), new DpProp.Builder(0f).build())
+                        .build();
+
+        /** Get the fingerprint for this object, or null if unknown. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public @Nullable Fingerprint getFingerprint() {
+            return mFingerprint;
+        }
+
+        /** Creates a new wrapper instance from the proto. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public static @NonNull CornerRadius fromProto(
+                ModifiersProto.@NonNull CornerRadius proto, @Nullable Fingerprint fingerprint) {
+            return new CornerRadius(proto, fingerprint);
+        }
+
+        static @NonNull CornerRadius fromProto(ModifiersProto.@NonNull CornerRadius proto) {
+            return fromProto(proto, null);
+        }
+
+        /** Returns the internal proto instance. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public ModifiersProto.@NonNull CornerRadius toProto() {
+            return mImpl;
+        }
+
+        @Override
+        public @NonNull String toString() {
+            return "CornerRadius{" + "x=" + getX() + ", y=" + getY() + "}";
+        }
+
+        /** Builder for {@link CornerRadius} */
+        public static final class Builder {
+            private final ModifiersProto.CornerRadius.Builder mImpl =
+                    ModifiersProto.CornerRadius.newBuilder();
+            private final Fingerprint mFingerprint = new Fingerprint(-2143429106);
+
+            /**
+             * Creates an instance of {@link Builder}.
+             *
+             * @param x the radius value in dp on the horizontal axis.
+             * @param y the radius value in dp on the vertical axis.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            @SuppressLint("CheckResult") // (b/247804720)
+            public Builder(@NonNull DpProp x, @NonNull DpProp y) {
+                setX(x);
+                setY(y);
+            }
+
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            Builder() {}
+
+            /**
+             * Sets the radius value in dp on the horizontal axis.
+             *
+             * <p>Note that this field only supports static values.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            @NonNull Builder setX(@NonNull DpProp x) {
+                if (x.getDynamicValue() != null) {
+                    throw new IllegalArgumentException(
+                            "CornerRadius.Builder.setX doesn't support dynamic values.");
+                }
+                mImpl.setX(x.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        1, checkNotNull(x.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the radius value in dp on the vertical axis.
+             *
+             * <p>Note that this field only supports static values.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            @NonNull Builder setY(@NonNull DpProp y) {
+                if (y.getDynamicValue() != null) {
+                    throw new IllegalArgumentException(
+                            "CornerRadius.Builder.setY doesn't support dynamic values.");
+                }
+                mImpl.setY(y.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        2, checkNotNull(y.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /** Builds an instance from accumulated values. */
+            public @NonNull CornerRadius build() {
+                return new CornerRadius(mImpl.build(), mFingerprint);
             }
         }
     }
@@ -1025,7 +1140,7 @@ public final class ModifiersBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class Corner {
         private final ModifiersProto.Corner mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         Corner(ModifiersProto.Corner impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -1033,8 +1148,7 @@ public final class ModifiersBuilders {
         }
 
         /** Gets the radius of the corner in DP. */
-        @Nullable
-        public DpProp getRadius() {
+        public @Nullable DpProp getRadius() {
             if (mImpl.hasRadius()) {
                 return DpProp.fromProto(mImpl.getRadius());
             } else {
@@ -1042,37 +1156,87 @@ public final class ModifiersBuilders {
             }
         }
 
+        /** Gets the radius for the top-left corner of either circular or elliptical shapes. */
+        public @NonNull CornerRadius getTopLeftRadius() {
+            if (mImpl.hasTopLeftRadius()) {
+                return CornerRadius.fromProto(mImpl.getTopLeftRadius());
+            } else {
+                return toCornerRadius(getRadius());
+            }
+        }
+
+        /** Gets the radius for the top-right corner of either circular or elliptical shapes. */
+        public @NonNull CornerRadius getTopRightRadius() {
+            if (mImpl.hasTopRightRadius()) {
+                return CornerRadius.fromProto(mImpl.getTopRightRadius());
+            } else {
+                return toCornerRadius(getRadius());
+            }
+        }
+
+        /** Gets the radius for the bottom-right corner of either circular or elliptical shapes. */
+        public @NonNull CornerRadius getBottomRightRadius() {
+            if (mImpl.hasBottomRightRadius()) {
+                return CornerRadius.fromProto(mImpl.getBottomRightRadius());
+            } else {
+                return toCornerRadius(getRadius());
+            }
+        }
+
+        /** Gets the radius for the bottom-left corner of either circular or elliptical shapes. */
+        public @NonNull CornerRadius getBottomLeftRadius() {
+            if (mImpl.hasBottomLeftRadius()) {
+                return CornerRadius.fromProto(mImpl.getBottomLeftRadius());
+            } else {
+                return toCornerRadius(getRadius());
+            }
+        }
+
+        @SuppressLint("ProtoLayoutMinSchema")
+        private @NonNull CornerRadius toCornerRadius(@Nullable DpProp radius) {
+            return radius == null
+                    ? CornerRadius.ZERO
+                    : new CornerRadius.Builder(dp(radius.getValue()), dp(radius.getValue()))
+                            .build();
+        }
+
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static Corner fromProto(
-                @NonNull ModifiersProto.Corner proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull Corner fromProto(
+                ModifiersProto.@NonNull Corner proto, @Nullable Fingerprint fingerprint) {
             return new Corner(proto, fingerprint);
         }
 
-        @NonNull
-        static Corner fromProto(@NonNull ModifiersProto.Corner proto) {
+        static @NonNull Corner fromProto(ModifiersProto.@NonNull Corner proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.Corner toProto() {
+        public ModifiersProto.@NonNull Corner toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
-            return "Corner{" + "radius=" + getRadius() + "}";
+        public @NonNull String toString() {
+            return "Corner{"
+                    + "radius="
+                    + getRadius()
+                    + ", topLeftRadius="
+                    + getTopLeftRadius()
+                    + ", topRightRadius="
+                    + getTopRightRadius()
+                    + ", bottomRightRadius="
+                    + getBottomRightRadius()
+                    + ", bottomLeftRadius="
+                    + getBottomLeftRadius()
+                    + "}";
         }
 
         /** Builder for {@link Corner} */
@@ -1086,11 +1250,13 @@ public final class ModifiersBuilders {
             /**
              * Sets the radius of the corner in DP.
              *
+             * <p>The shape for a specific corner can be overridden by setting that corner
+             * separately.
+             *
              * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setRadius(@NonNull DpProp radius) {
+            public @NonNull Builder setRadius(@NonNull DpProp radius) {
                 if (radius.getDynamicValue() != null) {
                     throw new IllegalArgumentException(
                             "Corner.Builder.setRadius doesn't support dynamic values.");
@@ -1101,9 +1267,104 @@ public final class ModifiersBuilders {
                 return this;
             }
 
+            /**
+             * Sets the radius for the top-left corner of either circular or elliptical shapes. If
+             * not set, defaults to radius for both horizontal and vertical axes when radius is set;
+             * or defaults to zeros when radius is also not set.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setTopLeftRadius(@NonNull CornerRadius topLeftRadius) {
+                mImpl.setTopLeftRadius(topLeftRadius.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        2, checkNotNull(topLeftRadius.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the radius for the top-right corner of either circular or elliptical shapes. If
+             * not set, defaults to radius for both horizontal and vertical axes when radius is set;
+             * or defaults to zeros when radius is also not set.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setTopRightRadius(@NonNull CornerRadius topRightRadius) {
+                mImpl.setTopRightRadius(topRightRadius.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        3, checkNotNull(topRightRadius.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the radius for the bottom-right corner of either circular or elliptical shapes.
+             * If not set, defaults to radius for both horizontal and vertical axes when radius is
+             * set; or defaults to zeros when radius is also not set.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setBottomRightRadius(@NonNull CornerRadius bottomRightRadius) {
+                mImpl.setBottomRightRadius(bottomRightRadius.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        4, checkNotNull(bottomRightRadius.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the radius for the bottom-left corner of either circular or elliptical shapes.
+             * If not set, defaults to radius for both horizontal and vertical axes when radius is
+             * set; or defaults to zeros when radius is also not set.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setBottomLeftRadius(@NonNull CornerRadius bottomLeftRadius) {
+                mImpl.setBottomLeftRadius(bottomLeftRadius.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        5, checkNotNull(bottomLeftRadius.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the radius for the top-left corner of either circular or elliptical shapes. If
+             * not set, defaults to radius for both horizontal and vertical axes when radius is set;
+             * or defaults to zeros when radius is also not set.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setTopLeftRadius(
+                    @NonNull DpProp xRadius, @NonNull DpProp yRadius) {
+                return setTopLeftRadius(new CornerRadius.Builder(xRadius, yRadius).build());
+            }
+
+            /**
+             * Sets the radius for the top-right corner of either circular or elliptical shapes. If
+             * not set, defaults to radius for both horizontal and vertical axes when radius is set;
+             * or defaults to zeros when radius is also not set.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setTopRightRadius(
+                    @NonNull DpProp xRadius, @NonNull DpProp yRadius) {
+                return setTopRightRadius(new CornerRadius.Builder(xRadius, yRadius).build());
+            }
+
+            /**
+             * Sets the radius for the bottom-right corner of either circular or elliptical shapes.
+             * If not set, defaults to radius for both horizontal and vertical axes when radius is
+             * set; or defaults to zeros when radius is also not set.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setBottomRightRadius(
+                    @NonNull DpProp xRadius, @NonNull DpProp yRadius) {
+                return setBottomRightRadius(new CornerRadius.Builder(xRadius, yRadius).build());
+            }
+
+            /**
+             * Sets the radius for the bottom-left corner of either circular or elliptical shapes.
+             * If not set, defaults to radius for both horizontal and vertical axes when radius is
+             * set; or defaults to zeros when radius is also not set.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setBottomLeftRadius(
+                    @NonNull DpProp xRadius, @NonNull DpProp yRadius) {
+                return setBottomLeftRadius(new CornerRadius.Builder(xRadius, yRadius).build());
+            }
+
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public Corner build() {
+            public @NonNull Corner build() {
                 return new Corner(mImpl.build(), mFingerprint);
             }
         }
@@ -1113,7 +1374,7 @@ public final class ModifiersBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class Background {
         private final ModifiersProto.Background mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         Background(ModifiersProto.Background impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -1126,9 +1387,11 @@ public final class ModifiersBuilders {
          *
          * <p>While this field is statically accessible from 1.0, it's only bindable since version
          * 1.2 and renderers supporting version 1.2 will use the dynamic value (if set).
+         *
+         * <p>If a brush is set, this color will only be used if brush is not supported by the
+         * renderer (versions below 1.5).
          */
-        @Nullable
-        public ColorProp getColor() {
+        public @Nullable ColorProp getColor() {
             if (mImpl.hasColor()) {
                 return ColorProp.fromProto(mImpl.getColor());
             } else {
@@ -1141,8 +1404,7 @@ public final class ModifiersBuilders {
          * if it has a background color or border. If not defined, defaults to having a square
          * corner.
          */
-        @Nullable
-        public Corner getCorner() {
+        public @Nullable Corner getCorner() {
             if (mImpl.hasCorner()) {
                 return Corner.fromProto(mImpl.getCorner());
             } else {
@@ -1150,37 +1412,51 @@ public final class ModifiersBuilders {
             }
         }
 
+        /**
+         * Gets a brush used to draw the background. If set, the brush will be used instead of the
+         * color provided in {@code setColor()}.
+         */
+        public @Nullable Brush getBrush() {
+            if (mImpl.hasBrush()) {
+                return ColorBuilders.brushFromProto(mImpl.getBrush());
+            } else {
+                return null;
+            }
+        }
+
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static Background fromProto(
-                @NonNull ModifiersProto.Background proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull Background fromProto(
+                ModifiersProto.@NonNull Background proto, @Nullable Fingerprint fingerprint) {
             return new Background(proto, fingerprint);
         }
 
-        @NonNull
-        static Background fromProto(@NonNull ModifiersProto.Background proto) {
+        static @NonNull Background fromProto(ModifiersProto.@NonNull Background proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.Background toProto() {
+        public ModifiersProto.@NonNull Background toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
-            return "Background{" + "color=" + getColor() + ", corner=" + getCorner() + "}";
+        public @NonNull String toString() {
+            return "Background{"
+                    + "color="
+                    + getColor()
+                    + ", corner="
+                    + getCorner()
+                    + ", brush="
+                    + getBrush()
+                    + "}";
         }
 
         /** Builder for {@link Background} */
@@ -1198,10 +1474,12 @@ public final class ModifiersBuilders {
              *
              * <p>While this field is statically accessible from 1.0, it's only bindable since
              * version 1.2 and renderers supporting version 1.2 will use the dynamic value (if set).
+             *
+             * <p>If a brush is set, this color will only be used if brush is not supported by the
+             * renderer (versions below 1.5).
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setColor(@NonNull ColorProp color) {
+            public @NonNull Builder setColor(@NonNull ColorProp color) {
                 mImpl.setColor(color.toProto());
                 mFingerprint.recordPropertyUpdate(
                         1, checkNotNull(color.getFingerprint()).aggregateValueAsInt());
@@ -1214,17 +1492,33 @@ public final class ModifiersBuilders {
              * square corner.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setCorner(@NonNull Corner corner) {
+            public @NonNull Builder setCorner(@NonNull Corner corner) {
                 mImpl.setCorner(corner.toProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(corner.getFingerprint()).aggregateValueAsInt());
                 return this;
             }
 
+            /**
+             * Sets a brush used to draw the background. If set and supported, the brush will be
+             * used instead of the color provided in {@code setColor()}.
+             *
+             * @throws IllegalArgumentException if the brush is not a {@link LinearGradient}.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 500)
+            public @NonNull Builder setBrush(@NonNull Brush brush) {
+                if (!(brush instanceof LinearGradient)) {
+                    throw new IllegalArgumentException(
+                            "Only LinearGradient is supported for Background.");
+                }
+                mImpl.setBrush(brush.toBrushProto());
+                mFingerprint.recordPropertyUpdate(
+                        3, checkNotNull(brush.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public Background build() {
+            public @NonNull Background build() {
                 return new Background(mImpl.build(), mFingerprint);
             }
         }
@@ -1237,7 +1531,7 @@ public final class ModifiersBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class ElementMetadata {
         private final ModifiersProto.ElementMetadata mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         ElementMetadata(ModifiersProto.ElementMetadata impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -1248,41 +1542,35 @@ public final class ModifiersBuilders {
          * Gets property describing the element with which it is associated. For use by libraries
          * building higher-level components only. This can be used to track component metadata.
          */
-        @NonNull
-        public byte[] getTagData() {
+        public byte @NonNull [] getTagData() {
             return mImpl.getTagData().toByteArray();
         }
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static ElementMetadata fromProto(
-                @NonNull ModifiersProto.ElementMetadata proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull ElementMetadata fromProto(
+                ModifiersProto.@NonNull ElementMetadata proto, @Nullable Fingerprint fingerprint) {
             return new ElementMetadata(proto, fingerprint);
         }
 
-        @NonNull
-        static ElementMetadata fromProto(@NonNull ModifiersProto.ElementMetadata proto) {
+        static @NonNull ElementMetadata fromProto(ModifiersProto.@NonNull ElementMetadata proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.ElementMetadata toProto() {
+        public ModifiersProto.@NonNull ElementMetadata toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "ElementMetadata{" + "tagData=" + Arrays.toString(getTagData()) + "}";
         }
 
@@ -1301,17 +1589,259 @@ public final class ModifiersBuilders {
              * metadata.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setTagData(@NonNull byte[] tagData) {
+            public @NonNull Builder setTagData(byte @NonNull [] tagData) {
                 mImpl.setTagData(ByteString.copyFrom(tagData));
                 mFingerprint.recordPropertyUpdate(1, Arrays.hashCode(tagData));
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public ElementMetadata build() {
+            public @NonNull ElementMetadata build() {
                 return new ElementMetadata(mImpl.build(), mFingerprint);
+            }
+        }
+    }
+
+    /**
+     * A modifier to apply transformations to the element. All of these transformations can be
+     * animated by setting dynamic values. This modifier is not layout affecting.
+     */
+    @RequiresSchemaVersion(major = 1, minor = 400)
+    public static final class Transformation {
+        private final ModifiersProto.Transformation mImpl;
+        private final @Nullable Fingerprint mFingerprint;
+
+        Transformation(ModifiersProto.Transformation impl, @Nullable Fingerprint fingerprint) {
+            this.mImpl = impl;
+            this.mFingerprint = fingerprint;
+        }
+
+        /**
+         * Gets the horizontal offset of this element relative to the location where the element's
+         * layout placed it.
+         */
+        public @NonNull DpProp getTranslationX() {
+            if (mImpl.hasTranslationX()) {
+                return DpProp.fromProto(mImpl.getTranslationX());
+            } else {
+                return new DpProp.Builder(0f).build();
+            }
+        }
+
+        /**
+         * Gets the vertical offset of this element in addition to the location where the element's
+         * layout placed it.
+         */
+        public @NonNull DpProp getTranslationY() {
+            if (mImpl.hasTranslationY()) {
+                return DpProp.fromProto(mImpl.getTranslationY());
+            } else {
+                return new DpProp.Builder(0f).build();
+            }
+        }
+
+        /**
+         * Gets the scale of this element in the x direction around the pivot point, as a proportion
+         * of the element's unscaled width.
+         */
+        public @NonNull FloatProp getScaleX() {
+            if (mImpl.hasScaleX()) {
+                return FloatProp.fromProto(mImpl.getScaleX());
+            } else {
+                return new FloatProp.Builder(1f).build();
+            }
+        }
+
+        /**
+         * Gets the scale of this element in the y direction around the pivot point, as a proportion
+         * of the element's unscaled height.
+         */
+        public @NonNull FloatProp getScaleY() {
+            if (mImpl.hasScaleY()) {
+                return FloatProp.fromProto(mImpl.getScaleY());
+            } else {
+                return new FloatProp.Builder(1f).build();
+            }
+        }
+
+        /** Gets the clockwise Degrees that the element is rotated around the pivot point. */
+        public @NonNull DegreesProp getRotation() {
+            if (mImpl.hasRotation()) {
+                return DegreesProp.fromProto(mImpl.getRotation());
+            } else {
+                return new DegreesProp.Builder(0f).build();
+            }
+        }
+
+        /**
+         * Gets the horizontal location of the point around which the element is rotated and scaled.
+         * With type {@link DpProp}, it is the offset from the element center; otherwise with type
+         * {@link BoundingBoxRatio}, it is the location proportional to the bounding box width.
+         */
+        public @NonNull PivotDimension getPivotX() {
+            if (mImpl.hasPivotX()) {
+                return DimensionBuilders.pivotDimensionFromProto(mImpl.getPivotX());
+            } else {
+                return new DpProp.Builder(0f).build();
+            }
+        }
+
+        /**
+         * Gets the vertical location of the point around which the element is rotated and scaled.
+         * With type {@link DpProp}, it is the offset from the element center; otherwise with type
+         * {@link BoundingBoxRatio}, it is the location proportional to the bounding box height.
+         */
+        public @NonNull PivotDimension getPivotY() {
+            if (mImpl.hasPivotY()) {
+                return DimensionBuilders.pivotDimensionFromProto(mImpl.getPivotY());
+            } else {
+                return new DpProp.Builder(0f).build();
+            }
+        }
+
+        /** Get the fingerprint for this object, or null if unknown. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public @Nullable Fingerprint getFingerprint() {
+            return mFingerprint;
+        }
+
+        /** Creates a new wrapper instance from the proto. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public static @NonNull Transformation fromProto(
+                ModifiersProto.@NonNull Transformation proto, @Nullable Fingerprint fingerprint) {
+            return new Transformation(proto, fingerprint);
+        }
+
+        static @NonNull Transformation fromProto(ModifiersProto.@NonNull Transformation proto) {
+            return fromProto(proto, null);
+        }
+
+        /** Returns the internal proto instance. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public ModifiersProto.@NonNull Transformation toProto() {
+            return mImpl;
+        }
+
+        @Override
+        public @NonNull String toString() {
+            return "Transformation{"
+                    + "translationX="
+                    + getTranslationX()
+                    + ", translationY="
+                    + getTranslationY()
+                    + ", scaleX="
+                    + getScaleX()
+                    + ", scaleY="
+                    + getScaleY()
+                    + ", rotation="
+                    + getRotation()
+                    + ", pivotX="
+                    + getPivotX()
+                    + ", pivotY="
+                    + getPivotY()
+                    + "}";
+        }
+
+        /** Builder for {@link Transformation} */
+        public static final class Builder {
+            private final ModifiersProto.Transformation.Builder mImpl =
+                    ModifiersProto.Transformation.newBuilder();
+            private final Fingerprint mFingerprint = new Fingerprint(369448770);
+
+            /** Creates an instance of {@link Builder}. */
+            public Builder() {}
+
+            /**
+             * Sets the horizontal offset of this element relative to the location where the
+             * element's layout placed it. If not set, defaults to zero.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setTranslationX(@NonNull DpProp translationX) {
+                mImpl.setTranslationX(translationX.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        1, checkNotNull(translationX.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the vertical offset of this element in addition to the location where the
+             * element's layout placed it. If not set, defaults to zero.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setTranslationY(@NonNull DpProp translationY) {
+                mImpl.setTranslationY(translationY.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        2, checkNotNull(translationY.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the scale of this element in the x direction around the pivot point, as a
+             * proportion of the element's unscaled width. If not set, defaults to one.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setScaleX(@NonNull FloatProp scaleX) {
+                mImpl.setScaleX(scaleX.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        3, checkNotNull(scaleX.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the scale of this element in the y direction around the pivot point, as a
+             * proportion of the element's unscaled height. If not set, defaults to one.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setScaleY(@NonNull FloatProp scaleY) {
+                mImpl.setScaleY(scaleY.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        4, checkNotNull(scaleY.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the clockwise degrees that the element is rotated around the pivot point. If not
+             * set, defaults to zero.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setRotation(@NonNull DegreesProp rotation) {
+                mImpl.setRotation(rotation.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        5, checkNotNull(rotation.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the horizontal location of the point around which the element is rotated and
+             * scaled. With type {@link DpProp}, it is the offset from the element center; otherwise
+             * with type {@link BoundingBoxRatio}, it is the location proportional to the bounding
+             * box width. Dynamic value is supported. If not set, defaults to the element center.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setPivotX(@NonNull PivotDimension pivotX) {
+                mImpl.setPivotX(pivotX.toPivotDimensionProto());
+                mFingerprint.recordPropertyUpdate(
+                        6, checkNotNull(pivotX.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the vertical location of the point around which the element is rotated and
+             * scaled. With type {@link DpProp}, it is the offset from the element center; otherwise
+             * with type {@link BoundingBoxRatio}, it is the location proportional to the bounding
+             * box height. Dynamic value is supported. If not set, defaults to the element center.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setPivotY(@NonNull PivotDimension pivotY) {
+                mImpl.setPivotY(pivotY.toPivotDimensionProto());
+                mFingerprint.recordPropertyUpdate(
+                        7, checkNotNull(pivotY.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /** Builds an instance from accumulated values. */
+            public @NonNull Transformation build() {
+                return new Transformation(mImpl.build(), mFingerprint);
             }
         }
     }
@@ -1324,7 +1854,7 @@ public final class ModifiersBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class Modifiers {
         private final ModifiersProto.Modifiers mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         Modifiers(ModifiersProto.Modifiers impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -1335,8 +1865,7 @@ public final class ModifiersBuilders {
          * Gets the clickable property of the modified element. It allows its wrapped element to
          * have actions associated with it, which will be executed when the element is tapped.
          */
-        @Nullable
-        public Clickable getClickable() {
+        public @Nullable Clickable getClickable() {
             if (mImpl.hasClickable()) {
                 return Clickable.fromProto(mImpl.getClickable());
             } else {
@@ -1348,8 +1877,7 @@ public final class ModifiersBuilders {
          * Gets the semantics of the modified element. This can be used to add metadata to the
          * modified element (eg. screen reader content descriptions).
          */
-        @Nullable
-        public Semantics getSemantics() {
+        public @Nullable Semantics getSemantics() {
             if (mImpl.hasSemantics()) {
                 return Semantics.fromProto(mImpl.getSemantics());
             } else {
@@ -1358,8 +1886,7 @@ public final class ModifiersBuilders {
         }
 
         /** Gets the padding of the modified element. */
-        @Nullable
-        public Padding getPadding() {
+        public @Nullable Padding getPadding() {
             if (mImpl.hasPadding()) {
                 return Padding.fromProto(mImpl.getPadding());
             } else {
@@ -1368,8 +1895,7 @@ public final class ModifiersBuilders {
         }
 
         /** Gets the border of the modified element. */
-        @Nullable
-        public Border getBorder() {
+        public @Nullable Border getBorder() {
             if (mImpl.hasBorder()) {
                 return Border.fromProto(mImpl.getBorder());
             } else {
@@ -1378,8 +1904,7 @@ public final class ModifiersBuilders {
         }
 
         /** Gets the background (with optional corner radius) of the modified element. */
-        @Nullable
-        public Background getBackground() {
+        public @Nullable Background getBackground() {
             if (mImpl.hasBackground()) {
                 return Background.fromProto(mImpl.getBackground());
             } else {
@@ -1391,8 +1916,7 @@ public final class ModifiersBuilders {
          * Gets metadata about an element. For use by libraries building higher-level components
          * only. This can be used to track component metadata.
          */
-        @Nullable
-        public ElementMetadata getMetadata() {
+        public @Nullable ElementMetadata getMetadata() {
             if (mImpl.hasMetadata()) {
                 return ElementMetadata.fromProto(mImpl.getMetadata());
             } else {
@@ -1405,8 +1929,7 @@ public final class ModifiersBuilders {
          * trigger this animation for this element and everything underneath it.
          */
         @ProtoLayoutExperimental
-        @Nullable
-        public AnimatedVisibility getContentUpdateAnimation() {
+        public @Nullable AnimatedVisibility getContentUpdateAnimation() {
             if (mImpl.hasContentUpdateAnimation()) {
                 return AnimatedVisibility.fromProto(mImpl.getContentUpdateAnimation());
             } else {
@@ -1420,8 +1943,7 @@ public final class ModifiersBuilders {
          * children render any contents. Defaults to visible.
          */
         @ProtoLayoutExperimental
-        @NonNull
-        public BoolProp isVisible() {
+        public @NonNull BoolProp isVisible() {
             if (mImpl.hasVisible()) {
                 return BoolProp.fromProto(mImpl.getVisible());
             } else {
@@ -1429,18 +1951,37 @@ public final class ModifiersBuilders {
             }
         }
 
+        /** Gets the transformation applied to the element post-layout. */
+        public @Nullable Transformation getTransformation() {
+            if (mImpl.hasTransformation()) {
+                return Transformation.fromProto(mImpl.getTransformation());
+            } else {
+                return null;
+            }
+        }
+
+        /**
+         * Gets the opacity of the element with a value from 0 to 1, where 0 means the view is the
+         * element is completely transparent and 1 means the element is completely opaque.
+         */
+        public @Nullable FloatProp getOpacity() {
+            if (mImpl.hasOpacity()) {
+                return FloatProp.fromProto(mImpl.getOpacity());
+            } else {
+                return null;
+            }
+        }
+
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static Modifiers fromProto(
-                @NonNull ModifiersProto.Modifiers proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull Modifiers fromProto(
+                ModifiersProto.@NonNull Modifiers proto, @Nullable Fingerprint fingerprint) {
             return new Modifiers(proto, fingerprint);
         }
 
@@ -1449,22 +1990,19 @@ public final class ModifiersBuilders {
          * object created using this method can't be added to any other wrapper.
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static Modifiers fromProto(@NonNull ModifiersProto.Modifiers proto) {
+        public static @NonNull Modifiers fromProto(ModifiersProto.@NonNull Modifiers proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.Modifiers toProto() {
+        public ModifiersProto.@NonNull Modifiers toProto() {
             return mImpl;
         }
 
         @Override
         @OptIn(markerClass = ProtoLayoutExperimental.class)
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "Modifiers{"
                     + "clickable="
                     + getClickable()
@@ -1482,6 +2020,10 @@ public final class ModifiersBuilders {
                     + getContentUpdateAnimation()
                     + ", visible="
                     + isVisible()
+                    + ", transformation="
+                    + getTransformation()
+                    + ", opacity="
+                    + getOpacity()
                     + "}";
         }
 
@@ -1499,8 +2041,7 @@ public final class ModifiersBuilders {
              * have actions associated with it, which will be executed when the element is tapped.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setClickable(@NonNull Clickable clickable) {
+            public @NonNull Builder setClickable(@NonNull Clickable clickable) {
                 mImpl.setClickable(clickable.toProto());
                 mFingerprint.recordPropertyUpdate(
                         1, checkNotNull(clickable.getFingerprint()).aggregateValueAsInt());
@@ -1512,8 +2053,7 @@ public final class ModifiersBuilders {
              * modified element (eg. screen reader content descriptions).
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setSemantics(@NonNull Semantics semantics) {
+            public @NonNull Builder setSemantics(@NonNull Semantics semantics) {
                 mImpl.setSemantics(semantics.toProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(semantics.getFingerprint()).aggregateValueAsInt());
@@ -1522,8 +2062,7 @@ public final class ModifiersBuilders {
 
             /** Sets the padding of the modified element. */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setPadding(@NonNull Padding padding) {
+            public @NonNull Builder setPadding(@NonNull Padding padding) {
                 mImpl.setPadding(padding.toProto());
                 mFingerprint.recordPropertyUpdate(
                         3, checkNotNull(padding.getFingerprint()).aggregateValueAsInt());
@@ -1532,8 +2071,7 @@ public final class ModifiersBuilders {
 
             /** Sets the border of the modified element. */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setBorder(@NonNull Border border) {
+            public @NonNull Builder setBorder(@NonNull Border border) {
                 mImpl.setBorder(border.toProto());
                 mFingerprint.recordPropertyUpdate(
                         4, checkNotNull(border.getFingerprint()).aggregateValueAsInt());
@@ -1542,8 +2080,7 @@ public final class ModifiersBuilders {
 
             /** Sets the background (with optional corner radius) of the modified element. */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setBackground(@NonNull Background background) {
+            public @NonNull Builder setBackground(@NonNull Background background) {
                 mImpl.setBackground(background.toProto());
                 mFingerprint.recordPropertyUpdate(
                         5, checkNotNull(background.getFingerprint()).aggregateValueAsInt());
@@ -1555,8 +2092,7 @@ public final class ModifiersBuilders {
              * only. This can be used to track component metadata.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setMetadata(@NonNull ElementMetadata metadata) {
+            public @NonNull Builder setMetadata(@NonNull ElementMetadata metadata) {
                 mImpl.setMetadata(metadata.toProto());
                 mFingerprint.recordPropertyUpdate(
                         6, checkNotNull(metadata.getFingerprint()).aggregateValueAsInt());
@@ -1569,8 +2105,7 @@ public final class ModifiersBuilders {
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
             @ProtoLayoutExperimental
-            @NonNull
-            public Builder setContentUpdateAnimation(
+            public @NonNull Builder setContentUpdateAnimation(
                     @NonNull AnimatedVisibility contentUpdateAnimation) {
                 mImpl.setContentUpdateAnimation(contentUpdateAnimation.toProto());
                 mFingerprint.recordPropertyUpdate(
@@ -1593,17 +2128,37 @@ public final class ModifiersBuilders {
             @RequiresSchemaVersion(major = 1, minor = 300)
             @ProtoLayoutExperimental
             @SuppressLint("MissingGetterMatchingBuilder")
-            @NonNull
-            public Builder setVisible(@NonNull BoolProp visible) {
+            public @NonNull Builder setVisible(@NonNull BoolProp visible) {
                 mImpl.setVisible(visible.toProto());
                 mFingerprint.recordPropertyUpdate(
                         10, checkNotNull(visible.getFingerprint()).aggregateValueAsInt());
                 return this;
             }
 
+            /** Sets the transformation applied to the element post-layout. */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setTransformation(@NonNull Transformation transformation) {
+                mImpl.setTransformation(transformation.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        11, checkNotNull(transformation.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the opacity of the element with a value from 0 to 1, where 0 means the element
+             * is completely transparent and 1 means the element is completely opaque. Dynamic value
+             * is supported.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setOpacity(@NonNull FloatProp opacity) {
+                mImpl.setOpacity(opacity.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        12, checkNotNull(opacity.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public Modifiers build() {
+            public @NonNull Modifiers build() {
                 return new Modifiers(mImpl.build(), mFingerprint);
             }
         }
@@ -1617,7 +2172,7 @@ public final class ModifiersBuilders {
     @ProtoLayoutExperimental
     public static final class AnimatedVisibility {
         private final ModifiersProto.AnimatedVisibility mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         AnimatedVisibility(
                 ModifiersProto.AnimatedVisibility impl, @Nullable Fingerprint fingerprint) {
@@ -1626,8 +2181,7 @@ public final class ModifiersBuilders {
         }
 
         /** Gets the content transition that is triggered when element enters the layout. */
-        @Nullable
-        public EnterTransition getEnterTransition() {
+        public @Nullable EnterTransition getEnterTransition() {
             if (mImpl.hasEnterTransition()) {
                 return EnterTransition.fromProto(mImpl.getEnterTransition());
             } else {
@@ -1639,8 +2193,7 @@ public final class ModifiersBuilders {
          * Gets the content transition that is triggered when element exits the layout. Note that
          * indefinite exit animations are ignored.
          */
-        @Nullable
-        public ExitTransition getExitTransition() {
+        public @Nullable ExitTransition getExitTransition() {
             if (mImpl.hasExitTransition()) {
                 return ExitTransition.fromProto(mImpl.getExitTransition());
             } else {
@@ -1650,35 +2203,31 @@ public final class ModifiersBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static AnimatedVisibility fromProto(
-                @NonNull ModifiersProto.AnimatedVisibility proto,
+        public static @NonNull AnimatedVisibility fromProto(
+                ModifiersProto.@NonNull AnimatedVisibility proto,
                 @Nullable Fingerprint fingerprint) {
             return new AnimatedVisibility(proto, fingerprint);
         }
 
-        @NonNull
-        static AnimatedVisibility fromProto(@NonNull ModifiersProto.AnimatedVisibility proto) {
+        static @NonNull AnimatedVisibility fromProto(
+                ModifiersProto.@NonNull AnimatedVisibility proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.AnimatedVisibility toProto() {
+        public ModifiersProto.@NonNull AnimatedVisibility toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "AnimatedVisibility{"
                     + "enterTransition="
                     + getEnterTransition()
@@ -1698,8 +2247,7 @@ public final class ModifiersBuilders {
 
             /** Sets the content transition that is triggered when element enters the layout. */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setEnterTransition(@NonNull EnterTransition enterTransition) {
+            public @NonNull Builder setEnterTransition(@NonNull EnterTransition enterTransition) {
                 mImpl.setEnterTransition(enterTransition.toProto());
                 mFingerprint.recordPropertyUpdate(
                         1, checkNotNull(enterTransition.getFingerprint()).aggregateValueAsInt());
@@ -1711,8 +2259,7 @@ public final class ModifiersBuilders {
              * that indefinite exit animations are ignored.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setExitTransition(@NonNull ExitTransition exitTransition) {
+            public @NonNull Builder setExitTransition(@NonNull ExitTransition exitTransition) {
                 mImpl.setExitTransition(exitTransition.toProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(exitTransition.getFingerprint()).aggregateValueAsInt());
@@ -1720,8 +2267,7 @@ public final class ModifiersBuilders {
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public AnimatedVisibility build() {
+            public @NonNull AnimatedVisibility build() {
                 return new AnimatedVisibility(mImpl.build(), mFingerprint);
             }
         }
@@ -1732,7 +2278,7 @@ public final class ModifiersBuilders {
     @ProtoLayoutExperimental
     public static final class EnterTransition {
         private final ModifiersProto.EnterTransition mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         EnterTransition(ModifiersProto.EnterTransition impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -1743,8 +2289,7 @@ public final class ModifiersBuilders {
          * Gets the fading in animation for content transition of an element and its children
          * happening when entering the layout.
          */
-        @Nullable
-        public FadeInTransition getFadeIn() {
+        public @Nullable FadeInTransition getFadeIn() {
             if (mImpl.hasFadeIn()) {
                 return FadeInTransition.fromProto(mImpl.getFadeIn());
             } else {
@@ -1756,8 +2301,7 @@ public final class ModifiersBuilders {
          * Gets the sliding in animation for content transition of an element and its children
          * happening when entering the layout.
          */
-        @Nullable
-        public SlideInTransition getSlideIn() {
+        public @Nullable SlideInTransition getSlideIn() {
             if (mImpl.hasSlideIn()) {
                 return SlideInTransition.fromProto(mImpl.getSlideIn());
             } else {
@@ -1767,34 +2311,29 @@ public final class ModifiersBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static EnterTransition fromProto(
-                @NonNull ModifiersProto.EnterTransition proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull EnterTransition fromProto(
+                ModifiersProto.@NonNull EnterTransition proto, @Nullable Fingerprint fingerprint) {
             return new EnterTransition(proto, fingerprint);
         }
 
-        @NonNull
-        static EnterTransition fromProto(@NonNull ModifiersProto.EnterTransition proto) {
+        static @NonNull EnterTransition fromProto(ModifiersProto.@NonNull EnterTransition proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.EnterTransition toProto() {
+        public ModifiersProto.@NonNull EnterTransition toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "EnterTransition{" + "fadeIn=" + getFadeIn() + ", slideIn=" + getSlideIn() + "}";
         }
 
@@ -1812,8 +2351,7 @@ public final class ModifiersBuilders {
              * happening when entering the layout.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setFadeIn(@NonNull FadeInTransition fadeIn) {
+            public @NonNull Builder setFadeIn(@NonNull FadeInTransition fadeIn) {
                 mImpl.setFadeIn(fadeIn.toProto());
                 mFingerprint.recordPropertyUpdate(
                         1, checkNotNull(fadeIn.getFingerprint()).aggregateValueAsInt());
@@ -1825,8 +2363,7 @@ public final class ModifiersBuilders {
              * happening when entering the layout.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setSlideIn(@NonNull SlideInTransition slideIn) {
+            public @NonNull Builder setSlideIn(@NonNull SlideInTransition slideIn) {
                 mImpl.setSlideIn(slideIn.toProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(slideIn.getFingerprint()).aggregateValueAsInt());
@@ -1834,8 +2371,7 @@ public final class ModifiersBuilders {
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public EnterTransition build() {
+            public @NonNull EnterTransition build() {
                 return new EnterTransition(mImpl.build(), mFingerprint);
             }
         }
@@ -1849,7 +2385,7 @@ public final class ModifiersBuilders {
     @ProtoLayoutExperimental
     public static final class FadeInTransition {
         private final ModifiersProto.FadeInTransition mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         FadeInTransition(ModifiersProto.FadeInTransition impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -1866,8 +2402,7 @@ public final class ModifiersBuilders {
         }
 
         /** Gets the animation parameters for duration, delay, etc. */
-        @Nullable
-        public AnimationSpec getAnimationSpec() {
+        public @Nullable AnimationSpec getAnimationSpec() {
             if (mImpl.hasAnimationSpec()) {
                 return AnimationSpec.fromProto(mImpl.getAnimationSpec());
             } else {
@@ -1877,34 +2412,29 @@ public final class ModifiersBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static FadeInTransition fromProto(
-                @NonNull ModifiersProto.FadeInTransition proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull FadeInTransition fromProto(
+                ModifiersProto.@NonNull FadeInTransition proto, @Nullable Fingerprint fingerprint) {
             return new FadeInTransition(proto, fingerprint);
         }
 
-        @NonNull
-        static FadeInTransition fromProto(@NonNull ModifiersProto.FadeInTransition proto) {
+        static @NonNull FadeInTransition fromProto(ModifiersProto.@NonNull FadeInTransition proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.FadeInTransition toProto() {
+        public ModifiersProto.@NonNull FadeInTransition toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "FadeInTransition{"
                     + "initialAlpha="
                     + getInitialAlpha()
@@ -1927,8 +2457,8 @@ public final class ModifiersBuilders {
              * not set, defaults to fully transparent, i.e. 0.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setInitialAlpha(@FloatRange(from = 0.0, to = 1.0) float initialAlpha) {
+            public @NonNull Builder setInitialAlpha(
+                    @FloatRange(from = 0.0, to = 1.0) float initialAlpha) {
                 mImpl.setInitialAlpha(initialAlpha);
                 mFingerprint.recordPropertyUpdate(1, Float.floatToIntBits(initialAlpha));
                 return this;
@@ -1936,8 +2466,7 @@ public final class ModifiersBuilders {
 
             /** Sets the animation parameters for duration, delay, etc. */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setAnimationSpec(@NonNull AnimationSpec animationSpec) {
+            public @NonNull Builder setAnimationSpec(@NonNull AnimationSpec animationSpec) {
                 mImpl.setAnimationSpec(animationSpec.toProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(animationSpec.getFingerprint()).aggregateValueAsInt());
@@ -1945,8 +2474,7 @@ public final class ModifiersBuilders {
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public FadeInTransition build() {
+            public @NonNull FadeInTransition build() {
                 return new FadeInTransition(mImpl.build(), mFingerprint);
             }
         }
@@ -1957,7 +2485,7 @@ public final class ModifiersBuilders {
     @ProtoLayoutExperimental
     public static final class SlideInTransition {
         private final ModifiersProto.SlideInTransition mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         SlideInTransition(
                 ModifiersProto.SlideInTransition impl, @Nullable Fingerprint fingerprint) {
@@ -1981,8 +2509,7 @@ public final class ModifiersBuilders {
          * Note that sliding from the screen boundaries can only be achieved if all parent's sizes
          * are big enough to accommodate it.
          */
-        @Nullable
-        public SlideBound getInitialSlideBound() {
+        public @Nullable SlideBound getInitialSlideBound() {
             if (mImpl.hasInitialSlideBound()) {
                 return ModifiersBuilders.slideBoundFromProto(mImpl.getInitialSlideBound());
             } else {
@@ -1991,8 +2518,7 @@ public final class ModifiersBuilders {
         }
 
         /** Gets the animation parameters for duration, delay, etc. */
-        @Nullable
-        public AnimationSpec getAnimationSpec() {
+        public @Nullable AnimationSpec getAnimationSpec() {
             if (mImpl.hasAnimationSpec()) {
                 return AnimationSpec.fromProto(mImpl.getAnimationSpec());
             } else {
@@ -2002,35 +2528,31 @@ public final class ModifiersBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static SlideInTransition fromProto(
-                @NonNull ModifiersProto.SlideInTransition proto,
+        public static @NonNull SlideInTransition fromProto(
+                ModifiersProto.@NonNull SlideInTransition proto,
                 @Nullable Fingerprint fingerprint) {
             return new SlideInTransition(proto, fingerprint);
         }
 
-        @NonNull
-        static SlideInTransition fromProto(@NonNull ModifiersProto.SlideInTransition proto) {
+        static @NonNull SlideInTransition fromProto(
+                ModifiersProto.@NonNull SlideInTransition proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.SlideInTransition toProto() {
+        public ModifiersProto.@NonNull SlideInTransition toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "SlideInTransition{"
                     + "direction="
                     + getDirection()
@@ -2056,8 +2578,7 @@ public final class ModifiersBuilders {
              * to the right.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setDirection(@SlideDirection int direction) {
+            public @NonNull Builder setDirection(@SlideDirection int direction) {
                 mImpl.setDirection(ModifiersProto.SlideDirection.forNumber(direction));
                 mFingerprint.recordPropertyUpdate(1, direction);
                 return this;
@@ -2070,8 +2591,7 @@ public final class ModifiersBuilders {
              * sizes are big enough to accommodate it.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setInitialSlideBound(@NonNull SlideBound initialSlideBound) {
+            public @NonNull Builder setInitialSlideBound(@NonNull SlideBound initialSlideBound) {
                 mImpl.setInitialSlideBound(initialSlideBound.toSlideBoundProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(initialSlideBound.getFingerprint()).aggregateValueAsInt());
@@ -2080,8 +2600,7 @@ public final class ModifiersBuilders {
 
             /** Sets the animation parameters for duration, delay, etc. */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setAnimationSpec(@NonNull AnimationSpec animationSpec) {
+            public @NonNull Builder setAnimationSpec(@NonNull AnimationSpec animationSpec) {
                 mImpl.setAnimationSpec(animationSpec.toProto());
                 mFingerprint.recordPropertyUpdate(
                         3, checkNotNull(animationSpec.getFingerprint()).aggregateValueAsInt());
@@ -2089,8 +2608,7 @@ public final class ModifiersBuilders {
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public SlideInTransition build() {
+            public @NonNull SlideInTransition build() {
                 return new SlideInTransition(mImpl.build(), mFingerprint);
             }
         }
@@ -2101,7 +2619,7 @@ public final class ModifiersBuilders {
     @ProtoLayoutExperimental
     public static final class ExitTransition {
         private final ModifiersProto.ExitTransition mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         ExitTransition(ModifiersProto.ExitTransition impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -2112,8 +2630,7 @@ public final class ModifiersBuilders {
          * Gets the fading out animation for content transition of an element and its children
          * happening when exiting the layout.
          */
-        @Nullable
-        public FadeOutTransition getFadeOut() {
+        public @Nullable FadeOutTransition getFadeOut() {
             if (mImpl.hasFadeOut()) {
                 return FadeOutTransition.fromProto(mImpl.getFadeOut());
             } else {
@@ -2125,8 +2642,7 @@ public final class ModifiersBuilders {
          * Gets the sliding out animation for content transition of an element and its children
          * happening when exiting the layout.
          */
-        @Nullable
-        public SlideOutTransition getSlideOut() {
+        public @Nullable SlideOutTransition getSlideOut() {
             if (mImpl.hasSlideOut()) {
                 return SlideOutTransition.fromProto(mImpl.getSlideOut());
             } else {
@@ -2136,34 +2652,29 @@ public final class ModifiersBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static ExitTransition fromProto(
-                @NonNull ModifiersProto.ExitTransition proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull ExitTransition fromProto(
+                ModifiersProto.@NonNull ExitTransition proto, @Nullable Fingerprint fingerprint) {
             return new ExitTransition(proto, fingerprint);
         }
 
-        @NonNull
-        static ExitTransition fromProto(@NonNull ModifiersProto.ExitTransition proto) {
+        static @NonNull ExitTransition fromProto(ModifiersProto.@NonNull ExitTransition proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.ExitTransition toProto() {
+        public ModifiersProto.@NonNull ExitTransition toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "ExitTransition{"
                     + "fadeOut="
                     + getFadeOut()
@@ -2186,8 +2697,7 @@ public final class ModifiersBuilders {
              * happening when exiting the layout.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setFadeOut(@NonNull FadeOutTransition fadeOut) {
+            public @NonNull Builder setFadeOut(@NonNull FadeOutTransition fadeOut) {
                 mImpl.setFadeOut(fadeOut.toProto());
                 mFingerprint.recordPropertyUpdate(
                         1, checkNotNull(fadeOut.getFingerprint()).aggregateValueAsInt());
@@ -2199,8 +2709,7 @@ public final class ModifiersBuilders {
              * happening when exiting the layout.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setSlideOut(@NonNull SlideOutTransition slideOut) {
+            public @NonNull Builder setSlideOut(@NonNull SlideOutTransition slideOut) {
                 mImpl.setSlideOut(slideOut.toProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(slideOut.getFingerprint()).aggregateValueAsInt());
@@ -2208,8 +2717,7 @@ public final class ModifiersBuilders {
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public ExitTransition build() {
+            public @NonNull ExitTransition build() {
                 return new ExitTransition(mImpl.build(), mFingerprint);
             }
         }
@@ -2223,7 +2731,7 @@ public final class ModifiersBuilders {
     @ProtoLayoutExperimental
     public static final class FadeOutTransition {
         private final ModifiersProto.FadeOutTransition mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         FadeOutTransition(
                 ModifiersProto.FadeOutTransition impl, @Nullable Fingerprint fingerprint) {
@@ -2241,8 +2749,7 @@ public final class ModifiersBuilders {
         }
 
         /** Gets the animation parameters for duration, delay, etc. */
-        @Nullable
-        public AnimationSpec getAnimationSpec() {
+        public @Nullable AnimationSpec getAnimationSpec() {
             if (mImpl.hasAnimationSpec()) {
                 return AnimationSpec.fromProto(mImpl.getAnimationSpec());
             } else {
@@ -2252,35 +2759,31 @@ public final class ModifiersBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static FadeOutTransition fromProto(
-                @NonNull ModifiersProto.FadeOutTransition proto,
+        public static @NonNull FadeOutTransition fromProto(
+                ModifiersProto.@NonNull FadeOutTransition proto,
                 @Nullable Fingerprint fingerprint) {
             return new FadeOutTransition(proto, fingerprint);
         }
 
-        @NonNull
-        static FadeOutTransition fromProto(@NonNull ModifiersProto.FadeOutTransition proto) {
+        static @NonNull FadeOutTransition fromProto(
+                ModifiersProto.@NonNull FadeOutTransition proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.FadeOutTransition toProto() {
+        public ModifiersProto.@NonNull FadeOutTransition toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "FadeOutTransition{"
                     + "targetAlpha="
                     + getTargetAlpha()
@@ -2302,8 +2805,8 @@ public final class ModifiersBuilders {
              * Sets the target alpha of the fade out transition. It should be between 0 and 1. If
              * not set, defaults to fully invisible, i.e. 0.
              */
-            @NonNull
-            public Builder setTargetAlpha(@FloatRange(from = 0.0, to = 1.0) float targetAlpha) {
+            public @NonNull Builder setTargetAlpha(
+                    @FloatRange(from = 0.0, to = 1.0) float targetAlpha) {
                 mImpl.setTargetAlpha(targetAlpha);
                 mFingerprint.recordPropertyUpdate(1, Float.floatToIntBits(targetAlpha));
                 return this;
@@ -2311,8 +2814,7 @@ public final class ModifiersBuilders {
 
             /** Sets the animation parameters for duration, delay, etc. */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setAnimationSpec(@NonNull AnimationSpec animationSpec) {
+            public @NonNull Builder setAnimationSpec(@NonNull AnimationSpec animationSpec) {
                 mImpl.setAnimationSpec(animationSpec.toProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(animationSpec.getFingerprint()).aggregateValueAsInt());
@@ -2320,8 +2822,7 @@ public final class ModifiersBuilders {
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public FadeOutTransition build() {
+            public @NonNull FadeOutTransition build() {
                 return new FadeOutTransition(mImpl.build(), mFingerprint);
             }
         }
@@ -2332,7 +2833,7 @@ public final class ModifiersBuilders {
     @ProtoLayoutExperimental
     public static final class SlideOutTransition {
         private final ModifiersProto.SlideOutTransition mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         SlideOutTransition(
                 ModifiersProto.SlideOutTransition impl, @Nullable Fingerprint fingerprint) {
@@ -2356,8 +2857,7 @@ public final class ModifiersBuilders {
          * that sliding from the screen boundaries can only be achieved if all parent's sizes are
          * big enough to accommodate it.
          */
-        @Nullable
-        public SlideBound getTargetSlideBound() {
+        public @Nullable SlideBound getTargetSlideBound() {
             if (mImpl.hasTargetSlideBound()) {
                 return ModifiersBuilders.slideBoundFromProto(mImpl.getTargetSlideBound());
             } else {
@@ -2366,8 +2866,7 @@ public final class ModifiersBuilders {
         }
 
         /** Gets the animation parameters for duration, delay, etc. */
-        @Nullable
-        public AnimationSpec getAnimationSpec() {
+        public @Nullable AnimationSpec getAnimationSpec() {
             if (mImpl.hasAnimationSpec()) {
                 return AnimationSpec.fromProto(mImpl.getAnimationSpec());
             } else {
@@ -2377,35 +2876,31 @@ public final class ModifiersBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static SlideOutTransition fromProto(
-                @NonNull ModifiersProto.SlideOutTransition proto,
+        public static @NonNull SlideOutTransition fromProto(
+                ModifiersProto.@NonNull SlideOutTransition proto,
                 @Nullable Fingerprint fingerprint) {
             return new SlideOutTransition(proto, fingerprint);
         }
 
-        @NonNull
-        static SlideOutTransition fromProto(@NonNull ModifiersProto.SlideOutTransition proto) {
+        static @NonNull SlideOutTransition fromProto(
+                ModifiersProto.@NonNull SlideOutTransition proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.SlideOutTransition toProto() {
+        public ModifiersProto.@NonNull SlideOutTransition toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "SlideOutTransition{"
                     + "direction="
                     + getDirection()
@@ -2431,8 +2926,7 @@ public final class ModifiersBuilders {
              * from right to the left.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setDirection(@SlideDirection int direction) {
+            public @NonNull Builder setDirection(@SlideDirection int direction) {
                 mImpl.setDirection(ModifiersProto.SlideDirection.forNumber(direction));
                 mFingerprint.recordPropertyUpdate(1, direction);
                 return this;
@@ -2444,8 +2938,7 @@ public final class ModifiersBuilders {
              * Note that sliding from the screen boundaries can only be achieved if all parent's
              * sizes are big enough to accommodate it.
              */
-            @NonNull
-            public Builder setTargetSlideBound(@NonNull SlideBound targetSlideBound) {
+            public @NonNull Builder setTargetSlideBound(@NonNull SlideBound targetSlideBound) {
                 mImpl.setTargetSlideBound(targetSlideBound.toSlideBoundProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(targetSlideBound.getFingerprint()).aggregateValueAsInt());
@@ -2454,8 +2947,7 @@ public final class ModifiersBuilders {
 
             /** Sets the animation parameters for duration, delay, etc. */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setAnimationSpec(@NonNull AnimationSpec animationSpec) {
+            public @NonNull Builder setAnimationSpec(@NonNull AnimationSpec animationSpec) {
                 mImpl.setAnimationSpec(animationSpec.toProto());
                 mFingerprint.recordPropertyUpdate(
                         3, checkNotNull(animationSpec.getFingerprint()).aggregateValueAsInt());
@@ -2463,8 +2955,7 @@ public final class ModifiersBuilders {
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public SlideOutTransition build() {
+            public @NonNull SlideOutTransition build() {
                 return new SlideOutTransition(mImpl.build(), mFingerprint);
             }
         }
@@ -2476,39 +2967,34 @@ public final class ModifiersBuilders {
     public interface SlideBound {
         /** Get the protocol buffer representation of this object. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        ModifiersProto.SlideBound toSlideBoundProto();
+        ModifiersProto.@NonNull SlideBound toSlideBoundProto();
 
         /** Get the fingerprint for this object or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        Fingerprint getFingerprint();
+        @Nullable Fingerprint getFingerprint();
 
         /** Builder to create {@link SlideBound} objects. */
         @RestrictTo(Scope.LIBRARY_GROUP)
         interface Builder {
 
             /** Builds an instance with values accumulated in this Builder. */
-            @NonNull
-            SlideBound build();
+            @NonNull SlideBound build();
         }
     }
 
     /** Creates a new wrapper instance from the proto. */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
     @ProtoLayoutExperimental
-    public static SlideBound slideBoundFromProto(
-            @NonNull ModifiersProto.SlideBound proto, @Nullable Fingerprint fingerprint) {
+    public static @NonNull SlideBound slideBoundFromProto(
+            ModifiersProto.@NonNull SlideBound proto, @Nullable Fingerprint fingerprint) {
         if (proto.hasParentBound()) {
             return SlideParentBound.fromProto(proto.getParentBound(), fingerprint);
         }
         throw new IllegalStateException("Proto was not a recognised instance of SlideBound");
     }
 
-    @NonNull
     @ProtoLayoutExperimental
-    static SlideBound slideBoundFromProto(@NonNull ModifiersProto.SlideBound proto) {
+    static @NonNull SlideBound slideBoundFromProto(ModifiersProto.@NonNull SlideBound proto) {
         return slideBoundFromProto(proto, null);
     }
 
@@ -2517,7 +3003,7 @@ public final class ModifiersBuilders {
     @ProtoLayoutExperimental
     public static final class SlideParentBound implements SlideBound {
         private final ModifiersProto.SlideParentBound mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         SlideParentBound(ModifiersProto.SlideParentBound impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -2535,46 +3021,41 @@ public final class ModifiersBuilders {
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static SlideParentBound fromProto(
-                @NonNull ModifiersProto.SlideParentBound proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull SlideParentBound fromProto(
+                ModifiersProto.@NonNull SlideParentBound proto, @Nullable Fingerprint fingerprint) {
             return new SlideParentBound(proto, fingerprint);
         }
 
-        @NonNull
-        static SlideParentBound fromProto(@NonNull ModifiersProto.SlideParentBound proto) {
+        static @NonNull SlideParentBound fromProto(ModifiersProto.@NonNull SlideParentBound proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        ModifiersProto.SlideParentBound toProto() {
+        ModifiersProto.@NonNull SlideParentBound toProto() {
             return mImpl;
         }
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
         @ProtoLayoutExperimental
-        public ModifiersProto.SlideBound toSlideBoundProto() {
+        public ModifiersProto.@NonNull SlideBound toSlideBoundProto() {
             return ModifiersProto.SlideBound.newBuilder().setParentBound(mImpl).build();
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "SlideParentBound{" + "snapTo=" + getSnapTo() + "}";
         }
 
         /** Builder for {@link SlideParentBound}. */
+        @SuppressWarnings("HiddenSuperclass")
         public static final class Builder implements SlideBound.Builder {
             private final ModifiersProto.SlideParentBound.Builder mImpl =
                     ModifiersProto.SlideParentBound.newBuilder();
@@ -2588,8 +3069,7 @@ public final class ModifiersBuilders {
              * SLIDE_PARENT_SNAP_TO_INSIDE if not specified.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setSnapTo(@SlideParentSnapOption int snapTo) {
+            public @NonNull Builder setSnapTo(@SlideParentSnapOption int snapTo) {
                 mImpl.setSnapTo(ModifiersProto.SlideParentSnapOption.forNumber(snapTo));
                 mFingerprint.recordPropertyUpdate(1, snapTo);
                 return this;
@@ -2597,8 +3077,7 @@ public final class ModifiersBuilders {
 
             /** Builds an instance from accumulated values. */
             @Override
-            @NonNull
-            public SlideParentBound build() {
+            public @NonNull SlideParentBound build() {
                 return new SlideParentBound(mImpl.build(), mFingerprint);
             }
         }
@@ -2611,7 +3090,7 @@ public final class ModifiersBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class ArcModifiers {
         private final ModifiersProto.ArcModifiers mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         ArcModifiers(ModifiersProto.ArcModifiers impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -2622,8 +3101,7 @@ public final class ModifiersBuilders {
          * Gets allows its wrapped element to have actions associated with it, which will be
          * executed when the element is tapped.
          */
-        @Nullable
-        public Clickable getClickable() {
+        public @Nullable Clickable getClickable() {
             if (mImpl.hasClickable()) {
                 return Clickable.fromProto(mImpl.getClickable());
             } else {
@@ -2635,8 +3113,7 @@ public final class ModifiersBuilders {
          * Gets adds metadata for the modified element, for example, screen reader content
          * descriptions.
          */
-        @Nullable
-        public Semantics getSemantics() {
+        public @Nullable Semantics getSemantics() {
             if (mImpl.hasSemantics()) {
                 return Semantics.fromProto(mImpl.getSemantics());
             } else {
@@ -2644,41 +3121,51 @@ public final class ModifiersBuilders {
             }
         }
 
+        /**
+         * Gets the opacity of the element with a value from 0 to 1, where 0 means the element is
+         * completely transparent and 1 means the element is completely opaque. Dynamic value is
+         * supported.
+         */
+        public @Nullable FloatProp getOpacity() {
+            if (mImpl.hasOpacity()) {
+                return FloatProp.fromProto(mImpl.getOpacity());
+            } else {
+                return null;
+            }
+        }
+
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static ArcModifiers fromProto(
-                @NonNull ModifiersProto.ArcModifiers proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull ArcModifiers fromProto(
+                ModifiersProto.@NonNull ArcModifiers proto, @Nullable Fingerprint fingerprint) {
             return new ArcModifiers(proto, fingerprint);
         }
 
-        @NonNull
-        static ArcModifiers fromProto(@NonNull ModifiersProto.ArcModifiers proto) {
+        static @NonNull ArcModifiers fromProto(ModifiersProto.@NonNull ArcModifiers proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.ArcModifiers toProto() {
+        public ModifiersProto.@NonNull ArcModifiers toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "ArcModifiers{"
                     + "clickable="
                     + getClickable()
                     + ", semantics="
                     + getSemantics()
+                    + ", opacity="
+                    + getOpacity()
                     + "}";
         }
 
@@ -2696,8 +3183,7 @@ public final class ModifiersBuilders {
              * executed when the element is tapped.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setClickable(@NonNull Clickable clickable) {
+            public @NonNull Builder setClickable(@NonNull Clickable clickable) {
                 mImpl.setClickable(clickable.toProto());
                 mFingerprint.recordPropertyUpdate(
                         1, checkNotNull(clickable.getFingerprint()).aggregateValueAsInt());
@@ -2709,17 +3195,24 @@ public final class ModifiersBuilders {
              * descriptions.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setSemantics(@NonNull Semantics semantics) {
+            public @NonNull Builder setSemantics(@NonNull Semantics semantics) {
                 mImpl.setSemantics(semantics.toProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(semantics.getFingerprint()).aggregateValueAsInt());
                 return this;
             }
 
+            /** Sets the opacity of the element. */
+            @RequiresSchemaVersion(major = 1, minor = 400)
+            public @NonNull Builder setOpacity(@NonNull FloatProp opacity) {
+                mImpl.setOpacity(opacity.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        4, checkNotNull(opacity.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public ArcModifiers build() {
+            public @NonNull ArcModifiers build() {
                 return new ArcModifiers(mImpl.build(), mFingerprint);
             }
         }
@@ -2733,7 +3226,7 @@ public final class ModifiersBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class SpanModifiers {
         private final ModifiersProto.SpanModifiers mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         SpanModifiers(ModifiersProto.SpanModifiers impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -2744,8 +3237,7 @@ public final class ModifiersBuilders {
          * Gets allows its wrapped element to have actions associated with it, which will be
          * executed when the element is tapped.
          */
-        @Nullable
-        public Clickable getClickable() {
+        public @Nullable Clickable getClickable() {
             if (mImpl.hasClickable()) {
                 return Clickable.fromProto(mImpl.getClickable());
             } else {
@@ -2755,34 +3247,29 @@ public final class ModifiersBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static SpanModifiers fromProto(
-                @NonNull ModifiersProto.SpanModifiers proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull SpanModifiers fromProto(
+                ModifiersProto.@NonNull SpanModifiers proto, @Nullable Fingerprint fingerprint) {
             return new SpanModifiers(proto, fingerprint);
         }
 
-        @NonNull
-        static SpanModifiers fromProto(@NonNull ModifiersProto.SpanModifiers proto) {
+        static @NonNull SpanModifiers fromProto(ModifiersProto.@NonNull SpanModifiers proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.SpanModifiers toProto() {
+        public ModifiersProto.@NonNull SpanModifiers toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "SpanModifiers{" + "clickable=" + getClickable() + "}";
         }
 
@@ -2800,8 +3287,7 @@ public final class ModifiersBuilders {
              * executed when the element is tapped.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setClickable(@NonNull Clickable clickable) {
+            public @NonNull Builder setClickable(@NonNull Clickable clickable) {
                 mImpl.setClickable(clickable.toProto());
                 mFingerprint.recordPropertyUpdate(
                         1, checkNotNull(clickable.getFingerprint()).aggregateValueAsInt());
@@ -2809,8 +3295,7 @@ public final class ModifiersBuilders {
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public SpanModifiers build() {
+            public @NonNull SpanModifiers build() {
                 return new SpanModifiers(mImpl.build(), mFingerprint);
             }
         }
@@ -2820,7 +3305,7 @@ public final class ModifiersBuilders {
     @RequiresSchemaVersion(major = 1, minor = 300)
     public static final class Shadow {
         private final ModifiersProto.Shadow mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         Shadow(ModifiersProto.Shadow impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -2831,8 +3316,7 @@ public final class ModifiersBuilders {
          * Gets the blur radius of the shadow. It controls the size of the blur that is drawn. When
          * set to zero, the shadow is not drawn. Defaults to zero.
          */
-        @NonNull
-        public DpProp getBlurRadius() {
+        public @NonNull DpProp getBlurRadius() {
             if (mImpl.hasBlurRadius()) {
                 return DpProp.fromProto(mImpl.getBlurRadius());
             } else {
@@ -2841,8 +3325,7 @@ public final class ModifiersBuilders {
         }
 
         /** Gets the color used in the shadow. Defaults to Black. */
-        @NonNull
-        public ColorProp getColor() {
+        public @NonNull ColorProp getColor() {
             if (mImpl.hasColor()) {
                 return ColorProp.fromProto(mImpl.getColor());
             } else {
@@ -2852,34 +3335,29 @@ public final class ModifiersBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static Shadow fromProto(
-                @NonNull ModifiersProto.Shadow proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull Shadow fromProto(
+                ModifiersProto.@NonNull Shadow proto, @Nullable Fingerprint fingerprint) {
             return new Shadow(proto, fingerprint);
         }
 
-        @NonNull
-        static Shadow fromProto(@NonNull ModifiersProto.Shadow proto) {
+        static @NonNull Shadow fromProto(ModifiersProto.@NonNull Shadow proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ModifiersProto.Shadow toProto() {
+        public ModifiersProto.@NonNull Shadow toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "Shadow{" + "blurRadius=" + getBlurRadius() + ", color=" + getColor() + "}";
         }
 
@@ -2898,8 +3376,7 @@ public final class ModifiersBuilders {
              * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 300)
-            @NonNull
-            public Builder setBlurRadius(@NonNull DpProp blurRadius) {
+            public @NonNull Builder setBlurRadius(@NonNull DpProp blurRadius) {
                 if (blurRadius.getDynamicValue() != null) {
                     throw new IllegalArgumentException(
                             "Shadow.Builder.setBlurRadius doesn't support dynamic values.");
@@ -2916,8 +3393,7 @@ public final class ModifiersBuilders {
              * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 300)
-            @NonNull
-            public Builder setColor(@NonNull ColorProp color) {
+            public @NonNull Builder setColor(@NonNull ColorProp color) {
                 if (color.getDynamicValue() != null) {
                     throw new IllegalArgumentException(
                             "Shadow.Builder.setColor doesn't support dynamic values.");
@@ -2929,8 +3405,7 @@ public final class ModifiersBuilders {
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public Shadow build() {
+            public @NonNull Shadow build() {
                 return new Shadow(mImpl.build(), mFingerprint);
             }
         }

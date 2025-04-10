@@ -47,9 +47,6 @@ import android.widget.TabHost.TabSpec;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -77,11 +74,17 @@ import com.example.androidx.mediarouting.data.PlaylistItem;
 import com.example.androidx.mediarouting.player.Player;
 import com.example.androidx.mediarouting.player.RemotePlayer;
 import com.example.androidx.mediarouting.providers.SampleMediaRouteProvider;
+import com.example.androidx.mediarouting.providers.WrapperMediaRouteProvider;
+import com.example.androidx.mediarouting.services.WrapperMediaRouteProviderService;
 import com.example.androidx.mediarouting.session.SessionManager;
 import com.example.androidx.mediarouting.ui.LibraryAdapter;
 import com.example.androidx.mediarouting.ui.PlaylistAdapter;
+import com.google.common.base.Function;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.util.List;
@@ -137,11 +140,15 @@ public class MainActivity extends AppCompatActivity {
         routesManager.reloadDialogType();
 
         // Create a route selector for the type of routes that we care about.
-        mSelector = new MediaRouteSelector.Builder()
-                .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
-                .addControlCategory(MediaControlIntent.CATEGORY_LIVE_AUDIO)
-                .addControlCategory(SampleMediaRouteProvider.CATEGORY_SAMPLE_ROUTE)
-                .build();
+        mSelector =
+                new MediaRouteSelector.Builder()
+                        .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
+                        .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_AUDIO_PLAYBACK)
+                        .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_VIDEO_PLAYBACK)
+                        .addControlCategory(MediaControlIntent.CATEGORY_LIVE_AUDIO)
+                        .addControlCategory(SampleMediaRouteProvider.CATEGORY_SAMPLE_ROUTE)
+                        .addControlCategory(WrapperMediaRouteProvider.CATEGORY_WRAPPER_ROUTE)
+                        .build();
 
         mMediaRouter.setOnPrepareTransferListener(mOnPrepareTransferListener);
 
@@ -164,8 +171,8 @@ public class MainActivity extends AppCompatActivity {
         String[] mediaNames = getResources().getStringArray(R.array.media_names);
         String[] mediaUris = getResources().getStringArray(R.array.media_uris);
         String[] mediaMimes = getResources().getStringArray(R.array.media_mimes);
-        LibraryAdapter libraryItems = new LibraryAdapter(/* mainActivity= */ this,
-                /* sessionManager= */  mSessionManager);
+        LibraryAdapter libraryItems =
+                new LibraryAdapter(/* mainActivity= */ this, /* sessionManager= */ mSessionManager);
         for (int i = 0; i < mediaNames.length; i++) {
             libraryItems.add(new MediaItem(
                     "[streaming] " + mediaNames[i], Uri.parse(mediaUris[i]), mediaMimes[i]));
@@ -265,8 +272,9 @@ public class MainActivity extends AppCompatActivity {
         mMediaRouter.setMediaSessionCompat(mMediaSession);
 
         // Set up playback manager and player
-        mPlayer = Player.create(MainActivity.this,
-                mMediaRouter.getSelectedRoute(), mMediaSession);
+        mPlayer =
+                Player.createPlayerForActivity(
+                        MainActivity.this, mMediaRouter.getSelectedRoute(), mMediaSession);
 
         mSessionManager.setPlayer(mPlayer);
         mSessionManager.setCallback(new SampleSessionManagerCallback());
@@ -303,9 +311,9 @@ public class MainActivity extends AppCompatActivity {
         if (mediaRouteActionProvider != null) {
             mediaRouteActionProvider.setRouteSelector(mSelector);
             mediaRouteActionProvider.setDialogFactory(new MediaRouteDialogFactory() {
-                @NonNull
                 @Override
-                public MediaRouteControllerDialogFragment onCreateControllerDialogFragment() {
+                public @NonNull MediaRouteControllerDialogFragment
+                        onCreateControllerDialogFragment() {
                     return new ControllerDialogFragment(MainActivity.this,
                             mUseDefaultControlCheckBox);
                 }
@@ -520,8 +528,7 @@ public class MainActivity extends AppCompatActivity {
         mSeekBar.setEnabled(item != null && item.getDuration() > 0);
     }
 
-    @Nullable
-    private PlaylistItem getCheckedPlaylistItem() {
+    private @Nullable PlaylistItem getCheckedPlaylistItem() {
         int count = mPlayListView.getCount();
         int index = mPlayListView.getCheckedItemPosition();
         if (count > 0) {
@@ -539,12 +546,17 @@ public class MainActivity extends AppCompatActivity {
                 ? 0 : (SystemClock.elapsedRealtime() - item.getTimestamp()));
     }
 
-    @NonNull
-    private MediaRouterParams getRouterParams() {
-        return new MediaRouterParams.Builder()
-                .setDialogType(MediaRouterParams.DIALOG_TYPE_DEFAULT)
-                .setTransferToLocalEnabled(true) // Phone speaker will be shown when casting.
-                .build();
+    private @NonNull MediaRouterParams getRouterParams() {
+        MediaRouterParams.Builder routerParams =
+                new MediaRouterParams.Builder()
+                        .setDialogType(MediaRouterParams.DIALOG_TYPE_DEFAULT)
+                        .setTransferToLocalEnabled(
+                                true); // Phone speaker will be shown when casting.
+        boolean wrapperRouteProviderEnabled =
+                SettingsActivity.isServiceEnabled(
+                        getApplicationContext(), WrapperMediaRouteProviderService.class);
+        routerParams.setMediaTransferRestrictedToSelfProviders(wrapperRouteProviderEnabled);
+        return routerParams.build();
     }
 
     /**
@@ -559,19 +571,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Media route discovery fragment.
-     */
+    /** Media route discovery fragment. */
     public static final class DiscoveryFragment extends MediaRouteDiscoveryFragment {
         private MediaRouter.Callback mCallback;
 
-        public void setCallback(@Nullable MediaRouter.Callback cb) {
+        public void setCallback(MediaRouter.@Nullable Callback cb) {
             mCallback = cb;
         }
 
-        @Nullable
         @Override
-        public MediaRouter.Callback onCreateCallback() {
+        public MediaRouter.@Nullable Callback onCreateCallback() {
             return mCallback;
         }
 
@@ -611,6 +620,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onItemChanged(@NonNull PlaylistItem item) {
+            updateUi();
         }
     }
 
@@ -646,6 +656,9 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onRouteChanged(@NonNull MediaRouter router, @NonNull RouteInfo route) {
             Log.d(TAG, "onRouteChanged: route=" + route);
+            if (route.isSelected()) {
+                updateRouteDescription();
+            }
         }
 
         @Override
@@ -659,26 +672,64 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "onRouteSelected: requestedRoute=" + requestedRoute
                     + ", route=" + selectedRoute + ", reason=" + reason);
 
-            if (reason != MediaRouter.UNSELECT_REASON_ROUTE_CHANGED) {
-                mPlayer = Player.create(MainActivity.this, selectedRoute, mMediaSession);
+            boolean needToRecreatePlayer =
+                    !selectedRoute.isSystemRoute() || mPlayer.isRemotePlayback();
+
+            if (needToRecreatePlayer) {
+                Player oldPlayer = mPlayer;
+                PlaylistItem currentItem = mSessionManager.getCurrentItem();
+                if (currentItem != null
+                        && currentItem.getState() != MediaItemStatus.PLAYBACK_STATE_PENDING) {
+                    // We haven't received a prepare transfer call for this. We set that up now.
+                    if (reason == MediaRouter.UNSELECT_REASON_STOPPED) {
+                        mSessionManager.pause();
+                    }
+                    mSessionManager.suspend(currentItem.getPosition());
+                }
+                mPlayer =
+                        Player.createPlayerForActivity(
+                                MainActivity.this, selectedRoute, mMediaSession);
                 mPlayer.updatePresentation();
                 mSessionManager.setPlayer(mPlayer);
+                mSessionManager.unsuspend();
+                updateUi();
+                oldPlayer.release();
             }
-            updateUi();
         }
 
         @Override
-        public void onRouteUnselected(@NonNull MediaRouter router, @NonNull RouteInfo route,
-                int reason) {
+        public void onRouteUnselected(
+                @NonNull MediaRouter router, @NonNull RouteInfo route, int reason) {
             Log.d(TAG, "onRouteUnselected: route=" + route);
+        }
 
-            if (reason != MediaRouter.UNSELECT_REASON_ROUTE_CHANGED) {
-                mMediaSession.setActive(false);
-                mSessionManager.stop();
+        @Override
+        public void onRouteConnected(
+                @NonNull MediaRouter router,
+                @NonNull RouteInfo connectedRoute,
+                @NonNull RouteInfo requestedRoute) {
+            Log.d(
+                    TAG,
+                    "onRouteConnected: connectedRoute="
+                            + connectedRoute
+                            + ", requestedRoute="
+                            + requestedRoute);
+        }
 
-                mPlayer.updatePresentation();
-                mPlayer.release();
-            }
+        @Override
+        public void onRouteDisconnected(
+                @NonNull MediaRouter router,
+                @Nullable RouteInfo disconnectedRoute,
+                @NonNull RouteInfo requestedRoute,
+                int reason) {
+            Log.d(
+                    TAG,
+                    "onRouteDisconnected: disconnectedRoute="
+                            + disconnectedRoute
+                            + ", requestedRoute = "
+                            + requestedRoute
+                            + " and reason="
+                            + reason);
         }
 
         @Override
@@ -727,9 +778,8 @@ public class MainActivity extends AppCompatActivity {
             mUseDefaultControlCheckBox = customControlViewCheckBox;
         }
 
-        @NonNull
         @Override
-        public MediaRouteControllerDialog onCreateControllerDialog(
+        public @NonNull MediaRouteControllerDialog onCreateControllerDialog(
                 @NonNull Context context, @Nullable Bundle savedInstanceState) {
             mMainActivity.updateStatusFromSessionManager();
             mControllerDialog =
@@ -769,17 +819,14 @@ public class MainActivity extends AppCompatActivity {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean canDrawOverlays(Context context) {
             return Settings.canDrawOverlays(context);
         }
 
-        @DoNotInline
         static boolean shouldShowRequestPermissionRationale(Activity activity, String permission) {
             return activity.shouldShowRequestPermissionRationale(permission);
         }
 
-        @DoNotInline
         static void requestPermissions(Activity activity, String[] permissions, int requestCode) {
             activity.requestPermissions(permissions, requestCode);
         }
@@ -787,42 +834,30 @@ public class MainActivity extends AppCompatActivity {
 
     @RequiresApi(30)
     private class TransferListener implements MediaRouter.OnPrepareTransferListener {
-        @Nullable
         @Override
-        public ListenableFuture<Void> onPrepareTransfer(@NonNull RouteInfo fromRoute,
+        public @Nullable ListenableFuture<Void> onPrepareTransfer(@NonNull RouteInfo fromRoute,
                 @NonNull RouteInfo toRoute) {
             Log.d(TAG, "onPrepareTransfer: from=" + fromRoute.getId()
                     + ", to=" + toRoute.getId());
             final PlaylistItem currentItem = getCheckedPlaylistItem();
 
-            if (currentItem != null) {
-                if (mPlayer.isRemotePlayback()) {
-                    RemotePlayer remotePlayer = (RemotePlayer) mPlayer;
-                    ListenableFuture<PlaylistItem> cacheRemoteState =
-                            remotePlayer.cacheRemoteState(currentItem);
-                    return Futures.transform(
-                            cacheRemoteState,
-                            (playlistItem) -> handleTransfer(playlistItem.getPosition(), toRoute),
-                            Runnable::run);
-                } else {
-                    long cachedPosition = getCurrentEstimatedPosition(currentItem);
-                    handleTransfer(cachedPosition, toRoute);
-                }
+            if (currentItem == null) {
+                return null; // No ongoing playback. Nothing to prepare.
             }
-            return Futures.immediateVoidFuture();
-        }
-
-        public Void handleTransfer(long currentPosition, RouteInfo destinationRoute) {
-            mSessionManager.suspend(currentPosition);
-            mMediaSession.setActive(false);
-            mPlayer.release();
-
-            mPlayer = Player.create(MainActivity.this, destinationRoute, mMediaSession);
-            mPlayer.updatePresentation();
-            mSessionManager.setPlayer(mPlayer);
-            mSessionManager.unsuspend();
-
-            return null;
+            if (mPlayer.isRemotePlayback()) {
+                RemotePlayer remotePlayer = (RemotePlayer) mPlayer;
+                ListenableFuture<PlaylistItem> cacheRemoteState =
+                        remotePlayer.cacheRemoteState(currentItem);
+                Function<PlaylistItem, Void> function =
+                        (playlistItem) -> {
+                            mSessionManager.suspend(playlistItem.getPosition());
+                            return null;
+                        };
+                return Futures.transform(cacheRemoteState, function, Runnable::run);
+            } else {
+                mSessionManager.suspend(getCurrentEstimatedPosition(currentItem));
+                return Futures.immediateVoidFuture();
+            }
         }
     }
 }

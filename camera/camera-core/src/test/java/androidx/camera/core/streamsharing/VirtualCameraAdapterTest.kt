@@ -45,10 +45,15 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor
 import androidx.camera.core.impl.utils.futures.Futures
 import androidx.camera.core.processing.SurfaceEdge
 import androidx.camera.testing.fakes.FakeCamera
+import androidx.camera.testing.impl.FakeCameraCapturePipeline
+import androidx.camera.testing.impl.FakeCameraCapturePipeline.InvocationType.POST_CAPTURE
+import androidx.camera.testing.impl.FakeCameraCapturePipeline.InvocationType.PRE_CAPTURE
 import androidx.camera.testing.impl.fakes.FakeDeferrableSurface
 import androidx.camera.testing.impl.fakes.FakeUseCaseConfig
 import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -58,9 +63,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
-/**
- * Unit tests for [VirtualCameraAdapter].
- */
+/** Unit tests for [VirtualCameraAdapter]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
@@ -75,37 +78,49 @@ class VirtualCameraAdapterTest {
         private val CROP_RECT = Rect(0, 0, 800, 600)
 
         // Arbitrary transform to test that the transform is propagated.
-        private val SENSOR_TO_BUFFER = Matrix().apply { setScale(1f, -1f) }
+        private val SENSOR_TO_BUFFER = Matrix().apply { setRotate(90F) }
         private var receivedSessionConfigError: SessionConfig.SessionError? = null
-        private val SESSION_CONFIG_WITH_SURFACE = SessionConfig.Builder()
-            .addSurface(FakeDeferrableSurface(INPUT_SIZE, ImageFormat.PRIVATE))
-            .addErrorListener { _, error ->
-                receivedSessionConfigError = error
-            }.build()
+        private val SESSION_CONFIG_WITH_SURFACE =
+            SessionConfig.Builder()
+                .addSurface(FakeDeferrableSurface(INPUT_SIZE, ImageFormat.PRIVATE))
+                .setErrorListener { _, error -> receivedSessionConfigError = error }
+                .build()
     }
 
     private val surfaceEdgesToClose = mutableListOf<SurfaceEdge>()
     private val parentCamera = FakeCamera()
     private val child1 = FakeUseCaseConfig.Builder().setTargetRotation(Surface.ROTATION_0).build()
-    private val child2 = FakeUseCaseConfig.Builder()
-        .setMirrorMode(MIRROR_MODE_ON)
-        .build()
-    private val childrenEdges = mapOf(
-        Pair(child1 as UseCase, createSurfaceEdge()),
-        Pair(child2 as UseCase, createSurfaceEdge())
-    )
+    private val child2 = FakeUseCaseConfig.Builder().setMirrorMode(MIRROR_MODE_ON).build()
+
+    private val childrenEdges =
+        mapOf(
+            Pair(child1 as UseCase, createSurfaceEdge()),
+            Pair(child2 as UseCase, createSurfaceEdge())
+        )
+    private val selectedChildSizes =
+        mapOf<UseCase, Size>(child1 to INPUT_SIZE, child2 to INPUT_SIZE)
     private val useCaseConfigFactory = FakeUseCaseConfigFactory()
     private lateinit var adapter: VirtualCameraAdapter
     private var snapshotTriggered = false
 
+    private enum class Event {
+        PRE_CAPTURE,
+        SNAPSHOT,
+        POST_CAPTURE,
+    }
+
+    private val events = CopyOnWriteArrayList<Event>()
+
     @Before
     fun setUp() {
-        adapter = VirtualCameraAdapter(
-            parentCamera, setOf(child1, child2), useCaseConfigFactory
-        ) { _, _ ->
-            snapshotTriggered = true
-            Futures.immediateFuture(null)
-        }
+        adapter =
+            VirtualCameraAdapter(parentCamera, null, setOf(child1, child2), useCaseConfigFactory) {
+                _,
+                _ ->
+                snapshotTriggered = true
+                events.add(Event.SNAPSHOT)
+                Futures.immediateFuture(null)
+            }
     }
 
     @After
@@ -134,6 +149,41 @@ class VirtualCameraAdapterTest {
     }
 
     @Test
+    fun submitStillCaptureRequests_invokesPreAndPostCapturesInCorrectSequence() {
+        // Arrange.
+        adapter.bindChildren()
+
+        val cameraControl = child1.camera!!.cameraControl as CameraControlInternal
+
+        val fakeCameraCapturePipeline =
+            cameraControl
+                .getCameraCapturePipelineAsync(CAPTURE_MODE_MINIMIZE_LATENCY, FLASH_MODE_AUTO)
+                .get(100, TimeUnit.MILLISECONDS) as FakeCameraCapturePipeline
+
+        fakeCameraCapturePipeline.addInvocationListener(
+            object : FakeCameraCapturePipeline.InvocationListener {
+                override fun onInvoked(invocationType: FakeCameraCapturePipeline.InvocationType) {
+                    when (invocationType) {
+                        PRE_CAPTURE -> events.add(Event.PRE_CAPTURE)
+                        POST_CAPTURE -> events.add(Event.POST_CAPTURE)
+                    }
+                }
+            }
+        )
+
+        // Act: submit a still capture request from a child.
+
+        cameraControl.submitStillCaptureRequests(
+            listOf(CaptureConfig.Builder().build()),
+            CAPTURE_MODE_MINIMIZE_LATENCY,
+            FLASH_MODE_AUTO
+        )
+        shadowOf(getMainLooper()).idle()
+
+        assertThat(events).isEqualTo(listOf(Event.PRE_CAPTURE, Event.SNAPSHOT, Event.POST_CAPTURE))
+    }
+
+    @Test
     fun getImageCaptureSurface_returnsNonRepeatingSurface() {
         assertThat(getUseCaseSurface(ImageCapture.Builder().build())).isNotNull()
     }
@@ -143,14 +193,15 @@ class VirtualCameraAdapterTest {
         // Arrange.
         val surfaceTexture = SurfaceTexture(0)
         val surface = Surface(surfaceTexture)
-        val preview = Preview.Builder().build().apply {
-            this.setSurfaceProvider {
-                it.provideSurface(surface, directExecutor()) {
-                    surfaceTexture.release()
-                    surface.release()
+        val preview =
+            Preview.Builder().build().apply {
+                this.setSurfaceProvider {
+                    it.provideSurface(surface, directExecutor()) {
+                        surfaceTexture.release()
+                        surface.release()
+                    }
                 }
             }
-        }
         // Act & Assert.
         assertThat(getUseCaseSurface(preview)).isNotNull()
         // Cleanup.
@@ -163,9 +214,10 @@ class VirtualCameraAdapterTest {
         useCase.bindToCamera(
             parentCamera,
             null,
+            null,
             useCase.getDefaultConfig(true, useCaseConfigFactory)
         )
-        useCase.updateSuggestedStreamSpec(StreamSpec.builder(INPUT_SIZE).build())
+        useCase.updateSuggestedStreamSpec(StreamSpec.builder(INPUT_SIZE).build(), null)
         return VirtualCameraAdapter.getChildSurface(useCase)
     }
 
@@ -173,7 +225,7 @@ class VirtualCameraAdapterTest {
     fun setUseCaseActiveAndInactive_surfaceConnectsAndDisconnects() {
         // Arrange.
         adapter.bindChildren()
-        adapter.setChildrenEdges(childrenEdges)
+        adapter.setChildrenEdges(childrenEdges, selectedChildSizes)
         child1.updateSessionConfigForTesting(SESSION_CONFIG_WITH_SURFACE)
         // Assert: edge open by default.
         verifyEdge(child1, OPEN, NO_PROVIDER)
@@ -192,7 +244,7 @@ class VirtualCameraAdapterTest {
     fun resetWithClosedChildSurface_invokesErrorListener() {
         // Arrange.
         adapter.bindChildren()
-        adapter.setChildrenEdges(childrenEdges)
+        adapter.setChildrenEdges(childrenEdges, selectedChildSizes)
         child1.updateSessionConfigForTesting(SESSION_CONFIG_WITH_SURFACE)
         child1.notifyActiveForTesting()
 
@@ -210,7 +262,7 @@ class VirtualCameraAdapterTest {
     fun resetUseCase_edgeInvalidated() {
         // Arrange: setup and get the old DeferrableSurface.
         adapter.bindChildren()
-        adapter.setChildrenEdges(childrenEdges)
+        adapter.setChildrenEdges(childrenEdges, selectedChildSizes)
         child1.updateSessionConfigForTesting(SESSION_CONFIG_WITH_SURFACE)
         child1.notifyActiveForTesting()
         val oldSurface = childrenEdges[child1]!!.deferrableSurfaceForTesting
@@ -227,7 +279,7 @@ class VirtualCameraAdapterTest {
     fun updateUseCaseWithAndWithoutSurface_surfaceConnectsAndDisconnects() {
         // Arrange
         adapter.bindChildren()
-        adapter.setChildrenEdges(childrenEdges)
+        adapter.setChildrenEdges(childrenEdges, selectedChildSizes)
         child1.notifyActiveForTesting()
         verifyEdge(child1, OPEN, NO_PROVIDER)
 
@@ -249,22 +301,42 @@ class VirtualCameraAdapterTest {
     }
 
     @Test
+    fun parentHasMirroring_clientDoNotApplyMirroring() {
+        // Arrange: create an edge that has mirrored the input in the past.
+        val inputEdge = createSurfaceEdge(matrix = Matrix().apply { setScale(-1f, 1f) })
+        // Act: get the children's out configs.
+        val outConfigs = adapter.getChildrenOutConfigs(inputEdge, Surface.ROTATION_90, true)
+        // Assert: child1 needs additional mirroring because the parent mirrors the input while the
+        // child doesn't mirror.
+        assertThat(outConfigs[child1]!!.isMirroring).isTrue()
+        // Assert: child2 does not need additional mirroring because both the parent and the child
+        // mirrors the input.
+        assertThat(outConfigs[child2]!!.isMirroring).isFalse()
+    }
+
+    @Test
     fun getChildrenOutConfigs() {
         // Arrange.
         val cropRect = Rect(10, 10, 410, 310)
         val preview = Preview.Builder().setTargetRotation(Surface.ROTATION_90).build()
         val imageCapture = ImageCapture.Builder().setTargetRotation(Surface.ROTATION_0).build()
-        adapter = VirtualCameraAdapter(
-            parentCamera, setOf(preview, child2, imageCapture), useCaseConfigFactory
-        ) { _, _ ->
-            Futures.immediateFuture(null)
-        }
+        adapter =
+            VirtualCameraAdapter(
+                parentCamera,
+                null,
+                setOf(preview, child2, imageCapture),
+                useCaseConfigFactory
+            ) { _, _ ->
+                Futures.immediateFuture(null)
+            }
 
         // Act.
-        val outConfigs = adapter.getChildrenOutConfigs(
-            createSurfaceEdge(cropRect = cropRect, rotationDegrees = 90),
-            Surface.ROTATION_90, true
-        )
+        val outConfigs =
+            adapter.getChildrenOutConfigs(
+                createSurfaceEdge(cropRect = cropRect, rotationDegrees = 90),
+                Surface.ROTATION_90,
+                true
+            )
 
         // Assert: preview config
         val previewOutConfig = outConfigs[preview]!!
@@ -274,7 +346,7 @@ class VirtualCameraAdapterTest {
         // Preview's target rotation matches the parent's, so it only applies the 90° rotation.
         assertThat(previewOutConfig.size).isEqualTo(Size(300, 400))
         assertThat(previewOutConfig.rotationDegrees).isEqualTo(90)
-        assertThat(previewOutConfig.mirroring).isFalse()
+        assertThat(previewOutConfig.isMirroring).isFalse()
         // Assert: ImageCapture config
         val imageOutConfig = outConfigs[imageCapture]!!
         assertThat(imageOutConfig.format).isEqualTo(ImageFormat.JPEG)
@@ -288,16 +360,23 @@ class VirtualCameraAdapterTest {
         assertThat(outConfig2.format).isEqualTo(INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE)
         assertThat(outConfig2.targets).isEqualTo(VIDEO_CAPTURE)
         assertThat(outConfig2.cropRect).isEqualTo(cropRect)
-        assertThat(outConfig2.mirroring).isTrue()
+        assertThat(outConfig2.isMirroring).isTrue()
     }
 
     @Test
     fun updateChildrenSpec_updateAndNotifyChildren() {
         // Act: update children with the map.
-        adapter.setChildrenEdges(childrenEdges)
-        // Assert: surface size, crop rect and transformation propagated to children
+        val selectedChildSizes =
+            mapOf<UseCase, Size>(child1 to Size(400, 300), child2 to Size(720, 480))
+        adapter.setChildrenEdges(childrenEdges, selectedChildSizes)
+        // Assert: surface size, original selected size, crop rect and transformation propagated
+        // to children
         assertThat(child1.attachedStreamSpec!!.resolution).isEqualTo(INPUT_SIZE)
+        assertThat(child1.attachedStreamSpec!!.originalConfiguredResolution)
+            .isEqualTo(Size(400, 300))
         assertThat(child2.attachedStreamSpec!!.resolution).isEqualTo(INPUT_SIZE)
+        assertThat(child2.attachedStreamSpec!!.originalConfiguredResolution)
+            .isEqualTo(Size(720, 480))
         assertThat(child1.viewPortCropRect).isEqualTo(CROP_RECT)
         assertThat(child2.viewPortCropRect).isEqualTo(CROP_RECT)
         assertThat(child1.sensorToBufferTransformMatrix).isEqualTo(SENSOR_TO_BUFFER)
@@ -315,16 +394,17 @@ class VirtualCameraAdapterTest {
         mirroring: Boolean = false
     ): SurfaceEdge {
         return SurfaceEdge(
-            target,
-            format,
-            streamSpec,
-            matrix,
-            hasCameraTransform,
-            cropRect,
-            rotationDegrees,
-            ROTATION_NOT_SPECIFIED,
-            mirroring
-        ).also { surfaceEdgesToClose.add(it) }
+                target,
+                format,
+                streamSpec,
+                matrix,
+                hasCameraTransform,
+                cropRect,
+                rotationDegrees,
+                ROTATION_NOT_SPECIFIED,
+                mirroring
+            )
+            .also { surfaceEdgesToClose.add(it) }
     }
 
     private fun verifyEdge(child: UseCase, isClosed: Boolean, hasProvider: Boolean) {

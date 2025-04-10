@@ -85,6 +85,9 @@ _formatted as “Jetpack libraries are…” with sub-points “Libraries should
 
 -   Guide developers toward using existing Jetpack best-practice libraries,
     including Architecture Components
+-   Libraries that involve user interfaces, e.g. any reference to `View`
+    classes, must provide non-`View` functional parity when used with the
+    Compose UI toolkit
 
 ### 9. Designed for tooling and testability
 
@@ -100,8 +103,8 @@ _formatted as “Jetpack libraries are…” with sub-points “Libraries should
 ### 10. Released using a clearly-defined process
 
 -   Follow Semantic Versioning and pre-release revision guidelines where each
-    library moves through alpha, beta, and rc revisions to gain feedback and
-    ensure stability
+    library moves through alpha, beta, and RC revisions in a timely manner to
+    gain feedback and ensure stability
 
 ### 11. Well-documented
 

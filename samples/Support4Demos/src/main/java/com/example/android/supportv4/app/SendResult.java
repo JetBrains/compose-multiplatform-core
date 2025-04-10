@@ -28,7 +28,6 @@ import android.widget.Button;
 
 import com.example.android.supportv4.R;
 
-
 /**
  * Example of receiving a result from another activity.
  */

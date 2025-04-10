@@ -16,23 +16,21 @@
 
 package androidx.camera.core;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An exception thrown to indicate an error has occurred during image capture or while saving the
  * captured image. See {@link ImageCapture.OnImageCapturedCallback} and
  * {@link ImageCapture.OnImageSavedCallback}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class ImageCaptureException extends Exception {
 
     @ImageCapture.ImageCaptureError
     private final int mImageCaptureError;
 
     public ImageCaptureException(@ImageCapture.ImageCaptureError final int imageCaptureError,
-            @NonNull final String message, @Nullable final Throwable cause) {
+            final @NonNull String message, final @Nullable Throwable cause) {
         super(message, cause);
         mImageCaptureError = imageCaptureError;
     }

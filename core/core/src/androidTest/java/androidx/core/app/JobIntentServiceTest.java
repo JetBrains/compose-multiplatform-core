@@ -30,13 +30,14 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
+import androidx.test.filters.SdkSuppress;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -365,6 +366,7 @@ public class JobIntentServiceTest {
      */
     @MediumTest
     @Test
+    @Ignore("JobIntentService is deprecated and no longer maintained")
     public void testEnqueueOne() throws Throwable {
         initStatics();
 
@@ -386,6 +388,7 @@ public class JobIntentServiceTest {
      */
     @MediumTest
     @Test
+    @Ignore("JobIntentService is deprecated and no longer maintained")
     public void testEnqueueMultiple() throws Throwable {
         initStatics();
 
@@ -410,6 +413,7 @@ public class JobIntentServiceTest {
      */
     @MediumTest
     @Test
+    @Ignore("JobIntentService is deprecated and no longer maintained")
     public void testEnqueueSubWork() throws Throwable {
         initStatics();
 
@@ -439,7 +443,8 @@ public class JobIntentServiceTest {
      */
     @MediumTest
     @Test
-    @RequiresApi(26)
+    @Ignore("JobIntentService is deprecated and no longer maintained")
+    @SdkSuppress(minSdkVersion = 26)
     public void testStopWhileWorking() throws Throwable {
         if (Build.VERSION.SDK_INT < 26) {
             // This test only makes sense when running on top of JobScheduler.

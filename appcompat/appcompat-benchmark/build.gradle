@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
+import androidx.build.SoftwareType
+
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("androidx.benchmark")
 }
 
 dependencies {
     androidTestImplementation(project(":appcompat:appcompat"))
-    androidTestImplementation(projectOrArtifact(":benchmark:benchmark-junit4"))
+    androidTestImplementation(androidx.projectOrArtifact(":benchmark:benchmark-junit4"))
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
@@ -32,6 +34,9 @@ dependencies {
 }
 
 android {
-    namespace "androidx.appcompat.benchmark"
+    namespace = "androidx.appcompat.benchmark"
 }
 
+androidx {
+    type = SoftwareType.BENCHMARK
+}

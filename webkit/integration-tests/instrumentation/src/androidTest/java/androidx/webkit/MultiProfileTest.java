@@ -26,6 +26,8 @@ import android.webkit.WebView;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
+import androidx.webkit.test.common.WebViewOnUiThread;
+import androidx.webkit.test.common.WebkitUtils;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -47,6 +49,7 @@ public class MultiProfileTest {
     // We are unifying the name as there's no way at the moment to delete the loaded profiles, we
     // should be able to use different test profiles once b/304456333 is fixed.
     private static final String PROFILE_TEST_NAME = "Test";
+
     @Before
     public void setUp() {
         WebkitUtils.checkFeature(WebViewFeature.MULTI_PROFILE);

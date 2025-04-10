@@ -20,12 +20,13 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
 import androidx.wear.ambient.AmbientModeSupport;
 
 import com.example.android.support.wear.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Main activity for the AmbientMode demo.
@@ -42,9 +43,8 @@ public class AmbientModeDemo extends FragmentActivity implements
         AmbientModeSupport.attach(this);
     }
 
-    @NonNull
     @Override
-    public AmbientModeSupport.AmbientCallback getAmbientCallback() {
+    public AmbientModeSupport.@NonNull AmbientCallback getAmbientCallback() {
         return new MyAmbientCallback();
     }
 

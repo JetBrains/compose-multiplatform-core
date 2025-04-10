@@ -24,6 +24,7 @@ public interface CurvedDirection {
      * The direction in which components are laid out on a [curvedRow] or [CurvedLayout]
      *
      * Example:
+     *
      * @sample androidx.wear.compose.foundation.samples.CurvedBottomLayout
      */
     @Immutable
@@ -46,49 +47,43 @@ public interface CurvedDirection {
             }
         }
 
-        companion object {
+        public companion object {
             /**
-             * Go in Clockwise direction for Ltr layout and Counter Clockwise for Rtl.
-             * This is generally used for curved layouts on the top of the screen.
+             * Go in Clockwise direction for Ltr layout and Counter Clockwise for Rtl. This is
+             * generally used for curved layouts on the top of the screen.
              */
-            val Normal = Angular(0)
+            public val Normal: Angular = Angular(0)
 
             /**
-             * Go in Counter Clockwise direction for Ltr layout and Clockwise for Rtl.
-             * This is generally used for curved layouts on the bottom of the screen.
+             * Go in Counter Clockwise direction for Ltr layout and Clockwise for Rtl. This is
+             * generally used for curved layouts on the bottom of the screen.
              */
-            val Reversed = Angular(1)
+            public val Reversed: Angular = Angular(1)
 
-            /**
-             * Go in Clockwise direction, independently of [LayoutDirection].
-             */
-            val Clockwise = Angular(2)
+            /** Go in Clockwise direction, independently of [LayoutDirection]. */
+            public val Clockwise: Angular = Angular(2)
 
-            /**
-             * Go in Counter Clockwise direction, independently of [LayoutDirection].
-             */
-            val CounterClockwise = Angular(3)
+            /** Go in Counter Clockwise direction, independently of [LayoutDirection]. */
+            public val CounterClockwise: Angular = Angular(3)
         }
     }
 
-    /**
-     * The direction in which components are lay down on a [curvedColumn]
-     */
+    /** The direction in which components are lay down on a [curvedColumn] */
     @Immutable
     @kotlin.jvm.JvmInline
     public value class Radial internal constructor(internal val value: Int) {
-        companion object {
+        public companion object {
             /**
-             * Lay components starting farther away from the center and going inwards.
-             * This is generally used for curved layouts on the top of the screen.
+             * Lay components starting farther away from the center and going inwards. This is
+             * generally used for curved layouts on the top of the screen.
              */
-            val OutsideIn = Radial(0)
+            public val OutsideIn: Radial = Radial(0)
 
             /**
-             * Go in Counter Clockwise direction for Ltr layout and Clockwise for Rtl.
-             * This is generally used for curved layouts on the bottom of the screen.
+             * Go in Counter Clockwise direction for Ltr layout and Clockwise for Rtl. This is
+             * generally used for curved layouts on the bottom of the screen.
              */
-            val InsideOut = Radial(1)
+            public val InsideOut: Radial = Radial(1)
         }
     }
 }

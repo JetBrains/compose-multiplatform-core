@@ -17,11 +17,11 @@
 package androidx.camera.video.internal;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.Logger;
 import androidx.core.util.Pair;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.Closeable;
 import java.nio.ByteBuffer;
@@ -42,7 +42,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * {@link #close()} has not been called. Once {@link #close()} has been called, it should be
  * assumed the {@link ByteBuffer} contains invalid data.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class SharedByteBuffer implements Closeable {
 
     private static final String TAG = "SharedByteBuffer";
@@ -79,8 +78,7 @@ public final class SharedByteBuffer implements Closeable {
      *                         {@code finalCloseAction} might be to return the ByteBuffer to a
      *                         pool so it can be reused.
      */
-    @NonNull
-    static SharedByteBuffer newSharedInstance(@NonNull ByteBuffer sharedBuf,
+    static @NonNull SharedByteBuffer newSharedInstance(@NonNull ByteBuffer sharedBuf,
             @NonNull Executor closeActionExecutor, @NonNull Runnable finalCloseAction) {
         AtomicInteger sharedRefCount = new AtomicInteger(1);
         int shareId = System.identityHashCode(sharedBuf);
@@ -121,8 +119,7 @@ public final class SharedByteBuffer implements Closeable {
      * instance's initial position, limit, and mark values will match those of this instance's
      * values at the time {@code share()} is called.
      */
-    @NonNull
-    SharedByteBuffer share() {
+    @NonNull SharedByteBuffer share() {
         int newRefCount;
         AtomicInteger sharedRefCountLocal;
         synchronized (mCloseLock) {
@@ -171,8 +168,7 @@ public final class SharedByteBuffer implements Closeable {
      * @throws IllegalStateException if this SharedByteBuffer is closed.
      * @see #close()
      */
-    @NonNull
-    public ByteBuffer get() {
+    public @NonNull ByteBuffer get() {
         synchronized (mCloseLock) {
             checkNotClosed("get()");
             return mSharedByteBuffer;
@@ -187,9 +183,8 @@ public final class SharedByteBuffer implements Closeable {
         }
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return String.format(Locale.US, "SharedByteBuffer[buf: %s, shareId: 0x%x, instanceId:0x%x]",
                 mSharedByteBuffer, mShareId, System.identityHashCode(this));
     }

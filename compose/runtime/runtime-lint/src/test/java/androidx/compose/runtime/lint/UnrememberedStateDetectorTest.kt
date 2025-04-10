@@ -27,12 +27,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-/* ktlint-disable max-line-length */
 @RunWith(JUnit4::class)
 
-/**
- * Test for [UnrememberedStateDetector].
- */
+/** Test for [UnrememberedStateDetector]. */
 class UnrememberedStateDetectorTest : LintDetectorTest() {
     override fun getDetector(): Detector = UnrememberedStateDetector()
 
@@ -41,9 +38,10 @@ class UnrememberedStateDetectorTest : LintDetectorTest() {
 
     @Test
     fun notRemembered() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
                 package androidx.compose.runtime.foo
 
                 import androidx.compose.runtime.*
@@ -115,12 +113,12 @@ class UnrememberedStateDetectorTest : LintDetectorTest() {
                     }
                 }
             """
-            ),
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            Stubs.StateFactoryMarker,
-            Stubs.Remember
-        )
+                ),
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                Stubs.StateFactoryMarker,
+                Stubs.Remember
+            )
             .skipTestModes(TestMode.TYPE_ALIAS)
             .run()
             .expect(
@@ -228,9 +226,10 @@ src/androidx/compose/runtime/foo/{.kt:69: Error: Creating a state object during 
 
     @Test
     fun rememberedInsideComposableBody() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
                 package androidx.compose.runtime.foo
 
                 import androidx.compose.runtime.*
@@ -313,21 +312,22 @@ src/androidx/compose/runtime/foo/{.kt:69: Error: Creating a state object during 
                     }
                 }
             """
-            ),
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            Stubs.StateFactoryMarker,
-            Stubs.Remember
-        )
+                ),
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                Stubs.StateFactoryMarker,
+                Stubs.Remember
+            )
             .run()
             .expectClean()
     }
 
     @Test
     fun noErrors() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
                 package androidx.compose.runtime.foo
 
                 import androidx.compose.runtime.*
@@ -412,20 +412,21 @@ src/androidx/compose/runtime/foo/{.kt:69: Error: Creating a state object during 
                     }
                 }
             """
-            ),
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            Stubs.Remember
-        )
+                ),
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                Stubs.Remember
+            )
             .run()
             .expectClean()
     }
 
     @Test
     fun arbitraryStateFactoryAnnotated() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
                 package androidx.compose.runtime.foo
 
                 import androidx.compose.runtime.*
@@ -485,15 +486,16 @@ src/androidx/compose/runtime/foo/{.kt:69: Error: Creating a state object during 
                     }
                 }
             """
-            ),
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            Stubs.StateFactoryMarker,
-            Stubs.Remember
-        )
+                ),
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                Stubs.StateFactoryMarker,
+                Stubs.Remember
+            )
             .skipTestModes(TestMode.TYPE_ALIAS)
             .run()
-            .expect("""
+            .expect(
+                """
 src/androidx/compose/runtime/foo/{.kt:12: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
                     val foo = makeMyState()
                               ~~~~~~~~~~~
@@ -522,5 +524,326 @@ src/androidx/compose/runtime/foo/{.kt:56: Error: Creating a state object during 
             """
             )
     }
+
+    @Test
+    fun customStateConstructor() {
+        lint()
+            .files(
+                kotlin(
+                    """
+                package androidx.compose.runtime.foo
+
+                import androidx.compose.runtime.*
+                import androidx.compose.runtime.snapshots.StateFactoryMarker
+
+                @Composable
+                fun Test() {
+                    val foo = CustomState<Nothing>()
+                    val bar = remember { makeMyState() }
+                }
+
+                val lambda = @Composable {
+                    val foo = CustomState<Nothing>()
+                    val bar = remember { makeMyState() }
+                }
+
+                val lambda2: @Composable () -> Unit = {
+                    val foo = CustomState<Nothing>()
+                    val bar = remember { makeMyState() }
+                }
+
+                @Composable
+                fun LambdaParameter(content: @Composable () -> Unit) {}
+
+                @Composable
+                fun Test2() {
+                    LambdaParameter(content = {
+                        val foo = CustomState<Nothing>()
+                        val bar = remember { makeMyState() }
+                    })
+                    LambdaParameter {
+                        val foo = CustomState<Nothing>()
+                        val bar = remember { makeMyState() }
+                    }
+                }
+
+                fun test3() {
+                    val localLambda1 = @Composable {
+                        val foo = CustomState<Nothing>()
+                        val bar = remember { makeMyState() }
+                    }
+
+                    val localLambda2: @Composable () -> Unit = {
+                        val foo = CustomState<Nothing>()
+                        val bar = remember { makeMyState() }
+                    }
+                }
+
+                @Composable
+                fun Test4() {
+                    val localObject = object {
+                        val foo = CustomState<Nothing>()
+                        val bar = remember { makeMyState() }
+                    }
+                }
+
+                class CustomState<T> : MutableState<T> {
+                    override var value: T
+                        get() = throw UnsupportedOperationException()
+                        set(_) { throw UnsupportedOperationException() }
+                    override fun component1(): T = value
+                    override fun component2(): (T) -> Unit = { value = it }
+                }
+            """
+                ),
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                Stubs.StateFactoryMarker,
+                Stubs.Remember
+            )
+            .skipTestModes(TestMode.TYPE_ALIAS)
+            .run()
+            .expect(
+                """
+src/androidx/compose/runtime/foo/{.kt:9: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
+                    val foo = CustomState<Nothing>()
+                              ~~~~~~~~~~~
+src/androidx/compose/runtime/foo/{.kt:14: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
+                    val foo = CustomState<Nothing>()
+                              ~~~~~~~~~~~
+src/androidx/compose/runtime/foo/{.kt:19: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
+                    val foo = CustomState<Nothing>()
+                              ~~~~~~~~~~~
+src/androidx/compose/runtime/foo/{.kt:29: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
+                        val foo = CustomState<Nothing>()
+                                  ~~~~~~~~~~~
+src/androidx/compose/runtime/foo/{.kt:33: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
+                        val foo = CustomState<Nothing>()
+                                  ~~~~~~~~~~~
+src/androidx/compose/runtime/foo/{.kt:40: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
+                        val foo = CustomState<Nothing>()
+                                  ~~~~~~~~~~~
+src/androidx/compose/runtime/foo/{.kt:45: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
+                        val foo = CustomState<Nothing>()
+                                  ~~~~~~~~~~~
+src/androidx/compose/runtime/foo/{.kt:53: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
+                        val foo = CustomState<Nothing>()
+                                  ~~~~~~~~~~~
+8 errors, 0 warnings
+            """
+            )
+    }
+
+    @Test
+    fun customStateAnonymousClass() {
+        lint()
+            .files(
+                kotlin(
+                    """
+                package androidx.compose.runtime.foo
+
+                import androidx.compose.runtime.*
+                import androidx.compose.runtime.snapshots.StateFactoryMarker
+
+                @Composable
+                fun Test() {
+                    val foo = object : MutableState<Nothing> {
+                        override var value: Nothing
+                            get() = throw UnsupportedOperationException()
+                            set(_) { throw UnsupportedOperationException() }
+                        override fun component1() = value
+                        override fun component2() = { _: Nothing -> }
+                    }
+                    val bar = remember {
+                        object : MutableState<Nothing> {
+                            override var value: Nothing
+                                get() = throw UnsupportedOperationException()
+                                set(_) { throw UnsupportedOperationException() }
+                            override fun component1() = value
+                            override fun component2() = { _: Nothing -> }
+                        }
+                    }
+                }
+
+                val lambda = @Composable {
+                    val foo = object : MutableState<Nothing> {
+                        override var value: Nothing
+                            get() = throw UnsupportedOperationException()
+                            set(_) { throw UnsupportedOperationException() }
+                        override fun component1() = value
+                        override fun component2() = { _: Nothing -> }
+                    }
+                    val bar = remember {
+                        object : MutableState<Nothing> {
+                            override var value: Nothing
+                                get() = throw UnsupportedOperationException()
+                                set(_) { throw UnsupportedOperationException() }
+                            override fun component1() = value
+                            override fun component2() = { _: Nothing -> }
+                        }
+                    }
+                }
+
+                val lambda2: @Composable () -> Unit = {
+                    val foo = object : MutableState<Nothing> {
+                        override var value: Nothing
+                            get() = throw UnsupportedOperationException()
+                            set(_) { throw UnsupportedOperationException() }
+                        override fun component1() = value
+                        override fun component2() = { _: Nothing -> }
+                    }
+                    val bar = remember {
+                        object : MutableState<Nothing> {
+                            override var value: Nothing
+                                get() = throw UnsupportedOperationException()
+                                set(_) { throw UnsupportedOperationException() }
+                            override fun component1() = value
+                            override fun component2() = { _: Nothing -> }
+                        }
+                    }
+                }
+
+                @Composable
+                fun LambdaParameter(content: @Composable () -> Unit) {}
+
+                @Composable
+                fun Test2() {
+                    LambdaParameter(content = {
+                        val foo = object : MutableState<Nothing> {
+                            override var value: Nothing
+                                get() = throw UnsupportedOperationException()
+                                set(_) { throw UnsupportedOperationException() }
+                            override fun component1() = value
+                            override fun component2() = { _: Nothing -> }
+                        }
+                        val bar = remember {
+                            object : MutableState<Nothing> {
+                                override var value: Nothing
+                                    get() = throw UnsupportedOperationException()
+                                    set(_) { throw UnsupportedOperationException() }
+                                override fun component1() = value
+                                override fun component2() = { _: Nothing -> }
+                            }
+                        }
+                    })
+                    LambdaParameter {
+                        val foo = object : MutableState<Nothing> {
+                            override var value: Nothing
+                                get() = throw UnsupportedOperationException()
+                                set(_) { throw UnsupportedOperationException() }
+                            override fun component1() = value
+                            override fun component2() = { _: Nothing -> }
+                        }
+                        val bar = remember {
+                            object : MutableState<Nothing> {
+                                override var value: Nothing
+                                    get() = throw UnsupportedOperationException()
+                                    set(_) { throw UnsupportedOperationException() }
+                                override fun component1() = value
+                                override fun component2() = { _: Nothing -> }
+                            }
+                        }
+                    }
+                }
+
+                fun test3() {
+                    val localLambda1 = @Composable {
+                        val foo = object : MutableState<Nothing> {
+                            override var value: Nothing
+                                get() = throw UnsupportedOperationException()
+                                set(_) { throw UnsupportedOperationException() }
+                            override fun component1() = value
+                            override fun component2() = { _: Nothing -> }
+                        }
+                        val bar = remember {
+                            object : MutableState<Nothing> {
+                                override var value: Nothing
+                                    get() = throw UnsupportedOperationException()
+                                    set(_) { throw UnsupportedOperationException() }
+                                override fun component1() = value
+                                override fun component2() = { _: Nothing -> }
+                            }
+                        }
+                    }
+
+                    val localLambda2: @Composable () -> Unit = {
+                        val foo = object : MutableState<Nothing> {
+                            override var value: Nothing
+                                get() = throw UnsupportedOperationException()
+                                set(_) { throw UnsupportedOperationException() }
+                            override fun component1() = value
+                            override fun component2() = { _: Nothing -> }
+                        }
+                        val bar = remember {
+                            object : MutableState<Nothing> {
+                                override var value: Nothing
+                                    get() = throw UnsupportedOperationException()
+                                    set(_) { throw UnsupportedOperationException() }
+                                override fun component1() = value
+                                override fun component2() = { _: Nothing -> }
+                            }
+                        }
+                    }
+                }
+
+                @Composable
+                fun Test4() {
+                    val localObject = object {
+                        val foo = object : MutableState<Nothing> {
+                            override var value: Nothing
+                                get() = throw UnsupportedOperationException()
+                                set(_) { throw UnsupportedOperationException() }
+                            override fun component1() = value
+                            override fun component2() = { _: Nothing -> }
+                        }
+                        val bar = remember {
+                            object : MutableState<Nothing> {
+                                override var value: Nothing
+                                    get() = throw UnsupportedOperationException()
+                                    set(_) { throw UnsupportedOperationException() }
+                                override fun component1() = value
+                                override fun component2() = { _: Nothing -> }
+                            }
+                        }
+                    }
+                }
+            """
+                ),
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                Stubs.StateFactoryMarker,
+                Stubs.Remember
+            )
+            .skipTestModes(TestMode.TYPE_ALIAS)
+            .run()
+            .expect(
+                """
+src/androidx/compose/runtime/foo/{.kt:9: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
+                    val foo = object : MutableState<Nothing> {
+                              ^
+src/androidx/compose/runtime/foo/{.kt:28: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
+                    val foo = object : MutableState<Nothing> {
+                              ^
+src/androidx/compose/runtime/foo/{.kt:47: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
+                    val foo = object : MutableState<Nothing> {
+                              ^
+src/androidx/compose/runtime/foo/{.kt:71: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
+                        val foo = object : MutableState<Nothing> {
+                                  ^
+src/androidx/compose/runtime/foo/{.kt:89: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
+                        val foo = object : MutableState<Nothing> {
+                                  ^
+src/androidx/compose/runtime/foo/{.kt:110: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
+                        val foo = object : MutableState<Nothing> {
+                                  ^
+src/androidx/compose/runtime/foo/{.kt:129: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
+                        val foo = object : MutableState<Nothing> {
+                                  ^
+src/androidx/compose/runtime/foo/{.kt:151: Error: Creating a state object during composition without using remember [UnrememberedMutableState]
+                        val foo = object : MutableState<Nothing> {
+                                  ^
+8 errors, 0 warnings
+            """
+            )
+    }
 }
-/* ktlint-enable max-line-length */

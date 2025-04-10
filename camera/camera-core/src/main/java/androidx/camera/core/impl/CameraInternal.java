@@ -19,9 +19,6 @@ package androidx.camera.core.impl;
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraInfo;
@@ -31,16 +28,16 @@ import androidx.camera.core.streamsharing.StreamSharing;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
 
 /**
  * The camera interface. It is controlled by the change of state in use cases.
  *
  * <p> It is a Camera instance backed by a single physical camera.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public interface CameraInternal extends Camera, UseCase.StateChangeCallback {
     /**
      * The state of a camera within the process.
@@ -50,12 +47,35 @@ public interface CameraInternal extends Camera, UseCase.StateChangeCallback {
      */
     enum State {
         /**
+         * Camera has been closed and has released all held resources.
+         */
+        RELEASED(/*holdsCameraSlot=*/false),
+        /**
+         * Camera is in the process of being released and cannot be reopened.
+         *
+         * <p>This is a transient state. Note that this state holds a camera slot even though the
+         * implementation may not actually hold camera resources.
+         */
+        // TODO: Check if this needs to be split up into multiple RELEASING states to
+        //  differentiate between when the camera slot is being held or not.
+        RELEASING(/*holdsCameraSlot=*/true),
+        /**
+         * Camera has been closed and should not be producing data.
+         */
+        CLOSED(/*holdsCameraSlot=*/false),
+        /**
          * Camera is waiting for resources to become available before opening.
          *
          * <p>The camera will automatically transition to an {@link #OPENING} state once resources
          * have become available. Resources are typically made available by other cameras closing.
          */
         PENDING_OPEN(/*holdsCameraSlot=*/false),
+        /**
+         * Camera is in the process of closing.
+         *
+         * <p>This is a transient state.
+         */
+        CLOSING(/*holdsCameraSlot=*/true),
         /**
          * Camera is in the process of opening.
          *
@@ -75,30 +95,7 @@ public interface CameraInternal extends Camera, UseCase.StateChangeCallback {
          * capture session is not configured yet. External users will only see OPEN state, no
          * matter the internal state is CONFIGURED or OPEN.
          */
-        CONFIGURED(/*holdsCameraSlot=*/true),
-        /**
-         * Camera is in the process of closing.
-         *
-         * <p>This is a transient state.
-         */
-        CLOSING(/*holdsCameraSlot=*/true),
-        /**
-         * Camera has been closed and should not be producing data.
-         */
-        CLOSED(/*holdsCameraSlot=*/false),
-        /**
-         * Camera is in the process of being released and cannot be reopened.
-         *
-         * <p>This is a transient state. Note that this state holds a camera slot even though the
-         * implementation may not actually hold camera resources.
-         */
-        // TODO: Check if this needs to be split up into multiple RELEASING states to
-        //  differentiate between when the camera slot is being held or not.
-        RELEASING(/*holdsCameraSlot=*/true),
-        /**
-         * Camera has been closed and has released all held resources.
-         */
-        RELEASED(/*holdsCameraSlot=*/false);
+        CONFIGURED(/*holdsCameraSlot=*/true);
 
         private final boolean mHoldsCameraSlot;
 
@@ -139,7 +136,7 @@ public interface CameraInternal extends Camera, UseCase.StateChangeCallback {
      * resume regardless of the camera availability if the camera is interrupted in
      * OPEN/OPENING/PENDING_OPEN state.
      *
-     * When not in active resuming mode, it will retry opening camera only when camera
+     * <p>When not in active resuming mode, it will retry opening camera only when camera
      * becomes available.
      */
     default void setActiveResumingMode(boolean enabled) {
@@ -158,14 +155,12 @@ public interface CameraInternal extends Camera, UseCase.StateChangeCallback {
      * <p>Once the camera is released it is permanently closed. A new instance must be created to
      * access the camera.
      */
-    @NonNull
-    ListenableFuture<Void> release();
+    @NonNull ListenableFuture<Void> release();
 
     /**
      * Retrieves an observable stream of the current state of the camera.
      */
-    @NonNull
-    Observable<State> getCameraState();
+    @NonNull Observable<State> getCameraState();
 
     /**
      * Sets the use case to be in the state where the capture session will be configured to handle
@@ -180,25 +175,21 @@ public interface CameraInternal extends Camera, UseCase.StateChangeCallback {
     void detachUseCases(@NonNull Collection<UseCase> useCases);
 
     /** Returns the global CameraControlInternal attached to this camera. */
-    @NonNull
-    CameraControlInternal getCameraControlInternal();
+    @NonNull CameraControlInternal getCameraControlInternal();
 
     /** Returns an interface to retrieve characteristics of the camera. */
-    @NonNull
-    CameraInfoInternal getCameraInfoInternal();
+    @NonNull CameraInfoInternal getCameraInfoInternal();
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Camera interface
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    @NonNull
     @Override
-    default CameraControl getCameraControl() {
+    default @NonNull CameraControl getCameraControl() {
         return getCameraControlInternal();
     }
 
-    @NonNull
     @Override
-    default CameraInfo getCameraInfo() {
+    default @NonNull CameraInfo getCameraInfo() {
         return getCameraInfoInternal();
     }
 
@@ -216,20 +207,22 @@ public interface CameraInternal extends Camera, UseCase.StateChangeCallback {
     }
 
     /**
-     * Always returns only itself since there is only ever one CameraInternal.
+     * Sets the flag in camera instance as primary or secondary camera.
+     *
+     * <p> In dual camera case, the flag will be used to pick up the corresponding
+     * {@link SessionConfig} in {@link UseCase}.
+     *
+     * <p> In single camera case, the flag will always be set to true.
+     *
+     * @param isPrimary whether the camera is primary or secondary.
      */
-    @NonNull
-    @Override
-    default LinkedHashSet<CameraInternal> getCameraInternals() {
-        return new LinkedHashSet<>(Collections.singleton(this));
-    }
+    default void setPrimary(boolean isPrimary) {}
 
     /**
      * Returns the current {@link CameraConfig}.
      */
-    @NonNull
     @Override
-    default CameraConfig getExtendedConfig() {
+    default @NonNull CameraConfig getExtendedConfig() {
         return CameraConfigs.defaultConfig();
     }
 

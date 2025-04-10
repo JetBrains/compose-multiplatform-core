@@ -17,9 +17,21 @@
 pluginManagement {
     repositories {
         mavenCentral()
-        google()
+        google {
+            content {
+                includeGroupByRegex("androidx.*")
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+            }
+        }
         gradlePluginPortal().content {
             it.includeModule("org.jetbrains.kotlin.jvm", "org.jetbrains.kotlin.jvm.gradle.plugin")
+        }
+        maven {
+            url = "https://packages.jetbrains.team/maven/p/kt/dev"
+            content {
+                includeGroupByRegex("org\\.jetbrains\\.kotlin.*")
+            }
         }
     }
 }
@@ -27,18 +39,36 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
-        google()
+        google {
+            content {
+                includeGroupByRegex("androidx.*")
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+            }
+        }
         gradlePluginPortal().content {
-            it.includeModule("com.gradle", "gradle-enterprise-gradle-plugin")
+            it.includeModule("com.gradle", "develocity-gradle-plugin")
             it.includeModule("com.gradle", "common-custom-user-data-gradle-plugin")
             it.includeModule("org.spdx", "spdx-gradle-plugin")
-            it.includeModule("com.github.johnrengelman.shadow",
-                    "com.github.johnrengelman.shadow.gradle.plugin")
-            it.includeModule("com.github.johnrengelman", "shadow")
+            it.includeModule("com.gradleup.shadow",
+                    "com.gradleup.shadow.gradle.plugin")
+            it.includeModule("com.gradleup.shadow", "shadow-gradle-plugin")
+        }
+        maven {
+            url = "https://packages.jetbrains.team/maven/p/kt/dev"
+            content {
+                includeGroupByRegex("org\\.jetbrains\\.kotlin.*")
+            }
         }
     }
 }
 
+apply from: "shared/src/main/groovy/out-setup.groovy"
+getGradle().beforeProject { project ->
+    init.chooseBuildDirectory(
+            new File("${buildscript.sourceFile.parent}/../.."), rootProject.name, project
+    )
+}
 System.setProperty("ALLOW_PUBLIC_REPOS", "true")
 rootProject.name = "playground-plugin"
 includeBuild("../../buildSrc") {

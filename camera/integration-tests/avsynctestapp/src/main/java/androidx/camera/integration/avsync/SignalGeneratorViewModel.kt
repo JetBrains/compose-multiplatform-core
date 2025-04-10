@@ -22,6 +22,7 @@ import android.media.AudioManager
 import androidx.camera.core.Logger
 import androidx.camera.integration.avsync.model.AudioGenerator
 import androidx.camera.integration.avsync.model.CameraHelper
+import androidx.camera.integration.avsync.model.CameraHelper.Companion.CameraImplementation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -45,31 +46,42 @@ private const val VOLUME_PERCENTAGE: Double = 1.0
 private const val TAG = "SignalGeneratorViewModel"
 
 enum class ActivationSignal {
-    Active, Inactive
+    Active,
+    Inactive
 }
 
 class SignalGeneratorViewModel : ViewModel() {
 
     private var signalGenerationJob: Job? = null
     private lateinit var audioGenerator: AudioGenerator
-    private val cameraHelper = CameraHelper()
+    private lateinit var cameraHelper: CameraHelper
     private lateinit var audioManager: AudioManager
     private var originalVolume: Int = 0
 
     var isGeneratorReady: Boolean by mutableStateOf(false)
         private set
+
     var isRecorderReady: Boolean by mutableStateOf(false)
         private set
+
     var isSignalGenerating: Boolean by mutableStateOf(false)
         private set
+
     var isActivePeriod: Boolean by mutableStateOf(false)
         private set
+
     var isRecording: Boolean by mutableStateOf(false)
         private set
+
     var isPaused: Boolean by mutableStateOf(false)
         private set
 
-    suspend fun initialRecorder(context: Context, lifecycleOwner: LifecycleOwner) {
+    suspend fun initialRecorder(
+        context: Context,
+        lifecycleOwner: LifecycleOwner,
+        cameraImplementation: CameraImplementation
+    ) {
+        cameraHelper = CameraHelper(cameraImplementation)
         withContext(Dispatchers.Main) {
             isRecorderReady = cameraHelper.bindCamera(context, lifecycleOwner)
         }
@@ -106,22 +118,26 @@ class SignalGeneratorViewModel : ViewModel() {
 
         signalGenerationJob?.cancel()
         isSignalGenerating = true
-        signalGenerationJob = activationSignalFlow().map { activationSignal ->
-            when (activationSignal) {
-                ActivationSignal.Active -> {
-                    isActivePeriod = true
-                    playBeepSound()
+        signalGenerationJob =
+            activationSignalFlow()
+                .map { activationSignal ->
+                    when (activationSignal) {
+                        ActivationSignal.Active -> {
+                            isActivePeriod = true
+                            playBeepSound()
+                        }
+                        ActivationSignal.Inactive -> {
+                            isActivePeriod = false
+                            stopBeepSound()
+                        }
+                    }
                 }
-                ActivationSignal.Inactive -> {
-                    isActivePeriod = false
+                .onCompletion {
                     stopBeepSound()
+                    restoreOriginalVolume()
+                    isActivePeriod = false
                 }
-            }
-        }.onCompletion {
-            stopBeepSound()
-            restoreOriginalVolume()
-            isActivePeriod = false
-        }.launchIn(viewModelScope)
+                .launchIn(viewModelScope)
     }
 
     fun stopSignalGeneration() {

@@ -17,10 +17,12 @@
 package androidx.room.compiler.processing
 
 import androidx.kruth.assertThat
+import androidx.kruth.assertWithMessage
 import androidx.room.compiler.codegen.XClassName
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.asClassName
 import androidx.room.compiler.processing.util.Source
+import androidx.room.compiler.processing.util.getDeclaredField
 import androidx.room.compiler.processing.util.runProcessorTest
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.JavaFile
@@ -45,7 +47,8 @@ class XProcessingEnvTest {
                     package foo.bar;
                     public class Baz {
                     }
-                    """.trimIndent()
+                    """
+                        .trimIndent()
                 )
             )
         ) {
@@ -54,48 +57,25 @@ class XProcessingEnvTest {
             val klass = List::class
             val element = it.processingEnv.requireTypeElement(qName)
             assertThat(element).isNotNull()
-            assertThat(element.asClassName().java).isEqualTo(
-                jClassName
-            )
+            assertThat(element.asClassName().java).isEqualTo(jClassName)
 
             val type = element.type
 
-            assertThat(
-                it.processingEnv.findTypeElement(qName)
-            ).isEqualTo(element)
-            assertThat(
-                it.processingEnv.findTypeElement(jClassName)
-            ).isEqualTo(element)
-            assertThat(
-                it.processingEnv.findTypeElement(klass)
-            ).isEqualTo(element)
+            assertThat(it.processingEnv.findTypeElement(qName)).isEqualTo(element)
+            assertThat(it.processingEnv.findTypeElement(jClassName.toString())).isEqualTo(element)
+            assertThat(it.processingEnv.findTypeElement(klass)).isEqualTo(element)
 
-            assertThat(
-                it.processingEnv.requireTypeElement(jClassName)
-            ).isEqualTo(element)
-            assertThat(
-                it.processingEnv.requireTypeElement(klass)
-            ).isEqualTo(element)
+            assertThat(it.processingEnv.requireTypeElement(jClassName.toString()))
+                .isEqualTo(element)
+            assertThat(it.processingEnv.requireTypeElement(klass)).isEqualTo(element)
 
-            assertThat(
-                it.processingEnv.findType(qName)
-            ).isEqualTo(type)
-            assertThat(
-                it.processingEnv.findType(jClassName)
-            ).isEqualTo(type)
-            assertThat(
-                it.processingEnv.findType(klass)
-            ).isEqualTo(type)
+            assertThat(it.processingEnv.findType(qName)).isEqualTo(type)
+            assertThat(it.processingEnv.findType(jClassName.toString())).isEqualTo(type)
+            assertThat(it.processingEnv.findType(klass)).isEqualTo(type)
 
-            assertThat(
-                it.processingEnv.requireType(jClassName)
-            ).isEqualTo(type)
-            assertThat(
-                it.processingEnv.requireType(klass)
-            ).isEqualTo(type)
-            assertThat(
-                it.processingEnv.requireType(qName)
-            ).isEqualTo(type)
+            assertThat(it.processingEnv.requireType(jClassName.toString())).isEqualTo(type)
+            assertThat(it.processingEnv.requireType(klass)).isEqualTo(type)
+            assertThat(it.processingEnv.requireType(qName)).isEqualTo(type)
         }
     }
 
@@ -113,15 +93,15 @@ class XProcessingEnvTest {
                         return 3;
                     }
                 }
-                    """.trimIndent()
+                    """
+                        .trimIndent()
                 )
             )
         ) {
             val element = it.processingEnv.requireTypeElement("foo.bar.Baz")
             assertThat(element.packageName).isEqualTo("foo.bar")
             assertThat(element.name).isEqualTo("Baz")
-            assertThat(element.asClassName())
-                .isEqualTo(XClassName.get("foo.bar", "Baz"))
+            assertThat(element.asClassName()).isEqualTo(XClassName.get("foo.bar", "Baz"))
             assertThat(element.findPrimaryConstructor()).isNull()
             assertThat(element.getConstructors()).hasSize(1)
             assertThat(element.getDeclaredMethods()).hasSize(2)
@@ -133,17 +113,17 @@ class XProcessingEnvTest {
 
     @Test
     fun getPrimitives() {
-        val source = Source.java(
-            "foo.bar.Baz",
-            """
+        val source =
+            Source.java(
+                "foo.bar.Baz",
+                """
             package foo.bar;
             class Baz {
             }
-            """.trimIndent()
-        )
-        runProcessorTest(
-            listOf(source)
-        ) { invocation ->
+            """
+                    .trimIndent()
+            )
+        runProcessorTest(listOf(source)) { invocation ->
             PRIMITIVE_TYPES.zip(BOXED_PRIMITIVE_TYPES).forEach { (primitive, boxed) ->
                 val targetType = invocation.processingEnv.requireType(primitive)
                 assertThat(targetType.asTypeName()).isEqualTo(primitive)
@@ -159,16 +139,18 @@ class XProcessingEnvTest {
 
     @Test
     fun nestedType() {
-        val src = Source.java(
-            "foo.bar.Outer",
-            """
+        val src =
+            Source.java(
+                "foo.bar.Outer",
+                """
             package foo.bar;
             public class Outer {
                 public static class Inner {
                 }
             }
-            """.trimIndent()
-        )
+            """
+                    .trimIndent()
+            )
         runProcessorTest(sources = listOf(src)) {
             it.processingEnv.requireTypeElement("foo.bar.Outer.Inner").let {
                 val className = it.asClassName()
@@ -180,38 +162,55 @@ class XProcessingEnvTest {
 
     @Test
     fun findGeneratedAnnotation() {
-        runProcessorTest(sources = emptyList(), classpath = emptyList()) { invocation ->
-            val generatedAnnotation = invocation.processingEnv.findGeneratedAnnotation()
-            assertThat(generatedAnnotation?.name).isEqualTo("Generated")
+
+        fun validateGeneratedAnnotation(jvmTarget: String, fqn: String) {
+            runProcessorTest(
+                sources = emptyList(),
+                classpath = emptyList(),
+                javacArguments = listOf("-target", jvmTarget, "-source", jvmTarget),
+                kotlincArguments = listOf("-jvm-target=$jvmTarget")
+            ) { invocation ->
+                val generatedAnnotation = invocation.processingEnv.findGeneratedAnnotation()
+                assertWithMessage("On jvmTarget=$jvmTarget")
+                    .that(generatedAnnotation?.qualifiedName)
+                    .isEqualTo(fqn)
+            }
         }
+
+        validateGeneratedAnnotation("1.8", "javax.annotation.Generated")
+        validateGeneratedAnnotation("9", "javax.annotation.processing.Generated")
+        validateGeneratedAnnotation("11", "javax.annotation.processing.Generated")
     }
 
     @Test
     fun generateCode() {
-        val javaSrc = Source.java(
-            "foo.bar.AccessGenerated",
-            """
+        val javaSrc =
+            Source.java(
+                "foo.bar.AccessGenerated",
+                """
             package foo.bar;
             public class AccessGenerated {
                 ToBeGenerated x;
             }
-            """.trimIndent()
-        )
-        val kotlinSrc = Source.kotlin(
-            "AccessGenerated.kt",
             """
+                    .trimIndent()
+            )
+        val kotlinSrc =
+            Source.kotlin(
+                "AccessGenerated.kt",
+                """
             package foo.bar;
             public class AccessGenerated(x: ToBeGenerated)
-            """.trimIndent()
-        )
+            """
+                    .trimIndent()
+            )
         listOf(javaSrc, kotlinSrc).forEach { src ->
             runProcessorTest(sources = listOf(src)) { invocation ->
                 val className = ClassName.get("foo.bar", "ToBeGenerated")
-                if (invocation.processingEnv.findTypeElement(className) == null) {
+                if (invocation.processingEnv.findTypeElement(className.toString()) == null) {
                     // generate only if it doesn't exist to handle multi-round
-                    val spec = TypeSpec.classBuilder(className)
-                        .addModifiers(Modifier.PUBLIC)
-                        .build()
+                    val spec =
+                        TypeSpec.classBuilder(className).addModifiers(Modifier.PUBLIC).build()
                     JavaFile.builder(className.packageName(), spec)
                         .build()
                         .writeTo(invocation.processingEnv.filer)
@@ -222,19 +221,16 @@ class XProcessingEnvTest {
 
     @Test
     fun errorLogFailsCompilation() {
-        val src = Source.java(
-            "Foo",
-            """
+        val src =
+            Source.java(
+                "Foo",
+                """
             class Foo {}
-            """.trimIndent()
-        )
-        runProcessorTest(
-            sources = listOf(src)
-        ) {
-            it.processingEnv.messager.printMessage(
-                Diagnostic.Kind.ERROR,
-                "intentional failure"
+            """
+                    .trimIndent()
             )
+        runProcessorTest(sources = listOf(src)) {
+            it.processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "intentional failure")
             it.assertCompilationResult {
                 compilationDidFail()
                 hasError("intentional failure")
@@ -244,20 +240,20 @@ class XProcessingEnvTest {
 
     @Test
     fun typeElementsAreCached() {
-        val src = Source.java(
-            "JavaSubject",
-            """
+        val src =
+            Source.java(
+                "JavaSubject",
+                """
             class JavaSubject {
                 NestedClass nestedClass;
                 class NestedClass {
                     int x;
                 }
             }
-            """.trimIndent()
-        )
-        runProcessorTest(
-            sources = listOf(src)
-        ) { invocation ->
+            """
+                    .trimIndent()
+            )
+        runProcessorTest(sources = listOf(src)) { invocation ->
             val parent = invocation.processingEnv.requireTypeElement("JavaSubject")
             val nested = invocation.processingEnv.requireTypeElement("JavaSubject.NestedClass")
             assertThat(nested.enclosingTypeElement).isSameInstanceAs(parent)
@@ -267,25 +263,22 @@ class XProcessingEnvTest {
     @Test
     fun jvmVersion() {
         runProcessorTest(
-            sources = listOf(
-                Source.java(
-                    "foo.bar.Baz",
-                    """
+            sources =
+                listOf(
+                    Source.java(
+                        "foo.bar.Baz",
+                        """
                 package foo.bar;
                 public class Baz {
                 }
-                    """.trimIndent()
-                )
-            ),
+                    """
+                            .trimIndent()
+                    )
+                ),
             javacArguments = listOf("-source", "11"),
-            kotlincArguments = listOf("-Xjvm-target 11")
+            kotlincArguments = listOf("-jvm-target=11")
         ) {
-            if (it.processingEnv.backend == XProcessingEnv.Backend.KSP) {
-                // KSP is hardcoded to 8 for now...
-                assertThat(it.processingEnv.jvmVersion).isEqualTo(8)
-            } else {
-                assertThat(it.processingEnv.jvmVersion).isEqualTo(11)
-            }
+            assertThat(it.processingEnv.jvmVersion).isEqualTo(11)
         }
     }
 
@@ -318,27 +311,95 @@ class XProcessingEnvTest {
         }
     }
 
-    companion object {
-        val PRIMITIVE_TYPES = listOf(
-            XTypeName.PRIMITIVE_BOOLEAN,
-            XTypeName.PRIMITIVE_BYTE,
-            XTypeName.PRIMITIVE_SHORT,
-            XTypeName.PRIMITIVE_INT,
-            XTypeName.PRIMITIVE_LONG,
-            XTypeName.PRIMITIVE_CHAR,
-            XTypeName.PRIMITIVE_FLOAT,
-            XTypeName.PRIMITIVE_DOUBLE,
-        )
+    @Test
+    fun testInteropTypesByNameFirst() {
+        runProcessorTest(
+            sources =
+                listOf(
+                    Source.kotlin(
+                        "test.Subject.kt",
+                        """
+                        package test
+                        class Subject {
+                            val javaString: java.lang.String = TODO()
+                            val kotlinString: String = TODO()
+                        }
+                        """
+                            .trimIndent()
+                    )
+                )
+        ) { invocation ->
+            val processingEnv = invocation.processingEnv
+            assertThat(processingEnv.requireTypeElement("java.lang.String").asClassName())
+                .isEqualTo(XTypeName.STRING)
+            if (invocation.isKsp) {
+                assertThat(processingEnv.requireTypeElement("kotlin.String").asClassName())
+                    .isEqualTo(XTypeName.STRING)
+            }
+            val subject = processingEnv.requireTypeElement("test.Subject")
+            assertThat(subject.getDeclaredField("javaString").type.typeElement!!.asClassName())
+                .isEqualTo(XClassName.get("java.lang", "String"))
+            assertThat(subject.getDeclaredField("kotlinString").type.typeElement!!.asClassName())
+                .isEqualTo(XTypeName.STRING)
+        }
+    }
 
-        val BOXED_PRIMITIVE_TYPES = listOf(
-            XTypeName.BOXED_BOOLEAN,
-            XTypeName.BOXED_BYTE,
-            XTypeName.BOXED_SHORT,
-            XTypeName.BOXED_INT,
-            XTypeName.BOXED_LONG,
-            XTypeName.BOXED_CHAR,
-            XTypeName.BOXED_FLOAT,
-            XTypeName.BOXED_DOUBLE,
-        )
+    @Test
+    fun testInteropTypesByDeclarationFirst() {
+        runProcessorTest(
+            sources =
+                listOf(
+                    Source.kotlin(
+                        "test.Subject.kt",
+                        """
+                        package test
+                        class Subject {
+                            val javaString: java.lang.String = TODO()
+                            val kotlinString: String = TODO()
+                        }
+                        """
+                            .trimIndent()
+                    )
+                )
+        ) { invocation ->
+            val processingEnv = invocation.processingEnv
+            val subject = processingEnv.requireTypeElement("test.Subject")
+            assertThat(subject.getDeclaredField("javaString").type.typeElement!!.asClassName())
+                .isEqualTo(XClassName.get("java.lang", "String"))
+            assertThat(subject.getDeclaredField("kotlinString").type.typeElement!!.asClassName())
+                .isEqualTo(XTypeName.STRING)
+            assertThat(processingEnv.requireTypeElement("java.lang.String").asClassName())
+                .isEqualTo(XTypeName.STRING)
+            if (invocation.isKsp) {
+                assertThat(processingEnv.requireTypeElement("kotlin.String").asClassName())
+                    .isEqualTo(XTypeName.STRING)
+            }
+        }
+    }
+
+    companion object {
+        val PRIMITIVE_TYPES =
+            listOf(
+                XTypeName.PRIMITIVE_BOOLEAN,
+                XTypeName.PRIMITIVE_BYTE,
+                XTypeName.PRIMITIVE_SHORT,
+                XTypeName.PRIMITIVE_INT,
+                XTypeName.PRIMITIVE_LONG,
+                XTypeName.PRIMITIVE_CHAR,
+                XTypeName.PRIMITIVE_FLOAT,
+                XTypeName.PRIMITIVE_DOUBLE,
+            )
+
+        val BOXED_PRIMITIVE_TYPES =
+            listOf(
+                XTypeName.BOXED_BOOLEAN,
+                XTypeName.BOXED_BYTE,
+                XTypeName.BOXED_SHORT,
+                XTypeName.BOXED_INT,
+                XTypeName.BOXED_LONG,
+                XTypeName.BOXED_CHAR,
+                XTypeName.BOXED_FLOAT,
+                XTypeName.BOXED_DOUBLE,
+            )
     }
 }

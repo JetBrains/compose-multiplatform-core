@@ -24,14 +24,14 @@ import android.app.Activity;
 import android.os.Build;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.R;
 import androidx.test.annotation.UiThreadTest;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.rule.ActivityTestRule;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -107,8 +107,7 @@ public class ViewCompatReceiveContentTest {
         } catch (IllegalArgumentException expected) { }
     }
 
-    @Nullable
-    private static OnReceiveContentListener getListener(@NonNull View view) {
+    private static @Nullable OnReceiveContentListener getListener(@NonNull View view) {
         return (OnReceiveContentListener) view.getTag(R.id.tag_on_receive_content_listener);
     }
 }

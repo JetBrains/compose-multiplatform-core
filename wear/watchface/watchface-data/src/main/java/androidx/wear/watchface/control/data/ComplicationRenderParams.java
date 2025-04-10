@@ -21,8 +21,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.wearable.complications.ComplicationData;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
@@ -30,6 +28,9 @@ import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
 import androidx.wear.watchface.data.RenderParametersWireFormat;
 import androidx.wear.watchface.style.data.UserStyleWireFormat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Parameters for the various AIDL renderComplicationToBitmap commands.
@@ -46,8 +47,7 @@ public class ComplicationRenderParams implements VersionedParcelable, Parcelable
 
     /** The {@link RenderParametersWireFormat} to render with. */
     @ParcelField(2)
-    @NonNull
-    RenderParametersWireFormat mRenderParametersWireFormats;
+    @NonNull RenderParametersWireFormat mRenderParametersWireFormats;
 
     /** The UTC time in milliseconds since the epoch to render with. */
     @ParcelField(4)
@@ -59,16 +59,14 @@ public class ComplicationRenderParams implements VersionedParcelable, Parcelable
      * complication.
      */
     @ParcelField(5)
-    @Nullable
-    ComplicationData mComplicationData;
+    @Nullable ComplicationData mComplicationData;
 
     /**
      * The {@link UserStyleWireFormat} to render with. If null then interactive watch faces will
      * render with the current style, and headless watch faces will render with the default style.
      */
     @ParcelField(6)
-    @Nullable
-    UserStyleWireFormat mUserStyle;
+    @Nullable UserStyleWireFormat mUserStyle;
 
     /** Used by VersionedParcelable. */
     ComplicationRenderParams() {}
@@ -90,8 +88,7 @@ public class ComplicationRenderParams implements VersionedParcelable, Parcelable
         return mComplicationSlotId;
     }
 
-    @NonNull
-    public RenderParametersWireFormat getRenderParametersWireFormat() {
+    public @NonNull RenderParametersWireFormat getRenderParametersWireFormat() {
         return mRenderParametersWireFormats;
     }
 
@@ -100,13 +97,11 @@ public class ComplicationRenderParams implements VersionedParcelable, Parcelable
         return mCalendarTimeMillis;
     }
 
-    @Nullable
-    public ComplicationData getComplicationData() {
+    public @Nullable ComplicationData getComplicationData() {
         return mComplicationData;
     }
 
-    @Nullable
-    public UserStyleWireFormat getUserStyle() {
+    public @Nullable UserStyleWireFormat getUserStyle() {
         return mUserStyle;
     }
 

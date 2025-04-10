@@ -21,6 +21,7 @@ import android.app.Activity
 import android.app.Service
 import android.content.ComponentName
 import android.content.Intent
+import android.os.Binder
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -269,6 +270,9 @@ public annotation class IsForSafeWatchFace
  * `android.support.wearable.complications.category.PROVIDER_CONFIG` as well as
  * [Intent.CATEGORY_DEFAULT] as categories.
  *
+ * Note back up and restore of any configuration data is left to the complication data source, see
+ * [METADATA_KEY_CONFIG_RESTORE_SUPPORTED] for more details.
+ *
  * The complication id being configured will be included in the intent that starts the config
  * activity using the extra key
  * `android.support.wearable.complications.EXTRA_CONFIG_COMPLICATION_ID`.
@@ -306,21 +310,26 @@ public annotation class IsForSafeWatchFace
  * system will append this value on your behalf.
  */
 public abstract class ComplicationDataSourceService : Service() {
-    private var wrapper: IComplicationProviderWrapper? = null
+    private val wrapper: IComplicationProviderWrapper by lazy { IComplicationProviderWrapper() }
+    private val complicationUpdateInterface: ComplicationDataRequester by lazy {
+        object : ComplicationDataRequester() {
+            override fun onComplicationRequest(
+                request: ComplicationRequest,
+                listener: ComplicationRequestListener
+            ) = this@ComplicationDataSourceService.onComplicationRequest(request, listener)
+        }
+    }
     internal val mainThreadHandler by lazy { createMainThreadHandler() }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     open fun createMainThreadHandler() = Handler(Looper.getMainLooper())
 
-    final override fun onBind(intent: Intent): IBinder? {
-        if (ACTION_COMPLICATION_UPDATE_REQUEST == intent.action) {
-            if (wrapper == null) {
-                wrapper = IComplicationProviderWrapper()
-            }
-            return wrapper
+    final override fun onBind(intent: Intent): IBinder? =
+        when (intent.action) {
+            ACTION_COMPLICATION_UPDATE_REQUEST -> wrapper
+            ACTION_WEAR_SDK_COMPLICATION_UPDATE_REQUEST -> complicationUpdateInterface
+            else -> null
         }
-        return null
-    }
 
     /**
      * Called when a complication is activated.
@@ -450,6 +459,14 @@ public abstract class ComplicationDataSourceService : Service() {
      */
     @MainThread public open fun onComplicationDeactivated(complicationInstanceId: Int) {}
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public abstract class ComplicationDataRequester : Binder() {
+        abstract fun onComplicationRequest(
+            request: ComplicationRequest,
+            listener: ComplicationRequestListener
+        )
+    }
+
     private inner class IComplicationProviderWrapper : IComplicationProvider.Stub() {
         override fun onUpdate(complicationInstanceId: Int, type: Int, manager: IBinder): Unit =
             aidlMethod(TAG, "onUpdate") {
@@ -467,8 +484,7 @@ public abstract class ComplicationDataSourceService : Service() {
                     bundle?.getInt(
                         IComplicationProvider.BUNDLE_KEY_IS_SAFE_FOR_WATCHFACE,
                         TargetWatchFaceSafety.UNKNOWN
-                    )
-                        ?: TargetWatchFaceSafety.UNKNOWN
+                    ) ?: TargetWatchFaceSafety.UNKNOWN
                 val expectedDataType = fromWireType(type)
                 val iComplicationManager = IComplicationManager.Stub.asInterface(manager)
                 mainThreadHandler.post {
@@ -666,8 +682,7 @@ public abstract class ComplicationDataSourceService : Service() {
                     bundle?.getInt(
                         IComplicationProvider.BUNDLE_KEY_IS_SAFE_FOR_WATCHFACE,
                         TargetWatchFaceSafety.UNKNOWN
-                    )
-                        ?: TargetWatchFaceSafety.UNKNOWN
+                    ) ?: TargetWatchFaceSafety.UNKNOWN
                 val expectedDataType = fromWireType(type)
                 val complicationType = fromWireType(type)
                 val latch = CountDownLatch(1)
@@ -756,6 +771,10 @@ public abstract class ComplicationDataSourceService : Service() {
         @SuppressWarnings("ActionValue")
         public const val ACTION_COMPLICATION_UPDATE_REQUEST: String =
             "android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST"
+
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public const val ACTION_WEAR_SDK_COMPLICATION_UPDATE_REQUEST: String =
+            "android.support.wearable.complications.ACTION_WEAR_SDK_COMPLICATION_UPDATE_REQUEST"
 
         /**
          * Metadata key used to declare supported complication types.
@@ -876,6 +895,29 @@ public abstract class ComplicationDataSourceService : Service() {
         // TODO(b/192233205): Migrate value to androidx.
         internal const val METADATA_KEY_HIDDEN: String =
             "android.support.wearable.complications.HIDDEN"
+
+        /**
+         * Metadata key used to declare that the complication data source service supports backup
+         * and restore (B&R) of complication configuration data. The system is responsible for
+         * backup and restore of the assignment of complications to watch faces, but responsibility
+         * for backup and restore for any complication data source configuration data is left to the
+         * data source.
+         *
+         * If this flag is set to false, then the system will restore any complications using this
+         * provider in the "not configured" state, i.e. the complication will show a + sign with a
+         * tap action leading to the complication data source's configuration action as defined by
+         * [METADATA_KEY_DATA_SOURCE_CONFIG_ACTION], instead of real data.
+         *
+         * This is a boolean value, defaulting to true, which means apps are opted in by default but
+         * can explicitly opt out by setting this meta-data tag to false.
+         *
+         * The value is ignored (equivalent to false) if the app does not enable Android B&R (
+         * https://developer.android.com/guide/topics/data/backup). This value is also ignored prior
+         * to Android U.
+         */
+        @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+        public const val METADATA_KEY_CONFIG_RESTORE_SUPPORTED =
+            "androidx.watchface.complications.datasource.CONFIG_RESTORE_SUPPORTED"
 
         /**
          * Metadata key used to declare an action for a configuration activity for a complication

@@ -16,45 +16,25 @@
 
 package androidx.compose.runtime.snapshots
 
-import androidx.compose.runtime.ExperimentalComposeApi
 import kotlin.coroutines.CoroutineContext
-import kotlinx.coroutines.ThreadContextElement
 
 /**
- * Return a [SnapshotContextElement] that will [enter][Snapshot.enter] this [Snapshot] whenever
- * the associated coroutine is resumed and leave this snapshot when it suspends.
- * The snapshot still must be [disposed][Snapshot.dispose] separately when it will no longer
- * be used.
+ * Return a [SnapshotContextElement] that will [enter][Snapshot.enter] this [Snapshot] whenever the
+ * associated coroutine is resumed and leave this snapshot when it suspends. The snapshot still must
+ * be [disposed][Snapshot.dispose] separately when it will no longer be used.
  *
  * @sample androidx.compose.runtime.samples.snapshotAsContextElementSample
  */
-@ExperimentalComposeApi
 fun Snapshot.asContextElement(): SnapshotContextElement = SnapshotContextElementImpl(this)
 
 /**
- * A [CoroutineContext] element that [enters][Snapshot.enter] an associated snapshot
- * whenever a coroutine associated with this context is resumed.
+ * A [CoroutineContext] element that [enters][Snapshot.enter] an associated snapshot whenever a
+ * coroutine associated with this context is resumed.
  */
-@ExperimentalComposeApi
 interface SnapshotContextElement : CoroutineContext.Element {
     companion object Key : CoroutineContext.Key<SnapshotContextElement>
 }
 
-/**
- * Implementation of [SnapshotContextElement] that enters a single given snapshot when updating
- * the thread context of a resumed coroutine.
- */
-@ExperimentalComposeApi
-private class SnapshotContextElementImpl(
-    private val snapshot: Snapshot
-) : SnapshotContextElement, ThreadContextElement<Snapshot?> {
+internal expect class SnapshotContextElementImpl(snapshot: Snapshot) : SnapshotContextElement {
     override val key: CoroutineContext.Key<*>
-        get() = SnapshotContextElement
-
-    override fun updateThreadContext(context: CoroutineContext): Snapshot? =
-        snapshot.unsafeEnter()
-
-    override fun restoreThreadContext(context: CoroutineContext, oldState: Snapshot?) {
-        snapshot.unsafeLeave(oldState)
-    }
 }

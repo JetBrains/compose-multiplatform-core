@@ -22,38 +22,45 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 /**
  * Execute the block asynchronously in a scope with the lifetime of the broadcast.
  *
- * The coroutine scope will finish once the block return, as the broadcast will finish at that
- * point too, allowing the system to kill the broadcast.
+ * The coroutine scope will finish once the block return, as the broadcast will finish at that point
+ * too, allowing the system to kill the broadcast.
  */
 internal fun BroadcastReceiver.goAsync(
     coroutineContext: CoroutineContext = Dispatchers.Default,
     block: suspend CoroutineScope.() -> Unit,
 ) {
-    val coroutineScope = CoroutineScope(SupervisorJob() + coroutineContext)
+    val parentScope = CoroutineScope(coroutineContext)
     val pendingResult = goAsync()
 
-    coroutineScope.launch {
+    parentScope.launch {
         try {
             try {
-                block()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (t: Throwable) {
-                Log.e(GlanceAppWidgetTag, "BroadcastReceiver execution failed", t)
+                // Use `coroutineScope` so that errors within `block` are rethrown at the end of
+                // this scope, instead of propagating up the Job hierarchy. If we use `parentScope`
+                // directly, then errors in child jobs `launch`ed by `block` would trigger the
+                // CoroutineExceptionHandler and crash the process.
+                coroutineScope { this.block() }
+            } catch (e: Throwable) {
+                if (e is CancellationException && e.cause == null) {
+                    // Regular cancellation, do nothing. The scope will always be cancelled below.
+                } else {
+                    Log.e(GlanceAppWidgetTag, "BroadcastReceiver execution failed", e)
+                }
             } finally {
-                // Nothing can be in the `finally` block after this, as this throws a
-                // `CancellationException`
-                coroutineScope.cancel()
+                // Make sure the parent scope is cancelled in all cases. Nothing can be in the
+                // `finally` block after this, as this throws a `CancellationException`.
+                parentScope.cancel()
             }
         } finally {
-            // This must be the last call, as the process may be killed after calling this.
+            // Notify ActivityManager that we are finished with this broadcast. This must be the
+            // last call, as the process may be killed after calling this.
             try {
                 pendingResult.finish()
             } catch (e: IllegalStateException) {

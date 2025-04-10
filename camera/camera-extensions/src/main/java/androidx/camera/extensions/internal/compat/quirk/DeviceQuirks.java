@@ -16,11 +16,15 @@
 
 package androidx.camera.extensions.internal.compat.quirk;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import static androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor;
+
+import androidx.camera.core.Logger;
 import androidx.camera.core.impl.Quirk;
+import androidx.camera.core.impl.QuirkSettingsHolder;
 import androidx.camera.core.impl.Quirks;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Provider of device specific quirks, which are used for device specific workarounds.
@@ -31,23 +35,26 @@ import androidx.camera.core.impl.Quirks;
  * <p>
  * Device specific quirks are lazily loaded, i.e. They are loaded the first time they're needed.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class DeviceQuirks {
+    private static final String TAG = "DeviceQuirks";
 
-    @NonNull
-    private static final Quirks QUIRKS;
+    /** @noinspection NotNullFieldNotInitialized*/
+    private static volatile @NonNull Quirks sQuirks;
 
     static {
-        QUIRKS = new Quirks(DeviceQuirksLoader.loadQuirks());
+        // Direct executor will initialize quirks immediately, guaranteeing it's never null.
+        QuirkSettingsHolder.instance().observe(directExecutor(), quirkSettings -> {
+            sQuirks = new Quirks(DeviceQuirksLoader.loadQuirks(quirkSettings));
+            Logger.d(TAG, "extensions DeviceQuirks = " + Quirks.toString(sQuirks));
+        });
     }
 
     private DeviceQuirks() {
     }
 
     /** Returns all device specific quirks loaded on the current device. */
-    @NonNull
-    public static Quirks getAll() {
-        return QUIRKS;
+    public static @NonNull Quirks getAll() {
+        return sQuirks;
     }
 
     /**
@@ -57,8 +64,7 @@ public class DeviceQuirks {
      * @return A device {@link Quirk} instance of the provided type, or {@code null} if it isn't
      * found.
      */
-    @Nullable
-    public static <T extends Quirk> T get(@NonNull final Class<T> quirkClass) {
-        return QUIRKS.get(quirkClass);
+    public static <T extends Quirk> @Nullable T get(final @NonNull Class<T> quirkClass) {
+        return sQuirks.get(quirkClass);
     }
 }

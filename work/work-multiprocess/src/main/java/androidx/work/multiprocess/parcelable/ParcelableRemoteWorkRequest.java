@@ -20,9 +20,10 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.WorkerParameters;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Everything you need to run a {@link androidx.work.multiprocess.RemoteListenableWorker}.
@@ -79,13 +80,11 @@ public class ParcelableRemoteWorkRequest implements Parcelable {
         mParcelableWorkerParameters.writeToParcel(parcel, flags);
     }
 
-    @NonNull
-    public String getWorkerClassName() {
+    public @NonNull String getWorkerClassName() {
         return mWorkerClassName;
     }
 
-    @NonNull
-    public ParcelableWorkerParameters getParcelableWorkerParameters() {
+    public @NonNull ParcelableWorkerParameters getParcelableWorkerParameters() {
         return mParcelableWorkerParameters;
     }
 }

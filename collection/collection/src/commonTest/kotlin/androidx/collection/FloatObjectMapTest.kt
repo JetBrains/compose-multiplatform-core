@@ -16,6 +16,7 @@
 
 package androidx.collection
 
+import kotlin.js.JsName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -79,36 +80,50 @@ class FloatObjectMapTest {
 
     @Test
     fun floatObjectMapInitFunction() {
-        val map1 = floatObjectMapOf(
-            1f, "World",
-        )
+        val map1 =
+            floatObjectMapOf(
+                1f,
+                "World",
+            )
         assertEquals(1, map1.size)
         assertEquals("World", map1[1f])
 
-        val map2 = floatObjectMapOf(
-            1f, "World",
-            2f, "Monde",
-        )
+        val map2 =
+            floatObjectMapOf(
+                1f,
+                "World",
+                2f,
+                "Monde",
+            )
         assertEquals(2, map2.size)
         assertEquals("World", map2[1f])
         assertEquals("Monde", map2[2f])
 
-        val map3 = floatObjectMapOf(
-            1f, "World",
-            2f, "Monde",
-            3f, "Welt",
-        )
+        val map3 =
+            floatObjectMapOf(
+                1f,
+                "World",
+                2f,
+                "Monde",
+                3f,
+                "Welt",
+            )
         assertEquals(3, map3.size)
         assertEquals("World", map3[1f])
         assertEquals("Monde", map3[2f])
         assertEquals("Welt", map3[3f])
 
-        val map4 = floatObjectMapOf(
-            1f, "World",
-            2f, "Monde",
-            3f, "Welt",
-            4f, "Sekai",
-        )
+        val map4 =
+            floatObjectMapOf(
+                1f,
+                "World",
+                2f,
+                "Monde",
+                3f,
+                "Welt",
+                4f,
+                "Sekai",
+            )
 
         assertEquals(4, map4.size)
         assertEquals("World", map4[1f])
@@ -116,13 +131,19 @@ class FloatObjectMapTest {
         assertEquals("Welt", map4[3f])
         assertEquals("Sekai", map4[4f])
 
-        val map5 = floatObjectMapOf(
-            1f, "World",
-            2f, "Monde",
-            3f, "Welt",
-            4f, "Sekai",
-            5f, "Mondo",
-        )
+        val map5 =
+            floatObjectMapOf(
+                1f,
+                "World",
+                2f,
+                "Monde",
+                3f,
+                "Welt",
+                4f,
+                "Sekai",
+                5f,
+                "Mondo",
+            )
 
         assertEquals(5, map5.size)
         assertEquals("World", map5[1f])
@@ -134,36 +155,50 @@ class FloatObjectMapTest {
 
     @Test
     fun mutableFloatObjectMapInitFunction() {
-        val map1 = mutableFloatObjectMapOf(
-            1f, "World",
-        )
+        val map1 =
+            mutableFloatObjectMapOf(
+                1f,
+                "World",
+            )
         assertEquals(1, map1.size)
         assertEquals("World", map1[1f])
 
-        val map2 = mutableFloatObjectMapOf(
-            1f, "World",
-            2f, "Monde",
-        )
+        val map2 =
+            mutableFloatObjectMapOf(
+                1f,
+                "World",
+                2f,
+                "Monde",
+            )
         assertEquals(2, map2.size)
         assertEquals("World", map2[1f])
         assertEquals("Monde", map2[2f])
 
-        val map3 = mutableFloatObjectMapOf(
-            1f, "World",
-            2f, "Monde",
-            3f, "Welt",
-        )
+        val map3 =
+            mutableFloatObjectMapOf(
+                1f,
+                "World",
+                2f,
+                "Monde",
+                3f,
+                "Welt",
+            )
         assertEquals(3, map3.size)
         assertEquals("World", map3[1f])
         assertEquals("Monde", map3[2f])
         assertEquals("Welt", map3[3f])
 
-        val map4 = mutableFloatObjectMapOf(
-            1f, "World",
-            2f, "Monde",
-            3f, "Welt",
-            4f, "Sekai",
-        )
+        val map4 =
+            mutableFloatObjectMapOf(
+                1f,
+                "World",
+                2f,
+                "Monde",
+                3f,
+                "Welt",
+                4f,
+                "Sekai",
+            )
 
         assertEquals(4, map4.size)
         assertEquals("World", map4[1f])
@@ -171,13 +206,19 @@ class FloatObjectMapTest {
         assertEquals("Welt", map4[3f])
         assertEquals("Sekai", map4[4f])
 
-        val map5 = mutableFloatObjectMapOf(
-            1f, "World",
-            2f, "Monde",
-            3f, "Welt",
-            4f, "Sekai",
-            5f, "Mondo",
-        )
+        val map5 =
+            mutableFloatObjectMapOf(
+                1f,
+                "World",
+                2f,
+                "Monde",
+                3f,
+                "Welt",
+                4f,
+                "Sekai",
+                5f,
+                "Mondo",
+            )
 
         assertEquals(5, map5.size)
         assertEquals("World", map5[1f])
@@ -185,6 +226,36 @@ class FloatObjectMapTest {
         assertEquals("Welt", map5[3f])
         assertEquals("Sekai", map5[4f])
         assertEquals("Mondo", map5[5f])
+    }
+
+    @Test
+    fun buildFloatObjectMapFunction() {
+        val contract: Boolean
+        val map = buildFloatObjectMap {
+            contract = true
+            put(1f, "World")
+            put(2f, "Monde")
+        }
+        assertTrue(contract)
+        assertEquals(2, map.size)
+        assertEquals("World", map[1f])
+        assertEquals("Monde", map[2f])
+    }
+
+    @Test
+    fun buildFloatObjectMapWithCapacityFunction() {
+        val contract: Boolean
+        val map =
+            buildFloatObjectMap(20) {
+                contract = true
+                put(1f, "World")
+                put(2f, "Monde")
+            }
+        assertTrue(contract)
+        assertEquals(2, map.size)
+        assertTrue(map.capacity >= 18)
+        assertEquals("World", map[1f])
+        assertEquals("Monde", map[2f])
     }
 
     @Test
@@ -406,9 +477,7 @@ class FloatObjectMapTest {
         map[5f] = "Mondo"
         map[6f] = "Sesang"
 
-        map.removeIf { key, value ->
-            key == 1f || key == 3f || value.startsWith('S')
-        }
+        map.removeIf { key, value -> key == 1f || key == 3f || value.startsWith('S') }
 
         assertEquals(2, map.size)
         assertEquals("Monde", map[2f])
@@ -589,29 +658,25 @@ class FloatObjectMapTest {
     @Test
     fun joinToString() {
         val map = MutableFloatObjectMap<String>()
-        repeat(5) {
-            map[it.toFloat()] = it.toString()
-        }
+        repeat(5) { map[it.toFloat()] = it.toString() }
         val order = IntArray(5)
         var index = 0
-        map.forEach { key, _ ->
-            order[index++] = key.toInt()
-        }
+        map.forEach { key, _ -> order[index++] = key.toInt() }
         assertEquals(
             "${order[0].toFloat()}=${order[0]}, ${order[1].toFloat()}=${order[1]}, " +
-            "${order[2].toFloat()}=${order[2]}, ${order[3].toFloat()}=${order[3]}, " +
-            "${order[4].toFloat()}=${order[4]}",
+                "${order[2].toFloat()}=${order[2]}, ${order[3].toFloat()}=${order[3]}, " +
+                "${order[4].toFloat()}=${order[4]}",
             map.joinToString()
         )
         assertEquals(
             "x${order[0].toFloat()}=${order[0]}, ${order[1].toFloat()}=${order[1]}, " +
-            "${order[2].toFloat()}=${order[2]}...",
+                "${order[2].toFloat()}=${order[2]}...",
             map.joinToString(prefix = "x", postfix = "y", limit = 3)
         )
         assertEquals(
             ">${order[0].toFloat()}=${order[0]}-${order[1].toFloat()}=${order[1]}-" +
-            "${order[2].toFloat()}=${order[2]}-${order[3].toFloat()}=${order[3]}-" +
-            "${order[4].toFloat()}=${order[4]}<",
+                "${order[2].toFloat()}=${order[2]}-${order[3].toFloat()}=${order[3]}-" +
+                "${order[4].toFloat()}=${order[4]}<",
             map.joinToString(separator = "-", prefix = ">", postfix = "<")
         )
         val names = arrayOf("one", "two", "three", "four", "five")
@@ -622,6 +687,7 @@ class FloatObjectMapTest {
     }
 
     @Test
+    @JsName("jsEquals")
     fun equals() {
         val map = MutableFloatObjectMap<String?>()
         map[1f] = "World"
@@ -730,5 +796,16 @@ class FloatObjectMapTest {
 
         assertTrue(map.all { key, value -> key < 7f && value.isNotEmpty() })
         assertFalse(map.all { key, _ -> key < 6f })
+    }
+
+    @Test
+    fun insertManyRemoveMany() {
+        val map = MutableFloatObjectMap<String>()
+
+        for (i in 0..1000000) {
+            map[i.toFloat()] = i.toString()
+            map.remove(i.toFloat())
+            assertTrue(map.capacity < 16, "Map grew larger than 16 after step $i")
+        }
     }
 }

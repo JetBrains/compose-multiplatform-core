@@ -51,19 +51,19 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.TextView;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.Px;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StyleRes;
 import androidx.core.text.PrecomputedTextCompat;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -72,7 +72,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
 
 /**
  * Helper for accessing features in {@link TextView}.
@@ -116,7 +115,10 @@ public final class TextViewCompat {
      * @attr name android:drawableTop
      * @attr name android:drawableEnd
      * @attr name android:drawableBottom
+     * @deprecated Call {@link TextView#setCompoundDrawablesRelative()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "textView.setCompoundDrawablesRelative(start, top, end, bottom)")
     public static void setCompoundDrawablesRelative(@NonNull TextView textView,
             @Nullable Drawable start, @Nullable Drawable top, @Nullable Drawable end,
             @Nullable Drawable bottom) {
@@ -141,7 +143,10 @@ public final class TextViewCompat {
      * @attr name android:drawableTop
      * @attr name android:drawableEnd
      * @attr name android:drawableBottom
+     * @deprecated Call {@link TextView#setCompoundDrawablesRelativeWithIntrinsicBounds()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "textView.setCompoundDrawablesRelativeWithIntrinsicBounds(start, top, end, bottom)")
     public static void setCompoundDrawablesRelativeWithIntrinsicBounds(@NonNull TextView textView,
             @Nullable Drawable start, @Nullable Drawable top, @Nullable Drawable end,
             @Nullable Drawable bottom) {
@@ -165,7 +170,10 @@ public final class TextViewCompat {
      * @attr name android:drawableTop
      * @attr name android:drawableEnd
      * @attr name android:drawableBottom
+     * @deprecated Call {@link TextView#setCompoundDrawablesRelativeWithIntrinsicBounds()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "textView.setCompoundDrawablesRelativeWithIntrinsicBounds(start, top, end, bottom)")
     public static void setCompoundDrawablesRelativeWithIntrinsicBounds(@NonNull TextView textView,
             @DrawableRes int start, @DrawableRes int top, @DrawableRes int end,
             @DrawableRes int bottom) {
@@ -175,7 +183,10 @@ public final class TextViewCompat {
     /**
      * Returns the maximum number of lines displayed in the given TextView, or -1 if the maximum
      * height was set in pixels instead.
+     * @deprecated Call {@link TextView#getMaxLines()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "textView.getMaxLines()")
     public static int getMaxLines(@NonNull TextView textView) {
         return textView.getMaxLines();
     }
@@ -183,7 +194,10 @@ public final class TextViewCompat {
     /**
      * Returns the minimum number of lines displayed in the given TextView, or -1 if the minimum
      * height was set in pixels instead.
+     * @deprecated Call {@link TextView#getMinLines()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "textView.getMinLines()")
     public static int getMinLines(@NonNull TextView textView) {
         return textView.getMinLines();
     }
@@ -207,9 +221,11 @@ public final class TextViewCompat {
 
     /**
      * Returns drawables for the start, top, end, and bottom borders from the given text view.
+     * @deprecated Call {@link TextView#getCompoundDrawablesRelative()} directly.
      */
-    @NonNull
-    public static Drawable[] getCompoundDrawablesRelative(@NonNull TextView textView) {
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "textView.getCompoundDrawablesRelative()")
+    public static Drawable @NonNull [] getCompoundDrawablesRelative(@NonNull TextView textView) {
         return textView.getCompoundDrawablesRelative();
     }
 
@@ -289,7 +305,7 @@ public final class TextViewCompat {
      */
     @SuppressWarnings("RedundantCast") // Intentionally invoking interface method.
     public static void setAutoSizeTextTypeUniformWithPresetSizes(@NonNull TextView textView,
-            @NonNull int[] presetSizes, int unit) throws IllegalArgumentException {
+            int @NonNull [] presetSizes, int unit) throws IllegalArgumentException {
         if (Build.VERSION.SDK_INT >= 27) {
             Api26Impl.setAutoSizeTextTypeUniformWithPresetSizes(textView, presetSizes, unit);
         } else if (textView instanceof AutoSizeableTextView) {
@@ -373,9 +389,8 @@ public final class TextViewCompat {
      *
      * @attr name android:autoSizePresetSizes
      */
-    @NonNull
     @SuppressWarnings("RedundantCast") // Intentionally invoking interface method.
-    public static int[] getAutoSizeTextAvailableSizes(@NonNull TextView textView) {
+    public static int @NonNull [] getAutoSizeTextAvailableSizes(@NonNull TextView textView) {
         if (Build.VERSION.SDK_INT >= 27) {
             return Api26Impl.getAutoSizeTextAvailableSizes(textView);
         }
@@ -406,9 +421,12 @@ public final class TextViewCompat {
      *
      * @param textView The TextView to set the action selection mode callback on.
      * @param callback The action selection mode callback to set on textView.
+     * @deprecated Call {@link TextView#setCustomSelectionActionModeCallback(ActionMode.Callback)} directly.
      */
-    public static void setCustomSelectionActionModeCallback(@NonNull final TextView textView,
-                @NonNull final ActionMode.Callback callback) {
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "textView.setCustomSelectionActionModeCallback(callback)")
+    public static void setCustomSelectionActionModeCallback(final @NonNull TextView textView,
+                final ActionMode.@NonNull Callback callback) {
         textView.setCustomSelectionActionModeCallback(
                 wrapCustomSelectionActionModeCallback(textView, callback));
     }
@@ -417,10 +435,9 @@ public final class TextViewCompat {
      * @see #setCustomSelectionActionModeCallback(TextView, ActionMode.Callback)
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    @Nullable
-    public static ActionMode.Callback wrapCustomSelectionActionModeCallback(
-            @NonNull final TextView textView,
-            @Nullable final ActionMode.Callback callback) {
+    public static ActionMode.@Nullable Callback wrapCustomSelectionActionModeCallback(
+            final @NonNull TextView textView,
+            final ActionMode.@Nullable Callback callback) {
         if (Build.VERSION.SDK_INT < 26 || Build.VERSION.SDK_INT > 27
                 || callback instanceof OreoCallback || callback == null) {
             // If the bug does not affect the current SDK version, or if
@@ -439,9 +456,8 @@ public final class TextViewCompat {
      * @see #setCustomSelectionActionModeCallback(TextView, ActionMode.Callback)
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    @Nullable
-    public static ActionMode.Callback unwrapCustomSelectionActionModeCallback(
-            @Nullable ActionMode.Callback callback) {
+    public static ActionMode.@Nullable Callback unwrapCustomSelectionActionModeCallback(
+            ActionMode.@Nullable Callback callback) {
         if (callback instanceof OreoCallback && Build.VERSION.SDK_INT >= 26) {
             return ((OreoCallback) callback).getWrappedCallback();
         }
@@ -492,8 +508,7 @@ public final class TextViewCompat {
             mCallback.onDestroyActionMode(mode);
         }
 
-        @NonNull
-        ActionMode.Callback getWrappedCallback() {
+        ActionMode.@NonNull Callback getWrappedCallback() {
             return mCallback;
         }
 
@@ -614,7 +629,7 @@ public final class TextViewCompat {
      * @attr name android:firstBaselineToTopHeight
      */
     public static void setFirstBaselineToTopHeight(
-            @NonNull final TextView textView,
+            final @NonNull TextView textView,
             @Px @IntRange(from = 0) final int firstBaselineToTopHeight) {
         Preconditions.checkArgumentNonnegative(firstBaselineToTopHeight);
         if (Build.VERSION.SDK_INT >= 28) {
@@ -657,7 +672,7 @@ public final class TextViewCompat {
      * @attr name android:lastBaselineToBottomHeight
      */
     public static void setLastBaselineToBottomHeight(
-            @NonNull final TextView textView,
+            final @NonNull TextView textView,
             @Px @IntRange(from = 0) int lastBaselineToBottomHeight) {
         Preconditions.checkArgumentNonnegative(lastBaselineToBottomHeight);
 
@@ -685,7 +700,7 @@ public final class TextViewCompat {
      * @see #setFirstBaselineToTopHeight(TextView, int)
      * @attr name android:firstBaselineToTopHeight
      */
-    public static int getFirstBaselineToTopHeight(@NonNull final TextView textView) {
+    public static int getFirstBaselineToTopHeight(final @NonNull TextView textView) {
         return textView.getPaddingTop() - textView.getPaint().getFontMetricsInt().top;
     }
 
@@ -695,7 +710,7 @@ public final class TextViewCompat {
      * @see #setLastBaselineToBottomHeight(TextView, int)
      * @attr name android:lastBaselineToBottomHeight
      */
-    public static int getLastBaselineToBottomHeight(@NonNull final TextView textView) {
+    public static int getLastBaselineToBottomHeight(final @NonNull TextView textView) {
         return textView.getPaddingBottom() + textView.getPaint().getFontMetricsInt().bottom;
     }
 
@@ -713,7 +728,7 @@ public final class TextViewCompat {
      *
      * @attr name android:lineHeight
      */
-    public static void setLineHeight(@NonNull final TextView textView,
+    public static void setLineHeight(final @NonNull TextView textView,
                               @Px @IntRange(from = 0) int lineHeight) {
         Preconditions.checkArgumentNonnegative(lineHeight);
 
@@ -764,8 +779,8 @@ public final class TextViewCompat {
      * @return a current {@link PrecomputedTextCompat.Params}
      * @see PrecomputedTextCompat
      */
-    public static @NonNull PrecomputedTextCompat.Params getTextMetricsParams(
-            @NonNull final TextView textView) {
+    public static PrecomputedTextCompat.@NonNull Params getTextMetricsParams(
+            final @NonNull TextView textView) {
         if (Build.VERSION.SDK_INT >= 28) {
             return new PrecomputedTextCompat.Params(Api28Impl.getTextMetricsParams(textView));
         } else {
@@ -787,7 +802,7 @@ public final class TextViewCompat {
      * @see PrecomputedTextCompat
      */
     public static void setTextMetricsParams(@NonNull TextView textView,
-            @NonNull PrecomputedTextCompat.Params params) {
+            PrecomputedTextCompat.@NonNull Params params) {
 
         // There is no way of setting text direction heuristics to TextView.
         // Convert to the View's text direction int values.
@@ -908,7 +923,7 @@ public final class TextViewCompat {
     /**
      * Convert TextDirectionHeuristic to TextDirection int values
      */
-    private static int getTextDirection(@NonNull  TextDirectionHeuristic heuristic) {
+    private static int getTextDirection(@NonNull TextDirectionHeuristic heuristic) {
         if (heuristic == TextDirectionHeuristics.FIRSTSTRONG_RTL) {
             return TEXT_DIRECTION_FIRST_STRONG;
         } else if (heuristic == TextDirectionHeuristics.FIRSTSTRONG_LTR) {
@@ -953,8 +968,7 @@ public final class TextViewCompat {
      * Only returns meaningful info when running on API v24 or newer, or if {@code textView}
      * implements the {@code TintableCompoundDrawablesView} interface.
      */
-    @Nullable
-    public static ColorStateList getCompoundDrawableTintList(@NonNull TextView textView) {
+    public static @Nullable ColorStateList getCompoundDrawableTintList(@NonNull TextView textView) {
         Preconditions.checkNotNull(textView);
         if (Build.VERSION.SDK_INT >= 24) {
             return Api23Impl.getCompoundDrawableTintList(textView);
@@ -972,7 +986,7 @@ public final class TextViewCompat {
      * {@code TintableCompoundDrawablesView} interface.
      */
     public static void setCompoundDrawableTintMode(@NonNull TextView textView,
-            @Nullable PorterDuff.Mode tintMode) {
+            PorterDuff.@Nullable Mode tintMode) {
         Preconditions.checkNotNull(textView);
         if (Build.VERSION.SDK_INT >= 24) {
             Api23Impl.setCompoundDrawableTintMode(textView, tintMode);
@@ -988,8 +1002,8 @@ public final class TextViewCompat {
      * Only returns meaningful info when running on API v24 or newer, or if {@code textView}
      * implements the {@code TintableCompoundDrawablesView} interface.
      */
-    @Nullable
-    public static PorterDuff.Mode getCompoundDrawableTintMode(@NonNull TextView textView) {
+    public static PorterDuff.@Nullable Mode getCompoundDrawableTintMode(
+            @NonNull TextView textView) {
         Preconditions.checkNotNull(textView);
         if (Build.VERSION.SDK_INT >= 24) {
             return Api23Impl.getCompoundDrawableTintMode(textView);
@@ -1005,12 +1019,10 @@ public final class TextViewCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setAutoSizeTextTypeWithDefaults(TextView textView, int autoSizeTextType) {
             textView.setAutoSizeTextTypeWithDefaults(autoSizeTextType);
         }
 
-        @DoNotInline
         static void setAutoSizeTextTypeUniformWithConfiguration(TextView textView,
                 int autoSizeMinTextSize, int autoSizeMaxTextSize, int autoSizeStepGranularity,
                 int unit) {
@@ -1018,33 +1030,27 @@ public final class TextViewCompat {
                     autoSizeMaxTextSize, autoSizeStepGranularity, unit);
         }
 
-        @DoNotInline
         static void setAutoSizeTextTypeUniformWithPresetSizes(TextView textView, int[] presetSizes,
                 int unit) {
             textView.setAutoSizeTextTypeUniformWithPresetSizes(presetSizes, unit);
         }
 
-        @DoNotInline
         static int getAutoSizeTextType(TextView textView) {
             return textView.getAutoSizeTextType();
         }
 
-        @DoNotInline
         static int getAutoSizeStepGranularity(TextView textView) {
             return textView.getAutoSizeStepGranularity();
         }
 
-        @DoNotInline
         static int getAutoSizeMinTextSize(TextView textView) {
             return textView.getAutoSizeMinTextSize();
         }
 
-        @DoNotInline
         static int getAutoSizeMaxTextSize(TextView textView) {
             return textView.getAutoSizeMaxTextSize();
         }
 
-        @DoNotInline
         static int[] getAutoSizeTextAvailableSizes(TextView textView) {
             return textView.getAutoSizeTextAvailableSizes();
         }
@@ -1056,22 +1062,18 @@ public final class TextViewCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setFirstBaselineToTopHeight(TextView textView, int firstBaselineToTopHeight) {
             textView.setFirstBaselineToTopHeight(firstBaselineToTopHeight);
         }
 
-        @DoNotInline
         static PrecomputedText.Params getTextMetricsParams(TextView textView) {
             return textView.getTextMetricsParams();
         }
 
-        @DoNotInline
         static String[] getDigitStrings(DecimalFormatSymbols decimalFormatSymbols) {
             return decimalFormatSymbols.getDigitStrings();
         }
 
-        @DoNotInline
         static CharSequence castToCharSequence(PrecomputedText precomputedText) {
             return precomputedText;
         }
@@ -1084,42 +1086,34 @@ public final class TextViewCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static int getBreakStrategy(TextView textView) {
             return textView.getBreakStrategy();
         }
 
-        @DoNotInline
         static void setBreakStrategy(TextView textView, int breakStrategy) {
             textView.setBreakStrategy(breakStrategy);
         }
 
-        @DoNotInline
         static int getHyphenationFrequency(TextView textView) {
             return textView.getHyphenationFrequency();
         }
 
-        @DoNotInline
         static void setHyphenationFrequency(TextView textView, int hyphenationFrequency) {
             textView.setHyphenationFrequency(hyphenationFrequency);
         }
 
-        @DoNotInline
         static PorterDuff.Mode getCompoundDrawableTintMode(TextView textView) {
             return textView.getCompoundDrawableTintMode();
         }
 
-        @DoNotInline
         static ColorStateList getCompoundDrawableTintList(TextView textView) {
             return textView.getCompoundDrawableTintList();
         }
 
-        @DoNotInline
         static void setCompoundDrawableTintList(TextView textView, ColorStateList tint) {
             textView.setCompoundDrawableTintList(tint);
         }
 
-        @DoNotInline
         static void setCompoundDrawableTintMode(TextView textView, PorterDuff.Mode tintMode) {
             textView.setCompoundDrawableTintMode(tintMode);
         }
@@ -1131,7 +1125,6 @@ public final class TextViewCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static DecimalFormatSymbols getInstance(Locale locale) {
             return DecimalFormatSymbols.getInstance(locale);
         }
@@ -1143,7 +1136,6 @@ public final class TextViewCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         public static void setLineHeight(
                 @NonNull TextView textView,
                 int unit,

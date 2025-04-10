@@ -35,10 +35,7 @@ import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
 import androidx.camera.camera2.internal.annotation.CameraExecutor;
@@ -52,6 +49,7 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Logger;
+import androidx.camera.core.imagecapture.CameraCapturePipeline;
 import androidx.camera.core.impl.CameraCaptureCallback;
 import androidx.camera.core.impl.CameraCaptureFailure;
 import androidx.camera.core.impl.CameraCaptureResult;
@@ -67,6 +65,9 @@ import androidx.concurrent.futures.CallbackToFutureAdapter;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -78,28 +79,22 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Implementation detail of the submitStillCaptures method.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 class Camera2CapturePipeline {
 
     private static final String TAG = "Camera2CapturePipeline";
 
-    @NonNull
-    private final Camera2CameraControlImpl mCameraControl;
+    private final @NonNull Camera2CameraControlImpl mCameraControl;
 
-    @NonNull
-    private final UseTorchAsFlash mUseTorchAsFlash;
+    private final @NonNull UseTorchAsFlash mUseTorchAsFlash;
 
     private final boolean mHasFlashUnit;
 
-    @NonNull
-    private final Quirks mCameraQuirk;
+    private final @NonNull Quirks mCameraQuirk;
 
-    @NonNull
     @CameraExecutor
-    private final Executor mExecutor;
+    private final @NonNull Executor mExecutor;
 
-    @NonNull
-    private final ScheduledExecutorService mScheduler;
+    private final @NonNull ScheduledExecutorService mScheduler;
 
     private final boolean mIsLegacyDevice;
 
@@ -140,14 +135,24 @@ class Camera2CapturePipeline {
      * when the capture was failed.
      */
     @ExecutedBy("mExecutor")
-    @NonNull
-    public ListenableFuture<List<Void>> submitStillCaptures(
+    public @NonNull ListenableFuture<List<Void>> submitStillCaptures(
             @NonNull List<CaptureConfig> captureConfigs, @CaptureMode int captureMode,
             @FlashMode int flashMode, @FlashType int flashType) {
 
+        Pipeline pipeline = createPipeline(captureMode, flashMode, flashType);
+        return Futures.nonCancellationPropagating(
+                pipeline.executeCapture(captureConfigs, flashMode));
+    }
+
+    /**
+     * Creates a {@link Pipeline} for the current capture request based on the parameters.
+     */
+    @VisibleForTesting
+    Pipeline createPipeline(@CaptureMode int captureMode, @FlashMode int flashMode,
+            @FlashType int flashType) {
         OverrideAeModeForStillCapture aeQuirk = new OverrideAeModeForStillCapture(mCameraQuirk);
-        Pipeline pipeline = new Pipeline(mTemplate, mExecutor, mCameraControl, mIsLegacyDevice,
-                aeQuirk);
+        Pipeline pipeline = new Pipeline(mTemplate, mExecutor, mScheduler, mCameraControl,
+                mIsLegacyDevice, aeQuirk);
 
         if (captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY) {
             pipeline.addTask(new AfTask(mCameraControl));
@@ -159,7 +164,12 @@ class Camera2CapturePipeline {
         } else {
             if (mHasFlashUnit) {
                 if (isTorchAsFlash(flashType)) {
-                    pipeline.addTask(new TorchTask(mCameraControl, flashMode, mExecutor));
+                    // TODO: b/339846763 - Disable AE precap only for the quirks where AE precapture
+                    //  is problematic, instead of all TorchAsFlash quirks.
+                    boolean triggerAePrecapture = !mUseTorchAsFlash.shouldUseTorchAsFlash()
+                            && !mCameraControl.isInVideoUsage();
+                    pipeline.addTask(new TorchTask(mCameraControl, flashMode, mExecutor, mScheduler,
+                            triggerAePrecapture));
                 } else {
                     pipeline.addTask(new AePreCaptureTask(mCameraControl, flashMode, aeQuirk));
                 }
@@ -168,8 +178,48 @@ class Camera2CapturePipeline {
             // pipeline.
         }
 
-        return Futures.nonCancellationPropagating(
-                pipeline.executeCapture(captureConfigs, flashMode));
+        Logger.d(TAG, "createPipeline: captureMode = " + captureMode + ", flashMode = " + flashMode
+                + ", flashType = " + flashType + ", pipeline tasks = " + pipeline.mTasks);
+
+        return pipeline;
+    }
+
+    @NonNull CameraCapturePipeline getCameraCapturePipeline(@CaptureMode int captureMode,
+            @FlashMode int flashMode, @FlashType int flashType) {
+        return new CameraCapturePipelineImpl(createPipeline(captureMode, flashMode, flashType),
+                mExecutor, flashMode);
+    }
+
+    /**
+     * The internal implementation for {@link CameraCapturePipeline}.
+     */
+    static class CameraCapturePipelineImpl implements CameraCapturePipeline {
+        private final Executor mExecutor;
+        private final Pipeline mPipelineDelegate;
+
+        @FlashMode private int mFlashMode;
+
+        CameraCapturePipelineImpl(Pipeline pipeline, Executor executor, @FlashMode int flashMode) {
+            mPipelineDelegate = pipeline;
+            mExecutor = executor;
+            mFlashMode = flashMode;
+        }
+
+        @Override
+        public @NonNull ListenableFuture<Void> invokePreCapture() {
+            Logger.d(TAG, "invokePreCapture");
+            return FutureChain.from(mPipelineDelegate.executePreCapture(mFlashMode)).transform(
+                    result -> null, mExecutor);
+        }
+
+        @Override
+        public @NonNull ListenableFuture<Void> invokePostCapture() {
+            return CallbackToFutureAdapter.getFuture(completer -> {
+                mPipelineDelegate.executePostCapture();
+                completer.set(null);
+                return "invokePostCaptureFuture";
+            });
+        }
     }
 
     /**
@@ -182,6 +232,7 @@ class Camera2CapturePipeline {
 
         private final int mTemplate;
         private final Executor mExecutor;
+        private final ScheduledExecutorService mScheduler;
         private final Camera2CameraControlImpl mCameraControl;
         private final OverrideAeModeForStillCapture mOverrideAeModeForStillCapture;
         private final boolean mIsLegacyDevice;
@@ -191,9 +242,8 @@ class Camera2CapturePipeline {
 
         private final PipelineTask mPipelineSubTask = new PipelineTask() {
 
-            @NonNull
             @Override
-            public ListenableFuture<Boolean> preCapture(
+            public @NonNull ListenableFuture<Boolean> preCapture(
                     @Nullable TotalCaptureResult captureResult) {
                 ArrayList<ListenableFuture<Boolean>> futures = new ArrayList<>();
                 for (PipelineTask task : mTasks) {
@@ -222,10 +272,12 @@ class Camera2CapturePipeline {
         };
 
         Pipeline(int template, @NonNull Executor executor,
+                @NonNull ScheduledExecutorService scheduler,
                 @NonNull Camera2CameraControlImpl cameraControl, boolean isLegacyDevice,
                 @NonNull OverrideAeModeForStillCapture overrideAeModeForStillCapture) {
             mTemplate = template;
             mExecutor = executor;
+            mScheduler = scheduler;
             mCameraControl = cameraControl;
             mIsLegacyDevice = isLegacyDevice;
             mOverrideAeModeForStillCapture = overrideAeModeForStillCapture;
@@ -252,43 +304,51 @@ class Camera2CapturePipeline {
 
         @SuppressWarnings("FutureReturnValueIgnored")
         @ExecutedBy("mExecutor")
-        @NonNull
-        ListenableFuture<List<Void>> executeCapture(@NonNull List<CaptureConfig> captureConfigs,
+        @NonNull ListenableFuture<List<Void>> executeCapture(
+                @NonNull List<CaptureConfig> captureConfigs,
                 @FlashMode int flashMode) {
+            ListenableFuture<List<Void>> future = FutureChain.from(
+                    executePreCapture(flashMode)
+            ).transformAsync(v -> submitConfigsInternal(captureConfigs, flashMode), mExecutor);
+
+            /* Always call postCapture(), it will unlock3A if it was locked in preCapture.*/
+            future.addListener(this::executePostCapture, mExecutor);
+
+            return future;
+        }
+
+        public @NonNull ListenableFuture<TotalCaptureResult> executePreCapture(int flashMode) {
             ListenableFuture<TotalCaptureResult> preCapture = Futures.immediateFuture(null);
+
             if (!mTasks.isEmpty()) {
                 ListenableFuture<TotalCaptureResult> getResult =
-                        mPipelineSubTask.isCaptureResultNeeded() ? waitForResult(
-                                ResultListener.NO_TIMEOUT, mCameraControl, null) :
-                                Futures.immediateFuture(null);
+                        mPipelineSubTask.isCaptureResultNeeded() ? waitForResult(mCameraControl,
+                                null) : Futures.immediateFuture(null);
 
                 preCapture = FutureChain.from(getResult).transformAsync(captureResult -> {
-                    if (isFlashRequired(flashMode, captureResult)) {
+                    if (!mCameraControl.isLowLightBoostOn() && isFlashRequired(flashMode,
+                            captureResult)) {
                         setTimeout3A(CHECK_3A_WITH_FLASH_TIMEOUT_IN_NS);
                     }
                     return mPipelineSubTask.preCapture(captureResult);
                 }, mExecutor).transformAsync(is3aConvergeRequired -> {
                     if (Boolean.TRUE.equals(is3aConvergeRequired)) {
-                        return waitForResult(mTimeout3A, mCameraControl,
+                        return waitForResult(mTimeout3A, mScheduler, mCameraControl,
                                 (result) -> is3AConverged(result, false));
                     }
                     return Futures.immediateFuture(null);
                 }, mExecutor);
             }
 
-            ListenableFuture<List<Void>> future = FutureChain.from(preCapture).transformAsync(
-                    v -> submitConfigsInternal(captureConfigs, flashMode), mExecutor);
+            return preCapture;
+        }
 
-
-            /* Always call postCapture(), it will unlock3A if it was locked in preCapture.*/
-            future.addListener(mPipelineSubTask::postCapture, mExecutor);
-
-            return future;
+        public void executePostCapture() {
+            mPipelineSubTask.postCapture();
         }
 
         @ExecutedBy("mExecutor")
-        @NonNull
-        ListenableFuture<List<Void>> submitConfigsInternal(
+        @NonNull ListenableFuture<List<Void>> submitConfigsInternal(
                 @NonNull List<CaptureConfig> captureConfigs, @FlashMode int flashMode) {
             List<ListenableFuture<Void>> futureList = new ArrayList<>();
             List<CaptureConfig> configsToSubmit = new ArrayList<>();
@@ -301,15 +361,20 @@ class Camera2CapturePipeline {
                 if (captureConfig.getTemplateType() == CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG
                         && !mCameraControl.getZslControl().isZslDisabledByFlashMode()
                         && !mCameraControl.getZslControl().isZslDisabledByUserCaseConfig()) {
-                    ImageProxy imageProxy =
-                            mCameraControl.getZslControl().dequeueImageFromBuffer();
-                    boolean isSuccess = imageProxy != null
-                            && mCameraControl.getZslControl().enqueueImageToImageWriter(
-                                        imageProxy);
-                    if (isSuccess) {
-                        cameraCaptureResult =
-                                CameraCaptureResults.retrieveCameraCaptureResult(
-                                        imageProxy.getImageInfo());
+                    ImageProxy imageProxy = mCameraControl.getZslControl().dequeueImageFromBuffer();
+                    if (imageProxy != null) {
+                        if (mCameraControl.getZslControl().enqueueImageToImageWriter(imageProxy)) {
+                            cameraCaptureResult = CameraCaptureResults.retrieveCameraCaptureResult(
+                                    imageProxy.getImageInfo());
+                        } else {
+                            Logger.e(TAG, "Failed to enqueue image to image writer");
+                        }
+
+                        if (cameraCaptureResult == null) {
+                            imageProxy.close();
+                        }
+                    } else {
+                        Logger.d(TAG, "ZSL capture skipped due to no valid buffer image");
                     }
                 }
 
@@ -327,12 +392,14 @@ class Camera2CapturePipeline {
                 futureList.add(CallbackToFutureAdapter.getFuture(completer -> {
                     configBuilder.addCameraCaptureCallback(new CameraCaptureCallback() {
                         @Override
-                        public void onCaptureCompleted(@NonNull CameraCaptureResult result) {
+                        public void onCaptureCompleted(int captureConfigId,
+                                @NonNull CameraCaptureResult result) {
                             completer.set(null);
                         }
 
                         @Override
-                        public void onCaptureFailed(@NonNull CameraCaptureFailure failure) {
+                        public void onCaptureFailed(int captureConfigId,
+                                @NonNull CameraCaptureFailure failure) {
                             String msg =
                                     "Capture request failed with reason " + failure.getReason();
                             completer.setException(
@@ -340,7 +407,7 @@ class Camera2CapturePipeline {
                         }
 
                         @Override
-                        public void onCaptureCancelled() {
+                        public void onCaptureCancelled(int captureConfigId) {
                             String msg = "Capture request is cancelled because camera is closed";
                             completer.setException(
                                     new ImageCaptureException(ERROR_CAMERA_CLOSED, msg, null));
@@ -356,7 +423,7 @@ class Camera2CapturePipeline {
         }
 
         @ExecutedBy("mExecutor")
-        private void applyStillCaptureTemplate(@NonNull CaptureConfig.Builder configBuilder,
+        private void applyStillCaptureTemplate(CaptureConfig.@NonNull Builder configBuilder,
                 @NonNull CaptureConfig captureConfig) {
             int templateToModify = CaptureConfig.TEMPLATE_TYPE_NONE;
             if (mTemplate == CameraDevice.TEMPLATE_RECORD && !mIsLegacyDevice) {
@@ -376,7 +443,7 @@ class Camera2CapturePipeline {
 
         @ExecutedBy("mExecutor")
         @OptIn(markerClass = ExperimentalCamera2Interop.class)
-        private void applyAeModeQuirk(@NonNull CaptureConfig.Builder configBuilder) {
+        private void applyAeModeQuirk(CaptureConfig.@NonNull Builder configBuilder) {
             Camera2ImplConfig.Builder impBuilder = new Camera2ImplConfig.Builder();
             impBuilder.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE,
                     CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH);
@@ -384,14 +451,51 @@ class Camera2CapturePipeline {
         }
     }
 
+    /**
+     * Waits, with a timeout, for a camera capture result satisfying some criteria defined with the
+     * {@code checker} parameter.
+     *
+     * @param timeoutNanos             The timeout for waiting in nanoseconds.
+     * @param scheduledExecutorService The executor service to enforce the timeout.
+     * @param cameraControl            The {@link Camera2CameraControlImpl} instance used to
+     *                                 listen for capture results.
+     * @param checker                  Defines the criteria of camera capture result for which
+     *                                 the returned future will be waiting.
+     * @return A {@link ListenableFuture} providing the first capture result that satisfies the
+     * {@code checker} parameter.
+     */
     @ExecutedBy("mExecutor")
-    @NonNull
-    static ListenableFuture<TotalCaptureResult> waitForResult(long waitTimeout,
+    static @NonNull ListenableFuture<TotalCaptureResult> waitForResult(long timeoutNanos,
+            @NonNull ScheduledExecutorService scheduledExecutorService,
             @NonNull Camera2CameraControlImpl cameraControl,
-            @Nullable ResultListener.Checker checker) {
-        ResultListener resultListener = new ResultListener(waitTimeout, checker);
+            ResultListener.@Nullable Checker checker) {
+        return Futures.makeTimeoutFuture(TimeUnit.NANOSECONDS.toMillis(timeoutNanos),
+                scheduledExecutorService, null, true, waitForResult(cameraControl, checker));
+    }
+
+    /**
+     * Waits indefinitely for a camera capture result satisfying some criteria defined with the
+     * {@code checker} parameter.
+     *
+     * @param cameraControl The {@link Camera2CameraControlImpl} instance used to listen for
+     *                      capture results.
+     * @param checker       Defines the criteria of camera capture result for which the returned
+     *                      future will be waiting.
+     * @return A {@link ListenableFuture} providing the first capture result that satisfies the
+     * {@code checker} parameter.
+     */
+    @ExecutedBy("mExecutor")
+    static @NonNull ListenableFuture<TotalCaptureResult> waitForResult(
+            @NonNull Camera2CameraControlImpl cameraControl,
+            ResultListener.@Nullable Checker checker) {
+        ResultListener resultListener = new ResultListener(checker);
         cameraControl.addCaptureResultListener(resultListener);
-        return resultListener.getFuture();
+
+        ListenableFuture<TotalCaptureResult> future = resultListener.getFuture();
+        future.addListener(() -> cameraControl.removeCaptureResultListener(resultListener),
+                cameraControl.mExecutor);
+
+        return  future;
     }
 
     static boolean is3AConverged(@Nullable TotalCaptureResult totalCaptureResult,
@@ -412,8 +516,7 @@ class Camera2CapturePipeline {
          * false.
          */
         @ExecutedBy("mExecutor")
-        @NonNull
-        ListenableFuture<Boolean> preCapture(@Nullable TotalCaptureResult captureResult);
+        @NonNull ListenableFuture<Boolean> preCapture(@Nullable TotalCaptureResult captureResult);
 
         /**
          * @return true if the preCapture method requires a CaptureResult. When it return false,
@@ -440,9 +543,9 @@ class Camera2CapturePipeline {
         }
 
         @ExecutedBy("mExecutor")
-        @NonNull
         @Override
-        public ListenableFuture<Boolean> preCapture(@Nullable TotalCaptureResult captureResult) {
+        public @NonNull ListenableFuture<Boolean> preCapture(
+                @Nullable TotalCaptureResult captureResult) {
             // Always return true for this task since we always need to wait for the focused
             // signal after the task is executed.
             ListenableFuture<Boolean> ret = Futures.immediateFuture(true);
@@ -502,31 +605,51 @@ class Camera2CapturePipeline {
         private boolean mIsExecuted = false;
         @CameraExecutor
         private final Executor mExecutor;
+        private final ScheduledExecutorService mScheduler;
+        private final boolean mTriggerAePrecapture;
 
         TorchTask(@NonNull Camera2CameraControlImpl cameraControl, @FlashMode int flashMode,
-                @NonNull Executor executor) {
+                @NonNull Executor executor, ScheduledExecutorService scheduler,
+                boolean triggerAePrecapture) {
             mCameraControl = cameraControl;
             mFlashMode = flashMode;
             mExecutor = executor;
+            mScheduler = scheduler;
+            mTriggerAePrecapture = triggerAePrecapture;
         }
 
         @ExecutedBy("mExecutor")
-        @NonNull
         @Override
-        public ListenableFuture<Boolean> preCapture(@Nullable TotalCaptureResult captureResult) {
+        public @NonNull ListenableFuture<Boolean> preCapture(
+                @Nullable TotalCaptureResult captureResult) {
+            boolean isFlashRequired = isFlashRequired(mFlashMode, captureResult);
+            Logger.d(TAG, "TorchTask#preCapture: isFlashRequired = " + isFlashRequired);
+
             if (isFlashRequired(mFlashMode, captureResult)) {
-                if (mCameraControl.isTorchOn()) {
+                if (mCameraControl.isLowLightBoostOn()) {
+                    Logger.d(TAG, "Low-light boost already on, not turn on");
+                } else if (mCameraControl.isTorchOn()) {
                     Logger.d(TAG, "Torch already on, not turn on");
                 } else {
                     Logger.d(TAG, "Turn on torch");
                     mIsExecuted = true;
 
                     ListenableFuture<Void> future = CallbackToFutureAdapter.getFuture(completer -> {
-                        mCameraControl.getTorchControl().enableTorchInternal(completer, true);
+                        mCameraControl.getTorchControl().enableTorchInternal(completer,
+                                TorchControl.USED_AS_FLASH);
                         return "TorchOn";
                     });
                     return FutureChain.from(future).transformAsync(
-                            input -> waitForResult(CHECK_3A_WITH_TORCH_TIMEOUT_IN_NS,
+                            input -> {
+                                if (mTriggerAePrecapture) {
+                                    return mCameraControl.getFocusMeteringControl()
+                                            .triggerAePrecapture();
+                                }
+                                return Futures.immediateFuture(null);
+                            },
+                            mExecutor
+                    ).transformAsync(
+                            input -> waitForResult(CHECK_3A_WITH_TORCH_TIMEOUT_IN_NS, mScheduler,
                                     mCameraControl, (result) -> is3AConverged(result, true)),
                             mExecutor).transform(input -> false, CameraXExecutors.directExecutor());
                 }
@@ -545,8 +668,11 @@ class Camera2CapturePipeline {
         @Override
         public void postCapture() {
             if (mIsExecuted) {
-                mCameraControl.getTorchControl().enableTorchInternal(null, false);
-                Logger.d(TAG, "Turn off torch");
+                mCameraControl.getTorchControl().enableTorchInternal(null, TorchControl.OFF);
+                Logger.d(TAG, "Turning off torch");
+                if (mTriggerAePrecapture) {
+                    mCameraControl.getFocusMeteringControl().cancelAfAeTrigger(false, true);
+                }
             }
         }
     }
@@ -569,10 +695,10 @@ class Camera2CapturePipeline {
         }
 
         @ExecutedBy("mExecutor")
-        @NonNull
         @Override
-        public ListenableFuture<Boolean> preCapture(@Nullable TotalCaptureResult captureResult) {
-            if (isFlashRequired(mFlashMode, captureResult)) {
+        public @NonNull ListenableFuture<Boolean> preCapture(
+                @Nullable TotalCaptureResult captureResult) {
+            if (!mCameraControl.isLowLightBoostOn() && isFlashRequired(mFlashMode, captureResult)) {
                 Logger.d(TAG, "Trigger AE");
                 mIsExecuted = true;
 
@@ -615,7 +741,7 @@ class Camera2CapturePipeline {
         private final Camera2CameraControlImpl mCameraControl;
         private final Executor mExecutor;
         private final ScheduledExecutorService mScheduler;
-        private final ImageCapture.ScreenFlashUiControl mScreenFlashUiControl;
+        private final ImageCapture.ScreenFlash mScreenFlash;
         private final UseFlashModeTorchFor3aUpdate mUseFlashModeTorchFor3aUpdate;
 
         ScreenFlashTask(@NonNull Camera2CameraControlImpl cameraControl, @NonNull Executor executor,
@@ -626,22 +752,21 @@ class Camera2CapturePipeline {
             mScheduler = scheduler;
             mUseFlashModeTorchFor3aUpdate = useFlashModeTorchFor3aUpdate;
 
-            mScreenFlashUiControl =
-                    Objects.requireNonNull(mCameraControl.getScreenFlashUiControl());
+            mScreenFlash = Objects.requireNonNull(mCameraControl.getScreenFlash());
         }
 
         @ExecutedBy("mExecutor")
-        @NonNull
         @Override
-        public ListenableFuture<Boolean> preCapture(@Nullable TotalCaptureResult captureResult) {
+        public @NonNull ListenableFuture<Boolean> preCapture(
+                @Nullable TotalCaptureResult captureResult) {
             Logger.d(TAG, "ScreenFlashTask#preCapture");
 
-            AtomicReference<ImageCapture.ScreenFlashUiCompleter> screenFlashUiCompleter =
+            AtomicReference<ImageCapture.ScreenFlashListener> screenFlashListener =
                     new AtomicReference<>();
 
             ListenableFuture<Void> uiAppliedFuture = CallbackToFutureAdapter.getFuture(
                     completer -> {
-                        screenFlashUiCompleter.set(() -> {
+                        screenFlashListener.set(() -> {
                             Logger.d(TAG, "ScreenFlashTask#preCapture: UI change applied");
                             completer.set(null);
                         });
@@ -651,7 +776,9 @@ class Camera2CapturePipeline {
             ListenableFuture<Void> future = CallbackToFutureAdapter.getFuture(completer -> {
                 CameraXExecutors.mainThreadExecutor().execute(() -> {
                     Logger.d(TAG, "ScreenFlashTask#preCapture: invoking applyScreenFlashUi");
-                    mScreenFlashUiControl.applyScreenFlashUi(screenFlashUiCompleter.get());
+                    mScreenFlash.apply(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(
+                                    ImageCapture.SCREEN_FLASH_UI_APPLY_TIMEOUT_SECONDS),
+                            screenFlashListener.get());
                     completer.set(null);
                 });
                 return "OnScreenFlashStart";
@@ -669,23 +796,25 @@ class Camera2CapturePipeline {
                                     return "EnableTorchInternal";
                                 }
                                 Logger.d(TAG, "ScreenFlashTask#preCapture: enable torch");
-                                mCameraControl.enableTorchInternal(true);
+                                mCameraControl.enableTorchInternal(TorchControl.USED_AS_FLASH);
                                 completer.set(null);
                                 return "EnableTorchInternal";
                             }),
                     mExecutor
             ).transformAsync(
-                    input -> Futures.makeTimeoutFuture(TimeUnit.SECONDS.toMillis(
+                    input -> Futures.makeTimeoutFuture(
+                            // Not using the previous timestamp here gives users a bit more grace
+                            // time before CameraX stops waiting.
+                            TimeUnit.SECONDS.toMillis(
                                     ImageCapture.SCREEN_FLASH_UI_APPLY_TIMEOUT_SECONDS),
-                            mScheduler, null,
-                            uiAppliedFuture),
+                            mScheduler, null, true, uiAppliedFuture),
                     mExecutor
             ).transformAsync(
                     input -> mCameraControl.getFocusMeteringControl().triggerAePrecapture(),
                     mExecutor
             ).transformAsync(
-                    input -> waitForResult(CHECK_3A_WITH_SCREEN_FLASH_TIMEOUT_IN_NS, mCameraControl,
-                            (result) -> is3AConverged(result, false)), mExecutor
+                    input -> waitForResult(CHECK_3A_WITH_SCREEN_FLASH_TIMEOUT_IN_NS, mScheduler,
+                            mCameraControl, (result) -> is3AConverged(result, false)), mExecutor
             ).transform(input -> false, CameraXExecutors.directExecutor());
         }
 
@@ -700,18 +829,19 @@ class Camera2CapturePipeline {
         public void postCapture() {
             Logger.d(TAG, "ScreenFlashTask#postCapture");
             if (mUseFlashModeTorchFor3aUpdate.shouldUseFlashModeTorch()) {
-                mCameraControl.enableTorchInternal(false);
+                mCameraControl.enableTorchInternal(TorchControl.OFF);
             }
             mCameraControl.getFocusMeteringControl().enableExternalFlashAeMode(false).addListener(
                     () -> Log.d(TAG, "enableExternalFlashAeMode disabled"), mExecutor
             );
             mCameraControl.getFocusMeteringControl().cancelAfAeTrigger(false, true);
-            CameraXExecutors.mainThreadExecutor().execute(
-                    mScreenFlashUiControl::clearScreenFlashUi);
+            CameraXExecutors.mainThreadExecutor().execute(mScreenFlash::clear);
         }
     }
 
     static boolean isFlashRequired(@FlashMode int flashMode, @Nullable TotalCaptureResult result) {
+        Logger.d(TAG, "isFlashRequired: flashMode = " + flashMode);
+
         switch (flashMode) {
             case FLASH_MODE_SCREEN:
             case FLASH_MODE_ON:
@@ -719,6 +849,7 @@ class Camera2CapturePipeline {
             case FLASH_MODE_AUTO:
                 Integer aeState = (result != null) ? result.get(CaptureResult.CONTROL_AE_STATE)
                         : null;
+                Logger.d(TAG, "isFlashRequired: aeState = " + aeState);
                 return aeState != null && aeState == CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED;
             case FLASH_MODE_OFF:
                 return false;
@@ -740,50 +871,28 @@ class Camera2CapturePipeline {
             boolean check(@NonNull TotalCaptureResult totalCaptureResult);
         }
 
-        static final long NO_TIMEOUT = 0L;
-
         private CallbackToFutureAdapter.Completer<TotalCaptureResult> mCompleter;
         private final ListenableFuture<TotalCaptureResult> mFuture =
                 CallbackToFutureAdapter.getFuture(completer -> {
                     mCompleter = completer;
                     return "waitFor3AResult";
                 });
-        private final long mTimeLimitNs;
         private final Checker mChecker;
-        private volatile Long mTimestampOfFirstUpdateNs = null;
 
         /**
-         * @param timeLimitNs timeout threshold in Nanos
          * @param checker     the checker to define the condition to complete the mFuture, set null
          *                    will complete the mFuture once it receives any totalCaptureResults.
          */
-        ResultListener(long timeLimitNs, @Nullable Checker checker) {
-            mTimeLimitNs = timeLimitNs;
+        ResultListener(@Nullable Checker checker) {
             mChecker = checker;
         }
 
-        @NonNull
-        public ListenableFuture<TotalCaptureResult> getFuture() {
+        public @NonNull ListenableFuture<TotalCaptureResult> getFuture() {
             return mFuture;
         }
 
         @Override
         public boolean onCaptureResult(@NonNull TotalCaptureResult captureResult) {
-            Long currentTimestampNs = captureResult.get(CaptureResult.SENSOR_TIMESTAMP);
-            if (currentTimestampNs != null && mTimestampOfFirstUpdateNs == null) {
-                mTimestampOfFirstUpdateNs = currentTimestampNs;
-            }
-
-            Long timestampOfFirstUpdateNs = mTimestampOfFirstUpdateNs;
-            if (NO_TIMEOUT != mTimeLimitNs && timestampOfFirstUpdateNs != null
-                    && currentTimestampNs != null
-                    && currentTimestampNs - timestampOfFirstUpdateNs > mTimeLimitNs) {
-                mCompleter.set(null);
-                Logger.d(TAG, "Wait for capture result timeout, current:" + currentTimestampNs
-                        + " first: " + timestampOfFirstUpdateNs);
-                return true;
-            }
-
             if (mChecker != null && !mChecker.check(captureResult)) {
                 return false;
             }
@@ -793,9 +902,9 @@ class Camera2CapturePipeline {
         }
     }
 
+    /** Whether torch flash should be used due to quirk or VideoCapture binding. */
     private boolean isTorchAsFlash(@FlashType int flashType) {
         return mUseTorchAsFlash.shouldUseTorchAsFlash() || mTemplate == CameraDevice.TEMPLATE_RECORD
                 || flashType == FLASH_TYPE_USE_TORCH_AS_FLASH;
     }
-
 }

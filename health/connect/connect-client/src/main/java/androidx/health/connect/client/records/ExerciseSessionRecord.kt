@@ -41,13 +41,13 @@ internal constructor(
     override val startZoneOffset: ZoneOffset?,
     override val endTime: Instant,
     override val endZoneOffset: ZoneOffset?,
+    override val metadata: Metadata,
     /** Type of exercise (e.g. walking, swimming). Required field. */
     @property:ExerciseTypes val exerciseType: Int,
     /** Title of the session. Optional field. */
     val title: String? = null,
     /** Additional notes for the session. Optional field. */
     val notes: String? = null,
-    override val metadata: Metadata = Metadata.EMPTY,
     /**
      * [ExerciseSegment]s of the session. Optional field. Time in segments should be within the
      * parent session, and should not overlap with each other.
@@ -65,6 +65,7 @@ internal constructor(
      * session.
      */
     val exerciseRouteResult: ExerciseRouteResult = ExerciseRouteResult.NoData(),
+    val plannedExerciseSessionId: String? = null
 ) : IntervalRecord {
 
     @JvmOverloads
@@ -73,28 +74,34 @@ internal constructor(
         startZoneOffset: ZoneOffset?,
         endTime: Instant,
         endZoneOffset: ZoneOffset?,
+        metadata: Metadata,
         /** Type of exercise (e.g. walking, swimming). Required field. */
         exerciseType: Int,
         /** Title of the session. Optional field. */
         title: String? = null,
         /** Additional notes for the session. Optional field. */
         notes: String? = null,
-        metadata: Metadata = Metadata.EMPTY,
         segments: List<ExerciseSegment> = emptyList(),
         laps: List<ExerciseLap> = emptyList(),
         exerciseRoute: ExerciseRoute? = null,
+        /**
+         * The planned exercise session this workout was based upon. Optional field. Requires
+         * [androidx.health.connect.client.HealthConnectFeatures.FEATURE_PLANNED_EXERCISE].
+         */
+        plannedExerciseSessionId: String? = null,
     ) : this(
         startTime,
         startZoneOffset,
         endTime,
         endZoneOffset,
+        metadata,
         exerciseType,
         title,
         notes,
-        metadata,
         segments,
         laps,
-        exerciseRoute?.let { ExerciseRouteResult.Data(it) } ?: ExerciseRouteResult.NoData()
+        exerciseRoute?.let { ExerciseRouteResult.Data(it) } ?: ExerciseRouteResult.NoData(),
+        plannedExerciseSessionId,
     )
 
     init {
@@ -176,6 +183,10 @@ internal constructor(
         result = 31 * result + metadata.hashCode()
         result = 31 * result + exerciseRouteResult.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "ExerciseSessionRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, exerciseType=$exerciseType, title=$title, notes=$notes, metadata=$metadata, segments=$segments, laps=$laps, exerciseRouteResult=$exerciseRouteResult)"
     }
 
     companion object {

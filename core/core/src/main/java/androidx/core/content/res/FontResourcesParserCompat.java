@@ -28,15 +28,14 @@ import android.util.TypedValue;
 import android.util.Xml;
 
 import androidx.annotation.ArrayRes;
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.R;
 import androidx.core.provider.FontRequest;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -77,14 +76,17 @@ public class FontResourcesParserCompat {
      */
     public static final class ProviderResourceEntry implements FamilyResourceEntry {
         private final @NonNull FontRequest mRequest;
+        private final @Nullable FontRequest mFallbackRequest;
         private final int mTimeoutMs;
         private final @FetchStrategy int mStrategy;
         private final @Nullable String mSystemFontFamilyName;
 
         @RestrictTo(LIBRARY)
-        public ProviderResourceEntry(@NonNull FontRequest request, @FetchStrategy int strategy,
+        public ProviderResourceEntry(@NonNull FontRequest request,
+                @Nullable FontRequest fallbackRequest, @FetchStrategy int strategy,
                 int timeoutMs, @Nullable String systemFontFamilyName) {
             mRequest = request;
+            mFallbackRequest = fallbackRequest;
             mStrategy = strategy;
             mTimeoutMs = timeoutMs;
             mSystemFontFamilyName = systemFontFamilyName;
@@ -92,11 +94,15 @@ public class FontResourcesParserCompat {
 
         public ProviderResourceEntry(@NonNull FontRequest request, @FetchStrategy int strategy,
                 int timeoutMs) {
-            this(request, strategy, timeoutMs, null /*systemFontFamilyName*/);
+            this(request, null, strategy, timeoutMs, null /*systemFontFamilyName*/);
         }
 
         public @NonNull FontRequest getRequest() {
             return mRequest;
+        }
+
+        public @Nullable FontRequest getFallbackRequest() {
+            return mFallbackRequest;
         }
 
         public @FetchStrategy int getFetchStrategy() {
@@ -163,13 +169,13 @@ public class FontResourcesParserCompat {
      * A class that represents a file based font-family element in an xml font file.
      */
     public static final class FontFamilyFilesResourceEntry implements FamilyResourceEntry {
-        private final @NonNull FontFileResourceEntry[] mEntries;
+        private final FontFileResourceEntry @NonNull [] mEntries;
 
-        public FontFamilyFilesResourceEntry(@NonNull FontFileResourceEntry[] entries) {
+        public FontFamilyFilesResourceEntry(FontFileResourceEntry @NonNull [] entries) {
             mEntries = entries;
         }
 
-        public @NonNull FontFileResourceEntry[] getEntries() {
+        public FontFileResourceEntry @NonNull [] getEntries() {
             return mEntries;
         }
     }
@@ -210,6 +216,7 @@ public class FontResourcesParserCompat {
         String authority = array.getString(R.styleable.FontFamily_fontProviderAuthority);
         String providerPackage = array.getString(R.styleable.FontFamily_fontProviderPackage);
         String query = array.getString(R.styleable.FontFamily_fontProviderQuery);
+        String fallbackQuery = array.getString(R.styleable.FontFamily_fontProviderFallbackQuery);
         int certsId = array.getResourceId(R.styleable.FontFamily_fontProviderCerts, 0);
         int strategy = array.getInteger(R.styleable.FontFamily_fontProviderFetchStrategy,
                 FETCH_STRATEGY_ASYNC);
@@ -224,8 +231,15 @@ public class FontResourcesParserCompat {
                 skip(parser);
             }
             List<List<byte[]>> certs = readCerts(resources, certsId);
+            FontRequest fallbackRequest;
+            if (fallbackQuery != null) {
+                fallbackRequest = new FontRequest(authority, providerPackage, fallbackQuery, certs);
+            } else {
+                fallbackRequest = null;
+            }
             return new ProviderResourceEntry(
                     new FontRequest(authority, providerPackage, query, certs),
+                    fallbackRequest,
                     strategy,
                     timeoutMs,
                     systemFontFamilyName
@@ -266,9 +280,8 @@ public class FontResourcesParserCompat {
      *
      * Provider cert entry must be cert string array or array of cert string array.
      */
-    @NonNull
     @SuppressWarnings("MixedMutabilityReturnType")
-    public static List<List<byte[]>> readCerts(@NonNull Resources resources,
+    public static @NonNull List<List<byte[]>> readCerts(@NonNull Resources resources,
             @ArrayRes int certsId) {
         if (certsId == 0) {
             return Collections.emptyList();
@@ -364,7 +377,6 @@ public class FontResourcesParserCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static int getType(TypedArray typedArray, int index) {
             return typedArray.getType(index);
         }

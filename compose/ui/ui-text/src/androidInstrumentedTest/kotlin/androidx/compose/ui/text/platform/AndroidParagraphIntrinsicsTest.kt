@@ -31,6 +31,12 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.anyInt
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.verify
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
 @SmallTest
@@ -47,19 +53,22 @@ class AndroidParagraphIntrinsicsTest {
     @Test
     fun whenEmojiCompatLoads_hasStaleFontsIsTrue() {
         val fontState = mutableStateOf(false)
-        EmojiCompatStatus.setDelegateForTesting(object : EmojiCompatStatusDelegate {
-            override val fontLoaded: State<Boolean>
-                get() = fontState
-        })
-
-        val subject = ActualParagraphIntrinsics(
-            "text",
-            TextStyle.Default,
-            listOf(),
-            listOf(),
-            Density(1f),
-            createFontFamilyResolver(context)
+        EmojiCompatStatus.setDelegateForTesting(
+            object : EmojiCompatStatusDelegate {
+                override val fontLoaded: State<Boolean>
+                    get() = fontState
+            }
         )
+
+        val subject =
+            ActualParagraphIntrinsics(
+                "text",
+                TextStyle.Default,
+                listOf(),
+                listOf(),
+                Density(1f),
+                createFontFamilyResolver(context)
+            )
 
         assertThat(subject.hasStaleResolvedFonts).isFalse()
         fontState.value = true
@@ -69,17 +78,47 @@ class AndroidParagraphIntrinsicsTest {
     @Test
     fun whenStyleSaysNoemojiCompat_NoEmojiCompat() {
         val fontState = mutableStateOf(false)
-        EmojiCompatStatus.setDelegateForTesting(object : EmojiCompatStatusDelegate {
-            override val fontLoaded: State<Boolean>
-                get() = fontState
-        })
-
-        val style = TextStyle(
-            platformStyle = PlatformTextStyle(
-                emojiSupportMatch = EmojiSupportMatch.None
-            )
+        EmojiCompatStatus.setDelegateForTesting(
+            object : EmojiCompatStatusDelegate {
+                override val fontLoaded: State<Boolean>
+                    get() = fontState
+            }
         )
-        val subject = ActualParagraphIntrinsics(
+
+        val style =
+            TextStyle(platformStyle = PlatformTextStyle(emojiSupportMatch = EmojiSupportMatch.None))
+        val subject =
+            ActualParagraphIntrinsics(
+                "text",
+                style,
+                listOf(),
+                listOf(),
+                Density(1f),
+                createFontFamilyResolver(context)
+            )
+        fontState.value = true
+        assertThat(subject.hasStaleResolvedFonts).isFalse()
+    }
+
+    @Test
+    fun whenReplaceall_replaceAll() {
+        // sorry mocks - every obvious way to make this properly testable involves an allocation in
+        // prod code :(
+        val mock = mock(EmojiCompat::class.java)
+        whenever(mock.process(ArgumentMatchers.anyString(), anyInt(), anyInt(), anyInt(), anyInt()))
+            .thenReturn("")
+        EmojiCompat.reset(mock)
+
+        EmojiCompatStatus.setDelegateForTesting(
+            object : EmojiCompatStatusDelegate {
+                override val fontLoaded: State<Boolean>
+                    get() = mutableStateOf(true)
+            }
+        )
+
+        val style =
+            TextStyle(platformStyle = PlatformTextStyle(emojiSupportMatch = EmojiSupportMatch.All))
+        ActualParagraphIntrinsics(
             "text",
             style,
             listOf(),
@@ -87,7 +126,53 @@ class AndroidParagraphIntrinsicsTest {
             Density(1f),
             createFontFamilyResolver(context)
         )
-        fontState.value = true
-        assertThat(subject.hasStaleResolvedFonts).isFalse()
+
+        verify(mock)
+            .process(
+                eq("text"),
+                eq(0),
+                eq("text".length),
+                eq(Int.MAX_VALUE),
+                eq(EmojiCompat.REPLACE_STRATEGY_ALL)
+            )
+    }
+
+    @Test
+    fun whenDefaultStrategy_doesDefault() {
+        // sorry mocks - every obvious way to make this properly testable involves an allocation in
+        // prod code :(
+        val mock = mock(EmojiCompat::class.java)
+        whenever(mock.process(ArgumentMatchers.anyString(), anyInt(), anyInt(), anyInt(), anyInt()))
+            .thenReturn("")
+        EmojiCompat.reset(mock)
+
+        EmojiCompatStatus.setDelegateForTesting(
+            object : EmojiCompatStatusDelegate {
+                override val fontLoaded: State<Boolean>
+                    get() = mutableStateOf(true)
+            }
+        )
+
+        val style =
+            TextStyle(
+                platformStyle = PlatformTextStyle(emojiSupportMatch = EmojiSupportMatch.Default)
+            )
+        ActualParagraphIntrinsics(
+            "text",
+            style,
+            listOf(),
+            listOf(),
+            Density(1f),
+            createFontFamilyResolver(context)
+        )
+
+        verify(mock)
+            .process(
+                eq("text"),
+                eq(0),
+                eq("text".length),
+                eq(Int.MAX_VALUE),
+                eq(EmojiCompat.REPLACE_STRATEGY_DEFAULT)
+            )
     }
 }

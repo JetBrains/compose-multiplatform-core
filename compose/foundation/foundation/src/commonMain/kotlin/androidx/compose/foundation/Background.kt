@@ -29,6 +29,9 @@ import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.ObserverModifierNode
+import androidx.compose.ui.node.invalidateDraw
+import androidx.compose.ui.node.observeReads
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.unit.LayoutDirection
@@ -37,27 +40,24 @@ import androidx.compose.ui.unit.LayoutDirection
  * Draws [shape] with a solid [color] behind the content.
  *
  * @sample androidx.compose.foundation.samples.DrawBackgroundColor
- *
  * @param color color to paint background with
  * @param shape desired shape of the background
  */
 @Stable
-fun Modifier.background(
-    color: Color,
-    shape: Shape = RectangleShape
-): Modifier {
+fun Modifier.background(color: Color, shape: Shape = RectangleShape): Modifier {
     val alpha = 1.0f // for solid colors
     return this.then(
         BackgroundElement(
             color = color,
             shape = shape,
             alpha = alpha,
-            inspectorInfo = debugInspectorInfo {
-                name = "background"
-                value = color
-                properties["color"] = color
-                properties["shape"] = shape
-            }
+            inspectorInfo =
+                debugInspectorInfo {
+                    name = "background"
+                    value = color
+                    properties["color"] = color
+                    properties["shape"] = shape
+                }
         )
     )
 }
@@ -66,31 +66,31 @@ fun Modifier.background(
  * Draws [shape] with [brush] behind the content.
  *
  * @sample androidx.compose.foundation.samples.DrawBackgroundShapedBrush
- *
  * @param brush brush to paint background with
  * @param shape desired shape of the background
- * @param alpha Opacity to be applied to the [brush], with `0` being completely transparent and
- * `1` being completely opaque. The value must be between `0` and `1`.
+ * @param alpha Opacity to be applied to the [brush], with `0` being completely transparent and `1`
+ *   being completely opaque. The value must be between `0` and `1`.
  */
 @Stable
 fun Modifier.background(
     brush: Brush,
     shape: Shape = RectangleShape,
-    @FloatRange(from = 0.0, to = 1.0)
-    alpha: Float = 1.0f
-) = this.then(
-    BackgroundElement(
-        brush = brush,
-        alpha = alpha,
-        shape = shape,
-        inspectorInfo = debugInspectorInfo {
-            name = "background"
-            properties["alpha"] = alpha
-            properties["brush"] = brush
-            properties["shape"] = shape
-        }
+    @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f
+) =
+    this.then(
+        BackgroundElement(
+            brush = brush,
+            alpha = alpha,
+            shape = shape,
+            inspectorInfo =
+                debugInspectorInfo {
+                    name = "background"
+                    properties["alpha"] = alpha
+                    properties["brush"] = brush
+                    properties["shape"] = shape
+                }
+        )
     )
-)
 
 private class BackgroundElement(
     private val color: Color = Color.Unspecified,
@@ -100,12 +100,7 @@ private class BackgroundElement(
     private val inspectorInfo: InspectorInfo.() -> Unit
 ) : ModifierNodeElement<BackgroundNode>() {
     override fun create(): BackgroundNode {
-        return BackgroundNode(
-            color,
-            brush,
-            alpha,
-            shape
-        )
+        return BackgroundNode(color, brush, alpha, shape)
     }
 
     override fun update(node: BackgroundNode) {
@@ -141,13 +136,15 @@ private class BackgroundNode(
     var brush: Brush?,
     var alpha: Float,
     var shape: Shape,
-) : DrawModifierNode, Modifier.Node() {
+) : DrawModifierNode, Modifier.Node(), ObserverModifierNode {
 
-    // naive cache outline calculation if size is the same
-    private var lastSize: Size? = null
+    // Naively cache outline calculation if input parameters are the same, we manually observe
+    // reads inside shape#createOutline separately
+    private var lastSize: Size = Size.Unspecified
     private var lastLayoutDirection: LayoutDirection? = null
     private var lastOutline: Outline? = null
     private var lastShape: Shape? = null
+    private var tmpOutline: Outline? = null
 
     override fun ContentDrawScope.draw() {
         if (shape === RectangleShape) {
@@ -159,23 +156,43 @@ private class BackgroundNode(
         drawContent()
     }
 
+    override fun onObservedReadsChanged() {
+        // Reset cached properties
+        lastSize = Size.Unspecified
+        lastLayoutDirection = null
+        lastOutline = null
+        lastShape = null
+        // Invalidate draw so we build the cache again - this is needed because observeReads within
+        // the draw scope obscures the state reads from the draw scope's observer
+        invalidateDraw()
+    }
+
     private fun ContentDrawScope.drawRect() {
         if (color != Color.Unspecified) drawRect(color = color)
         brush?.let { drawRect(brush = it, alpha = alpha) }
     }
 
     private fun ContentDrawScope.drawOutline() {
-        val outline =
-            if (size == lastSize && layoutDirection == lastLayoutDirection && lastShape == shape) {
-                lastOutline!!
-            } else {
-                shape.createOutline(size, layoutDirection, this)
-            }
+        val outline = getOutline()
         if (color != Color.Unspecified) drawOutline(outline, color = color)
         brush?.let { drawOutline(outline, brush = it, alpha = alpha) }
+    }
+
+    private fun ContentDrawScope.getOutline(): Outline {
+        val outline: Outline?
+        if (size == lastSize && layoutDirection == lastLayoutDirection && lastShape == shape) {
+            outline = lastOutline!!
+        } else {
+            // Manually observe reads so we can directly invalidate the outline when it changes
+            // Use tmpOutline to avoid creating an object reference to local var outline
+            observeReads { tmpOutline = shape.createOutline(size, layoutDirection, this) }
+            outline = tmpOutline
+            tmpOutline = null
+        }
         lastOutline = outline
         lastSize = size
         lastLayoutDirection = layoutDirection
         lastShape = shape
+        return outline!!
     }
 }

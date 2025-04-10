@@ -28,9 +28,8 @@ import android.util.Pair;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -39,23 +38,20 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RunnableFuture;
 
 /**
- * Implementation for HDR preview use case.
+ * Implementation for HDR preview use case that implements a {@link PreviewImageProcessorImpl}.
  *
- * <p>This class should be implemented by OEM and deployed to the target devices. 3P developers
- * don't need to implement this, unless this is used for related testing usage.
+ * <p>This is only for testing camera-extensions and should not be used as a sample OEM
+ * implementation.
  *
  * @since 1.0
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class HdrPreviewExtenderImpl implements PreviewExtenderImpl {
     private static final String TAG = "HdrPreviewExtenderImpl";
 
     private static final int DEFAULT_STAGE_ID = 0;
 
-    @Nullable
-    GLImage2SurfaceRenderer mRenderer;
-    @Nullable
-    GlHandlerThread mGlHandlerThread;
+    @Nullable GLImage2SurfaceRenderer mRenderer;
+    @Nullable GlHandlerThread mGlHandlerThread;
 
     public HdrPreviewExtenderImpl() { }
 
@@ -71,30 +67,26 @@ public final class HdrPreviewExtenderImpl implements PreviewExtenderImpl {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O;
     }
 
-    @NonNull
     @Override
-    public CaptureStageImpl getCaptureStage() {
+    public @NonNull CaptureStageImpl getCaptureStage() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         return new SettableCaptureStage(DEFAULT_STAGE_ID);
     }
 
-    @NonNull
     @Override
-    public ProcessorType getProcessorType() {
+    public @NonNull ProcessorType getProcessorType() {
         return ProcessorType.PROCESSOR_TYPE_IMAGE_PROCESSOR;
     }
 
     @SuppressWarnings("ConstantConditions") // Super method is nullable.
-    @Nullable
     @Override
-    public ProcessorImpl getProcessor() {
+    public @Nullable ProcessorImpl getProcessor() {
         return mProcessor;
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedResolutions() {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedResolutions() {
         return null;
     }
 
@@ -123,21 +115,18 @@ public final class HdrPreviewExtenderImpl implements PreviewExtenderImpl {
         }
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onPresetSession() {
+    public @Nullable CaptureStageImpl onPresetSession() {
         return null;
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onEnableSession() {
+    public @Nullable CaptureStageImpl onEnableSession() {
         return null;
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onDisableSession() {
+    public @Nullable CaptureStageImpl onDisableSession() {
         return null;
     }
 
@@ -200,10 +189,8 @@ public final class HdrPreviewExtenderImpl implements PreviewExtenderImpl {
     }
 
     static class GlHandlerThread {
-        @NonNull
-        final HandlerThread mRenderThread;
-        @NonNull
-        final Handler mRenderHandler;
+        final @NonNull HandlerThread mRenderThread;
+        final @NonNull Handler mRenderHandler;
 
         GlHandlerThread() {
             mRenderThread = new HandlerThread("EglRendererThread");
@@ -233,4 +220,11 @@ public final class HdrPreviewExtenderImpl implements PreviewExtenderImpl {
     public int onSessionType() {
         return SessionConfiguration.SESSION_REGULAR;
     }
+
+    /**
+     * This method is used to check if test lib is running. If OEM implementation exists, invoking
+     * this method will throw {@link NoSuchMethodError}. This can be used to determine if OEM
+     * implementation is used or not.
+     */
+    public static void checkTestlibRunning() {}
 }

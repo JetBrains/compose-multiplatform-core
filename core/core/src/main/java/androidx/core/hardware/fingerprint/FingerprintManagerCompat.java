@@ -24,11 +24,12 @@ import android.os.Build;
 import android.os.CancellationSignal;
 import android.os.Handler;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
+import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.security.Signature;
 
@@ -45,13 +46,13 @@ import javax.crypto.Mac;
  */
 @SuppressWarnings({"deprecation", "unused"})
 @Deprecated
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FingerprintManagerCompat {
 
     private final Context mContext;
 
     /** Get a {@link FingerprintManagerCompat} instance for a provided context. */
-    @NonNull
-    public static FingerprintManagerCompat from(@NonNull Context context) {
+    public static @NonNull FingerprintManagerCompat from(@NonNull Context context) {
         return new FingerprintManagerCompat(context);
     }
 
@@ -106,9 +107,10 @@ public class FingerprintManagerCompat {
      * {@link #authenticate(CryptoObject, int, CancellationSignal, AuthenticationCallback, Handler)}
      */
     @Deprecated
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     @RequiresPermission(Manifest.permission.USE_FINGERPRINT)
     public void authenticate(@Nullable CryptoObject crypto, int flags,
-            @Nullable androidx.core.os.CancellationSignal cancel,
+            androidx.core.os.@Nullable CancellationSignal cancel,
             @NonNull AuthenticationCallback callback,
             @Nullable Handler handler) {
         authenticate(crypto, flags,
@@ -143,9 +145,9 @@ public class FingerprintManagerCompat {
         }
     }
 
-    @Nullable
     @RequiresApi(23)
-    private static FingerprintManager getFingerprintManagerOrNull(@NonNull Context context) {
+    private static @Nullable FingerprintManager getFingerprintManagerOrNull(
+            @NonNull Context context) {
         return Api23Impl.getFingerprintManagerOrNull(context);
     }
 
@@ -219,22 +221,19 @@ public class FingerprintManagerCompat {
          * Get {@link Signature} object.
          * @return {@link Signature} object or null if this doesn't contain one.
          */
-        @Nullable
-        public Signature getSignature() { return mSignature; }
+        public @Nullable Signature getSignature() { return mSignature; }
 
         /**
          * Get {@link Cipher} object.
          * @return {@link Cipher} object or null if this doesn't contain one.
          */
-        @Nullable
-        public Cipher getCipher() { return mCipher; }
+        public @Nullable Cipher getCipher() { return mCipher; }
 
         /**
          * Get {@link Mac} object.
          * @return {@link Mac} object or null if this doesn't contain one.
          */
-        @Nullable
-        public Mac getMac() { return mMac; }
+        public @Nullable Mac getMac() { return mMac; }
     }
 
     /**
@@ -244,7 +243,7 @@ public class FingerprintManagerCompat {
     public static final class AuthenticationResult {
         private final CryptoObject mCryptoObject;
 
-        public AuthenticationResult(CryptoObject crypto) {
+        public AuthenticationResult(@NonNull CryptoObject crypto) {
             mCryptoObject = crypto;
         }
 
@@ -253,7 +252,7 @@ public class FingerprintManagerCompat {
          * @return crypto object provided to {@link FingerprintManagerCompat#authenticate(
          *         CryptoObject, int, CancellationSignal, AuthenticationCallback, Handler)}.
          */
-        public CryptoObject getCryptoObject() { return mCryptoObject; }
+        public @NonNull CryptoObject getCryptoObject() { return mCryptoObject; }
     }
 
     /**
@@ -270,7 +269,7 @@ public class FingerprintManagerCompat {
          * @param errMsgId An integer identifying the error message
          * @param errString A human-readable error string that can be shown in UI
          */
-        public void onAuthenticationError(int errMsgId, CharSequence errString) { }
+        public void onAuthenticationError(int errMsgId, @NonNull CharSequence errString) { }
 
         /**
          * Called when a recoverable error has been encountered during authentication. The help
@@ -279,13 +278,13 @@ public class FingerprintManagerCompat {
          * @param helpMsgId An integer identifying the error message
          * @param helpString A human-readable string that can be shown in UI
          */
-        public void onAuthenticationHelp(int helpMsgId, CharSequence helpString) { }
+        public void onAuthenticationHelp(int helpMsgId, @NonNull CharSequence helpString) { }
 
         /**
          * Called when a fingerprint is recognized.
          * @param result An object containing authentication-related data
          */
-        public void onAuthenticationSucceeded(AuthenticationResult result) { }
+        public void onAuthenticationSucceeded(@NonNull AuthenticationResult result) { }
 
         /**
          * Called when a fingerprint is valid but not recognized.
@@ -300,19 +299,16 @@ public class FingerprintManagerCompat {
         }
 
         @RequiresPermission(Manifest.permission.USE_FINGERPRINT)
-        @DoNotInline
         static boolean hasEnrolledFingerprints(Object fingerprintManager) {
             return ((FingerprintManager) fingerprintManager).hasEnrolledFingerprints();
         }
 
         @RequiresPermission(Manifest.permission.USE_FINGERPRINT)
-        @DoNotInline
         static boolean isHardwareDetected(Object fingerprintManager) {
             return ((FingerprintManager) fingerprintManager).isHardwareDetected();
         }
 
         @RequiresPermission(Manifest.permission.USE_FINGERPRINT)
-        @DoNotInline
         static void authenticate(Object fingerprintManager, Object crypto,
                 CancellationSignal cancel, int flags, Object callback, Handler handler) {
             ((FingerprintManager) fingerprintManager).authenticate(
@@ -320,13 +316,11 @@ public class FingerprintManagerCompat {
                     (FingerprintManager.AuthenticationCallback) callback, handler);
         }
 
-        @DoNotInline
         static FingerprintManager.CryptoObject getCryptoObject(Object authenticationResult) {
             return ((FingerprintManager.AuthenticationResult) authenticationResult)
                     .getCryptoObject();
         }
 
-        @DoNotInline
         public static FingerprintManager getFingerprintManagerOrNull(Context context) {
             if (Build.VERSION.SDK_INT == 23) {
                 return context.getSystemService(FingerprintManager.class);
@@ -338,7 +332,6 @@ public class FingerprintManagerCompat {
             }
         }
 
-        @DoNotInline
         public static FingerprintManager.CryptoObject wrapCryptoObject(CryptoObject cryptoObject) {
             if (cryptoObject == null) {
                 return null;
@@ -353,7 +346,6 @@ public class FingerprintManagerCompat {
             }
         }
 
-        @DoNotInline
         public static CryptoObject unwrapCryptoObject(Object cryptoObjectObj) {
             FingerprintManager.CryptoObject cryptoObject =
                     (FingerprintManager.CryptoObject) cryptoObjectObj;

@@ -1,4 +1,11 @@
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -15,6 +22,7 @@ dependencies {
     implementation(project(":compose:integration-tests:demos:common"))
     implementation(project(":compose:material:material"))
     implementation(project(":compose:material:material:material-samples"))
+    implementation(project(":compose:material:material-navigation-samples"))
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:ui:ui"))
     implementation(project(":compose:ui:ui-text"))
@@ -23,11 +31,12 @@ dependencies {
 
 androidx {
     name = "Compose Material Demos"
-    publish = Publish.NONE
+    type = SoftwareType.TEST_APPLICATION
     inceptionYear = "2019"
     description = "This is a project for Material demos."
 }
 
 android {
-    namespace "androidx.compose.material.demos"
+    compileSdk = 35
+    namespace = "androidx.compose.material.demos"
 }

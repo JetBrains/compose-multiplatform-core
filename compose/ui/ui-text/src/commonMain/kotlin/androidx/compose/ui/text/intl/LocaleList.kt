@@ -28,12 +28,16 @@ import androidx.compose.ui.util.fastMap
  * @see SpanStyle
  */
 @Immutable
-class LocaleList constructor(val localeList: List<Locale>) : Collection<Locale> {
+class LocaleList(val localeList: List<Locale>) : Collection<Locale> {
     companion object {
 
         /**
-         * Returns Locale object which represents current locale
+         * An empty instance of [LocaleList]. Usually used to reference a lack of explicit [Locale]
+         * configuration.
          */
+        val Empty = LocaleList(listOf())
+
+        /** Returns Locale object which represents current locale */
         val current: LocaleList
             get() = platformLocaleDelegate.current
     }
@@ -42,14 +46,13 @@ class LocaleList constructor(val localeList: List<Locale>) : Collection<Locale> 
      * Create a [LocaleList] object from comma separated language tags.
      *
      * @param languageTags A comma separated [IETF BCP47](https://tools.ietf.org/html/bcp47)
-     * compliant language tag.
+     *   compliant language tag.
      */
-    constructor(languageTags: String) :
-        this(languageTags.split(",").fastMap { it.trim() }.fastMap { Locale(it) })
+    constructor(
+        languageTags: String
+    ) : this(languageTags.split(",").fastMap { it.trim() }.fastMap { Locale(it) })
 
-    /**
-     * Creates a [LocaleList] object from a list of [Locale]s.
-     */
+    /** Creates a [LocaleList] object from a list of [Locale]s. */
     constructor(vararg locales: Locale) : this(locales.toList())
 
     operator fun get(i: Int) = localeList[i]

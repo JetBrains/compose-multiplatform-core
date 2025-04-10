@@ -20,11 +20,14 @@ package androidx.room
  * Repeatable annotation declaring the renamed tables in the new version of an auto migration.
  *
  * @see [AutoMigration]
- *
  */
 @JvmRepeatable(RenameTable.Entries::class)
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)
+@Suppress(
+    // Due to @JvmRepeatable in this actual while expect has @Repeatable
+    "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT"
+)
 public actual annotation class RenameTable(
     /**
      * Name of the table in the [AutoMigration.from] version of the database.
@@ -40,12 +43,8 @@ public actual annotation class RenameTable(
      */
     actual val toTableName: String,
 ) {
-    /**
-     * Container annotation for the repeatable annotation [RenameTable].
-     */
+    /** Container annotation for the repeatable annotation [RenameTable]. */
     @Target(AnnotationTarget.CLASS)
     @Retention(AnnotationRetention.BINARY)
-    public annotation class Entries(
-        vararg val value: RenameTable
-    )
+    public annotation class Entries(vararg val value: RenameTable)
 }

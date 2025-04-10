@@ -17,27 +17,98 @@
 package androidx.wear.compose.material3.samples
 
 import androidx.annotation.Sampled
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.wear.compose.material3.Icon
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.IconToggleButton
+import androidx.wear.compose.material3.IconToggleButtonDefaults
+import androidx.wear.compose.material3.samples.icons.WifiOffIcon
+import androidx.wear.compose.material3.samples.icons.WifiOnIcon
 
 @Sampled
 @Composable
 fun IconToggleButtonSample() {
-    var checked by remember { mutableStateOf(true) }
-    IconToggleButton(
-        checked = checked,
-        onCheckedChange = { checked = !checked }
+    var firstChecked by remember { mutableStateOf(true) }
+    var secondChecked by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxSize(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = Icons.Filled.Favorite,
-            contentDescription = "Favorite icon"
-        )
+        IconToggleButton(
+            checked = firstChecked,
+            onCheckedChange = { firstChecked = !firstChecked },
+            shapes = IconToggleButtonDefaults.animatedShapes(),
+        ) {
+            if (firstChecked) {
+                WifiOnIcon()
+            } else {
+                WifiOffIcon()
+            }
+        }
+
+        Spacer(modifier = Modifier.width(5.dp))
+
+        IconToggleButton(
+            checked = secondChecked,
+            onCheckedChange = { secondChecked = !secondChecked },
+            shapes = IconToggleButtonDefaults.animatedShapes(),
+        ) {
+            if (secondChecked) {
+                WifiOnIcon()
+            } else {
+                WifiOffIcon()
+            }
+        }
+    }
+}
+
+@Sampled
+@Composable
+fun IconToggleButtonVariantSample() {
+    var firstChecked by remember { mutableStateOf(true) }
+    var secondChecked by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxSize(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconToggleButton(
+            checked = firstChecked,
+            onCheckedChange = { firstChecked = !firstChecked },
+            shapes = IconToggleButtonDefaults.variantAnimatedShapes(),
+        ) {
+            if (firstChecked) {
+                WifiOnIcon()
+            } else {
+                WifiOffIcon()
+            }
+        }
+
+        Spacer(modifier = Modifier.width(5.dp))
+
+        IconToggleButton(
+            checked = secondChecked,
+            onCheckedChange = { secondChecked = !secondChecked },
+            shapes = IconToggleButtonDefaults.variantAnimatedShapes(),
+        ) {
+            if (secondChecked) {
+                WifiOnIcon()
+            } else {
+                WifiOffIcon()
+            }
+        }
     }
 }

@@ -20,8 +20,7 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.util.AndroidRuntimeException;
 
-import androidx.annotation.NonNull;
-
+import org.jspecify.annotations.NonNull;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -68,9 +67,9 @@ public final class AnimatorTestRule implements TestRule {
         mTestHandler = new AnimationHandler(new TestProvider());
     }
 
-    @NonNull
     @Override
-    public Statement apply(@NonNull final Statement base, @NonNull Description description) {
+    public @NonNull Statement apply(final @NonNull Statement base,
+            @NonNull Description description) {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {

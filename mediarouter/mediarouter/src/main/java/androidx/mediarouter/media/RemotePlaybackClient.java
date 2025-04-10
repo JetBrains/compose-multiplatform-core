@@ -25,7 +25,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -62,6 +61,7 @@ public class RemotePlaybackClient {
     /**
      * Creates a remote playback client for a route.
      *
+     * @param context The {@link Context}.
      * @param route The media route.
      */
     public RemotePlaybackClient(@NonNull Context context, @NonNull MediaRouter.RouteInfo route) {
@@ -701,8 +701,10 @@ public class RemotePlaybackClient {
                                     + ", itemId=" + itemIdResult
                                     + ", itemStatus=" + itemStatus);
                         }
-                        callback.onResult(data, sessionIdResult, sessionStatus,
-                                itemIdResult, itemStatus);
+                        if (callback != null) {
+                            callback.onResult(data, sessionIdResult, sessionStatus,
+                                    itemIdResult, itemStatus);
+                        }
                         return;
                     }
                 }
@@ -773,7 +775,9 @@ public class RemotePlaybackClient {
             Bundle data) {
         Log.w(TAG, "Received invalid result data from " + intent.getAction()
                 + ": data=" + bundleToString(data));
-        callback.onError(null, MediaControlIntent.ERROR_UNKNOWN, data);
+        if (callback != null) {
+            callback.onError(null, MediaControlIntent.ERROR_UNKNOWN, data);
+        }
     }
 
     void handleError(Intent intent, ActionCallback callback,
@@ -791,7 +795,9 @@ public class RemotePlaybackClient {
                     + ", code=" + code
                     + ", data=" + bundleToString(data));
         }
-        callback.onError(error, code, data);
+        if (callback != null) {
+            callback.onError(error, code, data);
+        }
     }
 
     private void detectFeatures() {
@@ -1063,7 +1069,6 @@ public class RemotePlaybackClient {
 
     @RequiresApi(33)
     private static class Api33 {
-        @DoNotInline
         static void registerReceiver(@NonNull Context context, @NonNull BroadcastReceiver receiver,
                 @NonNull IntentFilter filter, int flags) {
             context.registerReceiver(receiver, filter, flags);

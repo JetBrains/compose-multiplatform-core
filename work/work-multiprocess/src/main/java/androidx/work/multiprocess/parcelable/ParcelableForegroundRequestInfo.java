@@ -21,9 +21,10 @@ import android.app.Notification;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.ForegroundInfo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * ForegroundInfo but parcelable.
@@ -69,13 +70,11 @@ public class ParcelableForegroundRequestInfo implements Parcelable {
             };
 
 
-    @NonNull
-    public ForegroundInfo getForegroundInfo() {
+    public @NonNull ForegroundInfo getForegroundInfo() {
         return mForegroundInfo;
     }
 
-    @NonNull
-    public String getId() {
+    public @NonNull String getId() {
         return mId;
     }
 

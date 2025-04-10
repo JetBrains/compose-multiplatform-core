@@ -20,12 +20,12 @@ import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE;
 import static androidx.camera.video.VideoRecordEvent.Finalize.VideoRecordError;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Consumer;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -91,7 +91,6 @@ import java.util.concurrent.Executor;
  * {@link #getRecordingStats} can be used to get the recording state such as total recorded bytes
  * and total duration when the event is triggered.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public abstract class VideoRecordEvent {
 
     private final OutputOptions mOutputOptions;
@@ -108,21 +107,18 @@ public abstract class VideoRecordEvent {
     /**
      * Gets the recording statistics of current event.
      */
-    @NonNull
-    public RecordingStats getRecordingStats() {
+    public @NonNull RecordingStats getRecordingStats() {
         return mRecordingStats;
     }
 
     /**
      * Gets the {@link OutputOptions} associated with this event.
      */
-    @NonNull
-    public OutputOptions getOutputOptions() {
+    public @NonNull OutputOptions getOutputOptions() {
         return mOutputOptions;
     }
 
-    @NonNull
-    static Start start(@NonNull OutputOptions outputOptions,
+    static @NonNull Start start(@NonNull OutputOptions outputOptions,
             @NonNull RecordingStats recordingStats) {
         return new Start(outputOptions, recordingStats);
     }
@@ -134,7 +130,6 @@ public abstract class VideoRecordEvent {
      * {@link PendingRecording#start(Executor, Consumer)}, a {@code Start} event will be the
      * first event.
      */
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     public static final class Start extends VideoRecordEvent {
 
         @SuppressWarnings("WeakerAccess") /* synthetic accessor */
@@ -143,15 +138,13 @@ public abstract class VideoRecordEvent {
         }
     }
 
-    @NonNull
-    static Finalize finalize(@NonNull OutputOptions outputOptions,
+    static @NonNull Finalize finalize(@NonNull OutputOptions outputOptions,
             @NonNull RecordingStats recordingStats,
             @NonNull OutputResults outputResults) {
         return new Finalize(outputOptions, recordingStats, outputResults, ERROR_NONE, null);
     }
 
-    @NonNull
-    static Finalize finalizeWithError(@NonNull OutputOptions outputOptions,
+    static @NonNull Finalize finalizeWithError(@NonNull OutputOptions outputOptions,
             @NonNull RecordingStats recordingStats,
             @NonNull OutputResults outputResults,
             @VideoRecordError int error,
@@ -230,7 +223,6 @@ public abstract class VideoRecordEvent {
      * <p>If there's no error that prevents the file to be generated, the file can be accessed
      * safely after receiving the finalize event.
      */
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     public static final class Finalize extends VideoRecordEvent {
         /**
          * The recording succeeded with no error.
@@ -378,16 +370,15 @@ public abstract class VideoRecordEvent {
         /**
          * Gets the {@link OutputResults}.
          */
-        @NonNull
-        public OutputResults getOutputResults() {
+        public @NonNull OutputResults getOutputResults() {
             return mOutputResults;
         }
 
         /**
          * Indicates whether an error occurred.
          *
-         * <p>Returns {@code true} if {@link #getError()} returns {@link #ERROR_NONE}, otherwise
-         * {@code false}.
+         * <p>Returns {@code false} if {@link #getError()} returns {@link #ERROR_NONE}, otherwise
+         * {@code true}.
          */
         public boolean hasError() {
             return mError != ERROR_NONE;
@@ -410,15 +401,17 @@ public abstract class VideoRecordEvent {
         /**
          * Gets the error cause.
          *
-         * <p>Returns {@code null} if {@link #hasError()} returns {@code false}.
+         * <p>Returns the error cause if any, otherwise returns {@code null}.
+         * <p>Note that not all error types include an error cause. For some error types, the
+         * file may still be generated successfully with no error cause. For example,
+         * {@link #ERROR_FILE_SIZE_LIMIT_REACHED}, {@link #ERROR_DURATION_LIMIT_REACHED} and
+         * {@link #ERROR_SOURCE_INACTIVE}.
          */
-        @Nullable
-        public Throwable getCause() {
+        public @Nullable Throwable getCause() {
             return mCause;
         }
 
-        @NonNull
-        static String errorToString(@VideoRecordError int error) {
+        static @NonNull String errorToString(@VideoRecordError int error) {
             switch (error) {
                 case ERROR_NONE: return "ERROR_NONE";
                 case ERROR_UNKNOWN: return "ERROR_UNKNOWN";
@@ -438,8 +431,7 @@ public abstract class VideoRecordEvent {
         }
     }
 
-    @NonNull
-    static Status status(@NonNull OutputOptions outputOptions,
+    static @NonNull Status status(@NonNull OutputOptions outputOptions,
             @NonNull RecordingStats recordingStats) {
         return new Status(outputOptions, recordingStats);
     }
@@ -447,7 +439,6 @@ public abstract class VideoRecordEvent {
     /**
      * The status report of the recording in progress.
      */
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     public static final class Status extends VideoRecordEvent {
 
         @SuppressWarnings("WeakerAccess") /* synthetic accessor */
@@ -456,8 +447,7 @@ public abstract class VideoRecordEvent {
         }
     }
 
-    @NonNull
-    static Pause pause(@NonNull OutputOptions outputOptions,
+    static @NonNull Pause pause(@NonNull OutputOptions outputOptions,
             @NonNull RecordingStats recordingStats) {
         return new Pause(outputOptions, recordingStats);
     }
@@ -467,7 +457,6 @@ public abstract class VideoRecordEvent {
      *
      * <p>A {@code Pause} event will be triggered after calling {@link Recording#pause()}.
      */
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     public static final class Pause extends VideoRecordEvent {
 
         @SuppressWarnings("WeakerAccess") /* synthetic accessor */
@@ -476,8 +465,7 @@ public abstract class VideoRecordEvent {
         }
     }
 
-    @NonNull
-    static Resume resume(@NonNull OutputOptions outputOptions,
+    static @NonNull Resume resume(@NonNull OutputOptions outputOptions,
             @NonNull RecordingStats recordingStats) {
         return new Resume(outputOptions, recordingStats);
     }
@@ -487,7 +475,6 @@ public abstract class VideoRecordEvent {
      *
      * <p>A {@code Resume} event will be triggered after calling {@link Recording#resume()}.
      */
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     public static final class Resume extends VideoRecordEvent {
 
         @SuppressWarnings("WeakerAccess") /* synthetic accessor */

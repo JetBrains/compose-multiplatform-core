@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-@file:SuppressLint("ClassVerificationFailure") // Entire file is RequiresApi(26)
 @file:Suppress("NOTHING_TO_INLINE") // Aliases to public API.
 
 package androidx.core.graphics.drawable
 
-import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.drawable.Icon
 import android.net.Uri
@@ -38,21 +36,18 @@ public inline fun Bitmap.toAdaptiveIcon(): Icon = Icon.createWithAdaptiveBitmap(
  *
  * @see Icon.createWithBitmap
  */
-@RequiresApi(26)
-public inline fun Bitmap.toIcon(): Icon = Icon.createWithBitmap(this)
+@RequiresApi(26) public inline fun Bitmap.toIcon(): Icon = Icon.createWithBitmap(this)
 
 /**
  * Create an [Icon] from this [Uri].
  *
  * @see Icon.createWithContentUri
  */
-@RequiresApi(26)
-public inline fun Uri.toIcon(): Icon = Icon.createWithContentUri(this)
+@RequiresApi(26) public inline fun Uri.toIcon(): Icon = Icon.createWithContentUri(this)
 
 /**
  * Create an [Icon] from this [ByteArray].
  *
  * @see Icon.createWithData
  */
-@RequiresApi(26)
-public inline fun ByteArray.toIcon(): Icon = Icon.createWithData(this, 0, size)
+@RequiresApi(26) public inline fun ByteArray.toIcon(): Icon = Icon.createWithData(this, 0, size)

@@ -16,14 +16,15 @@
 
 package androidx.camera.video;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import android.location.Location;
 
 import com.google.auto.value.AutoValue;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /** A fake implementation of {@link OutputOptions}. */
 // Java is used because @AutoValue is required.
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class FakeOutputOptions extends OutputOptions {
 
     private FakeOutputOptions(@NonNull FakeOutputOptionsInternal fakeOutputOptionsInternal) {
@@ -31,7 +32,6 @@ public class FakeOutputOptions extends OutputOptions {
     }
 
     /** The builder of the {@link FakeOutputOptions} object. */
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     public static final class Builder extends OutputOptions.Builder<FakeOutputOptions, Builder> {
 
         /** Creates a builder of the {@link FakeOutputOptions}. */
@@ -41,8 +41,7 @@ public class FakeOutputOptions extends OutputOptions {
 
         /** Builds the {@link FakeOutputOptions} instance. */
         @Override
-        @NonNull
-        public FakeOutputOptions build() {
+        public @NonNull FakeOutputOptions build() {
             return new FakeOutputOptions(
                     ((FakeOutputOptionsInternal.Builder) mRootInternalBuilder).build());
         }
@@ -50,14 +49,15 @@ public class FakeOutputOptions extends OutputOptions {
 
     @AutoValue
     abstract static class FakeOutputOptionsInternal extends OutputOptions.OutputOptionsInternal {
+        @Override
+        abstract @Nullable Location getLocation();
 
         @AutoValue.Builder
         abstract static class Builder extends OutputOptions.OutputOptionsInternal.Builder<Builder> {
 
             @SuppressWarnings("NullableProblems") // Nullable problem in AutoValue generated class
             @Override
-            @NonNull
-            abstract FakeOutputOptionsInternal build();
+            abstract @NonNull FakeOutputOptionsInternal build();
         }
     }
 }

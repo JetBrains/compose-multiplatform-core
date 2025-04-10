@@ -1,5 +1,5 @@
 /*
- * Copyright 20 The Android Open Source Project
+ * Copyright 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,17 +39,16 @@ import androidx.compose.ui.unit.dp
  */
 @OptIn(ExperimentalLayoutApi::class)
 class RectsInFlowColumnTestCase(
-    private val amountOfRectangles: Int
+    private val amountOfRectangles: Int,
+    private val modifier: Modifier = Modifier
 ) : LayeredComposeTestCase(), ToggleableTestCase {
 
     private val states = mutableListOf<MutableState<Color>>()
 
     @Composable
     override fun MeasuredContent() {
-        FlowColumn(maxItemsInEachColumn = 3) {
-            repeat(amountOfRectangles) {
-                ColoredRectWithModel()
-            }
+        FlowColumn(modifier, maxItemsInEachColumn = 3) {
+            repeat(amountOfRectangles) { ColoredRectWithModel() }
         }
     }
 
@@ -66,9 +65,6 @@ class RectsInFlowColumnTestCase(
     fun ColoredRectWithModel() {
         val state = remember { mutableStateOf(Color.Black) }
         states.add(state)
-        Box(
-            Modifier
-                .size(100.dp, 50.dp)
-                .background(color = state.value))
+        Box(Modifier.size(100.dp, 50.dp).background(color = state.value))
     }
 }

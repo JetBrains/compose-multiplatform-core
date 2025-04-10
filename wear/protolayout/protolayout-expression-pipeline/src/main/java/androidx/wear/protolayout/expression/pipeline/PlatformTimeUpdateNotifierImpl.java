@@ -21,10 +21,11 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
@@ -37,11 +38,11 @@ import java.util.concurrent.Executor;
 public class PlatformTimeUpdateNotifierImpl implements PlatformTimeUpdateNotifier {
     private static final String TAG = "PlatformTimeUpdateNotifierImpl";
     private final Handler mUiHandler = new Handler(Looper.getMainLooper());
-    @Nullable private Runnable mRegisteredReceiver;
+    private @Nullable Runnable mRegisteredReceiver;
     private final Runnable mNotifyAndSchedule = this::notifyAndScheduleNextSecond;
     private long mLastScheduleTimeMillis = 0;
     private boolean mUpdatesEnabled = true;
-    @Nullable private Executor mRegisteredExecutor;
+    private @Nullable Executor mRegisteredExecutor;
 
     /**
      * Sets the callback to be called whenever platform time needs to be reevaluated. Note that this
@@ -86,7 +87,7 @@ public class PlatformTimeUpdateNotifierImpl implements PlatformTimeUpdateNotifie
             mUiHandler.removeCallbacks(this.mNotifyAndSchedule, this);
         } else if (mRegisteredReceiver != null) {
             mLastScheduleTimeMillis = SystemClock.uptimeMillis();
-            scheduleNextSecond();
+            notifyAndScheduleNextSecond();
         }
     }
 

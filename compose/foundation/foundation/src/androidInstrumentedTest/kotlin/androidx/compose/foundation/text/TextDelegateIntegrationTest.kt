@@ -18,7 +18,6 @@ package androidx.compose.foundation.text
 
 import android.graphics.Bitmap
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
@@ -36,7 +35,6 @@ import kotlin.math.roundToInt
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(InternalFoundationTextApi::class)
 @RunWith(AndroidJUnit4::class)
 @SmallTest
 class TextDelegateIntegrationTest {
@@ -44,7 +42,6 @@ class TextDelegateIntegrationTest {
     private val fontFamily = TEST_FONT_FAMILY
     private val density = Density(density = 1f)
     private val context = InstrumentationRegistry.getInstrumentation().context
-    @OptIn(ExperimentalTextApi::class)
     private val fontFamilyResolver = createFontFamilyResolver(context)
 
     @Test
@@ -54,12 +51,13 @@ class TextDelegateIntegrationTest {
             val text = "Hello"
             val spanStyle = SpanStyle(fontSize = fontSize, fontFamily = fontFamily)
             val annotatedString = AnnotatedString(text, spanStyle)
-            val textDelegate = TextDelegate(
-                text = annotatedString,
-                style = TextStyle.Default,
-                density = this,
-                fontFamilyResolver = fontFamilyResolver
-            )
+            val textDelegate =
+                TextDelegate(
+                    text = annotatedString,
+                    style = TextStyle.Default,
+                    density = this,
+                    fontFamilyResolver = fontFamilyResolver
+                )
 
             textDelegate.layoutIntrinsics(LayoutDirection.Ltr)
 
@@ -75,12 +73,13 @@ class TextDelegateIntegrationTest {
             val text = "Hello"
             val spanStyle = SpanStyle(fontSize = fontSize, fontFamily = fontFamily)
             val annotatedString = AnnotatedString(text, spanStyle)
-            val textDelegate = TextDelegate(
-                text = annotatedString,
-                style = TextStyle.Default,
-                density = this,
-                fontFamilyResolver = fontFamilyResolver
-            )
+            val textDelegate =
+                TextDelegate(
+                    text = annotatedString,
+                    style = TextStyle.Default,
+                    density = this,
+                    fontFamilyResolver = fontFamilyResolver
+                )
 
             textDelegate.layoutIntrinsics(LayoutDirection.Ltr)
 
@@ -91,12 +90,13 @@ class TextDelegateIntegrationTest {
 
     @Test
     fun TextLayoutInput_reLayout_withDifferentHeight() {
-        val textDelegate = TextDelegate(
-            text = AnnotatedString(text = "Hello World!"),
-            style = TextStyle.Default,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver
-        )
+        val textDelegate =
+            TextDelegate(
+                text = AnnotatedString(text = "Hello World!"),
+                style = TextStyle.Default,
+                density = density,
+                fontFamilyResolver = fontFamilyResolver
+            )
         val width = 200
         val heightFirstLayout = 100
         val heightSecondLayout = 200
@@ -106,22 +106,20 @@ class TextDelegateIntegrationTest {
         assertThat(resultFirstLayout.layoutInput.constraints).isEqualTo(constraintsFirstLayout)
 
         val constraintsSecondLayout = Constraints.fixed(width, heightSecondLayout)
-        val resultSecondLayout = textDelegate.layout(
-            constraintsSecondLayout,
-            LayoutDirection.Ltr,
-            resultFirstLayout
-        )
+        val resultSecondLayout =
+            textDelegate.layout(constraintsSecondLayout, LayoutDirection.Ltr, resultFirstLayout)
         assertThat(resultSecondLayout.layoutInput.constraints).isEqualTo(constraintsSecondLayout)
     }
 
     @Test
     fun TextLayoutResult_reLayout_withDifferentHeight() {
-        val textDelegate = TextDelegate(
-            text = AnnotatedString(text = "Hello World!"),
-            style = TextStyle.Default,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver
-        )
+        val textDelegate =
+            TextDelegate(
+                text = AnnotatedString(text = "Hello World!"),
+                style = TextStyle.Default,
+                density = density,
+                fontFamilyResolver = fontFamilyResolver
+            )
         val width = 200
         val heightFirstLayout = 100
         val heightSecondLayout = 200
@@ -131,11 +129,8 @@ class TextDelegateIntegrationTest {
         assertThat(resultFirstLayout.size.height).isEqualTo(heightFirstLayout)
 
         val constraintsSecondLayout = Constraints.fixed(width, heightSecondLayout)
-        val resultSecondLayout = textDelegate.layout(
-            constraintsSecondLayout,
-            LayoutDirection.Ltr,
-            resultFirstLayout
-        )
+        val resultSecondLayout =
+            textDelegate.layout(constraintsSecondLayout, LayoutDirection.Ltr, resultFirstLayout)
         assertThat(resultSecondLayout.size.height).isEqualTo(heightSecondLayout)
     }
 
@@ -143,14 +138,15 @@ class TextDelegateIntegrationTest {
     fun TextLayoutResult_layout_withEllipsis_withoutSoftWrap() {
         val fontSize = 20f
         val text = AnnotatedString(text = "Hello World! Hello World! Hello World! Hello World!")
-        val textDelegate = TextDelegate(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp),
-            softWrap = false,
-            overflow = TextOverflow.Ellipsis,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver
-        )
+        val textDelegate =
+            TextDelegate(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp),
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+                density = density,
+                fontFamilyResolver = fontFamilyResolver
+            )
         textDelegate.layoutIntrinsics(LayoutDirection.Ltr)
         // Makes width smaller than needed.
         val width = textDelegate.maxIntrinsicWidth / 2
@@ -165,19 +161,21 @@ class TextDelegateIntegrationTest {
     fun TextLayoutResult_layoutWithLimitedHeight_withEllipsis() {
         val fontSize = 20f
         val text = AnnotatedString(text = "Hello World! Hello World! Hello World! Hello World!")
-        val textDelegate = TextDelegate(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp),
-            overflow = TextOverflow.Ellipsis,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver
-        )
+        val textDelegate =
+            TextDelegate(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp),
+                overflow = TextOverflow.Ellipsis,
+                density = density,
+                fontFamilyResolver = fontFamilyResolver
+            )
         textDelegate.layoutIntrinsics(LayoutDirection.Ltr)
 
-        val constraints = Constraints(
-            maxWidth = textDelegate.maxIntrinsicWidth / 4,
-            maxHeight = (fontSize * 2.7).roundToInt() // fully fits at most 2 lines
-        )
+        val constraints =
+            Constraints(
+                maxWidth = textDelegate.maxIntrinsicWidth / 4,
+                maxHeight = (fontSize * 2.7).roundToInt() // fully fits at most 2 lines
+            )
         val layoutResult = textDelegate.layout(constraints, LayoutDirection.Ltr)
 
         assertThat(layoutResult.lineCount).isEqualTo(2)
@@ -188,22 +186,39 @@ class TextDelegateIntegrationTest {
     fun TextLayoutResult_sameWidth_inRtlAndLtr_withLetterSpacing() {
         val fontSize = 20f
         val text = AnnotatedString(text = "Hello World")
-        val textDelegate = TextDelegate(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp, letterSpacing = 0.5.sp),
-            overflow = TextOverflow.Ellipsis,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver
-        )
+        val textDelegate =
+            TextDelegate(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp, letterSpacing = 0.5.sp),
+                overflow = TextOverflow.Ellipsis,
+                density = density,
+                fontFamilyResolver = fontFamilyResolver
+            )
         val layoutResultLtr = textDelegate.layout(Constraints(), LayoutDirection.Ltr)
         val layoutResultRtl = textDelegate.layout(Constraints(), LayoutDirection.Rtl)
 
         assertThat(layoutResultLtr.size.width).isEqualTo(layoutResultRtl.size.width)
     }
+
+    @Test
+    fun layoutText_doesntThrow_when2shl14char() {
+        val textDelegate =
+            TextDelegate(
+                text = AnnotatedString(text = "a".repeat(2 shl 14)),
+                style = TextStyle.Default,
+                density = density,
+                fontFamilyResolver = fontFamilyResolver
+            )
+        val subject =
+            textDelegate.layout(
+                Constraints() /* unbounded */,
+                layoutDirection = LayoutDirection.Ltr,
+                null
+            )
+        assertThat(subject.size.width).isGreaterThan(0)
+        assertThat(subject.size.height).isGreaterThan(0)
+    }
 }
 
-private fun TextLayoutResult.toBitmap() = Bitmap.createBitmap(
-    size.width,
-    size.height,
-    Bitmap.Config.ARGB_8888
-)
+private fun TextLayoutResult.toBitmap() =
+    Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)

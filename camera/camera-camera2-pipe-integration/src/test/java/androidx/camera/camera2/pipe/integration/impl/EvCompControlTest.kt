@@ -27,7 +27,7 @@ import androidx.camera.camera2.pipe.RequestNumber
 import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.pipe.integration.compat.EvCompImpl
 import androidx.camera.camera2.pipe.integration.testing.FakeCameraProperties
-import androidx.camera.camera2.pipe.integration.testing.FakeUseCaseCamera
+import androidx.camera.camera2.pipe.integration.testing.FakeUseCaseCameraRequestControl
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeFrameInfo
 import androidx.camera.camera2.pipe.testing.FakeFrameMetadata
@@ -64,25 +64,23 @@ class EvCompControlTest {
             dispatcher,
         )
     }
-    private val metadata = FakeCameraMetadata(
-        mapOf(
-            CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE to Range.create(-4, 4),
-            CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP to Rational.parseRational("1/2"),
-        ),
-    )
+    private val metadata =
+        FakeCameraMetadata(
+            mapOf(
+                CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE to Range.create(-4, 4),
+                CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP to Rational.parseRational("1/2"),
+            ),
+        )
     private val comboRequestListener = ComboRequestListener()
     private lateinit var exposureControl: EvCompControl
 
     @Before
     fun setUp() {
-        exposureControl = EvCompControl(
-            EvCompImpl(
-                FakeCameraProperties(metadata),
-                fakeUseCaseThreads,
-                comboRequestListener
+        exposureControl =
+            EvCompControl(
+                EvCompImpl(FakeCameraProperties(metadata), fakeUseCaseThreads, comboRequestListener)
             )
-        )
-        exposureControl.useCaseCamera = FakeUseCaseCamera()
+        exposureControl.requestControl = FakeUseCaseCameraRequestControl()
     }
 
     @Test
@@ -92,10 +90,9 @@ class EvCompControlTest {
 
         // Assert. The second call should keep working.
         assertThat(deferred1.isCompleted).isFalse()
-        // Assert. The first call should be cancelled with a CameraControl.OperationCanceledException.
-        assertThrows<CameraControl.OperationCanceledException> {
-            deferred.awaitWithTimeout()
-        }
+        // Assert. The first call should be cancelled with a
+        // CameraControl.OperationCanceledException.
+        assertThrows<CameraControl.OperationCanceledException> { deferred.awaitWithTimeout() }
     }
 
     @Test
@@ -115,42 +112,37 @@ class EvCompControlTest {
         val deferred = exposureControl.updateAsync(1)
 
         // Act. Simulate control inactive by set useCaseCamera to null & call reset().
-        exposureControl.useCaseCamera = null
+        exposureControl.requestControl = null
         exposureControl.reset()
 
         // Assert. The exposure control has been set to inactive. It should throw an exception.
-        assertThrows<CameraControl.OperationCanceledException> {
-            deferred.awaitWithTimeout()
-        }
+        assertThrows<CameraControl.OperationCanceledException> { deferred.awaitWithTimeout() }
     }
 
     @Test
     fun setExposureNotInRange_shouldCompleteTheTaskWithException(): Unit = runBlocking {
         // Assert. The Exposure index 5 is not in the valid range. It should throw an exception.
-        assertThrows<IllegalArgumentException> {
-            exposureControl.updateAsync(5).awaitWithTimeout()
-        }
+        assertThrows<IllegalArgumentException> { exposureControl.updateAsync(5).awaitWithTimeout() }
     }
 
     @Test
     fun setExposureOnNotSupportedCamera_shouldCompleteTheTaskWithException(): Unit = runBlocking {
         // Arrange.
-        val evCompCompat = EvCompImpl(
-            // Fake CameraProperties without CONTROL_AE_COMPENSATION related properties.
-            FakeCameraProperties(),
-            fakeUseCaseThreads,
-            comboRequestListener
-        )
+        val evCompCompat =
+            EvCompImpl(
+                // Fake CameraProperties without CONTROL_AE_COMPENSATION related properties.
+                FakeCameraProperties(),
+                fakeUseCaseThreads,
+                comboRequestListener
+            )
         exposureControl = EvCompControl(evCompCompat)
-        exposureControl.useCaseCamera = FakeUseCaseCamera()
+        exposureControl.requestControl = FakeUseCaseCameraRequestControl()
 
         // Act.
         val deferred = exposureControl.updateAsync(1)
 
         // Assert. This camera does not support the exposure compensation, the task should fail.
-        assertThrows<IllegalArgumentException> {
-            deferred.awaitWithTimeout()
-        }
+        assertThrows<IllegalArgumentException> { deferred.awaitWithTimeout() }
     }
 
     @Test
@@ -159,7 +151,7 @@ class EvCompControlTest {
         val deferred = exposureControl.updateAsync(targetEv)
 
         // Act. Simulate the UseCaseCamera is recreated.
-        exposureControl.useCaseCamera = FakeUseCaseCamera()
+        exposureControl.requestControl = FakeUseCaseCameraRequestControl()
         comboRequestListener.simulateAeConverge(exposureValue = targetEv)
 
         // Assert. The setEV task should be completed.
@@ -172,45 +164,45 @@ class EvCompControlTest {
         val deferred = exposureControl.updateAsync(1)
 
         // Act. Simulate the UseCaseCamera is recreated,
-        exposureControl.useCaseCamera = FakeUseCaseCamera()
+        exposureControl.requestControl = FakeUseCaseCameraRequestControl()
         // Act. Submits a new EV value.
         val deferred2 = exposureControl.updateAsync(targetEv)
         comboRequestListener.simulateAeConverge(exposureValue = targetEv)
 
         // Assert. The previous setEV task should be cancelled
-        assertThrows<CameraControl.OperationCanceledException> {
-            deferred.awaitWithTimeout()
-        }
+        assertThrows<CameraControl.OperationCanceledException> { deferred.awaitWithTimeout() }
         // Assert. The latest setEV task should be completed.
         assertThat(deferred2.awaitWithTimeout()).isEqualTo(targetEv)
     }
 
     private suspend fun Deferred<Int>.awaitWithTimeout(
         timeMillis: Long = TimeUnit.SECONDS.toMillis(5)
-    ) = withTimeout(timeMillis) {
-        await()
-    }
+    ) = withTimeout(timeMillis) { await() }
 
     private fun ComboRequestListener.simulateAeConverge(
         exposureValue: Int,
         frameNumber: FrameNumber = FrameNumber(101L),
     ) {
-        val requestMetadata = FakeRequestMetadata(
-            requestParameters = mapOf(
-                CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION to exposureValue
-            ),
-            requestNumber = RequestNumber(1)
-        )
-        val resultMetaData = FakeFrameMetadata(
-            resultMetadata = mapOf(
-                CaptureResult.CONTROL_AE_EXPOSURE_COMPENSATION to exposureValue,
-                CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_CONVERGED,
-            ),
-            frameNumber = frameNumber,
-        )
+        val requestMetadata =
+            FakeRequestMetadata(
+                requestParameters =
+                    mapOf(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION to exposureValue),
+                requestNumber = RequestNumber(1)
+            )
+        val resultMetaData =
+            FakeFrameMetadata(
+                resultMetadata =
+                    mapOf(
+                        CaptureResult.CONTROL_AE_EXPOSURE_COMPENSATION to exposureValue,
+                        CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_CONVERGED,
+                    ),
+                frameNumber = frameNumber,
+            )
         fakeUseCaseThreads.sequentialExecutor.execute {
             onComplete(
-                requestMetadata, frameNumber, FakeFrameInfo(
+                requestMetadata,
+                frameNumber,
+                FakeFrameInfo(
                     metadata = resultMetaData,
                     requestMetadata = requestMetadata,
                 )

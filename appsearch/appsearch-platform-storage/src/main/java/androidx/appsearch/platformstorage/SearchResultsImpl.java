@@ -16,24 +16,31 @@
 package androidx.appsearch.platformstorage;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.SearchResult;
 import androidx.appsearch.app.SearchResults;
 import androidx.appsearch.app.SearchSpec;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.platformstorage.converter.SearchResultToPlatformConverter;
+import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
+import androidx.collection.ArraySet;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -47,30 +54,41 @@ class SearchResultsImpl implements SearchResults {
     private final android.app.appsearch.SearchResults mPlatformResults;
     private final SearchSpec mSearchSpec;
     private final Executor mExecutor;
+    private final Context mContext;
 
     SearchResultsImpl(
-            @NonNull android.app.appsearch.SearchResults platformResults,
+            android.app.appsearch.@NonNull SearchResults platformResults,
             @NonNull SearchSpec searchSpec,
-            @NonNull Executor executor) {
+            @NonNull Executor executor,
+            @NonNull Context context) {
         mPlatformResults = Preconditions.checkNotNull(platformResults);
         mSearchSpec = Preconditions.checkNotNull(searchSpec);
         mExecutor = Preconditions.checkNotNull(executor);
+        mContext = Preconditions.checkNotNull(context);
     }
 
     @SuppressLint("WrongConstant")
     @Override
-    @NonNull
-    public ListenableFuture<List<SearchResult>> getNextPageAsync() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE
-                && mSearchSpec.getJoinSpec() != null) {
-            throw new UnsupportedOperationException("Searching with a SearchSpec containing a "
-                    + "JoinSpec is not supported on this AppSearch implementation.");
-        }
+    public @NonNull ListenableFuture<List<SearchResult>> getNextPageAsync() {
         ResolvableFuture<List<SearchResult>> future = ResolvableFuture.create();
         mPlatformResults.getNextPage(mExecutor, result -> {
             if (result.isSuccess()) {
                 List<android.app.appsearch.SearchResult> frameworkResults = result.getResultValue();
                 List<SearchResult> jetpackResults = new ArrayList<>(frameworkResults.size());
+                Map<String, List<String>> projection = mSearchSpec.getProjections();
+
+                boolean isBuildVersionBeforeUDC =
+                        Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
+                boolean isAppSearchMainlineVersionBeforeUBase =
+                        AppSearchVersionUtil.getAppSearchVersionCode(mContext)
+                            < AppSearchVersionUtil.APPSEARCH_U_BASE_VERSION_CODE;
+                // Projection must be manually applied on versions before Android U.
+                // This is a workaround in Jetpack code for a pre-existing projection bug
+                // that persists Android S and T.
+                boolean manuallyApplyProjection = isBuildVersionBeforeUDC
+                        && isAppSearchMainlineVersionBeforeUBase
+                        && !projection.isEmpty();
+
                 for (int i = 0; i < frameworkResults.size(); i++) {
                     if (Build.VERSION.SDK_INT == Build.VERSION_CODES.S
                             || Build.VERSION.SDK_INT == Build.VERSION_CODES.S_V2) {
@@ -93,7 +111,14 @@ class SearchResultsImpl implements SearchResults {
                     SearchResult jetpackResult =
                             SearchResultToPlatformConverter.toJetpackSearchResult(
                                     frameworkResults.get(i));
-                    jetpackResults.add(jetpackResult);
+
+                    if (manuallyApplyProjection) {
+                        SearchResult searchResult =
+                                manuallyApplyProjection(jetpackResult, projection);
+                        jetpackResults.add(searchResult);
+                    } else {
+                        jetpackResults.add(jetpackResult);
+                    }
                 }
                 future.set(jetpackResults);
             } else {
@@ -110,5 +135,129 @@ class SearchResultsImpl implements SearchResults {
     @Override
     public void close() {
         mPlatformResults.close();
+    }
+
+    /**
+     * Helper function to manually apply projection.
+     *
+     * @param jetpackResult {@link SearchResult} from Jetpack.
+     * @param projection {@link SearchSpec} projection.
+     * @return {@link SearchResult} with manually applied projection.
+     */
+    @NonNull
+    private SearchResult manuallyApplyProjection(
+            @NonNull SearchResult jetpackResult,
+            @NonNull Map<String, List<String>> projection) {
+        GenericDocument jetpackGenericDocument = jetpackResult.getGenericDocument();
+        GenericDocument.Builder jetpackGenericDocumentBuilder =
+                new GenericDocument.Builder(jetpackGenericDocument);
+
+        // Determine the properties we want to keep for a given schema type.
+        Set<String> retainedProperties = null;
+        List<String> schemaTypes = projection.get(jetpackGenericDocument.getSchemaType());
+        List<String> wildcardSchemaTypes = projection.get(SearchSpec.SCHEMA_TYPE_WILDCARD);
+
+        if (schemaTypes != null) {
+            retainedProperties = new ArraySet<>(schemaTypes);
+        } else if (wildcardSchemaTypes != null) {
+            retainedProperties = new ArraySet<>(wildcardSchemaTypes);
+        }
+
+        if (retainedProperties != null) {
+            for (String propertyName : jetpackGenericDocument.getPropertyNames()) {
+                GenericDocument propertyDocument = jetpackGenericDocument
+                        .getPropertyDocument(propertyName);
+
+                // Check if the property is a nested document.
+                if (propertyDocument != null) {
+                    // Apply projection to the nested documents.
+                    applyProjectionToNestedDocument(jetpackGenericDocumentBuilder,
+                            propertyDocument, propertyName, retainedProperties);
+                } else if (!retainedProperties.contains(propertyName)) {
+                    // If a property is not a part of the projection, it will be removed.
+                    jetpackGenericDocumentBuilder.clearProperty(propertyName);
+                }
+            }
+        }
+
+        // Build an updated SearchResult that accounts for projection.
+        SearchResult.Builder resultBuilder = new SearchResult.Builder(jetpackResult)
+                .setGenericDocument(jetpackGenericDocumentBuilder.build());
+
+        // The updated SearchResult should not hold MatchInfos that have propertyPaths
+        // corresponding any removed properties.
+        List<SearchResult.MatchInfo> matchInfos = jetpackResult.getMatchInfos();
+        if (!matchInfos.isEmpty()) {
+            resultBuilder.clearMatchInfos();
+        }
+        for (SearchResult.MatchInfo matchInfo : matchInfos) {
+            String propertyPath = matchInfo.getPropertyPath();
+
+            boolean isPropertyInSchemaTypeProjection = schemaTypes != null
+                    && schemaTypes.contains(propertyPath);
+
+            boolean isPropertyInWildcardProjection = wildcardSchemaTypes != null
+                    && wildcardSchemaTypes.contains(propertyPath);
+
+            if (isPropertyInSchemaTypeProjection || isPropertyInWildcardProjection) {
+                SearchResult.MatchInfo clonedMatchInfo =
+                        new SearchResult.MatchInfo.Builder(matchInfo).build();
+                resultBuilder.addMatchInfo(clonedMatchInfo);
+            }
+        }
+
+        // Return the updated SearchResult.
+        return resultBuilder.build();
+    }
+
+    /**
+     * Helper function to manually apply projection to a nested document.
+     *
+     * @param jetpackGenericDocumentBuilder The builder for the parent {@link GenericDocument}.
+     * @param nestedDocument The nested {@link GenericDocument} whose properties need projection.
+     * @param propertyName The property name of the parent document.
+     * @param retainedProperties The set of properties that need to be retained.
+     */
+    private void applyProjectionToNestedDocument(
+            GenericDocument.@NonNull Builder jetpackGenericDocumentBuilder,
+            @NonNull GenericDocument nestedDocument,
+            @NonNull String propertyName,
+            @NonNull Set<String> retainedProperties) {
+        Set<String> nestedProperties = new ArraySet<>();
+
+        for (String property : retainedProperties) {
+            if (property.startsWith(propertyName + ".")) {
+                // The property will be in the format "propertyName.nestedPropertyName"
+                // Capture the "nestedPropertyName"
+                nestedProperties.add(property.substring(propertyName.length() + 1));
+            }
+        }
+
+        if (!nestedProperties.isEmpty()) {
+            // Build a new nested document with the projected properties.
+            GenericDocument.Builder nestedDocumentBuilder = new GenericDocument
+                    .Builder(nestedDocument);
+            for (String nestedPropertyName : nestedDocument.getPropertyNames()) {
+                GenericDocument nestedPropertyDocument = nestedDocument
+                        .getPropertyDocument(nestedPropertyName);
+
+                // Check if the property is a nested document.
+                if (nestedPropertyDocument != null) {
+                    // Recursively apply projection to the nested documents.
+                    applyProjectionToNestedDocument(
+                            nestedDocumentBuilder,
+                            nestedPropertyDocument,
+                            nestedPropertyName,
+                            nestedProperties);
+                } else if (!nestedProperties.contains(nestedPropertyName)) {
+                    // If the nested property is not part of the projection, it will be removed.
+                    nestedDocumentBuilder.clearProperty(nestedPropertyName);
+                }
+            }
+
+            // Modify the builder of the parent document.
+            jetpackGenericDocumentBuilder.setPropertyDocument(propertyName,
+                    nestedDocumentBuilder.build());
+        }
     }
 }

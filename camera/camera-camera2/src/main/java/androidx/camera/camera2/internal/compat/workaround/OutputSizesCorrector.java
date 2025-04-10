@@ -18,11 +18,11 @@ package androidx.camera.camera2.internal.compat.workaround;
 
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.ExtraSupportedOutputSizeQuirk;
 import androidx.camera.core.Logger;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +34,6 @@ import java.util.List;
  * 1. ExtraSupportedOutputSizeQuirk
  * 2. ExcludedSupportedSizesContainer
  */
-@RequiresApi(21)
 public class OutputSizesCorrector {
     private static final String TAG = "OutputSizesCorrector";
     private final String mCameraId;
@@ -55,8 +54,7 @@ public class OutputSizesCorrector {
     /**
      * Applies the output sizes related quirks onto the input sizes array.
      */
-    @NonNull
-    public Size[] applyQuirks(@NonNull Size[] sizes, int format) {
+    public Size @NonNull [] applyQuirks(Size @NonNull [] sizes, int format) {
         List<Size> sizeList = new ArrayList<>(Arrays.asList(sizes));
         addExtraSupportedOutputSizesByFormat(sizeList, format);
         excludeProblematicOutputSizesByFormat(sizeList, format);
@@ -69,8 +67,7 @@ public class OutputSizesCorrector {
     /**
      * Applies the output sizes related quirks onto the input sizes array.
      */
-    @NonNull
-    public <T> Size[] applyQuirks(@NonNull Size[] sizes, @NonNull Class<T> klass) {
+    public <T> Size @NonNull [] applyQuirks(Size @NonNull [] sizes, @NonNull Class<T> klass) {
         List<Size> sizeList = new ArrayList<>(Arrays.asList(sizes));
         addExtraSupportedOutputSizesByClass(sizeList, klass);
         excludeProblematicOutputSizesByClass(sizeList, klass);

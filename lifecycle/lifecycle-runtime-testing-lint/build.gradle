@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
-
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 import androidx.build.BundleInsideHelper
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,9 +35,9 @@ dependencies {
     compileOnly(libs.androidLintMinApi)
     compileOnly(libs.kotlinStdlib)
     // Needed for Compose lint util functions
-    bundleInside(projectOrArtifact(":compose:lint:common"))
+    bundleInside(project(":compose:lint:common"))
 
-    testImplementation(projectOrArtifact(":compose:lint:common-test"))
+    testImplementation(project(":compose:lint:common-test"))
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.kotlinReflect)
     testImplementation(libs.kotlinStdlibJdk8)
@@ -42,7 +48,7 @@ dependencies {
 
 androidx {
     name = "Lifecycle Runtime Testing Lint Checks"
-    type = LibraryType.LINT
+    type = SoftwareType.LINT
     inceptionYear = "2023"
     description = "Android Lifecycle Runtime Testing Lint Checks"
 }

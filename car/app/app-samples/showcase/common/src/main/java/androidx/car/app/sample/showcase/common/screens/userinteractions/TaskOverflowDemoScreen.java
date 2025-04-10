@@ -16,12 +16,11 @@
 
 package androidx.car.app.sample.showcase.common.screens.userinteractions;
 
-import static androidx.car.app.model.Action.BACK;
-
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.Screen;
 import androidx.car.app.constraints.ConstraintManager;
+import androidx.car.app.model.Action;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.ListTemplate;
 import androidx.car.app.model.Row;
@@ -33,6 +32,8 @@ import androidx.car.app.sample.showcase.common.screens.templatelayouts.MessageTe
 import androidx.car.app.sample.showcase.common.screens.templatelayouts.PaneTemplateDemoScreen;
 import androidx.car.app.sample.showcase.common.screens.templatelayouts.SearchTemplateDemoScreen;
 import androidx.car.app.sample.showcase.common.screens.templatelayouts.SignInTemplateDemoScreen;
+
+import org.jspecify.annotations.NonNull;
 
 /** A screen demonstrating Task Overflow for the different templates */
 public class TaskOverflowDemoScreen extends Screen {
@@ -86,9 +87,8 @@ public class TaskOverflowDemoScreen extends Screen {
                 .build();
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
         int listLimit = getCarContext().getCarService(ConstraintManager.class).getContentLimit(
                 ConstraintManager.CONTENT_LIMIT_TYPE_LIST);
         if (listLimit >= 6) {
@@ -101,8 +101,10 @@ public class TaskOverflowDemoScreen extends Screen {
         }
         return new ListTemplate.Builder()
                 .setSingleList(listBuilder.build())
-                .setTitle(getCarContext().getString(R.string.application_overflow_title))
-                .setHeaderAction(BACK)
+                .setHeader(new Header.Builder()
+                        .setTitle(getCarContext().getString(R.string.application_overflow_title))
+                        .setStartHeaderAction(Action.BACK)
+                        .build())
                 .build();
     }
 }

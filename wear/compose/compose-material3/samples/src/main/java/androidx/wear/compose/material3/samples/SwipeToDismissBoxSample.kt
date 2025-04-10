@@ -43,31 +43,23 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.SwipeToDismissValue
 import androidx.wear.compose.foundation.edgeSwipeToDismiss
 import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
-import androidx.wear.compose.material3.Checkbox
+import androidx.wear.compose.material3.CheckboxButton
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.SwipeToDismissBox
 import androidx.wear.compose.material3.Text
-import androidx.wear.compose.material3.ToggleButton
 
 @Sampled
 @Composable
-fun SimpleSwipeToDismissBox(
-    navigateBack: () -> Unit
-) {
-    SwipeToDismissBox(
-        onDismissed = navigateBack
-    ) { isBackground ->
+fun SimpleSwipeToDismissBox(navigateBack: () -> Unit) {
+    SwipeToDismissBox(onDismissed = navigateBack) { isBackground ->
         if (isBackground) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                modifier =
+                    Modifier.fillMaxSize().background(MaterialTheme.colorScheme.secondaryContainer)
             )
         } else {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.primary),
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primary),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
@@ -103,7 +95,6 @@ fun StatefulSwipeToDismissBox() {
         backgroundKey = if (!showMainScreen) "MainKey" else "Background",
         contentKey = if (showMainScreen) "MainKey" else "ItemKey",
     ) { isBackground ->
-
         if (isBackground || showMainScreen) {
             // Best practice would be to use State Hoisting and leave this composable stateless.
             // Here, we want to support MainScreen being shown from different destinations
@@ -116,32 +107,27 @@ fun StatefulSwipeToDismissBox() {
                     // and can be shown in foreground or background.
                     val checked = rememberSaveable { mutableStateOf(true) }
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(
-                            4.dp, Alignment.CenterVertically
-                        ),
+                        modifier =
+                            Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 8.dp),
+                        verticalArrangement =
+                            Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
                     ) {
                         Row(
-                            modifier = Modifier
-                                .height(40.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.surface,
-                                    shape = CircleShape
-                                )
-                                .padding(horizontal = 12.dp),
+                            modifier =
+                                Modifier.height(40.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.surfaceContainer,
+                                        shape = CircleShape
+                                    )
+                                    .padding(horizontal = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Box(
-                                modifier = Modifier.clickable { showMainScreen = false }
-                            ) {
+                            Box(modifier = Modifier.clickable { showMainScreen = false }) {
                                 Text("Item details")
                             }
-                            ToggleButton(
+                            CheckboxButton(
                                 label = { Text("Checkbox", maxLines = 1) },
                                 checked = checked.value,
-                                toggleControl = { Checkbox() },
                                 onCheckedChange = { checked.value = it },
                             )
                         }
@@ -150,9 +136,7 @@ fun StatefulSwipeToDismissBox() {
             )
         } else {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.primary),
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primary),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
@@ -165,33 +149,28 @@ fun StatefulSwipeToDismissBox() {
 
 @Sampled
 @Composable
-fun EdgeSwipeForSwipeToDismiss(
-    navigateBack: () -> Unit
-) {
+fun EdgeSwipeForSwipeToDismiss(navigateBack: () -> Unit) {
     val state = rememberSwipeToDismissBoxState()
 
     // When using Modifier.edgeSwipeToDismiss, it is required that the element on which the
     // modifier applies exists within a SwipeToDismissBox which shares the same state.
-    SwipeToDismissBox(
-        state = state,
-        onDismissed = navigateBack
-    ) { isBackground ->
+    SwipeToDismissBox(state = state, onDismissed = navigateBack) { isBackground ->
         val horizontalScrollState = rememberScrollState(0)
         if (isBackground) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                modifier =
+                    Modifier.fillMaxSize().background(MaterialTheme.colorScheme.secondaryContainer)
             )
         } else {
             Box(modifier = Modifier.fillMaxSize()) {
                 Text(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .edgeSwipeToDismiss(state)
-                        .horizontalScroll(horizontalScrollState),
-                    text = "This text can be scrolled horizontally - to dismiss, swipe " +
-                        "right from the left edge of the screen (called Edge Swiping)",
+                    modifier =
+                        Modifier.align(Alignment.Center)
+                            .edgeSwipeToDismiss(state)
+                            .horizontalScroll(horizontalScrollState),
+                    text =
+                        "This text can be scrolled horizontally - to dismiss, swipe " +
+                            "right from the left edge of the screen (called Edge Swiping)",
                 )
             }
         }

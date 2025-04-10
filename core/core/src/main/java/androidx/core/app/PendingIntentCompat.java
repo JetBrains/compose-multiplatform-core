@@ -28,12 +28,12 @@ import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.Handler;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Closeable;
 import java.lang.annotation.Retention;
@@ -72,7 +72,7 @@ public final class PendingIntentCompat {
     public static @NonNull PendingIntent getActivities(
             @NonNull Context context,
             int requestCode,
-            @NonNull @SuppressLint("ArrayReturn") Intent[] intents,
+            @SuppressLint("ArrayReturn") Intent @NonNull [] intents,
             @Flags int flags,
             @Nullable Bundle options,
             boolean isMutable) {
@@ -89,7 +89,7 @@ public final class PendingIntentCompat {
     public static @NonNull PendingIntent getActivities(
             @NonNull Context context,
             int requestCode,
-            @NonNull @SuppressLint("ArrayReturn") Intent[] intents,
+            @SuppressLint("ArrayReturn") Intent @NonNull [] intents,
             @Flags int flags,
             boolean isMutable) {
         return PendingIntent.getActivities(
@@ -204,7 +204,7 @@ public final class PendingIntentCompat {
     public static void send(
             @NonNull PendingIntent pendingIntent,
             int code,
-            @Nullable PendingIntent.OnFinished onFinished,
+            PendingIntent.@Nullable OnFinished onFinished,
             @Nullable Handler handler) throws PendingIntent.CanceledException {
         try (GatedCallback gatedCallback = new GatedCallback(onFinished)) {
             pendingIntent.send(code, gatedCallback.getCallback(), handler);
@@ -229,7 +229,7 @@ public final class PendingIntentCompat {
             @SuppressLint("ContextFirst") @NonNull Context context,
             int code,
             @NonNull Intent intent,
-            @Nullable PendingIntent.OnFinished onFinished,
+            PendingIntent.@Nullable OnFinished onFinished,
             @Nullable Handler handler) throws PendingIntent.CanceledException {
         send(pendingIntent, context, code, intent, onFinished, handler, null, null);
     }
@@ -252,7 +252,7 @@ public final class PendingIntentCompat {
             @SuppressLint("ContextFirst") @NonNull Context context,
             int code,
             @NonNull Intent intent,
-            @Nullable PendingIntent.OnFinished onFinished,
+            PendingIntent.@Nullable OnFinished onFinished,
             @Nullable Handler handler,
             @Nullable String requiredPermissions,
             @Nullable Bundle options) throws PendingIntent.CanceledException {
@@ -275,7 +275,7 @@ public final class PendingIntentCompat {
         }
     }
 
-    private static int addMutabilityFlags(boolean isMutable, int flags) {
+    static int addMutabilityFlags(boolean isMutable, int flags) {
         if (isMutable) {
             if (VERSION.SDK_INT >= 31) {
                 flags |= FLAG_MUTABLE;
@@ -295,13 +295,12 @@ public final class PendingIntentCompat {
     private static class Api23Impl {
         private Api23Impl() {}
 
-        @DoNotInline
         public static void send(
                 @NonNull PendingIntent pendingIntent,
                 @NonNull Context context,
                 int code,
                 @NonNull Intent intent,
-                @Nullable PendingIntent.OnFinished onFinished,
+                PendingIntent.@Nullable OnFinished onFinished,
                 @Nullable Handler handler,
                 @Nullable String requiredPermission,
                 @Nullable Bundle options) throws PendingIntent.CanceledException {
@@ -320,7 +319,6 @@ public final class PendingIntentCompat {
     private static class Api26Impl {
         private Api26Impl() {}
 
-        @DoNotInline
         public static PendingIntent getForegroundService(
                 Context context, int requestCode, Intent intent, int flags) {
             return PendingIntent.getForegroundService(context, requestCode, intent, flags);
@@ -332,17 +330,15 @@ public final class PendingIntentCompat {
 
         private final CountDownLatch mComplete = new CountDownLatch(1);
 
-        @Nullable
-        private PendingIntent.OnFinished mCallback;
+        private PendingIntent.@Nullable OnFinished mCallback;
         private boolean mSuccess;
 
-        GatedCallback(@Nullable PendingIntent.OnFinished callback) {
+        GatedCallback(PendingIntent.@Nullable OnFinished callback) {
             this.mCallback = callback;
             mSuccess = false;
         }
 
-        @Nullable
-        public PendingIntent.OnFinished getCallback() {
+        public PendingIntent.@Nullable OnFinished getCallback() {
             if (mCallback == null) {
                 return null;
             } else {

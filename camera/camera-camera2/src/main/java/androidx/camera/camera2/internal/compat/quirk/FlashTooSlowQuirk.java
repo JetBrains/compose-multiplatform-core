@@ -21,9 +21,9 @@ import static android.hardware.camera2.CameraMetadata.LENS_FACING_BACK;
 import android.hardware.camera2.CameraCharacteristics;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -40,7 +40,6 @@ import java.util.Locale;
  *     Device(s): Pixel 3a / Pixel 3a XL, all models of Pixel 4 and 5, SM-A320, Moto G20, Itel A48,
  *     Realme C11 2021
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class FlashTooSlowQuirk implements UseTorchAsFlashQuirk {
     private static final List<String> AFFECTED_MODEL_PREFIXES = Arrays.asList(
             "PIXEL 3A",

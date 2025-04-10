@@ -23,9 +23,10 @@ import android.net.Uri;
 import android.provider.DocumentsContract;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 
@@ -41,14 +42,13 @@ class TreeDocumentFile extends DocumentFile {
     }
 
     @Override
-    @Nullable
-    public DocumentFile createFile(@NonNull String mimeType, @NonNull String displayName) {
+    public @Nullable DocumentFile createFile(@NonNull String mimeType,
+            @NonNull String displayName) {
         final Uri result = TreeDocumentFile.createFile(mContext, mUri, mimeType, displayName);
         return (result != null) ? new TreeDocumentFile(this, mContext, result) : null;
     }
 
-    @Nullable
-    private static Uri createFile(Context context, Uri self, String mimeType,
+    private static @Nullable Uri createFile(Context context, Uri self, String mimeType,
             String displayName) {
         try {
             return DocumentsContract.createDocument(context.getContentResolver(), self, mimeType,
@@ -59,28 +59,24 @@ class TreeDocumentFile extends DocumentFile {
     }
 
     @Override
-    @Nullable
-    public DocumentFile createDirectory(@NonNull String displayName) {
+    public @Nullable DocumentFile createDirectory(@NonNull String displayName) {
         final Uri result = TreeDocumentFile.createFile(
                 mContext, mUri, DocumentsContract.Document.MIME_TYPE_DIR, displayName);
         return (result != null) ? new TreeDocumentFile(this, mContext, result) : null;
     }
 
-    @NonNull
     @Override
-    public Uri getUri() {
+    public @NonNull Uri getUri() {
         return mUri;
     }
 
     @Override
-    @Nullable
-    public String getName() {
+    public @Nullable String getName() {
         return DocumentsContractApi19.getName(mContext, mUri);
     }
 
     @Override
-    @Nullable
-    public String getType() {
+    public @Nullable String getType() {
         return DocumentsContractApi19.getType(mContext, mUri);
     }
 
@@ -133,9 +129,8 @@ class TreeDocumentFile extends DocumentFile {
         return DocumentsContractApi19.exists(mContext, mUri);
     }
 
-    @NonNull
     @Override
-    public DocumentFile[] listFiles() {
+    public DocumentFile @NonNull [] listFiles() {
         final ContentResolver resolver = mContext.getContentResolver();
         final Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(mUri,
                 DocumentsContract.getDocumentId(mUri));

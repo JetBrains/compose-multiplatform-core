@@ -25,12 +25,12 @@ import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.util.Collections;
@@ -85,6 +85,7 @@ public final class VelocityTrackerCompat {
      *
      * @deprecated Use {@link VelocityTracker#getXVelocity(int)} directly.
      */
+    @androidx.annotation.ReplaceWith(expression = "tracker.getXVelocity(pointerId)")
     @Deprecated
     public static float getXVelocity(VelocityTracker tracker, int pointerId) {
         return tracker.getXVelocity(pointerId);
@@ -97,6 +98,7 @@ public final class VelocityTrackerCompat {
      *
      * @deprecated Use {@link VelocityTracker#getYVelocity(int)} directly.
      */
+    @androidx.annotation.ReplaceWith(expression = "tracker.getYVelocity(pointerId)")
     @Deprecated
     public static float getYVelocity(VelocityTracker tracker, int pointerId) {
         return tracker.getYVelocity(pointerId);
@@ -295,8 +297,8 @@ public final class VelocityTrackerCompat {
         sFallbackTrackers.remove(tracker);
     }
 
-    @Nullable
-    private static VelocityTrackerFallback getFallbackTrackerOrNull(VelocityTracker tracker) {
+    private static @Nullable VelocityTrackerFallback getFallbackTrackerOrNull(
+            VelocityTracker tracker) {
         return sFallbackTrackers.get(tracker);
     }
 
@@ -306,17 +308,14 @@ public final class VelocityTrackerCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean isAxisSupported(VelocityTracker velocityTracker, int axis) {
             return velocityTracker.isAxisSupported(axis);
         }
 
-        @DoNotInline
         static float getAxisVelocity(VelocityTracker velocityTracker, int axis, int id) {
             return velocityTracker.getAxisVelocity(axis, id);
         }
 
-        @DoNotInline
         static float getAxisVelocity(VelocityTracker velocityTracker, int axis) {
             return velocityTracker.getAxisVelocity(axis);
         }

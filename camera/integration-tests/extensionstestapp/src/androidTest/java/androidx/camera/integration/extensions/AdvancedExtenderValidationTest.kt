@@ -16,9 +16,10 @@
 
 package androidx.camera.integration.extensions
 
-import androidx.camera.camera2.Camera2Config
+import androidx.camera.integration.extensions.CameraExtensionsActivity.CAMERA_PIPE_IMPLEMENTATION_OPTION
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil
-import androidx.camera.integration.extensions.utils.CameraIdExtensionModePair
+import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.CameraXExtensionTestParams
+import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -40,26 +41,30 @@ import org.junit.runners.Parameterized
 @LargeTest
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 28)
-class AdvancedExtenderValidationTest(config: CameraIdExtensionModePair) {
-    private val validation = AdvancedExtenderValidation(config.cameraId, config.extensionMode)
+class AdvancedExtenderValidationTest(config: CameraXExtensionTestParams) {
+    private val validation =
+        AdvancedExtenderValidation(config.cameraXConfig, config.cameraId, config.extensionMode)
 
     companion object {
         @JvmStatic
         @get:Parameterized.Parameters(name = "config = {0}")
-        val parameters: Collection<CameraIdExtensionModePair>
+        val parameters: Collection<CameraXExtensionTestParams>
             get() = CameraXExtensionsTestUtil.getAllCameraIdExtensionModeCombinations()
     }
 
     @get:Rule
-    val useCamera = CameraUtil.grantCameraPermissionAndPreTest(
-        CameraUtil.PreTestCameraIdList(Camera2Config.defaultConfig())
-    )
+    val cameraPipeConfigTestRule =
+        CameraPipeConfigTestRule(active = config.implName == CAMERA_PIPE_IMPLEMENTATION_OPTION)
 
-    @Before
-    fun setUp() = validation.setUp()
+    @get:Rule
+    val useCamera =
+        CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
+            CameraUtil.PreTestCameraIdList(config.cameraXConfig)
+        )
 
-    @After
-    fun tearDown() = validation.tearDown()
+    @Before fun setUp() = validation.setUp()
+
+    @After fun tearDown() = validation.tearDown()
 
     @Test
     fun getSupportedPreviewOutputResolutions_returnValidData() =
@@ -100,4 +105,29 @@ class AdvancedExtenderValidationTest(config: CameraIdExtensionModePair) {
     @Test
     fun initSessionWithAnalysis_medianSize_canConfigureSession() =
         validation.initSessionWithAnalysis_medianSize_canConfigureSession()
+
+    @Test
+    fun initSessionWithOutputSurfaceConfigurationImpl_maxSize_canConfigureSession() =
+        validation.initSessionWithOutputSurfaceConfigurationImpl_maxSize_canConfigureSession()
+
+    @Test
+    fun validateSessionTypeSupport_sinceVersion_1_4() =
+        validation.validateSessionTypeSupport_sinceVersion_1_4()
+
+    @Test
+    fun validateSessionTypeSupportWithOutputSurfaceConfigurationImpl_sinceVersion_1_4() =
+        validation.validateSessionTypeSupportWithOutputSurfaceConfigurationImpl_sinceVersion_1_4()
+
+    @Test
+    fun validatePostviewSupport_sinceVersion_1_4() =
+        validation.validatePostviewSupport_sinceVersion_1_4()
+
+    @Test
+    fun validateProcessProgressSupport_sinceVersion_1_4() =
+        validation.validateProcessProgressSupport_sinceVersion_1_4()
+
+    @Test
+    @SdkSuppress(minSdkVersion = 30)
+    fun validateAvailableCharacteristicsKeyValuesSupport_sinceVersion_1_5() =
+        validation.validateAvailableCharacteristicsKeyValuesSupport_sinceVersion_1_5()
 }

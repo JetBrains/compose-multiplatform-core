@@ -76,4 +76,19 @@ public class RemoteEntryJavaTest {
         assertThat(fromSlice).isNotNull();
         assertThat(fromSlice.getPendingIntent()).isEqualTo(mPendingIntent);
     }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 34)
+    @SuppressWarnings("deprecation")
+    public void fromRemoteEntry_success() {
+        RemoteEntry originalEntry = new RemoteEntry(mPendingIntent);
+        android.app.slice.Slice slice = RemoteEntry.toSlice(originalEntry);
+        assertNotNull(slice);
+
+        RemoteEntry remoteEntry = RemoteEntry.fromRemoteEntry(
+                new android.service.credentials.RemoteEntry(slice));
+
+        assertThat(remoteEntry).isNotNull();
+        assertThat(remoteEntry.getPendingIntent()).isEqualTo(mPendingIntent);
+    }
 }

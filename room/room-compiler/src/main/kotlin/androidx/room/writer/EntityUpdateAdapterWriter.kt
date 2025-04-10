@@ -18,100 +18,105 @@ package androidx.room.writer
 
 import androidx.room.compiler.codegen.VisibilityModifier
 import androidx.room.compiler.codegen.XFunSpec
-import androidx.room.compiler.codegen.XFunSpec.Builder.Companion.addStatement
 import androidx.room.compiler.codegen.XTypeSpec
 import androidx.room.ext.CommonTypeNames
 import androidx.room.ext.RoomTypeNames
-import androidx.room.ext.SupportDbTypeNames
+import androidx.room.ext.SQLiteDriverTypeNames
 import androidx.room.solver.CodeGenScope
-import androidx.room.vo.FieldWithIndex
-import androidx.room.vo.Fields
-import androidx.room.vo.Pojo
+import androidx.room.vo.DataClass
+import androidx.room.vo.Properties
+import androidx.room.vo.PropertyWithIndex
 import androidx.room.vo.ShortcutEntity
 import androidx.room.vo.columnNames
 
-class EntityUpdateAdapterWriter private constructor(
+class EntityUpdateAdapterWriter
+private constructor(
     val tableName: String,
-    val pojo: Pojo,
-    val primaryKeyFields: Fields,
+    val dataClass: DataClass,
+    val primaryKeyFields: Properties,
     val onConflict: String
 ) {
     companion object {
         fun create(entity: ShortcutEntity, onConflict: String) =
             EntityUpdateAdapterWriter(
                 tableName = entity.tableName,
-                pojo = entity.pojo,
-                primaryKeyFields = entity.primaryKey.fields,
+                dataClass = entity.dataClass,
+                primaryKeyFields = entity.primaryKey.properties,
                 onConflict = onConflict
             )
     }
 
-    fun createAnonymous(typeWriter: TypeWriter, dbParam: String): XTypeSpec {
-        return XTypeSpec.anonymousClassBuilder(typeWriter.codeLanguage, "%L", dbParam).apply {
-            superclass(RoomTypeNames.DELETE_OR_UPDATE_ADAPTER.parametrizedBy(pojo.typeName))
-            addFunction(
-                XFunSpec.builder(
-                    language = language,
-                    name = "createQuery",
-                    visibility = VisibilityModifier.PROTECTED,
-                    isOverride = true
-                ).apply {
-                    returns(CommonTypeNames.STRING)
-                    val pojoCols = pojo.columnNames.joinToString(",") {
-                        "`$it` = ?"
-                    }
-                    val pkFieldsCols = primaryKeyFields.columnNames.joinToString(" AND ") {
-                        "`$it` = ?"
-                    }
-                    val query = buildString {
-                        if (onConflict.isNotEmpty()) {
-                            append("UPDATE OR $onConflict `$tableName` SET")
-                        } else {
-                            append("UPDATE `$tableName` SET")
-                        }
-                        append(" $pojoCols")
-                        append(" WHERE")
-                        append(" $pkFieldsCols")
-                    }
-                    addStatement("return %S", query)
-                }.build()
-            )
-            addFunction(
-                XFunSpec.builder(
-                    language = language,
-                    name = "bind",
-                    visibility = VisibilityModifier.PROTECTED,
-                    isOverride = true
-                ).apply {
-                    val stmtParam = "statement"
-                    addParameter(SupportDbTypeNames.SQLITE_STMT, stmtParam)
-                    val entityParam = "entity"
-                    addParameter(pojo.typeName, entityParam)
-                    val mappedField = FieldWithIndex.byOrder(pojo.fields)
-                    val bindScope = CodeGenScope(typeWriter)
-                    FieldReadWriteWriter.bindToStatement(
-                        ownerVar = entityParam,
-                        stmtParamVar = stmtParam,
-                        fieldsWithIndices = mappedField,
-                        scope = bindScope
-                    )
-                    val pkeyStart = pojo.fields.size
-                    val mappedPrimaryKeys = primaryKeyFields.mapIndexed { index, field ->
-                        FieldWithIndex(
-                            field = field,
-                            indexVar = "${pkeyStart + index + 1}",
-                            alwaysExists = true
+    fun createAnonymous(typeWriter: TypeWriter): XTypeSpec {
+        return XTypeSpec.anonymousClassBuilder()
+            .apply {
+                superclass(
+                    RoomTypeNames.DELETE_OR_UPDATE_ADAPTER.parametrizedBy(dataClass.typeName)
+                )
+                addFunction(
+                    XFunSpec.builder(
+                            name = "createQuery",
+                            visibility = VisibilityModifier.PROTECTED,
+                            isOverride = true
                         )
-                    }
-                    FieldReadWriteWriter.bindToStatement(
-                        ownerVar = entityParam,
-                        stmtParamVar = stmtParam,
-                        fieldsWithIndices = mappedPrimaryKeys,
-                        scope = bindScope
-                    )
-                    addCode(bindScope.generate())
-                }.build()
-            )
-        }.build()
+                        .apply {
+                            returns(CommonTypeNames.STRING)
+                            val dataClassCols =
+                                dataClass.columnNames.joinToString(",") { "`$it` = ?" }
+                            val pkFieldsCols =
+                                primaryKeyFields.columnNames.joinToString(" AND ") { "`$it` = ?" }
+                            val query = buildString {
+                                if (onConflict.isNotEmpty()) {
+                                    append("UPDATE OR $onConflict `$tableName` SET")
+                                } else {
+                                    append("UPDATE `$tableName` SET")
+                                }
+                                append(" $dataClassCols")
+                                append(" WHERE")
+                                append(" $pkFieldsCols")
+                            }
+                            addStatement("return %S", query)
+                        }
+                        .build()
+                )
+                addFunction(
+                    XFunSpec.builder(
+                            name = "bind",
+                            visibility = VisibilityModifier.PROTECTED,
+                            isOverride = true
+                        )
+                        .apply {
+                            val stmtParam = "statement"
+                            addParameter(stmtParam, SQLiteDriverTypeNames.STATEMENT)
+                            val entityParam = "entity"
+                            addParameter(entityParam, dataClass.typeName)
+                            val mappedField = PropertyWithIndex.byOrder(dataClass.properties)
+                            val bindScope = CodeGenScope(writer = typeWriter)
+                            PropertyReadWriteWriter.bindToStatement(
+                                ownerVar = entityParam,
+                                stmtParamVar = stmtParam,
+                                propertiesWithIndices = mappedField,
+                                scope = bindScope
+                            )
+                            val pkeyStart = dataClass.properties.size
+                            val mappedPrimaryKeys =
+                                primaryKeyFields.mapIndexed { index, field ->
+                                    PropertyWithIndex(
+                                        property = field,
+                                        indexVar = "${pkeyStart + index + 1}",
+                                        alwaysExists = true
+                                    )
+                                }
+                            PropertyReadWriteWriter.bindToStatement(
+                                ownerVar = entityParam,
+                                stmtParamVar = stmtParam,
+                                propertiesWithIndices = mappedPrimaryKeys,
+                                scope = bindScope
+                            )
+                            addCode(bindScope.generate())
+                        }
+                        .build()
+                )
+            }
+            .build()
     }
 }

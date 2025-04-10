@@ -20,6 +20,7 @@ import android.content.Context
 import androidx.appsearch.annotation.Document
 import androidx.appsearch.app.AppSearchSchema
 import androidx.appsearch.app.AppSearchSession
+import androidx.appsearch.app.EmbeddingVector
 import androidx.appsearch.app.GenericDocument
 import androidx.appsearch.app.PutDocumentsRequest
 import androidx.appsearch.app.SearchSpec
@@ -43,9 +44,11 @@ public class AnnotationProcessorKtTest {
     @Before
     public fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        session = LocalStorage.createSearchSessionAsync(
-            LocalStorage.SearchContext.Builder(context, DB_NAME).build()
-        ).get()
+        session =
+            LocalStorage.createSearchSessionAsync(
+                    LocalStorage.SearchContext.Builder(context, DB_NAME).build()
+                )
+                .get()
 
         // Cleanup whatever documents may still exist in these databases. This is needed in
         // addition to tearDown in case a test exited without completing properly.
@@ -64,15 +67,9 @@ public class AnnotationProcessorKtTest {
 
     @Document
     internal data class Card(
-        @Document.Namespace
-        val namespace: String,
-
-        @Document.Id
-        val id: String,
-
-        @Document.CreationTimestampMillis
-        val creationTimestampMillis: Long = 0L,
-
+        @Document.Namespace val namespace: String,
+        @Document.Id val id: String,
+        @Document.CreationTimestampMillis val creationTimestampMillis: Long = 0L,
         @Document.StringProperty(
             indexingType = AppSearchSchema.StringPropertyConfig.INDEXING_TYPE_PREFIXES,
             tokenizerType = AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_PLAIN
@@ -82,119 +79,49 @@ public class AnnotationProcessorKtTest {
 
     @Document
     internal data class Gift(
-        @Document.Namespace
-        val namespace: String,
-
-        @Document.Id
-        val id: String,
-
-        @Document.CreationTimestampMillis
-        val creationTimestampMillis: Long = 0L,
+        @Document.Namespace val namespace: String,
+        @Document.Id val id: String,
+        @Document.CreationTimestampMillis val creationTimestampMillis: Long = 0L,
 
         // Collections
-        @Document.LongProperty
-        val collectLong: Collection<Long>,
-
-        @Document.LongProperty
-        val collectInteger: Collection<Int>,
-
-        @Document.DoubleProperty
-        val collectDouble: Collection<Double>,
-
-        @Document.DoubleProperty
-        val collectFloat: Collection<Float>,
-
-        @Document.BooleanProperty
-        val collectBoolean: Collection<Boolean>,
-
-        @Document.BytesProperty
-        val collectByteArr: Collection<ByteArray>,
-
-        @Document.StringProperty
-        val collectString: Collection<String>,
-
-        @Document.DocumentProperty
-        val collectCard: Collection<Card>,
+        @Document.LongProperty val collectLong: Collection<Long>,
+        @Document.LongProperty val collectInteger: Collection<Int>,
+        @Document.DoubleProperty val collectDouble: Collection<Double>,
+        @Document.DoubleProperty val collectFloat: Collection<Float>,
+        @Document.BooleanProperty val collectBoolean: Collection<Boolean>,
+        @Document.BytesProperty val collectByteArr: Collection<ByteArray>,
+        @Document.StringProperty val collectString: Collection<String>,
+        @Document.DocumentProperty val collectCard: Collection<Card>,
 
         // Arrays
-        @Document.LongProperty
-        val arrBoxLong: Array<Long>,
-
-        @Document.LongProperty
-        val arrUnboxLong: LongArray,
-
-        @Document.LongProperty
-        val arrBoxInteger: Array<Int>,
-
-        @Document.LongProperty
-        val arrUnboxInt: IntArray,
-
-        @Document.DoubleProperty
-        val arrBoxDouble: Array<Double>,
-
-        @Document.DoubleProperty
-        val arrUnboxDouble: DoubleArray,
-
-        @Document.DoubleProperty
-        val arrBoxFloat: Array<Float>,
-
-        @Document.DoubleProperty
-        val arrUnboxFloat: FloatArray,
-
-        @Document.BooleanProperty
-        val arrBoxBoolean: Array<Boolean>,
-
-        @Document.BooleanProperty
-        val arrUnboxBoolean: BooleanArray,
-
-        @Document.BytesProperty
-        val arrUnboxByteArr: Array<ByteArray>,
-
-        @Document.StringProperty
-        val arrString: Array<String>,
-
-        @Document.DocumentProperty
-        val arrCard: Array<Card>,
+        @Document.LongProperty val arrBoxLong: Array<Long>,
+        @Document.LongProperty val arrUnboxLong: LongArray,
+        @Document.LongProperty val arrBoxInteger: Array<Int>,
+        @Document.LongProperty val arrUnboxInt: IntArray,
+        @Document.DoubleProperty val arrBoxDouble: Array<Double>,
+        @Document.DoubleProperty val arrUnboxDouble: DoubleArray,
+        @Document.DoubleProperty val arrBoxFloat: Array<Float>,
+        @Document.DoubleProperty val arrUnboxFloat: FloatArray,
+        @Document.BooleanProperty val arrBoxBoolean: Array<Boolean>,
+        @Document.BooleanProperty val arrUnboxBoolean: BooleanArray,
+        @Document.BytesProperty val arrUnboxByteArr: Array<ByteArray>,
+        @Document.StringProperty val arrString: Array<String>,
+        @Document.DocumentProperty val arrCard: Array<Card>,
 
         // Single values
-        @Document.StringProperty
-        val string: String,
-
-        @Document.LongProperty
-        val boxLong: Long,
-
-        @Document.LongProperty
-        val unboxLong: Long = 0,
-
-        @Document.LongProperty
-        val boxInteger: Int,
-
-        @Document.LongProperty
-        val unboxInt: Int = 0,
-
-        @Document.DoubleProperty
-        val boxDouble: Double,
-
-        @Document.DoubleProperty
-        val unboxDouble: Double = 0.0,
-
-        @Document.DoubleProperty
-        val boxFloat: Float,
-
-        @Document.DoubleProperty
-        val unboxFloat: Float = 0f,
-
-        @Document.BooleanProperty
-        val boxBoolean: Boolean,
-
-        @Document.BooleanProperty
-        val unboxBoolean: Boolean = false,
-
-        @Document.BytesProperty
-        val unboxByteArr: ByteArray,
-
-        @Document.DocumentProperty
-        val card: Card
+        @Document.StringProperty val string: String,
+        @Document.LongProperty val boxLong: Long,
+        @Document.LongProperty val unboxLong: Long = 0,
+        @Document.LongProperty val boxInteger: Int,
+        @Document.LongProperty val unboxInt: Int = 0,
+        @Document.DoubleProperty val boxDouble: Double,
+        @Document.DoubleProperty val unboxDouble: Double = 0.0,
+        @Document.DoubleProperty val boxFloat: Float,
+        @Document.DoubleProperty val unboxFloat: Float = 0f,
+        @Document.BooleanProperty val boxBoolean: Boolean,
+        @Document.BooleanProperty val unboxBoolean: Boolean = false,
+        @Document.BytesProperty val unboxByteArr: ByteArray,
+        @Document.DocumentProperty val card: Card
     ) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -244,21 +171,78 @@ public class AnnotationProcessorKtTest {
         }
     }
 
+    @Document
+    internal data class NullabilityDefaults(
+        @Document.Namespace val namespace: String,
+        @Document.Id val id: String,
+        @Document.StringProperty val nonNullList: List<String>,
+        @Document.StringProperty val nullableList: List<String>?,
+        @Document.BooleanProperty val nonNullBoolean: Boolean,
+        @Document.BooleanProperty val nullableBoolean: Boolean?
+    ) {}
+
+    @Test
+    fun testAnnotationProcessor_nullabilityDefaults() {
+        // Create an empty GenericDocument
+        val genericDocument =
+            GenericDocument.Builder<GenericDocument.Builder<*>>("ns", "id", "schema").build()
+        val classDocument = genericDocument.toDocumentClass(NullabilityDefaults::class.java)
+        assertThat(classDocument.nullableBoolean).isNull()
+        assertThat(classDocument.nullableList).isNull()
+        assertThat(classDocument.nonNullBoolean).isNotNull()
+        assertThat(classDocument.nonNullList).isNotNull()
+    }
+
+    @Document
+    internal data class NullabilityLists(
+        @Document.Namespace val namespace: String,
+        @Document.Id val id: String,
+        @Document.StringProperty val nonNullStrings: List<String>,
+        @Document.StringProperty val nullableStrings: List<String>?,
+        @Document.BooleanProperty val nonNullBooleans: List<Boolean>,
+        @Document.BooleanProperty val nullableBooleans: List<Boolean>?,
+        @Document.LongProperty val nonNullLongs: List<Long>,
+        @Document.LongProperty val nullableLongs: List<Long>?,
+        @Document.DocumentProperty val nonNullCustomTypes: List<Gift>,
+        @Document.DocumentProperty val nullableCustomTypes: List<Gift>?,
+        @Document.EmbeddingProperty val nonNullEmbeddings: List<EmbeddingVector>,
+        @Document.EmbeddingProperty val nullableEmbeddings: List<EmbeddingVector>?
+    ) {}
+
+    @Test
+    fun testAnnotationProcessor_nullableListDefaults() {
+        // Create an empty GenericDocument
+        val genericDocument =
+            GenericDocument.Builder<GenericDocument.Builder<*>>("ns", "id", "schema").build()
+        val classDocument = genericDocument.toDocumentClass(NullabilityLists::class.java)
+        assertThat(classDocument.nullableBooleans).isNull()
+        assertThat(classDocument.nullableLongs).isNull()
+        assertThat(classDocument.nullableStrings).isNull()
+        assertThat(classDocument.nullableCustomTypes).isNull()
+        assertThat(classDocument.nullableEmbeddings).isNull()
+        assertThat(classDocument.nonNullBooleans).isNotNull()
+        assertThat(classDocument.nonNullLongs).isNotNull()
+        assertThat(classDocument.nonNullStrings).isNotNull()
+        assertThat(classDocument.nonNullCustomTypes).isNotNull()
+        assertThat(classDocument.nonNullEmbeddings).isNotNull()
+    }
+
     @Test
     fun testAnnotationProcessor() {
-        session.setSchemaAsync(
-            SetSchemaRequest.Builder()
-                .addDocumentClasses(Card::class.java, Gift::class.java).build()
-        ).get()
+        session
+            .setSchemaAsync(
+                SetSchemaRequest.Builder()
+                    .addDocumentClasses(Card::class.java, Gift::class.java)
+                    .build()
+            )
+            .get()
 
         // Create a Gift object and assign values.
         val inputDocument = createPopulatedGift()
 
         // Index the Gift document and query it.
         checkIsBatchResultSuccess(
-            session.putAsync(
-                PutDocumentsRequest.Builder().addDocuments(inputDocument).build()
-            )
+            session.putAsync(PutDocumentsRequest.Builder().addDocuments(inputDocument).build())
         )
         val searchResults = session.search("", SearchSpec.Builder().build())
         val documents = convertSearchResultsToDocuments(searchResults)

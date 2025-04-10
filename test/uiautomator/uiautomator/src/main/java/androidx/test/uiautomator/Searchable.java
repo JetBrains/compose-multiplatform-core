@@ -16,7 +16,7 @@
 
 package androidx.test.uiautomator;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -30,6 +30,5 @@ interface Searchable {
     UiObject2 findObject(@NonNull BySelector selector);
 
     /** Returns all objects that match the {@code selector} criteria. */
-    @NonNull
-    List<UiObject2> findObjects(@NonNull BySelector selector);
+    @NonNull List<UiObject2> findObjects(@NonNull BySelector selector);
 }

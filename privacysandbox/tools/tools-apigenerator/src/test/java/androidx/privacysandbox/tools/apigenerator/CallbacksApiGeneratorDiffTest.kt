@@ -22,12 +22,20 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4::class)
 class CallbacksApiGeneratorDiffTest : AbstractApiGeneratorDiffTest() {
     override val subdirectoryName = "callbacks"
-    override val relativePathsToExpectedAidlClasses = listOf(
-        "com/sdkwithcallbacks/IMyInterface.java",
-        "com/sdkwithcallbacks/ISdkCallback.java",
-        "com/sdkwithcallbacks/ISdkService.java",
-        "com/sdkwithcallbacks/ParcelableResponse.java",
-        "com/sdkwithcallbacks/IMyUiInterface.java",
-        "com/sdkwithcallbacks/IMyUiInterfaceCoreLibInfoAndBinderWrapper.java"
-    )
+    override val relativePathsToExpectedAidlClasses =
+        listOf(
+            "com/sdkwithcallbacks/IMyInterface.java",
+            "com/sdkwithcallbacks/ISdkCallback.java",
+            "com/sdkwithcallbacks/ISdkService.java",
+            "com/sdkwithcallbacks/ParcelableResponse.java",
+            "com/sdkwithcallbacks/ParcelableMyEnum.java",
+            "com/sdkwithcallbacks/IMySharedUiInterface.java",
+            "com/sdkwithcallbacks/IMySharedUiInterfaceCoreLibInfoAndBinderWrapper.java",
+            "com/sdkwithcallbacks/IMyUiInterface.java",
+            "com/sdkwithcallbacks/IMyUiInterfaceCoreLibInfoAndBinderWrapper.java",
+            "com/sdkwithcallbacks/PrivacySandboxThrowableParcel.java",
+            "com/sdkwithcallbacks/IResponseTransactionCallback.java",
+            "com/sdkwithcallbacks/ICancellationSignal.java",
+            "com/sdkwithcallbacks/ParcelableStackFrame.java",
+        )
 }

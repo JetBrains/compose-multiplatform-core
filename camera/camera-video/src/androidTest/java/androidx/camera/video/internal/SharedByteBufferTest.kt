@@ -18,6 +18,7 @@ package androidx.camera.video.internal
 
 import android.os.Build
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
+import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.MediumTest
@@ -47,42 +48,54 @@ class SharedByteBufferTest {
 
     @Test
     fun canRetrieveByteBuffer_fromOriginal() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         val buf = ByteBuffer.allocate(0)
         SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
-            // no-op close action
-        }.use { sharedBuf ->
-            assertThat(sharedBuf.get()).isEqualTo(buf)
-        }
+                // no-op close action
+            }
+            .use { sharedBuf -> assertThat(sharedBuf.get()).isEqualTo(buf) }
     }
 
     @Test
     fun canRetrieveByteBuffer_fromShared() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         val buf = ByteBuffer.allocate(0)
         SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
-            // no-op close action
-        }.use { origBuf ->
-            origBuf.share().use { sharedBuf ->
-                assertThat(sharedBuf.get()).isEqualTo(buf)
+                // no-op close action
             }
-        }
+            .use { origBuf ->
+                origBuf.share().use { sharedBuf -> assertThat(sharedBuf.get()).isEqualTo(buf) }
+            }
     }
 
     @Test
     fun closeActionRuns_afterAllSharedBufsClosed() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         // Arrange
         val buf = ByteBuffer.allocate(0)
         var closeActionRan = false
-        val origBuf = SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
-            closeActionRan = true
-        }
+        val origBuf =
+            SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
+                closeActionRan = true
+            }
         val sharedBufs = listOf(origBuf.share(), origBuf.share(), origBuf.share())
 
         // Act
         origBuf.close()
         val closeActionRanAfterOrigBufClosed = closeActionRan
-        sharedBufs.forEach {
-            it.close()
-        }
+        sharedBufs.forEach { it.close() }
 
         // Assert
         assertThat(closeActionRanAfterOrigBufClosed).isFalse()
@@ -91,38 +104,52 @@ class SharedByteBufferTest {
 
     @Test
     fun closedSharedBuf_throwsOnGet() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         val buf = ByteBuffer.allocate(0)
-        val sharedBuf = SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
-            // no-op close action
-        }
+        val sharedBuf =
+            SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
+                // no-op close action
+            }
 
         sharedBuf.close()
 
-        assertThrows<IllegalStateException> {
-            sharedBuf.get()
-        }
+        assertThrows<IllegalStateException> { sharedBuf.get() }
     }
 
     @Test
     fun closedSharedBuf_throwsOnShare() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         val buf = ByteBuffer.allocate(0)
-        val sharedBuf = SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
-            // no-op close action
-        }
+        val sharedBuf =
+            SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
+                // no-op close action
+            }
 
         sharedBuf.close()
 
-        assertThrows<IllegalStateException> {
-            sharedBuf.share()
-        }
+        assertThrows<IllegalStateException> { sharedBuf.share() }
     }
 
     @Test
     fun canGetFromSharedBuf_afterOrigClosed() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         val buf = ByteBuffer.allocate(0)
-        val origBuf = SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
-            // no-op close action
-        }
+        val origBuf =
+            SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
+                // no-op close action
+            }
 
         origBuf.share().use { sharedBuf ->
             origBuf.close()
@@ -132,26 +159,34 @@ class SharedByteBufferTest {
 
     @Test
     fun closeAction_onlyRunsOnce_afterLastBufferClosed() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         val buf = ByteBuffer.allocate(0)
         var numFinalCloseInvocations = 0
         SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
-            numFinalCloseInvocations++
-        }.use { sharedBuf ->
-            repeat(10) {
-                sharedBuf.share().close()
+                numFinalCloseInvocations++
             }
-        }
+            .use { sharedBuf -> repeat(10) { sharedBuf.share().close() } }
 
         assertThat(numFinalCloseInvocations).isEqualTo(1)
     }
 
     @Test
     fun closeAction_onlyRunsOnce_whenCloseCalledMultipleTimes() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         val buf = ByteBuffer.allocate(0)
         var numFinalCloseInvocations = 0
-        val sharedBuf = SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
-            numFinalCloseInvocations++
-        }
+        val sharedBuf =
+            SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
+                numFinalCloseInvocations++
+            }
 
         repeat(10) {
             // Close same buffer. close() is idempotent.
@@ -163,25 +198,31 @@ class SharedByteBufferTest {
 
     @Test
     fun limitIsTransferred_toChildSharedInstances() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         val buf = ByteBuffer.allocate(16)
         var origLimit: Int
         var sharedInstanceLimit0: Int
         var sharedInstanceLimit1: Int
         SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
-            // no-op close action
-        }.use { origBuf ->
-            origBuf.share().use { sharedBuf0 ->
-                sharedBuf0.get().limit(8)
-                sharedInstanceLimit0 = sharedBuf0.get().limit()
-
-                sharedBuf0.share().use { sharedBuf1 ->
-                    sharedInstanceLimit1 = sharedBuf1.get().limit()
-                }
+                // no-op close action
             }
+            .use { origBuf ->
+                origBuf.share().use { sharedBuf0 ->
+                    sharedBuf0.get().limit(8)
+                    sharedInstanceLimit0 = sharedBuf0.get().limit()
 
-            // Check origBuf limit last to ensure it hasn't been modified
-            origLimit = origBuf.get().limit()
-        }
+                    sharedBuf0.share().use { sharedBuf1 ->
+                        sharedInstanceLimit1 = sharedBuf1.get().limit()
+                    }
+                }
+
+                // Check origBuf limit last to ensure it hasn't been modified
+                origLimit = origBuf.get().limit()
+            }
 
         assertThat(origLimit).isEqualTo(16)
         assertThat(sharedInstanceLimit0).isEqualTo(8)
@@ -190,25 +231,31 @@ class SharedByteBufferTest {
 
     @Test
     fun positionIsTransferred_toChildSharedInstances() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         val buf = ByteBuffer.allocate(16)
         var origPos: Int
         var sharedInstancePos0: Int
         var sharedInstancePos1: Int
         SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
-            // no-op close action
-        }.use { origBuf ->
-            origBuf.share().use { sharedBuf0 ->
-                sharedBuf0.get().position(8)
-                sharedInstancePos0 = sharedBuf0.get().position()
-
-                sharedBuf0.share().use { sharedBuf1 ->
-                    sharedInstancePos1 = sharedBuf1.get().position()
-                }
+                // no-op close action
             }
+            .use { origBuf ->
+                origBuf.share().use { sharedBuf0 ->
+                    sharedBuf0.get().position(8)
+                    sharedInstancePos0 = sharedBuf0.get().position()
 
-            // Check origBuf position last to ensure it hasn't been modified
-            origPos = origBuf.get().position()
-        }
+                    sharedBuf0.share().use { sharedBuf1 ->
+                        sharedInstancePos1 = sharedBuf1.get().position()
+                    }
+                }
+
+                // Check origBuf position last to ensure it hasn't been modified
+                origPos = origBuf.get().position()
+            }
 
         assertThat(origPos).isEqualTo(0)
         assertThat(sharedInstancePos0).isEqualTo(8)
@@ -217,40 +264,49 @@ class SharedByteBufferTest {
 
     @Test
     fun markIsTransferred_toChildSharedInstances() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         val buf = ByteBuffer.allocate(16)
         var origMark: Int
         var sharedInstanceMark0: Int
         var sharedInstanceMark1: Int
         SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
-            // no-op close action
-        }.use { origBuf ->
-            origBuf.get().mark()
-            origBuf.share().use { sharedBuf0 ->
-                sharedBuf0.get().apply {
-                    position(8)
-                    mark()
-                    position(10)
+                // no-op close action
+            }
+            .use { origBuf ->
+                origBuf.get().mark()
+                origBuf.share().use { sharedBuf0 ->
+                    sharedBuf0.get().apply {
+                        position(8)
+                        mark()
+                        position(10)
+                    }
+
+                    sharedBuf0.share().use { sharedBuf1 ->
+                        sharedInstanceMark1 =
+                            with(sharedBuf1.get()) {
+                                reset()
+                                position()
+                            }
+                    }
+
+                    sharedInstanceMark0 =
+                        with(sharedBuf0.get()) {
+                            reset()
+                            position()
+                        }
                 }
 
-                sharedBuf0.share().use { sharedBuf1 ->
-                    sharedInstanceMark1 = with(sharedBuf1.get()) {
+                // Check origBuf mark last to ensure it hasn't been modified
+                origMark =
+                    with(origBuf.get()) {
                         reset()
                         position()
                     }
-                }
-
-                sharedInstanceMark0 = with(sharedBuf0.get()) {
-                    reset()
-                    position()
-                }
             }
-
-            // Check origBuf mark last to ensure it hasn't been modified
-            origMark = with(origBuf.get()) {
-                reset()
-                position()
-            }
-        }
 
         assertThat(origMark).isEqualTo(0)
         assertThat(sharedInstanceMark0).isEqualTo(8)
@@ -261,6 +317,11 @@ class SharedByteBufferTest {
     @MediumTest
     fun closeAction_runsOnBackgroundThread_whenFinalInstanceClosedOnBackgroundThread(): Unit =
         runBlocking {
+            // Skip for b/264902324
+            assumeFalse(
+                "Emulator API 30 crashes running this test.",
+                Build.VERSION.SDK_INT == 30 && isEmulator()
+            )
             val buf = ByteBuffer.allocate(0)
             val closeActionThreadNameDeferred = CompletableDeferred<String>()
             val origBuf =
@@ -291,6 +352,11 @@ class SharedByteBufferTest {
     @Test
     @LargeTest
     fun finalizeClosesUnclosedInstances() = runBlocking {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         assumeFalse(
             "Ignore devices that get flaky result. See b/278842333",
             isModel("moto c") || isModel("rne-l23")
@@ -298,14 +364,14 @@ class SharedByteBufferTest {
 
         val buf = ByteBuffer.allocate(0)
         val closeActionDeferred = CompletableDeferred<Unit>()
-        val origBuf = SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
-            closeActionDeferred.complete(Unit)
-        }
+        val origBuf =
+            SharedByteBuffer.newSharedInstance(buf, CameraXExecutors.directExecutor()) {
+                closeActionDeferred.complete(Unit)
+            }
 
         val finalizeAwaitQueue = ReferenceQueue<SharedByteBuffer>()
         // Create 5 phantom reachable SharedByteBuffers
-        val phantomReferences =
-            List(5) { PhantomReference(origBuf.share(), finalizeAwaitQueue) }
+        val phantomReferences = List(5) { PhantomReference(origBuf.share(), finalizeAwaitQueue) }
         try {
             // Close original buffer. Only phantomly reachable instances will now exist.
             origBuf.close()

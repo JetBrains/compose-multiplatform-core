@@ -38,16 +38,11 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @OptIn(UiToolingDataApi::class)
 class InlineClassConverterTest {
-    @get:Rule
-    val rule = ComposeInspectionRule(TestActivity::class, false)
+    @get:Rule val rule = ComposeInspectionRule(TestActivity::class, false)
 
     @Test
     fun parameterValueTest() {
-        rule.show {
-            Surface {
-                Text(text = "OK", fontSize = 12.sp)
-            }
-        }
+        rule.show { Surface { Text(text = "OK", fontSize = 12.sp) } }
 
         val tree = rule.compositionData.asTree()
         val groups = flatten(tree)
@@ -62,17 +57,15 @@ class InlineClassConverterTest {
             assertThat(value).isInstanceOf(valueType)
         }
 
-        validate(surface, "color", Color::class.java)
-        validate(surface, "elevation", Dp::class.java)
-        validate(text, "color", Color::class.java)
-        validate(text, "fontSize", TextUnit::class.java)
+        validate(surface, "$2", Color::class.java)
+        validate(surface, "$5", Dp::class.java)
+        validate(text, "$2", Color::class.java)
+        validate(text, "$3", TextUnit::class.java)
     }
 
     private fun flatten(group: Group): Sequence<Group> =
         sequenceOf(group).plus(group.children.asSequence().flatMap { flatten(it) })
 
     private fun find(groups: Sequence<Group>, calleeName: String) =
-        groups.first {
-            it.parameters.isNotEmpty() && it.name == calleeName
-        }
+        groups.first { it.parameters.isNotEmpty() && it.name == calleeName }
 }

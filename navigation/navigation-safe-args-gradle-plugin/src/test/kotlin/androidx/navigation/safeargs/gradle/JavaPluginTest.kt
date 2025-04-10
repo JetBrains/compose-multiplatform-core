@@ -28,14 +28,18 @@ class JavaPluginTest : BasePluginTest() {
     fun runGenerateTask() {
         testData("app-project").copyRecursively(projectRoot())
         projectSetup.writeDefaultBuildGradle(
-            prefix = """
+            prefix =
+                """
                 plugins {
                     id('com.android.application')
                     id('androidx.navigation.safeargs')
                 }
-            """.trimIndent(),
-            suffix = """
+            """
+                    .trimIndent(),
+            suffix =
+                """
                 android {
+                    namespace "androidx.navigation.testapp"
                     flavorDimensions "mode"
                     productFlavors {
                         foo {
@@ -49,9 +53,10 @@ class JavaPluginTest : BasePluginTest() {
                 }
 
                 dependencies {
-                    implementation "${projectSetup.props.navigationRuntime}"
+                    implementation "$NAVIGATION_RUNTIME"
                 }
-            """.trimIndent()
+            """
+                    .trimIndent()
         )
         runGradle("assembleNotfooDebug", "assembleFooDebug")
             .assertSuccessfulTask("assembleNotfooDebug")
@@ -66,10 +71,7 @@ class JavaPluginTest : BasePluginTest() {
     @Test
     fun generateForFeature() {
         setupMultiModuleBuildGradle()
-        runGradle(
-            ":feature:assembleFooDebug",
-            ":feature:assembleNotfooDebug"
-        )
+        runGradle(":feature:assembleFooDebug", ":feature:assembleNotfooDebug")
             .assertSuccessfulTask("feature:assembleNotfooDebug")
             .assertSuccessfulTask("feature:assembleFooDebug")
 
@@ -80,10 +82,7 @@ class JavaPluginTest : BasePluginTest() {
     @Test
     fun generateForLibrary() {
         setupMultiModuleBuildGradle()
-        runGradle(
-            ":library:assembleFooDebug",
-            ":library:assembleNotfooDebug"
-        )
+        runGradle(":library:assembleFooDebug", ":library:assembleNotfooDebug")
             .assertSuccessfulTask("library:assembleNotfooDebug")
             .assertSuccessfulTask("library:assembleFooDebug")
 
@@ -94,10 +93,7 @@ class JavaPluginTest : BasePluginTest() {
     @Test
     fun generateForBaseFeature() {
         setupMultiModuleBuildGradle()
-        runGradle(
-            ":base:assembleFooDebug",
-            ":base:assembleNotfooDebug"
-        )
+        runGradle(":base:assembleFooDebug", ":base:assembleNotfooDebug")
             .assertSuccessfulTask("base:assembleNotfooDebug")
             .assertSuccessfulTask("base:assembleFooDebug")
 
@@ -110,10 +106,7 @@ class JavaPluginTest : BasePluginTest() {
     @Test
     fun generateForDynamicFeature() {
         setupMultiModuleBuildGradle()
-        runGradle(
-            ":dynamic_feature:assembleFooDebug",
-            ":dynamic_feature:assembleNotfooDebug"
-        )
+        runGradle(":dynamic_feature:assembleFooDebug", ":dynamic_feature:assembleNotfooDebug")
             .assertSuccessfulTask("dynamic_feature:assembleNotfooDebug")
             .assertSuccessfulTask("dynamic_feature:assembleFooDebug")
 

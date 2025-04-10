@@ -20,11 +20,12 @@ import android.app.slice.Slice;
 import android.os.Build;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StringDef;
 import androidx.autofill.inline.v1.InlineSuggestionUi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -59,8 +60,7 @@ public final class UiVersions {
             new HashSet<String>(Arrays.asList(INLINE_UI_VERSION_1));
 
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @NonNull
-    public static Set<String> getUiVersions() {
+    public static @NonNull Set<String> getUiVersions() {
         return UI_VERSIONS;
     }
 
@@ -72,8 +72,7 @@ public final class UiVersions {
      * @return the list of versions that are both specified in the {@code versionedBundle} and
      * supported by the current library.
      */
-    @NonNull
-    public static List<String> getVersions(@NonNull Bundle versionedBundle) {
+    public static @NonNull List<String> getVersions(@NonNull Bundle versionedBundle) {
         return VersionUtils.getSupportedVersions(versionedBundle);
     }
 
@@ -89,8 +88,7 @@ public final class UiVersions {
         /**
          * Returns the content represented as a {@link Slice} so it can be transported through IPC.
          */
-        @NonNull
-        Slice getSlice();
+        @NonNull Slice getSlice();
     }
 
     /**
@@ -103,17 +101,15 @@ public final class UiVersions {
          *
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        @NonNull
-        Bundle getBundle();
+        @NonNull Bundle getBundle();
 
         /**
          * Returns the {@link InlineUiVersion} the style corresponds to.
          *
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        @NonNull
         @InlineUiVersion
-        String getVersion();
+        @NonNull String getVersion();
     }
 
     /**
@@ -121,8 +117,7 @@ public final class UiVersions {
      *
      * <p>See {@link androidx.autofill.inline.v1.InlineSuggestionUi} for example usage.
      */
-    @NonNull
-    public static StylesBuilder newStylesBuilder() {
+    public static @NonNull StylesBuilder newStylesBuilder() {
         return new StylesBuilder();
     }
 
@@ -147,8 +142,7 @@ public final class UiVersions {
          * @param style the style being added
          * @throws IllegalArgumentException if the style version is not supported by the library
          */
-        @NonNull
-        public StylesBuilder addStyle(@NonNull Style style) {
+        public @NonNull StylesBuilder addStyle(@NonNull Style style) {
             if (!VersionUtils.isVersionSupported(style.getVersion())) {
                 throw new IllegalArgumentException(
                         "Unsupported style version: " + style.getVersion());
@@ -163,8 +157,7 @@ public final class UiVersions {
          *
          * @throws IllegalStateException if no style has been put in the builder
          */
-        @NonNull
-        public Bundle build() {
+        public @NonNull Bundle build() {
             if (mStyles.isEmpty()) {
                 throw new IllegalStateException("Please put at least one style in the builder");
             }

@@ -16,11 +16,9 @@
 package androidx.wear.compose.material3
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
@@ -30,246 +28,96 @@ import androidx.wear.compose.material3.tokens.ColorTokens
 /**
  * A [ColorScheme] holds all the named color parameters for a [MaterialTheme].
  *
- * Color schemes are designed to be harmonious, ensure accessible text, and distinguish UI
- * elements and surfaces from one another.
+ * Color schemes are designed to be harmonious, ensure accessible text, and distinguish UI elements
+ * and surfaces from one another.
  *
  * The Material color system and custom schemes provide default values for color as a starting point
  * for customization.
  *
- * To learn more about color schemes,
- * see [Material Design Color System](https://m3.material.io/styles/color/the-color-system/color-roles).
+ * To learn more about color schemes, see
+ * [Material Design Color System](https://m3.material.io/styles/color/the-color-system/color-roles).
  *
  * @property primary The primary color is the color displayed most frequently across your app’s
- * screens and components.
+ *   screens and components.
  * @property primaryDim is less prominent than [primary] for component backgrounds
  * @property primaryContainer is a standout container color for key components.
  * @property onPrimary Color used for text and icons displayed on top of the primary color.
  * @property onPrimaryContainer The color (and state variants) that should be used for content on
- * top of [primaryContainer].
+ *   top of [primaryContainer].
  * @property secondary The secondary color provides more ways to accent and distinguish your
- * product.
+ *   product.
  * @property secondaryDim is less prominent than [secondary] for component backgrounds.
  * @property secondaryContainer A tonal color to be used in containers.
  * @property onSecondary Color used for text and icons displayed on top of the secondary color.
  * @property onSecondaryContainer The color (and state variants) that should be used for content on
- * top of [secondaryContainer].
- * @property tertiary The tertiary color that can be used to balance primary and secondary
- * colors, or bring heightened attention to an element.
- * @property tertiaryDim A less prominent tertiary color that can be used to balance
- * primary and secondary colors, or bring heightened attention to an element.
+ *   top of [secondaryContainer].
+ * @property tertiary The tertiary color that can be used to balance primary and secondary colors,
+ *   or bring heightened attention to an element.
+ * @property tertiaryDim A less prominent tertiary color that can be used to balance primary and
+ *   secondary colors, or bring heightened attention to an element.
  * @property tertiaryContainer A tonal color to be used in containers.
  * @property onTertiary Color used for text and icons displayed on top of the tertiary color.
  * @property onTertiaryContainer The color (and state variants) that should be used for content on
- * top of [tertiaryContainer].
- * @property surfaceDim A surface color used for large containment components
- * such as Card and Button with low prominence.
- * @property surface The main surface color that affect surfaces of components with large
- * containment areas, such as Card and Button.
- * @property surfaceBright A surface color used for large containment components
- * such Card and Button with high prominence.
+ *   top of [tertiaryContainer].
+ * @property surfaceContainerLow A surface color used for large containment components such as Card
+ *   and Button with low prominence.
+ * @property surfaceContainer The main surface color that affect surfaces of components with large
+ *   containment areas, such as Card and Button.
+ * @property surfaceContainerHigh A surface color used for large containment components such Card
+ *   and Button with high prominence.
  * @property onSurface Color used for text and icons displayed on top of the surface color.
- * @property onSurfaceVariant The color for secondary text and icons on top of
- * [surface].
- * @property outline The main color for primary outline components.
- * The outline color role adds contrast for accessibility purposes.
+ * @property onSurfaceVariant The color for secondary text and icons on top of [surfaceContainer].
+ * @property outline The main color for primary outline components. The outline color role adds
+ *   contrast for accessibility purposes.
  * @property outlineVariant The secondary color for secondary outline components.
  * @property background The background color that appears behind other content.
  * @property onBackground Color used for text and icons displayed on top of the background color.
- * @property error The error color is used to indicate errors.
+ * @property error Color that indicates remove, delete, close or dismiss actions, such as Swipe to
+ *   Reveal. Added as a slightly less alarming and urgent alternative to errorContainer than the
+ *   error dim color.
+ * @property errorDim Indicates high priority errors or emergency actions, such as safety alerts,
+ *   failed dialog overlays or stop buttons.
+ * @property errorContainer A less prominent container color than [error], for components using the
+ *   error state. Can also indicate an active error state which feels less interactive than a filled
+ *   state, such as an active emergency sharing button, or on a failed overlay dialog..
  * @property onError Color used for text and icons displayed on top of the error color.
- */@Stable
-class ColorScheme(
-    primary: Color = ColorTokens.Primary,
-    primaryDim: Color = ColorTokens.PrimaryDim,
-    primaryContainer: Color = ColorTokens.PrimaryContainer,
-    onPrimary: Color = ColorTokens.OnPrimary,
-    onPrimaryContainer: Color = ColorTokens.OnPrimaryContainer,
-    secondary: Color = ColorTokens.Secondary,
-    secondaryDim: Color = ColorTokens.SecondaryDim,
-    secondaryContainer: Color = ColorTokens.SecondaryContainer,
-    onSecondary: Color = ColorTokens.OnSecondary,
-    onSecondaryContainer: Color = ColorTokens.OnSecondaryContainer,
-    tertiary: Color = ColorTokens.Tertiary,
-    tertiaryDim: Color = ColorTokens.TertiaryDim,
-    tertiaryContainer: Color = ColorTokens.TertiaryContainer,
-    onTertiary: Color = ColorTokens.OnTertiary,
-    onTertiaryContainer: Color = ColorTokens.OnTertiaryContainer,
-    surfaceDim: Color = ColorTokens.SurfaceDim,
-    surface: Color = ColorTokens.Surface,
-    surfaceBright: Color = ColorTokens.SurfaceBright,
-    onSurface: Color = ColorTokens.OnSurface,
-    onSurfaceVariant: Color = ColorTokens.OnSurfaceVariant,
-    outline: Color = ColorTokens.Outline,
-    outlineVariant: Color = ColorTokens.OutlineVariant,
-    background: Color = ColorTokens.Background,
-    onBackground: Color = ColorTokens.OnBackground,
-    error: Color = ColorTokens.Error,
-    onError: Color = ColorTokens.OnError,
+ * @property onErrorContainer Color used for text and icons on the errorContainer color.
+ */
+@Immutable
+@Stable
+public class ColorScheme(
+    public val primary: Color = ColorTokens.Primary,
+    public val primaryDim: Color = ColorTokens.PrimaryDim,
+    public val primaryContainer: Color = ColorTokens.PrimaryContainer,
+    public val onPrimary: Color = ColorTokens.OnPrimary,
+    public val onPrimaryContainer: Color = ColorTokens.OnPrimaryContainer,
+    public val secondary: Color = ColorTokens.Secondary,
+    public val secondaryDim: Color = ColorTokens.SecondaryDim,
+    public val secondaryContainer: Color = ColorTokens.SecondaryContainer,
+    public val onSecondary: Color = ColorTokens.OnSecondary,
+    public val onSecondaryContainer: Color = ColorTokens.OnSecondaryContainer,
+    public val tertiary: Color = ColorTokens.Tertiary,
+    public val tertiaryDim: Color = ColorTokens.TertiaryDim,
+    public val tertiaryContainer: Color = ColorTokens.TertiaryContainer,
+    public val onTertiary: Color = ColorTokens.OnTertiary,
+    public val onTertiaryContainer: Color = ColorTokens.OnTertiaryContainer,
+    public val surfaceContainerLow: Color = ColorTokens.SurfaceContainerLow,
+    public val surfaceContainer: Color = ColorTokens.SurfaceContainer,
+    public val surfaceContainerHigh: Color = ColorTokens.SurfaceContainerHigh,
+    public val onSurface: Color = ColorTokens.OnSurface,
+    public val onSurfaceVariant: Color = ColorTokens.OnSurfaceVariant,
+    public val outline: Color = ColorTokens.Outline,
+    public val outlineVariant: Color = ColorTokens.OutlineVariant,
+    public val background: Color = ColorTokens.Background,
+    public val onBackground: Color = ColorTokens.OnBackground,
+    public val error: Color = ColorTokens.Error,
+    public val errorDim: Color = ColorTokens.ErrorDim,
+    public val errorContainer: Color = ColorTokens.ErrorContainer,
+    public val onError: Color = ColorTokens.OnError,
+    public val onErrorContainer: Color = ColorTokens.OnErrorContainer,
 ) {
-    /**
-     * [primary] is the main color used across screens and components
-     */
-    var primary: Color by mutableStateOf(primary)
-        internal set
-
-    /**
-     * [primaryDim] is less prominent than [primary] for component backgrounds
-     */
-    var primaryDim: Color by mutableStateOf(primaryDim)
-        internal set
-
-    /**
-     * [primaryContainer] is a standout container color for key components
-     */
-    var primaryContainer: Color by mutableStateOf(primaryContainer)
-        internal set
-
-    /**
-     * [onPrimary] is for text and icons shown against the Primary and primaryDim colors
-     */
-    var onPrimary: Color by mutableStateOf(onPrimary)
-        internal set
-
-    /**
-     * [onPrimaryContainer] is a contrast-passing color shown against the primaryContainer
-     */
-    var onPrimaryContainer: Color by mutableStateOf(onPrimaryContainer)
-        internal set
-
-    /**
-     * [secondary] is an accent color used across screens and components
-     */
-    var secondary: Color by mutableStateOf(secondary)
-        internal set
-
-    /**
-     * [secondaryDim] is less prominent than [secondary] for component backgrounds
-     */
-    var secondaryDim: Color by mutableStateOf(secondaryDim)
-
-    /**
-     * [secondaryContainer] is a less prominent container color than [primaryContainer],
-     * for components like tonal buttons
-     */
-    var secondaryContainer: Color by mutableStateOf(secondaryContainer)
-        internal set
-
-    /**
-     * [onSecondary] is for text and icons shown against the Secondary and SecondaryDim colors
-     */
-    var onSecondary: Color by mutableStateOf(onSecondary)
-        internal set
-
-    /**
-     * [onSecondaryContainer] is a contrast-passing color shown against the secondaryContainer
-     */
-    var onSecondaryContainer: Color by mutableStateOf(onSecondaryContainer)
-        internal set
-
-    /**
-     * [tertiary] is a complementary color to create contrast and draw attention to elements
-     */
-    var tertiary: Color by mutableStateOf(tertiary)
-        internal set
-
-    /**
-     * [tertiaryDim] is less prominent than [tertiary] for component backgrounds
-     */
-    var tertiaryDim: Color by mutableStateOf(tertiaryDim)
-        internal set
-
-    /**
-     * [tertiaryContainer] is a contrasting container color for components
-     */
-    var tertiaryContainer: Color by mutableStateOf(tertiaryContainer)
-        internal set
-
-    /**
-     * [onTertiary] is for text and icons shown against the Tertiary and tertiaryDim colors
-     */
-    var onTertiary: Color by mutableStateOf(onTertiary)
-        internal set
-
-    /**
-     * [onTertiaryContainer] is a contrast-passing color shown against the tertiaryContainer
-     */
-    var onTertiaryContainer: Color by mutableStateOf(onTertiaryContainer)
-        internal set
-
-    /**
-     * [surfaceDim] is a surface color used for large containment components, with the
-     * lowest prominence behind Surface and surfaceBright
-     */
-    var surfaceDim: Color by mutableStateOf(surfaceDim)
-        internal set
-
-    /**
-     * [surface] is the main color for large containment components like card and button backgrounds
-     */
-    var surface: Color by mutableStateOf(surface)
-        internal set
-
-    /**
-     * [surfaceBright] is a surface color used for large containment components, with
-     * the highest prominence, ahead of Surface and surfaceDim
-     */
-    var surfaceBright: Color by mutableStateOf(surfaceBright)
-        internal set
-
-    /**
-     * [onSurface] for primary text and icons shown against the
-     * [surface], [surfaceDim] and [surfaceBright]
-     */
-    var onSurface: Color by mutableStateOf(onSurface)
-        internal set
-
-    /**
-     * [onSurfaceVariant] for secondary text and icons on
-     * [surface], [surfaceDim] and [surfaceBright]
-     */
-    var onSurfaceVariant: Color by mutableStateOf(onSurfaceVariant)
-        internal set
-
-    /**
-     * [outline] is the main color for primary outline components
-     */
-    var outline: Color by mutableStateOf(outline)
-        internal set
-
-    /**
-     * [outlineVariant] is the secondary color for secondary outline components
-     */
-    var outlineVariant: Color by mutableStateOf(outlineVariant)
-        internal set
-
-    /**
-     * [background] is the static color used behind all texts and components
-     */
-    var background: Color by mutableStateOf(background)
-        internal set
-
-    /**
-     * [onBackground] is used for text and icons shown against the background color
-     */
-    var onBackground: Color by mutableStateOf(onBackground)
-        internal set
-
-    /**
-     * [error] indicates errors and emergency states
-     */
-    var error: Color by mutableStateOf(error)
-        internal set
-
-    /**
-     * [onError] is used for text and icons on the error color
-     */
-    var onError: Color by mutableStateOf(onError)
-        internal set
-
-    /**
-     * Returns a copy of this Colors, optionally overriding some of the values.
-     */
-    fun copy(
+    /** Returns a copy of this Colors, optionally overriding some of the values. */
+    public fun copy(
         primary: Color = this.primary,
         primaryDim: Color = this.primaryDim,
         primaryContainer: Color = this.primaryContainer,
@@ -285,9 +133,9 @@ class ColorScheme(
         tertiaryContainer: Color = this.tertiaryContainer,
         onTertiary: Color = this.onTertiary,
         onTertiaryContainer: Color = this.onTertiaryContainer,
-        surfaceDim: Color = this.surfaceDim,
-        surface: Color = this.surface,
-        surfaceBright: Color = this.surfaceBright,
+        surfaceContainerLow: Color = this.surfaceContainerLow,
+        surfaceContainer: Color = this.surfaceContainer,
+        surfaceContainerHigh: Color = this.surfaceContainerHigh,
         onSurface: Color = this.onSurface,
         onSurfaceVariant: Color = this.onSurfaceVariant,
         outline: Color = this.outline,
@@ -295,35 +143,42 @@ class ColorScheme(
         background: Color = this.background,
         onBackground: Color = this.onBackground,
         error: Color = this.error,
-        onError: Color = this.onError
-    ): ColorScheme = ColorScheme(
-        primary = primary,
-        primaryDim = primaryDim,
-        primaryContainer = primaryContainer,
-        onPrimary = onPrimary,
-        onPrimaryContainer = onPrimaryContainer,
-        secondary = secondary,
-        secondaryDim = secondaryDim,
-        secondaryContainer = secondaryContainer,
-        onSecondary = onSecondary,
-        onSecondaryContainer = onSecondaryContainer,
-        tertiary = tertiary,
-        tertiaryDim = tertiaryDim,
-        tertiaryContainer = tertiaryContainer,
-        onTertiary = onTertiary,
-        onTertiaryContainer = onTertiaryContainer,
-        surfaceDim = surfaceDim,
-        surface = surface,
-        surfaceBright = surfaceBright,
-        onSurface = onSurface,
-        onSurfaceVariant = onSurfaceVariant,
-        outline = outline,
-        outlineVariant = outlineVariant,
-        background = background,
-        onBackground = onBackground,
-        error = error,
-        onError = onError
-    )
+        errorDim: Color = this.errorDim,
+        errorContainer: Color = this.errorContainer,
+        onError: Color = this.onError,
+        onErrorContainer: Color = this.onErrorContainer,
+    ): ColorScheme =
+        ColorScheme(
+            primary = primary,
+            primaryDim = primaryDim,
+            primaryContainer = primaryContainer,
+            onPrimary = onPrimary,
+            onPrimaryContainer = onPrimaryContainer,
+            secondary = secondary,
+            secondaryDim = secondaryDim,
+            secondaryContainer = secondaryContainer,
+            onSecondary = onSecondary,
+            onSecondaryContainer = onSecondaryContainer,
+            tertiary = tertiary,
+            tertiaryDim = tertiaryDim,
+            tertiaryContainer = tertiaryContainer,
+            onTertiary = onTertiary,
+            onTertiaryContainer = onTertiaryContainer,
+            surfaceContainerLow = surfaceContainerLow,
+            surfaceContainer = surfaceContainer,
+            surfaceContainerHigh = surfaceContainerHigh,
+            onSurface = onSurface,
+            onSurfaceVariant = onSurfaceVariant,
+            outline = outline,
+            outlineVariant = outlineVariant,
+            background = background,
+            onBackground = onBackground,
+            error = error,
+            errorDim = errorDim,
+            errorContainer = errorContainer,
+            onError = onError,
+            onErrorContainer = onErrorContainer,
+        )
 
     override fun toString(): String {
         return "Colors(" +
@@ -342,9 +197,9 @@ class ColorScheme(
             "tertiaryContainer=$tertiaryContainer, " +
             "onTertiary=$onTertiary, " +
             "onTertiaryContainer=$onTertiaryContainer, " +
-            "surfaceDim=$surfaceDim, " +
-            "surface=$surface, " +
-            "surfaceBright=$surfaceBright, " +
+            "surfaceContainerLow=$surfaceContainerLow, " +
+            "surfaceContainer=$surfaceContainer, " +
+            "surfaceContainerHigh=$surfaceContainerHigh, " +
             "onSurface=$onSurface, " +
             "onSurfaceVariant=$onSurfaceVariant, " +
             "outline=$outline, " +
@@ -352,14 +207,90 @@ class ColorScheme(
             "background=$background, " +
             "onBackground=$onBackground, " +
             "error=$error, " +
-            "onError=$onError" +
+            "errorDim=$errorDim, " +
+            "errorContainer=$errorContainer, " +
+            "onError=$onError," +
+            "onErrorContainer=$onErrorContainer" +
             ")"
     }
+
+    // Button Colors
+    internal var defaultButtonColorsCached: ButtonColors? = null
+    internal var defaultFilledVariantButtonColorsCached: ButtonColors? = null
+    internal var defaultFilledTonalButtonColorsCached: ButtonColors? = null
+    internal var defaultOutlinedButtonColorsCached: ButtonColors? = null
+    internal var defaultChildButtonColorsCached: ButtonColors? = null
+    internal var defaultButtonWithContainerPainterColorsCached: ButtonColors? = null
+
+    // Icon Button
+    internal var defaultIconButtonColorsCached: IconButtonColors? = null
+    internal var defaultFilledIconButtonColorsCached: IconButtonColors? = null
+    internal var defaultFilledVariantIconButtonColorsCached: IconButtonColors? = null
+    internal var defaultFilledTonalIconButtonColorsCached: IconButtonColors? = null
+    internal var defaultOutlinedIconButtonColorsCached: IconButtonColors? = null
+
+    // Icon Toggle Button
+    internal var defaultIconToggleButtonColorsCached: IconToggleButtonColors? = null
+
+    // Text Button
+    internal var defaultTextButtonColorsCached: TextButtonColors? = null
+    internal var defaultFilledTextButtonColorsCached: TextButtonColors? = null
+    internal var defaultFilledVariantTextButtonColorsCached: TextButtonColors? = null
+    internal var defaultFilledTonalTextButtonColorsCached: TextButtonColors? = null
+    internal var defaultOutlinedTextButtonColorsCached: TextButtonColors? = null
+
+    // Text Toggle Button
+    internal var defaultTextToggleButtonColorsCached: TextToggleButtonColors? = null
+
+    // Card
+    internal var defaultCardColorsCached: CardColors? = null
+    internal var defaultOutlinedCardColorsCached: CardColors? = null
+    internal var defaultCardWithContainerPainterColorsCached: CardColors? = null
+
+    // Toggle Button
+    internal var defaultSwitchButtonColorsCached: SwitchButtonColors? = null
+    internal var defaultSplitSwitchButtonColorsCached: SplitSwitchButtonColors? = null
+
+    // Checkbox Button
+    internal var defaultCheckboxButtonColorsCached: CheckboxButtonColors? = null
+    internal var defaultSplitCheckboxButtonColorsCached: SplitCheckboxButtonColors? = null
+
+    // Radio Button
+    internal var defaultRadioButtonColorsCached: RadioButtonColors? = null
+    internal var defaultSplitRadioButtonColorsCached: SplitRadioButtonColors? = null
+
+    // Progress Indicator
+    internal var defaultProgressIndicatorColorsCached: ProgressIndicatorColors? = null
+
+    // Slider
+    internal var defaultSliderColorsCached: SliderColors? = null
+    internal var defaultVariantSliderColorsCached: SliderColors? = null
+
+    // Stepper
+    internal var defaultStepperColorsCached: StepperColors? = null
+
+    // Level Indicator
+    internal var defaultLevelIndicatorColorsCached: LevelIndicatorColors? = null
+
+    // Scroll Indicator
+    internal var defaultScrollIndicatorColorsCached: ScrollIndicatorColors? = null
+
+    // Confirmation
+    internal var defaultConfirmationColorsCached: ConfirmationDialogColors? = null
+    internal var defaultSuccessConfirmationColorsCached: ConfirmationDialogColors? = null
+    internal var defaultFailureConfirmationColorsCached: ConfirmationDialogColors? = null
+
+    // Open on Phone dialog
+    internal var mDefaultOpenOnPhoneDialogColorsCached: OpenOnPhoneDialogColors? = null
+
+    // Picker
+    internal var defaultTimePickerColorsCached: TimePickerColors? = null
+    internal var defaultDatePickerColorsCached: DatePickerColors? = null
 }
 
 /**
- * The Material color system contains pairs of colors that are typically used for the background
- * and content color inside a component. For example, a Button typically uses `primary` for its
+ * The Material color system contains pairs of colors that are typically used for the background and
+ * content color inside a component. For example, a Button typically uses `primary` for its
  * background, and `onPrimary` for the color of its content (usually text or iconography).
  *
  * This function tries to match the provided [backgroundColor] to a 'background' color in this
@@ -370,95 +301,57 @@ class ColorScheme(
  * [Color.Unspecified].
  *
  * @return the matching content color for [backgroundColor]. If [backgroundColor] is not present in
- * the theme's [ColorScheme], then returns [Color.Unspecified].
- *
+ *   the theme's [ColorScheme], then returns [Color.Unspecified].
  * @see contentColorFor
  */
-fun ColorScheme.contentColorFor(backgroundColor: Color): Color {
+public fun ColorScheme.contentColorFor(backgroundColor: Color): Color {
     return when (backgroundColor) {
-        primary, primaryDim -> onPrimary
+        primary,
+        primaryDim -> onPrimary
         primaryContainer -> onPrimaryContainer
-        secondary, secondaryDim -> onSecondary
+        secondary,
+        secondaryDim -> onSecondary
         secondaryContainer -> onSecondaryContainer
-        tertiary, tertiaryDim -> onTertiary
+        tertiary,
+        tertiaryDim -> onTertiary
         tertiaryContainer -> onTertiaryContainer
-        surface, surfaceDim, surfaceBright -> onSurface
+        surfaceContainer,
+        surfaceContainerLow,
+        surfaceContainerHigh -> onSurface
         background -> onBackground
         error -> onError
+        errorDim -> onError
+        errorContainer -> onErrorContainer
         else -> Color.Unspecified
     }
 }
 
 /**
- * The Material color system contains pairs of colors that are typically used for the background
- * and content color inside a component. For example, a Button typically uses `primary` for its
+ * The Material color system contains pairs of colors that are typically used for the background and
+ * content color inside a component. For example, a Button typically uses `primary` for its
  * background, and `onPrimary` for the color of its content (usually text or iconography).
  *
  * This function tries to match the provided [backgroundColor] to a 'background' color in this
  * [ColorScheme], and then will return the corresponding color used for content. For example, when
  * [backgroundColor] is [ColorScheme.primary], this will return [ColorScheme.onPrimary].
  *
- * If [backgroundColor] does not match a background color in the theme, this will return
- * the current value of [LocalContentColor] as a best-effort color.
+ * If [backgroundColor] does not match a background color in the theme, this will return the current
+ * value of [LocalContentColor] as a best-effort color.
  *
  * @return the matching content color for [backgroundColor]. If [backgroundColor] is not present in
- * the theme's [ColorScheme], then returns the current value of [LocalContentColor].
- *
+ *   the theme's [ColorScheme], then returns the current value of [LocalContentColor].
  * @see ColorScheme.contentColorFor
  */
 @Composable
 @ReadOnlyComposable
-fun contentColorFor(backgroundColor: Color): Color =
-    MaterialTheme.colorScheme
-        .contentColorFor(backgroundColor)
-        .takeOrElse { LocalContentColor.current }
-
-/**
- * Updates the internal values of the given [ColorScheme] with values from the [other] [ColorScheme]. This
- * allows efficiently updating a subset of [ColorScheme], without recomposing every composable that
- * consumes values from [LocalColorScheme].
- *
- * Because [ColorScheme] is very wide-reaching, and used by many expensive composables in the
- * hierarchy, providing a new value to [LocalColorScheme] causes every composable consuming
- * [LocalColorScheme] to recompose, which is prohibitively expensive in cases such as animating one
- * color in the theme. Instead, [ColorScheme] is internally backed by [mutableStateOf], and this
- * function mutates the internal state of [this] to match values in [other]. This means that any
- * changes will mutate the internal state of [this], and only cause composables that are reading
- * the specific changed value to recompose.
- */
-internal fun ColorScheme.updateColorSchemeFrom(other: ColorScheme) {
-    primary = other.primary
-    primaryDim = other.primaryDim
-    primaryContainer = other.primaryContainer
-    onPrimary = other.onPrimary
-    onPrimaryContainer = other.onPrimaryContainer
-    secondary = other.secondary
-    secondaryDim = other.secondaryDim
-    secondaryContainer = other.secondaryContainer
-    onSecondary = other.onSecondary
-    onSecondaryContainer = other.onSecondaryContainer
-    tertiary = other.tertiary
-    tertiaryDim = other.tertiaryDim
-    tertiaryContainer = other.tertiaryContainer
-    onTertiary = other.onTertiary
-    onTertiaryContainer = other.onTertiaryContainer
-    surfaceDim = other.surfaceDim
-    surface = other.surface
-    surfaceBright = other.surfaceBright
-    onSurface = other.onSurface
-    onSurfaceVariant = other.onSurfaceVariant
-    outline = other.outline
-    outlineVariant = other.outlineVariant
-    background = other.background
-    onBackground = other.onBackground
-    error = other.error
-    onError = other.onError
-}
+public fun contentColorFor(backgroundColor: Color): Color =
+    MaterialTheme.colorScheme.contentColorFor(backgroundColor).takeOrElse {
+        LocalContentColor.current
+    }
 
 /**
  * Helper function for component color tokens. Here is an example on how to use component color
- * tokens:
- * ``MaterialTheme.colorScheme.fromToken(FilledButtonTokens.ContainerColor)``
+ * tokens: ``MaterialTheme.colorScheme.fromToken(FilledButtonTokens.ContainerColor)``
  */
 internal fun ColorScheme.fromToken(value: ColorSchemeKeyTokens): Color {
     return when (value) {
@@ -477,9 +370,9 @@ internal fun ColorScheme.fromToken(value: ColorSchemeKeyTokens): Color {
         ColorSchemeKeyTokens.TertiaryContainer -> tertiaryContainer
         ColorSchemeKeyTokens.OnTertiary -> onTertiary
         ColorSchemeKeyTokens.OnTertiaryContainer -> onTertiaryContainer
-        ColorSchemeKeyTokens.SurfaceDim -> surfaceDim
-        ColorSchemeKeyTokens.Surface -> surface
-        ColorSchemeKeyTokens.SurfaceBright -> surfaceBright
+        ColorSchemeKeyTokens.SurfaceContainerLow -> surfaceContainerLow
+        ColorSchemeKeyTokens.SurfaceContainer -> surfaceContainer
+        ColorSchemeKeyTokens.SurfaceContainerHigh -> surfaceContainerHigh
         ColorSchemeKeyTokens.OnSurface -> onSurface
         ColorSchemeKeyTokens.OnSurfaceVariant -> onSurfaceVariant
         ColorSchemeKeyTokens.Outline -> outline
@@ -487,28 +380,35 @@ internal fun ColorScheme.fromToken(value: ColorSchemeKeyTokens): Color {
         ColorSchemeKeyTokens.Background -> background
         ColorSchemeKeyTokens.OnBackground -> onBackground
         ColorSchemeKeyTokens.Error -> error
+        ColorSchemeKeyTokens.ErrorContainer -> errorContainer
+        ColorSchemeKeyTokens.ErrorDim -> errorDim
         ColorSchemeKeyTokens.OnError -> onError
+        ColorSchemeKeyTokens.OnErrorContainer -> onErrorContainer
     }
 }
 
+/**
+ * CompositionLocal used to pass [ColorScheme] down the tree.
+ *
+ * Setting the value here is typically done as part of [MaterialTheme]. To retrieve the current
+ * value of this CompositionLocal, use [MaterialTheme.colorScheme].
+ */
 internal val LocalColorScheme = staticCompositionLocalOf<ColorScheme> { ColorScheme() }
 
 /**
  * Convert given color to disabled color.
+ *
  * @param disabledAlpha Alpha used to represent disabled colors.
  */
-@Composable
 internal fun Color.toDisabledColor(disabledAlpha: Float = DisabledContentAlpha) =
     this.copy(alpha = this.alpha * disabledAlpha)
 
 /**
- * Converts a color token key to the local color scheme provided by the theme.
- * The color references the [LocalColorScheme].
+ * Converts a color token key to the local color scheme provided by the theme. The color references
+ * the [LocalColorScheme].
  */
 internal val ColorSchemeKeyTokens.value: Color
-    @ReadOnlyComposable
-    @Composable
-    get() = MaterialTheme.colorScheme.fromToken(this)
+    @ReadOnlyComposable @Composable get() = MaterialTheme.colorScheme.fromToken(this)
 
 internal const val DisabledContentAlpha = 0.38f
 internal const val DisabledContainerAlpha = 0.12f

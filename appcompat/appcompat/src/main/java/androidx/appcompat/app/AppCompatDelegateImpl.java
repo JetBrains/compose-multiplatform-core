@@ -17,7 +17,6 @@
 package androidx.appcompat.app;
 
 import static android.view.View.GONE;
-import static android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
 import static android.view.View.VISIBLE;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -78,10 +77,7 @@ import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IdRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StyleRes;
@@ -111,8 +107,8 @@ import androidx.appcompat.widget.ViewUtils;
 import androidx.collection.SimpleArrayMap;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NavUtils;
-import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
+import androidx.core.graphics.Insets;
 import androidx.core.os.LocaleListCompat;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.view.KeyEventDispatcher;
@@ -127,6 +123,8 @@ import androidx.core.widget.PopupWindowCompat;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 
 import java.util.List;
@@ -149,11 +147,6 @@ class AppCompatDelegateImpl extends AppCompatDelegate
      */
     private static final boolean sCanReturnDifferentContext =
             !"robolectric".equals(Build.FINGERPRINT);
-
-    /**
-     * Flag indicating whether ContextThemeWrapper.applyOverrideConfiguration() is available.
-     */
-    private static final boolean sCanApplyOverrideConfiguration = Build.VERSION.SDK_INT >= 17;
 
     private static boolean sInstalledExceptionHandler;
 
@@ -213,6 +206,13 @@ class AppCompatDelegateImpl extends AppCompatDelegate
 
     ActionMode mActionMode;
     ActionBarContextView mActionModeView;
+
+    // Paddings loaded from R.attr.actionModeStyle.
+    private int mActionModeViewInternalPaddingLeft;
+    private int mActionModeViewInternalPaddingTop;
+    private int mActionModeViewInternalPaddingRight;
+    private int mActionModeViewInternalPaddingBottom;
+
     PopupWindow mActionModePopup;
     Runnable mShowActionModePopup;
     ViewPropertyAnimatorCompat mFadeAnim = null;
@@ -224,7 +224,6 @@ class AppCompatDelegateImpl extends AppCompatDelegate
     ViewGroup mSubDecor;
 
     private TextView mTitleView;
-    private View mStatusGuard;
 
     // Used to keep track of Progress Bar Window features
     private boolean mFeatureProgress, mFeatureIndeterminateProgress;
@@ -382,10 +381,9 @@ class AppCompatDelegateImpl extends AppCompatDelegate
         }
     }
 
-    @NonNull
     @Override
     @CallSuper
-    public Context attachBaseContext2(@NonNull final Context baseContext) {
+    public @NonNull Context attachBaseContext2(final @NonNull Context baseContext) {
         mBaseContextAttached = true;
 
         // This is a tricky method. Here are some things to avoid:
@@ -412,8 +410,7 @@ class AppCompatDelegateImpl extends AppCompatDelegate
         // If the base context is a ContextThemeWrapper (thus not an Application context)
         // and nobody's touched its Resources yet, we can shortcut and directly apply our
         // override configuration.
-        if (sCanApplyOverrideConfiguration
-                && baseContext instanceof android.view.ContextThemeWrapper) {
+        if (baseContext instanceof android.view.ContextThemeWrapper) {
             final Configuration config = createOverrideAppConfiguration(
                     baseContext, modeToApply, localesToApply, null, false);
             if (DEBUG) {
@@ -461,32 +458,30 @@ class AppCompatDelegateImpl extends AppCompatDelegate
 
         Configuration configOverlay = null;
 
-        if (Build.VERSION.SDK_INT >= 17) {
-            // There is a bug in createConfigurationContext where it applies overrides to the
-            // canonical configuration, e.g. ActivityThread.mCurrentConfig, rather than the base
-            // configuration, e.g. Activity.getResources().getConfiguration(). We can lean on this
-            // bug to obtain a reference configuration and reconstruct any custom configuration
-            // that may have been applied by the app, thereby avoiding the bug later on.
-            Configuration overrideConfig = new Configuration();
-            // We have to modify a value to receive a new Configuration, so use one that developers
-            // can't override.
-            overrideConfig.uiMode = -1;
-            // Workaround for incorrect default fontScale on earlier SDKs.
-            overrideConfig.fontScale = 0f;
-            Configuration referenceConfig =
-                    baseContext.createConfigurationContext(overrideConfig)
-                            .getResources().getConfiguration();
-            // Revert the uiMode change so that the diff doesn't include uiMode.
-            Configuration baseConfig = baseContext.getResources().getConfiguration();
-            referenceConfig.uiMode = baseConfig.uiMode;
+        // There is a bug in createConfigurationContext where it applies overrides to the
+        // canonical configuration, e.g. ActivityThread.mCurrentConfig, rather than the base
+        // configuration, e.g. Activity.getResources().getConfiguration(). We can lean on this
+        // bug to obtain a reference configuration and reconstruct any custom configuration
+        // that may have been applied by the app, thereby avoiding the bug later on.
+        Configuration overrideConfig = new Configuration();
+        // We have to modify a value to receive a new Configuration, so use one that developers
+        // can't override.
+        overrideConfig.uiMode = -1;
+        // Workaround for incorrect default fontScale on earlier SDKs.
+        overrideConfig.fontScale = 0f;
+        Configuration referenceConfig =
+                baseContext.createConfigurationContext(overrideConfig)
+                        .getResources().getConfiguration();
+        // Revert the uiMode change so that the diff doesn't include uiMode.
+        Configuration baseConfig = baseContext.getResources().getConfiguration();
+        referenceConfig.uiMode = baseConfig.uiMode;
 
-            // Extract any customizations as an overlay.
-            if (!referenceConfig.equals(baseConfig)) {
-                configOverlay = generateConfigDelta(referenceConfig, baseConfig);
-                if (DEBUG) {
-                    Log.d(TAG, "Application config (" + referenceConfig + ") does not match base "
-                            + "config (" + baseConfig + "), using base overlay: " + configOverlay);
-                }
+        // Extract any customizations as an overlay.
+        if (!referenceConfig.equals(baseConfig)) {
+            configOverlay = generateConfigDelta(referenceConfig, baseConfig);
+            if (DEBUG) {
+                Log.d(TAG, "Application config (" + referenceConfig + ") does not match base "
+                        + "config (" + baseConfig + "), using base overlay: " + configOverlay);
             }
         }
 
@@ -669,9 +664,8 @@ class AppCompatDelegateImpl extends AppCompatDelegate
     }
 
     @SuppressWarnings({"TypeParameterUnusedInFormals", "unchecked"})
-    @Nullable
     @Override
-    public <T extends View> T findViewById(@IdRes int id) {
+    public <T extends View> @Nullable T findViewById(@IdRes int id) {
         ensureSubDecor();
         return (T) mWindow.findViewById(id);
     }
@@ -1007,7 +1001,7 @@ class AppCompatDelegateImpl extends AppCompatDelegate
                         public WindowInsetsCompat onApplyWindowInsets(View v,
                                 WindowInsetsCompat insets) {
                             final int top = insets.getSystemWindowInsetTop();
-                            final int newTop = updateStatusGuard(insets, null);
+                            final int newTop = updateActionModeInsets(insets, null);
 
                             if (top != newTop) {
                                 insets = insets.replaceSystemWindowInsets(
@@ -1027,7 +1021,7 @@ class AppCompatDelegateImpl extends AppCompatDelegate
                     new FitWindowsViewGroup.OnFitSystemWindowsListener() {
                         @Override
                         public void onFitSystemWindows(Rect insets) {
-                            insets.top = updateStatusGuard(null, insets);
+                            insets.top = updateActionModeInsets(null, insets);
                         }
                     });
         }
@@ -1252,7 +1246,7 @@ class AppCompatDelegateImpl extends AppCompatDelegate
     }
 
     @Override
-    public ActionMode startSupportActionMode(@NonNull final ActionMode.Callback callback) {
+    public ActionMode startSupportActionMode(final ActionMode.@NonNull Callback callback) {
         if (callback == null) {
             throw new IllegalArgumentException("ActionMode callback can not be null.");
         }
@@ -1289,7 +1283,7 @@ class AppCompatDelegateImpl extends AppCompatDelegate
         invalidatePanelMenu(FEATURE_OPTIONS_PANEL);
     }
 
-    ActionMode startSupportActionModeFromWindow(@NonNull ActionMode.Callback callback) {
+    ActionMode startSupportActionModeFromWindow(ActionMode.@NonNull Callback callback) {
         endOnGoingFadeAnimation();
         if (mActionMode != null) {
             mActionMode.finish();
@@ -1383,6 +1377,12 @@ class AppCompatDelegateImpl extends AppCompatDelegate
                         mActionModeView = (ActionBarContextView) stub.inflate();
                     }
                 }
+                if (mActionModeView != null) {
+                    mActionModeViewInternalPaddingLeft = mActionModeView.getPaddingLeft();
+                    mActionModeViewInternalPaddingTop = mActionModeView.getPaddingTop();
+                    mActionModeViewInternalPaddingRight = mActionModeView.getPaddingRight();
+                    mActionModeViewInternalPaddingBottom = mActionModeView.getPaddingBottom();
+                }
             }
 
             if (mActionModeView != null) {
@@ -1443,7 +1443,7 @@ class AppCompatDelegateImpl extends AppCompatDelegate
     final boolean shouldAnimateActionModeView() {
         // We only to animate the action mode in if the sub decor has already been laid out.
         // If it hasn't been laid out, it hasn't been drawn to screen yet.
-        return mSubDecorInstalled && mSubDecor != null && ViewCompat.isLaidOut(mSubDecor);
+        return mSubDecorInstalled && mSubDecor != null && mSubDecor.isLaidOut();
     }
 
     @Override
@@ -1621,6 +1621,7 @@ class AppCompatDelegateImpl extends AppCompatDelegate
             TypedArray a = mContext.obtainStyledAttributes(R.styleable.AppCompatTheme);
             String viewInflaterClassName =
                     a.getString(R.styleable.AppCompatTheme_viewInflaterClass);
+            a.recycle();
             if (viewInflaterClassName == null) {
                 // Set to null (the default in all AppCompat themes). Create the base inflater
                 // (no reflection)
@@ -1679,7 +1680,7 @@ class AppCompatDelegateImpl extends AppCompatDelegate
                 // added to the hierarchy at the end of the inflate() call.
                 return true;
             } else if (parent == windowDecor || !(parent instanceof View)
-                    || ViewCompat.isAttachedToWindow((View) parent)) {
+                    || ((View) parent).isAttachedToWindow()) {
                 // We have either hit the window's decor view, a parent which isn't a View
                 // (i.e. ViewRootImpl), or an attached view, so we know that the original parent
                 // is currently added to the view hierarchy. This means that it has not be
@@ -1721,8 +1722,7 @@ class AppCompatDelegateImpl extends AppCompatDelegate
         return onCreateView(null, name, context, attrs);
     }
 
-    @Nullable
-    private AppCompatActivity tryUnwrapContext() {
+    private @Nullable AppCompatActivity tryUnwrapContext() {
         Context context = mContext;
         while (context != null) {
             if (context instanceof AppCompatActivity) {
@@ -2299,23 +2299,22 @@ class AppCompatDelegateImpl extends AppCompatDelegate
     }
 
     /**
-     * Updates the status bar guard
+     * Makes the action mode view fit navigation bar and extend into the rest of system window
+     * insets.
      *
      * @param insets the current system window insets, or null if not available
      * @param rectInsets the current system window insets if {@code insets} is not available
      * @return the new top system window inset
      */
-    final int updateStatusGuard(@Nullable final WindowInsetsCompat insets,
-            @Nullable final Rect rectInsets) {
+    final int updateActionModeInsets(final @Nullable WindowInsetsCompat insets,
+            final @Nullable Rect rectInsets) {
         int systemWindowInsetTop = 0;
         if (insets != null) {
             systemWindowInsetTop = insets.getSystemWindowInsetTop();
         } else if (rectInsets != null) {
             systemWindowInsetTop = rectInsets.top;
         }
-        boolean showStatusGuard = false;
 
-        // Show the status guard when the non-overlay contextual action bar is showing
         if (mActionModeView != null) {
             if (mActionModeView.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
                 ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams)
@@ -2327,81 +2326,45 @@ class AppCompatDelegateImpl extends AppCompatDelegate
                         mTempRect1 = new Rect();
                         mTempRect2 = new Rect();
                     }
-                    final Rect innerInsets = mTempRect1;
+                    final Rect systemWindowInsets = mTempRect1;
                     final Rect rect = mTempRect2;
+                    final Insets navBarInsets;
                     if (insets == null) {
-                        innerInsets.set(rectInsets);
+                        systemWindowInsets.set(rectInsets);
+                        navBarInsets = Insets.NONE;
                     } else {
-                        innerInsets.set(
+                        systemWindowInsets.set(
                                 insets.getSystemWindowInsetLeft(),
                                 insets.getSystemWindowInsetTop(),
                                 insets.getSystemWindowInsetRight(),
                                 insets.getSystemWindowInsetBottom());
+                        navBarInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
                     }
 
-                    ViewUtils.computeFitSystemWindows(mSubDecor, innerInsets, rect);
-                    int newTopMargin = innerInsets.top;
-                    int newLeftMargin = innerInsets.left;
-                    int newRightMargin = innerInsets.right;
+                    ViewUtils.computeFitSystemWindows(mSubDecor, systemWindowInsets, rect);
+                    final Insets newMargin = inset(
+                            navBarInsets, rect.left, rect.top, rect.right, rect.bottom);
 
-                    // Must use root window insets for the guard, because the color views consume
-                    // the navigation bar inset if the window does not request LAYOUT_HIDE_NAV - but
-                    // the status guard is attached at the root.
-                    WindowInsetsCompat rootInsets = ViewCompat.getRootWindowInsets(mSubDecor);
-                    int newGuardLeftMargin =
-                            rootInsets == null ? 0 : rootInsets.getSystemWindowInsetLeft();
-                    int newGuardRightMargin =
-                            rootInsets == null ? 0 : rootInsets.getSystemWindowInsetRight();
-
-                    if (mlp.topMargin != newTopMargin || mlp.leftMargin != newLeftMargin
-                            || mlp.rightMargin != newRightMargin) {
+                    if (mlp.leftMargin != newMargin.left || mlp.rightMargin != newMargin.right) {
                         mlpChanged = true;
-                        mlp.topMargin = newTopMargin;
-                        mlp.leftMargin = newLeftMargin;
-                        mlp.rightMargin = newRightMargin;
+                        mlp.leftMargin = newMargin.left;
+                        mlp.rightMargin = newMargin.right;
                     }
 
-                    if (newTopMargin > 0 && mStatusGuard == null) {
-                        mStatusGuard = new View(mContext);
-                        mStatusGuard.setVisibility(GONE);
-                        final FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                                MATCH_PARENT, mlp.topMargin, Gravity.LEFT | Gravity.TOP);
-                        lp.leftMargin = newGuardLeftMargin;
-                        lp.rightMargin = newGuardRightMargin;
-                        mSubDecor.addView(mStatusGuard, -1, lp);
-                    } else if (mStatusGuard != null) {
-                        final ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams)
-                                mStatusGuard.getLayoutParams();
-                        if (lp.height != mlp.topMargin || lp.leftMargin != newGuardLeftMargin
-                                || lp.rightMargin != newGuardRightMargin) {
-                            lp.height = mlp.topMargin;
-                            lp.leftMargin = newGuardLeftMargin;
-                            lp.rightMargin = newGuardRightMargin;
-                            mStatusGuard.setLayoutParams(lp);
-                        }
-                    }
-
-                    // The action mode's theme may differ from the app, so
-                    // always show the status guard above it.
-                    showStatusGuard = mStatusGuard != null;
-
-                    if (showStatusGuard && mStatusGuard.getVisibility() != VISIBLE) {
-                        // If it wasn't previously shown, the color may be stale
-                        updateStatusGuardColor(mStatusGuard);
-                    }
+                    mActionModeView.setPadding(
+                            mActionModeViewInternalPaddingLeft + systemWindowInsets.left
+                                    - newMargin.left,
+                            mActionModeViewInternalPaddingTop + systemWindowInsets.top,
+                            mActionModeViewInternalPaddingRight + systemWindowInsets.right
+                                    - newMargin.right,
+                            mActionModeViewInternalPaddingBottom);
 
                     // We only need to consume the insets if the action
                     // mode is overlaid on the app content (e.g. it's
                     // sitting in a FrameLayout, see
                     // screen_simple_overlay_action_mode.xml).
-                    if (!mOverlayActionMode && showStatusGuard) {
+                    if (!mOverlayActionMode && systemWindowInsets.top > 0) {
                         systemWindowInsetTop = 0;
-                    }
-                } else {
-                    // reset top margin
-                    if (mlp.topMargin != 0) {
-                        mlpChanged = true;
-                        mlp.topMargin = 0;
                     }
                 }
                 if (mlpChanged) {
@@ -2409,19 +2372,16 @@ class AppCompatDelegateImpl extends AppCompatDelegate
                 }
             }
         }
-        if (mStatusGuard != null) {
-            mStatusGuard.setVisibility(showStatusGuard ? VISIBLE : GONE);
-        }
 
         return systemWindowInsetTop;
     }
 
-    private void updateStatusGuardColor(View v) {
-        boolean lightStatusBar = (ViewCompat.getWindowSystemUiVisibility(v)
-                & SYSTEM_UI_FLAG_LIGHT_STATUS_BAR) != 0;
-        v.setBackgroundColor(lightStatusBar
-                ? ContextCompat.getColor(mContext, R.color.abc_decor_view_status_guard_light)
-                : ContextCompat.getColor(mContext, R.color.abc_decor_view_status_guard));
+    private static Insets inset(Insets in, int left, int top, int right, int bottom) {
+        return Insets.of(
+                Math.max(0, in.left - left),
+                Math.max(0, in.top - top),
+                Math.max(0, in.right - right),
+                Math.max(0, in.bottom - bottom));
     }
 
     private void throwFeatureRequestIfSubDecorInstalled() {
@@ -2565,8 +2525,7 @@ class AppCompatDelegateImpl extends AppCompatDelegate
      * checks for requested app-specific locales and returns them after an overlay
      * with the system locales. If requested app-specific do not exist, it returns a null.
      */
-    @Nullable
-    LocaleListCompat calculateApplicationLocales(@NonNull Context context) {
+    @Nullable LocaleListCompat calculateApplicationLocales(@NonNull Context context) {
         if (Build.VERSION.SDK_INT >= 33) {
             return null;
         }
@@ -2694,8 +2653,7 @@ class AppCompatDelegateImpl extends AppCompatDelegate
         }
     }
 
-    @NonNull
-    private Configuration createOverrideAppConfiguration(@NonNull Context context,
+    private @NonNull Configuration createOverrideAppConfiguration(@NonNull Context context,
             @ApplyableNightMode int mode, @Nullable LocaleListCompat locales,
             @Nullable Configuration configOverlay, boolean ignoreFollowSystem) {
         int newNightMode;
@@ -2866,7 +2824,7 @@ class AppCompatDelegateImpl extends AppCompatDelegate
     }
 
     private void updateResourcesConfiguration(int uiModeNightModeValue,
-            @Nullable final LocaleListCompat locales, final boolean callOnConfigChange,
+            final @Nullable LocaleListCompat locales, final boolean callOnConfigChange,
             @Nullable Configuration configOverlay) {
         // If the Activity is not set to handle config changes we will
         // update the Resources with a new Configuration with  updated nightMode and locales.
@@ -2926,10 +2884,9 @@ class AppCompatDelegateImpl extends AppCompatDelegate
 
     /**
      */
-    @NonNull
     @RestrictTo(LIBRARY)
     @VisibleForTesting
-    final AutoNightModeManager getAutoTimeNightModeManager() {
+    final @NonNull AutoNightModeManager getAutoTimeNightModeManager() {
         return getAutoTimeNightModeManager(mContext);
     }
 
@@ -3376,8 +3333,7 @@ class AppCompatDelegateImpl extends AppCompatDelegate
     interface ActionBarMenuCallback {
         boolean onPreparePanel(int featureId);
 
-        @Nullable
-        View onCreatePanelView(int featureId);
+        @Nullable View onCreatePanelView(int featureId);
     }
 
     class AppCompatWindowCallback extends WindowCallbackWrapper {
@@ -3644,8 +3600,7 @@ class AppCompatDelegateImpl extends AppCompatDelegate
             mContext.registerReceiver(mReceiver, filter);
         }
 
-        @Nullable
-        abstract IntentFilter createIntentFilterForBroadcastReceiver();
+        abstract @Nullable IntentFilter createIntentFilterForBroadcastReceiver();
 
         void cleanup() {
             if (mReceiver != null) {
@@ -3786,8 +3741,7 @@ class AppCompatDelegateImpl extends AppCompatDelegate
      * <p>
      * This is fine for device configurations as no member is ever undefined.
      */
-    @NonNull
-    private static Configuration generateConfigDelta(@NonNull Configuration base,
+    private static @NonNull Configuration generateConfigDelta(@NonNull Configuration base,
             @Nullable Configuration change) {
         final Configuration delta = new Configuration();
         delta.fontScale = 0;
@@ -3899,12 +3853,10 @@ class AppCompatDelegateImpl extends AppCompatDelegate
     static class Api21Impl {
         private Api21Impl() { }
 
-        @DoNotInline
         static boolean isPowerSaveMode(PowerManager powerManager) {
             return powerManager.isPowerSaveMode();
         }
 
-        @DoNotInline
         static String toLanguageTag(Locale locale) {
             return locale.toLanguageTag();
         }
@@ -3916,7 +3868,6 @@ class AppCompatDelegateImpl extends AppCompatDelegate
 
         // Most methods of LocaleListCompat requires a minimum API of 24 to be used and these are
         // the helper implementations of those methods, used to indirectly invoke them in our code.
-        @DoNotInline
         static void generateConfigDelta_locale(@NonNull Configuration base,
                 @NonNull Configuration change, @NonNull Configuration delta) {
             final LocaleList baseLocales = base.getLocales();
@@ -3927,17 +3878,14 @@ class AppCompatDelegateImpl extends AppCompatDelegate
             }
         }
 
-        @DoNotInline
         static LocaleListCompat getLocales(Configuration configuration) {
             return LocaleListCompat.forLanguageTags(configuration.getLocales().toLanguageTags());
         }
 
-        @DoNotInline
         static void setLocales(Configuration configuration, LocaleListCompat locales) {
             configuration.setLocales(LocaleList.forLanguageTags(locales.toLanguageTags()));
         }
 
-        @DoNotInline
         public static void setDefaultLocales(LocaleListCompat locales) {
             LocaleList.setDefault(LocaleList.forLanguageTags(locales.toLanguageTags()));
         }
@@ -3968,7 +3916,6 @@ class AppCompatDelegateImpl extends AppCompatDelegate
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static OnBackInvokedCallback registerOnBackPressedCallback(
                 Object dispatcher, AppCompatDelegateImpl delegate) {
             OnBackInvokedCallback onBackInvokedCallback = delegate::onBackPressed;
@@ -3978,14 +3925,12 @@ class AppCompatDelegateImpl extends AppCompatDelegate
             return onBackInvokedCallback;
         }
 
-        @DoNotInline
         static void unregisterOnBackInvokedCallback(Object dispatcher, Object callback) {
             OnBackInvokedCallback onBackInvokedCallback = (OnBackInvokedCallback) callback;
             OnBackInvokedDispatcher typedDispatcher = (OnBackInvokedDispatcher) dispatcher;
             typedDispatcher.unregisterOnBackInvokedCallback(onBackInvokedCallback);
         }
 
-        @DoNotInline
         static OnBackInvokedDispatcher getOnBackInvokedDispatcher(Activity activity) {
             return activity.getOnBackInvokedDispatcher();
         }

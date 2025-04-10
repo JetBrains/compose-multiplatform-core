@@ -17,13 +17,13 @@
 package androidx.window.reflection
 
 import android.util.Log
+import java.lang.reflect.Constructor
+import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import kotlin.reflect.KClass
 
-/**
- * Utility class used for reflection guard for WindowExtensions classes' validation
- */
+/** Utility class used for reflection guard for WindowExtensions classes' validation */
 internal object ReflectionUtils {
 
     internal fun checkIsPresent(classLoader: () -> Class<*>): Boolean {
@@ -38,15 +38,15 @@ internal object ReflectionUtils {
     }
 
     /**
-     * Validates the code block normally for reflection. If there are [ClassNotFoundException]
-     * or [NoSuchMethodException] thrown, validation will fail.
-     * Otherwise will return the validation result from the [block]
+     * Validates the code block normally for reflection. If there are [ClassNotFoundException] or
+     * [NoSuchMethodException] thrown, validation will fail. Otherwise will return the validation
+     * result from the [block]
      */
     @JvmStatic
-    internal fun validateReflection(errorMessage: String? = null, block: () -> Boolean): Boolean {
+    internal fun validateReflection(errorMessage: String, block: () -> Boolean): Boolean {
         return try {
             val result = block()
-            if (!result && errorMessage != null) {
+            if (!result) {
                 Log.e("ReflectionGuard", errorMessage)
             }
             result
@@ -56,27 +56,36 @@ internal object ReflectionUtils {
         } catch (noMethod: NoSuchMethodException) {
             Log.e("ReflectionGuard", "NoSuchMethod: ${errorMessage.orEmpty()}")
             false
+        } catch (noField: NoSuchFieldException) {
+            Log.e("ReflectionGuard", "NoSuchField: ${errorMessage.orEmpty()}")
+            false
         }
     }
 
-    /**
-     * Checks if a method has public modifier
-     */
+    /** Checks if a constructor has public modifier */
+    internal val Constructor<*>.isPublic: Boolean
+        get() {
+            return Modifier.isPublic(modifiers)
+        }
+
+    /** Checks if a method has public modifier */
     internal val Method.isPublic: Boolean
         get() {
             return Modifier.isPublic(modifiers)
         }
 
-    /**
-     * Checks if a method's return value is type of kotlin [clazz]
-     */
+    /** Checks if a field has public modifier */
+    internal val Field.isPublic: Boolean
+        get() {
+            return Modifier.isPublic(modifiers)
+        }
+
+    /** Checks if a method's return value is type of kotlin [clazz] */
     internal fun Method.doesReturn(clazz: KClass<*>): Boolean {
         return doesReturn(clazz.java)
     }
 
-    /**
-     * Checks if a method's return value is type of java [clazz]
-     */
+    /** Checks if a method's return value is type of java [clazz] */
     internal fun Method.doesReturn(clazz: Class<*>): Boolean {
         return returnType.equals(clazz)
     }

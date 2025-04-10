@@ -22,11 +22,12 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.CancellationSignal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.ContentResolverCompat;
 import androidx.core.os.OperationCanceledException;
 import androidx.loader.app.LoaderManager;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -52,9 +53,8 @@ public class CursorLoader extends AsyncTaskLoader<Cursor> {
     private CancellationSignal mCancellationSignal;
 
     /* Runs on a worker thread */
-    @Nullable
     @Override
-    public Cursor loadInBackground() {
+    public @Nullable Cursor loadInBackground() {
         synchronized (this) {
             if (isLoadInBackgroundCanceled()) {
                 throw new OperationCanceledException();
@@ -132,8 +132,8 @@ public class CursorLoader extends AsyncTaskLoader<Cursor> {
      * ContentResolver.query()} for documentation on the meaning of the
      * parameters.  These will be passed as-is to that call.
      */
-    public CursorLoader(@NonNull Context context, @NonNull Uri uri, @Nullable String[] projection,
-            @Nullable String selection, @Nullable String[] selectionArgs,
+    public CursorLoader(@NonNull Context context, @NonNull Uri uri, String @Nullable [] projection,
+            @Nullable String selection, String @Nullable [] selectionArgs,
             @Nullable String sortOrder) {
         super(context);
         mObserver = new ForceLoadContentObserver();
@@ -190,8 +190,7 @@ public class CursorLoader extends AsyncTaskLoader<Cursor> {
         mCursor = null;
     }
 
-    @NonNull
-    public Uri getUri() {
+    public @NonNull Uri getUri() {
         return mUri;
     }
 
@@ -199,17 +198,15 @@ public class CursorLoader extends AsyncTaskLoader<Cursor> {
         mUri = uri;
     }
 
-    @Nullable
-    public String[] getProjection() {
+    public String @Nullable [] getProjection() {
         return mProjection;
     }
 
-    public void setProjection(@Nullable String[] projection) {
+    public void setProjection(String @Nullable [] projection) {
         mProjection = projection;
     }
 
-    @Nullable
-    public String getSelection() {
+    public @Nullable String getSelection() {
         return mSelection;
     }
 
@@ -217,17 +214,15 @@ public class CursorLoader extends AsyncTaskLoader<Cursor> {
         mSelection = selection;
     }
 
-    @Nullable
-    public String[] getSelectionArgs() {
+    public String @Nullable [] getSelectionArgs() {
         return mSelectionArgs;
     }
 
-    public void setSelectionArgs(@Nullable String[] selectionArgs) {
+    public void setSelectionArgs(String @Nullable [] selectionArgs) {
         mSelectionArgs = selectionArgs;
     }
 
-    @Nullable
-    public String getSortOrder() {
+    public @Nullable String getSortOrder() {
         return mSortOrder;
     }
 
@@ -243,7 +238,7 @@ public class CursorLoader extends AsyncTaskLoader<Cursor> {
     @Override
     @Deprecated
     public void dump(@NonNull String prefix, @Nullable FileDescriptor fd,
-            @NonNull PrintWriter writer, @Nullable String[] args) {
+            @NonNull PrintWriter writer, String @Nullable [] args) {
         super.dump(prefix, fd, writer, args);
         writer.print(prefix); writer.print("mUri="); writer.println(mUri);
         writer.print(prefix); writer.print("mProjection=");

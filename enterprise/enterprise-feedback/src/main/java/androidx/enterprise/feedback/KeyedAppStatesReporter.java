@@ -20,8 +20,8 @@ import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.os.Message;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.concurrent.Executor;

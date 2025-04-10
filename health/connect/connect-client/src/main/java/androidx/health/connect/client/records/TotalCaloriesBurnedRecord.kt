@@ -15,7 +15,9 @@
  */
 package androidx.health.connect.client.records
 
+import android.os.Build
 import androidx.health.connect.client.aggregate.AggregateMetric
+import androidx.health.connect.client.impl.platform.records.toPlatformRecord
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.units.Energy
 import androidx.health.connect.client.units.kilocalories
@@ -33,13 +35,21 @@ public class TotalCaloriesBurnedRecord(
     override val endZoneOffset: ZoneOffset?,
     /** Energy in [Energy] unit. Required field. Valid range: 0-1000000 kcal. */
     public val energy: Energy,
-    override val metadata: Metadata = Metadata.EMPTY,
+    override val metadata: Metadata,
 ) : IntervalRecord {
 
+    /*
+     * Android U devices and later use the platform's validation instead of Jetpack validation.
+     * See b/400965398 for more context.
+     */
     init {
-        energy.requireNotLess(other = energy.zero(), "energy")
-        energy.requireNotMore(other = MAX_ENERGY, name = "energy")
         require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            this.toPlatformRecord()
+        } else {
+            energy.requireNotLess(other = energy.zero(), "energy")
+            energy.requireNotMore(other = MAX_ENERGY, name = "energy")
+        }
     }
 
     /*
@@ -70,6 +80,10 @@ public class TotalCaloriesBurnedRecord(
         result = 31 * result + (endZoneOffset?.hashCode() ?: 0)
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "TotalCaloriesBurnedRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, energy=$energy, metadata=$metadata)"
     }
 
     companion object {

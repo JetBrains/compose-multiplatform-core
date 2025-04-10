@@ -19,8 +19,9 @@ package androidx.remotecallback;
 import android.content.Context;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Generates a {@link RemoteCallback} when a RemoteCallback is being triggered, should only
@@ -29,7 +30,11 @@ import androidx.annotation.RestrictTo;
  * @param <T> Should be specified as the root class (e.g. class X extends
  *           CallbackReceiver\<X>)
  *
+ * @deprecated Slice framework has been deprecated, it will not receive any updates moving
+ * forward. If you are looking for a framework that handles communication across apps,
+ * consider using {@link android.app.appsearch.AppSearchManager}.
  */
+@Deprecated
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface CallbackBase<T> {
 
@@ -37,9 +42,8 @@ public interface CallbackBase<T> {
      * Generates a {@link RemoteCallback} when a RemoteCallback is being triggered, should only
      * be used in the context on {@link CallbackReceiver#createRemoteCallback}.
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    RemoteCallback toRemoteCallback(@NonNull Class<T> cls, @NonNull Context context,
+    @NonNull RemoteCallback toRemoteCallback(@NonNull Class<T> cls, @NonNull Context context,
             @NonNull String authority, @NonNull Bundle args,
             @NonNull String method);
 }

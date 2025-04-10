@@ -1,3 +1,10 @@
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
@@ -16,6 +23,9 @@ dependencies {
     implementation(project(":compose:integration-tests:demos:common"))
     implementation(project(":compose:ui:ui:ui-samples"))
     implementation(project(":compose:material:material"))
+    implementation(project(":compose:material3:material3"))
+    implementation("androidx.compose.material:material-icons-core:1.6.7")
+    implementation(project(":navigation:navigation-compose"))
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:runtime:runtime-livedata"))
     implementation(project(":compose:ui:ui"))
@@ -24,6 +34,7 @@ dependencies {
     implementation(project(":compose:ui:ui-tooling-preview"))
     implementation(project(":compose:ui:ui-viewbinding"))
 
+    implementation("androidx.activity:activity-compose:1.8.1")
     implementation("androidx.fragment:fragment-ktx:1.2.5")
     implementation(project(":recyclerview:recyclerview"))
     implementation(project(":customview:customview-poolingcontainer"))
@@ -31,12 +42,15 @@ dependencies {
     implementation("androidx.coordinatorlayout:coordinatorlayout:1.1.0")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
-    debugImplementation(project(":compose:ui:ui-tooling"))
+    implementation(project(":compose:ui:ui-tooling"))
 }
 
 android {
+    compileSdk = 35
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
-    namespace "androidx.compose.ui.demos"
+    namespace = "androidx.compose.ui.demos"
+    // TODO(b/349411310)?
+    experimentalProperties["android.lint.useK2Uast"] = false
 }

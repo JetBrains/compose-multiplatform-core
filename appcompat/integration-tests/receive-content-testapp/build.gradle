@@ -20,18 +20,17 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        minSdkVersion 21
-    }
-    namespace "androidx.appcompat.demo.receivecontent"
+    compileSdk = 35
+    namespace = "androidx.appcompat.demo.receivecontent"
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api(libs.jspecify)
+    api("androidx.annotation:annotation:1.8.1")
     implementation(project(":appcompat:appcompat"))
     implementation(libs.constraintLayout)
     implementation(libs.guavaAndroid)
-    implementation(projectOrArtifact(":recyclerview:recyclerview"))
+    implementation(project(":recyclerview:recyclerview"))
     implementation(libs.material)
 
     androidTestImplementation("androidx.lifecycle:lifecycle-common:2.6.1")

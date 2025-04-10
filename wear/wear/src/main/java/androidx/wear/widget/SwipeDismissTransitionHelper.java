@@ -38,12 +38,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.dynamicanimation.animation.DynamicAnimation;
 import androidx.dynamicanimation.animation.FloatValueHolder;
 import androidx.dynamicanimation.animation.SpringAnimation;
 import androidx.dynamicanimation.animation.SpringForce;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A helper class to handle transition of swiping to dismiss and dismiss animation.
@@ -283,7 +284,7 @@ class SwipeDismissTransitionHelper {
     /**
      * Triggers the recovery animation.
      */
-    void animateRecovery(@Nullable DismissController.OnDismissListener dismissListener) {
+    void animateRecovery(DismissController.@Nullable OnDismissListener dismissListener) {
         mVelocityTracker.computeCurrentVelocity(VELOCITY_UNIT);
         mRecoverySpring = createSpringAnimation(mTranslationX, 0, mVelocityTracker.getXVelocity(),
                 (animation, value, velocity) -> {
@@ -306,7 +307,7 @@ class SwipeDismissTransitionHelper {
     /**
      * Triggers the dismiss animation.
      */
-    void animateDismissal(@Nullable DismissController.OnDismissListener dismissListener) {
+    void animateDismissal(DismissController.@Nullable OnDismissListener dismissListener) {
         if (mVelocityTracker == null) {
             mVelocityTracker = VelocityTracker.obtain();
         }
@@ -343,8 +344,7 @@ class SwipeDismissTransitionHelper {
     /**
      * @return The velocity tracker.
      */
-    @Nullable
-    VelocityTracker getVelocityTracker() {
+    @Nullable VelocityTracker getVelocityTracker() {
         return mVelocityTracker;
     }
 

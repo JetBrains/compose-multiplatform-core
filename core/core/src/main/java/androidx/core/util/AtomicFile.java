@@ -18,8 +18,8 @@ package androidx.core.util;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -63,8 +63,7 @@ public class AtomicFile {
      * Return the path to the base file.  You should not generally use this,
      * as the data at that path may not be valid.
      */
-    @NonNull
-    public File getBaseFile() {
+    public @NonNull File getBaseFile() {
         return mBaseName;
     }
 
@@ -91,8 +90,7 @@ public class AtomicFile {
      * safe (or will be lost).  You must do your own threading protection for
      * access to AtomicFile.
      */
-    @NonNull
-    public FileOutputStream startWrite() throws IOException {
+    public @NonNull FileOutputStream startWrite() throws IOException {
         if (mLegacyBackupName.exists()) {
             rename(mLegacyBackupName, mBaseName);
         }
@@ -161,8 +159,7 @@ public class AtomicFile {
      * <p>
      * You must do your own threading protection for access to AtomicFile.
      */
-    @NonNull
-    public FileInputStream openRead() throws FileNotFoundException {
+    public @NonNull FileInputStream openRead() throws FileNotFoundException {
         if (mLegacyBackupName.exists()) {
             rename(mLegacyBackupName, mBaseName);
         }
@@ -186,8 +183,7 @@ public class AtomicFile {
      * A convenience for {@link #openRead()} that also reads all of the
      * file contents into a byte array which is returned.
      */
-    @NonNull
-    public byte[] readFully() throws IOException {
+    public byte @NonNull [] readFully() throws IOException {
         FileInputStream stream = openRead();
         try {
             int pos = 0;

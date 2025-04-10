@@ -16,9 +16,13 @@
 
 package androidx.compose.ui.modifier
 
+import android.os.Build
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Applier
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReusableComposeNode
 import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.ReusableContentHost
@@ -26,10 +30,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.testutils.assertPixels
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.SubcompositionReusableContentHost
 import androidx.compose.ui.draw.DrawModifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.LayoutModifier
@@ -45,14 +55,19 @@ import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.ObserverModifierNode
 import androidx.compose.ui.node.observeReads
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Rule
@@ -63,8 +78,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ModifierNodeReuseAndDeactivationTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun reusingCallsResetOnModifier() {
@@ -72,20 +86,14 @@ class ModifierNodeReuseAndDeactivationTest {
 
         var resetCalls = 0
 
-        rule.setContent {
-            ReusableContent(reuseKey) {
-                TestLayout(onReset = { resetCalls++ })
-            }
-        }
+        rule.setContent { ReusableContent(reuseKey) { TestLayout(onReset = { resetCalls++ }) } }
 
         rule.runOnIdle {
             assertThat(resetCalls).isEqualTo(0)
             reuseKey = 1
         }
 
-        rule.runOnIdle {
-            assertThat(resetCalls).isEqualTo(1)
-        }
+        rule.runOnIdle { assertThat(resetCalls).isEqualTo(1) }
     }
 
     @Test
@@ -94,20 +102,14 @@ class ModifierNodeReuseAndDeactivationTest {
 
         var createCalls = 0
 
-        rule.setContent {
-            ReusableContent(reuseKey) {
-                TestLayout(onCreate = { createCalls++ })
-            }
-        }
+        rule.setContent { ReusableContent(reuseKey) { TestLayout(onCreate = { createCalls++ }) } }
 
         rule.runOnIdle {
             assertThat(createCalls).isEqualTo(1)
             reuseKey = 1
         }
 
-        rule.runOnIdle {
-            assertThat(createCalls).isEqualTo(1)
-        }
+        rule.runOnIdle { assertThat(createCalls).isEqualTo(1) }
     }
 
     @Test
@@ -117,9 +119,7 @@ class ModifierNodeReuseAndDeactivationTest {
 
         rule.setContent {
             ReusableContentHost(active) {
-                ReusableContent(0) {
-                    TestLayout(onReset = { resetCalls++ })
-                }
+                ReusableContent(0) { TestLayout(onReset = { resetCalls++ }) }
             }
         }
 
@@ -128,9 +128,7 @@ class ModifierNodeReuseAndDeactivationTest {
             active = false
         }
 
-        rule.runOnIdle {
-            assertThat(resetCalls).isEqualTo(1)
-        }
+        rule.runOnIdle { assertThat(resetCalls).isEqualTo(1) }
     }
 
     @Test
@@ -140,23 +138,15 @@ class ModifierNodeReuseAndDeactivationTest {
 
         rule.setContent {
             ReusableContentHost(active) {
-                ReusableContent(0) {
-                    TestLayout(onReset = { resetCalls++ })
-                }
+                ReusableContent(0) { TestLayout(onReset = { resetCalls++ }) }
             }
         }
 
-        rule.runOnIdle {
-            active = false
-        }
+        rule.runOnIdle { active = false }
 
-        rule.runOnIdle {
-            active = true
-        }
+        rule.runOnIdle { active = true }
 
-        rule.runOnIdle {
-            assertThat(resetCalls).isEqualTo(1)
-        }
+        rule.runOnIdle { assertThat(resetCalls).isEqualTo(1) }
     }
 
     @Test
@@ -165,12 +155,7 @@ class ModifierNodeReuseAndDeactivationTest {
         var updateCalls = 0
 
         rule.setContent {
-            ReusableContent(reuseKey) {
-                TestLayout(
-                    key = 1,
-                    onUpdate = { updateCalls++ }
-                )
-            }
+            ReusableContent(reuseKey) { TestLayout(key = 1, onUpdate = { updateCalls++ }) }
         }
 
         rule.runOnIdle {
@@ -178,9 +163,7 @@ class ModifierNodeReuseAndDeactivationTest {
             reuseKey++
         }
 
-        rule.runOnIdle {
-            assertThat(updateCalls).isEqualTo(0)
-        }
+        rule.runOnIdle { assertThat(updateCalls).isEqualTo(0) }
     }
 
     @Test
@@ -189,12 +172,7 @@ class ModifierNodeReuseAndDeactivationTest {
         var updateCalls = 0
 
         rule.setContent {
-            ReusableContent(reuseKey) {
-                TestLayout(
-                    key = reuseKey,
-                    onUpdate = { updateCalls++ }
-                )
-            }
+            ReusableContent(reuseKey) { TestLayout(key = reuseKey, onUpdate = { updateCalls++ }) }
         }
 
         rule.runOnIdle {
@@ -202,9 +180,7 @@ class ModifierNodeReuseAndDeactivationTest {
             reuseKey++
         }
 
-        rule.runOnIdle {
-            assertThat(updateCalls).isEqualTo(1)
-        }
+        rule.runOnIdle { assertThat(updateCalls).isEqualTo(1) }
     }
 
     @Test
@@ -243,12 +219,16 @@ class ModifierNodeReuseAndDeactivationTest {
     @Test
     fun unchangedNodesAreDetachedAndReattachedWhenReused() {
         val nodeInstance = object : Modifier.Node() {}
-        val element = object : ModifierNodeElement<Modifier.Node>() {
-            override fun create(): Modifier.Node = nodeInstance
-            override fun hashCode(): Int = System.identityHashCode(this)
-            override fun equals(other: Any?) = (other === this)
-            override fun update(node: Modifier.Node) { }
-        }
+        val element =
+            object : ModifierNodeElement<Modifier.Node>() {
+                override fun create(): Modifier.Node = nodeInstance
+
+                override fun hashCode(): Int = System.identityHashCode(this)
+
+                override fun equals(other: Any?) = (other === this)
+
+                override fun update(node: Modifier.Node) {}
+            }
 
         var active by mutableStateOf(true)
         rule.setContent {
@@ -263,27 +243,30 @@ class ModifierNodeReuseAndDeactivationTest {
                             modifier = element
                         }
                     },
-                    update = { },
-                    content = { }
+                    update = {},
+                    content = {}
                 )
             }
         }
 
         rule.runOnIdle {
             assertWithMessage("Modifier Node was not attached when being initially created")
-                .that(nodeInstance.isAttached).isTrue()
+                .that(nodeInstance.isAttached)
+                .isTrue()
         }
 
         active = false
         rule.runOnIdle {
             assertWithMessage("Modifier Node should be detached when its LayoutNode is deactivated")
-                .that(nodeInstance.isAttached).isFalse()
+                .that(nodeInstance.isAttached)
+                .isFalse()
         }
 
         active = true
         rule.runOnIdle {
             assertWithMessage("Modifier Node was not attached after being reactivated")
-                .that(nodeInstance.isAttached).isTrue()
+                .that(nodeInstance.isAttached)
+                .isTrue()
         }
     }
 
@@ -321,9 +304,7 @@ class ModifierNodeReuseAndDeactivationTest {
             active = true
         }
 
-        rule.runOnIdle {
-            assertThat(onAttachCalls).isEqualTo(2)
-        }
+        rule.runOnIdle { assertThat(onAttachCalls).isEqualTo(2) }
     }
 
     @Test
@@ -332,17 +313,12 @@ class ModifierNodeReuseAndDeactivationTest {
         var reuseKey by mutableStateOf(0)
 
         var invalidations = 0
-        val onInvalidate: () -> Unit = {
-            invalidations++
-        }
+        val onInvalidate: () -> Unit = { invalidations++ }
 
         rule.setContent {
             ReusableContentHost(active) {
                 ReusableContent(reuseKey) {
-                    Layout(
-                        modifier = StatelessElement(onInvalidate),
-                        measurePolicy = MeasurePolicy
-                    )
+                    Layout(modifier = StatelessElement(onInvalidate), measurePolicy = MeasurePolicy)
                 }
             }
         }
@@ -357,9 +333,7 @@ class ModifierNodeReuseAndDeactivationTest {
             reuseKey = 1
         }
 
-        rule.runOnIdle {
-            assertThat(invalidations).isEqualTo(1)
-        }
+        rule.runOnIdle { assertThat(invalidations).isEqualTo(1) }
     }
 
     @Test
@@ -369,9 +343,7 @@ class ModifierNodeReuseAndDeactivationTest {
         var size by mutableStateOf(10)
 
         var invalidations = 0
-        val onInvalidate: () -> Unit = {
-            invalidations++
-        }
+        val onInvalidate: () -> Unit = { invalidations++ }
 
         rule.setContent {
             ReusableContentHost(active) {
@@ -395,9 +367,7 @@ class ModifierNodeReuseAndDeactivationTest {
             size = 20
         }
 
-        rule.runOnIdle {
-            assertThat(invalidations).isEqualTo(2)
-        }
+        rule.runOnIdle { assertThat(invalidations).isEqualTo(2) }
     }
 
     @Test
@@ -405,16 +375,11 @@ class ModifierNodeReuseAndDeactivationTest {
         var reuseKey by mutableStateOf(0)
 
         var resetCalls = 0
-        val onReset: () -> Unit = {
-            resetCalls++
-        }
+        val onReset: () -> Unit = { resetCalls++ }
 
         rule.setContent {
             ReusableContent(reuseKey) {
-                Layout(
-                    modifier = DelegatingElement(onReset),
-                    measurePolicy = MeasurePolicy
-                )
+                Layout(modifier = DelegatingElement(onReset), measurePolicy = MeasurePolicy)
             }
         }
 
@@ -423,9 +388,7 @@ class ModifierNodeReuseAndDeactivationTest {
             reuseKey = 1
         }
 
-        rule.runOnIdle {
-            assertThat(resetCalls).isEqualTo(1)
-        }
+        rule.runOnIdle { assertThat(resetCalls).isEqualTo(1) }
     }
 
     @Test
@@ -441,12 +404,9 @@ class ModifierNodeReuseAndDeactivationTest {
         }
 
         rule.setContent {
-            ReusableContentHost(active) {
+            SubcompositionReusableContentHost(active) {
                 ReusableContent(0) {
-                    Layout(
-                        modifier = LayerElement(layerBlock),
-                        measurePolicy = MeasurePolicy
-                    )
+                    Layout(modifier = LayerElement(layerBlock), measurePolicy = MeasurePolicy)
                 }
             }
         }
@@ -461,18 +421,14 @@ class ModifierNodeReuseAndDeactivationTest {
             counter++
         }
 
-        rule.runOnIdle {
-            active = true
-        }
+        rule.runOnIdle { active = true }
 
         rule.runOnIdle {
             assertThat(invalidations).isEqualTo(2)
             counter++
         }
 
-        rule.runOnIdle {
-            assertThat(invalidations).isEqualTo(3)
-        }
+        rule.runOnIdle { assertThat(invalidations).isEqualTo(3) }
     }
 
     @Test
@@ -490,10 +446,7 @@ class ModifierNodeReuseAndDeactivationTest {
         rule.setContent {
             ReusableContentHost(active) {
                 ReusableContent(0) {
-                    Layout(
-                        modifier = LayoutElement(measureBlock),
-                        measurePolicy = MeasurePolicy
-                    )
+                    Layout(modifier = LayoutElement(measureBlock), measurePolicy = MeasurePolicy)
                 }
             }
         }
@@ -508,18 +461,14 @@ class ModifierNodeReuseAndDeactivationTest {
             counter++
         }
 
-        rule.runOnIdle {
-            active = true
-        }
+        rule.runOnIdle { active = true }
 
         rule.runOnIdle {
             assertThat(invalidations).isEqualTo(2)
             counter++
         }
 
-        rule.runOnIdle {
-            assertThat(invalidations).isEqualTo(3)
-        }
+        rule.runOnIdle { assertThat(invalidations).isEqualTo(3) }
     }
 
     @Test
@@ -555,18 +504,14 @@ class ModifierNodeReuseAndDeactivationTest {
             counter++
         }
 
-        rule.runOnIdle {
-            active = true
-        }
+        rule.runOnIdle { active = true }
 
         rule.runOnIdle {
             assertThat(invalidations).isEqualTo(2)
             counter++
         }
 
-        rule.runOnIdle {
-            assertThat(invalidations).isEqualTo(3)
-        }
+        rule.runOnIdle { assertThat(invalidations).isEqualTo(3) }
     }
 
     @Test
@@ -583,10 +528,7 @@ class ModifierNodeReuseAndDeactivationTest {
 
         rule.setContent {
             ReusableContent(key) {
-                Layout(
-                    modifier = OldLayoutModifier(drawBlock),
-                    measurePolicy = MeasurePolicy
-                )
+                Layout(modifier = OldLayoutModifier(drawBlock), measurePolicy = MeasurePolicy)
             }
         }
 
@@ -600,9 +542,7 @@ class ModifierNodeReuseAndDeactivationTest {
             counter++
         }
 
-        rule.runOnIdle {
-            assertThat(invalidations).isEqualTo(2)
-        }
+        rule.runOnIdle { assertThat(invalidations).isEqualTo(2) }
     }
 
     @Test
@@ -618,12 +558,9 @@ class ModifierNodeReuseAndDeactivationTest {
         }
 
         rule.setContent {
-            ReusableContentHost(active) {
+            SubcompositionReusableContentHost(active) {
                 ReusableContent(0) {
-                    Layout(
-                        modifier = DrawElement(drawBlock),
-                        measurePolicy = MeasurePolicy
-                    )
+                    Layout(modifier = DrawElement(drawBlock), measurePolicy = MeasurePolicy)
                 }
             }
         }
@@ -638,18 +575,14 @@ class ModifierNodeReuseAndDeactivationTest {
             counter++
         }
 
-        rule.runOnIdle {
-            active = true
-        }
+        rule.runOnIdle { active = true }
 
         rule.runOnIdle {
             assertThat(invalidations).isEqualTo(2)
             counter++
         }
 
-        rule.runOnIdle {
-            assertThat(invalidations).isEqualTo(3)
-        }
+        rule.runOnIdle { assertThat(invalidations).isEqualTo(3) }
     }
 
     @Test
@@ -665,12 +598,9 @@ class ModifierNodeReuseAndDeactivationTest {
         }
 
         rule.setContent {
-            ReusableContentHost(active) {
+            SubcompositionReusableContentHost(active) {
                 ReusableContent(0) {
-                    Layout(
-                        modifier = OldDrawModifier(drawBlock),
-                        measurePolicy = MeasurePolicy
-                    )
+                    Layout(modifier = OldDrawModifier(drawBlock), measurePolicy = MeasurePolicy)
                 }
             }
         }
@@ -685,18 +615,14 @@ class ModifierNodeReuseAndDeactivationTest {
             counter++
         }
 
-        rule.runOnIdle {
-            active = true
-        }
+        rule.runOnIdle { active = true }
 
         rule.runOnIdle {
             assertThat(invalidations).isEqualTo(2)
             counter++
         }
 
-        rule.runOnIdle {
-            assertThat(invalidations).isEqualTo(3)
-        }
+        rule.runOnIdle { assertThat(invalidations).isEqualTo(3) }
     }
 
     @Test
@@ -712,12 +638,9 @@ class ModifierNodeReuseAndDeactivationTest {
         }
 
         rule.setContent {
-                ReusableContent(key) {
-                    Layout(
-                        modifier = OldDrawModifier(drawBlock),
-                        measurePolicy = MeasurePolicy
-                    )
-                }
+            ReusableContent(key) {
+                Layout(modifier = OldDrawModifier(drawBlock), measurePolicy = MeasurePolicy)
+            }
         }
 
         rule.runOnIdle {
@@ -726,13 +649,11 @@ class ModifierNodeReuseAndDeactivationTest {
         }
 
         rule.runOnIdle {
-            assertThat(invalidations).isEqualTo(1)
+            assertThat(invalidations).isEqualTo(2)
             counter++
         }
 
-        rule.runOnIdle {
-            assertThat(invalidations).isEqualTo(2)
-        }
+        rule.runOnIdle { assertThat(invalidations).isEqualTo(3) }
     }
 
     @Test
@@ -750,10 +671,7 @@ class ModifierNodeReuseAndDeactivationTest {
         rule.setContent {
             ReusableContentHost(active) {
                 ReusableContent(0) {
-                    Layout(
-                        modifier = ObserverElement(observedBlock),
-                        measurePolicy = MeasurePolicy
-                    )
+                    Layout(modifier = ObserverElement(observedBlock), measurePolicy = MeasurePolicy)
                 }
             }
         }
@@ -768,18 +686,14 @@ class ModifierNodeReuseAndDeactivationTest {
             counter++
         }
 
-        rule.runOnIdle {
-            active = true
-        }
+        rule.runOnIdle { active = true }
 
         rule.runOnIdle {
             assertThat(invalidations).isEqualTo(2)
             counter++
         }
 
-        rule.runOnIdle {
-            assertThat(invalidations).isEqualTo(3)
-        }
+        rule.runOnIdle { assertThat(invalidations).isEqualTo(3) }
     }
 
     @Test
@@ -793,11 +707,10 @@ class ModifierNodeReuseAndDeactivationTest {
         rule.setContent {
             ReusableContentHost(active) {
                 ReusableContent(0) {
-                    @OptIn(ExperimentalComposeUiApi::class)
                     Layout(
-                        modifier = Modifier
-                            .modifierLocalProvider(key) { providedValue }
-                            .modifierLocalConsumer { receivedValue = key.current },
+                        modifier =
+                            Modifier.modifierLocalProvider(key) { providedValue }
+                                .modifierLocalConsumer { receivedValue = key.current },
                         measurePolicy = MeasurePolicy
                     )
                 }
@@ -809,17 +722,11 @@ class ModifierNodeReuseAndDeactivationTest {
             active = false
         }
 
-        rule.runOnIdle {
-            providedValue = 1
-        }
+        rule.runOnIdle { providedValue = 1 }
 
-        rule.runOnIdle {
-            active = true
-        }
+        rule.runOnIdle { active = true }
 
-        rule.runOnIdle {
-            assertThat(receivedValue).isEqualTo(1)
-        }
+        rule.runOnIdle { assertThat(receivedValue).isEqualTo(1) }
     }
 
     @Test
@@ -832,12 +739,14 @@ class ModifierNodeReuseAndDeactivationTest {
         rule.setContent {
             ReusableContentHost(active) {
                 ReusableContent(0) {
-                    Layout(content = {
-                        Layout(
-                            modifier = modifier.testTag("child"),
-                            measurePolicy = MeasurePolicy
-                        )
-                    }) { measurables, constraints ->
+                    Layout(
+                        content = {
+                            Layout(
+                                modifier = modifier.testTag("child"),
+                                measurePolicy = MeasurePolicy
+                            )
+                        }
+                    ) { measurables, constraints ->
                         val placeable = measurables.first().measure(constraints)
                         layout(placeable.width, placeable.height) {
                             childX.toString()
@@ -848,9 +757,7 @@ class ModifierNodeReuseAndDeactivationTest {
             }
         }
 
-        rule.runOnIdle {
-            active = false
-        }
+        rule.runOnIdle { active = false }
 
         rule.runOnIdle {
             active = true
@@ -859,7 +766,8 @@ class ModifierNodeReuseAndDeactivationTest {
             childX = 10
         }
 
-        rule.onNodeWithTag("child")
+        rule
+            .onNodeWithTag("child")
             .assertLeftPositionInRootIsEqualTo(with(rule.density) { 10.toDp() })
     }
 
@@ -870,12 +778,14 @@ class ModifierNodeReuseAndDeactivationTest {
 
         rule.setContent {
             ReusableContentHost(active) {
-                Layout(content = {
-                    Layout(
-                        modifier = Modifier.size(50.dp).testTag("child"),
-                        measurePolicy = MeasurePolicy
-                    )
-                }) { measurables, constraints ->
+                Layout(
+                    content = {
+                        Layout(
+                            modifier = Modifier.size(50.dp).testTag("child"),
+                            measurePolicy = MeasurePolicy
+                        )
+                    }
+                ) { measurables, constraints ->
                     val placeable = measurables.first().measure(constraints)
                     layout(placeable.width, placeable.height) {
                         coordinates = this.coordinates
@@ -885,12 +795,47 @@ class ModifierNodeReuseAndDeactivationTest {
             }
         }
 
-        rule.runOnIdle {
-            active = false
+        rule.runOnIdle { active = false }
+
+        rule.runOnIdle { assertThat(coordinates?.isAttached).isEqualTo(false) }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun deactivatingWithALayer_layerIsAddedAgainWhenReused() {
+        var active by mutableStateOf(true)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SubcompositionReusableContentHost(active) {
+                    Layout(
+                        content = {
+                            Canvas(
+                                modifier =
+                                    Modifier.padding(5.dp).size(5.dp).graphicsLayer(clip = true)
+                            ) {
+                                drawRect(Color.Red, Offset(-5f, -5f), Size(15f, 15f))
+                            }
+                        },
+                        modifier = Modifier.testTag("test").drawBehind { drawRect(Color.Blue) }
+                    ) { measurables, constraints ->
+                        val placeable = measurables.first().measure(constraints)
+                        layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                    }
+                }
+            }
         }
 
-        rule.runOnIdle {
-            assertThat(coordinates?.isAttached).isEqualTo(false)
+        rule.runOnIdle { active = false }
+
+        rule.runOnIdle { active = true }
+
+        rule.onNodeWithTag("test").captureToImage().assertPixels(IntSize(15, 15)) {
+            if (it.x in 5 until 10 && it.y in 5 until 10) {
+                Color.Red
+            } else {
+                Color.Blue
+            }
         }
     }
 }
@@ -910,14 +855,15 @@ private fun TestLayout(
     val currentOnDetach by rememberUpdatedState(onDetach)
     val currentOnAttach by rememberUpdatedState(onAttach)
     Layout(
-        modifier = createModifier(
-            key = key,
-            onCreate = { currentOnCreate.invoke() },
-            onUpdate = { currentOnUpdate.invoke() },
-            onReset = { currentOnReset.invoke() },
-            onDetach = { currentOnDetach.invoke() },
-            onAttach = { currentOnAttach.invoke() },
-        ),
+        modifier =
+            createModifier(
+                key = key,
+                onCreate = { currentOnCreate.invoke() },
+                onUpdate = { currentOnUpdate.invoke() },
+                onReset = { currentOnReset.invoke() },
+                onDetach = { currentOnDetach.invoke() },
+                onAttach = { currentOnAttach.invoke() },
+            ),
         measurePolicy = MeasurePolicy
     )
 }
@@ -930,31 +876,31 @@ private fun createModifier(
     onDetach: () -> Unit = {},
     onAttach: () -> Unit = {},
 ): Modifier {
-    class GenericModifierWithLifecycle(
-        val key: Any?
-    ) : ModifierNodeElement<Modifier.Node>() {
+    class GenericModifierWithLifecycle(val key: Any?) : ModifierNodeElement<Modifier.Node>() {
         override fun create(): Modifier.Node {
             onCreate()
             return object : Modifier.Node() {
                 override fun onReset() = onReset()
+
                 override fun onAttach() = onAttach()
+
                 override fun onDetach() = onDetach()
             }
         }
 
-        override fun update(node: Modifier.Node) { onUpdate() }
+        override fun update(node: Modifier.Node) {
+            onUpdate()
+        }
 
         override fun hashCode(): Int = "ModifierNodeReuseAndDeactivationTest".hashCode()
 
-        override fun equals(other: Any?) = (other === this) ||
-            (other is GenericModifierWithLifecycle && other.key == this.key)
+        override fun equals(other: Any?) =
+            (other === this) || (other is GenericModifierWithLifecycle && other.key == this.key)
     }
     return GenericModifierWithLifecycle(key)
 }
 
-private val MeasurePolicy = MeasurePolicy { _, _ ->
-    layout(100, 100) { }
-}
+private val MeasurePolicy = MeasurePolicy { _, _ -> layout(100, 100) {} }
 
 private data class StatelessElement(
     private val onInvalidate: () -> Unit,
@@ -974,9 +920,7 @@ private data class StatelessElement(
         ): MeasureResult {
             val placeable = measurable.measure(Constraints.fixed(size, size))
             onMeasure()
-            return layout(placeable.width, placeable.height) {
-                placeable.place(0, 0)
-            }
+            return layout(placeable.width, placeable.height) { placeable.place(0, 0) }
         }
     }
 }
@@ -991,13 +935,14 @@ private data class DelegatingElement(
     }
 
     class Node(var onReset: () -> Unit) : DelegatingNode() {
-        private val inner = delegate(
-            object : Modifier.Node() {
-                override fun onReset() {
-                    this@Node.onReset.invoke()
+        private val inner =
+            delegate(
+                object : Modifier.Node() {
+                    override fun onReset() {
+                        this@Node.onReset.invoke()
+                    }
                 }
-            }
-        )
+            )
     }
 }
 
@@ -1017,9 +962,7 @@ private data class LayerElement(
         ): MeasureResult {
             val placeable = measurable.measure(constraints)
             return layout(placeable.width, placeable.height) {
-                placeable.placeWithLayer(0, 0) {
-                    layerBlock.invoke()
-                }
+                placeable.placeWithLayer(0, 0) { layerBlock.invoke() }
             }
         }
     }
@@ -1041,9 +984,7 @@ private data class ObserverElement(
         }
 
         private fun observe() {
-            observeReads {
-                observedBlock()
-            }
+            observeReads { observedBlock() }
         }
 
         override fun onObservedReadsChanged() {
@@ -1068,9 +1009,7 @@ private data class LayoutElement(
         ): MeasureResult {
             val placeable = measurable.measure(constraints)
             measureBlock.invoke()
-            return layout(placeable.width, placeable.height) {
-                placeable.place(0, 0)
-            }
+            return layout(placeable.width, placeable.height) { placeable.place(0, 0) }
         }
     }
 }
@@ -1084,9 +1023,7 @@ private data class OldLayoutModifier(
     ): MeasureResult {
         val placeable = measurable.measure(constraints)
         measureBlock.invoke()
-        return layout(placeable.width, placeable.height) {
-            placeable.place(0, 0)
-        }
+        return layout(placeable.width, placeable.height) { placeable.place(0, 0) }
     }
 }
 
@@ -1117,8 +1054,11 @@ private data class OldDrawModifier(
 
 private object StatelessLayoutElement1 : ModifierNodeElement<StatelessLayoutModifier1>() {
     override fun create() = StatelessLayoutModifier1()
+
     override fun update(node: StatelessLayoutModifier1) {}
+
     override fun hashCode(): Int = 241
+
     override fun equals(other: Any?) = other === this
 }
 
@@ -1128,16 +1068,17 @@ private class StatelessLayoutModifier1 : Modifier.Node(), LayoutModifierNode {
         constraints: Constraints
     ): MeasureResult {
         val placeable = measurable.measure(constraints)
-        return layout(placeable.width, placeable.height) {
-            placeable.place(0, 0)
-        }
+        return layout(placeable.width, placeable.height) { placeable.place(0, 0) }
     }
 }
 
 private object StatelessLayoutElement2 : ModifierNodeElement<StatelessLayoutModifier2>() {
     override fun create() = StatelessLayoutModifier2()
+
     override fun update(node: StatelessLayoutModifier2) {}
+
     override fun hashCode(): Int = 242
+
     override fun equals(other: Any?) = other === this
 }
 
@@ -1147,8 +1088,6 @@ private class StatelessLayoutModifier2 : Modifier.Node(), LayoutModifierNode {
         constraints: Constraints
     ): MeasureResult {
         val placeable = measurable.measure(constraints)
-        return layout(placeable.width, placeable.height) {
-            placeable.place(0, 0)
-        }
+        return layout(placeable.width, placeable.height) { placeable.place(0, 0) }
     }
 }

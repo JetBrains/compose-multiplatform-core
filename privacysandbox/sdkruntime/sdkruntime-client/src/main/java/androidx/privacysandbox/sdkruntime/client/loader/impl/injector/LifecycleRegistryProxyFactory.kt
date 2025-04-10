@@ -24,63 +24,65 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.Method
 
 /**
- * Create proxy of [Lifecycle] that implements same interface loaded by SDK Classloader.
- * Proxy [Lifecycle.Event] from original object to proxy.
+ * Create proxy of [Lifecycle] that implements same interface loaded by SDK Classloader. Proxy
+ * [Lifecycle.Event] from original object to proxy.
  */
-internal class LifecycleRegistryProxyFactory private constructor(
+internal class LifecycleRegistryProxyFactory
+private constructor(
     private val lifecycleRegistryConstructor: Constructor<out Any>,
     private val lifecycleEventInstances: Map<String, Any>,
     private val handleLifecycleEventMethod: Method
 ) {
-    fun setupLifecycleProxy(
-        activityHolderProxy: Any,
-        sourceLifecycle: Lifecycle
-    ): Any {
+    fun setupLifecycleProxy(activityHolderProxy: Any, sourceLifecycle: Lifecycle): Any {
         val registry = lifecycleRegistryConstructor.newInstance(activityHolderProxy)
-        sourceLifecycle.addObserver(object : LifecycleEventObserver {
-            @SuppressLint("BanUncheckedReflection") // using reflection on library classes
-            override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-                val enumInstance = lifecycleEventInstances[event.name]
-                if (enumInstance != null) {
-                    handleLifecycleEventMethod.invoke(registry, enumInstance)
+        sourceLifecycle.addObserver(
+            object : LifecycleEventObserver {
+                @SuppressLint("BanUncheckedReflection") // using reflection on library classes
+                override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+                    val enumInstance = lifecycleEventInstances[event.name]
+                    if (enumInstance != null) {
+                        handleLifecycleEventMethod.invoke(registry, enumInstance)
+                    }
                 }
             }
-        })
+        )
         return registry
     }
 
     companion object {
         fun createFor(classLoader: ClassLoader): LifecycleRegistryProxyFactory {
-            val lifecycleOwnerClass = Class.forName(
-                "androidx.lifecycle.LifecycleOwner",
-                /* initialize = */ false,
-                classLoader
-            )
-            val lifecycleRegistryClass = Class.forName(
-                "androidx.lifecycle.LifecycleRegistry",
-                /* initialize = */ false,
-                classLoader
-            )
-            val lifecycleRegistryConstructor =
-                lifecycleRegistryClass.getConstructor(
-                    /* parameter1 */ lifecycleOwnerClass
-                )
-
-            val lifecycleEventEnum =
+            val lifecycleOwnerClass =
                 Class.forName(
-                    Lifecycle.Event::class.java.name,
+                    "androidx.lifecycle.LifecycleOwner",
                     /* initialize = */ false,
                     classLoader
                 )
-            val lifecycleEventInstances = lifecycleEventEnum
-                .enumConstants
-                .filterIsInstance(Enum::class.java)
-                .associateBy({ it.name }, { it })
+            val lifecycleRegistryClass =
+                Class.forName(
+                    "androidx.lifecycle.LifecycleRegistry",
+                    /* initialize = */ false,
+                    classLoader
+                )
+            val lifecycleRegistryConstructor =
+                lifecycleRegistryClass.getConstructor(/* parameter1 */ lifecycleOwnerClass)
 
-            val handleLifecycleEventMethod = lifecycleRegistryClass.getMethod(
-                "handleLifecycleEvent",
-                /* parameter1 */ lifecycleEventEnum
-            )
+            val lifecycleEventEnum =
+                Class.forName(
+                    "androidx.lifecycle.Lifecycle\$Event",
+                    /* initialize = */ false,
+                    classLoader
+                )
+            @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+            val lifecycleEventInstances =
+                lifecycleEventEnum.enumConstants
+                    .filterIsInstance(Enum::class.java)
+                    .associateBy({ it.name }, { it })
+
+            val handleLifecycleEventMethod =
+                lifecycleRegistryClass.getMethod(
+                    "handleLifecycleEvent",
+                    /* parameter1 */ lifecycleEventEnum
+                )
 
             return LifecycleRegistryProxyFactory(
                 lifecycleRegistryConstructor,

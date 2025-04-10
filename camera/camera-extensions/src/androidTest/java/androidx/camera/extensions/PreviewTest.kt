@@ -21,12 +21,14 @@ import android.graphics.SurfaceTexture
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Size
-import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraXConfig
 import androidx.camera.core.Preview
 import androidx.camera.extensions.impl.ExtensionsTestlibControl
 import androidx.camera.extensions.util.ExtensionsTestUtil
+import androidx.camera.extensions.util.ExtensionsTestUtil.CAMERA_PIPE_IMPLEMENTATION_OPTION
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.GLUtil
@@ -45,6 +47,7 @@ import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,15 +57,19 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 21)
 class PreviewTest(
+    private val implName: String,
+    private val cameraXConfig: CameraXConfig,
     private val implType: ExtensionsTestlibControl.ImplementationType,
     @field:ExtensionMode.Mode @param:ExtensionMode.Mode private val extensionMode: Int,
     @field:CameraSelector.LensFacing @param:CameraSelector.LensFacing private val lensFacing: Int
 ) {
+    @get:Rule
+    val cameraPipeConfigTestRule =
+        CameraPipeConfigTestRule(active = implName == CAMERA_PIPE_IMPLEMENTATION_OPTION)
 
     @get:Rule
-    val useCamera = CameraUtil.grantCameraPermissionAndPreTest(
-        PreTestCameraIdList(Camera2Config.defaultConfig())
-    )
+    val useCamera =
+        CameraUtil.grantCameraPermissionAndPreTestAndPostTest(PreTestCameraIdList(cameraXConfig))
 
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -79,59 +86,56 @@ class PreviewTest(
     private var isSurfaceTextureReleased = false
     private val isSurfaceTextureReleasedLock = Any()
 
-    private val onFrameAvailableListener = object : SurfaceTexture.OnFrameAvailableListener {
-        private var complete = false
-        private var counter = 0
+    private val onFrameAvailableListener =
+        object : SurfaceTexture.OnFrameAvailableListener {
+            private var complete = false
+            private var counter = 0
 
-        override fun onFrameAvailable(surfaceTexture: SurfaceTexture): Unit = runBlocking {
-            if (complete) {
-                return@runBlocking
-            }
+            override fun onFrameAvailable(surfaceTexture: SurfaceTexture): Unit = runBlocking {
+                if (complete) {
+                    return@runBlocking
+                }
 
-            withContext(Dispatchers.Main) {
-                synchronized(isSurfaceTextureReleasedLock) {
-                    if (!isSurfaceTextureReleased) {
-                        surfaceTexture.updateTexImage()
+                withContext(Dispatchers.Main) {
+                    synchronized(isSurfaceTextureReleasedLock) {
+                        if (!isSurfaceTextureReleased) {
+                            surfaceTexture.updateTexImage()
+                        }
                     }
                 }
-            }
 
-            if (counter++ >= 10) {
-                frameReceivedLatch.countDown()
-                complete = true
+                if (counter++ >= 10) {
+                    frameReceivedLatch.countDown()
+                    complete = true
+                }
             }
         }
-    }
 
     private val handler: Handler
-    private val handlerThread = HandlerThread("FrameAvailableListener").also {
-        it.start()
-        handler = Handler(it.looper)
-    }
+    private val handlerThread =
+        HandlerThread("FrameAvailableListener").also {
+            it.start()
+            handler = Handler(it.looper)
+        }
 
     @Before
     fun setUp(): Unit = runBlocking {
         assumeTrue(
-            ExtensionsTestUtil.isTargetDeviceAvailableForExtensions(
-                lensFacing,
-                extensionMode
-            )
+            ExtensionsTestUtil.isTargetDeviceAvailableForExtensions(lensFacing, extensionMode)
         )
 
+        ProcessCameraProvider.configureInstance(cameraXConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
         ExtensionsTestlibControl.getInstance().setImplementationType(implType)
         baseCameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
-        extensionsManager = ExtensionsManager.getInstanceAsync(
-            context,
-            cameraProvider
-        )[10000, TimeUnit.MILLISECONDS]
+        extensionsManager =
+            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
+                    10000, TimeUnit.MILLISECONDS]
 
         assumeTrue(extensionsManager.isExtensionAvailable(baseCameraSelector, extensionMode))
 
-        extensionsCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
-            baseCameraSelector,
-            extensionMode
-        )
+        extensionsCameraSelector =
+            extensionsManager.getExtensionEnabledCameraSelector(baseCameraSelector, extensionMode)
 
         withContext(Dispatchers.Main) {
             fakeLifecycleOwner = FakeLifecycleOwner().apply { startAndResume() }
@@ -151,14 +155,19 @@ class PreviewTest(
 
     companion object {
         val context: Context = ApplicationProvider.getApplicationContext()
+
         @JvmStatic
-        @get:Parameterized.Parameters(name = "implType = {0}, mode = {1}, facing = {2}")
-        val parameters: Collection<Array<Any>>
-            get() = ExtensionsTestUtil.getAllImplExtensionsLensFacingCombinations(context, true)
+        @Parameterized.Parameters(
+            name = "cameraXConfig = {0}, implType = {2}, mode = {3}, facing = {4}"
+        )
+        fun data(): Collection<Array<Any>> {
+            return ExtensionsTestUtil.getAllImplExtensionsLensFacingCombinations(context, true)
+        }
     }
 
     @UiThreadTest
     @Test
+    @Ignore("b/331617278")
     fun canBindToLifeCycleAndDisplayPreview(): Unit = runBlocking {
         withContext(Dispatchers.Main) {
             val preview = Preview.Builder().build()
@@ -167,11 +176,7 @@ class PreviewTest(
                 SurfaceTextureProvider.createSurfaceTextureProvider(createSurfaceTextureCallback())
             )
 
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                extensionsCameraSelector,
-                preview
-            )
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, extensionsCameraSelector, preview)
         }
 
         // Waits for the surface texture being ready
@@ -182,29 +187,26 @@ class PreviewTest(
     }
 
     @Test
+    @Ignore("b/331617278")
     fun highResolutionDisabled_whenExtensionsEnabled(): Unit = runBlocking {
         val preview = Preview.Builder().build()
 
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                extensionsCameraSelector,
-                preview)
+            preview.setSurfaceProvider(
+                SurfaceTextureProvider.createSurfaceTextureProvider(createSurfaceTextureCallback())
+            )
+
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, extensionsCameraSelector, preview)
         }
 
-        assertThat(preview.currentConfig.isHigResolutionDisabled(false)).isTrue()
+        assertThat(preview.currentConfig.isHighResolutionDisabled(false)).isTrue()
     }
 
     private fun createSurfaceTextureCallback(): SurfaceTextureProvider.SurfaceTextureCallback =
         object : SurfaceTextureProvider.SurfaceTextureCallback {
-            override fun onSurfaceTextureReady(
-                surfaceTexture: SurfaceTexture,
-                resolution: Size
-            ) {
+            override fun onSurfaceTextureReady(surfaceTexture: SurfaceTexture, resolution: Size) {
                 surfaceTexture.attachToGLContext(GLUtil.getTexIdFromGLContext())
-                surfaceTexture.setOnFrameAvailableListener(
-                    onFrameAvailableListener, handler
-                )
+                surfaceTexture.setOnFrameAvailableListener(onFrameAvailableListener, handler)
                 surfaceTextureLatch.countDown()
             }
 

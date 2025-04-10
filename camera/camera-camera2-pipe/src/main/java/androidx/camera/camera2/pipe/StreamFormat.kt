@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe
 
-import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 
 /**
@@ -27,36 +26,37 @@ import androidx.annotation.RestrictTo
  * it in.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @JvmInline
-value class StreamFormat(val value: Int) {
-    companion object {
-        val UNKNOWN: StreamFormat = StreamFormat(0)
-        val PRIVATE: StreamFormat = StreamFormat(0x22)
+public value class StreamFormat(public val value: Int) {
+    public companion object {
+        public val UNKNOWN: StreamFormat = StreamFormat(0)
+        public val PRIVATE: StreamFormat = StreamFormat(0x22)
 
-        val DEPTH16: StreamFormat = StreamFormat(0x44363159)
-        val DEPTH_JPEG: StreamFormat = StreamFormat(0x69656963)
-        val DEPTH_POINT_CLOUD: StreamFormat = StreamFormat(0x101)
-        val FLEX_RGB_888: StreamFormat = StreamFormat(0x29)
-        val FLEX_RGBA_8888: StreamFormat = StreamFormat(0x2A)
-        val HEIC: StreamFormat = StreamFormat(0x48454946)
-        val JPEG: StreamFormat = StreamFormat(0x100)
-        val NV16: StreamFormat = StreamFormat(0x10)
-        val NV21: StreamFormat = StreamFormat(0x11)
-        val RAW10: StreamFormat = StreamFormat(0x25)
-        val RAW12: StreamFormat = StreamFormat(0x26)
-        val RAW_DEPTH: StreamFormat = StreamFormat(0x1002)
-        val RAW_PRIVATE: StreamFormat = StreamFormat(0x24)
-        val RAW_SENSOR: StreamFormat = StreamFormat(0x20)
-        val RGB_565: StreamFormat = StreamFormat(4)
-        val Y12: StreamFormat = StreamFormat(0x32315659)
-        val Y16: StreamFormat = StreamFormat(0x20363159)
-        val Y8: StreamFormat = StreamFormat(0x20203859)
-        val YUV_420_888: StreamFormat = StreamFormat(0x23)
-        val YUV_422_888: StreamFormat = StreamFormat(0x27)
-        val YUV_444_888: StreamFormat = StreamFormat(0x28)
-        val YUY2: StreamFormat = StreamFormat(0x14)
-        val YV12: StreamFormat = StreamFormat(0x32315659)
+        public val DEPTH16: StreamFormat = StreamFormat(0x44363159)
+        public val DEPTH_JPEG: StreamFormat = StreamFormat(0x69656963)
+        public val DEPTH_POINT_CLOUD: StreamFormat = StreamFormat(0x101)
+        public val FLEX_RGB_888: StreamFormat = StreamFormat(0x29)
+        public val FLEX_RGBA_8888: StreamFormat = StreamFormat(0x2A)
+        public val HEIC: StreamFormat = StreamFormat(0x48454946)
+        public val JPEG: StreamFormat = StreamFormat(0x100)
+        public val JPEG_R: StreamFormat = StreamFormat(0x1005)
+        public val NV16: StreamFormat = StreamFormat(0x10)
+        public val NV21: StreamFormat = StreamFormat(0x11)
+        public val RAW10: StreamFormat = StreamFormat(0x25)
+        public val RAW12: StreamFormat = StreamFormat(0x26)
+        public val RAW_DEPTH: StreamFormat = StreamFormat(0x1002)
+        public val RAW_PRIVATE: StreamFormat = StreamFormat(0x24)
+        public val RAW_SENSOR: StreamFormat = StreamFormat(0x20)
+        public val RGB_565: StreamFormat = StreamFormat(4)
+        public val Y12: StreamFormat = StreamFormat(0x32315659)
+        public val Y16: StreamFormat = StreamFormat(0x20363159)
+        public val Y8: StreamFormat = StreamFormat(0x20203859)
+        public val YCBCR_P010: StreamFormat = StreamFormat(0x36)
+        public val YUV_420_888: StreamFormat = StreamFormat(0x23)
+        public val YUV_422_888: StreamFormat = StreamFormat(0x27)
+        public val YUV_444_888: StreamFormat = StreamFormat(0x28)
+        public val YUY2: StreamFormat = StreamFormat(0x14)
+        public val YV12: StreamFormat = StreamFormat(0x32315659)
     }
 
     override fun toString(): String {
@@ -69,7 +69,7 @@ value class StreamFormat(val value: Int) {
      * @return the number of bits per pixel or -1 if the format does not have a well defined number
      *   of bits per pixel.
      */
-    val bitsPerPixel: Int
+    public val bitsPerPixel: Int
         get() {
             when (this) {
                 DEPTH16 -> return 16
@@ -85,6 +85,7 @@ value class StreamFormat(val value: Int) {
                 Y12 -> return 12
                 Y16 -> return 16
                 Y8 -> return 8
+                YCBCR_P010 -> return 16
                 YUV_420_888 -> return 12
                 YUV_422_888 -> return 16
                 YUV_444_888 -> return 24
@@ -100,7 +101,7 @@ value class StreamFormat(val value: Int) {
      *
      * @return a human readable string representation of the StreamFormat.
      */
-    val name: String
+    public val name: String
         get() {
             when (this) {
                 UNKNOWN -> return "UNKNOWN"
@@ -112,6 +113,7 @@ value class StreamFormat(val value: Int) {
                 FLEX_RGBA_8888 -> return "FLEX_RGBA_8888"
                 HEIC -> return "HEIC"
                 JPEG -> return "JPEG"
+                JPEG_R -> return "JPEG_R"
                 NV16 -> return "NV16"
                 NV21 -> return "NV21"
                 RAW10 -> return "RAW10"
@@ -123,12 +125,13 @@ value class StreamFormat(val value: Int) {
                 Y12 -> return "Y12"
                 Y16 -> return "Y16"
                 Y8 -> return "Y8"
+                YCBCR_P010 -> return "YCBCR_P010"
                 YUV_420_888 -> return "YUV_420_888"
                 YUV_422_888 -> return "YUV_422_888"
                 YUV_444_888 -> return "YUV_444_888"
                 YUY2 -> return "YUY2"
                 YV12 -> return "YV12"
             }
-            return "UNKNOWN-${this.value.toString(16)}"
+            return "UNKNOWN(${this.value.toString(16)})"
         }
 }

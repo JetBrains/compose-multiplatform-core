@@ -19,7 +19,7 @@ package androidx.wear.tiles;
 import android.content.Context;
 import android.content.Intent;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * {@link TileUpdateRequester} which notifies the viewer that it should fetch a new version of the

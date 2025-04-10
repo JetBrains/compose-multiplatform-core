@@ -18,8 +18,8 @@ package com.example.androidx.webkit;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -58,8 +58,7 @@ public class HttpServer {
         /**
          * Called to initialize a new RequestHandler
          */
-        @NonNull
-        RequestHandler create(@NonNull Socket socket);
+        @NonNull RequestHandler create(@NonNull Socket socket);
     }
 
     private static final int TIMEOUT_MILLIS = 5000;

@@ -27,14 +27,14 @@ import android.util.Range;
 import android.util.Rational;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.impl.utils.AspectRatioUtil;
 import androidx.camera.core.internal.utils.SizeUtil;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,7 +61,6 @@ import java.util.Map;
  * list based on the smallest area difference to the given video size of CamcorderProfile.
  * It provides {@link #getResolutions(Quality, int)} API to query the result.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 class QualityRatioToResolutionsTable {
 
     // Key: Quality
@@ -115,8 +114,8 @@ class QualityRatioToResolutionsTable {
      *
      * <p>Giving {@link AspectRatio#RATIO_DEFAULT} will return the mapped profile size.
      */
-    @NonNull
-    List<Size> getResolutions(@NonNull Quality quality, @AspectRatio.Ratio int aspectRatio) {
+    @NonNull List<Size> getResolutions(@NonNull Quality quality,
+            @AspectRatio.Ratio int aspectRatio) {
         List<Size> qualityRatioRow = getQualityRatioRow(quality, aspectRatio);
         return qualityRatioRow != null ? new ArrayList<>(qualityRatioRow) : new ArrayList<>(0);
     }
@@ -159,8 +158,7 @@ class QualityRatioToResolutionsTable {
         }
     }
 
-    @Nullable
-    private static Quality findMappedQuality(@NonNull Size resolution) {
+    private static @Nullable Quality findMappedQuality(@NonNull Size resolution) {
         for (Map.Entry<Quality, Range<Integer>> entry : sQualityRangeMap.entrySet()) {
             if (entry.getValue().contains(resolution.getHeight())) {
                 return entry.getKey();
@@ -169,8 +167,7 @@ class QualityRatioToResolutionsTable {
         return null;
     }
 
-    @Nullable
-    private static Integer findMappedAspectRatio(@NonNull Size resolution) {
+    private static @Nullable Integer findMappedAspectRatio(@NonNull Size resolution) {
         for (Map.Entry<Integer, Rational> entry : sAspectRatioMap.entrySet()) {
             if (AspectRatioUtil.hasMatchingAspectRatio(resolution, entry.getValue(),
                     SizeUtil.RESOLUTION_QVGA)) {
@@ -180,8 +177,7 @@ class QualityRatioToResolutionsTable {
         return null;
     }
 
-    @Nullable
-    private List<Size> getQualityRatioRow(@NonNull Quality quality,
+    private @Nullable List<Size> getQualityRatioRow(@NonNull Quality quality,
             @AspectRatio.Ratio int aspectRatio) {
         return mTable.get(QualityRatio.of(quality, aspectRatio));
     }
@@ -193,8 +189,7 @@ class QualityRatioToResolutionsTable {
             return new AutoValue_QualityRatioToResolutionsTable_QualityRatio(quality, aspectRatio);
         }
 
-        @NonNull
-        abstract Quality getQuality();
+        abstract @NonNull Quality getQuality();
 
         @SuppressWarnings("unused")
         @AspectRatio.Ratio

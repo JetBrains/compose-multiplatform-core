@@ -18,6 +18,7 @@ package androidx.compose.foundation
 
 import androidx.compose.foundation.interaction.HoverInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -32,19 +33,16 @@ import kotlinx.coroutines.launch
  * Configure component to be hoverable via pointer enter/exit events.
  *
  * @sample androidx.compose.foundation.samples.HoverableSample
- *
  * @param interactionSource [MutableInteractionSource] that will be used to emit
- * [HoverInteraction.Enter] when this element is being hovered.
+ *   [HoverInteraction.Enter] when this element is being hovered.
  * @param enabled Controls the enabled state. When `false`, hover events will be ignored.
  */
-fun Modifier.hoverable(
-    interactionSource: MutableInteractionSource,
-    enabled: Boolean = true
-) = this then if (enabled) HoverableElement(interactionSource) else Modifier
+@Stable
+fun Modifier.hoverable(interactionSource: MutableInteractionSource, enabled: Boolean = true) =
+    this then if (enabled) HoverableElement(interactionSource) else Modifier
 
-private class HoverableElement(
-    private val interactionSource: MutableInteractionSource
-) : ModifierNodeElement<HoverableNode>() {
+private class HoverableElement(private val interactionSource: MutableInteractionSource) :
+    ModifierNodeElement<HoverableNode>() {
     override fun create() = HoverableNode(interactionSource)
 
     override fun update(node: HoverableNode) {
@@ -69,12 +67,11 @@ private class HoverableElement(
     }
 }
 
-internal class HoverableNode(
-    private var interactionSource: MutableInteractionSource?
-) : PointerInputModifierNode, Modifier.Node() {
+private class HoverableNode(private var interactionSource: MutableInteractionSource) :
+    PointerInputModifierNode, Modifier.Node() {
     private var hoverInteraction: HoverInteraction.Enter? = null
 
-    fun updateInteractionSource(interactionSource: MutableInteractionSource?) {
+    fun updateInteractionSource(interactionSource: MutableInteractionSource) {
         if (this.interactionSource != interactionSource) {
             tryEmitExit()
             // b/273699888 TODO: Define behavior if there is an ongoing hover
@@ -103,26 +100,18 @@ internal class HoverableNode(
         tryEmitExit()
     }
 
-     private fun emitEnter() {
+    private suspend fun emitEnter() {
         if (hoverInteraction == null) {
             val interaction = HoverInteraction.Enter()
-            interactionSource?.let { interactionSource ->
-                coroutineScope.launch {
-                    interactionSource.emit(interaction)
-                }
-            }
+            interactionSource.emit(interaction)
             hoverInteraction = interaction
         }
     }
 
-    private fun emitExit() {
+    private suspend fun emitExit() {
         hoverInteraction?.let { oldValue ->
             val interaction = HoverInteraction.Exit(oldValue)
-            interactionSource?.let { interactionSource ->
-                coroutineScope.launch {
-                    interactionSource.emit(interaction)
-                }
-            }
+            interactionSource.emit(interaction)
             hoverInteraction = null
         }
     }
@@ -130,7 +119,7 @@ internal class HoverableNode(
     private fun tryEmitExit() {
         hoverInteraction?.let { oldValue ->
             val interaction = HoverInteraction.Exit(oldValue)
-            interactionSource?.tryEmit(interaction)
+            interactionSource.tryEmit(interaction)
             hoverInteraction = null
         }
     }

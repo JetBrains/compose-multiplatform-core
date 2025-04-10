@@ -1,5 +1,3 @@
-package androidx.wear.protolayout.renderer;
-
 /*
  * Copyright 2023 The Android Open Source Project
  *
@@ -15,12 +13,15 @@ package androidx.wear.protolayout.renderer;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package androidx.wear.protolayout.renderer;
 
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+import androidx.annotation.RestrictTo.Scope;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * View provider for a View ExtensionLayoutElement. This should check that the given renderer
@@ -28,7 +29,7 @@ import androidx.annotation.RestrictTo;
  * payload. The returned View will be measured using the width/height from the {@link
  * androidx.wear.protolayout.LayoutElementBuilders.ExtensionLayoutElement} message.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(Scope.LIBRARY)
 public interface ProtoLayoutExtensionViewProvider {
     /**
      * Return an Android View from the given renderer extension. In case of an error, this method
@@ -36,6 +37,5 @@ public interface ProtoLayoutExtensionViewProvider {
      *
      * <p>Note: The renderer extension must not set the default tag of the returned View object.
      */
-    @Nullable
-    View provideView(@NonNull byte[] extensionPayload, @NonNull String vendorId);
+    @Nullable View provideView(byte @NonNull [] extensionPayload, @NonNull String vendorId);
 }

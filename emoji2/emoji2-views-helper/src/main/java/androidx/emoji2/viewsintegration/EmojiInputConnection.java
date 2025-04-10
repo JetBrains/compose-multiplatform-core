@@ -22,10 +22,10 @@ import android.view.inputmethod.InputConnectionWrapper;
 import android.widget.TextView;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.emoji2.text.EmojiCompat;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * InputConnectionWrapper for EditText delete operations. Keyboard does not have knowledge about
@@ -36,23 +36,22 @@ import androidx.emoji2.text.EmojiCompat;
  *
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-@RequiresApi(19)
 final class EmojiInputConnection extends InputConnectionWrapper {
     private final TextView mTextView;
     private final EmojiCompatDeleteHelper mEmojiCompatDeleteHelper;
 
     EmojiInputConnection(
-            @NonNull final TextView textView,
-            @NonNull final InputConnection inputConnection,
-            @NonNull final EditorInfo outAttrs) {
+            final @NonNull TextView textView,
+            final @NonNull InputConnection inputConnection,
+            final @NonNull EditorInfo outAttrs) {
         this(textView, inputConnection, outAttrs, new EmojiCompatDeleteHelper());
     }
 
     EmojiInputConnection(
-            @NonNull final TextView textView,
-            @NonNull final InputConnection inputConnection,
-            @NonNull final EditorInfo outAttrs,
-            @NonNull final EmojiCompatDeleteHelper emojiCompatDeleteHelper
+            final @NonNull TextView textView,
+            final @NonNull InputConnection inputConnection,
+            final @NonNull EditorInfo outAttrs,
+            final @NonNull EmojiCompatDeleteHelper emojiCompatDeleteHelper
     ) {
         super(inputConnection, false);
         mTextView = textView;
@@ -81,8 +80,8 @@ final class EmojiInputConnection extends InputConnectionWrapper {
 
     public static class EmojiCompatDeleteHelper {
         public boolean handleDeleteSurroundingText(
-                @NonNull final InputConnection inputConnection,
-                @NonNull final Editable editable,
+                final @NonNull InputConnection inputConnection,
+                final @NonNull Editable editable,
                 @IntRange(from = 0) final int beforeLength,
                 @IntRange(from = 0) final int afterLength,
                 final boolean inCodePoints) {
@@ -90,7 +89,7 @@ final class EmojiInputConnection extends InputConnectionWrapper {
                     beforeLength, afterLength, inCodePoints);
         }
 
-        public void updateEditorInfoAttrs(@NonNull final EditorInfo outAttrs) {
+        public void updateEditorInfoAttrs(final @NonNull EditorInfo outAttrs) {
             if (EmojiCompat.isConfigured()) {
                 EmojiCompat.get().updateEditorInfo(outAttrs);
             }

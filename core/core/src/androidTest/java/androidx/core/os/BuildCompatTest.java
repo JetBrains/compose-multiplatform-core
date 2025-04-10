@@ -51,6 +51,13 @@ public class BuildCompatTest {
         assertFalse(BuildCompat.isAtLeastPreReleaseCodename("S", "REL"));
 
         assertFalse(BuildCompat.isAtLeastPreReleaseCodename("RMR1", "REL"));
+
+        assertFalse(BuildCompat.isAtLeastPreReleaseCodename("RMR1", "REL"));
+
+        assertTrue(BuildCompat.isAtLeastPreReleaseCodename("VanillaIceCream", "VanillaIceCream"));
+        assertTrue(BuildCompat.isAtLeastPreReleaseCodename("VanillaIceCream", "Baklava"));
+        assertTrue(BuildCompat.isAtLeastPreReleaseCodename("Baklava", "Baklava"));
+        assertFalse(BuildCompat.isAtLeastPreReleaseCodename("Baklava", "VanillaIceCream"));
     }
 
     @Test
@@ -75,5 +82,17 @@ public class BuildCompatTest {
     @Test
     public void isAtLeastU_byMinSdk() {
         assertTrue(BuildCompat.isAtLeastU());
+    }
+
+    @SdkSuppress(minSdkVersion = 35)
+    @Test
+    public void isAtLeastV_byMinSdk() {
+        assertTrue(BuildCompat.isAtLeastV());
+    }
+
+    @SdkSuppress(minSdkVersion = 36)
+    @Test
+    public void isAtLeastB_byMinSdk() {
+        assertTrue(BuildCompat.isAtLeastB());
     }
 }

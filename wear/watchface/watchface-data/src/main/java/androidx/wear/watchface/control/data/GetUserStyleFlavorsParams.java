@@ -21,12 +21,13 @@ import android.content.ComponentName;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Parameters for {@link IWatchFaceControlService#GetUserStyleFlavors}.
@@ -39,8 +40,7 @@ public class GetUserStyleFlavorsParams implements VersionedParcelable, Parcelabl
 
     /** The {@link ComponentName} of the watchface family to create. */
     @ParcelField(1)
-    @NonNull
-    ComponentName mWatchFaceName;
+    @NonNull ComponentName mWatchFaceName;
 
     /** Used by VersionedParcelable. */
     GetUserStyleFlavorsParams() {}
@@ -49,8 +49,7 @@ public class GetUserStyleFlavorsParams implements VersionedParcelable, Parcelabl
         mWatchFaceName = watchFaceName;
     }
 
-    @NonNull
-    public ComponentName getWatchFaceName() {
+    public @NonNull ComponentName getWatchFaceName() {
         return mWatchFaceName;
     }
 

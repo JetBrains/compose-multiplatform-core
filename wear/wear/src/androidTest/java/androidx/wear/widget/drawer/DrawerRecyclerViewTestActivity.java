@@ -23,11 +23,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.wear.test.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public class DrawerRecyclerViewTestActivity extends Activity {
     private static final int DRAWER_SIZE = 5;
@@ -68,9 +69,8 @@ public class DrawerRecyclerViewTestActivity extends Activity {
     }
 
     private class ScrollAdapter extends RecyclerView.Adapter<ScrollAdapter.ViewHolder> {
-        @NonNull
         @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        public @NonNull ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             return new ViewHolder(
                     getLayoutInflater().inflate(
                             R.layout.test_drawer_horizontal_scroll_fragment,

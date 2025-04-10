@@ -32,13 +32,14 @@ import android.widget.LinearLayout;
 
 import androidx.annotation.GravityInt;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.R;
 import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
 import androidx.resourceinspection.annotation.Attribute;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -1492,7 +1493,7 @@ public class LinearLayoutCompat extends ViewGroup {
                 if (gravity < 0) {
                     gravity = minorGravity;
                 }
-                final int layoutDirection = ViewCompat.getLayoutDirection(this);
+                final int layoutDirection = getLayoutDirection();
                 final int absoluteGravity = GravityCompat.getAbsoluteGravity(gravity,
                         layoutDirection);
                 switch (absoluteGravity & Gravity.HORIZONTAL_GRAVITY_MASK) {
@@ -1561,7 +1562,7 @@ public class LinearLayoutCompat extends ViewGroup {
         final int[] maxAscent = mMaxAscent;
         final int[] maxDescent = mMaxDescent;
 
-        final int layoutDirection = ViewCompat.getLayoutDirection(this);
+        final int layoutDirection = getLayoutDirection();
         switch (GravityCompat.getAbsoluteGravity(majorGravity, layoutDirection)) {
             case Gravity.RIGHT:
                 // mTotalLength contains the padding already

@@ -1,0 +1,97 @@
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.SoftwareType
+import androidx.build.PlatformIdentifier
+
+plugins {
+    id("AndroidXPlugin")
+    id("com.android.library")
+    alias(libs.plugins.kotlinSerialization)
+}
+
+androidXMultiplatform {
+    androidTarget()
+    jvmStubs()
+    linuxX64Stubs()
+
+    defaultPlatform(PlatformIdentifier.ANDROID)
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                api(project(":savedstate:savedstate"))
+                api("androidx.compose.runtime:runtime:1.7.5")
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation(project(":kruth:kruth"))
+                implementation(libs.kotlinTest)
+                implementation(libs.kotlinTestCommon)
+                implementation(libs.kotlinTestAnnotationsCommon)
+                implementation(libs.kotlinCoroutinesTest)
+            }
+        }
+
+         androidMain {
+            dependsOn(commonMain)
+            dependencies {
+                api("androidx.annotation:annotation:1.8.1")
+                implementation("androidx.core:core-ktx:1.13.1")
+            }
+        }
+
+        androidUnitTest {
+            dependsOn(commonTest)
+            dependencies {
+                implementation(libs.robolectric)
+            }
+        }
+
+        androidInstrumentedTest {
+            dependsOn(commonTest)
+            dependencies {
+                implementation(libs.testExtJunit)
+                implementation(libs.testCore)
+                implementation(libs.testRunner)
+                implementation(libs.testRules)
+            }
+        }
+
+        nonAndroidMain {
+            dependsOn(commonMain)
+        }
+
+        jvmStubsMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(nonAndroidMain)
+        }
+    }
+}
+
+android {
+    buildTypes.configureEach {
+        consumerProguardFiles("proguard-rules.pro")
+    }
+    namespace = "androidx.savedstate.compose"
+    experimentalProperties["android.lint.useK2Uast"] = false // TODO(b/345531033)
+}
+
+androidx {
+    name = "Saved State Compose"
+    type = SoftwareType.PUBLISHED_LIBRARY
+    samples(project(":savedstate:savedstate-compose"))
+    inceptionYear = "2018"
+    description = "Compose integration with Saved State"
+    metalavaK2UastEnabled = false
+}

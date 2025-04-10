@@ -21,11 +21,11 @@ import android.media.ImageReader;
 import android.view.Surface;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.ImageReaderProxy;
 import androidx.camera.core.impl.utils.MainThreadAsyncHandler;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 
@@ -35,7 +35,6 @@ import java.util.concurrent.Executor;
  * <p>All methods map one-to-one between this {@link ImageReaderProxy} and the wrapped {@link
  * ImageReader}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 class AndroidImageReaderProxy implements ImageReaderProxy {
     @GuardedBy("mLock")
     private final ImageReader mImageReader;
@@ -55,8 +54,7 @@ class AndroidImageReaderProxy implements ImageReaderProxy {
     }
 
     @Override
-    @Nullable
-    public ImageProxy acquireLatestImage() {
+    public @Nullable ImageProxy acquireLatestImage() {
         synchronized (mLock) {
             Image image;
             try {
@@ -80,8 +78,7 @@ class AndroidImageReaderProxy implements ImageReaderProxy {
     }
 
     @Override
-    @Nullable
-    public ImageProxy acquireNextImage() {
+    public @Nullable ImageProxy acquireNextImage() {
         synchronized (mLock) {
             Image image;
             try {
@@ -143,9 +140,8 @@ class AndroidImageReaderProxy implements ImageReaderProxy {
         }
     }
 
-    @Nullable
     @Override
-    public Surface getSurface() {
+    public @Nullable Surface getSurface() {
         synchronized (mLock) {
             return mImageReader.getSurface();
         }

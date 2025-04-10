@@ -19,11 +19,11 @@ package androidx.webkit;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
-import android.os.Build;
-
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
-import androidx.test.filters.SdkSuppress;
+import androidx.webkit.test.common.PollingCheck;
+import androidx.webkit.test.common.WebViewOnUiThread;
+import androidx.webkit.test.common.WebkitUtils;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -46,7 +46,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @LargeTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
 public class TracingControllerTest {
     private TracingController mTracingController;
     private WebViewOnUiThread mWebViewOnUiThread;
@@ -60,7 +59,7 @@ public class TracingControllerTest {
     public void setUp() {
         WebkitUtils.checkFeature(WebViewFeature.TRACING_CONTROLLER_BASIC_USAGE);
 
-        mWebViewOnUiThread = new androidx.webkit.WebViewOnUiThread();
+        mWebViewOnUiThread = new WebViewOnUiThread();
         mSingleThreadExecutor = Executors.newSingleThreadExecutor(getCustomThreadFactory());
         mTracingController = TracingController.getInstance();
         Assert.assertNotNull(mTracingController);
@@ -233,6 +232,7 @@ public class TracingControllerTest {
     private ThreadFactory getCustomThreadFactory() {
         return new ThreadFactory() {
             private final AtomicInteger mThreadCount = new AtomicInteger(0);
+
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r);
@@ -297,6 +297,7 @@ public class TracingControllerTest {
             return mChunkCount;
 
         }
+
         boolean getComplete() {
             return mComplete;
         }

@@ -72,7 +72,7 @@
     <string name="changes_selection_to_index_toast_msg_prefix" msgid="957766225794389167">"ਚੋਣ ਨੂੰ ਕ੍ਰਮ-ਸੂਚੀ ਵਿੱਚ ਬਦਲਿਆ ਗਿਆ"</string>
     <string name="yes_action_toast_msg" msgid="6216215197177241247">"ਹਾਂ ਬਟਨ ਦਬਾਇਆ ਗਿਆ!"</string>
     <string name="no_action_toast_msg" msgid="6165492423831023809">"ਕੋਈ ਬਟਨ ਨਹੀਂ ਦਬਾਇਆ ਗਿਆ!"</string>
-    <string name="alert_timeout_toast_msg" msgid="5568380708832805374">"ਸੁਚੇਤਨਾ ਦਾ ਸਮਾਂ ਸਮਾਪਤ ਹੋਇਆ!"</string>
+    <string name="alert_timeout_toast_msg" msgid="5568380708832805374">"ਅਲਰਟ ਦਾ ਸਮਾਂ ਸਮਾਪਤ ਹੋਇਆ!"</string>
     <string name="first_row_title" msgid="219428344573165351">"ਵੱਡੇ ਚਿੱਤਰ ਅਤੇ ਲੰਮੀ ਲਿਖਤ ਲੰਮੀ ਲਿਖਤ ਲੰਮੀ ਲਿਖਤ ਲੰਮੀ ਲਿਖਤ ਲੰਮੀ ਲਿਖਤ ਵਾਲੀ ਕਤਾਰ"</string>
     <string name="first_row_text" msgid="3887390298628338716">"ਲਿਖਤ ਲਿਖਤ ਲਿਖਤ"</string>
     <string name="other_row_title_prefix" msgid="4702355788835253197">"ਕਤਾਰ ਦਾ ਸਿਰਲੇਖ"</string>
@@ -96,10 +96,10 @@
     <string name="unavailable" msgid="3636401138255192934">"ਉਪਲਬਧ ਨਹੀਂ"</string>
     <string name="ev_connector_types" msgid="735458637011996125">"EV ਕਨੈਕਟਰ ਦੀਆਂ ਕਿਸਮਾਂ"</string>
     <string name="example_title" msgid="530257630320010494">"ਉਦਾਹਰਨ %d"</string>
-    <string name="example_1_text" msgid="8456567953748293512">"ਇਸ ਲਿਖਤ ਦਾ ਰੰਗ ਲਾਲ ਹੈ"</string>
-    <string name="example_2_text" msgid="718820705318661440">"ਇਸ ਲਿਖਤ ਦਾ ਰੰਗ ਹਰਾ ਹੈ"</string>
-    <string name="example_3_text" msgid="977269832109695627">"ਇਸ ਲਿਖਤ ਦਾ ਰੰਗ ਨੀਲਾ ਹੈ"</string>
-    <string name="example_4_text" msgid="2043547015979437373">"ਇਸ ਲਿਖਤ ਦਾ ਰੰਗ ਪੀਲਾ ਹੈ"</string>
+    <string name="example_1_text" msgid="8631503055894800688">"ਇਸ ਲਿਖਤ ਦਾ ਰੰਗ "<annotation color="red">"ਲਾਲ"</annotation>" ਹੈ"</string>
+    <string name="example_2_text" msgid="1359373957397219102">"ਇਸ ਲਿਖਤ ਦਾ ਰੰਗ "<annotation color="green">"ਹਰਾ"</annotation>" ਹੈ"</string>
+    <string name="example_3_text" msgid="2409207170762049673">"ਇਸ ਲਿਖਤ ਦਾ ਰੰਗ "<annotation color="blue">"ਨੀਲਾ"</annotation>" ਹੈ"</string>
+    <string name="example_4_text" msgid="9055989886645433000">"ਇਸ ਲਿਖਤ ਦਾ ਰੰਗ "<annotation color="yellow">"ਪੀਲਾ"</annotation>" ਹੈ"</string>
     <string name="example_5_text" msgid="8828804968749423500">"ਇਹ ਲਿਖਤ ਪ੍ਰਾਇਮਰੀ ਰੰਗ ਦੀ ਵਰਤੋਂ ਕਰਦੀ ਹੈ"</string>
     <string name="example_6_text" msgid="7991523168517599600">"ਇਹ ਲਿਖਤ ਸੈਕੰਡਰੀ ਰੰਗ ਦੀ ਵਰਤੋਂ ਕਰਦੀ ਹੈ"</string>
     <string name="color_demo" msgid="1822427636476178993">"ਰੰਗ ਦਾ ਡੈਮੋ"</string>
@@ -231,12 +231,16 @@
     <string name="msg_template_demo_title" msgid="3895210951340409473">"ਸੁਨੇਹਾ ਟੈਮਪਲੇਟ ਦਾ ਡੈਮੋ"</string>
     <string name="msg_template_demo_text" msgid="2275291617716161409">"ਸੁਨੇਹਾ ਇੱਥੇ ਜਾਂਦਾ ਹੈ।\nਦੂਜੀ ਲਾਈਨ ਵਿੱਚ ਹੋਰ ਲਿਖਤ।"</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"ਛੋਟੇ ਸੁਨੇਹੇ ਦੇ ਟੈਮਪਲੇਟ ਦਾ ਡੈਮੋ"</string>
+    <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"ਸੈਕਸ਼ਨਬੱਧ ਆਈਟਮ ਦੇ ਟੈਮਪਲੇਟ ਦਾ ਡੈਮੋ"</string>
+    <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"ਰੇਡੀਓ ਬਟਨ ਵਾਲਾ ਸੈਕਸ਼ਨ"</string>
+    <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"ਟੌਗਲ ਵਾਲਾ ਸੈਕਸ਼ਨ"</string>
+    <string name="sectioned_item_template_lots_of_rows_section_title" msgid="1501401956386938735">"ਕਈ ਕਤਾਰਾਂ ਵਾਲਾ ਸੈਕਸ਼ਨ"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"ਪੂਰਵ-ਝਲਕ ਟੈਮਪਲੇਟ ਦਾ ਡੈਮੋ"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"ਥਾਂ ਸੰਬੰਧੀ ਸੂਚੀ ਟੈਮਪਲੇਟ ਦਾ ਡੈਮੋ"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"ਥਾਵਾਂ ਬ੍ਰਾਊਜ਼ ਕਰੋ"</string>
     <string name="search_template_demo_title" msgid="1770474418958318114">"ਟੈਮਪਲੇਟ ਦਾ ਡੈਮੋ ਖੋਜੋ"</string>
     <string name="search_hint" msgid="978495498991026792">"ਇੱਥੇ ਖੋਜੋ"</string>
-    <string name="additional_text" msgid="8410289578276941586">"ਕਿਰਪਾ ਕਰਕੇ ਸਾਡੇ ਸੇਵਾ ਦੇ ਨਿਯਮਾਂ ਦੀ ਸਮੀਖਿਆ ਕਰੋ"</string>
+    <string name="additional_text" msgid="5755100726890686184">"ਕਿਰਪਾ ਕਰਕੇ ਸਾਡੇ "<annotation link="terms_of_service">"ਸੇਵਾ ਦੇ ਨਿਯਮਾਂ"</annotation>" ਦੀ ਸਮੀਖਿਆ ਕਰੋ"</string>
     <string name="google_sign_in" msgid="6556259799319701727">"Google ਸਾਈਨ-ਇਨ"</string>
     <string name="use_pin" msgid="7850893299484337431">"ਪਿੰਨ ਵਰਤੋ"</string>
     <string name="qr_code" msgid="5487041647280777397">"QR ਕੋਡ"</string>
@@ -321,6 +325,7 @@
     <string name="secondary_actions_test_subtitle" msgid="6985282813402073703">"ਸਿਰਫ਼ ਸੈਕੰਡਰੀ ਕਾਰਵਾਈ ਨੂੰ ਹੀ ਚੁਣਿਆ ਜਾ ਸਕਦਾ ਹੈ"</string>
     <string name="decoration_test_title" msgid="8450127046762442244">"ਸਜਾਵਟ ਜਾਂਚ"</string>
     <string name="secondary_actions_decoration_test_title" msgid="6282873404859209490">"ਸੈਕੰਡਰੀ ਕਾਰਵਾਈਆਂ ਅਤੇ ਸਜਾਵਟ"</string>
+    <string name="secondary_actions_decoration_test_title_long" msgid="3700606949229899169">"ਪੂਰੇ ਲੰਬੇ ਸਿਰਲੇਖ ਨਾਲ ਸੈਕੰਡਰੀ ਕਾਰਵਾਈਆਂ ਅਤੇ ਸਜਾਵਟ ਨਾਲ ਕਤਾਰ"</string>
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"ਕਤਾਰ ਨੂੰ ਵੀ ਚੁਣਿਆ ਜਾ ਸਕਦਾ ਹੈ"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"ਸੈਕੰਡਰੀ ਕਾਰਵਾਈ ਚੁਣੀ ਗਈ ਹੈ"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"ਕਤਾਰ ਨਾਲ ਸੰਬੰਧਿਤ ਪ੍ਰਾਇਮਰੀ ਕਾਰਵਾਈ ਚੁਣੀ ਗਈ ਹੈ"</string>

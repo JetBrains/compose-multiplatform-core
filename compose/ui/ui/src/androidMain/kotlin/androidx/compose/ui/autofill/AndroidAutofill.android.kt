@@ -24,9 +24,9 @@ import android.view.ViewStructure
 import android.view.autofill.AutofillId
 import android.view.autofill.AutofillManager
 import android.view.autofill.AutofillValue
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.internal.checkPreconditionNotNull
+import androidx.compose.ui.platform.coreshims.ViewCompatShims
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastRoundToInt
 
@@ -36,20 +36,29 @@ import androidx.compose.ui.util.fastRoundToInt
  * @param view The parent compose view.
  * @param autofillTree The autofill tree. This will be replaced by a semantic tree (b/138604305).
  */
-@ExperimentalComposeUiApi
 @RequiresApi(Build.VERSION_CODES.O)
-internal class AndroidAutofill(val view: View, val autofillTree: AutofillTree) : Autofill {
+internal class AndroidAutofill(
+    val view: View,
+    val autofillTree: @Suppress("Deprecation") AutofillTree
+) : @Suppress("Deprecation") Autofill {
 
-    val autofillManager = view.context.getSystemService(AutofillManager::class.java)
-        ?: error("Autofill service could not be located.")
+    val autofillManager =
+        view.context.getSystemService(AutofillManager::class.java)
+            ?: error("Autofill service could not be located.")
+    var rootAutofillId: AutofillId
 
-    init { view.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES }
+    init {
+        view.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+        rootAutofillId =
+            checkPreconditionNotNull(ViewCompatShims.getAutofillId(view)?.toAutofillId())
+    }
 
-    override fun requestAutofillForNode(autofillNode: AutofillNode) {
-        val boundingBox = autofillNode.boundingBox
-            ?: error("requestAutofill called before onChildPositioned()")
+    override fun requestAutofillForNode(autofillNode: @Suppress("Deprecation") AutofillNode) {
+        val boundingBox =
+            autofillNode.boundingBox ?: error("requestAutofill called before onChildPositioned()")
 
-        // TODO(b/138731416): Find out what happens when notifyViewEntered() is called multiple times
+        // TODO(b/138731416): Find out what happens when notifyViewEntered() is called multiple
+        // times
         // before calling notifyViewExited().
         autofillManager.notifyViewEntered(
             view,
@@ -63,7 +72,7 @@ internal class AndroidAutofill(val view: View, val autofillTree: AutofillTree) :
         )
     }
 
-    override fun cancelAutofillForNode(autofillNode: AutofillNode) {
+    override fun cancelAutofillForNode(autofillNode: @Suppress("Deprecation") AutofillNode) {
         autofillManager.notifyViewExited(view, autofillNode.id)
     }
 }
@@ -75,22 +84,18 @@ internal class AndroidAutofill(val view: View, val autofillTree: AutofillTree) :
  *
  * This function populates the view structure using the information in the { AutofillTree }.
  */
-@ExperimentalComposeUiApi
 @RequiresApi(Build.VERSION_CODES.O)
 internal fun AndroidAutofill.populateViewStructure(root: ViewStructure) {
+    if (autofillTree.children.isEmpty()) return
 
     // Add child nodes. The function returns the index to the first item.
-    var index = AutofillApi23Helper.addChildCount(root, autofillTree.children.count())
+    var index = AutofillApi26Helper.addChildCount(root, autofillTree.children.count())
 
     for ((id, autofillNode) in autofillTree.children) {
-        AutofillApi23Helper.newChild(root, index)?.also { child ->
-            AutofillApi26Helper.setAutofillId(
-                child,
-                AutofillApi26Helper.getAutofillId(root)!!,
-                id
-            )
-            AutofillApi23Helper.setId(child, id, view.context.packageName, null, null)
-            AutofillApi26Helper.setAutofillType(child, View.AUTOFILL_TYPE_TEXT)
+        AutofillApi26Helper.newChild(root, index).also { child ->
+            AutofillApi26Helper.setAutofillId(child, rootAutofillId, id)
+            AutofillApi26Helper.setId(child, id, view.context.packageName, null, null)
+            AutofillApi26Helper.setAutofillType(child, ContentDataType.Text.dataType)
             AutofillApi26Helper.setAutofillHints(
                 child,
                 autofillNode.autofillTypes.fastMap { it.androidType }.toTypedArray()
@@ -98,7 +103,7 @@ internal fun AndroidAutofill.populateViewStructure(root: ViewStructure) {
 
             val boundingBox = autofillNode.boundingBox
             if (boundingBox == null) {
-                // Do we need an exception here? warning? silently ignore? If the boundingbox is
+                // Do we need an exception here? warning? silently ignore? If the bounding box is
                 // null, the autofill overlay will not be shown.
                 Log.w(
                     "Autofill Warning",
@@ -112,119 +117,31 @@ internal fun AndroidAutofill.populateViewStructure(root: ViewStructure) {
                 val bottom = boundingBox.bottom.fastRoundToInt()
                 val width = right - left
                 val height = bottom - top
-                AutofillApi23Helper.setDimens(child, left, top, 0, 0, width, height)
+                AutofillApi26Helper.setDimens(child, left, top, 0, 0, width, height)
             }
         }
         index++
     }
 }
 
-/**
- * Triggers onFill() in response to a request from the autofill framework.
- */
-@ExperimentalComposeUiApi
+/** Triggers onFill() in response to a request from the autofill framework. */
 @RequiresApi(Build.VERSION_CODES.O)
 internal fun AndroidAutofill.performAutofill(values: SparseArray<AutofillValue>) {
+    if (autofillTree.children.isEmpty()) return
+
     for (index in 0 until values.size()) {
         val itemId = values.keyAt(index)
         val value = values[itemId]
         when {
-            AutofillApi26Helper.isText(value) -> autofillTree.performAutofill(
-                itemId,
-                AutofillApi26Helper.textValue(value).toString()
-            )
-            AutofillApi26Helper.isDate(value) ->
-                TODO("b/138604541: Add onFill() callback for date")
-            AutofillApi26Helper.isList(value) ->
-                TODO("b/138604541: Add onFill() callback for list")
+            AutofillApi26Helper.isText(value) ->
+                autofillTree.performAutofill(
+                    itemId,
+                    AutofillApi26Helper.textValue(value).toString()
+                )
+            AutofillApi26Helper.isDate(value) -> TODO("b/138604541: Add onFill() callback for date")
+            AutofillApi26Helper.isList(value) -> TODO("b/138604541: Add onFill() callback for list")
             AutofillApi26Helper.isToggle(value) ->
                 TODO("b/138604541:  Add onFill() callback for toggle")
         }
     }
-}
-
-/**
- * This class is here to ensure that the classes that use this API will get verified and can be
- * AOT compiled. It is expected that this class will soft-fail verification, but the classes
- * which use this method will pass.
- */
-@RequiresApi(26)
-internal object AutofillApi26Helper {
-    @RequiresApi(26)
-    @DoNotInline
-    fun setAutofillId(structure: ViewStructure, parent: AutofillId, virtualId: Int) =
-        structure.setAutofillId(parent, virtualId)
-
-    @RequiresApi(26)
-    @DoNotInline
-    fun getAutofillId(structure: ViewStructure) = structure.autofillId
-
-    @RequiresApi(26)
-    @DoNotInline
-    fun setAutofillType(structure: ViewStructure, type: Int) = structure.setAutofillType(type)
-
-    @RequiresApi(26)
-    @DoNotInline
-    fun setAutofillHints(structure: ViewStructure, hints: Array<String>) =
-        structure.setAutofillHints(hints)
-
-    @RequiresApi(26)
-    @DoNotInline
-    fun isText(value: AutofillValue) = value.isText
-
-    @RequiresApi(26)
-    @DoNotInline
-    fun isDate(value: AutofillValue) = value.isDate
-
-    @RequiresApi(26)
-    @DoNotInline
-    fun isList(value: AutofillValue) = value.isList
-
-    @RequiresApi(26)
-    @DoNotInline
-    fun isToggle(value: AutofillValue) = value.isToggle
-
-    @RequiresApi(26)
-    @DoNotInline
-    fun textValue(value: AutofillValue): CharSequence = value.textValue
-}
-
-/**
- * This class is here to ensure that the classes that use this API will get verified and can be
- * AOT compiled. It is expected that this class will soft-fail verification, but the classes
- * which use this method will pass.
- */
-@RequiresApi(23)
-internal object AutofillApi23Helper {
-    @RequiresApi(23)
-    @DoNotInline
-    fun newChild(structure: ViewStructure, index: Int): ViewStructure? =
-        structure.newChild(index)
-
-    @RequiresApi(23)
-    @DoNotInline
-    fun addChildCount(structure: ViewStructure, num: Int) =
-        structure.addChildCount(num)
-
-    @RequiresApi(23)
-    @DoNotInline
-    fun setId(
-        structure: ViewStructure,
-        id: Int,
-        packageName: String?,
-        typeName: String?,
-        entryName: String?
-    ) = structure.setId(id, packageName, typeName, entryName)
-
-    @RequiresApi(23)
-    @DoNotInline
-    fun setDimens(
-        structure: ViewStructure,
-        left: Int,
-        top: Int,
-        scrollX: Int,
-        scrollY: Int,
-        width: Int,
-        height: Int
-    ) = structure.setDimens(left, top, scrollX, scrollY, width, height)
 }

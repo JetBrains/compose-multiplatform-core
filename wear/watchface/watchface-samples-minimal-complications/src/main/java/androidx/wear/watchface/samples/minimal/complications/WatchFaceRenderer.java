@@ -31,7 +31,6 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.view.SurfaceHolder;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Px;
 import androidx.wear.watchface.CanvasType;
 import androidx.wear.watchface.ComplicationSlot;
@@ -41,6 +40,8 @@ import androidx.wear.watchface.RenderParameters.HighlightedElement;
 import androidx.wear.watchface.Renderer;
 import androidx.wear.watchface.WatchState;
 import androidx.wear.watchface.style.CurrentUserStyleRepository;
+
+import org.jspecify.annotations.NonNull;
 
 import java.time.ZonedDateTime;
 import java.util.concurrent.TimeUnit;

@@ -21,11 +21,10 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
-import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 
 internal class LruCacheTest {
 
@@ -116,9 +115,7 @@ internal class LruCacheTest {
 
     @Test
     fun testConstructorDoesNotAllowZeroCacheSize() {
-        assertFailsWith<IllegalArgumentException> {
-            LruCache<String, String>(0)
-        }
+        assertFailsWith<IllegalArgumentException> { LruCache<String, String>(0) }
     }
 
     @Test
@@ -158,8 +155,8 @@ internal class LruCacheTest {
     }
 
     /**
-     * Replacing the value for a key doesn't cause an eviction but it does bring
-     * the replaced entry to the front of the queue.
+     * Replacing the value for a key doesn't cause an eviction but it does bring the replaced entry
+     * to the front of the queue.
      */
     @Test
     fun testPutCauseEviction() {
@@ -177,8 +174,7 @@ internal class LruCacheTest {
     fun testCustomSizesImpactsSize() {
         val cache =
             object : LruCache<String, String>(10) {
-                override fun sizeOf(key: String, value: String): Int =
-                    key.length + value.length
+                override fun sizeOf(key: String, value: String): Int = key.length + value.length
             }
         assertEquals(0, cache.size())
         cache.put("a", "AA")
@@ -219,18 +215,17 @@ internal class LruCacheTest {
 
     @Test
     fun testEvictionThrowsWhenSizesAreInconsistent() {
-        val cache = object : LruCache<String, IntArray>(4) {
-            override fun sizeOf(key: String, value: IntArray): Int = value[0]
-        }
+        val cache =
+            object : LruCache<String, IntArray>(4) {
+                override fun sizeOf(key: String, value: IntArray): Int = value[0]
+            }
         val a = intArrayOf(4)
         cache.put("a", a)
         // get the cache size out of sync
         a[0] = 1
         assertEquals(4, cache.size())
         // evict something
-        assertFailsWith<IllegalStateException> {
-            cache.put("b", intArrayOf(2))
-        }
+        assertFailsWith<IllegalStateException> { cache.put("b", intArrayOf(2)) }
     }
 
     @Test
@@ -239,15 +234,12 @@ internal class LruCacheTest {
             object : LruCache<String, String>(4) {
                 override fun sizeOf(key: String, value: String): Int = -1
             }
-        assertFailsWith<IllegalStateException> {
-            cache.put("a", "A")
-        }
+        assertFailsWith<IllegalStateException> { cache.put("a", "A") }
     }
 
     /**
-     * Naive caches evict at most one element at a time. This is problematic
-     * because evicting a small element may be insufficient to make room for a
-     * large element.
+     * Naive caches evict at most one element at a time. This is problematic because evicting a
+     * small element may be insufficient to make room for a large element.
      */
     @Test
     fun testDifferentElementSizes() {
@@ -329,9 +321,8 @@ internal class LruCacheTest {
     }
 
     /**
-     * Test what happens when a value is added to the map while create is
-     * working. The map value should be returned by get(), and the created value
-     * should be released with entryRemoved().
+     * Test what happens when a value is added to the map while create is working. The map value
+     * should be returned by get(), and the created value should be released with entryRemoved().
      */
     @Test
     fun testCreateWithConcurrentPut() {
@@ -357,9 +348,9 @@ internal class LruCacheTest {
     }
 
     /**
-     * Test what happens when two creates happen concurrently. The result from
-     * the first create to return is returned by both gets. The other created
-     * values should be released with entryRemove().
+     * Test what happens when two creates happen concurrently. The result from the first create to
+     * return is returned by both gets. The other created values should be released with
+     * entryRemove().
      */
     @Test
     fun testCreateWithConcurrentCreate() {
@@ -390,7 +381,7 @@ internal class LruCacheTest {
     }
 
     @Test
-    fun testAbleToUpdateFromAnotherThreadWithBlockedEntryRemoved() {
+    fun testAbleToUpdateFromAnotherThreadWithBlockedEntryRemoved() = runTest {
         val cache =
             object : LruCache<String, String>(3) {
                 override fun entryRemoved(
@@ -400,9 +391,7 @@ internal class LruCacheTest {
                     newValue: String?
                 ) {
                     if (key in setOf("a", "b", "c", "d")) {
-                        runBlocking(Dispatchers.Default) {
-                            put("x", "X")
-                        }
+                        launch { put("x", "X") }
                     }
                 }
             }
@@ -416,10 +405,9 @@ internal class LruCacheTest {
         cache.evictAll() // multiple eviction
     }
 
-    /** Makes sure that LruCache operations are correctly synchronized to guarantee consistency.  */
-    @OptIn(DelicateCoroutinesApi::class) // Using GlobalScope in tests
+    /** Makes sure that LruCache operations are correctly synchronized to guarantee consistency. */
     @Test
-    fun consistentMultithreadedAccess() {
+    fun consistentMultithreadedAccess() = runTest {
         var nonNullValues = 0
         var nullValues = 0
         var valuesPut = 0
@@ -434,8 +422,10 @@ internal class LruCacheTest {
                 override fun create(key: String): Int = value
             }
 
+        val scope = CoroutineScope(Dispatchers.Default)
+
         val t0 =
-            GlobalScope.launch(Dispatchers.Default) {
+            scope.launch {
                 repeat(rounds) {
                     if (cache[key] != null) {
                         nonNullValues++
@@ -446,7 +436,7 @@ internal class LruCacheTest {
             }
 
         val t1 =
-            GlobalScope.launch(Dispatchers.Default) {
+            scope.launch {
                 repeat(rounds) { i ->
                     if (i % 2 == 0) {
                         if (cache.put(key, value) != null) {
@@ -461,10 +451,8 @@ internal class LruCacheTest {
                 }
             }
 
-        runBlocking {
-            t0.join()
-            t1.join()
-        }
+        t0.join()
+        t1.join()
 
         assertEquals(rounds, nonNullValues)
         assertEquals(0, nullValues)
@@ -494,16 +482,12 @@ internal class LruCacheTest {
         // to Map wouldn't show up in API files. Hence we have a test that would break if it starts
         // returning immutable map.
         snapshot1["c"] = "e"
-        assertEquals(
-            "e",
-            snapshot1["c"]
-        )
+        assertEquals("e", snapshot1["c"])
     }
 
     private fun newCreatingCache(): LruCache<String, String> =
         object : LruCache<String, String>(3) {
-            override fun create(key: String): String? =
-                if (key.length > 1) "created-$key" else null
+            override fun create(key: String): String? = if (key.length > 1) "created-$key" else null
         }
 
     private fun newRemovalLogCache(log: MutableList<String>): LruCache<String, String> =

@@ -27,6 +27,7 @@ message LayoutNode {
   repeated LayoutNode children = 7;
   bool has_image_description = 10;
   bool has_image_color_filter = 11;
+  bool has_image_alpha = 12;
 }
 
 enum ContentScale {

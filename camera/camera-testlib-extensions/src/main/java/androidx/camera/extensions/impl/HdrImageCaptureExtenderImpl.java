@@ -33,12 +33,14 @@ import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -46,14 +48,14 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Implementation for HDR image capture use case.
+ * Implementation for HDR image capture use case that implements {@link CaptureProcessorImpl} that
+ * processing the results from a burst capture of 3 frames.
  *
- * <p>This class should be implemented by OEM and deployed to the target devices. 3P developers
- * don't need to implement this, unless this is used for related testing usage.
+ * <p>This is only for testing camera-extensions and should not be used as a sample OEM
+ * implementation.
  *
  * @since 1.0
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @SuppressLint("UnknownNullness")
 public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderImpl {
     private static final String TAG = "HdrImageCaptureExtender";
@@ -109,9 +111,8 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
         return false;
     }
 
-    @NonNull
     @Override
-    public List<CaptureStageImpl> getCaptureStages() {
+    public @NonNull List<CaptureStageImpl> getCaptureStages() {
         // Under exposed capture stage
         SettableCaptureStage captureStageUnder = new SettableCaptureStage(UNDER_STAGE_ID);
         // Turn off AE so that ISO sensitivity can be controlled
@@ -138,9 +139,8 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
     }
 
 
-    @Nullable
     @Override
-    public CaptureProcessorImpl getCaptureProcessor() {
+    public @Nullable CaptureProcessorImpl getCaptureProcessor() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             mCaptureProcessor = new HdrImageCaptureExtenderCaptureProcessorImpl();
             return mCaptureProcessor;
@@ -162,9 +162,8 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
         }
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onPresetSession() {
+    public @Nullable CaptureStageImpl onPresetSession() {
         // The CaptureRequest parameters will be set via SessionConfiguration#setSessionParameters
         // (CaptureRequest) which only supported from API level 28.
         if (Build.VERSION.SDK_INT < 28) {
@@ -175,16 +174,14 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
         return captureStage;
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onEnableSession() {
+    public @Nullable CaptureStageImpl onEnableSession() {
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
         return captureStage;
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onDisableSession() {
+    public @Nullable CaptureStageImpl onDisableSession() {
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
         return captureStage;
     }
@@ -194,20 +191,18 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
         return 4;
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedResolutions() {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedResolutions() {
         return null;
     }
 
-    @Nullable
     @Override
-    public Range<Long> getEstimatedCaptureLatencyRange(@Nullable Size captureOutputSize) {
+    public @Nullable Range<Long> getEstimatedCaptureLatencyRange(@Nullable Size captureOutputSize) {
         return new Range<>(300L, 1000L);
     }
 
     @RequiresApi(23)
-    static final class HdrImageCaptureExtenderCaptureProcessorImpl implements CaptureProcessorImpl {
+    final class HdrImageCaptureExtenderCaptureProcessorImpl implements CaptureProcessorImpl {
         private ImageWriter mImageWriter;
         @Override
         public void onOutputSurface(@NonNull Surface surface, int imageFormat) {
@@ -256,7 +251,9 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
 
             // Do processing here
             // The sample here simply returns the normal image result
+            long timestamp = imageDataPairs.get(UNDER_STAGE_ID).first.getTimestamp();
             Image normalImage = imageDataPairs.get(NORMAL_STAGE_ID).first;
+            outputImage.setTimestamp(timestamp);
             if (outputImage.getWidth() != normalImage.getWidth()
                     || outputImage.getHeight() != normalImage.getHeight()) {
                 throw new IllegalStateException(String.format("input image "
@@ -317,7 +314,7 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
             if (resultCallback != null) {
                 executorForCallback.execute(
                         () -> resultCallback.onCaptureCompleted(
-                                captureResult.get(CaptureResult.SENSOR_TIMESTAMP),
+                                timestamp,
                                 getFilteredResults(captureResult)));
             }
 
@@ -328,13 +325,15 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
         private List<Pair<CaptureResult.Key, Object>> getFilteredResults(
                 TotalCaptureResult captureResult) {
             List<Pair<CaptureResult.Key, Object>> list = new ArrayList<>();
-            for (CaptureResult.Key key : captureResult.getKeys()) {
-                list.add(new Pair<>(key, captureResult.get(key)));
-            }
 
+            for (CaptureResult.Key availableCaptureResultKey : getAvailableCaptureResultKeys()) {
+                if (captureResult.get(availableCaptureResultKey) != null) {
+                    list.add(new Pair<>(availableCaptureResultKey,
+                            captureResult.get(availableCaptureResultKey)));
+                }
+            }
             return list;
         }
-
 
         @Override
         public void onResolutionUpdate(@NonNull Size size) {
@@ -370,9 +369,8 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
         }
     }
 
-    @NonNull
     @Override
-    public List<CaptureRequest.Key> getAvailableCaptureRequestKeys() {
+    public @NonNull List<CaptureRequest.Key> getAvailableCaptureRequestKeys() {
         return null;
     }
 
@@ -381,9 +379,9 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
         return SessionConfiguration.SESSION_REGULAR;
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedPostviewResolutions(@NonNull Size captureSize) {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedPostviewResolutions(
+            @NonNull Size captureSize) {
         return Collections.emptyList();
     }
 
@@ -392,9 +390,8 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
         return false;
     }
 
-    @Nullable
     @Override
-    public Pair<Long, Long> getRealtimeCaptureLatency() {
+    public @Nullable Pair<Long, Long> getRealtimeCaptureLatency() {
         return null;
     }
 
@@ -403,9 +400,15 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
         return false;
     }
 
-    @NonNull
     @Override
-    public List<CaptureResult.Key> getAvailableCaptureResultKeys() {
-        return null;
+    public @NonNull List<CaptureResult.Key> getAvailableCaptureResultKeys() {
+        return Arrays.asList(CaptureResult.SENSOR_TIMESTAMP);
     }
+
+    /**
+     * This method is used to check if test lib is running. If OEM implementation exists, invoking
+     * this method will throw {@link NoSuchMethodError}. This can be used to determine if OEM
+     * implementation is used or not.
+     */
+    public static void checkTestlibRunning() {}
 }

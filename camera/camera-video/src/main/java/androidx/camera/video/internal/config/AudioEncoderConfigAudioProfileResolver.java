@@ -19,8 +19,6 @@ package androidx.camera.video.internal.config;
 
 import android.util.Range;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.EncoderProfilesProxy.AudioProfileProxy;
 import androidx.camera.core.impl.Timebase;
@@ -29,12 +27,13 @@ import androidx.camera.video.internal.audio.AudioSettings;
 import androidx.camera.video.internal.encoder.AudioEncoderConfig;
 import androidx.core.util.Supplier;
 
+import org.jspecify.annotations.NonNull;
+
 /**
  * An {@link AudioEncoderConfig} supplier that resolves requested encoder settings from an
  * {@link AudioSpec} for the given {@link AudioSettings} using the provided
  * {@link AudioProfileProxy}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class AudioEncoderConfigAudioProfileResolver implements
         Supplier<AudioEncoderConfig> {
 
@@ -72,14 +71,13 @@ public final class AudioEncoderConfigAudioProfileResolver implements
     }
 
     @Override
-    @NonNull
-    public AudioEncoderConfig get() {
+    public @NonNull AudioEncoderConfig get() {
         Logger.d(TAG, "Using resolved AUDIO bitrate from AudioProfile");
         Range<Integer> audioSpecBitrateRange = mAudioSpec.getBitrate();
         int resolvedBitrate = AudioConfigUtil.scaleAndClampBitrate(
                 mAudioProfileProxy.getBitrate(),
                 mAudioSettings.getChannelCount(), mAudioProfileProxy.getChannels(),
-                mAudioSettings.getSampleRate(), mAudioProfileProxy.getSampleRate(),
+                mAudioSettings.getEncodeSampleRate(), mAudioProfileProxy.getSampleRate(),
                 audioSpecBitrateRange);
 
         return AudioEncoderConfig.builder()
@@ -87,7 +85,8 @@ public final class AudioEncoderConfigAudioProfileResolver implements
                 .setProfile(mAudioProfile)
                 .setInputTimebase(mInputTimebase)
                 .setChannelCount(mAudioSettings.getChannelCount())
-                .setSampleRate(mAudioSettings.getSampleRate())
+                .setCaptureSampleRate(mAudioSettings.getCaptureSampleRate())
+                .setEncodeSampleRate(mAudioSettings.getEncodeSampleRate())
                 .setBitrate(resolvedBitrate)
                 .build();
     }

@@ -18,9 +18,7 @@ package androidx.compose.ui.node
 
 import androidx.compose.runtime.AbstractApplier
 
-internal class UiApplier(
-    root: LayoutNode
-) : AbstractApplier<LayoutNode>(root) {
+internal class UiApplier(root: LayoutNode) : AbstractApplier<LayoutNode>(root) {
 
     override fun insertTopDown(index: Int, instance: LayoutNode) {
         // Ignored. Insert is performed in [insertBottomUp] to build the tree bottom-up to avoid
@@ -46,5 +44,9 @@ internal class UiApplier(
     override fun onEndChanges() {
         super.onEndChanges()
         root.owner?.onEndApplyChanges()
+    }
+
+    override fun reuse() {
+        current.onReuse()
     }
 }

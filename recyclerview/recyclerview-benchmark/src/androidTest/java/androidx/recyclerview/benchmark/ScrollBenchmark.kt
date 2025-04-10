@@ -22,10 +22,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.benchmark.junit4.BenchmarkRule
-import androidx.benchmark.junit4.measureRepeated
+import androidx.benchmark.junit4.measureRepeatedOnMainThread
 import androidx.recyclerview.benchmark.test.R
 import androidx.recyclerview.widget.RecyclerView
-import androidx.test.annotation.UiThreadTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import org.junit.Before
@@ -37,13 +36,10 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ScrollBenchmark {
 
-    /**
-     * TrivialAdapter recreated each time, since it's stateful: [TrivialAdapter.disableReuse]
-     */
+    /** TrivialAdapter recreated each time, since it's stateful: [TrivialAdapter.disableReuse] */
     private lateinit var trivialAdapter: TrivialAdapter
 
-    @get:Rule
-    val benchmarkRule = BenchmarkRule()
+    @get:Rule val benchmarkRule = BenchmarkRule()
 
     @Suppress("DEPRECATION")
     @get:Rule
@@ -61,23 +57,21 @@ class ScrollBenchmark {
         }
     }
 
-    @UiThreadTest
     @Test
     fun offset() {
         val rv = activityRule.activity.recyclerView
         var offset = 10
-        benchmarkRule.measureRepeated {
+        benchmarkRule.measureRepeatedOnMainThread {
             // keep scrolling up and down - no new item should be revealed
             rv.scrollBy(0, offset)
             offset *= -1
         }
     }
 
-    @UiThreadTest
     @Test
     fun bindOffset() {
         val rv = activityRule.activity.recyclerView
-        benchmarkRule.measureRepeated {
+        benchmarkRule.measureRepeatedOnMainThread {
             // each scroll should reveal a new item
             rv.scrollBy(0, 100)
         }
@@ -91,7 +85,6 @@ class ScrollBenchmark {
         }
     }
 
-    @UiThreadTest
     @Test
     fun createBindOffset() {
         forceInflate {
@@ -100,32 +93,30 @@ class ScrollBenchmark {
             }
         }
         val rv = activityRule.activity.recyclerView
-        benchmarkRule.measureRepeated {
+        benchmarkRule.measureRepeatedOnMainThread {
             // each scroll should reveal a new item that must be inflated
             rv.scrollBy(0, 100)
         }
     }
 
-    @UiThreadTest
     @Test
     fun inflateBindOffset() {
         forceInflate()
         val rv = activityRule.activity.recyclerView
-        benchmarkRule.measureRepeated {
+        benchmarkRule.measureRepeatedOnMainThread {
             // each scroll should reveal a new item that must be inflated
             rv.scrollBy(0, 100)
         }
     }
 
-    @UiThreadTest
     @Test
     fun complexItems() {
 
         // Displays *many* items, each 500px tall, with many children
         forceInflate {
-            val vg: ViewGroup = LayoutInflater.from(it.context).inflate(
-                R.layout.item_viewgroup, it, false
-            ) as ViewGroup
+            val vg: ViewGroup =
+                LayoutInflater.from(it.context).inflate(R.layout.item_viewgroup, it, false)
+                    as ViewGroup
             for (i in 1..5) {
                 val parent = LinearLayout(it.context)
                 parent.layoutParams =
@@ -142,7 +133,7 @@ class ScrollBenchmark {
         }
 
         val rv = activityRule.activity.recyclerView
-        benchmarkRule.measureRepeated {
+        benchmarkRule.measureRepeatedOnMainThread {
             // each scroll should reveal a new item that must be inflated
             rv.scrollBy(0, 500)
         }
@@ -157,16 +148,12 @@ private class ZeroSizePool : RecyclerView.RecycledViewPool() {
 
 private class TrivialViewHolder(view: View) : RecyclerView.ViewHolder(view)
 
-/**
- * Displays *many* items, each 100px tall, with minimal inflation/bind work.
- */
+/** Displays *many* items, each 100px tall, with minimal inflation/bind work. */
 private open class TrivialAdapter : RecyclerView.Adapter<TrivialViewHolder>() {
     var disableReuse = false
 
     open var inflater: (ViewGroup) -> View = {
-        LayoutInflater.from(it.context).inflate(
-            R.layout.item_view, it, false
-        )
+        LayoutInflater.from(it.context).inflate(R.layout.item_view, it, false)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrivialViewHolder {

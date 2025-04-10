@@ -17,15 +17,23 @@
 package androidx.compose.material3
 
 import androidx.compose.foundation.MutatorMutex
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material3.internal.BasicTooltipDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
@@ -33,6 +41,7 @@ import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.IntOffset
@@ -45,6 +54,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
@@ -55,8 +65,7 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalMaterial3Api::class)
 class TooltipTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun plainTooltip_noContent_size() {
@@ -72,15 +81,14 @@ class TooltipTest {
         rule.mainClock.autoAdvance = false
 
         // Trigger tooltip
-        scope.launch {
-            state.show()
-        }
+        scope.launch { state.show() }
 
         // Advance by the fade in time
-        rule.mainClock.advanceTimeBy(TooltipFadeInDuration.toLong())
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
 
         rule.waitForIdle()
-        rule.onNodeWithTag(ContainerTestTag)
+        rule
+            .onNodeWithTag(ContainerTestTag)
             .assertHeightIsEqualTo(TooltipMinHeight)
             .assertWidthIsEqualTo(TooltipMinWidth)
     }
@@ -99,15 +107,14 @@ class TooltipTest {
         rule.mainClock.autoAdvance = false
 
         // Trigger tooltip
-        scope.launch {
-            state.show()
-        }
+        scope.launch { state.show() }
 
         // Advance by the fade in time
-        rule.mainClock.advanceTimeBy(TooltipFadeInDuration.toLong())
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
 
         rule.waitForIdle()
-        rule.onNodeWithTag(ContainerTestTag)
+        rule
+            .onNodeWithTag(ContainerTestTag)
             .assertHeightIsEqualTo(TooltipMinHeight)
             .assertWidthIsEqualTo(TooltipMinWidth)
     }
@@ -131,15 +138,14 @@ class TooltipTest {
         rule.mainClock.autoAdvance = false
 
         // Trigger tooltip
-        scope.launch {
-            state.show()
-        }
+        scope.launch { state.show() }
 
         // Advance by the fade in time
-        rule.mainClock.advanceTimeBy(TooltipFadeInDuration.toLong())
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
 
         rule.waitForIdle()
-        rule.onNodeWithTag(ContainerTestTag)
+        rule
+            .onNodeWithTag(ContainerTestTag)
             .assertHeightIsEqualTo(customHeight)
             .assertWidthIsEqualTo(customWidth)
     }
@@ -163,15 +169,14 @@ class TooltipTest {
         rule.mainClock.autoAdvance = false
 
         // Trigger tooltip
-        scope.launch {
-            state.show()
-        }
+        scope.launch { state.show() }
 
         // Advance by the fade in time
-        rule.mainClock.advanceTimeBy(TooltipFadeInDuration.toLong())
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
 
         rule.waitForIdle()
-        rule.onNodeWithTag(ContainerTestTag)
+        rule
+            .onNodeWithTag(ContainerTestTag)
             .assertHeightIsEqualTo(customHeight)
             .assertWidthIsEqualTo(customWidth)
     }
@@ -184,12 +189,7 @@ class TooltipTest {
             state = rememberTooltipState()
             scope = rememberCoroutineScope()
             PlainTooltipTest(
-                tooltipContent = {
-                    Text(
-                        text = "Test",
-                        modifier = Modifier.testTag(TextTestTag)
-                    )
-                },
+                tooltipContent = { Text(text = "Test", modifier = Modifier.testTag(TextTestTag)) },
                 tooltipState = state
             )
         }
@@ -198,15 +198,14 @@ class TooltipTest {
         rule.mainClock.autoAdvance = false
 
         // Trigger tooltip
-        scope.launch {
-            state.show()
-        }
+        scope.launch { state.show() }
 
         // Advance by the fade in time
-        rule.mainClock.advanceTimeBy(TooltipFadeInDuration.toLong())
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
 
         rule.waitForIdle()
-        rule.onNodeWithTag(TextTestTag)
+        rule
+            .onNodeWithTag(TextTestTag)
             .assertLeftPositionInRootIsEqualTo(8.dp)
             .assertTopPositionInRootIsEqualTo(4.dp)
     }
@@ -230,12 +229,10 @@ class TooltipTest {
         rule.mainClock.autoAdvance = false
 
         // Trigger tooltip
-        scope.launch {
-            state.show()
-        }
+        scope.launch { state.show() }
 
         // Advance by the fade in time
-        rule.mainClock.advanceTimeBy(TooltipFadeInDuration.toLong())
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
 
         rule.waitForIdle()
         val subhead = rule.onNodeWithTag(SubheadTestTag)
@@ -247,15 +244,18 @@ class TooltipTest {
         val subheadBound = subhead.getUnclippedBoundsInRoot()
         val textBound = text.getUnclippedBoundsInRoot()
 
-        rule.onNodeWithTag(SubheadTestTag)
+        rule
+            .onNodeWithTag(SubheadTestTag)
             .assertLeftPositionInRootIsEqualTo(RichTooltipHorizontalPadding)
             .assertTopPositionInRootIsEqualTo(28.dp - subheadBaseline)
 
-        rule.onNodeWithTag(TextTestTag)
+        rule
+            .onNodeWithTag(TextTestTag)
             .assertLeftPositionInRootIsEqualTo(RichTooltipHorizontalPadding)
             .assertTopPositionInRootIsEqualTo(subheadBound.bottom + 24.dp - textBaseLine)
 
-        rule.onNodeWithTag(ActionTestTag)
+        rule
+            .onNodeWithTag(ActionTestTag)
             .assertLeftPositionInRootIsEqualTo(RichTooltipHorizontalPadding)
             .assertTopPositionInRootIsEqualTo(textBound.bottom + 16.dp)
     }
@@ -280,12 +280,10 @@ class TooltipTest {
         assertThat(state.isVisible).isFalse()
 
         // Trigger tooltip
-        scope.launch {
-            state.show()
-        }
+        scope.launch { state.show() }
 
         // Advance by the fade in time
-        rule.mainClock.advanceTimeBy(TooltipFadeInDuration.toLong())
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
 
         // Check that the tooltip is now showing
         rule.waitForIdle()
@@ -318,12 +316,10 @@ class TooltipTest {
         assertThat(state.isVisible).isFalse()
 
         // Trigger tooltip
-        scope.launch {
-            state.show()
-        }
+        scope.launch { state.show() }
 
         // Advance by the fade in time
-        rule.mainClock.advanceTimeBy(TooltipFadeInDuration.toLong())
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
 
         // Check that the tooltip is now showing
         rule.waitForIdle()
@@ -349,7 +345,9 @@ class TooltipTest {
                     TextButton(
                         onClick = { scope.launch { state.dismiss() } },
                         modifier = Modifier.testTag(ActionTestTag)
-                    ) { Text(text = "Action") }
+                    ) {
+                        Text(text = "Action")
+                    }
                 },
                 tooltipState = state
             )
@@ -362,31 +360,92 @@ class TooltipTest {
         assertThat(state.isVisible).isFalse()
 
         // Trigger tooltip
-        scope.launch {
-            state.show()
-        }
+        scope.launch { state.show() }
 
         // Advance by the fade in time
-        rule.mainClock.advanceTimeBy(TooltipFadeInDuration.toLong())
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
 
         // Check that the tooltip is now showing
         rule.waitForIdle()
         assertThat(state.isVisible).isTrue()
 
-        // Tooltip should still be visible after the normal TooltipDuration, since we have an action.
+        // Tooltip should still be visible after the normal TooltipDuration, since we have an
+        // action.
         rule.mainClock.advanceTimeBy(milliseconds = BasicTooltipDefaults.TooltipDuration)
         rule.waitForIdle()
         assertThat(state.isVisible).isTrue()
 
         // Click the action and check that it closed the tooltip
-        rule.onNodeWithTag(ActionTestTag)
-            .performTouchInput { click() }
+        rule.onNodeWithTag(ActionTestTag).performTouchInput { click() }
 
         // Advance by the fade out duration
         // plus some additional time to make sure that the tooltip is full faded out.
-        rule.mainClock.advanceTimeBy(TooltipFadeOutDuration.toLong() + 100L)
+        rule.mainClock.advanceTimeBy(TooltipFadeOutDuration)
         rule.waitForIdle()
         assertThat(state.isVisible).isFalse()
+    }
+
+    @Test
+    fun plainTooltip_longPress_showsTooltip() {
+        lateinit var state: TooltipState
+        var changedToVisible = false
+        rule.mainClock.autoAdvance = false
+        rule.setMaterialContent(lightColorScheme()) {
+            state = rememberTooltipState()
+            LaunchedEffect(true) {
+                snapshotFlow { state.isVisible }
+                    .collectLatest {
+                        if (it) {
+                            changedToVisible = true
+                        }
+                    }
+            }
+            Box(Modifier.testTag("tooltip")) {
+                PlainTooltipTest(tooltipContent = { Text(text = "Test") }, tooltipState = state)
+            }
+        }
+
+        assertThat(changedToVisible).isFalse()
+
+        rule.onNodeWithTag("tooltip").performTouchInput { longClick() }
+
+        rule.mainClock.advanceTimeBy(
+            TooltipFadeInDuration +
+                TooltipFadeOutDuration +
+                500L +
+                BasicTooltipDefaults.TooltipDuration
+        )
+
+        assertThat(changedToVisible).isTrue()
+        assertThat(state.isVisible).isFalse()
+    }
+
+    @Test
+    fun plainTooltip_longPress_keepsTooltipVisible() {
+        lateinit var state: TooltipState
+        val startTime = rule.mainClock.currentTime
+        var visibleTime = 0L
+        rule.setMaterialContent(lightColorScheme()) {
+            state = rememberTooltipState()
+            LaunchedEffect(true) {
+                snapshotFlow { state.isVisible }
+                    .collectLatest {
+                        if (!it) {
+                            visibleTime = rule.mainClock.currentTime - startTime
+                        }
+                    }
+            }
+            Box(Modifier.testTag("tooltip")) {
+                PlainTooltipTest(tooltipContent = { Text(text = "Test") }, tooltipState = state)
+            }
+        }
+
+        rule.onNodeWithTag("tooltip").performTouchInput { longClick(durationMillis = 10_000) }
+
+        rule.waitForIdle()
+        assertThat(state.isVisible).isFalse()
+
+        assertThat(visibleTime).isGreaterThan(9999)
     }
 
     @Test
@@ -406,16 +465,15 @@ class TooltipTest {
 
         // Plain tooltip positioning
         lateinit var positionProvider: PopupPositionProvider
-        rule.setContent {
-            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider()
-        }
+        rule.setContent { positionProvider = TooltipDefaults.rememberTooltipPositionProvider() }
 
-        val tooltipPosition = positionProvider.calculatePosition(
-            anchorBounds = anchorBounds,
-            windowSize = windowSize,
-            layoutDirection = LayoutDirection.Ltr,
-            popupContentSize = popupSize
-        )
+        val tooltipPosition =
+            positionProvider.calculatePosition(
+                anchorBounds = anchorBounds,
+                windowSize = windowSize,
+                layoutDirection = LayoutDirection.Ltr,
+                popupContentSize = popupSize
+            )
 
         val tooltipBounds = IntRect(tooltipPosition, popupSize)
 
@@ -440,16 +498,15 @@ class TooltipTest {
 
         // Rich tooltip positioning
         lateinit var positionProvider: PopupPositionProvider
-        rule.setContent {
-            positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider()
-        }
+        rule.setContent { positionProvider = TooltipDefaults.rememberTooltipPositionProvider() }
 
-        val tooltipPosition = positionProvider.calculatePosition(
-            anchorBounds = anchorBounds,
-            windowSize = windowSize,
-            layoutDirection = LayoutDirection.Ltr,
-            popupContentSize = popupSize
-        )
+        val tooltipPosition =
+            positionProvider.calculatePosition(
+                anchorBounds = anchorBounds,
+                windowSize = windowSize,
+                layoutDirection = LayoutDirection.Ltr,
+                popupContentSize = popupSize
+            )
 
         val tooltipBounds = IntRect(tooltipPosition, popupSize)
 
@@ -462,14 +519,15 @@ class TooltipTest {
         var anchorBounds = Rect.Zero
         rule.setContent {
             TooltipBox(
-                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
                 state = rememberTooltipState(initialIsVisible = true, isPersistent = true),
                 tooltip = {
                     PlainTooltip(
-                        modifier = Modifier.drawCaret {
-                            it?.let { anchorBounds = it.boundsInWindow() }
-                            onDrawBehind {}
-                        }
+                        modifier =
+                            Modifier.drawCaret {
+                                it?.let { anchorBounds = it.boundsInWindow() }
+                                onDrawBehind {}
+                            }
                     ) {}
                 }
             ) {
@@ -484,16 +542,64 @@ class TooltipTest {
         rule.waitForIdle()
         val expectedAnchorBoundsDp =
             rule.onNodeWithTag(AnchorTestTag, true).getUnclippedBoundsInRoot()
-        val expectedAnchorBounds = with(rule.density) {
-            Rect(
-                expectedAnchorBoundsDp.left.roundToPx().toFloat(),
-                expectedAnchorBoundsDp.top.roundToPx().toFloat(),
-                expectedAnchorBoundsDp.right.roundToPx().toFloat(),
-                expectedAnchorBoundsDp.bottom.roundToPx().toFloat()
-            )
+        val expectedAnchorBounds =
+            with(rule.density) {
+                Rect(
+                    expectedAnchorBoundsDp.left.roundToPx().toFloat(),
+                    expectedAnchorBoundsDp.top.roundToPx().toFloat(),
+                    expectedAnchorBoundsDp.right.roundToPx().toFloat(),
+                    expectedAnchorBoundsDp.bottom.roundToPx().toFloat()
+                )
+            }
+
+        assertThat(anchorBounds.left).isWithin(0.001f).of(expectedAnchorBounds.left)
+        assertThat(anchorBounds.top).isWithin(0.001f).of(expectedAnchorBounds.top)
+        assertThat(anchorBounds.right).isWithin(0.001f).of(expectedAnchorBounds.right)
+        assertThat(anchorBounds.bottom).isWithin(0.001f).of(expectedAnchorBounds.bottom)
+    }
+
+    @Test
+    fun richTooltip_caretAnchorPositioning() {
+        var anchorBounds = Rect.Zero
+        rule.setContent {
+            TooltipBox(
+                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
+                state = rememberTooltipState(initialIsVisible = true, isPersistent = true),
+                tooltip = {
+                    RichTooltip(
+                        modifier =
+                            Modifier.drawCaret {
+                                it?.let { anchorBounds = it.boundsInWindow() }
+                                onDrawBehind {}
+                            }
+                    ) {}
+                }
+            ) {
+                Icon(
+                    Icons.Filled.Favorite,
+                    modifier = Modifier.testTag(AnchorTestTag),
+                    contentDescription = null
+                )
+            }
         }
 
-        assertThat(anchorBounds == expectedAnchorBounds).isTrue()
+        rule.waitForIdle()
+        val expectedAnchorBoundsDp =
+            rule.onNodeWithTag(AnchorTestTag, true).getUnclippedBoundsInRoot()
+        val expectedAnchorBounds =
+            with(rule.density) {
+                Rect(
+                    expectedAnchorBoundsDp.left.roundToPx().toFloat(),
+                    expectedAnchorBoundsDp.top.roundToPx().toFloat(),
+                    expectedAnchorBoundsDp.right.roundToPx().toFloat(),
+                    expectedAnchorBoundsDp.bottom.roundToPx().toFloat()
+                )
+            }
+
+        assertThat(anchorBounds.left).isWithin(0.001f).of(expectedAnchorBounds.left)
+        assertThat(anchorBounds.top).isWithin(0.001f).of(expectedAnchorBounds.top)
+        assertThat(anchorBounds.right).isWithin(0.001f).of(expectedAnchorBounds.right)
+        assertThat(anchorBounds.bottom).isWithin(0.001f).of(expectedAnchorBounds.bottom)
     }
 
     @Test
@@ -507,22 +613,20 @@ class TooltipTest {
             topState = rememberTooltipState(isPersistent = true)
             bottomState = rememberTooltipState(isPersistent = true)
             TooltipBox(
-                positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider(),
+                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
                 tooltip = {
                     RichTooltip(
                         title = {
                             Text(text = "Subhead", modifier = Modifier.testTag(SubheadTestTag))
                         },
                         action = {
-                            TextButton(
-                                modifier = Modifier.testTag(ActionTestTag),
-                                onClick = {}
-                            ) {
+                            TextButton(modifier = Modifier.testTag(ActionTestTag), onClick = {}) {
                                 Text(text = "Action")
                             }
                         }
-
-                    ) { Text(text = "Text", modifier = Modifier.testTag(TextTestTag)) }
+                    ) {
+                        Text(text = "Text", modifier = Modifier.testTag(TextTestTag))
+                    }
                 },
                 state = topState,
                 modifier = Modifier.testTag(topTooltipTag)
@@ -530,22 +634,20 @@ class TooltipTest {
             scope.launch { topState.show() }
 
             TooltipBox(
-                positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider(),
+                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
                 tooltip = {
                     RichTooltip(
                         title = {
                             Text(text = "Subhead", modifier = Modifier.testTag(SubheadTestTag))
                         },
                         action = {
-                            TextButton(
-                                modifier = Modifier.testTag(ActionTestTag),
-                                onClick = {}
-                            ) {
+                            TextButton(modifier = Modifier.testTag(ActionTestTag), onClick = {}) {
                                 Text(text = "Action")
                             }
                         }
-
-                    ) { Text(text = "Text", modifier = Modifier.testTag(TextTestTag)) }
+                    ) {
+                        Text(text = "Text", modifier = Modifier.testTag(TextTestTag))
+                    }
                 },
                 state = bottomState,
                 modifier = Modifier.testTag(bottomTooltipTag)
@@ -557,7 +659,7 @@ class TooltipTest {
         rule.mainClock.autoAdvance = false
 
         // Advance by the fade in time
-        rule.mainClock.advanceTimeBy(TooltipFadeInDuration.toLong())
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
 
         // Check that only the tooltip associated with bottomState is visible
         rule.waitForIdle()
@@ -573,54 +675,44 @@ class TooltipTest {
         lateinit var bottomState: TooltipState
         rule.setMaterialContent(lightColorScheme()) {
             val scope = rememberCoroutineScope()
-            topState = rememberTooltipState(
-                isPersistent = true,
-                mutatorMutex = MutatorMutex()
-            )
+            topState = rememberTooltipState(isPersistent = true, mutatorMutex = MutatorMutex())
             TooltipBox(
-                positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider(),
+                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
                 tooltip = {
                     RichTooltip(
                         title = {
                             Text(text = "Subhead", modifier = Modifier.testTag(SubheadTestTag))
                         },
                         action = {
-                            TextButton(
-                                modifier = Modifier.testTag(ActionTestTag),
-                                onClick = {}
-                            ) {
+                            TextButton(modifier = Modifier.testTag(ActionTestTag), onClick = {}) {
                                 Text(text = "Action")
                             }
                         }
-
-                    ) { Text(text = "Text", modifier = Modifier.testTag(TextTestTag)) }
+                    ) {
+                        Text(text = "Text", modifier = Modifier.testTag(TextTestTag))
+                    }
                 },
                 state = topState,
                 modifier = Modifier.testTag(topTooltipTag)
             ) {}
             scope.launch { topState.show() }
 
-            bottomState = rememberTooltipState(
-                isPersistent = true,
-                mutatorMutex = MutatorMutex()
-            )
+            bottomState = rememberTooltipState(isPersistent = true, mutatorMutex = MutatorMutex())
             TooltipBox(
-                positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider(),
+                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
                 tooltip = {
                     RichTooltip(
                         title = {
                             Text(text = "Subhead", modifier = Modifier.testTag(SubheadTestTag))
                         },
                         action = {
-                            TextButton(
-                                modifier = Modifier.testTag(ActionTestTag),
-                                onClick = {}
-                            ) {
+                            TextButton(modifier = Modifier.testTag(ActionTestTag), onClick = {}) {
                                 Text(text = "Action")
                             }
                         }
-
-                    ) { Text(text = "Text", modifier = Modifier.testTag(TextTestTag)) }
+                    ) {
+                        Text(text = "Text", modifier = Modifier.testTag(TextTestTag))
+                    }
                 },
                 state = bottomState,
                 modifier = Modifier.testTag(bottomTooltipTag)
@@ -632,7 +724,7 @@ class TooltipTest {
         rule.mainClock.autoAdvance = false
 
         // Advance by the fade in time
-        rule.mainClock.advanceTimeBy(TooltipFadeInDuration.toLong())
+        rule.mainClock.advanceTimeBy(TooltipFadeInDuration)
 
         // Check that both tooltips are now showing
         rule.waitForIdle()
@@ -647,7 +739,7 @@ class TooltipTest {
         tooltipState: TooltipState = rememberTooltipState(),
     ) {
         TooltipBox(
-            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
             tooltip = {
                 PlainTooltip(
                     modifier = modifier.testTag(ContainerTestTag),
@@ -656,10 +748,7 @@ class TooltipTest {
             },
             state = tooltipState
         ) {
-            Icon(
-                Icons.Filled.Favorite,
-                contentDescription = null
-            )
+            Icon(Icons.Filled.Favorite, contentDescription = null)
         }
     }
 
@@ -672,7 +761,7 @@ class TooltipTest {
         tooltipState: TooltipState = rememberTooltipState(action != null),
     ) {
         TooltipBox(
-            positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider(),
+            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
             tooltip = {
                 RichTooltip(
                     title = title,
@@ -683,11 +772,33 @@ class TooltipTest {
             },
             state = tooltipState,
         ) {
-            Icon(
-                Icons.Filled.Favorite,
-                contentDescription = null
-            )
+            Icon(Icons.Filled.Favorite, contentDescription = null)
         }
+    }
+
+    @Test
+    fun plainTooltip_withClickable_hasCorrectSemantics() {
+        rule.setMaterialContent(lightColorScheme()) {
+            TooltipBox(
+                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
+                tooltip = {
+                    PlainTooltip(
+                        modifier = Modifier.testTag(ContainerTestTag),
+                        content = { Text("Tooltip") }
+                    )
+                },
+                state = rememberTooltipState()
+            ) {
+                IconButton(modifier = Modifier.testTag(AnchorTestTag), onClick = {}) {
+                    Icon(Icons.Filled.Favorite, contentDescription = null)
+                }
+            }
+        }
+
+        rule
+            .onNodeWithTag(AnchorTestTag)
+            .assertHasClickAction()
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick))
     }
 }
 
@@ -696,3 +807,6 @@ private const val AnchorTestTag = "Anchor"
 private const val ContainerTestTag = "Container"
 private const val SubheadTestTag = "Subhead"
 private const val TextTestTag = "Text"
+// We use springs to animate, so picking an arbitrary durations that work.
+private const val TooltipFadeInDuration = 300L
+private const val TooltipFadeOutDuration = 300L

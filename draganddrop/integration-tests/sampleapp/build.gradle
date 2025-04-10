@@ -26,7 +26,12 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 24
+        minSdk = 24
     }
-    namespace "androidx.draganddrop.sampleapp"
+    namespace = "androidx.draganddrop.sampleapp"
+}
+
+androidx {
+    // TODO: b/326456246
+    optOutJSpecify = true
 }

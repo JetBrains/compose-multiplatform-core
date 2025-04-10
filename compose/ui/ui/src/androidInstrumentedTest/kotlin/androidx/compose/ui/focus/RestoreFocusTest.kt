@@ -18,7 +18,6 @@ package androidx.compose.ui.focus
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.key
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -29,12 +28,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalComposeUiApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class RestoreFocusTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun noSavedChild_doesNotRestoreChild() {
@@ -45,26 +42,15 @@ class RestoreFocusTest {
         lateinit var child2State: FocusState
         rule.setFocusableContent {
             focusManager = LocalFocusManager.current
-            Box(
-                Modifier
-                    .focusRequester(parent)
-                    .focusTarget()
-            ) {
+            Box(Modifier.focusRequester(parent).focusTarget()) {
                 key(1) {
                     Box(
-                        Modifier
-                            .focusRequester(child1)
+                        Modifier.focusRequester(child1)
                             .onFocusChanged { child1State = it }
                             .focusTarget()
                     )
                 }
-                key(2) {
-                    Box(
-                        Modifier
-                            .onFocusChanged { child2State = it }
-                            .focusTarget()
-                    )
-                }
+                key(2) { Box(Modifier.onFocusChanged { child2State = it }.focusTarget()) }
             }
         }
         rule.runOnIdle { child1.requestFocus() }
@@ -90,22 +76,11 @@ class RestoreFocusTest {
         lateinit var child2State: FocusState
         rule.setFocusableContent {
             focusManager = LocalFocusManager.current
-            Box(
-                Modifier
-                    .focusRequester(parent)
-                    .focusTarget()
-            ) {
-                key(1) {
-                    Box(
-                        Modifier
-                            .onFocusChanged { child1State = it }
-                            .focusTarget()
-                    )
-                }
+            Box(Modifier.focusRequester(parent).focusTarget()) {
+                key(1) { Box(Modifier.onFocusChanged { child1State = it }.focusTarget()) }
                 key(2) {
                     Box(
-                        Modifier
-                            .focusRequester(child2)
+                        Modifier.focusRequester(child2)
                             .onFocusChanged { child2State = it }
                             .focusTarget()
                     )
@@ -137,19 +112,10 @@ class RestoreFocusTest {
         lateinit var child2State: FocusState
         rule.setFocusableContent {
             focusManager = LocalFocusManager.current
-            Box(
-                Modifier
-                    .focusRequester(parent)
-                    .focusTarget()
-            ) {
+            Box(Modifier.focusRequester(parent).focusTarget()) {
+                Box(Modifier.onFocusChanged { child1State = it }.focusTarget())
                 Box(
-                    Modifier
-                        .onFocusChanged { child1State = it }
-                        .focusTarget()
-                )
-                Box(
-                    Modifier
-                        .focusRequester(child2)
+                    Modifier.focusRequester(child2)
                         .onFocusChanged { child2State = it }
                         .focusTarget()
                 )
@@ -180,19 +146,10 @@ class RestoreFocusTest {
         lateinit var grandChildState: FocusState
         rule.setFocusableContent {
             focusManager = LocalFocusManager.current
-            Box(
-                Modifier
-                    .focusRequester(parent)
-                    .focusTarget()
-            ) {
-                Box(
-                    Modifier
-                        .onFocusChanged { childState = it }
-                        .focusTarget()
-                ) {
+            Box(Modifier.focusRequester(parent).focusTarget()) {
+                Box(Modifier.onFocusChanged { childState = it }.focusTarget()) {
                     Box(
-                        Modifier
-                            .focusRequester(grandChild)
+                        Modifier.focusRequester(grandChild)
                             .onFocusChanged { grandChildState = it }
                             .focusTarget()
                     )

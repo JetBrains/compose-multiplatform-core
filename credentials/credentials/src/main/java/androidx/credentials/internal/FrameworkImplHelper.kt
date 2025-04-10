@@ -16,47 +16,64 @@
 
 package androidx.credentials.internal
 
-import android.content.Context
-import android.graphics.drawable.Icon
-import android.os.Bundle
+import android.annotation.SuppressLint
+import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
-import androidx.credentials.CreateCredentialRequest
-import androidx.credentials.CreatePasswordRequest
-import androidx.credentials.CreatePublicKeyCredentialRequest
-import androidx.credentials.R
+import androidx.annotation.VisibleForTesting
+import androidx.credentials.Credential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
 
-@RequiresApi(23)
-internal class FrameworkImplHelper {
+@RequiresApi(34)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+class FrameworkImplHelper {
     companion object {
-        /**
-         * Take the create request's `credentialData` and add SDK specific values to it.
-         */
-        @RestrictTo(RestrictTo.Scope.LIBRARY) // used from java tests
+        @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
         @JvmStatic
-        @RequiresApi(23)
-        fun getFinalCreateCredentialData(
-            request: CreateCredentialRequest,
-            context: Context,
-        ): Bundle {
-            val createCredentialData = request.credentialData
-            val displayInfoBundle = request.displayInfo.toBundle()
-            displayInfoBundle.putParcelable(
-                CreateCredentialRequest.DisplayInfo.BUNDLE_KEY_CREDENTIAL_TYPE_ICON,
-                Icon.createWithResource(
-                    context,
-                    when (request) {
-                        is CreatePasswordRequest -> R.drawable.ic_password
-                        is CreatePublicKeyCredentialRequest -> R.drawable.ic_passkey
-                        else -> R.drawable.ic_other_sign_in
-                    }
+        fun convertGetResponseToJetpackClass(
+            response: android.credentials.GetCredentialResponse
+        ): GetCredentialResponse {
+            val credential = response.credential
+            return GetCredentialResponse(Credential.createFrom(credential.type, credential.data))
+        }
+
+        @JvmStatic
+        @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+        fun convertGetRequestToFrameworkClass(
+            request: GetCredentialRequest
+        ): android.credentials.GetCredentialRequest {
+            val builder =
+                android.credentials.GetCredentialRequest.Builder(
+                    GetCredentialRequest.getRequestMetadataBundle(request)
                 )
-            )
-            createCredentialData.putBundle(
-                CreateCredentialRequest.DisplayInfo.BUNDLE_KEY_REQUEST_DISPLAY_INFO,
-                displayInfoBundle
-            )
-            return createCredentialData
+            request.credentialOptions.forEach {
+                builder.addCredentialOption(
+                    android.credentials.CredentialOption.Builder(
+                            it.type,
+                            it.requestData,
+                            it.candidateQueryData
+                        )
+                        .setIsSystemProviderRequired(it.isSystemProviderRequired)
+                        .setAllowedProviders(it.allowedProviders)
+                        .build()
+                )
+            }
+            setOriginForGetRequest(request, builder)
+            return builder.build()
+        }
+
+        @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+        @SuppressLint("MissingPermission")
+        @VisibleForTesting
+        @JvmStatic
+        fun setOriginForGetRequest(
+            request: GetCredentialRequest,
+            builder: android.credentials.GetCredentialRequest.Builder
+        ) {
+            if (request.origin != null) {
+                builder.setOrigin(request.origin)
+            }
         }
     }
 }

@@ -18,13 +18,13 @@ package androidx.wear.tiles.timeline;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import androidx.annotation.Nullable;
 import androidx.wear.protolayout.LayoutElementBuilders;
 import androidx.wear.protolayout.TimelineBuilders;
 import androidx.wear.tiles.TilesTestRunner;
 
 import com.google.common.truth.Expect;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -552,8 +552,8 @@ public class TilesTimelineCacheTest {
     }
 
     private void expectTimelineEntryEqual(
-            @Nullable TimelineBuilders.TimelineEntry actual,
-            @Nullable TimelineBuilders.TimelineEntry expected) {
+            TimelineBuilders.@Nullable TimelineEntry actual,
+            TimelineBuilders.@Nullable TimelineEntry expected) {
         if (expected == null) {
             expect.that(actual).isNull();
         } else {

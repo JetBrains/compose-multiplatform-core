@@ -19,22 +19,19 @@ package androidx.camera.core.impl;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
-
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A class wrapping output surface information for initializing {@link SessionProcessor}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @AutoValue
 public abstract class OutputSurface {
     /**
      * Creates an OutputSurface instance.
      */
-    @NonNull
-    public static OutputSurface create(
+    public static @NonNull OutputSurface create(
             @NonNull Surface surface, @NonNull Size size, int imageFormat) {
         return new AutoValue_OutputSurface(surface, size, imageFormat);
     }
@@ -42,14 +39,12 @@ public abstract class OutputSurface {
     /**
      * Gets the {@link Surface}.
      */
-    @NonNull
-    public abstract Surface getSurface();
+    public abstract @NonNull Surface getSurface();
 
     /**
      * Gets the size of the {@link Surface}.
      */
-    @NonNull
-    public abstract Size getSize();
+    public abstract @NonNull Size getSize();
 
     /**
      * Gets the image format of the {@link Surface}.

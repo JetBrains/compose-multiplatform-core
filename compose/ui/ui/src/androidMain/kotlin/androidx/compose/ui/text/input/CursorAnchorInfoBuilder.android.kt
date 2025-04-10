@@ -20,7 +20,6 @@ import android.graphics.Matrix
 import android.os.Build
 import android.view.inputmethod.CursorAnchorInfo
 import android.view.inputmethod.EditorBoundsInfo
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.toAndroidRectF
@@ -147,10 +146,9 @@ private fun CursorAnchorInfo.Builder.addCharacterBounds(
     val endOffsetTransformed = offsetMapping.originalToTransformed(endOffset)
     val array = FloatArray((endOffsetTransformed - startOffsetTransformed) * 4)
     textLayoutResult.multiParagraph.fillBoundingBoxes(
-        TextRange(
-            startOffsetTransformed,
-            endOffsetTransformed
-        ), array, 0
+        TextRange(startOffsetTransformed, endOffsetTransformed),
+        array,
+        0
     )
 
     for (offset in startOffset until endOffset) {
@@ -175,7 +173,7 @@ private fun CursorAnchorInfo.Builder.addCharacterBounds(
         }
         if (
             !innerTextFieldBounds.containsInclusive(rect.left, rect.top) ||
-            !innerTextFieldBounds.containsInclusive(rect.right, rect.bottom)
+                !innerTextFieldBounds.containsInclusive(rect.right, rect.bottom)
         ) {
             flags = flags or CursorAnchorInfo.FLAG_HAS_INVISIBLE_REGION
         }
@@ -191,7 +189,6 @@ private fun CursorAnchorInfo.Builder.addCharacterBounds(
 @RequiresApi(33)
 private object CursorAnchorInfoApi33Helper {
     @JvmStatic
-    @DoNotInline
     fun setEditorBoundsInfo(
         builder: CursorAnchorInfo.Builder,
         decorationBoxBounds: Rect
@@ -207,7 +204,6 @@ private object CursorAnchorInfoApi33Helper {
 @RequiresApi(34)
 private object CursorAnchorInfoApi34Helper {
     @JvmStatic
-    @DoNotInline
     fun addVisibleLineBounds(
         builder: CursorAnchorInfo.Builder,
         textLayoutResult: TextLayoutResult,

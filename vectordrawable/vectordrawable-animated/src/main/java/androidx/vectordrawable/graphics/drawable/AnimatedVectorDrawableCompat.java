@@ -40,10 +40,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Xml;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.collection.ArrayMap;
 import androidx.core.content.res.ResourcesCompat;
@@ -51,6 +48,8 @@ import androidx.core.content.res.TypedArrayUtils;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.util.ObjectsCompat;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -155,8 +154,7 @@ public class AnimatedVectorDrawableCompat extends VectorDrawableCommon
 
     private static final boolean DBG_ANIMATION_VECTOR_DRAWABLE = false;
 
-    @NonNull
-    private final AnimatedVectorDrawableCompatState mAnimatedVectorState;
+    private final @NonNull AnimatedVectorDrawableCompatState mAnimatedVectorState;
 
     private final Context mContext;
 
@@ -195,9 +193,8 @@ public class AnimatedVectorDrawableCompat extends VectorDrawableCommon
      * mutate() will be effective only if the getConstantState() is returning non-null.
      * Otherwise, it just return the current object without modification.
      */
-    @NonNull
     @Override
-    public Drawable mutate() {
+    public @NonNull Drawable mutate() {
         if (mDelegateDrawable != null) {
             mDelegateDrawable.mutate();
         }
@@ -214,8 +211,7 @@ public class AnimatedVectorDrawableCompat extends VectorDrawableCommon
      * @param resId   the resource ID for AnimatedVectorDrawableCompat object.
      * @return a new AnimatedVectorDrawableCompat or null if parsing error is found.
      */
-    @Nullable
-    public static AnimatedVectorDrawableCompat create(@NonNull Context context,
+    public static @Nullable AnimatedVectorDrawableCompat create(@NonNull Context context,
             @DrawableRes int resId) {
         if (Build.VERSION.SDK_INT >= 24) {
             final AnimatedVectorDrawableCompat drawable = new AnimatedVectorDrawableCompat(context);
@@ -259,8 +255,7 @@ public class AnimatedVectorDrawableCompat extends VectorDrawableCommon
      * document, tries to create a Drawable from that tag. Returns {@code null}
      * if the tag is not a valid drawable.
      */
-    @NonNull
-    public static AnimatedVectorDrawableCompat createFromXmlInner(@NonNull Context context,
+    public static @NonNull AnimatedVectorDrawableCompat createFromXmlInner(@NonNull Context context,
             @NonNull Resources r, @NonNull XmlPullParser parser, @NonNull AttributeSet attrs,
             @Nullable Theme theme) throws XmlPullParserException, IOException {
         final AnimatedVectorDrawableCompat drawable = new AnimatedVectorDrawableCompat(context);
@@ -273,9 +268,8 @@ public class AnimatedVectorDrawableCompat extends VectorDrawableCommon
      * <strong>Note</strong> that we don't support constant state when SDK < 24.
      * Make sure you check the return value before using it.
      */
-    @Nullable
     @Override
-    public ConstantState getConstantState() {
+    public @Nullable ConstantState getConstantState() {
         if (mDelegateDrawable != null && Build.VERSION.SDK_INT >= 24) {
             return new AnimatedVectorDrawableDelegateState(mDelegateDrawable.getConstantState());
         }
@@ -356,9 +350,8 @@ public class AnimatedVectorDrawableCompat extends VectorDrawableCommon
         mAnimatedVectorState.mVectorDrawable.setColorFilter(colorFilter);
     }
 
-    @Nullable
     @Override
-    public ColorFilter getColorFilter() {
+    public @Nullable ColorFilter getColorFilter() {
         if (mDelegateDrawable != null) {
             return DrawableCompat.getColorFilter(mDelegateDrawable);
         }
@@ -386,7 +379,7 @@ public class AnimatedVectorDrawableCompat extends VectorDrawableCommon
     }
 
     @Override
-    public void setTintMode(@Nullable PorterDuff.Mode tintMode) {
+    public void setTintMode(PorterDuff.@Nullable Mode tintMode) {
         if (mDelegateDrawable != null) {
             DrawableCompat.setTintMode(mDelegateDrawable, tintMode);
             return;
@@ -828,7 +821,7 @@ public class AnimatedVectorDrawableCompat extends VectorDrawableCommon
      */
     @RequiresApi(23)
     private static void registerPlatformCallback(@NonNull AnimatedVectorDrawable avd,
-            @NonNull final AnimationCallback callback) {
+            final @NonNull AnimationCallback callback) {
         Api23Impl.registerAnimationCallback(avd, callback.getPlatformCallback());
     }
 
@@ -950,19 +943,16 @@ public class AnimatedVectorDrawableCompat extends VectorDrawableCommon
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean unregisterAnimationCallback(Object animatedVectorDrawable,
                 Object callback) {
             return ((AnimatedVectorDrawable) animatedVectorDrawable).unregisterAnimationCallback(
                     (Animatable2.AnimationCallback) callback);
         }
 
-        @DoNotInline
         static void clearAnimationCallbacks(Object animatedVectorDrawable) {
             ((AnimatedVectorDrawable) animatedVectorDrawable).clearAnimationCallbacks();
         }
 
-        @DoNotInline
         static void registerAnimationCallback(Object animatedVectorDrawable, Object callback) {
             ((AnimatedVectorDrawable) animatedVectorDrawable).registerAnimationCallback(
                     (Animatable2.AnimationCallback) callback);

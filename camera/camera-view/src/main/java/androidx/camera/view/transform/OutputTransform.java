@@ -19,12 +19,12 @@ package androidx.camera.view.transform;
 import android.graphics.Matrix;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.UseCaseGroup;
 import androidx.camera.view.TransformExperimental;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents the transform applied to the output of a {@link UseCase}.
@@ -32,14 +32,11 @@ import androidx.camera.view.TransformExperimental;
  * <p> Represents the rotation, cropping and/or mirroring applied to the raw buffer of a
  * {@link UseCase} output.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @TransformExperimental
 public final class OutputTransform {
 
-    @NonNull
-    final Matrix mMatrix;
-    @NonNull
-    final Size mViewPortSize;
+    final @NonNull Matrix mMatrix;
+    final @NonNull Size mViewPortSize;
 
     /**
      * @param matrix       The mapping from a normalized viewport space (-1, -1) - (1, 1) to
@@ -64,13 +61,11 @@ public final class OutputTransform {
      *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    public Matrix getMatrix() {
+    public @NonNull Matrix getMatrix() {
         return mMatrix;
     }
 
-    @NonNull
-    Size getViewPortSize() {
+    @NonNull Size getViewPortSize() {
         return mViewPortSize;
     }
 

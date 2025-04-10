@@ -19,17 +19,16 @@ package androidx.camera.core.impl;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.utils.futures.Futures;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A {@link DeferrableSurface} which always returns immediately.
  *
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class ImmediateSurface extends DeferrableSurface {
     private final Surface mSurface;
 
@@ -43,8 +42,7 @@ public final class ImmediateSurface extends DeferrableSurface {
     }
 
     @Override
-    @NonNull
-    public ListenableFuture<Surface> provideSurface() {
+    public @NonNull ListenableFuture<Surface> provideSurface() {
         return Futures.immediateFuture(mSurface);
     }
 }

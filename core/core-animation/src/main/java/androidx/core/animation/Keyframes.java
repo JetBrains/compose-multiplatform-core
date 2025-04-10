@@ -15,7 +15,7 @@
  */
 package androidx.core.animation;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -60,8 +60,7 @@ interface Keyframes<T> extends Cloneable {
      */
     List<Keyframe<T>> getKeyframes();
 
-    @NonNull
-    Keyframes clone();
+    @NonNull Keyframes clone();
 
     /**
      * A specialization of Keyframes that has integer primitive value calculation.

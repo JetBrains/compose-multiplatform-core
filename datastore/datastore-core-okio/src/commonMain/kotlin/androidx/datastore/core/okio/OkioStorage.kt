@@ -38,8 +38,8 @@ import okio.use
  * @param fileSystem The file system to perform IO operations on.
  * @param serializer The serializer for `T`.
  * @param coordinatorProducer The producer to provide [InterProcessCoordinator] that coordinates IO
- * operations across processes if needed. By default it provides single process coordinator, which
- * doesn't support cross process use cases.
+ *   operations across processes if needed. By default it provides single process coordinator, which
+ *   doesn't support cross process use cases.
  * @param producePath The file producer that returns the file path that will be read and written.
  */
 public class OkioStorage<T>(
@@ -77,9 +77,7 @@ public class OkioStorage<T>(
             serializer,
             coordinatorProducer(canonicalPath, fileSystem)
         ) {
-            activeFilesLock.withLock {
-                activeFiles.remove(canonicalPath.toString())
-            }
+            activeFilesLock.withLock { activeFiles.remove(canonicalPath.toString()) }
         }
     }
 
@@ -102,9 +100,8 @@ internal class OkioStorageConnection<T>(
     // TODO:(b/233402915) support multiple readers
     private val transactionMutex = Mutex()
 
-    override suspend fun <R> readScope(
-        block: suspend ReadScope<T>.(locked: Boolean) -> R
-    ): R {
+    // TODO(b/394876261): Add exception handling for exceptions thrown due to direct boot.
+    override suspend fun <R> readScope(block: suspend ReadScope<T>.(locked: Boolean) -> R): R {
         checkNotClosed()
 
         val lock = transactionMutex.tryLock()
@@ -119,23 +116,16 @@ internal class OkioStorageConnection<T>(
         }
     }
 
+    // TODO(b/394876261): Add exception handling for exceptions thrown due to direct boot.
     override suspend fun writeScope(block: suspend WriteScope<T>.() -> Unit) {
         checkNotClosed()
         val parentDir = path.parent ?: error("must have a parent path")
-        fileSystem.createDirectories(
-            dir = parentDir,
-            mustCreate = false
-        )
+        fileSystem.createDirectories(dir = parentDir, mustCreate = false)
         transactionMutex.withLock {
             val scratchPath = parentDir / "${path.name}.tmp"
             try {
-                fileSystem.delete(
-                    path = scratchPath,
-                    mustExist = false
-                )
-                OkioWriteScope(fileSystem, scratchPath, serializer).use {
-                    block(it)
-                }
+                fileSystem.delete(path = scratchPath, mustExist = false)
+                OkioWriteScope(fileSystem, scratchPath, serializer).use { block(it) }
                 if (fileSystem.exists(scratchPath)) {
                     fileSystem.atomicMove(scratchPath, path)
                 }
@@ -174,16 +164,17 @@ internal open class OkioReadScope<T>(
         checkClose()
 
         return try {
-            fileSystem.read(
-                file = path
-            ) {
-                serializer.readFrom(this)
-            }
+            fileSystem.read(file = path) { serializer.readFrom(this) }
         } catch (ex: FileNotFoundException) {
             if (fileSystem.exists(path)) {
-                throw ex
+                // Attempt a second read in case a race condition resulted in the file being created
+                // by a different process. If we can't read again, a FileNotFoundException is
+                // thrown.
+                fileSystem.read(file = path) { serializer.readFrom(this) }
+            } else {
+                // File does not exist, return default value.
+                serializer.defaultValue
             }
-            serializer.defaultValue
         }
     }
 
@@ -200,8 +191,7 @@ internal class OkioWriteScope<T>(
     fileSystem: FileSystem,
     path: Path,
     serializer: OkioSerializer<T>
-) :
-    OkioReadScope<T>(fileSystem, path, serializer), WriteScope<T> {
+) : OkioReadScope<T>(fileSystem, path, serializer), WriteScope<T> {
 
     override suspend fun writeData(value: T) {
         checkClose()

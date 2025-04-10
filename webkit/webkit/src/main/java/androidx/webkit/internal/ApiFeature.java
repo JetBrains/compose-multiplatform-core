@@ -18,11 +18,10 @@ package androidx.webkit.internal;
 
 import android.os.Build;
 
-import androidx.annotation.ChecksSdkIntAtLeast;
-import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,17 +29,17 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Enum-like class to represent features that are supported by the AndroidX webview API.
- *
+ * Enum-like class to represent features that are supported by the AndroidX WebView API.
+ * <p>
  * Features that have framework support should be represented by the appropriate subclass
  * matching the SDK version where the feature became available, which allows static analysis to
  * verify that calling the feature is safe through the {@link #isSupportedByFramework()} method.
- *
+ * <p>
  * To gain this benefit, variables containing {@link ApiFeature} should always be declared as the
  * specific subtype.
- *
+ * <p>
  * To add support for a new API version, add a new subclass representing the desired API level.
- *
+ * <p>
  * This class should only be instantiated as constants in {@link WebViewFeatureInternal} and is
  * meant to act as enum values for that class.
  */
@@ -59,9 +58,8 @@ public abstract class ApiFeature implements ConditionallySupportedFeature {
         sValues.add(this);
     }
 
-    @NonNull
     @Override
-    public String getPublicFeatureName() {
+    public @NonNull String getPublicFeatureName() {
         return mPublicFeatureValue;
     }
 
@@ -82,12 +80,7 @@ public abstract class ApiFeature implements ConditionallySupportedFeature {
 
     /**
      * Return whether this {@link ApiFeature} is supported by the current WebView APK.
-     *
-     * <p>WebView updates were only supported starting in Android L and the preinstalled WebView in
-     * earlier OS versions is not compatible with this library. If this returns true, then that
-     * implies we're on Android L or above.
      */
-    @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.LOLLIPOP)
     public boolean isSupportedByWebView() {
         return BoundaryInterfaceReflectionUtil.containsFeature(LAZY_HOLDER.WEBVIEW_APK_FEATURES,
                 mInternalFeatureValue);
@@ -96,15 +89,13 @@ public abstract class ApiFeature implements ConditionallySupportedFeature {
     /**
      * Get all instantiated values of this class as if it was an enum.
      */
-    @NonNull
-    public static Set<ApiFeature> values() {
+    public static @NonNull Set<ApiFeature> values() {
         return Collections.unmodifiableSet(sValues);
     }
 
 
-    @NonNull
     @VisibleForTesting
-    public static Set<String> getWebViewApkFeaturesForTesting() {
+    public static @NonNull Set<String> getWebViewApkFeaturesForTesting() {
         return LAZY_HOLDER.WEBVIEW_APK_FEATURES;
     }
 

@@ -32,7 +32,7 @@ public class SpeedRecord(
     override val endTime: Instant,
     override val endZoneOffset: ZoneOffset?,
     override val samples: List<Sample>,
-    override val metadata: Metadata = Metadata.EMPTY,
+    override val metadata: Metadata,
 ) : SeriesRecord<SpeedRecord.Sample> {
 
     init {
@@ -67,6 +67,10 @@ public class SpeedRecord(
         result = 31 * result + samples.hashCode()
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "SpeedRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, samples=$samples, metadata=$metadata)"
     }
 
     companion object {
@@ -119,7 +123,6 @@ public class SpeedRecord(
      *
      * @param time The point in time when the measurement was taken.
      * @param speed Speed in [Velocity] unit. Valid range: 0-1000000 meters/sec.
-     *
      * @see SpeedRecord
      */
     public class Sample(
@@ -146,6 +149,10 @@ public class SpeedRecord(
             var result = time.hashCode()
             result = 31 * result + speed.hashCode()
             return result
+        }
+
+        override fun toString(): String {
+            return "Sample(time=$time, speed=$speed)"
         }
     }
 }

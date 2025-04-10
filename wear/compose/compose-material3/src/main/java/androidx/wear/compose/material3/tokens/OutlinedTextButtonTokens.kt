@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-// VERSION: v0_27
+// VERSION: v0_103
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 package androidx.wear.compose.material3.tokens
-
 internal object OutlinedTextButtonTokens {
     val ContainerShape = ShapeKeyTokens.CornerFull
-    val ContentColor = ColorSchemeKeyTokens.OnBackground
+    val ContentColor = ColorSchemeKeyTokens.OnSurface
     val ContentFont = TypographyKeyTokens.LabelMedium
     val DisabledContentColor = ColorSchemeKeyTokens.OnSurface
     val DisabledContentOpacity = 0.38f

@@ -18,7 +18,6 @@ package com.example.android.leanback;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 import androidx.leanback.paging.PagingDataAdapter;
 import androidx.leanback.widget.HorizontalGridView;
@@ -27,6 +26,8 @@ import androidx.leanback.widget.ListRowPresenter;
 import androidx.leanback.widget.RowPresenter;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ViewModelProvider;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * PagedRowPresenter
@@ -45,7 +46,7 @@ public class PagedRowPresenter extends ListRowPresenter {
     }
     @Override
     protected void onBindRowViewHolder(
-            @NonNull RowPresenter.ViewHolder holder,
+            RowPresenter.@NonNull ViewHolder holder,
             @NonNull Object item
     ) {
         super.onBindRowViewHolder(holder, item);

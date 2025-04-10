@@ -18,8 +18,11 @@ package androidx.credentials.provider.ui
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.service.credentials.Action
 import androidx.credentials.provider.AuthenticationAction
+import androidx.credentials.provider.AuthenticationAction.Companion.fromAction
 import androidx.credentials.provider.AuthenticationAction.Companion.fromSlice
+import androidx.credentials.provider.AuthenticationAction.Companion.toSlice
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
@@ -35,8 +38,8 @@ import org.junit.runner.RunWith
 class AuthenticationActionTest {
     private val mContext = ApplicationProvider.getApplicationContext<Context>()
     private val mIntent = Intent()
-    private val mPendingIntent = PendingIntent.getActivity(mContext, 0, mIntent,
-        PendingIntent.FLAG_IMMUTABLE)
+    private val mPendingIntent =
+        PendingIntent.getActivity(mContext, 0, mIntent, PendingIntent.FLAG_IMMUTABLE)
 
     @Test
     fun build_success() {
@@ -57,7 +60,9 @@ class AuthenticationActionTest {
         Assert.assertThrows(
             "Expected empty title to throw IAE",
             IllegalArgumentException::class.java
-        ) { AuthenticationAction("", mPendingIntent) }
+        ) {
+            AuthenticationAction("", mPendingIntent)
+        }
     }
 
     @Test
@@ -73,6 +78,19 @@ class AuthenticationActionTest {
             assertNotNull(fromSlice.pendingIntent)
             assertThat(fromSlice.pendingIntent).isEqualTo(mPendingIntent)
         }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 34)
+    fun fromAction_success() {
+        val originalAction = AuthenticationAction(TITLE, mPendingIntent)
+        val slice = toSlice(originalAction)
+        assertNotNull(slice)
+
+        val action = fromAction(Action(slice))
+
+        assertNotNull(action)
+        assertThat(action!!.pendingIntent).isEqualTo(mPendingIntent)
     }
 
     companion object {

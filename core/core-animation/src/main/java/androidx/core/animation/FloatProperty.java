@@ -18,7 +18,7 @@ package androidx.core.animation;
 import android.annotation.SuppressLint;
 import android.util.Property;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An implementation of {@link android.util.Property} to be used specifically with fields of type

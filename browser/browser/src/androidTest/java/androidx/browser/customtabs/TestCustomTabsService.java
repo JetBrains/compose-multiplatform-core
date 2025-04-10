@@ -24,12 +24,12 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 import android.os.RemoteException;
+import android.support.customtabs.IAuthTabCallback;
 import android.support.customtabs.ICustomTabsCallback;
 import android.support.customtabs.ICustomTabsService;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.mockito.Mockito;
 
 import java.io.FileDescriptor;
@@ -85,6 +85,18 @@ public class TestCustomTabsService extends CustomTabsService {
         }
 
         @Override
+        public void prefetch(ICustomTabsCallback callback, Uri url, Bundle options)
+                throws RemoteException {
+            mMock.prefetch(callback, url, options);
+        }
+
+        @Override
+        public void prefetchWithMultipleUrls(ICustomTabsCallback callback, List<Uri> urls,
+                Bundle options) throws RemoteException {
+            mMock.prefetchWithMultipleUrls(callback, urls, options);
+        }
+
+        @Override
         public Bundle extraCommand(String commandName, Bundle args) throws RemoteException {
             return null;
         }
@@ -135,11 +147,21 @@ public class TestCustomTabsService extends CustomTabsService {
                 IBinder callback, Bundle extras) throws RemoteException {
             return mMock.setEngagementSignalsCallback(customTabsCallback, callback, extras);
         }
+
+        @Override
+        public boolean isEphemeralBrowsingSupported(Bundle extras) throws RemoteException {
+            return mMock.isEphemeralBrowsingSupported(extras);
+        }
+
+        @Override
+        public boolean newAuthTabSession(IAuthTabCallback callback, Bundle extras)
+                throws RemoteException {
+            return false;
+        }
     };
 
-    @NonNull
     @Override
-    public IBinder onBind(Intent intent) {
+    public @NonNull IBinder onBind(Intent intent) {
         sInstance = this;
         return super.onBind(intent);
     }
@@ -161,9 +183,13 @@ public class TestCustomTabsService extends CustomTabsService {
         return false;
     }
 
-    @NonNull
     @Override
-    protected Bundle extraCommand(@NonNull String commandName, Bundle args) {
+    protected void prefetch(@NonNull CustomTabsSessionToken sessionToken,
+            @NonNull Uri url, @NonNull PrefetchOptions options) {
+    }
+
+    @Override
+    protected @NonNull Bundle extraCommand(@NonNull String commandName, Bundle args) {
         return Bundle.EMPTY;
     }
 

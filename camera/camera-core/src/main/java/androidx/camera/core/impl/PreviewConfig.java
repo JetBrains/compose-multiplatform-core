@@ -16,15 +16,14 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.Preview;
 import androidx.camera.core.internal.ThreadConfig;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Configuration for a {@link Preview} use case.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class PreviewConfig
         implements UseCaseConfig<Preview>,
         ImageOutputConfig,
@@ -38,9 +37,8 @@ public final class PreviewConfig
         mConfig = config;
     }
 
-    @NonNull
     @Override
-    public Config getConfig() {
+    public @NonNull Config getConfig() {
         return mConfig;
     }
 

@@ -1,7 +1,9 @@
 // Baseline format: 1.0
-AddedMethod: androidx.privacysandbox.ads.adservices.topics.GetTopicsRequest#shouldRecordObservation():
-    Added method androidx.privacysandbox.ads.adservices.topics.GetTopicsRequest.shouldRecordObservation()
+AddedField: androidx.privacysandbox.ads.adservices.customaudience.CustomAudience#Companion:
+    Added field androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.Companion
 
 
-RemovedMethod: androidx.privacysandbox.ads.adservices.topics.GetTopicsRequest#getShouldRecordObservation():
-    Removed method androidx.privacysandbox.ads.adservices.topics.GetTopicsRequest.getShouldRecordObservation()
+AddedMethod: androidx.privacysandbox.ads.adservices.customaudience.CustomAudience#getAuctionServerRequestFlags():
+    Added method androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.getAuctionServerRequestFlags()
+AddedMethod: androidx.privacysandbox.ads.adservices.customaudience.CustomAudience#getPriority():
+    Added method androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.getPriority()

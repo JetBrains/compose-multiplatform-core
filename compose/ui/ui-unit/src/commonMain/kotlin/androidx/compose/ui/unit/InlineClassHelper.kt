@@ -19,8 +19,9 @@ package androidx.compose.ui.unit
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
-// Same as DpOffset/DpSize.Unspecified.packedValue, but avoids a getstatic
-internal const val UnspecifiedPackedFloats = 0x7fc00000_7fc00000L // NaN_NaN
+// 0x80000000_80000000UL.toLong() but expressed as a const value
+// Mask for the sign bit of the two floats packed in a long
+internal const val DualFloatSignBit = -0x7fffffff_80000000L
 
 // This function exists so we do *not* inline the throw. It keeps
 // the call site much smaller and since it's the slow path anyway,
@@ -33,9 +34,7 @@ internal fun throwIllegalArgumentException(message: String) {
 @Suppress("BanInlineOptIn") // same opt-in as using Kotlin's require()
 @OptIn(ExperimentalContracts::class)
 internal inline fun requirePrecondition(value: Boolean, lazyMessage: () -> String) {
-    contract {
-        returns() implies value
-    }
+    contract { returns() implies value }
     if (!value) {
         throwIllegalArgumentException(lazyMessage())
     }
@@ -50,9 +49,7 @@ internal fun throwIllegalStateException(message: String) {
 @Suppress("BanInlineOptIn") // same opt-in as using Kotlin's check()
 @OptIn(ExperimentalContracts::class)
 internal inline fun checkPrecondition(value: Boolean, lazyMessage: () -> String) {
-    contract {
-        returns() implies value
-    }
+    contract { returns() implies value }
     if (!value) {
         throwIllegalStateException(lazyMessage())
     }

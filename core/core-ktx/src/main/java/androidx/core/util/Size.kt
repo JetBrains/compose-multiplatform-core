@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-@file:SuppressLint("ClassVerificationFailure") // Entire file is RequiresApi(21)
 @file:Suppress("NOTHING_TO_INLINE")
 
 package androidx.core.util
 
-import android.annotation.SuppressLint
 import android.util.Size
 import android.util.SizeF
 import androidx.annotation.RequiresApi
@@ -27,56 +25,47 @@ import androidx.annotation.RequiresApi
 /**
  * Returns "width", the first component of this [Size].
  *
- * This method allows to use destructuring declarations when working with
- * sizes, for example:
+ * This method allows to use destructuring declarations when working with sizes, for example:
  * ```
  * val (w, h) = mySize
  * ```
  */
-@RequiresApi(21)
-public inline operator fun Size.component1(): Int = width
+@RequiresApi(21) public inline operator fun Size.component1(): Int = width
 
 /**
  * Returns "height", the second component of this [Size].
  *
- * This method allows to use destructuring declarations when working with
- * sizes, for example:
+ * This method allows to use destructuring declarations when working with sizes, for example:
  * ```
  * val (w, h) = mySize
  * ```
  */
-@RequiresApi(21)
-public inline operator fun Size.component2(): Int = height
+@RequiresApi(21) public inline operator fun Size.component2(): Int = height
 
 /**
  * Returns "width", the first component of this [SizeF].
  *
- * This method allows to use destructuring declarations when working with
- * sizes, for example:
+ * This method allows to use destructuring declarations when working with sizes, for example:
  * ```
  * val (w, h) = mySize
  * ```
  */
-@RequiresApi(21)
-public inline operator fun SizeF.component1(): Float = width
+@RequiresApi(21) public inline operator fun SizeF.component1(): Float = width
 
 /**
  * Returns "height", the second component of this [SizeF].
  *
- * This method allows to use destructuring declarations when working with
- * sizes, for example:
+ * This method allows to use destructuring declarations when working with sizes, for example:
  * ```
  * val (w, h) = mySize
  * ```
  */
-@RequiresApi(21)
-public inline operator fun SizeF.component2(): Float = height
+@RequiresApi(21) public inline operator fun SizeF.component2(): Float = height
 
 /**
  * Returns "width", the first component of this [SizeFCompat].
  *
- * This method allows to use destructuring declarations when working with
- * sizes, for example:
+ * This method allows to use destructuring declarations when working with sizes, for example:
  * ```
  * val (w, h) = mySize
  * ```
@@ -86,8 +75,7 @@ public inline operator fun SizeFCompat.component1(): Float = width
 /**
  * Returns "height", the second component of this [SizeFCompat].
  *
- * This method allows to use destructuring declarations when working with
- * sizes, for example:
+ * This method allows to use destructuring declarations when working with sizes, for example:
  * ```
  * val (w, h) = mySize
  * ```

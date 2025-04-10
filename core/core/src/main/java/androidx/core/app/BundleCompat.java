@@ -19,8 +19,8 @@ package androidx.core.app;
 import android.os.Bundle;
 import android.os.IBinder;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link Bundle}.
@@ -38,10 +38,12 @@ public final class BundleCompat {
      * @param bundle The bundle to get the {@link IBinder}.
      * @param key    The key to use while getting the {@link IBinder}.
      * @return       The {@link IBinder} that was obtained.
+     * @deprecated Call {@link Bundle#getBinder()} directly.
      */
-    @Nullable
-    public static IBinder getBinder(@NonNull Bundle bundle, @Nullable String key) {
-        return androidx.core.os.BundleCompat.getBinder(bundle, key);
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "bundle.getBinder(key)")
+    public static @Nullable IBinder getBinder(@NonNull Bundle bundle, @Nullable String key) {
+        return bundle.getBinder(key);
     }
 
     /**
@@ -50,9 +52,12 @@ public final class BundleCompat {
      * @param bundle The bundle to insert the {@link IBinder}.
      * @param key    The key to use while putting the {@link IBinder}.
      * @param binder The {@link IBinder} to put.
+     * @deprecated Call {@link Bundle#putBinder()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "bundle.putBinder(key, binder)")
     public static void putBinder(@NonNull Bundle bundle, @Nullable String key,
             @Nullable IBinder binder) {
-        androidx.core.os.BundleCompat.putBinder(bundle, key, binder);
+        bundle.putBinder(key, binder);
     }
 }

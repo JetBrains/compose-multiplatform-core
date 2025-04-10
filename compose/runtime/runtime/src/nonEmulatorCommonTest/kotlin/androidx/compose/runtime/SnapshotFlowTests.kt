@@ -37,15 +37,14 @@ class SnapshotFlowTests {
 
         // Use Dispatchers.Unconfined to cause the observer to run immediately for this test,
         // both here and when we apply a change.
-        val collector = snapshotFlow { state * 2 }
-            .onEach { result = it }
-            .launchIn(this + Dispatchers.Unconfined)
+        val collector =
+            snapshotFlow { state * 2 }
+                .onEach { result = it }
+                .launchIn(this + Dispatchers.Unconfined)
 
         assertEquals(2, result, "value after initial run")
 
-        Snapshot.withMutableSnapshot {
-            state = 5
-        }
+        Snapshot.withMutableSnapshot { state = 5 }
 
         assertEquals(10, result, "value after snapshot update")
 
@@ -59,9 +58,7 @@ class SnapshotFlowTests {
 
         // This test uses the runTest single-threaded dispatcher for observation, which means
         // we don't flush changes to the observer until we yield() intentionally.
-        val collector = snapshotFlow { state }
-            .onEach { runCount++ }
-            .launchIn(this)
+        val collector = snapshotFlow { state }.onEach { runCount++ }.launchIn(this)
 
         assertEquals(0, runCount, "initial value - snapshot collector hasn't run yet")
         yield()
@@ -89,9 +86,7 @@ class SnapshotFlowTests {
 
         // This test uses the runTest single-threaded dispatcher for observation, which means
         // we don't flush changes to the observer until we yield() intentionally.
-        val collector = snapshotFlow { state }
-            .onEach { runCount++ }
-            .launchIn(this)
+        val collector = snapshotFlow { state }.onEach { runCount++ }.launchIn(this)
         yield()
 
         assertEquals(1, runCount, "initial run")
@@ -102,5 +97,30 @@ class SnapshotFlowTests {
         assertEquals(1, runCount, "after changing unrelated state")
 
         collector.cancel()
+    }
+
+    @Test
+    fun nestedDerivedStateWorks() = runTest {
+        val truth = mutableStateOf(true)
+        val derived1 = derivedStateOf { truth.value }
+        val derived2 = derivedStateOf { derived1.value }
+
+        val results = mutableListOf<Int>()
+
+        val collector1 = snapshotFlow { derived2.value }.onEach { results += 1 }.launchIn(this)
+
+        val collector2 = snapshotFlow { derived2.value }.onEach { results += 2 }.launchIn(this)
+
+        yield()
+
+        truth.value = false
+
+        Snapshot.sendApplyNotifications()
+        yield()
+
+        assertEquals(listOf(1, 2, 1, 2), results)
+
+        collector1.cancel()
+        collector2.cancel()
     }
 }

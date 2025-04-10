@@ -19,7 +19,6 @@ package androidx.wear.protolayout.renderer.helper;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 
-import androidx.annotation.Nullable;
 import androidx.wear.protolayout.expression.proto.DynamicProto.DynamicString;
 import androidx.wear.protolayout.expression.proto.FixedProto.FixedString;
 import androidx.wear.protolayout.proto.AlignmentProto.HorizontalAlignment;
@@ -55,6 +54,8 @@ import androidx.wear.protolayout.proto.ModifiersProto;
 import androidx.wear.protolayout.proto.TypesProto.BoolProp;
 import androidx.wear.protolayout.proto.TypesProto.Int32Prop;
 import androidx.wear.protolayout.proto.TypesProto.StringProp;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;

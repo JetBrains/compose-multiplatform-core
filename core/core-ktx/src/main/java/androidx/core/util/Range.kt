@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-@file:SuppressLint("ClassVerificationFailure") // Entire file is RequiresApi(21)
 @file:Suppress("NOTHING_TO_INLINE") // Aliases to public API.
 
 package androidx.core.util
 
-import android.annotation.SuppressLint
 import android.util.Range
 import androidx.annotation.RequiresApi
 
@@ -51,10 +49,14 @@ public inline infix fun <T : Comparable<T>> Range<T>.and(other: Range<T>): Range
 
 /** Returns this [Range] as a [ClosedRange]. */
 @RequiresApi(21)
-public fun <T : Comparable<T>> Range<T>.toClosedRange(): ClosedRange<T> = object : ClosedRange<T> {
-    override val endInclusive get() = upper
-    override val start get() = lower
-}
+public fun <T : Comparable<T>> Range<T>.toClosedRange(): ClosedRange<T> =
+    object : ClosedRange<T> {
+        override val endInclusive
+            get() = upper
+
+        override val start
+            get() = lower
+    }
 
 /** Returns this [ClosedRange] as a [Range]. */
 @RequiresApi(21)

@@ -16,40 +16,39 @@
 
 package androidx.room.compiler.codegen.java
 
-import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.JCodeBlock
-import androidx.room.compiler.codegen.TargetLanguage
+import androidx.room.compiler.codegen.JCodeBlockBuilder
+import androidx.room.compiler.codegen.XAnnotationSpec
 import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.XFunSpec
 import androidx.room.compiler.codegen.XMemberName
+import androidx.room.compiler.codegen.XName
 import androidx.room.compiler.codegen.XPropertySpec
+import androidx.room.compiler.codegen.XSpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.XTypeSpec
+import androidx.room.compiler.codegen.impl.XAnnotationSpecImpl
+import androidx.room.compiler.codegen.impl.XCodeBlockImpl
+import androidx.room.compiler.codegen.impl.XFunSpecImpl
+import androidx.room.compiler.codegen.impl.XPropertySpecImpl
+import androidx.room.compiler.codegen.impl.XTypeSpecImpl
 
-internal class JavaCodeBlock(
-    internal val actual: JCodeBlock
-) : JavaLang(), XCodeBlock {
+internal class JavaCodeBlock(internal val actual: JCodeBlock) : XSpec(), XCodeBlock {
 
-    override fun toString() = actual.toString()
-
-    internal class Builder : JavaLang(), XCodeBlock.Builder {
-        internal val actual = JCodeBlock.builder()
+    internal class Builder(internal val actual: JCodeBlockBuilder) :
+        XSpec.Builder(), XCodeBlock.Builder {
 
         override fun add(code: XCodeBlock) = apply {
-            require(code is JavaCodeBlock)
-            actual.add(code.actual)
+            require(code is XCodeBlockImpl)
+            actual.add(code.java.actual)
         }
 
         override fun add(format: String, vararg args: Any?) = apply {
-            val processedFormat = processFormatString(format)
-            val processedArgs = processArgs(args)
-            actual.add(processedFormat, *processedArgs)
+            actual.add(formatString(format), *formatArgs(args))
         }
 
         override fun addStatement(format: String, vararg args: Any?) = apply {
-            val processedFormat = processFormatString(format)
-            val processedArgs = processArgs(args)
-            actual.addStatement(processedFormat, *processedArgs)
+            actual.addStatement(formatString(format), *formatArgs(args))
         }
 
         override fun addLocalVariable(
@@ -60,50 +59,33 @@ internal class JavaCodeBlock(
         ) = apply {
             val finalKeyword = if (isMutable) "" else "final "
             if (assignExpr != null) {
-                require(assignExpr is JavaCodeBlock)
-                actual.addStatement(
-                    "$finalKeyword\$T \$L = \$L",
-                    typeName.java,
-                    name,
-                    assignExpr.actual
-                )
+                addStatement("$finalKeyword%T %L = %L", typeName, name, assignExpr)
             } else {
-                actual.addStatement("$finalKeyword\$T \$L", typeName.java, name)
+                addStatement("$finalKeyword%T %L", typeName, name)
             }
         }
 
         override fun beginControlFlow(controlFlow: String, vararg args: Any?) = apply {
-            val processedControlFlow = processFormatString(controlFlow)
-            val processedArgs = processArgs(args)
-            actual.beginControlFlow(processedControlFlow, *processedArgs)
+            actual.beginControlFlow(formatString(controlFlow), *formatArgs(args))
         }
 
         override fun nextControlFlow(controlFlow: String, vararg args: Any?) = apply {
-            val processedControlFlow = processFormatString(controlFlow)
-            val processedArgs = processArgs(args)
-            actual.nextControlFlow(processedControlFlow, *processedArgs)
+            actual.nextControlFlow(formatString(controlFlow), *formatArgs(args))
         }
 
-        override fun endControlFlow() = apply {
-            actual.endControlFlow()
-        }
+        override fun endControlFlow() = apply { actual.endControlFlow() }
 
-        override fun indent() = apply {
-            actual.indent()
-        }
+        override fun indent() = apply { actual.indent() }
 
-        override fun unindent() = apply {
-            actual.unindent()
-        }
+        override fun unindent() = apply { actual.unindent() }
 
-        override fun build(): XCodeBlock {
-            return JavaCodeBlock(actual.build())
-        }
+        override fun build() = JavaCodeBlock(actual.build())
 
         // Converts '%' place holders to '$' for JavaPoet
-        private fun processFormatString(format: String): String {
+        private fun formatString(format: String): String {
             // Replace KPoet's member name placeholder for a JPoet literal for a XMemberName arg.
-            return format.replace("%M", "\$L")
+            return format
+                .replace("%M", "\$L")
                 // TODO(b/247241415): Very simple replace for now, but this will not work when
                 //  emitting modulo expressions!
                 .replace('%', '$')
@@ -111,19 +93,23 @@ internal class JavaCodeBlock(
 
         // Unwraps room.compiler.codegen types to their JavaPoet actual
         // TODO(b/247242375): Consider improving by wrapping args.
-        private fun processArgs(args: Array<out Any?>): Array<Any?> {
+        private fun formatArgs(args: Array<out Any?>): Array<Any?> {
             return Array(args.size) { index ->
-                val arg = args[index]
-                if (arg is TargetLanguage) {
-                    check(arg.language == CodeLanguage.JAVA) { "$arg is not JavaCode" }
-                }
-                when (arg) {
+                when (val arg = args[index]) {
                     is XTypeName -> arg.java
                     is XMemberName -> arg.java
-                    is XTypeSpec -> (arg as JavaTypeSpec).actual
-                    is XPropertySpec -> (arg as JavaPropertySpec).actual
-                    is XFunSpec -> (arg as JavaFunSpec).actual
-                    is XCodeBlock -> (arg as JavaCodeBlock).actual
+                    is XName -> arg.java
+                    is XTypeSpec -> (arg as XTypeSpecImpl).java.actual
+                    is XPropertySpec -> (arg as XPropertySpecImpl).java.actual
+                    is XFunSpec -> (arg as XFunSpecImpl).java.actual
+                    is XCodeBlock -> (arg as XCodeBlockImpl).java.actual
+                    is XAnnotationSpec -> (arg as XAnnotationSpecImpl).java.actual
+                    is XTypeSpec.Builder,
+                    is XPropertySpec.Builder,
+                    is XFunSpec.Builder,
+                    is XCodeBlock.Builder,
+                    is XAnnotationSpec.Builder ->
+                        error("Found builder, ${arg.javaClass}. Did you forget to call .build()?")
                     else -> arg
                 }
             }

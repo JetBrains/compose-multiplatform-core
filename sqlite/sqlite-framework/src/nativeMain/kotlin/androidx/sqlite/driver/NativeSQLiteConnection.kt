@@ -22,6 +22,7 @@ import androidx.sqlite.SQLiteStatement
 import androidx.sqlite.throwSQLiteException
 import cnames.structs.sqlite3
 import cnames.structs.sqlite3_stmt
+import kotlin.concurrent.Volatile
 import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.allocPointerTo
 import kotlinx.cinterop.memScoped
@@ -34,12 +35,9 @@ import sqlite3.sqlite3_close_v2
 import sqlite3.sqlite3_prepare16_v2
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // For actual typealias in unbundled
-@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
-class NativeSQLiteConnection(
-    private val dbPointer: CPointer<sqlite3>
-) : SQLiteConnection {
+public class NativeSQLiteConnection(private val dbPointer: CPointer<sqlite3>) : SQLiteConnection {
 
-    private var isClosed = false
+    @OptIn(ExperimentalStdlibApi::class) @Volatile private var isClosed = false
 
     override fun prepare(sql: String): SQLiteStatement = memScoped {
         if (isClosed) {
@@ -48,13 +46,14 @@ class NativeSQLiteConnection(
         val stmtPointer = allocPointerTo<sqlite3_stmt>()
         // Kotlin/Native uses UTF-16 character encoding by default.
         val sqlUtf16 = sql.utf16
-        val resultCode = sqlite3_prepare16_v2(
-            db = dbPointer,
-            zSql = sqlUtf16,
-            nByte = sqlUtf16.size,
-            ppStmt = stmtPointer.ptr,
-            pzTail = null
-        )
+        val resultCode =
+            sqlite3_prepare16_v2(
+                db = dbPointer,
+                zSql = sqlUtf16,
+                nByte = sqlUtf16.size,
+                ppStmt = stmtPointer.ptr,
+                pzTail = null
+            )
         if (resultCode != SQLITE_OK) {
             throwSQLiteException(resultCode, dbPointer.getErrorMsg())
         }
@@ -62,7 +61,9 @@ class NativeSQLiteConnection(
     }
 
     override fun close() {
-        sqlite3_close_v2(dbPointer)
+        if (!isClosed) {
+            sqlite3_close_v2(dbPointer)
+        }
         isClosed = true
     }
 }

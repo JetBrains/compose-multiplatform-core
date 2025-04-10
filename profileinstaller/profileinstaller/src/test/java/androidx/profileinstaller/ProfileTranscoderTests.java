@@ -22,11 +22,11 @@ import static androidx.profileinstaller.ProfileTranscoder.MAGIC_PROFM;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import androidx.test.filters.SdkSuppress;
 
 import com.google.common.truth.Truth;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -41,7 +41,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.Arrays;
 
-@RequiresApi(api = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 @RunWith(JUnit4.class)
 public class ProfileTranscoderTests {
     private static final String APK_NAME = "base.apk";
@@ -194,6 +194,17 @@ public class ProfileTranscoderTests {
         );
     }
 
+    @Test
+    public void testTranscodeForS_ComposeLife() throws IOException {
+        assertGoldenTranscodeWithMeta(
+                testFile("composelife/baseline.prof"),
+                testFile("composelife/baseline.profm"),
+                testFile("composelife/baseline-s.prof"),
+                ProfileVersion.V015_S,
+                "" /* apkName */
+        );
+    }
+
     private static File testFile(@NonNull String fileName) {
         return new File("src/test/test-data", fileName);
     }
@@ -201,7 +212,7 @@ public class ProfileTranscoderTests {
     private static void assertGoldenTranscode(
             @NonNull File input,
             @NonNull File golden,
-            @NonNull byte[] desiredVersion
+            byte @NonNull [] desiredVersion
     ) throws IOException {
         try (
                 InputStream is = new FileInputStream(input);
@@ -225,7 +236,7 @@ public class ProfileTranscoderTests {
             @NonNull File input,
             @NonNull File inputMeta,
             @NonNull File golden,
-            @NonNull byte[] desiredVersion,
+            byte @NonNull [] desiredVersion,
             @NonNull String apkName
     ) throws IOException {
         byte[] actualBytes = readProfileAndMetadata(input, inputMeta, desiredVersion, apkName);
@@ -236,7 +247,7 @@ public class ProfileTranscoderTests {
     private static byte[] readProfileAndMetadata(
             @NonNull File input,
             @NonNull File inputMeta,
-            @NonNull byte[] desiredVersion,
+            byte @NonNull [] desiredVersion,
             @NonNull String apkName
     ) throws IOException {
         try (
@@ -267,7 +278,7 @@ public class ProfileTranscoderTests {
     private static void updateGoldenTranscode(
             @NonNull File input,
             @NonNull File golden,
-            @NonNull byte[] desiredVersion
+            byte @NonNull [] desiredVersion
     ) throws IOException {
         try (
                 InputStream is = new FileInputStream(input);
@@ -284,7 +295,7 @@ public class ProfileTranscoderTests {
         }
     }
 
-    private static void expectBytes(@NonNull InputStream is, @NonNull byte[] bytes)
+    private static void expectBytes(@NonNull InputStream is, byte @NonNull [] bytes)
             throws IOException {
         byte[] actual = Encoding.read(is, bytes.length);
         Truth.assertThat(actual).isEqualTo(bytes);

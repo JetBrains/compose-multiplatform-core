@@ -21,11 +21,11 @@ import android.os.Looper;
 import android.webkit.TracingController;
 import android.webkit.WebView;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.webkit.TracingConfig;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.OutputStream;
 import java.util.concurrent.Executor;
@@ -43,16 +43,13 @@ public class ApiHelperForP {
     /**
      * @see TracingController#getInstance()
      */
-    @DoNotInline
-    @NonNull
-    public static TracingController getTracingControllerInstance() {
+    public static @NonNull TracingController getTracingControllerInstance() {
         return TracingController.getInstance();
     }
 
     /**
      * @see TracingController#isTracing()
      */
-    @DoNotInline
     public static boolean isTracing(@NonNull TracingController tracingController) {
         return tracingController.isTracing();
     }
@@ -62,7 +59,6 @@ public class ApiHelperForP {
      * isolate new types in this class.
      * @see TracingController#start(android.webkit.TracingConfig)
      */
-    @DoNotInline
     public static void start(@NonNull TracingController tracingController,
             @NonNull TracingConfig tracingConfig) {
         android.webkit.TracingConfig config =
@@ -77,7 +73,6 @@ public class ApiHelperForP {
     /**
      * @see TracingController#stop(OutputStream, Executor)
      */
-    @DoNotInline
     public static boolean stop(@NonNull TracingController tracingController,
             @Nullable OutputStream os, @NonNull Executor ex) {
         return tracingController.stop(os, ex);
@@ -86,18 +81,14 @@ public class ApiHelperForP {
     /**
      * @see WebView#getWebViewClassLoader()
      */
-    @DoNotInline
-    @NonNull
-    public static ClassLoader getWebViewClassLoader() {
+    public static @NonNull ClassLoader getWebViewClassLoader() {
         return WebView.getWebViewClassLoader();
     }
 
     /**
      * @see WebView#getWebViewLooper()
      */
-    @DoNotInline
-    @NonNull
-    public static Looper getWebViewLooper(@NonNull WebView webView) {
+    public static @NonNull Looper getWebViewLooper(@NonNull WebView webView) {
         return webView.getWebViewLooper();
     }
 
@@ -105,7 +96,6 @@ public class ApiHelperForP {
     /**
      * @see WebView#setDataDirectorySuffix(String)
      */
-    @DoNotInline
     public static void setDataDirectorySuffix(@NonNull String suffix) {
         WebView.setDataDirectorySuffix(suffix);
     }

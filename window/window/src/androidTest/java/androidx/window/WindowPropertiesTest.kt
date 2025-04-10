@@ -29,8 +29,7 @@ import org.junit.Test
 
 class WindowPropertiesTest {
 
-    @get:Rule
-    val activityRule = ActivityScenarioRule(TestActivity::class.java)
+    @get:Rule val activityRule = ActivityScenarioRule(TestActivity::class.java)
 
     @Test
     fun test_property_activity_embedding_allow_system_override() {
@@ -60,10 +59,7 @@ class WindowPropertiesTest {
         activityRule.scenario.onActivity { activity ->
             // Should be true as defined in AndroidManifest.xml
             assertTrue(
-                getProperty(
-                    activity,
-                    WindowProperties.PROPERTY_ACTIVITY_EMBEDDING_SPLITS_ENABLED
-                )
+                getProperty(activity, WindowProperties.PROPERTY_ACTIVITY_EMBEDDING_SPLITS_ENABLED)
             )
         }
     }
@@ -117,8 +113,43 @@ class WindowPropertiesTest {
             assertFalse(
                 getProperty(
                     activity,
-                    WindowProperties
-                        .PROPERTY_COMPAT_ALLOW_RESIZEABLE_ACTIVITY_OVERRIDES
+                    WindowProperties.PROPERTY_COMPAT_ALLOW_RESIZEABLE_ACTIVITY_OVERRIDES
+                )
+            )
+        }
+    }
+
+    @Test
+    fun test_property_allow_user_aspect_ratio_override() {
+        assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            // No-op, but to suppress lint
+            return
+        }
+        activityRule.scenario.onActivity { activity ->
+            // Should be false as defined in AndroidManifest.xml
+            assertFalse(
+                getProperty(
+                    activity,
+                    WindowProperties.PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_OVERRIDE
+                )
+            )
+        }
+    }
+
+    @Test
+    fun test_property_allow_user_aspect_ratio_fullscreen_override() {
+        assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            // No-op, but to suppress lint
+            return
+        }
+        activityRule.scenario.onActivity { activity ->
+            // Should be false as defined in AndroidManifest.xml
+            assertFalse(
+                getProperty(
+                    activity,
+                    WindowProperties.PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_FULLSCREEN_OVERRIDE
                 )
             )
         }
@@ -128,8 +159,8 @@ class WindowPropertiesTest {
     @Throws(PackageManager.NameNotFoundException::class)
     private fun getProperty(context: Context, propertyName: String): Boolean {
         val packageManager = context.packageManager
-        val property = packageManager.getProperty(
-            propertyName, context.applicationContext.packageName)
+        val property =
+            packageManager.getProperty(propertyName, context.applicationContext.packageName)
         if (!property.isBoolean) {
             throw IllegalStateException("Property=$propertyName must have a boolean value")
         }

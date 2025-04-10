@@ -1,0 +1,5 @@
+// Baseline format: 1.0
+AddedAbstractMethod: androidx.compose.material3.adaptive.layout.PaneScaffoldScope#getSaveableStateHolder():
+    Added method androidx.compose.material3.adaptive.layout.PaneScaffoldScope.getSaveableStateHolder()
+AddedAbstractMethod: androidx.compose.material3.adaptive.layout.PaneScaffoldScope#preferredHeight(androidx.compose.ui.Modifier, float):
+    Added method androidx.compose.material3.adaptive.layout.PaneScaffoldScope.preferredHeight(androidx.compose.ui.Modifier,float)

@@ -21,8 +21,6 @@ import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
@@ -30,6 +28,9 @@ import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
 import androidx.wear.watchface.data.IdAndComplicationDataWireFormat;
 import androidx.wear.watchface.style.data.UserStyleWireFormat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -42,23 +43,19 @@ import java.util.List;
 @SuppressLint("BanParcelableUsage") // TODO(b/169214666): Remove Parcelable
 public final class EditorStateWireFormat implements VersionedParcelable, Parcelable {
     @ParcelField(1)
-    @Nullable
-    String mWatchFaceInstanceId;
+    @Nullable String mWatchFaceInstanceId;
 
     @ParcelField(2)
-    @NonNull
-    UserStyleWireFormat mUserStyle;
+    @NonNull UserStyleWireFormat mUserStyle;
 
     @ParcelField(3)
-    @NonNull
-    List<IdAndComplicationDataWireFormat> mPreviewComplicationData;
+    @NonNull List<IdAndComplicationDataWireFormat> mPreviewComplicationData;
 
     @ParcelField(4)
     boolean mCommitChanges;
 
     @ParcelField(5)
-    @Nullable
-    Bundle mPreviewImageBundle;
+    @Nullable Bundle mPreviewImageBundle;
 
     /** Used by VersionedParcelable. */
     EditorStateWireFormat() {}
@@ -76,18 +73,15 @@ public final class EditorStateWireFormat implements VersionedParcelable, Parcela
         mPreviewImageBundle = previewImageBundle;
     }
 
-    @Nullable
-    public String getWatchFaceInstanceId() {
+    public @Nullable String getWatchFaceInstanceId() {
         return mWatchFaceInstanceId;
     }
 
-    @NonNull
-    public UserStyleWireFormat getUserStyle() {
+    public @NonNull UserStyleWireFormat getUserStyle() {
         return mUserStyle;
     }
 
-    @NonNull
-    public List<IdAndComplicationDataWireFormat> getPreviewComplicationData() {
+    public @NonNull List<IdAndComplicationDataWireFormat> getPreviewComplicationData() {
         return mPreviewComplicationData;
     }
 
@@ -95,8 +89,7 @@ public final class EditorStateWireFormat implements VersionedParcelable, Parcela
         return mCommitChanges;
     }
 
-    @Nullable
-    public Bundle getPreviewImageBundle() {
+    public @Nullable Bundle getPreviewImageBundle() {
         return mPreviewImageBundle;
     }
 

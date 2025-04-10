@@ -29,11 +29,11 @@ import android.os.Parcelable;
 import android.os.strictmode.UnsafeIntentLaunchViolation;
 import android.provider.MediaStore;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Consumer;
 import androidx.core.util.Predicate;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -88,8 +88,7 @@ public class IntentSanitizer {
      * @param in input intent
      * @return a copy of the input intent after filtering out unwanted members.
      */
-    @NonNull
-    public Intent sanitizeByFiltering(@NonNull Intent in) {
+    public @NonNull Intent sanitizeByFiltering(@NonNull Intent in) {
         return sanitize(in, msg -> {});
     }
 
@@ -101,8 +100,7 @@ public class IntentSanitizer {
      * @return a copy of the input intent if the input intent does not contain any unwanted members.
      * @throws SecurityException if the input intent contains any unwanted members.
      */
-    @NonNull
-    public Intent sanitizeByThrowing(@NonNull Intent in) {
+    public @NonNull Intent sanitizeByThrowing(@NonNull Intent in) {
         return sanitize(in, msg -> {
             throw new SecurityException(msg);
         });
@@ -117,8 +115,7 @@ public class IntentSanitizer {
      * @param penalty consumer of the error message if dirty members are found.
      * @return a sanitized copy of the given intent.
      */
-    @NonNull
-    public Intent sanitize(@NonNull Intent in,
+    public @NonNull Intent sanitize(@NonNull Intent in,
             @NonNull Consumer<String> penalty) {
         Intent intent = new Intent();
 
@@ -323,8 +320,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowFlags(int flags) {
+        public @NonNull Builder allowFlags(int flags) {
             mAllowedFlags |= flags;
             return this;
         }
@@ -354,8 +350,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowHistoryStackFlags() {
+        public @NonNull Builder allowHistoryStackFlags() {
             mAllowedFlags |= HISTORY_STACK_FLAGS;
             return this;
         }
@@ -373,8 +368,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowReceiverFlags() {
+        public @NonNull Builder allowReceiverFlags() {
             mAllowedFlags |= RECEIVER_FLAGS;
             return this;
         }
@@ -388,8 +382,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowAction(@NonNull String action) {
+        public @NonNull Builder allowAction(@NonNull String action) {
             checkNotNull(action);
             allowAction(action::equals);
             return this;
@@ -404,8 +397,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowAction(@NonNull Predicate<String> filter) {
+        public @NonNull Builder allowAction(@NonNull Predicate<String> filter) {
             checkNotNull(filter);
             mAllowedActions = mAllowedActions.or(filter);
             return this;
@@ -420,8 +412,7 @@ public class IntentSanitizer {
          * @return this builder
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowDataWithAuthority(@NonNull String authority) {
+        public @NonNull Builder allowDataWithAuthority(@NonNull String authority) {
             checkNotNull(authority);
             allowData(v -> authority.equals(v.getAuthority()));
             return this;
@@ -435,8 +426,7 @@ public class IntentSanitizer {
          * @param filter data filter.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowData(@NonNull Predicate<Uri> filter) {
+        public @NonNull Builder allowData(@NonNull Predicate<Uri> filter) {
             checkNotNull(filter);
             mAllowedData = mAllowedData.or(filter);
             return this;
@@ -453,8 +443,7 @@ public class IntentSanitizer {
          * @return this builder
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowType(@NonNull String type) {
+        public @NonNull Builder allowType(@NonNull String type) {
             checkNotNull(type);
             return allowType(type::equals);
         }
@@ -467,8 +456,7 @@ public class IntentSanitizer {
          * @param filter the data type filter.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowType(@NonNull Predicate<String> filter) {
+        public @NonNull Builder allowType(@NonNull Predicate<String> filter) {
             checkNotNull(filter);
             mAllowedTypes = mAllowedTypes.or(filter);
             return this;
@@ -483,8 +471,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowCategory(@NonNull String category) {
+        public @NonNull Builder allowCategory(@NonNull String category) {
             checkNotNull(category);
             return allowCategory(category::equals);
         }
@@ -498,8 +485,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowCategory(@NonNull Predicate<String> filter) {
+        public @NonNull Builder allowCategory(@NonNull Predicate<String> filter) {
             checkNotNull(filter);
             mAllowedCategories = mAllowedCategories.or(filter);
             return this;
@@ -515,8 +501,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowPackage(@NonNull String packageName) {
+        public @NonNull Builder allowPackage(@NonNull String packageName) {
             checkNotNull(packageName);
             return allowPackage(packageName::equals);
         }
@@ -532,8 +517,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowPackage(@NonNull Predicate<String> filter) {
+        public @NonNull Builder allowPackage(@NonNull Predicate<String> filter) {
             checkNotNull(filter);
             mAllowedPackages = mAllowedPackages.or(filter);
             return this;
@@ -548,8 +532,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowComponent(@NonNull ComponentName component) {
+        public @NonNull Builder allowComponent(@NonNull ComponentName component) {
             checkNotNull(component);
             return allowComponent(component::equals);
         }
@@ -563,8 +546,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowComponent(@NonNull Predicate<ComponentName> filter) {
+        public @NonNull Builder allowComponent(@NonNull Predicate<ComponentName> filter) {
             checkNotNull(filter);
             mAllowSomeComponents = true;
             mAllowedComponents = mAllowedComponents.or(filter);
@@ -580,8 +562,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowComponentWithPackage(@NonNull String packageName) {
+        public @NonNull Builder allowComponentWithPackage(@NonNull String packageName) {
             checkNotNull(packageName);
             return allowComponent(v -> packageName.equals(v.getPackageName()));
         }
@@ -596,8 +577,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowAnyComponent() {
+        public @NonNull Builder allowAnyComponent() {
             mAllowAnyComponent = true;
             mAllowedComponents = v -> true;
             return this;
@@ -610,8 +590,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowClipDataText() {
+        public @NonNull Builder allowClipDataText() {
             mAllowClipDataText = true;
             return this;
         }
@@ -625,8 +604,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowClipDataUriWithAuthority(@NonNull String authority) {
+        public @NonNull Builder allowClipDataUriWithAuthority(@NonNull String authority) {
             checkNotNull(authority);
             return allowClipDataUri(v -> authority.equals(v.getAuthority()));
         }
@@ -641,8 +619,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowClipDataUri(@NonNull Predicate<Uri> filter) {
+        public @NonNull Builder allowClipDataUri(@NonNull Predicate<Uri> filter) {
             checkNotNull(filter);
             mAllowedClipDataUri = mAllowedClipDataUri.or(filter);
             return this;
@@ -658,8 +635,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowClipData(@NonNull Predicate<ClipData> filter) {
+        public @NonNull Builder allowClipData(@NonNull Predicate<ClipData> filter) {
             checkNotNull(filter);
             mAllowedClipData = mAllowedClipData.or(filter);
             return this;
@@ -675,8 +651,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowExtra(@NonNull String key, @NonNull Class<?> clazz) {
+        public @NonNull Builder allowExtra(@NonNull String key, @NonNull Class<?> clazz) {
             return allowExtra(key, clazz, (v) -> true);
         }
 
@@ -693,8 +668,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public <T> Builder allowExtra(@NonNull String key, @NonNull Class<T> clazz,
+        public <T> @NonNull Builder allowExtra(@NonNull String key, @NonNull Class<T> clazz,
                 @NonNull Predicate<T> valueFilter) {
             checkNotNull(key);
             checkNotNull(clazz);
@@ -713,8 +687,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowExtra(@NonNull String key, @NonNull Predicate<Object> filter) {
+        public @NonNull Builder allowExtra(@NonNull String key, @NonNull Predicate<Object> filter) {
             checkNotNull(key);
             checkNotNull(filter);
             Predicate<Object> allowedExtra = mAllowedExtras.get(key);
@@ -737,8 +710,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowExtraStreamUriWithAuthority(@NonNull String uriAuthority) {
+        public @NonNull Builder allowExtraStreamUriWithAuthority(@NonNull String uriAuthority) {
             checkNotNull(uriAuthority);
             allowExtra(Intent.EXTRA_STREAM, Uri.class,
                     (v) -> uriAuthority.equals(v.getAuthority()));
@@ -758,8 +730,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowExtraStream(@NonNull Predicate<Uri> filter) {
+        public @NonNull Builder allowExtraStream(@NonNull Predicate<Uri> filter) {
             allowExtra(Intent.EXTRA_STREAM, Uri.class, filter);
             return this;
         }
@@ -778,8 +749,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowExtraOutput(@NonNull String uriAuthority) {
+        public @NonNull Builder allowExtraOutput(@NonNull String uriAuthority) {
             allowExtra(MediaStore.EXTRA_OUTPUT, Uri.class,
                     (v) -> uriAuthority.equals(v.getAuthority()));
             return this;
@@ -799,8 +769,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowExtraOutput(@NonNull Predicate<Uri> filter) {
+        public @NonNull Builder allowExtraOutput(@NonNull Predicate<Uri> filter) {
             allowExtra(MediaStore.EXTRA_OUTPUT, Uri.class, filter);
             return this;
         }
@@ -811,8 +780,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowIdentifier() {
+        public @NonNull Builder allowIdentifier() {
             mAllowIdentifier = true;
             return this;
         }
@@ -823,8 +791,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowSelector() {
+        public @NonNull Builder allowSelector() {
             mAllowSelector = true;
             return this;
         }
@@ -835,8 +802,7 @@ public class IntentSanitizer {
          * @return this builder.
          */
         @SuppressLint("BuilderSetStyle")
-        @NonNull
-        public Builder allowSourceBounds() {
+        public @NonNull Builder allowSourceBounds() {
             mAllowSourceBounds = true;
             return this;
         }
@@ -846,8 +812,7 @@ public class IntentSanitizer {
          *
          * @return the IntentSanitizer
          */
-        @NonNull
-        public IntentSanitizer build() {
+        public @NonNull IntentSanitizer build() {
             if ((mAllowAnyComponent && mAllowSomeComponents)
                     || (!mAllowAnyComponent && !mAllowSomeComponents)) {
                 throw new SecurityException(
@@ -950,7 +915,6 @@ public class IntentSanitizer {
         private Api31Impl() {
         }
 
-        @DoNotInline
         static void checkOtherMembers(int i, ClipData.Item item, Consumer<String> penalty) {
             if (item.getHtmlText() != null || item.getIntent() != null
                     || item.getTextLinks() != null) {
@@ -966,12 +930,10 @@ public class IntentSanitizer {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static Intent setIdentifier(Intent intent, String identifier) {
             return intent.setIdentifier(identifier);
         }
 
-        @DoNotInline
         static String getIdentifier(Intent intent) {
             return intent.getIdentifier();
         }

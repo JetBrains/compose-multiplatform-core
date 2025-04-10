@@ -19,9 +19,10 @@ package androidx.sqlite.inspection;
 import android.annotation.SuppressLint;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.inspection.InspectorEnvironment;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
@@ -36,7 +37,7 @@ import java.util.List;
  * The list of instances of InvalidationTrackers are cached to avoid re-finding them after each
  * query. Make sure to call {@link #invalidateCache()} after a new database connection is detected.
  */
-class RoomInvalidationRegistry {
+class RoomInvalidationRegistry implements Invalidation {
     private static final String TAG = "RoomInvalidationRegistry";
     private static final String INVALIDATION_TRACKER_QNAME = "androidx.room.InvalidationTracker";
 
@@ -45,14 +46,12 @@ class RoomInvalidationRegistry {
     /**
      * Might be null if application does not ship with Room.
      */
-    @Nullable
-    private final InvalidationTrackerInvoker mInvoker;
+    private final @Nullable InvalidationTrackerInvoker mInvoker;
 
     /**
      * The list of InvalidationTracker instances.
      */
-    @Nullable
-    private List<WeakReference<?>> mInvalidationInstances = null;
+    private @Nullable List<WeakReference<?>> mInvalidationInstances = null;
 
     RoomInvalidationRegistry(InspectorEnvironment environment) {
         mEnvironment = environment;
@@ -64,7 +63,8 @@ class RoomInvalidationRegistry {
      * <p>
      * If the list of InvalidationTracker instances are not cached, this will do a lookup.
      */
-    void triggerInvalidations() {
+    @Override
+    public void triggerInvalidations() {
         if (mInvoker == null) {
             return;
         }
@@ -84,8 +84,7 @@ class RoomInvalidationRegistry {
         mInvalidationInstances = null;
     }
 
-    @NonNull
-    private List<WeakReference<?>> getInvalidationTrackerInstances() {
+    private @NonNull List<WeakReference<?>> getInvalidationTrackerInstances() {
         List<WeakReference<?>> cached = mInvalidationInstances;
         if (cached != null) {
             return cached;
@@ -104,8 +103,7 @@ class RoomInvalidationRegistry {
         return cached;
     }
 
-    @Nullable
-    private InvalidationTrackerInvoker findInvalidationTrackerClass() {
+    private @Nullable InvalidationTrackerInvoker findInvalidationTrackerClass() {
         try {
             ClassLoader classLoader = RoomInvalidationRegistry.class.getClassLoader();
             if (classLoader != null) {
@@ -123,8 +121,7 @@ class RoomInvalidationRegistry {
      */
     static class InvalidationTrackerInvoker {
         public final Class<?> invalidationTrackerClass;
-        @Nullable
-        private final Method mRefreshMethod;
+        private final @Nullable Method mRefreshMethod;
 
         InvalidationTrackerInvoker(Class<?> invalidationTrackerClass) {
             this.invalidationTrackerClass = invalidationTrackerClass;

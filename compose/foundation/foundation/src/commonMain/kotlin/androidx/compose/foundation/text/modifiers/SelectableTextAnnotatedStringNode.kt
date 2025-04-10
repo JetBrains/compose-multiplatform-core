@@ -16,7 +16,9 @@
 
 package androidx.compose.foundation.text.modifiers
 
+import androidx.compose.foundation.internal.requirePreconditionNotNull
 import androidx.compose.foundation.text.DefaultMinLines
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
@@ -56,28 +58,35 @@ internal class SelectableTextAnnotatedStringNode(
     placeholders: List<AnnotatedString.Range<Placeholder>>? = null,
     onPlaceholderLayout: ((List<Rect?>) -> Unit)? = null,
     private var selectionController: SelectionController? = null,
-    overrideColor: ColorProducer? = null
+    overrideColor: ColorProducer? = null,
+    autoSize: TextAutoSize? = null,
+    private var onShowTranslation: ((TextAnnotatedStringNode.TextSubstitutionValue) -> Unit)? = null
 ) : DelegatingNode(), LayoutModifierNode, DrawModifierNode, GlobalPositionAwareModifierNode {
+    override val shouldAutoInvalidate: Boolean
+        get() = false
 
-    private val delegate = delegate(
-        TextAnnotatedStringNode(
-            text = text,
-            style = style,
-            fontFamilyResolver = fontFamilyResolver,
-            onTextLayout = onTextLayout,
-            overflow = overflow,
-            softWrap = softWrap,
-            maxLines = maxLines,
-            minLines = minLines,
-            placeholders = placeholders,
-            onPlaceholderLayout = onPlaceholderLayout,
-            selectionController = selectionController,
-            overrideColor = overrideColor
+    private val textAnnotatedStringNode =
+        delegate(
+            TextAnnotatedStringNode(
+                text = text,
+                style = style,
+                fontFamilyResolver = fontFamilyResolver,
+                onTextLayout = onTextLayout,
+                overflow = overflow,
+                softWrap = softWrap,
+                maxLines = maxLines,
+                minLines = minLines,
+                placeholders = placeholders,
+                onPlaceholderLayout = onPlaceholderLayout,
+                selectionController = selectionController,
+                overrideColor = overrideColor,
+                autoSize = autoSize,
+                onShowTranslation = onShowTranslation
+            )
         )
-    )
 
     init {
-        requireNotNull(selectionController) {
+        requirePreconditionNotNull(selectionController) {
             "Do not use SelectionCapableStaticTextModifier unless selectionController != null"
         }
     }
@@ -86,32 +95,32 @@ internal class SelectableTextAnnotatedStringNode(
         selectionController?.updateGlobalPosition(coordinates)
     }
 
-    override fun ContentDrawScope.draw() = delegate.drawNonExtension(this)
+    override fun ContentDrawScope.draw() = textAnnotatedStringNode.drawNonExtension(this)
 
     override fun MeasureScope.measure(
         measurable: Measurable,
         constraints: Constraints
-    ): MeasureResult = delegate.measureNonExtension(this, measurable, constraints)
+    ): MeasureResult = textAnnotatedStringNode.measureNonExtension(this, measurable, constraints)
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurable: IntrinsicMeasurable,
         height: Int
-    ): Int = delegate.minIntrinsicWidthNonExtension(this, measurable, height)
+    ): Int = textAnnotatedStringNode.minIntrinsicWidthNonExtension(this, measurable, height)
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurable: IntrinsicMeasurable,
         width: Int
-    ): Int = delegate.minIntrinsicHeightNonExtension(this, measurable, width)
+    ): Int = textAnnotatedStringNode.minIntrinsicHeightNonExtension(this, measurable, width)
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurable: IntrinsicMeasurable,
         height: Int
-    ): Int = delegate.maxIntrinsicWidthNonExtension(this, measurable, height)
+    ): Int = textAnnotatedStringNode.maxIntrinsicWidthNonExtension(this, measurable, height)
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurable: IntrinsicMeasurable,
         width: Int
-    ): Int = delegate.maxIntrinsicHeightNonExtension(this, measurable, width)
+    ): Int = textAnnotatedStringNode.maxIntrinsicHeightNonExtension(this, measurable, width)
 
     fun update(
         text: AnnotatedString,
@@ -125,27 +134,30 @@ internal class SelectableTextAnnotatedStringNode(
         onTextLayout: ((TextLayoutResult) -> Unit)?,
         onPlaceholderLayout: ((List<Rect?>) -> Unit)?,
         selectionController: SelectionController?,
-        color: ColorProducer?
+        color: ColorProducer?,
+        autoSize: TextAutoSize?
     ) {
-        delegate.doInvalidations(
-            drawChanged = delegate.updateDraw(color, style),
-            textChanged = delegate.updateText(
-                text = text
-            ),
-            layoutChanged = delegate.updateLayoutRelatedArgs(
-                style = style,
-                placeholders = placeholders,
-                minLines = minLines,
-                maxLines = maxLines,
-                softWrap = softWrap,
-                fontFamilyResolver = fontFamilyResolver,
-                overflow = overflow
-            ),
-            callbacksChanged = delegate.updateCallbacks(
-                onTextLayout = onTextLayout,
-                onPlaceholderLayout = onPlaceholderLayout,
-                selectionController = selectionController
-            ),
+        textAnnotatedStringNode.doInvalidations(
+            drawChanged = textAnnotatedStringNode.updateDraw(color, style),
+            textChanged = textAnnotatedStringNode.updateText(text = text),
+            layoutChanged =
+                textAnnotatedStringNode.updateLayoutRelatedArgs(
+                    style = style,
+                    placeholders = placeholders,
+                    minLines = minLines,
+                    maxLines = maxLines,
+                    softWrap = softWrap,
+                    fontFamilyResolver = fontFamilyResolver,
+                    overflow = overflow,
+                    autoSize = autoSize
+                ),
+            callbacksChanged =
+                textAnnotatedStringNode.updateCallbacks(
+                    onTextLayout = onTextLayout,
+                    onPlaceholderLayout = onPlaceholderLayout,
+                    selectionController = selectionController,
+                    onShowTranslation = onShowTranslation
+                ),
         )
         this.selectionController = selectionController
         // we always relayout when we're selectable

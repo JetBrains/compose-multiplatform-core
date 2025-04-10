@@ -16,18 +16,16 @@
 
 package androidx.camera.extensions.internal.sessionprocessor;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
 /**
  * Surface will be created by constructing a MultiResolutionImageReader.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @AutoValue
 public abstract class MultiResolutionImageReaderOutputConfig implements Camera2OutputConfig {
     /**

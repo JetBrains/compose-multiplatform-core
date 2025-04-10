@@ -42,7 +42,6 @@ import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.widget.SpinnerAdapter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.R;
 import androidx.appcompat.content.res.AppCompatResources;
@@ -66,6 +65,8 @@ import androidx.core.view.ViewPropertyAnimatorListenerAdapter;
 import androidx.core.view.ViewPropertyAnimatorUpdateListener;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentTransaction;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -907,7 +908,7 @@ public class WindowDecorActionBar extends ActionBar implements
     private boolean shouldAnimateContextView() {
         // We only to animate the action mode in if the container view has already been laid out.
         // If it hasn't been laid out, it hasn't been drawn to screen yet.
-        return ViewCompat.isLaidOut(mContainerView);
+        return mContainerView.isLaidOut();
     }
 
     @Override

@@ -17,7 +17,6 @@
 package androidx.compose.foundation.text
 
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.style.TextOverflow
@@ -32,28 +31,22 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(InternalFoundationTextApi::class)
 @RunWith(AndroidJUnit4::class)
 @SmallTest
 class TextDelegateWidthWithLetterSpacingTest {
     private val fontFamily = TEST_FONT_FAMILY
 
-    /**
-     * values are exact values for the repro case (on Pixel4, Android 11)
-     */
+    /** values are exact values for the repro case (on Pixel4, Android 11) */
     private val density = Density(3.051f, 1.15f)
     private val letterSpacing = 0.4.sp
     private val lineHeight = 16.sp
     private val fontSize = 12.sp
     private val context = InstrumentationRegistry.getInstrumentation().context
-    @OptIn(ExperimentalTextApi::class)
     private val fontFamilyResolver = createFontFamilyResolver(context)
 
     @Test
     fun letterSpacing_and_lineHeight() {
-        assertLineCount(
-            TextStyle(letterSpacing = letterSpacing, lineHeight = lineHeight)
-        )
+        assertLineCount(TextStyle(letterSpacing = letterSpacing, lineHeight = lineHeight))
     }
 
     @Test
@@ -72,17 +65,15 @@ class TextDelegateWidthWithLetterSpacingTest {
     }
 
     private fun assertLineCount(style: TextStyle) {
-        val textDelegate = TextDelegate(
-            text = AnnotatedString(text = "This is a callout message"),
-            style = style.copy(
-                fontFamily = fontFamily,
-                fontSize = fontSize
-            ),
-            softWrap = true,
-            overflow = TextOverflow.Clip,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver
-        )
+        val textDelegate =
+            TextDelegate(
+                text = AnnotatedString(text = "This is a callout message"),
+                style = style.copy(fontFamily = fontFamily, fontSize = fontSize),
+                softWrap = true,
+                overflow = TextOverflow.Clip,
+                density = density,
+                fontFamilyResolver = fontFamilyResolver
+            )
         val layoutResult = textDelegate.layout(Constraints(), LayoutDirection.Ltr)
         assertThat(layoutResult.lineCount).isEqualTo(1)
     }

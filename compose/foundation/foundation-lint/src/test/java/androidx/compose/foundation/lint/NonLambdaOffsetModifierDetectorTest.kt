@@ -23,7 +23,6 @@ import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestFile
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -35,11 +34,13 @@ class NonLambdaOffsetModifierDetectorTest : LintDetectorTest() {
         "Warning: ${NonLambdaOffsetModifierDetector.ReportMainMessage} " +
             "[${NonLambdaOffsetModifierDetector.IssueId}]"
 
-    private val OffsetStub: TestFile = bytecodeStub(
-        filename = "Offset.kt",
-        filepath = "androidx/compose/foundation/layout",
-        checksum = 0xd449361a,
-        source = """
+    private val OffsetStub: TestFile =
+        bytecodeStub(
+            filename = "Offset.kt",
+            filepath = "androidx/compose/foundation/layout",
+            checksum = 0xdde1b690,
+            source =
+                """
         package androidx.compose.foundation.layout
 
         import androidx.compose.ui.Modifier
@@ -54,50 +55,55 @@ class NonLambdaOffsetModifierDetectorTest : LintDetectorTest() {
         fun Modifier.absoluteOffset(offset: Density.() -> IntOffset): Modifier = this.then(Modifier)
 
         """,
-        """
+            """
                 META-INF/main.kotlin_module:
-                H4sIAAAAAAAAAGNgYGBmYGBgBGJ2KM3ApcellJiXUpSfmVKhl5yfW5BfnKqX
-                ll+al5JYkpmfp5eTWJlfWiLE4Z+WVpxa4l3CpcAlgaG+NFOvNC+zRIjFpcC7
-                RIlBiwEAXUlt+WoAAAA=
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijg0uNSSsxLKcrPTKnQS87PLcgvTtVL
+                yy/NS0ksyczP08tJrMwvLRHi8E9LK04t8S7hUuCSwFBfmqlXmpdZIsTiUgBU
+                wcfFUpJaXCLEFgIkvUuUGLQYAPzR4e16AAAA
                 """,
-        """
+            """
                 androidx/compose/foundation/layout/OffsetKt.class:
-                H4sIAAAAAAAAALVW3U8jVRT/3en3tOyW8rXAwtZtdaGwTAcXVimiyIdWWkC7
-                ITFEk2k7LQPtTNOZIfBi9skX/wDjqy++GhPjuiaG+Ogftdlzpx+UD9sVtMnc
-                e+6555z7O79z53T+fvXyTwBP8DnDjKIX64ZWPJEKRrVmmKpUMmy9qFiaoUsV
-                5dSwLWmnVDJVa8vygTGED5VjhXb0srSTP1QLpHUxeA3HhuFkKnMloq1JWaOo
-                lTS1nrp219Y1S1qvdd+c7h6YIZYx6mXpULXydUXTTUnRdcNyEjGlbcPatisV
-                svIuWweaueKHn2HyyLAqmi4dHlclTbfUuq5UpLRu1cldK5g+iAxDhQO1cNT0
-                31XqSlUlQ4ZHU5nLTKQ6NDkepJya3gshhD4RQdxhYCd+hGk69SPCcL9bPj4M
-                MgTWaEPRKQOG7rzG25apEIYxEsAQ7jG4rQOVfFd6FKUHtSGMYTxIEe8zhOKc
-                vnir3JO9ijLRtaYMdxqR4kW1pNgVivjd/3aB0lcL1vNOjXcJ6EOMXyeNVitE
-                9dQmL/bbeEdEHI9C8MArQsA0gxjX4qV4WbXWa1T8NEOwQWKxFteOiQIlbxoV
-                21J3mqQONrYvq4cvKlqUhTDXOElm+LoXeR0XvmTrhcbLsdmU5N58/HS7A5Yf
-                d6mQSi+dddqlhvRmNlJPrfRC6oeHIdorXYb+lklWtRTqegrphOqxi9oj44OP
-                CnbEBYH0JxqXkiQVietfz55HxbPnonBPaE2dT3tnLBamQUiyBD3zI2FhbCDi
-                jghJtzN6kq6/fvQKfu/YZKeZ3y+EfbTyO1KASxRHeKMwQrcoHPw8Q6SVdycZ
-                D3sXhyH+JvXhjaF5wMaJxX0NvXXSs9OaSgaBhuncEd1s95pRVBnuZjRd3bar
-                ebX+TMlXVA7TKCiVPaWu8XVTOf6FrVtaVU3rx5qpkWr1vNETvsu77Z59wawv
-                ZymFo6xSawYN5LSyrlh2nWQxZ9j1grqp8Y3BxmJdzdvldi4Mo81j9q5AgEzv
-                ohv858UobwNw4RNafUV6foEeJCKBF7g7E+mncTYyQGPiF4yeYeh3TAj4md82
-                fOq4EwMQkSY52nDFJD1wpDDpmCNFSBLwWdPDR/MWPQOu5qJjDAfwFh6SzPF8
-                TyH5zsKE+5sfMOha9LgWvX8g/uWQ59vf6P9mwnOdOpuYmX2BBEfpQoZGN4SR
-                YQfvMCULwhsibCM0x2iea+JPkF2I5BnMEsoA+vCYJA/ZtHTRtm6Ud7TbkRa8
-                QJp0W9KS/wlp8/9MWpDI6SfSgkRIP6UfvAFpHrxL9hxkljITaB5tkbbQlS7+
-                iZJ2oDhO7TvGQy7SftaxfnKFrD7hAlm8bDdG0HcBgXQzBC5sO4ab2CEVy2VX
-                d8V2mxG3nIYkJnLRlrQpzkTl6LnFv/gWJs/56HrtWq/zTwSyS2REOSbPygtL
-                srgQm1+SFxvT03MgTm+5HRp+SjIm8+iyzGcKvyFil+hIEzlPicf39uFK4/00
-                lmhEKo1lfJDGCj7cBzPxEVb3IZqYM/HAhMfExybWTKyb2DARNhE1EXkN1SFU
-                dTgMAAA=
+                H4sIAAAAAAAA/+1WSVMbRxT+erSPhC2EN7GZWAoGYTwS2DhGDrEDKFEswEaE
+                xCFLDdIID0gzqlkoyCFF5ZBrzjkml1xTOZEcUpRzy2/Ib0nl9YwECGRE8DVS
+                9fTr7u9t3+vpnr/++f0PAPfwBcOYrJUNXS3vSCW9VtdNRarotlaWLVXXpKq8
+                q9uWtFSpmIr11AqAMUQ35W2ZVrQNaWl9UynRrIfhku5gxlfrLya/XrzH8Hik
+                cMqyrUoLelmtqIqRzeVGzwYwJAq6sSFtKta6IauaKcmapltOYKa0qFuLdrVK
+                qEjSeqmaSdd/EEGGwS3dqqqatLldk1TNUgxNrkp5zTLIiFoyAxAZrpZeKqWt
+                hpVnsiHXFAIy3B4pnMwve2ymyI1sZEdXI4igS0QYlxj6z8ojgChDaJYWZI0i
+                Zzibl+QhMhtBDD0hdOMKg9d6qZDuTAdSO1AawTVcD5PFGwzXj9P2lT1RPqzc
+                YKe6sB1qOWq7DNda654sKxXZrloMxY71z59muuOW6Gu3bmuqJc3VA3iLdmeJ
+                dodl2CVLN8bVWr1K3I3kRnMRJJAUcQtvR+CDX4SA2wxiUk1WkhuKNVendPIM
+                YZeVcj2pblNy8rqpV21LWTqxua+4sNblIMYZbrZbaaW3vdEmcxHcccPLMPhd
+                chm+7EBm4diOr9hayX1Hcg0p05nXn9/MwaPxtupuYRR666zd7OsR9Gq6XGRn
+                Okfqf8QJngliKohJhqFOqdPR1Eo4Q3dTZ0GxZDrpZAIJtW0PHYmMP0L8AdoQ
+                W1wQaHFH5VKapDKV5e+DvVviwZ4o3BCa3fHWnAp6exPRg71eIc1S1CauR4Xe
+                npg3JqS9ztOX9rz6yS8E/b0jx2HBoBAN0CjoSCEu/bnPDvYI6w2K0TAZFc5l
+                UzifyUg0/OpbISD6gq9+HEwznuMEQ6zJ0XEmb3WuMkPyPIXmp0zDwfyOxXV1
+                relpZbeuEGDgDGd1Wh8+3zEaQIHOX9ft3S2qfqrQ7noo6rZRUuaUdXvjMCBy
+                4tuWq7bCGCsuPHkmHloRnzomxFRxqCnlxLGhzNAR4j9cq6Q5MTRXb6t1lDLh
+                UgUxk8jcydyfzogPExPTmSm3e3AUiJPBm0XDvaQTGW49k+E9mZ+nK9M7q5cV
+                hssFVVMW7dq6YqzI61WF7xW9JFdXZUPl48Zk37KtWWpNyWvbqqnS1JOj25s2
+                ycnVwyu4BdZVtOTS1oJcbxgNFdUNTbZsg+RIXtMUY7Yqm6ZCUNGtYE7luCvt
+                yskQb3hdPRURMnTievlrDz/i/IaAB8s0ek7z/N3vScVC+7ic+hVXD9D9G+IC
+                fuGHA4qOCp1LELFC8pALRy/6HHM96McArXNpkCQBHzc0AtSvUgt7GgP6RUO4
+                SSaY4/t7MsXnxwe83/yAqGfK55nyX/V9t4/huQHfyan5VCK5jxEelQef0NML
+                oSfmxHeNEgLFF0GUohDJRRTDjXhThItQPKMk+RGi/xhJPsI05/oP5+L8bjpN
+                zN0OxIRbiJEuSkz6jYiZeD0xYSKgm6IIU9LdREz4AsRM0te01wlugTIRqI+n
+                Yg+ImLHYO2fSwz8kV5xQHCUEG/Rwkw9p/VMHff8UOV1CY+A+45i+eARdLRGM
+                XywCH144m4yR/276dI3jM0dxEWsE+f8AxedExzLRkyWqHq3Bk8e7eczk8R4e
+                5/EE7+cxi7k1MBPzyK2hy8S0iT4TkyY+MPGhibyJj0z0m3hqYtDEHRN+k2zx
+                ulwiu0vUnjn6z/8FFIb9PeENAAA=
                 """
-    )
+        )
 
     // common_typos_disable
-    private val AnotherOffsetDefinitionStub = kotlinAndBytecodeStub(
-        filename = "InitialTestPackage.kt",
-        filepath = "initial/test/pack",
-        checksum = 0xd4dfae47,
-        source = """
+    private val AnotherOffsetDefinitionStub =
+        kotlinAndBytecodeStub(
+            filename = "InitialTestPackage.kt",
+            filepath = "initial/test/pack",
+            checksum = 0xceabfb36,
+            source =
+                """
             package initial.test.pack
 
             class OffsetClass {
@@ -121,108 +127,115 @@ class NonLambdaOffsetModifierDetectorTest : LintDetectorTest() {
             }
 
         """,
-        """
+            """
                 META-INF/main.kotlin_module:
-                H4sIAAAAAAAAAGNgYGBmYGBgBGJ2KM3AJc0lmJiXX5KRWqRXklpcoleQmJwt
-                xBYCZHqXcGlyCWbmZZZkJuYgSYp4QoRAagKAAonpqd4lSgxaDACYtrgJYAAA
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgkuYSTMzLL8lILdIrSS0u0StITM4W
+                YgsBMr1LuDS5BDPzMksyE3OQJEU8IUIgNQFAgcT0VO8SJQYtBgDlWnMBYAAA
                 AA==
                 """,
-        """
+            """
                 initial/test/pack/AnotherClass.class:
-                H4sIAAAAAAAAAIVU308cVRT+7sz+mB0WmIVCKay0yorL0nYAW62FooBWBgFJ
-                aYgVXy674zIwzKwzd4m+GJ76JzTRFxNjfOKhJgrGJg1t3/ybjPHcnemCC4Fk
-                5txzz5zzne+ce+78/e9fzwHcwjLDoOM5wuGuKexQmDVe3jZnPF9s2sGcy8Mw
-                DcZgbPFdbrrcq5qfb2zZZZGGypCakqHTDImiNbLGoBZH1rJIIq0jAY1BqwV+
-                zQ7EdwzMykJHWwYKsuQvNp2Q4dri+aknGdqqtlhpolACi0Ev+zs137M9MU5Q
-                Zb9GX4aIwcVoQ4t+UDW3bLERcMcLTe7Rdy4cn/RlXyzXXXdSFpDSiWcvQ1aC
-                Fyr217zuCoa14kUpLGuxtVOTF/LKohuXZMZ+apnwV0XgeFWGS8WRE2CRlWq4
-                3GqbrTtuxQ7SGNRxVba99yR68fUZ3NPwJh0Zr9Vsr8Jwo3ga/HS+GJsoDqEg
-                4d9myMtWn+f4jnQsSse58x1L0nE0izzekNoNKn+Th5tzfsVmyB1HWp6wq7LC
-                sWjUaJZMTOgYx7tUkf1Nnbs0TT3FM3r/JUPhvEOnE+cbrk19TTZ6xtB1GoXI
-                LG77wnU8c8kWvMIFJ5uys6vSHWJSpGnCt8n0rSN3RFOp0Gz+crQ3qCt9iq4Y
-                R3s6PYqh6YqWorWNVpXWDu3lY63vaG9CGWOz7V0pQ+lXxtSXP6cUI7GQMdJy
-                N//qsbrQbWikk6OmKZETmRmZM6TrE5rR1p/oY2Ns/tUTlQKzkccTRno76R1S
-                f5BrwmtEpz+hJY2U5DrBqA70WNGcPqQxXaEp5VX75jaNfSI6kE6aY3u5vrNh
-                Bw9lz2Sr/DJ313jgyH1sHHhQ94SzY1verhM6ZJo57jdD+6og5CVei70Lrd4r
-                POA7trCD/4Xpq349KNv3HRlzJY5ZO4VPE6HQr0cW0yV/N6RppNOFJnmfdtP0
-                XaFVLx0iUxr4A+2/0U7BpySlD9CBeZK9kRftOoGGJtFoDmDQG2GZtMqIZOl3
-                tO+fCZONHGKYHJF6HTzUGszODKAfA8HKgHGoDU6ZZ1AeDRzi8tNmUEQ20ySb
-                iclaMZsewMigD1fi3MNxk3L5xPc/QJMMpkoDBxiIIBdIqmASgS5mnP4urZJa
-                /hmuPjrEta63DjAsIw8wYowc4PoBbj5tKSMfMzrBg6TZ7MFw3IMGgz9xq7UN
-                WhzPcBvvxTy+olVesUJp9FckE/ujL6D8iKS6P3oEZUkCXaf3J2lJRGey0Dg+
-                Na39g1ya9scdKzQ7VsAdfEB5PouvMt5vhC425CdYovULst6lk5lch2physI9
-                kpiW4kMLH2FmHSzELObW0RnK5+MQekOmQhghciG6QnSHuN0w3glhhsiT/h8X
-                5RN2iwcAAA==
+                H4sIAAAAAAAA/4VU30/cRhD+1r4fPnOADwIhcCVpudLjSGKgSZsGkhZoU0yA
+                oBChpvRluXMPg7Gv9h5qXyqe8idEal8qVVWfeEilFqpGikjy1r+pqjp7dg56
+                IJDsmdnxzLffzsz673//egHgBh4wDDqeIxzumsIOhVnj5S1z2vPFhh3MujwM
+                02AMxibf4abLvar5YH3TLos0VIbUlEy9y5AoWiOrDGpxZDWLJNI6EtAYtFrg
+                1+xAfMfArCx0tGWgIEvxYsMJGa4snL31JENb1RbLTRTawGLQy/52zfdsT4wT
+                VNmv0ZchYnA+2tCCH1TNTVusB9zxQpN79J0Lxyd7yRdLddedlAdI6cSzlyEr
+                wQsV+2tedwXDavG8LSxrobVSk+fyyqIbF+SO/VQy4a+IwPGqDBeKI8fAIi+d
+                4WKrb6buuBU7SGNQx2VZ9t7j6MU3Pbij4W1qGa/VbK/CcK14EvzkfjE2URxC
+                QcK/y5CXpT4r8D0ZWJSBs2cHlmTgaBZ5vCWta3T8DR5uzPoVmyF3lGl5wq7K
+                E45Fo0azZGJCxzjepxPZ39S5S9PUUzyl9l8yFM5qOnWcr7s21TXZqBlD10kU
+                IrOw5QvX8cxFW/AKF5x8yvaOSneISZGRAjTmW+T/1pEr4qpUaEB/Odwd1JU+
+                RVeMw12dHsXQdEVLkW4jrZLu0F490foOdyeUMTbT3pUylH5lTH31c0oxEvMZ
+                Iy1Xc6+fqPPdhkY2BWqaEgWRm5E7Q7Y+oRlt/Yk+NsbmXj9VKTEbRTxlZLeT
+                3SHth7kmvEZ0+hNa0khJrhNMnqDHiob1Ec3qMo0qr9rXt2j2E1FXOmmY7aX6
+                9rodPJKFk/Xyy9xd5YEj17Fz4GHdE862bXk7TuiQa/qo6AztK4KQF3ktji60
+                Ri/zgG/bwg7+l6av+PWgbN9zZM6lOGf1BD6NhUL/H3mYLvnPIUsjm241yc9p
+                dZe+K6T10gEypYE/0P4brRTMkZQxQAcskr1RFK06ZXfJkmg0DDDojbBM2XTS
+                ydLvaN87FSYbBcQwOSL1JnmoNZmdmkB/B4KVCeNQG5wyz6E8HjjAxWfNpIhs
+                pkk2E5Odj9n0AEYGfbgU7z0cFymXT3z/AzTJYKo0sI+BCPI+SRVMItDtjLe/
+                TVpSyz/H5ccHuNL1zj6GZeY+RoyRfVzdx/VnLcfIx4yO8SBpNmswHNegweBP
+                3GgtgxbnM9zEBzGPr0jLK1Yojf6KZGJv9CWUH5FU90YPoSxKoKv0/iQ9iagn
+                9xvtU9PaP8ilaX1UsUKzYgXcwke0zwLZaUnqw0bqYkPewxLpL8h7mzozuQbV
+                wpSFOxZN08dk4hML05hZAwsxi0/X0BnK57MQekOmQhghciG6QnSHuNlw3gph
+                hsiT/R+xoJVLkAcAAA==
                 """,
-        """
+            """
                 initial/test/pack/InitialTestPackageKt.class:
-                H4sIAAAAAAAAAJVRXU8TQRQ9M4W2LghtbZUWRJQCbR9cIL5VTQiJcUMFIqQv
-                fXG6Hdppt7tmZ9rgGz/IH2B8MDz7o4x3aFWEGHWSuffcc7/mzv367fMXAM9Q
-                Y9hUoTJKBK6R2rjvhT9wvQlzSsQx2aIrD0wKjCHTF2PhBiLsukftvvSJTTAk
-                o7MzLQ3DRqVxu9heGJmejPcDoXXd86oew3ojirtuX5p2LFSoXRFSjDAqInwY
-                mcNRENSp7HPTU/plGmmG1UFkAhW6/fHQVaGRcUg9vNDElK58nYLDUPB70h9M
-                849FLIaSAhm2Ko2bz65fY05skW692pzHPO46mMMCw3zZ9i7/GGztb3MxsHO6
-                NBv7wLAg2joKRkYeTfPzk3I36WxjOtYbaURHGEF1+HCcoNUwK1JUbmABJ/5c
-                WbRNqLPDcHB5seBcXjg8k3b4End4OlEqZS4vSnyb1fg2301mEhaTnrGanLN/
-                8tmSu4x6onB7808H9NCZ/agjGRbpG+ThaNiW8aloB8TkGpEvgqaIlbWnZPnt
-                KDRqKL1wrLQi6ucy9n4tmsE5iUaxL18pm1Oc5jQnGdcCsQOOGdjDUcQskqTL
-                ZL0mbb/EqeXufMLi8sq7j1cxGySTNEwSWWwSXptEIUM2rlAO98hvUZ4Qxxbh
-                uQRRKUxOEYX/aFP4rc39f2/DUbmS66iSfkGeBzTfUgsJD0UPJZJY9rCChx5W
-                8agFpqnN4xaSGgWNJxpZjZxGXmP2O5cbQQjTAwAA
+                H4sIAAAAAAAA/5VR328SQRD+9qCUXmtLEbTQWtHSFjDxaOMbatI0MV6KbWMb
+                XnhxObawcNyZ24XUN/4g/wDjg+mzf5RxFlBrG6NecjPffPNrZ+brt89fADzD
+                E4YdGUgtue9oobTznnt9x50y50Scks074kjPgzGkenzEHZ8HHeek1RMesTGG
+                RHhxoYRm2C7Vbxc7CELdFdGhz5WquW7ZZdiqh1HH6QndirgMlMMDiuFahoSP
+                Q3089P0alX2uu1K9TCLJsNkPtS8DpzcaODLQIgqohxvoiNKlp+ZhM2S9rvD6
+                s/xTHvGBoECG3VL95rNr15gzU6RTKzeWsIQ7NhaxzLBUNL2LPwYr/G0uBnZJ
+                P83GPjAs85YK/aEWJ7P8zLTcTXq1PhvrjdC8zTWnOtZgFKPTMCMWjADV7Btg
+                kfNSGlQl1N5jOLoaL9tXY9tKJW1rzbKtZCyfT12N81aVVayqtZ9IxQwmHTea
+                nHN/8pmS+8x0y94+/9M+vTZ+GLYFwwrtQhwPBy0RnfOWT0y6Hnrcb/BIGntG
+                Ft8OAy0Hwg1GUkmifl7k4Ne1GeyzcBh54pU0OblZTmOacS0Qe7AQN9sgncMc
+                EqS3yXpN2qzErqQXPmFlfePdx0nMDskEDZPAKnYJF6ZRSJGNCUrjLvkNyhCy
+                UCK8GCNqHtMvh+x/tMn+1ubev7exUJ7IIiqkX5DnPs231kTMRc5F3sU6Nlw8
+                wKaLhyg0wRQe4XETCYWswpbCqkJaIaMw9x0Y3G4V2AMAAA==
                 """,
-        """
+            """
                 initial/test/pack/OffsetClass.class:
-                H4sIAAAAAAAAAI1QPW8TQRB9u/dhc/nwOYTgfBGgSig4x6IDRSKWIl1kMILI
-                FG5Y25uw8fkOeddR6PxbqGlSRaKILEp+FGL2fFUUoZx082bezLzZmT9/f90A
-                eIXnDNsqVUaJJDJSm+ib6A+j9umplqaZCK1LYAzhubgQUSLSs6jdO5d9U4LD
-                4L+xnQcMzu5eZxEe/AAuSgyu+ao0w07rv8qvSSHLQwZvN473YgZ2Sb/F7wzL
-                oqezZGJkuyiqtoaZSVQavZNGDIQRpMBHFw4twqyhyWxI1KWyUZ28wT7D59l0
-                NeA1HvBwNg142TplQqc2mzZ4nR16v3/4POTHa6Gzwetuww+9An2LxJfu4q18
-                g9FoPIrna57Qlh9oSXEmXw7pvW4zG0iGCp1Bvp+MenJ8InoJMSutrC+Sjhgr
-                Gxdk8CmbjPvySNlg/eMkNWokO0oryr5N08wIo7JUYx+crmw/h2bT0cluUxQR
-                0nPgvbhG+Yocjidk/Zx0sUN2cV6ABwgIq1jIGdt8SNX2aO7m1peft3r9vPfp
-                PF/0Wm8Jy4V2hTxOeuG99IJ76nGqsZ1beEbYpFyV3r7ShRPjYYxVsnR6Mmsx
-                HqPWBdNYx0YXZY1AY1PD1whzZ0mjorHwDymQrhH2AgAA
+                H4sIAAAAAAAA/41QPW8TQRB9u/dh5/Lhc0iC80UCNAkF51jpQEjEEtIhgxFE
+                pnDD2t6Ejc93yLuOQuffQp2GKlIKZFHyoxCz56sQQjnpZt682fd2Z379vv0B
+                4BiPGXZVqowSSWSkNtEX0R9G7bMzLU0zEVqXwBjCC3EpokSk51G7dyH7pgSH
+                wX9ulS8YnIPDzhI8+AFclBhc81lphr3Wf52fkUOWlwzeQRwfxgzsin6bvzKs
+                iJ7OkomR7eJQtTXMTKLS6I00YiCMIAc+unRoEGbDgg0g8ZD4K2WrOqHBEcPH
+                2XQt4DUe8HA2DXjZgjJlpzabNnidnXg/v/k85K83QmeL192GH3pF9m0mvvQv
+                3to3mL10PZ7PekqjvqNJxbl8OqRHu81sIBkqtAv5djLqyfGp6CXErLayvkg6
+                YqxsXZDBh2wy7stXyhab7yepUSPZUVpR92WaZkYYlaUaR+C0avs5dDdtnuID
+                qiI7PmXvyQ3K3wlw7FH0c9LFPsWl+QEsIKBcxWLOWPEJnbZLc7d3Pl3/pfVz
+                7f68X2gtWsZK4V0hxMkvvJNfcEc/joe5chePKDepV6W3r3bhxLgXYy3GOjYI
+                4n6MGja7YBpb2O6irBFo7Gj4GmEOljUqGot/AARrj8f7AgAA
                 """
-    )
+        )
     // common_typos_enabled
 
-    private val DensityStub: TestFile = bytecodeStub(
-        filename = "Density.kt",
-        filepath = "androidx/compose/ui/unit",
-        checksum = 0xaa534a7a,
-        """
+    private val DensityStub: TestFile =
+        bytecodeStub(
+            filename = "Density.kt",
+            filepath = "androidx/compose/ui/unit",
+            checksum = 0xeb800aa8,
+            """
             package androidx.compose.ui.unit
 
-            interface Density
+            interface Density {
+                val density: Float
+                val fontScale: Float
+            }
         """,
-        """
-        META-INF/main.kotlin_module:
-        H4sIAAAAAAAAAGNgYGBmYGBgBGJWKM3ApcIlnpiXUpSfmVKhl5yfW5BfnKpX
-        mqmXlp8vxOmWn++SWJLoXaLEoMUAAALEmjo+AAAA
-        """,
-        """
-        androidx/compose/ui/unit/Density.class:
-        H4sIAAAAAAAAAIVOTUvDQBB9s7FNjV+pH1Bv4g9w2+LNkyBCoCIoeMlpm6yy
-        Tbor3U2pt/4uD9KzP0qcqHdn4M17M/DefH69fwC4xDHhTNly4Uy5koWbvzqv
-        ZWNkY02QN9p6E95iECGdqaWStbIv8n4600WIERH6k8qF2lh5p4MqVVBXBDFf
-        RuxNLXQIVPFqZVo1ZFaOCCebdS8RA5GIlNnzYLMeiyG1xzHhfPLfP5wBQvKn
-        LqrA4tE1i0LfmloTTh8aG8xcPxlvprW+ttYFFYyzvssZ2MJvCRz+YB9HPEds
-        2eHu5ogyxBl6jNhuIcmwg90c5LGH/RzC48Aj/QaMxaG1RAEAAA==
-        """
-    )
+            """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijg0uNSSsxLKcrPTKnQS87PLcgvTtVL
+                yy/NS0ksyczP08tJrMwvLRHi8E9LK04t8S7hUuCSwFBfmqlXmpdZIsTiUgBU
+                wcfFUpJaXCLEFgIkvUuUGLQYAPzR4e16AAAA
+                """,
+            """
+                androidx/compose/ui/unit/Density.class:
+                H4sIAAAAAAAA/4VPTUtCQRQ9M+/Tl9XTvtRVtKpNz6RdqyiEB0agEIGr0TfK
+                pM4LZ57Yzt/Soh/RIsRlPyqaJ0bQJhjOvffcw5x7Pr/ePwBcokZwzGQyTUUy
+                j/rp5DlVPMpElEmho1suldAvHghB+MRmLBozOYzue0+8rz1YBMGQ642KwDo9
+                axIUDdVMpe702ZgTlFqjVI+FjO64ZgnT7IqATmaWcSc5FHIAARkZfi7yqW66
+                5IKgtVyUA1qhAQ2Xi8A8GnoB9W1/UFkuGrRO2uWQ1mjdely92atX163Zvh06
+                hnX/sF7o5H82CE5a/6U195lzvOQnVWHwGybYaM5H2gydNJv2eVPkm2o7k1pM
+                +INQojfm11KmmmmRSuUaZ9h5SFCbwIELmOrl1WwqazxC1dQbY+wbRaELK0YQ
+                YytGEdumxU6MXYRdEIUSyl34CnsK+woHa3QUXIVDBe8bGvQ5CNoBAAA=
+                """
+        )
 
     override fun getDetector(): Detector = NonLambdaOffsetModifierDetector()
 
     override fun getIssues(): MutableList<Issue> =
         mutableListOf(NonLambdaOffsetModifierDetector.UseOfNonLambdaOverload)
 
-    @Ignore("b/309832115")
     @Test
     fun lambdaOffset_simpleUsage_shouldNotWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.foundation.layout.absoluteOffset
@@ -242,23 +255,23 @@ class NonLambdaOffsetModifierDetectorTest : LintDetectorTest() {
                 modifier.absoluteOffset { IntOffset(0, 0) }
             }
         """
-            ),
-            Stubs.Composable,
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.IntOffset,
-            OffsetStub
-        )
+                ),
+                Stubs.Composable,
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.IntOffset,
+                OffsetStub
+            )
             .run()
             .expectClean()
     }
 
-    @Ignore("b/309832115")
     @Test
     fun lambdaOffset_withStateUsages_shouldNotWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.foundation.layout.absoluteOffset
@@ -290,25 +303,25 @@ class NonLambdaOffsetModifierDetectorTest : LintDetectorTest() {
                 modifier.absoluteOffset { IntOffset(offsetY.value, 0) }
             }
         """
-            ),
-            Stubs.Composable,
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.IntOffset,
-            Stubs.SnapshotState,
-            Stubs.Remember,
-            OffsetStub
-        )
+                ),
+                Stubs.Composable,
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.IntOffset,
+                Stubs.SnapshotState,
+                Stubs.Remember,
+                OffsetStub
+            )
             .run()
             .expectClean()
     }
 
-    @Ignore("b/309832115")
     @Test
     fun lambdaOffset_withAnimatableUsage_shouldNotWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.animation.core.Animatable
@@ -345,25 +358,25 @@ class NonLambdaOffsetModifierDetectorTest : LintDetectorTest() {
                 modifier.absoluteOffset { IntOffset(offsetX.value.toInt(), 0) }
             }
         """
-            ),
-            Stubs.Composable,
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.IntOffset,
-            Stubs.Animatable,
-            Stubs.Remember,
-            OffsetStub
-        )
+                ),
+                Stubs.Composable,
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.IntOffset,
+                Stubs.Animatable,
+                Stubs.Remember,
+                OffsetStub
+            )
             .run()
             .expectClean()
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingVariableDp_shouldNotWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
             import androidx.compose.foundation.layout.absoluteOffset
             import androidx.compose.foundation.layout.offset
@@ -390,24 +403,24 @@ class NonLambdaOffsetModifierDetectorTest : LintDetectorTest() {
                 Modifier.offset(offsetX, with(density) { 0.dp })
             }
         """
-            ),
-            Stubs.Composable,
-            Stubs.Modifier,
-            DensityStub,
-            Stubs.Dp,
-            Stubs.IntOffset,
-            OffsetStub
-        )
+                ),
+                Stubs.Composable,
+                Stubs.Modifier,
+                DensityStub,
+                Stubs.Dp,
+                Stubs.IntOffset,
+                OffsetStub
+            )
             .run()
             .expectClean()
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingPassedStaticArguments_shouldNotWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.foundation.layout.absoluteOffset
@@ -425,26 +438,26 @@ class NonLambdaOffsetModifierDetectorTest : LintDetectorTest() {
                 Modifier.absoluteOffset(0.dp, passedOffset)
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                OffsetStub
+            )
             .run()
             .expectClean()
     }
 
     // State tests
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingStateLocalVariable_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.foundation.layout.absoluteOffset
@@ -464,14 +477,14 @@ class NonLambdaOffsetModifierDetectorTest : LintDetectorTest() {
                 Modifier.absoluteOffset(0.dp, offsetStateful.value)
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -486,12 +499,12 @@ src/test/test.kt:18: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingDelegatedStateVariable_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.foundation.layout.absoluteOffset
@@ -512,14 +525,14 @@ src/test/test.kt:18: $WarningMessage
                 Modifier.absoluteOffset(0.dp, offsetStateful)
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -534,12 +547,60 @@ src/test/test.kt:19: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
+    @Test
+    fun nonLambdaOffset_usingDelegatedStateVariable_fullyQualified_shouldWarn() {
+        lint()
+            .files(
+                kotlin(
+                    """
+            package test
+
+            import androidx.compose.foundation.layout.absoluteOffset
+            import androidx.compose.foundation.layout.offset
+            import androidx.compose.runtime.Composable
+            import androidx.compose.runtime.getValue
+            import androidx.compose.runtime.mutableStateOf
+            import androidx.compose.ui.Modifier
+            import androidx.compose.ui.unit.dp
+
+            @Composable
+            fun ComposableFunction() {
+                // Fully qualified usage of remember
+                val offsetStateful by androidx.compose.runtime.remember { mutableStateOf(0.dp) }
+                val yAxis = 10.dp
+
+                Modifier.offset(offsetStateful.value, yAxis)
+                Modifier.absoluteOffset(0.dp, offsetStateful.value)
+            }
+        """
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                OffsetStub
+            )
+            .run()
+            .expect(
+                """
+src/test/test.kt:18: $WarningMessage
+                Modifier.offset(offsetStateful.value, yAxis)
+                         ~~~~~~
+src/test/test.kt:19: $WarningMessage
+                Modifier.absoluteOffset(0.dp, offsetStateful.value)
+                         ~~~~~~~~~~~~~~
+0 errors, 2 warnings
+            """
+            )
+    }
+
     @Test
     fun nonLambdaOffset_usingStateReceiver_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.foundation.layout.absoluteOffset
@@ -565,14 +626,14 @@ src/test/test.kt:19: $WarningMessage
                 Modifier.absoluteOffset(value, 10.dp)
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -593,12 +654,12 @@ src/test/test.kt:24: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingTopLevelStateVariables_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.foundation.layout.absoluteOffset
@@ -617,15 +678,15 @@ src/test/test.kt:24: $WarningMessage
                 Modifier.absoluteOffset(offsetStateful.value, yAxis)
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            Stubs.Animatable,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                Stubs.Animatable,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -640,12 +701,12 @@ src/test/test.kt:17: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingClassPropertiesState_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.foundation.layout.absoluteOffset
@@ -666,15 +727,15 @@ src/test/test.kt:17: $WarningMessage
                 Modifier.absoluteOffset(secondaryClass.offsetStateful.value, yAxis)
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            Stubs.Animatable,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                Stubs.Animatable,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -689,12 +750,12 @@ src/test/SecondaryClass.kt:19: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingLambdaMethodWithState_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.foundation.layout.absoluteOffset
@@ -714,14 +775,14 @@ src/test/SecondaryClass.kt:19: $WarningMessage
                 Modifier.absoluteOffset(0.dp, run { offsetStateful.value })
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -736,12 +797,12 @@ src/test/test.kt:18: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingStateArgumentsHoisted_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.foundation.layout.absoluteOffset
@@ -760,14 +821,14 @@ src/test/test.kt:18: $WarningMessage
                 Modifier.absoluteOffset(0.dp, offsetStateful.value)
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -782,12 +843,12 @@ src/test/test.kt:17: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingStateVariableWithSecondaryMethodCallNoStateInSignature_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.foundation.layout.absoluteOffset
@@ -813,14 +874,14 @@ src/test/test.kt:17: $WarningMessage
                 return offsetStateful + 10.dp
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -835,12 +896,12 @@ src/test/test.kt:20: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingStateVariableWithSecondaryMethodCallStateInSignature_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.foundation.layout.absoluteOffset
@@ -867,14 +928,14 @@ src/test/test.kt:20: $WarningMessage
             }
 
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -889,12 +950,12 @@ src/test/test.kt:20: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingDelegatedStateVariableWithComplexExpression_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.foundation.layout.absoluteOffset
@@ -915,14 +976,14 @@ src/test/test.kt:20: $WarningMessage
                 Modifier.absoluteOffset(0.dp, offsetStateful + 100.dp + yAxis)
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -939,12 +1000,12 @@ src/test/test.kt:19: $WarningMessage
 
     // Animatable tests
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingAnimatableArgumentsLocalVariable_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.animation.core.Animatable
@@ -962,15 +1023,15 @@ src/test/test.kt:19: $WarningMessage
                 Modifier.absoluteOffset(0.dp, y = offsetX.value)
             }
         """
-            ),
-            Stubs.Dp,
-            Stubs.Animatable,
-            Stubs.Modifier,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            OffsetStub
-        )
+                ),
+                Stubs.Dp,
+                Stubs.Animatable,
+                Stubs.Modifier,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -985,12 +1046,12 @@ src/test/test.kt:16: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingAnimatableArgumentsHoisted_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.animation.core.Animatable
@@ -1007,15 +1068,15 @@ src/test/test.kt:16: $WarningMessage
                 Modifier.absoluteOffset(0.dp, y = offsetX.value)
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            Stubs.Animatable,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                Stubs.Animatable,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -1030,12 +1091,12 @@ src/test/test.kt:15: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingAnimatableReceiver_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.animation.core.Animatable
@@ -1061,15 +1122,15 @@ src/test/test.kt:15: $WarningMessage
                 Modifier.absoluteOffset(value, 10.dp)
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            Stubs.Animatable,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                Stubs.Animatable,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -1090,12 +1151,12 @@ src/test/test.kt:24: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingLambdaMethodWithAnimatable_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.animation.core.Animatable
@@ -1115,15 +1176,15 @@ src/test/test.kt:24: $WarningMessage
                 Modifier.absoluteOffset(0.dp, run { offsetStateful.value })
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            Stubs.Animatable,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                Stubs.Animatable,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -1138,12 +1199,12 @@ src/test/test.kt:18: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingTopLevelAnimatableVariables_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.animation.core.Animatable
@@ -1163,15 +1224,15 @@ src/test/test.kt:18: $WarningMessage
                 Modifier.absoluteOffset(0.dp, animatable.value)
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            Stubs.Animatable,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                Stubs.Animatable,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -1186,12 +1247,12 @@ src/test/test.kt:18: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingClassPropertiesAnimatable_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.animation.core.Animatable
@@ -1213,15 +1274,15 @@ src/test/test.kt:18: $WarningMessage
                 Modifier.absoluteOffset(0.dp, secondaryClass.animatable.value)
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            Stubs.Animatable,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                Stubs.Animatable,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -1236,12 +1297,12 @@ src/test/SecondaryClass.kt:20: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingAnimatableVariableWithComplexExpression_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.animation.core.Animatable
@@ -1259,15 +1320,15 @@ src/test/SecondaryClass.kt:20: $WarningMessage
                 Modifier.absoluteOffset(0.dp, y = offsetX.value + 5.dp)
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            Stubs.Animatable,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                Stubs.Animatable,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -1282,12 +1343,12 @@ src/test/test.kt:16: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_animatableVariableWithSecondaryMethodCallNoStateInSignature_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.animation.core.Animatable
@@ -1312,15 +1373,15 @@ src/test/test.kt:16: $WarningMessage
                 return offsetStateful + 10.dp
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            Stubs.Animatable,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                Stubs.Animatable,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -1335,12 +1396,12 @@ src/test/test.kt:19: $WarningMessage
             )
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonLambdaOffset_usingAnimatableArgumentsWithMethodCallStateInSignature_shouldWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
             package test
 
             import androidx.compose.animation.core.Animatable
@@ -1365,15 +1426,15 @@ src/test/test.kt:19: $WarningMessage
                 return offsetStateful.value + 10.dp
             }
         """
-            ),
-            Stubs.Modifier,
-            Stubs.Dp,
-            Stubs.Remember,
-            Stubs.Composable,
-            Stubs.SnapshotState,
-            Stubs.Animatable,
-            OffsetStub
-        )
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                Stubs.Animatable,
+                OffsetStub
+            )
             .run()
             .expect(
                 """
@@ -1390,12 +1451,12 @@ src/test/test.kt:19: $WarningMessage
 
     // Non modifier related tests
 
-    @Ignore("b/309832115")
     @Test
     fun nonModifierOffset_bytecode_shouldNotWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
                 package another.test.pack
 
                 import initial.test.pack.AnotherClass
@@ -1408,19 +1469,19 @@ src/test/test.kt:19: $WarningMessage
                 val anotherOffsetCalculation = otherOffsets.offset(0, 0)
 
         """
-            ),
-            AnotherOffsetDefinitionStub.bytecode
-        )
+                ),
+                AnotherOffsetDefinitionStub.bytecode
+            )
             .run()
             .expectClean()
     }
 
-    @Ignore("b/309832115")
     @Test
     fun nonModifierOffsetKotlin_shouldNotWarn() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                    """
                 package another.test.pack
 
                 import initial.test.pack.AnotherClass
@@ -1433,9 +1494,9 @@ src/test/test.kt:19: $WarningMessage
                 val anotherOffsetCalculation = otherOffsets.offset(0, 0)
 
         """
-            ),
-            AnotherOffsetDefinitionStub.kotlin
-        )
+                ),
+                AnotherOffsetDefinitionStub.kotlin
+            )
             .run()
             .expectClean()
     }

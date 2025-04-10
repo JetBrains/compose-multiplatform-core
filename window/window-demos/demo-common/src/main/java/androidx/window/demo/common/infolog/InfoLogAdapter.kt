@@ -27,8 +27,9 @@ class InfoLogAdapter : RecyclerView.Adapter<InfoLogVH>() {
     private val items = mutableListOf<InfoLog>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): InfoLogVH {
-        val root = LayoutInflater.from(parent.context)
-            .inflate(R.layout.view_holder_info_log, parent, false)
+        val root =
+            LayoutInflater.from(parent.context)
+                .inflate(R.layout.view_holder_info_log, parent, false)
         return InfoLogVH(root)
     }
 
@@ -50,6 +51,11 @@ class InfoLogAdapter : RecyclerView.Adapter<InfoLogVH>() {
     fun append(title: String, message: String) {
         append(InfoLog(title, message, id))
         ++id
+    }
+
+    fun appendAndNotify(title: String, message: String) {
+        append(title, message)
+        notifyDataSetChanged()
     }
 
     private fun append(item: InfoLog) {

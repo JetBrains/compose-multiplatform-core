@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 
-import androidx.build.KmpPlatformsKt
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.mpp.BitcodeEmbeddingMode
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFrameworkConfig
@@ -29,10 +36,8 @@ plugins {
     id("androidx.benchmark.darwin")
 }
 
-def macEnabled = KmpPlatformsKt.enableMac(project)
-
 androidXMultiplatform {
-    android()
+    androidTarget()
 
     // XCFrameworkConfig must always be called AndroidXDarwinBenchmarks
     def xcf = new XCFrameworkConfig(project, "AndroidXDarwinBenchmarks")
@@ -42,7 +47,7 @@ androidXMultiplatform {
             baseName = "AndroidXDarwinBenchmarks"
             // https://youtrack.jetbrains.com/issue/KT-48552
             embedBitcode = BitcodeEmbeddingMode.DISABLE
-            export(project(":benchmark:benchmark-darwin"))
+            export(project.project(":benchmark:benchmark-darwin"))
             xcf.add(it)
         }
     }
@@ -65,7 +70,7 @@ androidXMultiplatform {
         androidInstrumentedTest {
             dependsOn(commonTest)
             dependencies {
-                implementation(projectOrArtifact(":benchmark:benchmark-junit4"))
+                implementation(androidx.projectOrArtifact(":benchmark:benchmark-junit4"))
                 implementation(libs.junit)
                 implementation(libs.testExtJunit)
                 implementation(libs.testCore)
@@ -74,12 +79,10 @@ androidXMultiplatform {
             }
         }
 
-        if (macEnabled) {
-            darwinMain {
-                dependsOn(commonMain)
-                dependencies {
-                    api(project(":benchmark:benchmark-darwin"))
-                }
+        darwinMain {
+            dependsOn(commonMain)
+            dependencies {
+                api(project(":benchmark:benchmark-darwin"))
             }
         }
 
@@ -109,14 +112,14 @@ androidXMultiplatform {
 
 androidx {
     name = "Collections Benchmarks (Android / iOS)"
+    type = SoftwareType.BENCHMARK
     inceptionYear = "2022"
     description = "AndroidX Collections Benchmarks (Android / iOS)"
 }
 
 darwinBenchmark {
-    xcodeGenConfigFile = project.rootProject.file(
-            "benchmark/benchmark-darwin-xcode/projects/collection-benchmark-ios.yml"
-    )
+    xcodeGenConfigFile = new File(rootDir,
+            "benchmark/benchmark-darwin-xcode/projects/collection-benchmark-ios.yml")
     xcodeProjectName = "collection-benchmark-ios"
     scheme = "testapp-ios"
     // To run locally switch to iOS 17.0 simulators
@@ -125,8 +128,8 @@ darwinBenchmark {
 }
 
 android {
-    namespace "androidx.collection.benchmark"
+    namespace = "androidx.collection.benchmark"
     defaultConfig {
-        minSdkVersion 22 // b/294570164
+        minSdk = 22 // b/294570164
     }
 }

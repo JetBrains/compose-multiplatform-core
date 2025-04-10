@@ -19,8 +19,9 @@ package androidx.window.extensions.layout;
 import android.graphics.Rect;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -76,8 +77,7 @@ public class FoldingFeature implements DisplayFeature {
      * The bounding rectangle of the feature within the application window in the window
      * coordinate space.
      */
-    @NonNull
-    private final Rect mBounds;
+    private final @NonNull Rect mBounds;
 
     /**
      * The physical type of the feature.
@@ -99,9 +99,8 @@ public class FoldingFeature implements DisplayFeature {
     }
 
     /** Gets the bounding rect of the display feature in window coordinate space. */
-    @NonNull
     @Override
-    public Rect getBounds() {
+    public @NonNull Rect getBounds() {
         return new Rect(mBounds);
     }
 
@@ -130,8 +129,7 @@ public class FoldingFeature implements DisplayFeature {
         }
     }
 
-    @NonNull
-    private static String typeToString(int type) {
+    private static @NonNull String typeToString(int type) {
         switch (type) {
             case TYPE_FOLD:
                 return "FOLD";
@@ -142,8 +140,7 @@ public class FoldingFeature implements DisplayFeature {
         }
     }
 
-    @NonNull
-    private static String stateToString(int state) {
+    private static @NonNull String stateToString(int state) {
         switch (state) {
             case STATE_FLAT:
                 return "FLAT";
@@ -154,9 +151,8 @@ public class FoldingFeature implements DisplayFeature {
         }
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "ExtensionDisplayFoldFeature { " + mBounds
                 + ", type=" + typeToString(getType()) + ", state=" + stateToString(mState) + " }";
     }

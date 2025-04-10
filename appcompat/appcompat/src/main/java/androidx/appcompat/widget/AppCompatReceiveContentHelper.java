@@ -33,12 +33,12 @@ import android.view.DragEvent;
 import android.view.View;
 import android.widget.TextView;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.view.ContentInfoCompat;
 import androidx.core.view.ViewCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Common code for handling content via {@link ViewCompat#performReceiveContent}.
@@ -117,7 +117,6 @@ final class AppCompatReceiveContentHelper {
     private static final class OnDropApi24Impl {
         private OnDropApi24Impl() {}
 
-        @DoNotInline
         static boolean onDropForTextView(@NonNull DragEvent event, @NonNull TextView view,
                 @NonNull Activity activity) {
             activity.requestDragAndDropPermissions(event);
@@ -134,7 +133,6 @@ final class AppCompatReceiveContentHelper {
             return true;
         }
 
-        @DoNotInline
         static boolean onDropForView(@NonNull DragEvent event, @NonNull View view,
                 @NonNull Activity activity) {
             activity.requestDragAndDropPermissions(event);
@@ -153,8 +151,7 @@ final class AppCompatReceiveContentHelper {
      * @param view The target view.
      * @return The activity if found; null otherwise.
      */
-    @Nullable
-    static Activity tryGetActivity(@NonNull View view) {
+    static @Nullable Activity tryGetActivity(@NonNull View view) {
         Context context = view.getContext();
         while (context instanceof ContextWrapper) {
             if (context instanceof Activity) {

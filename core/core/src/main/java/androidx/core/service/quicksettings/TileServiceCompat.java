@@ -22,10 +22,10 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.service.quicksettings.TileService;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A helper for accessing {@link TileService} API methods.
@@ -67,7 +67,6 @@ public class TileServiceCompat {
 
     @RequiresApi(34)
     private static class Api34Impl {
-        @DoNotInline
         static void startActivityAndCollapse(TileService service,
                 PendingIntent pendingIntent) {
             service.startActivityAndCollapse(pendingIntent);
@@ -76,7 +75,6 @@ public class TileServiceCompat {
 
     @RequiresApi(24)
     private static class Api24Impl {
-        @DoNotInline
         static void startActivityAndCollapse(TileService service, Intent intent) {
             service.startActivityAndCollapse(intent);
         }

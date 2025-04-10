@@ -18,8 +18,9 @@ package androidx.wear.watchface;
 
 import android.view.SurfaceHolder;
 
-import androidx.annotation.NonNull;
 import androidx.wear.watchface.style.CurrentUserStyleRepository;
+
+import org.jspecify.annotations.NonNull;
 
 import java.time.ZonedDateTime;
 

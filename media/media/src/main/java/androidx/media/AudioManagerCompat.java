@@ -20,13 +20,19 @@ import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.os.Build;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat.StreamType;
 
-/** Compatibility library for {@link AudioManager} with fallbacks for older platforms. */
+import org.jspecify.annotations.NonNull;
+
+/**
+ * Compatibility library for {@link AudioManager} with fallbacks for older platforms.
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
+ */
+@Deprecated
 public final class AudioManagerCompat {
 
     private static final String TAG = "AudioManCompat";
@@ -178,7 +184,6 @@ public final class AudioManagerCompat {
     @RequiresApi(21)
     private static class Api21Impl {
 
-        @DoNotInline
         static boolean isVolumeFixed(AudioManager audioManager) {
             return audioManager.isVolumeFixed();
         }
@@ -189,13 +194,11 @@ public final class AudioManagerCompat {
     @RequiresApi(26)
     private static class Api26Impl {
 
-        @DoNotInline
         static int abandonAudioFocusRequest(AudioManager audioManager,
                 AudioFocusRequest focusRequest) {
             return audioManager.abandonAudioFocusRequest(focusRequest);
         }
 
-        @DoNotInline
         static int requestAudioFocus(AudioManager audioManager, AudioFocusRequest focusRequest) {
             return audioManager.requestAudioFocus(focusRequest);
         }
@@ -206,7 +209,6 @@ public final class AudioManagerCompat {
     @RequiresApi(28)
     private static class Api28Impl {
 
-        @DoNotInline
         static int getStreamMinVolume(AudioManager audioManager, int streamType) {
             return audioManager.getStreamMinVolume(streamType);
         }

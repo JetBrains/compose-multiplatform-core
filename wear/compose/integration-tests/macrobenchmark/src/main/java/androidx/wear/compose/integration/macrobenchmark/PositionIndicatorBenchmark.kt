@@ -18,48 +18,49 @@ package androidx.wear.compose.integration.macrobenchmark
 
 import android.content.Intent
 import androidx.benchmark.macro.CompilationMode
-import androidx.benchmark.macro.FrameTimingMetric
+import androidx.benchmark.macro.ExperimentalMetricApi
+import androidx.benchmark.macro.FrameTimingGfxInfoMetric
+import androidx.benchmark.macro.MemoryUsageMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.filters.LargeTest
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.testutils.createCompilationParams
 import java.lang.Thread.sleep
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+@OptIn(ExperimentalMetricApi::class)
 @LargeTest
 @RunWith(Parameterized::class)
-class PositionIndicatorBenchmark(
-    private val compilationMode: CompilationMode
-) {
-    @get:Rule
-    val benchmarkRule = MacrobenchmarkRule()
-
-    private lateinit var device: UiDevice
+class PositionIndicatorBenchmark(private val compilationMode: CompilationMode) {
+    @get:Rule val benchmarkRule = MacrobenchmarkRule()
 
     @Before
     fun setUp() {
-        val instrumentation = InstrumentationRegistry.getInstrumentation()
-        device = UiDevice.getInstance(instrumentation)
+        disableChargingExperience()
+    }
+
+    @After
+    fun destroy() {
+        enableChargingExperience()
     }
 
     @Test
     fun start() {
         benchmarkRule.measureRepeated(
             packageName = PACKAGE_NAME,
-            metrics = listOf(
-                FrameTimingMetric()
-            ),
+            metrics =
+                listOf(FrameTimingGfxInfoMetric(), MemoryUsageMetric(MemoryUsageMetric.Mode.Last)),
             compilationMode = compilationMode,
             iterations = 5,
             setupBlock = {
                 val intent = Intent()
-                intent.action = ACTION
+                intent.action = POSITION_INDICATOR_ACTIVITY
                 startActivityAndWait(intent)
             }
         ) {
@@ -71,26 +72,30 @@ class PositionIndicatorBenchmark(
 
             // By default indicator visibility is Show
             // Increase and decrease indicator 10 times 1 direction and 10 times another
-            repeatIncrementAndDecrement(10, 200)
+            repeatIncrementAndDecrement(device, 10, 200)
 
             // Switch from Show to AutoHide
             buttonVisibilityAutoHide?.click()
 
             // Increase and decrease indicator with delay shorter than hiding delay
-            repeatIncrementAndDecrement(10, 200)
+            repeatIncrementAndDecrement(device, 10, 200)
 
             // Increase and decrease indicator with delay longer than hiding delay
-            repeatIncrementAndDecrement(3, 2500)
+            repeatIncrementAndDecrement(device, 3, 2500)
 
             // Switch from Autohide to Hide
             buttonVisibilityHide?.click()
 
             // Increase and decrease indicator 10 times 1 direction and 10 times another
-            repeatIncrementAndDecrement(10, 200)
+            repeatIncrementAndDecrement(device, 10, 200)
         }
     }
 
-    private fun repeatIncrementAndDecrement(times: Int, delayBetweenClicks: Long) {
+    private fun repeatIncrementAndDecrement(
+        device: UiDevice,
+        times: Int,
+        delayBetweenClicks: Long
+    ) {
         val buttonIncrease = device.findObject(By.desc(INCREASE_POSITION))
         val buttonDecrease = device.findObject(By.desc(DECREASE_POSITION))
 
@@ -109,9 +114,8 @@ class PositionIndicatorBenchmark(
 
     companion object {
         private const val PACKAGE_NAME = "androidx.wear.compose.integration.macrobenchmark.target"
-        private const val ACTION =
-            "androidx.wear.compose.integration.macrobenchmark.target" +
-                ".POSITION_INDICATOR_ACTIVITY"
+        private const val POSITION_INDICATOR_ACTIVITY =
+            "${PACKAGE_NAME}.POSITION_INDICATOR_ACTIVITY"
         private const val INCREASE_POSITION = "PI_INCREASE_POSITION"
         private const val DECREASE_POSITION = "PI_DECREASE_POSITION"
         private const val CHANGE_VISIBILITY_SHOW = "PI_VISIBILITY_SHOW"

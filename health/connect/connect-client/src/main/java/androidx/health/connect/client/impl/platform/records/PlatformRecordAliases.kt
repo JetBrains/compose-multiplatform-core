@@ -130,6 +130,81 @@ internal typealias PlatformElevationGainedRecord =
 internal typealias PlatformElevationGainedRecordBuilder =
     android.health.connect.datatypes.ElevationGainedRecord.Builder
 
+internal typealias PlatformPlannedExerciseSessionRecord =
+    android.health.connect.datatypes.PlannedExerciseSessionRecord
+
+internal typealias PlatformPlannedExerciseSessionRecordBuilder =
+    android.health.connect.datatypes.PlannedExerciseSessionRecord.Builder
+
+internal typealias PlatformPlannedExerciseBlock =
+    android.health.connect.datatypes.PlannedExerciseBlock
+
+internal typealias PlatformPlannedExerciseBlockBuilder =
+    android.health.connect.datatypes.PlannedExerciseBlock.Builder
+
+internal typealias PlatformPlannedExerciseStep =
+    android.health.connect.datatypes.PlannedExerciseStep
+
+internal typealias PlatformPlannedExerciseStepBuilder =
+    android.health.connect.datatypes.PlannedExerciseStep.Builder
+
+internal typealias PlatformExerciseCompletionGoal =
+    android.health.connect.datatypes.ExerciseCompletionGoal
+
+internal typealias PlatformDistanceGoal =
+    android.health.connect.datatypes.ExerciseCompletionGoal.DistanceGoal
+
+internal typealias PlatformDistanceAndDurationGoal =
+    android.health.connect.datatypes.ExerciseCompletionGoal.DistanceWithVariableRestGoal
+
+internal typealias PlatformStepsGoal =
+    android.health.connect.datatypes.ExerciseCompletionGoal.StepsGoal
+
+internal typealias PlatformDurationGoal =
+    android.health.connect.datatypes.ExerciseCompletionGoal.DurationGoal
+
+internal typealias PlatformRepetitionsGoal =
+    android.health.connect.datatypes.ExerciseCompletionGoal.RepetitionsGoal
+
+internal typealias PlatformTotalCaloriesBurnedGoal =
+    android.health.connect.datatypes.ExerciseCompletionGoal.TotalCaloriesBurnedGoal
+
+internal typealias PlatformActiveCaloriesBurnedGoal =
+    android.health.connect.datatypes.ExerciseCompletionGoal.ActiveCaloriesBurnedGoal
+
+internal typealias PlatformUnknownCompletionGoal =
+    android.health.connect.datatypes.ExerciseCompletionGoal.UnknownGoal
+
+internal typealias PlatformManualCompletion =
+    android.health.connect.datatypes.ExerciseCompletionGoal.UnspecifiedGoal
+
+internal typealias PlatformExercisePerformanceTarget =
+    android.health.connect.datatypes.ExercisePerformanceGoal
+
+internal typealias PlatformPowerTarget =
+    android.health.connect.datatypes.ExercisePerformanceGoal.PowerGoal
+
+internal typealias PlatformSpeedTarget =
+    android.health.connect.datatypes.ExercisePerformanceGoal.SpeedGoal
+
+internal typealias PlatformCadenceTarget =
+    android.health.connect.datatypes.ExercisePerformanceGoal.CadenceGoal
+
+internal typealias PlatformHeartRateTarget =
+    android.health.connect.datatypes.ExercisePerformanceGoal.HeartRateGoal
+
+internal typealias PlatformWeightTarget =
+    android.health.connect.datatypes.ExercisePerformanceGoal.WeightGoal
+
+internal typealias PlatformRateOfPerceivedExertionTarget =
+    android.health.connect.datatypes.ExercisePerformanceGoal.RateOfPerceivedExertionGoal
+
+internal typealias PlatformAmrapTarget =
+    android.health.connect.datatypes.ExercisePerformanceGoal.AmrapGoal
+
+internal typealias PlatformUnknownPerformanceTarget =
+    android.health.connect.datatypes.ExercisePerformanceGoal.UnknownGoal
+
 internal typealias PlatformExerciseLap = android.health.connect.datatypes.ExerciseLap
 
 internal typealias PlatformExerciseLapBuilder = android.health.connect.datatypes.ExerciseLap.Builder
@@ -194,6 +269,12 @@ internal typealias PlatformIntermenstrualBleedingRecord =
 
 internal typealias PlatformIntermenstrualBleedingRecordBuilder =
     android.health.connect.datatypes.IntermenstrualBleedingRecord.Builder
+
+internal typealias PlatformMindfulnessSessionRecord =
+    android.health.connect.datatypes.MindfulnessSessionRecord
+
+internal typealias PlatformMindfulnessSessionRecordBuilder =
+    android.health.connect.datatypes.MindfulnessSessionRecord.Builder
 
 internal typealias PlatformLeanBodyMassRecord = android.health.connect.datatypes.LeanBodyMassRecord
 
@@ -264,6 +345,15 @@ internal typealias PlatformSexualActivityRecordBuilder =
 
 internal typealias PlatformSexualActivityProtectionUsed =
     android.health.connect.datatypes.SexualActivityRecord.SexualActivityProtectionUsed
+
+internal typealias PlatformSkinTemperatureRecord =
+    android.health.connect.datatypes.SkinTemperatureRecord
+
+internal typealias PlatformSkinTemperatureDelta =
+    android.health.connect.datatypes.SkinTemperatureRecord.Delta
+
+internal typealias PlatformSkinTemperatureRecordBuilder =
+    android.health.connect.datatypes.SkinTemperatureRecord.Builder
 
 internal typealias PlatformSleepSessionRecord = android.health.connect.datatypes.SleepSessionRecord
 
@@ -348,6 +438,28 @@ internal typealias PlatformPressure = android.health.connect.datatypes.units.Pre
 
 internal typealias PlatformTemperature = android.health.connect.datatypes.units.Temperature
 
+internal typealias PlatformTemperatureDelta =
+    android.health.connect.datatypes.units.TemperatureDelta
+
 internal typealias PlatformVelocity = android.health.connect.datatypes.units.Velocity
 
 internal typealias PlatformVolume = android.health.connect.datatypes.units.Volume
+
+internal typealias PlatformFhirVersion = android.health.connect.datatypes.FhirVersion
+
+internal typealias PlatformFhirResource = android.health.connect.datatypes.FhirResource
+
+internal typealias PlatformFhirResourceBuilder =
+    android.health.connect.datatypes.FhirResource.Builder
+
+internal typealias PlatformMedicalDataSource = android.health.connect.datatypes.MedicalDataSource
+
+internal typealias PlatformMedicalDataSourceBuilder =
+    android.health.connect.datatypes.MedicalDataSource.Builder
+
+internal typealias PlatformMedicalResourceId = android.health.connect.MedicalResourceId
+
+internal typealias PlatformMedicalResource = android.health.connect.datatypes.MedicalResource
+
+internal typealias PlatformMedicalResourceBuilder =
+    android.health.connect.datatypes.MedicalResource.Builder

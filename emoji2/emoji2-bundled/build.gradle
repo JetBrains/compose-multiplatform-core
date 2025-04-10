@@ -1,4 +1,11 @@
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -6,7 +13,7 @@ plugins {
 }
 
 ext {
-    fontDir = project(':noto-emoji-compat-font').projectDir
+    fontDir = project(":noto-emoji-compat-font").projectDir
 }
 
 android {
@@ -25,40 +32,40 @@ android {
             }
         }
     }
-    namespace "androidx.emoji2.bundled"
+    namespace = "androidx.emoji2.bundled"
 
 }
 
 dependencies {
+    api(libs.jspecify)
     api(project(":emoji2:emoji2"))
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation project(':internal-testutils-runtime')
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
+    androidTestImplementation(project(":internal-testutils-runtime"))
 
     // view tests that use font are in this module as well; for licensing reasons
-    androidTestImplementation project(":emoji2:emoji2-views")
+    androidTestImplementation(project(":emoji2:emoji2-views"))
 }
 
 androidx {
     name = "Emoji2 Bundled"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Library bundled with assets to enable emoji compatibility in Kitkat and newer " +
             "devices to avoid the empty emoji characters."
-    metalavaK2UastEnabled = true
 
-    license {
+    extraLicense {
         name = "SIL Open Font License, Version 1.1"
         url = "http://scripts.sil.org/cms/scripts/page.php?item_id=OFL_web"
     }
 
-    license {
+    extraLicense {
         name = "Unicode, Inc. License"
         url = "http://www.unicode.org/copyright.html#License"
     }

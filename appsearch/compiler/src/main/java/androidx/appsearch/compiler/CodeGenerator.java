@@ -21,8 +21,6 @@ import static androidx.appsearch.compiler.IntrospectionHelper.RESTRICT_TO_ANNOTA
 import static androidx.appsearch.compiler.IntrospectionHelper.RESTRICT_TO_SCOPE_CLASS;
 import static androidx.appsearch.compiler.IntrospectionHelper.getDocumentClassFactoryForClass;
 
-import androidx.annotation.NonNull;
-
 import com.google.auto.common.GeneratedAnnotationSpecs;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
@@ -30,6 +28,8 @@ import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 

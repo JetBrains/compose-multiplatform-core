@@ -16,12 +16,18 @@
 
 package androidx.camera.camera2.pipe.integration.adapter
 
-import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
-import androidx.annotation.RequiresApi
+import androidx.annotation.OptIn
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLegacy
+import androidx.camera.camera2.pipe.FrameInfo
+import androidx.camera.camera2.pipe.FrameNumber
+import androidx.camera.camera2.pipe.InputRequest
 import androidx.camera.camera2.pipe.Request
+import androidx.camera.camera2.pipe.RequestFailure
+import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.RequestTemplate
+import androidx.camera.camera2.pipe.integration.compat.workaround.TemplateParamsOverride
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraScope
 import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
 import androidx.camera.camera2.pipe.integration.impl.CAMERAX_TAG_BUNDLE
@@ -30,26 +36,39 @@ import androidx.camera.camera2.pipe.integration.impl.CameraCallbackMap
 import androidx.camera.camera2.pipe.integration.impl.CameraProperties
 import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
 import androidx.camera.camera2.pipe.integration.impl.toParameters
+import androidx.camera.camera2.pipe.media.AndroidImage
+import androidx.camera.core.ExperimentalGetImage
+import androidx.camera.core.ImageProxy
+import androidx.camera.core.impl.CameraCaptureResults
 import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.Config
+import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 
 /**
- * Maps a [CaptureConfig] issued by CameraX (e.g. by the image capture use case) to a [Request]
- * that CameraPipe can submit to the camera.
+ * Maps a [CaptureConfig] issued by CameraX (e.g. by the image capture use case) to a [Request] that
+ * CameraPipe can submit to the camera.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @UseCaseCameraScope
-class CaptureConfigAdapter @Inject constructor(
+public class CaptureConfigAdapter
+@Inject
+constructor(
     cameraProperties: CameraProperties,
     private val useCaseGraphConfig: UseCaseGraphConfig,
+    private val zslControl: ZslControl,
     private val threads: UseCaseThreads,
+    private val templateParamsOverride: TemplateParamsOverride,
 ) {
-    private val isLegacyDevice = cameraProperties.metadata[
-        CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
-    ] == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
+    private val isLegacyDevice = cameraProperties.metadata.isHardwareLevelLegacy
 
-    fun mapToRequest(
+    /**
+     * Maps [CaptureConfig] to [Request].
+     *
+     * @throws IllegalStateException When CaptureConfig does not have any surface or a CaptureConfig
+     *   surface is not recognized in [UseCaseGraphConfig.surfaceToStreamMap]
+     */
+    @OptIn(ExperimentalGetImage::class)
+    public fun mapToRequest(
         captureConfig: CaptureConfig,
         requestTemplate: RequestTemplate,
         sessionConfigOptions: Config,
@@ -60,17 +79,19 @@ class CaptureConfigAdapter @Inject constructor(
             "Attempted to issue a capture without surfaces using $captureConfig"
         }
 
-        val streamIdList = surfaces.map {
-            checkNotNull(useCaseGraphConfig.surfaceToStreamMap[it]) {
-                "Attempted to issue a capture with an unrecognized surface."
+        val streamIdList =
+            surfaces.map {
+                checkNotNull(useCaseGraphConfig.surfaceToStreamMap[it]) {
+                    "Attempted to issue a capture with an unrecognized surface: $it"
+                }
             }
-        }
 
-        val callbacks = CameraCallbackMap().apply {
-            captureConfig.cameraCaptureCallbacks.forEach { callback ->
-                addCaptureCallback(callback, threads.sequentialExecutor)
+        val callbacks =
+            CameraCallbackMap().apply {
+                captureConfig.cameraCaptureCallbacks.forEach { callback ->
+                    addCaptureCallback(callback, threads.sequentialExecutor)
+                }
             }
-        }
 
         val configOptions = captureConfig.implementationOptions
         val optionBuilder = Camera2ImplConfig.Builder()
@@ -95,29 +116,114 @@ class CaptureConfigAdapter @Inject constructor(
             )
         }
 
+        var inputRequest: InputRequest? = null
+        var captureCallback: Request.Listener? = null
+        var requestTemplateToSubmit = RequestTemplate(captureConfig.templateType)
+        if (
+            captureConfig.templateType == CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG &&
+                !zslControl.isZslDisabledByUserCaseConfig() &&
+                !zslControl.isZslDisabledByFlashMode()
+        ) {
+            zslControl.dequeueImageFromBuffer()?.let { imageProxy ->
+                CameraCaptureResults.retrieveCameraCaptureResult(imageProxy.imageInfo)?.let {
+                    cameraCaptureResult ->
+                    check(cameraCaptureResult is CaptureResultAdapter) {
+                        "Unexpected capture result type: ${cameraCaptureResult.javaClass}"
+                    }
+                    val imageWrapper = AndroidImage(checkNotNull(imageProxy.image))
+                    val frameInfo = checkNotNull(cameraCaptureResult.unwrapAs(FrameInfo::class))
+                    inputRequest = InputRequest(imageWrapper, frameInfo)
+
+                    // It's essential to call ImageProxy#close().
+                    // To ensure the ImageProxy is closed after the image is written to the output
+                    // surface. This is crucial to prevent resource leaks, where images might not
+                    // be closed properly if CameraX fails to propagate close events to its internal
+                    // components.
+                    captureCallback = buildImageClosingRequestListener(imageProxy)
+                }
+            }
+        }
+
+        // Apply still capture template type for regular still capture case
+        if (inputRequest == null) {
+            requestTemplateToSubmit =
+                captureConfig.getStillCaptureTemplate(requestTemplate, isLegacyDevice)
+        }
+
+        val parameters =
+            templateParamsOverride.getOverrideParams(requestTemplateToSubmit) +
+                optionBuilder.build().toParameters()
+        val requestListeners = buildList {
+            add(callbacks)
+            captureCallback?.let { add(it) }
+            addAll(additionalListeners)
+        }
+
         return Request(
             streams = streamIdList,
-            listeners = listOf(callbacks) + additionalListeners,
-            parameters = optionBuilder.build().toParameters(),
+            listeners = requestListeners,
+            parameters = parameters,
             extras = mapOf(CAMERAX_TAG_BUNDLE to captureConfig.tagBundle),
-            template = captureConfig.getStillCaptureTemplate(requestTemplate, isLegacyDevice)
+            template = requestTemplateToSubmit,
+            inputRequest = inputRequest,
         )
     }
 
-    companion object {
+    private fun buildImageClosingRequestListener(imageProxy: ImageProxy): Request.Listener {
+        val imageProxyToClose = AtomicReference(imageProxy)
+
+        fun closeImageProxy() {
+            imageProxyToClose.getAndSet(null)?.close()
+        }
+
+        return object : Request.Listener {
+            override fun onComplete(
+                requestMetadata: RequestMetadata,
+                frameNumber: FrameNumber,
+                result: FrameInfo
+            ) {
+                closeImageProxy()
+            }
+
+            override fun onFailed(
+                requestMetadata: RequestMetadata,
+                frameNumber: FrameNumber,
+                requestFailure: RequestFailure
+            ) {
+                closeImageProxy()
+            }
+
+            override fun onAborted(request: Request) {
+                closeImageProxy()
+            }
+
+            override fun onTotalCaptureResult(
+                requestMetadata: RequestMetadata,
+                frameNumber: FrameNumber,
+                totalCaptureResult: FrameInfo
+            ) {
+                closeImageProxy()
+            }
+        }
+    }
+
+    public companion object {
         internal fun CaptureConfig.getStillCaptureTemplate(
             sessionTemplate: RequestTemplate,
             isLegacyDevice: Boolean,
         ): RequestTemplate {
             var templateToModify = CaptureConfig.TEMPLATE_TYPE_NONE
-            if (sessionTemplate == RequestTemplate(CameraDevice.TEMPLATE_RECORD) &&
-                !isLegacyDevice
+            if (
+                sessionTemplate == RequestTemplate(CameraDevice.TEMPLATE_RECORD) && !isLegacyDevice
             ) {
                 // Always override template by TEMPLATE_VIDEO_SNAPSHOT when
                 // repeating template is TEMPLATE_RECORD. Note:
                 // TEMPLATE_VIDEO_SNAPSHOT is not supported on legacy device.
                 templateToModify = CameraDevice.TEMPLATE_VIDEO_SNAPSHOT
-            } else if (templateType == CaptureConfig.TEMPLATE_TYPE_NONE) {
+            } else if (
+                templateType == CaptureConfig.TEMPLATE_TYPE_NONE ||
+                    templateType == CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG
+            ) {
                 templateToModify = CameraDevice.TEMPLATE_STILL_CAPTURE
             }
 

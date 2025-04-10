@@ -16,17 +16,17 @@
 
 package androidx.window.extensions.embedding;
 
-import android.annotation.SuppressLint;
 import android.os.Build;
 import android.view.WindowMetrics;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
-import androidx.window.extensions.WindowExtensions;
+import androidx.window.extensions.RequiresVendorApiLevel;
 import androidx.window.extensions.core.util.function.Predicate;
 import androidx.window.extensions.embedding.SplitAttributes.SplitType;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -40,11 +40,9 @@ import java.util.Objects;
  * the device.
  */
 public abstract class SplitRule extends EmbeddingRule {
-    @NonNull
-    private final Predicate<WindowMetrics> mParentWindowMetricsPredicate;
+    private final @NonNull Predicate<WindowMetrics> mParentWindowMetricsPredicate;
 
-    @NonNull
-    private final SplitAttributes mDefaultSplitAttributes;
+    private final @NonNull SplitAttributes mDefaultSplitAttributes;
 
     /**
      * Never finish the associated container.
@@ -103,18 +101,17 @@ public abstract class SplitRule extends EmbeddingRule {
      * @param parentMetrics the {@link WindowMetrics} of the parent window.
      * @return whether the parent window satisfied the {@link SplitRule} requirements.
      */
-    @SuppressLint("ClassVerificationFailure") // Only called by Extensions implementation on device.
     @RequiresApi(api = Build.VERSION_CODES.N)
     public boolean checkParentMetrics(@NonNull WindowMetrics parentMetrics) {
         return mParentWindowMetricsPredicate.test(parentMetrics);
     }
 
     /**
-     * @deprecated Use {@link #getDefaultSplitAttributes()} instead starting with
-     * {@link WindowExtensions#VENDOR_API_LEVEL_2}. Only used if
-     * {@link #getDefaultSplitAttributes()} can't be called on
-     * {@link WindowExtensions#VENDOR_API_LEVEL_1}.
+     * @deprecated Use {@link #getDefaultSplitAttributes()} instead starting with vendor API
+     * level 2. Only used if {@link #getDefaultSplitAttributes()} can't be called on vendor API
+     * level 1.
      */
+    @RequiresVendorApiLevel(level = 1, deprecatedSince = 2)
     @Deprecated
     public float getSplitRatio() {
         final SplitType splitType = mDefaultSplitAttributes.getSplitType();
@@ -126,11 +123,11 @@ public abstract class SplitRule extends EmbeddingRule {
     }
 
     /**
-     * @deprecated Use {@link #getDefaultSplitAttributes()} instead starting with
-     * {@link WindowExtensions#VENDOR_API_LEVEL_2}. Only used if
-     * {@link #getDefaultSplitAttributes()} can't be called on
-     * {@link WindowExtensions#VENDOR_API_LEVEL_1}.
+     * @deprecated Use {@link #getDefaultSplitAttributes()} instead starting with vendor API
+     * level 2. Only used if {@link #getDefaultSplitAttributes()} can't be called on vendor API
+     * level 1.
      */
+    @RequiresVendorApiLevel(level = 1, deprecatedSince = 2)
     @Deprecated
     @SplitAttributes.ExtLayoutDirection
     public int getLayoutDirection() {
@@ -140,11 +137,9 @@ public abstract class SplitRule extends EmbeddingRule {
     /**
      * Returns the default {@link SplitAttributes} which is applied if
      * {@link #checkParentMetrics(WindowMetrics)} is {@code true}.
-     *
-     * Since {@link WindowExtensions#VENDOR_API_LEVEL_2}
      */
-    @NonNull
-    public SplitAttributes getDefaultSplitAttributes() {
+    @RequiresVendorApiLevel(level = 2)
+    public @NonNull SplitAttributes getDefaultSplitAttributes() {
         return mDefaultSplitAttributes;
     }
 
@@ -166,9 +161,8 @@ public abstract class SplitRule extends EmbeddingRule {
         return result;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "SplitRule{"
                 + "mTag=" + getTag()
                 + ", mDefaultSplitAttributes=" + mDefaultSplitAttributes

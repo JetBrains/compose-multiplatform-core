@@ -19,7 +19,8 @@ package androidx.wear.tiles.material;
 import static androidx.annotation.Dimension.DP;
 
 import androidx.annotation.Dimension;
-import androidx.annotation.NonNull;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Contains the default values used by button Tiles components.
@@ -33,41 +34,34 @@ public class ButtonDefaults {
     private ButtonDefaults() {}
 
     /** The default size for standard {@link Button}. */
-    @NonNull
-    public static final androidx.wear.tiles.DimensionBuilders.DpProp DEFAULT_SIZE =
+    public static final androidx.wear.tiles.DimensionBuilders.@NonNull DpProp DEFAULT_SIZE =
             androidx.wear.tiles.DimensionBuilders.dp(52);
 
     /** The recommended size for large {@link Button}. */
-    @NonNull
-    public static final androidx.wear.tiles.DimensionBuilders.DpProp LARGE_SIZE =
+    public static final androidx.wear.tiles.DimensionBuilders.@NonNull DpProp LARGE_SIZE =
             androidx.wear.tiles.DimensionBuilders.dp(60);
 
     /** The recommended size for extra large {@link Button}. */
-    @NonNull
-    public static final androidx.wear.tiles.DimensionBuilders.DpProp EXTRA_LARGE_SIZE =
+    public static final androidx.wear.tiles.DimensionBuilders.@NonNull DpProp EXTRA_LARGE_SIZE =
             androidx.wear.tiles.DimensionBuilders.dp(88);
 
     /** Returns the recommended icon size for the given size of a {@link Button}. */
-    @NonNull
-    public static androidx.wear.tiles.DimensionBuilders.DpProp recommendedIconSize(
-            @NonNull androidx.wear.tiles.DimensionBuilders.DpProp buttonSize) {
+    public static androidx.wear.tiles.DimensionBuilders.@NonNull DpProp recommendedIconSize(
+            androidx.wear.tiles.DimensionBuilders.@NonNull DpProp buttonSize) {
         return recommendedIconSize(buttonSize.getValue());
     }
 
     /** Returns the recommended icon size for the given size of a {@link Button}. */
-    @NonNull
-    public static androidx.wear.tiles.DimensionBuilders.DpProp recommendedIconSize(
+    public static androidx.wear.tiles.DimensionBuilders.@NonNull DpProp recommendedIconSize(
             @Dimension(unit = DP) float buttonSize) {
         return androidx.wear.tiles.DimensionBuilders.dp(buttonSize / 2);
     }
 
     /** The recommended colors for a primary {@link Button}. */
-    @NonNull
-    public static final ButtonColors PRIMARY_COLORS =
+    public static final @NonNull ButtonColors PRIMARY_COLORS =
             ButtonColors.primaryButtonColors(Colors.DEFAULT);
 
     /** The recommended colors for a secondary {@link Button}. */
-    @NonNull
-    public static final ButtonColors SECONDARY_COLORS =
+    public static final @NonNull ButtonColors SECONDARY_COLORS =
             ButtonColors.secondaryButtonColors(Colors.DEFAULT);
 }

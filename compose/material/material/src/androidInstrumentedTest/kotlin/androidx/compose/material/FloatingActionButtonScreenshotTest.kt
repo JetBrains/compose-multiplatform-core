@@ -16,20 +16,19 @@
 package androidx.compose.material
 
 import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.testutils.assertAgainstGolden
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.platform.LocalInputModeManager
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -40,7 +39,9 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,24 +49,29 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-@OptIn(ExperimentalTestApi::class)
 class FloatingActionButtonScreenshotTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
-    @get:Rule
-    val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL)
+    @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL)
+
+    // TODO(b/267253920): Add a compose test API to set/reset InputMode.
+    @After
+    fun resetTouchMode() =
+        with(InstrumentationRegistry.getInstrumentation()) {
+            if (SDK_INT < 33) setInTouchMode(true) else resetInTouchMode()
+        }
 
     @Test
     fun icon() {
         rule.setMaterialContent {
-            FloatingActionButton(onClick = { }) {
+            FloatingActionButton(onClick = {}) {
                 Icon(Icons.Filled.Favorite, contentDescription = null)
             }
         }
 
-        rule.onNode(hasClickAction())
+        rule
+            .onNode(hasClickAction())
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "fab_icon")
     }
@@ -73,13 +79,11 @@ class FloatingActionButtonScreenshotTest {
     @Test
     fun text() {
         rule.setMaterialContent {
-            ExtendedFloatingActionButton(
-                text = { Text("EXTENDED") },
-                onClick = {}
-            )
+            ExtendedFloatingActionButton(text = { Text("EXTENDED") }, onClick = {})
         }
 
-        rule.onNode(hasClickAction())
+        rule
+            .onNode(hasClickAction())
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "fab_text")
     }
@@ -94,7 +98,8 @@ class FloatingActionButtonScreenshotTest {
             )
         }
 
-        rule.onNode(hasClickAction())
+        rule
+            .onNode(hasClickAction())
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "fab_textAndIcon")
     }
@@ -103,15 +108,14 @@ class FloatingActionButtonScreenshotTest {
     fun ripple() {
         rule.setMaterialContent {
             Box(Modifier.requiredSize(100.dp, 100.dp).wrapContentSize()) {
-                FloatingActionButton(onClick = { }) {
+                FloatingActionButton(onClick = {}) {
                     Icon(Icons.Filled.Favorite, contentDescription = null)
                 }
             }
         }
 
         // Start ripple
-        rule.onNode(hasClickAction())
-            .performTouchInput { down(center) }
+        rule.onNode(hasClickAction()).performTouchInput { down(center) }
 
         rule.waitForIdle()
         // Ripples are drawn on the RenderThread, not the main (UI) thread, so we can't
@@ -119,29 +123,24 @@ class FloatingActionButtonScreenshotTest {
         // finished animating.
         Thread.sleep(300)
 
-        rule.onRoot()
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, "fab_ripple")
+        rule.onRoot().captureToImage().assertAgainstGolden(screenshotRule, "fab_ripple")
     }
 
     @Test
     fun hover() {
         rule.setMaterialContent {
             Box(Modifier.requiredSize(100.dp, 100.dp).wrapContentSize()) {
-                FloatingActionButton(onClick = { }) {
+                FloatingActionButton(onClick = {}) {
                     Icon(Icons.Filled.Favorite, contentDescription = null)
                 }
             }
         }
 
-        rule.onNode(hasClickAction())
-            .performMouseInput { enter(center) }
+        rule.onNode(hasClickAction()).performMouseInput { enter(center) }
 
         rule.waitForIdle()
 
-        rule.onRoot()
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, "fab_hover")
+        rule.onRoot().captureToImage().assertAgainstGolden(screenshotRule, "fab_hover")
     }
 
     @Test
@@ -153,28 +152,20 @@ class FloatingActionButtonScreenshotTest {
             localInputModeManager = LocalInputModeManager.current
             Box(Modifier.requiredSize(100.dp, 100.dp).wrapContentSize()) {
                 FloatingActionButton(
-                    onClick = { },
-                    modifier = Modifier
-                        .focusRequester(focusRequester)
+                    onClick = {},
+                    modifier = Modifier.focusRequester(focusRequester)
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = null)
                 }
             }
         }
 
-        rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class)
-            localInputModeManager!!.requestInputMode(InputMode.Keyboard)
-        }
+        rule.runOnIdle { localInputModeManager!!.requestInputMode(InputMode.Keyboard) }
 
-        rule.runOnIdle {
-            focusRequester.requestFocus()
-        }
+        rule.runOnIdle { focusRequester.requestFocus() }
 
         rule.waitForIdle()
 
-        rule.onRoot()
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, "fab_focus")
+        rule.onRoot().captureToImage().assertAgainstGolden(screenshotRule, "fab_focus")
     }
 }

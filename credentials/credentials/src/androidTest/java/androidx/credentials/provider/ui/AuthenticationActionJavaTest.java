@@ -22,7 +22,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 
 import android.app.PendingIntent;
-import android.app.slice.Slice;
 import android.content.Context;
 import android.content.Intent;
 
@@ -75,13 +74,30 @@ public class AuthenticationActionJavaTest {
 
     @Test
     @SdkSuppress(minSdkVersion = 28)
+    @SuppressWarnings("deprecation")
     public void fromSlice_success() {
         AuthenticationAction originalAction = new AuthenticationAction(TITLE, mPendingIntent);
-        Slice slice = AuthenticationAction.toSlice(originalAction);
+        android.app.slice.Slice slice = AuthenticationAction.toSlice(originalAction);
 
         AuthenticationAction fromSlice = AuthenticationAction.fromSlice(slice);
 
         assertNotNull(fromSlice);
         assertThat(fromSlice.getPendingIntent()).isEqualTo(mPendingIntent);
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 34)
+    @SuppressWarnings("deprecation")
+    public void fromAction_success() {
+        AuthenticationAction originalAction = new AuthenticationAction(TITLE, mPendingIntent);
+        android.app.slice.Slice slice = AuthenticationAction.toSlice(originalAction);
+        assertNotNull(slice);
+
+        AuthenticationAction action = AuthenticationAction.fromAction(
+                new android.service.credentials.Action(slice)
+        );
+
+        assertNotNull(action);
+        assertThat(action.getPendingIntent()).isEqualTo(mPendingIntent);
     }
 }

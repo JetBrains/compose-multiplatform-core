@@ -18,12 +18,16 @@ package androidx.appsearch.builtintypes;
 
 import static androidx.core.util.Preconditions.checkNotNull;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.appsearch.annotation.Document;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.builtintypes.properties.Keyword;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -36,30 +40,32 @@ import java.util.Objects;
 @Document(name = "builtin:ImageObject")
 public final class ImageObject extends Thing {
 
-    @NonNull
     @Document.DocumentProperty(name = "keywords", indexNestedProperties = true)
-    private final List<Keyword> mKeywords;
+    private final @NonNull List<Keyword> mKeywords;
 
-    @Nullable
     @Document.StringProperty
-    private final String mSha256;
+    private final @Nullable String mSha256;
 
-    @Nullable
     @Document.StringProperty
-    private final String mThumbnailSha256;
+    private final @Nullable String mThumbnailSha256;
 
+    @Document.BytesProperty
+    private final byte @Nullable [] mBytes;
+
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     ImageObject(@NonNull String namespace, @NonNull String id, int documentScore,
             long creationTimestampMillis, long documentTtlMillis, @Nullable String name,
             @Nullable List<String> alternateNames, @Nullable String description,
             @Nullable String image, @Nullable String url,
             @NonNull List<PotentialAction> potentialActions,
             @NonNull List<Keyword> keywords,
-            @Nullable String sha256, @Nullable String thumbnailSha256) {
+            @Nullable String sha256, @Nullable String thumbnailSha256, byte @Nullable [] bytes) {
         super(namespace, id, documentScore, creationTimestampMillis, documentTtlMillis, name,
                 alternateNames, description, image, url, potentialActions);
         mKeywords = checkNotNull(keywords);
         mSha256 = sha256;
         mThumbnailSha256 = thumbnailSha256;
+        mBytes = bytes;
     }
 
     /**
@@ -67,8 +73,7 @@ public final class ImageObject extends Thing {
      *
      * <p>See <a href="http://schema.org/keywords">http://schema.org/keywords</a> for more context.
      */
-    @NonNull
-    public List<Keyword> getKeywords() {
+    public @NonNull List<Keyword> getKeywords() {
         return mKeywords;
     }
 
@@ -79,17 +84,23 @@ public final class ImageObject extends Thing {
      *
      * <p>See <a href="http://schema.org/sha256">http://schema.org/sha256</a> for more context.
      */
-    @Nullable
-    public String getSha256() {
+    public @Nullable String getSha256() {
         return mSha256;
     }
 
     /**
      * Returns the {@code sha256} for the thumbnail of this image or video.
      */
-    @Nullable
-    public String getThumbnailSha256() {
+    public @Nullable String getThumbnailSha256() {
         return mThumbnailSha256;
+    }
+
+    /**
+     * Returns the byte representation of this image or video.
+     * Can be a compressed bitmap (e.g. JPEG or PNG).
+     */
+    public byte @Nullable [] getBytes() {
+        return mBytes;
     }
 
     @Override
@@ -98,12 +109,13 @@ public final class ImageObject extends Thing {
         if (o == null || getClass() != o.getClass()) return false;
         ImageObject that = (ImageObject) o;
         return mKeywords.equals(that.mKeywords) && Objects.equals(mSha256, that.mSha256)
-                && Objects.equals(mThumbnailSha256, that.mThumbnailSha256);
+                && Objects.equals(mThumbnailSha256, that.mThumbnailSha256)
+                && Arrays.equals(mBytes, that.mBytes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mKeywords, mSha256, mThumbnailSha256);
+        return Objects.hash(mKeywords, mSha256, mThumbnailSha256, Arrays.hashCode(mBytes));
     }
 
     /**
@@ -131,20 +143,20 @@ public final class ImageObject extends Thing {
 
     @SuppressWarnings("unchecked")
     static class BuilderImpl<Self extends BuilderImpl<Self>> extends Thing.BuilderImpl<Self> {
-        @NonNull
-        protected final List<Keyword> mKeywords;
+        protected final @NonNull List<Keyword> mKeywords;
 
-        @Nullable
-        protected String mSha256;
+        protected @Nullable String mSha256;
 
-        @Nullable
-        protected String mThumbnailSha256;
+        protected @Nullable String mThumbnailSha256;
+
+        protected byte @Nullable [] mBytes;
 
         BuilderImpl(@NonNull String namespace, @NonNull String id) {
             super(namespace, id);
             mKeywords = new ArrayList<>();
             mSha256 = null;
             mThumbnailSha256 = null;
+            mBytes = null;
         }
 
         BuilderImpl(@NonNull ImageObject copyFrom) {
@@ -152,14 +164,15 @@ public final class ImageObject extends Thing {
             mKeywords = new ArrayList<>(copyFrom.getKeywords());
             mSha256 = copyFrom.getSha256();
             mThumbnailSha256 = copyFrom.getThumbnailSha256();
+            mBytes = copyFrom.getBytes();
         }
 
-        @NonNull
         @Override
-        public ImageObject build() {
+        public @NonNull ImageObject build() {
             return new ImageObject(mNamespace, mId, mDocumentScore, mCreationTimestampMillis,
                     mDocumentTtlMillis, mName, mAlternateNames, mDescription, mImage, mUrl,
-                    mPotentialActions, new ArrayList<>(mKeywords), mSha256, mThumbnailSha256);
+                    mPotentialActions, new ArrayList<>(mKeywords), mSha256, mThumbnailSha256,
+                    mBytes);
         }
 
         /**
@@ -167,8 +180,7 @@ public final class ImageObject extends Thing {
          */
         // Atypical overloads in the Builder to model union types.
         @SuppressWarnings("MissingGetterMatchingBuilder")
-        @NonNull
-        public Self addKeyword(@NonNull String text) {
+        public @NonNull Self addKeyword(@NonNull String text) {
             mKeywords.add(new Keyword(checkNotNull(text)));
             return (Self) this;
         }
@@ -176,8 +188,7 @@ public final class ImageObject extends Thing {
         /**
          * Appends the {@link Keyword}.
          */
-        @NonNull
-        public Self addKeyword(@NonNull Keyword keyword) {
+        public @NonNull Self addKeyword(@NonNull Keyword keyword) {
             mKeywords.add(checkNotNull(keyword));
             return (Self) this;
         }
@@ -185,8 +196,7 @@ public final class ImageObject extends Thing {
         /**
          * Appends all the {@code values}.
          */
-        @NonNull
-        public Self addKeywords(@NonNull Iterable<Keyword> values) {
+        public @NonNull Self addKeywords(@NonNull Iterable<Keyword> values) {
             for (Keyword value : checkNotNull(values)) {
                 mKeywords.add(checkNotNull(value));
             }
@@ -196,8 +206,7 @@ public final class ImageObject extends Thing {
         /**
          * Sets the {@code sha256}.
          */
-        @NonNull
-        public Self setSha256(@Nullable String text) {
+        public @NonNull Self setSha256(@Nullable String text) {
             mSha256 = text;
             return (Self) this;
         }
@@ -205,9 +214,16 @@ public final class ImageObject extends Thing {
         /**
          * Sets the {@code sha256} of the thumbnail of this image of video.
          */
-        @NonNull
-        public Self setThumbnailSha256(@Nullable String text) {
+        public @NonNull Self setThumbnailSha256(@Nullable String text) {
             mThumbnailSha256 = text;
+            return (Self) this;
+        }
+
+        /**
+         * Sets the byte representation of this image or video.
+         */
+        public @NonNull Self setBytes(byte @Nullable [] bytes) {
+            mBytes = bytes;
             return (Self) this;
         }
     }

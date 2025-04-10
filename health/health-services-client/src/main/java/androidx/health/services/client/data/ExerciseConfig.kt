@@ -25,24 +25,25 @@ import androidx.health.services.client.proto.DataProto
  * Defines configuration for an exercise tracked using Health Services.
  *
  * @constructor Creates a new ExerciseConfig for an exercise tracked using Health Services
- *
  * @property exerciseType [ExerciseType] user is performing for this exercise
  * @property dataTypes [DataType] which will be tracked for this exercise
  * @property isAutoPauseAndResumeEnabled whether auto-pause/resume is enabled for this exercise
  * @property isGpsEnabled whether GPS is enabled for this exercise. Must be set to `true` when
- * [DataType.LOCATION] is present in [dataTypes].
+ *   [DataType.LOCATION] is present in [dataTypes].
  * @property exerciseGoals [ExerciseGoal]s for this exercise. [DataType]s in [ExerciseGoal]s must
- * also be tracked (i.e. contained in [dataTypes]) in some form. For example, an [ExerciseGoal] for
- * [DataType.STEPS_TOTAL] requires that [dataTypes] contains either or both of
- * [DataType.STEPS_TOTAL] / [DataType.STEPS].
+ *   also be tracked (i.e. contained in [dataTypes]) in some form. For example, an [ExerciseGoal]
+ *   for [DataType.STEPS_TOTAL] requires that [dataTypes] contains either or both of
+ *   [DataType.STEPS_TOTAL] / [DataType.STEPS].
  * @property exerciseParams [Bundle] bundle for specifying exercise presets, the values of an
- * on-going exercise which can be used to pre-populate a new exercise.
- * @property swimmingPoolLengthMeters length (in meters) of the swimming pool, or 0 if not relevant to
- * this exercise
- * @property exerciseTypeConfig [ExerciseTypeConfig] containing attributes which may be
- * modified after the exercise has started
+ *   on-going exercise which can be used to pre-populate a new exercise.
+ * @property swimmingPoolLengthMeters length (in meters) of the swimming pool, or 0 if not relevant
+ *   to this exercise
+ * @property exerciseTypeConfig [ExerciseTypeConfig] containing attributes which may be modified
+ *   after the exercise has started
  * @property batchingModeOverrides [BatchingMode] overrides for this exercise
  * @property exerciseEventTypes [ExerciseEventType]s which should be tracked for this exercise
+ * @property debouncedGoals [DebouncedGoal]s for this exercise. [DataType]s in [DebouncedGoal]s must
+ *   also be tracked.
  */
 @Suppress("ParcelCreator")
 class ExerciseConfig
@@ -58,6 +59,7 @@ constructor(
     val exerciseTypeConfig: ExerciseTypeConfig? = null,
     val batchingModeOverrides: Set<BatchingMode> = emptySet(),
     val exerciseEventTypes: Set<ExerciseEventType<*>> = emptySet(),
+    val debouncedGoals: List<DebouncedGoal<*>> = emptyList(),
 ) {
 
     internal constructor(
@@ -70,8 +72,8 @@ constructor(
         proto.isGpsUsageEnabled,
         proto.exerciseGoalsList.map { ExerciseGoal.fromProto(it) },
         BundlesUtil.fromProto(proto.exerciseParams),
-        if (proto.hasSwimmingPoolLength()) {
-            proto.swimmingPoolLength
+        if (proto.hasSwimmingPoolLengthMeters()) {
+            proto.swimmingPoolLengthMeters
         } else {
             SWIMMING_POOL_LENGTH_UNSPECIFIED
         },
@@ -80,6 +82,7 @@ constructor(
         } else null,
         proto.batchingModeOverridesList.map { BatchingMode(it) }.toSet(),
         proto.exerciseEventTypesList.map { ExerciseEventType.fromProto(it) }.toSet(),
+        proto.debouncedGoalsList.map { DebouncedGoal.fromProto(it) },
     )
 
     init {
@@ -116,6 +119,7 @@ constructor(
         private var exerciseTypeConfig: ExerciseTypeConfig? = null
         private var batchingModeOverrides: Set<BatchingMode> = emptySet()
         private var exerciseEventTypes: Set<ExerciseEventType<*>> = emptySet()
+        private var debouncedGoals: List<DebouncedGoal<*>> = emptyList()
 
         /**
          * Sets the requested [DataType]s that should be tracked during this exercise. If not
@@ -123,7 +127,7 @@ constructor(
          * [ExerciseType].
          *
          * @param dataTypes set of [DataType]s ([AggregateDataType] or [DeltaDataType]) to track
-         * during this exercise
+         *   during this exercise
          */
         fun setDataTypes(dataTypes: Set<DataType<*, *>>): Builder {
             this.dataTypes = dataTypes.toSet()
@@ -145,14 +149,13 @@ constructor(
         /**
          * Sets whether GPS will be used for this exercise. If not set, it's disabled by default.
          *
-         * If [DataType.LOCATION] is among the data types requested for the exercise, GPS usage
-         * MUST be enabled. Enabling GPS will improve data generation for types like distance and
-         * speed.
+         * If [DataType.LOCATION] is among the data types requested for the exercise, GPS usage MUST
+         * be enabled. Enabling GPS will improve data generation for types like distance and speed.
          *
-         * If no data type is specified in the configuration, WHS provides all data types
-         * supported for the exercise. In this case, if [DataType.LOCATION] is among the supported
-         * data types for the exercise but GPS usage is disabled (i.e. [isGpsEnabled] is `false`,
-         * then [ExerciseClient.startExerciseAsync] will fail.
+         * If no data type is specified in the configuration, WHS provides all data types supported
+         * for the exercise. In this case, if [DataType.LOCATION] is among the supported data types
+         * for the exercise but GPS usage is disabled (i.e. [isGpsEnabled] is `false`, then
+         * [ExerciseClient.startExerciseAsync] will fail.
          *
          * @param isGpsEnabled if true, GPS will be enabled for this exercise
          */
@@ -173,6 +176,20 @@ constructor(
          */
         fun setExerciseGoals(exerciseGoals: List<ExerciseGoal<*>>): Builder {
             this.exerciseGoals = exerciseGoals
+            return this
+        }
+
+        /**
+         * Sets [DebouncedGoal]s specified for this exercise.
+         *
+         * [DataType]s in [DebouncedGoal]s must also be tracked. Only one debounced goal per data
+         * type can be tracked in an exercise. If multiple debuonced goals of the same data type,
+         * only the last one will be applied.
+         *
+         * @param debouncedGoals the list of [DeoubcendGoal]s to begin the exercise with
+         */
+        fun setDebouncedGoals(debouncedGoals: List<DebouncedGoal<*>>): Builder {
+            this.debouncedGoals = debouncedGoals
             return this
         }
 
@@ -198,7 +215,7 @@ constructor(
          * Sets the [ExerciseTypeConfig] which are configurable attributes for the ongoing exercise.
          *
          * @param exerciseTypeConfig [ExerciseTypeConfig] specifying active exercise type
-         * configurations
+         *   configurations
          */
         fun setExerciseTypeConfig(exerciseTypeConfig: ExerciseTypeConfig?): Builder {
             this.exerciseTypeConfig = exerciseTypeConfig
@@ -238,6 +255,7 @@ constructor(
                 exerciseTypeConfig,
                 batchingModeOverrides,
                 exerciseEventTypes,
+                debouncedGoals,
             )
         }
     }
@@ -250,20 +268,23 @@ constructor(
             "isGpsEnabled=$isGpsEnabled, " +
             "exerciseGoals=$exerciseGoals, " +
             "swimmingPoolLengthMeters=$swimmingPoolLengthMeters, " +
-            "exerciseTypeConfig=$exerciseTypeConfig)"
+            "exerciseTypeConfig=$exerciseTypeConfig, " +
+            "debouncedGoals=$debouncedGoals)"
 
     internal fun toProto(): DataProto.ExerciseConfig {
-        val builder = DataProto.ExerciseConfig.newBuilder()
-            .setExerciseType(exerciseType.toProto())
-            .addAllDataTypes(dataTypes.filter { !it.isAggregate }.map { it.proto })
-            .addAllAggregateDataTypes(dataTypes.filter { it.isAggregate }.map { it.proto })
-            .setIsAutoPauseAndResumeEnabled(isAutoPauseAndResumeEnabled)
-            .setIsGpsUsageEnabled(isGpsEnabled)
-            .addAllExerciseGoals(exerciseGoals.map { it.proto })
-            .setExerciseParams(BundlesUtil.toProto(exerciseParams))
-            .setSwimmingPoolLength(swimmingPoolLengthMeters)
-            .addAllBatchingModeOverrides(batchingModeOverrides.map { it.toProto() })
-            .addAllExerciseEventTypes(exerciseEventTypes.map { it.toProto() })
+        val builder =
+            DataProto.ExerciseConfig.newBuilder()
+                .setExerciseType(exerciseType.toProto())
+                .addAllDataTypes(dataTypes.filter { !it.isAggregate }.map { it.proto })
+                .addAllAggregateDataTypes(dataTypes.filter { it.isAggregate }.map { it.proto })
+                .setIsAutoPauseAndResumeEnabled(isAutoPauseAndResumeEnabled)
+                .setIsGpsUsageEnabled(isGpsEnabled)
+                .addAllExerciseGoals(exerciseGoals.map { it.proto })
+                .addAllDebouncedGoals(debouncedGoals.map { it.proto })
+                .setExerciseParams(BundlesUtil.toProto(exerciseParams))
+                .setSwimmingPoolLengthMeters(swimmingPoolLengthMeters)
+                .addAllBatchingModeOverrides(batchingModeOverrides.map { it.toProto() })
+                .addAllExerciseEventTypes(exerciseEventTypes.map { it.toProto() })
         if (exerciseTypeConfig != null) {
             builder.exerciseTypeConfig = exerciseTypeConfig.toProto()
         }
@@ -276,8 +297,7 @@ constructor(
          *
          * @param exerciseType the [ExerciseType] representing this exercise
          */
-        @JvmStatic
-        fun builder(exerciseType: ExerciseType): Builder = Builder(exerciseType)
+        @JvmStatic fun builder(exerciseType: ExerciseType): Builder = Builder(exerciseType)
 
         public const val SWIMMING_POOL_LENGTH_UNSPECIFIED = 0.0f
     }

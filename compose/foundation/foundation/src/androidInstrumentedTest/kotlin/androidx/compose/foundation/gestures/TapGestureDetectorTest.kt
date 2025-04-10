@@ -16,6 +16,15 @@
 
 package androidx.compose.foundation.gestures
 
+import android.os.Build
+import android.view.InputDevice
+import android.view.MotionEvent
+import android.view.MotionEvent.ACTION_DOWN
+import android.view.MotionEvent.ACTION_MOVE
+import android.view.MotionEvent.CLASSIFICATION_DEEP_PRESS
+import android.view.MotionEvent.CLASSIFICATION_NONE
+import android.view.MotionEvent.PointerCoords
+import android.view.View
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -31,6 +40,7 @@ import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.TouchInjectionScope
@@ -39,6 +49,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
+import androidx.test.filters.SdkSuppress
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -52,8 +63,7 @@ private const val TargetTag = "TargetLayout"
 @RunWith(JUnit4::class)
 class TapGestureDetectorTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private var pressed = false
     private var released = false
@@ -66,8 +76,8 @@ class TapGestureDetectorTest {
     private val LongPressTimeoutMillis: Long = 500L
 
     /**
-     * The maximum time from the start of the first tap to the start of the second
-     * tap in a double-tap gesture.
+     * The maximum time from the start of the first tap to the start of the second tap in a
+     * double-tap gesture.
      */
     // TODO(shepshapard): In Android, this is actually the time from the first's up event
     // to the second's down event, according to the ViewConfiguration docs.
@@ -83,9 +93,7 @@ class TapGestureDetectorTest {
                     canceled = true
                 }
             },
-            onTap = {
-                tapped = true
-            }
+            onTap = { tapped = true }
         )
     }
 
@@ -99,9 +107,7 @@ class TapGestureDetectorTest {
                     canceled = true
                 }
             },
-            onTap = {
-                tapped = true
-            }
+            onTap = { tapped = true }
         )
     }
 
@@ -142,14 +148,12 @@ class TapGestureDetectorTest {
     ): @Composable () -> Unit = {
         CompositionLocalProvider(
             LocalDensity provides Density(1f),
-            LocalViewConfiguration provides TestViewConfiguration(
-                minimumTouchTargetSize = DpSize.Zero
-            )
+            LocalViewConfiguration provides
+                TestViewConfiguration(minimumTouchTargetSize = DpSize.Zero)
         ) {
             with(LocalDensity.current) {
                 Box(
-                    Modifier
-                        .fillMaxSize()
+                    Modifier.fillMaxSize()
                         // Some tests execute a lambda before the initial and final passes
                         // so they are called here, higher up the chain, so that the
                         // calls happen prior to the gestureDetector below. The lambdas
@@ -159,13 +163,9 @@ class TapGestureDetectorTest {
                             awaitPointerEventScope {
                                 while (true) {
                                     val event = awaitPointerEvent(PointerEventPass.Initial)
-                                    event.changes.forEach {
-                                        initialPass(it)
-                                    }
+                                    event.changes.forEach { initialPass(it) }
                                     awaitPointerEvent(PointerEventPass.Final)
-                                    event.changes.forEach {
-                                        finalPass(it)
-                                    }
+                                    event.changes.forEach { finalPass(it) }
                                 }
                             }
                         }
@@ -191,16 +191,12 @@ class TapGestureDetectorTest {
         this.finalPass = nothingHandler
     }
 
-    /**
-     * Clicking in the region should result in the callback being invoked.
-     */
+    /** Clicking in the region should result in the callback being invoked. */
     @Test
     fun normalTap() {
         rule.setContent(util)
 
-        performTouch(finalPass = { assertTrue(isConsumed) }) {
-            down(0, Offset(5f, 5f))
-        }
+        performTouch(finalPass = { assertTrue(isConsumed) }) { down(0, Offset(5f, 5f)) }
 
         assertTrue(pressed)
         assertFalse(tapped)
@@ -208,25 +204,19 @@ class TapGestureDetectorTest {
 
         rule.mainClock.advanceTimeBy(50)
 
-        performTouch(finalPass = { assertTrue(isConsumed) }) {
-            up(0)
-        }
+        performTouch(finalPass = { assertTrue(isConsumed) }) { up(0) }
 
         assertTrue(tapped)
         assertTrue(released)
         assertFalse(canceled)
     }
 
-    /**
-     * Clicking in the region should result in the callback being invoked.
-     */
+    /** Clicking in the region should result in the callback being invoked. */
     @Test
     fun normalTap_withShortcut() {
         rule.setContent(utilWithShortcut)
 
-        performTouch(finalPass = { assertTrue(isConsumed) }) {
-            down(0, Offset(5f, 5f))
-        }
+        performTouch(finalPass = { assertTrue(isConsumed) }) { down(0, Offset(5f, 5f)) }
 
         assertTrue(pressed)
         assertFalse(tapped)
@@ -234,33 +224,25 @@ class TapGestureDetectorTest {
 
         rule.mainClock.advanceTimeBy(50)
 
-        performTouch(finalPass = { assertTrue(isConsumed) }) {
-            up(0)
-        }
+        performTouch(finalPass = { assertTrue(isConsumed) }) { up(0) }
 
         assertTrue(tapped)
         assertTrue(released)
         assertFalse(canceled)
     }
 
-    /**
-     * Clicking in the region should result in the callback being invoked.
-     */
+    /** Clicking in the region should result in the callback being invoked. */
     @Test
     fun normalTapWithAllGestures() {
         rule.setContent(allGestures)
 
-        performTouch(finalPass = { assertTrue(isConsumed) }) {
-            down(0, Offset(5f, 5f))
-        }
+        performTouch(finalPass = { assertTrue(isConsumed) }) { down(0, Offset(5f, 5f)) }
 
         assertTrue(pressed)
 
         rule.mainClock.advanceTimeBy(50)
 
-        performTouch(finalPass = { assertTrue(isConsumed) }) {
-            up(0)
-        }
+        performTouch(finalPass = { assertTrue(isConsumed) }) { up(0) }
 
         assertTrue(released)
 
@@ -275,19 +257,13 @@ class TapGestureDetectorTest {
         assertFalse(doubleTapped)
     }
 
-    /**
-     * Clicking in the region should result in the callback being invoked.
-     */
+    /** Clicking in the region should result in the callback being invoked. */
     @Test
     fun normalDoubleTap() {
         rule.setContent(allGestures)
 
-        performTouch {
-            down(0, Offset(5f, 5f))
-        }
-        performTouch(finalPass = { assertTrue(isConsumed) }) {
-            up(0)
-        }
+        performTouch { down(0, Offset(5f, 5f)) }
+        performTouch(finalPass = { assertTrue(isConsumed) }) { up(0) }
 
         assertTrue(pressed)
         assertTrue(released)
@@ -299,12 +275,8 @@ class TapGestureDetectorTest {
 
         rule.mainClock.advanceTimeBy(50)
 
-        performTouch {
-            down(0, Offset(5f, 5f))
-        }
-        performTouch(finalPass = { assertTrue(isConsumed) }) {
-            up(0)
-        }
+        performTouch { down(0, Offset(5f, 5f)) }
+        performTouch(finalPass = { assertTrue(isConsumed) }) { up(0) }
 
         assertFalse(tapped)
         assertTrue(doubleTapped)
@@ -312,16 +284,12 @@ class TapGestureDetectorTest {
         assertTrue(released)
     }
 
-    /**
-     * Long press in the region should result in the callback being invoked.
-     */
+    /** Long press in the region should result in the callback being invoked. */
     @Test
     fun normalLongPress() {
         rule.setContent(allGestures)
 
-        performTouch(finalPass = { assertTrue(isConsumed) }) {
-            down(0, Offset(5f, 5f))
-        }
+        performTouch(finalPass = { assertTrue(isConsumed) }) { down(0, Offset(5f, 5f)) }
 
         assertTrue(pressed)
 
@@ -331,9 +299,7 @@ class TapGestureDetectorTest {
 
         rule.mainClock.advanceTimeBy(500)
 
-        performTouch(finalPass = { assertTrue(isConsumed) }) {
-            up(0)
-        }
+        performTouch(finalPass = { assertTrue(isConsumed) }) { up(0) }
 
         assertFalse(tapped)
         assertFalse(doubleTapped)
@@ -342,8 +308,8 @@ class TapGestureDetectorTest {
     }
 
     /**
-     * Pressing in the region, sliding out and then lifting should result in
-     * the callback not being invoked
+     * Pressing in the region, sliding out and then lifting should result in the callback not being
+     * invoked
      */
     @Test
     fun tapMiss() {
@@ -354,9 +320,7 @@ class TapGestureDetectorTest {
             moveTo(0, Offset(15f, 15f))
         }
 
-        performTouch(finalPass = { assertFalse(isConsumed) }) {
-            up(0)
-        }
+        performTouch(finalPass = { assertFalse(isConsumed) }) { up(0) }
 
         assertTrue(pressed)
         assertTrue(canceled)
@@ -365,8 +329,8 @@ class TapGestureDetectorTest {
     }
 
     /**
-     * Pressing in the region, sliding out and then lifting should result in
-     * the callback not being invoked
+     * Pressing in the region, sliding out and then lifting should result in the callback not being
+     * invoked
      */
     @Test
     fun tapMiss_withShortcut() {
@@ -377,9 +341,7 @@ class TapGestureDetectorTest {
             moveTo(0, Offset(15f, 15f))
         }
 
-        performTouch(finalPass = { assertFalse(isConsumed) }) {
-            up(0)
-        }
+        performTouch(finalPass = { assertFalse(isConsumed) }) { up(0) }
 
         assertTrue(pressed)
         assertTrue(canceled)
@@ -388,8 +350,8 @@ class TapGestureDetectorTest {
     }
 
     /**
-     * Pressing in the region, sliding out and then lifting should result in
-     * the callback not being invoked
+     * Pressing in the region, sliding out and then lifting should result in the callback not being
+     * invoked
      */
     @Test
     fun longPressMiss() {
@@ -402,9 +364,7 @@ class TapGestureDetectorTest {
 
         rule.mainClock.advanceTimeBy(LongPressTimeoutMillis + 10)
 
-        performTouch(finalPass = { assertFalse(isConsumed) }) {
-            up(0)
-        }
+        performTouch(finalPass = { assertFalse(isConsumed) }) { up(0) }
 
         assertTrue(pressed)
         assertFalse(released)
@@ -415,8 +375,8 @@ class TapGestureDetectorTest {
     }
 
     /**
-     * Pressing in the region, sliding out and then lifting should result in
-     * the callback not being invoked for double-tap
+     * Pressing in the region, sliding out and then lifting should result in the callback not being
+     * invoked for double-tap
      */
     @Test
     fun doubleTapMiss() {
@@ -441,9 +401,7 @@ class TapGestureDetectorTest {
             moveTo(1, Offset(15f, 15f))
         }
 
-        performTouch(finalPass = { assertFalse(isConsumed) }) {
-            up(1)
-        }
+        performTouch(finalPass = { assertFalse(isConsumed) }) { up(1) }
 
         assertTrue(pressed)
         assertFalse(released)
@@ -454,8 +412,8 @@ class TapGestureDetectorTest {
     }
 
     /**
-     * Pressing in the region, sliding out, then back in, then lifting
-     * should result the gesture being canceled.
+     * Pressing in the region, sliding out, then back in, then lifting should result the gesture
+     * being canceled.
      */
     @Test
     fun tapOutAndIn() {
@@ -467,9 +425,7 @@ class TapGestureDetectorTest {
             moveTo(0, Offset(6f, 6f))
         }
 
-        performTouch(finalPass = { assertFalse(isConsumed) }) {
-            up(0)
-        }
+        performTouch(finalPass = { assertFalse(isConsumed) }) { up(0) }
 
         assertFalse(tapped)
         assertTrue(pressed)
@@ -478,8 +434,8 @@ class TapGestureDetectorTest {
     }
 
     /**
-     * Pressing in the region, sliding out, then back in, then lifting
-     * should result the gesture being canceled.
+     * Pressing in the region, sliding out, then back in, then lifting should result the gesture
+     * being canceled.
      */
     @Test
     fun tapOutAndIn_withShortcut() {
@@ -491,9 +447,7 @@ class TapGestureDetectorTest {
             moveTo(0, Offset(6f, 6f))
         }
 
-        performTouch(finalPass = { assertFalse(isConsumed) }) {
-            up(0)
-        }
+        performTouch(finalPass = { assertFalse(isConsumed) }) { up(0) }
 
         assertFalse(tapped)
         assertTrue(pressed)
@@ -501,9 +455,7 @@ class TapGestureDetectorTest {
         assertTrue(canceled)
     }
 
-    /**
-     * After a first tap, a second tap should also be detected.
-     */
+    /** After a first tap, a second tap should also be detected. */
     @Test
     fun secondTap() {
         rule.setContent(util)
@@ -532,9 +484,7 @@ class TapGestureDetectorTest {
         assertFalse(canceled)
     }
 
-    /**
-     * After a first tap, a second tap should also be detected.
-     */
+    /** After a first tap, a second tap should also be detected. */
     @Test
     fun secondTap_withShortcut() {
         rule.setContent(utilWithShortcut)
@@ -564,23 +514,19 @@ class TapGestureDetectorTest {
     }
 
     /**
-     * Clicking in the region with the up already consumed should result in the callback not
-     * being invoked.
+     * Clicking in the region with the up already consumed should result in the callback not being
+     * invoked.
      */
     @Test
     fun consumedUpTap() {
         rule.setContent(util)
 
-        performTouch {
-            down(0, Offset(5f, 5f))
-        }
+        performTouch { down(0, Offset(5f, 5f)) }
 
         assertFalse(tapped)
         assertTrue(pressed)
 
-        performTouch(initialPass = { if (pressed != previousPressed) consume() }) {
-            up(0)
-        }
+        performTouch(initialPass = { if (pressed != previousPressed) consume() }) { up(0) }
 
         assertFalse(tapped)
         assertFalse(released)
@@ -588,23 +534,19 @@ class TapGestureDetectorTest {
     }
 
     /**
-     * Clicking in the region with the up already consumed should result in the callback not
-     * being invoked.
+     * Clicking in the region with the up already consumed should result in the callback not being
+     * invoked.
      */
     @Test
     fun consumedUpTap_withShortcut() {
         rule.setContent(utilWithShortcut)
 
-        performTouch {
-            down(0, Offset(5f, 5f))
-        }
+        performTouch { down(0, Offset(5f, 5f)) }
 
         assertFalse(tapped)
         assertTrue(pressed)
 
-        performTouch(initialPass = { if (pressed != previousPressed) consume() }) {
-            up(0)
-        }
+        performTouch(initialPass = { if (pressed != previousPressed) consume() }) { up(0) }
 
         assertFalse(tapped)
         assertFalse(released)
@@ -612,26 +554,20 @@ class TapGestureDetectorTest {
     }
 
     /**
-     * Clicking in the region with the motion consumed should result in the callback not
-     * being invoked.
+     * Clicking in the region with the motion consumed should result in the callback not being
+     * invoked.
      */
     @Test
     fun consumedMotionTap() {
         rule.setContent(util)
 
-        performTouch {
-            down(0, Offset(5f, 5f))
-        }
+        performTouch { down(0, Offset(5f, 5f)) }
 
-        performTouch(initialPass = { consume() }) {
-            moveTo(0, Offset(6f, 2f))
-        }
+        performTouch(initialPass = { consume() }) { moveTo(0, Offset(6f, 2f)) }
 
         rule.mainClock.advanceTimeBy(50)
 
-        performTouch {
-            up(0)
-        }
+        performTouch { up(0) }
 
         assertFalse(tapped)
         assertTrue(pressed)
@@ -640,26 +576,20 @@ class TapGestureDetectorTest {
     }
 
     /**
-     * Clicking in the region with the motion consumed should result in the callback not
-     * being invoked.
+     * Clicking in the region with the motion consumed should result in the callback not being
+     * invoked.
      */
     @Test
     fun consumedMotionTap_withShortcut() {
         rule.setContent(utilWithShortcut)
 
-        performTouch {
-            down(0, Offset(5f, 5f))
-        }
+        performTouch { down(0, Offset(5f, 5f)) }
 
-        performTouch(initialPass = { consume() }) {
-            moveTo(0, Offset(6f, 2f))
-        }
+        performTouch(initialPass = { consume() }) { moveTo(0, Offset(6f, 2f)) }
 
         rule.mainClock.advanceTimeBy(50)
 
-        performTouch {
-            up(0)
-        }
+        performTouch { up(0) }
 
         assertFalse(tapped)
         assertTrue(pressed)
@@ -671,19 +601,13 @@ class TapGestureDetectorTest {
     fun consumedChange_MotionTap() {
         rule.setContent(util)
 
-        performTouch {
-            down(0, Offset(5f, 5f))
-        }
+        performTouch { down(0, Offset(5f, 5f)) }
 
-        performTouch(initialPass = { consume() }) {
-            moveTo(0, Offset(6f, 2f))
-        }
+        performTouch(initialPass = { consume() }) { moveTo(0, Offset(6f, 2f)) }
 
         rule.mainClock.advanceTimeBy(50)
 
-        performTouch {
-            up(0)
-        }
+        performTouch { up(0) }
 
         assertFalse(tapped)
         assertTrue(pressed)
@@ -692,174 +616,124 @@ class TapGestureDetectorTest {
     }
 
     /**
-     * Clicking in the region with the up already consumed should result in the callback not
-     * being invoked.
+     * Clicking in the region with the up already consumed should result in the callback not being
+     * invoked.
      */
     @Test
     fun consumedChange_upTap() {
         rule.setContent(util)
 
-        performTouch {
-            down(0, Offset(5f, 5f))
-        }
+        performTouch { down(0, Offset(5f, 5f)) }
 
         assertFalse(tapped)
         assertTrue(pressed)
 
-        performTouch(initialPass = { consume() }) {
-            up(0)
-        }
+        performTouch(initialPass = { consume() }) { up(0) }
 
         assertFalse(tapped)
         assertFalse(released)
         assertTrue(canceled)
     }
 
-    /**
-     * Ensure that two-finger taps work.
-     */
+    /** Ensure that two-finger taps work. */
     @Test
     fun twoFingerTap() {
         rule.setContent(util)
 
-        performTouch(finalPass = { assertTrue(isConsumed) }) {
-            down(0, Offset(1f, 1f))
-        }
+        performTouch(finalPass = { assertTrue(isConsumed) }) { down(0, Offset(1f, 1f)) }
 
         assertTrue(pressed)
         pressed = false
 
-        performTouch(finalPass = { assertFalse(isConsumed) }) {
-            down(1, Offset(9f, 5f))
-        }
+        performTouch(finalPass = { assertFalse(isConsumed) }) { down(1, Offset(9f, 5f)) }
 
         assertFalse(pressed)
 
-        performTouch(finalPass = { assertFalse(isConsumed) }) {
-            up(0)
-        }
+        performTouch(finalPass = { assertFalse(isConsumed) }) { up(0) }
 
         assertFalse(tapped)
         assertFalse(released)
 
-        performTouch(finalPass = { assertTrue(isConsumed) }) {
-            up(1)
-        }
+        performTouch(finalPass = { assertTrue(isConsumed) }) { up(1) }
 
         assertTrue(tapped)
         assertTrue(released)
         assertFalse(canceled)
     }
 
-    /**
-     * Ensure that two-finger taps work.
-     */
+    /** Ensure that two-finger taps work. */
     @Test
     fun twoFingerTap_withShortcut() {
         rule.setContent(utilWithShortcut)
 
-        performTouch(finalPass = { assertTrue(isConsumed) }) {
-            down(0, Offset(1f, 1f))
-        }
+        performTouch(finalPass = { assertTrue(isConsumed) }) { down(0, Offset(1f, 1f)) }
 
         assertTrue(pressed)
         pressed = false
 
-        performTouch(finalPass = { assertFalse(isConsumed) }) {
-            down(1, Offset(9f, 5f))
-        }
+        performTouch(finalPass = { assertFalse(isConsumed) }) { down(1, Offset(9f, 5f)) }
 
         assertFalse(pressed)
 
-        performTouch(finalPass = { assertFalse(isConsumed) }) {
-            up(0)
-        }
+        performTouch(finalPass = { assertFalse(isConsumed) }) { up(0) }
 
         assertFalse(tapped)
         assertFalse(released)
 
-        performTouch(finalPass = { assertTrue(isConsumed) }) {
-            up(1)
-        }
+        performTouch(finalPass = { assertTrue(isConsumed) }) { up(1) }
 
         assertTrue(tapped)
         assertTrue(released)
         assertFalse(canceled)
     }
 
-    /**
-     * A position change consumption on any finger should cause tap to cancel.
-     */
+    /** A position change consumption on any finger should cause tap to cancel. */
     @Test
     fun twoFingerTapCancel() {
         rule.setContent(util)
 
-        performTouch {
-            down(0, Offset(1f, 1f))
-        }
+        performTouch { down(0, Offset(1f, 1f)) }
         assertTrue(pressed)
 
-        performTouch {
-            down(1, Offset(9f, 5f))
-        }
+        performTouch { down(1, Offset(9f, 5f)) }
 
-        performTouch(initialPass = { consume() }) {
-            moveTo(0, Offset(5f, 5f))
-        }
-        performTouch(finalPass = { assertFalse(isConsumed) }) {
-            up(0)
-        }
+        performTouch(initialPass = { consume() }) { moveTo(0, Offset(5f, 5f)) }
+        performTouch(finalPass = { assertFalse(isConsumed) }) { up(0) }
 
         assertFalse(tapped)
         assertTrue(canceled)
 
         rule.mainClock.advanceTimeBy(50)
-        performTouch(finalPass = { assertFalse(isConsumed) }) {
-            up(1)
-        }
+        performTouch(finalPass = { assertFalse(isConsumed) }) { up(1) }
 
         assertFalse(tapped)
         assertFalse(released)
     }
 
-    /**
-     * A position change consumption on any finger should cause tap to cancel.
-     */
+    /** A position change consumption on any finger should cause tap to cancel. */
     @Test
     fun twoFingerTapCancel_withShortcut() {
         rule.setContent(utilWithShortcut)
-        performTouch {
-            down(0, Offset(1f, 1f))
-        }
+        performTouch { down(0, Offset(1f, 1f)) }
 
         assertTrue(pressed)
 
-        performTouch {
-            down(1, Offset(9f, 5f))
-        }
+        performTouch { down(1, Offset(9f, 5f)) }
 
-        performTouch(initialPass = { consume() }) {
-            moveTo(0, Offset(5f, 5f))
-        }
-        performTouch(finalPass = { assertFalse(isConsumed) }) {
-            up(0)
-        }
+        performTouch(initialPass = { consume() }) { moveTo(0, Offset(5f, 5f)) }
+        performTouch(finalPass = { assertFalse(isConsumed) }) { up(0) }
 
         assertFalse(tapped)
         assertTrue(canceled)
 
         rule.mainClock.advanceTimeBy(50)
-        performTouch(finalPass = { assertFalse(isConsumed) }) {
-            up(1)
-        }
+        performTouch(finalPass = { assertFalse(isConsumed) }) { up(1) }
 
         assertFalse(tapped)
         assertFalse(released)
     }
 
-    /**
-     * Detect the second tap as long press.
-     */
+    /** Detect the second tap as long press. */
     @Test
     fun secondTapLongPress() {
         rule.setContent(allGestures)
@@ -880,23 +754,216 @@ class TapGestureDetectorTest {
         released = false
 
         rule.mainClock.advanceTimeBy(50)
-        performTouch {
-            down(1, Offset(5f, 5f))
-        }
+        performTouch { down(1, Offset(5f, 5f)) }
 
         assertTrue(pressed)
 
         rule.mainClock.advanceTimeBy(LongPressTimeoutMillis + 10)
 
-        assertTrue(tapped)
+        // The first tap was part of a double tap, which then became a long press, so we don't
+        // retroactively treat it as a tap to avoid triggering both a tap and a long press at the
+        // same time
+        assertFalse(tapped)
         assertTrue(longPressed)
         assertFalse(released)
         assertFalse(canceled)
+        assertFalse(doubleTapped)
 
         rule.mainClock.advanceTimeBy(500)
-        performTouch {
-            up(1)
-        }
+        performTouch { up(1) }
         assertTrue(released)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun longPress_deepPress() {
+        lateinit var view: View
+        rule.setContent {
+            view = LocalView.current
+            allGestures()
+        }
+
+        rule.waitForIdle()
+
+        val pointerProperties =
+            arrayOf(
+                MotionEvent.PointerProperties().also {
+                    it.id = 0
+                    it.toolType = MotionEvent.TOOL_TYPE_FINGER
+                }
+            )
+
+        val downEvent =
+            MotionEvent.obtain(
+                /* downTime = */ 0,
+                /* eventTime = */ 0,
+                /* action = */ ACTION_DOWN,
+                /* pointerCount = */ 1,
+                /* pointerProperties = */ pointerProperties,
+                /* pointerCoords = */ arrayOf(
+                    PointerCoords().apply {
+                        x = 5f
+                        y = 5f
+                    }
+                ),
+                /* metaState = */ 0,
+                /* buttonState = */ 0,
+                /* xPrecision = */ 0f,
+                /* yPrecision = */ 0f,
+                /* deviceId = */ 0,
+                /* edgeFlags = */ 0,
+                /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
+                /* displayId = */ 0,
+                /* flags = */ 0,
+                /* classification = */ CLASSIFICATION_NONE
+            )
+
+        view.dispatchTouchEvent(downEvent)
+        rule.mainClock.advanceTimeBy(50)
+
+        assertTrue(pressed)
+        assertFalse(longPressed)
+
+        val deepPressMoveEvent =
+            MotionEvent.obtain(
+                /* downTime = */ 0,
+                /* eventTime = */ 50,
+                /* action = */ ACTION_MOVE,
+                /* pointerCount = */ 1,
+                /* pointerProperties = */ pointerProperties,
+                /* pointerCoords = */ arrayOf(
+                    PointerCoords().apply {
+                        x = 10f
+                        y = 10f
+                    }
+                ),
+                /* metaState = */ 0,
+                /* buttonState = */ 0,
+                /* xPrecision = */ 0f,
+                /* yPrecision = */ 0f,
+                /* deviceId = */ 0,
+                /* edgeFlags = */ 0,
+                /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
+                /* displayId = */ 0,
+                /* flags = */ 0,
+                /* classification = */ CLASSIFICATION_DEEP_PRESS
+            )
+
+        view.dispatchTouchEvent(deepPressMoveEvent)
+        rule.mainClock.advanceTimeBy(50)
+
+        assertTrue(pressed)
+        // Even though the timeout didn't pass, the deep press should immediately trigger the long
+        // press
+        assertTrue(longPressed)
+        assertFalse(tapped)
+        assertFalse(released)
+        assertFalse(canceled)
+        assertFalse(doubleTapped)
+    }
+
+    /** Detect the second deep press as long press. */
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun secondTapLongPress_deepPress() {
+        lateinit var view: View
+        rule.setContent {
+            view = LocalView.current
+            allGestures()
+        }
+
+        performTouch {
+            down(0, Offset(5f, 5f))
+            up(0)
+        }
+
+        assertTrue(pressed)
+        assertTrue(released)
+        assertFalse(canceled)
+        assertFalse(tapped)
+        assertFalse(doubleTapped)
+        assertFalse(longPressed)
+
+        pressed = false
+        released = false
+
+        rule.mainClock.advanceTimeBy(50)
+
+        val pointerProperties =
+            arrayOf(
+                MotionEvent.PointerProperties().also {
+                    it.id = 0
+                    it.toolType = MotionEvent.TOOL_TYPE_FINGER
+                }
+            )
+
+        val downEvent =
+            MotionEvent.obtain(
+                /* downTime = */ 0,
+                /* eventTime = */ 50,
+                /* action = */ ACTION_DOWN,
+                /* pointerCount = */ 1,
+                /* pointerProperties = */ pointerProperties,
+                /* pointerCoords = */ arrayOf(
+                    PointerCoords().apply {
+                        x = 5f
+                        y = 5f
+                    }
+                ),
+                /* metaState = */ 0,
+                /* buttonState = */ 0,
+                /* xPrecision = */ 0f,
+                /* yPrecision = */ 0f,
+                /* deviceId = */ 0,
+                /* edgeFlags = */ 0,
+                /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
+                /* displayId = */ 0,
+                /* flags = */ 0,
+                /* classification = */ CLASSIFICATION_NONE
+            )
+
+        view.dispatchTouchEvent(downEvent)
+        rule.mainClock.advanceTimeBy(50)
+
+        assertTrue(pressed)
+        assertFalse(longPressed)
+        assertFalse(tapped)
+
+        val deepPressMoveEvent =
+            MotionEvent.obtain(
+                /* downTime = */ 0,
+                /* eventTime = */ 100,
+                /* action = */ ACTION_MOVE,
+                /* pointerCount = */ 1,
+                /* pointerProperties = */ pointerProperties,
+                /* pointerCoords = */ arrayOf(
+                    PointerCoords().apply {
+                        x = 10f
+                        y = 10f
+                    }
+                ),
+                /* metaState = */ 0,
+                /* buttonState = */ 0,
+                /* xPrecision = */ 0f,
+                /* yPrecision = */ 0f,
+                /* deviceId = */ 0,
+                /* edgeFlags = */ 0,
+                /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
+                /* displayId = */ 0,
+                /* flags = */ 0,
+                /* classification = */ CLASSIFICATION_DEEP_PRESS
+            )
+
+        view.dispatchTouchEvent(deepPressMoveEvent)
+        rule.mainClock.advanceTimeBy(50)
+
+        assertTrue(pressed)
+        // Even though the timeout didn't pass, the deep press should immediately trigger the long
+        // press
+        assertTrue(longPressed)
+        assertFalse(tapped)
+        assertFalse(released)
+        assertFalse(canceled)
+        assertFalse(doubleTapped)
     }
 }

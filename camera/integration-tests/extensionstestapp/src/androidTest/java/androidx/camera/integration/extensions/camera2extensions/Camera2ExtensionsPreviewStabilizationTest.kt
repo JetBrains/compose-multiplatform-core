@@ -45,7 +45,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
-import java.util.concurrent.Executors
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import org.junit.Assume.assumeTrue
@@ -67,7 +66,7 @@ import org.junit.runners.Parameterized
 class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
     @get:Rule
     val useCamera =
-        CameraUtil.grantCameraPermissionAndPreTest(
+        CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
             CameraUtil.PreTestCameraIdList(Camera2Config.defaultConfig())
         )
 
@@ -92,11 +91,15 @@ class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
         assumeCameraExtensionSupported(extensionMode, extensionsCharacteristics)
 
         val cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId)
-        val availableVideoStabilizationModes = cameraCharacteristics.get(
-            CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES
+        val availableVideoStabilizationModes =
+            cameraCharacteristics.get(
+                CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES
+            )
+        assumeTrue(
+            availableVideoStabilizationModes?.contains(
+                CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
+            ) == true
         )
-        assumeTrue(availableVideoStabilizationModes?.contains(
-            CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION) == true)
     }
 
     @Test
@@ -105,23 +108,25 @@ class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
 
         // Preview surface
         val cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId)
-        val configs = cameraCharacteristics.get(
-            CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)!!
-        val previewSize = configs.getOutputSizes(SurfaceTexture::class.java)
-            .maxBy { it.width * it.height }
+        val configs =
+            cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)!!
+        val previewSize =
+            configs.getOutputSizes(SurfaceTexture::class.java).maxBy { it.width * it.height }
         val deferredPreviewFrame = CompletableDeferred<SurfaceTexture>()
 
-        val executorForGL = Executors.newSingleThreadExecutor()
         // Some OEM requires frames drain (updateTexImage being invoked) in SurfaceTexture,
         // otherwise it might cause still capture to fail.
-        val surfaceTextureHolder = SurfaceTextureProvider.createAutoDrainingSurfaceTextureAsync(
-            executorForGL,
-            previewSize.width,
-            previewSize.height, {
-                if (!deferredPreviewFrame.isCompleted) {
-                    deferredPreviewFrame.complete(it)
-                }
-            }) { executorForGL.shutdown() }.await()
+        val surfaceTextureHolder =
+            SurfaceTextureProvider.createAutoDrainingSurfaceTextureAsync(
+                    previewSize.width,
+                    previewSize.height,
+                    {
+                        if (!deferredPreviewFrame.isCompleted) {
+                            deferredPreviewFrame.complete(it)
+                        }
+                    }
+                )
+                .await()
         val previewSurface = Surface(surfaceTextureHolder.surfaceTexture)
 
         val cameraDevice = openCameraDevice(cameraManager, cameraId)
@@ -145,7 +150,7 @@ class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
         val cropRectWithStabilizationDeferred = CompletableDeferred<Rect?>()
         cameraSession.setRepeatingRequest(
             requestBuilder.build(),
-            CaptureCallback(cropRectWithStabilizationDeferred),
+            CaptureCallback(cropRectWithStabilizationDeferred, 20),
             cameraHandler
         )
 
@@ -187,32 +192,41 @@ class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
     ): CameraCaptureSession {
         val deferred = CompletableDeferred<CameraCaptureSession>()
 
-        val sessionConfiguration = SessionConfiguration(
-            SessionConfiguration.SESSION_REGULAR,
-            outputConfigs,
-            CameraXExecutors.ioExecutor(),
-            object : CameraCaptureSession.StateCallback() {
-                override fun onConfigured(session: CameraCaptureSession) {
-                    deferred.complete(session)
-                }
+        val sessionConfiguration =
+            SessionConfiguration(
+                SessionConfiguration.SESSION_REGULAR,
+                outputConfigs,
+                CameraXExecutors.ioExecutor(),
+                object : CameraCaptureSession.StateCallback() {
+                    override fun onConfigured(session: CameraCaptureSession) {
+                        deferred.complete(session)
+                    }
 
-                override fun onConfigureFailed(session: CameraCaptureSession) {
-                    deferred.completeExceptionally(RuntimeException("onConfigurationFailed"))
+                    override fun onConfigureFailed(session: CameraCaptureSession) {
+                        deferred.completeExceptionally(RuntimeException("onConfigurationFailed"))
+                    }
                 }
-            })
+            )
 
         cameraDevice.createCaptureSession(sessionConfiguration)
         return deferred.await()
     }
 
-    private class CaptureCallback(private val deferred: CompletableDeferred<Rect?>) :
-        CameraCaptureSession.CaptureCallback() {
+    private class CaptureCallback(
+        private val deferred: CompletableDeferred<Rect?>,
+        private val numFramesToWait: Int = 1
+    ) : CameraCaptureSession.CaptureCallback() {
+        private var numFramesReceived = 0
+
         override fun onCaptureCompleted(
             session: CameraCaptureSession,
             request: CaptureRequest,
             result: TotalCaptureResult
         ) {
-            deferred.complete(result.get(CaptureResult.SCALER_CROP_REGION))
+            numFramesReceived++
+            if (numFramesReceived >= numFramesToWait) {
+                deferred.complete(result.get(CaptureResult.SCALER_CROP_REGION))
+            }
         }
     }
 }

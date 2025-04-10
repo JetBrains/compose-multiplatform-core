@@ -16,9 +16,10 @@
 
 package androidx.wear.watchface.style.data;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Wire format for {@link
@@ -32,7 +33,7 @@ public class DoubleRangeOptionWireFormat extends OptionWireFormat {
 
     // WARNING: This class is held in a list and can't change due to flaws in VersionedParcelable.
 
-    public DoubleRangeOptionWireFormat(@NonNull byte[] id) {
+    public DoubleRangeOptionWireFormat(byte @NonNull [] id) {
         super(id);
     }
 }

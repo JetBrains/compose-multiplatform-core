@@ -16,15 +16,14 @@
 
 package androidx.transition;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Path;
 import android.util.AttributeSet;
 
-import androidx.annotation.NonNull;
 import androidx.core.content.res.TypedArrayUtils;
 
+import org.jspecify.annotations.NonNull;
 import org.xmlpull.v1.XmlPullParser;
 
 /**
@@ -66,8 +65,6 @@ public class ArcMotion extends PathMotion {
     public ArcMotion() {
     }
 
-    @SuppressLint("RestrictedApi") // remove once core lib would be released with the new
-    // LIBRARY_GROUP_PREFIX restriction. tracking in b/127286008
     public ArcMotion(@NonNull Context context, @NonNull AttributeSet attrs) {
         super(context, attrs);
         TypedArray a = context.obtainStyledAttributes(attrs, Styleable.ARC_MOTION);
@@ -181,9 +178,8 @@ public class ArcMotion extends PathMotion {
         return (float) Math.tan(Math.toRadians(arcInDegrees / 2));
     }
 
-    @NonNull
     @Override
-    public Path getPath(float startX, float startY, float endX, float endY) {
+    public @NonNull Path getPath(float startX, float startY, float endX, float endY) {
         // Here's a little ascii art to show how this is calculated:
         // c---------- b
         //  \        / |

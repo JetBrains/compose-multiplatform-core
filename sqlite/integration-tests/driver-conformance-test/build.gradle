@@ -14,19 +14,33 @@
  * limitations under the License.
  */
 
-import androidx.build.KmpPlatformsKt
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
-def nativeEnabled = KmpPlatformsKt.enableNative(project)
-
 androidXMultiplatform {
-    android()
-    androidNative()
+    androidLibrary {
+        namespace = "androidx.sqlite.driver.test"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+        withAndroidTestOnJvmBuilder {
+            it.defaultSourceSetName = "androidUnitTest"
+        }
+    }
     ios()
     jvm()
     linux()
@@ -36,8 +50,10 @@ androidXMultiplatform {
         commonTest {
             dependencies {
                 implementation(project(":sqlite:sqlite"))
+                implementation(project(":sqlite:sqlite-bundled"))
                 implementation(libs.kotlinStdlib)
                 implementation(libs.kotlinTest)
+                implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":kruth:kruth"))
             }
         }
@@ -45,8 +61,6 @@ androidXMultiplatform {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":sqlite:sqlite-framework"))
-                implementation(project(":sqlite:sqlite-bundled"))
-
                 implementation(libs.kotlinTestJunit)
                 implementation(libs.testRunner)
                 implementation(libs.testCore)
@@ -55,21 +69,16 @@ androidXMultiplatform {
         jvmTest {
             dependsOn(commonTest)
             dependencies {
-                implementation(project(":sqlite:sqlite-bundled"))
-
                 implementation(libs.kotlinTestJunit)
             }
         }
-        if (nativeEnabled) {
-            nativeTest {
-                dependsOn(commonTest)
-                dependencies {
-                    implementation(project(":sqlite:sqlite-framework"))
-                    implementation(project(":sqlite:sqlite-bundled"))
-                }
+        nativeTest {
+            dependsOn(commonTest)
+            dependencies {
+                implementation(project(":sqlite:sqlite-framework"))
             }
         }
-        targets.all { target ->
+        targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["test"].defaultSourceSet {
                     dependsOn(nativeTest)
@@ -79,9 +88,6 @@ androidXMultiplatform {
     }
 }
 
-android {
-    namespace "androidx.sqlite.driver.test"
-}
 
 androidx {
     name = "SQLite Driver Coformance Base Tests"

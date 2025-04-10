@@ -23,10 +23,11 @@ import android.app.AlarmManager;
 import android.app.AlarmManager.OnAlarmListener;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.wear.protolayout.proto.TimelineProto.Timeline;
 import androidx.wear.protolayout.proto.TimelineProto.TimelineEntry;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 
@@ -65,7 +66,7 @@ public class TilesTimelineManagerInternal implements AutoCloseable {
     private final Executor mListenerExecutor;
     private final Listener mListener;
     private final int mToken;
-    @Nullable private OnAlarmListener mAlarmListener = null;
+    private @Nullable OnAlarmListener mAlarmListener = null;
 
     /**
      * Default constructor.

@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -26,14 +33,13 @@ dependencies {
     // core-telecom dependencies
     api(libs.kotlinStdlib)
     api(libs.guavaListenableFuture)
-    implementation("androidx.annotation:annotation:1.4.0")
-    // @OptIn annotations
-    api("androidx.annotation:annotation-experimental:1.3.0")
-    implementation("androidx.core:core:1.9.0")
-    implementation(libs.kotlinCoroutinesCore)
-    implementation(libs.kotlinCoroutinesGuava)
+    implementation("androidx.annotation:annotation:1.9.0") // OptIn, RestrictTo, etc.
+    implementation("androidx.core:core:1.13.1")
+    implementation(libs.kotlinCoroutinesCore) // launch, async, etc.
+    implementation("androidx.lifecycle:lifecycle-service:2.8.1")
     // Test dependencies
     androidTestImplementation(project(":internal-testutils-common"))
+    androidTestImplementation(libs.androidx.annotation)
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
@@ -41,12 +47,11 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.espressoCore)
-    androidTestImplementation(libs.multidex)
     androidTestImplementation(libs.kotlinCoroutinesTest)
 }
 
 android {
-    namespace "androidx.core.telecom"
+    namespace = "androidx.core.telecom"
     buildFeatures {
         aidl = true
     }
@@ -54,9 +59,8 @@ android {
 
 androidx {
     name = "androidx.core:core-telecom"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.CORE_TELECOM
     inceptionYear = "2023"
     description = "Integrate VoIP calls with the Telecom framework."
-    metalavaK2UastEnabled = true
 }

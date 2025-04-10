@@ -17,6 +17,7 @@
 package androidx.glance
 
 import androidx.annotation.ColorRes
+import androidx.annotation.FloatRange
 import androidx.annotation.RestrictTo
 import androidx.compose.ui.graphics.Color
 import androidx.glance.layout.ContentScale
@@ -26,35 +27,33 @@ import androidx.glance.unit.ColorProvider
 sealed interface BackgroundModifier : GlanceModifier.Element {
 
     class Color(val colorProvider: ColorProvider) : BackgroundModifier {
-        override fun toString() =
-            "BackgroundModifier(colorProvider=$colorProvider)"
+        override fun toString() = "BackgroundModifier(colorProvider=$colorProvider)"
     }
 
     class Image(
         val imageProvider: ImageProvider?,
         val contentScale: ContentScale = ContentScale.FillBounds,
-        val colorFilter: ColorFilter? = null
+        val colorFilter: ColorFilter? = null,
+        val alpha: Float? = null
     ) : BackgroundModifier {
         override fun toString() =
             "BackgroundModifier(colorFilter=$colorFilter, imageProvider=$imageProvider, " +
-                "contentScale=$contentScale)"
+                "contentScale=$contentScale, alpha=$alpha)"
     }
 }
 
 /**
- * Apply a background color to the element this modifier is attached to. This will cause the
- * element to paint the specified [Color] as its background, which will fill the bounds of the
- * element.
+ * Apply a background color to the element this modifier is attached to. This will cause the element
+ * to paint the specified [Color] as its background, which will fill the bounds of the element.
  *
  * @param color The color to set as the background.
  */
-fun GlanceModifier.background(color: Color): GlanceModifier =
-    background(ColorProvider(color))
+fun GlanceModifier.background(color: Color): GlanceModifier = background(ColorProvider(color))
 
 /**
- * Apply a background color to the element this modifier is attached to. This will cause the
- * element to paint the specified color resource as its background, which will fill the bounds of
- * the element.
+ * Apply a background color to the element this modifier is attached to. This will cause the element
+ * to paint the specified color resource as its background, which will fill the bounds of the
+ * element.
  *
  * @param color The color resource to set as the background.
  */
@@ -62,9 +61,9 @@ fun GlanceModifier.background(@ColorRes color: Int): GlanceModifier =
     background(ColorProvider(color))
 
 /**
- * Apply a background color to the element this modifier is attached to. This will cause the
- * element to paint the specified [ColorProvider] as its background, which will fill the bounds of
- * the element.
+ * Apply a background color to the element this modifier is attached to. This will cause the element
+ * to paint the specified [ColorProvider] as its background, which will fill the bounds of the
+ * element.
  *
  * @param colorProvider The color to set as the background
  */
@@ -76,7 +75,6 @@ fun GlanceModifier.background(colorProvider: ColorProvider): GlanceModifier =
  *
  * @param imageProvider The content to set as the background
  * @param contentScale scaling to apply to the imageProvider.
- *
  */
 @Deprecated(
     "This method has been deprecated in favor of the one that accepts a colorFilter.",
@@ -85,15 +83,14 @@ fun GlanceModifier.background(colorProvider: ColorProvider): GlanceModifier =
 fun GlanceModifier.background(
     imageProvider: ImageProvider,
     contentScale: ContentScale = ContentScale.FillBounds
-): GlanceModifier =
-    this.then(BackgroundModifier.Image(imageProvider, contentScale))
+): GlanceModifier = this.then(BackgroundModifier.Image(imageProvider, contentScale))
 
 /**
  * Apply a background image to the element this modifier is attached to.
  *
  * @param imageProvider The content to set as the background
- * @param colorFilter Optional color filter to apply to [imageProvider], such as tint.
  * @param contentScale scaling to apply to the imageProvider.
+ * @param colorFilter Optional color filter to apply to [imageProvider], such as tint.
  */
 fun GlanceModifier.background(
     imageProvider: ImageProvider,
@@ -104,6 +101,30 @@ fun GlanceModifier.background(
         BackgroundModifier.Image(
             imageProvider = imageProvider,
             contentScale = contentScale,
-            colorFilter = colorFilter
+            colorFilter = colorFilter,
+            alpha = null,
+        )
+    )
+
+/**
+ * Apply a background image to the element this modifier is attached to.
+ *
+ * @param imageProvider The content to set as the background
+ * @param contentScale scaling to apply to the imageProvider.
+ * @param colorFilter Optional color filter to apply to [imageProvider], such as tint.
+ * @param alpha Opacity (0f to 1f) to apply to the background image.
+ */
+fun GlanceModifier.background(
+    imageProvider: ImageProvider,
+    @FloatRange(from = 0.0, to = 1.0) alpha: Float,
+    contentScale: ContentScale = ContentScale.FillBounds,
+    colorFilter: ColorFilter? = null,
+): GlanceModifier =
+    this.then(
+        BackgroundModifier.Image(
+            imageProvider = imageProvider,
+            contentScale = contentScale,
+            colorFilter = colorFilter,
+            alpha = alpha,
         )
     )

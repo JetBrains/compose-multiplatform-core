@@ -18,94 +18,48 @@ package androidx.room.compiler.processing.util.compiler
 
 import androidx.room.compiler.processing.util.compiler.steps.CompilationStepArguments
 import androidx.room.compiler.processing.util.compiler.steps.RawDiagnosticMessage
-import androidx.room.compiler.processing.util.getSystemClasspaths
 import java.io.File
-import java.net.URLClassLoader
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
+import org.jetbrains.kotlin.compiler.plugin.parseLegacyPluginOption
+import org.jetbrains.kotlin.config.ApiVersion
 import org.jetbrains.kotlin.config.JvmDefaultMode
 import org.jetbrains.kotlin.config.JvmTarget
+import org.jetbrains.kotlin.config.LanguageVersion
 
-/**
- * Utility object to run kotlin compiler via its CLI API.
- */
+/** Utility object to run kotlin compiler via its CLI API. */
 internal object KotlinCliRunner {
     private val compiler = K2JVMCompiler()
-    private fun List<SourceSet>.existingRootPaths() = this.asSequence()
-        .map { it.root }
-        .filter { it.exists() }
-        .map { it.canonicalPath }
-        .distinct()
 
-    private fun CompilationStepArguments.copyToCliArguments(cliArguments: K2JVMCompilerArguments) {
-        // stdlib is in the classpath so no need to specify it here.
-        cliArguments.noStdlib = true
-        cliArguments.noReflect = true
-        cliArguments.jvmTarget = JvmTarget.JVM_1_8.description
-        cliArguments.noOptimize = true
-        // useJavac & compileJava are experimental so lets not use it for now.
-        cliArguments.useJavac = false
-        cliArguments.compileJava = false
-        cliArguments.jvmDefault = JvmDefaultMode.ALL_COMPATIBILITY.description
-        cliArguments.allowNoSourceFiles = true
-        cliArguments.javacArguments = javacArguments.toTypedArray()
-        val inherited = if (inheritClasspaths) {
-            inheritedClasspath
-        } else {
-            emptyList()
-        }
-        cliArguments.classpath = (additionalClasspaths + inherited)
-            .filter { it.exists() }
-            .distinct()
-            .joinToString(
-                separator = File.pathSeparator
-            ) {
-                it.canonicalPath
-            }
-        cliArguments.javaSourceRoots = this.sourceSets.filter {
-            it.hasJavaSource
-        }.existingRootPaths()
-            .toList()
-            .toTypedArray()
-        cliArguments.freeArgs += this.sourceSets.filter {
-            it.hasKotlinSource
-        }.existingRootPaths()
-    }
-
-    /**
-     * Runs the kotlin cli API with the given arguments.
-     */
-    @OptIn(ExperimentalCompilerApi::class)
+    /** Runs the Kotlin CLI API with the given arguments. */
     fun runKotlinCli(
-        /**
-         * Compilation arguments (sources, classpaths etc)
-         */
+        /** Compilation arguments (sources, classpaths etc) */
         arguments: CompilationStepArguments,
-        /**
-         * Destination directory where generated class files will be written to
-         */
+        /** Destination directory where generated class files will be written to */
         destinationDir: File,
-        /**
-         * List of component registrars for the compilation.
-         */
-        @Suppress("DEPRECATION")
-        pluginRegistrars: List<org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar>
+        /** List of plugin registrars for the compilation. */
+        @OptIn(ExperimentalCompilerApi::class)
+        pluginRegistrars: PluginRegistrarArguments =
+            PluginRegistrarArguments(emptyList(), emptyList())
     ): KotlinCliResult {
-        val cliArguments = compiler.createArguments()
         destinationDir.mkdirs()
-        cliArguments.destination = destinationDir.absolutePath
-        arguments.copyToCliArguments(cliArguments)
+        val cliArguments =
+            compiler.createArguments().apply {
+                destination = destinationDir.absolutePath
+                arguments.copyToCliArguments(this)
+            }
         compiler.parseArguments(arguments.kotlincArguments.toTypedArray(), cliArguments)
 
         val diagnosticsMessageCollector = DiagnosticsMessageCollector("kotlinc")
-        val exitCode = DelegatingTestRegistrar.runCompilation(
-            compiler = compiler,
-            messageCollector = diagnosticsMessageCollector,
-            arguments = cliArguments,
-            pluginRegistrars = pluginRegistrars
-        )
+        val exitCode =
+            DelegatingTestRegistrar.runCompilation(
+                compiler = compiler,
+                messageCollector = diagnosticsMessageCollector,
+                arguments = cliArguments,
+                registrars = pluginRegistrars
+            )
 
         return KotlinCliResult(
             exitCode = exitCode,
@@ -115,66 +69,106 @@ internal object KotlinCliRunner {
         )
     }
 
-    /**
-     * Result of a kotlin compilation request
-     */
+    /** Get the language version specified with `-language-version=xxx`. */
+    fun getLanguageVersion(kotlincArguments: List<String>): LanguageVersion {
+        return parseArguments(kotlincArguments).languageVersion?.let {
+            LanguageVersion.fromVersionString(it)
+        } ?: TestDefaultOptions.kotlinLanguageVersion
+    }
+
+    /** Get the api version specified with `-api-version=xxx`. */
+    fun getApiVersion(kotlincArguments: List<String>): ApiVersion {
+        return parseArguments(kotlincArguments).apiVersion?.let { ApiVersion.parse(it) }
+            ?: TestDefaultOptions.kotlinApiVersion
+    }
+
+    /** Get the jvm target specified with `-jvm-target=xxx`. */
+    fun getJvmTarget(kotlincArguments: List<String>): JvmTarget {
+        return parseArguments(kotlincArguments).jvmTarget?.let { JvmTarget.fromString(it) }
+            ?: TestDefaultOptions.jvmTarget
+    }
+
+    /** Get the jvm default mode specified with `-Xjvm-default=xxx`. */
+    fun getJvmDefaultMode(kotlincArguments: List<String>): JvmDefaultMode {
+        return parseArguments(kotlincArguments).jvmDefault.let {
+            JvmDefaultMode.fromStringOrNull(it)
+        } ?: TestDefaultOptions.jvmDefaultMode
+    }
+
+    /** Get the JVM module name specified with `-module-name`. */
+    fun getJvmModuleName(kotlincArguments: List<String>): String {
+        return parseArguments(kotlincArguments).moduleName ?: TestDefaultOptions.jvmModuleName
+    }
+
+    private fun parseArguments(kotlincArguments: List<String>): K2JVMCompilerArguments {
+        return compiler.createArguments().apply {
+            compiler.parseArguments(kotlincArguments.toTypedArray(), this)
+        }
+    }
+
+    private fun CompilationStepArguments.copyToCliArguments(cliArguments: K2JVMCompilerArguments) {
+        // stdlib is in the classpath so no need to specify it here.
+        cliArguments.noStdlib = true
+        cliArguments.noReflect = true
+        cliArguments.noOptimize = true
+
+        // We want allow no sources to run test handlers
+        cliArguments.allowNoSourceFiles = true
+
+        cliArguments.languageVersion = getLanguageVersion(kotlincArguments).versionString
+        cliArguments.apiVersion = getApiVersion(kotlincArguments).versionString
+        cliArguments.jvmTarget = getJvmTarget(kotlincArguments).description
+        cliArguments.jvmDefault = getJvmDefaultMode(kotlincArguments).description
+
+        // useJavac & compileJava are experimental so lets not use it for now.
+        cliArguments.useJavac = false
+        cliArguments.compileJava = false
+
+        cliArguments.javacArguments = javacArguments.toTypedArray()
+
+        val inherited =
+            if (inheritClasspaths) {
+                TestClasspath.inheritedClasspath
+            } else {
+                emptyList()
+            }
+        cliArguments.classpath =
+            (additionalClasspaths + inherited)
+                .filter { it.exists() }
+                .distinct()
+                .joinToString(separator = File.pathSeparator) { it.canonicalPath }
+
+        cliArguments.javaSourceRoots =
+            this.sourceSets.filter { it.hasJavaSource }.existingRootPaths().toList().toTypedArray()
+
+        // Sources to compile are passed as args
+        cliArguments.freeArgs += this.sourceSets.filter { it.hasKotlinSource }.existingRootPaths()
+    }
+
+    /** Result of a kotlin compilation request */
     internal class KotlinCliResult(
-        /**
-         * The exit code reported by the compiler
-         */
+        /** The exit code reported by the compiler */
         val exitCode: ExitCode,
-        /**
-         * List of diagnostic messages reported by the compiler
-         */
+        /** List of diagnostic messages reported by the compiler */
         val diagnostics: List<RawDiagnosticMessage>,
-        /**
-         * The output classpath for the compiled files.
-         */
+        /** The output classpath for the compiled files. */
         val compiledClasspath: File,
-        /**
-         * Compiler arguments that were passed into Kotlin CLI
-         */
+        /** Compiler arguments that were passed into Kotlin CLI */
         val kotlinCliArguments: K2JVMCompilerArguments
     )
 
-    private val inheritedClasspath by lazy(LazyThreadSafetyMode.NONE) {
-        getClasspathFromClassloader(KotlinCliRunner::class.java.classLoader)
-    }
-
-    // ported from https://github.com/google/compile-testing/blob/master/src/main/java/com
-    // /google/testing/compile/Compiler.java#L231
-    private fun getClasspathFromClassloader(referenceClassLoader: ClassLoader): List<File> {
-        val platformClassLoader: ClassLoader = ClassLoader.getPlatformClassLoader()
-        var currentClassloader = referenceClassLoader
-        val systemClassLoader = ClassLoader.getSystemClassLoader()
-
-        // Concatenate search paths from all classloaders in the hierarchy
-        // 'till the system classloader.
-        val classpaths: MutableSet<String> = LinkedHashSet()
-        while (true) {
-            if (currentClassloader === systemClassLoader) {
-                classpaths.addAll(getSystemClasspaths())
-                break
-            }
-            if (currentClassloader === platformClassLoader) {
-                break
-            }
-            check(currentClassloader is URLClassLoader) {
-                """Classpath for compilation could not be extracted
-                since $currentClassloader is not an instance of URLClassloader
-                """.trimIndent()
-            }
-            // We only know how to extract classpaths from URLClassloaders.
-            currentClassloader.urLs.forEach { url ->
-                check(url.protocol == "file") {
-                    """Given classloader consists of classpaths which are unsupported for
-                    compilation.
-                    """.trimIndent()
-                }
-                classpaths.add(url.path)
-            }
-            currentClassloader = currentClassloader.parent
-        }
-        return classpaths.map { File(it) }.filter { it.exists() }
+    internal fun getPluginOptions(
+        pluginId: String,
+        kotlincArguments: List<String>
+    ): Map<String, String> {
+        val options =
+            kotlincArguments
+                .dropLast(1)
+                .zip(kotlincArguments.drop(1))
+                .filter { it.first == "-P" }
+                .mapNotNull { parseLegacyPluginOption(it.second) }
+        return options
+            .filter { it.pluginId == pluginId }
+            .associateBy({ it.optionName }, { it.value })
     }
 }

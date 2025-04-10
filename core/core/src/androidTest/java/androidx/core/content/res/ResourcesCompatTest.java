@@ -36,7 +36,6 @@ import android.os.Build;
 import android.support.v4.testutils.TestUtils;
 import android.util.DisplayMetrics;
 
-import androidx.annotation.NonNull;
 import androidx.core.graphics.TypefaceCompat;
 import androidx.core.provider.FontsContractCompat;
 import androidx.core.provider.MockFontProvider;
@@ -47,6 +46,7 @@ import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 

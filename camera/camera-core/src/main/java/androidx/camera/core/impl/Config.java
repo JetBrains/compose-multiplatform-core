@@ -16,13 +16,13 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.utils.ResolutionSelectorUtil;
 import androidx.camera.core.resolutionselector.ResolutionSelector;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.Set;
@@ -39,7 +39,6 @@ import java.util.Set;
  * {@link Config#retrieveOptionWithPriority} and {@link Config#getPriorities} can be used to
  * retrieve option value of specified priority.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public interface Config {
 
     /**
@@ -63,8 +62,7 @@ public interface Config {
      * @return The value stored in this configuration.
      * @throws IllegalArgumentException if the given option does not exist in this configuration.
      */
-    @Nullable
-    <ValueT> ValueT retrieveOption(@NonNull Option<ValueT> id);
+    <ValueT> @Nullable ValueT retrieveOption(@NonNull Option<ValueT> id);
 
     /**
      * Retrieves the value for the specified option if it exists in the configuration.
@@ -80,8 +78,8 @@ public interface Config {
      * @return The value stored in this configuration, or {@code valueIfMissing} if it does
      * not exist.
      */
-    @Nullable
-    <ValueT> ValueT retrieveOption(@NonNull Option<ValueT> id, @Nullable ValueT valueIfMissing);
+    <ValueT> @Nullable ValueT retrieveOption(@NonNull Option<ValueT> id,
+            @Nullable ValueT valueIfMissing);
 
     /**
      * Retrieves the value for the specified option and specified priority if it exists in the
@@ -94,8 +92,7 @@ public interface Config {
      * @throws IllegalArgumentException if the given option with specified priority does not exist
      * in this configuration.
      */
-    @Nullable
-    <ValueT> ValueT retrieveOptionWithPriority(@NonNull Option<ValueT> id,
+    <ValueT> @Nullable ValueT retrieveOptionWithPriority(@NonNull Option<ValueT> id,
             @NonNull OptionPriority priority);
 
     /**
@@ -105,8 +102,7 @@ public interface Config {
      * priority will be returned. If the option does not exist, an
      * {@link IllegalArgumentException} will be thrown.
      */
-    @NonNull
-    OptionPriority getOptionPriority(@NonNull Option<?> opt);
+    @NonNull OptionPriority getOptionPriority(@NonNull Option<?> opt);
 
     /**
      * Search the configuration for {@link Option}s whose id match the supplied search string.
@@ -128,16 +124,14 @@ public interface Config {
      *
      * @return A {@link Set} of {@link Option}s contained within this configuration.
      */
-    @NonNull
-    Set<Option<?>> listOptions();
+    @NonNull Set<Option<?>> listOptions();
 
     /**
      *
      * Returns a {@link Set} of all priorities set for the specified option.
      *
      */
-    @NonNull
-    Set<OptionPriority> getPriorities(@NonNull Option<?> option);
+    @NonNull Set<OptionPriority> getPriorities(@NonNull Option<?> option);
 
     /**
      * A callback for retrieving results of a {@link Config.Option} search.
@@ -183,8 +177,8 @@ public interface Config {
          * @return An {@link Option} object which can be used to store/retrieve values from a {@link
          * Config}.
          */
-        @NonNull
-        public static <T> Option<T> create(@NonNull String id, @NonNull Class<?> valueClass) {
+        public static <T> @NonNull Option<T> create(@NonNull String id,
+                @NonNull Class<?> valueClass) {
             return Option.create(id, valueClass, /*token=*/ null);
         }
 
@@ -203,9 +197,8 @@ public interface Config {
          * Config}.
          */
         @SuppressWarnings("unchecked")
-        @NonNull
-        public static <T> Option<T> create(@NonNull String id, @NonNull Class<?> valueClass,
-                @Nullable Object token) {
+        public static <T> @NonNull Option<T> create(@NonNull String id,
+                @NonNull Class<?> valueClass, @Nullable Object token) {
             return new AutoValue_Config_Option<>(id, (Class<T>) valueClass, token);
         }
 
@@ -218,16 +211,14 @@ public interface Config {
          *
          * @return The identifier.
          */
-        @NonNull
-        public abstract String getId();
+        public abstract @NonNull String getId();
 
         /**
          * Returns the class object associated with the value for this option.
          *
          * @return The class object for the value's type.
          */
-        @NonNull
-        public abstract Class<T> getValueClass();
+        public abstract @NonNull Class<T> getValueClass();
 
         /**
          * Returns the optional type-erased context object for this option.
@@ -236,8 +227,7 @@ public interface Config {
          *
          * @return The type-erased context object.
          */
-        @Nullable
-        public abstract Object getToken();
+        public abstract @Nullable Object getToken();
     }
 
     /**
@@ -254,9 +244,19 @@ public interface Config {
          * value.
          *
          * <p>This priority should only be used to explicitly specify an option, such as used by
-         * {@code Camera2Interop} or {@code Camera2CameraControl}, and should be used with caution.
+         * {@code Camera2Interop} or {@code Camera2CameraControl} to override an option.
          */
         ALWAYS_OVERRIDE,
+
+        /**
+         * This priority is higher than {@link #REQUIRED} and {@link #OPTIONAL}, and it is designed
+         * to override the options internally to work around some device specific issues.
+         *
+         * <p>When two option values are set with this priority, the newer value takes precedence
+         * over the old one. Options with this priority can still be overridden by
+         * {@link #ALWAYS_OVERRIDE} which are normally used by {@code Camera2Interop}.
+         */
+        HIGH_PRIORITY_REQUIRED,
 
         /**
          * It's a required option value in order to achieve expected CameraX behavior. It takes
@@ -297,8 +297,8 @@ public interface Config {
      * @param baseConfig the base config.
      * @return a {@link MutableOptionsBundle} of the merged config.
      */
-    @NonNull
-    static Config mergeConfigs(@Nullable Config extendedConfig, @Nullable Config baseConfig) {
+    static @NonNull Config mergeConfigs(@Nullable Config extendedConfig,
+            @Nullable Config baseConfig) {
         if (extendedConfig == null && baseConfig == null) {
             return OptionsBundle.emptyBundle();
         }

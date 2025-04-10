@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun CardSample() {
     Card(Modifier.size(width = 180.dp, height = 100.dp)) {
-        // Card content
+        Box(Modifier.fillMaxSize()) { Text("Card content", Modifier.align(Alignment.Center)) }
     }
 }
 
@@ -47,9 +47,7 @@ fun ClickableCardSample() {
         onClick = { /* Do something */ },
         modifier = Modifier.size(width = 180.dp, height = 100.dp)
     ) {
-        Box(Modifier.fillMaxSize()) {
-            Text("Clickable", Modifier.align(Alignment.Center))
-        }
+        Box(Modifier.fillMaxSize()) { Text("Clickable", Modifier.align(Alignment.Center)) }
     }
 }
 
@@ -58,7 +56,7 @@ fun ClickableCardSample() {
 @Composable
 fun ElevatedCardSample() {
     ElevatedCard(Modifier.size(width = 180.dp, height = 100.dp)) {
-        // Card content
+        Box(Modifier.fillMaxSize()) { Text("Card content", Modifier.align(Alignment.Center)) }
     }
 }
 
@@ -70,9 +68,7 @@ fun ClickableElevatedCardSample() {
         onClick = { /* Do something */ },
         modifier = Modifier.size(width = 180.dp, height = 100.dp)
     ) {
-        Box(Modifier.fillMaxSize()) {
-            Text("Clickable", Modifier.align(Alignment.Center))
-        }
+        Box(Modifier.fillMaxSize()) { Text("Clickable", Modifier.align(Alignment.Center)) }
     }
 }
 
@@ -81,7 +77,7 @@ fun ClickableElevatedCardSample() {
 @Composable
 fun OutlinedCardSample() {
     OutlinedCard(Modifier.size(width = 180.dp, height = 100.dp)) {
-        // Card content
+        Box(Modifier.fillMaxSize()) { Text("Card content", Modifier.align(Alignment.Center)) }
     }
 }
 
@@ -93,8 +89,6 @@ fun ClickableOutlinedCardSample() {
         onClick = { /* Do something */ },
         modifier = Modifier.size(width = 180.dp, height = 100.dp)
     ) {
-        Box(Modifier.fillMaxSize()) {
-            Text("Clickable", Modifier.align(Alignment.Center))
-        }
+        Box(Modifier.fillMaxSize()) { Text("Clickable", Modifier.align(Alignment.Center)) }
     }
 }

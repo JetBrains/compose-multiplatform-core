@@ -20,10 +20,10 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.ImageFormatConstants;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * <p>QuirkSummary
@@ -34,7 +34,6 @@ import androidx.camera.core.impl.Quirk;
  *                  issues.
  *     Device(s): Motorola Moto E5 Play.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class ExtraSupportedOutputSizeQuirk implements Quirk {
 
     static boolean load() {
@@ -49,8 +48,7 @@ public class ExtraSupportedOutputSizeQuirk implements Quirk {
     /**
      * Returns the extra supported resolutions on the device.
      */
-    @NonNull
-    public Size[] getExtraSupportedResolutions(int format) {
+    public Size @NonNull [] getExtraSupportedResolutions(int format) {
         if (format == ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE
                 && isMotoE5Play()) {
             return getMotoE5PlayExtraSupportedResolutions();
@@ -62,8 +60,7 @@ public class ExtraSupportedOutputSizeQuirk implements Quirk {
     /**
      * Returns the extra supported resolutions on the device.
      */
-    @NonNull
-    public <T> Size[] getExtraSupportedResolutions(@NonNull Class<T> klass) {
+    public <T> Size @NonNull [] getExtraSupportedResolutions(@NonNull Class<T> klass) {
         if (StreamConfigurationMap.isOutputSupportedFor(klass) && isMotoE5Play()) {
             return getMotoE5PlayExtraSupportedResolutions();
         } else {
@@ -71,8 +68,7 @@ public class ExtraSupportedOutputSizeQuirk implements Quirk {
         }
     }
 
-    @NonNull
-    private Size[] getMotoE5PlayExtraSupportedResolutions() {
+    private Size @NonNull [] getMotoE5PlayExtraSupportedResolutions() {
         // Both the front and the main cameras support the following resolutions.
         return new Size[]{
                 // FHD

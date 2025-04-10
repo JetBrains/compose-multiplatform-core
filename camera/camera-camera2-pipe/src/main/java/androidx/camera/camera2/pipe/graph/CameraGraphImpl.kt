@@ -18,51 +18,59 @@ package androidx.camera.camera2.pipe.graph
 
 import android.os.Build
 import android.view.Surface
-import androidx.annotation.RequiresApi
-import androidx.camera.camera2.pipe.CameraBackend
+import androidx.camera.camera2.pipe.AudioRestrictionMode
 import androidx.camera.camera2.pipe.CameraController
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.GraphState
-import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.camera2.pipe.compat.AudioRestrictionController
 import androidx.camera.camera2.pipe.config.CameraGraphScope
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
-import androidx.camera.camera2.pipe.core.TokenLockImpl
-import androidx.camera.camera2.pipe.core.acquire
-import androidx.camera.camera2.pipe.core.acquireOrNull
-import androidx.camera.camera2.pipe.internal.GraphLifecycleManager
+import androidx.camera.camera2.pipe.core.Token
+import androidx.camera.camera2.pipe.core.acquireToken
+import androidx.camera.camera2.pipe.core.acquireTokenAndSuspend
+import androidx.camera.camera2.pipe.core.tryAcquireToken
+import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
+import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
+import androidx.camera.camera2.pipe.internal.FrameDistributor
 import javax.inject.Inject
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.sync.Mutex
 
-internal val cameraGraphIds = atomic(0)
-
-@RequiresApi(21)
 @CameraGraphScope
 internal class CameraGraphImpl
 @Inject
 constructor(
     graphConfig: CameraGraph.Config,
     metadata: CameraMetadata,
-    private val graphLifecycleManager: GraphLifecycleManager,
     private val graphProcessor: GraphProcessor,
     private val graphListener: GraphListener,
     private val streamGraph: StreamGraphImpl,
     private val surfaceGraph: SurfaceGraph,
-    private val cameraBackend: CameraBackend,
     private val cameraController: CameraController,
     private val graphState3A: GraphState3A,
-    private val listener3A: Listener3A
+    private val listener3A: Listener3A,
+    private val frameDistributor: FrameDistributor,
+    private val frameCaptureQueue: FrameCaptureQueue,
+    private val audioRestrictionController: AudioRestrictionController,
+    override val id: CameraGraphId,
+    override val parameters: CameraGraphParametersImpl,
+    private val sessionLock: SessionLock
 ) : CameraGraph {
-    private val debugId = cameraGraphIds.incrementAndGet()
-
-    // Only one session can be active at a time.
-    private val sessionLock = TokenLockImpl(1)
-
     private val controller3A = Controller3A(graphProcessor, metadata, graphState3A, listener3A)
+    private val closed = atomic(false)
 
     init {
         // Log out the configuration of the camera graph when it is created.
@@ -77,33 +85,21 @@ constructor(
                 "Cannot create a HIGH_SPEED CameraGraph with more than two outputs. " +
                     "Configured outputs are ${streamGraph.outputs}"
             }
-            val containsPreviewStream =
-                this.streamGraph.outputs.any {
-                    it.streamUseCase == OutputStream.StreamUseCase.PREVIEW
-                }
-            val containsVideoStream =
-                this.streamGraph.outputs.any {
-                    it.streamUseCase == OutputStream.StreamUseCase.VIDEO_RECORD
-                }
-            if (streamGraph.outputs.size == 2) {
-                require(containsPreviewStream) {
-                    "Cannot create a HIGH_SPEED CameraGraph without setting the Preview " +
-                        "Video stream. Configured outputs are ${streamGraph.outputs}"
-                }
-            } else {
-                require(containsPreviewStream || containsVideoStream) {
-                    "Cannot create a HIGH_SPEED CameraGraph without having a Preview or Video " +
-                        "stream. Configured outputs are ${streamGraph.outputs}"
-                }
+
+            // Streams must be preview and/or video for high speed sessions
+            val allStreamsValidForHighSpeedOperatingMode =
+                this.streamGraph.outputs.all { it.isValidForHighSpeedOperatingMode() }
+
+            require(allStreamsValidForHighSpeedOperatingMode) {
+                "HIGH_SPEED CameraGraph must only contain Preview and/or Video " +
+                    "streams. Configured outputs are ${streamGraph.outputs}"
             }
         }
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            require(graphConfig.input == null) {
-                "Reprocessing not supported under Android M"
-            }
+            require(graphConfig.input == null) { "Reprocessing not supported under Android M" }
         }
-        if (graphConfig.input != null) {
+        if (graphConfig.input != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             require(graphConfig.input.isNotEmpty()) {
                 "At least one InputConfiguration is required for reprocessing"
             }
@@ -121,45 +117,73 @@ constructor(
     override val graphState: StateFlow<GraphState>
         get() = graphProcessor.graphState
 
-    private var _isForeground = false
-    override var isForeground: Boolean
-        get() = _isForeground
+    override var isForeground: Boolean = true
         set(value) {
-            _isForeground = value
+            field = value
             cameraController.isForeground = value
         }
 
     override fun start() {
+        check(!closed.value) { "Cannot start $this after calling close()" }
+
         Debug.traceStart { "$this#start" }
         Log.info { "Starting $this" }
         graphListener.onGraphStarting()
-        graphLifecycleManager.monitorAndStart(cameraBackend, cameraController)
+        cameraController.start()
         Debug.traceStop()
     }
 
     override fun stop() {
+        check(!closed.value) { "Cannot stop $this after calling close()" }
+
         Debug.traceStart { "$this#stop" }
         Log.info { "Stopping $this" }
         graphListener.onGraphStopping()
-        graphLifecycleManager.monitorAndStop(cameraBackend, cameraController)
+        cameraController.stop()
         Debug.traceStop()
     }
 
     override suspend fun acquireSession(): CameraGraph.Session {
-        Debug.traceStart { "$this#acquireSession" }
-        val token = sessionLock.acquire(1)
-        val session = CameraGraphSessionImpl(token, graphProcessor, controller3A)
-        Debug.traceStop()
-        return session
+        // Step 1: Acquire a lock on the session mutex, which returns a releasable token. This may
+        //         or may not suspend.
+        val token = sessionLock.acquireToken()
+
+        // Step 2: Return a session that can be used to interact with the session. The session must
+        //         be closed when it is no longer needed.
+        return createSessionFromToken(token)
     }
 
     override fun acquireSessionOrNull(): CameraGraph.Session? {
-        Debug.traceStart { "$this#acquireSessionOrNull" }
-        val token = sessionLock.acquireOrNull(1) ?: return null
-        val session = CameraGraphSessionImpl(token, graphProcessor, controller3A)
-        Debug.traceStop()
-        return session
+        val token = sessionLock.tryAcquireToken() ?: return null
+        return createSessionFromToken(token)
     }
+
+    override suspend fun <T> useSession(
+        action: suspend CoroutineScope.(CameraGraph.Session) -> T
+    ): T =
+        acquireSession().use {
+            // Wrap the block in a coroutineScope to ensure all operations are completed before
+            // releasing the lock.
+            coroutineScope { action(it) }
+        }
+
+    override fun <T> useSessionIn(
+        scope: CoroutineScope,
+        action: suspend CoroutineScope.(CameraGraph.Session) -> T
+    ): Deferred<T> {
+        return sessionLock.withTokenIn(scope) { token ->
+            // Create and use the session
+            createSessionFromToken(token).use { session ->
+                // Wrap the block in a coroutineScope to ensure all operations are completed
+                // before exiting and releasing the lock. The lock can be released early if the
+                // calling action decides to call session.close() early.
+                coroutineScope { action(session) }
+            }
+        }
+    }
+
+    private fun createSessionFromToken(token: Token) =
+        CameraGraphSessionImpl(token, graphProcessor, controller3A, frameCaptureQueue, parameters)
 
     override fun setSurface(stream: StreamId, surface: Surface?) {
         Debug.traceStart { "$stream#setSurface" }
@@ -170,15 +194,68 @@ constructor(
         Debug.traceStop()
     }
 
-    override fun close() {
-        Debug.traceStart { "$this#close" }
-        Log.info { "Closing $this" }
-        sessionLock.close()
-        graphProcessor.close()
-        graphLifecycleManager.monitorAndClose(cameraBackend, cameraController)
-        surfaceGraph.close()
-        Debug.traceStop()
+    override fun updateAudioRestrictionMode(mode: AudioRestrictionMode) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            audioRestrictionController.updateCameraGraphAudioRestrictionMode(this, mode)
+        }
     }
 
-    override fun toString(): String = "CameraGraph-$debugId"
+    override fun close() {
+        if (closed.compareAndSet(expect = false, update = true)) {
+            Debug.traceStart { "$this#close" }
+            Log.info { "Closing $this" }
+            graphProcessor.close()
+            cameraController.close()
+            frameDistributor.close()
+            frameCaptureQueue.close()
+            surfaceGraph.close()
+            audioRestrictionController.removeCameraGraph(this)
+            Debug.traceStop()
+        }
+    }
+
+    override fun toString(): String = id.toString()
+}
+
+@CameraGraphScope
+internal class SessionLock @Inject constructor() {
+    private val mutex = Mutex()
+
+    internal suspend fun acquireToken(): Token = mutex.acquireToken()
+
+    internal fun tryAcquireToken(): Token? = mutex.tryAcquireToken()
+
+    internal fun <T> withTokenIn(
+        scope: CoroutineScope,
+        action: suspend (token: Token) -> T
+    ): Deferred<T> {
+        // https://github.com/Kotlin/kotlinx.coroutines/issues/1578
+        // To handle `runBlocking` we need to use `job.complete()` in `result.invokeOnCompletion`.
+        // However, if we do this directly on the scope that is provided it will cause
+        // SupervisorScopes to block and never complete. To work around this, we create a childJob,
+        // propagate the existing context, and use that as the context for scope.async.
+        val childJob = Job(scope.coroutineContext[Job])
+        val context = scope.coroutineContext + childJob
+        val result =
+            scope.async(context = context, start = CoroutineStart.UNDISPATCHED) {
+                ensureActive() // Exit early if the parent scope has been canceled.
+
+                // It is very important to acquire *and* suspend here. Invoking a coroutine using
+                // UNDISPATCHED will execute on the current thread until the suspension point, and
+                // this will force the execution to switch to the provided scope after ensuring the
+                // lock is acquired or in the queue. This guarantees exclusion, ordering, and
+                // execution within the correct scope.
+                mutex.acquireTokenAndSuspend().use { token -> action(token) }
+            }
+        result.invokeOnCompletion { childJob.complete() }
+        return result
+    }
+
+    private suspend fun <T> Token.use(block: suspend (Token) -> T): T {
+        try {
+            return block(this)
+        } finally {
+            this.release()
+        }
+    }
 }

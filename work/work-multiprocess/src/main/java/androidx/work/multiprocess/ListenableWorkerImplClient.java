@@ -18,8 +18,6 @@ package androidx.work.multiprocess;
 
 import static android.content.Context.BIND_AUTO_CREATE;
 
-import static androidx.work.multiprocess.ListenableCallback.ListenableCallbackRunnable.reportFailure;
-
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Context;
@@ -27,8 +25,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.work.Logger;
@@ -36,7 +32,9 @@ import androidx.work.impl.utils.futures.SettableFuture;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
-import java.util.concurrent.ExecutionException;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.concurrent.Executor;
 
 /***
@@ -69,14 +67,13 @@ public class ListenableWorkerImplClient {
      * @return a {@link ListenableFuture} of {@link IListenableWorkerImpl} after a
      * {@link ServiceConnection} is established.
      */
-    @NonNull
-    public ListenableFuture<IListenableWorkerImpl> getListenableWorkerImpl(
+    public @NonNull ListenableFuture<IListenableWorkerImpl> getListenableWorkerImpl(
             @NonNull ComponentName component) {
 
         synchronized (mLock) {
             if (mConnection == null) {
-                Logger.get().debug(TAG,
-                        "Binding to " + component.getPackageName() + ", " + component.getClassName());
+                Logger.get().debug(TAG, "Binding to " + component.getPackageName() + ", "
+                        + component.getClassName());
 
                 mConnection = new Connection();
                 try {
@@ -99,51 +96,23 @@ public class ListenableWorkerImplClient {
      * Executes a method on an instance of {@link IListenableWorkerImpl} using the instance of
      * {@link RemoteDispatcher}.
      */
-    @NonNull
-    public ListenableFuture<byte[]> execute(
+    public @NonNull ListenableFuture<byte[]> execute(
             @NonNull ComponentName componentName,
             @NonNull RemoteDispatcher<IListenableWorkerImpl> dispatcher) {
 
         ListenableFuture<IListenableWorkerImpl> session = getListenableWorkerImpl(componentName);
-        return execute(session, dispatcher, new RemoteCallback());
+        return execute(session, dispatcher);
     }
 
     /**
      * Executes a method on an instance of {@link IListenableWorkerImpl} using the instance of
-     * {@link RemoteDispatcher} and the {@link RemoteCallback}.
+     * {@link RemoteDispatcher}
      */
-    @NonNull
     @SuppressLint("LambdaLast")
-    public ListenableFuture<byte[]> execute(
+    public @NonNull ListenableFuture<byte[]> execute(
             @NonNull ListenableFuture<IListenableWorkerImpl> session,
-            @NonNull final RemoteDispatcher<IListenableWorkerImpl> dispatcher,
-            @NonNull final RemoteCallback callback) {
-
-        session.addListener(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    final IListenableWorkerImpl iListenableWorker = session.get();
-                    callback.setBinder(iListenableWorker.asBinder());
-                    mExecutor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                dispatcher.execute(iListenableWorker, callback);
-                            } catch (Throwable innerThrowable) {
-                                Logger.get().error(TAG, "Unable to execute", innerThrowable);
-                                reportFailure(callback, innerThrowable);
-                            }
-                        }
-                    });
-                } catch (ExecutionException | InterruptedException exception) {
-                    String message = "Unable to bind to service";
-                    Logger.get().error(TAG, message, exception);
-                    reportFailure(callback, exception);
-                }
-            }
-        }, mExecutor);
-        return callback.getFuture();
+            final @NonNull RemoteDispatcher<IListenableWorkerImpl> dispatcher) {
+        return RemoteExecuteKt.execute(mExecutor, session, dispatcher);
     }
 
     /**
@@ -161,9 +130,8 @@ public class ListenableWorkerImplClient {
     /**
      * @return the {@link ServiceConnection} instance.
      */
-    @Nullable
     @VisibleForTesting
-    public Connection getConnection() {
+    public @Nullable Connection getConnection() {
         return mConnection;
     }
 

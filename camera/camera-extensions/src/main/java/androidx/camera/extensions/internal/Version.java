@@ -18,11 +18,10 @@ package androidx.camera.extensions.internal;
 
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.math.BigInteger;
 import java.util.Objects;
@@ -32,7 +31,6 @@ import java.util.regex.Pattern;
 /**
  * Class encapsulating a version with major, minor, patch and description values.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @AutoValue
 public abstract class Version implements Comparable<Version> {
     public static final Version VERSION_1_0 = Version.create(1, 0, 0, "");
@@ -40,6 +38,7 @@ public abstract class Version implements Comparable<Version> {
     public static final Version VERSION_1_2 = Version.create(1, 2, 0, "");
     public static final Version VERSION_1_3 = Version.create(1, 3, 0, "");
     public static final Version VERSION_1_4 = Version.create(1, 4, 0, "");
+    public static final Version VERSION_1_5 = Version.create(1, 5, 0, "");
 
     private static final Pattern VERSION_STRING_PATTERN =
             Pattern.compile("(\\d+)(?:\\.(\\d+))(?:\\.(\\d+))(?:\\-(.+))?");
@@ -51,8 +50,7 @@ public abstract class Version implements Comparable<Version> {
      *                      (major.minor.patch[-description])
      * @return the parsed Version object or <tt>null</tt> if the versionString format is invalid.
      */
-    @Nullable
-    public static Version parse(@NonNull String versionString) {
+    public static @Nullable Version parse(@NonNull String versionString) {
         if (TextUtils.isEmpty(versionString)) {
             return null;
         }
@@ -72,8 +70,8 @@ public abstract class Version implements Comparable<Version> {
     /**
      * Creates a new instance of the Version object with the given parameters.
      */
-    @NonNull
-    public static Version create(int major, int minor, int patch, @NonNull String description) {
+    public static @NonNull Version create(int major, int minor, int patch,
+            @NonNull String description) {
         return new AutoValue_Version(major, minor, patch, description);
     }
 
@@ -92,9 +90,8 @@ public abstract class Version implements Comparable<Version> {
 
     abstract String getDescription();
 
-    @NonNull
     @Override
-    public final String toString() {
+    public final @NonNull String toString() {
         StringBuilder sb = new StringBuilder(getMajor() + "." + getMinor() + "." + getPatch());
         if (!TextUtils.isEmpty(getDescription())) {
             sb.append("-" + getDescription());

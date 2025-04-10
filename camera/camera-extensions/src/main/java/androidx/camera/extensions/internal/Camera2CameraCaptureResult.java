@@ -20,13 +20,13 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureResult;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.CameraCaptureMetaData;
 import androidx.camera.core.impl.CameraCaptureResult;
 import androidx.camera.core.impl.TagBundle;
 import androidx.camera.core.impl.utils.ExifData;
+
+import org.jspecify.annotations.NonNull;
 
 import java.nio.BufferUnderflowException;
 
@@ -37,7 +37,6 @@ import java.nio.BufferUnderflowException;
  * generate the {@link CameraCaptureResult} from a
  * {@link android.hardware.camera2.CaptureResult} instance.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class Camera2CameraCaptureResult implements CameraCaptureResult {
     private static final String TAG = "C2CameraCaptureResult";
 
@@ -62,9 +61,8 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
      *
      * @return the {@link CameraCaptureMetaData.AfMode}.
      */
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AfMode getAfMode() {
+    public CameraCaptureMetaData.@NonNull AfMode getAfMode() {
         Integer mode = mCaptureResult.get(CaptureResult.CONTROL_AF_MODE);
         if (mode == null) {
             return CameraCaptureMetaData.AfMode.UNKNOWN;
@@ -91,9 +89,8 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
      *
      * @return the {@link CameraCaptureMetaData.AfState}.
      */
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AfState getAfState() {
+    public CameraCaptureMetaData.@NonNull AfState getAfState() {
         Integer state = mCaptureResult.get(CaptureResult.CONTROL_AF_STATE);
         if (state == null) {
             return CameraCaptureMetaData.AfState.UNKNOWN;
@@ -125,9 +122,8 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
      *
      * @return the {@link CameraCaptureMetaData.AeState}.
      */
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AeState getAeState() {
+    public CameraCaptureMetaData.@NonNull AeState getAeState() {
         Integer state = mCaptureResult.get(CaptureResult.CONTROL_AE_STATE);
         if (state == null) {
             return CameraCaptureMetaData.AeState.UNKNOWN;
@@ -156,9 +152,8 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
      *
      * @return the {@link CameraCaptureMetaData.AwbState}.
      */
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AwbState getAwbState() {
+    public CameraCaptureMetaData.@NonNull AwbState getAwbState() {
         Integer state = mCaptureResult.get(CaptureResult.CONTROL_AWB_STATE);
         if (state == null) {
             return CameraCaptureMetaData.AwbState.UNKNOWN;
@@ -184,9 +179,8 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
      *
      * @return the {@link CameraCaptureMetaData.FlashState}.
      */
-    @NonNull
     @Override
-    public CameraCaptureMetaData.FlashState getFlashState() {
+    public CameraCaptureMetaData.@NonNull FlashState getFlashState() {
         Integer state = mCaptureResult.get(CaptureResult.FLASH_STATE);
         if (state == null) {
             return CameraCaptureMetaData.FlashState.UNKNOWN;
@@ -206,9 +200,8 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
         return CameraCaptureMetaData.FlashState.UNKNOWN;
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AeMode getAeMode() {
+    public CameraCaptureMetaData.@NonNull AeMode getAeMode() {
         Integer aeMode = mCaptureResult.get(CaptureResult.CONTROL_AE_MODE);
         if (aeMode == null) {
             return CameraCaptureMetaData.AeMode.UNKNOWN;
@@ -231,9 +224,8 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
         }
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AwbMode getAwbMode() {
+    public CameraCaptureMetaData.@NonNull AwbMode getAwbMode() {
         Integer awbMode = mCaptureResult.get(CaptureResult.CONTROL_AWB_MODE);
         if (awbMode == null) {
             return CameraCaptureMetaData.AwbMode.UNKNOWN;
@@ -273,14 +265,13 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
         return timestamp;
     }
 
-    @NonNull
     @Override
-    public TagBundle getTagBundle() {
+    public @NonNull TagBundle getTagBundle() {
         return mTagBundle;
     }
 
     @Override
-    public void populateExifData(@NonNull ExifData.Builder exifData) {
+    public void populateExifData(ExifData.@NonNull Builder exifData) {
         // Call interface default to set flash mode
         CameraCaptureResult.super.populateExifData(exifData);
 
@@ -339,9 +330,8 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
         }
     }
 
-    @NonNull
     @Override
-    public CaptureResult getCaptureResult() {
+    public @NonNull CaptureResult getCaptureResult() {
         return mCaptureResult;
     }
 }

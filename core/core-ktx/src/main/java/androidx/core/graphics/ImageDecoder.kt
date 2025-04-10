@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-@file:SuppressLint("ClassVerificationFailure") // Entire file is RequiresApi(28)
-
 package androidx.core.graphics
 
-import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.graphics.ImageDecoder.ImageInfo
@@ -35,9 +32,7 @@ import androidx.annotation.RequiresApi
 public inline fun ImageDecoder.Source.decodeBitmap(
     crossinline action: ImageDecoder.(info: ImageInfo, source: Source) -> Unit
 ): Bitmap {
-    return ImageDecoder.decodeBitmap(this) { decoder, info, source ->
-        decoder.action(info, source)
-    }
+    return ImageDecoder.decodeBitmap(this) { decoder, info, source -> decoder.action(info, source) }
 }
 
 /**

@@ -23,7 +23,6 @@ import android.view.ViewGroup;
 import androidx.leanback.R;
 import androidx.leanback.system.Settings;
 
-
 /**
  * ShadowOverlayHelper is a helper class for shadow, overlay color and rounded corner.
  * There are many choices to implement Shadow, overlay color.

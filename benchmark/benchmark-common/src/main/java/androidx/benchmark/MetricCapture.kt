@@ -26,49 +26,46 @@ import android.os.Debug
  *
  * This class may be initialized on a different thread from where measurement occurs, but all
  * `capture` methods must be invoked from the same thread.
+ *
+ * @sample androidx.benchmark.samples.metricCaptureMultiMetricSample
  */
 @ExperimentalBenchmarkConfigApi
 abstract class MetricCapture(
+    /**
+     * List of names of metrics produced by this MetricCapture.
+     *
+     * The length of this list defines how many metrics will be produced by [captureStart] and
+     * [captureStop].
+     */
     val names: List<String>
 ) {
     /**
      * Starts collecting data for a run.
      *
      * Called at the start of each run.
+     *
+     * @param timeNs Current time, just before starting metrics. Can be used directly to drive a
+     *   timing metric produced.
      */
     abstract fun captureStart(timeNs: Long)
 
     /**
      * Mark the end of a run, and store offset metrics in the output array, per sub metric.
      *
-     * To output values, store them in the output array offset by both the parameter offset,
-     * and their submetric index, for example:
+     * To output values, store them in the output array offset by both the parameter offset, and
+     * their submetric index.
      *
-     * ```
-     * class MyMetricCapture("firstSubMetricName", "secondSubMetricName") {
-     *     //...
-     *     override fun captureStop(timeNs: Long, output: LongArray, offset: Int) {
-     *         output[offset + 0] = firstSubMetricValue
-     *         output[offset + 1] = secondSubMetricValue
-     *     }
-     * }
-     * ```
-     *
-     * @param timeNs Time of metric capture start, in monotonic time (System..
+     * @param timeNs Time of metric capture start, in monotonic time ([java.lang.System.nanoTime])
      * @param output LongArray sized to hold all simultaneous sub metric outputs, use `offset` as
-     *  the initial position in `output` to start writing submetrics.
+     *   the initial position in `output` to start writing submetrics.
      * @param offset Offset into the output array to start writing sub metrics.
      */
     abstract fun captureStop(timeNs: Long, output: LongArray, offset: Int)
 
-    /**
-     * Pause data collection.
-     */
+    /** Pause data collection. */
     abstract fun capturePaused()
 
-    /**
-     * Resume data collection
-     */
+    /** Resume data collection */
     abstract fun captureResumed()
 
     override fun equals(other: Any?): Boolean {
@@ -83,12 +80,13 @@ abstract class MetricCapture(
 /**
  * Time metric, which reports time in nanos, based on the time passed to [captureStop].
  *
- * Reports "timeNs"
+ * Reports elapsed time with the label from `name`, which defaults to `timeNs`.
+ *
+ * @param name Metric name of the measured time, defaults to `timeNs`.
  */
 @ExperimentalBenchmarkConfigApi
-public class TimeCapture : MetricCapture(
-    names = listOf("timeNs")
-) {
+class TimeCapture @JvmOverloads constructor(name: String = "timeNs") :
+    MetricCapture(names = listOf(name)) {
     private var currentStarted = 0L
     private var currentPausedStarted = 0L
     private var currentTotalPaused = 0L
@@ -112,9 +110,7 @@ public class TimeCapture : MetricCapture(
 }
 
 @Suppress("DEPRECATION")
-internal class AllocationCountCapture : MetricCapture(
-    names = listOf("allocationCount")
-) {
+internal class AllocationCountCapture : MetricCapture(names = listOf("allocationCount")) {
     private var currentPausedStarted = 0
     private var currentTotalPaused = 0
 
@@ -143,36 +139,25 @@ internal class AllocationCountCapture : MetricCapture(
 internal class CpuEventCounterCapture(
     private val cpuEventCounter: CpuEventCounter,
     private val events: List<CpuEventCounter.Event>
-) : MetricCapture(events.map { it.name }) {
+) : MetricCapture(events.map { it.outputName }) {
     constructor(
         cpuEventCounter: CpuEventCounter,
         mask: Int
-    ) : this(cpuEventCounter, CpuEventCounter.Event.values().filter {
-        it.flag.and(mask) != 0
-    })
+    ) : this(cpuEventCounter, CpuEventCounter.Event.values().filter { it.flag.and(mask) != 0 })
 
     private val values = CpuEventCounter.Values()
     private val flags = events.getFlags()
-    private var hasResetEvents = false
 
     override fun captureStart(timeNs: Long) {
-        if (!hasResetEvents) {
-            // must be called on measure thread, so we wait until after init (which can be separate)
-            cpuEventCounter.resetEvents(flags)
-            hasResetEvents = true
-        } else {
-            // flags already set, fast path
-            cpuEventCounter.reset()
-        }
+        // must be called on measure thread, so we wait until after init (which can be separate)
+        cpuEventCounter.resetEvents(flags)
         cpuEventCounter.start()
     }
 
     override fun captureStop(timeNs: Long, output: LongArray, offset: Int) {
         cpuEventCounter.stop()
         cpuEventCounter.read(values)
-        events.forEachIndexed { index, event ->
-            output[offset + index] = values.getValue(event)
-        }
+        events.forEachIndexed { index, event -> output[offset + index] = values.getValue(event) }
     }
 
     override fun capturePaused() {

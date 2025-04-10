@@ -18,10 +18,12 @@ package androidx.camera.integration.core
 
 import android.content.Context
 import android.content.pm.PackageManager
+import androidx.annotation.OptIn
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
+import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.LabTestRule
 import androidx.concurrent.futures.await
@@ -42,15 +44,17 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
+@OptIn(ExperimentalCameraProviderConfiguration::class)
 class CameraXInitTest(private val implName: String, private val cameraXConfig: CameraXConfig) {
 
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() = listOf(
-            arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-            arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
-        )
+        fun data() =
+            listOf(
+                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+            )
     }
 
     // Don't use CameraUtil.grantCameraPermissionAndPreTest. This test verifies the CameraX
@@ -59,8 +63,7 @@ class CameraXInitTest(private val implName: String, private val cameraXConfig: C
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(android.Manifest.permission.CAMERA)
 
-    @get:Rule
-    val labTest: LabTestRule = LabTestRule()
+    @get:Rule val labTest: LabTestRule = LabTestRule()
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val packageManager = context.packageManager
@@ -105,6 +108,23 @@ class CameraXInitTest(private val implName: String, private val cameraXConfig: C
         }
         if (packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT)) {
             assertThat(cameraProvider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)).isTrue()
+        }
+    }
+
+    @Test
+    fun configImplTypeIsCorrect(): Unit = runBlocking {
+        withTimeout(10000) {
+            ProcessCameraProvider.configureInstance(cameraXConfig)
+            cameraProvider = ProcessCameraProvider.getInstance(context).await()
+
+            assertThat(cameraProvider.configImplType)
+                .isEqualTo(
+                    if (implName == CameraPipeConfig::class.simpleName) {
+                        CameraXConfig.CAMERAX_CONFIG_IMPL_TYPE_PIPE
+                    } else {
+                        CameraXConfig.CAMERAX_CONFIG_IMPL_TYPE_CAMERA_CAMERA2
+                    }
+                )
         }
     }
 }

@@ -20,13 +20,14 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
 import androidx.wear.watchface.complications.data.DefaultComplicationDataSourcePolicyWireFormat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,18 +38,15 @@ import java.util.Map;
 public class UserStyleFlavorWireFormat implements VersionedParcelable, Parcelable {
     /** User style identifier. */
     @ParcelField(1)
-    @NonNull
-    public String mId = "";
+    public @NonNull String mId = "";
 
     /** User style definition of the flavor. */
     @ParcelField(2)
-    @NonNull
-    public UserStyleWireFormat mStyle = new UserStyleWireFormat();
+    public @NonNull UserStyleWireFormat mStyle = new UserStyleWireFormat();
 
     /** Map of ComplicationSlot id to complication's default for the flavor. */
     @ParcelField(3)
-    @NonNull
-    public Map<Integer, DefaultComplicationDataSourcePolicyWireFormat> mComplications =
+    public @NonNull Map<Integer, DefaultComplicationDataSourcePolicyWireFormat> mComplications =
             new HashMap<>();
 
     UserStyleFlavorWireFormat() {}

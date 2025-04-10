@@ -28,18 +28,15 @@ import com.squareup.kotlinpoet.TypeSpec
 
 class ThrowableParcelConverterFileGenerator(
     private val basePackageName: String,
-    private val target: GenerationTarget,
 ) {
     companion object {
         const val converterName = "${throwableParcelName}Converter"
-        fun toThrowableParcelNameSpec(packageName: String) = MemberName(ClassName(
-            packageName,
-            converterName
-        ), "toThrowableParcel")
-        fun fromThrowableParcelNameSpec(packageName: String) = MemberName(ClassName(
-            packageName,
-            converterName
-        ), "fromThrowableParcel")
+
+        fun toThrowableParcelNameSpec(packageName: String) =
+            MemberName(ClassName(packageName, converterName), "toThrowableParcel")
+
+        fun fromThrowableParcelNameSpec(packageName: String) =
+            MemberName(ClassName(packageName, converterName), "fromThrowableParcel")
     }
 
     private val throwableParcelNameSpec = ClassName(basePackageName, throwableParcelName)
@@ -48,20 +45,15 @@ class ThrowableParcelConverterFileGenerator(
     private val fromThrowableParcelNameSpec = fromThrowableParcelNameSpec(basePackageName)
 
     fun generate() =
-        FileSpec.builder(
-            basePackageName,
-            converterName
-        ).build {
+        FileSpec.builder(basePackageName, converterName).build {
             addCommonSettings()
             addType(generateConverter())
         }
 
     private fun generateConverter() =
         TypeSpec.objectBuilder(ClassName(basePackageName, converterName)).build {
-            when (target) {
-                GenerationTarget.CLIENT -> addFunction(generateFromThrowableParcel())
-                GenerationTarget.SERVER -> addFunction(generateToThrowableParcel())
-            }
+            addFunction(generateFromThrowableParcel())
+            addFunction(generateToThrowableParcel())
         }
 
     private fun generateToThrowableParcel() =
@@ -91,7 +83,8 @@ class ThrowableParcelConverterFileGenerator(
                         }.toTypedArray()
                     parcel.isCancellationException = throwable is %T
                     return parcel
-                """.trimIndent(),
+                """
+                        .trimIndent(),
                     throwableParcelNameSpec,
                     parcelableStackFrameNameSpec,
                     cancellationExceptionClass,
@@ -130,7 +123,8 @@ class ThrowableParcelConverterFileGenerator(
                             )
                         }.toTypedArray()
                     return exception
-                """.trimIndent(),
+                """
+                        .trimIndent(),
                     stackTraceElementClass,
                 )
             }

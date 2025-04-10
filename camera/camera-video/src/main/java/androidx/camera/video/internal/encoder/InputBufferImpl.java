@@ -19,8 +19,6 @@ package androidx.camera.video.internal.encoder;
 import android.media.MediaCodec;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.concurrent.futures.CallbackToFutureAdapter.Completer;
@@ -28,11 +26,12 @@ import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 class InputBufferImpl implements InputBuffer {
     private final MediaCodec mMediaCodec;
     private final int mBufferIndex;
@@ -59,8 +58,7 @@ class InputBufferImpl implements InputBuffer {
 
     /** {@inheritDoc} */
     @Override
-    @NonNull
-    public ByteBuffer getByteBuffer() {
+    public @NonNull ByteBuffer getByteBuffer() {
         throwIfTerminated();
         return mByteBuffer;
     }
@@ -117,8 +115,7 @@ class InputBufferImpl implements InputBuffer {
 
     /** {@inheritDoc} */
     @Override
-    @NonNull
-    public ListenableFuture<Void> getTerminationFuture() {
+    public @NonNull ListenableFuture<Void> getTerminationFuture() {
         return Futures.nonCancellationPropagating(mTerminationFuture);
     }
 

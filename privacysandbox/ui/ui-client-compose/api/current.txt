@@ -1,0 +1,9 @@
+// Signature format: 4.0
+package androidx.privacysandbox.ui.client.compose {
+
+  public final class SandboxedSdkUiKt {
+    method @androidx.compose.runtime.Composable public static void SandboxedSdkUi(androidx.privacysandbox.ui.core.SandboxedUiAdapter sandboxedUiAdapter, optional androidx.compose.ui.Modifier modifier, optional boolean providerUiOnTop, optional androidx.privacysandbox.ui.client.view.SandboxedSdkViewEventListener? sandboxedSdkViewEventListener);
+  }
+
+}
+

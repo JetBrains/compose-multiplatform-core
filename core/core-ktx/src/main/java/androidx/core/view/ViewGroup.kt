@@ -21,6 +21,7 @@ package androidx.core.view
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.Px
+import kotlin.collections.removeLast as removeLastKt
 
 /**
  * Returns the view at [index].
@@ -40,7 +41,8 @@ public inline operator fun ViewGroup.plusAssign(view: View): Unit = addView(view
 public inline operator fun ViewGroup.minusAssign(view: View): Unit = removeView(view)
 
 /** Returns the number of views in this view group. */
-public inline val ViewGroup.size: Int get() = childCount
+public inline val ViewGroup.size: Int
+    get() = childCount
 
 /** Returns true if this view group contains no views. */
 public inline fun ViewGroup.isEmpty(): Boolean = childCount == 0
@@ -81,15 +83,20 @@ public inline fun ViewGroup.forEachIndexed(action: (index: Int, view: View) -> U
  * }
  * ```
  */
-public inline val ViewGroup.indices: IntRange get() = 0 until childCount
+public inline val ViewGroup.indices: IntRange
+    get() = 0 until childCount
 
 /** Returns a [MutableIterator] over the views in this view group. */
-public operator fun ViewGroup.iterator(): MutableIterator<View> = object : MutableIterator<View> {
-    private var index = 0
-    override fun hasNext() = index < childCount
-    override fun next() = getChildAt(index++) ?: throw IndexOutOfBoundsException()
-    override fun remove() = removeViewAt(--index)
-}
+public operator fun ViewGroup.iterator(): MutableIterator<View> =
+    object : MutableIterator<View> {
+        private var index = 0
+
+        override fun hasNext() = index < childCount
+
+        override fun next() = getChildAt(index++) ?: throw IndexOutOfBoundsException()
+
+        override fun remove() = removeViewAt(--index)
+    }
 
 /**
  * Returns a [Sequence] over the immediate child views in this view group.
@@ -98,28 +105,80 @@ public operator fun ViewGroup.iterator(): MutableIterator<View> = object : Mutab
  * @see ViewGroup.descendants
  */
 public val ViewGroup.children: Sequence<View>
-    get() = object : Sequence<View> {
-        override fun iterator() = this@children.iterator()
-    }
+    get() =
+        object : Sequence<View> {
+            override fun iterator() = this@children.iterator()
+        }
 
 /**
  * Returns a [Sequence] over the child views in this view group recursively.
- * This performs a depth-first traversal.
- * A view with no children will return a zero-element sequence.
+ *
+ * This performs a depth-first traversal. A view with no children will return a zero-element
+ * sequence.
+ *
+ * For example, to efficiently filter views within the hierarchy using a predicate:
+ * ```
+ * fun ViewGroup.findViewTreeIterator(predicate: (View) -> Boolean): Sequence<View> {
+ *     return sequenceOf(this)
+ *         .plus(descendantsTree)
+ *         .filter { predicate(it) }
+ * }
+ * ```
  *
  * @see View.allViews
  * @see ViewGroup.children
  * @see View.ancestors
  */
 public val ViewGroup.descendants: Sequence<View>
-    get() = sequence {
-        forEach { child ->
-            yield(child)
-            if (child is ViewGroup) {
-                yieldAll(child.descendants)
+    get() = Sequence {
+        TreeIterator(children.iterator()) { child -> (child as? ViewGroup)?.children?.iterator() }
+    }
+
+/**
+ * Lazy iterator for iterating through an abstract hierarchy.
+ *
+ * @param rootIterator Iterator for root elements of hierarchy
+ * @param getChildIterator Function which returns a child iterator for the current item if the
+ *   current item has a child or `null` otherwise
+ */
+internal class TreeIterator<T>(
+    rootIterator: Iterator<T>,
+    private val getChildIterator: ((T) -> Iterator<T>?)
+) : Iterator<T> {
+    private val stack = mutableListOf<Iterator<T>>()
+
+    private var iterator: Iterator<T> = rootIterator
+
+    override fun hasNext(): Boolean {
+        return iterator.hasNext()
+    }
+
+    override fun next(): T {
+        val item = iterator.next()
+        prepareNextIterator(item)
+        return item
+    }
+
+    /** Calculates next iterator for [item]. */
+    private fun prepareNextIterator(item: T) {
+        // If current item has a child, then get the child iterator and save the current iterator to
+        // the stack. Otherwise, if current iterator has no more elements then restore the parent
+        // iterator from the stack.
+        val childIterator = getChildIterator(item)
+        if (childIterator != null && childIterator.hasNext()) {
+            stack.add(iterator)
+            iterator = childIterator
+        } else {
+            while (!iterator.hasNext() && stack.isNotEmpty()) {
+                iterator = stack.last()
+                // MutableCollections.removeLast() is shadowed by java.util.list.removeAt()
+                // which was added in sdk 35 making this call unsafe
+                // stack.removeLast()
+                stack.removeLastKt()
             }
         }
     }
+}
 
 /**
  * Sets the margins in the ViewGroup's MarginLayoutParams. This version of the method sets all axes
@@ -132,8 +191,8 @@ public inline fun ViewGroup.MarginLayoutParams.setMargins(@Px size: Int) {
 }
 
 /**
- * Updates the margins in the [ViewGroup]'s [ViewGroup.MarginLayoutParams].
- * This version of the method allows using named parameters to just set one or more axes.
+ * Updates the margins in the [ViewGroup]'s [ViewGroup.MarginLayoutParams]. This version of the
+ * method allows using named parameters to just set one or more axes.
  *
  * @see ViewGroup.MarginLayoutParams.setMargins
  */
@@ -147,8 +206,8 @@ public inline fun ViewGroup.MarginLayoutParams.updateMargins(
 }
 
 /**
- * Updates the relative margins in the ViewGroup's MarginLayoutParams.
- * This version of the method allows using named parameters to just set one or more axes.
+ * Updates the relative margins in the ViewGroup's MarginLayoutParams. This version of the method
+ * allows using named parameters to just set one or more axes.
  *
  * Note that this inline method references platform APIs added in API 17 and may raise runtime
  * verification warnings on earlier platforms. See Chromium's guide to

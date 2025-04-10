@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -38,7 +39,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
@@ -64,8 +64,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class NestedScrollModifierTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private val mainLayoutTag = "mainLayout"
 
@@ -80,56 +79,58 @@ class NestedScrollModifierTest {
     fun nestedScroll_twoNodes_orderTest(): Unit = runBlocking {
         var counter = 0
         val childConnection = object : NestedScrollConnection {}
-        val parentConnection = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                assertThat(counter).isEqualTo(1)
-                counter++
-                return Offset.Zero
-            }
+        val parentConnection =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    assertThat(counter).isEqualTo(1)
+                    counter++
+                    return Offset.Zero
+                }
 
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                assertThat(counter).isEqualTo(3)
-                counter++
-                return Offset.Zero
-            }
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    assertThat(counter).isEqualTo(3)
+                    counter++
+                    return Offset.Zero
+                }
 
-            override suspend fun onPreFling(available: Velocity): Velocity {
-                assertThat(counter).isEqualTo(5)
-                counter++
-                return Velocity.Zero
-            }
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    assertThat(counter).isEqualTo(5)
+                    counter++
+                    return Velocity.Zero
+                }
 
-            override suspend fun onPostFling(
-                consumed: Velocity,
-                available: Velocity
-            ): Velocity {
-                assertThat(counter).isEqualTo(7)
-                counter++
-                return available
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
+                    assertThat(counter).isEqualTo(7)
+                    counter++
+                    return available
+                }
             }
-        }
         val childDispatcher = NestedScrollDispatcher()
         rule.setContent {
             Box(Modifier.requiredSize(100.dp).nestedScroll(parentConnection)) {
-                Box(
-                    Modifier.requiredSize(100.dp).nestedScroll(childConnection, childDispatcher)
-                )
+                Box(Modifier.requiredSize(100.dp).nestedScroll(childConnection, childDispatcher))
             }
         }
 
         assertThat(counter).isEqualTo(0)
         counter++
 
-        childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.Drag)
+        childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.UserInput)
         assertThat(counter).isEqualTo(2)
         counter++
 
-        childDispatcher
-            .dispatchPostScroll(scrollOffset, scrollLeftOffset, NestedScrollSource.Drag)
+        childDispatcher.dispatchPostScroll(
+            scrollOffset,
+            scrollLeftOffset,
+            NestedScrollSource.UserInput
+        )
         assertThat(counter).isEqualTo(4)
         counter++
 
@@ -146,20 +147,22 @@ class NestedScrollModifierTest {
     fun nestedScroll_NNodes_orderTest_preScroll() {
         var counter = 0
         val childConnection = object : NestedScrollConnection {}
-        val parentConnection = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                assertThat(counter).isEqualTo(2)
-                counter++
-                return Offset.Zero
+        val parentConnection =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    assertThat(counter).isEqualTo(2)
+                    counter++
+                    return Offset.Zero
+                }
             }
-        }
-        val grandParentConnection = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                assertThat(counter).isEqualTo(1)
-                counter++
-                return Offset.Zero
+        val grandParentConnection =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    assertThat(counter).isEqualTo(1)
+                    counter++
+                    return Offset.Zero
+                }
             }
-        }
         val childDispatcher = NestedScrollDispatcher()
         rule.setContent {
             Box(Modifier.requiredSize(100.dp).nestedScroll(grandParentConnection)) {
@@ -175,7 +178,7 @@ class NestedScrollModifierTest {
             assertThat(counter).isEqualTo(0)
             counter++
 
-            childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.Drag)
+            childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.UserInput)
             assertThat(counter).isEqualTo(3)
             counter++
         }
@@ -185,29 +188,31 @@ class NestedScrollModifierTest {
     fun nestedScroll_NNodes_orderTest_scroll() {
         var counter = 0
         val childConnection = object : NestedScrollConnection {}
-        val parentConnection = object : NestedScrollConnection {
+        val parentConnection =
+            object : NestedScrollConnection {
 
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                assertThat(counter).isEqualTo(1)
-                counter++
-                return Offset.Zero
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    assertThat(counter).isEqualTo(1)
+                    counter++
+                    return Offset.Zero
+                }
             }
-        }
-        val grandParentConnection = object : NestedScrollConnection {
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                assertThat(counter).isEqualTo(2)
-                counter++
-                return Offset.Zero
+        val grandParentConnection =
+            object : NestedScrollConnection {
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    assertThat(counter).isEqualTo(2)
+                    counter++
+                    return Offset.Zero
+                }
             }
-        }
         val childDispatcher = NestedScrollDispatcher()
         rule.setContent {
             Box(Modifier.requiredSize(100.dp).nestedScroll(grandParentConnection)) {
@@ -223,8 +228,11 @@ class NestedScrollModifierTest {
             assertThat(counter).isEqualTo(0)
             counter++
 
-            childDispatcher
-                .dispatchPostScroll(scrollOffset, scrollLeftOffset, NestedScrollSource.Drag)
+            childDispatcher.dispatchPostScroll(
+                scrollOffset,
+                scrollLeftOffset,
+                NestedScrollSource.UserInput
+            )
             assertThat(counter).isEqualTo(3)
             counter++
         }
@@ -234,21 +242,23 @@ class NestedScrollModifierTest {
     fun nestedScroll_NNodes_orderTest_preFling(): Unit = runBlocking {
         var counter = 0
         val childConnection = object : NestedScrollConnection {}
-        val parentConnection = object : NestedScrollConnection {
+        val parentConnection =
+            object : NestedScrollConnection {
 
-            override suspend fun onPreFling(available: Velocity): Velocity {
-                assertThat(counter).isEqualTo(2)
-                counter++
-                return Velocity.Zero
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    assertThat(counter).isEqualTo(2)
+                    counter++
+                    return Velocity.Zero
+                }
             }
-        }
-        val grandParentConnection = object : NestedScrollConnection {
-            override suspend fun onPreFling(available: Velocity): Velocity {
-                assertThat(counter).isEqualTo(1)
-                counter++
-                return Velocity.Zero
+        val grandParentConnection =
+            object : NestedScrollConnection {
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    assertThat(counter).isEqualTo(1)
+                    counter++
+                    return Velocity.Zero
+                }
             }
-        }
         val childDispatcher = NestedScrollDispatcher()
         rule.setContent {
             Box(Modifier.requiredSize(100.dp).nestedScroll(grandParentConnection)) {
@@ -272,26 +282,28 @@ class NestedScrollModifierTest {
     fun nestedScroll_NNodes_orderTest_fling(): Unit = runBlocking {
         var counter = 0
         val childConnection = object : NestedScrollConnection {}
-        val parentConnection = object : NestedScrollConnection {
-            override suspend fun onPostFling(
-                consumed: Velocity,
-                available: Velocity
-            ): Velocity {
-                assertThat(counter).isEqualTo(1)
-                counter++
-                return Velocity.Zero
+        val parentConnection =
+            object : NestedScrollConnection {
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
+                    assertThat(counter).isEqualTo(1)
+                    counter++
+                    return Velocity.Zero
+                }
             }
-        }
-        val grandParentConnection = object : NestedScrollConnection {
-            override suspend fun onPostFling(
-                consumed: Velocity,
-                available: Velocity
-            ): Velocity {
-                assertThat(counter).isEqualTo(2)
-                counter++
-                return Velocity.Zero
+        val grandParentConnection =
+            object : NestedScrollConnection {
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
+                    assertThat(counter).isEqualTo(2)
+                    counter++
+                    return Velocity.Zero
+                }
             }
-        }
         val childDispatcher = NestedScrollDispatcher()
         rule.setContent {
             Box(Modifier.requiredSize(100.dp).nestedScroll(grandParentConnection)) {
@@ -316,47 +328,46 @@ class NestedScrollModifierTest {
     fun nestedScroll_twoNodes_hierarchyDispatch(): Unit = runBlocking {
         val preScrollReturn = Offset(60f, 30f)
         val preFlingReturn = Velocity(154f, 56f)
-        var currentsource = NestedScrollSource.Drag
+        var currentsource = NestedScrollSource.UserInput
 
         val childConnection = object : NestedScrollConnection {}
-        val parentConnection = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                assertThat(available).isEqualTo(preScrollOffset)
-                assertThat(source).isEqualTo(currentsource)
-                return preScrollReturn
-            }
+        val parentConnection =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    assertThat(available).isEqualTo(preScrollOffset)
+                    assertThat(source).isEqualTo(currentsource)
+                    return preScrollReturn
+                }
 
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                assertThat(consumed).isEqualTo(scrollOffset)
-                assertThat(available).isEqualTo(scrollLeftOffset)
-                assertThat(source).isEqualTo(currentsource)
-                return Offset.Zero
-            }
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    assertThat(consumed).isEqualTo(scrollOffset)
+                    assertThat(available).isEqualTo(scrollLeftOffset)
+                    assertThat(source).isEqualTo(currentsource)
+                    return Offset.Zero
+                }
 
-            override suspend fun onPreFling(available: Velocity): Velocity {
-                assertThat(available).isEqualTo(preFling)
-                return preFlingReturn
-            }
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    assertThat(available).isEqualTo(preFling)
+                    return preFlingReturn
+                }
 
-            override suspend fun onPostFling(
-                consumed: Velocity,
-                available: Velocity
-            ): Velocity {
-                assertThat(consumed).isEqualTo(postFlingConsumed)
-                assertThat(available).isEqualTo(postFlingLeft)
-                return Velocity.Zero
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
+                    assertThat(consumed).isEqualTo(postFlingConsumed)
+                    assertThat(available).isEqualTo(postFlingLeft)
+                    return Velocity.Zero
+                }
             }
-        }
         val childDispatcher = NestedScrollDispatcher()
         rule.setContent {
             Box(Modifier.requiredSize(100.dp).nestedScroll(parentConnection)) {
-                Box(
-                    Modifier.requiredSize(100.dp).nestedScroll(childConnection, childDispatcher)
-                )
+                Box(Modifier.requiredSize(100.dp).nestedScroll(childConnection, childDispatcher))
             }
         }
 
@@ -365,7 +376,7 @@ class NestedScrollModifierTest {
 
         childDispatcher.dispatchPostScroll(scrollOffset, scrollLeftOffset, currentsource)
         // flip to fling to test again below
-        currentsource = NestedScrollSource.Fling
+        currentsource = NestedScrollSource.SideEffect
 
         val preRes2 = childDispatcher.dispatchPreScroll(preScrollOffset, currentsource)
         assertThat(preRes2).isEqualTo(preScrollReturn)
@@ -384,19 +395,21 @@ class NestedScrollModifierTest {
         val parentConsumedPreScroll = Offset(1f, 1f)
 
         val childConnection = object : NestedScrollConnection {}
-        val grandParentConnection = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                assertThat(available).isEqualTo(dispatchedPreScroll)
-                return grandParentConsumesPreScroll
+        val grandParentConnection =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    assertThat(available).isEqualTo(dispatchedPreScroll)
+                    return grandParentConsumesPreScroll
+                }
             }
-        }
-        val parentConnection = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                assertThat(available)
-                    .isEqualTo(dispatchedPreScroll - grandParentConsumesPreScroll)
-                return parentConsumedPreScroll
+        val parentConnection =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    assertThat(available)
+                        .isEqualTo(dispatchedPreScroll - grandParentConsumesPreScroll)
+                    return parentConsumedPreScroll
+                }
             }
-        }
         val childDispatcher = NestedScrollDispatcher()
         rule.setContent {
             Box(Modifier.requiredSize(100.dp).nestedScroll(grandParentConnection)) {
@@ -410,7 +423,7 @@ class NestedScrollModifierTest {
 
         rule.runOnIdle {
             val preRes =
-                childDispatcher.dispatchPreScroll(dispatchedPreScroll, NestedScrollSource.Drag)
+                childDispatcher.dispatchPreScroll(dispatchedPreScroll, NestedScrollSource.UserInput)
             assertThat(preRes).isEqualTo(grandParentConsumesPreScroll + parentConsumedPreScroll)
         }
     }
@@ -423,28 +436,30 @@ class NestedScrollModifierTest {
         val parentConsumedScroll = Offset(1f, 1f)
 
         val childConnection = object : NestedScrollConnection {}
-        val grandParentConnection = object : NestedScrollConnection {
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                assertThat(consumed).isEqualTo(parentConsumedScroll + dispatchedConsumedScroll)
-                assertThat(available).isEqualTo(dispatchedScroll - parentConsumedScroll)
-                return grandParentConsumedScroll
+        val grandParentConnection =
+            object : NestedScrollConnection {
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    assertThat(consumed).isEqualTo(parentConsumedScroll + dispatchedConsumedScroll)
+                    assertThat(available).isEqualTo(dispatchedScroll - parentConsumedScroll)
+                    return grandParentConsumedScroll
+                }
             }
-        }
-        val parentConnection = object : NestedScrollConnection {
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                assertThat(consumed).isEqualTo(dispatchedConsumedScroll)
-                assertThat(available).isEqualTo(dispatchedScroll)
-                return parentConsumedScroll
+        val parentConnection =
+            object : NestedScrollConnection {
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    assertThat(consumed).isEqualTo(dispatchedConsumedScroll)
+                    assertThat(available).isEqualTo(dispatchedScroll)
+                    return parentConsumedScroll
+                }
             }
-        }
         val childDispatcher = NestedScrollDispatcher()
         rule.setContent {
             Box(Modifier.requiredSize(100.dp).nestedScroll(grandParentConnection)) {
@@ -460,7 +475,7 @@ class NestedScrollModifierTest {
             childDispatcher.dispatchPostScroll(
                 dispatchedConsumedScroll,
                 dispatchedScroll,
-                NestedScrollSource.Drag
+                NestedScrollSource.UserInput
             )
         }
     }
@@ -472,19 +487,21 @@ class NestedScrollModifierTest {
         val parentConsumedPreFling = Velocity(1f, 1f)
 
         val childConnection = object : NestedScrollConnection {}
-        val grandParentConnection = object : NestedScrollConnection {
-            override suspend fun onPreFling(available: Velocity): Velocity {
-                assertThat(available).isEqualTo(dispatchedVelocity)
-                return grandParentConsumesPreFling
+        val grandParentConnection =
+            object : NestedScrollConnection {
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    assertThat(available).isEqualTo(dispatchedVelocity)
+                    return grandParentConsumesPreFling
+                }
             }
-        }
-        val parentConnection = object : NestedScrollConnection {
-            override suspend fun onPreFling(available: Velocity): Velocity {
-                assertThat(available)
-                    .isEqualTo(dispatchedVelocity - grandParentConsumesPreFling)
-                return parentConsumedPreFling
+        val parentConnection =
+            object : NestedScrollConnection {
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    assertThat(available)
+                        .isEqualTo(dispatchedVelocity - grandParentConsumesPreFling)
+                    return parentConsumedPreFling
+                }
             }
-        }
         val childDispatcher = NestedScrollDispatcher()
         rule.setContent {
             Box(Modifier.requiredSize(100.dp).nestedScroll(grandParentConnection)) {
@@ -508,29 +525,31 @@ class NestedScrollModifierTest {
         val parentConsumedPostFling = Velocity(1f, 1f)
 
         val childConnection = object : NestedScrollConnection {}
-        val grandParentConnection = object : NestedScrollConnection {
-            override suspend fun onPostFling(
-                consumed: Velocity,
-                available: Velocity
-            ): Velocity {
-                assertThat(consumed)
-                    .isEqualTo(parentConsumedPostFling + dispatchedConsumedVelocity)
-                assertThat(available)
-                    .isEqualTo(dispatchedLeftVelocity - parentConsumedPostFling)
-                return grandParentConsumedPostFling
+        val grandParentConnection =
+            object : NestedScrollConnection {
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
+                    assertThat(consumed)
+                        .isEqualTo(parentConsumedPostFling + dispatchedConsumedVelocity)
+                    assertThat(available)
+                        .isEqualTo(dispatchedLeftVelocity - parentConsumedPostFling)
+                    return grandParentConsumedPostFling
+                }
             }
-        }
-        val parentConnection = object : NestedScrollConnection {
+        val parentConnection =
+            object : NestedScrollConnection {
 
-            override suspend fun onPostFling(
-                consumed: Velocity,
-                available: Velocity
-            ): Velocity {
-                assertThat(consumed).isEqualTo(dispatchedConsumedVelocity)
-                assertThat(available).isEqualTo(dispatchedLeftVelocity)
-                return parentConsumedPostFling
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
+                    assertThat(consumed).isEqualTo(dispatchedConsumedVelocity)
+                    assertThat(available).isEqualTo(dispatchedLeftVelocity)
+                    return parentConsumedPostFling
+                }
             }
-        }
         val childDispatcher = NestedScrollDispatcher()
         rule.setContent {
             Box(Modifier.requiredSize(100.dp).nestedScroll(grandParentConnection)) {
@@ -549,46 +568,46 @@ class NestedScrollModifierTest {
     fun nestedScroll_twoNodes_flatDispatch(): Unit = runBlocking {
         val preScrollReturn = Offset(60f, 30f)
         val preFlingReturn = Velocity(154f, 56f)
-        var currentsource = NestedScrollSource.Drag
+        var currentsource = NestedScrollSource.UserInput
 
         val childConnection = object : NestedScrollConnection {}
-        val parentConnection = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                assertThat(available).isEqualTo(preScrollOffset)
-                assertThat(source).isEqualTo(currentsource)
-                return preScrollReturn
-            }
+        val parentConnection =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    assertThat(available).isEqualTo(preScrollOffset)
+                    assertThat(source).isEqualTo(currentsource)
+                    return preScrollReturn
+                }
 
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                assertThat(consumed).isEqualTo(scrollOffset)
-                assertThat(available).isEqualTo(scrollLeftOffset)
-                assertThat(source).isEqualTo(currentsource)
-                return Offset.Zero
-            }
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    assertThat(consumed).isEqualTo(scrollOffset)
+                    assertThat(available).isEqualTo(scrollLeftOffset)
+                    assertThat(source).isEqualTo(currentsource)
+                    return Offset.Zero
+                }
 
-            override suspend fun onPreFling(available: Velocity): Velocity {
-                assertThat(available).isEqualTo(preFling)
-                return preFlingReturn
-            }
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    assertThat(available).isEqualTo(preFling)
+                    return preFlingReturn
+                }
 
-            override suspend fun onPostFling(
-                consumed: Velocity,
-                available: Velocity
-            ): Velocity {
-                assertThat(consumed).isEqualTo(postFlingConsumed)
-                assertThat(available).isEqualTo(postFlingLeft)
-                return Velocity.Zero
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
+                    assertThat(consumed).isEqualTo(postFlingConsumed)
+                    assertThat(available).isEqualTo(postFlingLeft)
+                    return Velocity.Zero
+                }
             }
-        }
         val childDispatcher = NestedScrollDispatcher()
         rule.setContent {
             Box(
-                Modifier
-                    .requiredSize(100.dp)
+                Modifier.requiredSize(100.dp)
                     .nestedScroll(parentConnection) // parent
                     .nestedScroll(childConnection, childDispatcher) // child
             )
@@ -599,7 +618,7 @@ class NestedScrollModifierTest {
 
         childDispatcher.dispatchPostScroll(scrollOffset, scrollLeftOffset, currentsource)
         // flip to fling to test again below
-        currentsource = NestedScrollSource.Fling
+        currentsource = NestedScrollSource.SideEffect
 
         val preRes2 = childDispatcher.dispatchPreScroll(preScrollOffset, currentsource)
         assertThat(preRes2).isEqualTo(preScrollReturn)
@@ -613,34 +632,35 @@ class NestedScrollModifierTest {
 
     @Test
     fun nestedScroll_shouldNotCalledSelfConnection(): Unit = runBlocking {
-        val childConnection = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                assertWithMessage("self connection shouldn't be called").fail()
-                return Offset.Zero
-            }
+        val childConnection =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    assertWithMessage("self connection shouldn't be called").fail()
+                    return Offset.Zero
+                }
 
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                assertWithMessage("self connection shouldn't be called").fail()
-                return Offset.Zero
-            }
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    assertWithMessage("self connection shouldn't be called").fail()
+                    return Offset.Zero
+                }
 
-            override suspend fun onPreFling(available: Velocity): Velocity {
-                assertWithMessage("self connection shouldn't be called").fail()
-                return Velocity.Zero
-            }
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    assertWithMessage("self connection shouldn't be called").fail()
+                    return Velocity.Zero
+                }
 
-            override suspend fun onPostFling(
-                consumed: Velocity,
-                available: Velocity
-            ): Velocity {
-                assertWithMessage("self connection shouldn't be called").fail()
-                return Velocity.Zero
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
+                    assertWithMessage("self connection shouldn't be called").fail()
+                    return Velocity.Zero
+                }
             }
-        }
         val parentConnection = object : NestedScrollConnection {}
         val childDispatcher = NestedScrollDispatcher()
         rule.setContent {
@@ -649,9 +669,12 @@ class NestedScrollModifierTest {
             }
         }
 
-        childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.Drag)
-        childDispatcher
-            .dispatchPostScroll(scrollOffset, scrollLeftOffset, NestedScrollSource.Fling)
+        childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.UserInput)
+        childDispatcher.dispatchPostScroll(
+            scrollOffset,
+            scrollLeftOffset,
+            NestedScrollSource.SideEffect
+        )
 
         childDispatcher.dispatchPreFling(preFling)
         childDispatcher.dispatchPostFling(postFlingConsumed, postFlingLeft)
@@ -660,17 +683,13 @@ class NestedScrollModifierTest {
     @Test
     fun nestedScroll_hierarchyDispatch_rootParentRemoval() {
         testRootParentAdditionRemoval { root, child ->
-            Box(Modifier.requiredSize(100.dp).then(root)) {
-                Box(child)
-            }
+            Box(Modifier.requiredSize(100.dp).then(root)) { Box(child) }
         }
     }
 
     @Test
     fun nestedScroll_flatDispatch_rootParentRemoval() {
-        testRootParentAdditionRemoval { root, child ->
-            Box(Modifier.then(root).then(child))
-        }
+        testRootParentAdditionRemoval { root, child -> Box(Modifier.then(root).then(child)) }
     }
 
     @Test
@@ -692,13 +711,7 @@ class NestedScrollModifierTest {
         testMiddleParentAdditionRemoval { rootMod, middleMod, childMod ->
             // random boxes to emulate nesting
             Box(Modifier.requiredSize(100.dp).then(rootMod)) {
-                Box {
-                    Box(Modifier.requiredSize(100.dp).then(middleMod)) {
-                        Box {
-                            Box(childMod)
-                        }
-                    }
-                }
+                Box { Box(Modifier.requiredSize(100.dp).then(middleMod)) { Box { Box(childMod) } } }
             }
         }
     }
@@ -706,12 +719,7 @@ class NestedScrollModifierTest {
     @Test
     fun nestedScroll_flatDispatch_middleParentRemoval() {
         testMiddleParentAdditionRemoval { rootMod, middleMod, childMod ->
-            Box(
-                Modifier
-                    .then(rootMod)
-                    .then(middleMod)
-                    .then(childMod)
-            )
+            Box(Modifier.then(rootMod).then(middleMod).then(childMod))
         }
     }
 
@@ -720,8 +728,7 @@ class NestedScrollModifierTest {
         testMiddleParentAdditionRemoval { rootMod, middleMod, childMod ->
             // insert a few random modifiers so it's more realistic example of wrapper re-usage
             Box(
-                Modifier
-                    .requiredSize(100.dp)
+                Modifier.requiredSize(100.dp)
                     .then(rootMod)
                     .requiredSize(90.dp)
                     .clipToBounds()
@@ -740,80 +747,82 @@ class NestedScrollModifierTest {
 
         val isConnection1Parent = mutableStateOf(true)
         val childConnection = object : NestedScrollConnection {}
-        val connection1 = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
-                counter++
-                return preScrollReturn
-            }
+        val connection1 =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
+                    counter++
+                    return preScrollReturn
+                }
 
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
-                counter++
-                return Offset.Zero
-            }
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
+                    counter++
+                    return Offset.Zero
+                }
 
-            override suspend fun onPreFling(available: Velocity): Velocity {
-                assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
-                counter++
-                return preFlingReturn
-            }
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
+                    counter++
+                    return preFlingReturn
+                }
 
-            override suspend fun onPostFling(
-                consumed: Velocity,
-                available: Velocity
-            ): Velocity {
-                assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
-                counter++
-                return Velocity.Zero
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
+                    assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
+                    counter++
+                    return Velocity.Zero
+                }
             }
-        }
-        val connection2 = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
-                counter++
-                return preScrollReturn
-            }
+        val connection2 =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
+                    counter++
+                    return preScrollReturn
+                }
 
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
-                counter++
-                return Offset.Zero
-            }
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
+                    counter++
+                    return Offset.Zero
+                }
 
-            override suspend fun onPreFling(available: Velocity): Velocity {
-                assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
-                counter++
-                return preFlingReturn
-            }
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
+                    counter++
+                    return preFlingReturn
+                }
 
-            override suspend fun onPostFling(
-                consumed: Velocity,
-                available: Velocity
-            ): Velocity {
-                assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
-                counter++
-                return Velocity.Zero
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
+                    assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
+                    counter++
+                    return Velocity.Zero
+                }
             }
-        }
         val childDispatcher = NestedScrollDispatcher()
         rule.setContent {
-            val nestedScrollParents = if (isConnection1Parent.value) {
-                Modifier.nestedScroll(connection1).nestedScroll(connection2)
-            } else {
-                Modifier.nestedScroll(connection2).nestedScroll(connection1)
-            }
+            val nestedScrollParents =
+                if (isConnection1Parent.value) {
+                    Modifier.nestedScroll(connection1).nestedScroll(connection2)
+                } else {
+                    Modifier.nestedScroll(connection2).nestedScroll(connection1)
+                }
             Box(
-                Modifier
-                    .requiredSize(100.dp)
+                Modifier.requiredSize(100.dp)
                     .then(nestedScrollParents)
                     .nestedScroll(childConnection, childDispatcher)
             )
@@ -822,14 +831,14 @@ class NestedScrollModifierTest {
         repeat(2) {
             counter = 1
 
-            childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.Drag)
+            childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.UserInput)
             assertThat(counter).isEqualTo(3)
             counter = 1
 
             childDispatcher.dispatchPostScroll(
                 scrollOffset,
                 scrollLeftOffset,
-                NestedScrollSource.Drag
+                NestedScrollSource.UserInput
             )
             assertThat(counter).isEqualTo(3)
             counter = 1
@@ -860,9 +869,7 @@ class NestedScrollModifierTest {
                 } else {
                     Modifier
                 }
-            Box(parent) {
-                Box(Modifier.nestedScroll(childConnection, childDispatcher))
-            }
+            Box(parent) { Box(Modifier.nestedScroll(childConnection, childDispatcher)) }
         }
 
         rule.runOnIdle {
@@ -884,70 +891,72 @@ class NestedScrollModifierTest {
 
         val isConnection1Parent = mutableStateOf(true)
         val childConnection = object : NestedScrollConnection {}
-        val connection1 = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
-                counter++
-                return preScrollReturn
-            }
+        val connection1 =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
+                    counter++
+                    return preScrollReturn
+                }
 
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
-                counter++
-                return Offset.Zero
-            }
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
+                    counter++
+                    return Offset.Zero
+                }
 
-            override suspend fun onPreFling(available: Velocity): Velocity {
-                assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
-                counter++
-                return preFlingReturn
-            }
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
+                    counter++
+                    return preFlingReturn
+                }
 
-            override suspend fun onPostFling(
-                consumed: Velocity,
-                available: Velocity
-            ): Velocity {
-                assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
-                counter++
-                return Velocity.Zero
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
+                    assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
+                    counter++
+                    return Velocity.Zero
+                }
             }
-        }
-        val connection2 = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
-                counter++
-                return preScrollReturn
-            }
+        val connection2 =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
+                    counter++
+                    return preScrollReturn
+                }
 
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
-                counter++
-                return Offset.Zero
-            }
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
+                    counter++
+                    return Offset.Zero
+                }
 
-            override suspend fun onPreFling(available: Velocity): Velocity {
-                assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
-                counter++
-                return preFlingReturn
-            }
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
+                    counter++
+                    return preFlingReturn
+                }
 
-            override suspend fun onPostFling(
-                consumed: Velocity,
-                available: Velocity
-            ): Velocity {
-                assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
-                counter++
-                return Velocity.Zero
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
+                    assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
+                    counter++
+                    return Velocity.Zero
+                }
             }
-        }
         val childDispatcher = NestedScrollDispatcher()
         rule.setContent {
             val outerBoxConnection = if (isConnection1Parent.value) connection1 else connection2
@@ -962,14 +971,14 @@ class NestedScrollModifierTest {
         repeat(2) {
             counter = 1
 
-            childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.Drag)
+            childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.UserInput)
             assertThat(counter).isEqualTo(3)
             counter = 1
 
             childDispatcher.dispatchPostScroll(
                 scrollOffset,
                 scrollLeftOffset,
-                NestedScrollSource.Drag
+                NestedScrollSource.UserInput
             )
             assertThat(counter).isEqualTo(3)
             counter = 1
@@ -993,9 +1002,7 @@ class NestedScrollModifierTest {
         val MaxOffsetBound = 900f
         val ConsumedEverything = 0.0f
         rule.setContent {
-            var offset by remember {
-                mutableStateOf(MaxOffsetBound)
-            }
+            var offset by remember { mutableStateOf(MaxOffsetBound) }
             val nestedScrollConnection = remember {
                 object : NestedScrollConnection {
                     fun consumedDelta(scrollDelta: Float): Float {
@@ -1021,12 +1028,9 @@ class NestedScrollModifierTest {
                         available: Offset,
                         source: NestedScrollSource
                     ): Offset {
-                        return if (abs(available.y) > 0f &&
-                            available.y > 0f
-                        ) {
+                        return if (abs(available.y) > 0f && available.y > 0f) {
                             Offset(0f, consumedDelta(available.y))
-                        } else
-                            super.onPostScroll(consumed, available, source)
+                        } else super.onPostScroll(consumed, available, source)
                     }
 
                     override suspend fun onPreFling(available: Velocity): Velocity {
@@ -1037,26 +1041,17 @@ class NestedScrollModifierTest {
             }
 
             Column(modifier = Modifier.fillMaxSize().testTag(mainLayoutTag)) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                )
+                Box(modifier = Modifier.fillMaxWidth().height(80.dp))
                 LazyColumn(
-                    modifier = Modifier
-                        .graphicsLayer {
-                            translationY = offset
-                        }
-                        .nestedScroll(connection = nestedScrollConnection)
-                        .fillMaxWidth()
-                        .weight(1f)
+                    modifier =
+                        Modifier.graphicsLayer { translationY = offset }
+                            .nestedScroll(connection = nestedScrollConnection)
+                            .fillMaxWidth()
+                            .weight(1f)
                 ) {
                     items(100) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp)
-                                .background(Color.Gray)
+                            modifier = Modifier.fillMaxWidth().height(60.dp).background(Color.Gray)
                         ) {
                             BasicText(text = it.toString())
                         }
@@ -1092,19 +1087,21 @@ class NestedScrollModifierTest {
 
         val emitNewParent = mutableStateOf(true)
         val childConnection = object : NestedScrollConnection {}
-        val rootParent = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                return rootParentPreConsumed
-            }
-        }
-        val parentToRemove = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (!emitNewParent.value) {
-                    assertWithMessage("Shouldn't be called when not emitted").fail()
+        val rootParent =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    return rootParentPreConsumed
                 }
-                return parentToRemovePreConsumed
             }
-        }
+        val parentToRemove =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    if (!emitNewParent.value) {
+                        assertWithMessage("Shouldn't be called when not emitted").fail()
+                    }
+                    return parentToRemovePreConsumed
+                }
+            }
         val childDispatcher = NestedScrollDispatcher()
         rule.setContent {
             val maybeNestedScroll =
@@ -1118,14 +1115,14 @@ class NestedScrollModifierTest {
 
         rule.runOnIdle {
             val res =
-                childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.Drag)
+                childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.UserInput)
             assertThat(res).isEqualTo(rootParentPreConsumed + parentToRemovePreConsumed)
             emitNewParent.value = false
         }
 
         rule.runOnIdle {
             val res =
-                childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.Drag)
+                childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.UserInput)
             assertThat(res).isEqualTo(rootParentPreConsumed)
 
             emitNewParent.value = true
@@ -1133,7 +1130,7 @@ class NestedScrollModifierTest {
 
         rule.runOnIdle {
             val res =
-                childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.Drag)
+                childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.UserInput)
             assertThat(res).isEqualTo(rootParentPreConsumed + parentToRemovePreConsumed)
         }
     }
@@ -1145,11 +1142,12 @@ class NestedScrollModifierTest {
 
         val emitParentNestedScroll = mutableStateOf(true)
         val childConnection = object : NestedScrollConnection {}
-        val parent = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                return preScrollReturn
+        val parent =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    return preScrollReturn
+                }
             }
-        }
         val childDispatcher = NestedScrollDispatcher()
         rule.setContent {
             val maybeNestedScroll =
@@ -1161,25 +1159,27 @@ class NestedScrollModifierTest {
         }
 
         rule.runOnIdle {
-            val res = childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.Drag)
+            val res =
+                childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.UserInput)
             assertThat(res).isEqualTo(preScrollReturn)
 
             emitParentNestedScroll.value = false
         }
 
         rule.runOnIdle {
-            val res = childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.Drag)
+            val res =
+                childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.UserInput)
             assertThat(res).isEqualTo(Offset.Zero)
             emitParentNestedScroll.value = true
         }
 
         rule.runOnIdle {
-            val res = childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.Drag)
+            val res =
+                childDispatcher.dispatchPreScroll(preScrollOffset, NestedScrollSource.UserInput)
             assertThat(res).isEqualTo(preScrollReturn)
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @MediumTest
     @Test
     fun testPreScrollConsumption_verticalScrollMouse_postScrollAvailableIsZero() {
@@ -1190,50 +1190,37 @@ class NestedScrollModifierTest {
         var postScrollConsumedOffset = Offset.Zero
         var postScrollAvailableOffset = Offset.Zero
 
-        val nestedScrollConnection = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                preScrollCount++
-                preScrollAvailableOffset = available
+        val nestedScrollConnection =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    preScrollCount++
+                    preScrollAvailableOffset = available
 
-                return available
+                    return available
+                }
+
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    postScrollCount++
+                    postScrollConsumedOffset = consumed
+                    postScrollAvailableOffset = available
+
+                    return super.onPostScroll(consumed, available, source)
+                }
             }
-
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                postScrollCount++
-                postScrollConsumedOffset = consumed
-                postScrollAvailableOffset = available
-
-                return super.onPostScroll(consumed, available, source)
-            }
-        }
 
         rule.setContent {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(connection = nestedScrollConnection)
+                modifier = Modifier.fillMaxSize().nestedScroll(connection = nestedScrollConnection)
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                )
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(mainLayoutTag)
-                        .weight(1f)
-                ) {
+                Box(modifier = Modifier.fillMaxWidth().height(80.dp))
+                LazyColumn(modifier = Modifier.fillMaxWidth().testTag(mainLayoutTag).weight(1f)) {
                     items(100) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp)
-                                .background(Color.Gray)
+                            modifier = Modifier.fillMaxWidth().height(60.dp).background(Color.Gray)
                         ) {
                             BasicText(text = it.toString())
                         }
@@ -1263,7 +1250,6 @@ class NestedScrollModifierTest {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @MediumTest
     @Test
     fun testNoPreScrollConsumption_verticalScrollMouse_postScrollAvailableNotZero() {
@@ -1274,50 +1260,37 @@ class NestedScrollModifierTest {
         var postScrollConsumedOffset = Offset.Zero
         var postScrollAvailableOffset = Offset.Zero
 
-        val nestedScrollConnection = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                preScrollCount++
-                preScrollAvailableOffset = available
+        val nestedScrollConnection =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    preScrollCount++
+                    preScrollAvailableOffset = available
 
-                return Offset.Zero
+                    return Offset.Zero
+                }
+
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    postScrollCount++
+                    postScrollConsumedOffset = consumed
+                    postScrollAvailableOffset = available
+
+                    return super.onPostScroll(consumed, available, source)
+                }
             }
-
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                postScrollCount++
-                postScrollConsumedOffset = consumed
-                postScrollAvailableOffset = available
-
-                return super.onPostScroll(consumed, available, source)
-            }
-        }
 
         rule.setContent {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(connection = nestedScrollConnection)
+                modifier = Modifier.fillMaxSize().nestedScroll(connection = nestedScrollConnection)
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                )
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(mainLayoutTag)
-                        .weight(1f)
-                ) {
+                Box(modifier = Modifier.fillMaxWidth().height(80.dp))
+                LazyColumn(modifier = Modifier.fillMaxWidth().testTag(mainLayoutTag).weight(1f)) {
                     items(100) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp)
-                                .background(Color.Gray)
+                            modifier = Modifier.fillMaxWidth().height(60.dp).background(Color.Gray)
                         ) {
                             BasicText(text = it.toString())
                         }
@@ -1357,50 +1330,37 @@ class NestedScrollModifierTest {
         var postScrollConsumedOffset = Offset.Zero
         var postScrollAvailableOffset = Offset.Zero
 
-        val nestedScrollConnection = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                preScrollCount++
-                preScrollAvailableOffset = available
-                // Pre-roll consumes full amount
-                return available
-            }
+        val nestedScrollConnection =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    preScrollCount++
+                    preScrollAvailableOffset = available
+                    // Pre-roll consumes full amount
+                    return available
+                }
 
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                postScrollCount++
-                postScrollConsumedOffset = consumed
-                postScrollAvailableOffset = available
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    postScrollCount++
+                    postScrollConsumedOffset = consumed
+                    postScrollAvailableOffset = available
 
-                return super.onPostScroll(consumed, available, source)
+                    return super.onPostScroll(consumed, available, source)
+                }
             }
-        }
 
         rule.setContent {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(connection = nestedScrollConnection)
+                modifier = Modifier.fillMaxSize().nestedScroll(connection = nestedScrollConnection)
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                )
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(mainLayoutTag)
-                        .weight(1f)
-                ) {
+                Box(modifier = Modifier.fillMaxWidth().height(80.dp))
+                LazyColumn(modifier = Modifier.fillMaxWidth().testTag(mainLayoutTag).weight(1f)) {
                     items(100) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp)
-                                .background(Color.Gray)
+                            modifier = Modifier.fillMaxWidth().height(60.dp).background(Color.Gray)
                         ) {
                             BasicText(text = it.toString())
                         }
@@ -1434,50 +1394,37 @@ class NestedScrollModifierTest {
         var postScrollConsumedOffset = Offset.Zero
         var postScrollAvailableOffset = Offset.Zero
 
-        val nestedScrollConnection = object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                preScrollCount++
-                preScrollAvailableOffset = available
+        val nestedScrollConnection =
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    preScrollCount++
+                    preScrollAvailableOffset = available
 
-                return Offset.Zero
+                    return Offset.Zero
+                }
+
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    postScrollCount++
+                    postScrollConsumedOffset = consumed
+                    postScrollAvailableOffset = available
+
+                    return super.onPostScroll(consumed, available, source)
+                }
             }
-
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                postScrollCount++
-                postScrollConsumedOffset = consumed
-                postScrollAvailableOffset = available
-
-                return super.onPostScroll(consumed, available, source)
-            }
-        }
 
         rule.setContent {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(connection = nestedScrollConnection)
+                modifier = Modifier.fillMaxSize().nestedScroll(connection = nestedScrollConnection)
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                )
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(mainLayoutTag)
-                        .weight(1f)
-                ) {
+                Box(modifier = Modifier.fillMaxWidth().height(80.dp))
+                LazyColumn(modifier = Modifier.fillMaxWidth().testTag(mainLayoutTag).weight(1f)) {
                     items(100) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp)
-                                .background(Color.Gray)
+                            modifier = Modifier.fillMaxWidth().height(60.dp).background(Color.Gray)
                         ) {
                             BasicText(text = it.toString())
                         }
@@ -1501,48 +1448,37 @@ class NestedScrollModifierTest {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @MediumTest
     @Test
     fun testFlingCallbacks_verticalScrollMouse_shouldNotTriggerCallbacks() {
         var preFlingCount = 0
         var postFlingCount = 0
 
-        val nestedScrollConnection = object : NestedScrollConnection {
-            override suspend fun onPreFling(available: Velocity): Velocity {
-                preFlingCount++
-                return super.onPreFling(available)
-            }
+        val nestedScrollConnection =
+            object : NestedScrollConnection {
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    preFlingCount++
+                    return super.onPreFling(available)
+                }
 
-            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-                postFlingCount++
-                return super.onPostFling(consumed, available)
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
+                    postFlingCount++
+                    return super.onPostFling(consumed, available)
+                }
             }
-        }
 
         rule.setContent {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(connection = nestedScrollConnection)
+                modifier = Modifier.fillMaxSize().nestedScroll(connection = nestedScrollConnection)
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                )
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(mainLayoutTag)
-                        .weight(1f)
-                ) {
+                Box(modifier = Modifier.fillMaxWidth().height(80.dp))
+                LazyColumn(modifier = Modifier.fillMaxWidth().testTag(mainLayoutTag).weight(1f)) {
                     items(100) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp)
-                                .background(Color.Gray)
+                            modifier = Modifier.fillMaxWidth().height(60.dp).background(Color.Gray)
                         ) {
                             BasicText(text = it.toString())
                         }
@@ -1572,41 +1508,31 @@ class NestedScrollModifierTest {
         var preFlingCount = 0
         var postFlingCount = 0
 
-        val nestedScrollConnection = object : NestedScrollConnection {
-            override suspend fun onPreFling(available: Velocity): Velocity {
-                preFlingCount++
-                return super.onPreFling(available)
-            }
+        val nestedScrollConnection =
+            object : NestedScrollConnection {
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    preFlingCount++
+                    return super.onPreFling(available)
+                }
 
-            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-                postFlingCount++
-                return super.onPostFling(consumed, available)
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
+                    postFlingCount++
+                    return super.onPostFling(consumed, available)
+                }
             }
-        }
 
         rule.setContent {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(connection = nestedScrollConnection)
+                modifier = Modifier.fillMaxSize().nestedScroll(connection = nestedScrollConnection)
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                )
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(mainLayoutTag)
-                        .weight(1f)
-                ) {
+                Box(modifier = Modifier.fillMaxWidth().height(80.dp))
+                LazyColumn(modifier = Modifier.fillMaxWidth().testTag(mainLayoutTag).weight(1f)) {
                     items(100) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp)
-                                .background(Color.Gray)
+                            modifier = Modifier.fillMaxWidth().height(60.dp).background(Color.Gray)
                         ) {
                             BasicText(text = it.toString())
                         }
@@ -1621,6 +1547,52 @@ class NestedScrollModifierTest {
         rule.runOnIdle {
             assertThat(preFlingCount).isGreaterThan(0)
             assertThat(postFlingCount).isGreaterThan(0)
+        }
+    }
+
+    @Test
+    fun modifierIsRemoved_shouldKeepInfoAboutPreviousParent() {
+        val innerDispatcher = NestedScrollDispatcher()
+        val outerDispatcher = NestedScrollDispatcher()
+        var keepAround by mutableStateOf(true)
+
+        rule.setContent {
+            Column(
+                modifier =
+                    Modifier.nestedScroll(
+                        dispatcher = outerDispatcher,
+                        connection = object : NestedScrollConnection {}
+                    )
+            ) {
+                Box(
+                    Modifier.size(400.dp)
+                        .then(
+                            if (keepAround)
+                                Modifier.nestedScroll(
+                                    dispatcher = innerDispatcher,
+                                    connection = object : NestedScrollConnection {}
+                                )
+                            else Modifier
+                        )
+                )
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(innerDispatcher.lastKnownParentNode).isNull()
+            assertThat(innerDispatcher.nestedScrollNode?.parentNestedScrollNode)
+                .isEqualTo(outerDispatcher.nestedScrollNode)
+        }
+
+        rule.runOnIdle {
+            keepAround = false // remove inner node
+        }
+
+        rule.runOnIdle {
+            // the inner node's parent is the outer node
+            assertThat(innerDispatcher.lastKnownParentNode)
+                .isEqualTo(outerDispatcher.nestedScrollNode)
+            assertThat(innerDispatcher.nestedScrollNode?.parentNestedScrollNode).isNull()
         }
     }
 }

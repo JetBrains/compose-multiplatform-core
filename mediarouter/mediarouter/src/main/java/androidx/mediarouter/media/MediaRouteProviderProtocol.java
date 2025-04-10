@@ -162,6 +162,7 @@ abstract class MediaRouteProviderProtocol {
     public static final String CLIENT_DATA_UNSELECT_REASON = "unselectReason";
     public static final String CLIENT_DATA_MEMBER_ROUTE_IDS = "memberRouteIds";
     public static final String CLIENT_DATA_MEMBER_ROUTE_ID = "memberRouteId";
+    public static final String CLIENT_DATA_ROUTE_CONTROLLER_OPTIONS = "routeControllerOptions";
 
     public static final String DATA_KEY_GROUPABLE_SECION_TITLE = "groupableTitle";
     public static final String DATA_KEY_TRANSFERABLE_SECTION_TITLE = "transferableTitle";

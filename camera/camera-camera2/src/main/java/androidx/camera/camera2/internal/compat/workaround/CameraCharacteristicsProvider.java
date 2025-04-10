@@ -18,9 +18,8 @@ package androidx.camera.camera2.internal.compat.workaround;
 
 import android.hardware.camera2.CameraCharacteristics;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An interface for providing camera characteristics from
@@ -29,9 +28,7 @@ import androidx.annotation.RequiresApi;
  * <p>This layer of abstraction can be used to customize the behavior of providing
  * characteristics for testing.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public interface CameraCharacteristicsProvider {
     /** Retrieves the camera characteristic value from the provided key. */
-    @Nullable
-    <T> T get(@NonNull CameraCharacteristics.Key<T> key);
+    <T> @Nullable T get(CameraCharacteristics.@NonNull Key<T> key);
 }

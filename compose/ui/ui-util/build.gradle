@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 
-import androidx.build.KmpPlatformsKt
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
@@ -25,50 +32,58 @@ plugins {
 }
 
 androidXMultiplatform {
-    android()
-    desktop()
+    androidTarget()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
+                implementation(libs.kotlinStdlib)
+                implementation("androidx.collection:collection:1.4.3")
             }
         }
 
         commonTest {
             dependencies {
-                implementation(kotlin("test-junit"))
+                implementation(libs.kotlinTest)
+                implementation(project(":kruth:kruth"))
             }
         }
 
         jvmMain {
-            dependencies {
-                implementation(libs.kotlinStdlib)
-            }
+            dependsOn(commonMain)
         }
 
+        jvmTest {
+            dependsOn(commonTest)
+        }
 
         androidMain {
             dependsOn(jvmMain)
             dependencies {
-                implementation(libs.kotlinStdlib)
+                api("androidx.annotation:annotation-experimental:1.4.1")
             }
         }
 
-        desktopMain {
-            dependsOn(jvmMain)
+        commonStubsMain {
+            dependsOn(commonMain)
         }
 
-        jvmTest {
-            dependencies {
-            }
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
+                implementation(libs.testRunner)
             }
         }
 
@@ -78,16 +93,12 @@ androidXMultiplatform {
                 implementation(libs.truth)
             }
         }
-
-        desktopTest {
-            dependsOn(jvmTest)
-        }
     }
 }
 
 androidx {
     name = "Compose Util"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2020"
     description = "Internal Compose utilities used by other modules"
     legacyDisableKotlinStrictApiMode = true
@@ -98,5 +109,8 @@ androidxCompose {
 }
 
 android {
-    namespace "androidx.compose.ui.util"
+    namespace = "androidx.compose.ui.util"
+    buildTypes.configureEach {
+        consumerProguardFiles("proguard-rules.pro")
+    }
 }

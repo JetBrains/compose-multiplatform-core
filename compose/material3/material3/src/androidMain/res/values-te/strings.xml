@@ -20,7 +20,9 @@
     <string name="m3c_dialog" msgid="7617233117134790350">"డైలాగ్"</string>
     <string name="m3c_dropdown_menu_expanded" msgid="2360841780724299882">"విస్తరించబడింది"</string>
     <string name="m3c_dropdown_menu_collapsed" msgid="3177828188723359358">"కుదించబడింది"</string>
+    <string name="m3c_dropdown_menu_toggle" msgid="8687821690726149911">"డ్రాప్‌డౌన్ మెనూను టోగుల్ చేయండి"</string>
     <string name="m3c_snackbar_dismiss" msgid="6152755701819882931">"విస్మరించండి"</string>
+    <string name="m3c_snackbar_pane_title" msgid="3868801555855510515">"హెచ్చరిక"</string>
     <string name="m3c_search_bar_search" msgid="6152806324422087846">"సెర్చ్ చేయండి"</string>
     <string name="m3c_suggestions_available" msgid="7655536806087401899">"సూచనలు దిగువున ఉన్నాయి"</string>
     <string name="m3c_date_picker_title" msgid="7430790972741451689">"తేదీని ఎంచుకోండి"</string>
@@ -59,6 +61,8 @@
     <string name="m3c_bottom_sheet_collapse_description" msgid="2988463736136100848">"దిగువున ఉన్న షీట్‌ను కుదిస్తుంది"</string>
     <string name="m3c_bottom_sheet_dismiss_description" msgid="1555567894577437024">"దిగువున ఉన్న షీట్‌ను విస్మరిస్తుంది"</string>
     <string name="m3c_bottom_sheet_expand_description" msgid="6670819569745899763">"దిగువున ఉన్న షీట్‌ను విస్తరిస్తుంది"</string>
+    <string name="m3c_floating_toolbar_collapse" msgid="6072492480528318635">"టూల్‌బార్‌ను కుదించండి"</string>
+    <string name="m3c_floating_toolbar_expand" msgid="6880757017246780255">"టూల్‌బార్‌ను విస్తరించండి"</string>
     <string name="m3c_tooltip_pane_description" msgid="5460405025248574620">"టూల్‌టిప్"</string>
     <string name="m3c_tooltip_long_press_label" msgid="1805687647081129904">"టూల్‌టిప్‌ను చూడండి"</string>
     <string name="m3c_time_picker_pm" msgid="6616362054113087709">"PM"</string>
@@ -73,4 +77,10 @@
     <string name="m3c_time_picker_hour" msgid="2349193472625211372">"గంట"</string>
     <string name="m3c_time_picker_minute_text_field" msgid="7661234488295443182">"నిమిషాలను ఎంచుకోవడం కోసం"</string>
     <string name="m3c_time_picker_hour_text_field" msgid="6973808109666874069">"గంటలను ఎంచుకోవడం కోసం"</string>
+    <string name="m3c_time_picker_toggle_keyboard" msgid="4145073906612931838">"సమయాన్ని ఇన్‌పుట్‌గా ఎంటర్ చేయడం కోసం టెక్స్ట్ ఇన్‌పుట్ మోడ్‌కు మారండి"</string>
+    <string name="m3c_time_picker_toggle_touch" msgid="8841786098195101324">"సమయాన్ని ఇన్‌పుట్‌గా ఎంటర్ చేయడం కోసం గడియారం మోడ్‌కు మారండి"</string>
+    <string name="m3c_time_picker_dialog_title" msgid="7412665527536641863">"సమయాన్ని ఎంచుకోండి"</string>
+    <string name="m3c_time_input_dialog_title" msgid="409352516511718051">"సమయాన్ని ఎంటర్ చేయండి"</string>
+    <string name="m3c_wide_navigation_rail_close_rail" msgid="6564222473543418073">"రైలును మూసివేయండి"</string>
+    <string name="m3c_wide_navigation_rail_pane_title" msgid="8350283435461615411">"నావిగేషన్ రైలు"</string>
 </resources>

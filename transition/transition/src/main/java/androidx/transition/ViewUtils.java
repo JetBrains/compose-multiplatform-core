@@ -22,9 +22,8 @@ import android.os.Build;
 import android.util.Property;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.view.ViewCompat;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Compatibility utilities for platform features of {@link View}.
@@ -71,12 +70,12 @@ class ViewUtils {
 
                 @Override
                 public Rect get(View view) {
-                    return ViewCompat.getClipBounds(view);
+                    return view.getClipBounds();
                 }
 
                 @Override
                 public void set(View view, Rect clipBounds) {
-                    ViewCompat.setClipBounds(view, clipBounds);
+                    view.setClipBounds(clipBounds);
                 }
 
             };

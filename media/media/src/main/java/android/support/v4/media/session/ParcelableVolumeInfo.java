@@ -20,9 +20,13 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 /**
- * Convenience class for passing information about the audio configuration of a
- * {@link MediaSessionCompat}.
+ * Convenience class for passing information about the audio configuration of a {@link
+ * MediaSessionCompat}.
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 @SuppressLint("BanParcelableUsage")
 public class ParcelableVolumeInfo implements Parcelable {
     public int volumeType;

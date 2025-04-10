@@ -19,8 +19,9 @@ package androidx.core.animation;
 import android.annotation.SuppressLint;
 
 import androidx.annotation.FloatRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This class holds a time/value pair for an animation. The Keyframe class is used
@@ -85,8 +86,8 @@ public abstract class Keyframe<T> implements Cloneable {
      * the time in this keyframe, and the the value animated from as the time passes the time in
      * this keyframe.
      */
-    @NonNull
-    public static Keyframe<Integer> ofInt(@FloatRange(from = 0, to = 1) float fraction, int value) {
+    public static @NonNull Keyframe<Integer> ofInt(@FloatRange(from = 0, to = 1) float fraction,
+            int value) {
         return new IntKeyframe(fraction, value);
     }
 
@@ -102,8 +103,7 @@ public abstract class Keyframe<T> implements Cloneable {
      * @param fraction The time, expressed as a value between 0 and 1, representing the fraction
      * of time elapsed of the overall animation duration.
      */
-    @NonNull
-    public static Keyframe<Integer> ofInt(@FloatRange(from = 0, to = 1) float fraction) {
+    public static @NonNull Keyframe<Integer> ofInt(@FloatRange(from = 0, to = 1) float fraction) {
         return new IntKeyframe(fraction);
     }
 
@@ -119,8 +119,7 @@ public abstract class Keyframe<T> implements Cloneable {
      * the time in this keyframe, and the the value animated from as the time passes the time in
      * this keyframe.
      */
-    @NonNull
-    public static Keyframe<Float> ofFloat(@FloatRange(from = 0, to = 1) float fraction,
+    public static @NonNull Keyframe<Float> ofFloat(@FloatRange(from = 0, to = 1) float fraction,
             float value) {
         return new FloatKeyframe(fraction, value);
     }
@@ -137,8 +136,7 @@ public abstract class Keyframe<T> implements Cloneable {
      * @param fraction The time, expressed as a value between 0 and 1, representing the fraction
      * of time elapsed of the overall animation duration.
      */
-    @NonNull
-    public static Keyframe<Float> ofFloat(@FloatRange(from = 0, to = 1) float fraction) {
+    public static @NonNull Keyframe<Float> ofFloat(@FloatRange(from = 0, to = 1) float fraction) {
         return new FloatKeyframe(fraction);
     }
 
@@ -154,8 +152,7 @@ public abstract class Keyframe<T> implements Cloneable {
      * the time in this keyframe, and the the value animated from as the time passes the time in
      * this keyframe.
      */
-    @NonNull
-    public static <T> Keyframe<T> ofObject(@FloatRange(from = 0, to = 1) float fraction,
+    public static <T> @NonNull Keyframe<T> ofObject(@FloatRange(from = 0, to = 1) float fraction,
                 @Nullable T value) {
         return new ObjectKeyframe<T>(fraction, value);
     }
@@ -172,8 +169,7 @@ public abstract class Keyframe<T> implements Cloneable {
      * @param fraction The time, expressed as a value between 0 and 1, representing the fraction
      * of time elapsed of the overall animation duration.
      */
-    @NonNull
-    public static <T> Keyframe<T> ofObject(@FloatRange(from = 0, to = 1) float fraction) {
+    public static <T> @NonNull Keyframe<T> ofObject(@FloatRange(from = 0, to = 1) float fraction) {
         return new ObjectKeyframe<>(fraction, null);
     }
 
@@ -210,8 +206,7 @@ public abstract class Keyframe<T> implements Cloneable {
     //TODO: Consider removing hasValue() and making keyframe always contain nonNull value, and
     // using a different signal for when the animation should read the property value as its start
     // value.
-    @Nullable
-    public abstract T getValue();
+    public abstract @Nullable T getValue();
 
     /**
      * Sets the value for this Keyframe.
@@ -246,8 +241,7 @@ public abstract class Keyframe<T> implements Cloneable {
      *
      * @return The optional interpolator for this Keyframe.
      */
-    @Nullable
-    public Interpolator getInterpolator() {
+    public @Nullable Interpolator getInterpolator() {
         return mInterpolator;
     }
 
@@ -266,15 +260,13 @@ public abstract class Keyframe<T> implements Cloneable {
      *
      * @return The type of the value stored in the Keyframe.
      */
-    @NonNull
-    public Class<?> getType() {
+    public @NonNull Class<?> getType() {
         return mValueType;
     }
 
     @SuppressLint("NoClone") /* Platform API */
-    @NonNull
     @Override
-    public abstract Keyframe<T> clone();
+    public abstract @NonNull Keyframe<T> clone();
 
     /**
      * This internal subclass is used for all types which are not int or float.
@@ -304,9 +296,8 @@ public abstract class Keyframe<T> implements Cloneable {
             mHasValue = (value != null);
         }
 
-        @NonNull
         @Override
-        public ObjectKeyframe<T> clone() {
+        public @NonNull ObjectKeyframe<T> clone() {
             ObjectKeyframe<T> kfClone = new ObjectKeyframe<>(getFraction(),
                     hasValue() ? mValue : null);
             kfClone.mValueWasSetOnStart = mValueWasSetOnStart;
@@ -354,9 +345,8 @@ public abstract class Keyframe<T> implements Cloneable {
             }
         }
 
-        @NonNull
         @Override
-        public IntKeyframe clone() {
+        public @NonNull IntKeyframe clone() {
             IntKeyframe kfClone = mHasValue ? new IntKeyframe(getFraction(), mValue) :
                     new IntKeyframe(getFraction());
             kfClone.setInterpolator(getInterpolator());
@@ -403,9 +393,8 @@ public abstract class Keyframe<T> implements Cloneable {
             }
         }
 
-        @NonNull
         @Override
-        public FloatKeyframe clone() {
+        public @NonNull FloatKeyframe clone() {
             FloatKeyframe kfClone = mHasValue ? new FloatKeyframe(getFraction(), mValue) :
                     new FloatKeyframe(getFraction());
             kfClone.setInterpolator(getInterpolator());

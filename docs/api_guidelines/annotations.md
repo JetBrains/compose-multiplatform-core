@@ -112,6 +112,10 @@ NOTE Experimental marker annotation *are themselves* experimental, meaning that
 it's considered binary compatible to refactor or remove an experimental marker
 annotation.
 
+Note: Experimental APIs are reviewed by API Council both when the APIs are first
+introduced, and when they are stabilized. API Council may have additional
+feedback during stabilization.
+
 ### `@RestrictTo` APIs {#restricted-api}
 
 Jetpack's library tooling supports hiding JVM-visible (ex. `public` and
@@ -198,9 +202,28 @@ scopes:
         <td><code>TEST</code></td>
         <td><code>*</code></td>
         <td>No compatibility guarantees (same as private)</td>
-        <td>Not recommended. Prefer language visibility, e.g. `internal` or package-private.</td>
+        <td>Not allowed in Jetpack, use `@VisibleForTesting`</td>
     </tr>
 </table>
+
+#### Test APIs and `@VisibleForTesting`
+
+For library APIs that should only be used from test code -- including the
+library's own tests, integration test apps, app developers' tests, or
+third-party testing libraries -- use the `@VisibleForTesting` annotation to
+ensure that the API is only called from test source sets.
+
+Libraries targeted at multi-platform usage in IntelliJ may use `@TestOnly` to
+ensure that the IDE enforces usage restrictions.
+
+Jetpack prefers that libraries expose test APIs as public API and maintain
+binary compatibility. This ensures that whatever a library needs in its own
+integration test app is available to app developers and may be safely called in
+third-party testing libraries.
+
+In cases where a test API needs restricted visibility or flexibility around
+binary compatibility, the `@VisibleForTesting` annotation may be combined with a
+`@RestrictTo` scope or `@RequiresOptIn` feature group.
 
 #### `@IntDef` `@StringDef` and `@LongDef` and visibility
 
@@ -236,7 +259,7 @@ Java visibility should be set as appropriate for the code in question
 (`private`, `package`, or `public`) and is unrelated to hiding.
 
 For more, read the section in
-[Android API Council Guidelines](https://android.googlesource.com/platform/developers/docs/+/refs/heads/master/api-guidelines/index.md#no-public-typedefs)
+[Android API Council Guidelines](https://android.googlesource.com/platform/developers/docs/+/refs/heads/main/api-guidelines/framework.md#framework-hide-typedefs)
 
 #### `*current.txt` File Explanation {#currenttxt}
 
@@ -270,8 +293,9 @@ the current library version.
         <td>Superset of all public APIs (<code>api/current.txt</code>) and
         all <code>RestrictTo</code> APIs that require compatibility across
         versions.
-        <p/>Specifically, includes <code>@RestrictTo(LIBRARY_GROUP)</code> and
-        <code>@RestrictTo(LIBRARY_GROUP_PREFIX)</code>.</td>
+        <p/>Specifically, includes <code>@RestrictTo(LIBRARY_GROUP)</code>
+        (for non-atomically versioned groups) and
+        <code>@RestrictTo(LIBRARY_GROUP_PREFIX)</code> (for all libraries).</td>
     </tr>
     <tr>
         <td><code>api/restricted_1.3.0-beta02.txt.txt</code></td>
@@ -279,8 +303,9 @@ the current library version.
         all <code>RestrictTo</code> APIs that require compatibility across
         versions, as available in version <code>1.3.0-beta02.txt</code>.
         <p/>
-        Specifically, includes <code>@RestrictTo(LIBRARY_GROUP)</code> and
-        <code>@RestrictTo(LIBRARY_GROUP_PREFIX)</code>. This file is only
-        generated during Beta.</td>
+        Specifically, includes <code>@RestrictTo(LIBRARY_GROUP)</code>
+        (for non-atomically versioned groups) and
+        <code>@RestrictTo(LIBRARY_GROUP_PREFIX)</code> (for all libraries).
+        This file is only generated during Beta.</td>
     </tr>
 </table>

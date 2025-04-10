@@ -27,30 +27,31 @@ import kotlin.jvm.JvmField
  * implementation of a RoomDatabase with runtime.
  *
  * @see [RoomDatabase.createOpenDelegate]
- * @see [RoomConnectionManager.openDelegate]
+ * @see [BaseRoomConnectionManager.openDelegate]
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 abstract class RoomOpenDelegate(
     val version: Int,
     val identityHash: String,
+    val legacyIdentityHash: String
 ) : RoomOpenDelegateMarker {
     abstract fun onCreate(connection: SQLiteConnection)
+
     abstract fun onPreMigrate(connection: SQLiteConnection)
+
     abstract fun onValidateSchema(connection: SQLiteConnection): ValidationResult
+
     abstract fun onPostMigrate(connection: SQLiteConnection)
+
     abstract fun onOpen(connection: SQLiteConnection)
 
     abstract fun createAllTables(connection: SQLiteConnection)
+
     abstract fun dropAllTables(connection: SQLiteConnection)
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    class ValidationResult(
-        @JvmField val isValid: Boolean,
-        @JvmField val expectedFoundMsg: String?
-    )
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
+    class ValidationResult(@JvmField val isValid: Boolean, @JvmField val expectedFoundMsg: String?)
 }
 
-/**
- * Marker interface for Room's code generated delegate.
- */
+/** Marker interface for Room's code generated delegate. */
 interface RoomOpenDelegateMarker

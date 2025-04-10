@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -22,7 +29,7 @@ plugins {
 }
 
 androidXMultiplatform {
-    android()
+    androidTarget()
     desktop()
 }
 
@@ -35,16 +42,16 @@ android {
         main {
             res.srcDirs += "src/commonMain/resources"
             res.srcDirs += "src/androidMain/res"
-            java.srcDirs += "src/commonMain/java"
+            java.srcDirs += "src/androidMain/java"
             assets.srcDirs += "src/androidMain/assets"
         }
     }
 }
 
 androidx {
-    type = LibraryType.INTERNAL_TEST_LIBRARY
+    type = SoftwareType.INTERNAL_TEST_LIBRARY
 }
 
 android {
-    namespace "androidx.testutils.fonts"
+    namespace = "androidx.testutils.fonts"
 }

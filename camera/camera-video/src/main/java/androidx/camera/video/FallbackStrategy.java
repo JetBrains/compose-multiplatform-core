@@ -17,10 +17,10 @@
 package androidx.camera.video;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -29,7 +29,6 @@ import java.lang.annotation.RetentionPolicy;
  * A class represents the strategy that will be adopted when the device does not support all the
  * desired {@link Quality} in {@link QualitySelector} in order to select the quality as possible.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class FallbackStrategy {
 
     // Restrict access to sealed class
@@ -43,8 +42,7 @@ public class FallbackStrategy {
      * <p>If that can not result in a supported quality, choose the quality that is closest to
      * and lower than the input quality.
      */
-    @NonNull
-    public static FallbackStrategy higherQualityOrLowerThan(@NonNull Quality quality) {
+    public static @NonNull FallbackStrategy higherQualityOrLowerThan(@NonNull Quality quality) {
         return new AutoValue_FallbackStrategy_RuleStrategy(quality,
                 FALLBACK_RULE_HIGHER_OR_LOWER);
     }
@@ -53,8 +51,7 @@ public class FallbackStrategy {
      * Returns a fallback strategy that will choose the quality that is closest to and higher
      * than the input quality.
      */
-    @NonNull
-    public static FallbackStrategy higherQualityThan(@NonNull Quality quality) {
+    public static @NonNull FallbackStrategy higherQualityThan(@NonNull Quality quality) {
         return new AutoValue_FallbackStrategy_RuleStrategy(quality,
                 FALLBACK_RULE_HIGHER);
     }
@@ -66,8 +63,7 @@ public class FallbackStrategy {
      * <p>If that can not result in a supported quality, choose the quality that is closest to
      * and higher than the input quality.
      */
-    @NonNull
-    public static FallbackStrategy lowerQualityOrHigherThan(@NonNull Quality quality) {
+    public static @NonNull FallbackStrategy lowerQualityOrHigherThan(@NonNull Quality quality) {
         return new AutoValue_FallbackStrategy_RuleStrategy(quality,
                 FALLBACK_RULE_LOWER_OR_HIGHER);
     }
@@ -76,8 +72,7 @@ public class FallbackStrategy {
      * Returns a fallback strategy that will choose the quality that is closest to and lower
      * than the input quality.
      */
-    @NonNull
-    public static FallbackStrategy lowerQualityThan(@NonNull Quality quality) {
+    public static @NonNull FallbackStrategy lowerQualityThan(@NonNull Quality quality) {
         return new AutoValue_FallbackStrategy_RuleStrategy(quality,
                 FALLBACK_RULE_LOWER);
     }
@@ -129,8 +124,7 @@ public class FallbackStrategy {
 
     @AutoValue
     abstract static class RuleStrategy extends FallbackStrategy {
-        @NonNull
-        abstract Quality getFallbackQuality();
+        abstract @NonNull Quality getFallbackQuality();
 
         @FallbackRule
         abstract int getFallbackRule();

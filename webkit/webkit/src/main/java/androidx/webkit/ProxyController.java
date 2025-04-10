@@ -16,10 +16,12 @@
 
 package androidx.webkit;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.AnyThread;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
 import androidx.webkit.internal.ProxyControllerImpl;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -49,6 +51,7 @@ import java.util.concurrent.Executor;
  * ProxyController.getInstance().clearProxyOverride(executor, listener);
  * </pre>
  */
+@AnyThread
 public abstract class ProxyController {
     /**
      */
@@ -64,8 +67,7 @@ public abstract class ProxyController {
      */
     @RequiresFeature(name = WebViewFeature.PROXY_OVERRIDE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @NonNull
-    public static ProxyController getInstance() {
+    public static @NonNull ProxyController getInstance() {
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.PROXY_OVERRIDE)) {
             throw new UnsupportedOperationException("Proxy override not supported");
         }

@@ -17,59 +17,58 @@
 package androidx.camera.camera2.pipe.media
 
 import android.media.ImageWriter
-import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.camera.camera2.pipe.InputId
+import androidx.camera.camera2.pipe.InputStreamId
 import androidx.camera.camera2.pipe.UnsafeWrapper
 
-/**
- * Simplified wrapper for [ImageWriter]-like classes.
- */
-
-@RequiresApi(Build.VERSION_CODES.M)
-interface ImageWriterWrapper : UnsafeWrapper, AutoCloseable {
+/** Simplified wrapper for [ImageWriter]-like classes. */
+@RequiresApi(23)
+public interface ImageWriterWrapper : UnsafeWrapper, AutoCloseable {
 
     /**
      * Get the ImageWriter format.
+     *
      * @see [ImageWriter.getFormat]
      */
-    val format: Int
+    public val format: Int
 
     /**
      * Get the maximum number of images that can be dequeued from the ImageWriter simultaneously.
+     *
      * @see [ImageWriter.getMaxImages]
      */
-    val maxImages: Int
+    public val maxImages: Int
 
     /**
      * Queue an input Image back to ImageWriter for the downstream consumer to access.
+     *
      * @see [ImageWriter.queueInputImage]
      */
-    fun queueInputImage(image: ImageWrapper)
+    public fun queueInputImage(image: ImageWrapper): Boolean
 
     /**
      * Dequeue the next available input Image for the application to produce data into.
+     *
      * @see [ImageWriter.dequeueInputImage]
      */
-    fun dequeueInputImage(): ImageWrapper
+    public fun dequeueInputImage(): ImageWrapper
 
     /**
-     * Set the [OnImageReleasedListener]. Setting additional listeners will override the previous listener.]
+     * Set the [OnImageReleasedListener]. Setting additional listeners will override the previous
+     * listener.]
      */
-    fun setOnImageReleasedListener(onImageReleasedListener: OnImageReleasedListener)
+    public fun setOnImageReleasedListener(onImageReleasedListener: OnImageReleasedListener)
 
     /**
      * The OnImageListener adapts the standard [ImageWriter.OnImageReleasedListener] to retrieve
      * images returned to the ImageWriter.
      */
-    fun interface OnImageReleasedListener {
-        /**
-         * Handle the [ImageWrapper] that has been released back to [ImageWriterWrapper].
-         */
-        fun onImageReleased(inputId: InputId)
+    public fun interface OnImageReleasedListener {
+        /** Handle the [ImageWrapper] that has been released back to [ImageWriterWrapper]. */
+        public fun onImageReleased(inputStreamId: InputStreamId)
     }
 
-    interface Builder {
-        fun build(): ImageWriterWrapper
+    public interface Builder {
+        public fun build(): ImageWriterWrapper
     }
 }

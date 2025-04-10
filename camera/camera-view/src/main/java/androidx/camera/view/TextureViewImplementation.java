@@ -25,9 +25,6 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.Logger;
 import androidx.camera.core.SurfaceRequest;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
@@ -39,13 +36,15 @@ import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * The {@link TextureView} implementation for {@link PreviewView}
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class TextureViewImplementation extends PreviewViewImplementation {
 
     private static final String TAG = "TextureViewImpl";
@@ -58,21 +57,17 @@ final class TextureViewImplementation extends PreviewViewImplementation {
     SurfaceTexture mDetachedSurfaceTexture;
     AtomicReference<CallbackToFutureAdapter.Completer<Void>> mNextFrameCompleter =
             new AtomicReference<>();
-    @Nullable
-    OnSurfaceNotInUseListener mOnSurfaceNotInUseListener;
-    @Nullable
-    PreviewView.OnFrameUpdateListener mOnFrameUpdateListener;
-    @Nullable
-    Executor mFrameUpdateExecutor;
+    @Nullable OnSurfaceNotInUseListener mOnSurfaceNotInUseListener;
+    PreviewView.@Nullable OnFrameUpdateListener mOnFrameUpdateListener;
+    @Nullable Executor mFrameUpdateExecutor;
 
     TextureViewImplementation(@NonNull FrameLayout parent,
             @NonNull PreviewTransformation previewTransform) {
         super(parent, previewTransform);
     }
 
-    @Nullable
     @Override
-    View getPreview() {
+    @Nullable View getPreview() {
         return mTextureView;
     }
 
@@ -128,7 +123,7 @@ final class TextureViewImplementation extends PreviewViewImplementation {
                 new FrameLayout.LayoutParams(mResolution.getWidth(), mResolution.getHeight()));
         mTextureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
-            public void onSurfaceTextureAvailable(@NonNull final SurfaceTexture surfaceTexture,
+            public void onSurfaceTextureAvailable(final @NonNull SurfaceTexture surfaceTexture,
                     final int width, final int height) {
                 Logger.d(TAG, "SurfaceTexture available. Size: " + width + "x" + height);
                 mSurfaceTexture = surfaceTexture;
@@ -146,13 +141,13 @@ final class TextureViewImplementation extends PreviewViewImplementation {
             }
 
             @Override
-            public void onSurfaceTextureSizeChanged(@NonNull final SurfaceTexture surfaceTexture,
+            public void onSurfaceTextureSizeChanged(final @NonNull SurfaceTexture surfaceTexture,
                     final int width, final int height) {
                 Logger.d(TAG, "SurfaceTexture size changed: " + width + "x" + height);
             }
 
             @Override
-            public boolean onSurfaceTextureDestroyed(@NonNull final SurfaceTexture surfaceTexture) {
+            public boolean onSurfaceTextureDestroyed(final @NonNull SurfaceTexture surfaceTexture) {
                 mSurfaceTexture = null;
 
                 // If the camera is still using the surface, prevent the TextureView from
@@ -192,7 +187,7 @@ final class TextureViewImplementation extends PreviewViewImplementation {
             }
 
             @Override
-            public void onSurfaceTextureUpdated(@NonNull final SurfaceTexture surfaceTexture) {
+            public void onSurfaceTextureUpdated(final @NonNull SurfaceTexture surfaceTexture) {
                 CallbackToFutureAdapter.Completer<Void> completer =
                         mNextFrameCompleter.getAndSet(null);
 
@@ -264,8 +259,7 @@ final class TextureViewImplementation extends PreviewViewImplementation {
     }
 
     @Override
-    @NonNull
-    ListenableFuture<Void> waitForNextFrame() {
+    @NonNull ListenableFuture<Void> waitForNextFrame() {
         return CallbackToFutureAdapter.getFuture(
                 completer -> {
                     mNextFrameCompleter.set(completer);
@@ -274,9 +268,8 @@ final class TextureViewImplementation extends PreviewViewImplementation {
         );
     }
 
-    @Nullable
     @Override
-    Bitmap getPreviewBitmap() {
+    @Nullable Bitmap getPreviewBitmap() {
         // If textureView is still null or its SurfaceTexture isn't available yet, return null
         if (mTextureView == null || !mTextureView.isAvailable()) {
             return null;
@@ -288,7 +281,7 @@ final class TextureViewImplementation extends PreviewViewImplementation {
 
     @Override
     void setFrameUpdateListener(@NonNull Executor executor,
-            @NonNull PreviewView.OnFrameUpdateListener listener) {
+            PreviewView.@NonNull OnFrameUpdateListener listener) {
         mOnFrameUpdateListener = listener;
         mFrameUpdateExecutor = executor;
     }

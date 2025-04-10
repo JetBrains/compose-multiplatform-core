@@ -18,6 +18,7 @@ package androidx.compose.foundation.text.selection.gestures
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
 import androidx.compose.foundation.text.selection.fetchTextLayoutResult
 import androidx.compose.foundation.text.selection.gestures.util.SelectionSubject
 import androidx.compose.foundation.text.selection.gestures.util.TextSelectionAsserter
@@ -32,46 +33,49 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.runner.RunWith
 
 @MediumTest
-@RunWith(AndroidJUnit4::class)
+@RunWith(ContextMenuFlagFlipperRunner::class)
 internal class SingleTextSelectionGesturesRtlTest : TextSelectionGesturesTest() {
 
     private val testTag = "testTag"
 
-    override val word = "בבבבב"
-    override val textContent = mutableStateOf("בבבבב\nבבבבב בבבבב בבבבב\nבבבבב")
+    override val word = RtlChar.repeat(5)
+    override val textContent = mutableStateOf("$word\n$word $word $word\n$word")
     override var textDirection: ResolvedTextDirection = ResolvedTextDirection.Rtl
 
     override lateinit var asserter: TextSelectionAsserter
 
     @Before
     fun setupAsserter() {
-        asserter = object : TextSelectionAsserter(
-            textContent = textContent.value,
-            rule = rule,
-            textToolbar = textToolbar,
-            hapticFeedback = hapticFeedback,
-            getActual = { selection.value },
-        ) {
-            override fun subAssert() {
-                Truth.assertAbout(SelectionSubject.withContent(textContent))
-                    .that(getActual())
-                    .hasSelection(
-                        expected = selection,
-                        startTextDirection = startLayoutDirection,
-                        endTextDirection = endLayoutDirection,
-                    )
-            }
-        }.apply {
-            startLayoutDirection = ResolvedTextDirection.Rtl
-            endLayoutDirection = ResolvedTextDirection.Rtl
-        }
+        asserter =
+            object :
+                    TextSelectionAsserter(
+                        textContent = textContent.value,
+                        rule = rule,
+                        textToolbar = textToolbar,
+                        spyTextActionModeCallback = spyTextActionModeCallback,
+                        hapticFeedback = hapticFeedback,
+                        getActual = { selection.value },
+                    ) {
+                    override fun subAssert() {
+                        Truth.assertAbout(SelectionSubject.withContent(textContent))
+                            .that(getActual())
+                            .hasSelection(
+                                expected = selection,
+                                startTextDirection = startLayoutDirection,
+                                endTextDirection = endLayoutDirection,
+                            )
+                    }
+                }
+                .apply {
+                    startLayoutDirection = ResolvedTextDirection.Rtl
+                    endLayoutDirection = ResolvedTextDirection.Rtl
+                }
     }
 
     @Composable
@@ -79,13 +83,12 @@ internal class SingleTextSelectionGesturesRtlTest : TextSelectionGesturesTest() 
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             BasicText(
                 text = textContent.value,
-                style = TextStyle(
-                    fontFamily = fontFamily,
-                    fontSize = fontSize,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag(testTag),
+                style =
+                    TextStyle(
+                        fontFamily = fontFamily,
+                        fontSize = fontSize,
+                    ),
+                modifier = Modifier.fillMaxWidth().testTag(testTag),
             )
         }
     }

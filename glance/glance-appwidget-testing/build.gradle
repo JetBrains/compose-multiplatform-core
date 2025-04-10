@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -38,8 +45,6 @@ dependencies {
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
-
-    samples(projectOrArtifact(":glance:glance-appwidget-testing:glance-appwidget-testing-samples"))
 }
 
 android {
@@ -50,15 +55,19 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
+        compileSdk = 35
     }
-    namespace "androidx.glance.appwidget.testing"
+    namespace = "androidx.glance.appwidget.testing"
+    // TODO(b/313699418): need to update compose.runtime version to 1.6.0+ in glance-appwidget
+    experimentalProperties["android.lint.useK2Uast"] = false
 }
 
 androidx {
     name = "androidx.glance:glance-appwidget-testing"
-    type = LibraryType.PUBLISHED_LIBRARY
-    targetsJavaConsumers = false
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2023"
     description = "This library provides APIs for developers to use for testing their appWidget specific Glance composables."
+    legacyDisableKotlinStrictApiMode = true
+    samples(project(":glance:glance-appwidget-testing:glance-appwidget-testing-samples"))
 }

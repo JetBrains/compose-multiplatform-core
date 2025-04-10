@@ -1,119 +1,335 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.3.0-alpha04" type="baseline" client="gradle" dependencies="false" name="AGP (8.3.0-alpha04)" variant="all" version="8.3.0-alpha04">
+<issues format="6" by="lint 8.10.0-alpha07" type="baseline" client="gradle" dependencies="false" name="AGP (8.10.0-alpha07)" variant="all" version="8.10.0-alpha07">
 
     <issue
-        id="BanSuppressTag"
-        message="@suppress is not allowed in documentation"
-        errorLine1="class TextDelegate("
-        errorLine2="      ~~~~~~~~~~~~">
+        id="LambdaStructuralEquality"
+        message="Checking lambdas for structural equality, instead of checking for referential equality"
+        errorLine1="        if (onAttach != other.onAttach) return false"
+        errorLine2="                     ~~">
         <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/TextDelegate.kt"/>
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/ClickableTest.kt"/>
     </issue>
 
     <issue
-        id="BanSuppressTag"
-        message="@suppress is not allowed in documentation"
-        errorLine1="        fun applyCompositionDecoration("
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="LambdaStructuralEquality"
+        message="Checking lambdas for structural equality, instead of checking for referential equality"
+        errorLine1="        if (onDraw != other.onDraw) return false"
+        errorLine2="                   ~~">
         <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/TextFieldDelegate.kt"/>
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/IndicationTest.kt"/>
     </issue>
 
     <issue
-        id="BanThreadSleep"
-        message="Uses Thread.sleep()"
-        errorLine1="            Thread.sleep(5)"
-        errorLine2="                   ~~~~~">
+        id="LambdaStructuralEquality"
+        message="Checking lambdas for structural equality, instead of checking for referential equality"
+        errorLine1="        if (onCreate != other.onCreate) return false"
+        errorLine2="                     ~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/lazy/grid/LazyScrollTest.kt"/>
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/IndicationTest.kt"/>
     </issue>
 
     <issue
-        id="BanThreadSleep"
-        message="Uses Thread.sleep()"
-        errorLine1="            Thread.sleep(5)"
-        errorLine2="                   ~~~~~">
+        id="LambdaStructuralEquality"
+        message="Checking lambdas for structural equality, instead of checking for referential equality"
+        errorLine1="        if (hasScrollableBlock != other.hasScrollableBlock) return false"
+        errorLine2="                               ~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/lazy/list/LazyScrollTest.kt"/>
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/ScrollableTest.kt"/>
     </issue>
 
     <issue
-        id="BanThreadSleep"
-        message="Uses Thread.sleep()"
-        errorLine1="            Thread.sleep(5)"
-        errorLine2="                   ~~~~~">
+        id="CoroutineCreationDuringComposition"
+        message="Calls to launch should happen inside a LaunchedEffect and not composition"
+        errorLine1="            rememberCoroutineScope().launch(start = CoroutineStart.UNDISPATCHED) {"
+        errorLine2="                                     ~~~~~~">
         <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridAnimatedScrollTest.kt"/>
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/SelectionContainerTest.kt"/>
     </issue>
 
     <issue
-        id="PrimitiveInCollection"
-        message="field anchors with type Map&lt;T, Float>: replace with ObjectFloatMap"
-        errorLine1="    internal val anchors = mutableMapOf&lt;T, Float>()"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="CoroutineCreationDuringComposition"
+        message="Calls to launch should happen inside a LaunchedEffect and not composition"
+        errorLine1="            rememberCoroutineScope().launch(start = CoroutineStart.UNDISPATCHED) {"
+        errorLine2="                                     ~~~~~~">
         <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/gestures/AnchoredDraggable.kt"/>
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/SelectionContainerTest.kt"/>
     </issue>
 
     <issue
-        id="PrimitiveInCollection"
-        message="return type Map&lt;T, Float> of getAnchors$lint_module: replace with ObjectFloatMap"
-        errorLine1="    internal val anchors = mutableMapOf&lt;T, Float>()"
-        errorLine2="                 ~~~~~~~">
+        id="InvalidLanguageTagDelimiter"
+        message="A hyphen (-), not an underscore (_) delimiter should be used in a language tag"
+        errorLine1="                    TransformedText(text.toUpperCase(LocaleList(&quot;en_US&quot;)), OffsetMapping.Identity)"
+        errorLine2="                                                                ~~~~~~~">
         <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/gestures/AnchoredDraggable.kt"/>
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/textfield/TextFieldTest.kt"/>
     </issue>
 
     <issue
-        id="PrimitiveInCollection"
-        message="constructor MapDraggableAnchors has parameter anchors with type Map&lt;T, Float>: replace with ObjectFloatMap"
-        errorLine1="private class MapDraggableAnchors&lt;T>(private val anchors: Map&lt;T, Float>) : DraggableAnchors&lt;T> {"
-        errorLine2="                                                          ~~~~~~~~~~~~~">
+        id="ModifierFactoryExtensionFunction"
+        message="Modifier factory functions should be extensions on Modifier"
+        errorLine1="    internal fun &lt;T> createAnchoredDraggableModifier("
+        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/gestures/AnchoredDraggable.kt"/>
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/anchoredDraggable/AnchoredDraggableBackwardsCompatibleTest.kt"/>
     </issue>
 
     <issue
-        id="PrimitiveInCollection"
-        message="field anchors with type Map&lt;T, Float>: replace with ObjectFloatMap"
-        errorLine1="private class MapDraggableAnchors&lt;T>(private val anchors: Map&lt;T, Float>) : DraggableAnchors&lt;T> {"
-        errorLine2="                                                          ~~~~~~~~~~~~~">
+        id="ModifierFactoryExtensionFunction"
+        message="Modifier factory functions should be extensions on Modifier"
+        errorLine1="    fun LazyItemScope.fillParentMaxMainAxis() ="
+        errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/gestures/AnchoredDraggable.kt"/>
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/lazy/list/BaseLazyListTestWithOrientation.kt"/>
     </issue>
 
     <issue
-        id="PrimitiveInCollection"
-        message="method genericClickableWithoutGesture has parameter currentKeyPressInteractions with type Map&lt;Key, Press>: replace with LongObjectMap"
-        errorLine1="    currentKeyPressInteractions: MutableMap&lt;Key, PressInteraction.Press>,"
-        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="ModifierFactoryExtensionFunction"
+        message="Modifier factory functions should be extensions on Modifier"
+        errorLine1="    fun LazyItemScope.fillParentMaxCrossAxis() ="
+        errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/Clickable.kt"/>
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/lazy/list/BaseLazyListTestWithOrientation.kt"/>
     </issue>
 
     <issue
-        id="PrimitiveInCollection"
-        message="field currentKeyPressInteractions with type Map&lt;Key, Press>: replace with LongObjectMap"
-        errorLine1="        val currentKeyPressInteractions = mutableMapOf&lt;Key, PressInteraction.Press>()"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="ModifierFactoryExtensionFunction"
+        message="Modifier factory functions should be extensions on Modifier"
+        errorLine1="    private fun createSubject(text: AnnotatedString): TextAnnotatedStringElement {"
+        errorLine2="                ~~~~~~~~~~~~~">
         <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/Clickable.kt"/>
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringContentCaptureInvalidationTest.kt"/>
     </issue>
 
     <issue
-        id="PrimitiveInCollection"
-        message="return type Map&lt;Key, Press> of getCurrentKeyPressInteractions: replace with LongObjectMap"
-        errorLine1="        val currentKeyPressInteractions = mutableMapOf&lt;Key, PressInteraction.Press>()"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="ModifierFactoryExtensionFunction"
+        message="Modifier factory functions should be extensions on Modifier"
+        errorLine1="    private fun createSubject(text: String): TextStringSimpleElement {"
+        errorLine2="                ~~~~~~~~~~~~~">
         <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/Clickable.kt"/>
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextStringContentCaptureTest.kt"/>
+    </issue>
+
+    <issue
+        id="ModifierFactoryReturnType"
+        message="Modifier factory functions should have a return type of Modifier"
+        errorLine1="    private fun createSubject(text: AnnotatedString): TextAnnotatedStringElement {"
+        errorLine2="                ~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringContentCaptureInvalidationTest.kt"/>
+    </issue>
+
+    <issue
+        id="ModifierFactoryReturnType"
+        message="Modifier factory functions should have a return type of Modifier"
+        errorLine1="    private fun createSubject(text: String): TextStringSimpleElement {"
+        errorLine2="                ~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextStringContentCaptureTest.kt"/>
+    </issue>
+
+    <issue
+        id="ModifierParameter"
+        message="Modifier parameter should be the first optional parameter"
+        errorLine1="        modifier: Modifier = Modifier,"
+        errorLine2="        ~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/pager/BasePagerTest.kt"/>
+    </issue>
+
+    <issue
+        id="ModifierParameter"
+        message="Modifier parameter should be named modifier"
+        errorLine1="    private fun TestMarqueeContent(marqueeModifier: Modifier) {"
+        errorLine2="                                   ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/BasicMarqueeTest.kt"/>
+    </issue>
+
+    <issue
+        id="ModifierParameter"
+        message="Optional Modifier parameter should have a default value of `Modifier`"
+        errorLine1="private fun OuterBox(modifier: Modifier = Modifier.fillMaxSize(), content: @Composable () -> Unit) {"
+        errorLine2="                     ~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/contextmenu/provider/BasicTextContextMenuProviderTest.kt"/>
+    </issue>
+
+    <issue
+        id="ModifierParameter"
+        message="Modifier parameter should be the first optional parameter"
+        errorLine1="        modifier: Modifier = Modifier,"
+        errorLine2="        ~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/contextmenu/ContextMenuAreaTest.kt"/>
+    </issue>
+
+    <issue
+        id="ModifierParameter"
+        message="Modifier parameter should be the first optional parameter"
+        errorLine1="        modifier: Modifier = Modifier,"
+        errorLine2="        ~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/contextmenu/ContextMenuAreaTest.kt"/>
+    </issue>
+
+    <issue
+        id="ModifierParameter"
+        message="Modifier parameter should be the first optional parameter"
+        errorLine1="        modifier: Modifier = Modifier.testTag(tag),"
+        errorLine2="        ~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/contextmenu/ContextMenuUiTest.kt"/>
+    </issue>
+
+    <issue
+        id="ModifierParameter"
+        message="Optional Modifier parameter should have a default value of `Modifier`"
+        errorLine1="        modifier: Modifier = Modifier.testTag(tag),"
+        errorLine2="        ~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/contextmenu/ContextMenuUiTest.kt"/>
+    </issue>
+
+    <issue
+        id="ModifierParameter"
+        message="Modifier parameter should be the first optional parameter"
+        errorLine1="        modifier: Modifier = Modifier,"
+        errorLine2="        ~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/pager/SingleParamBasePagerTest.kt"/>
+    </issue>
+
+    <issue
+        id="ModifierParameter"
+        message="Modifier parameter should be the first optional parameter"
+        errorLine1="        modifier: Modifier = Modifier,"
+        errorLine2="        ~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/pager/SingleParamBasePagerTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnnecessaryComposedModifier"
+        message="Unnecessary use of Modifier.composed"
+        errorLine1="                    Modifier.fillMaxSize().testTag(PagerTestTag).composed {"
+        errorLine2="                                                                 ~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/pager/PagerTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnrememberedMutableState"
+        message="Creating a state object during composition without using `remember`"
+        errorLine1="        texts = derivedStateOf {"
+        errorLine2="                ~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesBidiTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnrememberedMutableState"
+        message="Creating a state object during composition without using `remember`"
+        errorLine1="        textContentIndices = derivedStateOf { texts.value.textContentIndices() }"
+        errorLine2="                             ~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesBidiTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnrememberedMutableState"
+        message="Creating a state object during composition without using `remember`"
+        errorLine1="        texts = derivedStateOf {"
+        errorLine2="                ~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesRtlTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnrememberedMutableState"
+        message="Creating a state object during composition without using `remember`"
+        errorLine1="        textContentIndices = derivedStateOf { texts.value.textContentIndices() }"
+        errorLine2="                             ~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesRtlTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnrememberedMutableState"
+        message="Creating a state object during composition without using `remember`"
+        errorLine1="        texts = derivedStateOf {"
+        errorLine2="                ~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnrememberedMutableState"
+        message="Creating a state object during composition without using `remember`"
+        errorLine1="        textContentIndices = derivedStateOf { texts.value.textContentIndices() }"
+        errorLine2="                             ~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/selection/gestures/MultiTextSelectionGesturesTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedBoxWithConstraintsScope"
+        message="BoxWithConstraints scope is not used"
+        errorLine1="                    BoxWithConstraints {"
+        errorLine2="                                       ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/ClickableTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedBoxWithConstraintsScope"
+        message="BoxWithConstraints scope is not used"
+        errorLine1="                    BoxWithConstraints {"
+        errorLine2="                                       ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/CombinedClickableTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedBoxWithConstraintsScope"
+        message="BoxWithConstraints scope is not used"
+        errorLine1="                    BoxWithConstraints {"
+        errorLine2="                                       ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringNodeTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedBoxWithConstraintsScope"
+        message="BoxWithConstraints scope is not used"
+        errorLine1="                    BoxWithConstraints {"
+        errorLine2="                                       ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/modifiers/TextStringSimpleNodeTest.kt"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateValueProperty"
+        message="Reading `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
+        errorLine1="            val stateValue = state.value"
+        errorLine2="                                   ~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/input/TextFieldKeyEventTest.kt"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateValueProperty"
+        message="Assigning `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
+        errorLine1="            state.value += 1"
+        errorLine2="                  ~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/foundation/text/input/TextFieldKeyEventTest.kt"/>
     </issue>
 
     <issue
         id="PrimitiveInCollection"
         message="variable pinnedItems with type List&lt;? extends Integer>: replace with IntList"
-        errorLine1="        val pinnedItems = itemProvider.calculateLazyLayoutPinnedIndices("
-        errorLine2="        ^">
+        errorLine1="            val pinnedItems ="
+        errorLine2="            ^">
         <location
             file="src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGrid.kt"/>
     </issue>
@@ -220,7 +436,7 @@
     <issue
         id="PrimitiveInCollection"
         message="field previousDefaultSpans with type List&lt;GridItemSpan>: replace with LongList"
-        errorLine1="    /**"
+        errorLine1="    /** List of 1x1 spans if we do not have custom spans. */"
         errorLine2="    ^">
         <location
             file="src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGridSpanLayoutProvider.kt"/>
@@ -246,15 +462,6 @@
 
     <issue
         id="PrimitiveInCollection"
-        message="field countPerType with type Map&lt;Object, Integer>: replace with ObjectIntMap"
-        errorLine1="    private val countPerType = mutableMapOf&lt;Any?, Int>()"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/layout/LazyLayout.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
         message="return type List&lt;Integer> of calculateLazyLayoutPinnedIndices: replace with IntList"
         errorLine1="): List&lt;Int> {"
         errorLine2="   ~~~~~~~~~">
@@ -273,101 +480,11 @@
 
     <issue
         id="PrimitiveInCollection"
-        message="field map with type Map&lt;Object, Integer>: replace with ObjectIntMap"
-        errorLine1="    private val map: Map&lt;Any, Int>"
-        errorLine2="                     ~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/layout/LazyLayoutKeyIndexMap.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="field placeablesCache with type HashMap&lt;Integer, List&lt;Placeable>>: replace with IntObjectMap"
-        errorLine1="    /**"
-        errorLine2="    ^">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/layout/LazyLayoutMeasureScope.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
         message="variable pinnedItems with type List&lt;? extends Integer>: replace with IntList"
-        errorLine1="        val pinnedItems = itemProvider.calculateLazyLayoutPinnedIndices("
-        errorLine2="        ^">
+        errorLine1="            val pinnedItems ="
+        errorLine2="            ^">
         <location
             file="src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyList.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="method findOrComposeLazyListHeader has parameter headerIndexes with type List&lt;Integer>: replace with IntList"
-        errorLine1="    headerIndexes: List&lt;Int>,"
-        errorLine2="                   ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyListHeaders.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="field _headerIndexes with type List&lt;Integer>: replace with IntList"
-        errorLine1="    private var _headerIndexes: MutableList&lt;Int>? = null"
-        errorLine2="                                ~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyListIntervalContent.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of getHeaderIndexes: replace with IntList"
-        errorLine1="    val headerIndexes: List&lt;Int> get() = _headerIndexes ?: emptyList()"
-        errorLine2="        ~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyListIntervalContent.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="variable varb332e573 with type List&lt;Integer>: replace with IntList"
-        errorLine1="    val headerIndexes: List&lt;Int> get() = _headerIndexes ?: emptyList()"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyListIntervalContent.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="variable headersIndexes with type List&lt;Integer>: replace with IntList"
-        errorLine1="        val headersIndexes = _headerIndexes ?: mutableListOf&lt;Int>().also {"
-        errorLine2="        ^">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyListIntervalContent.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="variable varb3338ae4 with type List&lt;Integer>: replace with IntList"
-        errorLine1="        val headersIndexes = _headerIndexes ?: mutableListOf&lt;Int>().also {"
-        errorLine2="                             ^">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyListIntervalContent.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of getHeaderIndexes: replace with IntList"
-        errorLine1="    val headerIndexes: List&lt;Int>"
-        errorLine2="                       ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyListItemProvider.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="method measureLazyList has parameter headerIndexes with type List&lt;Integer>: replace with IntList"
-        errorLine1="    headerIndexes: List&lt;Int>,"
-        errorLine2="                   ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyListMeasure.kt"/>
     </issue>
 
     <issue
@@ -436,8 +553,8 @@
     <issue
         id="PrimitiveInCollection"
         message="variable pinnedItems with type List&lt;? extends Integer>: replace with IntList"
-        errorLine1="        val pinnedItems = itemProvider.calculateLazyLayoutPinnedIndices("
-        errorLine2="        ^">
+        errorLine1="            val pinnedItems ="
+        errorLine2="            ^">
         <location
             file="src/commonMain/kotlin/androidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridMeasurePolicy.kt"/>
     </issue>
@@ -478,34 +595,6 @@
             file="src/commonMain/kotlin/androidx/compose/foundation/pager/PagerMeasure.kt"/>
     </issue>
 
-    <!-- TODO(soboleva) temporary change, remove when stable link annotations merged -->
-    <issue
-        id="IllegalExperimentalApiUsage"
-        message="`Experimental` and `RequiresOptIn` APIs may only be used within the same-version group where they were defined."
-        errorLine1="@OptIn(ExperimentalTextApi::class)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/BasicText.kt"/>
-    </issue>
-
-    <issue
-        id="IllegalExperimentalApiUsage"
-        message="`Experimental` and `RequiresOptIn` APIs may only be used within the same-version group where they were defined."
-        errorLine1="@OptIn(ExperimentalTextApi::class)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringNode.kt"/>
-    </issue>
-
-    <issue
-        id="IllegalExperimentalApiUsage"
-        message="`Experimental` and `RequiresOptIn` APIs may only be used within the same-version group where they were defined."
-        errorLine1="@OptIn(ExperimentalTextApi::class)"
-        errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/TextLinkScope.kt"/>
-    </issue>
-
     <issue
         id="PrimitiveInCollection"
         message="method createPagesAfterList has parameter pinnedPages with type List&lt;Integer>: replace with IntList"
@@ -527,154 +616,10 @@
     <issue
         id="PrimitiveInCollection"
         message="variable pinnedPages with type List&lt;? extends Integer>: replace with IntList"
-        errorLine1="        val pinnedPages = itemProvider.calculateLazyLayoutPinnedIndices("
-        errorLine2="        ^">
+        errorLine1="            val pinnedPages ="
+        errorLine2="            ^">
         <location
             file="src/commonMain/kotlin/androidx/compose/foundation/pager/PagerMeasurePolicy.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type Map&lt;Long, Selection> of createSubSelections: replace with LongObjectMap"
-        errorLine1="    fun createSubSelections(selection: Selection): Map&lt;Long, Selection>"
-        errorLine2="                                                   ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/selection/SelectionLayout.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="constructor MultiSelectionLayout has parameter selectableIdToInfoListIndex with type Map&lt;Long, Integer>: replace with LongIntMap"
-        errorLine1="    val selectableIdToInfoListIndex: Map&lt;Long, Int>,"
-        errorLine2="                                     ~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/selection/SelectionLayout.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="field selectableIdToInfoListIndex with type Map&lt;Long, Integer>: replace with LongIntMap"
-        errorLine1="    val selectableIdToInfoListIndex: Map&lt;Long, Int>,"
-        errorLine2="                                     ~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/selection/SelectionLayout.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type Map&lt;Long, Integer> of getSelectableIdToInfoListIndex: replace with LongIntMap"
-        errorLine1="    val selectableIdToInfoListIndex: Map&lt;Long, Int>,"
-        errorLine2="                                     ~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/selection/SelectionLayout.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="method createAndPutSubSelection has parameter $this$createAndPutSubSelection with type Map&lt;Long, Selection>: replace with LongObjectMap"
-        errorLine1="    private fun MutableMap&lt;Long, Selection>.createAndPutSubSelection("
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/selection/SelectionLayout.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="field selectableIdToInfoListIndex with type Map&lt;Long, Integer>: replace with LongIntMap"
-        errorLine1="    private val selectableIdToInfoListIndex: MutableMap&lt;Long, Int> = mutableMapOf()"
-        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/selection/SelectionLayout.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="variable newSubselection with type Map&lt;Long, ? extends Selection>: replace with LongObjectMap"
-        errorLine1="                val (newSelection, newSubselection) = selectAll("
-        errorLine2="                                   ~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/selection/SelectionManager.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="variable subselections with type Map&lt;Long, Selection>: replace with LongObjectMap"
-        errorLine1="        val subselections = mutableMapOf&lt;Long, Selection>()"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/selection/SelectionManager.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="variable idToIndexMap with type Map&lt;Long, Integer>: replace with LongIntMap"
-        errorLine1="        val idToIndexMap = mutableMapOf&lt;Long, Int>()"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/selection/SelectionManager.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type Map&lt;Long, Selection> of getSubselections: replace with LongObjectMap"
-        errorLine1="    val subselections: Map&lt;Long, Selection>"
-        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/selection/SelectionRegistrar.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="field _selectableMap with type Map&lt;Long, Selectable>: replace with LongObjectMap"
-        errorLine1="    private val _selectableMap = mutableMapOf&lt;Long, Selectable>()"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/selection/SelectionRegistrarImpl.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type Map&lt;Long, Selectable> of getSelectableMap$lint_module: replace with LongObjectMap"
-        errorLine1="    internal val selectableMap: Map&lt;Long, Selectable>"
-        errorLine2="                 ~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/selection/SelectionRegistrarImpl.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="method setSubselections has parameter &lt;set-?> with type Map&lt;Long, Selection>: replace with LongObjectMap"
-        errorLine1="    override var subselections: Map&lt;Long, Selection> by mutableStateOf(emptyMap())"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/selection/SelectionRegistrarImpl.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="field baselineCache with type Map&lt;AlignmentLine, Integer>: replace with ObjectIntMap"
-        errorLine1="    private var baselineCache: Map&lt;AlignmentLine, Int>? = null"
-        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/modifiers/TextAnnotatedStringNode.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="field baselineCache with type Map&lt;AlignmentLine, Integer>: replace with ObjectIntMap"
-        errorLine1="    private var baselineCache: MutableMap&lt;AlignmentLine, Int>? = null"
-        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/modifiers/TextStringSimpleNode.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="variable cache with type Map&lt;AlignmentLine, Integer>: replace with ObjectIntMap"
-        errorLine1="            var cache = baselineCache"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/foundation/text/modifiers/TextStringSimpleNode.kt"/>
     </issue>
 
 </issues>

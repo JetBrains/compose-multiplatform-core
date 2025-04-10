@@ -23,16 +23,14 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
 import androidx.car.app.constraints.ConstraintManager;
 import androidx.car.app.model.Action;
-import androidx.car.app.model.ActionStrip;
 import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.Pane;
 import androidx.car.app.model.PaneTemplate;
 import androidx.car.app.model.Row;
@@ -43,19 +41,19 @@ import androidx.core.graphics.drawable.IconCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /**
  * Creates a screen that demonstrates usage of the full screen {@link PaneTemplate} to display a
  * details screen.
  */
 public final class PaneTemplateDemoScreen extends Screen implements DefaultLifecycleObserver {
-    @Nullable
-    private IconCompat mPaneImage;
+    private @Nullable IconCompat mPaneImage;
 
-    @Nullable
-    private IconCompat mRowLargeIcon;
+    private @Nullable IconCompat mRowLargeIcon;
 
-    @Nullable
-    private IconCompat mCommuteIcon;
+    private @Nullable IconCompat mCommuteIcon;
 
     public PaneTemplateDemoScreen(@NonNull CarContext carContext) {
         super(carContext);
@@ -93,9 +91,8 @@ public final class PaneTemplateDemoScreen extends Screen implements DefaultLifec
         }
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
         int listLimit = getCarContext().getCarService(ConstraintManager.class).getContentLimit(
                 ConstraintManager.CONTENT_LIMIT_TYPE_PANE);
 
@@ -135,26 +132,25 @@ public final class PaneTemplateDemoScreen extends Screen implements DefaultLifec
                                 .build());
 
         return new PaneTemplate.Builder(paneBuilder.build())
-                .setHeaderAction(Action.BACK)
-                .setActionStrip(
-                        new ActionStrip.Builder()
-                                .addAction(new Action.Builder()
-                                        .setTitle(getCarContext().getString(
-                                                R.string.commute_action_title))
-                                        .setIcon(
-                                                new CarIcon.Builder(mCommuteIcon)
-                                                        .setTint(CarColor.BLUE)
-                                                        .build())
-                                        .setOnClickListener(
-                                                () -> CarToast.makeText(
-                                                                getCarContext(),
-                                                                getCarContext().getString(
-                                                                        R.string.commute_toast_msg),
-                                                                LENGTH_SHORT)
-                                                        .show())
-                                        .build())
+                .setHeader(new Header.Builder()
+                        .setTitle(getCarContext().getString(R.string.pane_template_demo_title))
+                        .setStartHeaderAction(Action.BACK)
+                        .addEndHeaderAction(new Action.Builder()
+                                .setTitle(getCarContext().getString(
+                                        R.string.commute_action_title))
+                                .setIcon(
+                                        new CarIcon.Builder(mCommuteIcon)
+                                                .setTint(CarColor.BLUE)
+                                                .build())
+                                .setOnClickListener(
+                                        () -> CarToast.makeText(
+                                                        getCarContext(),
+                                                        getCarContext().getString(
+                                                                R.string.commute_toast_msg),
+                                                        LENGTH_SHORT)
+                                                .show())
                                 .build())
-                .setTitle(getCarContext().getString(R.string.pane_template_demo_title))
+                        .build())
                 .build();
     }
 }

@@ -24,17 +24,20 @@ import androidx.compose.ui.semantics.SemanticsNode
  * [assertHasClickAction], or navigate to other nodes such as [onChildren].
  *
  * An instance of [SemanticsNodeInteraction] can be obtained from
- * [onNode][SemanticsNodeInteractionsProvider.onNode] and convenience
- * methods that use a specific filter, such as [onNodeWithText].
+ * [onNode][SemanticsNodeInteractionsProvider.onNode] and convenience methods that use a specific
+ * filter, such as [onNodeWithText].
  *
  * Here you can see how you can locate a checkbox, click it and verify that it's checked:
+ *
  * @sample androidx.compose.ui.test.samples.clickAndVerifyCheckbox
  *
  * [useUnmergedTree] is for tests with a special need to inspect implementation detail within
  * children. For example:
+ *
  * @sample androidx.compose.ui.test.samples.useUnmergedTree
  */
-class SemanticsNodeInteraction constructor(
+class SemanticsNodeInteraction
+constructor(
     internal val testContext: TestContext,
     internal val useUnmergedTree: Boolean,
     internal val selector: SemanticsSelector
@@ -57,17 +60,14 @@ class SemanticsNodeInteraction constructor(
         atLeastOneRootRequired: Boolean,
         errorMessageOnFail: String? = null,
         skipDeactivatedNodes: Boolean = true
-    ): SelectionResult {
-        return selector
-            .map(
-                testContext.getAllSemanticsNodes(
-                    atLeastOneRootRequired = atLeastOneRootRequired,
-                    useUnmergedTree = useUnmergedTree,
-                    skipDeactivatedNodes = skipDeactivatedNodes
-                ),
-                errorMessageOnFail.orEmpty()
-            )
-    }
+    ): SelectionResult =
+        testContext.testOwner.getAllSemanticsNodes(
+            atLeastOneRootRequired = atLeastOneRootRequired,
+            useUnmergedTree = useUnmergedTree,
+            skipDeactivatedNodes = skipDeactivatedNodes
+        ) {
+            selector.map(it, errorMessageOnFail.orEmpty())
+        }
 
     /**
      * Returns the semantics node captured by this object.
@@ -81,7 +81,7 @@ class SemanticsNodeInteraction constructor(
      * @throws AssertionError if 0 or multiple nodes found.
      */
     fun fetchSemanticsNode(errorMessageOnFail: String? = null): SemanticsNode {
-        return fetchOneOrDie(errorMessageOnFail)
+        return fetchOneOrThrow(errorMessageOnFail)
     }
 
     /**
@@ -92,10 +92,11 @@ class SemanticsNodeInteraction constructor(
      * @throws [AssertionError] if the assert fails.
      */
     fun assertDoesNotExist() {
-        val result = fetchSemanticsNodes(
-            atLeastOneRootRequired = false,
-            errorMessageOnFail = "Failed: assertDoesNotExist."
-        )
+        val result =
+            fetchSemanticsNodes(
+                atLeastOneRootRequired = false,
+                errorMessageOnFail = "Failed: assertDoesNotExist."
+            )
         if (result.selectedNodes.isNotEmpty()) {
             throw AssertionError(
                 buildErrorMessageForCountMismatch(
@@ -116,26 +117,25 @@ class SemanticsNodeInteraction constructor(
      * introduce additional overhead.
      *
      * @param errorMessageOnFail Error message prefix to be added to the message in case this
-     * asserts fails. This is typically used by operations that rely on this assert. Example prefix
-     * could be: "Failed to perform doOnClick.".
-     *
+     *   asserts fails. This is typically used by operations that rely on this assert. Example
+     *   prefix could be: "Failed to perform doOnClick.".
      * @throws [AssertionError] if the assert fails.
      */
     fun assertExists(errorMessageOnFail: String? = null): SemanticsNodeInteraction {
-        fetchOneOrDie(errorMessageOnFail)
+        fetchOneOrThrow(errorMessageOnFail)
         return this
     }
 
     /**
      * Asserts that the component was found and it is deactivated.
      *
-     * For example, the children of [androidx.compose.ui.layout.SubcomposeLayout] which are
-     * retained to be reused in future are considered deactivated.
+     * For example, the children of [androidx.compose.ui.layout.SubcomposeLayout] which are retained
+     * to be reused in future are considered deactivated.
      *
      * @throws [AssertionError] if the assert fails.
      */
     fun assertIsDeactivated(errorMessageOnFail: String? = null) {
-        val node = fetchOneOrDie(skipDeactivatedNodes = false)
+        val node = fetchOneOrThrow(skipDeactivatedNodes = false)
         if (!node.layoutInfo.isDeactivated) {
             throw AssertionError(
                 buildGeneralErrorMessage(
@@ -147,18 +147,18 @@ class SemanticsNodeInteraction constructor(
         }
     }
 
-    private fun fetchOneOrDie(
+    private fun fetchOneOrThrow(
         errorMessageOnFail: String? = null,
         skipDeactivatedNodes: Boolean = true
     ): SemanticsNode {
-        val finalErrorMessage = errorMessageOnFail
-            ?: "Failed: assertExists."
+        val finalErrorMessage = errorMessageOnFail ?: "Failed: assertExists."
 
-        val result = fetchSemanticsNodes(
-            atLeastOneRootRequired = true,
-            errorMessageOnFail = finalErrorMessage,
-            skipDeactivatedNodes = skipDeactivatedNodes
-        )
+        val result =
+            fetchSemanticsNodes(
+                atLeastOneRootRequired = true,
+                errorMessageOnFail = finalErrorMessage,
+                skipDeactivatedNodes = skipDeactivatedNodes
+            )
         if (result.selectedNodes.count() != 1) {
             if (result.selectedNodes.isEmpty() && lastSeenSemantics != null) {
                 // This means that node we used to have is no longer in the tree.
@@ -190,19 +190,15 @@ class SemanticsNodeInteraction constructor(
         return result.selectedNodes.first()
     }
 
-    /**
-     * If using the merged tree, performs the same search in the unmerged tree.
-     */
+    /** If using the merged tree, performs the same search in the unmerged tree. */
     private fun getNodesInUnmergedTree(errorMessageOnFail: String?): List<SemanticsNode> {
         return if (!useUnmergedTree) {
-            selector
-                .map(
-                    testContext.getAllSemanticsNodes(
-                        atLeastOneRootRequired = true,
-                        useUnmergedTree = true
-                    ),
-                    errorMessageOnFail.orEmpty()
-                ).selectedNodes
+            testContext.testOwner.getAllSemanticsNodes(
+                atLeastOneRootRequired = true,
+                useUnmergedTree = true
+            ) {
+                selector.map(it, errorMessageOnFail.orEmpty()).selectedNodes
+            }
         } else {
             emptyList()
         }
@@ -215,19 +211,19 @@ class SemanticsNodeInteraction constructor(
  * navigate to other nodes such as [get].
  *
  * An instance of [SemanticsNodeInteractionCollection] can be obtained from
- * [onAllNodes][SemanticsNodeInteractionsProvider.onAllNodes] and convenience
- * methods that use a specific filter, such as [onAllNodesWithText].
+ * [onAllNodes][SemanticsNodeInteractionsProvider.onAllNodes] and convenience methods that use a
+ * specific filter, such as [onAllNodesWithText].
  *
  * For example, here is how you verify that there are exactly two clickable items:
+ *
  * @sample androidx.compose.ui.test.samples.verifyTwoClickableNodes
  */
-class SemanticsNodeInteractionCollection constructor(
+class SemanticsNodeInteractionCollection
+constructor(
     internal val testContext: TestContext,
     internal val useUnmergedTree: Boolean,
     internal val selector: SemanticsSelector
 ) {
-    private var nodeIds: List<Int>? = null
-
     constructor(
         testContext: TestContext,
         useUnmergedTree: Boolean,
@@ -241,27 +237,18 @@ class SemanticsNodeInteractionCollection constructor(
      * multiple times in one atomic operation, it is better to cache the result instead of calling
      * this API multiple times.
      *
-     * @param atLeastOneRootRequired Whether to throw an error in case there is no compose
-     * content in the current test app.
+     * @param atLeastOneRootRequired Whether to throw an error in case there is no compose content
+     *   in the current test app.
      * @param errorMessageOnFail Custom error message to append when this fails to retrieve the
-     * nodes.
+     *   nodes.
      */
     fun fetchSemanticsNodes(
         atLeastOneRootRequired: Boolean = true,
         errorMessageOnFail: String? = null
     ): List<SemanticsNode> {
-        if (nodeIds == null) {
-            return selector
-                .map(
-                    testContext.getAllSemanticsNodes(atLeastOneRootRequired, useUnmergedTree),
-                    errorMessageOnFail.orEmpty()
-                )
-                .apply { nodeIds = selectedNodes.map { it.id }.toList() }
-                .selectedNodes
+        return testContext.testOwner.getAllSemanticsNodes(atLeastOneRootRequired, useUnmergedTree) {
+            selector.map(it, errorMessageOnFail.orEmpty()).selectedNodes
         }
-
-        return testContext.getAllSemanticsNodes(atLeastOneRootRequired, useUnmergedTree)
-            .filter { it.id in nodeIds!! }
     }
 
     /**

@@ -21,17 +21,15 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withTimeout
 
 /**
- * An executor that can block some known runnables. We use it to slow down database
- * invalidation events.
+ * An executor that can block some known runnables. We use it to slow down database invalidation
+ * events.
  */
-@OptIn(ExperimentalCoroutinesApi::class)
 class FilteringExecutor(
     private val delegate: ExecutorService = Executors.newSingleThreadExecutor()
 ) : Executor {
@@ -46,18 +44,17 @@ class FilteringExecutor(
         }
 
     suspend fun awaitDeferredSizeAtLeast(min: Int) = withTestTimeout {
-        deferredSize.mapLatest {
-            it >= min
-        }.first()
+        deferredSize.filter { it >= min }.first()
     }
 
     private fun reEnqueueDeferred() {
-        val copy = lock.withLock {
-            val copy = deferred.toMutableList()
-            deferred.clear()
-            deferredSize.value = 0
-            copy
-        }
+        val copy =
+            lock.withLock {
+                val copy = deferred.toMutableList()
+                deferred.clear()
+                deferredSize.value = 0
+                copy
+            }
         copy.forEach(this::execute)
     }
 
@@ -89,11 +86,7 @@ class FilteringExecutor(
 
 suspend fun <T> withTestTimeout(duration: Long = 3, block: suspend () -> T): T {
     try {
-        return withTimeout(
-            timeMillis = TimeUnit.SECONDS.toMillis(duration)
-        ) {
-            block()
-        }
+        return withTimeout(timeMillis = TimeUnit.SECONDS.toMillis(duration)) { block() }
     } catch (err: Throwable) {
         throw AssertionError("didn't complete in expected time", err)
     }

@@ -28,19 +28,19 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.View;
 import android.widget.HeaderViewListAdapter;
 import android.widget.ListAdapter;
 import android.widget.PopupWindow;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.view.menu.ListMenuItemView;
 import androidx.appcompat.view.menu.MenuAdapter;
 import androidx.appcompat.view.menu.MenuBuilder;
-import androidx.core.view.ViewCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Method;
 
@@ -75,9 +75,8 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
-    @NonNull
     @Override
-    DropDownListView createDropDownListView(Context context, boolean hijackFocus) {
+    @NonNull DropDownListView createDropDownListView(Context context, boolean hijackFocus) {
         MenuDropDownListView view = new MenuDropDownListView(context, hijackFocus);
         view.setHoverListener(this);
         return view;
@@ -148,7 +147,7 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
 
             final Resources res = context.getResources();
             final Configuration config = res.getConfiguration();
-            if (ViewCompat.LAYOUT_DIRECTION_RTL == config.getLayoutDirection()) {
+            if (View.LAYOUT_DIRECTION_RTL == config.getLayoutDirection()) {
                 mAdvanceKey = KeyEvent.KEYCODE_DPAD_LEFT;
                 mRetreatKey = KeyEvent.KEYCODE_DPAD_RIGHT;
             } else {
@@ -248,12 +247,10 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setEnterTransition(PopupWindow popupWindow, Transition enterTransition) {
             popupWindow.setEnterTransition(enterTransition);
         }
 
-        @DoNotInline
         static void setExitTransition(PopupWindow popupWindow, Transition exitTransition) {
             popupWindow.setExitTransition(exitTransition);
         }
@@ -265,7 +262,6 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setTouchModal(PopupWindow popupWindow, boolean touchModal) {
             popupWindow.setTouchModal(touchModal);
         }

@@ -20,16 +20,9 @@ package androidx.tv.material3
  * [NavigationDrawerScope] is used to provide the doesNavigationDrawerHaveFocus state to the
  * [NavigationDrawerItem] composable
  */
-@ExperimentalTvMaterial3Api // TODO (b/263353219): Remove this before launching beta
 interface NavigationDrawerScope {
-    /**
-     * Whether any item within the [NavigationDrawer] or [ModalNavigationDrawer] is focused
-     */
-    @get:Suppress("GetterSetterNames")
-    val hasFocus: Boolean
+    /** Whether any item within the [NavigationDrawer] or [ModalNavigationDrawer] is focused */
+    @get:Suppress("GetterSetterNames") val hasFocus: Boolean
 }
 
-@OptIn(ExperimentalTvMaterial3Api::class)
-internal class NavigationDrawerScopeImpl(
-    override val hasFocus: Boolean
-) : NavigationDrawerScope
+internal class NavigationDrawerScopeImpl(override val hasFocus: Boolean) : NavigationDrawerScope

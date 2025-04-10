@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.integration.compat.quirk
 
 import android.annotation.SuppressLint
-import androidx.annotation.RequiresApi
 import androidx.camera.core.impl.Quirk
 
 /**
@@ -25,22 +24,21 @@ import androidx.camera.core.impl.Quirk
  * [android.hardware.camera2.CameraCaptureSession.StateCallback.onClosed] callback.
  *
  * QuirkSummary
- * - Bug Id:      144817309
+ * - Bug Id: 144817309
  * - Description: On Android API 22s and lower,
- *                [android.hardware.camera2.CameraCaptureSession.StateCallback.onClosed] callback
- *                will not be triggered under some circumstances.
- * - Device(s):   Devices in Android API version <= 22
+ *   [android.hardware.camera2.CameraCaptureSession.StateCallback.onClosed] callback will not be
+ *   triggered under some circumstances.
+ * - Device(s): Devices in Android API version <= 22
  */
 @SuppressLint("CameraXQuirksClassDetector")
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-class CaptureSessionOnClosedNotCalledQuirk : Quirk {
-    companion object {
+public class CaptureSessionOnClosedNotCalledQuirk : Quirk {
+    public companion object {
         /**
          * The quirk is disabled for CameraPipe, as it intrinsically handles things without the
          * reliance on the onClosed callback. For [androidx.camera.core.impl.DeferrableSurface] that
          * does need this signal for ref-counting, CameraPipe has an extra pipeline that "finalizes"
          * the capture session when a new capture session is created or the camera device is closed.
          */
-        fun isEnabled(): Boolean = false
+        public fun isEnabled(): Boolean = false
     }
 }

@@ -24,20 +24,22 @@ import android.net.Uri;
 
 import androidx.annotation.IntRange;
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
-import androidx.work.impl.utils.futures.SettableFuture;
+import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.work.impl.utils.taskexecutor.TaskExecutor;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A class that can perform work asynchronously in {@link WorkManager}.  For most cases, we
@@ -65,7 +67,7 @@ public abstract class ListenableWorker {
     private @NonNull Context mAppContext;
     private @NonNull WorkerParameters mWorkerParams;
 
-    private volatile int mStopReason = STOP_REASON_NOT_STOPPED;
+    private final AtomicInteger mStopReason = new AtomicInteger(STOP_REASON_NOT_STOPPED);
 
     private boolean mUsed;
 
@@ -199,8 +201,7 @@ public abstract class ListenableWorker {
      * @return A {@code com.google.common.util.concurrent.ListenableFuture} which resolves
      * after progress is persisted. Cancelling this future is a no-op.
      */
-    @NonNull
-    public ListenableFuture<Void> setProgressAsync(@NonNull Data data) {
+    public @NonNull ListenableFuture<Void> setProgressAsync(@NonNull Data data) {
         return mWorkerParams.getProgressUpdater()
                 .updateProgress(getApplicationContext(), getId(), data);
     }
@@ -228,8 +229,8 @@ public abstract class ListenableWorker {
      * the {@link ListenableWorker} transitions to running in the context of a foreground
      * {@link android.app.Service}.
      */
-    @NonNull
-    public final ListenableFuture<Void> setForegroundAsync(@NonNull ForegroundInfo foregroundInfo) {
+    public final @NonNull ListenableFuture<Void> setForegroundAsync(
+            @NonNull ForegroundInfo foregroundInfo) {
         return mWorkerParams.getForegroundUpdater()
                 .setForegroundAsync(getApplicationContext(), getId(), foregroundInfo);
     }
@@ -250,14 +251,14 @@ public abstract class ListenableWorker {
      * {@link ForegroundInfo} instance if the WorkRequest is marked immediate. For more
      * information look at {@link WorkRequest.Builder#setExpedited(OutOfQuotaPolicy)}.
      */
-    @NonNull
-    public ListenableFuture<ForegroundInfo> getForegroundInfoAsync() {
-        SettableFuture<ForegroundInfo> future = SettableFuture.create();
-        String message =
-                "Expedited WorkRequests require a ListenableWorker to provide an implementation for"
-                        + " `getForegroundInfoAsync()`";
-        future.setException(new IllegalStateException(message));
-        return future;
+    public @NonNull ListenableFuture<ForegroundInfo> getForegroundInfoAsync() {
+        return CallbackToFutureAdapter.getFuture((completer) -> {
+            String message =
+                    "Expedited WorkRequests require a ListenableWorker to provide an implementation"
+                            + " for`getForegroundInfoAsync()`";
+            completer.setException(new IllegalStateException(message));
+            return "default failing getForegroundInfoAsync";
+        });
     }
 
     /**
@@ -269,7 +270,7 @@ public abstract class ListenableWorker {
      * @return {@code true} if the work operation has been interrupted
      */
     public final boolean isStopped() {
-        return mStopReason != STOP_REASON_NOT_STOPPED;
+        return mStopReason.get() != STOP_REASON_NOT_STOPPED;
     }
 
     /**
@@ -283,15 +284,16 @@ public abstract class ListenableWorker {
     @StopReason
     @RequiresApi(31)
     public final int getStopReason() {
-        return mStopReason;
+        return mStopReason.get();
     }
 
     /**
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public final void stop(int reason) {
-        mStopReason = reason;
-        onStopped();
+        if (mStopReason.compareAndSet(STOP_REASON_NOT_STOPPED, reason)) {
+            onStopped();
+        }
     }
 
     /**
@@ -360,8 +362,7 @@ public abstract class ListenableWorker {
          *
          * @return An instance of {@link Result} indicating successful execution of work
          */
-        @NonNull
-        public static Result success() {
+        public static @NonNull Result success() {
             return new Success();
         }
 
@@ -374,8 +375,7 @@ public abstract class ListenableWorker {
          *                   OneTimeWorkRequest that is dependent on this work
          * @return An instance of {@link Result} indicating successful execution of work
          */
-        @NonNull
-        public static Result success(@NonNull Data outputData) {
+        public static @NonNull Result success(@NonNull Data outputData) {
             return new Success(outputData);
         }
 
@@ -386,8 +386,7 @@ public abstract class ListenableWorker {
          *
          * @return An instance of {@link Result} indicating that the work needs to be retried
          */
-        @NonNull
-        public static Result retry() {
+        public static @NonNull Result retry() {
             return new Retry();
         }
 
@@ -395,13 +394,12 @@ public abstract class ListenableWorker {
          * Returns an instance of {@link Result} that can be used to indicate that the work
          * completed with a permanent failure. Any work that depends on this will also be marked as
          * failed and will not be run. <b>If you need child workers to run, you need to use
-         * {@link #success()} or {@link #success(Data)}</b>; failure indicates a permanent stoppage
-         * of the chain of work.
+         * {@link #success()} or {@link #success(Data) success(Data)}</b>; failure indicates a
+         * permanent stoppage of the chain of work.
          *
          * @return An instance of {@link Result} indicating failure when executing work
          */
-        @NonNull
-        public static Result failure() {
+        public static @NonNull Result failure() {
             return new Failure();
         }
 
@@ -409,15 +407,14 @@ public abstract class ListenableWorker {
          * Returns an instance of {@link Result} that can be used to indicate that the work
          * completed with a permanent failure. Any work that depends on this will also be marked as
          * failed and will not be run. <b>If you need child workers to run, you need to use
-         * {@link #success()} or {@link #success(Data)}</b>; failure indicates a permanent stoppage
-         * of the chain of work.
+         * {@link #success()} or {@link #success(Data) success(Data)}</b>; failure indicates a
+         * permanent stoppage of the chain of work.
          *
          * @param outputData A {@link Data} object that can be used to keep track of why the work
          *                   failed
          * @return An instance of {@link Result} indicating failure when executing work
          */
-        @NonNull
-        public static Result failure(@NonNull Data outputData) {
+        public static @NonNull Result failure(@NonNull Data outputData) {
             return new Failure(outputData);
         }
 
@@ -425,8 +422,7 @@ public abstract class ListenableWorker {
          * @return The output {@link Data} which will be merged into the input {@link Data} of
          * any {@link OneTimeWorkRequest} that is dependent on this work request.
          */
-        @NonNull
-        public abstract Data getOutputData();
+        public abstract @NonNull Data getOutputData();
 
         /**
          */
@@ -479,9 +475,8 @@ public abstract class ListenableWorker {
                 return 31 * name.hashCode() + mOutputData.hashCode();
             }
 
-            @NonNull
             @Override
-            public String toString() {
+            public @NonNull String toString() {
                 return "Success {" + "mOutputData=" + mOutputData + '}';
             }
         }
@@ -531,9 +526,8 @@ public abstract class ListenableWorker {
                 return 31 * name.hashCode() + mOutputData.hashCode();
             }
 
-            @NonNull
             @Override
-            public String toString() {
+            public @NonNull String toString() {
                 return "Failure {" +  "mOutputData=" + mOutputData +  '}';
             }
         }
@@ -563,16 +557,14 @@ public abstract class ListenableWorker {
                 return name.hashCode();
             }
 
-            @NonNull
             @Override
-            public Data getOutputData() {
+            public @NonNull Data getOutputData() {
                 return Data.EMPTY;
             }
 
 
-            @NonNull
             @Override
-            public String toString() {
+            public @NonNull String toString() {
                 return "Retry";
             }
         }

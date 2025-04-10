@@ -19,7 +19,6 @@ package androidx.transition;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.content.res.XmlResourceParser;
@@ -28,10 +27,10 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.res.TypedArrayUtils;
-import androidx.core.view.ViewCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This transition tracks changes to the visibility of target views in the
@@ -99,8 +98,6 @@ public class Fade extends Visibility {
     public Fade() {
     }
 
-    @SuppressLint("RestrictedApi") // remove once core lib would be released with the new
-    // LIBRARY_GROUP_PREFIX restriction. tracking in b/127286008
     public Fade(@NonNull Context context, @NonNull AttributeSet attrs) {
         super(context, attrs);
         TypedArray a = context.obtainStyledAttributes(attrs, Styleable.FADE);
@@ -149,9 +146,8 @@ public class Fade extends Visibility {
         return anim;
     }
 
-    @Nullable
     @Override
-    public Animator onAppear(@NonNull ViewGroup sceneRoot, @NonNull View view,
+    public @Nullable Animator onAppear(@NonNull ViewGroup sceneRoot, @NonNull View view,
             @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         if (DBG) {
             View startView = (startValues != null) ? startValues.view : null;
@@ -163,9 +159,8 @@ public class Fade extends Visibility {
         return createAnimation(view, startAlpha, 1);
     }
 
-    @Nullable
     @Override
-    public Animator onDisappear(@NonNull ViewGroup sceneRoot, @NonNull final View view,
+    public @Nullable Animator onDisappear(@NonNull ViewGroup sceneRoot, final @NonNull View view,
             @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         ViewUtils.saveNonTransitionAlpha(view);
         float startAlpha = getStartAlpha(startValues, 1);
@@ -199,7 +194,7 @@ public class Fade extends Visibility {
 
         @Override
         public void onAnimationStart(Animator animation) {
-            if (ViewCompat.hasOverlappingRendering(mView)
+            if (mView.hasOverlappingRendering()
                     && mView.getLayerType() == View.LAYER_TYPE_NONE) {
                 mLayerTypeChanged = true;
                 mView.setLayerType(View.LAYER_TYPE_HARDWARE, null);

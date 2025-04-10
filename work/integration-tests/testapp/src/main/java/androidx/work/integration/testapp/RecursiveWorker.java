@@ -18,11 +18,12 @@ package androidx.work.integration.testapp;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.TimeUnit;
 
@@ -37,9 +38,8 @@ public class RecursiveWorker extends Worker {
         super(context, parameters);
     }
 
-    @NonNull
     @Override
-    public Result doWork() {
+    public @NonNull Result doWork() {
         OneTimeWorkRequest newRequest = new OneTimeWorkRequest.Builder(RecursiveWorker.class)
                 .addTag(TAG)
                 .setInitialDelay(100, TimeUnit.MILLISECONDS)

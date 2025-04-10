@@ -17,13 +17,13 @@
 package androidx.camera.testing.fakes;
 
 import static androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager.MAX_OUTPUT_SIZE;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
@@ -36,11 +36,12 @@ import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
-import androidx.camera.testing.impl.fakes.FakeCameraCaptureResult;
-import androidx.camera.testing.impl.mocks.MockScreenFlashUiControl;
+import androidx.camera.testing.imagecapture.CaptureResult;
+import androidx.camera.testing.impl.mocks.MockScreenFlash;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -70,22 +71,24 @@ public final class FakeCameraControlTest {
     }
 
     @Test
+    // TODO: b/366136115 - Remove test for deprecated API when the API is fully removed.
+    @SuppressWarnings("deprecation")
     public void notifiesAllRequestOnCaptureCancelled() {
         CountDownLatch latch = new CountDownLatch(3);
         CaptureConfig captureConfig1 = createCaptureConfig(new CameraCaptureCallback() {
             @Override
-            public void onCaptureCancelled() {
+            public void onCaptureCancelled(int captureConfigId) {
                 latch.countDown();
             }
         }, new CameraCaptureCallback() {
             @Override
-            public void onCaptureCancelled() {
+            public void onCaptureCancelled(int captureConfigId) {
                 latch.countDown();
             }
         });
         CaptureConfig captureConfig2 = createCaptureConfig(new CameraCaptureCallback() {
             @Override
-            public void onCaptureCancelled() {
+            public void onCaptureCancelled(int captureConfigId) {
                 latch.countDown();
             }
         });
@@ -98,25 +101,58 @@ public final class FakeCameraControlTest {
     }
 
     @Test
+    public void completeAllCaptureRequests_notifiesCaptureCancelledToAllRequests() {
+        CountDownLatch latch = new CountDownLatch(3);
+        CaptureConfig captureConfig1 = createCaptureConfig(new CameraCaptureCallback() {
+            @Override
+            public void onCaptureCancelled(int captureConfigId) {
+                latch.countDown();
+            }
+        }, new CameraCaptureCallback() {
+            @Override
+            public void onCaptureCancelled(int captureConfigId) {
+                latch.countDown();
+            }
+        });
+        CaptureConfig captureConfig2 = createCaptureConfig(new CameraCaptureCallback() {
+            @Override
+            public void onCaptureCancelled(int captureConfigId) {
+                latch.countDown();
+            }
+        });
+
+        mCameraControl.submitStillCaptureRequests(Arrays.asList(captureConfig1, captureConfig2),
+                ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY, ImageCapture.FLASH_TYPE_ONE_SHOT_FLASH);
+        mCameraControl.completeAllCaptureRequests(CaptureResult.cancelledResult());
+
+        awaitLatch(latch);
+    }
+
+    @Test
+    // TODO: b/366136115 - Remove test for deprecated API when the API is fully removed.
+    @SuppressWarnings("deprecation")
     public void notifiesAllRequestOnCaptureFailed() {
         CountDownLatch latch = new CountDownLatch(3);
         List<CameraCaptureFailure> failureList = new ArrayList<>();
         CaptureConfig captureConfig1 = createCaptureConfig(new CameraCaptureCallback() {
             @Override
-            public void onCaptureFailed(@NonNull CameraCaptureFailure failure) {
+            public void onCaptureFailed(int captureConfigId,
+                    @NonNull CameraCaptureFailure failure) {
                 failureList.add(failure);
                 latch.countDown();
             }
         }, new CameraCaptureCallback() {
             @Override
-            public void onCaptureFailed(@NonNull CameraCaptureFailure failure) {
+            public void onCaptureFailed(int captureConfigId,
+                    @NonNull CameraCaptureFailure failure) {
                 failureList.add(failure);
                 latch.countDown();
             }
         });
         CaptureConfig captureConfig2 = createCaptureConfig(new CameraCaptureCallback() {
             @Override
-            public void onCaptureFailed(@NonNull CameraCaptureFailure failure) {
+            public void onCaptureFailed(int captureConfigId,
+                    @NonNull CameraCaptureFailure failure) {
                 failureList.add(failure);
                 latch.countDown();
             }
@@ -130,6 +166,39 @@ public final class FakeCameraControlTest {
     }
 
     @Test
+    public void completeAllCaptureRequests_notifiesCaptureFailedToAllRequests() {
+        CountDownLatch latch = new CountDownLatch(3);
+        CaptureConfig captureConfig1 = createCaptureConfig(new CameraCaptureCallback() {
+            @Override
+            public void onCaptureFailed(int captureConfigId,
+                    @NonNull CameraCaptureFailure failure) {
+                latch.countDown();
+            }
+        }, new CameraCaptureCallback() {
+            @Override
+            public void onCaptureFailed(int captureConfigId,
+                    @NonNull CameraCaptureFailure failure) {
+                latch.countDown();
+            }
+        });
+        CaptureConfig captureConfig2 = createCaptureConfig(new CameraCaptureCallback() {
+            @Override
+            public void onCaptureFailed(int captureConfigId,
+                    @NonNull CameraCaptureFailure failure) {
+                latch.countDown();
+            }
+        });
+
+        mCameraControl.submitStillCaptureRequests(Arrays.asList(captureConfig1, captureConfig2),
+                ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY, ImageCapture.FLASH_TYPE_ONE_SHOT_FLASH);
+        mCameraControl.completeAllCaptureRequests(CaptureResult.failedResult());
+
+        awaitLatch(latch);
+    }
+
+    @Test
+    // TODO: b/366136115 - Remove test for deprecated API when the API is fully removed.
+    @SuppressWarnings("deprecation")
     public void notifiesAllRequestOnCaptureCompleted() {
         CameraCaptureResult captureResult = new FakeCameraCaptureResult();
 
@@ -137,20 +206,23 @@ public final class FakeCameraControlTest {
         List<CameraCaptureResult> resultList = new ArrayList<>();
         CaptureConfig captureConfig1 = createCaptureConfig(new CameraCaptureCallback() {
             @Override
-            public void onCaptureCompleted(@NonNull CameraCaptureResult cameraCaptureResult) {
+            public void onCaptureCompleted(int captureConfigId,
+                    @NonNull CameraCaptureResult cameraCaptureResult) {
                 resultList.add(cameraCaptureResult);
                 latch.countDown();
             }
         }, new CameraCaptureCallback() {
             @Override
-            public void onCaptureCompleted(@NonNull CameraCaptureResult cameraCaptureResult) {
+            public void onCaptureCompleted(int captureConfigId,
+                    @NonNull CameraCaptureResult cameraCaptureResult) {
                 resultList.add(cameraCaptureResult);
                 latch.countDown();
             }
         });
         CaptureConfig captureConfig2 = createCaptureConfig(new CameraCaptureCallback() {
             @Override
-            public void onCaptureCompleted(@NonNull CameraCaptureResult cameraCaptureResult) {
+            public void onCaptureCompleted(int captureConfigId,
+                    @NonNull CameraCaptureResult cameraCaptureResult) {
                 resultList.add(cameraCaptureResult);
                 latch.countDown();
             }
@@ -163,6 +235,82 @@ public final class FakeCameraControlTest {
         awaitLatch(latch);
         assertThat(resultList).containsExactlyElementsIn(Arrays.asList(captureResult, captureResult,
                 captureResult));
+    }
+
+    @Test
+    public void completeAllCaptureRequests_notifiesCaptureCompletedToAllRequests() {
+        FakeCameraCaptureResult captureResult = new FakeCameraCaptureResult();
+
+        CountDownLatch latch = new CountDownLatch(3);
+        List<CameraCaptureResult> resultList = new ArrayList<>();
+        CaptureConfig captureConfig1 = createCaptureConfig(new CameraCaptureCallback() {
+            @Override
+            public void onCaptureCompleted(int captureConfigId,
+                    @NonNull CameraCaptureResult cameraCaptureResult) {
+                resultList.add(cameraCaptureResult);
+                latch.countDown();
+            }
+        }, new CameraCaptureCallback() {
+            @Override
+            public void onCaptureCompleted(int captureConfigId,
+                    @NonNull CameraCaptureResult cameraCaptureResult) {
+                resultList.add(cameraCaptureResult);
+                latch.countDown();
+            }
+        });
+        CaptureConfig captureConfig2 = createCaptureConfig(new CameraCaptureCallback() {
+            @Override
+            public void onCaptureCompleted(int captureConfigId,
+                    @NonNull CameraCaptureResult cameraCaptureResult) {
+                resultList.add(cameraCaptureResult);
+                latch.countDown();
+            }
+        });
+
+        mCameraControl.submitStillCaptureRequests(Arrays.asList(captureConfig1, captureConfig2),
+                ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY, ImageCapture.FLASH_TYPE_ONE_SHOT_FLASH);
+        mCameraControl.completeAllCaptureRequests(CaptureResult.successfulResult(captureResult));
+
+        awaitLatch(latch);
+        assertThat(resultList).containsExactlyElementsIn(Arrays.asList(captureResult, captureResult,
+                captureResult));
+    }
+
+    @Test
+    public void submitCaptureResult_notifiesCaptureCompletedToAllCallbacksOfFirstRequest() {
+        FakeCameraCaptureResult captureResult = new FakeCameraCaptureResult();
+
+        CountDownLatch latch = new CountDownLatch(2);
+        List<CameraCaptureResult> resultList = new ArrayList<>();
+        CaptureConfig captureConfig1 = createCaptureConfig(new CameraCaptureCallback() {
+            @Override
+            public void onCaptureCompleted(int captureConfigId,
+                    @NonNull CameraCaptureResult cameraCaptureResult) {
+                resultList.add(cameraCaptureResult);
+                latch.countDown();
+            }
+        }, new CameraCaptureCallback() {
+            @Override
+            public void onCaptureCompleted(int captureConfigId,
+                    @NonNull CameraCaptureResult cameraCaptureResult) {
+                resultList.add(cameraCaptureResult);
+                latch.countDown();
+            }
+        });
+        CaptureConfig captureConfig2 = createCaptureConfig(new CameraCaptureCallback() {
+            @Override
+            public void onCaptureCompleted(int captureConfigId,
+                    @NonNull CameraCaptureResult cameraCaptureResult) {
+                resultList.add(cameraCaptureResult);
+            }
+        });
+
+        mCameraControl.submitStillCaptureRequests(Arrays.asList(captureConfig1, captureConfig2),
+                ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY, ImageCapture.FLASH_TYPE_ONE_SHOT_FLASH);
+        mCameraControl.submitCaptureResult(CaptureResult.successfulResult(captureResult));
+
+        awaitLatch(latch);
+        assertThat(resultList).containsExactlyElementsIn(List.of(captureResult, captureResult));
     }
 
     @Test
@@ -216,18 +364,18 @@ public final class FakeCameraControlTest {
     }
 
     @Test
-    public void canSetScreenFlashUiControl() {
-        ImageCapture.ScreenFlashUiControl screenFlashUiControl = new MockScreenFlashUiControl();
-        mCameraControl.setScreenFlashUiControl(screenFlashUiControl);
-        assertThat(mCameraControl.getScreenFlashUiControl()).isEqualTo(screenFlashUiControl);
+    public void canSetScreenFlash() {
+        ImageCapture.ScreenFlash screenFlash = new MockScreenFlash();
+        mCameraControl.setScreenFlash(screenFlash);
+        assertThat(mCameraControl.getScreenFlash()).isEqualTo(screenFlash);
     }
 
     @Test
-    public void canClearScreenFlashUiControl_afterEnable() {
-        ImageCapture.ScreenFlashUiControl screenFlashUiControl = new MockScreenFlashUiControl();
-        mCameraControl.setScreenFlashUiControl(screenFlashUiControl);
-        mCameraControl.setScreenFlashUiControl(null);
-        assertThat(mCameraControl.getScreenFlashUiControl()).isEqualTo(null);
+    public void canClearScreenFlash_afterEnable() {
+        ImageCapture.ScreenFlash screenFlash = new MockScreenFlash();
+        mCameraControl.setScreenFlash(screenFlash);
+        mCameraControl.setScreenFlash(null);
+        assertThat(mCameraControl.getScreenFlash()).isEqualTo(null);
     }
 
     @Test
@@ -257,7 +405,7 @@ public final class FakeCameraControlTest {
     @Test
     public void futureCompletes_whenStillCaptureRequestsSubmittedAndSuccessNotified() {
         ListenableFuture<?> future = submitStillCaptureRequests();
-        mCameraControl.notifyAllRequestsOnCaptureCompleted(new FakeCameraCaptureResult());
+        mCameraControl.completeAllCaptureRequests(CaptureResult.successfulResult());
 
         try {
             future.get(3, TimeUnit.SECONDS);

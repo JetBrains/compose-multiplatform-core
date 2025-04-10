@@ -17,7 +17,6 @@
 package androidx.car.app.sample.showcase.common.screens.mapdemos.mapwithcontent;
 
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
@@ -28,11 +27,14 @@ import androidx.car.app.model.ActionStrip;
 import androidx.car.app.model.CarIcon;
 import androidx.car.app.model.GridItem;
 import androidx.car.app.model.GridTemplate;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.Template;
 import androidx.car.app.navigation.model.MapWithContentTemplate;
 import androidx.car.app.sample.showcase.common.R;
 import androidx.core.graphics.drawable.IconCompat;
+
+import org.jspecify.annotations.NonNull;
 
 /** Simple demo of how to present a map template with a list. */
 public class MapWithGridTemplateDemoScreen extends Screen {
@@ -43,9 +45,8 @@ public class MapWithGridTemplateDemoScreen extends Screen {
 
     @ExperimentalCarApi
     @RequiresCarApi(7)
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
         ItemList.Builder gridItemListBuilder = new ItemList.Builder();
         for (int i = 0; i <= 7; i++) {
             gridItemListBuilder.addItem(createGridItem());
@@ -54,8 +55,10 @@ public class MapWithGridTemplateDemoScreen extends Screen {
 
         GridTemplate gridTemplate = new GridTemplate.Builder()
                 .setSingleList(gridItemListBuilder.build())
-                .setHeaderAction(Action.BACK)
-                .setTitle("Report?")
+                .setHeader(new Header.Builder()
+                        .setStartHeaderAction(Action.BACK)
+                        .setTitle("Report?")
+                        .build())
                 .build();
 
 

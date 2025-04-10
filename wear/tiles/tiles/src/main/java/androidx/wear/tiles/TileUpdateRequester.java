@@ -16,7 +16,7 @@
 
 package androidx.wear.tiles;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface used for a Tile Service to notify a Tile Renderer that it should fetch a new Timeline

@@ -23,10 +23,11 @@ import android.os.Bundle;
 
 import androidx.annotation.Dimension;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.browser.customtabs.CustomTabsService.Relation;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -36,6 +37,15 @@ import java.lang.annotation.RetentionPolicy;
  * the implementation, all callbacks are sent to the UI thread for the client.
  */
 public class CustomTabsCallback {
+    /**
+     * To be called when a navigation event happens.
+     *
+     * @param navigationEvent The code corresponding to the navigation event.
+     * @param extras Reserved for future use.
+     */
+    public void onNavigationEvent(@NavigationEvent int navigationEvent, @Nullable Bundle extras) {
+    }
+
     /**
      * Sent when the tab has started loading a page.
      */
@@ -67,6 +77,14 @@ public class CustomTabsCallback {
      */
     public static final int TAB_HIDDEN = 6;
 
+    /** Possible navigation event values. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @IntDef({NAVIGATION_STARTED, NAVIGATION_FINISHED, NAVIGATION_FAILED, NAVIGATION_ABORTED,
+            TAB_SHOWN, TAB_HIDDEN})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface NavigationEvent {
+    }
+
     /**
      * Key for the extra included in {@link #onRelationshipValidationResult} {@code extras}
      * containing whether the verification was performed while the device was online. This may be
@@ -74,14 +92,6 @@ public class CustomTabsCallback {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public static final String ONLINE_EXTRAS_KEY = "online";
-
-    /**
-     * To be called when a navigation event happens.
-     *
-     * @param navigationEvent The code corresponding to the navigation event.
-     * @param extras Reserved for future use.
-     */
-    public void onNavigationEvent(int navigationEvent, @Nullable Bundle extras) {}
 
     /**
      * Unsupported callbacks that may be provided by the implementation.
@@ -123,8 +133,8 @@ public class CustomTabsCallback {
      *     }
      * </code></pre>
      */
-    @Nullable
-    public Bundle extraCallbackWithResult(@NonNull String callbackName, @Nullable Bundle args) {
+    public @Nullable Bundle extraCallbackWithResult(@NonNull String callbackName,
+            @Nullable Bundle args) {
         return null;
     }
 

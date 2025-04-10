@@ -68,31 +68,33 @@ open class ExampleOpenGLWatchFaceService : SampleWatchFaceService() {
     private val watchFaceStyle by lazy { WatchFaceColorStyle.create(this, "white_style") }
 
     private val colorStyleSetting by lazy {
-        ListUserStyleSetting(
-            UserStyleSetting.Id("color_style_setting"),
-            resources,
-            R.string.colors_style_setting,
-            R.string.colors_style_setting_description,
-            icon = null,
-            options =
-                listOf(
-                    ListUserStyleSetting.ListOption(
-                        Option.Id("red_style"),
-                        resources,
-                        R.string.colors_style_red,
-                        R.string.colors_style_red_screen_reader,
-                        Icon.createWithResource(this, R.drawable.red_style)
+        ListUserStyleSetting.Builder(
+                UserStyleSetting.Id("color_style_setting"),
+                options =
+                    listOf(
+                        ListUserStyleSetting.ListOption.Builder(
+                                Option.Id("red_style"),
+                                resources,
+                                R.string.colors_style_red,
+                                R.string.colors_style_red_screen_reader
+                            )
+                            .setIcon { Icon.createWithResource(this, R.drawable.red_style) }
+                            .build(),
+                        ListUserStyleSetting.ListOption.Builder(
+                                Option.Id("green_style"),
+                                resources,
+                                R.string.colors_style_green,
+                                R.string.colors_style_green_screen_reader
+                            )
+                            .setIcon { Icon.createWithResource(this, R.drawable.green_style) }
+                            .build()
                     ),
-                    ListUserStyleSetting.ListOption(
-                        Option.Id("green_style"),
-                        resources,
-                        R.string.colors_style_green,
-                        R.string.colors_style_green_screen_reader,
-                        Icon.createWithResource(this, R.drawable.green_style)
-                    )
-                ),
-            listOf(WatchFaceLayer.BASE, WatchFaceLayer.COMPLICATIONS_OVERLAY)
-        )
+                listOf(WatchFaceLayer.BASE, WatchFaceLayer.COMPLICATIONS_OVERLAY),
+                resources,
+                R.string.colors_style_setting,
+                R.string.colors_style_setting_description
+            )
+            .build()
     }
 
     @OptIn(ComplicationExperimental::class)
@@ -154,7 +156,7 @@ open class ExampleOpenGLWatchFaceService : SampleWatchFaceService() {
             )
 
     class ExampleSharedAssets : Renderer.SharedAssets {
-        override fun onDestroy() { }
+        override fun onDestroy() {}
     }
 
     @OptIn(WatchFaceExperimental::class)
@@ -172,36 +174,37 @@ open class ExampleOpenGLWatchFaceService : SampleWatchFaceService() {
             watchState,
             FRAME_PERIOD_MS,
             // Try a config with 4x MSAA if supported and if necessary fall back to one without.
-            eglConfigAttribListList = listOf(
-                intArrayOf(
-                    EGL14.EGL_RENDERABLE_TYPE,
-                    EGL14.EGL_OPENGL_ES2_BIT,
-                    EGL14.EGL_RED_SIZE,
-                    8,
-                    EGL14.EGL_GREEN_SIZE,
-                    8,
-                    EGL14.EGL_BLUE_SIZE,
-                    8,
-                    EGL14.EGL_ALPHA_SIZE,
-                    8,
-                    EGL14.EGL_SAMPLES, // 4x MSAA (anti-aliasing)
-                    4,
-                    EGL14.EGL_NONE
+            eglConfigAttribListList =
+                listOf(
+                    intArrayOf(
+                        EGL14.EGL_RENDERABLE_TYPE,
+                        EGL14.EGL_OPENGL_ES2_BIT,
+                        EGL14.EGL_RED_SIZE,
+                        8,
+                        EGL14.EGL_GREEN_SIZE,
+                        8,
+                        EGL14.EGL_BLUE_SIZE,
+                        8,
+                        EGL14.EGL_ALPHA_SIZE,
+                        8,
+                        EGL14.EGL_SAMPLES, // 4x MSAA (anti-aliasing)
+                        4,
+                        EGL14.EGL_NONE
+                    ),
+                    intArrayOf(
+                        EGL14.EGL_RENDERABLE_TYPE,
+                        EGL14.EGL_OPENGL_ES2_BIT,
+                        EGL14.EGL_RED_SIZE,
+                        8,
+                        EGL14.EGL_GREEN_SIZE,
+                        8,
+                        EGL14.EGL_BLUE_SIZE,
+                        8,
+                        EGL14.EGL_ALPHA_SIZE,
+                        8,
+                        EGL14.EGL_NONE
+                    )
                 ),
-                intArrayOf(
-                    EGL14.EGL_RENDERABLE_TYPE,
-                    EGL14.EGL_OPENGL_ES2_BIT,
-                    EGL14.EGL_RED_SIZE,
-                    8,
-                    EGL14.EGL_GREEN_SIZE,
-                    8,
-                    EGL14.EGL_BLUE_SIZE,
-                    8,
-                    EGL14.EGL_ALPHA_SIZE,
-                    8,
-                    EGL14.EGL_NONE
-                )
-            ),
             eglSurfaceAttribList = intArrayOf(EGL14.EGL_NONE),
             eglContextAttribList = intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE)
         ) {

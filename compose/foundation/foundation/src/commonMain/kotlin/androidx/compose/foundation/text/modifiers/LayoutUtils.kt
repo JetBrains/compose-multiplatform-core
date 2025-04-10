@@ -20,34 +20,34 @@ import androidx.compose.foundation.text.ceilToIntPx
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 
-/**
- * Find the constraints to pass to Paragraph based on all the parameters.
- */
+/** Find the constraints to pass to Paragraph based on all the parameters. */
 internal fun finalConstraints(
     constraints: Constraints,
     softWrap: Boolean,
     overflow: TextOverflow,
     maxIntrinsicWidth: Float
-): Constraints = Constraints(
+): Constraints =
+    Constraints.fitPrioritizingWidth(
+        minWidth = 0,
         maxWidth = finalMaxWidth(constraints, softWrap, overflow, maxIntrinsicWidth),
+        minHeight = 0,
         maxHeight = constraints.maxHeight
     )
 
-/**
- * Find the final max width a Paragraph would use based on all parameters.
- */
+/** Find the final max width a Paragraph would use based on all parameters. */
 internal fun finalMaxWidth(
     constraints: Constraints,
     softWrap: Boolean,
     overflow: TextOverflow,
     maxIntrinsicWidth: Float
 ): Int {
-    val widthMatters = softWrap || overflow == TextOverflow.Ellipsis
-    val maxWidth = if (widthMatters && constraints.hasBoundedWidth) {
-        constraints.maxWidth
-    } else {
-        Constraints.Infinity
-    }
+    val widthMatters = softWrap || overflow.isEllipsis
+    val maxWidth =
+        if (widthMatters && constraints.hasBoundedWidth) {
+            constraints.maxWidth
+        } else {
+            Constraints.Infinity
+        }
 
     // if minWidth == maxWidth the width is fixed.
     //    therefore we can pass that value to our paragraph and use it
@@ -65,9 +65,7 @@ internal fun finalMaxWidth(
     }
 }
 
-/**
- * Find the maxLines to pass to text layout based on all parameters
- */
+/** Find the maxLines to pass to text layout based on all parameters */
 internal fun finalMaxLines(softWrap: Boolean, overflow: TextOverflow, maxLinesIn: Int): Int {
     // This is a fallback behavior because native text layout doesn't support multiple
     // ellipsis in one text layout.
@@ -83,51 +81,13 @@ internal fun finalMaxLines(softWrap: Boolean, overflow: TextOverflow, maxLinesIn
     //     AA…
     // Here we assume there won't be any '\n' character when softWrap is false. And make
     // maxLines 1 to implement the similar behavior.
-    val overwriteMaxLines = !softWrap && overflow == TextOverflow.Ellipsis
+    val overwriteMaxLines = !softWrap && overflow.isEllipsis
     return if (overwriteMaxLines) 1 else maxLinesIn.coerceAtLeast(1)
 }
 
-/**
- * Constraints are packed see [Constraints] implementation.
- *
- * These constants are the largest values that each slot can hold. The following pairings are the
- * only ones allowed:
- *
- * (Big, Tiny), (Tiny, Big)
- * (Medium, Small), (Small, Medium)
- *
- * For more information see [Constraints] implementation
- */
-internal const val BigConstraintValue = (1 shl 18) - 1
-internal const val MediumConstraintValue = (1 shl 16) - 1
-internal const val SmallConstraintValue = (1 shl 15) - 1
-internal const val TinyConstraintValue = (1 shl 13) - 1
-
-/**
- * Make constraints that never throw from being too large. Prefer to keep accurate width information
- * first, then constrain height based on the size of width.
- *
- * This will return a Constraint with the same or smaller dimensions than the passed (width, height)
- *
- * see b/312294386 for more details
- *
- * This particular logic is text specific, so not generalizing.
- *
- * @param width desired width (has priority)
- * @param height desired height (uses the remaining bits after width)
- *
- * @return a safe Constraint that never throws for running out of bits
- */
-internal fun Constraints.Companion.fixedCoerceHeightAndWidthForBits(
-    width: Int,
-    height: Int
-): Constraints {
-    val safeWidth = minOf(width, BigConstraintValue - 1)
-    val safeHeight = when {
-        safeWidth < TinyConstraintValue -> minOf(height, BigConstraintValue - 1)
-        safeWidth < SmallConstraintValue -> minOf(height, MediumConstraintValue - 1)
-        safeWidth < MediumConstraintValue -> minOf(height, SmallConstraintValue - 1)
-        else -> minOf(height, TinyConstraintValue - 1)
+internal val TextOverflow.isEllipsis: Boolean
+    get() {
+        return this == TextOverflow.Ellipsis ||
+            this == TextOverflow.StartEllipsis ||
+            this == TextOverflow.MiddleEllipsis
     }
-    return fixed(safeWidth, safeHeight)
-}

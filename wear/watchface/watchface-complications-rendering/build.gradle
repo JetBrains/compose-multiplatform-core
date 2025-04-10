@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 
-import androidx.build.RunApiTasks
-import androidx.build.Publish
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -25,7 +31,8 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api(libs.jspecify)
+    api("androidx.annotation:annotation:1.8.1")
     api(project(":wear:watchface:watchface-complications-data"))
     api(project(":wear:watchface:watchface"))
 
@@ -45,26 +52,35 @@ dependencies {
     testImplementation(project(":wear:watchface:watchface"))
 }
 
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions.suppressWarnings = true
+}
+
+tasks.withType(JavaCompile){
+    options.compilerArgs <<"-Xlint:-deprecation"
+}
+
 android {
     buildFeatures {
         aidl = true
     }
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
-    lintOptions {
-        disable 'NullabilityAnnotationsDetector' // False alarm on transformed files.
+    lint {
+        disable.add("NullabilityAnnotationsDetector") // False alarm on transformed files.
     }
 
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.wear.watchface.complications.rendering"
+    namespace = "androidx.wear.watchface.complications.rendering"
 }
 
 androidx {
     name = "Android Wear Watchface Complication Rendering"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Support for rendering complications on the watch face"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
+    failOnDeprecationWarnings = false
 }

@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.3.0-alpha02" type="baseline" client="gradle" dependencies="false" name="AGP (8.3.0-alpha02)" variant="all" version="8.3.0-alpha02">
+<issues format="6" by="lint 8.8.0-alpha01" type="baseline" client="gradle" dependencies="false" name="AGP (8.8.0-alpha01)" variant="all" version="8.8.0-alpha01">
+
+    <issue
+        id="NewApi"
+        message="`&lt;androidx.wear.watchface.control.WatchFaceControlService>` requires API level 27 (current min is 26)"
+        errorLine1="    &lt;service"
+        errorLine2="    ^">
+        <location
+            file="src/main/AndroidManifest.xml"/>
+    </issue>
 
     <issue
         id="VisibleForTests"
@@ -22,8 +31,8 @@
     <issue
         id="VisibleForTests"
         message="This method should only be accessed from tests or within private scope"
-        errorLine1="                complicationSlotsManager.watchState = watchState"
-        errorLine2="                                         ~~~~~~~~~~">
+        errorLine1="                    complicationSlotsManager.watchState = watchState"
+        errorLine2="                                             ~~~~~~~~~~">
         <location
             file="src/main/java/androidx/wear/watchface/WatchFaceService.kt"/>
     </issue>

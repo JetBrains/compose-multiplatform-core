@@ -16,13 +16,12 @@
 
 package androidx.kruth
 
-/**
- * A Subject for [Char] arrays.
- */
-class PrimitiveCharArraySubject internal constructor(
+/** A Subject for [Char] arrays. */
+class PrimitiveCharArraySubject
+internal constructor(
     actual: CharArray?,
     metadata: FailureMetadata = FailureMetadata(),
-) : Subject<CharArray?>(actual = actual, metadata = metadata) {
+) : Subject<CharArray?>(actual, metadata = metadata, typeDescriptionOverride = "array") {
 
     private val helper =
         HelperArraySubject(
@@ -50,10 +49,9 @@ class PrimitiveCharArraySubject internal constructor(
         helper.hasLength(length)
     }
 
-    /** Converts this [PrimitiveBooleanArraySubject] to [IterableSubject].*/
+    /** Converts this [PrimitiveBooleanArraySubject] to [IterableSubject]. */
     fun asList(): IterableSubject<Char> {
-        metadata.assertNotNull(actual)
-
+        requireNonNull(actual)
         return IterableSubject(actual = actual.asList(), metadata = metadata)
     }
 }

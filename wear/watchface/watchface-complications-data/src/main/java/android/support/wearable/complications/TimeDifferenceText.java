@@ -20,10 +20,11 @@ import android.annotation.SuppressLint;
 import android.content.res.Resources;
 import android.os.Parcel;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.wear.watchface.complications.data.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -54,7 +55,7 @@ public final class TimeDifferenceText implements TimeDependentText {
 
     private final boolean mShowNowText;
 
-    @Nullable private final TimeUnit mMinimumUnit;
+    private final @Nullable TimeUnit mMinimumUnit;
 
     public TimeDifferenceText(
             long referencePeriodStart,
@@ -87,9 +88,8 @@ public final class TimeDifferenceText implements TimeDependentText {
                 mReferencePeriodStart, mReferencePeriodEnd, mStyle, mShowNowText, mMinimumUnit);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         if (ComplicationData.shouldRedact()) {
             return "TimeDifferenceText{Redacted}";
         }
@@ -144,9 +144,8 @@ public final class TimeDifferenceText implements TimeDependentText {
         throw new InvalidObjectException("Use SerializedForm");
     }
 
-    @NonNull
     @Override
-    public CharSequence getTextAt(@NonNull Resources resources, long dateTimeMillis) {
+    public @NonNull CharSequence getTextAt(@NonNull Resources resources, long dateTimeMillis) {
         long timeDifference = getTimeDifference(dateTimeMillis);
 
         if (timeDifference == 0 && mShowNowText) {
@@ -204,28 +203,27 @@ public final class TimeDifferenceText implements TimeDependentText {
     }
 
     /** Returns the start of the reference period, as milliseconds since epoch. */
-    long getReferencePeriodStart() {
+    public long getReferencePeriodStart() {
         return mReferencePeriodStart;
     }
 
     /** Returns the end of the reference period, as milliseconds since epoch. */
-    long getReferencePeriodEnd() {
+    public long getReferencePeriodEnd() {
         return mReferencePeriodEnd;
     }
 
     /** Returns the style to be used when formatting the text. */
-    int getStyle() {
+    public int getStyle() {
         return mStyle;
     }
 
     /** Returns true if text for "now" should be shown when within the reference period. */
-    boolean shouldShowNowText() {
+    public boolean shouldShowNowText() {
         return mShowNowText;
     }
 
     /** Returns the minimum unit specified, or {@code null} if none has been specified. */
-    @Nullable
-    public TimeUnit getMinimumUnit() {
+    public @Nullable TimeUnit getMinimumUnit() {
         return mMinimumUnit;
     }
 
@@ -493,15 +491,13 @@ public final class TimeDifferenceText implements TimeDependentText {
 
     public static final Creator<TimeDifferenceText> CREATOR =
             new Creator<TimeDifferenceText>() {
-                @NonNull
                 @Override
-                public TimeDifferenceText createFromParcel(@NonNull Parcel source) {
+                public @NonNull TimeDifferenceText createFromParcel(@NonNull Parcel source) {
                     return new TimeDifferenceText(source);
                 }
 
-                @NonNull
                 @Override
-                public TimeDifferenceText[] newArray(int size) {
+                public TimeDifferenceText @NonNull [] newArray(int size) {
                     return new TimeDifferenceText[size];
                 }
             };

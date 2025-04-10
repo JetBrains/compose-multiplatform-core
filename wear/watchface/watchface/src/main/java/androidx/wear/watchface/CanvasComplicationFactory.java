@@ -16,14 +16,17 @@
 
 package androidx.wear.watchface;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.WorkerThread;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Factory for creating a CanvasComplication. This decouples construction of Complications and their
  * CanvasComplication renderers.
+ * @deprecated use Watch Face Format instead
  */
 // TODO(b/188035300): Put links into the comments.
+@Deprecated
 public interface CanvasComplicationFactory {
     /**
      * Creates a CanvasComplication. This will be called on a background thread, however all
@@ -39,10 +42,9 @@ public interface CanvasComplicationFactory {
      *     loaded.
      * @return The constructed CanvasComplication.
      */
-    @NonNull
     @WorkerThread
     @SuppressWarnings("ExecutorRegistration") // This is UI thread only.
-    CanvasComplication create(
+    @NonNull CanvasComplication create(
             @NonNull WatchState watchState,
-            @NonNull CanvasComplication.InvalidateCallback invalidateCallback);
+            CanvasComplication.@NonNull InvalidateCallback invalidateCallback);
 }

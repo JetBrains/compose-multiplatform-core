@@ -18,8 +18,8 @@ package androidx.credentials
 
 import android.graphics.drawable.Icon
 import androidx.credentials.CreateCredentialRequest.DisplayInfo
-import androidx.credentials.CreateCredentialRequest.DisplayInfo.Companion.parseFromCredentialDataBundle
-import androidx.credentials.internal.FrameworkImplHelper.Companion.getFinalCreateCredentialData
+import androidx.credentials.CreateCredentialRequest.DisplayInfo.Companion.createFrom
+import androidx.credentials.internal.getFinalCreateCredentialData
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
@@ -37,9 +37,7 @@ class CreateCredentialRequestDisplayInfoTest {
 
     @Test
     fun constructor_emptyUserId_throws() {
-        assertThrows(
-            IllegalArgumentException::class.java
-        ) { DisplayInfo("") }
+        assertThrows(IllegalArgumentException::class.java) { DisplayInfo("") }
     }
 
     @Test
@@ -58,10 +56,7 @@ class CreateCredentialRequestDisplayInfoTest {
         val expectedUserId: CharSequence = "userId"
         val expectedDisplayName: CharSequence = "displayName"
 
-        val displayInfo = DisplayInfo(
-            expectedUserId,
-            expectedDisplayName
-        )
+        val displayInfo = DisplayInfo(expectedUserId, expectedDisplayName)
 
         assertThat(displayInfo.userId).isEqualTo(expectedUserId)
         assertThat(displayInfo.userDisplayName).isEqualTo(expectedDisplayName)
@@ -76,11 +71,12 @@ class CreateCredentialRequestDisplayInfoTest {
         val expectedDisplayName: CharSequence = "displayName"
         val expectedDefaultProvider = "com.test/com.test.TestProviderComponent"
 
-        val displayInfo = DisplayInfo(
-            userId = expectedUserId,
-            userDisplayName = expectedDisplayName,
-            preferDefaultProvider = expectedDefaultProvider
-        )
+        val displayInfo =
+            DisplayInfo(
+                userId = expectedUserId,
+                userDisplayName = expectedDisplayName,
+                preferDefaultProvider = expectedDefaultProvider
+            )
 
         assertThat(displayInfo.userId).isEqualTo(expectedUserId)
         assertThat(displayInfo.userDisplayName).isEqualTo(expectedDisplayName)
@@ -96,10 +92,8 @@ class CreateCredentialRequestDisplayInfoTest {
         val expectedIcon = Icon.createWithResource(mContext, R.drawable.ic_passkey)
         val expectedDefaultProvider = "defaultProvider"
 
-        val displayInfo = DisplayInfo(
-            expectedUserId,
-            expectedDisplayName, expectedIcon, expectedDefaultProvider
-        )
+        val displayInfo =
+            DisplayInfo(expectedUserId, expectedDisplayName, expectedIcon, expectedDefaultProvider)
 
         assertThat(displayInfo.userId).isEqualTo(expectedUserId)
         assertThat(displayInfo.userDisplayName).isEqualTo(expectedDisplayName)
@@ -107,23 +101,17 @@ class CreateCredentialRequestDisplayInfoTest {
         assertThat(displayInfo.preferDefaultProvider).isEqualTo(expectedDefaultProvider)
     }
 
-    @SdkSuppress(minSdkVersion = 28)
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun constructFromBundle_success() {
         val expectedUserId = "userId"
         val request = CreatePasswordRequest(expectedUserId, "password")
 
-        val displayInfo = parseFromCredentialDataBundle(
-            getFinalCreateCredentialData(
-                request, mContext
-            )
-        )
+        val displayInfo = createFrom(getFinalCreateCredentialData(request, mContext))
 
-        assertThat(displayInfo!!.userId).isEqualTo(expectedUserId)
+        assertThat(displayInfo.userId).isEqualTo(expectedUserId)
         assertThat(displayInfo.userDisplayName).isNull()
-        assertThat(displayInfo.credentialTypeIcon?.resId).isEqualTo(
-            R.drawable.ic_password
-        )
+        assertThat(displayInfo.credentialTypeIcon?.resId).isEqualTo(R.drawable.ic_password)
         assertThat(displayInfo.preferDefaultProvider).isNull()
     }
 }

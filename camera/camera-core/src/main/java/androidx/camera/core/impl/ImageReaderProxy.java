@@ -19,12 +19,12 @@ package androidx.camera.core.impl;
 import android.media.ImageReader;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.core.ImageProxy;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 
@@ -35,24 +35,20 @@ import java.util.concurrent.Executor;
  * ImageReaderProxy} provides {@link ImageProxy} instances.
  *
  */
-
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public interface ImageReaderProxy {
     /**
      * Acquires the latest image in the queue.
      *
      * <p>@see {@link ImageReader#acquireLatestImage()}.
      */
-    @Nullable
-    ImageProxy acquireLatestImage();
+    @Nullable ImageProxy acquireLatestImage();
 
     /**
      * Acquires the next image in the queue.
      *
      * <p>@see {@link ImageReader#acquireNextImage()}.
      */
-    @Nullable
-    ImageProxy acquireNextImage();
+    @Nullable ImageProxy acquireNextImage();
 
     /**
      * Closes the reader.
@@ -94,8 +90,7 @@ public interface ImageReaderProxy {
      *
      * <p>@see {@link ImageReader#getSurface()}.
      */
-    @Nullable
-    Surface getSurface();
+    @Nullable Surface getSurface();
 
     /**
      * Sets the on-image-available listener.
@@ -104,7 +99,7 @@ public interface ImageReaderProxy {
      * @param executor The executor on which the listener should be invoked.
      */
     void setOnImageAvailableListener(
-            @NonNull ImageReaderProxy.OnImageAvailableListener listener,
+            ImageReaderProxy.@NonNull OnImageAvailableListener listener,
             @NonNull Executor executor);
 
     /**

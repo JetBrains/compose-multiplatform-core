@@ -16,8 +16,9 @@
 
 package androidx.wear.watchface.complications.rendering;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Class to detect and replace emoji in CharSequences.
@@ -66,8 +67,7 @@ final class EmojiHelper {
      * Returns a String with all emoji replaced with the given character. This method will remove
      * consequent emoji.
      */
-    @Nullable
-    static String replaceEmoji(@Nullable CharSequence text, int newCharacter) {
+    static @Nullable String replaceEmoji(@Nullable CharSequence text, int newCharacter) {
         if (text == null) {
             return null;
         }

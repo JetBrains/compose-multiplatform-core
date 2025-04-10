@@ -30,7 +30,9 @@ import androidx.camera.camera2.pipe.graph.GraphListener
 import androidx.camera.camera2.pipe.testing.FakeCaptureSequence
 import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor
 import androidx.camera.camera2.pipe.testing.FakeCaptureSessionFactory
+import androidx.camera.camera2.pipe.testing.FakeThreads
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -38,11 +40,11 @@ import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
 import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -62,10 +64,11 @@ class CaptureSessionStateTest {
             ): CaptureSequenceProcessor<Request, FakeCaptureSequence> = fakeCaptureSequenceProcessor
         }
     private val timeSource = SystemTimeSource()
-    private val cameraGraphFlags = CameraGraph.Flags(
-        quirkFinalizeSessionOnCloseBehavior = FinalizeSessionOnCloseBehavior.OFF,
-        quirkCloseCaptureSessionOnDisconnect = false,
-    )
+    private val cameraGraphFlags =
+        CameraGraph.Flags(
+            finalizeSessionOnCloseBehavior = FinalizeSessionOnCloseBehavior.OFF,
+            closeCaptureSessionOnDisconnect = false,
+        )
 
     private val surface1: Surface = Surface(SurfaceTexture(1))
     private val surface2: Surface = Surface(SurfaceTexture(2))
@@ -75,7 +78,8 @@ class CaptureSessionStateTest {
 
     private val captureSessionFactory =
         FakeCaptureSessionFactory(
-            requiredStreams = setOf(stream1, stream2), deferrableStreams = setOf(stream3Deferred)
+            requiredStreams = setOf(stream1, stream2),
+            deferrableStreams = setOf(stream3Deferred)
         )
 
     private val fakeCameraDevice: CameraDeviceWrapper = mock()
@@ -88,7 +92,8 @@ class CaptureSessionStateTest {
     }
 
     @Test
-    fun disconnectBeforeCameraDoesNotAcceptCamera() = runTest {
+    fun shutdownBeforeCameraDoesNotAcceptCamera() = runTest {
+        val fakeThreads = FakeThreads.fromTestScope(this)
         val state =
             CaptureSessionState(
                 fakeGraphListener,
@@ -97,21 +102,24 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                fakeThreads.blockingDispatcher,
+                fakeThreads.backgroundDispatcher,
                 this
             )
         // When disconnect is called first
-        state.disconnect()
+        state.shutdown()
 
         // Setting a camera device has no effect
         state.cameraDevice = fakeCameraDevice
 
         // And a captureSession is never created
         advanceUntilIdle()
-        verifyNoInteractions(fakeGraphListener)
+        verify(fakeGraphListener, times(1)).onGraphStopped(isNull())
     }
 
     @Test
-    fun disconnectBeforeCameraCallsSurfaceListener() = runTest {
+    fun shutdownBeforeCameraCallsSurfaceListener() = runTest {
+        val fakeThreads = FakeThreads.fromTestScope(this)
         val state =
             CaptureSessionState(
                 fakeGraphListener,
@@ -120,6 +128,8 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                fakeThreads.blockingDispatcher,
+                fakeThreads.backgroundDispatcher,
                 this
             )
 
@@ -129,17 +139,18 @@ class CaptureSessionStateTest {
         verify(fakeSurfaceListener, times(1)).onSurfaceActive(eq(surface2))
 
         // And a device is never set
-        state.disconnect()
+        state.shutdown()
 
         // Then fakeSurfaceListener marks surfaces as inactive.
         advanceUntilIdle()
-        verifyNoInteractions(fakeGraphListener)
+        verify(fakeGraphListener, times(1)).onGraphStopped(isNull())
         verify(fakeSurfaceListener, times(1)).onSurfaceInactive(eq(surface1))
         verify(fakeSurfaceListener, times(1)).onSurfaceInactive(eq(surface2))
     }
 
     @Test
-    fun disconnectAfterCaptureSessionDoesNotCallOnSurfaceInactive() = runTest {
+    fun shutdownAfterCaptureSessionDoesNotCallOnSurfaceInactive() = runTest {
+        val fakeThreads = FakeThreads.fromTestScope(this)
         val state =
             CaptureSessionState(
                 fakeGraphListener,
@@ -148,6 +159,8 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                fakeThreads.blockingDispatcher,
+                fakeThreads.backgroundDispatcher,
                 this
             )
 
@@ -163,17 +176,18 @@ class CaptureSessionStateTest {
         advanceUntilIdle()
 
         // And the state is then disconnected
-        state.disconnect()
+        state.shutdown()
 
         // Then fakeSurfaceListener does not mark surfaces as inactive.
         advanceUntilIdle()
-        verifyNoInteractions(fakeGraphListener)
+        verify(fakeGraphListener, times(1)).onGraphStopped(isNull())
         verify(fakeSurfaceListener, never()).onSurfaceInactive(eq(surface1))
         verify(fakeSurfaceListener, never()).onSurfaceInactive(eq(surface2))
     }
 
     @Test
     fun onSessionFinalizeCallsSurfaceListener() = runTest {
+        val fakeThreads = FakeThreads.fromTestScope(this)
         val state =
             CaptureSessionState(
                 fakeGraphListener,
@@ -182,6 +196,8 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                fakeThreads.blockingDispatcher,
+                fakeThreads.backgroundDispatcher,
                 this
             )
         // When surfaces are configured
@@ -191,13 +207,14 @@ class CaptureSessionStateTest {
 
         // Then fakeSurfaceListener marks surfaces as inactive.
         advanceUntilIdle()
-        verifyNoInteractions(fakeGraphListener)
+        verify(fakeGraphListener, times(1)).onGraphStopped(isNull())
         verify(fakeSurfaceListener, times(1)).onSurfaceInactive(eq(surface1))
         verify(fakeSurfaceListener, times(1)).onSurfaceInactive(eq(surface2))
     }
 
     @Test
     fun onConfigureFailedCallsSurfaceListener() = runTest {
+        val fakeThreads = FakeThreads.fromTestScope(this)
         val state =
             CaptureSessionState(
                 fakeGraphListener,
@@ -206,6 +223,8 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                fakeThreads.blockingDispatcher,
+                fakeThreads.backgroundDispatcher,
                 this
             )
         // When surfaces are configured
@@ -215,13 +234,14 @@ class CaptureSessionStateTest {
 
         // Then fakeSurfaceListener marks surfaces as inactive.
         advanceUntilIdle()
-        verifyNoInteractions(fakeGraphListener)
+        verify(fakeGraphListener, times(1)).onGraphStopped(isNull())
         verify(fakeSurfaceListener, times(1)).onSurfaceInactive(eq(surface1))
         verify(fakeSurfaceListener, times(1)).onSurfaceInactive(eq(surface2))
     }
 
     @Test
     fun onClosedCallsSurfaceListener() = runTest {
+        val fakeThreads = FakeThreads.fromTestScope(this)
         val state =
             CaptureSessionState(
                 fakeGraphListener,
@@ -230,6 +250,8 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                fakeThreads.blockingDispatcher,
+                fakeThreads.backgroundDispatcher,
                 this
             )
         // When surfaces are configured
@@ -239,13 +261,14 @@ class CaptureSessionStateTest {
 
         // Then fakeSurfaceListener marks surfaces as inactive.
         advanceUntilIdle()
-        verifyNoInteractions(fakeGraphListener)
+        verify(fakeGraphListener, times(1)).onGraphStopped(isNull())
         verify(fakeSurfaceListener, times(1)).onSurfaceInactive(eq(surface1))
         verify(fakeSurfaceListener, times(1)).onSurfaceInactive(eq(surface2))
     }
 
     @Test
     fun captureSessionStateClosesCaptureSessionWhenQuirkIsEnabled() = runTest {
+        val fakeThreads = FakeThreads.fromTestScope(this, Dispatchers.IO)
         val state =
             CaptureSessionState(
                 fakeGraphListener,
@@ -254,8 +277,10 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 CameraGraph.Flags(
-                    quirkCloseCaptureSessionOnDisconnect = true,
+                    closeCaptureSessionOnDisconnect = true,
                 ),
+                fakeThreads.blockingDispatcher,
+                fakeThreads.backgroundDispatcher,
                 this
             )
 
@@ -274,7 +299,7 @@ class CaptureSessionStateTest {
         state.onConfigured(fakeCaptureSession)
 
         // And the state is then disconnected
-        state.disconnect()
+        state.shutdown()
 
         // Then make sure we do close the capture session.
         advanceUntilIdle()

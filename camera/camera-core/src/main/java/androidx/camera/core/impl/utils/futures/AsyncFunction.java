@@ -16,11 +16,10 @@
 
 package androidx.camera.core.impl.utils.futures;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
@@ -38,7 +37,6 @@ import java.util.concurrent.Future;
  * @param <O>
  */
 @FunctionalInterface
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public interface AsyncFunction<I, O> {
     /**
      * Returns an output {@code Future} to use in place of the given {@code input}. The output
@@ -48,6 +46,5 @@ public interface AsyncFunction<I, O> {
      * <p>Throwing an exception from this method is equivalent to returning a failing {@code
      * Future}.
      */
-    @NonNull
-    ListenableFuture<O> apply(@Nullable I input) throws Exception;
+    @NonNull ListenableFuture<O> apply(@Nullable I input) throws Exception;
 }

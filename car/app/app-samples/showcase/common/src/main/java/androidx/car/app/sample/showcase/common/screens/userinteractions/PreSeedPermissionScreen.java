@@ -16,18 +16,18 @@
 
 package androidx.car.app.sample.showcase.common.screens.userinteractions;
 
-import static androidx.car.app.model.Action.BACK;
-
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.Screen;
 import androidx.car.app.model.Action;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.MessageTemplate;
 import androidx.car.app.model.Template;
 import androidx.car.app.sample.showcase.common.R;
 import androidx.car.app.sample.showcase.common.ShowcaseService;
+
+import org.jspecify.annotations.NonNull;
 
 /** A screen that demonstrates exiting the app and pre-seeding it with a request for permissions */
 public class PreSeedPermissionScreen extends Screen {
@@ -35,12 +35,12 @@ public class PreSeedPermissionScreen extends Screen {
         super(carContext);
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
         return new MessageTemplate.Builder(getCarContext().getString(R.string.finish_app_msg))
-                .setTitle(getCarContext().getString(R.string.preseed_permission_app_title))
-                .setHeaderAction(BACK)
+                .setHeader(new Header.Builder().setStartHeaderAction(Action.BACK)
+                        .setTitle(getCarContext().getString(R.string.preseed_permission_app_title))
+                        .build())
                 .addAction(
                         new Action.Builder()
                                 .setOnClickListener(

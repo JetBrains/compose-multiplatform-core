@@ -21,11 +21,12 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.tvprovider.media.tv.TvContractCompat.Programs;
 import androidx.tvprovider.media.tv.TvContractCompat.Programs.Genres.Genre;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A convenience class to access {@link TvContractCompat.Programs} entries in the system content
@@ -72,6 +73,7 @@ import androidx.tvprovider.media.tv.TvContractCompat.Programs.Genres.Genre;
  *         null, null);
  * </pre>
  */
+@SuppressWarnings("HiddenSuperclass")
 public final class Program extends BaseProgram implements Comparable<Program> {
     /**
      */
@@ -140,8 +142,7 @@ public final class Program extends BaseProgram implements Comparable<Program> {
      *
      * <p>No-op on devices prior to {@link android.os.Build.VERSION_CODES#R}.
      */
-    @Nullable
-    public String getGlobalContentId() {
+    public @Nullable String getGlobalContentId() {
         return mValues.getAsString(Programs.COLUMN_GLOBAL_CONTENT_ID);
     }
 
@@ -264,6 +265,7 @@ public final class Program extends BaseProgram implements Comparable<Program> {
     /**
      * This Builder class simplifies the creation of a {@link Program} object.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public static class Builder extends BaseProgram.Builder<Builder> {
 
         /**
@@ -349,8 +351,7 @@ public final class Program extends BaseProgram implements Comparable<Program> {
          * @param eventId The value of {@link Programs#COLUMN_EVENT_ID} for the program.
          * @return This Builder object to allow for chaining of calls to builder methods.
          */
-        @NonNull
-        public Builder setEventId(int eventId) {
+        public @NonNull Builder setEventId(int eventId) {
             mValues.put(Programs.COLUMN_EVENT_ID, eventId);
             return this;
         }
@@ -364,8 +365,7 @@ public final class Program extends BaseProgram implements Comparable<Program> {
          *                    program.
          * @return This Builder object to allow for chaining of calls to builder methods.
          */
-        @NonNull
-        public Builder setGlobalContentId(@Nullable String globalContentId) {
+        public @NonNull Builder setGlobalContentId(@Nullable String globalContentId) {
             mValues.put(Programs.COLUMN_GLOBAL_CONTENT_ID, globalContentId);
             return this;
         }

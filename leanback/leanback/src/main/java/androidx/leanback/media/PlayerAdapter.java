@@ -16,8 +16,8 @@
 
 package androidx.leanback.media;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Base class that wraps underlying media player. The class is used by PlaybackGlue, for example
@@ -129,8 +129,7 @@ public abstract class PlayerAdapter {
      * Gets callback for event of PlayerAdapter.
      * @return Client for event of PlayerAdapter.
      */
-    @Nullable
-    public final Callback getCallback() {
+    public final @Nullable Callback getCallback() {
         return mCallback;
     }
 

@@ -22,7 +22,7 @@ import android.os.Build
 import android.os.Handler
 import android.view.Surface
 import androidx.annotation.RequiresApi
-import androidx.camera.camera2.pipe.InputId
+import androidx.camera.camera2.pipe.InputStreamId
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.compat.Api29Compat
 import androidx.camera.camera2.pipe.core.Log
@@ -30,21 +30,35 @@ import androidx.camera.camera2.pipe.media.AndroidImageReader.Companion.IMAGEREAD
 import kotlin.reflect.KClass
 import kotlinx.atomicfu.atomic
 
-/**
- * Implements an [ImageWriterWrapper] using an [ImageWriter].
- */
-@RequiresApi(Build.VERSION_CODES.M)
-class AndroidImageWriter private constructor(
+/** Implements an [ImageWriterWrapper] using an [ImageWriter]. */
+@RequiresApi(23)
+public class AndroidImageWriter
+private constructor(
     private val imageWriter: ImageWriter,
-    private val inputId: InputId
+    private val inputStreamId: InputStreamId
 ) : ImageWriterWrapper, ImageWriter.OnImageReleasedListener {
     private val onImageReleasedListener = atomic<ImageWriterWrapper.OnImageReleasedListener?>(null)
     override val maxImages: Int = imageWriter.maxImages
 
     override val format: Int = imageWriter.format
 
-    override fun queueInputImage(image: ImageWrapper) {
-        imageWriter.queueInputImage(image.unwrapAs(Image::class))
+    override fun queueInputImage(image: ImageWrapper): Boolean {
+        return try {
+            val unwrappedImage = image.unwrapAs(Image::class)
+            if (unwrappedImage == null) {
+                Log.warn { "Failed to unwrap image wrapper $image" }
+                return false
+            }
+            imageWriter.queueInputImage(unwrappedImage)
+            true
+        } catch (e: Throwable) {
+            Log.warn {
+                "Failed to queue image to $this due to error ${e.message}. " +
+                    "Ignoring failure and closing $image"
+            }
+            image.close()
+            false
+        }
     }
 
     override fun dequeueInputImage(): ImageWrapper {
@@ -59,33 +73,33 @@ class AndroidImageWriter private constructor(
     }
 
     override fun onImageReleased(writer: ImageWriter?) {
-        onImageReleasedListener.value?.onImageReleased(inputId)
+        onImageReleasedListener.value?.onImageReleased(inputStreamId)
     }
 
-    override fun close() = imageWriter.close()
+    override fun close(): Unit = imageWriter.close()
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? = when (type) {
-        ImageWriter::class -> imageWriter as T?
-        else -> null
-    }
+    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+        when (type) {
+            ImageWriter::class -> imageWriter as T?
+            else -> null
+        }
 
     override fun toString(): String {
-        return "ImageWriter-${StreamFormat(imageWriter.format).name}-" +
-            "inputId$inputId"
+        return "ImageWriter-${StreamFormat(imageWriter.format).name}-$inputStreamId"
     }
 
-    companion object {
+    public companion object {
         /**
          * Create and configure a new ImageWriter instance as an [ImageWriter].
          *
          * See [ImageWriter.newInstance] for details.
          */
-        fun create(
+        public fun create(
             surface: Surface,
+            inputStreamId: InputStreamId,
             maxImages: Int,
-            format: Int?,
-            inputId: InputId,
+            format: StreamFormat?,
             handler: Handler
         ): ImageWriterWrapper {
             require(maxImages > 0) { "Max images ($maxImages) must be > 0" }
@@ -94,15 +108,14 @@ class AndroidImageWriter private constructor(
                     "$IMAGEREADER_MAX_CAPACITY to prevent overloading downstream " +
                     "consumer components."
             }
-
             // Create and configure a new ImageWriter
             val imageWriter =
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && format != null) {
-                    Api29Compat.imageWriterNewInstance(surface, maxImages, format)
+                    Api29Compat.imageWriterNewInstance(surface, maxImages, format.value)
                 } else {
                     if (format != null) {
                         Log.warn {
-                            "Ignoring format ($format) for $inputId. Android " +
+                            "Ignoring format ($format) for $inputStreamId. Android " +
                                 "${Build.VERSION.SDK_INT} does not support creating ImageWriters " +
                                 "with formats. This may lead to unexpected behaviors."
                         }
@@ -110,10 +123,8 @@ class AndroidImageWriter private constructor(
                     ImageWriter.newInstance(surface, maxImages)
                 }
 
-            val androidImageWriter = AndroidImageWriter(imageWriter, inputId)
-            imageWriter.setOnImageReleasedListener(
-                androidImageWriter, handler
-            )
+            val androidImageWriter = AndroidImageWriter(imageWriter, inputStreamId)
+            imageWriter.setOnImageReleasedListener(androidImageWriter, handler)
             return androidImageWriter
         }
     }

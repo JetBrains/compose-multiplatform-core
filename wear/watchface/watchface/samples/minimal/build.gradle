@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -27,23 +34,31 @@ dependencies {
     implementation(libs.guavaAndroid)
 }
 
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions.suppressWarnings = true
+}
+
+tasks.withType(JavaCompile){
+    options.compilerArgs <<"-Xlint:-deprecation"
+}
+
 androidx {
     name = "Wear Watchface Minimal Sample"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2021"
     description = "Contains the sample code for the Androidx Wear Watchface library"
 }
 
 android {
     defaultConfig {
-        applicationId "androidx.wear.watchface.samples.minimal"
-        minSdkVersion 26
+        applicationId = "androidx.wear.watchface.samples.minimal"
+        minSdk = 26
     }
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android.txt')
         }
     }
@@ -52,5 +67,5 @@ android {
         sourceCompatibility 1.8
         targetCompatibility 1.8
     }
-    namespace "androidx.wear.watchface.samples.minimal"
+    namespace = "androidx.wear.watchface.samples.minimal"
 }

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.preferencesOf
+import androidx.glance.Button
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
@@ -57,9 +58,7 @@ class GlanceAppWidgetUnitTestEnvironmentTest {
     fun runTest_localSizeRead() = runGlanceAppWidgetUnitTest {
         setAppWidgetSize(DpSize(width = 120.dp, height = 200.dp))
 
-        provideComposable {
-            ComposableReadingLocalSize()
-        }
+        provideComposable { ComposableReadingLocalSize() }
 
         onNode(hasText("120.0 dp x 200.0 dp")).assertExists()
     }
@@ -81,9 +80,7 @@ class GlanceAppWidgetUnitTestEnvironmentTest {
     fun runTest_currentStateRead() = runGlanceAppWidgetUnitTest {
         setState(preferencesOf(toggleKey to true))
 
-        provideComposable {
-            ComposableReadingState()
-        }
+        provideComposable { ComposableReadingState() }
 
         onNode(hasText("isToggled")).assertExists()
     }
@@ -107,26 +104,32 @@ class GlanceAppWidgetUnitTestEnvironmentTest {
     fun runTest_emptyComposable_throwsError() = runGlanceAppWidgetUnitTest {
         provideComposable {}
 
-        val exception = assertThrows(IllegalStateException::class.java) {
-            onNode(hasText("abc")).assertExists()
-        }
+        val exception =
+            assertThrows(IllegalStateException::class.java) {
+                onNode(hasText("abc")).assertExists()
+            }
 
-        assertThat(exception).hasMessageThat().isEqualTo(
-            "No nodes found to perform the assertions. Provide the composable to be " +
-                "tested using `provideComposable` function before performing assertions."
-        )
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo(
+                "No nodes found to perform the assertions. Provide the composable to be " +
+                    "tested using `provideComposable` function before performing assertions."
+            )
     }
 
     @Test
     fun runTest_composableNotProvided_throwsError() = runGlanceAppWidgetUnitTest {
-        val exception = assertThrows(IllegalStateException::class.java) {
-            onNode(hasText("abc")).assertExists()
-        }
+        val exception =
+            assertThrows(IllegalStateException::class.java) {
+                onNode(hasText("abc")).assertExists()
+            }
 
-        assertThat(exception).hasMessageThat().isEqualTo(
-            "No nodes found to perform the assertions. Provide the composable to be " +
-                "tested using `provideComposable` function before performing assertions."
-        )
+        assertThat(exception)
+            .hasMessageThat()
+            .isEqualTo(
+                "No nodes found to perform the assertions. Provide the composable to be " +
+                    "tested using `provideComposable` function before performing assertions."
+            )
     }
 
     @Test
@@ -152,9 +155,7 @@ class GlanceAppWidgetUnitTestEnvironmentTest {
             Spacer()
             Text(text = "xyz")
 
-            LaunchedEffect(Unit) {
-                text = "changed"
-            }
+            LaunchedEffect(Unit) { text = "changed" }
         }
 
         onNode(hasTestTag("mutable-test")).assert(hasText("changed"))
@@ -201,11 +202,9 @@ class GlanceAppWidgetUnitTestEnvironmentTest {
     fun runTest_onMultipleNodesMatchedAcrossHierarchy() = runGlanceAppWidgetUnitTest {
         provideComposable {
             Column {
-                Row {
-                    Text("text-row")
-                }
+                Row { Text("text-row") }
                 Spacer()
-                Text("text-in-column")
+                Button("text-in-column", onClick = {})
             }
         }
 
@@ -251,4 +250,5 @@ class GlanceAppWidgetUnitTestEnvironmentTest {
 }
 
 private val toggleKey = booleanPreferencesKey("title_toggled_key")
+
 private fun getTitle(toggled: Boolean) = if (toggled) "isToggled" else "notToggled"

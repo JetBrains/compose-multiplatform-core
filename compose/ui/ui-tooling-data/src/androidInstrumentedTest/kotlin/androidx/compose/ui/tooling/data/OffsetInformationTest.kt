@@ -29,34 +29,35 @@ class OffsetInformationTest : ToolingTest() {
     @Test
     fun testOffset() {
         val slotTableRecord = CompositionDataRecord.create()
-        show {
-            Inspectable(slotTableRecord) {
-                OffsetData()
-            }
-        }
+        show { Inspectable(slotTableRecord) { OffsetData() } }
 
         val table = slotTableRecord.store.first()
         val tree = table.asTree()
-        val offsets = tree.all().filter {
-            it.location?.sourceFile == "OffsetData.kt" &&
-                it.name != null && it.name != "remember"
-        }.map {
-            it.name!! to it.location!!.offset
-        }
+        val offsets =
+            tree
+                .all()
+                .filter {
+                    it.location?.sourceFile == "OffsetData.kt" &&
+                        it.name != null &&
+                        it.name != "remember"
+                }
+                .map { it.name!! to it.location!!.offset }
 
         assertArrayEquals(
             arrayListOf(
-                "MyComposeTheme" to 1603,
-                "Column" to 1628,
-                "Text" to 1685,
-                "Greeting" to 1928,
-                "Text" to 2763,
-                "Surface" to 1960,
-                "Button" to 2088,
-                "Text" to 2111,
-                "Surface" to 2150,
-                "TextButton" to 2277,
-                "Row" to 2418
+                "MyComposeTheme" to 1598,
+                "Column" to 1623,
+                "Text" to 1680,
+                "Greeting" to 1845,
+                "Text" to 2509,
+                "<get-shapes>" to 1927,
+                "Surface" to 1877,
+                "Button" to 1959,
+                "Text" to 1982,
+                "<get-shapes>" to 2070,
+                "Surface" to 2021,
+                "TextButton" to 2102,
+                "Row" to 2185
             ),
             offsets
         )
@@ -65,20 +66,19 @@ class OffsetInformationTest : ToolingTest() {
     @Test
     fun testInline() {
         val slotTableRecord = CompositionDataRecord.create()
-        show {
-            Inspectable(slotTableRecord) {
-                OffsetData()
-            }
-        }
+        show { Inspectable(slotTableRecord) { OffsetData() } }
 
         val table = slotTableRecord.store.first()
         val tree = table.asTree()
-        val inlines = tree.all().filter {
-            it.location?.sourceFile == "OffsetData.kt" &&
-                it.name != null && it.name != "remember"
-        }.map {
-            it.name!! to it.isInline
-        }
+        val inlines =
+            tree
+                .all()
+                .filter {
+                    it.location?.sourceFile == "OffsetData.kt" &&
+                        it.name != null &&
+                        it.name != "remember"
+                }
+                .map { it.name!! to it.isInline }
 
         assertArrayEquals(
             arrayListOf(
@@ -87,9 +87,11 @@ class OffsetInformationTest : ToolingTest() {
                 "Text" to false,
                 "Greeting" to false,
                 "Text" to false,
+                "<get-shapes>" to false,
                 "Surface" to false,
                 "Button" to false,
                 "Text" to false,
+                "<get-shapes>" to false,
                 "Surface" to false,
                 "TextButton" to false,
                 "Row" to true

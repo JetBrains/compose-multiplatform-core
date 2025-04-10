@@ -19,9 +19,10 @@ package com.example.android.support.text.emoji;
 import android.os.Build;
 import android.text.TextPaint;
 
-import androidx.annotation.NonNull;
 import androidx.core.graphics.PaintCompat;
 import androidx.emoji2.text.EmojiCompat;
+
+import org.jspecify.annotations.NonNull;
 
 class GlyphCheckerSample {
 

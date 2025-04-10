@@ -18,15 +18,14 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
+    compileSdk = 35
+
     defaultConfig {
-        applicationId "androidx.camera.integration.camera2.pipe"
-        minSdkVersion 21
-        versionCode 1
-        multiDexEnabled true
+        applicationId = "androidx.camera.integration.camera2.pipe"
     }
 
     sourceSets {
@@ -39,21 +38,24 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro")
         }
     }
-    namespace "androidx.camera.integration.camera2.pipe"
+    namespace = "androidx.camera.integration.camera2.pipe"
 }
 
 dependencies {
+    def lifecycle_version = "2.8.7"
+
     // Internal library
     implementation(libs.kotlinStdlib)
 
     // Android Support Library
     implementation("androidx.appcompat:appcompat:1.1.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version")
     implementation(libs.constraintLayout)
 
     // Camera Pipe

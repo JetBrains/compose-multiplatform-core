@@ -17,6 +17,7 @@
 package androidx.build.clang
 
 import androidx.build.KonanPrebuiltsSetup
+import androidx.build.ProjectLayoutType
 import androidx.build.clang.KonanBuildService.Companion.obtain
 import androidx.build.getKonanPrebuiltsFolder
 import java.io.ByteArrayOutputStream
@@ -29,17 +30,21 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
+import org.gradle.api.tasks.Optional
 import org.gradle.process.ExecOperations
 import org.gradle.process.ExecSpec
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 import org.jetbrains.kotlin.gradle.utils.NativeCompilerDownloader
+import org.jetbrains.kotlin.konan.TempFiles
+import org.jetbrains.kotlin.konan.target.Family
+import org.jetbrains.kotlin.konan.target.LinkerArguments
 import org.jetbrains.kotlin.konan.target.LinkerOutputKind
 import org.jetbrains.kotlin.konan.target.Platform
 import org.jetbrains.kotlin.konan.target.PlatformManager
 
 /**
- * A Gradle BuildService that provides access to Konan Compiler (clang, linker, ar etc) to
- * build native sources for multiple targets.
+ * A Gradle BuildService that provides access to Konan Compiler (clang, linker, ar etc) to build
+ * native sources for multiple targets.
  *
  * You can obtain the instance via [obtain].
  *
@@ -47,23 +52,29 @@ import org.jetbrains.kotlin.konan.target.PlatformManager
  * @see ClangCompileTask
  * @see ClangSharedLibraryTask
  */
-abstract class KonanBuildService @Inject constructor(
-    private val execOperations: ExecOperations
-) : BuildService<KonanBuildService.Parameters> {
+abstract class KonanBuildService @Inject constructor(private val execOperations: ExecOperations) :
+    BuildService<KonanBuildService.Parameters> {
     private val dist by lazy {
+        // double check that we don't initialize konan distribution without prebuilts in AOSP
+        check(
+            parameters.projectLayoutType.get() == ProjectLayoutType.PLAYGROUND ||
+                parameters.prebuilts.isPresent
+        ) {
+            """
+                Prebuilts directory for Konan must be provided when the project is not a playground
+                project.
+            """
+                .trimIndent()
+        }
         KonanPrebuiltsSetup.createKonanDistribution(
-            prebuiltsDirectory = parameters.prebuilts.get().asFile,
+            prebuiltsDirectory = parameters.prebuilts.orNull?.asFile,
             konanHome = parameters.konanHome.get().asFile
         )
     }
 
-    private val platformManager by lazy {
-        PlatformManager(distribution = dist)
-    }
+    private val platformManager by lazy { PlatformManager(distribution = dist) }
 
-    /**
-     * @see ClangCompileTask
-     */
+    /** @see ClangCompileTask */
     fun compile(parameters: ClangCompileParameters) {
         val outputDir = parameters.output.get().asFile
         outputDir.deleteRecursively()
@@ -75,16 +86,14 @@ abstract class KonanBuildService @Inject constructor(
             add("--compile")
             parameters.includes.files.forEach { includeDirectory ->
                 check(includeDirectory.isDirectory) {
-                    "Include parameter for clang must be a directory"
+                    "Include parameter for clang must be a directory: $includeDirectory"
                 }
                 add("-I${includeDirectory.canonicalPath}")
             }
             addAll(parameters.sources.regularFilePaths())
         }
 
-        val clangCommand = platform.clang.clangC(
-            *additionalArgs.toTypedArray()
-        )
+        val clangCommand = platform.clang.clangC(*additionalArgs.toTypedArray())
         execOperations.executeSilently { execSpec ->
             execSpec.executable = clangCommand.first()
             execSpec.args(clangCommand.drop(1))
@@ -92,9 +101,7 @@ abstract class KonanBuildService @Inject constructor(
         }
     }
 
-    /**
-     * @see ClangArchiveTask
-     */
+    /** @see ClangArchiveTask */
     fun archiveLibrary(parameters: ClangArchiveParameters) {
         val outputFile = parameters.outputFile.get().asFile
         outputFile.delete()
@@ -106,71 +113,82 @@ abstract class KonanBuildService @Inject constructor(
             add(parameters.outputFile.get().asFile.canonicalPath)
             addAll(parameters.objectFiles.regularFilePaths())
         }
-        val commands = platform.clang.llvmAr(
-            *llvmArgs.toTypedArray()
-        )
+        val commands = platform.clang.llvmAr(*llvmArgs.toTypedArray())
         execOperations.executeSilently { execSpec ->
             execSpec.executable = commands.first()
             execSpec.args(commands.drop(1))
         }
     }
 
-    /**
-     * @see ClangSharedLibraryTask
-     */
+    /** @see ClangSharedLibraryTask */
     fun createSharedLibrary(parameters: ClangSharedLibraryParameters) {
         val outputFile = parameters.outputFile.get().asFile
         outputFile.delete()
         outputFile.parentFile.mkdirs()
 
         val platform = getPlatform(parameters.konanTarget)
+
+        // Specify max-page-size to align ELF regions to 16kb
+        val linkerFlags =
+            parameters.linkerArgs.get() +
+                if (parameters.konanTarget.get().asKonanTarget.family == Family.ANDROID) {
+                    listOf("-z", "max-page-size=16384")
+                } else {
+                    emptyList()
+                }
+
         val objectFiles = parameters.objectFiles.regularFilePaths()
         val linkedObjectFiles = parameters.linkedObjects.regularFilePaths()
-        val linkCommands = platform.linker.finalLinkCommands(
-            objectFiles = objectFiles,
-            executable = outputFile.canonicalPath,
-            libraries = linkedObjectFiles,
-            linkerArgs = emptyList(),
-            optimize = true,
-            debug = false,
-            kind = LinkerOutputKind.DYNAMIC_LIBRARY,
-            outputDsymBundle = "unused",
-            needsProfileLibrary = false,
-            mimallocEnabled = false,
-            sanitizer = null
-        )
-        linkCommands.map { it.argsWithExecutable }.forEach { args ->
-            execOperations.executeSilently { execSpec ->
-                execSpec.executable = args.first()
-                args.drop(1).filterNot {
-                    // TODO b/305804211 Figure out if we would rather pass all args manually
-                    // We use the linker that konan uses to be as similar as possible but that
-                    // linker also has konan demangling, which we don't need and not even available
-                    // in the default distribution. Hence we remove that parameters.
-                    // In the future, we can consider not using the `platform.linker` but then
-                    // we would need to parse the konan.properties file to get the relevant
-                    // necessary parameters like sysroot etc.
-                    // https://github.com/JetBrains/kotlin/blob/master/kotlin-native/build-tools/src/main/kotlin/org/jetbrains/kotlin/KotlinNativeTest.kt#L536
-                    it.contains("--defsym") ||
-                        it.contains("Konan_cxa_demangle")
-                }.forEach {
-                    execSpec.args(it)
+        val linkCommands =
+            with(platform.linker) {
+                LinkerArguments(
+                        TempFiles(),
+                        objectFiles = objectFiles,
+                        executable = outputFile.canonicalPath,
+                        libraries = linkedObjectFiles,
+                        linkerArgs = linkerFlags,
+                        optimize = true,
+                        debug = false,
+                        kind = LinkerOutputKind.DYNAMIC_LIBRARY,
+                        outputDsymBundle = "unused",
+                        mimallocEnabled = false,
+                        sanitizer = null
+                    )
+                    .finalLinkCommands()
+            }
+        linkCommands
+            .map { it.argsWithExecutable }
+            .forEach { args ->
+                execOperations.executeSilently { execSpec ->
+                    execSpec.executable = args.first()
+                    args
+                        .drop(1)
+                        .filterNot {
+                            // TODO b/305804211 Figure out if we would rather pass all args manually
+                            // We use the linker that konan uses to be as similar as possible but
+                            // that
+                            // linker also has konan demangling, which we don't need and not even
+                            // available
+                            // in the default distribution. Hence we remove that parameters.
+                            // In the future, we can consider not using the `platform.linker` but
+                            // then
+                            // we would need to parse the konan.properties file to get the relevant
+                            // necessary parameters like sysroot etc.
+                            // https://github.com/JetBrains/kotlin/blob/master/kotlin-native/build-tools/src/main/kotlin/org/jetbrains/kotlin/KotlinNativeTest.kt#L536
+                            it.contains("--defsym") || it.contains("Konan_cxa_demangle")
+                        }
+                        .forEach { execSpec.args(it) }
                 }
             }
-        }
     }
 
     private fun FileCollection.regularFilePaths(): List<String> {
-        return files.flatMap {
-            it.walkTopDown().filter {
-                it.isFile
-            }.map { it.canonicalPath }
-        }.distinct()
+        return files
+            .flatMap { it.walkTopDown().filter { it.isFile }.map { it.canonicalPath } }
+            .distinct()
     }
 
-    private fun getPlatform(
-        serializableKonanTarget: Property<SerializableKonanTarget>
-    ): Platform {
+    private fun getPlatform(serializableKonanTarget: Property<SerializableKonanTarget>): Platform {
         val konanTarget = serializableKonanTarget.get().asKonanTarget
         check(platformManager.enabled.contains(konanTarget)) {
             "cannot find enabled target with name ${serializableKonanTarget.get()}"
@@ -180,9 +198,7 @@ abstract class KonanBuildService @Inject constructor(
         return platform
     }
 
-    /**
-     * Execute the command without logs unless it fails.
-     */
+    /** Execute the command without logs unless it fails. */
     private fun <T> ExecOperations.executeSilently(block: (ExecSpec) -> T) {
         val outputStream = ByteArrayOutputStream()
         val errorStream = ByteArrayOutputStream()
@@ -200,28 +216,35 @@ abstract class KonanBuildService @Inject constructor(
                 ${outputStream.toString(Charsets.UTF_8)}
                 ==== error:
                 ${errorStream.toString(Charsets.UTF_8)}
-            """.trimIndent()
+            """
+                    .trimIndent()
             )
         }
     }
 
     interface Parameters : BuildServiceParameters {
+        /** KONAN_HOME parameter for initializing konan */
         val konanHome: DirectoryProperty
-        val prebuilts: DirectoryProperty
+
+        /** Location if konan prebuilts. Can be null if this is a playground project */
+        @get:Optional val prebuilts: DirectoryProperty
+
+        /**
+         * The type of the project (Playground vs AOSP main). This value is used to ensure we
+         * initialize Konan distribution properly.
+         */
+        val projectLayoutType: Property<ProjectLayoutType>
     }
 
     companion object {
         internal const val KEY = "konanBuildService"
-        fun obtain(
-            project: Project
-        ): Provider<KonanBuildService> {
+
+        fun obtain(project: Project): Provider<KonanBuildService> {
             return project.gradle.sharedServices.registerIfAbsent(
                 KEY,
                 KonanBuildService::class.java
             ) {
-                check(
-                    project.plugins.hasPlugin(KotlinMultiplatformPluginWrapper::class.java)
-                ) {
+                check(project.plugins.hasPlugin(KotlinMultiplatformPluginWrapper::class.java)) {
                     "KonanBuildService can only be used in projects that applied the KMP plugin"
                 }
                 check(KonanPrebuiltsSetup.isConfigured(project)) {
@@ -230,12 +253,11 @@ abstract class KonanBuildService @Inject constructor(
                 val nativeCompilerDownloader = NativeCompilerDownloader(project)
                 nativeCompilerDownloader.downloadIfNeeded()
 
-                it.parameters.konanHome.set(
-                    nativeCompilerDownloader.compilerDirectory
-                )
-                it.parameters.prebuilts.set(
-                    project.getKonanPrebuiltsFolder()
-                )
+                it.parameters.konanHome.set(nativeCompilerDownloader.compilerDirectory)
+                it.parameters.projectLayoutType.set(ProjectLayoutType.from(project))
+                if (!ProjectLayoutType.isPlayground(project)) {
+                    it.parameters.prebuilts.set(project.getKonanPrebuiltsFolder())
+                }
             }
         }
     }

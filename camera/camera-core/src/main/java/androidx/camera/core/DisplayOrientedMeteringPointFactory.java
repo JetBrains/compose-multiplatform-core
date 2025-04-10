@@ -20,9 +20,9 @@ import android.graphics.PointF;
 import android.view.Display;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A {@link MeteringPointFactory} that can convert a {@link View} (x, y) into a
@@ -47,7 +47,6 @@ import androidx.annotation.RestrictTo;
  *
  * @see MeteringPoint
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class DisplayOrientedMeteringPointFactory extends MeteringPointFactory {
     /** The logical width of FoV in current display orientation */
     private final float mWidth;
@@ -55,10 +54,8 @@ public final class DisplayOrientedMeteringPointFactory extends MeteringPointFact
     private final float mHeight;
 
     /** {@link Display} used for detecting display orientation */
-    @NonNull
-    private final Display mDisplay;
-    @NonNull
-    private final CameraInfo mCameraInfo;
+    private final @NonNull Display mDisplay;
+    private final @NonNull CameraInfo mCameraInfo;
 
     /**
      * Creates a {@link DisplayOrientedMeteringPointFactory} for converting View (x, y) into a
@@ -95,9 +92,8 @@ public final class DisplayOrientedMeteringPointFactory extends MeteringPointFact
      *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
     @Override
-    protected PointF convertPoint(float x, float y) {
+    protected @NonNull PointF convertPoint(float x, float y) {
         float width = mWidth;
         float height = mHeight;
 

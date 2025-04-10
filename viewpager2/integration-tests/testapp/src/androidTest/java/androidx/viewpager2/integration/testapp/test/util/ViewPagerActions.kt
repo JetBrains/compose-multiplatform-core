@@ -20,7 +20,6 @@ import android.graphics.Rect
 import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
-import androidx.core.view.ViewCompat
 import androidx.test.espresso.InjectEventSecurityException
 import androidx.test.espresso.PerformException
 import androidx.test.espresso.UiController
@@ -83,15 +82,16 @@ private class SwipeAction(val direction: Direction) : ViewAction {
         )
 
     override fun perform(uiController: UiController, view: View) {
-        val vp = if (view is ViewPager2) {
-            view
-        } else {
-            var parent = view.parent
-            while (parent !is ViewPager2 && parent != null) {
-                parent = parent.parent
+        val vp =
+            if (view is ViewPager2) {
+                view
+            } else {
+                var parent = view.parent
+                while (parent !is ViewPager2 && parent != null) {
+                    parent = parent.parent
+                }
+                parent as ViewPager2
             }
-            parent as ViewPager2
-        }
         val isForward = direction == FORWARD
         val swipeAction: ViewAction
         if (vp.orientation == ViewPager2.ORIENTATION_HORIZONTAL) {
@@ -103,7 +103,7 @@ private class SwipeAction(val direction: Direction) : ViewAction {
     }
 
     private fun ViewPager2.isRtl(): Boolean {
-        return ViewCompat.getLayoutDirection(this) == ViewCompat.LAYOUT_DIRECTION_RTL
+        return getLayoutDirection() == View.LAYOUT_DIRECTION_RTL
     }
 }
 
@@ -141,8 +141,7 @@ private class WaitForInjectMotionEventsAction : ViewAction {
                 if (uiController.injectMotionEvent(event)) {
                     injectionSucceeded = true
                 }
-            } catch (e: InjectEventSecurityException) {
-            }
+            } catch (e: InjectEventSecurityException) {}
             event.recycle()
 
             if (injectionSucceeded) {

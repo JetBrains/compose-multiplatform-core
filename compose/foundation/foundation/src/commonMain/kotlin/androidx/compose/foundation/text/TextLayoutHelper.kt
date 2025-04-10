@@ -16,9 +16,11 @@
 
 package androidx.compose.foundation.text
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,7 +41,6 @@ import androidx.compose.ui.unit.LayoutDirection
  * @param layoutDirection a layout direction to be used for computing text layout.
  * @param constraints a constraint to be used for computing text layout.
  */
-@OptIn(InternalFoundationTextApi::class)
 internal fun TextLayoutResult.canReuse(
     text: AnnotatedString,
     style: TextStyle,
@@ -62,8 +63,8 @@ internal fun TextLayoutResult.canReuse(
         // measure or display
         return false
     }
-    if (!(
-        layoutInput.text == text &&
+    if (
+        !(layoutInput.text == text &&
             layoutInput.style.hasSameLayoutAffectingAttributes(style) &&
             layoutInput.placeholders == placeholders &&
             layoutInput.maxLines == maxLines &&
@@ -71,8 +72,7 @@ internal fun TextLayoutResult.canReuse(
             layoutInput.overflow == overflow &&
             layoutInput.density == density &&
             layoutInput.layoutDirection == layoutDirection &&
-            layoutInput.fontFamilyResolver == fontFamilyResolver
-        )
+            layoutInput.fontFamilyResolver == fontFamilyResolver)
     ) {
         return false
     }
@@ -86,4 +86,46 @@ internal fun TextLayoutResult.canReuse(
     }
     return constraints.maxWidth == layoutInput.constraints.maxWidth &&
         constraints.maxHeight == layoutInput.constraints.maxHeight
+}
+
+/** Returns whether the given pixel position is inside the selection. */
+internal fun TextLayoutResult.isPositionInsideSelection(
+    position: Offset,
+    selectionRange: TextRange?,
+): Boolean {
+    if ((selectionRange == null) || selectionRange.collapsed) return false
+
+    fun isOffsetSelectedAndContainsPosition(offset: Int) =
+        selectionRange.contains(offset) && getBoundingBox(offset).contains(position)
+
+    // getOffsetForPosition returns the index at which the cursor should be placed when the
+    // given position is clicked. This means that when position is to the right of the center of
+    // a glyph it will return the index of the next glyph. So we test both the index it returns
+    // and the previous index.
+    val offset = getOffsetForPosition(position)
+    return isOffsetSelectedAndContainsPosition(offset) ||
+        isOffsetSelectedAndContainsPosition(offset - 1)
+}
+
+/**
+ * Returns the text line height for the given offset. It also returns the last visible line height
+ * if the given offset is followed after the last visible character. If the text is empty, or if the
+ * requested line is out of the visible range, then returns zero.
+ *
+ * @param offset a character offset
+ * @return the line height for the given offset
+ */
+internal fun TextLayoutResult.getLineHeight(offset: Int): Float {
+    if (offset < 0 || layoutInput.text.isEmpty()) return 0f
+
+    val line =
+        minOf(
+            multiParagraph.getLineForOffset(offset),
+            multiParagraph.maxLines - 1,
+            multiParagraph.lineCount - 1
+        )
+    val lineEnd = multiParagraph.getLineEnd(line)
+    if (offset > lineEnd) return 0f
+
+    return multiParagraph.getLineHeight(line)
 }

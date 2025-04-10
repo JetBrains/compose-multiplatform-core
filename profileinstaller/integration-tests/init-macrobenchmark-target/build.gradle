@@ -17,18 +17,18 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
         }
     }
-    namespace "androidx.profileinstaller.integration.macrobenchmark.target"
+    namespace = "androidx.profileinstaller.integration.macrobenchmark.target"
 }
 
 dependencies {

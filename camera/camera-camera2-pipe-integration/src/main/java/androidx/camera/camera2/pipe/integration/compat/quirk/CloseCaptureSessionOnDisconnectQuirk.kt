@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.integration.compat.quirk
 
 import android.annotation.SuppressLint
 import android.os.Build
-import androidx.annotation.RequiresApi
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isInfinixDevice
 import androidx.camera.core.impl.Quirk
 import java.util.Locale
 
@@ -31,23 +29,24 @@ import java.util.Locale
  * - Crashes in the camera HAL
  *
  * QuirkSummary
- * - Bug Id:      277675483, 282871038
+ * - Bug Id: 277675483, 282871038
  * - Description: Instructs CameraPipe to close the capture session before creating a new one to
- *                avoid undesirable behaviors
+ *   avoid undesirable behaviors
  *
  * TODO(b/270421716): enable CameraXQuirksClassDetector lint check when kotlin is supported.
  */
 @SuppressLint("CameraXQuirksClassDetector")
-class CloseCaptureSessionOnDisconnectQuirk : Quirk {
+public class CloseCaptureSessionOnDisconnectQuirk : Quirk {
 
-    companion object {
-        private val androidTOrNewerSm8150Devices = mapOf(
-            "google" to setOf("pixel 4", "pixel 4 xl"),
-            "samsung" to setOf("sm-g770f"),
-        )
+    public companion object {
+        private val androidTOrNewerSm8150Devices =
+            mapOf(
+                "google" to setOf("pixel 4", "pixel 4 xl"),
+                "samsung" to setOf("sm-g770f"),
+            )
 
         @JvmStatic
-        fun isEnabled(): Boolean {
+        public fun isEnabled(): Boolean {
             if (CameraQuirks.isImmediateSurfaceReleaseAllowed()) {
                 // If we can release Surfaces immediately, we'll finalize the session when the
                 // camera graph is closed (through FinalizeSessionOnCloseQuirk), and thus we won't
@@ -70,10 +69,11 @@ class CloseCaptureSessionOnDisconnectQuirk : Quirk {
                 // As a result, we need to close the capture session to stop the captures, then
                 // release the Surfaces by FinalizeSessionOnCloseQuirk.
                 true
-            } else if ((Build.HARDWARE.equals("qcom", ignoreCase = true) &&
-                Build.VERSION.SDK_INT <= Build.VERSION_CODES.S) ||
-                androidTOrNewerSm8150Devices[Build.BRAND.lowercase(Locale.getDefault())]?.contains(
-                    Build.MODEL.lowercase(Locale.getDefault())) == true
+            } else if (
+                (Build.HARDWARE.equals("qcom", ignoreCase = true) &&
+                    Build.VERSION.SDK_INT <= Build.VERSION_CODES.S) ||
+                    androidTOrNewerSm8150Devices[Build.BRAND.lowercase(Locale.getDefault())]
+                        ?.contains(Build.MODEL.lowercase(Locale.getDefault())) == true
             ) {
                 // On qcom platforms from a certain era, switching capture sessions without closing
                 // the prior session then setting the repeating request immediately, puts the camera
@@ -85,7 +85,7 @@ class CloseCaptureSessionOnDisconnectQuirk : Quirk {
                 // significant memory, including the _foreground_ test applications. Closing the
                 // capture session ensures that we finalize every CameraGraph session, slightly
                 // lowering the peak memory.
-                Build.BRAND.lowercase(Locale.getDefault()) == "infinix"
+                isInfinixDevice()
             }
         }
     }

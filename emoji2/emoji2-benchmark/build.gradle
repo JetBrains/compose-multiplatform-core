@@ -14,17 +14,24 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("androidx.benchmark")
 }
 
 ext {
-    fontDir = project(':noto-emoji-compat-font').projectDir
+    fontDir = project(":noto-emoji-compat-font").projectDir
 }
 
 android {
@@ -35,28 +42,29 @@ android {
             }
         }
     }
-    namespace "androidx.emoji2.benchmark"
+    namespace = "androidx.emoji2.benchmark"
 
 }
 
 dependencies {
+    api(libs.jspecify)
     androidTestImplementation(project(":emoji2:emoji2"))
     androidTestImplementation(project(":emoji2:emoji2-bundled"))
-    androidTestImplementation(projectOrArtifact(":benchmark:benchmark-junit4"))
+    androidTestImplementation(project(":benchmark:benchmark-junit4"))
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation project(':internal-testutils-runtime')
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
+    androidTestImplementation(project(":internal-testutils-runtime"))
     androidTestImplementation(libs.kotlinStdlib)
 }
 
 androidx {
     name = "Emoji2 Benchmarks"
-    publish = Publish.NONE
+    type = SoftwareType.BENCHMARK
     inceptionYear = "2021"
     description = "Emoji2 Benchmarks"
 }

@@ -42,6 +42,10 @@ import androidx.sqlite.db.SupportSQLiteQuery;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import io.reactivex.Completable;
+import io.reactivex.Observable;
+import io.reactivex.Single;
+
 import org.reactivestreams.Publisher;
 
 import java.util.Collection;
@@ -50,10 +54,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
-
-import io.reactivex.Completable;
-import io.reactivex.Observable;
-import io.reactivex.Single;
 
 @SuppressWarnings("SameParameterValue")
 @Dao
@@ -270,6 +270,9 @@ public abstract class UserDao {
 
     @Query("SELECT * FROM user where mAge > :age")
     public abstract DataSource.Factory<Integer, User> loadPagedByAge(int age);
+
+    @Query("SELECT * FROM user where mLastName = :name")
+    public abstract DataSource.Factory<Integer, User> loadPagedByLastname(String name);
 
     @RawQuery(observedEntities = User.class)
     public abstract DataSource.Factory<Integer, User> loadPagedByAgeWithObserver(

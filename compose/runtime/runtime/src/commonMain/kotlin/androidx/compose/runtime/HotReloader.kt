@@ -15,13 +15,17 @@
  */
 
 @file:OptIn(InternalComposeApi::class)
+
 package androidx.compose.runtime
+
+import androidx.annotation.RestrictTo
+import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
 
 /**
  * Apply Code Changes will invoke the two functions before and after a code swap.
  *
- * This forces the whole view hierarchy to be redrawn to invoke any code change that was
- * introduce in the code swap.
+ * This forces the whole view hierarchy to be redrawn to invoke any code change that was introduce
+ * in the code swap.
  *
  * All these are private as within JVMTI / JNI accessibility is mostly a formality.
  */
@@ -61,29 +65,56 @@ private class HotReloader {
 }
 
 /**
- * @suppress
+ * Simulates hot reload of all current compositions by disposing all composed content and restarting
+ * compositions. Calling this method switches recomposer into hot reload mode. Test-only API, not
+ * for use in production.
+ *
+ * @param context context for disposal.
  */
-@TestOnly
-fun simulateHotReload(context: Any) = HotReloader.simulateHotReload(context)
+@TestOnly fun simulateHotReload(context: Any) = HotReloader.simulateHotReload(context)
 
 /**
- * @suppress
+ * Invalidates composed groups with the given key. Calling this method switches recomposer into hot
+ * reload mode. Test-only API, not for use in production.
+ *
+ * @param key group key to invalidate.
  */
-@TestOnly
-fun invalidateGroupsWithKey(key: Int) = HotReloader.invalidateGroupsWithKey(key)
+@TestOnly fun invalidateGroupsWithKey(key: Int) = HotReloader.invalidateGroupsWithKey(key)
+
+/** Disables hot reload mode in recomposer. Test-only API, not for use in production. */
+@TestOnly fun disableHotReloadMode() = Recomposer.setHotReloadEnabled(false)
 
 /**
- * @suppress
+ * Get list of errors captured in composition. This list is only available when recomposer is in hot
+ * reload mode. Test-only API, not for use in production.
+ *
+ * @return pair of error and whether the error is recoverable.
+ */
+@Deprecated(
+    "currentCompositionErrors only reports errors that extend from Exception. This method is " +
+        "unsupported outside of Compose runtime tests. Internally, getCurrentCompositionErrors " +
+        "should be used instead."
+)
+@TestOnly
+fun currentCompositionErrors(): List<Pair<Exception, Boolean>> =
+    getCurrentCompositionErrors().mapNotNull { (cause, recoverable) ->
+        (cause as? Exception ?: return@mapNotNull null) to recoverable
+    }
+
+/**
+ * Get list of errors captured in composition. This list is only available when recomposer is in hot
+ * reload mode. Test-only API, not for use in production.
+ *
+ * @return pair of error and whether the error is recoverable.
  */
 // suppressing for test-only api
 @Suppress("ListIterator")
+@RestrictTo(LIBRARY_GROUP)
 @TestOnly
-fun currentCompositionErrors(): List<Pair<Exception, Boolean>> =
-    HotReloader.getCurrentErrors()
-        .map { it.cause to it.recoverable }
+fun getCurrentCompositionErrors(): List<Pair<Throwable, Boolean>> =
+    HotReloader.getCurrentErrors().map { it.cause to it.recoverable }
 
 /**
- * @suppress
+ * Clears current composition errors in hot reload mode. Test-only API, not for use in production.
  */
-@TestOnly
-fun clearCompositionErrors() = HotReloader.clearErrors()
+@TestOnly fun clearCompositionErrors() = HotReloader.clearErrors()

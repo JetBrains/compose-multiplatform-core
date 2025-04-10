@@ -60,6 +60,7 @@ class DeferredBooksDaoTest : TestDatabaseTest() {
     fun increaseBookSalesSingle() {
         val testObserver = TestObserver<Int>()
         booksDao.increaseBookSalesSingle(TestUtil.BOOK_1.bookId).subscribeWith(testObserver)
+        drain()
         testObserver.assertComplete()
         testObserver.assertValue(1)
     }
@@ -68,6 +69,7 @@ class DeferredBooksDaoTest : TestDatabaseTest() {
     fun increaseBookSalesMaybe() {
         val testObserver = TestObserver<Int>()
         booksDao.increaseBookSalesMaybe(TestUtil.BOOK_1.bookId).subscribeWith(testObserver)
+        drain()
         testObserver.assertComplete()
         testObserver.assertValue(1)
     }
@@ -76,6 +78,7 @@ class DeferredBooksDaoTest : TestDatabaseTest() {
     fun increaseBookSalesCompletable() {
         val testObserver = TestObserver<Int>()
         booksDao.increaseBookSalesCompletable(TestUtil.BOOK_1.bookId).subscribeWith(testObserver)
+        drain()
         testObserver.assertComplete()
     }
 
@@ -100,15 +103,14 @@ class DeferredBooksDaoTest : TestDatabaseTest() {
 
     @Test
     fun deleteUnsoldBooksSuspend() {
-        runBlocking {
-            assertThat(booksDao.deleteUnsoldBooksSuspend(), `is`(0))
-        }
+        runBlocking { assertThat(booksDao.deleteUnsoldBooksSuspend(), `is`(0)) }
     }
 
     @Test
     fun deleteUnsoldBooksSingle() {
         val testObserver = TestObserver<Int>()
         booksDao.deleteUnsoldBooksSingle().subscribeWith(testObserver)
+        drain()
         testObserver.assertComplete()
         testObserver.assertValue(0)
     }
@@ -117,6 +119,7 @@ class DeferredBooksDaoTest : TestDatabaseTest() {
     fun deleteUnsoldBooksMaybe() {
         val testObserver = TestObserver<Int>()
         booksDao.deleteUnsoldBooksMaybe().subscribeWith(testObserver)
+        drain()
         testObserver.assertComplete()
         testObserver.assertValue(0)
     }
@@ -125,6 +128,7 @@ class DeferredBooksDaoTest : TestDatabaseTest() {
     fun deleteUnsoldBooksCompletable() {
         val testObserver = TestObserver<Int>()
         booksDao.deleteUnsoldBooksCompletable().subscribeWith(testObserver)
+        drain()
         testObserver.assertComplete()
     }
 
@@ -157,6 +161,7 @@ class DeferredBooksDaoTest : TestDatabaseTest() {
     fun deleteBookWithIdsSingle() {
         val testObserver = TestObserver<Int>()
         booksDao.deleteBookWithIdsSingle(TestUtil.BOOK_1.bookId).subscribeWith(testObserver)
+        drain()
         testObserver.assertComplete()
         testObserver.assertValue(1)
     }
@@ -165,6 +170,7 @@ class DeferredBooksDaoTest : TestDatabaseTest() {
     fun deleteBookWithIdsMaybe() {
         val testObserver = TestObserver<Int>()
         booksDao.deleteBookWithIdsMaybe(TestUtil.BOOK_1.bookId).subscribeWith(testObserver)
+        drain()
         testObserver.assertComplete()
         testObserver.assertValue(1)
     }
@@ -173,6 +179,7 @@ class DeferredBooksDaoTest : TestDatabaseTest() {
     fun deleteBookWithIdsCompletable() {
         val testObserver = TestObserver<Int>()
         booksDao.deleteBookWithIdsCompletable(TestUtil.BOOK_1.bookId).subscribeWith(testObserver)
+        drain()
         testObserver.assertComplete()
     }
 
@@ -205,6 +212,7 @@ class DeferredBooksDaoTest : TestDatabaseTest() {
     fun insertPublisherSingle() {
         val testObserver = TestObserver<Long>()
         booksDao.insertPublisherSingle("ph3", "publisher 3").subscribeWith(testObserver)
+        drain()
         testObserver.assertComplete()
         assertThat(booksDao.getPublisher(testObserver.values()[0]), notNullValue())
     }
@@ -213,6 +221,7 @@ class DeferredBooksDaoTest : TestDatabaseTest() {
     fun insertPublisherMaybe() {
         val testObserver = TestObserver<Long>()
         booksDao.insertPublisherMaybe("ph3", "publisher 3").subscribeWith(testObserver)
+        drain()
         testObserver.assertComplete()
         assertThat(booksDao.getPublisher(testObserver.values()[0]), notNullValue())
     }
@@ -221,6 +230,7 @@ class DeferredBooksDaoTest : TestDatabaseTest() {
     fun insertPublisherCompletable() {
         val testObserver = TestObserver<Long>()
         booksDao.insertPublisherCompletable("ph3", "publisher 3").subscribeWith(testObserver)
+        drain()
         testObserver.assertComplete()
     }
 

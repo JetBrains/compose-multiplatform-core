@@ -16,17 +16,16 @@
 
 package androidx.camera.core.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.ReadableConfig;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 
 /**
  * Configuration containing IO related options.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public interface IoConfig extends ReadableConfig {
 
     // Option Declarations:
@@ -47,8 +46,7 @@ public interface IoConfig extends ReadableConfig {
      * @return The stored value or <code>valueIfMissing</code> if the value does not exist in this
      * configuration.
      */
-    @Nullable
-    default Executor getIoExecutor(@Nullable Executor valueIfMissing) {
+    default @Nullable Executor getIoExecutor(@Nullable Executor valueIfMissing) {
         return retrieveOption(OPTION_IO_EXECUTOR, valueIfMissing);
     }
 
@@ -59,8 +57,7 @@ public interface IoConfig extends ReadableConfig {
      * @return The stored value, if it exists in this configuration.
      * @throws IllegalArgumentException if the option does not exist in this configuration.
      */
-    @NonNull
-    default Executor getIoExecutor() {
+    default @NonNull Executor getIoExecutor() {
         return retrieveOption(OPTION_IO_EXECUTOR);
     }
 
@@ -77,7 +74,6 @@ public interface IoConfig extends ReadableConfig {
          * @param executor The executor which will be used for IO tasks.
          * @return the current Builder.
          */
-        @NonNull
-        B setIoExecutor(@NonNull Executor executor);
+        @NonNull B setIoExecutor(@NonNull Executor executor);
     }
 }

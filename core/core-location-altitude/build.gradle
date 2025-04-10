@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
-import androidx.build.BundleInsideHelper
-import androidx.build.LibraryType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -25,34 +31,27 @@ plugins {
 }
 
 android {
-    namespace "androidx.core.location.altitude"
+    namespace = "androidx.core.location.altitude"
 
-    buildTypes.all {
+    buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
 }
 
-BundleInsideHelper.forInsideAar(
-        project,
-        /* from = */ "com.google.protobuf",
-        /* to =   */ "androidx.core.location.altitude.impl.proto",
-        // proto-lite dependency includes .proto files, which are not used and would clash if
-        // users also use proto library directly
-        /* dropResourcesWithSuffix = */ ".proto"
-)
-
 dependencies {
-    api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.5.0")
+    api(libs.jspecify)
+    api("androidx.annotation:annotation:1.8.1")
 
-    bundleInside(project(":core:core-location-altitude-proto"))
-
+    implementation(project(":core:core-location-altitude-proto"))
+    implementation("androidx.core:core:1.13.0")
+    implementation(project(":room:room-runtime"))
+    implementation(project(":room:room-common"))
+    implementation(project(":sqlite:sqlite"))
     implementation(libs.autoValueAnnotations)
-    implementation(project(":core:core"))
-    implementation("androidx.room:room-runtime:2.4.3")
+    implementation(libs.kotlinStdlib)
 
     annotationProcessor(libs.autoValue)
-    annotationProcessor("androidx.room:room-compiler:2.4.3")
+    annotationProcessor(project(":room:room-compiler"))
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testCore)
@@ -63,9 +62,8 @@ dependencies {
 
 androidx {
     name = "Location Altitude"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.CORE_LOCATION_ALTITUDE
     inceptionYear = "2022"
     description = "Provides compatibility APIs concerning location altitudes."
-    metalavaK2UastEnabled = true
 }

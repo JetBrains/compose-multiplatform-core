@@ -16,8 +16,6 @@
 
 package androidx.appsearch.testutil;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.localstorage.AppSearchLogger;
 import androidx.appsearch.localstorage.stats.CallStats;
@@ -25,9 +23,13 @@ import androidx.appsearch.localstorage.stats.InitializeStats;
 import androidx.appsearch.localstorage.stats.OptimizeStats;
 import androidx.appsearch.localstorage.stats.PutDocumentStats;
 import androidx.appsearch.localstorage.stats.RemoveStats;
+import androidx.appsearch.localstorage.stats.SearchSessionStats;
 import androidx.appsearch.localstorage.stats.SearchStats;
 import androidx.appsearch.localstorage.stats.SetSchemaStats;
 import androidx.appsearch.stats.SchemaMigrationStats;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,29 +42,23 @@ import java.util.List;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class SimpleTestLogger implements AppSearchLogger {
     /** Holds {@link CallStats} after logging. */
-    @Nullable
-    public CallStats mCallStats;
+    public @Nullable CallStats mCallStats;
     /** Holds {@link PutDocumentStats} after logging. */
-    @Nullable
-    public PutDocumentStats mPutDocumentStats;
+    public @Nullable PutDocumentStats mPutDocumentStats;
     /** Holds {@link InitializeStats} after logging. */
-    @Nullable
-    public InitializeStats mInitializeStats;
+    public @Nullable InitializeStats mInitializeStats;
     /** Holds {@link SearchStats} after logging. */
-    @Nullable
-    public SearchStats mSearchStats;
+    public @Nullable SearchStats mSearchStats;
     /** Holds {@link RemoveStats} after logging. */
-    @Nullable
-    public RemoveStats mRemoveStats;
+    public @Nullable RemoveStats mRemoveStats;
     /** Holds {@link OptimizeStats} after logging. */
-    @Nullable
-    public OptimizeStats mOptimizeStats;
+    public @Nullable OptimizeStats mOptimizeStats;
     /** Holds {@link SetSchemaStats} after logging. */
-    @NonNull
-    public List<SetSchemaStats> mSetSchemaStats = new ArrayList<>();
+    public @NonNull List<SetSchemaStats> mSetSchemaStats = new ArrayList<>();
     /** Holds {@link androidx.appsearch.stats.SchemaMigrationStats} after logging. */
-    @Nullable
-    public SchemaMigrationStats mSchemaMigrationStats;
+    public @Nullable SchemaMigrationStats mSchemaMigrationStats;
+    /** Holds {@link SearchSessionStats} after logging. */
+    public @NonNull List<SearchSessionStats> mSearchSessionsStats = new ArrayList<>();
 
     @Override
     public void logStats(@NonNull CallStats stats) {
@@ -102,5 +98,10 @@ public final class SimpleTestLogger implements AppSearchLogger {
     @Override
     public void logStats(@NonNull SchemaMigrationStats stats) {
         mSchemaMigrationStats = stats;
+    }
+
+    @Override
+    public void logStats(@NonNull List<SearchSessionStats> searchSessionsStats) {
+        mSearchSessionsStats.addAll(searchSessionsStats);
     }
 }

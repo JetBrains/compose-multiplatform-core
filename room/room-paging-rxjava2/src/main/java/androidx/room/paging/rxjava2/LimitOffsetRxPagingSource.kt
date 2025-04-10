@@ -24,13 +24,15 @@ import androidx.paging.PagingState
 import androidx.paging.rxjava2.RxPagingSource
 import androidx.room.RoomDatabase
 import androidx.room.RoomSQLiteQuery
-import androidx.room.RxRoom.createSingle
+import androidx.room.RxRoom
+import androidx.room.paging.CursorSQLiteStatement
 import androidx.room.paging.util.INITIAL_ITEM_COUNT
 import androidx.room.paging.util.INVALID
 import androidx.room.paging.util.ThreadSafeInvalidationObserver
 import androidx.room.paging.util.getClippedRefreshKey
 import androidx.room.paging.util.queryDatabase
 import androidx.room.paging.util.queryItemCount
+import androidx.sqlite.SQLiteStatement
 import androidx.sqlite.db.SupportSQLiteQuery
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
@@ -48,30 +50,24 @@ abstract class LimitOffsetRxPagingSource<Value : Any>(
         supportSQLiteQuery: SupportSQLiteQuery,
         db: RoomDatabase,
         vararg tables: String
-    ) : this (
-        sourceQuery = RoomSQLiteQuery.copyFrom(supportSQLiteQuery),
-        db = db,
-        tables = tables
-    )
+    ) : this(sourceQuery = RoomSQLiteQuery.copyFrom(supportSQLiteQuery), db = db, tables = tables)
 
+    @VisibleForTesting internal val itemCount: AtomicInteger = AtomicInteger(INITIAL_ITEM_COUNT)
     @VisibleForTesting
-    internal val itemCount: AtomicInteger = AtomicInteger(INITIAL_ITEM_COUNT)
-    @VisibleForTesting
-    internal val observer = ThreadSafeInvalidationObserver(tables = tables) {
-        invalidate()
-    }
+    internal val observer = ThreadSafeInvalidationObserver(tables = tables) { invalidate() }
 
     override fun loadSingle(params: LoadParams<Int>): Single<LoadResult<Int, Value>> {
         val scheduler = Schedulers.from(db.queryExecutor)
-        return createSingle {
-            observer.registerIfNecessary(db)
-            val tempCount = itemCount.get()
-            if (tempCount == INITIAL_ITEM_COUNT) {
-                initialLoad(params)
-            } else {
-                nonInitialLoad(tempCount, params)
+        return RxRoom.createSingle {
+                observer.registerIfNecessary(db)
+                val tempCount = itemCount.get()
+                if (tempCount == INITIAL_ITEM_COUNT) {
+                    initialLoad(params)
+                } else {
+                    nonInitialLoad(tempCount, params)
+                }
             }
-        }.subscribeOn(scheduler)
+            .subscribeOn(scheduler)
     }
 
     private fun initialLoad(params: LoadParams<Int>): LoadResult<Int, Value> {
@@ -91,13 +87,14 @@ abstract class LimitOffsetRxPagingSource<Value : Any>(
     }
 
     private fun nonInitialLoad(tempCount: Int, params: LoadParams<Int>): LoadResult<Int, Value> {
-        val result = queryDatabase(
-            params = params,
-            sourceQuery = sourceQuery,
-            db = db,
-            itemCount = tempCount,
-            convertRows = ::convertRows
-        )
+        val result =
+            queryDatabase(
+                params = params,
+                sourceQuery = sourceQuery,
+                db = db,
+                itemCount = tempCount,
+                convertRows = ::convertRows
+            )
         // manually check if database has been updated. If so, the observer's
         // invalidation callback will invalidate this paging source
         db.invalidationTracker.refreshVersionsSync()
@@ -106,7 +103,16 @@ abstract class LimitOffsetRxPagingSource<Value : Any>(
     }
 
     @NonNull
-    protected abstract fun convertRows(cursor: Cursor): List<Value>
+    protected open fun convertRows(cursor: Cursor): List<Value> {
+        return convertRows(CursorSQLiteStatement(cursor))
+    }
+
+    protected open fun convertRows(statement: SQLiteStatement): List<Value> {
+        throw NotImplementedError(
+            "Unexpected call to a function with no implementation that Room is suppose to " +
+                "generate. Please file a bug at: $BUG_LINK."
+        )
+    }
 
     override fun getRefreshKey(state: PagingState<Int, Value>): Int? {
         return state.getClippedRefreshKey()
@@ -114,4 +120,9 @@ abstract class LimitOffsetRxPagingSource<Value : Any>(
 
     override val jumpingSupported: Boolean
         get() = true
+
+    companion object {
+        const val BUG_LINK =
+            "https://issuetracker.google.com/issues/new?component=413107&template=1096568"
+    }
 }

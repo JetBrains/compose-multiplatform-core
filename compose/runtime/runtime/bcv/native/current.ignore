@@ -1,0 +1,4 @@
+// Baseline format: 1.0
+[linuxX64]: Removed declaration androidx.compose.runtime/Immutable from androidx.compose.runtime:runtime
+[linuxX64]: Removed declaration androidx.compose.runtime/Stable from androidx.compose.runtime:runtime
+[linuxX64]: Removed declaration androidx.compose.runtime/StableMarker from androidx.compose.runtime:runtime

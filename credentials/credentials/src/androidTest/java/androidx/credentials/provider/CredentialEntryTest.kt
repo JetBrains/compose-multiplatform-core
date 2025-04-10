@@ -37,70 +37,58 @@ import org.junit.runner.RunWith
 class CredentialEntryTest {
     private val mContext = ApplicationProvider.getApplicationContext<Context>()
     private val mIntent = Intent()
-    private val mPendingIntent = PendingIntent.getActivity(mContext, 0, mIntent,
-        PendingIntent.FLAG_IMMUTABLE)
+    private val mPendingIntent =
+        PendingIntent.getActivity(mContext, 0, mIntent, PendingIntent.FLAG_IMMUTABLE)
 
     companion object {
-        private val BEGIN_OPTION_CUSTOM: BeginGetCredentialOption = BeginGetCustomCredentialOption(
-            "id", "custom", Bundle()
-        )
-        private val BEGIN_OPTION_PASSWORD: BeginGetPasswordOption = BeginGetPasswordOption(
-            emptySet(), Bundle.EMPTY, "id"
-        )
+        private val BEGIN_OPTION_CUSTOM: BeginGetCredentialOption =
+            BeginGetCustomCredentialOption("id", "custom", Bundle())
+        private val BEGIN_OPTION_PASSWORD: BeginGetPasswordOption =
+            BeginGetPasswordOption(emptySet(), Bundle.EMPTY, "id")
         private val BEGIN_OPTION_PUBLIC_KEY: BeginGetPublicKeyCredentialOption =
             BeginGetPublicKeyCredentialOption(
-                Bundle.EMPTY, "id", "{\"key1\":{\"key2\":{\"key3\":\"value3\"}}}"
-        )
+                Bundle.EMPTY,
+                "id",
+                "{\"key1\":{\"key2\":{\"key3\":\"value3\"}}}"
+            )
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun createFrom_passwordCredential() {
-        val entry = PasswordCredentialEntry(
-            mContext,
-            "username",
-            mPendingIntent,
-            BEGIN_OPTION_PASSWORD
-        )
+        val entry =
+            PasswordCredentialEntry(mContext, "username", mPendingIntent, BEGIN_OPTION_PASSWORD)
         assertNotNull(entry)
 
         val slice = PasswordCredentialEntry.toSlice(entry)
         assertNotNull(slice)
 
-        val result = CredentialEntry.createFrom(slice!!)
+        val result = CredentialEntry.fromSlice(slice!!)
         assertThat(result).isNotNull()
         assertThat(result!!.type).isEqualTo(TYPE_PASSWORD_CREDENTIAL)
     }
 
     @Test
     fun createFrom_publicKeyCredential() {
-        val entry = PublicKeyCredentialEntry(
-            mContext,
-            "username",
-            mPendingIntent,
-            BEGIN_OPTION_PUBLIC_KEY
-        )
+        val entry =
+            PublicKeyCredentialEntry(mContext, "username", mPendingIntent, BEGIN_OPTION_PUBLIC_KEY)
         assertNotNull(entry)
 
         val slice = PublicKeyCredentialEntry.toSlice(entry)
         assertNotNull(slice)
 
-        val result = CredentialEntry.createFrom(slice!!)
+        val result = CredentialEntry.fromSlice(slice!!)
         assertNotNull(result)
         assertThat(result!!.type).isEqualTo(TYPE_PUBLIC_KEY_CREDENTIAL)
     }
 
     @Test
     fun createFrom_customCredential() {
-        val entry = CustomCredentialEntry(
-            mContext,
-            "title",
-            mPendingIntent,
-            BEGIN_OPTION_CUSTOM
-        )
+        val entry = CustomCredentialEntry(mContext, "title", mPendingIntent, BEGIN_OPTION_CUSTOM)
         val slice = CustomCredentialEntry.toSlice(entry)
         assertNotNull(slice)
 
-        val result = CredentialEntry.createFrom(slice!!)
+        val result = CredentialEntry.fromSlice(slice!!)
         assertThat(result).isNotNull()
         assertThat(result!!.type).isEqualTo("custom")
     }

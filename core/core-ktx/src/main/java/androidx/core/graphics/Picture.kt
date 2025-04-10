@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 20188 The Android Open Source Project
+ * Copyright (C) 2018 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,8 @@ import android.graphics.Canvas
 import android.graphics.Picture
 
 /**
- * Creates a new [Canvas] to record commands in this [Picture], executes the specified
- * [block] on the newly created canvas and returns this [Picture]. Example:
- *
+ * Creates a new [Canvas] to record commands in this [Picture], executes the specified [block] on
+ * the newly created canvas and returns this [Picture]. Example:
  * ```
  * return myPicture.record(1280, 720) {
  *    drawLine(…)

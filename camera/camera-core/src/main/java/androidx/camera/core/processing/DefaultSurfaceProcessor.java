@@ -32,12 +32,10 @@ import android.util.Size;
 import android.view.Surface;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import androidx.arch.core.util.Function;
+import androidx.camera.core.CameraXThreads;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.Logger;
 import androidx.camera.core.SurfaceOutput;
@@ -46,6 +44,7 @@ import androidx.camera.core.SurfaceRequest;
 import androidx.camera.core.impl.utils.MatrixExt;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.Futures;
+import androidx.camera.core.processing.util.GLUtils.InputFormat;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 
 import com.google.auto.value.AutoValue;
@@ -53,9 +52,13 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import kotlin.Triple;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -71,7 +74,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p> This implementation simply copies the frame from the source to the destination with the
  * transformation defined in {@link SurfaceOutput#updateTransformMatrix}.
  */
-@RequiresApi(21)
 public class DefaultSurfaceProcessor implements SurfaceProcessorInternal,
         SurfaceTexture.OnFrameAvailableListener {
     private static final String TAG = "DefaultSurfaceProcessor";
@@ -98,24 +100,25 @@ public class DefaultSurfaceProcessor implements SurfaceProcessorInternal,
 
     /** Constructs {@link DefaultSurfaceProcessor} with default shaders. */
     DefaultSurfaceProcessor(@NonNull DynamicRange dynamicRange) {
-        this(dynamicRange, ShaderProvider.DEFAULT);
+        this(dynamicRange, Collections.emptyMap());
     }
 
     /**
      * Constructs {@link DefaultSurfaceProcessor} with custom shaders.
      *
-     * @param shaderProvider custom shader provider for OpenGL rendering.
-     * @throws IllegalArgumentException if the shaderProvider provides invalid shader.
+     * @param shaderProviderOverrides custom shader providers for OpenGL rendering, for each input
+     *                                format.
+     * @throws IllegalArgumentException if any shaderProvider override provides invalid shader.
      */
     DefaultSurfaceProcessor(@NonNull DynamicRange dynamicRange,
-            @NonNull ShaderProvider shaderProvider) {
-        mGlThread = new HandlerThread("GL Thread");
+            @NonNull Map<InputFormat, ShaderProvider> shaderProviderOverrides) {
+        mGlThread = new HandlerThread(CameraXThreads.TAG + "GL Thread");
         mGlThread.start();
         mGlHandler = new Handler(mGlThread.getLooper());
         mGlExecutor = CameraXExecutors.newHandlerExecutor(mGlHandler);
         mGlRenderer = new OpenGlRenderer();
         try {
-            initGlRenderer(dynamicRange, shaderProvider);
+            initGlRenderer(dynamicRange, shaderProviderOverrides);
         } catch (RuntimeException e) {
             release();
             throw e;
@@ -137,7 +140,17 @@ public class DefaultSurfaceProcessor implements SurfaceProcessorInternal,
             surfaceTexture.setDefaultBufferSize(surfaceRequest.getResolution().getWidth(),
                     surfaceRequest.getResolution().getHeight());
             Surface surface = new Surface(surfaceTexture);
+            surfaceRequest.setTransformationInfoListener(mGlExecutor, transformationInfo -> {
+                InputFormat inputFormat = InputFormat.DEFAULT;
+                if (surfaceRequest.getDynamicRange().is10BitHdr()
+                        && transformationInfo.hasCameraTransform()) {
+                    inputFormat = InputFormat.YUV;
+                }
+
+                mGlRenderer.setInputFormat(inputFormat);
+            });
             surfaceRequest.provideSurface(surface, mGlExecutor, result -> {
+                surfaceRequest.clearTransformationInfoListener();
                 surfaceTexture.setOnFrameAvailableListener(null);
                 surfaceTexture.release();
                 surface.release();
@@ -185,8 +198,7 @@ public class DefaultSurfaceProcessor implements SurfaceProcessorInternal,
     }
 
     @Override
-    @NonNull
-    public ListenableFuture<Void> snapshot(
+    public @NonNull ListenableFuture<Void> snapshot(
             @IntRange(from = 0, to = 100) int jpegQuality,
             @IntRange(from = 0, to = 359) int rotationDegrees) {
         return Futures.nonCancellationPropagating(CallbackToFutureAdapter.getFuture(
@@ -309,9 +321,8 @@ public class DefaultSurfaceProcessor implements SurfaceProcessorInternal,
         mPendingSnapshots.clear();
     }
 
-    @NonNull
-    private Bitmap getBitmap(@NonNull Size size,
-            @NonNull float[] textureTransform,
+    private @NonNull Bitmap getBitmap(@NonNull Size size,
+            float @NonNull [] textureTransform,
             int rotationDegrees) {
         float[] snapshotTransform = textureTransform.clone();
 
@@ -346,11 +357,11 @@ public class DefaultSurfaceProcessor implements SurfaceProcessorInternal,
     }
 
     private void initGlRenderer(@NonNull DynamicRange dynamicRange,
-            @NonNull ShaderProvider shaderProvider) {
+            @NonNull Map<InputFormat, ShaderProvider> shaderProviderOverrides) {
         ListenableFuture<Void> initFuture = CallbackToFutureAdapter.getFuture(completer -> {
             executeSafely(() -> {
                 try {
-                    mGlRenderer.init(dynamicRange, shaderProvider);
+                    mGlRenderer.init(dynamicRange, shaderProviderOverrides);
                     completer.set(null);
                 } catch (RuntimeException e) {
                     completer.setException(e);
@@ -405,14 +416,12 @@ public class DefaultSurfaceProcessor implements SurfaceProcessorInternal,
         @IntRange(from = 0, to = 359)
         abstract int getRotationDegrees();
 
-        @NonNull
-        abstract CallbackToFutureAdapter.Completer<Void> getCompleter();
+        abstract CallbackToFutureAdapter.@NonNull Completer<Void> getCompleter();
 
-        @NonNull
-        static AutoValue_DefaultSurfaceProcessor_PendingSnapshot of(
+        static @NonNull AutoValue_DefaultSurfaceProcessor_PendingSnapshot of(
                 @IntRange(from = 0, to = 100) int jpegQuality,
                 @IntRange(from = 0, to = 359) int rotationDegrees,
-                @NonNull CallbackToFutureAdapter.Completer<Void> completer) {
+                CallbackToFutureAdapter.@NonNull Completer<Void> completer) {
             return new AutoValue_DefaultSurfaceProcessor_PendingSnapshot(
                     jpegQuality, rotationDegrees, completer);
         }
@@ -433,8 +442,8 @@ public class DefaultSurfaceProcessor implements SurfaceProcessorInternal,
         /**
          * Creates a new {@link DefaultSurfaceProcessor} with no-op shader.
          */
-        @NonNull
-        public static SurfaceProcessorInternal newInstance(@NonNull DynamicRange dynamicRange) {
+        public static @NonNull SurfaceProcessorInternal newInstance(
+                @NonNull DynamicRange dynamicRange) {
             return sSupplier.apply(dynamicRange);
         }
 

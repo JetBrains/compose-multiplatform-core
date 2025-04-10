@@ -16,6 +16,10 @@
 
 package androidx.camera.core;
 
+import static androidx.camera.core.CameraUnavailableException.CAMERA_ERROR;
+import static androidx.camera.core.impl.CameraValidator.CameraIdListIncorrectException;
+import static androidx.camera.core.impl.CameraValidator.validateCameras;
+
 import android.app.Application;
 import android.content.ComponentName;
 import android.content.Context;
@@ -30,25 +34,32 @@ import android.util.SparseArray;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+import androidx.annotation.VisibleForTesting;
+import androidx.arch.core.util.Function;
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraFactory;
+import androidx.camera.core.impl.CameraProviderExecutionState;
 import androidx.camera.core.impl.CameraRepository;
 import androidx.camera.core.impl.CameraThreadConfig;
-import androidx.camera.core.impl.CameraValidator;
 import androidx.camera.core.impl.MetadataHolderService;
+import androidx.camera.core.impl.QuirkSettings;
+import androidx.camera.core.impl.QuirkSettingsHolder;
+import androidx.camera.core.impl.QuirkSettingsLoader;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.impl.utils.ContextUtil;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.os.HandlerCompat;
 import androidx.core.util.Preconditions;
+import androidx.tracing.Trace;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Executor;
@@ -59,14 +70,12 @@ import java.util.concurrent.Executor;
  * <p>This is a singleton class responsible for managing the set of camera instances.
  *
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
+@OptIn(markerClass = ExperimentalRetryPolicy.class)
 @MainThread
 @RestrictTo(Scope.LIBRARY_GROUP)
 public final class CameraX {
     private static final String TAG = "CameraX";
     private static final String RETRY_TOKEN = "retry_token";
-    private static final long WAIT_INITIALIZED_TIMEOUT_MILLIS = 3000L;
-    private static final long RETRY_SLEEP_MILLIS = 500L;
 
     final CameraRepository mCameraRepository = new CameraRepository();
     private final Object mInitializeLock = new Object();
@@ -75,14 +84,11 @@ public final class CameraX {
 
     private final Executor mCameraExecutor;
     private final Handler mSchedulerHandler;
-    @Nullable
-    private final HandlerThread mSchedulerThread;
+    private final @Nullable HandlerThread mSchedulerThread;
     private CameraFactory mCameraFactory;
     private CameraDeviceSurfaceManager mSurfaceManager;
     private UseCaseConfigFactory mDefaultConfigFactory;
-    // TODO(b/161302102): Remove the stored context. Only make use of the context within the
-    //  called method.
-    private Context mAppContext;
+    private final RetryPolicy mRetryPolicy;
     private final ListenableFuture<Void> mInitInternalFuture;
 
     @GuardedBy("mInitializeLock")
@@ -90,13 +96,20 @@ public final class CameraX {
     @GuardedBy("mInitializeLock")
     private ListenableFuture<Void> mShutdownInternalFuture = Futures.immediateFuture(null);
     private final Integer mMinLogLevel;
+    private final @CameraXConfig.ImplType int mConfigImplType;
 
     private static final Object MIN_LOG_LEVEL_LOCK = new Object();
     @GuardedBy("MIN_LOG_LEVEL_LOCK")
     private static final SparseArray<Integer> sMinLogLevelReferenceCountMap = new SparseArray<>();
 
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public CameraX(@NonNull Context context, @Nullable CameraXConfig.Provider configProvider) {
+    public CameraX(@NonNull Context context, CameraXConfig.@Nullable Provider configProvider) {
+        this(context, configProvider, new QuirkSettingsLoader());
+    }
+
+    @VisibleForTesting
+    CameraX(@NonNull Context context, CameraXConfig.@Nullable Provider configProvider,
+            @NonNull Function<Context, QuirkSettings> quirkSettingsLoader) {
         if (configProvider != null) {
             mCameraXConfig = configProvider.getCameraXConfig();
         } else {
@@ -111,6 +124,9 @@ public final class CameraX {
 
             mCameraXConfig = provider.getCameraXConfig();
         }
+        // Update quirks settings as early as possible since device quirks are loaded statically.
+        updateQuirkSettings(context, mCameraXConfig.getQuirkSettings(), quirkSettingsLoader);
+        mConfigImplType = mCameraXConfig.getConfigImplType();
 
         Executor executor = mCameraXConfig.getCameraExecutor(null);
         Handler schedulerHandler = mCameraXConfig.getSchedulerHandler(null);
@@ -129,6 +145,8 @@ public final class CameraX {
         mMinLogLevel = mCameraXConfig.retrieveOption(CameraXConfig.OPTION_MIN_LOGGING_LEVEL, null);
         increaseMinLogLevelReference(mMinLogLevel);
 
+        mRetryPolicy = new RetryPolicy.Builder(
+                mCameraXConfig.getCameraProviderInitRetryPolicy()).build();
         mInitInternalFuture = initInternal(context);
     }
 
@@ -138,9 +156,8 @@ public final class CameraX {
      * @throws IllegalStateException if the {@link CameraFactory} has not been set, due to being
      *                               uninitialized.
      */
-    @NonNull
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public CameraFactory getCameraFactory() {
+    public @NonNull CameraFactory getCameraFactory() {
         if (mCameraFactory == null) {
             throw new IllegalStateException("CameraX not initialized yet.");
         }
@@ -148,9 +165,8 @@ public final class CameraX {
         return mCameraFactory;
     }
 
-    @Nullable
     @SuppressWarnings("deprecation")
-    private static CameraXConfig.Provider getConfigProvider(@NonNull Context context) {
+    private static CameraXConfig.@Nullable Provider getConfigProvider(@NonNull Context context) {
         CameraXConfig.Provider configProvider = null;
         Application application = ContextUtil.getApplicationFromContext(context);
         if (application instanceof CameraXConfig.Provider) {
@@ -199,14 +215,63 @@ public final class CameraX {
     }
 
     /**
+     * Updates the global {@link QuirkSettings} instance based on provided settings or
+     * application metadata.
+     *
+     * <p>This method determines the source of the quirk settings to be used:
+     *
+     * <ol>
+     *   <li>If `cameraXConfigQuirkSettings` is not null, those settings are used directly.</li>
+     *   <li>Otherwise, if the application's meta-data contains quirk settings, those are loaded
+     *       using {@link QuirkSettingsLoader}.</li>
+     *   <li>If neither of the above is available, the default {@link QuirkSettings} are used.</li>
+     * </ol>
+     *
+     * <p>The determined quirk settings are then set as the global instance in
+     * {@link QuirkSettingsHolder}.
+     *
+     * @param context                    The context used for loading quirk settings from app
+     *                                   metadata.
+     * @param cameraXConfigQuirkSettings Quirk settings provided through the CameraX configuration,
+     *                                   or null if not available.
+     * @param quirkSettingsLoader        Typically a {@link QuirkSettingsLoader} instance to load
+     *                                   settings from context. In unit tests, this may be an
+     *                                   fake implementation.
+     */
+    private static void updateQuirkSettings(@NonNull Context context,
+            @Nullable QuirkSettings cameraXConfigQuirkSettings,
+            @NonNull Function<Context, QuirkSettings> quirkSettingsLoader) {
+        QuirkSettings quirkSettings;
+        if (cameraXConfigQuirkSettings != null) {
+            quirkSettings = cameraXConfigQuirkSettings;
+            Logger.d(TAG, "QuirkSettings from CameraXConfig: " + quirkSettings);
+        } else {
+            quirkSettings = quirkSettingsLoader.apply(context);
+            Logger.d(TAG, "QuirkSettings from app metadata: " + quirkSettings);
+        }
+        if (quirkSettings == null) {
+            quirkSettings = QuirkSettingsHolder.DEFAULT;
+            Logger.d(TAG, "QuirkSettings by default: " + quirkSettings);
+        }
+        QuirkSettingsHolder.instance().set(quirkSettings);
+    }
+
+    /**
+     * Returns the config impl type of the instance.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public @CameraXConfig.ImplType int getConfigImplType() {
+        return mConfigImplType;
+    }
+
+    /**
      * Returns the {@link CameraDeviceSurfaceManager} instance.
      *
      * @throws IllegalStateException if the {@link CameraDeviceSurfaceManager} has not been set, due
      *                               to being uninitialized.
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public CameraDeviceSurfaceManager getCameraDeviceSurfaceManager() {
+    public @NonNull CameraDeviceSurfaceManager getCameraDeviceSurfaceManager() {
         if (mSurfaceManager == null) {
             throw new IllegalStateException("CameraX not initialized yet.");
         }
@@ -219,8 +284,7 @@ public final class CameraX {
      *
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public CameraRepository getCameraRepository() {
+    public @NonNull CameraRepository getCameraRepository() {
         return mCameraRepository;
     }
 
@@ -229,8 +293,7 @@ public final class CameraX {
      *
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public UseCaseConfigFactory getDefaultConfigFactory() {
+    public @NonNull UseCaseConfigFactory getDefaultConfigFactory() {
         if (mDefaultConfigFactory == null) {
             throw new IllegalStateException("CameraX not initialized yet.");
         }
@@ -243,8 +306,7 @@ public final class CameraX {
      *
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public ListenableFuture<Void> getInitializeFuture() {
+    public @NonNull ListenableFuture<Void> getInitializeFuture() {
         return mInitInternalFuture;
     }
 
@@ -253,8 +315,7 @@ public final class CameraX {
      *
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public ListenableFuture<Void> shutdown() {
+    public @NonNull ListenableFuture<Void> shutdown() {
         return shutdownInternal();
     }
 
@@ -265,7 +326,7 @@ public final class CameraX {
             mInitState = InternalInitState.INITIALIZING;
             return CallbackToFutureAdapter.getFuture(
                     completer -> {
-                        initAndRetryRecursively(mCameraExecutor, SystemClock.elapsedRealtime(),
+                        initAndRetryRecursively(mCameraExecutor, SystemClock.elapsedRealtime(), 1,
                                 context, completer);
                         return "CameraX initInternal";
                     });
@@ -278,16 +339,13 @@ public final class CameraX {
     private void initAndRetryRecursively(
             @NonNull Executor cameraExecutor,
             long startMs,
+            int attemptCount,
             @NonNull Context context,
-            @NonNull CallbackToFutureAdapter.Completer<Void> completer) {
+            CallbackToFutureAdapter.@NonNull Completer<Void> completer) {
         cameraExecutor.execute(() -> {
+            Trace.beginSection("CX:initAndRetryRecursively");
+            Context appContext = ContextUtil.getApplicationContext(context);
             try {
-                // TODO(b/161302102): Remove the stored context. Only make use of
-                //  the context within the called method.
-                mAppContext = ContextUtil.getApplicationFromContext(context);
-                if (mAppContext == null) {
-                    mAppContext = ContextUtil.getApplicationContext(context);
-                }
                 CameraFactory.Provider cameraFactoryProvider =
                         mCameraXConfig.getCameraFactoryProvider(null);
                 if (cameraFactoryProvider == null) {
@@ -303,7 +361,7 @@ public final class CameraX {
                         mCameraXConfig.getAvailableCamerasLimiter(null);
                 long cameraOpenRetryMaxTimeoutInMillis =
                         mCameraXConfig.getCameraOpenRetryMaxTimeoutInMillisWhileResuming();
-                mCameraFactory = cameraFactoryProvider.newInstance(mAppContext,
+                mCameraFactory = cameraFactoryProvider.newInstance(appContext,
                         cameraThreadConfig,
                         availableCamerasLimiter,
                         cameraOpenRetryMaxTimeoutInMillis);
@@ -314,7 +372,7 @@ public final class CameraX {
                             "Invalid app configuration provided. Missing "
                                     + "CameraDeviceSurfaceManager."));
                 }
-                mSurfaceManager = surfaceManagerProvider.newInstance(mAppContext,
+                mSurfaceManager = surfaceManagerProvider.newInstance(appContext,
                         mCameraFactory.getCameraManager(),
                         mCameraFactory.getAvailableCameraIds());
 
@@ -325,7 +383,7 @@ public final class CameraX {
                             "Invalid app configuration provided. Missing "
                                     + "UseCaseConfigFactory."));
                 }
-                mDefaultConfigFactory = configFactoryProvider.newInstance(mAppContext);
+                mDefaultConfigFactory = configFactoryProvider.newInstance(appContext);
 
                 if (cameraExecutor instanceof CameraExecutor) {
                     CameraExecutor executor = (CameraExecutor) cameraExecutor;
@@ -335,33 +393,48 @@ public final class CameraX {
                 mCameraRepository.init(mCameraFactory);
 
                 // Please ensure only validate the camera at the last of the initialization.
-                CameraValidator.validateCameras(mAppContext, mCameraRepository,
-                        availableCamerasLimiter);
+                validateCameras(appContext, mCameraRepository, availableCamerasLimiter);
 
                 // Set completer to null if the init was successful.
+                if (attemptCount > 1) {
+                    // Reset execution trace status on success
+                    traceExecutionState(null);
+                }
                 setStateToInitialized();
                 completer.set(null);
-            } catch (CameraValidator.CameraIdListIncorrectException | InitializationException
-                    | RuntimeException e) {
-                if (SystemClock.elapsedRealtime() - startMs
-                        < WAIT_INITIALIZED_TIMEOUT_MILLIS - RETRY_SLEEP_MILLIS) {
+            } catch (CameraIdListIncorrectException | InitializationException
+                     | RuntimeException e) {
+                RetryPolicy.ExecutionState executionState =
+                        new CameraProviderExecutionState(startMs, attemptCount, e);
+                RetryPolicy.RetryConfig retryConfig = mRetryPolicy.onRetryDecisionRequested(
+                        executionState);
+                traceExecutionState(executionState);
+                if (retryConfig.shouldRetry() && attemptCount < Integer.MAX_VALUE) {
                     Logger.w(TAG, "Retry init. Start time " + startMs + " current time "
                             + SystemClock.elapsedRealtime(), e);
                     HandlerCompat.postDelayed(mSchedulerHandler, () -> initAndRetryRecursively(
-                            cameraExecutor, startMs, mAppContext, completer), RETRY_TOKEN,
-                            RETRY_SLEEP_MILLIS);
+                            cameraExecutor, startMs, attemptCount + 1, appContext,
+                            completer), RETRY_TOKEN, retryConfig.getRetryDelayInMillis());
 
                 } else {
                     synchronized (mInitializeLock) {
                         mInitState = InternalInitState.INITIALIZING_ERROR;
                     }
-                    if (e instanceof CameraValidator.CameraIdListIncorrectException) {
-                        // Ignore the camera validation failure if it reaches the maximum retry
-                        // time. Set complete.
-                        Logger.e(TAG, "The device might underreport the amount of the cameras. "
-                                + "Finish the initialize task since we are already reaching the "
-                                + "maximum number of retries.");
+                    if (retryConfig.shouldCompleteWithoutFailure()) {
+                        // Ignoring camera failure for compatibility reasons. Initialization will
+                        // be marked as complete, but some camera features might be unavailable.
+                        setStateToInitialized();
                         completer.set(null);
+                    } else if (e instanceof CameraIdListIncorrectException) {
+                        String message = "Device reporting less cameras than anticipated. On real"
+                                + " devices: Retrying initialization might resolve temporary "
+                                + "camera errors. On emulators: Ensure virtual camera "
+                                + "configuration matches supported camera features as reported by"
+                                + " PackageManager#hasSystemFeature. Available cameras: "
+                                + ((CameraIdListIncorrectException) e).getAvailableCameraCount();
+                        Logger.e(TAG, message, e);
+                        completer.setException(new InitializationException(
+                                new CameraUnavailableException(CAMERA_ERROR, message)));
                     } else if (e instanceof InitializationException) {
                         completer.setException(e);
                     } else {
@@ -369,6 +442,8 @@ public final class CameraX {
                         completer.setException(new InitializationException(e));
                     }
                 }
+            } finally {
+                Trace.endSection();
             }
         });
     }
@@ -379,8 +454,7 @@ public final class CameraX {
         }
     }
 
-    @NonNull
-    private ListenableFuture<Void> shutdownInternal() {
+    private @NonNull ListenableFuture<Void> shutdownInternal() {
         synchronized (mInitializeLock) {
             mSchedulerHandler.removeCallbacksAndMessages(RETRY_TOKEN);
             switch (mInitState) {
@@ -515,5 +589,12 @@ public final class CameraX {
          * <p>Once the CameraX instance has been shutdown, it can't be used or re-initialized.
          */
         SHUTDOWN
+    }
+
+    private void traceExecutionState(RetryPolicy.@Nullable ExecutionState state) {
+        if (Trace.isEnabled()) {
+            int status = state != null ? state.getStatus() : -1;
+            Trace.setCounter("CX:CameraProvider-RetryStatus", status);
+        }
     }
 }

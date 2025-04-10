@@ -16,11 +16,11 @@
 
 package androidx.camera.core;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.impl.CaptureBundle;
 import androidx.camera.core.impl.CaptureStage;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,23 +32,20 @@ import java.util.List;
  *
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class CaptureBundles {
     /** Creates a {@link CaptureBundle} which contain a single default {@link CaptureStage}. */
-    @NonNull
-    public static CaptureBundle singleDefaultCaptureBundle() {
+    public static @NonNull CaptureBundle singleDefaultCaptureBundle() {
         return createCaptureBundle(new CaptureStage.DefaultCaptureStage());
     }
 
     /** Returns a {@link CaptureBundle} which contains a list of {@link CaptureStage}. */
-    @NonNull
-    static CaptureBundle createCaptureBundle(@NonNull CaptureStage... captureStages) {
+    static @NonNull CaptureBundle createCaptureBundle(CaptureStage @NonNull ... captureStages) {
         return new CaptureBundleImpl(Arrays.asList(captureStages));
     }
 
     /** Returns a {@link CaptureBundle} which contains a list of {@link CaptureStage}. */
-    @NonNull
-    static CaptureBundle createCaptureBundle(@NonNull List<CaptureStage> captureStageList) {
+    static @NonNull CaptureBundle createCaptureBundle(
+            @NonNull List<CaptureStage> captureStageList) {
         return new CaptureBundleImpl(captureStageList);
     }
 

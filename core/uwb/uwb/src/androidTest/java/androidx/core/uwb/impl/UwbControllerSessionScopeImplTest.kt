@@ -16,6 +16,7 @@
 
 package androidx.core.uwb.impl
 
+import androidx.core.uwb.RangingControleeParameters
 import androidx.core.uwb.RangingResult
 import androidx.core.uwb.UwbAddress
 import androidx.core.uwb.common.TestCommons.Companion.COMPLEX_CHANNEL
@@ -38,50 +39,57 @@ import org.junit.Assert
 import org.junit.Test
 
 class UwbControllerSessionScopeImplTest {
-    private val uwbClient = TestUwbClient(
-        COMPLEX_CHANNEL, LOCAL_ADDRESS, RANGING_CAPABILITIES,
-        isAvailable = true,
-        isController = true
-    )
-    private val uwbClientSession = UwbClientSessionScopeImpl(
-        uwbClient,
-        androidx.core.uwb.RangingCapabilities(
-            RANGING_CAPABILITIES.supportsDistance(),
-            RANGING_CAPABILITIES.supportsAzimuthalAngle(),
-            RANGING_CAPABILITIES.supportsElevationAngle(),
-            RANGING_CAPABILITIES.minRangingInterval,
-            RANGING_CAPABILITIES.supportedChannels.toSet(),
-            RANGING_CAPABILITIES.supportedNtfConfigs.toSet(),
-            RANGING_CAPABILITIES.supportedConfigIds.toSet(),
-            RANGING_CAPABILITIES.supportedSlotDurations.toSet(),
-            RANGING_CAPABILITIES.supportedRangingUpdateRates.toSet(),
-            RANGING_CAPABILITIES.supportsRangingIntervalReconfigure(),
-            RANGING_CAPABILITIES.hasBackgroundRangingSupport()
-        ),
-        UwbAddress(LOCAL_ADDRESS.address)
-    )
-    private val uwbControllerSession = UwbControllerSessionScopeImpl(
-        uwbClient,
-        androidx.core.uwb.RangingCapabilities(
-            RANGING_CAPABILITIES.supportsDistance(),
-            RANGING_CAPABILITIES.supportsAzimuthalAngle(),
-            RANGING_CAPABILITIES.supportsElevationAngle(),
-            RANGING_CAPABILITIES.minRangingInterval,
-            RANGING_CAPABILITIES.supportedChannels.toSet(),
-            RANGING_CAPABILITIES.supportedNtfConfigs.toSet(),
-            RANGING_CAPABILITIES.supportedConfigIds.toSet(),
-            RANGING_CAPABILITIES.supportedSlotDurations.toSet(),
-            RANGING_CAPABILITIES.supportedRangingUpdateRates.toSet(),
-            RANGING_CAPABILITIES.supportsRangingIntervalReconfigure(),
-            RANGING_CAPABILITIES.hasBackgroundRangingSupport()
-        ),
-        UwbAddress(LOCAL_ADDRESS.address),
-        androidx.core.uwb.UwbComplexChannel(
-            COMPLEX_CHANNEL.channel,
-            COMPLEX_CHANNEL.preambleIndex)
-    )
+    private val uwbClient =
+        TestUwbClient(
+            COMPLEX_CHANNEL,
+            LOCAL_ADDRESS,
+            RANGING_CAPABILITIES,
+            isAvailable = true,
+            isController = true
+        )
+    private val uwbClientSession =
+        UwbClientSessionScopeImpl(
+            uwbClient,
+            androidx.core.uwb.RangingCapabilities(
+                RANGING_CAPABILITIES.supportsDistance(),
+                RANGING_CAPABILITIES.supportsAzimuthalAngle(),
+                RANGING_CAPABILITIES.supportsElevationAngle(),
+                RANGING_CAPABILITIES.minRangingInterval,
+                RANGING_CAPABILITIES.supportedChannels.toSet(),
+                RANGING_CAPABILITIES.supportedNtfConfigs.toSet(),
+                RANGING_CAPABILITIES.supportedConfigIds.toSet(),
+                RANGING_CAPABILITIES.supportedSlotDurations.toSet(),
+                RANGING_CAPABILITIES.supportedRangingUpdateRates.toSet(),
+                RANGING_CAPABILITIES.supportsRangingIntervalReconfigure(),
+                RANGING_CAPABILITIES.hasBackgroundRangingSupport()
+            ),
+            UwbAddress(LOCAL_ADDRESS.address)
+        )
+    private val uwbControllerSession =
+        UwbControllerSessionScopeImpl(
+            uwbClient,
+            androidx.core.uwb.RangingCapabilities(
+                RANGING_CAPABILITIES.supportsDistance(),
+                RANGING_CAPABILITIES.supportsAzimuthalAngle(),
+                RANGING_CAPABILITIES.supportsElevationAngle(),
+                RANGING_CAPABILITIES.minRangingInterval,
+                RANGING_CAPABILITIES.supportedChannels.toSet(),
+                RANGING_CAPABILITIES.supportedNtfConfigs.toSet(),
+                RANGING_CAPABILITIES.supportedConfigIds.toSet(),
+                RANGING_CAPABILITIES.supportedSlotDurations.toSet(),
+                RANGING_CAPABILITIES.supportedRangingUpdateRates.toSet(),
+                RANGING_CAPABILITIES.supportsRangingIntervalReconfigure(),
+                RANGING_CAPABILITIES.hasBackgroundRangingSupport()
+            ),
+            UwbAddress(LOCAL_ADDRESS.address),
+            androidx.core.uwb.UwbComplexChannel(
+                COMPLEX_CHANNEL.channel,
+                COMPLEX_CHANNEL.preambleIndex
+            )
+        )
 
     private var rangingResult: RangingResult? = null
+
     @Test
     public fun testAddControlee_success() {
         val job = startRanging()
@@ -156,10 +164,11 @@ class UwbControllerSessionScopeImplTest {
 
     private fun startRanging(): Job {
         val sessionFlow = uwbControllerSession.prepareSession(RANGING_PARAMETERS)
-        val job = sessionFlow
-            .cancellable()
-            .onEach { rangingResult = it }
-            .launchIn(CoroutineScope(Dispatchers.Main.immediate))
+        val job =
+            sessionFlow
+                .cancellable()
+                .onEach { rangingResult = it }
+                .launchIn(CoroutineScope(Dispatchers.Main.immediate))
 
         runBlocking {
             // wait for the coroutines for UWB to get launched.
@@ -171,8 +180,28 @@ class UwbControllerSessionScopeImplTest {
     private fun stopRanging(job: Job) {
         // cancel and wait for the job to terminate.
         job.cancel()
-        runBlocking {
-            job.join()
+        runBlocking { job.join() }
+    }
+
+    @Test
+    public fun testAddControleeIndividualKeyCase_success() {
+        val job = startRanging()
+
+        // a non-null RangingResult should return from the TestUwbClient.
+        if (rangingResult != null) {
+            assertThat(rangingResult is RangingResult.RangingResultPosition).isTrue()
+            assertThat(rangingResult!!.device.address.address).isEqualTo(NEIGHBOR_1)
+        } else {
+            stopRanging(job)
+            Assert.fail()
         }
+
+        runBlocking {
+            uwbControllerSession.addControlee(UwbAddress(NEIGHBOR_2), RangingControleeParameters(1))
+            delay(500)
+        }
+        assertThat(rangingResult is RangingResult.RangingResultPosition).isTrue()
+        assertThat(rangingResult!!.device.address.address).isEqualTo(NEIGHBOR_2)
+        stopRanging(job)
     }
 }

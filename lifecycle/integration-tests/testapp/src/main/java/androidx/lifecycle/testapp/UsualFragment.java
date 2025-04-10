@@ -21,17 +21,17 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Simple fragment which does nothing.
  */
 public class UsualFragment extends Fragment {
 
-    @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public @Nullable View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
         return new View(getContext());
     }

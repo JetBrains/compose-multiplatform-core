@@ -20,9 +20,9 @@ import android.media.AudioRecord;
 import android.media.AudioRecordingConfiguration;
 import android.media.AudioTimestamp;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper class to avoid verification errors for methods introduced in Android 7.0 (API 24).
@@ -36,7 +36,6 @@ public final class Api24Impl {
     /**
      * Gets the audio timestamp from a {@link AudioRecord}.
      */
-    @DoNotInline
     public static int getTimestamp(@NonNull AudioRecord audioRecord,
             @NonNull AudioTimestamp audioTimestamp, int timeBase) {
         return audioRecord.getTimestamp(audioTimestamp, timeBase);
@@ -45,7 +44,6 @@ public final class Api24Impl {
     /**
      * Gets the audio session ID from a {@link AudioRecordingConfiguration}.
      */
-    @DoNotInline
     public static int getClientAudioSessionId(
             @NonNull AudioRecordingConfiguration audioRecordingConfiguration) {
         return audioRecordingConfiguration.getClientAudioSessionId();

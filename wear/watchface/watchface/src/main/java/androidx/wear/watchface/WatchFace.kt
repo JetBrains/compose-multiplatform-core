@@ -97,7 +97,13 @@ public annotation class WatchFaceTypeIntDef
 /**
  * The type of watch face, whether it's digital or analog. This influences the time displayed in
  * preview images.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public object WatchFaceType {
     /* The WatchFace has an analog time display. */
     public const val ANALOG: Int = 0
@@ -113,7 +119,12 @@ public object WatchFaceType {
  * @param watchFaceType The type of watch face, whether it's digital or analog. Used to determine
  *   the default time for editor preview screenshots.
  * @param renderer The [Renderer] for this WatchFace.
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class WatchFace(
     @WatchFaceTypeIntDef public var watchFaceType: Int,
     public val renderer: Renderer
@@ -121,6 +132,7 @@ public class WatchFace(
     internal var tapListener: TapListener? = null
     internal var complicationDeniedDialogIntent: Intent? = null
     internal var complicationRationaleDialogIntent: Intent? = null
+    internal var updateScreenshotOnConfigurationChange = false
 
     public companion object {
         /** Returns whether [LegacyWatchFaceOverlayStyle] is supported on this device. */
@@ -256,7 +268,10 @@ public class WatchFace(
                 watchFaceService.createHeadlessEngine(componentName)
                     as WatchFaceService.EngineWrapper
             val headlessWatchFaceImpl = engine.createHeadlessInstance(params)
-            return engine.deferredWatchFaceImpl.await().WFEditorDelegate(headlessWatchFaceImpl)
+            return engine.watchFaceDetails!!
+                .deferredWatchFaceImpl
+                .await()
+                .WFEditorDelegate(headlessWatchFaceImpl)
         }
     }
 
@@ -305,10 +320,30 @@ public class WatchFace(
         /** Signals that the activity is going away and resources should be released. */
         public fun onDestroy()
 
-        /** Sets a callback to observe an y changes to [ComplicationSlot.configExtras]. */
+        /** Sets a callback to observe any changes to [ComplicationSlot.configExtras]. */
         public fun setComplicationSlotConfigExtrasChangeCallback(
             callback: ComplicationSlotConfigExtrasChangeCallback?
         )
+
+        /**
+         * Overrides the complications to be used until [onDestroy] is called. Note if any
+         * complications are received via the InteractiveClient while this override is in place,
+         * they should be buffered until [onDestroy] is called.
+         */
+        public fun setOverrideComplications(slotIdToComplicationData: Map<Int, ComplicationData>)
+
+        /**
+         * When a complication slot has been edited, we don't want to see a glimpse of the previous
+         * complication when the user has selected a new complication. To prevent that if the
+         * datasource source changed, the complication will be replaced with EmptyComplicationData
+         * when [onDestroy] is called.
+         */
+        public fun clearComplicationSlotAfterEditing(slotId: Int, previewData: ComplicationData)
+
+        /**
+         * Instructs the system to ignore any previous calls to [clearComplicationSlotAfterEditing].
+         */
+        public fun dontClearAnyComplicationSlotsAfterEditing()
     }
 
     /** Used to inform EditorSession about changes to [ComplicationSlot.configExtras]. */
@@ -542,6 +577,23 @@ public class WatchFace(
     ): WatchFace = apply {
         this.complicationRationaleDialogIntent = complicationRationaleDialogIntent
     }
+
+    /**
+     * If [updateScreenshotOnConfigurationChange] is true then whenever
+     * [WatchFaceService.onConfigurationChanged] gets called while this watch face is active then a
+     * request will be made for the system to update the watch's screenshot displayed in the picker.
+     *
+     * By default this is off.
+     *
+     * Note if [WatchFaceService.onConfigurationChanged] or
+     * [Renderer.sendPreviewImageNeedsUpdateRequest] get called very frequently then the system may
+     * throttle the rate at which screenshots are taken.
+     */
+    public fun setUpdateScreenshotOnConfigurationChange(
+        updateScreenshotOnConfigurationChange: Boolean
+    ): WatchFace = apply {
+        this.updateScreenshotOnConfigurationChange = updateScreenshotOnConfigurationChange
+    }
 }
 
 internal class MockTime(var speed: Double, var minTime: Long, var maxTime: Long) {
@@ -563,6 +615,10 @@ internal class MockTime(var speed: Double, var minTime: Long, var maxTime: Long)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class WatchFaceImpl
 @UiThread
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 constructor(
     watchface: WatchFace,
     private val watchFaceHostApi: WatchFaceHostApi,
@@ -654,6 +710,8 @@ constructor(
     internal var complicationDeniedDialogIntent = watchface.complicationDeniedDialogIntent
     internal var complicationRationaleDialogIntent = watchface.complicationRationaleDialogIntent
     @Suppress("Deprecation") internal var overlayStyle = watchface.overlayStyle
+    internal val updateScreenshotOnConfigurationChange =
+        watchface.updateScreenshotOnConfigurationChange
 
     private var mockTime = MockTime(1.0, 0, Long.MAX_VALUE)
 
@@ -670,23 +728,24 @@ constructor(
 
     init {
         val context = watchFaceHostApi.getContext()
-         displayManager = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
-         displayListener = object : DisplayManager.DisplayListener {
-            override fun onDisplayAdded(displayId: Int) {}
+        displayManager = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+        displayListener =
+            object : DisplayManager.DisplayListener {
+                override fun onDisplayAdded(displayId: Int) {}
 
-            override fun onDisplayChanged(displayId: Int) {
-                val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)!!
-                if (display.state == Display.STATE_OFF && watchState.isVisible.value == false) {
-                    // We want to avoid a glimpse of a stale time when transitioning from
-                    // hidden to visible, so we render two black frames to clear the buffers
-                    // when the display has been turned off and the watch is not visible.
-                    renderer.renderBlackFrame()
-                    renderer.renderBlackFrame()
+                override fun onDisplayChanged(displayId: Int) {
+                    val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)!!
+                    if (display.state == Display.STATE_OFF && watchState.isVisible.value == false) {
+                        // We want to avoid a glimpse of a stale time when transitioning from
+                        // hidden to visible, so we render two black frames to clear the buffers
+                        // when the display has been turned off and the watch is not visible.
+                        renderer.renderBlackFrame()
+                        renderer.renderBlackFrame()
+                    }
                 }
-            }
 
-            override fun onDisplayRemoved(displayId: Int) {}
-        }
+                override fun onDisplayRemoved(displayId: Int) {}
+            }
         displayManager.registerDisplayListener(
             displayListener,
             watchFaceHostApi.getUiThreadHandler()
@@ -783,14 +842,18 @@ constructor(
         // To save power we request a lower hardware display frame rate when the battery is low
         // and not charging.
         if (renderer.surfaceHolder.surface.isValid) {
-            SetFrameRateHelper.setFrameRate(
-                renderer.surfaceHolder.surface,
-                if (it) {
+            if (it) {
+                SetFrameRateHelper.setFrameRate(
+                    renderer.surfaceHolder.surface,
                     1000f / MAX_LOW_POWER_INTERACTIVE_UPDATE_RATE_MS.toFloat()
+                )
+            } else {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    ClearFrameRateHelperU.clearFrameRate(renderer.surfaceHolder.surface)
                 } else {
-                    SYSTEM_DECIDES_FRAME_RATE
+                    ClearFrameRateHelperR.clearFrameRate(renderer.surfaceHolder.surface)
                 }
-            )
+            }
         }
     }
 
@@ -821,8 +884,9 @@ constructor(
                     // init may not have completed.
                     if (initComplete) {
                         onDraw()
+                    } else {
+                        scheduleDraw()
                     }
-                    scheduleDraw()
                 }
             }
         }
@@ -895,8 +959,7 @@ constructor(
             get() =
                 InteractiveInstanceManager.getCurrentInteractiveInstance()
                     ?.engine
-                    ?.editorObscuresWatchFace
-                    ?: false
+                    ?.editorObscuresWatchFace ?: false
             set(value) {
                 InteractiveInstanceManager.getCurrentInteractiveInstance()?.engine?.let {
                     it.editorObscuresWatchFace = value
@@ -925,15 +988,35 @@ constructor(
             complicationSlotsManager.configExtrasChangeCallback = callback
         }
 
+        override fun setOverrideComplications(
+            slotIdToComplicationData: Map<Int, ComplicationData>
+        ) {
+            InteractiveInstanceManager.getCurrentInteractiveInstance()
+                ?.engine
+                ?.overrideComplicationsForEditing(slotIdToComplicationData)
+        }
+
+        override fun clearComplicationSlotAfterEditing(slotId: Int, previewData: ComplicationData) {
+            InteractiveInstanceManager.getCurrentInteractiveInstance()
+                ?.engine
+                ?.clearComplicationSlotAfterEditing(slotId, previewData)
+        }
+
+        override fun dontClearAnyComplicationSlotsAfterEditing() {
+            InteractiveInstanceManager.getCurrentInteractiveInstance()
+                ?.engine
+                ?.dontClearAnyComplicationSlotsAfterEditing()
+        }
+
         @SuppressLint("NewApi") // release
         override fun onDestroy(): Unit =
             TraceEvent("WFEditorDelegate.onDestroy").use {
                 InteractiveInstanceManager.getCurrentInteractiveInstance()?.engine?.let {
                     it.editorObscuresWatchFace = false
+                    it.onEditSessionFinished()
                 }
                 if (watchState.isHeadless) {
                     headlessWatchFaceImpl!!.release()
-                    this@WatchFaceImpl.onDestroy()
                 }
             }
     }
@@ -1385,12 +1468,24 @@ internal object CreateRemoteWatchFaceViewHelper {
     }
 }
 
-internal class SetFrameRateHelper {
-    @RequiresApi(Build.VERSION_CODES.R)
-    companion object {
-        fun setFrameRate(surface: Surface, frameRate: Float) {
-            surface.setFrameRate(frameRate, FRAME_RATE_COMPATIBILITY_DEFAULT)
-        }
+@RequiresApi(Build.VERSION_CODES.R)
+internal object SetFrameRateHelper {
+    fun setFrameRate(surface: Surface, frameRate: Float) {
+        surface.setFrameRate(frameRate, FRAME_RATE_COMPATIBILITY_DEFAULT)
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.R)
+internal object ClearFrameRateHelperR {
+    fun clearFrameRate(surface: Surface) {
+        surface.setFrameRate(SYSTEM_DECIDES_FRAME_RATE, FRAME_RATE_COMPATIBILITY_DEFAULT)
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+internal object ClearFrameRateHelperU {
+    fun clearFrameRate(surface: Surface) {
+        surface.clearFrameRate()
     }
 }
 

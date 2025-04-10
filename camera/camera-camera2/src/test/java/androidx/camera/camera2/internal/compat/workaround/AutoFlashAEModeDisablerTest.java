@@ -22,10 +22,10 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CaptureRequest;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.quirk.CameraQuirks;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -128,8 +128,7 @@ public class AutoFlashAEModeDisablerTest {
         assertThat(aeMode).isEqualTo(CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
     }
 
-    @NonNull
-    private AutoFlashAEModeDisabler createAutoFlashAEModeDisabler(int lensFacing) {
+    private @NonNull AutoFlashAEModeDisabler createAutoFlashAEModeDisabler(int lensFacing) {
         CameraCharacteristics characteristics =
                 ShadowCameraCharacteristics.newCameraCharacteristics();
         ShadowCameraCharacteristics shadowCharacteristics = Shadow.extract(characteristics);

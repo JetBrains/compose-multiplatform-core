@@ -16,17 +16,15 @@
 
 package androidx.camera.video.internal.audio;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
 
 /** Represents an audio stream. */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public interface AudioStream {
 
     /**
@@ -64,8 +62,7 @@ public interface AudioStream {
      * @return the retrieved information by this read operation.
      * @throws IllegalStateException if the stream has not been started or has been released.
      */
-    @NonNull
-    PacketInfo read(@NonNull ByteBuffer byteBuffer);
+    @NonNull PacketInfo read(@NonNull ByteBuffer byteBuffer);
 
     /**
      * Sets callback to monitor the stream state.
@@ -90,8 +87,7 @@ public interface AudioStream {
          * @param sizeInBytes the total size in bytes.
          * @param timestampNs the timestamp in nanoseconds.
          */
-        @NonNull
-        public static PacketInfo of(int sizeInBytes, long timestampNs) {
+        public static @NonNull PacketInfo of(int sizeInBytes, long timestampNs) {
             return new AutoValue_AudioStream_PacketInfo(sizeInBytes, timestampNs);
         }
 

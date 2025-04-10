@@ -1,4 +1,11 @@
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -7,7 +14,7 @@ plugins {
 
 dependencies {
     api("androidx.core:core:1.1.0")
-    implementation("androidx.collection:collection:1.1.0")
+    implementation("androidx.collection:collection:1.4.2")
 
     annotationProcessor(libs.nullaway)
 
@@ -18,12 +25,13 @@ dependencies {
 
 androidx {
     name = "Palette"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2014"
     description = "Android Support Palette"
-    metalavaK2UastEnabled = true
+    // TODO: b/326456246
+    optOutJSpecify = true
 }
 
 android {
-    namespace "androidx.palette"
+    namespace = "androidx.palette"
 }

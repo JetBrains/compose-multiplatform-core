@@ -31,3 +31,26 @@ internal fun assertFailsWithMessage(message: String, block: () -> Unit) {
 internal expect fun Float.nextUp(): Float
 
 internal expect fun Float.nextDown(): Float
+
+internal inline fun <reified E : Throwable> assertFailsWith(
+    assert: (E) -> Unit,
+    block: () -> Unit,
+) {
+    try {
+        block()
+    } catch (e: Throwable) {
+        if (e::class == E::class) {
+            assert(e as E)
+        } else {
+            throw e
+        }
+    }
+}
+
+/**
+ * Runs the given block only if we are not on JS. This is used to skip certain test blocks on JS
+ * when they cannot be supported.
+ *
+ * @see https://youtrack.jetbrains.com/issue/KT-73309/number-types-in-kotlin-js
+ */
+internal expect inline fun assumeNotJs(block: () -> Unit)

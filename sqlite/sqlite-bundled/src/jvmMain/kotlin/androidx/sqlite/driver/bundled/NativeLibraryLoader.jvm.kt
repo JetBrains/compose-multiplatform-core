@@ -16,53 +16,125 @@
 
 package androidx.sqlite.driver.bundled
 
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.util.Locale
 
+/** Helper class to load native libraries based on the host platform. */
 internal actual object NativeLibraryLoader {
+
+    private const val LIB_PATH_PROPERTY_NAME = "androidx.sqlite.driver.bundled.path"
+
+    private val osName: String
+        get() = System.getProperty("os.name")?.lowercase(Locale.US) ?: error("Cannot read osName")
+
+    private val osArch: String
+        get() = System.getProperty("os.arch")?.lowercase(Locale.US) ?: error("Cannot read osArch")
+
+    private val osPrefix: String
+        get() =
+            when {
+                osName.contains("linux") -> "linux"
+                osName.contains("mac") || osName.contains("osx") -> "osx"
+                osName.contains("windows") -> "windows"
+                else -> error("Unsupported operating system: $osName")
+            }
+
+    private val archSuffix: String
+        get() =
+            when {
+                osArch == "aarch64" -> "arm64"
+                osArch.contains("arm") ->
+                    when {
+                        osArch.contains("64") -> "arm64"
+                        else -> "arm32"
+                    }
+                osArch.contains("64") -> "x64"
+                osArch.contains("86") -> "x86"
+                else -> error("Unsupported architecture: $osArch")
+            }
+
     // TODO(b/304281116): Generate this via Gradle so it is consistent.
-    actual fun loadLibrary(name: String) {
-        try {
-            System.loadLibrary(name)
-            return
-        } catch (error: Throwable) {
-            // looks like we are not on Android, continue
-        }
-        // TODO(b/304281116): Temporary loading implementation
-        val osName =
-            System.getProperty("os.name")?.lowercase(Locale.US) ?: error("Cannot read osName")
-        val osArch =
-            System.getProperty("os.arch")?.lowercase(Locale.US) ?: error("Cannot read osArch")
-        val osPrefix = when {
-            osName.contains("linux") -> "linux"
-            osName.contains("mac") || osName.contains("osx") -> "osx"
-            else -> error("Unsupported operating system: $osName")
-        }
-        val archSuffix = when {
-            osArch == "aarch64" -> "arm64"
-            osArch.contains("arm") -> when {
-                osArch.contains("64") -> "arm64"
-                else -> "arm32"
+    actual fun loadLibrary(name: String): Unit =
+        synchronized(this) {
+            // Load for Android
+            try {
+                System.loadLibrary(name)
+                return
+            } catch (_: UnsatisfiedLinkError) {
+                // Likely not on Android, continue...
             }
-            osArch.contains("64") -> "x64"
-            osArch.contains("86") -> "x86"
-            else -> error("Unsupported architecture: $osArch")
+
+            val libName = getLibraryName(name)
+
+            // Load from configured property path
+            val libraryPath = System.getProperty(LIB_PATH_PROPERTY_NAME)
+            if (libraryPath != null) {
+                val libFile = File("$libraryPath/$libName")
+                check(libFile.exists()) {
+                    "Cannot find a suitable SQLite binary for $osName | $osArch at the " +
+                        "configured path ($LIB_PATH_PROPERTY_NAME = $libraryPath). " +
+                        "File $libFile does not exist."
+                }
+                tryLoad(libFile.canonicalPath)
+                return
+            }
+
+            // Load from shared lib/ or bin/ dir in Java home
+            val javaHomeLibs =
+                File(System.getProperty("java.home"), if (osPrefix == "windows") "bin" else "lib")
+            val libFile = javaHomeLibs.resolve(libName)
+            if (libFile.exists()) {
+                tryLoad(libFile.canonicalPath)
+                return
+            }
+
+            // Load from temp file extracted from resources
+            val libResourceName = getResourceName(libName)
+            val libTempCopy =
+                Files.createTempFile("androidx_$name", null).apply { toFile().deleteOnExit() }
+            NativeLibraryLoader::class
+                .java
+                .classLoader!!
+                .getResourceAsStream(libResourceName)
+                .use { resourceStream ->
+                    checkNotNull(resourceStream) {
+                        "Cannot find a suitable SQLite binary for $osName | $osArch. " +
+                            "Please file a bug at " +
+                            "https://issuetracker.google.com/issues/new?component=460784"
+                    }
+                    Files.copy(resourceStream, libTempCopy, StandardCopyOption.REPLACE_EXISTING)
+                }
+            tryLoad(libTempCopy.toFile().canonicalPath)
         }
+
+    /** Gets the native library file name. */
+    private fun getLibraryName(name: String): String {
+        val prefix =
+            when (osPrefix) {
+                "linux",
+                "osx" -> "lib"
+                "windows" -> ""
+                else -> error("Unsupported operating system: $osName")
+            }
+        val extension =
+            when (osPrefix) {
+                "linux" -> "so"
+                "osx" -> "dylib"
+                "windows" -> "dll"
+                else -> error("Unsupported operating system: $osName")
+            }
+        return "$prefix$name.$extension"
+    }
+
+    /** Gets the JAR's resource file path to the native library. */
+    private fun getResourceName(libName: String): String {
         val resourceFolder = "${osPrefix}_$archSuffix"
-        val ext = if (osPrefix == "linux") { "so" } else { "dylib" }
-        val resourceName = "$resourceFolder/lib$name.$ext"
-        val nativeLibCopy = Files.createTempFile("androidx_$name", null)
-        nativeLibCopy.toFile().deleteOnExit()
-        NativeLibraryLoader::class.java.classLoader!!.getResourceAsStream(
-            resourceName
-        ).use { resourceStream ->
-            checkNotNull(resourceStream) {
-                "Cannot find resource $resourceName"
-            }
-            Files.copy(resourceStream, nativeLibCopy, StandardCopyOption.REPLACE_EXISTING)
-        }
-        @Suppress("UnsafeDynamicallyLoadedCode")
-        System.load(nativeLibCopy.toFile().canonicalPath)
+        return "natives/$resourceFolder/$libName"
+    }
+
+    private fun tryLoad(path: String) {
+        @Suppress("UnsafeDynamicallyLoadedCode") System.load(path)
     }
 }

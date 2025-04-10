@@ -16,28 +16,606 @@
 
 package androidx.compose.foundation.text
 
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.ScrollableDefaults
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequesterImpl
+import androidx.compose.foundation.text.handwriting.stylusHandwriting
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.KeyboardActionHandler
+import androidx.compose.foundation.text.input.OutputTransformation
+import androidx.compose.foundation.text.input.TextFieldDecorator
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldLineLimits.MultiLine
+import androidx.compose.foundation.text.input.TextFieldLineLimits.SingleLine
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.internal.CodepointTransformation
+import androidx.compose.foundation.text.input.internal.SingleLineCodepointTransformation
+import androidx.compose.foundation.text.input.internal.TextFieldCoreModifier
+import androidx.compose.foundation.text.input.internal.TextFieldDecoratorModifier
+import androidx.compose.foundation.text.input.internal.TextFieldTextLayoutModifier
+import androidx.compose.foundation.text.input.internal.TextLayoutState
+import androidx.compose.foundation.text.input.internal.TransformedTextFieldState
+import androidx.compose.foundation.text.input.internal.selection.TextFieldSelectionState
+import androidx.compose.foundation.text.input.internal.selection.TextFieldSelectionState.InputType
+import androidx.compose.foundation.text.input.internal.selection.TextToolbarHandler
+import androidx.compose.foundation.text.input.internal.selection.TextToolbarState
+import androidx.compose.foundation.text.input.internal.selection.addBasicTextFieldTextContextMenuComponents
+import androidx.compose.foundation.text.input.internal.selection.menuItem
+import androidx.compose.foundation.text.selection.SelectionHandle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalTextToolbar
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
+
+private object BasicTextFieldDefaults {
+    val CursorBrush = SolidColor(Color.Black)
+}
 
 /**
- * Basic composable that enables users to edit text via hardware or software keyboard, but
- * provides no decorations like hint or placeholder.
+ * Basic text composable that provides an interactive box that accepts text input through software
+ * or hardware keyboard, but provides no decorations like hint or placeholder.
+ *
+ * All the editing state of this composable is hoisted through [state]. Whenever the contents of
+ * this composable change via user input or semantics, [TextFieldState.text] gets updated.
+ * Similarly, all the programmatic updates made to [state] also reflect on this composable.
+ *
+ * If you want to add decorations to your text field, such as icon or similar, and increase the hit
+ * target area, use the decorator.
+ *
+ * In order to filter (e.g. only allow digits, limit the number of characters), or change (e.g.
+ * convert every character to uppercase) the input received from the user, use an
+ * [InputTransformation].
+ *
+ * Limiting the height of the [BasicTextField] in terms of line count and choosing a scroll
+ * direction can be achieved by using [TextFieldLineLimits].
+ *
+ * Scroll state of the composable is also hoisted to enable observation and manipulation of the
+ * scroll behavior by the developer, e.g. bringing a searched keyword into view by scrolling to its
+ * position without focusing, or changing selection.
+ *
+ * It's also possible to internally wrap around an existing TextFieldState and expose a more
+ * lightweight state hoisting mechanism through a value that dictates the content of the TextField
+ * and an onValueChange callback that communicates the changes to this value.
+ *
+ * @param state [TextFieldState] object that holds the internal editing state of [BasicTextField].
+ * @param modifier optional [Modifier] for this text field.
+ * @param enabled controls the enabled state of the [BasicTextField]. When `false`, the text field
+ *   will be neither editable nor focusable, the input of the text field will not be selectable.
+ * @param readOnly controls the editable state of the [BasicTextField]. When `true`, the text field
+ *   can not be modified, however, a user can focus it and copy text from it. Read-only text fields
+ *   are usually used to display pre-filled forms that user can not edit.
+ * @param inputTransformation Optional [InputTransformation] that will be used to transform changes
+ *   to the [TextFieldState] made by the user. The transformation will be applied to changes made by
+ *   hardware and software keyboard events, pasting or dropping text, accessibility services, and
+ *   tests. The transformation will _not_ be applied when changing the [state] programmatically, or
+ *   when the transformation is changed. If the transformation is changed on an existing text field,
+ *   it will be applied to the next user edit. the transformation will not immediately affect the
+ *   current [state].
+ * @param textStyle Typographic and graphic style configuration for text content that's displayed in
+ *   the editor.
+ * @param keyboardOptions Software keyboard options that contain configurations such as
+ *   [KeyboardType] and [ImeAction].
+ * @param onKeyboardAction Called when the user presses the action button in the input method editor
+ *   (IME), or by pressing the enter key on a hardware keyboard if the [lineLimits] is configured as
+ *   [TextFieldLineLimits.SingleLine]. By default this parameter is null, and would execute the
+ *   default behavior for a received IME Action e.g., [ImeAction.Done] would close the keyboard,
+ *   [ImeAction.Next] would switch the focus to the next focusable item on the screen.
+ * @param lineLimits Whether the text field should be [SingleLine], scroll horizontally, and ignore
+ *   newlines; or [MultiLine] and grow and scroll vertically. If [SingleLine] is passed, all newline
+ *   characters ('\n') within the text will be replaced with regular whitespace (' '), ensuring that
+ *   the contents of the text field are presented in a single line.
+ * @param onTextLayout Callback that is executed when the text layout becomes queryable. The
+ *   callback receives a function that returns a [TextLayoutResult] if the layout can be calculated,
+ *   or null if it cannot. The function reads the layout result from a snapshot state object, and
+ *   will invalidate its caller when the layout result changes. A [TextLayoutResult] object contains
+ *   paragraph information, size of the text, baselines and other details. The callback can be used
+ *   to add additional decoration or functionality to the text. For example, to draw a cursor or
+ *   selection around the text. [Density] scope is the one that was used while creating the given
+ *   text layout.
+ * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
+ *   for this TextField. You can create and pass in your own remembered [MutableInteractionSource]
+ *   if you want to observe [Interaction]s and customize the appearance / behavior of this TextField
+ *   for different [Interaction]s.
+ * @param cursorBrush [Brush] to paint cursor with. If [SolidColor] with [Color.Unspecified]
+ *   provided, then no cursor will be drawn.
+ * @param outputTransformation An [OutputTransformation] that transforms how the contents of the
+ *   text field are presented.
+ * @param decorator Allows to add decorations around text field, such as icon, placeholder, helper
+ *   messages or similar, and automatically increase the hit target area of the text field.
+ * @param scrollState Scroll state that manages either horizontal or vertical scroll of TextField.
+ *   If [lineLimits] is [SingleLine], this text field is treated as single line with horizontal
+ *   scroll behavior. In other cases the text field becomes vertically scrollable.
+ * @sample androidx.compose.foundation.samples.BasicTextFieldDecoratorSample
+ * @sample androidx.compose.foundation.samples.BasicTextFieldCustomInputTransformationSample
+ * @sample androidx.compose.foundation.samples.BasicTextFieldWithValueOnValueChangeSample
+ */
+// This takes a composable lambda, but it is not primarily a container.
+@Suppress("ComposableLambdaParameterPosition")
+@Composable
+fun BasicTextField(
+    state: TextFieldState,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    inputTransformation: InputTransformation? = null,
+    textStyle: TextStyle = TextStyle.Default,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    onKeyboardAction: KeyboardActionHandler? = null,
+    lineLimits: TextFieldLineLimits = TextFieldLineLimits.Default,
+    onTextLayout: (Density.(getResult: () -> TextLayoutResult?) -> Unit)? = null,
+    interactionSource: MutableInteractionSource? = null,
+    cursorBrush: Brush = BasicTextFieldDefaults.CursorBrush,
+    outputTransformation: OutputTransformation? = null,
+    decorator: TextFieldDecorator? = null,
+    scrollState: ScrollState = rememberScrollState(),
+    // Last parameter must not be a function unless it's intended to be commonly used as a trailing
+    // lambda.
+) {
+    BasicTextField(
+        state = state,
+        modifier = modifier,
+        enabled = enabled,
+        readOnly = readOnly,
+        inputTransformation = inputTransformation,
+        textStyle = textStyle,
+        keyboardOptions = keyboardOptions,
+        onKeyboardAction = onKeyboardAction,
+        lineLimits = lineLimits,
+        onTextLayout = onTextLayout,
+        interactionSource = interactionSource,
+        cursorBrush = cursorBrush,
+        codepointTransformation = null,
+        outputTransformation = outputTransformation,
+        decorator = decorator,
+        scrollState = scrollState,
+    )
+}
+
+/**
+ * Internal core text field that accepts a [CodepointTransformation].
+ *
+ * @param codepointTransformation Visual transformation interface that provides a 1-to-1 mapping of
+ *   codepoints.
+ */
+// This takes a composable lambda, but it is not primarily a container.
+@Suppress("ComposableLambdaParameterPosition")
+@Composable
+internal fun BasicTextField(
+    state: TextFieldState,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    inputTransformation: InputTransformation? = null,
+    textStyle: TextStyle = TextStyle.Default,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    onKeyboardAction: KeyboardActionHandler? = null,
+    lineLimits: TextFieldLineLimits = TextFieldLineLimits.Default,
+    onTextLayout: (Density.(getResult: () -> TextLayoutResult?) -> Unit)? = null,
+    interactionSource: MutableInteractionSource? = null,
+    cursorBrush: Brush = BasicTextFieldDefaults.CursorBrush,
+    codepointTransformation: CodepointTransformation? = null,
+    outputTransformation: OutputTransformation? = null,
+    decorator: TextFieldDecorator? = null,
+    scrollState: ScrollState = rememberScrollState(),
+    isPassword: Boolean = false,
+    // Last parameter must not be a function unless it's intended to be commonly used as a trailing
+    // lambda.
+) {
+    val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
+    val singleLine = lineLimits == SingleLine
+    // We're using this to communicate focus state to cursor for now.
+    @Suppress("NAME_SHADOWING")
+    val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
+    val orientation = if (singleLine) Orientation.Horizontal else Orientation.Vertical
+    val isFocused = interactionSource.collectIsFocusedAsState().value
+    val isDragHovered = interactionSource.collectIsHoveredAsState().value
+    // Avoid reading LocalWindowInfo.current.isWindowFocused when the text field is not focused;
+    // otherwise all text fields in a window will be recomposed when it becomes focused.
+    val isWindowAndTextFieldFocused = isFocused && LocalWindowInfo.current.isWindowFocused
+    val stylusHandwritingTrigger = remember {
+        MutableSharedFlow<Unit>(replay = 1, onBufferOverflow = BufferOverflow.DROP_LATEST)
+    }
+
+    val transformedState =
+        remember(state, codepointTransformation, outputTransformation) {
+            // First prefer provided codepointTransformation if not null, e.g. BasicSecureTextField
+            // would send PasswordTransformation. Second, apply a SingleLineCodepointTransformation
+            // if
+            // text field is configured to be single line. Else, don't apply any visual
+            // transformation.
+            val appliedCodepointTransformation =
+                codepointTransformation ?: SingleLineCodepointTransformation.takeIf { singleLine }
+            TransformedTextFieldState(
+                textFieldState = state,
+                inputTransformation = inputTransformation,
+                codepointTransformation = appliedCodepointTransformation,
+                outputTransformation = outputTransformation
+            )
+        }
+
+    // Invalidate textLayoutState if TextFieldState itself has changed, since TextLayoutState
+    // would be carrying an invalid TextFieldState in its nonMeasureInputs.
+    val textLayoutState = remember(transformedState) { TextLayoutState() }
+
+    // InputTransformation.keyboardOptions might be backed by Snapshot state.
+    // Read in a restartable composable scope to make sure the resolved value is always up-to-date.
+    val resolvedKeyboardOptions =
+        keyboardOptions.fillUnspecifiedValuesWith(inputTransformation?.keyboardOptions)
+
+    val toolbarRequester = remember { ToolbarRequesterImpl() }
+    val textFieldSelectionState =
+        remember(transformedState) {
+            TextFieldSelectionState(
+                textFieldState = transformedState,
+                textLayoutState = textLayoutState,
+                density = density,
+                enabled = enabled,
+                readOnly = readOnly,
+                isFocused = isWindowAndTextFieldFocused,
+                isPassword = isPassword,
+                toolbarRequester = toolbarRequester,
+            )
+        }
+    val coroutineScope = rememberCoroutineScope()
+    val currentHapticFeedback = LocalHapticFeedback.current
+    val currentClipboard = LocalClipboard.current
+    val currentTextToolbar = LocalTextToolbar.current
+
+    val textToolbarHandler =
+        remember(coroutineScope, currentTextToolbar) {
+            object : TextToolbarHandler {
+                override suspend fun showTextToolbar(
+                    selectionState: TextFieldSelectionState,
+                    rect: Rect
+                ) =
+                    with(selectionState) {
+                        selectionState.updateClipboardEntry()
+                        currentTextToolbar.showMenu(
+                            rect = rect,
+                            onCopyRequested =
+                                menuItem(canCopy(), TextToolbarState.None) {
+                                    coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                                        copy()
+                                    }
+                                },
+                            onPasteRequested =
+                                menuItem(canPaste(), TextToolbarState.None) {
+                                    coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                                        paste()
+                                    }
+                                },
+                            onCutRequested =
+                                menuItem(canCut(), TextToolbarState.None) {
+                                    coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                                        cut()
+                                    }
+                                },
+                            onSelectAllRequested =
+                                menuItem(canSelectAll(), TextToolbarState.Selection) {
+                                    selectAll()
+                                },
+                            onAutofillRequested =
+                                menuItem(canAutofill(), TextToolbarState.None) { autofill() }
+                        )
+                    }
+
+                override fun hideTextToolbar() {
+                    if (currentTextToolbar.status == TextToolbarStatus.Shown) {
+                        currentTextToolbar.hide()
+                    }
+                }
+            }
+        }
+
+    SideEffect {
+        // These properties are not backed by snapshot state, so they can't be updated directly in
+        // composition.
+        transformedState.update(inputTransformation)
+
+        textFieldSelectionState.update(
+            hapticFeedBack = currentHapticFeedback,
+            clipboard = currentClipboard,
+            density = density,
+            enabled = enabled,
+            readOnly = readOnly,
+            isPassword = isPassword,
+            showTextToolbar = textToolbarHandler
+        )
+    }
+
+    DisposableEffect(textFieldSelectionState) { onDispose { textFieldSelectionState.dispose() } }
+
+    val handwritingEnabled =
+        !isPassword &&
+            keyboardOptions.keyboardType != KeyboardType.Password &&
+            keyboardOptions.keyboardType != KeyboardType.NumberPassword
+    val decorationModifiers =
+        modifier
+            .then(
+                // semantics + some focus + input session + touch to focus
+                TextFieldDecoratorModifier(
+                    textFieldState = transformedState,
+                    textLayoutState = textLayoutState,
+                    textFieldSelectionState = textFieldSelectionState,
+                    filter = inputTransformation,
+                    enabled = enabled,
+                    readOnly = readOnly,
+                    keyboardOptions = resolvedKeyboardOptions,
+                    keyboardActionHandler = onKeyboardAction,
+                    singleLine = singleLine,
+                    interactionSource = interactionSource,
+                    isPassword = isPassword,
+                    stylusHandwritingTrigger = stylusHandwritingTrigger
+                )
+            )
+            .stylusHandwriting(enabled, handwritingEnabled) {
+                // If this is a password field, we can't trigger handwriting.
+                // The expected behavior is 1) request focus 2) show software keyboard.
+                // Note: TextField will show software keyboard automatically when it
+                // gain focus. 3) show a toast message telling that handwriting is not
+                // supported for password fields. TODO(b/335294152)
+                if (handwritingEnabled) {
+                    // Send the handwriting start signal to platform.
+                    // The editor should send the signal when it is focused or is about
+                    // to gain focus, Here are more details:
+                    //   1) if the editor already has an active input session, the
+                    //   platform handwriting service should already listen to this flow
+                    //   and it'll start handwriting right away.
+                    //
+                    //   2) if the editor is not focused, but it'll be focused and
+                    //   create a new input session, one handwriting signal will be
+                    //   replayed when the platform collect this flow. And the platform
+                    //   should trigger handwriting accordingly.
+                    stylusHandwritingTrigger.tryEmit(Unit)
+                }
+            }
+            .focusable(interactionSource = interactionSource, enabled = enabled)
+            .scrollable(
+                state = scrollState,
+                orientation = orientation,
+                // Disable scrolling when textField is disabled or another dragging gesture is
+                // taking
+                // place
+                enabled =
+                    enabled && textFieldSelectionState.directDragGestureInitiator == InputType.None,
+                reverseDirection =
+                    ScrollableDefaults.reverseDirection(
+                        layoutDirection = layoutDirection,
+                        orientation = orientation,
+                        reverseScrolling = false
+                    ),
+                interactionSource = interactionSource,
+            )
+            .pointerHoverIcon(PointerIcon.Text)
+            .addContextMenuComponents(textFieldSelectionState, coroutineScope)
+
+    Box(decorationModifiers, propagateMinConstraints = true) {
+        ContextMenuArea(textFieldSelectionState, enabled) {
+            val nonNullDecorator = decorator ?: DefaultTextFieldDecorator
+            nonNullDecorator.Decoration {
+                val minLines: Int
+                val maxLines: Int
+                if (lineLimits is MultiLine) {
+                    minLines = lineLimits.minHeightInLines
+                    maxLines = lineLimits.maxHeightInLines
+                } else {
+                    minLines = 1
+                    maxLines = 1
+                }
+
+                Box(
+                    propagateMinConstraints = true,
+                    modifier =
+                        Modifier.heightIn(min = textLayoutState.minHeightForSingleLineField)
+                            .heightInLines(
+                                textStyle = textStyle,
+                                minLines = minLines,
+                                maxLines = maxLines
+                            )
+                            .textFieldMinSize(textStyle)
+                            .clipToBounds()
+                            .then(
+                                TextFieldCoreModifier(
+                                    isFocused = isWindowAndTextFieldFocused,
+                                    isDragHovered = isDragHovered,
+                                    textLayoutState = textLayoutState,
+                                    textFieldState = transformedState,
+                                    textFieldSelectionState = textFieldSelectionState,
+                                    cursorBrush = cursorBrush,
+                                    writeable = enabled && !readOnly,
+                                    scrollState = scrollState,
+                                    orientation = orientation,
+                                    toolbarRequester = toolbarRequester,
+                                )
+                            )
+                ) {
+                    Box(
+                        modifier =
+                            Modifier.bringIntoViewRequester(textLayoutState.bringIntoViewRequester)
+                                .then(
+                                    TextFieldTextLayoutModifier(
+                                        textLayoutState = textLayoutState,
+                                        textFieldState = transformedState,
+                                        textStyle = textStyle,
+                                        singleLine = singleLine,
+                                        onTextLayout = onTextLayout,
+                                        keyboardOptions = resolvedKeyboardOptions,
+                                    )
+                                )
+                    )
+
+                    if (
+                        enabled &&
+                            isWindowAndTextFieldFocused &&
+                            textFieldSelectionState.isInTouchMode
+                    ) {
+                        TextFieldSelectionHandles(selectionState = textFieldSelectionState)
+                        if (!readOnly) {
+                            TextFieldCursorHandle(selectionState = textFieldSelectionState)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+private fun Modifier.addContextMenuComponents(
+    textFieldSelectionState: TextFieldSelectionState,
+    coroutineScope: CoroutineScope
+): Modifier =
+    if (ComposeFoundationFlags.isNewContextMenuEnabled)
+        addBasicTextFieldTextContextMenuComponents(textFieldSelectionState, coroutineScope)
+    else this
+
+@Composable
+internal fun TextFieldCursorHandle(selectionState: TextFieldSelectionState) {
+    // Does not recompose if only position of the handle changes.
+    val cursorHandleState by
+        remember(selectionState) {
+            derivedStateOf { selectionState.getCursorHandleState(includePosition = false) }
+        }
+    if (cursorHandleState.visible) {
+        CursorHandle(
+            offsetProvider = {
+                selectionState.getCursorHandleState(includePosition = true).position
+            },
+            modifier =
+                Modifier.pointerInput(selectionState) {
+                    with(selectionState) { cursorHandleGestures() }
+                },
+            minTouchTargetSize = MinTouchTargetSizeForHandles,
+        )
+    }
+}
+
+@Composable
+internal fun TextFieldSelectionHandles(selectionState: TextFieldSelectionState) {
+    // Does not recompose if only position of the handle changes.
+    val startHandleState by
+        remember(selectionState) {
+            derivedStateOf {
+                selectionState.getSelectionHandleState(
+                    isStartHandle = true,
+                    includePosition = false
+                )
+            }
+        }
+    if (startHandleState.visible) {
+        SelectionHandle(
+            offsetProvider = {
+                selectionState
+                    .getSelectionHandleState(isStartHandle = true, includePosition = true)
+                    .position
+            },
+            isStartHandle = true,
+            direction = startHandleState.direction,
+            handlesCrossed = startHandleState.handlesCrossed,
+            modifier =
+                Modifier.pointerInput(selectionState) {
+                    with(selectionState) { selectionHandleGestures(true) }
+                },
+            lineHeight = startHandleState.lineHeight,
+            minTouchTargetSize = MinTouchTargetSizeForHandles,
+        )
+    }
+
+    // Does not recompose if only position of the handle changes.
+    val endHandleState by
+        remember(selectionState) {
+            derivedStateOf {
+                selectionState.getSelectionHandleState(
+                    isStartHandle = false,
+                    includePosition = false
+                )
+            }
+        }
+    if (endHandleState.visible) {
+        SelectionHandle(
+            offsetProvider = {
+                selectionState
+                    .getSelectionHandleState(isStartHandle = false, includePosition = true)
+                    .position
+            },
+            isStartHandle = false,
+            direction = endHandleState.direction,
+            handlesCrossed = endHandleState.handlesCrossed,
+            modifier =
+                Modifier.pointerInput(selectionState) {
+                    with(selectionState) { selectionHandleGestures(false) }
+                },
+            lineHeight = endHandleState.lineHeight,
+            minTouchTargetSize = MinTouchTargetSizeForHandles,
+        )
+    }
+}
+
+private val DefaultTextFieldDecorator = TextFieldDecorator { it() }
+
+/**
+ * Defines a minimum touch target area size for Selection and Cursor handles.
+ *
+ * Although BasicTextField is not part of Material spec, this accessibility feature is important
+ * enough to be included at foundation layer, and also TextField cannot change selection handles
+ * provided by BasicTextField to somehow achieve this accessibility requirement.
+ *
+ * This value is adopted from Android platform's TextView implementation.
+ */
+private val MinTouchTargetSizeForHandles = DpSize(40.dp, 40.dp)
+
+/**
+ * Basic composable that enables users to edit text via hardware or software keyboard, but provides
+ * no decorations like hint or placeholder.
  *
  * Whenever the user edits the text, [onValueChange] is called with the most up to date state
  * represented by [String] with which developer is expected to update their state.
@@ -50,9 +628,9 @@ import androidx.compose.ui.text.input.VisualTransformation
  * order to actually display and continue to edit that text in the field. The value you feed back
  * into the field may be different than the one provided to the [onValueChange] callback, however
  * the following caveats apply:
- * - The new value must be provided to [BasicTextField] immediately (i.e. by the next frame), or
- *   the text field may appear to glitch, e.g. the cursor may jump around. For more information
- *   about this requirement, see
+ * - The new value must be provided to [BasicTextField] immediately (i.e. by the next frame), or the
+ *   text field may appear to glitch, e.g. the cursor may jump around. For more information about
+ *   this requirement, see
  *   [this article](https://developer.android.com/jetpack/compose/text/user-input#state-practices).
  * - The value fed back into the field may be different from the one passed to [onValueChange],
  *   although this may result in the input connection being restarted, which can make the keyboard
@@ -67,64 +645,68 @@ import androidx.compose.ui.text.input.VisualTransformation
  * needed.
  *
  * Example usage:
+ *
  * @sample androidx.compose.foundation.samples.BasicTextFieldWithStringSample
  *
  * For example, if you need to include a placeholder in your TextField, you can write a composable
  * using the decoration box like this:
+ *
  * @sample androidx.compose.foundation.samples.PlaceholderBasicTextFieldSample
  *
- * If you want to add decorations to your text field, such as icon or similar, and increase the
- * hit target area, use the decoration box:
+ * If you want to add decorations to your text field, such as icon or similar, and increase the hit
+ * target area, use the decoration box:
+ *
  * @sample androidx.compose.foundation.samples.TextFieldWithIconSample
  *
  * In order to create formatted text field, for example for entering a phone number or a social
  * security number, use a [visualTransformation] parameter. Below is the example of the text field
  * for entering a credit card number:
+ *
  * @sample androidx.compose.foundation.samples.CreditCardSample
  *
- * Note: This overload does not support [KeyboardOptions.shouldShowKeyboardOnFocus].
+ * Note: This overload does not support [KeyboardOptions.showKeyboardOnFocus].
  *
  * @param value the input [String] text to be shown in the text field
  * @param onValueChange the callback that is triggered when the input service updates the text. An
- * updated text comes as a parameter of the callback
+ *   updated text comes as a parameter of the callback
  * @param modifier optional [Modifier] for this text field.
- * @param enabled controls the enabled state of the [BasicTextField]. When `false`, the text
- * field will be neither editable nor focusable, the input of the text field will not be selectable
- * @param readOnly controls the editable state of the [BasicTextField]. When `true`, the text
- * field can not be modified, however, a user can focus it and copy text from it. Read-only text
- * fields are usually used to display pre-filled forms that user can not edit
+ * @param enabled controls the enabled state of the [BasicTextField]. When `false`, the text field
+ *   will be neither editable nor focusable, the input of the text field will not be selectable
+ * @param readOnly controls the editable state of the [BasicTextField]. When `true`, the text field
+ *   can not be modified, however, a user can focus it and copy text from it. Read-only text fields
+ *   are usually used to display pre-filled forms that user can not edit
  * @param textStyle Style configuration that applies at character level such as color, font etc.
  * @param keyboardOptions software keyboard options that contains configuration such as
- * [KeyboardType] and [ImeAction].
- * @param keyboardActions when the input service emits an IME action, the corresponding callback
- * is called. Note that this IME action may be different from what you specified in
- * [KeyboardOptions.imeAction].
- * @param singleLine when set to true, this text field becomes a single horizontally scrolling
- * text field instead of wrapping onto multiple lines. The keyboard will be informed to not show
- * the return key as the [ImeAction]. [maxLines] and [minLines] are ignored as both are
- * automatically set to 1.
+ *   [KeyboardType] and [ImeAction].
+ * @param keyboardActions when the input service emits an IME action, the corresponding callback is
+ *   called. Note that this IME action may be different from what you specified in
+ *   [KeyboardOptions.imeAction].
+ * @param singleLine when set to true, this text field becomes a single horizontally scrolling text
+ *   field instead of wrapping onto multiple lines. The keyboard will be informed to not show the
+ *   return key as the [ImeAction]. [maxLines] and [minLines] are ignored as both are automatically
+ *   set to 1.
  * @param maxLines the maximum height in terms of maximum number of visible lines. It is required
- * that 1 <= [minLines] <= [maxLines]. This parameter is ignored when [singleLine] is true.
+ *   that 1 <= [minLines] <= [maxLines]. This parameter is ignored when [singleLine] is true.
  * @param minLines the minimum height in terms of minimum number of visible lines. It is required
- * that 1 <= [minLines] <= [maxLines]. This parameter is ignored when [singleLine] is true.
+ *   that 1 <= [minLines] <= [maxLines]. This parameter is ignored when [singleLine] is true.
  * @param visualTransformation The visual transformation filter for changing the visual
- * representation of the input. By default no visual transformation is applied.
+ *   representation of the input. By default no visual transformation is applied.
  * @param onTextLayout Callback that is executed when a new text layout is calculated. A
- * [TextLayoutResult] object that callback provides contains paragraph information, size of the
- * text, baselines and other details. The callback can be used to add additional decoration or
- * functionality to the text. For example, to draw a cursor or selection around the text.
- * @param interactionSource the [MutableInteractionSource] representing the stream of
- * [Interaction]s for this TextField. You can create and pass in your own remembered
- * [MutableInteractionSource] if you want to observe [Interaction]s and customize the
- * appearance / behavior of this TextField in different [Interaction]s.
+ *   [TextLayoutResult] object that callback provides contains paragraph information, size of the
+ *   text, baselines and other details. The callback can be used to add additional decoration or
+ *   functionality to the text. For example, to draw a cursor or selection around the text.
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this text field. You can use this to change the text field's
+ *   appearance or preview the text field in different states. Note that if `null` is provided,
+ *   interactions will still happen internally.
  * @param cursorBrush [Brush] to paint cursor with. If [SolidColor] with [Color.Unspecified]
- * provided, there will be no cursor drawn
- * @param decorationBox Composable lambda that allows to add decorations around text field, such
- * as icon, placeholder, helper messages or similar, and automatically increase the hit target area
- * of the text field. To allow you to control the placement of the inner text field relative to your
- * decorations, the text field implementation will pass in a framework-controlled composable
- * parameter "innerTextField" to the decorationBox lambda you provide. You must call
- * innerTextField exactly once.
+ *   provided, there will be no cursor drawn
+ * @param decorationBox Composable lambda that allows to add decorations around text field, such as
+ *   icon, placeholder, helper messages or similar, and automatically increase the hit target area
+ *   of the text field. To allow you to control the placement of the inner text field relative to
+ *   your decorations, the text field implementation will pass in a framework-controlled composable
+ *   parameter "innerTextField" to the decorationBox lambda you provide. You must call
+ *   innerTextField exactly once.
  */
 @Composable
 fun BasicTextField(
@@ -141,7 +723,7 @@ fun BasicTextField(
     minLines: Int = 1,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    interactionSource: MutableInteractionSource? = null,
     cursorBrush: Brush = SolidColor(Color.Black),
     decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit =
         @Composable { innerTextField -> innerTextField() }
@@ -155,8 +737,10 @@ fun BasicTextField(
     val textFieldValue = textFieldValueState.copy(text = value)
 
     SideEffect {
-        if (textFieldValue.selection != textFieldValueState.selection ||
-            textFieldValue.composition != textFieldValueState.composition) {
+        if (
+            textFieldValue.selection != textFieldValueState.selection ||
+                textFieldValue.composition != textFieldValueState.composition
+        ) {
             textFieldValueState = textFieldValue
         }
     }
@@ -195,21 +779,21 @@ fun BasicTextField(
 }
 
 /**
- * Basic composable that enables users to edit text via hardware or software keyboard, but
- * provides no decorations like hint or placeholder.
+ * Basic composable that enables users to edit text via hardware or software keyboard, but provides
+ * no decorations like hint or placeholder.
  *
  * Whenever the user edits the text, [onValueChange] is called with the most up to date state
- * represented by [TextFieldValue]. [TextFieldValue] contains the text entered by user, as well
- * as selection, cursor and text composition information. Please check [TextFieldValue] for the
+ * represented by [TextFieldValue]. [TextFieldValue] contains the text entered by user, as well as
+ * selection, cursor and text composition information. Please check [TextFieldValue] for the
  * description of its contents.
  *
  * It is crucial that the value provided to the [onValueChange] is fed back into [BasicTextField] in
  * order to actually display and continue to edit that text in the field. The value you feed back
  * into the field may be different than the one provided to the [onValueChange] callback, however
  * the following caveats apply:
- * - The new value must be provided to [BasicTextField] immediately (i.e. by the next frame), or
- *   the text field may appear to glitch, e.g. the cursor may jump around. For more information
- *   about this requirement, see
+ * - The new value must be provided to [BasicTextField] immediately (i.e. by the next frame), or the
+ *   text field may appear to glitch, e.g. the cursor may jump around. For more information about
+ *   this requirement, see
  *   [this article](https://developer.android.com/jetpack/compose/text/user-input#state-practices).
  * - The value fed back into the field may be different from the one passed to [onValueChange],
  *   although this may result in the input connection being restarted, which can make the keyboard
@@ -224,59 +808,62 @@ fun BasicTextField(
  * needed.
  *
  * Example usage:
+ *
  * @sample androidx.compose.foundation.samples.BasicTextFieldSample
  *
  * For example, if you need to include a placeholder in your TextField, you can write a composable
  * using the decoration box like this:
+ *
  * @sample androidx.compose.foundation.samples.PlaceholderBasicTextFieldSample
  *
- * If you want to add decorations to your text field, such as icon or similar, and increase the
- * hit target area, use the decoration box:
+ * If you want to add decorations to your text field, such as icon or similar, and increase the hit
+ * target area, use the decoration box:
+ *
  * @sample androidx.compose.foundation.samples.TextFieldWithIconSample
  *
- * Note: This overload does not support [KeyboardOptions.shouldShowKeyboardOnFocus].
+ * Note: This overload does not support [KeyboardOptions.showKeyboardOnFocus].
  *
  * @param value The [androidx.compose.ui.text.input.TextFieldValue] to be shown in the
- * [BasicTextField].
+ *   [BasicTextField].
  * @param onValueChange Called when the input service updates the values in [TextFieldValue].
  * @param modifier optional [Modifier] for this text field.
- * @param enabled controls the enabled state of the [BasicTextField]. When `false`, the text
- * field will be neither editable nor focusable, the input of the text field will not be selectable
- * @param readOnly controls the editable state of the [BasicTextField]. When `true`, the text
- * field can not be modified, however, a user can focus it and copy text from it. Read-only text
- * fields are usually used to display pre-filled forms that user can not edit
+ * @param enabled controls the enabled state of the [BasicTextField]. When `false`, the text field
+ *   will be neither editable nor focusable, the input of the text field will not be selectable
+ * @param readOnly controls the editable state of the [BasicTextField]. When `true`, the text field
+ *   can not be modified, however, a user can focus it and copy text from it. Read-only text fields
+ *   are usually used to display pre-filled forms that user can not edit
  * @param textStyle Style configuration that applies at character level such as color, font etc.
  * @param keyboardOptions software keyboard options that contains configuration such as
- * [KeyboardType] and [ImeAction].
- * @param keyboardActions when the input service emits an IME action, the corresponding callback
- * is called. Note that this IME action may be different from what you specified in
- * [KeyboardOptions.imeAction].
- * @param singleLine when set to true, this text field becomes a single horizontally scrolling
- * text field instead of wrapping onto multiple lines. The keyboard will be informed to not show
- * the return key as the [ImeAction]. [maxLines] and [minLines] are ignored as both are
- * automatically set to 1.
+ *   [KeyboardType] and [ImeAction].
+ * @param keyboardActions when the input service emits an IME action, the corresponding callback is
+ *   called. Note that this IME action may be different from what you specified in
+ *   [KeyboardOptions.imeAction].
+ * @param singleLine when set to true, this text field becomes a single horizontally scrolling text
+ *   field instead of wrapping onto multiple lines. The keyboard will be informed to not show the
+ *   return key as the [ImeAction]. [maxLines] and [minLines] are ignored as both are automatically
+ *   set to 1.
  * @param maxLines the maximum height in terms of maximum number of visible lines. It is required
- * that 1 <= [minLines] <= [maxLines]. This parameter is ignored when [singleLine] is true.
+ *   that 1 <= [minLines] <= [maxLines]. This parameter is ignored when [singleLine] is true.
  * @param minLines the minimum height in terms of minimum number of visible lines. It is required
- * that 1 <= [minLines] <= [maxLines]. This parameter is ignored when [singleLine] is true.
+ *   that 1 <= [minLines] <= [maxLines]. This parameter is ignored when [singleLine] is true.
  * @param visualTransformation The visual transformation filter for changing the visual
- * representation of the input. By default no visual transformation is applied.
+ *   representation of the input. By default no visual transformation is applied.
  * @param onTextLayout Callback that is executed when a new text layout is calculated. A
- * [TextLayoutResult] object that callback provides contains paragraph information, size of the
- * text, baselines and other details. The callback can be used to add additional decoration or
- * functionality to the text. For example, to draw a cursor or selection around the text.
- * @param interactionSource the [MutableInteractionSource] representing the stream of
- * [Interaction]s for this TextField. You can create and pass in your own remembered
- * [MutableInteractionSource] if you want to observe [Interaction]s and customize the
- * appearance / behavior of this TextField in different [Interaction]s.
+ *   [TextLayoutResult] object that callback provides contains paragraph information, size of the
+ *   text, baselines and other details. The callback can be used to add additional decoration or
+ *   functionality to the text. For example, to draw a cursor or selection around the text.
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this text field. You can use this to change the text field's
+ *   appearance or preview the text field in different states. Note that if `null` is provided,
+ *   interactions will still happen internally.
  * @param cursorBrush [Brush] to paint cursor with. If [SolidColor] with [Color.Unspecified]
- * provided, there will be no cursor drawn
- * @param decorationBox Composable lambda that allows to add decorations around text field, such
- * as icon, placeholder, helper messages or similar, and automatically increase the hit target area
- * of the text field. To allow you to control the placement of the inner text field relative to your
- * decorations, the text field implementation will pass in a framework-controlled composable
- * parameter "innerTextField" to the decorationBox lambda you provide. You must call
- * innerTextField exactly once.
+ *   provided, there will be no cursor drawn
+ * @param decorationBox Composable lambda that allows to add decorations around text field, such as
+ *   icon, placeholder, helper messages or similar, and automatically increase the hit target area
+ *   of the text field. To allow you to control the placement of the inner text field relative to
+ *   your decorations, the text field implementation will pass in a framework-controlled composable
+ *   parameter "innerTextField" to the decorationBox lambda you provide. You must call
+ *   innerTextField exactly once.
  */
 @Composable
 fun BasicTextField(
@@ -293,7 +880,7 @@ fun BasicTextField(
     minLines: Int = 1,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    interactionSource: MutableInteractionSource? = null,
     cursorBrush: Brush = SolidColor(Color.Black),
     decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit =
         @Composable { innerTextField -> innerTextField() }

@@ -17,14 +17,15 @@
 package androidx.appsearch.localstorage.stats;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
 import androidx.appsearch.app.AppSearchResult;
+import androidx.appsearch.stats.BaseStats;
 import androidx.collection.ArraySet;
-import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -44,7 +45,8 @@ import java.util.Set;
  * <!--@exportToFramework:hide-->
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class CallStats {
+public class CallStats extends BaseStats {
+    /** Call types. */
     @IntDef(value = {
             CALL_TYPE_UNKNOWN,
             CALL_TYPE_INITIALIZE,
@@ -77,6 +79,13 @@ public class CallStats {
             CALL_TYPE_REGISTER_OBSERVER_CALLBACK,
             CALL_TYPE_UNREGISTER_OBSERVER_CALLBACK,
             CALL_TYPE_GLOBAL_GET_NEXT_PAGE,
+            CALL_TYPE_EXECUTE_APP_FUNCTION,
+            CALL_TYPE_OPEN_WRITE_BLOB,
+            CALL_TYPE_COMMIT_BLOB,
+            CALL_TYPE_OPEN_READ_BLOB,
+            CALL_TYPE_GLOBAL_OPEN_READ_BLOB,
+            CALL_TYPE_REMOVE_BLOB,
+            CALL_TYPE_SET_BLOB_VISIBILITY
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface CallType {
@@ -113,6 +122,13 @@ public class CallStats {
     public static final int CALL_TYPE_REGISTER_OBSERVER_CALLBACK = 28;
     public static final int CALL_TYPE_UNREGISTER_OBSERVER_CALLBACK = 29;
     public static final int CALL_TYPE_GLOBAL_GET_NEXT_PAGE = 30;
+    public static final int CALL_TYPE_EXECUTE_APP_FUNCTION = 31;
+    public static final int CALL_TYPE_OPEN_WRITE_BLOB = 32;
+    public static final int CALL_TYPE_COMMIT_BLOB = 33;
+    public static final int CALL_TYPE_OPEN_READ_BLOB = 34;
+    public static final int CALL_TYPE_GLOBAL_OPEN_READ_BLOB = 35;
+    public static final int CALL_TYPE_REMOVE_BLOB = 36;
+    public static final int CALL_TYPE_SET_BLOB_VISIBILITY = 37;
 
     // These strings are for the subset of call types that correspond to an AppSearchManager API
     private static final String CALL_TYPE_STRING_INITIALIZE = "initialize";
@@ -144,11 +160,16 @@ public class CallStats {
     private static final String CALL_TYPE_STRING_UNREGISTER_OBSERVER_CALLBACK =
             "globalUnregisterObserverCallback";
     private static final String CALL_TYPE_STRING_GLOBAL_GET_NEXT_PAGE = "globalGetNextPage";
+    private static final String CALL_TYPE_STRING_EXECUTE_APP_FUNCTION = "executeAppFunction";
+    private static final String CALL_TYPE_STRING_OPEN_WRITE_BLOB = "openWriteBlob";
+    private static final String CALL_TYPE_STRING_COMMIT_BLOB = "commitBlob";
+    private static final String CALL_TYPE_STRING_OPEN_READ_BLOB = "openReadBlob";
+    private static final String CALL_TYPE_STRING_GLOBAL_OPEN_READ_BLOB = "globalOpenReadBlob";
+    private static final String CALL_TYPE_STRING_REMOVE_BLOB = "removeBlob";
+    private static final String CALL_TYPE_STRING_SET_BLOB_VISIBILITY = "setBlobVisibility";
 
-    @Nullable
-    private final String mPackageName;
-    @Nullable
-    private final String mDatabase;
+    private final @Nullable String mPackageName;
+    private final @Nullable String mDatabase;
     /**
      * The status code returned by {@link AppSearchResult#getResultCode()} for the call or
      * internal state.
@@ -164,7 +185,7 @@ public class CallStats {
     private final int mNumOperationsFailed;
 
     CallStats(@NonNull Builder builder) {
-        Preconditions.checkNotNull(builder);
+        super(builder);
         mPackageName = builder.mPackageName;
         mDatabase = builder.mDatabase;
         mStatusCode = builder.mStatusCode;
@@ -176,14 +197,12 @@ public class CallStats {
     }
 
     /** Returns calling package name. */
-    @Nullable
-    public String getPackageName() {
+    public @Nullable String getPackageName() {
         return mPackageName;
     }
 
     /** Returns calling database name. */
-    @Nullable
-    public String getDatabase() {
+    public @Nullable String getDatabase() {
         return mDatabase;
     }
 
@@ -245,11 +264,9 @@ public class CallStats {
     }
 
     /** Builder for {@link CallStats}. */
-    public static class Builder {
-        @Nullable
-        String mPackageName;
-        @Nullable
-        String mDatabase;
+    public static class Builder extends BaseStats.Builder<CallStats.Builder> {
+        @Nullable String mPackageName;
+        @Nullable String mDatabase;
         @AppSearchResult.ResultCode
         int mStatusCode;
         int mTotalLatencyMillis;
@@ -261,48 +278,42 @@ public class CallStats {
 
         /** Sets the PackageName used by the session. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setPackageName(@Nullable String packageName) {
+        public @NonNull Builder setPackageName(@Nullable String packageName) {
             mPackageName = packageName;
             return this;
         }
 
         /** Sets the database used by the session. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setDatabase(@Nullable String database) {
+        public @NonNull Builder setDatabase(@Nullable String database) {
             mDatabase = database;
             return this;
         }
 
         /** Sets the status code. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setStatusCode(@AppSearchResult.ResultCode int statusCode) {
+        public @NonNull Builder setStatusCode(@AppSearchResult.ResultCode int statusCode) {
             mStatusCode = statusCode;
             return this;
         }
 
         /** Sets total latency in millis. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setTotalLatencyMillis(int totalLatencyMillis) {
+        public @NonNull Builder setTotalLatencyMillis(int totalLatencyMillis) {
             mTotalLatencyMillis = totalLatencyMillis;
             return this;
         }
 
         /** Sets type of the call. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setCallType(@CallType int callType) {
+        public @NonNull Builder setCallType(@CallType int callType) {
             mCallType = callType;
             return this;
         }
 
         /** Sets estimated binder latency, in milliseconds. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setEstimatedBinderLatencyMillis(int estimatedBinderLatencyMillis) {
+        public @NonNull Builder setEstimatedBinderLatencyMillis(int estimatedBinderLatencyMillis) {
             mEstimatedBinderLatencyMillis = estimatedBinderLatencyMillis;
             return this;
         }
@@ -322,8 +333,7 @@ public class CallStats {
          * operation.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setNumOperationsSucceeded(int numOperationsSucceeded) {
+        public @NonNull Builder setNumOperationsSucceeded(int numOperationsSucceeded) {
             mNumOperationsSucceeded = numOperationsSucceeded;
             return this;
         }
@@ -342,15 +352,14 @@ public class CallStats {
          * operation.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setNumOperationsFailed(int numOperationsFailed) {
+        public @NonNull Builder setNumOperationsFailed(int numOperationsFailed) {
             mNumOperationsFailed = numOperationsFailed;
             return this;
         }
 
         /** Creates {@link CallStats} object from {@link Builder} instance. */
-        @NonNull
-        public CallStats build() {
+        @Override
+        public @NonNull CallStats build() {
             return new CallStats(/* builder= */ this);
         }
     }
@@ -410,6 +419,20 @@ public class CallStats {
                 return CALL_TYPE_UNREGISTER_OBSERVER_CALLBACK;
             case CALL_TYPE_STRING_GLOBAL_GET_NEXT_PAGE:
                 return CALL_TYPE_GLOBAL_GET_NEXT_PAGE;
+            case CALL_TYPE_STRING_EXECUTE_APP_FUNCTION:
+                return CALL_TYPE_EXECUTE_APP_FUNCTION;
+            case CALL_TYPE_STRING_OPEN_WRITE_BLOB:
+                return CALL_TYPE_OPEN_WRITE_BLOB;
+            case CALL_TYPE_STRING_COMMIT_BLOB:
+                return CALL_TYPE_COMMIT_BLOB;
+            case CALL_TYPE_STRING_OPEN_READ_BLOB:
+                return CALL_TYPE_OPEN_READ_BLOB;
+            case CALL_TYPE_STRING_GLOBAL_OPEN_READ_BLOB:
+                return CALL_TYPE_GLOBAL_OPEN_READ_BLOB;
+            case CALL_TYPE_STRING_REMOVE_BLOB:
+                return CALL_TYPE_REMOVE_BLOB;
+            case CALL_TYPE_STRING_SET_BLOB_VISIBILITY:
+                return CALL_TYPE_SET_BLOB_VISIBILITY;
             default:
                 return CALL_TYPE_UNKNOWN;
         }
@@ -419,8 +442,7 @@ public class CallStats {
      * Returns the set of all {@link CallStats.CallType} that map to an AppSearchManager API.
      */
     @VisibleForTesting
-    @NonNull
-    public static Set<Integer> getAllApiCallTypes() {
+    public static @NonNull Set<Integer> getAllApiCallTypes() {
         return new ArraySet<>(Arrays.asList(
                 CALL_TYPE_INITIALIZE,
                 CALL_TYPE_SET_SCHEMA,
@@ -445,6 +467,13 @@ public class CallStats {
                 CALL_TYPE_GET_STORAGE_INFO,
                 CALL_TYPE_REGISTER_OBSERVER_CALLBACK,
                 CALL_TYPE_UNREGISTER_OBSERVER_CALLBACK,
-                CALL_TYPE_GLOBAL_GET_NEXT_PAGE));
+                CALL_TYPE_GLOBAL_GET_NEXT_PAGE,
+                CALL_TYPE_EXECUTE_APP_FUNCTION,
+                CALL_TYPE_OPEN_WRITE_BLOB,
+                CALL_TYPE_COMMIT_BLOB,
+                CALL_TYPE_OPEN_READ_BLOB,
+                CALL_TYPE_GLOBAL_OPEN_READ_BLOB,
+                CALL_TYPE_REMOVE_BLOB,
+                CALL_TYPE_SET_BLOB_VISIBILITY));
     }
 }

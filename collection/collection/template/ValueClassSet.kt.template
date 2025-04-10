@@ -23,19 +23,19 @@
     "PrivatePropertyName",
     "NOTHING_TO_INLINE",
     "UnusedImport",
-    "ktlint:standard:import-ordering",
-    "ktlint:standard:max-line-length",
-    "ktlint:standard:no-unused-imports",
 )
+@file:OptIn(ExperimentalContracts::class)
 
 package PACKAGE
 
+import androidx.annotation.IntRange
 import androidx.collection.PRIMITIVESet
 import androidx.collection.MutablePRIMITIVESet
 import androidx.collection.emptyPRIMITIVESet
 import androidx.collection.mutablePRIMITIVESetOf
 import VALUE_PKG.VALUE_CLASS
 import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.jvm.JvmInline
 
@@ -139,6 +139,37 @@ VISIBILITY fun mutableVALUE_CLASSSetOf(
     )
 
 /**
+ * Builds a new [VALUE_CLASSSet] by populating a [MutableVALUE_CLASSSet] using the given
+ * [builderAction].
+ *
+ * The set passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ */
+VISIBILITY inline fun buildVALUE_CLASSSet(
+    builderAction: MutableVALUE_CLASSSet.() -> Unit,
+): VALUE_CLASSSet {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableVALUE_CLASSSet().apply(builderAction).asVALUE_CLASSSet()
+}
+
+/**
+ * Builds a new [VALUE_CLASSSet] by populating a [MutableVALUE_CLASSSet] using the given
+ * [builderAction].
+ *
+ * The set passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param initialCapacity Hint for the expected number of elements added in the [builderAction].
+ */
+VISIBILITY inline fun buildVALUE_CLASSSet(
+    initialCapacity: Int,
+    builderAction: MutableVALUE_CLASSSet.() -> Unit,
+): VALUE_CLASSSet {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableVALUE_CLASSSet(initialCapacity).apply(builderAction).asVALUE_CLASSSet()
+}
+
+/**
  * [VALUE_CLASSSet] is a container with a [Set]-like interface designed to avoid
  * allocations, including boxing.
  *
@@ -153,21 +184,20 @@ VISIBILITY fun mutableVALUE_CLASSSetOf(
  *
  * @see [MutableVALUE_CLASSSet]
  */
-@OptIn(ExperimentalContracts::class)
 @JvmInline
 VISIBILITY value class VALUE_CLASSSet(val set: PRIMITIVESet) {
     /**
      * Returns the number of elements that can be stored in this set
      * without requiring internal storage reallocation.
      */
-    @get:androidx.annotation.IntRange(from = 0)
+    @get:IntRange(from = 0)
     public inline val capacity: Int
         get() = set.capacity
 
     /**
      * Returns the number of elements in this set.
      */
-    @get:androidx.annotation.IntRange(from = 0)
+    @get:IntRange(from = 0)
     public inline val size: Int
         get() = set.size
 
@@ -246,7 +276,7 @@ VISIBILITY value class VALUE_CLASSSet(val set: PRIMITIVESet) {
     /**
      * Returns the number of elements in this set.
      */
-    @androidx.annotation.IntRange(from = 0)
+    @IntRange(from = 0)
     public inline fun count(): Int = set.count()
 
     /**
@@ -254,7 +284,7 @@ VISIBILITY value class VALUE_CLASSSet(val set: PRIMITIVESet) {
      * @param predicate Called for all elements in the set to count the number for which it returns
      * `true`.
      */
-    @androidx.annotation.IntRange(from = 0)
+    @IntRange(from = 0)
     public inline fun count(predicate: (element: VALUE_CLASS) -> Boolean): Int {
         contract { callsInPlace(predicate) }
         return set.count { predicate(VALUE_CLASS(itTO_PARAM)) }
@@ -304,21 +334,20 @@ VISIBILITY value class VALUE_CLASSSet(val set: PRIMITIVESet) {
  * the set (insertion or removal for instance), the calling code must provide
  * the appropriate synchronization. Concurrent reads are however safe.
  */
-@OptIn(ExperimentalContracts::class)
 @JvmInline
 VISIBILITY value class MutableVALUE_CLASSSet(val set: MutablePRIMITIVESet) {
     /**
      * Returns the number of elements that can be stored in this set
      * without requiring internal storage reallocation.
      */
-    @get:androidx.annotation.IntRange(from = 0)
+    @get:IntRange(from = 0)
     public inline val capacity: Int
         get() = set.capacity
 
     /**
      * Returns the number of elements in this set.
      */
-    @get:androidx.annotation.IntRange(from = 0)
+    @get:IntRange(from = 0)
     public inline val size: Int
         get() = set.size
 
@@ -397,7 +426,7 @@ VISIBILITY value class MutableVALUE_CLASSSet(val set: MutablePRIMITIVESet) {
     /**
      * Returns the number of elements in this set.
      */
-    @androidx.annotation.IntRange(from = 0)
+    @IntRange(from = 0)
     public inline fun count(): Int = set.count()
 
     /**
@@ -405,7 +434,7 @@ VISIBILITY value class MutableVALUE_CLASSSet(val set: MutablePRIMITIVESet) {
      * @param predicate Called for all elements in the set to count the number for which it returns
      * `true`.
      */
-    @androidx.annotation.IntRange(from = 0)
+    @IntRange(from = 0)
     public inline fun count(predicate: (element: VALUE_CLASS) -> Boolean): Int {
         contract { callsInPlace(predicate) }
         return set.count { predicate(VALUE_CLASS(itTO_PARAM)) }
@@ -540,6 +569,6 @@ VISIBILITY value class MutableVALUE_CLASSSet(val set: MutablePRIMITIVESet) {
      * Returns the number of empty elements removed from this set's storage.
      * Returns 0 if no trimming is necessary or possible.
      */
-    @androidx.annotation.IntRange(from = 0)
+    @IntRange(from = 0)
     public inline fun trim(): Int = set.trim()
 }

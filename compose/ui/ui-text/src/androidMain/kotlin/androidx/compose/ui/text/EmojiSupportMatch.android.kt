@@ -30,20 +30,20 @@ value class EmojiSupportMatch private constructor(private val value: Int) {
         return when (value) {
             Default.value -> "EmojiSupportMatch.Default"
             None.value -> "EmojiSupportMatch.None"
+            All.value -> "EmojiSupportMatch.All"
             else -> "Invalid(value=$value)"
         }
     }
 
     companion object {
 
-        /**
-         * Default support strategy defers to EmojiCompat.get()
-         */
+        /** Default support strategy defers to EmojiCompat.get() */
         val Default = EmojiSupportMatch(0)
 
-        /**
-         * Do not use support emoji for this paragraph.
-         */
+        /** Do not use support emoji for this paragraph. */
         val None = EmojiSupportMatch(1)
+
+        /** Attempt to replace all emoji, even if they're available on this device's fonts. */
+        val All = EmojiSupportMatch(2)
     }
 }

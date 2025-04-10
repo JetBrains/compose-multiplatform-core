@@ -19,7 +19,7 @@ package androidx.core.view;
 
 import android.view.View;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This interface should be implemented by {@link android.view.ViewGroup ViewGroup} subclasses
@@ -75,6 +75,6 @@ public interface NestedScrollingParent3 extends NestedScrollingParent2 {
      * @see NestedScrollingChild3#dispatchNestedScroll(int, int, int, int, int[], int, int[])
      */
     void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
-            int dyUnconsumed, @ViewCompat.NestedScrollType int type, @NonNull int[] consumed);
+            int dyUnconsumed, @ViewCompat.NestedScrollType int type, int @NonNull [] consumed);
 
 }

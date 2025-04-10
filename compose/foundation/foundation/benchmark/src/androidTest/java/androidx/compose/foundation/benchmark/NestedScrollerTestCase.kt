@@ -26,8 +26,8 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -40,9 +40,7 @@ import androidx.compose.ui.platform.LocalDensity
 import kotlin.random.Random
 import kotlinx.coroutines.runBlocking
 
-/**
- * Test case that puts many horizontal scrollers in a vertical scroller
- */
+/** Test case that puts many horizontal scrollers in a vertical scroller */
 class NestedScrollerTestCase : LayeredComposeTestCase(), ToggleableTestCase {
     // ScrollerPosition must now be constructed during composition to obtain the Density
     private lateinit var scrollState: ScrollState
@@ -50,10 +48,8 @@ class NestedScrollerTestCase : LayeredComposeTestCase(), ToggleableTestCase {
     @Composable
     override fun MeasuredContent() {
         scrollState = rememberScrollState()
-        LazyColumn {
-            items(5) { index ->
-                SquareRow(index == 0)
-            }
+        Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+            repeat(5) { index -> SquareRow(index == 0) }
         }
     }
 
@@ -75,11 +71,7 @@ class NestedScrollerTestCase : LayeredComposeTestCase(), ToggleableTestCase {
                             Color(red = red, green = green, blue = blue)
                         }
                         Box(Modifier.size(350f.toDp()).background(color = color))
-                        Text(
-                            text = "Some title",
-                            color = Color.Black,
-                            fontSize = 60f.toSp()
-                        )
+                        Text(text = "Some title", color = Color.Black, fontSize = 60f.toSp())
                         Row(Modifier.fillMaxWidth()) {
                             Text(
                                 "3.5 ★",
@@ -87,8 +79,7 @@ class NestedScrollerTestCase : LayeredComposeTestCase(), ToggleableTestCase {
                                 modifier = Modifier.align(Alignment.CenterVertically)
                             )
                             Box(
-                                Modifier
-                                    .align(Alignment.CenterVertically)
+                                Modifier.align(Alignment.CenterVertically)
                                     .size(40f.toDp())
                                     .background(color = playStoreColor)
                             )

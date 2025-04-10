@@ -22,9 +22,6 @@ import android.media.CamcorderProfile;
 import android.util.Pair;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
@@ -36,6 +33,9 @@ import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.SurfaceConfig;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -52,7 +52,6 @@ import java.util.Set;
  * devices. This structure is used to store the guaranteed supported stream capabilities related
  * info.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceManager {
     private static final String TAG = "Camera2DeviceSurfaceManager";
     private final Map<String, SupportedSurfaceCombination> mCameraSupportedSurfaceCombinationMap =
@@ -123,9 +122,8 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
      * @return new {@link SurfaceConfig} object
      * @throws IllegalStateException if not initialized
      */
-    @Nullable
     @Override
-    public SurfaceConfig transformSurfaceConfig(
+    public @Nullable SurfaceConfig transformSurfaceConfig(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             int imageFormat,
@@ -157,6 +155,8 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
      * @param newUseCaseConfigsSupportedSizeMap map of configurations of the use cases to the
      *                                          supported sizes list that will be given a
      *                                          suggested stream specification
+     * @param isPreviewStabilizationOn          whether the preview stabilization is enabled.
+     * @param hasVideoCapture                   whether the use cases has video capture.
      * @return map of suggested stream specifications for given use cases
      * @throws IllegalStateException    if not initialized
      * @throws IllegalArgumentException if {@code newUseCaseConfigs} is an empty list, if
@@ -164,15 +164,15 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
      *                                  available, or if the {@code cameraId}
      *                                  is not a valid id.
      */
-    @NonNull
     @Override
-    public Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
+    public @NonNull Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
             getSuggestedStreamSpecs(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             @NonNull List<AttachedSurfaceInfo> existingSurfaces,
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap,
-            boolean isPreviewStabilizationOn) {
+            boolean isPreviewStabilizationOn,
+            boolean hasVideoCapture) {
         Preconditions.checkArgument(!newUseCaseConfigsSupportedSizeMap.isEmpty(),
                 "No new use cases to be bound.");
 
@@ -188,6 +188,7 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
                 cameraMode,
                 existingSurfaces,
                 newUseCaseConfigsSupportedSizeMap,
-                isPreviewStabilizationOn);
+                isPreviewStabilizationOn,
+                hasVideoCapture);
     }
 }

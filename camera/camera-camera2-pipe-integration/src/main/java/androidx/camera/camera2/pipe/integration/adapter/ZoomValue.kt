@@ -16,16 +16,12 @@
 
 package androidx.camera.camera2.pipe.integration.adapter
 
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.integration.internal.ZoomMath.getLinearZoomFromZoomRatio
 import androidx.camera.camera2.pipe.integration.internal.ZoomMath.getZoomRatioFromLinearZoom
 import androidx.camera.core.ZoomState
 
-/**
- * Immutable adaptor to the ZoomState interface.
- */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-data class ZoomValue(
+/** Immutable adaptor to the ZoomState interface. */
+public data class ZoomValue(
     private val zoomRatio: Float,
     private val minZoomRatio: Float,
     private val maxZoomRatio: Float,
@@ -33,13 +29,14 @@ data class ZoomValue(
     private var linearZoom: Float? = null
 
     /**
-     * ZoomValue should be created with either zoomRatio or linearZoom and the other value should
-     * be calculated. If both are allowed to be set from outside, it becomes confusing regarding
-     * which value to use if the values don't align with conversion values.
-     * Secondary constructor with a LinearZoom value wrapper class is used for this purpose.
+     * ZoomValue should be created with either zoomRatio or linearZoom and the other value should be
+     * calculated. If both are allowed to be set from outside, it becomes confusing regarding which
+     * value to use if the values don't align with conversion values. Secondary constructor with a
+     * LinearZoom value wrapper class is used for this purpose.
      */
-    data class LinearZoom(val value: Float)
-    constructor(
+    public data class LinearZoom(val value: Float)
+
+    public constructor(
         linearZoom: LinearZoom,
         minZoomRatio: Float,
         maxZoomRatio: Float,
@@ -56,11 +53,16 @@ data class ZoomValue(
     }
 
     override fun getZoomRatio(): Float = zoomRatio
+
     override fun getMaxZoomRatio(): Float = maxZoomRatio
+
     override fun getMinZoomRatio(): Float = minZoomRatio
-    override fun getLinearZoom() = linearZoom ?: getLinearZoomFromZoomRatio(
-        zoomRatio = zoomRatio,
-        minZoomRatio = minZoomRatio,
-        maxZoomRatio = maxZoomRatio
-    )
+
+    override fun getLinearZoom(): Float =
+        linearZoom
+            ?: getLinearZoomFromZoomRatio(
+                zoomRatio = zoomRatio,
+                minZoomRatio = minZoomRatio,
+                maxZoomRatio = maxZoomRatio
+            )
 }

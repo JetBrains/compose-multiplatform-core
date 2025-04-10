@@ -17,19 +17,23 @@
 package androidx.room
 
 /**
- * Repeatable annotation declaring the renamed columns in the [AutoMigration.to] version of
- * an auto migration.
+ * Repeatable annotation declaring the renamed columns in the [AutoMigration.to] version of an auto
+ * migration.
  *
  * @see AutoMigration
  */
 @JvmRepeatable(RenameColumn.Entries::class)
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)
+@Suppress(
+    // Due to @JvmRepeatable in this actual while expect has @Repeatable
+    "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT"
+)
 public actual annotation class RenameColumn(
     /**
-     * Name of the table in the [AutoMigration.from] version of the database the renamed
-     * column is found in. The name in [AutoMigration.from] version is used in case the table
-     * was renamed in the [AutoMigration.to] version.
+     * Name of the table in the [AutoMigration.from] version of the database the renamed column is
+     * found in. The name in [AutoMigration.from] version is used in case the table was renamed in
+     * the [AutoMigration.to] version.
      *
      * @return Name of the table
      */
@@ -49,12 +53,8 @@ public actual annotation class RenameColumn(
      */
     actual val toColumnName: String,
 ) {
-    /**
-     * Container annotation for the repeatable annotation [RenameColumn].
-     */
+    /** Container annotation for the repeatable annotation [RenameColumn]. */
     @Target(AnnotationTarget.CLASS)
     @Retention(AnnotationRetention.BINARY)
-    public annotation class Entries(
-        vararg val value: RenameColumn
-    )
+    public annotation class Entries(vararg val value: RenameColumn)
 }

@@ -1,0 +1,42 @@
+// Signature format: 4.0
+package androidx.security.state.provider {
+
+  public final class UpdateInfo {
+    ctor public UpdateInfo(String uri, String component, String securityPatchLevel, java.util.Date publishedDate);
+    method public String getComponent();
+    method public java.util.Date getPublishedDate();
+    method public String getSecurityPatchLevel();
+    method public String getUri();
+    property public String component;
+    property public java.util.Date publishedDate;
+    property public String securityPatchLevel;
+    property public String uri;
+  }
+
+  public static final class UpdateInfo.Builder {
+    ctor public UpdateInfo.Builder();
+    method public androidx.security.state.provider.UpdateInfo build();
+    method public androidx.security.state.provider.UpdateInfo.Builder setComponent(String component);
+    method public androidx.security.state.provider.UpdateInfo.Builder setPublishedDate(java.util.Date publishedDate);
+    method public androidx.security.state.provider.UpdateInfo.Builder setSecurityPatchLevel(String securityPatchLevel);
+    method public androidx.security.state.provider.UpdateInfo.Builder setUri(String uri);
+  }
+
+  public final class UpdateInfoManager {
+    ctor public UpdateInfoManager(android.content.Context context, optional androidx.security.state.SecurityPatchState? customSecurityState);
+    method public void registerUpdate(androidx.security.state.provider.UpdateInfo updateInfo);
+    method public void unregisterUpdate(androidx.security.state.provider.UpdateInfo updateInfo);
+  }
+
+  public final class UpdateInfoProvider extends android.content.ContentProvider {
+    ctor public UpdateInfoProvider();
+    method public int delete(android.net.Uri uri, String? selection, String[]? selectionArgs);
+    method public String? getType(android.net.Uri uri);
+    method public android.net.Uri? insert(android.net.Uri uri, android.content.ContentValues? values);
+    method public boolean onCreate();
+    method public android.database.Cursor query(android.net.Uri uri, String[]? projection, String? selection, String[]? selectionArgs, String? sortOrder);
+    method public int update(android.net.Uri uri, android.content.ContentValues? values, String? selection, String[]? selectionArgs);
+  }
+
+}
+

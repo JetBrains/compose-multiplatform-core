@@ -19,75 +19,76 @@ package androidx.compose.animation.core
 import androidx.collection.IntList
 import androidx.collection.IntObjectMap
 
-/**
- * Implementation of [VectorizedMonoSplineKeyframesSpec] using [MonoSpline].
- */
-@ExperimentalAnimationSpecApi
+/** Implementation of [VectorizedMonoSplineKeyframesSpec] using [MonoSpline]. */
 internal class VectorizedMonoSplineKeyframesSpec<V : AnimationVector>(
     private val timestamps: IntList,
     private val keyframes: IntObjectMap<Pair<V, Easing>>,
     override val durationMillis: Int,
-    override val delayMillis: Int
+    override val delayMillis: Int,
+    private val periodicBias: Float,
 ) : VectorizedDurationBasedAnimationSpec<V> {
     // Objects initialized lazily once
-    private lateinit var valueVector: V
-    private lateinit var velocityVector: V
+    private var valueVector: V? = null
+    private var velocityVector: V? = null
 
     // Time values passed to MonoSpline.
     private lateinit var times: FloatArray
 
     // Objects for MonoSpline
-    private lateinit var lastInitialValue: V
-    private lateinit var lastTargetValue: V
-    private lateinit var monoSpline: MonoSpline
+    private var monoSpline: MonoSpline? = null
+    // [values] are not modified by MonoSpline so we can safely re-use it to re-instantiate it
+    private var values: Array<FloatArray>? = null
+    private var lastInitialValue: V? = null
+    private var lastTargetValue: V? = null
 
     private fun init(initialValue: V, targetValue: V, initialVelocity: V) {
-
         // Only need to initialize once
-        if (!::valueVector.isInitialized) {
+        if (valueVector == null) {
             valueVector = initialValue.newInstance()
             velocityVector = initialVelocity.newInstance()
 
-            times = FloatArray(timestamps.size) {
-                timestamps[it].toFloat() / SecondsToMillis
-            }
+            times = FloatArray(timestamps.size) { timestamps[it].toFloat() / SecondsToMillis }
         }
 
         // Need to re-initialize based on initial/target values
-        if (!::monoSpline.isInitialized ||
-            lastInitialValue != initialValue || lastTargetValue != targetValue
+        if (
+            monoSpline == null || lastInitialValue != initialValue || lastTargetValue != targetValue
         ) {
+            val initialChanged = lastInitialValue != initialValue
+            val targetChanged = lastTargetValue != targetValue
             lastInitialValue = initialValue
             lastTargetValue = targetValue
 
             val dimension = initialValue.size
 
-            // TODO(b/292114811): Re-use objects, after the first pass, only the initial and target
-            //  may change, and only if the keyframes does not overwrite it
-            val values = Array(timestamps.size) {
-                when (val timestamp = timestamps[it]) {
-                    // Start (zero) and end (durationMillis) may not have been declared in keyframes
-                    0 -> {
-                        if (!keyframes.contains(timestamp)) {
-                            FloatArray(dimension, initialValue::get)
+            var values = values
+            if (values == null) {
+                values =
+                    Array(timestamps.size) {
+                        val timestamp = timestamps[it]
+                        val keyframe = keyframes[timestamp]
+                        if (timestamp == 0 && keyframe == null) {
+                            FloatArray(dimension) { i -> initialValue[i] }
+                        } else if (timestamp == durationMillis && keyframe == null) {
+                            FloatArray(dimension) { i -> targetValue[i] }
                         } else {
-                            FloatArray(dimension, keyframes[timestamp]!!.first::get)
+                            val vectorValue = keyframe!!.first
+                            FloatArray(dimension) { i -> vectorValue[i] }
                         }
                     }
-
-                    durationMillis -> {
-                        if (!keyframes.contains(timestamp)) {
-                            FloatArray(dimension, targetValue::get)
-                        } else {
-                            FloatArray(dimension, keyframes[timestamp]!!.first::get)
-                        }
-                    }
-
-                    // All other values are guaranteed to exist
-                    else -> FloatArray(dimension, keyframes[timestamp]!!.first::get)
+                this.values = values
+            } else {
+                // We can re-use most of the objects. Only the start and end may need to be replaced
+                if (initialChanged && !keyframes.contains(0)) {
+                    val index = timestamps.binarySearch(0)
+                    values[index] = FloatArray(dimension) { i -> initialValue[i] }
+                }
+                if (targetChanged && !keyframes.contains(durationMillis)) {
+                    val index = timestamps.binarySearch(durationMillis)
+                    values[index] = FloatArray(dimension) { i -> targetValue[i] }
                 }
             }
-            monoSpline = MonoSpline(times, values)
+            monoSpline = MonoSpline(times, values, periodicBias)
         }
     }
 
@@ -100,20 +101,27 @@ internal class VectorizedMonoSplineKeyframesSpec<V : AnimationVector>(
         val playTimeMillis = playTimeNanos / MillisToNanos
         val clampedPlayTime = clampPlayTime(playTimeMillis).toInt()
         // If there is a key frame defined with the given time stamp, return that value
-        if (keyframes.containsKey(clampedPlayTime)) {
-            return keyframes[clampedPlayTime]!!.first
+        val keyframe = keyframes[clampedPlayTime]
+        if (keyframe != null) {
+            return keyframe.first
         }
 
         if (clampedPlayTime >= durationMillis) {
             return targetValue
-        } else if (clampedPlayTime <= 0) return initialValue
+        } else if (clampedPlayTime <= 0) {
+            return initialValue
+        }
 
         init(initialValue, targetValue, initialVelocity)
 
-        // TODO(b/292114811): Consider also passing the corresponding range index to avoid
-        //  the linear iteration within MonoSpline
-        monoSpline.getPos(
-            t = getEasedTimeSeconds(clampedPlayTime),
+        // There's no promise on the nature of the given time, so we need to search for the correct
+        // time range at every call
+        val index = findEntryForTimeMillis(clampedPlayTime)
+
+        val valueVector = valueVector!!
+        monoSpline!!.getPos(
+            index = index,
+            time = getEasedTimeFromIndex(index, clampedPlayTime),
             v = valueVector
         )
         return valueVector
@@ -126,17 +134,18 @@ internal class VectorizedMonoSplineKeyframesSpec<V : AnimationVector>(
         initialVelocity: V
     ): V {
         val playTimeMillis = playTimeNanos / MillisToNanos
-        val clampedPlayTime = clampPlayTime(playTimeMillis)
-        if (clampedPlayTime < 0L) {
-            return initialVelocity
-        }
+        val clampedPlayTime = clampPlayTime(playTimeMillis).toInt()
 
         init(initialValue, targetValue, initialVelocity)
 
-        // TODO(b/292114811): Consider also passing the corresponding range index to avoid
-        //  the linear iteration within MonoSpline
-        monoSpline.getSlope(
-            time = getEasedTimeSeconds(clampedPlayTime.toInt()),
+        // There's no promise on the nature of the given time, so we need to search for the correct
+        // time range at every call
+        val index = findEntryForTimeMillis(clampedPlayTime)
+
+        val velocityVector = velocityVector!!
+        monoSpline!!.getSlope(
+            index = index,
+            time = getEasedTimeFromIndex(index, clampedPlayTime),
             v = velocityVector
         )
         return velocityVector
@@ -148,10 +157,7 @@ internal class VectorizedMonoSplineKeyframesSpec<V : AnimationVector>(
         return keyframes[timestamp]?.second ?: LinearEasing
     }
 
-    private fun getEasedTimeSeconds(timeMillis: Int): Float {
-        // There's no promise on the nature of the given time, so we need to search for the correct
-        // time range at every call
-        val index = findEntryForTimeMillis(timeMillis)
+    private fun getEasedTimeFromIndex(index: Int, timeMillis: Int): Float {
         if (index >= timestamps.lastIndex) {
             // Return the same value. This may only happen at the end of the animation.
             return timeMillis.toFloat() / SecondsToMillis

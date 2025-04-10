@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
+import androidx.build.SoftwareType
+
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("androidx.benchmark")
 }
 
@@ -33,7 +35,8 @@ dependencies {
 }
 
 android {
-    namespace "androidx.metrics.performance.benchmark"
+    compileSdk = 35
+    namespace = "androidx.metrics.performance.benchmark"
     defaultConfig {
         // Enable measuring on an emulator, devices with low battery, and eng builds
         // We are only concerned with allocations in this benchmark, so runtime performance
@@ -43,3 +46,6 @@ android {
     }
 }
 
+androidx {
+    type = SoftwareType.BENCHMARK
+}

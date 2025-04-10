@@ -18,20 +18,19 @@ package androidx.camera.testing.impl.fakes;
 
 import android.graphics.Matrix;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.ImageInfo;
 import androidx.camera.core.impl.MutableTagBundle;
 import androidx.camera.core.impl.TagBundle;
 import androidx.camera.core.impl.utils.ExifData;
 
+import org.jspecify.annotations.NonNull;
+
 /**
  * A fake implementation of {@link ImageInfo} where the values are settable.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class FakeImageInfo implements ImageInfo {
-    @NonNull private MutableTagBundle mTagBundle = MutableTagBundle.create();
-    @NonNull private Matrix mSensorToBufferTransformMatrix = new Matrix();
+    private @NonNull MutableTagBundle mTagBundle = MutableTagBundle.create();
+    private @NonNull Matrix mSensorToBufferTransformMatrix = new Matrix();
 
     private long mTimestamp;
     private int mRotationDegrees;
@@ -63,9 +62,8 @@ public final class FakeImageInfo implements ImageInfo {
         mSensorToBufferTransformMatrix = sensorToBufferTransformMatrix;
     }
 
-    @NonNull
     @Override
-    public TagBundle getTagBundle() {
+    public @NonNull TagBundle getTagBundle() {
         return mTagBundle;
     }
 
@@ -79,14 +77,13 @@ public final class FakeImageInfo implements ImageInfo {
         return mRotationDegrees;
     }
 
-    @NonNull
     @Override
-    public Matrix getSensorToBufferTransformMatrix() {
+    public @NonNull Matrix getSensorToBufferTransformMatrix() {
         return mSensorToBufferTransformMatrix;
     }
 
     @Override
-    public void populateExifData(@NonNull ExifData.Builder exifBuilder) {
+    public void populateExifData(ExifData.@NonNull Builder exifBuilder) {
         exifBuilder.setOrientationDegrees(mRotationDegrees);
         exifBuilder.setFocalLength(mFocalLength);
     }

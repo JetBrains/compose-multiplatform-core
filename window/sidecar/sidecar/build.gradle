@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
-import androidx.build.RunApiTasks
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -23,19 +29,19 @@ plugins {
 }
 
 dependencies {
-    implementation("androidx.annotation:annotation:1.1.0")
+    api(libs.jspecify)
+    implementation("androidx.annotation:annotation:1.8.1")
 }
 
 androidx {
     name = "WindowManager Sidecar"
-    publish = Publish.SNAPSHOT_AND_RELEASE // Only to generate per-project-zips
-    runApiTasks = new RunApiTasks.Yes("Need to track API surface but should never publish")
+    type = SoftwareType.PUBLISHED_LIBRARY // Only to generate per-project-zips
     inceptionYear = "2020"
     description = "This version of the OEM extension is deprecated. Please use window:extensions:extensions." +
             "module instead."
-    metalavaK2UastEnabled = true
+    doNotDocumentReason = "Should not be published"
 }
 
 android {
-    namespace "androidx.window.sidecar"
+    namespace = "androidx.window.sidecar"
 }

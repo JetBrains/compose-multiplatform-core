@@ -16,13 +16,17 @@
 
 package androidx.compose.material3
 
+import android.content.res.Configuration
 import android.os.Build
+import android.os.LocaleList
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
@@ -48,11 +52,9 @@ import org.junit.runners.Parameterized
 @OptIn(ExperimentalMaterial3Api::class)
 class DateRangePickerScreenshotTest(private val scheme: ColorSchemeWrapper) {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
-    @get:Rule
-    val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
+    @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL3)
 
     private val wrap = Modifier.wrapContentSize(Alignment.Center)
     private val wrapperTestTag = "dateRangePickerWrapper"
@@ -63,9 +65,10 @@ class DateRangePickerScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Box(wrap.testTag(wrapperTestTag)) {
                 val monthInUtcMillis = dayInUtcMilliseconds(year = 2021, month = 1, dayOfMonth = 1)
                 DateRangePicker(
-                    state = rememberDateRangePickerState(
-                        initialDisplayedMonthMillis = monthInUtcMillis
-                    ),
+                    state =
+                        rememberDateRangePickerState(
+                            initialDisplayedMonthMillis = monthInUtcMillis
+                        ),
                     showModeToggle = false
                 )
             }
@@ -83,11 +86,12 @@ class DateRangePickerScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 val endSelectionMillis =
                     dayInUtcMilliseconds(year = 2021, month = 3, dayOfMonth = 10)
                 DateRangePicker(
-                    state = rememberDateRangePickerState(
-                        initialDisplayedMonthMillis = monthInUtcMillis,
-                        initialSelectedStartDateMillis = startSelectionMillis,
-                        initialSelectedEndDateMillis = endSelectionMillis
-                    ),
+                    state =
+                        rememberDateRangePickerState(
+                            initialDisplayedMonthMillis = monthInUtcMillis,
+                            initialSelectedStartDateMillis = startSelectionMillis,
+                            initialSelectedEndDateMillis = endSelectionMillis
+                        ),
                     showModeToggle = false
                 )
             }
@@ -105,11 +109,12 @@ class DateRangePickerScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 val endSelectionMillis =
                     dayInUtcMilliseconds(year = 2021, month = 4, dayOfMonth = 5)
                 DateRangePicker(
-                    state = rememberDateRangePickerState(
-                        initialDisplayedMonthMillis = monthInUtcMillis,
-                        initialSelectedStartDateMillis = startSelectionMillis,
-                        initialSelectedEndDateMillis = endSelectionMillis
-                    ),
+                    state =
+                        rememberDateRangePickerState(
+                            initialDisplayedMonthMillis = monthInUtcMillis,
+                            initialSelectedStartDateMillis = startSelectionMillis,
+                            initialSelectedEndDateMillis = endSelectionMillis
+                        ),
                     showModeToggle = false
                 )
             }
@@ -129,11 +134,12 @@ class DateRangePickerScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     val endSelectionMillis =
                         dayInUtcMilliseconds(year = 2021, month = 4, dayOfMonth = 5)
                     DateRangePicker(
-                        state = rememberDateRangePickerState(
-                            initialDisplayedMonthMillis = monthInUtcMillis,
-                            initialSelectedStartDateMillis = startSelectionMillis,
-                            initialSelectedEndDateMillis = endSelectionMillis
-                        ),
+                        state =
+                            rememberDateRangePickerState(
+                                initialDisplayedMonthMillis = monthInUtcMillis,
+                                initialSelectedStartDateMillis = startSelectionMillis,
+                                initialSelectedEndDateMillis = endSelectionMillis
+                            ),
                         showModeToggle = false
                     )
                 }
@@ -148,18 +154,21 @@ class DateRangePickerScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Box(wrap.testTag(wrapperTestTag)) {
                 val monthInUtcMillis = dayInUtcMilliseconds(year = 2000, month = 6, dayOfMonth = 1)
                 DateRangePicker(
-                    state = rememberDateRangePickerState(
-                        initialDisplayedMonthMillis = monthInUtcMillis,
-                        selectableDates = object : SelectableDates {
-                            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                                val localDate =
-                                    Instant.ofEpochMilli(utcTimeMillis).atZone(ZoneId.of("UTC"))
-                                        .toLocalDate()
-                                val dayOfWeek = localDate.dayOfWeek
-                                return dayOfWeek != DayOfWeek.SUNDAY
-                            }
-                        }
-                    ),
+                    state =
+                        rememberDateRangePickerState(
+                            initialDisplayedMonthMillis = monthInUtcMillis,
+                            selectableDates =
+                                object : SelectableDates {
+                                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                                        val localDate =
+                                            Instant.ofEpochMilli(utcTimeMillis)
+                                                .atZone(ZoneId.of("UTC"))
+                                                .toLocalDate()
+                                        val dayOfWeek = localDate.dayOfWeek
+                                        return dayOfWeek != DayOfWeek.SUNDAY
+                                    }
+                                }
+                        ),
                     showModeToggle = false
                 )
             }
@@ -173,13 +182,37 @@ class DateRangePickerScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Box(wrap.testTag(wrapperTestTag)) {
                 val monthInUtcMillis = dayInUtcMilliseconds(year = 2021, month = 1, dayOfMonth = 1)
                 DateRangePicker(
-                    state = rememberDateRangePickerState(
-                        initialDisplayedMonthMillis = monthInUtcMillis
-                    )
+                    state =
+                        rememberDateRangePickerState(initialDisplayedMonthMillis = monthInUtcMillis)
                 )
             }
         }
         assertAgainstGolden("dateRangePicker_withModeToggle_${scheme.name}")
+    }
+
+    @Test
+    fun dateRangePicker_customLocale() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            val preferredLocales = LocaleList.forLanguageTags("HE")
+            val config = Configuration()
+            config.setLocales(preferredLocales)
+            val newContext = LocalContext.current.createConfigurationContext(config)
+            CompositionLocalProvider(
+                LocalContext provides newContext,
+                LocalConfiguration provides config,
+                LocalLayoutDirection provides LayoutDirection.Rtl
+            ) {
+                Box(wrap.testTag(wrapperTestTag)) {
+                    val monthInUtcMillis =
+                        dayInUtcMilliseconds(year = 2021, month = 1, dayOfMonth = 1)
+                    val state =
+                        rememberDateRangePickerState(initialDisplayedMonthMillis = monthInUtcMillis)
+                    DateRangePicker(state = state, showModeToggle = false)
+                }
+            }
+        }
+        // Expecting the content of the DateRangePicker to be in Hebrew.
+        assertAgainstGolden("dateRangePicker_customLocale_${scheme.name}")
     }
 
     // Returns the given date's day as milliseconds from epoch. The returned value is for the day's
@@ -192,7 +225,8 @@ class DateRangePickerScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .toEpochMilli()
 
     private fun assertAgainstGolden(goldenName: String) {
-        rule.onNodeWithTag(wrapperTestTag)
+        rule
+            .onNodeWithTag(wrapperTestTag)
             .captureToImage()
             .assertAgainstGolden(screenshotRule, goldenName)
     }
@@ -203,10 +237,11 @@ class DateRangePickerScreenshotTest(private val scheme: ColorSchemeWrapper) {
     companion object {
         @Parameterized.Parameters(name = "{0}")
         @JvmStatic
-        fun parameters() = arrayOf(
-            ColorSchemeWrapper("lightTheme", lightColorScheme()),
-            ColorSchemeWrapper("darkTheme", darkColorScheme()),
-        )
+        fun parameters() =
+            arrayOf(
+                ColorSchemeWrapper("lightTheme", lightColorScheme()),
+                ColorSchemeWrapper("darkTheme", darkColorScheme()),
+            )
     }
 
     class ColorSchemeWrapper(val name: String, val colorScheme: ColorScheme) {

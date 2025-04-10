@@ -2,10 +2,10 @@ package com.sdkwithcallbacks
 
 import android.os.Bundle
 import android.os.IBinder
-import androidx.privacysandbox.ui.client.toLauncherInfo
-import androidx.privacysandbox.ui.core.ISdkActivityLauncher
-import androidx.privacysandbox.ui.core.ISdkActivityLauncherCallback
-import androidx.privacysandbox.ui.core.SdkActivityLauncher
+import androidx.privacysandbox.activity.client.toLauncherInfo
+import androidx.privacysandbox.activity.core.ISdkActivityLauncher
+import androidx.privacysandbox.activity.core.ISdkActivityLauncherCallback
+import androidx.privacysandbox.activity.core.SdkActivityLauncher
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -14,8 +14,7 @@ public class SdkActivityLauncherProxy(
     public val remote: ISdkActivityLauncher,
     public val launcherInfo: Bundle,
 ) : SdkActivityLauncher {
-    public override suspend fun launchSdkActivity(sdkActivityHandlerToken: IBinder): Boolean =
-            suspendCancellableCoroutine {
+    public override suspend fun launchSdkActivity(sdkActivityHandlerToken: IBinder): Boolean = suspendCancellableCoroutine {
         remote.launchSdkActivity(
             sdkActivityHandlerToken,
             object: ISdkActivityLauncherCallback.Stub() {

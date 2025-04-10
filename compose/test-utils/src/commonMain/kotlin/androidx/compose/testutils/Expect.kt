@@ -16,8 +16,6 @@
 
 package androidx.compose.testutils
 
-import java.io.PrintWriter
-import java.io.StringWriter
 import kotlin.text.RegexOption.DOT_MATCHES_ALL
 
 /**
@@ -26,7 +24,7 @@ import kotlin.text.RegexOption.DOT_MATCHES_ALL
  * [expectedMessage] is a regex with just the option [DOT_MATCHES_ALL] enabled.
  */
 fun expectAssertionError(
-    expectError: Boolean,
+    expectError: Boolean = true,
     expectedMessage: String = ".*",
     block: () -> Unit
 ) {
@@ -34,14 +32,14 @@ fun expectAssertionError(
 }
 
 /**
- * Runs the [block] and asserts that a [T] is thrown with the [expectedMessage] if [expectError]
- * is `true`, or that nothing is thrown if [expectError] is `false`. The [expectedMessage] is a
- * regex with just the option [DOT_MATCHES_ALL] enabled.
+ * Runs the [block] and asserts that a [T] is thrown with the [expectedMessage] if [expectError] is
+ * `true`, or that nothing is thrown if [expectError] is `false`. The [expectedMessage] is a regex
+ * with just the option [DOT_MATCHES_ALL] enabled.
  *
  * @param expectedMessage A regular expression that matches the entire expected error message. If
- * you don't want to verify the entire error message, use `.*` in the appropriate places. The
- * option [DOT_MATCHES_ALL] is enabled so you can match new lines with `.*`. Don't forget to
- * escape special characters like `[`, `(` or `*` (and double escaping for `\`).
+ *   you don't want to verify the entire error message, use `.*` in the appropriate places. The
+ *   option [DOT_MATCHES_ALL] is enabled so you can match new lines with `.*`. Don't forget to
+ *   escape special characters like `[`, `(` or `*` (and double escaping for `\`).
  */
 inline fun <reified T : Throwable> expectError(
     expectError: Boolean = true,
@@ -74,14 +72,10 @@ internal fun throwExpectError(
     thrown: Throwable? = null,
     expectedMessage: String? = null
 ) {
-    val stackTrace = thrown?.let {
-        StringWriter().use { sw ->
-            PrintWriter(sw).use { pw ->
-                it.printStackTrace(pw)
-            }
-            ":\n==============================\n$sw=============================="
-        }
-    } ?: ""
+    val stackTrace =
+        if (thrown != null) {
+            ":\n==============================\n${thrown.stackTraceToString()}=============================="
+        } else ""
 
     fun String.plusMessage(message: String?): String {
         return if (expectedMessage == null) this else "$this with message\n\"\"\"$message\"\"\"\n"

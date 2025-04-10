@@ -17,13 +17,15 @@
 package androidx.wear.watchface.style
 
 import android.annotation.SuppressLint
+import android.graphics.Color
 import android.graphics.RectF
 import android.graphics.drawable.Icon
-import android.os.Build
 import android.os.Parcel
-import androidx.annotation.RequiresApi
+import androidx.test.filters.SdkSuppress
 import androidx.wear.watchface.complications.ComplicationSlotBounds
 import androidx.wear.watchface.style.UserStyleSetting.BooleanUserStyleSetting
+import androidx.wear.watchface.style.UserStyleSetting.ColorUserStyleSetting
+import androidx.wear.watchface.style.UserStyleSetting.ColorUserStyleSetting.ColorOption
 import androidx.wear.watchface.style.UserStyleSetting.ComplicationSlotsUserStyleSetting
 import androidx.wear.watchface.style.UserStyleSetting.CustomValueUserStyleSetting
 import androidx.wear.watchface.style.UserStyleSetting.DoubleRangeUserStyleSetting
@@ -47,7 +49,7 @@ private const val NAME_RESOURCE_ID = 123456
 private const val SCREEN_READER_NAME_RESOURCE_ID = 567890
 
 @RunWith(StyleTestRunner::class)
-@RequiresApi(Build.VERSION_CODES.P)
+@SdkSuppress(minSdkVersion = 34)
 public class StyleParcelableTest {
     private val icon1 = Icon.createWithContentUri("icon1")
     private val icon2 = Icon.createWithContentUri("icon2")
@@ -59,50 +61,39 @@ public class StyleParcelableTest {
     private val wfIcon4 = Icon.createWithContentUri("wfIcon4")
 
     private val option1 =
-        ListOption(
-            Option.Id("1"),
-            "one",
-            "one screen reader",
-            icon1,
-            watchFaceEditorData = WatchFaceEditorData(wfIcon1)
-        )
+        ListOption.Builder(Option.Id("1"), "one", "one screen reader")
+            .setIcon(icon1)
+            .setWatchFaceEditorData(WatchFaceEditorData(wfIcon1))
+            .build()
     private val option2 =
-        ListOption(
-            Option.Id("2"),
-            "two",
-            "two screen reader",
-            icon2,
-            watchFaceEditorData = WatchFaceEditorData(wfIcon2)
-        )
+        ListOption.Builder(Option.Id("2"), "two", "two screen reader")
+            .setIcon(icon2)
+            .setWatchFaceEditorData(WatchFaceEditorData(wfIcon2))
+            .build()
     private val option3 =
-        ListOption(
-            Option.Id("3"),
-            "three",
-            "three screen reader",
-            icon3,
-            watchFaceEditorData = WatchFaceEditorData(wfIcon3)
-        )
+        ListOption.Builder(Option.Id("3"), "three", "three screen reader")
+            .setIcon(icon3)
+            .setWatchFaceEditorData(WatchFaceEditorData(wfIcon3))
+            .build()
     private val option4 =
-        ListOption(
-            Option.Id("4"),
-            "four",
-            "four screen reader",
-            icon4,
-            watchFaceEditorData = WatchFaceEditorData(wfIcon4)
-        )
+        ListOption.Builder(Option.Id("4"), "four", "four screen reader")
+            .setIcon(icon4)
+            .setWatchFaceEditorData(WatchFaceEditorData(wfIcon4))
+            .build()
 
     @Test
     public fun parcelAndUnparcelStyleSettingAndOption() {
         val settingIcon = Icon.createWithContentUri("settingIcon")
         val styleSetting =
-            ListUserStyleSetting(
-                UserStyleSetting.Id("id"),
-                "displayName",
-                "description",
-                settingIcon,
-                listOf(option1, option2, option3),
-                listOf(WatchFaceLayer.BASE)
-            )
+            ListUserStyleSetting.Builder(
+                    UserStyleSetting.Id("id"),
+                    listOf(option1, option2, option3),
+                    listOf(WatchFaceLayer.BASE),
+                    "displayName",
+                    "description"
+                )
+                .setIcon(settingIcon)
+                .build()
 
         val parcel = Parcel.obtain()
         styleSetting.toWireFormat().writeToParcel(parcel, 0)
@@ -402,23 +393,25 @@ public class StyleParcelableTest {
         val settingIcon1 = Icon.createWithContentUri("settingIcon1")
         val settingIcon2 = Icon.createWithContentUri("settingIcon2")
         val styleSetting1 =
-            ListUserStyleSetting(
-                UserStyleSetting.Id("id1"),
-                "displayName1",
-                "description1",
-                settingIcon1,
-                listOf(option1, option2),
-                listOf(WatchFaceLayer.BASE)
-            )
+            ListUserStyleSetting.Builder(
+                    UserStyleSetting.Id("id1"),
+                    listOf(option1, option2),
+                    listOf(WatchFaceLayer.BASE),
+                    "displayName1",
+                    "description1"
+                )
+                .setIcon(settingIcon1)
+                .build()
         val styleSetting2 =
-            ListUserStyleSetting(
-                UserStyleSetting.Id("id2"),
-                "displayName2",
-                "description2",
-                settingIcon2,
-                listOf(option3, option4),
-                listOf(WatchFaceLayer.COMPLICATIONS_OVERLAY)
-            )
+            ListUserStyleSetting.Builder(
+                    UserStyleSetting.Id("id2"),
+                    listOf(option3, option4),
+                    listOf(WatchFaceLayer.COMPLICATIONS_OVERLAY),
+                    "displayName2",
+                    "description2"
+                )
+                .setIcon(settingIcon2)
+                .build()
         val schema = UserStyleSchema(listOf(styleSetting1, styleSetting2))
         val userStyle =
             UserStyle(
@@ -445,199 +438,261 @@ public class StyleParcelableTest {
     }
 
     @Test
+    public fun parcelAndUnparcelColorUserStyle() {
+        val settingIcon = Icon.createWithContentUri("settingIcon1")
+        val redGray =
+            ColorOption.Builder(
+                    Option.Id("color1"),
+                    "Red/Gray",
+                    "Red/Gray",
+                    listOf(Color.RED, Color.GRAY)
+                )
+                .build()
+        val blackWhite =
+            ColorOption.Builder(
+                    Option.Id("color2"),
+                    "Black/White",
+                    "Black/White",
+                    listOf(Color.BLACK, Color.WHITE),
+                )
+                .build()
+        val greenMagenta =
+            ColorOption.Builder(
+                    Option.Id("color3"),
+                    "Green/Magenta",
+                    "Green/Magenta",
+                    listOf(Color.GREEN, Color.MAGENTA),
+                )
+                .build()
+        val colorSetting =
+            ColorUserStyleSetting.Builder(
+                    UserStyleSetting.Id("color"),
+                    listOf(redGray, blackWhite, greenMagenta),
+                    listOf(WatchFaceLayer.BASE),
+                    "Color",
+                    "Of the backgroud"
+                )
+                .setIcon(settingIcon)
+                .build()
+        val schema = UserStyleSchema(listOf(colorSetting))
+        val userStyle =
+            UserStyle(hashMapOf(colorSetting as UserStyleSetting to blackWhite as Option))
+
+        val parcel = Parcel.obtain()
+        userStyle.toWireFormat().writeToParcel(parcel, 0)
+
+        parcel.setDataPosition(0)
+
+        val unparcelled =
+            UserStyle(UserStyleData(UserStyleWireFormat.CREATOR.createFromParcel(parcel)), schema)
+        parcel.recycle()
+
+        assertThat(unparcelled.size).isEqualTo(1)
+        assertThat(unparcelled[colorSetting]!!.id.value.decodeToString())
+            .isEqualTo(blackWhite.id.value.decodeToString())
+    }
+
+    @Test
     public fun booleanUserStyleSetting_defaultValue() {
         val booleanUserStyleSettingDefaultTrue =
-            BooleanUserStyleSetting(
-                UserStyleSetting.Id("id2"),
-                "displayName2",
-                "description2",
-                null,
-                listOf(WatchFaceLayer.BASE),
-                true
-            )
+            BooleanUserStyleSetting.Builder(
+                    UserStyleSetting.Id("id2"),
+                    listOf(WatchFaceLayer.BASE),
+                    true,
+                    "displayName2",
+                    "description2"
+                )
+                .build()
         assertTrue(booleanUserStyleSettingDefaultTrue.getDefaultValue())
 
         val booleanUserStyleSettingDefaultFalse =
-            BooleanUserStyleSetting(
-                UserStyleSetting.Id("id2"),
-                "displayName2",
-                "description2",
-                null,
-                listOf(WatchFaceLayer.BASE),
-                false
-            )
+            BooleanUserStyleSetting.Builder(
+                    UserStyleSetting.Id("id2"),
+                    listOf(WatchFaceLayer.BASE),
+                    false,
+                    "displayName2",
+                    "description2"
+                )
+                .build()
         assertFalse(booleanUserStyleSettingDefaultFalse.getDefaultValue())
     }
 
     @Test
     public fun doubleRangeUserStyleSetting_defaultValue() {
         val doubleRangeUserStyleSettingDefaultMin =
-            DoubleRangeUserStyleSetting(
-                UserStyleSetting.Id("id2"),
-                "displayName2",
-                "description2",
-                null,
-                -1.0,
-                1.0,
-                listOf(WatchFaceLayer.BASE),
-                -1.0
-            )
+            DoubleRangeUserStyleSetting.Builder(
+                    UserStyleSetting.Id("id2"),
+                    -1.0,
+                    1.0,
+                    -1.0,
+                    listOf(WatchFaceLayer.BASE),
+                    "displayName2",
+                    "description2"
+                )
+                .build()
         assertThat(doubleRangeUserStyleSettingDefaultMin.defaultValue).isEqualTo(-1.0)
 
         val doubleRangeUserStyleSettingDefaultMid =
-            DoubleRangeUserStyleSetting(
-                UserStyleSetting.Id("id2"),
-                "displayName2",
-                "description2",
-                null,
-                -1.0,
-                1.0,
-                listOf(WatchFaceLayer.BASE),
-                0.5
-            )
+            DoubleRangeUserStyleSetting.Builder(
+                    UserStyleSetting.Id("id2"),
+                    -1.0,
+                    1.0,
+                    0.5,
+                    listOf(WatchFaceLayer.BASE),
+                    "displayName2",
+                    "description2"
+                )
+                .build()
         assertThat(doubleRangeUserStyleSettingDefaultMid.defaultValue).isEqualTo(0.5)
 
         val doubleRangeUserStyleSettingDefaultMax =
-            DoubleRangeUserStyleSetting(
-                UserStyleSetting.Id("id2"),
-                "displayName2",
-                "description2",
-                null,
-                -1.0,
-                1.0,
-                listOf(WatchFaceLayer.BASE),
-                1.0
-            )
+            DoubleRangeUserStyleSetting.Builder(
+                    UserStyleSetting.Id("id2"),
+                    -1.0,
+                    1.0,
+                    1.0,
+                    listOf(WatchFaceLayer.BASE),
+                    "displayName2",
+                    "description2"
+                )
+                .build()
         assertThat(doubleRangeUserStyleSettingDefaultMax.defaultValue).isEqualTo(1.0)
     }
 
     @Test
     public fun longRangeUserStyleSetting_defaultValue() {
         val longRangeUserStyleSettingDefaultMin =
-            LongRangeUserStyleSetting(
-                UserStyleSetting.Id("id2"),
-                "displayName2",
-                "description2",
-                null,
-                -1,
-                10,
-                listOf(WatchFaceLayer.BASE),
-                -1,
-            )
+            LongRangeUserStyleSetting.Builder(
+                    UserStyleSetting.Id("id2"),
+                    -1,
+                    10,
+                    -1,
+                    listOf(WatchFaceLayer.BASE),
+                    "displayName2",
+                    "description2"
+                )
+                .build()
         assertThat(longRangeUserStyleSettingDefaultMin.defaultValue).isEqualTo(-1)
 
         val longRangeUserStyleSettingDefaultMid =
-            LongRangeUserStyleSetting(
-                UserStyleSetting.Id("id2"),
-                "displayName2",
-                "description2",
-                null,
-                -1,
-                10,
-                listOf(WatchFaceLayer.BASE),
-                5
-            )
+            LongRangeUserStyleSetting.Builder(
+                    UserStyleSetting.Id("id2"),
+                    -1,
+                    10,
+                    5,
+                    listOf(WatchFaceLayer.BASE),
+                    "displayName2",
+                    "description2"
+                )
+                .build()
         assertThat(longRangeUserStyleSettingDefaultMid.defaultValue).isEqualTo(5)
 
         val longRangeUserStyleSettingDefaultMax =
-            LongRangeUserStyleSetting(
-                UserStyleSetting.Id("id2"),
-                "displayName2",
-                "description2",
-                null,
-                -1,
-                10,
-                listOf(WatchFaceLayer.BASE),
-                10
-            )
+            LongRangeUserStyleSetting.Builder(
+                    UserStyleSetting.Id("id2"),
+                    -1,
+                    10,
+                    10,
+                    listOf(WatchFaceLayer.BASE),
+                    "displayName2",
+                    "description2"
+                )
+                .build()
         assertThat(longRangeUserStyleSettingDefaultMax.defaultValue).isEqualTo(10)
     }
 
     @Test
-    @Suppress("Deprecation")
     public fun parcelAndUnparcelComplicationsUserStyleSetting() {
         val leftComplicationID = 101
         val rightComplicationID = 102
         val src =
-            ComplicationSlotsUserStyleSetting(
-                UserStyleSetting.Id("complications_style_setting"),
-                "Complications",
-                "Number and position",
-                icon = null,
-                complicationConfig =
+            ComplicationSlotsUserStyleSetting.Builder(
+                    UserStyleSetting.Id("complications_style_setting"),
                     listOf(
-                        ComplicationSlotsUserStyleSetting.ComplicationSlotsOption(
-                            Option.Id("LEFT_AND_RIGHT_COMPLICATIONS"),
-                            "Both",
-                            "Both complications visible",
-                            null,
-                            listOf()
-                        ),
-                        ComplicationSlotsUserStyleSetting.ComplicationSlotsOption(
-                            Option.Id("NO_COMPLICATIONS"),
-                            "None",
-                            "No complications visible",
-                            null,
-                            listOf(
-                                ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay(
-                                    leftComplicationID,
-                                    enabled = false
-                                ),
-                                ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay(
-                                    rightComplicationID,
-                                    enabled = false
-                                )
+                        ComplicationSlotsUserStyleSetting.ComplicationSlotsOption.Builder(
+                                Option.Id("LEFT_AND_RIGHT_COMPLICATIONS"),
+                                listOf(),
+                                "Both",
+                                "Both complications visible"
                             )
-                        ),
-                        ComplicationSlotsUserStyleSetting.ComplicationSlotsOption(
-                            Option.Id("LEFT_COMPLICATION"),
-                            "Left",
-                            "Left complication visible",
-                            null,
-                            listOf(
-                                ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay(
-                                    rightComplicationID,
-                                    enabled = false
-                                ),
-                                ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay(
-                                    leftComplicationID,
-                                    enabled = true,
-                                    nameResourceId = NAME_RESOURCE_ID,
-                                    screenReaderNameResourceId = SCREEN_READER_NAME_RESOURCE_ID
-                                )
-                            )
-                        ),
-                        ComplicationSlotsUserStyleSetting.ComplicationSlotsOption(
-                            Option.Id("RIGHT_COMPLICATION"),
-                            "Right",
-                            "Right complication visible",
-                            null,
-                            listOf(
-                                ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay(
-                                    leftComplicationID,
-                                    enabled = false
-                                )
-                            )
-                        ),
-                        ComplicationSlotsUserStyleSetting.ComplicationSlotsOption(
-                            Option.Id("RIGHT_COMPLICATION_MOVED"),
-                            "MoveRight",
-                            "Right complication moved",
-                            null,
-                            listOf(
-                                ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay(
-                                    leftComplicationID,
-                                    complicationSlotBounds =
-                                        ComplicationSlotBounds(
-                                            RectF(0.1f, 0.2f, 0.3f, 0.4f),
-                                            RectF(0.5f, 0.6f, 0.7f, 0.8f)
+                            .build(),
+                        ComplicationSlotsUserStyleSetting.ComplicationSlotsOption.Builder(
+                                Option.Id("NO_COMPLICATIONS"),
+                                listOf(
+                                    ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay
+                                        .Builder(
+                                            leftComplicationID,
                                         )
-                                )
+                                        .setEnabled(false)
+                                        .build(),
+                                    ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay
+                                        .Builder(
+                                            rightComplicationID,
+                                        )
+                                        .setEnabled(false)
+                                        .build()
+                                ),
+                                "None",
+                                "No complications visible"
                             )
-                        )
+                            .build(),
+                        ComplicationSlotsUserStyleSetting.ComplicationSlotsOption.Builder(
+                                Option.Id("LEFT_COMPLICATION"),
+                                listOf(
+                                    ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay
+                                        .Builder(
+                                            rightComplicationID,
+                                        )
+                                        .setEnabled(false)
+                                        .build(),
+                                    ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay
+                                        .Builder(leftComplicationID)
+                                        .setEnabled(true)
+                                        .setNameResourceId(NAME_RESOURCE_ID)
+                                        .setScreenReaderNameResourceId(
+                                            SCREEN_READER_NAME_RESOURCE_ID
+                                        )
+                                        .build()
+                                ),
+                                "Left",
+                                "Left complication visible"
+                            )
+                            .build(),
+                        ComplicationSlotsUserStyleSetting.ComplicationSlotsOption.Builder(
+                                Option.Id("RIGHT_COMPLICATION"),
+                                listOf(
+                                    ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay
+                                        .Builder(leftComplicationID)
+                                        .setEnabled(false)
+                                        .build()
+                                ),
+                                "Right",
+                                "Right complication visible"
+                            )
+                            .build(),
+                        ComplicationSlotsUserStyleSetting.ComplicationSlotsOption.Builder(
+                                Option.Id("RIGHT_COMPLICATION_MOVED"),
+                                listOf(
+                                    ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay
+                                        .Builder(leftComplicationID)
+                                        .setComplicationSlotBounds(
+                                            ComplicationSlotBounds(
+                                                RectF(0.1f, 0.2f, 0.3f, 0.4f),
+                                                RectF(0.5f, 0.6f, 0.7f, 0.8f)
+                                            )
+                                        )
+                                        .build()
+                                ),
+                                "MoveRight",
+                                "Right complication moved"
+                            )
+                            .build()
                     ),
-                listOf(WatchFaceLayer.COMPLICATIONS)
-            )
+                    listOf(WatchFaceLayer.COMPLICATIONS),
+                    "Complications",
+                    "Number and position"
+                )
+                .build()
 
         val parcel = Parcel.obtain()
         src.toWireFormat().writeToParcel(parcel, 0)
@@ -705,32 +760,34 @@ public class StyleParcelableTest {
         val settingIcon1 = Icon.createWithContentUri("settingIcon1")
         val settingIcon2 = Icon.createWithContentUri("settingIcon2")
         val styleSetting1 =
-            ListUserStyleSetting(
-                UserStyleSetting.Id("id1"),
-                "displayName1",
-                "description1",
-                settingIcon1,
-                listOf(option1, option2),
-                listOf(WatchFaceLayer.BASE)
-            )
+            ListUserStyleSetting.Builder(
+                    UserStyleSetting.Id("id1"),
+                    listOf(option1, option2),
+                    listOf(WatchFaceLayer.BASE),
+                    "displayName1",
+                    "description1"
+                )
+                .setIcon(settingIcon1)
+                .build()
         val styleSetting2 =
-            ListUserStyleSetting(
-                UserStyleSetting.Id("id2"),
-                "displayName2",
-                "description2",
-                settingIcon2,
-                listOf(option3, option4),
-                listOf(WatchFaceLayer.COMPLICATIONS_OVERLAY)
-            )
+            ListUserStyleSetting.Builder(
+                    UserStyleSetting.Id("id2"),
+                    listOf(option3, option4),
+                    listOf(WatchFaceLayer.COMPLICATIONS_OVERLAY),
+                    "displayName2",
+                    "description2"
+                )
+                .setIcon(settingIcon2)
+                .build()
         val styleSetting3 =
-            BooleanUserStyleSetting(
-                UserStyleSetting.Id("id3"),
-                "displayName3",
-                "description3",
-                null,
-                listOf(WatchFaceLayer.BASE),
-                true
-            )
+            BooleanUserStyleSetting.Builder(
+                    UserStyleSetting.Id("id3"),
+                    listOf(WatchFaceLayer.BASE),
+                    true,
+                    "displayName3",
+                    "description3"
+                )
+                .build()
         val styleSetting4 =
             CustomValueUserStyleSetting(listOf(WatchFaceLayer.BASE), "default".encodeToByteArray())
 
@@ -738,7 +795,10 @@ public class StyleParcelableTest {
             UserStyleSchema(listOf(styleSetting1, styleSetting2, styleSetting3, styleSetting4))
 
         assertThat(schema.toString())
-            .isEqualTo("[{id1 : 1, 2}, {id2 : 3, 4}, {id3 : true, false}, {CustomValue : default}]")
+            .isEqualTo(
+                "[{id1 : 1, 2}, {id2 : 3, 4}, {id3 : true, false}, " +
+                    "{CustomValue : [binary data, length: 7]}]"
+            )
     }
 
     @Ignore
@@ -747,23 +807,25 @@ public class StyleParcelableTest {
         val settingIcon1 = Icon.createWithContentUri("settingIcon1")
         val settingIcon2 = Icon.createWithContentUri("settingIcon2")
         val styleSetting1 =
-            ListUserStyleSetting(
-                UserStyleSetting.Id("id1"),
-                "displayName1",
-                "description1",
-                settingIcon1,
-                listOf(option1, option2),
-                listOf(WatchFaceLayer.BASE)
-            )
+            ListUserStyleSetting.Builder(
+                    UserStyleSetting.Id("id1"),
+                    listOf(option1, option2),
+                    listOf(WatchFaceLayer.BASE),
+                    "displayName1",
+                    "description1"
+                )
+                .setIcon(settingIcon1)
+                .build()
         val styleSetting2 =
-            ListUserStyleSetting(
-                UserStyleSetting.Id("id2"),
-                "displayName2",
-                "description2",
-                settingIcon2,
-                listOf(option3, option4),
-                listOf(WatchFaceLayer.COMPLICATIONS_OVERLAY)
-            )
+            ListUserStyleSetting.Builder(
+                    UserStyleSetting.Id("id2"),
+                    listOf(option3, option4),
+                    listOf(WatchFaceLayer.COMPLICATIONS_OVERLAY),
+                    "displayName2",
+                    "description2"
+                )
+                .setIcon(settingIcon2)
+                .build()
         val style = UserStyle(mapOf(styleSetting1 to option2, styleSetting2 to option3))
 
         assertThat(style.toString()).contains("id1 -> 2")

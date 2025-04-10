@@ -15,10 +15,11 @@
  */
 package androidx.paging.integration.testapp.room;
 
-import androidx.annotation.NonNull;
 import androidx.paging.DataSource;
 import androidx.paging.ItemKeyedDataSource;
 import androidx.room.InvalidationTracker;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -63,14 +64,12 @@ public class LastNameAscCustomerDataSource extends ItemKeyedDataSource<String, C
         return super.isInvalid();
     }
 
-    @NonNull
-    static String getKeyStatic(@NonNull Customer customer) {
+    static @NonNull String getKeyStatic(@NonNull Customer customer) {
         return customer.getLastName();
     }
 
-    @NonNull
     @Override
-    public String getKey(@NonNull Customer customer) {
+    public @NonNull String getKey(@NonNull Customer customer) {
         return getKeyStatic(customer);
     }
 

@@ -18,11 +18,11 @@ package androidx.camera.core.internal.compat.quirk;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * <p>QuirkSummary
@@ -40,7 +40,6 @@ import androidx.camera.core.impl.Quirk;
  *     Device(s): Huawei Mate 20 Lite, Honor 9X
  *     @see androidx.camera.core.internal.compat.workaround.ExifRotationAvailability
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class ImageCaptureRotationOptionQuirk implements Quirk {
 
     static boolean load() {
@@ -76,7 +75,7 @@ public final class ImageCaptureRotationOptionQuirk implements Quirk {
     /**
      * Returns true if the capture config option can be supported.
      */
-    public boolean isSupported(@NonNull Config.Option<?> option) {
+    public boolean isSupported(Config.@NonNull Option<?> option) {
         return option != CaptureConfig.OPTION_ROTATION;
     }
 }

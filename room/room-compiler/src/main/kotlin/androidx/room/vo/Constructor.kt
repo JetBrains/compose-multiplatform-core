@@ -18,23 +18,24 @@ package androidx.room.vo
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.processing.XExecutableElement
 import androidx.room.compiler.processing.isConstructor
 import androidx.room.compiler.processing.isMethod
 
 /**
- * Each Entity / Pojo we process has a constructor. It might be the empty constructor or a
- * constructor with fields. It can also be a static factory method, such as in the case of an
- * AutoValue Pojo.
+ * Each Entity / data class we process has a constructor. It might be the empty constructor or a
+ * constructor with properties. It can also be a static factory function, such as in the case of an
+ * AutoValue data class.
  */
 data class Constructor(val element: XExecutableElement, val params: List<Param>) {
 
-    fun hasField(field: Field): Boolean {
+    fun hasProperty(property: Property): Boolean {
         return params.any {
             when (it) {
-                is Param.FieldParam -> it.field === field
-                is Param.EmbeddedParam -> it.embedded.field === field
-                is Param.RelationParam -> it.relation.field === field
+                is Param.PropertyParam -> it.property === property
+                is Param.EmbeddedParam -> it.embedded.property === property
+                is Param.RelationParam -> it.relation.property === property
             }
         }
     }
@@ -45,27 +46,26 @@ data class Constructor(val element: XExecutableElement, val params: List<Param>)
                 builder.addStatement(
                     "%L = %L",
                     outVar,
-                    XCodeBlock.ofNewInstance(
-                        builder.language,
-                        element.enclosingElement.asClassName(),
-                        args
-                    )
+                    XCodeBlock.ofNewInstance(element.enclosingElement.asClassName(), args)
                 )
             }
             element.isMethod() -> {
-                // TODO when we generate Kotlin code, we need to handle not having enclosing
-                //  elements.
-                val methodName = when (builder.language) {
-                    CodeLanguage.JAVA -> element.jvmName
-                    CodeLanguage.KOTLIN -> element.name
+                builder.applyTo { language ->
+                    // TODO when we generate Kotlin code, we need to handle not having enclosing
+                    //  elements.
+                    val methodName =
+                        when (language) {
+                            CodeLanguage.JAVA -> element.jvmName
+                            CodeLanguage.KOTLIN -> element.name
+                        }
+                    addStatement(
+                        "%L = %T.%L(%L)",
+                        outVar,
+                        element.enclosingElement.asClassName(),
+                        methodName,
+                        args
+                    )
                 }
-                builder.addStatement(
-                    "%L = %T.%L(%L)",
-                    outVar,
-                    element.enclosingElement.asClassName(),
-                    methodName,
-                    args
-                )
             }
             else -> throw IllegalStateException("Invalid constructor kind ${element.kindName()}")
         }
@@ -75,16 +75,16 @@ data class Constructor(val element: XExecutableElement, val params: List<Param>)
 
         abstract fun log(): String
 
-        class FieldParam(val field: Field) : Param() {
-            override fun log(): String = field.getPath()
+        class PropertyParam(val property: Property) : Param() {
+            override fun log(): String = property.getPath()
         }
 
-        class EmbeddedParam(val embedded: EmbeddedField) : Param() {
-            override fun log(): String = embedded.field.getPath()
+        class EmbeddedParam(val embedded: EmbeddedProperty) : Param() {
+            override fun log(): String = embedded.property.getPath()
         }
 
         class RelationParam(val relation: Relation) : Param() {
-            override fun log(): String = relation.field.getPath()
+            override fun log(): String = relation.property.getPath()
         }
     }
 }

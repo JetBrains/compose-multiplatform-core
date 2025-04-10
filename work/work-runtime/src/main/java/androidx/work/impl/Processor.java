@@ -22,8 +22,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.PowerManager;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.ContextCompat;
 import androidx.work.Configuration;
@@ -37,6 +35,9 @@ import androidx.work.impl.utils.WakeLocks;
 import androidx.work.impl.utils.taskexecutor.TaskExecutor;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,8 +55,7 @@ public class Processor implements ForegroundProcessor {
     private static final String TAG = Logger.tagWithPrefix("Processor");
     private static final String FOREGROUND_WAKELOCK_TAG = "ProcessorForegroundLck";
 
-    @Nullable
-    private PowerManager.WakeLock mForegroundLock;
+    private PowerManager.@Nullable WakeLock mForegroundLock;
 
     private Context mAppContext;
     private Configuration mConfiguration;
@@ -108,7 +108,7 @@ public class Processor implements ForegroundProcessor {
     @SuppressWarnings("ConstantConditions")
     public boolean startWork(
             @NonNull StartStopToken startStopToken,
-            @Nullable WorkerParameters.RuntimeExtras runtimeExtras) {
+            WorkerParameters.@Nullable RuntimeExtras runtimeExtras) {
         WorkGenerationalId id = startStopToken.getId();
         String workSpecId = id.getWorkSpecId();
         ArrayList<String> tags = new ArrayList<>();
@@ -166,7 +166,7 @@ public class Processor implements ForegroundProcessor {
                             tags)
                             .withRuntimeExtras(runtimeExtras)
                             .build();
-            ListenableFuture<Boolean> future = workWrapper.getFuture();
+            ListenableFuture<Boolean> future = workWrapper.launch();
             future.addListener(
                     () -> {
                         boolean needsReschedule;
@@ -184,7 +184,6 @@ public class Processor implements ForegroundProcessor {
             set.add(startStopToken);
             mWorkRuns.put(workSpecId, set);
         }
-        mWorkTaskExecutor.getSerialTaskExecutor().execute(workWrapper);
         Logger.get().debug(TAG, getClass().getSimpleName() + ": processing " + id);
         return true;
     }
@@ -353,8 +352,7 @@ public class Processor implements ForegroundProcessor {
         }
     }
 
-    @Nullable
-    private WorkerWrapper getWorkerWrapperUnsafe(@NonNull String workSpecId) {
+    private @Nullable WorkerWrapper getWorkerWrapperUnsafe(@NonNull String workSpecId) {
         WorkerWrapper workerWrapper = mForegroundWorkMap.get(workSpecId);
         if (workerWrapper == null) {
             workerWrapper = mEnqueuedWorkMap.get(workSpecId);
@@ -367,8 +365,7 @@ public class Processor implements ForegroundProcessor {
      *
      * @param workSpecId id of running worker
      */
-    @Nullable
-    public WorkSpec getRunningWorkSpec(@NonNull String workSpecId) {
+    public @Nullable WorkSpec getRunningWorkSpec(@NonNull String workSpecId) {
         synchronized (mLock) {
             WorkerWrapper workerWrapper = getWorkerWrapperUnsafe(workSpecId);
             if (workerWrapper != null) {
@@ -379,7 +376,7 @@ public class Processor implements ForegroundProcessor {
         }
     }
 
-    private void runOnExecuted(@NonNull final WorkGenerationalId id, boolean needsReschedule) {
+    private void runOnExecuted(final @NonNull WorkGenerationalId id, boolean needsReschedule) {
         mWorkTaskExecutor.getMainThreadExecutor().execute(
                 () -> {
                     synchronized (mLock) {
@@ -413,8 +410,7 @@ public class Processor implements ForegroundProcessor {
         }
     }
 
-    @Nullable
-    private WorkerWrapper cleanUpWorkerUnsafe(@NonNull String id) {
+    private @Nullable WorkerWrapper cleanUpWorkerUnsafe(@NonNull String id) {
         WorkerWrapper wrapper = mForegroundWorkMap.remove(id);
         boolean wasForeground = wrapper != null;
         if (!wasForeground) {

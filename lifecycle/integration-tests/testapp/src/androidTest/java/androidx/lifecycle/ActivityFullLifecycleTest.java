@@ -37,13 +37,13 @@ import androidx.lifecycle.testapp.TestEvent;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.filters.LargeTest;
 
+import kotlin.Pair;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.List;
-
-import kotlin.Pair;
 
 @LargeTest
 @RunWith(Parameterized.class)

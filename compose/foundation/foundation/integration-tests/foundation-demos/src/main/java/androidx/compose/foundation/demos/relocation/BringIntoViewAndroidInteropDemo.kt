@@ -19,7 +19,6 @@ package androidx.compose.foundation.demos.relocation
 import android.content.Context
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.HorizontalScrollView
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,7 +41,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.launch
 
 // TODO(b/216652644) This demo is currently broken.
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BringIntoViewAndroidInteropDemo() {
     Column {
@@ -56,8 +54,7 @@ fun BringIntoViewAndroidInteropDemo() {
         val scope = rememberCoroutineScope()
 
         Box(
-            Modifier
-                .border(2.dp, Color.Blue)
+            Modifier.border(2.dp, Color.Blue)
                 .size(200.dp, 200.dp)
                 .verticalScroll(rememberScrollState())
         ) {
@@ -66,14 +63,12 @@ fun BringIntoViewAndroidInteropDemo() {
                     Box(Modifier.size(500.dp)) {
                         Text(
                             "Top-start",
-                            Modifier
-                                .align(Alignment.TopStart)
+                            Modifier.align(Alignment.TopStart)
                                 .bringIntoViewRequester(topStartRequester)
                         )
                         Text(
                             "Bottom-end",
-                            Modifier
-                                .align(Alignment.BottomEnd)
+                            Modifier.align(Alignment.BottomEnd)
                                 .bringIntoViewRequester(bottomEndRequester)
                         )
                     }
@@ -81,18 +76,10 @@ fun BringIntoViewAndroidInteropDemo() {
             }
         }
 
-        Button(onClick = {
-            scope.launch {
-                topStartRequester.bringIntoView()
-            }
-        }) {
+        Button(onClick = { scope.launch { topStartRequester.bringIntoView() } }) {
             Text("Bring top-start into view")
         }
-        Button(onClick = {
-            scope.launch {
-                bottomEndRequester.bringIntoView()
-            }
-        }) {
+        Button(onClick = { scope.launch { bottomEndRequester.bringIntoView() } }) {
             Text("Bring bottom-end into view")
         }
     }

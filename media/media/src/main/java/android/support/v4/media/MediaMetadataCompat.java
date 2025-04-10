@@ -40,7 +40,11 @@ import java.util.Set;
 
 /**
  * Contains metadata about an item, such as the title, artist, etc.
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 @SuppressLint("BanParcelableUsage")
 public final class MediaMetadataCompat implements Parcelable {
     private static final String TAG = "MediaMetadata";
@@ -641,9 +645,13 @@ public final class MediaMetadataCompat implements Parcelable {
             };
 
     /**
-     * Use to build MediaMetadata objects. The system defined metadata keys must
-     * use the appropriate data type.
+     * Use to build MediaMetadata objects. The system defined metadata keys must use the appropriate
+     * data type.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static final class Builder {
         private final Bundle mBundle;
 

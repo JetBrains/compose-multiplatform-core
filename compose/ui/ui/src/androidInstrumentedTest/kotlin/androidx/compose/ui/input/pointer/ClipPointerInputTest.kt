@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
@@ -74,25 +75,19 @@ class ClipPointerInputTest {
      *
      *     0   1   2   3   4
      *   .........   .........
-     * 0 .     t .   . t     .
-     *   .   |---|---|---|   .
-     * 1 . t | t |   | t | t .
-     *   ....|---|   |---|....
-     * 2     |           |
-     *   ....|---|   |---|....
-     * 3 . t | t |   | t | t .
-     *   .   |---|---|---|   .
-     * 4 .     t .   . t     .
-     *   .........   .........
+     *
+     * 0 . t . . t . . |---|---|---| . 1 . t | t | | t | t . ....|---| |---|.... 2 | | ....|---|
+     * |---|.... 3 . t | t | | t | t . . |---|---|---| . 4 . t . . t . ......... .........
      *
      * 4 LayoutNodes with PointerInputModifiers that are positioned by offset modifiers and where
-     * pointer input is clipped by a modifier on the parent. 4 touches touch just inside the
-     * parent LayoutNode and inside the child LayoutNodes. 8 touches touch just outside the
-     * parent LayoutNode but inside the child LayoutNodes.
+     * pointer input is clipped by a modifier on the parent. 4 touches touch just inside the parent
+     * LayoutNode and inside the child LayoutNodes. 8 touches touch just outside the parent
+     * LayoutNode but inside the child LayoutNodes.
      *
      * Because clipToBounds is being used on the parent LayoutNode, only the 4 touches inside the
      * parent LayoutNode should hit.
      */
+    @SdkSuppress(maxSdkVersion = 33) // b/321823104
     @Test
     fun clipToBounds_childrenOffsetViaLayout_onlyCorrectPointersHit() {
 
@@ -105,35 +100,31 @@ class ClipPointerInputTest {
 
         rule.runOnUiThreadIR {
             activity.setContent {
+                val children =
+                    @Composable {
+                        Child(loggingPim1)
+                        Child(loggingPim2)
+                        Child(loggingPim3)
+                        Child(loggingPim4)
+                    }
 
-                val children = @Composable {
-                    Child(loggingPim1)
-                    Child(loggingPim2)
-                    Child(loggingPim3)
-                    Child(loggingPim4)
-                }
-
-                val middle = @Composable {
-                    Layout(
-                        content = children,
-                        modifier = Modifier.clipToBounds()
-                    ) { measurables, constraints ->
-                        val placeables = measurables.map { m ->
-                            m.measure(constraints)
-                        }
-                        layout(3, 3) {
-                            placeables[0].place((-1), (-1))
-                            placeables[1].place(2, (-1))
-                            placeables[2].place((-1), 2)
-                            placeables[3].place(2, 2)
+                val middle =
+                    @Composable {
+                        Layout(content = children, modifier = Modifier.clipToBounds()) {
+                            measurables,
+                            constraints ->
+                            val placeables = measurables.map { m -> m.measure(constraints) }
+                            layout(3, 3) {
+                                placeables[0].place((-1), (-1))
+                                placeables[1].place(2, (-1))
+                                placeables[2].place((-1), 2)
+                                placeables[3].place(2, 2)
+                            }
                         }
                     }
-                }
 
                 Layout(content = middle) { measurables, constraints ->
-                    val placeables = measurables.map { m ->
-                        m.measure(constraints)
-                    }
+                    val placeables = measurables.map { m -> m.measure(constraints) }
                     layout(constraints.maxWidth, constraints.maxHeight) {
                         placeables[0].place(1, 1)
                         setupLatch.countDown()
@@ -147,13 +138,7 @@ class ClipPointerInputTest {
 
         assertThat(setupLatch.await(2, TimeUnit.SECONDS)).isTrue()
 
-        val offsetsThatHit =
-            listOf(
-                Offset(1f, 1f),
-                Offset(3f, 1f),
-                Offset(1f, 3f),
-                Offset(3f, 3f)
-            )
+        val offsetsThatHit = listOf(Offset(1f, 1f), Offset(3f, 1f), Offset(1f, 3f), Offset(3f, 3f))
         val offsetsThatMiss =
             listOf(
                 Offset(1f, 0f),
@@ -182,11 +167,7 @@ class ClipPointerInputTest {
         }
 
         // Act
-        rule.runOnUiThreadIR {
-            downEvents.forEach {
-                view.dispatchTouchEvent(it)
-            }
-        }
+        rule.runOnUiThreadIR { downEvents.forEach { view.dispatchTouchEvent(it) } }
 
         // Assert
 
@@ -201,25 +182,19 @@ class ClipPointerInputTest {
      *
      *     0   1   2   3   4
      *   .........   .........
-     * 0 .     t .   . t     .
-     *   .   |---|---|---|   .
-     * 1 . t | t |   | t | t .
-     *   ....|---|   |---|....
-     * 2     |           |
-     *   ....|---|   |---|....
-     * 3 . t | t |   | t | t .
-     *   .   |---|---|---|   .
-     * 4 .     t .   . t     .
-     *   .........   .........
+     *
+     * 0 . t . . t . . |---|---|---| . 1 . t | t | | t | t . ....|---| |---|.... 2 | | ....|---|
+     * |---|.... 3 . t | t | | t | t . . |---|---|---| . 4 . t . . t . ......... .........
      *
      * 4 LayoutNodes with PointerInputModifiers that are positioned by offset modifiers and where
-     * pointer input is clipped by a modifier on the parent. 4 touches touch just inside the
-     * parent LayoutNode and inside the child LayoutNodes. 8 touches touch just outside the
-     * parent LayoutNode but inside the child LayoutNodes.
+     * pointer input is clipped by a modifier on the parent. 4 touches touch just inside the parent
+     * LayoutNode and inside the child LayoutNodes. 8 touches touch just outside the parent
+     * LayoutNode but inside the child LayoutNodes.
      *
      * Because clipToBounds is being used on the parent LayoutNode, only the 4 touches inside the
      * parent LayoutNode should hit.
      */
+    @SdkSuppress(maxSdkVersion = 33) // b/321823104
     @Test
     fun clipToBounds_childrenOffsetViaModifier_onlyCorrectPointersHit() {
 
@@ -232,34 +207,27 @@ class ClipPointerInputTest {
 
         rule.runOnUiThreadIR {
             activity.setContent {
-
                 with(LocalDensity.current) {
+                    val children =
+                        @Composable {
+                            Child(Modifier.offset((-1f).toDp(), (-1f).toDp()).then(loggingPim1))
+                            Child(Modifier.offset(2f.toDp(), (-1f).toDp()).then(loggingPim2))
+                            Child(Modifier.offset((-1f).toDp(), 2f.toDp()).then(loggingPim3))
+                            Child(Modifier.offset(2f.toDp(), 2f.toDp()).then(loggingPim4))
+                        }
 
-                    val children = @Composable {
-                        Child(Modifier.offset((-1f).toDp(), (-1f).toDp()).then(loggingPim1))
-                        Child(Modifier.offset(2f.toDp(), (-1f).toDp()).then(loggingPim2))
-                        Child(Modifier.offset((-1f).toDp(), 2f.toDp()).then(loggingPim3))
-                        Child(Modifier.offset(2f.toDp(), 2f.toDp()).then(loggingPim4))
-                    }
-
-                    val middle = @Composable {
-                        Layout(
-                            content = children,
-                            modifier = Modifier.clipToBounds()
-                        ) { measurables, constraints ->
-                            val placeables = measurables.map { m ->
-                                m.measure(constraints)
-                            }
-                            layout(3, 3) {
-                                placeables.forEach { it.place(0, 0) }
+                    val middle =
+                        @Composable {
+                            Layout(content = children, modifier = Modifier.clipToBounds()) {
+                                measurables,
+                                constraints ->
+                                val placeables = measurables.map { m -> m.measure(constraints) }
+                                layout(3, 3) { placeables.forEach { it.place(0, 0) } }
                             }
                         }
-                    }
 
                     Layout(content = middle) { measurables, constraints ->
-                        val placeables = measurables.map { m ->
-                            m.measure(constraints)
-                        }
+                        val placeables = measurables.map { m -> m.measure(constraints) }
                         layout(constraints.maxWidth, constraints.maxHeight) {
                             placeables[0].place(1, 1)
                             setupLatch.countDown()
@@ -274,13 +242,7 @@ class ClipPointerInputTest {
 
         assertThat(setupLatch.await(2, TimeUnit.SECONDS)).isTrue()
 
-        val offsetsThatHit =
-            listOf(
-                Offset(1f, 1f),
-                Offset(3f, 1f),
-                Offset(1f, 3f),
-                Offset(3f, 3f)
-            )
+        val offsetsThatHit = listOf(Offset(1f, 1f), Offset(3f, 1f), Offset(1f, 3f), Offset(3f, 3f))
         val offsetsThatMiss =
             listOf(
                 Offset(1f, 0f),
@@ -309,11 +271,7 @@ class ClipPointerInputTest {
         }
 
         // Act
-        rule.runOnUiThreadIR {
-            downEvents.forEach {
-                view.dispatchTouchEvent(it)
-            }
-        }
+        rule.runOnUiThreadIR { downEvents.forEach { view.dispatchTouchEvent(it) } }
 
         // Assert
 
@@ -324,40 +282,38 @@ class ClipPointerInputTest {
     }
 
     /**
-     * This test creates a layout clipped to a rounded rectangle shape (circle).
-     * We'll touch in and out of the rounded area.
+     * This test creates a layout clipped to a rounded rectangle shape (circle). We'll touch in and
+     * out of the rounded area.
      */
+    @SdkSuppress(maxSdkVersion = 33) // b/321823104
     @Test
     fun clip_roundedRect() {
         pokeAroundCircle(RoundedCornerShape(50))
     }
 
     /**
-     * This test creates a layout clipped to a rounded rectangle shape (circle), but the
-     * corners are defined as larger than the side length
-     * We'll touch in and out of the rounded area.
+     * This test creates a layout clipped to a rounded rectangle shape (circle), but the corners are
+     * defined as larger than the side length We'll touch in and out of the rounded area.
      */
+    @SdkSuppress(maxSdkVersion = 33) // b/321823104
     @Test
     fun clip_roundedRectLargeCorner() {
         pokeAroundCircle(RoundedCornerShape(1.1f))
     }
 
     /**
-     * This test creates a layout clipped to a generic shape (circle).
-     * We'll touch in and out of the rounded area.
+     * This test creates a layout clipped to a generic shape (circle). We'll touch in and out of the
+     * rounded area.
      */
+    @SdkSuppress(maxSdkVersion = 33) // b/321823104
     @Test
     fun clip_genericShape() {
-        pokeAroundCircle(
-            GenericShape { size, _ ->
-                addOval(Rect(0f, 0f, size.width, size.height))
-            }
-        )
+        pokeAroundCircle(GenericShape { size, _ -> addOval(Rect(0f, 0f, size.width, size.height)) })
     }
 
     /**
-     * This test creates a layout clipped to a circle shape.
-     * We'll touch in and out of the rounded area.
+     * This test creates a layout clipped to a circle shape. We'll touch in and out of the rounded
+     * area.
      */
     fun pokeAroundCircle(shape: Shape) {
 
@@ -368,15 +324,13 @@ class ClipPointerInputTest {
         rule.runOnUiThreadIR {
             activity.setContent {
                 Child(
-                    Modifier.clip(shape)
-                        .then(loggingPim)
-                        .layout { measurable, constraints ->
-                            val p = measurable.measure(constraints)
-                            layout(p.width, p.height) {
-                                p.place(0, 0)
-                                setupLatch.countDown()
-                            }
+                    Modifier.clip(shape).then(loggingPim).layout { measurable, constraints ->
+                        val p = measurable.measure(constraints)
+                        layout(p.width, p.height) {
+                            p.place(0, 0)
+                            setupLatch.countDown()
                         }
+                    }
                 )
             }
 
@@ -432,11 +386,7 @@ class ClipPointerInputTest {
         }
 
         // Act
-        rule.runOnUiThreadIR {
-            downEvents.forEach {
-                view.dispatchTouchEvent(it)
-            }
-        }
+        rule.runOnUiThreadIR { downEvents.forEach { view.dispatchTouchEvent(it) } }
 
         // Assert
         assertThat(loggingPim.log).isEqualTo(offsetsThatHit)
@@ -446,23 +396,25 @@ class ClipPointerInputTest {
      * This creates a clipped rectangle that is smaller than the bounds and ensures that only the
      * clipped area receives touches
      */
+    @SdkSuppress(maxSdkVersion = 33) // b/321823104
     @Test
     fun clip_smallRect() {
-        val rectangleShape: Shape = object : Shape {
-            override fun createOutline(
-                size: Size,
-                layoutDirection: LayoutDirection,
-                density: Density
-            ) =
-                Outline.Rectangle(
-                    Rect(
-                        size.width * 0.25f,
-                        size.height * 0.25f,
-                        size.width * 0.75f,
-                        size.height * 0.75f,
+        val rectangleShape: Shape =
+            object : Shape {
+                override fun createOutline(
+                    size: Size,
+                    layoutDirection: LayoutDirection,
+                    density: Density
+                ) =
+                    Outline.Rectangle(
+                        Rect(
+                            size.width * 0.25f,
+                            size.height * 0.25f,
+                            size.width * 0.75f,
+                            size.height * 0.75f,
+                        )
                     )
-                )
-        }
+            }
 
         val setupLatch = CountDownLatch(1)
 
@@ -471,15 +423,14 @@ class ClipPointerInputTest {
         rule.runOnUiThreadIR {
             activity.setContent {
                 Child(
-                    Modifier.clip(rectangleShape)
-                        .then(loggingPim)
-                        .layout { measurable, constraints ->
-                            val p = measurable.measure(constraints)
-                            layout(p.width, p.height) {
-                                p.place(0, 0)
-                                setupLatch.countDown()
-                            }
+                    Modifier.clip(rectangleShape).then(loggingPim).layout { measurable, constraints
+                        ->
+                        val p = measurable.measure(constraints)
+                        layout(p.width, p.height) {
+                            p.place(0, 0)
+                            setupLatch.countDown()
                         }
+                    }
                 )
             }
 
@@ -498,12 +449,10 @@ class ClipPointerInputTest {
                 Offset(justIn, 0.5f),
                 Offset(0.5f, justIn),
                 Offset(justIn, justIn),
-
                 Offset(1f, 0.5f),
                 Offset(0.5f, 1f),
                 Offset(1f, justIn),
                 Offset(justIn, 1f),
-
                 Offset(1f, 1f),
             )
         val offsetsThatMiss =
@@ -534,11 +483,7 @@ class ClipPointerInputTest {
         }
 
         // Act
-        rule.runOnUiThreadIR {
-            downEvents.forEach {
-                view.dispatchTouchEvent(it)
-            }
-        }
+        rule.runOnUiThreadIR { downEvents.forEach { view.dispatchTouchEvent(it) } }
 
         // Assert
         assertThat(loggingPim.log).isEqualTo(offsetsThatHit)
@@ -546,31 +491,30 @@ class ClipPointerInputTest {
 
     @Composable
     fun Child(modifier: Modifier) {
-        Layout(content = {}, modifier = modifier) { _, _ ->
-            layout(2, 2) {}
-        }
+        Layout(content = {}, modifier = modifier) { _, _ -> layout(2, 2) {} }
     }
 
     class LoggingPim : PointerInputModifier {
         val log = mutableListOf<Offset>()
 
-        override val pointerInputFilter = object : PointerInputFilter() {
-            override fun onPointerEvent(
-                pointerEvent: PointerEvent,
-                pass: PointerEventPass,
-                bounds: IntSize
-            ) {
-                if (pass == PointerEventPass.Initial) {
-                    pointerEvent.changes.forEach {
-                        println("testtest, bounds: $bounds")
-                        log.add(it.position)
+        override val pointerInputFilter =
+            object : PointerInputFilter() {
+                override fun onPointerEvent(
+                    pointerEvent: PointerEvent,
+                    pass: PointerEventPass,
+                    bounds: IntSize
+                ) {
+                    if (pass == PointerEventPass.Initial) {
+                        pointerEvent.changes.forEach {
+                            println("testtest, bounds: $bounds")
+                            log.add(it.position)
+                        }
                     }
                 }
-            }
 
-            override fun onCancel() {
-                // Nothing
+                override fun onCancel() {
+                    // Nothing
+                }
             }
-        }
     }
 }

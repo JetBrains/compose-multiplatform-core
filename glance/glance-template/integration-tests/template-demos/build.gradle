@@ -43,5 +43,6 @@ dependencies {
 }
 
 android {
-    namespace "androidx.glance.appwidget.template.demos"
+    namespace = "androidx.glance.appwidget.template.demos"
+    compileSdk = 35
 }

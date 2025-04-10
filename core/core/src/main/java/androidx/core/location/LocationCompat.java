@@ -23,11 +23,11 @@ import android.location.Location;
 import android.os.Build.VERSION;
 import android.os.Bundle;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.FloatRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -77,16 +77,11 @@ public final class LocationCompat {
     public static final String EXTRA_MSL_ALTITUDE_ACCURACY =
             "androidx.core.location.extra.MSL_ALTITUDE_ACCURACY";
 
-    @Nullable
-    private static Method sSetIsFromMockProviderMethod;
-    @Nullable
-    private static Field sFieldsMaskField;
-    @Nullable
-    private static Integer sHasSpeedAccuracyMask;
-    @Nullable
-    private static Integer sHasBearingAccuracyMask;
-    @Nullable
-    private static Integer sHasVerticalAccuracyMask;
+    private static @Nullable Method sSetIsFromMockProviderMethod;
+    private static @Nullable Field sFieldsMaskField;
+    private static @Nullable Integer sHasSpeedAccuracyMask;
+    private static @Nullable Integer sHasBearingAccuracyMask;
+    private static @Nullable Integer sHasVerticalAccuracyMask;
 
     private LocationCompat() {
     }
@@ -106,7 +101,10 @@ public final class LocationCompat {
      * based on the difference between system time and the location time. This should be taken as a
      * best "guess" at what the elapsed realtime might have been, but if the clock used for
      * location derivation is different from the system clock, the results may be inaccurate.
+     * @deprecated Call {@link Location#getElapsedRealtimeNanos()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "location.getElapsedRealtimeNanos()")
     public static long getElapsedRealtimeNanos(@NonNull Location location) {
         return location.getElapsedRealtimeNanos();
     }
@@ -492,8 +490,13 @@ public final class LocationCompat {
      *
      * @see android.location.LocationManager#addTestProvider
      */
+    @SuppressWarnings("deprecation")
     public static boolean isMock(@NonNull Location location) {
-        return location.isFromMockProvider();
+        if (VERSION.SDK_INT >= 31) {
+            return Api31Impl.isMock(location);
+        } else {
+            return location.isFromMockProvider();
+        }
     }
 
     /**
@@ -527,43 +530,35 @@ public final class LocationCompat {
         private Api34Impl() {
         }
 
-        @DoNotInline
         static double getMslAltitudeMeters(Location location) {
             return location.getMslAltitudeMeters();
         }
 
-        @DoNotInline
         static void setMslAltitudeMeters(Location location, double mslAltitudeMeters) {
             location.setMslAltitudeMeters(mslAltitudeMeters);
         }
 
-        @DoNotInline
         static boolean hasMslAltitude(Location location) {
             return location.hasMslAltitude();
         }
 
-        @DoNotInline
         static void removeMslAltitude(Location location) {
             location.removeMslAltitude();
         }
 
-        @DoNotInline
         static float getMslAltitudeAccuracyMeters(Location location) {
             return location.getMslAltitudeAccuracyMeters();
         }
 
-        @DoNotInline
         static void setMslAltitudeAccuracyMeters(Location location,
                 float mslAltitudeAccuracyMeters) {
             location.setMslAltitudeAccuracyMeters(mslAltitudeAccuracyMeters);
         }
 
-        @DoNotInline
         static boolean hasMslAltitudeAccuracy(Location location) {
             return location.hasMslAltitudeAccuracy();
         }
 
-        @DoNotInline
         static void removeMslAltitudeAccuracy(Location location) {
             location.removeMslAltitudeAccuracy();
         }
@@ -574,17 +569,14 @@ public final class LocationCompat {
 
         private Api33Impl() {}
 
-        @DoNotInline
         static void removeVerticalAccuracy(Location location) {
             location.removeVerticalAccuracy();
         }
 
-        @DoNotInline
         static void removeSpeedAccuracy(Location location) {
             location.removeSpeedAccuracy();
         }
 
-        @DoNotInline
         static void removeBearingAccuracy(Location location) {
             location.removeBearingAccuracy();
         }
@@ -595,7 +587,6 @@ public final class LocationCompat {
 
         private Api29Impl() {}
 
-        @DoNotInline
         static void removeVerticalAccuracy(Location location) {
             if (!location.hasVerticalAccuracy()) {
                 return;
@@ -607,7 +598,6 @@ public final class LocationCompat {
             location.setElapsedRealtimeUncertaintyNanos(elapsedRealtimeUncertaintyNs);
         }
 
-        @DoNotInline
         static void removeSpeedAccuracy(Location location) {
             if (!location.hasSpeedAccuracy()) {
                 return;
@@ -619,7 +609,6 @@ public final class LocationCompat {
             location.setElapsedRealtimeUncertaintyNanos(elapsedRealtimeUncertaintyNs);
         }
 
-        @DoNotInline
         static void removeBearingAccuracy(Location location) {
             if (!location.hasBearingAccuracy()) {
                 return;
@@ -637,7 +626,6 @@ public final class LocationCompat {
 
         private Api28Impl() {}
 
-        @DoNotInline
         static void removeVerticalAccuracy(Location location) {
             if (!location.hasVerticalAccuracy()) {
                 return;
@@ -694,7 +682,6 @@ public final class LocationCompat {
             }
         }
 
-        @DoNotInline
         static void removeSpeedAccuracy(Location location) {
             if (!location.hasSpeedAccuracy()) {
                 return;
@@ -751,7 +738,6 @@ public final class LocationCompat {
             }
         }
 
-        @DoNotInline
         static void removeBearingAccuracy(Location location) {
             if (!location.hasBearingAccuracy()) {
                 return;
@@ -815,22 +801,18 @@ public final class LocationCompat {
         private Api26Impl() {
         }
 
-        @DoNotInline
         static boolean hasVerticalAccuracy(Location location) {
             return location.hasVerticalAccuracy();
         }
 
-        @DoNotInline
         static float getVerticalAccuracyMeters(Location location) {
             return location.getVerticalAccuracyMeters();
         }
 
-        @DoNotInline
         static void setVerticalAccuracyMeters(Location location, float verticalAccuracyM) {
             location.setVerticalAccuracyMeters(verticalAccuracyM);
         }
 
-        @DoNotInline
         static void removeVerticalAccuracy(Location location) {
             try {
                 byte fieldsMask = getFieldsMaskField().getByte(location);
@@ -843,22 +825,18 @@ public final class LocationCompat {
             }
         }
 
-        @DoNotInline
         static boolean hasSpeedAccuracy(Location location) {
             return location.hasSpeedAccuracy();
         }
 
-        @DoNotInline
         static float getSpeedAccuracyMetersPerSecond(Location location) {
             return location.getSpeedAccuracyMetersPerSecond();
         }
 
-        @DoNotInline
         static void setSpeedAccuracyMetersPerSecond(Location location, float speedAccuracyMps) {
             location.setSpeedAccuracyMetersPerSecond(speedAccuracyMps);
         }
 
-        @DoNotInline
         static void removeSpeedAccuracy(Location location) {
             try {
                 byte fieldsMask = getFieldsMaskField().getByte(location);
@@ -875,22 +853,18 @@ public final class LocationCompat {
             }
         }
 
-        @DoNotInline
         static boolean hasBearingAccuracy(Location location) {
             return location.hasBearingAccuracy();
         }
 
-        @DoNotInline
         static float getBearingAccuracyDegrees(Location location) {
             return location.getBearingAccuracyDegrees();
         }
 
-        @DoNotInline
         static void setBearingAccuracyDegrees(Location location, float bearingAccuracyD) {
             location.setBearingAccuracyDegrees(bearingAccuracyD);
         }
 
-        @DoNotInline
         static void removeBearingAccuracy(Location location) {
             try {
                 byte fieldsMask = getFieldsMaskField().getByte(location);
@@ -989,6 +963,17 @@ public final class LocationCompat {
             if (extras.isEmpty()) {
                 location.setExtras(null);
             }
+        }
+    }
+
+    @RequiresApi(31)
+    static class Api31Impl {
+        private Api31Impl() {
+            // This class is not instantiable.
+        }
+
+        static boolean isMock(Location location) {
+            return location.isMock();
         }
     }
 }

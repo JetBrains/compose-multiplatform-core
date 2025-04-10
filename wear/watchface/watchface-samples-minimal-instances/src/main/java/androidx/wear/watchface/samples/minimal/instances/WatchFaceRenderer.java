@@ -26,7 +26,6 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.view.SurfaceHolder;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Px;
 import androidx.annotation.UiThread;
 import androidx.lifecycle.FlowLiveDataConversions;
@@ -43,6 +42,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import kotlin.Unit;
+
+import org.jspecify.annotations.NonNull;
 
 import java.time.ZonedDateTime;
 import java.util.Objects;
@@ -89,9 +90,8 @@ public class WatchFaceRenderer extends ListenableCanvasRenderer {
     }
 
     @UiThread
-    @NonNull
     @Override
-    public ListenableFuture<Unit> initFuture() {
+    public @NonNull ListenableFuture<Unit> initFuture() {
         // observeForever has to be called from the UI thread but the WatchFaceRenderer is called
         // from a background thread.
         FlowLiveDataConversions.asLiveData(mCurrentUserStyleRepository.getUserStyle())

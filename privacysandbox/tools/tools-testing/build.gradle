@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -26,12 +33,12 @@ dependencies {
     api(libs.kspApi)
     api(libs.junit)
     api(libs.truth)
-    implementation project(":room:room-compiler-processing-testing")
+    implementation(project(":room:room-compiler-processing-testing"))
 }
 
 androidx {
     name = "androidx.privacysandbox.tools:tools-testing"
-    type = LibraryType.INTERNAL_TEST_LIBRARY
+    type = SoftwareType.INTERNAL_HOST_TEST_LIBRARY
     inceptionYear = "2022"
     description = "Testing utilities for privacysandbox tools."
 }

@@ -14,30 +14,48 @@
  * limitations under the License.
  */
 
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    android()
-    desktop()
+    androidLibrary {
+        namespace = "androidx.compose.runtime.integrationtests"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+        withAndroidTestOnJvmBuilder {
+            it.defaultSourceSetName = "androidUnitTest"
+        }
+
+        compileSdk = 35
+        aarMetadata.minCompileSdk = 35
+    }
 
     sourceSets {
         commonMain {
             dependencies {
                 implementation(libs.kotlinStdlibCommon)
                 implementation(libs.kotlinCoroutinesCore)
-                implementation(projectOrArtifact(":compose:ui:ui"))
+                implementation(project(":compose:ui:ui"))
             }
         }
 
         commonTest {
             dependencies {
-                implementation(kotlin("test-junit"))
+                implementation(libs.kotlinTest)
             }
         }
 
@@ -53,16 +71,9 @@ androidXMultiplatform {
             dependsOn(jvmMain)
             dependencies {
                 api(libs.kotlinCoroutinesAndroid)
-                api("androidx.annotation:annotation:1.1.0")
+                api("androidx.annotation:annotation:1.8.1")
 
                 implementation("androidx.core:core-ktx:1.1.0")
-            }
-        }
-
-        desktopMain {
-            dependsOn(jvmMain)
-            dependencies {
-                api(libs.kotlinCoroutinesSwing)
             }
         }
 
@@ -75,11 +86,11 @@ androidXMultiplatform {
         androidInstrumentedTest {
             dependsOn(jvmTest)
             dependencies {
-                implementation(projectOrArtifact(":compose:ui:ui"))
-                implementation(projectOrArtifact(":compose:material:material"))
-                implementation(projectOrArtifact(":compose:ui:ui-test-junit4"))
+                implementation(project(":compose:ui:ui"))
+                implementation(project(":compose:material:material"))
+                implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(project(":compose:test-utils"))
-                implementation(projectOrArtifact(":activity:activity-compose"))
+                implementation("androidx.activity:activity-compose:1.10.1")
                 implementation(libs.testExtJunit)
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -90,26 +101,21 @@ androidXMultiplatform {
         androidUnitTest {
             dependsOn(jvmTest)
         }
-
-        desktopTest {
-            dependsOn(jvmTest)
-        }
     }
 }
 
-android {
-    namespace "androidx.compose.runtime.integrationtests"
-}
 
 tasks.withType(KotlinCompile).configureEach {
     kotlinOptions {
         incremental = false
-        freeCompilerArgs += "-Xcontext-receivers"
+        freeCompilerArgs += [
+            "-Xcontext-receivers",
+        ]
     }
 }
 
 public File findFile() {
-    project.file("src/androidAndroidTest/kotlin/androidx/compose/runtime/GroupSizeTests.kt")
+    project.file("src/androidInstrumentedTest/kotlin/androidx/compose/runtime/GroupSizeTests.kt")
 }
 
 class UpdateExpectedGroupSizes extends DefaultTask {

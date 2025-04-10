@@ -19,9 +19,9 @@ package androidx.work.impl.utils
 
 import androidx.work.WorkInfo
 import androidx.work.WorkQuery
+import androidx.work.executeAsync
 import androidx.work.impl.WorkDatabase
 import androidx.work.impl.model.WorkSpec.Companion.WORK_INFO_MAPPER
-import androidx.work.impl.utils.futures.SettableFuture
 import androidx.work.impl.utils.taskexecutor.TaskExecutor
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.UUID
@@ -29,48 +29,46 @@ import java.util.UUID
 internal fun WorkDatabase.forStringIds(
     executor: TaskExecutor,
     ids: List<String>,
-): ListenableFuture<List<WorkInfo>> = loadStatusFuture(executor) { db ->
-    WORK_INFO_MAPPER.apply(db.workSpecDao().getWorkStatusPojoForIds(ids))
-}
+): ListenableFuture<List<WorkInfo>> =
+    loadStatusFuture(executor) { db ->
+        WORK_INFO_MAPPER.apply(db.workSpecDao().getWorkStatusPojoForIds(ids))
+    }
 
 internal fun WorkDatabase.forUUID(
     executor: TaskExecutor,
     id: UUID,
-): ListenableFuture<WorkInfo?> = loadStatusFuture(executor) { db ->
-    db.workSpecDao().getWorkStatusPojoForId(id.toString())?.toWorkInfo()
-}
+): ListenableFuture<WorkInfo?> =
+    loadStatusFuture(executor) { db ->
+        db.workSpecDao().getWorkStatusPojoForId(id.toString())?.toWorkInfo()
+    }
 
 internal fun WorkDatabase.forTag(
     executor: TaskExecutor,
     tag: String
-): ListenableFuture<List<WorkInfo>> = loadStatusFuture(executor) { db ->
-    WORK_INFO_MAPPER.apply(db.workSpecDao().getWorkStatusPojoForTag(tag))
-}
+): ListenableFuture<List<WorkInfo>> =
+    loadStatusFuture(executor) { db ->
+        WORK_INFO_MAPPER.apply(db.workSpecDao().getWorkStatusPojoForTag(tag))
+    }
 
 internal fun WorkDatabase.forUniqueWork(
     executor: TaskExecutor,
     name: String,
-): ListenableFuture<List<WorkInfo>> = loadStatusFuture(executor) { db ->
-    WORK_INFO_MAPPER.apply(db.workSpecDao().getWorkStatusPojoForName(name))
-}
+): ListenableFuture<List<WorkInfo>> =
+    loadStatusFuture(executor) { db ->
+        WORK_INFO_MAPPER.apply(db.workSpecDao().getWorkStatusPojoForName(name))
+    }
 
 internal fun WorkDatabase.forWorkQuerySpec(
     executor: TaskExecutor,
     querySpec: WorkQuery
-): ListenableFuture<List<WorkInfo>> = loadStatusFuture(executor) { db ->
-    WORK_INFO_MAPPER.apply(db.rawWorkInfoDao().getWorkInfoPojos(querySpec.toRawQuery()))
-}
+): ListenableFuture<List<WorkInfo>> =
+    loadStatusFuture(executor) { db ->
+        WORK_INFO_MAPPER.apply(db.rawWorkInfoDao().getWorkInfoPojos(querySpec.toRawQuery()))
+    }
 
 // it should be rewritten via SuspendToFutureAdapter.launchFuture once it is stable.
 private fun <T> WorkDatabase.loadStatusFuture(
     executor: TaskExecutor,
     block: (WorkDatabase) -> T
-): ListenableFuture<T> = SettableFuture.create<T>().apply {
-    executor.serialTaskExecutor.execute {
-        try {
-            set(block(this@loadStatusFuture))
-        } catch (throwable: Throwable) {
-            setException(throwable)
-        }
-    }
-}
+): ListenableFuture<T> =
+    executor.serialTaskExecutor.executeAsync("loadStatusFuture") { block(this@loadStatusFuture) }

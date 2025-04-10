@@ -24,7 +24,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
@@ -42,7 +41,6 @@ import org.junit.runner.RunWith
 // hooked up to PointerInteropFilter correctly.
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalComposeUiApi::class)
 class PointerInteropFilterComposeHookupTest {
 
     private lateinit var root: View
@@ -56,30 +54,27 @@ class PointerInteropFilterComposeHookupTest {
     }
     private val disallowInterceptRequester = RequestDisallowInterceptTouchEvent()
 
-    @get:Rule
-    val rule = createAndroidComposeRule<TestActivity>()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     @Before
     fun setup() {
         rule.activityRule.scenario.onActivity { activity ->
-
-            val parent = ComposeView(activity).apply {
-                setContent {
-                    with(LocalDensity.current) {
-                        Box(
-                            modifier = Modifier
-                                .spyGestureFilter {
-                                    eventStringLog.add(it.name)
-                                }
-                                .pointerInteropFilter(
-                                    disallowInterceptRequester,
-                                    motionEventCallback
-                                )
-                                .requiredSize(100f.toDp(), 100f.toDp())
-                        )
+            val parent =
+                ComposeView(activity).apply {
+                    setContent {
+                        with(LocalDensity.current) {
+                            Box(
+                                modifier =
+                                    Modifier.spyGestureFilter { eventStringLog.add(it.name) }
+                                        .pointerInteropFilter(
+                                            disallowInterceptRequester,
+                                            motionEventCallback
+                                        )
+                                        .requiredSize(100f.toDp(), 100f.toDp())
+                            )
+                        }
                     }
                 }
-            }
 
             activity.setContentView(
                 parent,
@@ -105,9 +100,7 @@ class PointerInteropFilterComposeHookupTest {
                 root
             )
 
-        rule.runOnIdle {
-            root.dispatchTouchEvent(down)
-        }
+        rule.runOnIdle { root.dispatchTouchEvent(down) }
 
         assertThat(motionEventLog).hasSize(1)
         assertThat(motionEventLog[0]).isSameInstanceAs(down)
@@ -270,7 +263,7 @@ class PointerInteropFilterComposeHookupTest {
     }
 
     @Test
-    fun ui_downMove_moveIsDispatchedDuringFinal() {
+    fun ui_downMove_moveIsDispatchedDuringMain() {
         val down =
             MotionEvent(
                 0,
@@ -300,9 +293,9 @@ class PointerInteropFilterComposeHookupTest {
 
         assertThat(eventStringLog).hasSize(4)
         assertThat(eventStringLog[0]).isEqualTo(PointerEventPass.Initial.toString())
-        assertThat(eventStringLog[1]).isEqualTo(PointerEventPass.Main.toString())
-        assertThat(eventStringLog[2]).isEqualTo(PointerEventPass.Final.toString())
-        assertThat(eventStringLog[3]).isEqualTo("motionEvent")
+        assertThat(eventStringLog[1]).isEqualTo("motionEvent")
+        assertThat(eventStringLog[2]).isEqualTo(PointerEventPass.Main.toString())
+        assertThat(eventStringLog[3]).isEqualTo(PointerEventPass.Final.toString())
     }
 
     @Test
@@ -386,9 +379,9 @@ class PointerInteropFilterComposeHookupTest {
 
         assertThat(eventStringLog).hasSize(4)
         assertThat(eventStringLog[0]).isEqualTo(PointerEventPass.Initial.toString())
-        assertThat(eventStringLog[1]).isEqualTo(PointerEventPass.Main.toString())
-        assertThat(eventStringLog[2]).isEqualTo(PointerEventPass.Final.toString())
-        assertThat(eventStringLog[3]).isEqualTo("motionEvent")
+        assertThat(eventStringLog[1]).isEqualTo("motionEvent")
+        assertThat(eventStringLog[2]).isEqualTo(PointerEventPass.Main.toString())
+        assertThat(eventStringLog[3]).isEqualTo(PointerEventPass.Final.toString())
     }
 
     @Test
@@ -445,8 +438,8 @@ class PointerInteropFilterComposeHookupTest {
 
         assertThat(eventStringLog).hasSize(4)
         assertThat(eventStringLog[0]).isEqualTo(PointerEventPass.Initial.toString())
-        assertThat(eventStringLog[1]).isEqualTo(PointerEventPass.Main.toString())
-        assertThat(eventStringLog[2]).isEqualTo(PointerEventPass.Final.toString())
-        assertThat(eventStringLog[3]).isEqualTo("motionEvent")
+        assertThat(eventStringLog[1]).isEqualTo("motionEvent")
+        assertThat(eventStringLog[2]).isEqualTo(PointerEventPass.Main.toString())
+        assertThat(eventStringLog[3]).isEqualTo(PointerEventPass.Final.toString())
     }
 }

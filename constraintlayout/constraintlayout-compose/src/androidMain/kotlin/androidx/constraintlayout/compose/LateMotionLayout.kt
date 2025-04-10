@@ -25,8 +25,10 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MultiMeasureLayout
+import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.node.Ref
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.semantics
@@ -39,6 +41,7 @@ import kotlinx.coroutines.channels.Channel
  *
  * It's only meant to be used by ConstraintLayout to animate changes.
  */
+@OptIn(ExperimentalMotionApi::class)
 @PublishedApi
 @Composable
 internal fun LateMotionLayout(
@@ -62,20 +65,20 @@ internal fun LateMotionLayout(
 
     // Start and end are guaranteed to be non-null when the lambda is invoked at the measure
     // step.
-    val measurePolicy = lateMotionLayoutMeasurePolicy(
-        startProvider = remember { { start.value!! } },
-        endProvider = remember { { end.value!! } },
-        contentTracker = contentTracker,
-        compositionSource = compositionSource,
-        motionProgress = motionProgress,
-        measurer = measurer,
-        optimizationLevel = optimizationLevel
-    )
+    val measurePolicy =
+        lateMotionLayoutMeasurePolicy(
+            startProvider = remember { { start.value!! } },
+            endProvider = remember { { end.value!! } },
+            contentTracker = contentTracker,
+            compositionSource = compositionSource,
+            motionProgress = motionProgress,
+            measurer = measurer,
+            optimizationLevel = optimizationLevel
+        )
 
     @Suppress("DEPRECATION")
     MultiMeasureLayout(
-        modifier = modifier
-            .semantics { designInfoProvider = measurer },
+        modifier = modifier.semantics { designInfoProvider = measurer },
         measurePolicy = measurePolicy,
         content = content
     )
@@ -83,8 +86,7 @@ internal fun LateMotionLayout(
     LaunchedEffect(channel) {
         for (constraints in channel) {
             val newConstraints = channel.tryReceive().getOrNull() ?: constraints
-            val currentConstraints =
-                if (direction.intValue == 1) start.value else end.value
+            val currentConstraints = if (direction.intValue == 1) start.value else end.value
             if (newConstraints != currentConstraints) {
                 if (direction.intValue == 1) {
                     end.value = newConstraints
@@ -107,6 +109,7 @@ internal fun LateMotionLayout(
  * Same as [motionLayoutMeasurePolicy] but the [ConstraintSet] objects are not available at call
  * time.
  */
+@OptIn(ExperimentalMotionApi::class) // Used only for ConstraintLayout `animateChanges` mode
 private fun lateMotionLayoutMeasurePolicy(
     startProvider: () -> ConstraintSet,
     endProvider: () -> ConstraintSet,
@@ -115,29 +118,31 @@ private fun lateMotionLayoutMeasurePolicy(
     motionProgress: State<Float>,
     measurer: MotionMeasurer,
     optimizationLevel: Int,
-): MeasurePolicy =
-    MeasurePolicy { measurables, constraints ->
-        // Do a state read, to guarantee that we control measure when the content recomposes without
-        // notifying our Composable caller
-        contentTracker.value
+): MeasurePolicy = MeasurePolicy { measurables, constraints ->
+    // Map to properly capture Placeables across Measure and Layout passes
+    val placeableMap = mutableMapOf<Measurable, Placeable>()
 
-        val layoutSize = measurer.performInterpolationMeasure(
+    // Do a state read, to guarantee that we control measure when the content recomposes without
+    // notifying our Composable caller
+    contentTracker.value
+
+    val layoutSize =
+        measurer.performInterpolationMeasure(
             constraints = constraints,
             layoutDirection = this.layoutDirection,
             constraintSetStart = startProvider(),
             constraintSetEnd = endProvider(),
             transition = TransitionImpl.EMPTY,
             measurables = measurables,
+            placeableMap = placeableMap,
             optimizationLevel = optimizationLevel,
             progress = motionProgress.value,
             compositionSource = compositionSource.value ?: CompositionSource.Unknown,
             invalidateOnConstraintsCallback = null
         )
-        compositionSource.value = CompositionSource.Unknown // Reset after measuring
+    compositionSource.value = CompositionSource.Unknown // Reset after measuring
 
-        layout(layoutSize.width, layoutSize.height) {
-            with(measurer) {
-                performLayout(measurables)
-            }
-        }
+    layout(layoutSize.width, layoutSize.height) {
+        with(measurer) { performLayout(measurables = measurables, placeableMap = placeableMap) }
     }
+}

@@ -1,0 +1,7 @@
+// Baseline format: 1.0
+AddedPackage: androidx.core.view.insets:
+    Added package androidx.core.view.insets
+
+
+RemovedPackage: androidx.core.view.insetscontrast:
+    Removed package androidx.core.view.insetscontrast

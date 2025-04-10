@@ -21,9 +21,9 @@ import static android.hardware.camera2.CameraMetadata.LENS_FACING_BACK;
 import android.hardware.camera2.CameraCharacteristics;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -42,7 +42,6 @@ import java.util.Locale;
  *                J6 (sm-j600g), Samsung Galaxy J7 Neo (sm-j701f), Samsung Galaxy J7 Prime
  *                (sm-g610f), Samsung Galaxy J7 (sm-j710mn)
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class ImageCaptureWithFlashUnderexposureQuirk implements UseTorchAsFlashQuirk {
 
     // List of devices with the issue. See b/228800282.

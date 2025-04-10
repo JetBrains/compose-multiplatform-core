@@ -18,12 +18,12 @@ package androidx.camera.camera2.pipe.graph
 
 import android.hardware.camera2.CameraAccessException
 import androidx.annotation.GuardedBy
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CaptureSequence
 import androidx.camera.camera2.pipe.CaptureSequenceProcessor
 import androidx.camera.camera2.pipe.CaptureSequences.invokeOnRequests
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.compat.ObjectUnavailableException
+import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
 import kotlinx.atomicfu.atomic
 
@@ -35,15 +35,16 @@ internal val graphRequestProcessorIds = atomic(0)
  *
  * GraphRequestProcessors are intended to be in conjunction with a [GraphListener].
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @Suppress("NOTHING_TO_INLINE")
-class GraphRequestProcessor
+public class GraphRequestProcessor
 private constructor(
     private val captureSequenceProcessor: CaptureSequenceProcessor<Any, CaptureSequence<Any>>
 ) {
-    companion object {
+    public companion object {
         /** Create a [GraphRequestProcessor] from a [CaptureSequenceProcessor] instance. */
-        fun from(captureSequenceProcessor: CaptureSequenceProcessor<*, *>): GraphRequestProcessor {
+        public fun from(
+            captureSequenceProcessor: CaptureSequenceProcessor<*, *>
+        ): GraphRequestProcessor {
             @Suppress("UNCHECKED_CAST")
             return GraphRequestProcessor(
                 captureSequenceProcessor as CaptureSequenceProcessor<Any, CaptureSequence<Any>>
@@ -60,10 +61,8 @@ private constructor(
         object : CaptureSequence.CaptureSequenceListener {
             override fun onCaptureSequenceComplete(captureSequence: CaptureSequence<*>) {
                 // Listen to the completion of active capture sequences and remove them from the
-                // list
-                // of currently active capture sequences. Since repeating requests are not required
-                // to
-                // execute, only non-repeating capture sequences are tracked.
+                // list of currently active capture sequences. Since repeating requests are not
+                // required to execute, only non-repeating capture sequences are tracked.
                 if (!captureSequence.repeating) {
                     synchronized(activeCaptureSequences) {
                         activeCaptureSequences.remove(captureSequence)
@@ -105,10 +104,10 @@ private constructor(
         captureSequenceProcessor.stopRepeating()
     }
 
-    internal fun close() {
+    internal suspend fun shutdown() {
         Log.debug { "Closing $this" }
         if (closed.compareAndSet(expect = false, update = true)) {
-            captureSequenceProcessor.close()
+            captureSequenceProcessor.shutdown()
         }
     }
 
@@ -116,29 +115,48 @@ private constructor(
         isRepeating: Boolean,
         requests: List<Request>,
         defaultParameters: Map<*, Any?>,
+        graphParameters: Map<*, Any?>,
         requiredParameters: Map<*, Any?>,
-        listeners: List<Request.Listener>,
+        listeners: List<Request.Listener>
     ): Boolean {
         // Reject incoming requests if this instance has been stopped or closed.
         if (closed.value) {
-            Log.warn { "Rejecting requests $requests: Request processor is closed." }
+            Log.warn { "Failed to submit $requests: $this is closed." }
             return false
         }
 
         // This can fail for various reasons and may throw exceptions.
         val captureSequence =
-            captureSequenceProcessor.build(
-                isRepeating,
-                requests,
-                defaultParameters,
-                requiredParameters,
-                listeners,
-                activeBurstListener
-            )
+            Debug.trace("CXCP#buildCaptureSequence") {
+                captureSequenceProcessor.build(
+                    isRepeating,
+                    requests,
+                    defaultParameters,
+                    graphParameters,
+                    requiredParameters,
+                    activeBurstListener,
+                    listeners
+                )
+            }
 
         // Reject incoming requests if this instance has been stopped or closed.
         if (captureSequence == null) {
-            Log.warn { "Rejecting requests $requests: Could not create the capture sequence." }
+            if (requests.any { it.inputRequest != null }) {
+                // A burst is classified as a reprocessing burst if *any* of the items have a non
+                // null inputRequest. If this happens, abort the entire burst and close all
+                // of the images.
+                for (request in requests) {
+                    // Ensure the image, if it exists, is closed.
+                    request.inputRequest?.image?.close()
+                    for (listener in request.listeners) {
+                        listener.onAborted(request)
+                    }
+                }
+                // Tell the calling method that the request was successfully handled. In this
+                // case, it was handled by aborting the requests and closing the images.
+                return true
+            }
+            Log.warn { "Failed to submit $requests: $this failed to build CaptureSequence." }
 
             // We do not need to invoke the sequenceCompleteListener since it has not been added to
             // the list of activeCaptureSequences yet.
@@ -148,13 +166,8 @@ private constructor(
         // Re-check again and reject requests if this instance has been closed or stopped.
         // This is an optimization since building the captureSequence can take non-zero time.
         if (closed.value) {
-            Log.warn { "Rejecting requests $requests: Request processor is closed." }
+            Log.warn { "Failed to submit $requests: $this is closed." }
             return false
-        }
-
-        // Reject incorrectly structured capture sequences:
-        check(captureSequence.captureRequestList.size == captureSequence.captureMetadataList.size) {
-            "CaptureSequence ($captureSequence) has mismatched request and metadata lists!"
         }
 
         // Non-repeating requests must always be aware of abort calls.
@@ -164,7 +177,7 @@ private constructor(
 
         var captured = false
         return try {
-            Log.debug { "Submitting $captureSequence" }
+            Log.debug { "$this submitting $captureSequence" }
             captureSequence.invokeOnRequestSequenceCreated()
 
             // NOTE: This is an unusual synchronization call. The purpose is to avoid a rare but
@@ -176,21 +189,24 @@ private constructor(
                 synchronized(lock = captureSequence) {
                     // Check closed state right before submitting.
                     if (closed.value) {
-                        Log.warn { "Did not submit $captureSequence, $this was closed!" }
+                        Log.warn { "Failed to submit $captureSequence: $this is closed." }
                         return false
                     }
-                    val sequenceNumber = captureSequenceProcessor.submit(captureSequence) ?: -1
-                    captureSequence.sequenceNumber = sequenceNumber
-                    sequenceNumber
+
+                    Debug.trace("CXCP#submit(CaptureSequence)") {
+                        val sequenceNumber = captureSequenceProcessor.submit(captureSequence) ?: -1
+                        captureSequence.sequenceNumber = sequenceNumber
+                        sequenceNumber
+                    }
                 }
 
             if (result != -1) {
                 captureSequence.invokeOnRequestSequenceSubmitted()
                 captured = true
-                Log.debug { "Submitted $captureSequence" }
+                Log.debug { "$this submitted $captureSequence" }
                 true
             } else {
-                Log.warn { "Did not submit $captureSequence, SequenceNumber was -1" }
+                Log.warn { "Failed to submit $captureSequence: $this received -1 from submit." }
                 false
             }
         } catch (closedException: ObjectUnavailableException) {

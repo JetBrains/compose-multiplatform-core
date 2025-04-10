@@ -25,9 +25,10 @@ import android.graphics.Rect;
 import android.graphics.Region;
 import android.graphics.drawable.Drawable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Drawable which delegates all calls to its wrapped {@link Drawable}.
@@ -134,21 +135,19 @@ class WrappedDrawableApi14 extends Drawable
     }
 
     @Override
-    public boolean setState(@NonNull int[] stateSet) {
+    public boolean setState(int @NonNull [] stateSet) {
         boolean handled = mDrawable.setState(stateSet);
         handled = updateTint(stateSet) || handled;
         return handled;
     }
 
-    @NonNull
     @Override
-    public int[] getState() {
+    public int @NonNull [] getState() {
         return mDrawable.getState();
     }
 
-    @NonNull
     @Override
-    public Drawable getCurrent() {
+    public @NonNull Drawable getCurrent() {
         return mDrawable.getCurrent();
     }
 
@@ -193,13 +192,11 @@ class WrappedDrawableApi14 extends Drawable
     }
 
     @Override
-    @RequiresApi(19)
     public void setAutoMirrored(boolean mirrored) {
         DrawableCompat.setAutoMirrored(mDrawable, mirrored);
     }
 
     @Override
-    @RequiresApi(19)
     public boolean isAutoMirrored() {
         return DrawableCompat.isAutoMirrored(mDrawable);
     }
@@ -217,8 +214,7 @@ class WrappedDrawableApi14 extends Drawable
     }
 
     @Override
-    @Nullable
-    public ConstantState getConstantState() {
+    public @Nullable ConstantState getConstantState() {
         if (mState != null && mState.canConstantState()) {
             mState.mChangingConfigurations = getChangingConfigurations();
             return mState;
@@ -226,9 +222,8 @@ class WrappedDrawableApi14 extends Drawable
         return null;
     }
 
-    @NonNull
     @Override
-    public Drawable mutate() {
+    public @NonNull Drawable mutate() {
         if (!mMutated && super.mutate() == this) {
             mState = mutateConstantState();
             if (mDrawable != null) {
@@ -250,8 +245,7 @@ class WrappedDrawableApi14 extends Drawable
      *
      * @return the new state
      */
-    @NonNull
-    private WrappedDrawableState mutateConstantState() {
+    private @NonNull WrappedDrawableState mutateConstantState() {
         return new WrappedDrawableState(mState);
     }
 
@@ -296,7 +290,7 @@ class WrappedDrawableApi14 extends Drawable
     }
 
     @Override
-    public void setTintMode(@NonNull PorterDuff.Mode tintMode) {
+    public void setTintMode(PorterDuff.@NonNull Mode tintMode) {
         mState.mTintMode = tintMode;
         updateTint(getState());
     }

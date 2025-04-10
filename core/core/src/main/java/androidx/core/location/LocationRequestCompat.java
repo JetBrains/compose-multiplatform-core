@@ -24,16 +24,16 @@ import android.annotation.SuppressLint;
 import android.location.LocationRequest;
 import android.os.Build.VERSION;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Preconditions;
 import androidx.core.util.TimeUtils;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -212,8 +212,7 @@ public final class LocationRequestCompat {
      * @see LocationRequest
      */
     @RequiresApi(31)
-    @NonNull
-    public LocationRequest toLocationRequest() {
+    public @NonNull LocationRequest toLocationRequest() {
         return Api31Impl.toLocationRequest(this);
     }
 
@@ -228,9 +227,7 @@ public final class LocationRequestCompat {
      * @see LocationRequest
      */
     @SuppressLint("NewApi")
-    @RequiresApi(19)
-    @Nullable
-    public LocationRequest toLocationRequest(@NonNull String provider) {
+    public @Nullable LocationRequest toLocationRequest(@NonNull String provider) {
         if (VERSION.SDK_INT >= 31) {
             return toLocationRequest();
         } else {
@@ -265,8 +262,7 @@ public final class LocationRequestCompat {
     }
 
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         StringBuilder s = new StringBuilder();
         s.append("Request[");
         if (mIntervalMillis != PASSIVE_INTERVAL) {
@@ -505,7 +501,6 @@ public final class LocationRequestCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         public static LocationRequest toLocationRequest(LocationRequestCompat obj) {
             return new LocationRequest.Builder(obj.getIntervalMillis())
                     .setQuality(obj.getQuality())
@@ -518,7 +513,6 @@ public final class LocationRequestCompat {
         }
     }
 
-    @RequiresApi(19)
     private static class Api19Impl {
         private static Class<?> sLocationRequestClass;
         private static Method sCreateFromDeprecatedProviderMethod;

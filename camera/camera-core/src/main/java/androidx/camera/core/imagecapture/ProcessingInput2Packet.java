@@ -16,26 +16,21 @@
 
 package androidx.camera.core.imagecapture;
 
-import static android.graphics.ImageFormat.JPEG;
-
 import static androidx.camera.core.ImageCapture.ERROR_FILE_IO;
 import static androidx.camera.core.imagecapture.ImagePipeline.EXIF_ROTATION_AVAILABILITY;
 import static androidx.camera.core.impl.utils.Exif.createFromImageProxy;
 import static androidx.camera.core.impl.utils.TransformUtils.getRectToRect;
 import static androidx.camera.core.impl.utils.TransformUtils.is90or270;
 import static androidx.camera.core.impl.utils.TransformUtils.within360;
+import static androidx.camera.core.internal.utils.ImageUtil.isJpegFormats;
 import static androidx.core.util.Preconditions.checkNotNull;
 
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.hardware.camera2.CaptureRequest;
-import android.os.Build;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.impl.CameraCaptureResult;
@@ -45,6 +40,9 @@ import androidx.camera.core.internal.compat.quirk.ImageCaptureRotationOptionQuir
 import androidx.camera.core.processing.Operation;
 import androidx.camera.core.processing.Packet;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 
 /**
@@ -52,20 +50,18 @@ import java.io.IOException;
  *
  * <p>This is we fix the metadata of the image, such as rotation and crop rect.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 final class ProcessingInput2Packet implements
         Operation<ProcessingNode.InputPacket, Packet<ImageProxy>> {
 
-    @NonNull
     @Override
-    public Packet<ImageProxy> apply(@NonNull ProcessingNode.InputPacket inputPacket)
+    public @NonNull Packet<ImageProxy> apply(ProcessingNode.@NonNull InputPacket inputPacket)
             throws ImageCaptureException {
         ImageProxy image = inputPacket.getImageProxy();
         ProcessingRequest request = inputPacket.getProcessingRequest();
 
         // Extracts Exif data from JPEG.
         Exif exif = null;
-        if (image.getFormat() == JPEG) {
+        if (isJpegFormats(image.getFormat())) {
             try {
                 exif = createFromImageProxy(image);
                 // Rewind the buffer after reading.
@@ -132,8 +128,7 @@ final class ProcessingInput2Packet implements
     /**
      * Updates sensorToSurface transformation.
      */
-    @NonNull
-    private static Matrix getUpdatedTransform(@NonNull Matrix sensorToSurface,
+    private static @NonNull Matrix getUpdatedTransform(@NonNull Matrix sensorToSurface,
             @NonNull Matrix halTransform) {
         Matrix sensorToBuffer = new Matrix(sensorToSurface);
         sensorToBuffer.postConcat(halTransform);
@@ -143,8 +138,8 @@ final class ProcessingInput2Packet implements
     /**
      * Transforms crop rect with the HAL transformation.
      */
-    @NonNull
-    private static Rect getUpdatedCropRect(@NonNull Rect cropRect, @NonNull Matrix halTransform) {
+    private static @NonNull Rect getUpdatedCropRect(@NonNull Rect cropRect,
+            @NonNull Matrix halTransform) {
         RectF rectF = new RectF(cropRect);
         halTransform.mapRect(rectF);
         rectF.sort();

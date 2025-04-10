@@ -34,12 +34,12 @@ def addMavenRepositories(RepositoryHandler handler) {
     if (metalavaRepoOverride != null) {
         for(extraRepo in metalavaRepoOverride.split(File.pathSeparator)) {
             handler.maven {
-                url extraRepo
+                url = extraRepo
             }
         }
     }
     handler.maven {
-        url("${repos.prebuiltsRoot}/androidx/internal")
+        url = "${repos.prebuiltsRoot}/androidx/internal"
         metadataSources {
             mavenPom()
             artifact()
@@ -51,7 +51,7 @@ def addMavenRepositories(RepositoryHandler handler) {
         }
     }
     handler.maven {
-        url("${repos.prebuiltsRoot}/androidx/external")
+        url = "${repos.prebuiltsRoot}/androidx/external"
         metadataSources {
             mavenPom()
             artifact()
@@ -65,10 +65,22 @@ def addMavenRepositories(RepositoryHandler handler) {
     }
     if (System.getenv("ALLOW_PUBLIC_REPOS") != null || System.getProperty("ALLOW_PUBLIC_REPOS") != null) {
         handler.mavenCentral()
-        handler.google()
+        handler.google {
+            content {
+                includeGroupByRegex("androidx.*")
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+            }
+        }
         handler.gradlePluginPortal()
         handler.maven {
-               url("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+               url = "https://maven.pkg.jetbrains.space/public/p/compose/dev"
+        }
+        handler.maven {
+            url = "https://packages.jetbrains.team/maven/p/kt/dev"
+            content {
+                includeGroupByRegex("org\\.jetbrains\\.kotlin.*")
+            }
         }
         handler.mavenLocal()
     }
@@ -77,7 +89,7 @@ def addMavenRepositories(RepositoryHandler handler) {
     if (androidPluginRepoOverride != null) {
         for(extraRepo in androidPluginRepoOverride.split(File.pathSeparator)) {
             handler.maven {
-                url extraRepo
+                url = extraRepo
             }
         }
     }

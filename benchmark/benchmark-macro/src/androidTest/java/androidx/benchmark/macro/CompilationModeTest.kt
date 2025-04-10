@@ -17,8 +17,10 @@
 package androidx.benchmark.macro
 
 import android.os.Build
+import androidx.benchmark.DeviceInfo
 import androidx.benchmark.Shell
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import kotlin.test.assertFailsWith
@@ -37,8 +39,7 @@ class CompilationModeTest {
     private val vmRunningInterpretedOnly: Boolean
 
     init {
-        vmRunningInterpretedOnly = Shell.getprop("dalvik.vm.extra-opts")
-            .contains("-Xusejit:false")
+        vmRunningInterpretedOnly = Shell.getprop("dalvik.vm.extra-opts").contains("-Xusejit:false")
     }
 
     @SdkSuppress(minSdkVersion = 24)
@@ -61,10 +62,8 @@ class CompilationModeTest {
             assertEquals("BaselineProfile", CompilationMode.Partial().toString())
             assertEquals(
                 "WarmupProfile(iterations=3)",
-                CompilationMode.Partial(
-                    BaselineProfileMode.Disable,
-                    warmupIterations = 3
-                ).toString()
+                CompilationMode.Partial(BaselineProfileMode.Disable, warmupIterations = 3)
+                    .toString()
             )
             assertEquals(
                 "Partial(baselineProfile=Require,iterations=3)",
@@ -97,5 +96,28 @@ class CompilationModeTest {
             assertFalse(CompilationMode.Full().isSupportedWithVmSettings())
         }
         assertTrue(CompilationMode.Interpreted.isSupportedWithVmSettings())
+    }
+
+    @Test
+    @MediumTest
+    @SdkSuppress(minSdkVersion = 30, maxSdkVersion = 33)
+    fun reinstallTargetPackageTest() {
+        assumeFalse(DeviceInfo.isEmulator) // Don't run these tests on an emulator.
+        val mode = CompilationMode.DEFAULT
+        val copiedApkPaths = mode.copiedApkPaths(Packages.TARGET)
+        try {
+            kotlin.test.assertTrue { copiedApkPaths.isNotEmpty() }
+            mode.uninstallPackage(Packages.TARGET)
+            var path = Shell.pmPath(Packages.TARGET)
+            kotlin.test.assertTrue { path.isEmpty() }
+            mode.installPackageFromPaths(
+                packageName = Packages.TARGET,
+                copiedApkPaths = copiedApkPaths
+            )
+            path = Shell.pmPath(Packages.TARGET)
+            kotlin.test.assertTrue { path.isNotEmpty() }
+        } finally {
+            Shell.rm(copiedApkPaths)
+        }
     }
 }

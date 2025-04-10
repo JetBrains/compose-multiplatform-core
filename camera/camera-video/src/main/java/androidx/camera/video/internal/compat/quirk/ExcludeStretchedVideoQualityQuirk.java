@@ -18,10 +18,10 @@ package androidx.camera.video.internal.compat.quirk;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.video.Quality;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * <p>QuirkSummary
@@ -33,7 +33,6 @@ import androidx.camera.video.Quality;
  *     Samsung J7 Prime (sm-g610m) API level 27 or above,
  *     Samsung J7 (sm-J710mn) API level 27 or above
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class ExcludeStretchedVideoQualityQuirk implements VideoQualityQuirk {
     static boolean load() {
         return isSamsungJ2() || isSamsungJ4() || isSamsungJ5() || isSamsungJ6() || isSamsungJ7Nxt()

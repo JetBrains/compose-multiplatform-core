@@ -19,9 +19,10 @@ package androidx.loader.app.test;
 import android.content.Context;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.Loader;
+
+import org.jspecify.annotations.NonNull;
 
 public class ImmediateLoaderCallbacks implements LoaderManager.LoaderCallbacks<Boolean> {
     private final Context mContext;
@@ -33,9 +34,8 @@ public class ImmediateLoaderCallbacks implements LoaderManager.LoaderCallbacks<B
         mContext = context;
     }
 
-    @NonNull
     @Override
-    public Loader<Boolean> onCreateLoader(int id, Bundle args) {
+    public @NonNull Loader<Boolean> onCreateLoader(int id, Bundle args) {
         return new ImmediateLoader(mContext);
     }
 

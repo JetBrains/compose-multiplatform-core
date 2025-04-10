@@ -18,10 +18,11 @@ package androidx.webkit.internal;
 
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.webkit.WebViewRenderProcessClient;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Adapter class to pass a {@link android.webkit.WebViewRenderProcessClient} over to chromium.
@@ -29,7 +30,7 @@ import androidx.webkit.WebViewRenderProcessClient;
 @RequiresApi(29)
 public class WebViewRenderProcessClientFrameworkAdapter extends
             android.webkit.WebViewRenderProcessClient {
-    private WebViewRenderProcessClient mWebViewRenderProcessClient;
+    private final WebViewRenderProcessClient mWebViewRenderProcessClient;
 
     public WebViewRenderProcessClientFrameworkAdapter(@NonNull WebViewRenderProcessClient client) {
         mWebViewRenderProcessClient = client;
@@ -37,20 +38,19 @@ public class WebViewRenderProcessClientFrameworkAdapter extends
 
     @Override
     public void onRenderProcessUnresponsive(@NonNull WebView view,
-                @Nullable final android.webkit.WebViewRenderProcess renderer) {
+                final android.webkit.@Nullable WebViewRenderProcess renderer) {
         mWebViewRenderProcessClient.onRenderProcessUnresponsive(view,
                 WebViewRenderProcessImpl.forFrameworkObject(renderer));
     }
 
     @Override
     public void onRenderProcessResponsive(@NonNull WebView view,
-                @Nullable final android.webkit.WebViewRenderProcess renderer) {
+                final android.webkit.@Nullable WebViewRenderProcess renderer) {
         mWebViewRenderProcessClient.onRenderProcessResponsive(view,
                 WebViewRenderProcessImpl.forFrameworkObject(renderer));
     }
 
-    @Nullable
-    public WebViewRenderProcessClient getFrameworkRenderProcessClient() {
+    public @Nullable WebViewRenderProcessClient getFrameworkRenderProcessClient() {
         return mWebViewRenderProcessClient;
     }
 }

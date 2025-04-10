@@ -20,18 +20,15 @@ package androidx.wear.compose.material
  *
  * @see ScalingLazyListLayoutInfo
  */
-@Deprecated("Was moved to androidx.wear.compose.foundation.lazy package. " +
-    "Please use it instead")
+@Deprecated(
+    "Was moved to androidx.wear.compose.foundation.lazy package. " + "Please use it instead"
+)
 public sealed interface ScalingLazyListItemInfo {
-    /**
-     * The index of the item in the list.
-     */
-    val index: Int
+    /** The index of the item in the list. */
+    public val index: Int
 
-    /**
-     * The key of the item which was passed to the item() or items() function.
-     */
-    val key: Any
+    /** The key of the item which was passed to the item() or items() function. */
+    public val key: Any
 
     /**
      * The main axis offset of the item before adjustment for scaling of the items in the viewport.
@@ -42,11 +39,11 @@ public sealed interface ScalingLazyListItemInfo {
      * For [ScalingLazyListAnchorType.ItemCenter] the offset is from the center of the list item to
      * the center-line of the viewport.
      *
-     * For [ScalingLazyListAnchorType.ItemStart] if is the offset
-     * between the start (edge) of the item and the center-line of the viewport, for normal layout
-     * this will be the top edge of the item, for reverseLayout it will be the bottom edge.
+     * For [ScalingLazyListAnchorType.ItemStart] if is the offset between the start (edge) of the
+     * item and the center-line of the viewport, for normal layout this will be the top edge of the
+     * item, for reverseLayout it will be the bottom edge.
      */
-    val unadjustedOffset: Int
+    public val unadjustedOffset: Int
 
     /**
      * The main axis offset of the item after adjustment for scaling of the items in the viewport.
@@ -57,33 +54,27 @@ public sealed interface ScalingLazyListItemInfo {
      * For [ScalingLazyListAnchorType.ItemCenter] the offset is from the center of the list item to
      * the center-line of the viewport.
      *
-     * For [ScalingLazyListAnchorType.ItemStart] if is the offset
-     * between the start (edge) of the item and the center-line of the viewport, for normal layout
-     * this will be the top edge of the item, for reverseLayout it will be the bottom edge.
+     * For [ScalingLazyListAnchorType.ItemStart] if is the offset between the start (edge) of the
+     * item and the center-line of the viewport, for normal layout this will be the top edge of the
+     * item, for reverseLayout it will be the bottom edge.
      *
      * A positive value indicates that the item's anchor point is below the viewport center-line, a
      * negative value indicates that the item anchor point is above the viewport center-line.
      */
-    val offset: Int
+    public val offset: Int
 
     /**
      * The scaled/adjusted main axis size of the item. Note that if you emit multiple layouts in the
      * composable slot for the item then this size will be calculated as the sum of their sizes.
      */
-    val size: Int
+    public val size: Int
 
-    /**
-     * How much scaling has been applied to the item, between 0 and 1
-     */
-    val scale: Float
+    /** How much scaling has been applied to the item, between 0 and 1 */
+    public val scale: Float
 
-    /**
-     * How much alpha has been applied to the item, between 0 and 1
-     */
-    val alpha: Float
+    /** How much alpha has been applied to the item, between 0 and 1 */
+    public val alpha: Float
 
-    /**
-     * The original (before scaling) size of the list item
-     */
-    val unadjustedSize: Int
+    /** The original (before scaling) size of the list item */
+    public val unadjustedSize: Int
 }

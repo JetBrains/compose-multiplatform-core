@@ -80,7 +80,7 @@
     <string name="navigate" msgid="2713090390373996139">"नेव्हिगेट करा"</string>
     <string name="dial" msgid="3145707439707628311">"डायल करा"</string>
     <string name="address" msgid="9010635942573581302">"पत्ता"</string>
-    <string name="phone" msgid="2504766809811627577">"फोन"</string>
+    <string name="phone" msgid="2504766809811627577">"Phone"</string>
     <string name="fail_start_nav" msgid="6921321606009212189">"नेव्हिगेशन सुरू करता आले नाही"</string>
     <string name="fail_start_dialer" msgid="1471602619507306261">"डायलर सुरू करता आला नाही"</string>
     <string name="car_hardware_demo_title" msgid="3679106197233262689">"कारच्या हार्डवेअरचा डेमो"</string>
@@ -96,10 +96,10 @@
     <string name="unavailable" msgid="3636401138255192934">"उपलब्ध नाही"</string>
     <string name="ev_connector_types" msgid="735458637011996125">"EV कनेक्टरचे प्रकार"</string>
     <string name="example_title" msgid="530257630320010494">"उदाहरणार्थ %d"</string>
-    <string name="example_1_text" msgid="8456567953748293512">"या मजकुरामध्ये लाल रंग आहे"</string>
-    <string name="example_2_text" msgid="718820705318661440">"या मजकुरामध्ये हिरवा रंग आहे"</string>
-    <string name="example_3_text" msgid="977269832109695627">"या मजकुरामध्ये निळा रंग आहे"</string>
-    <string name="example_4_text" msgid="2043547015979437373">"या मजकुरामध्ये पिवळा रंग आहे"</string>
+    <string name="example_1_text" msgid="8631503055894800688">"या मजकुराचा रंग "<annotation color="red">"लाल"</annotation>" आहे"</string>
+    <string name="example_2_text" msgid="1359373957397219102">"या मजकुराचा रंग "<annotation color="green">"हिरवा"</annotation>" आहे"</string>
+    <string name="example_3_text" msgid="2409207170762049673">"या मजकुराचा रंग "<annotation color="blue">"निळा"</annotation>" आहे"</string>
+    <string name="example_4_text" msgid="9055989886645433000">"या मजकुराचा रंग "<annotation color="yellow">"पिवळा"</annotation>" आहे"</string>
     <string name="example_5_text" msgid="8828804968749423500">"हा मजकूर प्राथमिक रंग वापरतो"</string>
     <string name="example_6_text" msgid="7991523168517599600">"हा मजकूर दुय्यम रंग वापरतो"</string>
     <string name="color_demo" msgid="1822427636476178993">"रंगाचा डेमो"</string>
@@ -231,12 +231,16 @@
     <string name="msg_template_demo_title" msgid="3895210951340409473">"मेसेजच्या टेंप्लेटचा डेमो"</string>
     <string name="msg_template_demo_text" msgid="2275291617716161409">"मेसेज येथे दिसतात.\nदुसऱ्या ओळीवर आणखी मजकूर आहे."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"छोटा मेसेज टेंप्लेट डेमो"</string>
+    <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"आयटमच्या सेक्शन्ड टेंप्लेटचा डेमो"</string>
+    <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"रेडिओ बटण विभाग"</string>
+    <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"टॉगल विभाग"</string>
+    <string name="sectioned_item_template_lots_of_rows_section_title" msgid="1501401956386938735">"भरपूर पंक्तींचा विभाग"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"पेनशी संबंधित टेंप्लेटचा डेमो"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"ठिकाणाच्या सूचीशी संबंधित टेंप्लेटचा डेमो"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"ठिकाणे ब्राउझ करा"</string>
     <string name="search_template_demo_title" msgid="1770474418958318114">"शोध टेंप्लेट डेमो"</string>
     <string name="search_hint" msgid="978495498991026792">"येथे शोधा"</string>
-    <string name="additional_text" msgid="8410289578276941586">"कृपया आमच्या सेवा अटींचे पुनरावलोकन करा"</string>
+    <string name="additional_text" msgid="5755100726890686184">"कृपया आमच्या "<annotation link="terms_of_service">"सेवा अटी"</annotation>" यांचे पुनरावलोकन करा"</string>
     <string name="google_sign_in" msgid="6556259799319701727">"Google साइन-इन"</string>
     <string name="use_pin" msgid="7850893299484337431">"पिन वापरा"</string>
     <string name="qr_code" msgid="5487041647280777397">"QR कोड"</string>
@@ -321,6 +325,7 @@
     <string name="secondary_actions_test_subtitle" msgid="6985282813402073703">"फक्त दुय्यम कृती निवडली जाऊ शकते"</string>
     <string name="decoration_test_title" msgid="8450127046762442244">"सजावट चाचणी"</string>
     <string name="secondary_actions_decoration_test_title" msgid="6282873404859209490">"दुय्यम कृती आणि सजावट"</string>
+    <string name="secondary_actions_decoration_test_title_long" msgid="3700606949229899169">"दुय्यम कृती व सजावट यांसह अतिशय मोठे शीर्षक असलेली पंक्ती"</string>
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"पंक्तीदेखील निवडली जाऊ शकते"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"दुय्यम कृती निवडली आहे"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"पंक्तीशी संबंधित प्राथमिक कृती निवडली आहे"</string>

@@ -16,9 +16,8 @@
 
 package androidx.profileinstaller;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,7 +33,6 @@ import java.util.zip.Inflater;
 /**
  * A set of utilities on top of InputStream / OutputStream that are used by [ProfileTranscoder].
  */
-@RequiresApi(19)
 class Encoding {
     private Encoding() {}
 
@@ -76,7 +74,7 @@ class Encoding {
         return (numberOfBits + SIZEOF_BYTE - 1 & -SIZEOF_BYTE) / SIZEOF_BYTE;
     }
 
-    static @NonNull byte[] read(@NonNull InputStream is, int length) throws IOException {
+    static byte @NonNull [] read(@NonNull InputStream is, int length) throws IOException {
         byte[] buffer = new byte[length];
         int offset = 0;
         while (offset < length) {
@@ -115,7 +113,7 @@ class Encoding {
         return new String(read(is, size), StandardCharsets.UTF_8);
     }
 
-    static @NonNull byte[] readCompressed(
+    static byte @NonNull [] readCompressed(
             @NonNull InputStream is,
             int compressedDataSize,
             int uncompressedDataSize
@@ -174,7 +172,7 @@ class Encoding {
         os.write(outputData); // compressed body
     }
 
-    static byte[] compress(@NonNull byte[] data) throws IOException {
+    static byte[] compress(byte @NonNull [] data) throws IOException {
         Deflater compressor = new Deflater(Deflater.BEST_SPEED);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (DeflaterOutputStream deflater = new DeflaterOutputStream(out, compressor)) {

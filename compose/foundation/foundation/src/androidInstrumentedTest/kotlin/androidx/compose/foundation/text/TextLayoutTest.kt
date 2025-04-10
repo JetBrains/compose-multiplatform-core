@@ -16,12 +16,17 @@
 
 package androidx.compose.foundation.text
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
@@ -31,16 +36,22 @@ import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.node.Ref
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
@@ -51,8 +62,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class TextLayoutTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun textLayout() {
@@ -61,15 +71,17 @@ class TextLayoutTest {
         rule.setContent {
             TestingText(
                 "aa",
-                modifier = Modifier.onGloballyPositioned { coordinates ->
-                    textSize.value = coordinates.size
-                }
+                modifier =
+                    Modifier.onGloballyPositioned { coordinates ->
+                        textSize.value = coordinates.size
+                    }
             )
             TestingText(
                 "aaaa",
-                modifier = Modifier.onGloballyPositioned { coordinates ->
-                    doubleTextSize.value = coordinates.size
-                }
+                modifier =
+                    Modifier.onGloballyPositioned { coordinates ->
+                        doubleTextSize.value = coordinates.size
+                    }
             )
         }
 
@@ -90,51 +102,42 @@ class TextLayoutTest {
         var textMeasurable by mutableStateOf<Measurable?>(null)
 
         rule.setContent {
-            TestingText(
-                "aa ",
-                modifier = Modifier.onSizeChanged { textSize.value = it }
-            )
-            TestingText(
-                "aa aa ",
-                modifier = Modifier.onSizeChanged { doubleTextSize.value = it }
-            )
+            TestingText("aa ", modifier = Modifier.onSizeChanged { textSize.value = it })
+            TestingText("aa aa ", modifier = Modifier.onSizeChanged { doubleTextSize.value = it })
 
             Layout(
-                content = {
-                    TestingText("aa aa ")
-                },
-                measurePolicy = object : MeasurePolicy {
-                    override fun MeasureScope.measure(
-                        measurables: List<Measurable>,
-                        constraints: Constraints
-                    ): MeasureResult {
-                        measurables.forEach {
-                            it.measure(constraints)
+                content = { TestingText("aa aa ") },
+                measurePolicy =
+                    object : MeasurePolicy {
+                        override fun MeasureScope.measure(
+                            measurables: List<Measurable>,
+                            constraints: Constraints
+                        ): MeasureResult {
+                            measurables.forEach { it.measure(constraints) }
+                            textMeasurable = measurables.first()
+                            return layout(0, 0) {}
                         }
-                        textMeasurable = measurables.first()
-                        return layout(0, 0) {}
+
+                        override fun IntrinsicMeasureScope.minIntrinsicWidth(
+                            measurables: List<IntrinsicMeasurable>,
+                            height: Int
+                        ) = 0
+
+                        override fun IntrinsicMeasureScope.minIntrinsicHeight(
+                            measurables: List<IntrinsicMeasurable>,
+                            width: Int
+                        ) = 0
+
+                        override fun IntrinsicMeasureScope.maxIntrinsicWidth(
+                            measurables: List<IntrinsicMeasurable>,
+                            height: Int
+                        ) = 0
+
+                        override fun IntrinsicMeasureScope.maxIntrinsicHeight(
+                            measurables: List<IntrinsicMeasurable>,
+                            width: Int
+                        ) = 0
                     }
-
-                    override fun IntrinsicMeasureScope.minIntrinsicWidth(
-                        measurables: List<IntrinsicMeasurable>,
-                        height: Int
-                    ) = 0
-
-                    override fun IntrinsicMeasureScope.minIntrinsicHeight(
-                        measurables: List<IntrinsicMeasurable>,
-                        width: Int
-                    ) = 0
-
-                    override fun IntrinsicMeasureScope.maxIntrinsicWidth(
-                        measurables: List<IntrinsicMeasurable>,
-                        height: Int
-                    ) = 0
-
-                    override fun IntrinsicMeasureScope.maxIntrinsicHeight(
-                        measurables: List<IntrinsicMeasurable>,
-                        width: Int
-                    ) = 0
-                }
             )
         }
 
@@ -147,20 +150,16 @@ class TextLayoutTest {
                 // Min width.
                 assertThat(textWidth).isEqualTo(textMeasurable.minIntrinsicWidth(0))
                 // Min height.
-                assertThat(textMeasurable.minIntrinsicHeight(textWidth))
-                    .isGreaterThan(textHeight)
-                assertThat(textHeight)
-                    .isEqualTo(textMeasurable.minIntrinsicHeight(doubleTextWidth))
+                assertThat(textMeasurable.minIntrinsicHeight(textWidth)).isGreaterThan(textHeight)
+                assertThat(textHeight).isEqualTo(textMeasurable.minIntrinsicHeight(doubleTextWidth))
                 assertThat(textHeight)
                     .isEqualTo(textMeasurable.minIntrinsicHeight(Constraints.Infinity))
 
                 // Max width.
                 assertThat(doubleTextWidth).isEqualTo(textMeasurable.maxIntrinsicWidth(0))
                 // Max height.
-                assertThat(textMeasurable.maxIntrinsicHeight(textWidth))
-                    .isGreaterThan(textHeight)
-                assertThat(textHeight)
-                    .isEqualTo(textMeasurable.maxIntrinsicHeight(doubleTextWidth))
+                assertThat(textMeasurable.maxIntrinsicHeight(textWidth)).isGreaterThan(textHeight)
+                assertThat(textHeight).isEqualTo(textMeasurable.maxIntrinsicHeight(doubleTextWidth))
                 assertThat(textHeight)
                     .isEqualTo(textMeasurable.maxIntrinsicHeight(Constraints.Infinity))
             }
@@ -173,9 +172,7 @@ class TextLayoutTest {
         var lastBaseline by mutableStateOf(-1)
 
         rule.setContent {
-            Layout({
-                TestingText("aa")
-            }) { measurables, _ ->
+            Layout({ TestingText("aa") }) { measurables, _ ->
                 val placeable = measurables.first().measure(Constraints())
                 firstBaseline = placeable[FirstBaseline]
                 lastBaseline = placeable[LastBaseline]
@@ -196,9 +193,7 @@ class TextLayoutTest {
         var lastBaseline by mutableStateOf(-1)
 
         rule.setContent {
-            Layout({
-                TestingText("aa")
-            }) { measurables, _ ->
+            Layout({ TestingText("aa") }) { measurables, _ ->
                 val placeable = measurables.first().measure(Constraints(maxWidth = 0))
                 firstBaseline = placeable[FirstBaseline]
                 lastBaseline = placeable[LastBaseline]
@@ -216,13 +211,43 @@ class TextLayoutTest {
     @Test
     fun textLayout_OnTextLayoutCallback() {
         val resultsFromCallback = mutableListOf<TextLayoutResult>()
-        rule.setContent {
-            TestingText("aa", onTextLayout = { resultsFromCallback += it })
-        }
+        rule.setContent { TestingText("aa", onTextLayout = { resultsFromCallback += it }) }
 
-        rule.runOnIdle {
-            assertThat(resultsFromCallback).hasSize(1)
+        rule.runOnIdle { assertThat(resultsFromCallback).hasSize(1) }
+    }
+
+    // Regression test for b/406305552
+    @Test
+    fun textLayout_updatesOnMinWidthChange_andEndAlign_multiParagraphLayoutCache() {
+        val tag = "tag"
+        var minWidth by mutableIntStateOf(200)
+        lateinit var textLayoutResult: TextLayoutResult
+        rule.setContent {
+            Box(Modifier.padding(32.dp)) {
+                BasicText(
+                    text = "text",
+                    style =
+                        TextStyle(
+                            textAlign = TextAlign.End,
+                            fontFamily = TEST_FONT_FAMILY,
+                            fontSize = 10.sp,
+                        ),
+                    onTextLayout = { textLayoutResult = it },
+                    modifier =
+                        Modifier.border(Dp.Hairline, Color.LightGray)
+                            .layout { measurable, constraints ->
+                                val placeable =
+                                    measurable.measure(constraints.copy(minWidth = minWidth))
+                                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                            }
+                            .testTag(tag)
+                )
+            }
         }
+        assertThat(textLayoutResult.getLineRight(0)).isWithin(0.1f).of(200f)
+        minWidth = 300
+        rule.waitForIdle()
+        assertThat(textLayoutResult.getLineRight(0)).isWithin(0.1f).of(300f)
     }
 }
 
@@ -232,9 +257,7 @@ private fun TestingText(
     modifier: Modifier = Modifier,
     onTextLayout: (TextLayoutResult) -> Unit = {}
 ) {
-    val textStyle = remember {
-        TextStyle(fontFamily = TEST_FONT_FAMILY)
-    }
+    val textStyle = remember { TextStyle(fontFamily = TEST_FONT_FAMILY) }
     BasicText(
         AnnotatedString(text),
         style = textStyle,

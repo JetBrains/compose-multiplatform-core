@@ -20,9 +20,9 @@ import android.app.Dialog;
 import android.os.Build;
 import android.view.View;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing features in {@link android.app.Dialog} in a backwards compatible
@@ -52,8 +52,7 @@ public class DialogCompat {
      * @see Dialog#requireViewById(int)
      * @see Dialog#findViewById(int)
      */
-    @NonNull
-    public static View requireViewById(@NonNull Dialog dialog, int id) {
+    public static @NonNull View requireViewById(@NonNull Dialog dialog, int id) {
         if (Build.VERSION.SDK_INT >= 28) {
             return Api28Impl.requireViewById(dialog, id);
         } else {
@@ -73,7 +72,6 @@ public class DialogCompat {
         }
 
         @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
-        @DoNotInline
         static <T> T requireViewById(Dialog dialog, int id) {
             return (T) dialog.requireViewById(id);
         }

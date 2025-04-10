@@ -16,13 +16,13 @@
 
 package androidx.camera.video.internal.config;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.EncoderProfilesProxy;
 import androidx.camera.video.internal.encoder.EncoderConfig;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Data class containing information about a video mime.
@@ -32,7 +32,6 @@ import com.google.auto.value.AutoValue;
  * {@link EncoderProfilesProxy.VideoProfileProxy}.
  */
 @SuppressWarnings("NullableProblems") // Problem from AutoValue generated class.
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @AutoValue
 public abstract class VideoMimeInfo extends MimeInfo {
 
@@ -42,12 +41,10 @@ public abstract class VideoMimeInfo extends MimeInfo {
      *
      * <p>If no VideoProfileProxy is provided, returns {@code null}.
      */
-    @Nullable
-    public abstract EncoderProfilesProxy.VideoProfileProxy getCompatibleVideoProfile();
+    public abstract EncoderProfilesProxy.@Nullable VideoProfileProxy getCompatibleVideoProfile();
 
     /** Creates a builder for the given mime type */
-    @NonNull
-    public static VideoMimeInfo.Builder builder(@NonNull String mimeType) {
+    public static VideoMimeInfo.@NonNull Builder builder(@NonNull String mimeType) {
         return new AutoValue_VideoMimeInfo.Builder()
                 .setMimeType(mimeType)
                 .setProfile(EncoderConfig.CODEC_PROFILE_NONE);
@@ -58,13 +55,11 @@ public abstract class VideoMimeInfo extends MimeInfo {
     @AutoValue.Builder
     public abstract static class Builder extends MimeInfo.Builder<Builder> {
         /** Sets a compatible {@link EncoderProfilesProxy.VideoProfileProxy} */
-        @NonNull
-        public abstract Builder setCompatibleVideoProfile(
-                @Nullable EncoderProfilesProxy.VideoProfileProxy videoProfile);
+        public abstract @NonNull Builder setCompatibleVideoProfile(
+                EncoderProfilesProxy.@Nullable VideoProfileProxy videoProfile);
 
         /** Builds a VideoMimeInfo. */
         @Override
-        @NonNull
-        public abstract VideoMimeInfo build();
+        public abstract @NonNull VideoMimeInfo build();
     }
 }

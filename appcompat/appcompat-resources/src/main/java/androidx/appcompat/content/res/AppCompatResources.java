@@ -16,23 +16,22 @@
 
 package androidx.appcompat.content.res;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.Drawable;
 
 import androidx.annotation.ColorRes;
 import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.widget.ResourceManagerInternal;
 import androidx.core.content.ContextCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Class for accessing an application's resources through AppCompat, and thus any backward
  * compatible functionality.
  */
-@SuppressLint("RestrictedAPI") // Temporary until we have correct restriction scopes for 1.0
 public final class AppCompatResources {
 
     private AppCompatResources() {}
@@ -61,8 +60,7 @@ public final class AppCompatResources {
      * @return Drawable An object that can be used to draw this resource.
      * @see ContextCompat#getDrawable(Context, int)
      */
-    @Nullable
-    public static Drawable getDrawable(@NonNull Context context, @DrawableRes int resId) {
+    public static @Nullable Drawable getDrawable(@NonNull Context context, @DrawableRes int resId) {
         return ResourceManagerInternal.get().getDrawable(context, resId);
     }
 }

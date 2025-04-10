@@ -16,12 +16,12 @@
 
 package androidx.camera.video;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.core.util.Consumer;
 import androidx.core.util.Preconditions;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -35,7 +35,6 @@ import java.util.concurrent.Executor;
  * {@link VideoRecordEvent#getRecordingStats()}.
  * @see PendingRecording#start(Executor, Consumer)
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @AutoValue
 public abstract class RecordingStats {
 
@@ -43,8 +42,7 @@ public abstract class RecordingStats {
     RecordingStats() {
     }
 
-    @NonNull
-    static RecordingStats of(long duration, long bytes, @NonNull AudioStats audioStats) {
+    static @NonNull RecordingStats of(long duration, long bytes, @NonNull AudioStats audioStats) {
         Preconditions.checkArgument(duration >= 0, "duration must be positive value.");
         Preconditions.checkArgument(bytes >= 0, "bytes must be positive value.");
         return new AutoValue_RecordingStats(duration, bytes, audioStats);
@@ -72,6 +70,5 @@ public abstract class RecordingStats {
     /**
      * Returns the {@link AudioStats} that is associated with this recording stats.
      */
-    @NonNull
-    public abstract AudioStats getAudioStats();
+    public abstract @NonNull AudioStats getAudioStats();
 }

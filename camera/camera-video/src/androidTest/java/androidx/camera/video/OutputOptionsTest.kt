@@ -20,8 +20,10 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.location.Location
+import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
+import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
@@ -30,6 +32,7 @@ import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.io.File
+import org.junit.Assume.assumeFalse
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -47,11 +50,15 @@ class OutputOptionsTest {
 
     @Test
     fun canBuildFileOutputOptions() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         val savedFile = File.createTempFile("CameraX", ".tmp")
         savedFile.deleteOnExit()
 
-        val fileOutputOptions = FileOutputOptions.Builder(savedFile)
-            .build()
+        val fileOutputOptions = FileOutputOptions.Builder(savedFile).build()
 
         assertThat(fileOutputOptions).isNotNull()
         assertThat(fileOutputOptions.file).isEqualTo(savedFile)
@@ -60,39 +67,47 @@ class OutputOptionsTest {
 
     @Test
     fun canBuildMediaStoreOutputOptions() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         val context: Context = ApplicationProvider.getApplicationContext()
         val contentResolver: ContentResolver = context.contentResolver
         val fileName = "OutputOptionTest"
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
-            put(MediaStore.Video.Media.TITLE, fileName)
-            put(MediaStore.Video.Media.DISPLAY_NAME, fileName)
-        }
+        val contentValues =
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
+                put(MediaStore.Video.Media.TITLE, fileName)
+                put(MediaStore.Video.Media.DISPLAY_NAME, fileName)
+            }
 
-        val mediaStoreOutputOptions = MediaStoreOutputOptions.Builder(
-            contentResolver,
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        ).setContentValues(contentValues)
-            .build()
+        val mediaStoreOutputOptions =
+            MediaStoreOutputOptions.Builder(
+                    contentResolver,
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                )
+                .setContentValues(contentValues)
+                .build()
 
         assertThat(mediaStoreOutputOptions).isNotNull()
         assertThat(mediaStoreOutputOptions.contentResolver).isEqualTo(contentResolver)
-        assertThat(mediaStoreOutputOptions.collectionUri).isEqualTo(
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        )
+        assertThat(mediaStoreOutputOptions.collectionUri)
+            .isEqualTo(MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
         assertThat(mediaStoreOutputOptions.contentValues).isEqualTo(contentValues)
     }
 
     @Test
     fun canBuildFileDescriptorOutputOptions() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         val savedFile = File.createTempFile("CameraX", ".tmp")
         savedFile.deleteOnExit()
-        ParcelFileDescriptor.open(
-            savedFile,
-            ParcelFileDescriptor.MODE_READ_WRITE
-        ).use { pfd ->
-            val fdOutputOptions = FileDescriptorOutputOptions.Builder(pfd)
-                .build()
+        ParcelFileDescriptor.open(savedFile, ParcelFileDescriptor.MODE_READ_WRITE).use { pfd ->
+            val fdOutputOptions = FileDescriptorOutputOptions.Builder(pfd).build()
 
             assertThat(fdOutputOptions).isNotNull()
             assertThat(fdOutputOptions.parcelFileDescriptor).isEqualTo(pfd)
@@ -102,13 +117,20 @@ class OutputOptionsTest {
 
     @Test
     fun mediaStore_builderContainsCorrectDefaults() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         val context: Context = ApplicationProvider.getApplicationContext()
         val contentResolver: ContentResolver = context.contentResolver
 
-        val mediaStoreOutputOptions = MediaStoreOutputOptions.Builder(
-            contentResolver,
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        ).build()
+        val mediaStoreOutputOptions =
+            MediaStoreOutputOptions.Builder(
+                    contentResolver,
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                )
+                .build()
 
         assertThat(mediaStoreOutputOptions.contentValues)
             .isEqualTo(MediaStoreOutputOptions.EMPTY_CONTENT_VALUES)
@@ -116,10 +138,16 @@ class OutputOptionsTest {
 
     @Test
     fun canBuildOutputOptions() {
-        val outputOptions = FakeOutputOptions.Builder()
-            .setFileSizeLimit(FILE_SIZE_LIMIT)
-            .setDurationLimitMillis(DURATION_LIMIT)
-            .build()
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
+        val outputOptions =
+            FakeOutputOptions.Builder()
+                .setFileSizeLimit(FILE_SIZE_LIMIT)
+                .setDurationLimitMillis(DURATION_LIMIT)
+                .build()
 
         assertThat(outputOptions).isNotNull()
         assertThat(outputOptions.fileSizeLimit).isEqualTo(FILE_SIZE_LIMIT)
@@ -128,6 +156,11 @@ class OutputOptionsTest {
 
     @Test
     fun defaultValuesCorrect() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         val outputOptions = FakeOutputOptions.Builder().build()
 
         assertThat(outputOptions.location).isNull()
@@ -137,6 +170,11 @@ class OutputOptionsTest {
 
     @Test
     fun invalidFileSizeLimit_throwsException() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         assertThrows(IllegalArgumentException::class.java) {
             FakeOutputOptions.Builder().setFileSizeLimit(INVALID_FILE_SIZE_LIMIT)
         }
@@ -144,6 +182,11 @@ class OutputOptionsTest {
 
     @Test
     fun invalidDurationLimit_throwsException() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         assertThrows(IllegalArgumentException::class.java) {
             FakeOutputOptions.Builder().setDurationLimitMillis(INVALID_DURATION_LIMIT)
         }
@@ -151,33 +194,46 @@ class OutputOptionsTest {
 
     @Test
     fun setValidLocation() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         listOf(
-            createLocation(0.0, 0.0),
-            createLocation(90.0, 180.0),
-            createLocation(-90.0, -180.0),
-            createLocation(10.1234, -100.5678),
-        ).forEach { location ->
-            val outputOptions = FakeOutputOptions.Builder().setLocation(location).build()
+                createLocation(0.0, 0.0),
+                createLocation(90.0, 180.0),
+                createLocation(-90.0, -180.0),
+                createLocation(10.1234, -100.5678),
+            )
+            .forEach { location ->
+                val outputOptions = FakeOutputOptions.Builder().setLocation(location).build()
 
-            assertWithMessage("Test $location failed")
-                .that(outputOptions.location).isEqualTo(location)
-        }
+                assertWithMessage("Test $location failed")
+                    .that(outputOptions.location)
+                    .isEqualTo(location)
+            }
     }
 
     @Test
     fun setInvalidLocation() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
         listOf(
-            createLocation(Double.NaN, 0.0),
-            createLocation(0.0, Double.NaN),
-            createLocation(90.5, 0.0),
-            createLocation(-90.5, 0.0),
-            createLocation(0.0, 180.5),
-            createLocation(0.0, -180.5),
-        ).forEach { location ->
-            assertThrows(IllegalArgumentException::class.java) {
-                FakeOutputOptions.Builder().setLocation(location)
+                createLocation(Double.NaN, 0.0),
+                createLocation(0.0, Double.NaN),
+                createLocation(90.5, 0.0),
+                createLocation(-90.5, 0.0),
+                createLocation(0.0, 180.5),
+                createLocation(0.0, -180.5),
+            )
+            .forEach { location ->
+                assertThrows(IllegalArgumentException::class.java) {
+                    FakeOutputOptions.Builder().setLocation(location)
+                }
             }
-        }
     }
 
     private fun createLocation(

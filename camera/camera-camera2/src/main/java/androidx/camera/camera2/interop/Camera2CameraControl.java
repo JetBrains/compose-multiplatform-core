@@ -17,9 +17,6 @@
 package androidx.camera.camera2.interop;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
@@ -35,6 +32,9 @@ import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.concurrent.Executor;
 
 /**
@@ -49,7 +49,6 @@ import java.util.concurrent.Executor;
  * unexpected behavior depends on the options being applied.
  */
 @ExperimentalCamera2Interop
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class Camera2CameraControl {
 
     private boolean mIsActive = false;
@@ -73,7 +72,7 @@ public final class Camera2CameraControl {
      */
     @RestrictTo(Scope.LIBRARY)
     public Camera2CameraControl(@NonNull Camera2CameraControlImpl camera2CameraControlImpl,
-            @NonNull @CameraExecutor Executor executor) {
+            @CameraExecutor @NonNull Executor executor) {
         mCamera2CameraControlImpl = camera2CameraControlImpl;
         mExecutor = executor;
     }
@@ -95,8 +94,7 @@ public final class Camera2CameraControl {
      *                                  information (e.g., if CameraX was not initialized with a
      *                                  {@link androidx.camera.camera2.Camera2Config}).
      */
-    @NonNull
-    public static Camera2CameraControl from(@NonNull CameraControl cameraControl) {
+    public static @NonNull Camera2CameraControl from(@NonNull CameraControl cameraControl) {
         CameraControlInternal cameraControlImpl =
                 ((CameraControlInternal) cameraControl).getImplementation();
         Preconditions.checkArgument(cameraControlImpl instanceof Camera2CameraControlImpl,
@@ -123,8 +121,7 @@ public final class Camera2CameraControl {
      * Cancelling the ListenableFuture is a no-op.
      */
     @SuppressWarnings("AsyncSuffixFuture")
-    @NonNull
-    public ListenableFuture<Void> setCaptureRequestOptions(
+    public @NonNull ListenableFuture<Void> setCaptureRequestOptions(
             @NonNull CaptureRequestOptions bundle) {
         clearCaptureRequestOptionsInternal();
         addCaptureRequestOptionsInternal(bundle);
@@ -154,8 +151,7 @@ public final class Camera2CameraControl {
      * options are set or camera is closed before the current request completes.
      */
     @SuppressWarnings("AsyncSuffixFuture")
-    @NonNull
-    public ListenableFuture<Void> addCaptureRequestOptions(
+    public @NonNull ListenableFuture<Void> addCaptureRequestOptions(
             @NonNull CaptureRequestOptions bundle) {
         addCaptureRequestOptionsInternal(bundle);
 
@@ -173,8 +169,7 @@ public final class Camera2CameraControl {
      *
      * @return The {@link CaptureRequestOptions}.
      */
-    @NonNull
-    public CaptureRequestOptions getCaptureRequestOptions() {
+    public @NonNull CaptureRequestOptions getCaptureRequestOptions() {
         synchronized (mLock) {
             return CaptureRequestOptions.Builder.from(mBuilder.build()).build();
         }
@@ -189,8 +184,7 @@ public final class Camera2CameraControl {
      * options are set or camera is closed before the current request completes.
      */
     @SuppressWarnings("AsyncSuffixFuture")
-    @NonNull
-    public ListenableFuture<Void> clearCaptureRequestOptions() {
+    public @NonNull ListenableFuture<Void> clearCaptureRequestOptions() {
         clearCaptureRequestOptionsInternal();
 
         return Futures.nonCancellationPropagating(CallbackToFutureAdapter.getFuture(completer -> {
@@ -203,8 +197,7 @@ public final class Camera2CameraControl {
      * Gets the {@link Camera2ImplConfig} that contains the existing capture request options.
      */
     @RestrictTo(Scope.LIBRARY)
-    @NonNull
-    public Camera2ImplConfig getCamera2ImplConfig() {
+    public @NonNull Camera2ImplConfig getCamera2ImplConfig() {
         synchronized (mLock) {
             return mBuilder.build();
         }
@@ -220,7 +213,7 @@ public final class Camera2CameraControl {
      * @param builder the builder to apply the existing capture request options.
      */
     @RestrictTo(Scope.LIBRARY)
-    public void applyOptionsToBuilder(@NonNull Camera2ImplConfig.Builder builder) {
+    public void applyOptionsToBuilder(Camera2ImplConfig.@NonNull Builder builder) {
         synchronized (mLock) {
             builder.insertAllOptions(mBuilder.getMutableConfig(),
                     Config.OptionPriority.ALWAYS_OVERRIDE);
@@ -240,7 +233,7 @@ public final class Camera2CameraControl {
     }
 
     @ExecutedBy("mExecutor")
-    private void updateConfig(@NonNull CallbackToFutureAdapter.Completer<Void> completer) {
+    private void updateConfig(CallbackToFutureAdapter.@NonNull Completer<Void> completer) {
         mPendingUpdate = true;
         failInFlightUpdate(new CameraControl.OperationCanceledException(
                 "Camera2CameraControl was updated with new options."));

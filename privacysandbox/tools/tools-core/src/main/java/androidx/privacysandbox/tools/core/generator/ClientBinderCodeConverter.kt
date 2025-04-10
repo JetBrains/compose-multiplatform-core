@@ -36,7 +36,7 @@ class ClientBinderCodeConverter(api: ParsedApi) : BinderCodeConverter(api) {
         annotatedInterface: AnnotatedInterface,
         expression: String
     ): CodeBlock {
-        if (annotatedInterface.inheritsSandboxedUiAdapter) {
+        if (annotatedInterface.inheritsUiAdapter) {
             return CodeBlock.of(
                 "%T(%L.binder, %L.coreLibInfo)",
                 annotatedInterface.clientProxyNameSpec(),
@@ -51,17 +51,18 @@ class ClientBinderCodeConverter(api: ParsedApi) : BinderCodeConverter(api) {
         annotatedInterface: AnnotatedInterface,
         expression: String
     ): CodeBlock {
-        if (annotatedInterface.inheritsSandboxedUiAdapter) {
+        if (annotatedInterface.inheritsUiAdapter) {
             return CodeBlock.builder().build {
                 addNamed(
                     "%coreLibInfoConverter:T.%toParcelable:N(" +
                         "(%interface:L as %clientProxy:T).coreLibInfo, " +
                         "%interface:L.remote)",
                     hashMapOf<String, Any>(
-                        "coreLibInfoConverter" to ClassName(
-                            annotatedInterface.type.packageName,
-                            annotatedInterface.coreLibInfoConverterName()
-                        ),
+                        "coreLibInfoConverter" to
+                            ClassName(
+                                annotatedInterface.type.packageName,
+                                annotatedInterface.coreLibInfoConverterName()
+                            ),
                         "toParcelable" to toParcelableMethodName,
                         "interface" to expression,
                         "context" to contextPropertyName,
@@ -71,12 +72,14 @@ class ClientBinderCodeConverter(api: ParsedApi) : BinderCodeConverter(api) {
             }
         }
         return CodeBlock.of(
-            "(%L as %T).remote", expression, annotatedInterface.clientProxyNameSpec()
+            "(%L as %T).remote",
+            expression,
+            annotatedInterface.clientProxyNameSpec()
         )
     }
 
     override fun convertToInterfaceBinderType(annotatedInterface: AnnotatedInterface): TypeName {
-        if (annotatedInterface.inheritsSandboxedUiAdapter) {
+        if (annotatedInterface.inheritsUiAdapter) {
             return annotatedInterface.uiAdapterAidlWrapper().poetTypeName()
         }
         return annotatedInterface.aidlType().innerType.poetTypeName()

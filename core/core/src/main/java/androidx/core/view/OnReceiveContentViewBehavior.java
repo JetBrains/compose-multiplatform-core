@@ -16,8 +16,8 @@
 
 package androidx.core.view;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Interface for widgets to implement default behavior for receiving content. Content may be both
@@ -40,6 +40,5 @@ public interface OnReceiveContentViewBehavior {
      * @return The portion of the passed-in content that was not handled (may be all, some, or none
      * of the passed-in content).
      */
-    @Nullable
-    ContentInfoCompat onReceiveContent(@NonNull ContentInfoCompat payload);
+    @Nullable ContentInfoCompat onReceiveContent(@NonNull ContentInfoCompat payload);
 }

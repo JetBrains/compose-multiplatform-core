@@ -25,12 +25,12 @@ import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.TypefaceSpan
 import android.text.style.UnderlineSpan
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.InternalTextApi
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -53,7 +53,7 @@ import androidx.compose.ui.util.fastForEach
 fun AnnotatedString.toAccessibilitySpannableString(
     density: Density,
     fontFamilyResolver: FontFamily.Resolver,
-    urlSpanCache: URLSpanCache
+    urlSpanCache: URLSpanCache,
 ): SpannableString {
     val spannableString = SpannableString(text)
     spanStylesOrNull?.fastForEach { (style, start, end) ->
@@ -72,6 +72,7 @@ fun AnnotatedString.toAccessibilitySpannableString(
         )
     }
 
+    @Suppress("Deprecation")
     getUrlAnnotations(0, length).fastForEach { (urlAnnotation, start, end) ->
         spannableString.setSpan(
             urlSpanCache.toURLSpan(urlAnnotation),
@@ -81,6 +82,26 @@ fun AnnotatedString.toAccessibilitySpannableString(
         )
     }
 
+    getLinkAnnotations(0, length).fastForEach { linkRange ->
+        if (linkRange.start != linkRange.end) {
+            val link = linkRange.item
+            if (link is LinkAnnotation.Url && link.linkInteractionListener == null) {
+                spannableString.setSpan(
+                    urlSpanCache.toURLSpan(linkRange.toUrlLink()),
+                    linkRange.start,
+                    linkRange.end,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            } else {
+                spannableString.setSpan(
+                    urlSpanCache.toClickableSpan(linkRange),
+                    linkRange.start,
+                    linkRange.end,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+        }
+    }
     return spannableString
 }
 
@@ -124,10 +145,13 @@ private fun SpannableString.setSpanStyle(
         } else {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 // TODO(b/214587005): Check for async here and uncache
-                val typeface = fontFamilyResolver.resolve(
-                    fontFamily = spanStyle.fontFamily,
-                    fontSynthesis = spanStyle.fontSynthesis ?: FontSynthesis.All
-                ).value as Typeface
+                val typeface =
+                    fontFamilyResolver
+                        .resolve(
+                            fontFamily = spanStyle.fontFamily,
+                            fontSynthesis = spanStyle.fontSynthesis ?: FontSynthesis.All
+                        )
+                        .value as Typeface
                 setSpan(
                     Api28Impl.createTypefaceSpan(typeface),
                     start,
@@ -143,20 +167,10 @@ private fun SpannableString.setSpanStyle(
         // should remove the underline and lineThrough effect on the given range. Here we didn't
         // remove any previously applied spans yet.
         if (TextDecoration.Underline in spanStyle.textDecoration) {
-            setSpan(
-                UnderlineSpan(),
-                start,
-                end,
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
+            setSpan(UnderlineSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         if (TextDecoration.LineThrough in spanStyle.textDecoration) {
-            setSpan(
-                StrikethroughSpan(),
-                start,
-                end,
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
+            setSpan(StrikethroughSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
     }
 
@@ -176,6 +190,8 @@ private fun SpannableString.setSpanStyle(
 
 @RequiresApi(28)
 private object Api28Impl {
-    @DoNotInline
     fun createTypefaceSpan(typeface: Typeface): TypefaceSpan = TypefaceSpan(typeface)
 }
+
+private fun AnnotatedString.Range<LinkAnnotation>.toUrlLink() =
+    AnnotatedString.Range(this.item as LinkAnnotation.Url, this.start, this.end)

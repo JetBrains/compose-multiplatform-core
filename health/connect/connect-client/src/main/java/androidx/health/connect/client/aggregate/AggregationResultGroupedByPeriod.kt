@@ -15,6 +15,7 @@
  */
 package androidx.health.connect.client.aggregate
 
+import androidx.annotation.RestrictTo
 import java.time.LocalDateTime
 
 /**
@@ -23,16 +24,40 @@ import java.time.LocalDateTime
  * @property result contains [AggregationResult] with metrics included in the request.
  * @property startTime start time of the slice.
  * @property endTime end time of the slice.
- *
  * @see [androidx.health.connect.client.HealthConnectClient.aggregateGroupByPeriod]
  */
 class AggregationResultGroupedByPeriod
-internal constructor(
-    public val result: AggregationResult,
-    public val startTime: LocalDateTime,
-    public val endTime: LocalDateTime,
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+constructor(
+    val result: AggregationResult,
+    val startTime: LocalDateTime,
+    val endTime: LocalDateTime,
 ) {
     init {
         require(startTime.isBefore(endTime)) { "start time must be before end time" }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as AggregationResultGroupedByPeriod
+
+        if (result != other.result) return false
+        if (startTime != other.startTime) return false
+        if (endTime != other.endTime) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var hash = result.hashCode()
+        hash = 31 * hash + startTime.hashCode()
+        hash = 31 * hash + endTime.hashCode()
+        return hash
+    }
+
+    override fun toString(): String {
+        return "AggregationResultGroupedByPeriod(result=$result, startTime=$startTime, endTime=$endTime)"
     }
 }

@@ -21,9 +21,10 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 import android.content.Context;
 import android.graphics.Typeface;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -66,9 +67,8 @@ public class TypefaceCompatApi28Impl extends TypefaceCompatApi26Impl {
         return m;
     }
 
-    @NonNull
     @Override
-    Typeface createWeightStyle(@NonNull Context context,
+    @NonNull Typeface createWeightStyle(@NonNull Context context,
             @NonNull Typeface base, int weight, boolean italic) {
         return Typeface.create(base, weight, italic);
     }

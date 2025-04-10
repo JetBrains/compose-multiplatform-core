@@ -20,6 +20,7 @@ import androidx.annotation.RestrictTo
 
 /**
  * Describes UWB ranging capabilities for the current device.
+ *
  * @property isDistanceSupported - Whether distance ranging is supported
  * @property isAzimuthalAngleSupported - Whether azimuthal angle of arrival is supported
  * @property isElevationAngleSupported - Whether elevation angle of arrival is supported
@@ -29,21 +30,23 @@ import androidx.annotation.RestrictTo
  * @property supportedConfigIds - Set of supported config ids
  * @property supportedSlotDurations - Set of supported slot durations
  * @property supportedRangingUpdateRates - Set of supported update rates
- * @property isRangingIntervalReconfigureSupported - Whether ranging interval reconfiguration is supported
- * @property isBackgroundRangingSupported - Whether a ranging can be started when the app is in background
+ * @property isRangingIntervalReconfigureSupported - Whether ranging interval reconfiguration is
+ *   supported
+ * @property isBackgroundRangingSupported - Whether a ranging can be started when the app is in
+ *   background
  */
-class RangingCapabilities
+public class RangingCapabilities
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 constructor(
-    val isDistanceSupported: Boolean,
-    val isAzimuthalAngleSupported: Boolean,
-    val isElevationAngleSupported: Boolean,
-    val minRangingInterval: Int,
-    val supportedChannels: Set<Int>,
-    val supportedNtfConfigs: Set<Int>,
-    val supportedConfigIds: Set<Int>,
-    val supportedSlotDurations: Set<Int>,
-    val supportedRangingUpdateRates: Set<Int>,
-    val isRangingIntervalReconfigureSupported: Boolean,
-    val isBackgroundRangingSupported: Boolean
+    public val isDistanceSupported: Boolean,
+    public val isAzimuthalAngleSupported: Boolean,
+    public val isElevationAngleSupported: Boolean,
+    public val minRangingInterval: Int,
+    public val supportedChannels: Set<Int>,
+    public val supportedNtfConfigs: Set<Int>,
+    public val supportedConfigIds: Set<Int>,
+    public val supportedSlotDurations: Set<Int>,
+    public val supportedRangingUpdateRates: Set<Int>,
+    public val isRangingIntervalReconfigureSupported: Boolean,
+    public val isBackgroundRangingSupported: Boolean
 )

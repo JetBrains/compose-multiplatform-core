@@ -16,38 +16,34 @@
 
 package androidx.compose.runtime.collection
 
+import androidx.collection.MutableScatterMap
 import androidx.collection.MutableScatterSet
 import androidx.collection.mutableScatterMapOf
+import kotlin.jvm.JvmInline
 
-/**
- * Maps values to a set of scopes.
- */
-internal class ScopeMap<T : Any> {
-    val map = mutableScatterMapOf<Any, Any>()
+/** Maps values to a set of scopes. */
+@JvmInline
+internal value class ScopeMap<Key : Any, Scope : Any>(
+    val map: MutableScatterMap<Any, Any> = mutableScatterMapOf(),
+) {
 
-    /**
-     * The number of values in the map.
-     */
-    val size get() = map.size
+    /** The number of values in the map. */
+    val size
+        get() = map.size
 
-    /**
-     * Adds a [key]/[scope] pair to the map.
-     */
-    fun add(key: Any, scope: T) {
+    /** Adds a [key]/[scope] pair to the map. */
+    fun add(key: Key, scope: Scope) {
         map.compute(key) { _, value ->
             when (value) {
                 null -> scope
                 is MutableScatterSet<*> -> {
-                    @Suppress("UNCHECKED_CAST")
-                    (value as MutableScatterSet<T>).add(scope)
+                    @Suppress("UNCHECKED_CAST") (value as MutableScatterSet<Scope>).add(scope)
                     value
                 }
-
                 else -> {
                     if (value !== scope) {
-                        val set = MutableScatterSet<T>()
-                        @Suppress("UNCHECKED_CAST")
-                        set.add(value as T)
+                        val set = MutableScatterSet<Scope>()
+                        @Suppress("UNCHECKED_CAST") set.add(value as Scope)
                         set.add(scope)
                         set
                     } else {
@@ -58,49 +54,52 @@ internal class ScopeMap<T : Any> {
         }
     }
 
-    /**
-     * Returns true if any scopes are associated with [element]
-     */
-    operator fun contains(element: Any): Boolean = map.containsKey(element)
+    /** Replaces scopes for [key] with [value] */
+    fun set(key: Key, value: Scope) {
+        map[key] = value
+    }
 
-    /**
-     * Executes [block] for all scopes mapped to the given [key].
-     */
-    inline fun forEachScopeOf(key: Any, block: (scope: T) -> Unit) {
+    /** Returns true if any scopes are associated with [element] */
+    operator fun contains(element: Key): Boolean = map.containsKey(element)
+
+    /** Executes [block] for all scopes mapped to the given [key]. */
+    inline fun forEachScopeOf(key: Key, block: (scope: Scope) -> Unit) {
         when (val value = map[key]) {
-            null -> { /* do nothing */ }
+            null -> {
+                /* do nothing */
+            }
             is MutableScatterSet<*> -> {
-                @Suppress("UNCHECKED_CAST")
-                (value as MutableScatterSet<T>).forEach(block)
+                @Suppress("UNCHECKED_CAST") (value as MutableScatterSet<Scope>).forEach(block)
             }
             else -> {
-                @Suppress("UNCHECKED_CAST")
-                block(value as T)
+                @Suppress("UNCHECKED_CAST") block(value as Scope)
             }
         }
     }
 
-    /**
-     * Removes all values and scopes from the map
-     */
+    inline fun anyScopeOf(key: Key, block: (scope: Scope) -> Boolean): Boolean {
+        forEachScopeOf(key) { if (block(it)) return true }
+        return false
+    }
+
+    /** Removes all values and scopes from the map */
     fun clear() {
         map.clear()
     }
 
     /**
-     * Remove [scope] from the scope set for [key]. If the scope set is empty after [scope] has
-     * been remove the reference to [key] is removed as well.
+     * Remove [scope] from the scope set for [key]. If the scope set is empty after [scope] has been
+     * remove the reference to [key] is removed as well.
      *
      * @param key the key of the scope map
      * @param scope the scope being removed
      * @return true if the value was removed from the scope
      */
-    fun remove(key: Any, scope: T): Boolean {
+    fun remove(key: Key, scope: Scope): Boolean {
         val value = map[key] ?: return false
         return when (value) {
             is MutableScatterSet<*> -> {
-                @Suppress("UNCHECKED_CAST")
-                val set = value as MutableScatterSet<T>
+                @Suppress("UNCHECKED_CAST") val set = value as MutableScatterSet<Scope>
 
                 val removed = set.remove(scope)
                 if (removed && set.isEmpty()) {
@@ -117,31 +116,60 @@ internal class ScopeMap<T : Any> {
     }
 
     /**
-     * Removes all scopes that match [predicate]. If all scopes for a given value have been
-     * removed, that value is removed also.
+     * Removes all scopes that match [predicate]. If all scopes for a given value have been removed,
+     * that value is removed also.
      */
-    inline fun removeScopeIf(crossinline predicate: (scope: T) -> Boolean) {
+    inline fun removeScopeIf(crossinline predicate: (scope: Scope) -> Boolean) {
         map.removeIf { _, value ->
             when (value) {
                 is MutableScatterSet<*> -> {
-                    @Suppress("UNCHECKED_CAST")
-                    val set = value as MutableScatterSet<T>
+                    @Suppress("UNCHECKED_CAST") val set = value as MutableScatterSet<Scope>
                     set.removeIf(predicate)
                     set.isEmpty()
                 }
                 else -> {
-                    @Suppress("UNCHECKED_CAST")
-                    predicate(value as T)
+                    @Suppress("UNCHECKED_CAST") predicate(value as Scope)
                 }
             }
         }
     }
 
     /**
-     * Removes given scope from all sets. If all scopes for a given value are removed, that value
-     * is removed as well.
+     * Removes given scope from all sets. If all scopes for a given value are removed, that value is
+     * removed as well.
      */
-    fun removeScope(scope: T) {
-        removeScopeIf { it === scope }
+    fun removeScope(scope: Scope) {
+        map.removeIf { _, value ->
+            when (value) {
+                is MutableScatterSet<*> -> {
+                    @Suppress("UNCHECKED_CAST") val set = value as MutableScatterSet<Scope>
+                    set.remove(scope)
+                    set.isEmpty()
+                }
+                else -> {
+                    value === scope
+                }
+            }
+        }
+    }
+
+    /**
+     * Converts values to regular Map to expose to instrumentation. WARNING: extremely slow, do no
+     * use in production!
+     */
+    fun asMap(): Map<Key, Set<Scope>> {
+        val result = hashMapOf<Key, Set<Scope>>()
+        map.forEach { key, value ->
+            @Suppress("UNCHECKED_CAST")
+            result[key as Key] =
+                when (value) {
+                    is MutableScatterSet<*> -> {
+                        val set = value as MutableScatterSet<Scope>
+                        @Suppress("AsCollectionCall") set.asSet()
+                    }
+                    else -> mutableSetOf(value as Scope)
+                }
+        }
+        return result
     }
 }

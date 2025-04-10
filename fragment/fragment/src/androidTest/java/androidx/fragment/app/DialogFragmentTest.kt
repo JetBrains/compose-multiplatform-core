@@ -20,7 +20,6 @@ import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
-import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -56,8 +55,8 @@ class DialogFragmentTest {
         androidx.test.rule.ActivityTestRule(EmptyFragmentTestActivity::class.java)
 
     @get:Rule
-    val ruleChain: RuleChain = RuleChain.outerRule(DetectLeaksAfterTestSuccess())
-        .around(activityTestRule)
+    val ruleChain: RuleChain =
+        RuleChain.outerRule(DetectLeaksAfterTestSuccess()).around(activityTestRule)
 
     @Test
     fun testDialogFragmentShows() {
@@ -67,9 +66,7 @@ class DialogFragmentTest {
             activityTestRule.activity.supportFragmentManager.executePendingTransactions()
         }
 
-        assertWithMessage("Dialog was not being shown")
-            .that(fragment.dialog?.isShowing)
-            .isTrue()
+        assertWithMessage("Dialog was not being shown").that(fragment.dialog?.isShowing).isTrue()
     }
 
     @UiThreadTest
@@ -78,9 +75,7 @@ class DialogFragmentTest {
         val fragment = TestDialogFragment()
         fragment.showNow(activityTestRule.activity.supportFragmentManager, null)
 
-        assertWithMessage("Dialog was not being shown")
-            .that(fragment.dialog?.isShowing)
-            .isTrue()
+        assertWithMessage("Dialog was not being shown").that(fragment.dialog?.isShowing).isTrue()
     }
 
     @Test
@@ -92,9 +87,7 @@ class DialogFragmentTest {
             activityTestRule.activity.supportFragmentManager.executePendingTransactions()
         }
 
-        assertWithMessage("Dialog was not being shown")
-            .that(fragment.dialog?.isShowing)
-            .isTrue()
+        assertWithMessage("Dialog was not being shown").that(fragment.dialog?.isShowing).isTrue()
     }
 
     @Test
@@ -106,18 +99,14 @@ class DialogFragmentTest {
         }
 
         val dialog = fragment.dialog
-        assertWithMessage("Dialog was not being shown")
-            .that(dialog?.isShowing)
-            .isTrue()
+        assertWithMessage("Dialog was not being shown").that(dialog?.isShowing).isTrue()
 
         fragment.dismiss()
         activityTestRule.runOnUiThread {
             activityTestRule.activity.supportFragmentManager.executePendingTransactions()
         }
 
-        assertWithMessage("Dialog should be removed")
-            .that(dialog?.isShowing)
-            .isFalse()
+        assertWithMessage("Dialog should be removed").that(dialog?.isShowing).isFalse()
     }
 
     @UiThreadTest
@@ -130,15 +119,11 @@ class DialogFragmentTest {
         }
 
         val dialog = fragment.dialog
-        assertWithMessage("Dialog was not being shown")
-            .that(dialog?.isShowing)
-            .isTrue()
+        assertWithMessage("Dialog was not being shown").that(dialog?.isShowing).isTrue()
 
         fragment.dismissNow()
 
-        assertWithMessage("Dialog should be removed")
-            .that(dialog?.isShowing)
-            .isFalse()
+        assertWithMessage("Dialog should be removed").that(dialog?.isShowing).isFalse()
     }
 
     @UiThreadTest
@@ -152,13 +137,10 @@ class DialogFragmentTest {
         fragment.showNow(fm, "dialog")
 
         val dialog = fragment.dialog
-        assertWithMessage("Dialog was not being shown")
-            .that(dialog?.isShowing)
-            .isTrue()
+        assertWithMessage("Dialog was not being shown").that(dialog?.isShowing).isTrue()
 
         fc.dispatchPause()
-        @Suppress("DEPRECATION")
-        fc.saveAllState()
+        @Suppress("DEPRECATION") fc.saveAllState()
 
         assertWithMessage("Dialog was not being shown after saving state")
             .that(dialog?.isShowing)
@@ -167,9 +149,7 @@ class DialogFragmentTest {
         fragment.dismissAllowingStateLoss()
         fm.executePendingTransactions()
 
-        assertWithMessage("Dialog should be removed")
-            .that(dialog?.isShowing)
-            .isFalse()
+        assertWithMessage("Dialog should be removed").that(dialog?.isShowing).isFalse()
 
         fc.dispatchStop()
         fc.dispatchDestroy()
@@ -188,13 +168,10 @@ class DialogFragmentTest {
         fm.executePendingTransactions()
 
         val dialog = fragment.dialog
-        assertWithMessage("Dialog was not being shown")
-            .that(dialog?.isShowing)
-            .isTrue()
+        assertWithMessage("Dialog was not being shown").that(dialog?.isShowing).isTrue()
 
         fc.dispatchPause()
-        @Suppress("DEPRECATION")
-        fc.saveAllState()
+        @Suppress("DEPRECATION") fc.saveAllState()
 
         assertWithMessage("Dialog was not being shown after saving state")
             .that(dialog?.isShowing)
@@ -203,9 +180,7 @@ class DialogFragmentTest {
         fragment.dismissAllowingStateLoss()
         fm.executePendingTransactions()
 
-        assertWithMessage("Dialog should be removed")
-            .that(dialog?.isShowing)
-            .isFalse()
+        assertWithMessage("Dialog should be removed").that(dialog?.isShowing).isFalse()
 
         fc.dispatchStop()
         fc.dispatchDestroy()
@@ -215,7 +190,8 @@ class DialogFragmentTest {
     @Test
     fun testDialogFragmentInLayout() {
         val fragment = TestLayoutDialogFragment()
-        activityTestRule.activity.supportFragmentManager.beginTransaction()
+        activityTestRule.activity.supportFragmentManager
+            .beginTransaction()
             .add(android.R.id.content, fragment)
             .commitNow()
 
@@ -232,7 +208,8 @@ class DialogFragmentTest {
 
         val fragment = StrictViewFragment(R.layout.fragment_a)
 
-        parentDialogfragment.childFragmentManager.beginTransaction()
+        parentDialogfragment.childFragmentManager
+            .beginTransaction()
             .add(R.id.fragmentContainer, fragment)
             .commitNow()
 
@@ -245,9 +222,7 @@ class DialogFragmentTest {
         val fragment = TestDialogFragment(true)
         fragment.showNow(activityTestRule.activity.supportFragmentManager, null)
 
-        assertWithMessage("Dialog was not null")
-            .that(fragment.dialog)
-            .isNull()
+        assertWithMessage("Dialog was not null").that(fragment.dialog).isNull()
     }
 
     @UiThreadTest
@@ -272,19 +247,15 @@ class DialogFragmentTest {
             fragment.showNow(activityTestRule.activity.supportFragmentManager, null)
         }
 
-        assertWithMessage("Dialog was not being shown")
-            .that(fragment.dialog?.isShowing)
-            .isTrue()
+        assertWithMessage("Dialog was not being shown").that(fragment.dialog?.isShowing).isTrue()
     }
 
     @Test
     fun testInflatedFragmentContainerViewDialogFragmentShowsNow() {
-       withUse(ActivityScenario.launch(EmptyFragmentTestActivity::class.java)) {
+        withUse(ActivityScenario.launch(EmptyFragmentTestActivity::class.java)) {
             val fragment = InflatedDialogFragment()
 
-            withActivity {
-                fragment.showNow(supportFragmentManager, "fragment1")
-            }
+            withActivity { fragment.showNow(supportFragmentManager, "fragment1") }
 
             assertWithMessage("Dialog was not being shown")
                 .that(fragment.dialog?.isShowing)
@@ -309,9 +280,7 @@ class DialogFragmentTest {
         val fragment = TestDialogFragmentWithChild(false)
         fragment.showNow(activityTestRule.activity.supportFragmentManager, null)
 
-        assertWithMessage("Dialog was not being shown")
-            .that(fragment.dialog?.isShowing)
-            .isTrue()
+        assertWithMessage("Dialog was not being shown").that(fragment.dialog?.isShowing).isTrue()
     }
 
     @UiThreadTest
@@ -320,9 +289,7 @@ class DialogFragmentTest {
         val fragment = TestDialogFragmentWithChild(true)
         fragment.showNow(activityTestRule.activity.supportFragmentManager, null)
 
-        assertWithMessage("Dialog was not being shown")
-            .that(fragment.dialog?.isShowing)
-            .isTrue()
+        assertWithMessage("Dialog was not being shown").that(fragment.dialog?.isShowing).isTrue()
     }
 
     @Test
@@ -331,15 +298,11 @@ class DialogFragmentTest {
         val fm = activityTestRule.activity.supportFragmentManager
 
         activityTestRule.runOnUiThread {
-            fm.beginTransaction()
-                .add(dialogFragment, null)
-                .commitNow()
+            fm.beginTransaction().add(dialogFragment, null).commitNow()
         }
 
         val dialog = dialogFragment.requireDialog()
-        activityTestRule.runOnUiThread {
-            dialog.cancel()
-        }
+        activityTestRule.runOnUiThread { dialog.cancel() }
 
         activityTestRule.runOnUiThread {
             assertWithMessage("OnCancel should have been called")
@@ -354,18 +317,14 @@ class DialogFragmentTest {
         val fm = activityTestRule.activity.supportFragmentManager
 
         activityTestRule.runOnUiThread {
-            fm.beginTransaction()
-                .add(dialogFragment, null)
-                .commitNow()
+            fm.beginTransaction().add(dialogFragment, null).commitNow()
         }
 
         val dialog = dialogFragment.requireDialog()
 
         activityTestRule.runOnUiThread {
             dialog.cancel()
-            fm.beginTransaction()
-                .remove(dialogFragment)
-                .commitNow()
+            fm.beginTransaction().remove(dialogFragment).commitNow()
         }
 
         activityTestRule.runOnUiThread {
@@ -384,17 +343,14 @@ class DialogFragmentTest {
 
         val dialogFragment = TestDialogFragment()
 
-        fm1.beginTransaction()
-            .add(dialogFragment, "dialog")
-            .commitNow()
+        fm1.beginTransaction().add(dialogFragment, "dialog").commitNow()
 
         dialogFragment.requireDialog().findViewById<EditText>(R.id.editText).apply {
             setText("saved", TextView.BufferType.EDITABLE)
         }
 
         fc1.dispatchPause()
-        @Suppress("DEPRECATION")
-        val savedState = fc1.saveAllState()
+        @Suppress("DEPRECATION") val savedState = fc1.saveAllState()
         fc1.dispatchStop()
         fc1.dispatchDestroy()
 
@@ -403,7 +359,8 @@ class DialogFragmentTest {
 
         val restoredDialogFragment = fm2.findFragmentByTag("dialog") as TestDialogFragment
         assertWithMessage("Dialog fragment was not restored")
-            .that(restoredDialogFragment).isNotNull()
+            .that(restoredDialogFragment)
+            .isNotNull()
 
         val restoredDialog = restoredDialogFragment.requireDialog()
 
@@ -427,17 +384,14 @@ class DialogFragmentTest {
         val dialogFragment = RestoreViewDialogFragment()
         val expectedText = "saved"
 
-        fm1.beginTransaction()
-            .add(dialogFragment, "dialog")
-            .commitNow()
+        fm1.beginTransaction().add(dialogFragment, "dialog").commitNow()
 
         dialogFragment.requireView().findViewById<EditText>(R.id.editText).apply {
             setText(expectedText, TextView.BufferType.EDITABLE)
         }
 
         fc1.dispatchPause()
-        @Suppress("DEPRECATION")
-        val savedState = fc1.saveAllState()
+        @Suppress("DEPRECATION") val savedState = fc1.saveAllState()
         fc1.dispatchStop()
         fc1.dispatchDestroy()
 
@@ -446,10 +400,15 @@ class DialogFragmentTest {
 
         val restoredDialogFragment = fm2.findFragmentByTag("dialog") as RestoreViewDialogFragment
         assertWithMessage("Dialog fragment was not restored")
-            .that(restoredDialogFragment).isNotNull()
+            .that(restoredDialogFragment)
+            .isNotNull()
 
-        val restoredText = restoredDialogFragment.requireView()
-            .findViewById<EditText>(R.id.editText).text.toString()
+        val restoredText =
+            restoredDialogFragment
+                .requireView()
+                .findViewById<EditText>(R.id.editText)
+                .text
+                .toString()
 
         assertWithMessage("State of EditText was not restored")
             .that(restoredText)
@@ -468,13 +427,10 @@ class DialogFragmentTest {
 
         val dialogFragment = TestLayoutDialogFragment()
 
-        fm1.beginTransaction()
-            .add(dialogFragment, "dialog")
-            .commitNow()
+        fm1.beginTransaction().add(dialogFragment, "dialog").commitNow()
 
         fc1.dispatchPause()
-        @Suppress("DEPRECATION")
-        val savedState = fc1.saveAllState()
+        @Suppress("DEPRECATION") val savedState = fc1.saveAllState()
         fc1.dispatchStop()
         fc1.dispatchDestroy()
 
@@ -483,7 +439,8 @@ class DialogFragmentTest {
 
         val restoredDialogFragment = fm2.findFragmentByTag("dialog") as TestLayoutDialogFragment
         assertWithMessage("Dialog fragment was not restored")
-            .that(restoredDialogFragment).isNotNull()
+            .that(restoredDialogFragment)
+            .isNotNull()
 
         val restoredDialog = restoredDialogFragment.dialog as RestoreDialog
 
@@ -506,9 +463,7 @@ class DialogFragmentTest {
         val dialogFragment = TestLayoutDialogFragment()
         dialogFragment.retainInstance = true
 
-        fm1.beginTransaction()
-            .add(dialogFragment, "dialog")
-            .commitNow()
+        fm1.beginTransaction().add(dialogFragment, "dialog").commitNow()
 
         fc1.dispatchPause()
         val savedState = fc1.saveAllState()
@@ -520,7 +475,8 @@ class DialogFragmentTest {
 
         val restoredDialogFragment = fm2.findFragmentByTag("dialog") as TestLayoutDialogFragment
         assertWithMessage("Dialog fragment was not restored")
-            .that(restoredDialogFragment).isNotNull()
+            .that(restoredDialogFragment)
+            .isNotNull()
 
         val restoredDialog = restoredDialogFragment.dialog as RestoreDialog
 
@@ -534,19 +490,11 @@ class DialogFragmentTest {
 
     @Test
     fun testRequireDialog() {
-        // There is a leak in API 30 InputMethodManager that causes this test to be flaky.
-        // Once https://github.com/square/leakcanary/issues/2592 is addressed we can upgrade
-        // leak canary and remove this.
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R) {
-            return
-        }
         val dialogFragment = TestDialogFragment()
         val fm = activityTestRule.activity.supportFragmentManager
 
         activityTestRule.runOnUiThread {
-            fm.beginTransaction()
-                .add(dialogFragment, null)
-                .commitNow()
+            fm.beginTransaction().add(dialogFragment, null).commitNow()
         }
 
         val dialog = dialogFragment.requireDialog()
@@ -558,12 +506,8 @@ class DialogFragmentTest {
 
         activityTestRule.runOnUiThread {
             dialog.cancel()
-            fm.beginTransaction()
-                .remove(dialogFragment)
-                .commitNow()
-            assertThrows(IllegalStateException::class.java) {
-                dialogFragment.requireDialog()
-            }
+            fm.beginTransaction().remove(dialogFragment).commitNow()
+            assertThrows(IllegalStateException::class.java) { dialogFragment.requireDialog() }
         }
     }
 
@@ -576,9 +520,7 @@ class DialogFragmentTest {
         activityTestRule.runOnUiThread {
             componentDialog = ComponentDialog(activityTestRule.activity)
             dialogFragment.setupDialog(componentDialog, 1)
-            fm.beginTransaction()
-                .add(dialogFragment, null)
-                .commitNow()
+            fm.beginTransaction().add(dialogFragment, null).commitNow()
         }
 
         activityTestRule.runOnUiThread {
@@ -589,9 +531,7 @@ class DialogFragmentTest {
 
         activityTestRule.runOnUiThread {
             componentDialog.cancel()
-            fm.beginTransaction()
-                .remove(dialogFragment)
-                .commitNow()
+            fm.beginTransaction().remove(dialogFragment).commitNow()
             assertThrows(IllegalStateException::class.java) {
                 dialogFragment.requireComponentDialog()
             }
@@ -606,9 +546,7 @@ class DialogFragmentTest {
         activityTestRule.runOnUiThread {
             val componentDialog = ComponentDialog(activityTestRule.activity)
             dialogFragment.setupDialog(componentDialog, 1)
-            fm.beginTransaction()
-                .add(dialogFragment, null)
-                .commitNow()
+            fm.beginTransaction().add(dialogFragment, null).commitNow()
         }
 
         activityTestRule.runOnUiThread {
@@ -640,9 +578,8 @@ class DialogFragmentTest {
         }
     }
 
-    class TestDialogFragmentWithChild(
-        val executePendingTransactions: Boolean = false
-    ) : DialogFragment() {
+    class TestDialogFragmentWithChild(val executePendingTransactions: Boolean = false) :
+        DialogFragment() {
 
         override fun onCreateView(
             inflater: LayoutInflater,
@@ -650,7 +587,8 @@ class DialogFragmentTest {
             savedInstanceState: Bundle?
         ): View? {
             val view = inflater.inflate(R.layout.simple_container, container, false)
-            childFragmentManager.beginTransaction()
+            childFragmentManager
+                .beginTransaction()
                 .add(R.id.fragmentContainer, StrictViewFragment())
                 .commit()
             if (executePendingTransactions) {
@@ -696,15 +634,16 @@ class DialogFragmentTest {
 
     class InflatedDialogFragment(val useFragmentContainerView: Boolean = true) : DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-            val view = if (useFragmentContainerView) {
-                layoutInflater.inflate(
-                    R.layout.inflated_fragment_container_view_no_parent,
-                    null,
-                    false
-                )
-            } else {
-                layoutInflater.inflate(R.layout.inflated_fragment_tag, null, false)
-            }
+            val view =
+                if (useFragmentContainerView) {
+                    layoutInflater.inflate(
+                        R.layout.inflated_fragment_container_view_no_parent,
+                        null,
+                        false
+                    )
+                } else {
+                    layoutInflater.inflate(R.layout.inflated_fragment_tag, null, false)
+                }
             return AlertDialog.Builder(context)
                 .setTitle("Test")
                 .setMessage("Message")

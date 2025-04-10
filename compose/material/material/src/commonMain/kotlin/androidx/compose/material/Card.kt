@@ -17,42 +17,39 @@
 package androidx.compose.material
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Indication
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * <a href="https://material.io/components/cards" class="external" target="_blank">Material Design card</a>.
+ * [Material Design card](https://material.io/components/cards)
  *
  * Cards contain content and actions about a single subject.
  *
- * ![Cards image](https://developer.android.com/images/reference/androidx/compose/material/cards.png)
+ * ![Cards
+ * image](https://developer.android.com/images/reference/androidx/compose/material/cards.png)
  *
- * This version of Card will block clicks behind it. For clickable card, please use another
- * overload that accepts `onClick` as a parameter.
+ * This version of Card will block clicks behind it. For clickable card, please use another overload
+ * that accepts `onClick` as a parameter.
  *
  * @sample androidx.compose.material.samples.CardSample
- *
  * @param modifier Modifier to be applied to the layout of the card.
- * @param shape Defines the card's shape as well its shadow. A shadow is only
- *  displayed if the [elevation] is greater than zero.
+ * @param shape Defines the card's shape as well its shadow. A shadow is only displayed if the
+ *   [elevation] is greater than zero.
  * @param backgroundColor The background color.
- * @param contentColor The preferred content color provided by this card to its children.
- * Defaults to either the matching content color for [backgroundColor], or if [backgroundColor]
- * is not a color from the theme, this will keep the same value set above this card.
+ * @param contentColor The preferred content color provided by this card to its children. Defaults
+ *   to either the matching content color for [backgroundColor], or if [backgroundColor] is not a
+ *   color from the theme, this will keep the same value set above this card.
  * @param border Optional border to draw on top of the card
- * @param elevation The z-coordinate at which to place this card. This controls
- *  the size of the shadow below the card.
+ * @param elevation The z-coordinate at which to place this card. This controls the size of the
+ *   shadow below the card.
+ * @param content The content displayed on the card.
  */
 @Composable
 @NonRestartableComposable
@@ -79,28 +76,28 @@ fun Card(
 /**
  * Cards are [Surface]s that display content and actions on a single topic.
  *
- * This version of Card provides click handling as well. If you do not want Card to handle
- * clicks, consider using another overload.
+ * This version of Card provides click handling as well. If you do not want Card to handle clicks,
+ * consider using another overload.
  *
  * @sample androidx.compose.material.samples.ClickableCardSample
- *
  * @param onClick callback to be called when the card is clicked
  * @param modifier Modifier to be applied to the layout of the card.
- * @param enabled Controls the enabled state of the card. When `false`, this card will not
- * be clickable
- * @param shape Defines the card's shape as well its shadow. A shadow is only
- *  displayed if the [elevation] is greater than zero.
+ * @param enabled Controls the enabled state of the card. When `false`, this card will not be
+ *   clickable
+ * @param shape Defines the card's shape as well its shadow. A shadow is only displayed if the
+ *   [elevation] is greater than zero.
  * @param backgroundColor The background color.
- * @param contentColor The preferred content color provided by this card to its children.
- * Defaults to either the matching content color for [backgroundColor], or if [backgroundColor]
- * is not a color from the theme, this will keep the same value set above this card.
+ * @param contentColor The preferred content color provided by this card to its children. Defaults
+ *   to either the matching content color for [backgroundColor], or if [backgroundColor] is not a
+ *   color from the theme, this will keep the same value set above this card.
  * @param border Optional border to draw on top of the card
- * @param elevation The z-coordinate at which to place this card. This controls
- *  the size of the shadow below the card.
- * @param interactionSource the [MutableInteractionSource] representing the stream of
- * [Interaction]s for this Card. You can create and pass in your own remembered
- * [MutableInteractionSource] if you want to observe [Interaction]s and customize the appearance
- * / behavior of this card in different [Interaction]s.
+ * @param elevation The z-coordinate at which to place this card. This controls the size of the
+ *   shadow below the card.
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this card. You can use this to change the card's appearance or
+ *   preview the card in different states. Note that if `null` is provided, interactions will still
+ *   happen internally.
+ * @param content The content displayed on the card.
  */
 @ExperimentalMaterialApi
 @Composable
@@ -114,7 +111,7 @@ fun Card(
     contentColor: Color = contentColorFor(backgroundColor),
     border: BorderStroke? = null,
     elevation: Dp = 1.dp,
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit
 ) {
     Surface(
@@ -127,85 +124,6 @@ fun Card(
         border = border,
         elevation = elevation,
         interactionSource = interactionSource,
-        content = content
-    )
-}
-
-/**
- * Cards are [Surface]s that display content and actions on a single topic.
- *
- * This version of Card provides click handling as well. If you do not want Card to handle
- * clicks, consider using another overload.
- *
- * @sample androidx.compose.material.samples.ClickableCardSample
- *
- * @param onClick callback to be called when the card is clicked
- * @param modifier Modifier to be applied to the layout of the card.
- * @param shape Defines the card's shape as well its shadow. A shadow is only
- *  displayed if the [elevation] is greater than zero.
- * @param backgroundColor The background color.
- * @param contentColor The preferred content color provided by this card to its children.
- * Defaults to either the matching content color for [backgroundColor], or if [backgroundColor]
- * is not a color from the theme, this will keep the same value set above this card.
- * @param border Optional border to draw on top of the card
- * @param elevation The z-coordinate at which to place this card. This controls
- *  the size of the shadow below the card.
- * @param interactionSource the [MutableInteractionSource] representing the stream of
- * [Interaction]s for this Card. You can create and pass in your own remembered
- * [MutableInteractionSource] if you want to observe [Interaction]s and customize the appearance
- * / behavior of this card in different [Interaction]s.
- * @param indication indication to be shown when card is pressed. By default, indication from
- * [LocalIndication] will be used. Pass `null` to show no indication, or current value from
- * [LocalIndication] to show theme default
- * @param enabled Controls the enabled state of the card. When `false`, this card will not
- * be clickable
- * @param onClickLabel semantic / accessibility label for the [onClick] action
- * @param role the type of user interface element. Accessibility services might use this
- * to describe the element or do customizations. For example, if the Card acts as a button, you
- * should pass the [Role.Button]
- */
-@ExperimentalMaterialApi
-@Composable
-@NonRestartableComposable
-@Suppress()
-@Deprecated(
-    "This API is deprecated with the introduction a newer Card function" +
-        " overload that accepts an onClick().",
-    replaceWith = ReplaceWith(
-        "Card(onClick, modifier, enabled, shape, backgroundColor, contentColor, border," +
-            " elevation, interactionSource, content)"
-    ),
-    level = DeprecationLevel.ERROR
-)
-fun Card(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    shape: Shape = MaterialTheme.shapes.medium,
-    backgroundColor: Color = MaterialTheme.colors.surface,
-    contentColor: Color = contentColorFor(backgroundColor),
-    border: BorderStroke? = null,
-    elevation: Dp = 1.dp,
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    indication: Indication? = LocalIndication.current,
-    enabled: Boolean = true,
-    onClickLabel: String? = null,
-    role: Role? = null,
-    content: @Composable () -> Unit
-) {
-    @Suppress("DEPRECATION_ERROR")
-    Surface(
-        onClick = onClick,
-        modifier = modifier,
-        shape = shape,
-        color = backgroundColor,
-        contentColor = contentColor,
-        border = border,
-        elevation = elevation,
-        interactionSource = interactionSource,
-        indication = indication,
-        enabled = enabled,
-        onClickLabel = onClickLabel,
-        role = role,
         content = content
     )
 }

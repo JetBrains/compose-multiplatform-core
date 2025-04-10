@@ -19,13 +19,13 @@ package androidx.webkit;
 import android.content.Context;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresFeature;
 import androidx.webkit.internal.ApiHelperForP;
 import androidx.webkit.internal.StartupApiFeature;
 import androidx.webkit.internal.WebViewFeatureInternal;
 
 import org.chromium.support_lib_boundary.ProcessGlobalConfigConstants;
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Process Global Configuration for WebView.
- *
+ * <p>
  * WebView has some process-global configuration parameters that cannot be changed once WebView has
  * been loaded. This class allows apps to set these parameters.
  * <p>
@@ -61,13 +61,14 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ProcessGlobalConfig {
     private static final AtomicReference<HashMap<String, Object>> sProcessGlobalConfig =
-            new AtomicReference<HashMap<String, Object>>();
+            new AtomicReference<>();
     private static final Object sLock = new Object();
     @GuardedBy("sLock")
     private static boolean sApplyCalled = false;
     String mDataDirectorySuffix;
     String mDataDirectoryBasePath;
     String mCacheDirectoryBasePath;
+    Boolean mPartitionedCookiesEnabled;
 
     /**
      * Creates a {@link ProcessGlobalConfig} object.
@@ -77,7 +78,7 @@ public class ProcessGlobalConfig {
 
     /**
      * Define the directory used to store WebView data for the current process.
-     *
+     * <p>
      * The provided suffix will be used when constructing data and cache
      * directory paths. If this API is not called, no suffix will be used.
      * Each directory can be used by only one process in the application. If more
@@ -111,8 +112,7 @@ public class ProcessGlobalConfig {
     @RequiresFeature(name = WebViewFeature.STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX,
             enforcement =
                     "androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)")
-    @NonNull
-    public ProcessGlobalConfig setDataDirectorySuffix(@NonNull Context context,
+    public @NonNull ProcessGlobalConfig setDataDirectorySuffix(@NonNull Context context,
             @NonNull String suffix) {
         final StartupApiFeature.P feature =
                 WebViewFeatureInternal.STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX;
@@ -132,7 +132,7 @@ public class ProcessGlobalConfig {
 
     /**
      * Set the base directories that WebView will use for the current process.
-     *
+     * <p>
      * If this method is not used, WebView uses the default base paths defined by the Android
      * framework.
      * <p>
@@ -148,7 +148,7 @@ public class ProcessGlobalConfig {
      * cache files when disk space is low and WebView may not function properly if this occurs.
      * Refer to
      * <a href="https://developer.android.com/training/data-storage/app-specific#internal-remove-cache">this</a>
-     *  link.
+     * link.
      * <p>
      * If the specified directories already exist then they must be readable and writable by the
      * current process. If they do not already exist, WebView will attempt to create them during
@@ -169,8 +169,7 @@ public class ProcessGlobalConfig {
             WebViewFeature.STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS,
             enforcement =
                     "androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)")
-    @NonNull
-    public ProcessGlobalConfig setDirectoryBasePaths(@NonNull Context context,
+    public @NonNull ProcessGlobalConfig setDirectoryBasePaths(@NonNull Context context,
             @NonNull File dataDirectoryBasePath, @NonNull File cacheDirectoryBasePath) {
         final StartupApiFeature.NoFramework feature =
                 WebViewFeatureInternal.STARTUP_FEATURE_SET_DIRECTORY_BASE_PATH;
@@ -191,8 +190,30 @@ public class ProcessGlobalConfig {
     }
 
     /**
-     * Applies the configuration to be used by WebView on loading.
+     * Configures whether partitioned cookies should be enabled or not. Refer to
+     * <a href="https://github.com/privacycg/CHIPS">this</a>
+     * link for more details.
      *
+     * <p>
+     * This is enabled for WebView M114 and above.
+     */
+    @RequiresFeature(name = WebViewFeature.STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES,
+            enforcement =
+                    "androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)")
+    public @NonNull ProcessGlobalConfig setPartitionedCookiesEnabled(
+            @NonNull Context context, boolean isEnabled) {
+        final StartupApiFeature.NoFramework feature =
+                WebViewFeatureInternal.STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES;
+        if (!feature.isSupported(context)) {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+        mPartitionedCookiesEnabled = isEnabled;
+        return this;
+    }
+
+    /**
+     * Applies the configuration to be used by WebView on loading.
+     * <p>
      * This method can only be called once.
      * <p>
      * Calling this method will not cause WebView to be loaded and will not block the calling
@@ -223,7 +244,7 @@ public class ProcessGlobalConfig {
             }
             sApplyCalled = true;
         }
-        HashMap<String, Object> configMap = new HashMap<String, Object>();
+        HashMap<String, Object> configMap = new HashMap<>();
         if (webViewCurrentlyLoaded()) {
             throw new IllegalStateException("WebView has already been loaded in the current "
                     + "process, so any attempt to apply the settings in ProcessGlobalConfig will "
@@ -247,6 +268,10 @@ public class ProcessGlobalConfig {
         if (config.mCacheDirectoryBasePath != null) {
             configMap.put(ProcessGlobalConfigConstants.CACHE_DIRECTORY_BASE_PATH,
                     config.mCacheDirectoryBasePath);
+        }
+        if (config.mPartitionedCookiesEnabled != null) {
+            configMap.put(ProcessGlobalConfigConstants.CONFIGURE_PARTITIONED_COOKIES,
+                    config.mPartitionedCookiesEnabled);
         }
         if (!sProcessGlobalConfig.compareAndSet(null, configMap)) {
             throw new RuntimeException("Attempting to set ProcessGlobalConfig"

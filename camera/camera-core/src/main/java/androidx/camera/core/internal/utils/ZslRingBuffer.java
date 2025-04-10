@@ -16,8 +16,6 @@
 
 package androidx.camera.core.internal.utils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.ImageInfo;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.impl.CameraCaptureMetaData.AeState;
@@ -25,6 +23,8 @@ import androidx.camera.core.impl.CameraCaptureMetaData.AfState;
 import androidx.camera.core.impl.CameraCaptureMetaData.AwbState;
 import androidx.camera.core.impl.CameraCaptureResult;
 import androidx.camera.core.impl.CameraCaptureResults;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Used for storing frames for ZSL capture.
@@ -37,7 +37,6 @@ import androidx.camera.core.impl.CameraCaptureResults;
  * - AWB Converged
  * </p>
  */
-@RequiresApi(21)
 public final class ZslRingBuffer extends ArrayRingBuffer<ImageProxy> {
 
     public ZslRingBuffer(int ringBufferCapacity,
@@ -57,6 +56,9 @@ public final class ZslRingBuffer extends ArrayRingBuffer<ImageProxy> {
     private boolean isValidZslFrame(@NonNull ImageInfo imageInfo) {
         CameraCaptureResult cameraCaptureResult =
                 CameraCaptureResults.retrieveCameraCaptureResult(imageInfo);
+        if (cameraCaptureResult == null) {
+            return false;
+        }
 
         if (cameraCaptureResult.getAfState() != AfState.LOCKED_FOCUSED
                 && cameraCaptureResult.getAfState() != AfState.PASSIVE_FOCUSED)  {

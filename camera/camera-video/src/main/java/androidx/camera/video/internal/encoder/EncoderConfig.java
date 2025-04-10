@@ -18,17 +18,16 @@ package androidx.camera.video.internal.encoder;
 
 import android.media.MediaFormat;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.EncoderProfilesProxy;
 import androidx.camera.core.impl.Timebase;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * The configuration represents the required parameters to configure an encoder.
  *
  * <p>An {@code EncoderConfig} is used to configure an {@link Encoder}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public interface EncoderConfig {
 
     /** Constant corresponding to no profile for the encoder */
@@ -41,8 +40,7 @@ public interface EncoderConfig {
      *
      * @see MediaFormat
      */
-    @NonNull
-    String getMimeType();
+    @NonNull String getMimeType();
 
     /**
      * The (optional) profile for the mime type returned by {@link #getMimeType()}.
@@ -58,14 +56,12 @@ public interface EncoderConfig {
     /**
      * Gets the input timebase.
      */
-    @NonNull
-    Timebase getInputTimebase();
+    @NonNull Timebase getInputTimebase();
 
     /**
      * Transfers the config to a {@link MediaFormat}.
      *
      * @return the result {@link MediaFormat}
      */
-    @NonNull
-    MediaFormat toMediaFormat() throws InvalidConfigException;
+    @NonNull MediaFormat toMediaFormat() throws InvalidConfigException;
 }

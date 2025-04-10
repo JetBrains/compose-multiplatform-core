@@ -20,10 +20,10 @@ import android.graphics.Rect;
 import android.media.Image;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -39,7 +39,6 @@ import java.util.Set;
  *
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public abstract class ForwardingImageProxy implements ImageProxy {
     private final Object mLock = new Object();
 
@@ -64,8 +63,7 @@ public abstract class ForwardingImageProxy implements ImageProxy {
     }
 
     @Override
-    @NonNull
-    public Rect getCropRect() {
+    public @NonNull Rect getCropRect() {
         return mImage.getCropRect();
     }
 
@@ -90,21 +88,18 @@ public abstract class ForwardingImageProxy implements ImageProxy {
     }
 
     @Override
-    @NonNull
-    public ImageProxy.PlaneProxy[] getPlanes() {
+    public ImageProxy.PlaneProxy @NonNull [] getPlanes() {
         return mImage.getPlanes();
     }
 
     @Override
-    @NonNull
-    public ImageInfo getImageInfo() {
+    public @NonNull ImageInfo getImageInfo() {
         return mImage.getImageInfo();
     }
 
-    @Nullable
     @Override
     @ExperimentalGetImage
-    public Image getImage() {
+    public @Nullable Image getImage() {
         return mImage.getImage();
     }
 

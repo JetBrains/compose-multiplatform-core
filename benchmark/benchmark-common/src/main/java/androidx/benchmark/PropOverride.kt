@@ -17,12 +17,11 @@
 package androidx.benchmark
 
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 
 /**
- * PropOverride provides temporary overriding of a platform setprop value, with resetting to
- * avoid polluting device state.
+ * PropOverride provides temporary overriding of a platform setprop value, with resetting to avoid
+ * polluting device state.
  *
  * It's recommended to use a try/finally to ensure that resetIfOverridden isn't missed.
  *
@@ -30,11 +29,7 @@ import androidx.annotation.RestrictTo
  * missed.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@RequiresApi(21)
-public class PropOverride(
-    private val propName: String,
-    private val overrideValue: String
-) {
+public class PropOverride(private val propName: String, private val overrideValue: String) {
     private var resetValue: String? = null
 
     fun forceValue() {

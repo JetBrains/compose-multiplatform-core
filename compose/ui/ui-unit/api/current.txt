@@ -8,32 +8,28 @@ package androidx.compose.ui.unit {
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class Constraints {
     ctor public Constraints(@kotlin.PublishedApi long value);
     method public long copy(optional int minWidth, optional int maxWidth, optional int minHeight, optional int maxHeight);
-    method public boolean getHasBoundedHeight();
-    method public boolean getHasBoundedWidth();
-    method public boolean getHasFixedHeight();
-    method public boolean getHasFixedWidth();
-    method public int getMaxHeight();
-    method public int getMaxWidth();
-    method public int getMinHeight();
-    method public int getMinWidth();
-    method public boolean isZero();
-    property public final boolean hasBoundedHeight;
-    property public final boolean hasBoundedWidth;
-    property @androidx.compose.runtime.Stable public final boolean hasFixedHeight;
-    property @androidx.compose.runtime.Stable public final boolean hasFixedWidth;
-    property @androidx.compose.runtime.Stable public final boolean isZero;
-    property public final int maxHeight;
-    property public final int maxWidth;
-    property public final int minHeight;
-    property public final int minWidth;
+    method public inline long copyMaxDimensions();
+    property public boolean hasBoundedHeight;
+    property public boolean hasBoundedWidth;
+    property @androidx.compose.runtime.Stable public boolean hasFixedHeight;
+    property @androidx.compose.runtime.Stable public boolean hasFixedWidth;
+    property @androidx.compose.runtime.Stable public boolean isZero;
+    property public int maxHeight;
+    property public int maxWidth;
+    property public int minHeight;
+    property public int minWidth;
     field public static final androidx.compose.ui.unit.Constraints.Companion Companion;
     field public static final int Infinity = 2147483647; // 0x7fffffff
   }
 
   public static final class Constraints.Companion {
+    method @androidx.compose.runtime.Stable public long fitPrioritizingHeight(int minWidth, int maxWidth, int minHeight, int maxHeight);
+    method @androidx.compose.runtime.Stable public long fitPrioritizingWidth(int minWidth, int maxWidth, int minHeight, int maxHeight);
     method @androidx.compose.runtime.Stable public long fixed(int width, int height);
     method @androidx.compose.runtime.Stable public long fixedHeight(int height);
     method @androidx.compose.runtime.Stable public long fixedWidth(int width);
+    method @Deprecated @androidx.compose.runtime.Stable public long restrictConstraints(int minWidth, int maxWidth, int minHeight, int maxHeight, optional boolean prioritizeWidth);
+    property public static int Infinity;
   }
 
   public final class ConstraintsKt {
@@ -58,7 +54,7 @@ package androidx.compose.ui.unit {
     method @androidx.compose.runtime.Stable public default androidx.compose.ui.geometry.Rect toRect(androidx.compose.ui.unit.DpRect);
     method @androidx.compose.runtime.Stable public default long toSize(long);
     method @androidx.compose.runtime.Stable public default long toSp(int);
-    property public abstract float density;
+    property @androidx.compose.runtime.Stable public abstract float density;
   }
 
   public final class DensityKt {
@@ -77,7 +73,7 @@ package androidx.compose.ui.unit {
     method @androidx.compose.runtime.Stable public inline operator float times(float other);
     method @androidx.compose.runtime.Stable public inline operator float times(int other);
     method @androidx.compose.runtime.Stable public inline operator float unaryMinus();
-    property public final float value;
+    property public float value;
     field public static final androidx.compose.ui.unit.Dp.Companion Companion;
   }
 
@@ -85,13 +81,13 @@ package androidx.compose.ui.unit {
     method public float getHairline();
     method public float getInfinity();
     method public float getUnspecified();
-    property public final float Hairline;
-    property public final float Infinity;
-    property public final float Unspecified;
+    property @androidx.compose.runtime.Stable public float Hairline;
+    property @androidx.compose.runtime.Stable public float Infinity;
+    property @androidx.compose.runtime.Stable public float Unspecified;
   }
 
   public final class DpKt {
-    method @androidx.compose.runtime.Stable public static long DpOffset(float x, float y);
+    method @androidx.compose.runtime.Stable public static inline long DpOffset(float x, float y);
     method @androidx.compose.runtime.Stable public static long DpSize(float width, float height);
     method @androidx.compose.runtime.Stable public static inline float coerceAtLeast(float, float minimumValue);
     method @androidx.compose.runtime.Stable public static inline float coerceAtMost(float, float maximumValue);
@@ -123,24 +119,39 @@ package androidx.compose.ui.unit {
     method @androidx.compose.runtime.Stable public static inline operator long times(float, long size);
     method @androidx.compose.runtime.Stable public static inline operator float times(int, float other);
     method @androidx.compose.runtime.Stable public static inline operator long times(int, long size);
+    property @androidx.compose.runtime.Stable public static long long.center;
+    property @androidx.compose.runtime.Stable public static inline float int.dp;
+    property @androidx.compose.runtime.Stable public static inline float double.dp;
+    property @androidx.compose.runtime.Stable public static inline float float.dp;
+    property @androidx.compose.runtime.Stable public static inline float androidx.compose.ui.unit.DpRect.height;
+    property @androidx.compose.runtime.Stable public static inline boolean float.isFinite;
+    property @androidx.compose.runtime.Stable public static inline boolean float.isSpecified;
+    property @androidx.compose.runtime.Stable public static inline boolean long.isSpecified;
+    property @androidx.compose.runtime.Stable public static inline boolean long.isSpecified;
+    property @androidx.compose.runtime.Stable public static inline boolean float.isUnspecified;
+    property @androidx.compose.runtime.Stable public static inline boolean long.isUnspecified;
+    property @androidx.compose.runtime.Stable public static inline boolean long.isUnspecified;
+    property @androidx.compose.runtime.Stable public static inline long androidx.compose.ui.unit.DpRect.size;
+    property @androidx.compose.runtime.Stable public static inline float androidx.compose.ui.unit.DpRect.width;
   }
 
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class DpOffset {
+    ctor public DpOffset(long packedValue);
     method public long copy(optional float x, optional float y);
-    method public float getX();
-    method public float getY();
-    method @androidx.compose.runtime.Stable public inline operator long minus(long other);
-    method @androidx.compose.runtime.Stable public inline operator long plus(long other);
-    property @androidx.compose.runtime.Stable public final float x;
-    property @androidx.compose.runtime.Stable public final float y;
+    method public long getPackedValue();
+    method @androidx.compose.runtime.Stable public operator long minus(long other);
+    method @androidx.compose.runtime.Stable public operator long plus(long other);
+    property public long packedValue;
+    property @androidx.compose.runtime.Stable public float x;
+    property @androidx.compose.runtime.Stable public float y;
     field public static final androidx.compose.ui.unit.DpOffset.Companion Companion;
   }
 
   public static final class DpOffset.Companion {
     method public long getUnspecified();
     method public long getZero();
-    property public final long Unspecified;
-    property public final long Zero;
+    property public long Unspecified;
+    property public long Zero;
   }
 
   @androidx.compose.runtime.Immutable public final class DpRect {
@@ -155,10 +166,10 @@ package androidx.compose.ui.unit {
     method public float getLeft();
     method public float getRight();
     method public float getTop();
-    property public final float bottom;
-    property public final float left;
-    property public final float right;
-    property public final float top;
+    property @androidx.compose.runtime.Stable public float bottom;
+    property @androidx.compose.runtime.Stable public float left;
+    property @androidx.compose.runtime.Stable public float right;
+    property @androidx.compose.runtime.Stable public float top;
     field public static final androidx.compose.ui.unit.DpRect.Companion Companion;
   }
 
@@ -171,22 +182,20 @@ package androidx.compose.ui.unit {
     method public long copy(optional float width, optional float height);
     method @androidx.compose.runtime.Stable public operator long div(float other);
     method @androidx.compose.runtime.Stable public operator long div(int other);
-    method public float getHeight();
-    method public float getWidth();
-    method @androidx.compose.runtime.Stable public inline operator long minus(long other);
-    method @androidx.compose.runtime.Stable public inline operator long plus(long other);
+    method @androidx.compose.runtime.Stable public operator long minus(long other);
+    method @androidx.compose.runtime.Stable public operator long plus(long other);
     method @androidx.compose.runtime.Stable public operator long times(float other);
     method @androidx.compose.runtime.Stable public operator long times(int other);
-    property @androidx.compose.runtime.Stable public final float height;
-    property @androidx.compose.runtime.Stable public final float width;
+    property @androidx.compose.runtime.Stable public float height;
+    property @androidx.compose.runtime.Stable public float width;
     field public static final androidx.compose.ui.unit.DpSize.Companion Companion;
   }
 
   public static final class DpSize.Companion {
     method public long getUnspecified();
     method public long getZero();
-    property public final long Unspecified;
-    property public final long Zero;
+    property public long Unspecified;
+    property public long Zero;
   }
 
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is experimental and is likely to change in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalUnitApi {
@@ -196,39 +205,42 @@ package androidx.compose.ui.unit {
     method public float getFontScale();
     method @androidx.compose.runtime.Stable public default float toDp(long);
     method @androidx.compose.runtime.Stable public default long toSp(float);
-    property public abstract float fontScale;
+    property @androidx.compose.runtime.Stable public abstract float fontScale;
   }
 
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class IntOffset {
+    ctor public IntOffset(long packedValue);
     method @androidx.compose.runtime.Stable public inline operator int component1();
     method @androidx.compose.runtime.Stable public inline operator int component2();
     method public long copy(optional int x, optional int y);
     method @androidx.compose.runtime.Stable public operator long div(float operand);
-    method public int getX();
-    method public int getY();
-    method @androidx.compose.runtime.Stable public inline operator long minus(long other);
-    method @androidx.compose.runtime.Stable public inline operator long plus(long other);
+    method public long getPackedValue();
+    method @androidx.compose.runtime.Stable public operator long minus(long other);
+    method @androidx.compose.runtime.Stable public operator long plus(long other);
     method @androidx.compose.runtime.Stable public operator long rem(int operand);
     method @androidx.compose.runtime.Stable public operator long times(float operand);
-    method @androidx.compose.runtime.Stable public inline operator long unaryMinus();
-    property @androidx.compose.runtime.Stable public final int x;
-    property @androidx.compose.runtime.Stable public final int y;
+    method @androidx.compose.runtime.Stable public operator long unaryMinus();
+    property public long packedValue;
+    property @androidx.compose.runtime.Stable public int x;
+    property @androidx.compose.runtime.Stable public int y;
     field public static final androidx.compose.ui.unit.IntOffset.Companion Companion;
   }
 
   public static final class IntOffset.Companion {
+    method public long getMax();
     method public long getZero();
-    property public final long Zero;
+    property public long Max;
+    property public long Zero;
   }
 
   public final class IntOffsetKt {
-    method @androidx.compose.runtime.Stable public static long IntOffset(int x, int y);
+    method @androidx.compose.runtime.Stable public static inline long IntOffset(int x, int y);
     method @androidx.compose.runtime.Stable public static long lerp(long start, long stop, float fraction);
     method @androidx.compose.runtime.Stable public static operator long minus(long, long offset);
     method @androidx.compose.runtime.Stable public static operator long minus(long, long offset);
     method @androidx.compose.runtime.Stable public static operator long plus(long, long offset);
     method @androidx.compose.runtime.Stable public static operator long plus(long, long offset);
-    method @androidx.compose.runtime.Stable public static inline long round(long);
+    method @androidx.compose.runtime.Stable public static long round(long);
     method @androidx.compose.runtime.Stable public static inline long toOffset(long);
   }
 
@@ -265,31 +277,31 @@ package androidx.compose.ui.unit {
     method public boolean overlaps(androidx.compose.ui.unit.IntRect other);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.unit.IntRect translate(int translateX, int translateY);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.unit.IntRect translate(long offset);
-    property public final int bottom;
-    property public final long bottomCenter;
-    property public final long bottomLeft;
-    property public final long bottomRight;
-    property public final long center;
-    property public final long centerLeft;
-    property public final long centerRight;
-    property @androidx.compose.runtime.Stable public final int height;
-    property @androidx.compose.runtime.Stable public final boolean isEmpty;
-    property public final int left;
-    property public final int maxDimension;
-    property public final int minDimension;
-    property public final int right;
-    property @androidx.compose.runtime.Stable public final long size;
-    property public final int top;
-    property public final long topCenter;
-    property public final long topLeft;
-    property public final long topRight;
-    property @androidx.compose.runtime.Stable public final int width;
+    property @androidx.compose.runtime.Stable public int bottom;
+    property public long bottomCenter;
+    property public long bottomLeft;
+    property public long bottomRight;
+    property public long center;
+    property public long centerLeft;
+    property public long centerRight;
+    property @androidx.compose.runtime.Stable public int height;
+    property @androidx.compose.runtime.Stable public boolean isEmpty;
+    property @androidx.compose.runtime.Stable public int left;
+    property public int maxDimension;
+    property public int minDimension;
+    property @androidx.compose.runtime.Stable public int right;
+    property @androidx.compose.runtime.Stable public long size;
+    property @androidx.compose.runtime.Stable public int top;
+    property public long topCenter;
+    property public long topLeft;
+    property public long topRight;
+    property @androidx.compose.runtime.Stable public int width;
     field public static final androidx.compose.ui.unit.IntRect.Companion Companion;
   }
 
   public static final class IntRect.Companion {
     method public androidx.compose.ui.unit.IntRect getZero();
-    property public final androidx.compose.ui.unit.IntRect Zero;
+    property @androidx.compose.runtime.Stable public androidx.compose.ui.unit.IntRect Zero;
   }
 
   public final class IntRectKt {
@@ -305,30 +317,31 @@ package androidx.compose.ui.unit {
     method @androidx.compose.runtime.Stable public inline operator int component1();
     method @androidx.compose.runtime.Stable public inline operator int component2();
     method @androidx.compose.runtime.Stable public operator long div(int other);
-    method public int getHeight();
-    method public int getWidth();
+    method public long getPackedValue();
     method @androidx.compose.runtime.Stable public operator long times(int other);
-    property @androidx.compose.runtime.Stable public final int height;
-    property @androidx.compose.runtime.Stable public final int width;
+    property @androidx.compose.runtime.Stable public inline int height;
+    property public long packedValue;
+    property @androidx.compose.runtime.Stable public inline int width;
     field public static final androidx.compose.ui.unit.IntSize.Companion Companion;
   }
 
   public static final class IntSize.Companion {
     method public long getZero();
-    property public final long Zero;
+    property public long Zero;
   }
 
   public final class IntSizeKt {
-    method @androidx.compose.runtime.Stable public static long IntSize(int width, int height);
+    method @androidx.compose.runtime.Stable public static inline long IntSize(int width, int height);
     method public static long getCenter(long);
-    method @androidx.compose.runtime.Stable public static operator long times(int, long size);
+    method @androidx.compose.runtime.Stable public static long roundToIntSize(long);
+    method @androidx.compose.runtime.Stable public static inline operator long times(int, long size);
     method @androidx.compose.runtime.Stable public static androidx.compose.ui.unit.IntRect toIntRect(long);
+    method @androidx.compose.runtime.Stable public static long toIntSize(long);
     method @androidx.compose.runtime.Stable public static long toSize(long);
+    property @androidx.compose.runtime.Stable public static long long.center;
   }
 
   public enum LayoutDirection {
-    method public static androidx.compose.ui.unit.LayoutDirection valueOf(String value) throws java.lang.IllegalArgumentException, java.lang.NullPointerException;
-    method public static androidx.compose.ui.unit.LayoutDirection[] values();
     enum_constant public static final androidx.compose.ui.unit.LayoutDirection Ltr;
     enum_constant public static final androidx.compose.ui.unit.LayoutDirection Rtl;
   }
@@ -338,24 +351,20 @@ package androidx.compose.ui.unit {
     method public inline operator long div(double other);
     method public inline operator long div(float other);
     method public inline operator long div(int other);
-    method public long getType();
-    method public float getValue();
-    method public boolean isEm();
-    method public boolean isSp();
     method public inline operator long times(double other);
     method public inline operator long times(float other);
     method public inline operator long times(int other);
     method public inline operator long unaryMinus();
-    property public final boolean isEm;
-    property public final boolean isSp;
-    property public final long type;
-    property public final float value;
+    property public boolean isEm;
+    property public boolean isSp;
+    property public long type;
+    property public float value;
     field public static final androidx.compose.ui.unit.TextUnit.Companion Companion;
   }
 
   public static final class TextUnit.Companion {
     method public long getUnspecified();
-    property public final long Unspecified;
+    property @androidx.compose.runtime.Stable public long Unspecified;
   }
 
   public final class TextUnitKt {
@@ -367,12 +376,20 @@ package androidx.compose.ui.unit {
     method public static long getSp(float);
     method public static long getSp(int);
     method public static inline boolean isSpecified(long);
-    method public static boolean isUnspecified(long);
+    method public static inline boolean isUnspecified(long);
     method @androidx.compose.runtime.Stable public static long lerp(long start, long stop, float fraction);
     method public static inline long takeOrElse(long, kotlin.jvm.functions.Function0<androidx.compose.ui.unit.TextUnit> block);
     method @androidx.compose.runtime.Stable public static inline operator long times(double, long other);
     method @androidx.compose.runtime.Stable public static inline operator long times(float, long other);
     method @androidx.compose.runtime.Stable public static inline operator long times(int, long other);
+    property @androidx.compose.runtime.Stable public static long float.em;
+    property @androidx.compose.runtime.Stable public static long double.em;
+    property @androidx.compose.runtime.Stable public static long int.em;
+    property @androidx.compose.runtime.Stable public static inline boolean long.isSpecified;
+    property @androidx.compose.runtime.Stable public static inline boolean long.isUnspecified;
+    property @androidx.compose.runtime.Stable public static long float.sp;
+    property @androidx.compose.runtime.Stable public static long double.sp;
+    property @androidx.compose.runtime.Stable public static long int.sp;
   }
 
   @kotlin.jvm.JvmInline public final value class TextUnitType {
@@ -384,31 +401,29 @@ package androidx.compose.ui.unit {
     method public long getEm();
     method public long getSp();
     method public long getUnspecified();
-    property public final long Em;
-    property public final long Sp;
-    property public final long Unspecified;
+    property public long Em;
+    property public long Sp;
+    property public long Unspecified;
   }
 
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class Velocity {
-    method @androidx.compose.runtime.Stable public operator float component1();
-    method @androidx.compose.runtime.Stable public operator float component2();
+    method @androidx.compose.runtime.Stable public inline operator float component1();
+    method @androidx.compose.runtime.Stable public inline operator float component2();
     method public long copy(optional float x, optional float y);
     method @androidx.compose.runtime.Stable public operator long div(float operand);
-    method public float getX();
-    method public float getY();
     method @androidx.compose.runtime.Stable public operator long minus(long other);
     method @androidx.compose.runtime.Stable public operator long plus(long other);
     method @androidx.compose.runtime.Stable public operator long rem(float operand);
     method @androidx.compose.runtime.Stable public operator long times(float operand);
     method @androidx.compose.runtime.Stable public operator long unaryMinus();
-    property @androidx.compose.runtime.Stable public final float x;
-    property @androidx.compose.runtime.Stable public final float y;
+    property @androidx.compose.runtime.Stable public float x;
+    property @androidx.compose.runtime.Stable public float y;
     field public static final androidx.compose.ui.unit.Velocity.Companion Companion;
   }
 
   public static final class Velocity.Companion {
     method public long getZero();
-    property public final long Zero;
+    property @androidx.compose.runtime.Stable public long Zero;
   }
 
   public final class VelocityKt {

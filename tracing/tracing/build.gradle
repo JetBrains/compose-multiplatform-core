@@ -14,31 +14,64 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
+import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
-    id("kotlin-android")
 }
 
-dependencies {
-    implementation("androidx.annotation:annotation:1.2.0")
-    androidTestImplementation(libs.kotlinStdlib)
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testRunner)
-    testImplementation(libs.junit)
+androidXMultiplatform {
+    androidLibrary {
+        namespace = "androidx.tracing"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+    }
+
+    defaultPlatform(PlatformIdentifier.ANDROID)
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                api(libs.kotlinStdlib)
+            }
+        }
+
+        androidMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation("androidx.annotation:annotation:1.8.1")
+            }
+        }
+
+        androidInstrumentedTest {
+            dependencies {
+                implementation(libs.testExtJunit)
+                implementation(libs.testCore)
+                implementation(libs.testRunner)
+                implementation(libs.junit)
+            }
+        }
+    }
 }
 
 androidx {
     name = "Tracing"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Android Tracing"
-    metalavaK2UastEnabled = true
-}
-
-android {
-    namespace "androidx.tracing"
+    legacyDisableKotlinStrictApiMode = true
+    deviceTests {
+        enableAlsoRunningOnPhysicalDevices = true
+    }
 }

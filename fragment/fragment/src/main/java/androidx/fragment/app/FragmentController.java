@@ -29,12 +29,13 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.collection.SimpleArrayMap;
 import androidx.core.view.MenuHost;
 import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.loader.app.LoaderManager;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -53,8 +54,8 @@ public class FragmentController {
     /**
      * Returns a {@link FragmentController}.
      */
-    @NonNull
-    public static FragmentController createController(@NonNull FragmentHostCallback<?> callbacks) {
+    public static @NonNull FragmentController createController(
+            @NonNull FragmentHostCallback<?> callbacks) {
         return new FragmentController(checkNotNull(callbacks, "callbacks == null"));
     }
 
@@ -65,9 +66,8 @@ public class FragmentController {
     /**
      * Returns a {@link FragmentManager} for this controller.
      */
-    @NonNull
-    public FragmentManager getSupportFragmentManager() {
-        return mHost.mFragmentManager;
+    public @NonNull FragmentManager getSupportFragmentManager() {
+        return mHost.getFragmentManager();
     }
 
     /**
@@ -88,25 +88,23 @@ public class FragmentController {
     /**
      * Returns a fragment with the given identifier.
      */
-    @Nullable
-    public Fragment findFragmentByWho(@NonNull String who) {
-        return mHost.mFragmentManager.findFragmentByWho(who);
+    public @Nullable Fragment findFragmentByWho(@NonNull String who) {
+        return mHost.getFragmentManager().findFragmentByWho(who);
     }
 
     /**
      * Returns the number of active fragments.
      */
     public int getActiveFragmentsCount() {
-        return mHost.mFragmentManager.getActiveFragmentCount();
+        return mHost.getFragmentManager().getActiveFragmentCount();
     }
 
     /**
      * Returns the list of active fragments.
      */
-    @NonNull
-    public List<Fragment> getActiveFragments(@SuppressLint("UnknownNullness")
+    public @NonNull List<Fragment> getActiveFragments(@SuppressLint("UnknownNullness")
             List<Fragment> actives) {
-        return mHost.mFragmentManager.getActiveFragments();
+        return mHost.getFragmentManager().getActiveFragments();
     }
 
     /**
@@ -114,7 +112,7 @@ public class FragmentController {
      * attached before the FragmentManager can be used to manage Fragments.
      */
     public void attachHost(@Nullable Fragment parent) {
-        mHost.mFragmentManager.attachController(
+        mHost.getFragmentManager().attachController(
                 mHost, mHost /*container*/, parent);
     }
 
@@ -129,10 +127,9 @@ public class FragmentController {
      *
      * @return view the newly created view
      */
-    @Nullable
-    public View onCreateView(@Nullable View parent, @NonNull String name, @NonNull Context context,
-            @NonNull AttributeSet attrs) {
-        return mHost.mFragmentManager.getLayoutInflaterFactory()
+    public @Nullable View onCreateView(@Nullable View parent, @NonNull String name,
+            @NonNull Context context, @NonNull AttributeSet attrs) {
+        return mHost.getFragmentManager().getLayoutInflaterFactory()
                 .onCreateView(parent, name, context, attrs);
     }
 
@@ -140,7 +137,7 @@ public class FragmentController {
      * Marks the fragment state as unsaved. This allows for "state loss" detection.
      */
     public void noteStateNotSaved() {
-        mHost.mFragmentManager.noteStateNotSaved();
+        mHost.getFragmentManager().noteStateNotSaved();
     }
 
     /**
@@ -154,9 +151,8 @@ public class FragmentController {
      */
     @SuppressWarnings("deprecation")
     @Deprecated
-    @Nullable
-    public Parcelable saveAllState() {
-        return mHost.mFragmentManager.saveAllState();
+    public @Nullable Parcelable saveAllState() {
+        return mHost.getFragmentManager().saveAllState();
     }
 
     /**
@@ -171,7 +167,7 @@ public class FragmentController {
     @Deprecated
     public void restoreAllState(@Nullable Parcelable state,
             @Nullable List<Fragment> nonConfigList) {
-        mHost.mFragmentManager.restoreAllState(state,
+        mHost.getFragmentManager().restoreAllState(state,
                 new FragmentManagerNonConfig(nonConfigList, null, null));
     }
 
@@ -187,7 +183,7 @@ public class FragmentController {
     @Deprecated
     public void restoreAllState(@Nullable Parcelable state,
             @Nullable FragmentManagerNonConfig nonConfig) {
-        mHost.mFragmentManager.restoreAllState(state, nonConfig);
+        mHost.getFragmentManager().restoreAllState(state, nonConfig);
     }
 
     /**
@@ -207,7 +203,7 @@ public class FragmentController {
                     + "ViewModelStoreOwner to call restoreSaveState(). Call restoreAllState() "
                     + " if you're still using retainNestedNonConfig().");
         }
-        mHost.mFragmentManager.restoreSaveState(state);
+        mHost.getFragmentManager().restoreSaveState(state);
     }
 
     /**
@@ -219,9 +215,8 @@ public class FragmentController {
      */
     @SuppressWarnings("deprecation")
     @Deprecated
-    @Nullable
-    public List<Fragment> retainNonConfig() {
-        FragmentManagerNonConfig nonconf = mHost.mFragmentManager.retainNonConfig();
+    public @Nullable List<Fragment> retainNonConfig() {
+        FragmentManagerNonConfig nonconf = mHost.getFragmentManager().retainNonConfig();
         return nonconf != null && nonconf.getFragments() != null
                 ? new ArrayList<>(nonconf.getFragments())
                 : null;
@@ -236,9 +231,8 @@ public class FragmentController {
      */
     @SuppressWarnings("deprecation")
     @Deprecated
-    @Nullable
-    public FragmentManagerNonConfig retainNestedNonConfig() {
-        return mHost.mFragmentManager.retainNonConfig();
+    public @Nullable FragmentManagerNonConfig retainNestedNonConfig() {
+        return mHost.getFragmentManager().retainNonConfig();
     }
 
     /**
@@ -249,7 +243,7 @@ public class FragmentController {
      * @see Fragment#onCreate(Bundle)
      */
     public void dispatchCreate() {
-        mHost.mFragmentManager.dispatchCreate();
+        mHost.getFragmentManager().dispatchCreate();
     }
 
     /**
@@ -260,7 +254,7 @@ public class FragmentController {
      * @see Fragment#onActivityCreated(Bundle)
      */
     public void dispatchActivityCreated() {
-        mHost.mFragmentManager.dispatchActivityCreated();
+        mHost.getFragmentManager().dispatchActivityCreated();
     }
 
     /**
@@ -271,7 +265,7 @@ public class FragmentController {
      * @see Fragment#onStart()
      */
     public void dispatchStart() {
-        mHost.mFragmentManager.dispatchStart();
+        mHost.getFragmentManager().dispatchStart();
     }
 
     /**
@@ -282,7 +276,7 @@ public class FragmentController {
      * @see Fragment#onResume()
      */
     public void dispatchResume() {
-        mHost.mFragmentManager.dispatchResume();
+        mHost.getFragmentManager().dispatchResume();
     }
 
     /**
@@ -293,7 +287,7 @@ public class FragmentController {
      * @see Fragment#onPause()
      */
     public void dispatchPause() {
-        mHost.mFragmentManager.dispatchPause();
+        mHost.getFragmentManager().dispatchPause();
     }
 
     /**
@@ -304,7 +298,7 @@ public class FragmentController {
      * @see Fragment#onStop()
      */
     public void dispatchStop() {
-        mHost.mFragmentManager.dispatchStop();
+        mHost.getFragmentManager().dispatchStop();
     }
 
     /**
@@ -322,7 +316,7 @@ public class FragmentController {
      * @see Fragment#onDestroyView()
      */
     public void dispatchDestroyView() {
-        mHost.mFragmentManager.dispatchDestroyView();
+        mHost.getFragmentManager().dispatchDestroyView();
     }
 
     /**
@@ -343,7 +337,7 @@ public class FragmentController {
      * @see Fragment#onDestroy()
      */
     public void dispatchDestroy() {
-        mHost.mFragmentManager.dispatchDestroy();
+        mHost.getFragmentManager().dispatchDestroy();
     }
 
     /**
@@ -358,7 +352,7 @@ public class FragmentController {
      */
     @Deprecated
     public void dispatchMultiWindowModeChanged(boolean isInMultiWindowMode) {
-        mHost.mFragmentManager.dispatchMultiWindowModeChanged(isInMultiWindowMode, true);
+        mHost.getFragmentManager().dispatchMultiWindowModeChanged(isInMultiWindowMode, true);
     }
 
     /**
@@ -373,7 +367,8 @@ public class FragmentController {
      */
     @Deprecated
     public void dispatchPictureInPictureModeChanged(boolean isInPictureInPictureMode) {
-        mHost.mFragmentManager.dispatchPictureInPictureModeChanged(isInPictureInPictureMode, true);
+        mHost.getFragmentManager().dispatchPictureInPictureModeChanged(
+                isInPictureInPictureMode, true);
     }
 
     /**
@@ -388,7 +383,7 @@ public class FragmentController {
      */
     @Deprecated
     public void dispatchConfigurationChanged(@NonNull Configuration newConfig) {
-        mHost.mFragmentManager.dispatchConfigurationChanged(newConfig, true);
+        mHost.getFragmentManager().dispatchConfigurationChanged(newConfig, true);
     }
 
     /**
@@ -404,7 +399,7 @@ public class FragmentController {
      */
     @Deprecated
     public void dispatchLowMemory() {
-        mHost.mFragmentManager.dispatchLowMemory(true);
+        mHost.getFragmentManager().dispatchLowMemory(true);
     }
 
     /**
@@ -420,7 +415,7 @@ public class FragmentController {
      */
     @Deprecated
     public boolean dispatchCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        return mHost.mFragmentManager.dispatchCreateOptionsMenu(menu, inflater);
+        return mHost.getFragmentManager().dispatchCreateOptionsMenu(menu, inflater);
     }
 
     /**
@@ -436,7 +431,7 @@ public class FragmentController {
      */
     @Deprecated
     public boolean dispatchPrepareOptionsMenu(@NonNull Menu menu) {
-        return mHost.mFragmentManager.dispatchPrepareOptionsMenu(menu);
+        return mHost.getFragmentManager().dispatchPrepareOptionsMenu(menu);
     }
 
     /**
@@ -453,7 +448,7 @@ public class FragmentController {
      */
     @Deprecated
     public boolean dispatchOptionsItemSelected(@NonNull MenuItem item) {
-        return mHost.mFragmentManager.dispatchOptionsItemSelected(item);
+        return mHost.getFragmentManager().dispatchOptionsItemSelected(item);
     }
 
     /**
@@ -466,7 +461,7 @@ public class FragmentController {
      * @see Fragment#onContextItemSelected(MenuItem)
      */
     public boolean dispatchContextItemSelected(@NonNull MenuItem item) {
-        return mHost.mFragmentManager.dispatchContextItemSelected(item);
+        return mHost.getFragmentManager().dispatchContextItemSelected(item);
     }
 
     /**
@@ -481,7 +476,7 @@ public class FragmentController {
      */
     @Deprecated
     public void dispatchOptionsMenuClosed(@NonNull Menu menu) {
-        mHost.mFragmentManager.dispatchOptionsMenuClosed(menu);
+        mHost.getFragmentManager().dispatchOptionsMenuClosed(menu);
     }
 
     /**
@@ -492,7 +487,7 @@ public class FragmentController {
      * @return {@code true} if queued actions were performed
      */
     public boolean execPendingActions() {
-        return mHost.mFragmentManager.execPendingActions(true);
+        return mHost.getFragmentManager().execPendingActions(true);
     }
 
     /**
@@ -551,8 +546,7 @@ public class FragmentController {
      * @deprecated Loaders are managed separately from FragmentController
      */
     @Deprecated
-    @Nullable
-    public SimpleArrayMap<String, LoaderManager> retainLoaderNonConfig() {
+    public @Nullable SimpleArrayMap<String, LoaderManager> retainLoaderNonConfig() {
         return null;
     }
 
@@ -576,6 +570,6 @@ public class FragmentController {
      */
     @Deprecated
     public void dumpLoaders(@NonNull String prefix, @Nullable FileDescriptor fd,
-            @NonNull PrintWriter writer, @Nullable String[] args) {
+            @NonNull PrintWriter writer, String @Nullable [] args) {
     }
 }

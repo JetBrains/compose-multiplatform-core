@@ -18,21 +18,24 @@
 
 package androidx.build.lint
 
+import com.android.tools.lint.checks.infrastructure.TestMode
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
-class IdeaSuppressionDetectorTest : AbstractLintDetectorTest(
-    useDetector = IdeaSuppressionDetector(),
-    useIssues = listOf(IdeaSuppressionDetector.ISSUE),
-) {
+class IdeaSuppressionDetectorTest :
+    AbstractLintDetectorTest(
+        useDetector = IdeaSuppressionDetector(),
+        useIssues = listOf(IdeaSuppressionDetector.ISSUE),
+    ) {
 
     @Test
     fun `Detection of IDEA-specific suppression in Java sources`() {
-        val input = java(
-            "src/androidx/IdeaSuppressionJava.java",
-            """
+        val input =
+            java(
+                "src/androidx/IdeaSuppressionJava.java",
+                """
                 public class IdeaSuppressionJava {
 
                     // Call to a deprecated method with an inline suppression.
@@ -48,26 +51,33 @@ class IdeaSuppressionDetectorTest : AbstractLintDetectorTest(
 
                     public void notDeprecatedMethod() {}
                 }
-            """.trimIndent()
-        )
+            """
+                    .trimIndent()
+            )
 
-        /* ktlint-disable max-line-length */
-        val expected = """
+        val expected =
+            """
 src/androidx/IdeaSuppressionJava.java:5: Error: Uses IntelliJ-specific suppression, should use @SuppressWarnings("deprecation") [IdeaSuppression]
         //noinspection deprecation
         ~~~~~~~~~~~~~~~~~~~~~~~~~~
 1 errors, 0 warnings
-        """.trimIndent()
-        /* ktlint-enable max-line-length */
+        """
+                .trimIndent()
 
-        check(input).expect(expected)
+        lint()
+            .files(*stubs, input)
+            .allowDuplicates()
+            .skipTestModes(TestMode.SUPPRESSIBLE)
+            .run()
+            .expect(expected)
     }
 
     @Test
     fun `Detection of IDEA-specific suppression in Kotlin sources`() {
-        val input = kotlin(
-            "src/androidx/IdeaSuppressionKotlin.kt",
-            """
+        val input =
+            kotlin(
+                "src/androidx/IdeaSuppressionKotlin.kt",
+                """
                 class IdeaSuppressionKotlin {
 
                     // Call to a deprecated method with an inline suppression.
@@ -83,18 +93,24 @@ src/androidx/IdeaSuppressionJava.java:5: Error: Uses IntelliJ-specific suppressi
 
                     fun notDeprecatedMethod() {}
                 }
-            """.trimIndent()
-        )
+            """
+                    .trimIndent()
+            )
 
-        /* ktlint-disable max-line-length */
-        val expected = """
+        val expected =
+            """
 src/androidx/IdeaSuppressionKotlin.kt:5: Error: Uses IntelliJ-specific suppression, should use @SuppressWarnings("deprecation") [IdeaSuppression]
         //noinspection deprecation
         ~~~~~~~~~~~~~~~~~~~~~~~~~~
 1 errors, 0 warnings
-        """.trimIndent()
-        /* ktlint-enable max-line-length */
+        """
+                .trimIndent()
 
-        check(input).expect(expected)
+        lint()
+            .files(*stubs, input)
+            .allowDuplicates()
+            .skipTestModes(TestMode.SUPPRESSIBLE)
+            .run()
+            .expect(expected)
     }
 }

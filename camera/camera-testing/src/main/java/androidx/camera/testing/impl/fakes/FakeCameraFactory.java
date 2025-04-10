@@ -16,9 +16,6 @@
 
 package androidx.camera.testing.impl.fakes;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.core.CameraSelector;
@@ -28,6 +25,9 @@ import androidx.camera.core.impl.CameraFactory;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.core.util.Pair;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,23 +43,18 @@ import java.util.concurrent.Callable;
  * A {@link CameraFactory} implementation that contains and produces fake cameras.
  *
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @RestrictTo(Scope.LIBRARY_GROUP)
 public final class FakeCameraFactory implements CameraFactory {
 
     private static final String TAG = "FakeCameraFactory";
 
-    @Nullable
-    private Set<String> mCachedCameraIds;
+    private @Nullable Set<String> mCachedCameraIds;
 
-    @Nullable
-    private final CameraSelector mAvailableCamerasSelector;
+    private final @Nullable CameraSelector mAvailableCamerasSelector;
 
-    @Nullable
-    private Object mCameraManager = null;
+    private @Nullable Object mCameraManager = null;
 
-    @NonNull
-    private CameraCoordinator mCameraCoordinator = new FakeCameraCoordinator();
+    private @NonNull CameraCoordinator mCameraCoordinator = new FakeCameraCoordinator();
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     final Map<String, Pair<Integer, Callable<CameraInternal>>> mCameraMap = new HashMap<>();
@@ -73,8 +68,7 @@ public final class FakeCameraFactory implements CameraFactory {
     }
 
     @Override
-    @NonNull
-    public CameraInternal getCamera(@NonNull String cameraId) {
+    public @NonNull CameraInternal getCamera(@NonNull String cameraId) {
         Pair<Integer, Callable<CameraInternal>> cameraPair = mCameraMap.get(cameraId);
         if (cameraPair != null) {
             try {
@@ -133,8 +127,7 @@ public final class FakeCameraFactory implements CameraFactory {
     }
 
     @Override
-    @NonNull
-    public Set<String> getAvailableCameraIds() {
+    public @NonNull Set<String> getAvailableCameraIds() {
         // Lazily cache the set of all camera ids. This cache will be invalidated anytime a new
         // camera is added.
         if (mCachedCameraIds == null) {
@@ -148,8 +141,7 @@ public final class FakeCameraFactory implements CameraFactory {
     }
 
     /** Returns a list of camera ids filtered with {@link #mAvailableCamerasSelector}. */
-    @NonNull
-    private List<String> filteredCameraIds() {
+    private @NonNull List<String> filteredCameraIds() {
         Preconditions.checkNotNull(mAvailableCamerasSelector);
         final List<String> filteredCameraIds = new ArrayList<>();
         for (Map.Entry<String, Pair<Integer, Callable<CameraInternal>>> entry :
@@ -173,9 +165,8 @@ public final class FakeCameraFactory implements CameraFactory {
         return filteredCameraIds;
     }
 
-    @NonNull
     @Override
-    public CameraCoordinator getCameraCoordinator() {
+    public @NonNull CameraCoordinator getCameraCoordinator() {
         return mCameraCoordinator;
     }
 
@@ -187,9 +178,8 @@ public final class FakeCameraFactory implements CameraFactory {
         mCameraManager = cameraManager;
     }
 
-    @Nullable
     @Override
-    public Object getCameraManager() {
+    public @Nullable Object getCameraManager() {
         return mCameraManager;
     }
 }

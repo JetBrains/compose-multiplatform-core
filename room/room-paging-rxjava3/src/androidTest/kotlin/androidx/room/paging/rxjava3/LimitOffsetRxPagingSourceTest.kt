@@ -67,9 +67,7 @@ private const val tableName: String = "TestItem"
 @MediumTest
 class LimitOffsetRxPagingSourceTest {
 
-    @JvmField
-    @Rule
-    val countingTaskExecutorRule = CountingTaskExecutorRule()
+    @JvmField @Rule val countingTaskExecutorRule = CountingTaskExecutorRule()
 
     @After
     fun tearDown() {
@@ -87,40 +85,34 @@ class LimitOffsetRxPagingSourceTest {
 
     @Test
     fun initialLoad() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
         val single = pagingSource.refresh()
         val result = single.await() as LoadResult.Page
-        assertThat(result.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(0, 15)
-        )
+        assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(0, 15))
     }
 
     @Test
     fun simpleAppend() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
         val single = pagingSource.append(key = 15)
         val result = single.await() as LoadResult.Page
-        assertThat(result.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(15, 20)
-        )
+        assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(15, 20))
     }
 
     @Test
     fun simplePrepend() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
         val single = pagingSource.prepend(key = 20)
         val result = single.await() as LoadResult.Page
-        assertThat(result.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(15, 20)
-        )
+        assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(15, 20))
     }
 
     @Test
     fun initialLoad_invalidationTracker_isRegistered() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
         val single = pagingSource.refresh()
         // run loadSingle to register InvalidationTracker
@@ -131,7 +123,7 @@ class LimitOffsetRxPagingSourceTest {
 
     @Test
     fun nonInitialLoad_invalidationTracker_isRegistered() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
         val single = pagingSource.prepend(key = 20)
         // run loadSingle to register InvalidationTracker
@@ -142,7 +134,7 @@ class LimitOffsetRxPagingSourceTest {
 
     @Test
     fun refresh_singleImmediatelyReturn() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
         val single = pagingSource.refresh()
 
@@ -153,9 +145,7 @@ class LimitOffsetRxPagingSourceTest {
         countingTaskExecutorRule.drainTasks(500, TimeUnit.MILLISECONDS)
 
         val result = observer.values().first() as LoadResult.Page
-        assertThat(result.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(0, 15)
-        )
+        assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(0, 15))
         observer.assertComplete()
         observer.assertNoErrors()
         observer.dispose()
@@ -163,7 +153,7 @@ class LimitOffsetRxPagingSourceTest {
 
     @Test
     fun append_singleImmediatelyReturn() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
         val single = pagingSource.append(key = 10)
 
@@ -174,9 +164,7 @@ class LimitOffsetRxPagingSourceTest {
         countingTaskExecutorRule.drainTasks(500, TimeUnit.MILLISECONDS)
 
         val result = observer.values().first() as LoadResult.Page
-        assertThat(result.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(10, 15)
-        )
+        assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(10, 15))
         observer.assertComplete()
         observer.assertNoErrors()
         observer.dispose()
@@ -184,7 +172,7 @@ class LimitOffsetRxPagingSourceTest {
 
     @Test
     fun prepend_singleImmediatelyReturn() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
         val single = pagingSource.prepend(key = 15)
 
@@ -195,9 +183,7 @@ class LimitOffsetRxPagingSourceTest {
         countingTaskExecutorRule.drainTasks(500, TimeUnit.MILLISECONDS)
 
         val result = observer.values().first() as LoadResult.Page
-        assertThat(result.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(10, 15)
-        )
+        assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(10, 15))
         observer.assertComplete()
         observer.assertNoErrors()
         observer.dispose()
@@ -205,7 +191,7 @@ class LimitOffsetRxPagingSourceTest {
 
     @Test
     fun dbUpdate_invalidatesPagingSource() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
         val single = pagingSource.append(key = 50)
 
@@ -218,7 +204,7 @@ class LimitOffsetRxPagingSourceTest {
         assertFalse(pagingSource.invalid)
 
         // this should cause refreshVersionsSync to invalidate pagingSource
-        db.dao.addItem(TestItem(113))
+        db.getDao().addItem(TestItem(113))
         countingTaskExecutorRule.drainTasks(500, TimeUnit.MILLISECONDS)
 
         assertTrue(pagingSource.invalid)
@@ -230,7 +216,7 @@ class LimitOffsetRxPagingSourceTest {
 
     @Test
     fun append_returnsInvalid() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
         val single = pagingSource.append(key = 50)
 
@@ -248,7 +234,7 @@ class LimitOffsetRxPagingSourceTest {
 
     @Test
     fun prepend_returnsInvalid() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
         val single = pagingSource.prepend(key = 50)
 
@@ -268,82 +254,68 @@ class LimitOffsetRxPagingSourceTest {
 
     @Test
     fun refresh_consecutively() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
         val single = pagingSource.refresh()
         val result = single.await() as LoadResult.Page
-        assertThat(result.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(0, 15)
-        )
+        assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(0, 15))
 
         val pagingSource2 = LimitOffsetRxPagingSourceImpl(db)
         val single2 = pagingSource2.refresh()
         val result2 = single2.await() as LoadResult.Page
-        assertThat(result2.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(0, 15)
-        )
+        assertThat(result2.data).containsExactlyElementsIn(ITEMS_LIST.subList(0, 15))
     }
 
     @Test
     fun append_consecutively() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
 
         val single = pagingSource.append(key = 15)
         val result = single.await() as LoadResult.Page
-        assertThat(result.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(15, 20)
-        )
+        assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(15, 20))
 
         val single2 = pagingSource.append(key = 40)
         val result2 = single2.await() as LoadResult.Page
-        assertThat(result2.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(40, 45)
-        )
+        assertThat(result2.data).containsExactlyElementsIn(ITEMS_LIST.subList(40, 45))
 
         val single3 = pagingSource.append(key = 45) // sequential append
         val result3 = single3.await() as LoadResult.Page
-        assertThat(result3.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(45, 50)
-        )
+        assertThat(result3.data).containsExactlyElementsIn(ITEMS_LIST.subList(45, 50))
     }
 
     @Test
     fun prepend_consecutively() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
 
         val single = pagingSource.prepend(key = 15)
         val result = single.await() as LoadResult.Page
-        assertThat(result.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(10, 15)
-        )
+        assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(10, 15))
 
         val single2 = pagingSource.prepend(key = 40)
         val result2 = single2.await() as LoadResult.Page
-        assertThat(result2.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(35, 40)
-        )
+        assertThat(result2.data).containsExactlyElementsIn(ITEMS_LIST.subList(35, 40))
 
         val single3 = pagingSource.prepend(key = 45) // sequential prepend
         val result3 = single3.await() as LoadResult.Page
-        assertThat(result3.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(40, 45)
-        )
+        assertThat(result3.data).containsExactlyElementsIn(ITEMS_LIST.subList(40, 45))
     }
 
     @Test
     fun refreshAgain_afterDispose() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
 
         var isDisposed = false
-        val single = pagingSource.refresh()
-            // dispose right after subscription
-            .doOnSubscribe { disposable -> disposable.dispose() }
-            .doOnDispose { isDisposed = true }
-            .doOnSuccess { assertWithMessage("The single should not succeed").fail() }
-            .doOnError { assertWithMessage("The single should not error out").fail() }
+        val single =
+            pagingSource
+                .refresh()
+                // dispose right after subscription
+                .doOnSubscribe { disposable -> disposable.dispose() }
+                .doOnDispose { isDisposed = true }
+                .doOnSuccess { assertWithMessage("The single should not succeed").fail() }
+                .doOnError { assertWithMessage("The single should not error out").fail() }
 
         assertFailsWith<AssertionError> { withTestTimeout(2) { single.await() } }
         assertTrue(isDisposed)
@@ -352,23 +324,23 @@ class LimitOffsetRxPagingSourceTest {
         // using same paging source
         val single2 = pagingSource.refresh()
         val result2 = single2.await() as LoadResult.Page
-        assertThat(result2.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(0, 15)
-        )
+        assertThat(result2.data).containsExactlyElementsIn(ITEMS_LIST.subList(0, 15))
     }
 
     @Test
     fun appendAgain_afterDispose() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
 
         var isDisposed = false
-        val single = pagingSource.append(key = 15)
-            // dispose right after subscription
-            .doOnSubscribe { disposable -> disposable.dispose() }
-            .doOnDispose { isDisposed = true }
-            .doOnSuccess { assertWithMessage("The single should not succeed").fail() }
-            .doOnError { assertWithMessage("The single should not error out").fail() }
+        val single =
+            pagingSource
+                .append(key = 15)
+                // dispose right after subscription
+                .doOnSubscribe { disposable -> disposable.dispose() }
+                .doOnDispose { isDisposed = true }
+                .doOnSuccess { assertWithMessage("The single should not succeed").fail() }
+                .doOnError { assertWithMessage("The single should not error out").fail() }
 
         assertFailsWith<AssertionError> { withTestTimeout(2) { single.await() } }
         assertTrue(isDisposed)
@@ -377,23 +349,23 @@ class LimitOffsetRxPagingSourceTest {
         // try with same key same paging source
         val single2 = pagingSource.append(key = 15)
         val result2 = single2.await() as LoadResult.Page
-        assertThat(result2.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(15, 20)
-        )
+        assertThat(result2.data).containsExactlyElementsIn(ITEMS_LIST.subList(15, 20))
     }
 
     @Test
     fun prependAgain_afterDispose() = setupAndRun { db ->
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(db)
 
         var isDisposed = false
-        val single = pagingSource.prepend(key = 40)
-            // dispose right after subscription
-            .doOnSubscribe { disposable -> disposable.dispose() }
-            .doOnDispose { isDisposed = true }
-            .doOnSuccess { assertWithMessage("The single should not succeed").fail() }
-            .doOnError { assertWithMessage("The single should not error out").fail() }
+        val single =
+            pagingSource
+                .prepend(key = 40)
+                // dispose right after subscription
+                .doOnSubscribe { disposable -> disposable.dispose() }
+                .doOnDispose { isDisposed = true }
+                .doOnSuccess { assertWithMessage("The single should not succeed").fail() }
+                .doOnError { assertWithMessage("The single should not error out").fail() }
 
         assertFailsWith<AssertionError> { withTestTimeout(2) { single.await() } }
         assertTrue(isDisposed)
@@ -402,21 +374,21 @@ class LimitOffsetRxPagingSourceTest {
         // try with same key same paging source
         val single2 = pagingSource.prepend(key = 40)
         val result2 = single2.await() as LoadResult.Page
-        assertThat(result2.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(35, 40)
-        )
+        assertThat(result2.data).containsExactlyElementsIn(ITEMS_LIST.subList(35, 40))
     }
 
     @Test
     fun assert_usesQueryExecutor() {
         val queryExecutor = TestExecutor()
-        val testDb = Room.inMemoryDatabaseBuilder(
-            ApplicationProvider.getApplicationContext(),
-            LimitOffsetTestDb::class.java
-        ).setQueryExecutor(queryExecutor)
-            .build()
+        val testDb =
+            Room.inMemoryDatabaseBuilder(
+                    ApplicationProvider.getApplicationContext(),
+                    LimitOffsetTestDb::class.java
+                )
+                .setQueryExecutor(queryExecutor)
+                .build()
 
-        testDb.dao.addAllItems(ITEMS_LIST)
+        testDb.getDao().addAllItems(ITEMS_LIST)
         queryExecutor.executeAll() // add items first
 
         runTest {
@@ -428,9 +400,7 @@ class LimitOffsetRxPagingSourceTest {
             // subscribe to single
             launch {
                 val result = single.await() as LoadResult.Page
-                assertThat(result.data).containsExactlyElementsIn(
-                    ITEMS_LIST.subList(15, 20)
-                )
+                assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(15, 20))
                 resultReceived = true
             }
 
@@ -449,21 +419,25 @@ class LimitOffsetRxPagingSourceTest {
 
     @Test
     fun cancelledCoroutine_disposesSingle() {
-        val testDb = Room.inMemoryDatabaseBuilder(
-            ApplicationProvider.getApplicationContext(),
-            LimitOffsetTestDb::class.java
-        ).build()
+        val testDb =
+            Room.inMemoryDatabaseBuilder(
+                    ApplicationProvider.getApplicationContext(),
+                    LimitOffsetTestDb::class.java
+                )
+                .build()
 
-        testDb.dao.addAllItems(ITEMS_LIST)
+        testDb.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetRxPagingSourceImpl(testDb)
 
         runBlocking {
             var isDisposed = false
-            val single = pagingSource.refresh()
-                .doOnSubscribe { Thread.sleep(300) } // subscribe but delay the load
-                .doOnSuccess { assertWithMessage("The single should not succeed").fail() }
-                .doOnError { assertWithMessage("The single should not error out").fail() }
-                .doOnDispose { isDisposed = true }
+            val single =
+                pagingSource
+                    .refresh()
+                    .doOnSubscribe { Thread.sleep(300) } // subscribe but delay the load
+                    .doOnSuccess { assertWithMessage("The single should not succeed").fail() }
+                    .doOnError { assertWithMessage("The single should not error out").fail() }
+                    .doOnDispose { isDisposed = true }
 
             val job = launch { single.await() }
             job.start()
@@ -480,59 +454,62 @@ class LimitOffsetRxPagingSourceTest {
 
     @Test
     fun refresh_secondaryConstructor() = setupAndRun { db ->
-        val pagingSource = object : LimitOffsetRxPagingSource<TestItem>(
-            db = db,
-            supportSQLiteQuery = SimpleSQLiteQuery("SELECT * FROM $tableName ORDER BY id ASC")
-        ) {
-            override fun convertRows(cursor: Cursor): List<TestItem> {
-                return convertRowsHelper(cursor)
+        val pagingSource =
+            object :
+                LimitOffsetRxPagingSource<TestItem>(
+                    db = db,
+                    supportSQLiteQuery =
+                        SimpleSQLiteQuery("SELECT * FROM $tableName ORDER BY id ASC")
+                ) {
+                override fun convertRows(cursor: Cursor): List<TestItem> {
+                    return convertRowsHelper(cursor)
+                }
             }
-        }
 
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val single = pagingSource.refresh()
         val result = single.await() as LoadResult.Page
-        assertThat(result.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(0, 15)
-        )
+        assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(0, 15))
     }
 
     @Test
     fun append_secondaryConstructor() = setupAndRun { db ->
-        val pagingSource = object : LimitOffsetRxPagingSource<TestItem>(
-            db = db,
-            supportSQLiteQuery = SimpleSQLiteQuery("SELECT * FROM $tableName ORDER BY id ASC")
-        ) {
-            override fun convertRows(cursor: Cursor): List<TestItem> {
-                return convertRowsHelper(cursor)
+        val pagingSource =
+            object :
+                LimitOffsetRxPagingSource<TestItem>(
+                    db = db,
+                    supportSQLiteQuery =
+                        SimpleSQLiteQuery("SELECT * FROM $tableName ORDER BY id ASC")
+                ) {
+                override fun convertRows(cursor: Cursor): List<TestItem> {
+                    return convertRowsHelper(cursor)
+                }
             }
-        }
 
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val single = pagingSource.append(key = 15)
         val result = single.await() as LoadResult.Page
-        assertThat(result.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(15, 20)
-        )
+        assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(15, 20))
     }
 
     @Test
     fun prepend_secondaryConstructor() = setupAndRun { db ->
-        val pagingSource = object : LimitOffsetRxPagingSource<TestItem>(
-            db = db,
-            supportSQLiteQuery = SimpleSQLiteQuery("SELECT * FROM $tableName ORDER BY id ASC")
-        ) {
-            override fun convertRows(cursor: Cursor): List<TestItem> {
-                return convertRowsHelper(cursor)
+        val pagingSource =
+            object :
+                LimitOffsetRxPagingSource<TestItem>(
+                    db = db,
+                    supportSQLiteQuery =
+                        SimpleSQLiteQuery("SELECT * FROM $tableName ORDER BY id ASC")
+                ) {
+                override fun convertRows(cursor: Cursor): List<TestItem> {
+                    return convertRowsHelper(cursor)
+                }
             }
-        }
 
-        db.dao.addAllItems(ITEMS_LIST)
+        db.getDao().addAllItems(ITEMS_LIST)
         val single = pagingSource.prepend(key = 15)
         val result = single.await() as LoadResult.Page
-        assertThat(result.data).containsExactlyElementsIn(
-            ITEMS_LIST.subList(10, 15)
-        )
+        assertThat(result.data).containsExactlyElementsIn(ITEMS_LIST.subList(10, 15))
     }
 
     @Test
@@ -541,17 +518,15 @@ class LimitOffsetRxPagingSourceTest {
         assertTrue(pagingSource.jumpingSupported)
     }
 
-    private fun setupAndRun(
-        test: suspend (LimitOffsetTestDb) -> Unit
-    ) {
-        val db = Room.inMemoryDatabaseBuilder(
-            ApplicationProvider.getApplicationContext(),
-            LimitOffsetTestDb::class.java
-        ).build()
+    private fun setupAndRun(test: suspend (LimitOffsetTestDb) -> Unit) {
+        val db =
+            Room.inMemoryDatabaseBuilder(
+                    ApplicationProvider.getApplicationContext(),
+                    LimitOffsetTestDb::class.java
+                )
+                .build()
 
-        runTest {
-            test(db)
-        }
+        runTest { test(db) }
         db.close()
     }
 }
@@ -559,11 +534,12 @@ class LimitOffsetRxPagingSourceTest {
 private class LimitOffsetRxPagingSourceImpl(
     db: RoomDatabase,
     query: String = "SELECT * FROM $tableName ORDER BY id ASC",
-) : LimitOffsetRxPagingSource<TestItem>(
-    db = db,
-    sourceQuery = RoomSQLiteQuery.acquire(query, 0),
-    tables = arrayOf(tableName)
-) {
+) :
+    LimitOffsetRxPagingSource<TestItem>(
+        db = db,
+        sourceQuery = RoomSQLiteQuery.acquire(query, 0),
+        tables = arrayOf(tableName)
+    ) {
     override fun convertRows(cursor: Cursor): List<TestItem> = convertRowsHelper(cursor)
 }
 
@@ -612,11 +588,12 @@ private fun LimitOffsetRxPagingSource<TestItem>.prepend(
     )
 }
 
-private val CONFIG = PagingConfig(
-    pageSize = 5,
-    enablePlaceholders = true,
-    initialLoadSize = 15,
-)
+private val CONFIG =
+    PagingConfig(
+        pageSize = 5,
+        enablePlaceholders = true,
+        initialLoadSize = 15,
+    )
 
 private val ITEMS_LIST = createItemsForDb(0, 100)
 
@@ -662,33 +639,25 @@ private fun createLoadParam(
 
 @Suppress("UNCHECKED_CAST")
 private fun ThreadSafeInvalidationObserver.privateRegisteredState(): AtomicBoolean {
-    return ThreadSafeInvalidationObserver::class.java
-        .getDeclaredField("registered")
-        .let {
-            it.isAccessible = true
-            it.get(this)
-        } as AtomicBoolean
+    return ThreadSafeInvalidationObserver::class.java.getDeclaredField("registered").let {
+        it.isAccessible = true
+        it.get(this)
+    } as AtomicBoolean
 }
 
 @Database(entities = [TestItem::class], version = 1, exportSchema = false)
 abstract class LimitOffsetTestDb : RoomDatabase() {
-    abstract val dao: TestItemDao
+    abstract fun getDao(): TestItemDao
 }
 
 @Entity(tableName = "TestItem")
-data class TestItem(
-    @PrimaryKey val id: Int,
-    val value: String = "item $id"
-)
+data class TestItem(@PrimaryKey val id: Int, val value: String = "item $id")
 
 @Dao
 interface TestItemDao {
-    @Insert
-    fun addAllItems(testItems: List<TestItem>)
+    @Insert fun addAllItems(testItems: List<TestItem>)
 
-    @Insert
-    fun addItem(testItem: TestItem)
+    @Insert fun addItem(testItem: TestItem)
 
-    @Query("SELECT COUNT(*) from $tableName")
-    fun itemCount(): Int
+    @Query("SELECT COUNT(*) from $tableName") fun itemCount(): Int
 }

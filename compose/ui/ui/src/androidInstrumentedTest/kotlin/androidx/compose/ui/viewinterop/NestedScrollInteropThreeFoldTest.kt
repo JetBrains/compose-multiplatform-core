@@ -18,9 +18,7 @@ package androidx.compose.ui.viewinterop
 
 import android.os.Build
 import androidx.activity.ComponentActivity
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -36,6 +34,7 @@ import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -43,12 +42,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
-@RequiresApi(Build.VERSION_CODES.M)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
 @RunWith(AndroidJUnit4::class)
 class NestedScrollInteropThreeFoldTest {
 
-    @get:Rule
-    val rule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     private val nestedScrollParentView by lazy {
         rule.activity.findViewById<TestNestedScrollParentView>(R.id.main_layout)
@@ -70,21 +68,14 @@ class NestedScrollInteropThreeFoldTest {
     fun nestedScrollInteropIsOff_CVC_shouldNotPropagateCorrectly() {
         // arrange
         rule.setContent {
-            NestedScrollDeepNested(
-                modifier = Modifier.nestedScroll(connection),
-                enabled = false
-            )
+            NestedScrollDeepNested(modifier = Modifier.nestedScroll(connection), enabled = false)
         }
 
         // act
-        rule.onNodeWithTag(MainTestList).performTouchInput {
-            swipeUp()
-        }
+        rule.onNodeWithTag(MainTestList).performTouchInput { swipeUp() }
 
         // assert
-        rule.runOnIdle {
-            assertThat(connection.offeredFromChild).isEqualTo(Offset.Zero)
-        }
+        rule.runOnIdle { assertThat(connection.offeredFromChild).isEqualTo(Offset.Zero) }
     }
 
     @Test
@@ -98,35 +89,24 @@ class NestedScrollInteropThreeFoldTest {
         }
 
         // act
-        rule.onNodeWithTag(AndroidViewContainer).performTouchInput {
-            swipeUp()
-        }
+        rule.onNodeWithTag(AndroidViewContainer).performTouchInput { swipeUp() }
 
         // assert
-        rule.runOnIdle {
-            assertThat(connection.offeredFromChild).isEqualTo(Offset.Zero)
-        }
+        rule.runOnIdle { assertThat(connection.offeredFromChild).isEqualTo(Offset.Zero) }
     }
 
     @Test
     fun nestedScrollInteropIsOn_CVC_shouldPropagateCorrectly() {
         // arrange
         rule.setContent {
-            NestedScrollDeepNested(
-                modifier = Modifier.nestedScroll(connection),
-                enabled = true
-            )
+            NestedScrollDeepNested(modifier = Modifier.nestedScroll(connection), enabled = true)
         }
 
         // act
-        rule.onNodeWithTag(MainTestList).performTouchInput {
-            swipeUp()
-        }
+        rule.onNodeWithTag(MainTestList).performTouchInput { swipeUp() }
 
         // assert
-        rule.runOnIdle {
-            assertThat(connection.offeredFromChild).isNotEqualTo(Offset.Zero)
-        }
+        rule.runOnIdle { assertThat(connection.offeredFromChild).isNotEqualTo(Offset.Zero) }
     }
 
     @Test
@@ -140,14 +120,10 @@ class NestedScrollInteropThreeFoldTest {
         }
 
         // act
-        rule.onNodeWithTag(AndroidViewContainer).performTouchInput {
-            swipeUp()
-        }
+        rule.onNodeWithTag(AndroidViewContainer).performTouchInput { swipeUp() }
 
         // assert
-        rule.runOnIdle {
-            assertThat(connection.offeredFromChild).isNotEqualTo(Offset.Zero)
-        }
+        rule.runOnIdle { assertThat(connection.offeredFromChild).isNotEqualTo(Offset.Zero) }
     }
 
     @Test
@@ -162,9 +138,7 @@ class NestedScrollInteropThreeFoldTest {
         }
 
         // act
-        rule.onNodeWithTag(MainTestList).performTouchInput {
-            swipeUp()
-        }
+        rule.onNodeWithTag(MainTestList).performTouchInput { swipeUp() }
 
         // assert
         rule.runOnIdle {
@@ -184,15 +158,12 @@ class NestedScrollInteropThreeFoldTest {
         }
 
         // act
-        rule.onNodeWithTag(AndroidViewContainer).performTouchInput {
-            swipeUp()
-        }
+        rule.onNodeWithTag(AndroidViewContainer).performTouchInput { swipeUp() }
 
         // assert
         rule.waitForIdle()
         assertThat(allConsumingConnection.offeredFromChild).isNotEqualTo(Offset.Zero)
-        onView(withId(R.id.fab))
-            .check(matches((isDisplayed())))
+        onView(withId(R.id.fab)).check(matches((isDisplayed())))
     }
 
     @Test
@@ -201,17 +172,14 @@ class NestedScrollInteropThreeFoldTest {
         val secondaryInspectableConnection = InspectableNestedScrollConnection()
         rule.setContent {
             NestedScrollDeepNested(
-                modifier = Modifier
-                    .nestedScroll(secondaryInspectableConnection),
+                modifier = Modifier.nestedScroll(secondaryInspectableConnection),
                 enabled = true,
                 connection = connection
             )
         }
 
         // act
-        rule.onNodeWithTag(MainTestList).performTouchInput {
-            swipeUp()
-        }
+        rule.onNodeWithTag(MainTestList).performTouchInput { swipeUp() }
 
         // assert
         rule.runOnIdle {
@@ -226,23 +194,21 @@ class NestedScrollInteropThreeFoldTest {
         val secondaryInspectableConnection = InspectableNestedScrollConnection()
         rule.setContent {
             NestedScrollDeepNested(
-                modifier = Modifier
-                    .nestedScroll(secondaryInspectableConnection),
+                modifier = Modifier.nestedScroll(secondaryInspectableConnection),
                 enabled = true,
                 connection = connection
             )
         }
 
         // act
-        rule.onNodeWithTag(MainTestList).performTouchInput {
-            swipeUp()
-        }
+        rule.onNodeWithTag(MainTestList).performTouchInput { swipeUp() }
 
         // assert
         rule.runOnIdle {
-            assertThat(secondaryInspectableConnection.velocityOfferedFromChild).isEqualTo(
-                connection.velocityConsumedDownChain + connection.velocityNotConsumedByChild
-            )
+            assertThat(secondaryInspectableConnection.velocityOfferedFromChild)
+                .isEqualTo(
+                    connection.velocityConsumedDownChain + connection.velocityNotConsumedByChild
+                )
         }
     }
 
@@ -257,32 +223,25 @@ class NestedScrollInteropThreeFoldTest {
         }
 
         // act
-        rule.onNodeWithTag(AndroidViewContainer).performTouchInput {
-            swipeUp()
-        }
+        rule.onNodeWithTag(AndroidViewContainer).performTouchInput { swipeUp() }
 
         // assert
         rule.runOnIdle {
-            assertThat(abs(nestedScrollParentView.velocityOfferedToParentOffset)).isEqualTo(
-                abs(connection.velocityConsumedDownChain)
-            )
+            assertThat(abs(nestedScrollParentView.velocityOfferedToParentOffset))
+                .isEqualTo(abs(connection.velocityConsumedDownChain))
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     private fun createViewComposeActivity(
         enableInterop: Boolean = true,
         outerModifier: Modifier = Modifier,
         content: @Composable () -> Unit
     ) {
-        rule
-            .activityRule
-            .scenario
-            .createActivityWithComposeContent(
-                layout = R.layout.test_nested_scroll_coordinator_layout,
-                enableInterop = enableInterop,
-                content = content,
-                modifier = outerModifier
-            )
+        rule.activityRule.scenario.createActivityWithComposeContent(
+            layout = R.layout.test_nested_scroll_coordinator_layout,
+            enableInterop = enableInterop,
+            content = content,
+            modifier = outerModifier
+        )
     }
 }

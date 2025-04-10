@@ -20,13 +20,13 @@ import android.graphics.drawable.Animatable2.AnimationCallback;
 import android.graphics.drawable.AnimatedVectorDrawable;
 import android.graphics.drawable.Drawable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import androidx.collection.ArraySet;
 import androidx.vectordrawable.graphics.drawable.SeekableAnimatedVectorDrawable;
 import androidx.wear.protolayout.expression.pipeline.BoundDynamicType;
+import androidx.wear.protolayout.expression.pipeline.DynamicTypeAnimator;
 import androidx.wear.protolayout.expression.pipeline.DynamicTypeBindingRequest;
 import androidx.wear.protolayout.expression.pipeline.QuotaManager;
 import androidx.wear.protolayout.expression.proto.DynamicProto.DynamicFloat;
@@ -35,11 +35,15 @@ import androidx.wear.protolayout.proto.TriggerProto.Trigger;
 import androidx.wear.protolayout.proto.TriggerProto.Trigger.InnerCase;
 import androidx.wear.protolayout.renderer.dynamicdata.PositionIdTree.TreeNode;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * Information about a layout node that has multiple dynamic types or animators to it.
@@ -49,25 +53,25 @@ import java.util.concurrent.atomic.AtomicBoolean;
 class NodeInfo implements TreeNode {
 
     /** List of active bound dynamic types in the pipeline. */
-    @NonNull private final List<BoundDynamicType> mActiveBoundTypes = new ArrayList<>();
+    private final @NonNull List<BoundDynamicType> mActiveBoundTypes = new ArrayList<>();
 
     /** List of bound dynamic types that need to be evaluated. */
-    @NonNull private List<BoundDynamicType> mPendingBoundTypes = Collections.emptyList();
+    private @NonNull List<BoundDynamicType> mPendingBoundTypes = Collections.emptyList();
 
     /** List of binding requests that failed to bind. */
-    @NonNull
-    private final List<DynamicTypeBindingRequest> mFailedBindingRequests = new ArrayList<>();
+    private final @NonNull List<DynamicTypeBindingRequest> mFailedBindingRequests =
+            new ArrayList<>();
 
-    @NonNull private final QuotaManager mAnimationQuotaManager;
+    private final @NonNull QuotaManager mAnimationQuotaManager;
 
     /** Set of animated image resources after they are resolved during inflation. */
-    @NonNull private Set<ResolvedAvd> mResolvedAvds = Collections.emptySet();
+    private @NonNull Set<ResolvedAvd> mResolvedAvds = Collections.emptySet();
 
-    @NonNull private Set<ResolvedSeekableAvd> mResolvedSeekableAvds = Collections.emptySet();
+    private @NonNull Set<ResolvedSeekableAvd> mResolvedSeekableAvds = Collections.emptySet();
 
-    @Nullable private AnimatedVisibility mAnimatedVisibility = null;
+    private @Nullable AnimatedVisibility mAnimatedVisibility = null;
 
-    @NonNull private final String mPosId;
+    private final @NonNull String mPosId;
 
     NodeInfo(@NonNull String posId, @NonNull QuotaManager animationQuotaManager) {
         this.mPosId = posId;
@@ -115,8 +119,8 @@ class NodeInfo implements TreeNode {
         return mFailedBindingRequests;
     }
 
-    @NonNull
-    ResolvedAvd addResolvedAvd(@NonNull AnimatedVectorDrawable drawable, @NonNull Trigger trigger) {
+    @NonNull ResolvedAvd addResolvedAvd(
+            @NonNull AnimatedVectorDrawable drawable, @NonNull Trigger trigger) {
         if (mResolvedAvds.isEmpty()) {
             mResolvedAvds = new ArraySet<>();
         }
@@ -220,8 +224,7 @@ class NodeInfo implements TreeNode {
      * Returns the total duration in milliseconds of the animated drawable associated with a
      * StateSource with the given key name; or null if no such SourceKey exists.
      */
-    @Nullable
-    Long getSeekableAnimationTotalDurationMillis(@NonNull String sourceKey) {
+    @Nullable Long getSeekableAnimationTotalDurationMillis(@NonNull String sourceKey) {
         for (ResolvedSeekableAvd resourceEntry : mResolvedSeekableAvds) {
             if (resourceEntry.hasStateSourceKey(sourceKey)) {
                 return resourceEntry.mDrawable.getTotalDuration();
@@ -241,10 +244,17 @@ class NodeInfo implements TreeNode {
                         + mResolvedAvds.stream().filter(avd -> avd.mDrawable.isRunning()).count());
     }
 
-    /** Returns how many expression nodes evaluated. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public @NonNull List<DynamicTypeAnimator> getAnimations() {
+        return mActiveBoundTypes.stream()
+                .flatMap(dt -> dt.getAnimations().stream())
+                .collect(Collectors.toList());
+    }
+
+    /** Returns the cost of evaluated expression nodes. */
     @VisibleForTesting
-    public int getExpressionNodesCount() {
-        return mActiveBoundTypes.stream().mapToInt(BoundDynamicType::getDynamicNodeCount).sum();
+    public int getExpressionDynamicNodesCost() {
+        return mActiveBoundTypes.stream().mapToInt(BoundDynamicType::getDynamicNodeCost).sum();
     }
 
     /** Stores the {@link AnimatedVisibility} associated with this node. */
@@ -256,21 +266,19 @@ class NodeInfo implements TreeNode {
      * Returns the {@link AnimatedVisibility} associated with this node. Returns null if no enter
      * animation is associated with this node.
      */
-    @Nullable
-    AnimatedVisibility getAnimatedVisibility() {
+    @Nullable AnimatedVisibility getAnimatedVisibility() {
         return mAnimatedVisibility;
     }
 
     /** Returns the position Id for this node. */
-    @NonNull
-    String getPosId() {
+    @NonNull String getPosId() {
         return mPosId;
     }
 
     static class ResolvedAvd {
-        @NonNull final AnimatedVectorDrawable mDrawable;
-        @NonNull final QuotaReleasingAnimationCallback mCallback;
-        @NonNull final Trigger mTrigger;
+        final @NonNull AnimatedVectorDrawable mDrawable;
+        final @NonNull QuotaReleasingAnimationCallback mCallback;
+        final @NonNull Trigger mTrigger;
         boolean mPlayedAtLeastOnce;
 
         ResolvedAvd(
@@ -292,8 +300,8 @@ class NodeInfo implements TreeNode {
     }
 
     static class ResolvedSeekableAvd {
-        @NonNull final SeekableAnimatedVectorDrawable mDrawable;
-        @NonNull final DynamicFloat mBoundProgress;
+        final @NonNull SeekableAnimatedVectorDrawable mDrawable;
+        final @NonNull DynamicFloat mBoundProgress;
 
         ResolvedSeekableAvd(
                 @NonNull SeekableAnimatedVectorDrawable drawable,
@@ -309,9 +317,9 @@ class NodeInfo implements TreeNode {
 
     /** The callback used for AVD animations to release quota when the animation is finished. */
     private static final class QuotaReleasingAnimationCallback extends AnimationCallback {
-        @NonNull private final QuotaManager mQuotaManager;
+        private final @NonNull QuotaManager mQuotaManager;
 
-        @NonNull final AtomicBoolean mIsUsingQuota = new AtomicBoolean(false);
+        final @NonNull AtomicBoolean mIsUsingQuota = new AtomicBoolean(false);
 
         QuotaReleasingAnimationCallback(@NonNull QuotaManager quotaManager) {
             this.mQuotaManager = quotaManager;
@@ -328,9 +336,8 @@ class NodeInfo implements TreeNode {
         public void onAnimationStart(@NonNull Drawable drawable) {}
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return mPosId;
     }
 }

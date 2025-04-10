@@ -21,13 +21,11 @@ import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.FrameTimingMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.filters.LargeTest
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
-import androidx.test.uiautomator.UiDevice
 import androidx.testutils.createCompilationParams
+import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,19 +33,17 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@Ignore("b/315170517")
-class SwipeBenchmark(
-    private val compilationMode: CompilationMode
-) {
-    @get:Rule
-    val benchmarkRule = MacrobenchmarkRule()
-
-    private lateinit var device: UiDevice
+class SwipeBenchmark(private val compilationMode: CompilationMode) {
+    @get:Rule val benchmarkRule = MacrobenchmarkRule()
 
     @Before
     fun setUp() {
-        val instrumentation = InstrumentationRegistry.getInstrumentation()
-        device = UiDevice.getInstance(instrumentation)
+        disableChargingExperience()
+    }
+
+    @After
+    fun destroy() {
+        enableChargingExperience()
     }
 
     @Test
@@ -66,7 +62,7 @@ class SwipeBenchmark(
             val swipeToDismissBox = device.findObject(By.res(PACKAGE_NAME, RESOURCE_ID))
             swipeToDismissBox.setGestureMargin(device.displayWidth / 5)
             repeat(10) {
-                swipeToDismissBox.swipe(Direction.RIGHT, 0.75f)
+                swipeToDismissBox.swipe(Direction.RIGHT, 0.75f, SWIPE_SPEED)
                 device.waitForIdle()
             }
         }
@@ -82,4 +78,6 @@ class SwipeBenchmark(
         @JvmStatic
         fun parameters() = createCompilationParams()
     }
+
+    private val SWIPE_SPEED = 500
 }

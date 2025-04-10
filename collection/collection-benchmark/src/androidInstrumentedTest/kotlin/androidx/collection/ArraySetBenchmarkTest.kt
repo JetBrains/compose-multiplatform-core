@@ -28,8 +28,7 @@ import org.junit.runners.Parameterized.Parameters
 class ArraySetBenchmarkTest(size: Int, sparse: Boolean) {
     private val sourceSet = createSourceSet(size, sparse)
 
-    @get:Rule
-    val benchmark = BenchmarkRule()
+    @get:Rule val benchmark = BenchmarkRule()
 
     @Test
     fun create() {
@@ -54,12 +53,14 @@ class ArraySetBenchmarkTest(size: Int, sparse: Boolean) {
     }
 
     companion object {
+        @Suppress("TYPE_INTERSECTION_AS_REIFIED_WARNING")
         @JvmStatic
         @Parameters(name = "size={0},sparse={1}")
-        fun parameters() = buildParameters(
-            // Slow tests, so only run the suite up to 1000 elements.
-            listOf(10, 100, 1_000),
-            listOf(true, false)
-        )
+        fun parameters() =
+            buildParameters(
+                // Slow tests, so only run the suite up to 1000 elements.
+                listOf(10, 100, 1_000),
+                listOf(true, false)
+            )
     }
 }

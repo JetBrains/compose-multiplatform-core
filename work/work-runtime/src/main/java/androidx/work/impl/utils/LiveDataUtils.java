@@ -19,14 +19,15 @@ package androidx.work.impl.utils;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.arch.core.util.Function;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.Observer;
 import androidx.work.impl.utils.taskexecutor.TaskExecutor;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utility methods for {@link LiveData}.
@@ -50,11 +51,10 @@ public class LiveDataUtils {
      * @return A new {@link LiveData} of type {@code Out}
      */
     @SuppressLint("LambdaLast")
-    @NonNull
-    public static <In, Out> LiveData<Out> dedupedMappedLiveDataFor(
+    public static <In, Out> @NonNull LiveData<Out> dedupedMappedLiveDataFor(
             @NonNull LiveData<In> inputLiveData,
-            @NonNull final Function<In, Out> mappingMethod,
-            @NonNull final TaskExecutor workTaskExecutor) {
+            final @NonNull Function<In, Out> mappingMethod,
+            final @NonNull TaskExecutor workTaskExecutor) {
 
         final Object lock = new Object();
         final MediatorLiveData<Out> outputLiveData = new MediatorLiveData<>();
@@ -64,7 +64,7 @@ public class LiveDataUtils {
             Out mCurrentOutput = null;
 
             @Override
-            public void onChanged(@Nullable final In input) {
+            public void onChanged(final @Nullable In input) {
                 workTaskExecutor.executeOnTaskThread(new Runnable() {
                     @Override
                     public void run() {

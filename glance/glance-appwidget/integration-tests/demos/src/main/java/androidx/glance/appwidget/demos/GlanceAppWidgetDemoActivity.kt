@@ -17,9 +17,15 @@
 package androidx.glance.appwidget.demos
 
 import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN
+import android.content.ComponentName
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,7 +56,10 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.lifecycle.lifecycleScope
+import kotlin.reflect.KClass
 import kotlinx.coroutines.launch
+
+private const val TAG = "GlanceAppWidgetDemo"
 
 class GlanceAppWidgetDemoActivity : ComponentActivity() {
 
@@ -65,31 +74,87 @@ class GlanceAppWidgetDemoActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        updateWidgetPreviews()
         updateView()
     }
+
+    private fun updateWidgetPreviews() =
+        lifecycleScope.launch {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                return@launch
+            }
+            val previewClasses =
+                listOf(
+                    ActionAppWidgetReceiver::class,
+                    BackgroundTintWidgetBroadcastReceiver::class,
+                    ButtonsWidgetBroadcastReceiver::class,
+                    CompoundButtonAppWidgetReceiver::class,
+                    ContentDescriptionAppWidgetReceiver::class,
+                    DefaultColorsAppWidgetReceiver::class,
+                    DefaultStateAppWidgetReceiver::class,
+                    ErrorUiAppWidgetReceiver::class,
+                    FontDemoAppWidgetReceiver::class,
+                    ImageAppWidgetReceiver::class,
+                    ProgressIndicatorAppWidgetReceiver::class,
+                    RemoteViewsWidgetReceiver::class,
+                    ResizingAppWidgetReceiver::class,
+                    ResponsiveAppWidgetReceiver::class,
+                    RippleAppWidgetReceiver::class,
+                    ScrollableAppWidgetReceiver::class,
+                    TitleBarWidgetBroadcastReceiver::class,
+                    TypographyDemoAppWidgetReceiver::class,
+                    VerticalGridAppWidgetReceiver::class,
+                )
+            try {
+                for (receiver in previewClasses) {
+                    if (
+                        receiver.hasPreviewForCategory(
+                            this@GlanceAppWidgetDemoActivity,
+                            WIDGET_CATEGORY_HOME_SCREEN
+                        )
+                    ) {
+                        Log.i(TAG, "Skipped updating previews for $receiver")
+                        continue
+                    }
+                    if (!manager.setWidgetPreviews(receiver)) {
+                        Log.e(TAG, "Failed to set previews for $receiver, probably rate limited")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "error thrown when calling setWidgetPreview", e)
+            }
+        }
 
     private fun updateView() {
         lifecycleScope.launch {
             // Discover the GlanceAppWidget
             val appWidgetManager = AppWidgetManager.getInstance(this@GlanceAppWidgetDemoActivity)
-            val receivers = appWidgetManager.installedProviders
-                .filter { it.provider.packageName == packageName }
-                .map { it.provider.className }
-            val data = receivers.mapNotNull { receiverName ->
-                val receiverClass = Class.forName(receiverName)
-                if (!GlanceAppWidgetReceiver::class.java.isAssignableFrom(receiverClass)) {
-                    return@mapNotNull null
+            val receivers =
+                appWidgetManager.installedProviders
+                    .filter { it.provider.packageName == packageName }
+                    .map { it.provider.className }
+            val data =
+                receivers.mapNotNull { receiverName ->
+                    val receiverClass = Class.forName(receiverName)
+                    if (!GlanceAppWidgetReceiver::class.java.isAssignableFrom(receiverClass)) {
+                        return@mapNotNull null
+                    }
+                    val receiver =
+                        receiverClass.getDeclaredConstructor().newInstance()
+                            as GlanceAppWidgetReceiver
+                    val provider = receiver.glanceAppWidget.javaClass
+                    ProviderData(
+                        provider = provider,
+                        receiver = receiver.javaClass,
+                        appWidgets =
+                            manager.getGlanceIds(provider).map { id ->
+                                AppWidgetDesc(
+                                    appWidgetId = id,
+                                    sizes = manager.getAppWidgetSizes(id)
+                                )
+                            }
+                    )
                 }
-                val receiver = receiverClass.getDeclaredConstructor()
-                    .newInstance() as GlanceAppWidgetReceiver
-                val provider = receiver.glanceAppWidget.javaClass
-                ProviderData(
-                    provider = provider,
-                    receiver = receiver.javaClass,
-                    appWidgets = manager.getGlanceIds(provider).map { id ->
-                        AppWidgetDesc(appWidgetId = id, sizes = manager.getAppWidgetSizes(id))
-                    })
-            }
 
             setContent {
                 val scope = rememberCoroutineScope()
@@ -103,9 +168,7 @@ class GlanceAppWidgetDemoActivity : ComponentActivity() {
                     )
                     Spacer(modifier = Modifier.height(5.dp))
                     LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
+                        modifier = Modifier.fillMaxWidth().weight(1f),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(data) {
@@ -113,8 +176,8 @@ class GlanceAppWidgetDemoActivity : ComponentActivity() {
                                 scope.launch {
                                     manager.requestPinGlanceAppWidget(
                                         receiver = it.receiver,
-                                        preview = it.provider.getDeclaredConstructor()
-                                            .newInstance(),
+                                        preview =
+                                            it.provider.getDeclaredConstructor().newInstance(),
                                         previewState = emptyPreferences()
                                     )
                                 }
@@ -130,19 +193,10 @@ class GlanceAppWidgetDemoActivity : ComponentActivity() {
 
 @Composable
 fun ShowProvider(providerData: ProviderData, onProviderClicked: (ProviderData) -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable {
-                onProviderClicked(providerData)
-            }
-    ) {
+    Column(modifier = Modifier.fillMaxWidth().clickable { onProviderClicked(providerData) }) {
         Text(providerData.provider.simpleName, fontWeight = FontWeight.Medium)
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp)
-                .background(Color.LightGray)
+            modifier = Modifier.fillMaxWidth().padding(start = 16.dp).background(Color.LightGray)
         ) {
             providerData.appWidgets.forEachIndexed { index, widget ->
                 ShowAppWidget(index, widget)
@@ -164,7 +218,8 @@ fun ShowAppWidget(index: Int, widgetDesc: AppWidgetDesc) {
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            widgetDesc.sizes.sortedBy { it.width.value * it.height.value }
+            widgetDesc.sizes
+                .sortedBy { it.width.value * it.height.value }
                 .forEachIndexed { index, size ->
                     Text(
                         String.format(
@@ -188,3 +243,15 @@ data class AppWidgetDesc(
     val appWidgetId: GlanceId,
     val sizes: List<DpSize>,
 )
+
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+private fun KClass<out GlanceAppWidgetReceiver>.hasPreviewForCategory(
+    context: Context,
+    widgetCategory: Int,
+): Boolean {
+    val manager = context.getSystemService(Context.APPWIDGET_SERVICE) as AppWidgetManager
+    val component = ComponentName(context, java)
+    val providerInfo =
+        manager.installedProviders.first { providerInfo -> providerInfo.provider == component }
+    return providerInfo.generatedPreviewCategories.and(widgetCategory) != 0
+}

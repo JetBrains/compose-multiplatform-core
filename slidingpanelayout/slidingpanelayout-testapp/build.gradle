@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -30,12 +37,12 @@ dependencies {
 }
 
 android {
-    namespace "androidx.slidingpanelayout.demo"
+    namespace = "androidx.slidingpanelayout.demo"
 }
 
 androidx {
     name = "androidx.slidingpanelayout:slidingpanelayout-demo"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2023"
     description = "SlidingPaneLayout Demos"
 }

@@ -1,0 +1,11 @@
+// Signature format: 4.0
+package androidx.lifecycle.viewmodel.navigation3 {
+
+  public final class ViewModelStoreNavEntryDecorator implements androidx.navigation3.NavEntryDecorator {
+    method @androidx.compose.runtime.Composable public void DecorateBackStack(java.util.List<?> backStack, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @androidx.compose.runtime.Composable public <T> void DecorateEntry(androidx.navigation3.NavEntry<T> entry);
+    field public static final androidx.lifecycle.viewmodel.navigation3.ViewModelStoreNavEntryDecorator INSTANCE;
+  }
+
+}
+

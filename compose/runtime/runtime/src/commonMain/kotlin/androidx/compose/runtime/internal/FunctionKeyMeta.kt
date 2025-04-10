@@ -19,34 +19,28 @@ package androidx.compose.runtime.internal
 import androidx.compose.runtime.ComposeCompilerApi
 
 /**
- * This annotation is applied to the FunctionKeyMeta classes created by the Compose
- * Compiler. These classes will have multiple of these annotations, each one corresponding to a
- * single composable function. The annotation holds some metadata about the function itself and is
- * intended to be used to provide information useful to tooling.
+ * This annotation is applied to the FunctionKeyMeta classes created by the Compose Compiler. These
+ * classes will have multiple of these annotations, each one corresponding to a single composable
+ * function. The annotation holds some metadata about the function itself and is intended to be used
+ * to provide information useful to tooling.
  *
  * @param key The key used for the function's group.
  * @param startOffset The startOffset of the function in the source file at the time of compilation.
  * @param endOffset The startOffset of the function in the source file at the time of compilation.
  */
 @ComposeCompilerApi
-@Target(AnnotationTarget.CLASS)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @Repeatable
-annotation class FunctionKeyMeta(
-    val key: Int,
-    val startOffset: Int,
-    val endOffset: Int
-)
+annotation class FunctionKeyMeta(val key: Int, val startOffset: Int, val endOffset: Int)
 
 /**
- * This annotation is applied to the FunctionKeyMeta classes created by the Compose
- * Compiler. This is intended to be used to provide information useful to tooling.
+ * This annotation is applied to the FunctionKeyMeta classes created by the Compose Compiler. This
+ * is intended to be used to provide information useful to tooling.
  *
  * @param file The file path of the file the associated class was produced for
  */
 @ComposeCompilerApi
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class FunctionKeyMetaClass(
-    val file: String
-)
+annotation class FunctionKeyMetaClass(val file: String)

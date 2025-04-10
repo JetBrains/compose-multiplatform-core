@@ -18,8 +18,8 @@ package androidx.transition;
 
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Base class for <code>TransitionPropagation</code>s that care about
@@ -60,9 +60,8 @@ public abstract class VisibilityPropagation extends TransitionPropagation {
         transitionValues.values.put(PROPNAME_VIEW_CENTER, loc);
     }
 
-    @Nullable
     @Override
-    public String[] getPropagationProperties() {
+    public String @Nullable [] getPropagationProperties() {
         return VISIBILITY_PROPAGATION_VALUES;
     }
 

@@ -21,50 +21,56 @@ import androidx.stableaidl.api.StableAidlExtension
 import androidx.stableaidl.tasks.StableAidlCheckApi
 import androidx.stableaidl.tasks.UpdateStableAidlApiTask
 import com.android.build.api.variant.SourceDirectories
-import com.android.build.gradle.internal.tasks.factory.dependsOn
 import java.io.File
 import org.gradle.api.Task
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.tasks.TaskProvider
 
-/**
- * Internal implementation of [StableAidlExtension] that wraps task providers.
- */
-open class StableAidlExtensionImpl : StableAidlExtension {
-    override val checkAction: Action = object : Action {
-        override fun <T : Task> before(task: TaskProvider<T>) {
-            task.dependsOn(checkTaskProvider)
+/** Internal implementation of [StableAidlExtension] that wraps task providers. */
+abstract class StableAidlExtensionImpl : StableAidlExtension {
+    override val checkAction: Action =
+        object : Action {
+            override fun <T : Task> before(task: TaskProvider<T>) {
+                task.dependsOn(checkTaskProvider)
+            }
         }
-    }
 
-    override val updateAction: Action = object : Action {
-        override fun <T : Task> before(task: TaskProvider<T>) {
-            task.dependsOn(updateTaskProvider)
+    override val updateAction: Action =
+        object : Action {
+            override fun <T : Task> before(task: TaskProvider<T>) {
+                task.dependsOn(updateTaskProvider)
+            }
         }
-    }
 
     override var taskGroup: String? = null
         set(taskGroup) {
             allTasks.forEach { (_, tasks) ->
-                tasks.forEach { task ->
-                    task.configure {
-                        it.group = taskGroup
-                    }
-                }
+                tasks.forEach { task -> task.configure { it.group = taskGroup } }
             }
             field = taskGroup
         }
 
     override fun addStaticImportDirs(vararg dirs: File) {
         importSourceDirs.forEach { importSourceDir ->
-            dirs.forEach { dir ->
-                importSourceDir.addStaticSourceDirectory(dir.absolutePath)
-            }
+            dirs.forEach { dir -> importSourceDir.addStaticSourceDirectory(dir.absolutePath) }
         }
     }
+
+    override abstract val shadowFrameworkDir: DirectoryProperty
 
     internal lateinit var updateTaskProvider: TaskProvider<UpdateStableAidlApiTask>
     internal lateinit var checkTaskProvider: TaskProvider<StableAidlCheckApi>
 
     internal val importSourceDirs = mutableListOf<SourceDirectories.Flat>()
     internal val allTasks = mutableMapOf<String, Set<TaskProvider<*>>>()
+
+    internal fun <T : Task> TaskProvider<out T>.dependsOn(
+        vararg tasks: TaskProvider<out Task>
+    ): TaskProvider<out T> {
+        if (tasks.isEmpty().not()) {
+            configure { it.dependsOn(*tasks) }
+        }
+
+        return this
+    }
 }

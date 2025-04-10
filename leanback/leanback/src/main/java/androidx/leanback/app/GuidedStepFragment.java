@@ -20,6 +20,11 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 
 import android.animation.Animator;
 import android.animation.AnimatorSet;
+import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentManager.BackStackEntry;
+import android.app.FragmentTransaction;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
@@ -33,15 +38,8 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.app.ActivityCompat;
-import android.app.Fragment;
-import android.app.Activity;
-import android.app.FragmentManager;
-import android.app.FragmentManager.BackStackEntry;
-import android.app.FragmentTransaction;
 import androidx.leanback.R;
 import androidx.leanback.transition.TransitionHelper;
 import androidx.leanback.widget.DiffCallback;
@@ -53,6 +51,9 @@ import androidx.leanback.widget.GuidedActionAdapterGroup;
 import androidx.leanback.widget.GuidedActionsStylist;
 import androidx.leanback.widget.NonOverlappingLinearLayout;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -248,9 +249,8 @@ public class GuidedStepFragment extends Fragment implements GuidedActionAdapter.
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     public static class DummyFragment extends Fragment {
-        @NonNull
         @Override
-        public View onCreateView(
+        public @NonNull View onCreateView(
                 @NonNull LayoutInflater inflater,
                 @Nullable ViewGroup container,
                 @Nullable Bundle savedInstanceState
@@ -282,8 +282,7 @@ public class GuidedStepFragment extends Fragment implements GuidedActionAdapter.
      * a basic GuidanceStylist.
      * @return The GuidanceStylist used in this fragment.
      */
-    @NonNull
-    public GuidanceStylist onCreateGuidanceStylist() {
+    public @NonNull GuidanceStylist onCreateGuidanceStylist() {
         return new GuidanceStylist();
     }
 
@@ -292,8 +291,7 @@ public class GuidedStepFragment extends Fragment implements GuidedActionAdapter.
      * returns a basic GuidedActionsStylist.
      * @return The GuidedActionsStylist used in this fragment.
      */
-    @NonNull
-    public GuidedActionsStylist onCreateActionsStylist() {
+    public @NonNull GuidedActionsStylist onCreateActionsStylist() {
         return new GuidedActionsStylist();
     }
 
@@ -302,8 +300,7 @@ public class GuidedStepFragment extends Fragment implements GuidedActionAdapter.
      * The default implementation returns a basic GuidedActionsStylist.
      * @return The GuidedActionsStylist used in this fragment.
      */
-    @NonNull
-    public GuidedActionsStylist onCreateButtonActionsStylist() {
+    public @NonNull GuidedActionsStylist onCreateButtonActionsStylist() {
         GuidedActionsStylist stylist = new GuidedActionsStylist();
         stylist.setAsButtonActions();
         return stylist;
@@ -695,8 +692,7 @@ public class GuidedStepFragment extends Fragment implements GuidedActionAdapter.
      * Returns the current GuidedStepFragment on the fragment transaction stack.
      * @return The current GuidedStepFragment, if any, on the fragment transaction stack.
      */
-    @Nullable
-    public static GuidedStepFragment getCurrentGuidedStepFragment(
+    public static @Nullable GuidedStepFragment getCurrentGuidedStepFragment(
             @NonNull FragmentManager fm
     ) {
         Fragment f = fm.findFragmentByTag(TAG_LEAN_BACK_ACTIONS_FRAGMENT);
@@ -710,8 +706,7 @@ public class GuidedStepFragment extends Fragment implements GuidedActionAdapter.
      * Returns the GuidanceStylist that displays guidance information for the user.
      * @return The GuidanceStylist for this fragment.
      */
-    @NonNull
-    public GuidanceStylist getGuidanceStylist() {
+    public @NonNull GuidanceStylist getGuidanceStylist() {
         return mGuidanceStylist;
     }
 
@@ -719,8 +714,7 @@ public class GuidedStepFragment extends Fragment implements GuidedActionAdapter.
      * Returns the GuidedActionsStylist that displays the actions the user may take.
      * @return The GuidedActionsStylist for this fragment.
      */
-    @NonNull
-    public GuidedActionsStylist getGuidedActionsStylist() {
+    public @NonNull GuidedActionsStylist getGuidedActionsStylist() {
         return mActionsStylist;
     }
 
@@ -728,8 +722,7 @@ public class GuidedStepFragment extends Fragment implements GuidedActionAdapter.
      * Returns the list of button GuidedActions that the user may take in this fragment.
      * @return The list of button GuidedActions for this fragment.
      */
-    @NonNull
-    public List<GuidedAction> getButtonActions() {
+    public @NonNull List<GuidedAction> getButtonActions() {
         return mButtonActions;
     }
 
@@ -738,8 +731,7 @@ public class GuidedStepFragment extends Fragment implements GuidedActionAdapter.
      * @param id  Id of the button action to search.
      * @return  GuidedAction object or null if not found.
      */
-    @Nullable
-    public GuidedAction findButtonActionById(long id) {
+    public @Nullable GuidedAction findButtonActionById(long id) {
         int index = findButtonActionPositionById(id);
         return index >= 0 ? mButtonActions.get(index) : null;
     }
@@ -764,8 +756,7 @@ public class GuidedStepFragment extends Fragment implements GuidedActionAdapter.
      * Returns the GuidedActionsStylist that displays the button actions the user may take.
      * @return The GuidedActionsStylist for this fragment.
      */
-    @NonNull
-    public GuidedActionsStylist getGuidedButtonActionsStylist() {
+    public @NonNull GuidedActionsStylist getGuidedButtonActionsStylist() {
         return mButtonActionsStylist;
     }
 
@@ -797,8 +788,7 @@ public class GuidedStepFragment extends Fragment implements GuidedActionAdapter.
      * @return The View corresponding to the button action at the indicated position, or null if
      * that action is not currently onscreen.
      */
-    @Nullable
-    public View getButtonActionItemView(int position) {
+    public @Nullable View getButtonActionItemView(int position) {
         final RecyclerView.ViewHolder holder = mButtonActionsStylist.getActionsGridView()
                     .findViewHolderForPosition(position);
         return holder == null ? null : holder.itemView;
@@ -824,8 +814,7 @@ public class GuidedStepFragment extends Fragment implements GuidedActionAdapter.
      * Returns the list of GuidedActions that the user may take in this fragment.
      * @return The list of GuidedActions for this fragment.
      */
-    @NonNull
-    public List<GuidedAction> getActions() {
+    public @NonNull List<GuidedAction> getActions() {
         return mActions;
     }
 
@@ -834,8 +823,7 @@ public class GuidedStepFragment extends Fragment implements GuidedActionAdapter.
      * @param id  Id of the action to search.
      * @return  GuidedAction object or null if not found.
      */
-    @Nullable
-    public GuidedAction findActionById(long id) {
+    public @Nullable GuidedAction findActionById(long id) {
         int index = findActionPositionById(id);
         return index >= 0 ? mActions.get(index) : null;
     }
@@ -898,8 +886,7 @@ public class GuidedStepFragment extends Fragment implements GuidedActionAdapter.
      * @return The View corresponding to the action at the indicated position, or null if that
      * action is not currently onscreen.
      */
-    @Nullable
-    public View getActionItemView(int position) {
+    public @Nullable View getActionItemView(int position) {
         final RecyclerView.ViewHolder holder = mActionsStylist.getActionsGridView()
                     .findViewHolderForPosition(position);
         return holder == null ? null : holder.itemView;
@@ -1008,8 +995,7 @@ public class GuidedStepFragment extends Fragment implements GuidedActionAdapter.
      * @param savedInstanceState
      * @return Created background view or null if no background.
      */
-    @Nullable
-    public View onCreateBackgroundView(
+    public @Nullable View onCreateBackgroundView(
             @NonNull LayoutInflater inflater,
             @Nullable ViewGroup container,
             @Nullable Bundle savedInstanceState
@@ -1111,8 +1097,8 @@ public class GuidedStepFragment extends Fragment implements GuidedActionAdapter.
      * {@inheritDoc}
      */
     @Override
-    @Nullable
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+    public @Nullable View onCreateView(LayoutInflater inflater,@Nullable ViewGroup container,
+            Bundle savedInstanceState) {
         if (DEBUG) Log.v(TAG, "onCreateView");
 
         resolveTheme();

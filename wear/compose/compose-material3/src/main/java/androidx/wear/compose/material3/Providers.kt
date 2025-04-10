@@ -23,6 +23,34 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 
 internal fun <T> provideScopeContent(
+    contentColor: Color,
+    textStyle: TextStyle,
+    content: (@Composable T.() -> Unit)
+): (@Composable T.() -> Unit) = {
+    CompositionLocalProvider(
+        LocalContentColor provides contentColor,
+        LocalTextStyle provides textStyle,
+    ) {
+        content()
+    }
+}
+
+internal fun <T> provideScopeContent(
+    contentColor: Color,
+    textStyle: TextStyle,
+    textConfiguration: TextConfiguration,
+    content: (@Composable T.() -> Unit)
+): (@Composable T.() -> Unit) = {
+    CompositionLocalProvider(
+        LocalContentColor provides contentColor,
+        LocalTextStyle provides textStyle,
+        LocalTextConfiguration provides textConfiguration,
+    ) {
+        content()
+    }
+}
+
+internal fun <T> provideScopeContent(
     contentColor: State<Color>,
     textStyle: TextStyle,
     content: (@Composable T.() -> Unit)
@@ -31,6 +59,33 @@ internal fun <T> provideScopeContent(
     CompositionLocalProvider(
         LocalContentColor provides color,
         LocalTextStyle provides textStyle,
+    ) {
+        content()
+    }
+}
+
+internal fun <T> provideScopeContent(
+    contentColor: State<Color>,
+    textStyle: TextStyle,
+    textConfiguration: TextConfiguration,
+    content: (@Composable T.() -> Unit)
+): (@Composable T.() -> Unit) = {
+    val color = contentColor.value
+    CompositionLocalProvider(
+        LocalContentColor provides color,
+        LocalTextStyle provides textStyle,
+        LocalTextConfiguration provides textConfiguration,
+    ) {
+        content()
+    }
+}
+
+internal fun <T> provideScopeContent(
+    color: Color,
+    content: (@Composable T.() -> Unit)
+): (@Composable T.() -> Unit) = {
+    CompositionLocalProvider(
+        LocalContentColor provides color,
     ) {
         content()
     }
@@ -51,28 +106,67 @@ internal fun <T> provideNullableScopeContent(
     contentColor: State<Color>,
     textStyle: TextStyle,
     content: (@Composable T.() -> Unit)?
-): (@Composable T.() -> Unit)? = content?.let {
-    {
-        val color = contentColor.value
-        CompositionLocalProvider(
-            LocalContentColor provides color,
-            LocalTextStyle provides textStyle
-        ) {
-            content()
+): (@Composable T.() -> Unit)? =
+    content?.let {
+        {
+            val color = contentColor.value
+            CompositionLocalProvider(
+                LocalContentColor provides color,
+                LocalTextStyle provides textStyle
+            ) {
+                content()
+            }
         }
     }
-}
+
+internal fun <T> provideNullableScopeContent(
+    contentColor: State<Color>,
+    textStyle: TextStyle,
+    textConfiguration: TextConfiguration,
+    content: (@Composable T.() -> Unit)?
+): (@Composable T.() -> Unit)? =
+    content?.let {
+        {
+            val color = contentColor.value
+            CompositionLocalProvider(
+                LocalContentColor provides color,
+                LocalTextStyle provides textStyle,
+                LocalTextConfiguration provides textConfiguration,
+            ) {
+                content()
+            }
+        }
+    }
 
 internal fun <T> provideNullableScopeContent(
     contentColor: State<Color>,
     content: (@Composable T.() -> Unit)?
-): (@Composable T.() -> Unit)? = content?.let {
-    {
-        val color = contentColor.value
-        CompositionLocalProvider(
-            LocalContentColor provides color,
-        ) {
-            content()
+): (@Composable T.() -> Unit)? =
+    content?.let {
+        {
+            val color = contentColor.value
+            CompositionLocalProvider(
+                LocalContentColor provides color,
+            ) {
+                content()
+            }
         }
     }
-}
+
+internal fun <T> provideNullableScopeContent(
+    contentColor: Color,
+    textStyle: TextStyle,
+    textConfiguration: TextConfiguration,
+    content: (@Composable T.() -> Unit)?
+): (@Composable T.() -> Unit)? =
+    content?.let {
+        {
+            CompositionLocalProvider(
+                LocalContentColor provides contentColor,
+                LocalTextStyle provides textStyle,
+                LocalTextConfiguration provides textConfiguration,
+            ) {
+                content()
+            }
+        }
+    }

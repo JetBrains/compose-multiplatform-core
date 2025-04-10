@@ -16,70 +16,91 @@
 
 package androidx.room.compiler.codegen.kotlin
 
+import androidx.room.compiler.codegen.KFunSpec
 import androidx.room.compiler.codegen.KTypeSpecBuilder
 import androidx.room.compiler.codegen.VisibilityModifier
 import androidx.room.compiler.codegen.XAnnotationSpec
-import androidx.room.compiler.codegen.XClassName
 import androidx.room.compiler.codegen.XFunSpec
+import androidx.room.compiler.codegen.XName
 import androidx.room.compiler.codegen.XPropertySpec
+import androidx.room.compiler.codegen.XSpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.XTypeSpec
+import androidx.room.compiler.codegen.impl.XAnnotationSpecImpl
+import androidx.room.compiler.codegen.impl.XFunSpecImpl
+import androidx.room.compiler.codegen.impl.XPropertySpecImpl
+import androidx.room.compiler.codegen.impl.XTypeSpecImpl
+import androidx.room.compiler.processing.XElement
+import androidx.room.compiler.processing.addOriginatingElement
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.javapoet.KTypeSpec
+import com.squareup.kotlinpoet.javapoet.KTypeVariableName
 
-internal class KotlinTypeSpec(
-    private val _className: XClassName?,
-    internal val actual: KTypeSpec
-) : KotlinLang(), XTypeSpec {
-    override fun toString() = actual.toString()
+internal class KotlinTypeSpec(internal val actual: KTypeSpec) : XSpec(), XTypeSpec {
 
-    override val className: XClassName
-        get() {
-            checkNotNull(_className) { "Anonymous classes have no name." }
-            return _className
-        }
+    override val name = actual.name?.let { XName.of(it) }
 
-    internal class Builder(
-        private val className: XClassName?,
-        internal val actual: KTypeSpecBuilder
-    ) : KotlinLang(), XTypeSpec.Builder {
-        override fun superclass(typeName: XTypeName) = apply {
-            actual.superclass(typeName.kotlin)
-        }
+    internal class Builder(internal val actual: KTypeSpecBuilder) :
+        XSpec.Builder(), XTypeSpec.Builder {
+
+        override fun superclass(typeName: XTypeName) = apply { actual.superclass(typeName.kotlin) }
 
         override fun addSuperinterface(typeName: XTypeName) = apply {
             actual.addSuperinterface(typeName.kotlin)
         }
 
-        override fun addAnnotation(annotation: XAnnotationSpec) {
-            check(annotation is KotlinAnnotationSpec)
-            actual.addAnnotation(annotation.actual)
+        override fun addAnnotation(annotation: XAnnotationSpec) = apply {
+            require(annotation is XAnnotationSpecImpl)
+            actual.addAnnotation(annotation.kotlin.actual)
         }
 
         override fun addProperty(propertySpec: XPropertySpec) = apply {
-            require(propertySpec is KotlinPropertySpec)
-            actual.addProperty(propertySpec.actual)
+            require(propertySpec is XPropertySpecImpl)
+            actual.addProperty(propertySpec.kotlin.actual)
         }
 
         override fun addFunction(functionSpec: XFunSpec) = apply {
-            require(functionSpec is KotlinFunSpec)
-            actual.addFunction(functionSpec.actual)
+            require(functionSpec is XFunSpecImpl)
+            actual.addFunction(functionSpec.kotlin.actual)
         }
 
         override fun addType(typeSpec: XTypeSpec) = apply {
-            require(typeSpec is KotlinTypeSpec)
-            actual.addType(typeSpec.actual)
+            require(typeSpec is XTypeSpecImpl)
+            actual.addType(typeSpec.kotlin.actual)
+        }
+
+        override fun addTypeVariable(typeVariable: XTypeName) = apply {
+            require(typeVariable.kotlin is KTypeVariableName)
+            actual.addTypeVariable(typeVariable.kotlin as KTypeVariableName)
         }
 
         override fun setPrimaryConstructor(functionSpec: XFunSpec) = apply {
-            require(functionSpec is KotlinFunSpec)
-            actual.primaryConstructor(functionSpec.actual)
-            functionSpec.actual.delegateConstructorArguments.forEach {
-                actual.addSuperclassConstructorParameter(it)
+            require(functionSpec is XFunSpecImpl)
+            if (
+                functionSpec.kotlin.actual.delegateConstructor != null ||
+                    functionSpec.kotlin.actual.delegateConstructorArguments.isNotEmpty()
+            ) {
+                // If ctor has super call, create a new spec without the super call as
+                // KotlinPoet disallows it and instead add the super params to the type spec.
+                // See https://github.com/square/kotlinpoet/pull/1859
+                val currentSpec = functionSpec.kotlin.actual
+                val newSpec =
+                    KFunSpec.constructorBuilder()
+                        .addModifiers(currentSpec.modifiers)
+                        .addAnnotations(currentSpec.annotations)
+                        .addParameters(currentSpec.parameters)
+                        .addCode(currentSpec.body)
+                        .build()
+                actual.primaryConstructor(newSpec)
+                currentSpec.delegateConstructorArguments.forEach {
+                    actual.addSuperclassConstructorParameter(it)
+                }
+            } else {
+                actual.primaryConstructor(functionSpec.kotlin.actual)
             }
         }
 
-        override fun setVisibility(visibility: VisibilityModifier) {
+        override fun setVisibility(visibility: VisibilityModifier) = apply {
             actual.addModifiers(visibility.toKotlinVisibilityModifier())
         }
 
@@ -87,8 +108,10 @@ internal class KotlinTypeSpec(
             actual.addModifiers(KModifier.ABSTRACT)
         }
 
-        override fun build(): XTypeSpec {
-            return KotlinTypeSpec(className, actual.build())
+        override fun addOriginatingElement(element: XElement) = apply {
+            actual.addOriginatingElement(element)
         }
+
+        override fun build() = KotlinTypeSpec(actual.build())
     }
 }

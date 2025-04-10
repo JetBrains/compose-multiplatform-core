@@ -28,7 +28,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import android.content.Context;
 import android.graphics.Color;
 
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.ActionBuilders.LaunchAction;
@@ -40,6 +39,7 @@ import androidx.wear.protolayout.ModifiersBuilders.Clickable;
 import androidx.wear.protolayout.ModifiersBuilders.ElementMetadata;
 import androidx.wear.protolayout.ModifiersBuilders.Modifiers;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.internal.DoNotInstrument;
@@ -75,17 +75,20 @@ public class TitleChipTest {
     @Test
     public void testTitleChipCustom() {
         DpProp width = dp(150);
+        String description = "Test description";
         TitleChip titleChip =
                 new TitleChip.Builder(CONTEXT, MAIN_TEXT, CLICKABLE, DEVICE_PARAMETERS)
                         .setChipColors(COLORS)
                         .setWidth(width)
+                        .setContentDescription(description)
                         .build();
 
         assertChip(titleChip, COLORS, width, /* iconId= */ null);
+        assertThat(titleChip.getContentDescription().getValue()).isEqualTo(description);
     }
 
     @Test
-    public void testIconChipIconCustomColor() {
+    public void testTitleChipIconCustomColor() {
         String iconId = "icon_id";
         TitleChip titleChip =
                 new TitleChip.Builder(CONTEXT, MAIN_TEXT, CLICKABLE, DEVICE_PARAMETERS)

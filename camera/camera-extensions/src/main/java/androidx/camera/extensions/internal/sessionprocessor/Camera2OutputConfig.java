@@ -16,9 +16,8 @@
 
 package androidx.camera.extensions.internal.sessionprocessor;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -26,7 +25,6 @@ import java.util.List;
  * A config representing a {@link android.hardware.camera2.params.OutputConfiguration} where
  * Surface will be created by the information in this config.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 interface Camera2OutputConfig {
     /**
      * Gets the id of this output config. The id can be used to identify the stream in vendor
@@ -43,13 +41,11 @@ interface Camera2OutputConfig {
     /**
      * Gets the physical camera id. Returns null if not specified.
      */
-    @Nullable
-    String getPhysicalCameraId();
+    @Nullable String getPhysicalCameraId();
 
     /**
      * If non-empty, enable surface sharing and add the surfaces constructed by the returned
      * Camera2OutputConfigs.
      */
-    @NonNull
-    List<Camera2OutputConfig> getSurfaceSharingOutputConfigs();
+    @NonNull List<Camera2OutputConfig> getSurfaceSharingOutputConfigs();
 }

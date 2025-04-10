@@ -18,8 +18,9 @@ package androidx.appsearch.safeparcel;
 
 import android.os.Parcel;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Implements {@link SafeParcelable}.
@@ -210,5 +211,11 @@ public abstract class AbstractSafeParcelable implements SafeParcelable {
      * "@Override" in child classes.
      */
     public void writeToParcel(@NonNull Parcel dest, int flags) {
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Override
+    public final int describeContents() {
+        return 0;
     }
 }

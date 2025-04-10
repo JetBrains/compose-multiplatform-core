@@ -16,32 +16,31 @@
 
 package androidx.room.writer
 
+import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
-import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.addLocalVal
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XMemberName.Companion.packageMember
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.ext.CommonTypeNames
+import androidx.room.ext.KotlinTypeNames
 import androidx.room.ext.RoomMemberNames
 import androidx.room.ext.RoomTypeNames
 import androidx.room.parser.ParsedQuery
 import androidx.room.parser.Section
 import androidx.room.solver.CodeGenScope
-import androidx.room.vo.QueryMethod
+import androidx.room.vo.QueryFunction
 import androidx.room.vo.QueryParameter
 
-/**
- * Writes the SQL query and arguments for a QueryMethod.
- */
+/** Writes the SQL query and arguments for a QueryMethod. */
 class QueryWriter(
     val parameters: List<QueryParameter>,
     val sectionToParamMapping: List<Pair<Section, QueryParameter?>>,
     val query: ParsedQuery
 ) {
 
-    constructor(queryMethod: QueryMethod) : this(
-        queryMethod.parameters,
-        queryMethod.sectionToParamMapping, queryMethod.query
-    )
+    constructor(
+        queryFunction: QueryFunction
+    ) : this(queryFunction.parameters, queryFunction.sectionToParamMapping, queryFunction.query)
 
     fun prepareReadAndBind(
         outSqlQueryName: String,
@@ -65,48 +64,58 @@ class QueryWriter(
         scope: CodeGenScope
     ): List<Pair<QueryParameter, String>> {
         val listSizeVars = arrayListOf<Pair<QueryParameter, String>>()
-        val varargParams = parameters
-            .filter { it.queryParamAdapter?.isMultiple ?: false }
+        val varargParams = parameters.filter { it.queryParamAdapter?.isMultiple ?: false }
         val sectionToParamMapping = sectionToParamMapping
-        val knownQueryArgsCount = sectionToParamMapping
-            .filterNot { it.second?.queryParamAdapter?.isMultiple ?: false }
-            .size
+        val knownQueryArgsCount =
+            sectionToParamMapping
+                .filterNot { it.second?.queryParamAdapter?.isMultiple ?: false }
+                .size
         scope.builder.apply {
             if (varargParams.isNotEmpty()) {
                 val stringBuilderVar = scope.getTmpVar("_stringBuilder")
-                addLocalVal(
-                    stringBuilderVar,
-                    CommonTypeNames.STRING_BUILDER,
-                    "%M()",
-                    RoomTypeNames.STRING_UTIL.packageMember("newStringBuilder")
-                )
+                applyTo { language ->
+                    val stringBuilderType =
+                        when (language) {
+                            CodeLanguage.JAVA -> CommonTypeNames.STRING_BUILDER
+                            CodeLanguage.KOTLIN -> KotlinTypeNames.STRING_BUILDER
+                        }
+                    addLocalVariable(
+                        name = stringBuilderVar,
+                        typeName = stringBuilderType,
+                        assignExpr = XCodeBlock.ofNewInstance(stringBuilderType)
+                    )
+                }
                 query.sections.forEach { section ->
                     when (section) {
                         is Section.Text ->
                             addStatement("%L.append(%S)", stringBuilderVar, section.text)
-                        is Section.NewLine ->
-                            addStatement("%L.append(%S)", stringBuilderVar, "\n")
+                        is Section.NewLine -> addStatement("%L.append(%S)", stringBuilderVar, "\n")
                         is Section.BindVar -> {
                             // If it is null, will be reported as error before. We just try out
                             // best to generate as much code as possible.
-                            sectionToParamMapping.firstOrNull {
-                                section == it.first
-                            }?.let { (_, param) ->
-                                if (param?.queryParamAdapter?.isMultiple == true) {
-                                    val tmpCount = scope.getTmpVar("_inputSize")
-                                    listSizeVars.add(param to tmpCount)
-                                    param.queryParamAdapter.getArgCount(param.name, tmpCount, scope)
-                                    addStatement(
-                                        "%M(%L, %L)",
-                                        RoomTypeNames.STRING_UTIL
-                                            .packageMember("appendPlaceholders"),
-                                        stringBuilderVar,
-                                        tmpCount
-                                    )
-                                } else {
-                                    addStatement("%L.append(%S)", stringBuilderVar, "?")
+                            sectionToParamMapping
+                                .firstOrNull { section == it.first }
+                                ?.let { (_, param) ->
+                                    if (param?.queryParamAdapter?.isMultiple == true) {
+                                        val tmpCount = scope.getTmpVar("_inputSize")
+                                        listSizeVars.add(param to tmpCount)
+                                        param.queryParamAdapter.getArgCount(
+                                            param.name,
+                                            tmpCount,
+                                            scope
+                                        )
+                                        addStatement(
+                                            "%M(%L, %L)",
+                                            RoomTypeNames.STRING_UTIL.packageMember(
+                                                "appendPlaceholders"
+                                            ),
+                                            stringBuilderVar,
+                                            tmpCount
+                                        )
+                                    } else {
+                                        addStatement("%L.append(%S)", stringBuilderVar, "?")
+                                    }
                                 }
-                            }
                         }
                     }
                 }
@@ -128,13 +137,13 @@ class QueryWriter(
                     addLocalVariable(
                         name = outArgsName,
                         typeName = RoomTypeNames.ROOM_SQL_QUERY,
-                        assignExpr = XCodeBlock.of(
-                            language,
-                            "%M(%L, %L)",
-                            RoomMemberNames.ROOM_SQL_QUERY_ACQUIRE,
-                            outSqlQueryName,
-                            argCount
-                        )
+                        assignExpr =
+                            XCodeBlock.of(
+                                "%M(%L, %L)",
+                                RoomMemberNames.ROOM_SQL_QUERY_ACQUIRE,
+                                outSqlQueryName,
+                                argCount
+                            )
                     )
                 }
             } else {
@@ -148,13 +157,13 @@ class QueryWriter(
                     addLocalVariable(
                         name = outArgsName,
                         typeName = RoomTypeNames.ROOM_SQL_QUERY,
-                        assignExpr = XCodeBlock.of(
-                            language,
-                            "%M(%L, %L)",
-                            RoomMemberNames.ROOM_SQL_QUERY_ACQUIRE,
-                            outSqlQueryName,
-                            knownQueryArgsCount
-                        )
+                        assignExpr =
+                            XCodeBlock.of(
+                                "%M(%L, %L)",
+                                RoomMemberNames.ROOM_SQL_QUERY_ACQUIRE,
+                                outSqlQueryName,
+                                knownQueryArgsCount
+                            )
                     )
                 }
             }
@@ -176,8 +185,7 @@ class QueryWriter(
                 name = argIndex,
                 typeName = XTypeName.PRIMITIVE_INT,
                 isMutable = true,
-                assignExpr = XCodeBlock.of(language, "%L", 1)
-
+                assignExpr = XCodeBlock.of("%L", 1)
             )
             // # of bindings with 1 placeholder
             var constInputs = 0
@@ -189,7 +197,11 @@ class QueryWriter(
                     addStatement(
                         "%L = %L%L",
                         argIndex,
-                        if (constInputs > 0) { 1 + constInputs } else { "1" },
+                        if (constInputs > 0) {
+                            1 + constInputs
+                        } else {
+                            "1"
+                        },
                         varInputs.joinToString("") { " + $it" }
                     )
                 }
@@ -199,7 +211,7 @@ class QueryWriter(
                 // add these to the list so that we can use them to calculate the next count.
                 val sizeVar = listSizeVars.firstOrNull { it.first == param }
                 if (sizeVar == null) {
-                    constInputs ++
+                    constInputs++
                 } else {
                     varInputs.add(sizeVar.second)
                 }

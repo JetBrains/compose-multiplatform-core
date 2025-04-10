@@ -29,10 +29,12 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.res.TypedArrayUtils;
+import androidx.core.view.ViewCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -99,8 +101,6 @@ public abstract class Visibility extends Transition {
     public Visibility() {
     }
 
-    @SuppressLint("RestrictedApi") // remove once core lib would be released with the new
-    // LIBRARY_GROUP_PREFIX restriction. tracking in b/127286008
     public Visibility(@NonNull Context context, @NonNull AttributeSet attrs) {
         super(context, attrs);
         TypedArray a = context.obtainStyledAttributes(attrs, Styleable.VISIBILITY_TRANSITION);
@@ -139,9 +139,8 @@ public abstract class Visibility extends Transition {
         return mMode;
     }
 
-    @Nullable
     @Override
-    public String[] getTransitionProperties() {
+    public String @Nullable [] getTransitionProperties() {
         return sTransitionProperties;
     }
 
@@ -242,9 +241,8 @@ public abstract class Visibility extends Transition {
         return visInfo;
     }
 
-    @Nullable
     @Override
-    public Animator createAnimator(@NonNull ViewGroup sceneRoot,
+    public @Nullable Animator createAnimator(@NonNull ViewGroup sceneRoot,
             @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         VisibilityInfo visInfo = getVisibilityChangeInfo(startValues, endValues);
         if (visInfo.mVisibilityChange
@@ -276,10 +274,10 @@ public abstract class Visibility extends Transition {
      * overall transition for this scene change. A null value means no animation
      * should be run.
      */
-    @Nullable
     @SuppressWarnings("UnusedParameters")
-    public Animator onAppear(@NonNull ViewGroup sceneRoot, @Nullable TransitionValues startValues,
-            int startVisibility, @Nullable TransitionValues endValues, int endVisibility) {
+    public @Nullable Animator onAppear(@NonNull ViewGroup sceneRoot,
+            @Nullable TransitionValues startValues, int startVisibility,
+            @Nullable TransitionValues endValues, int endVisibility) {
         if ((mMode & MODE_IN) != MODE_IN || endValues == null) {
             return null;
         }
@@ -314,8 +312,7 @@ public abstract class Visibility extends Transition {
      * overall transition for this scene change. A null value means no animation
      * should be run.
      */
-    @Nullable
-    public Animator onAppear(@NonNull ViewGroup sceneRoot, @NonNull View view,
+    public @Nullable Animator onAppear(@NonNull ViewGroup sceneRoot, @NonNull View view,
             @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         return null;
     }
@@ -335,9 +332,8 @@ public abstract class Visibility extends Transition {
      * overall transition for this scene change. A null value means no animation
      * should be run.
      */
-    @Nullable
     @SuppressWarnings("UnusedParameters")
-    public Animator onDisappear(@NonNull ViewGroup sceneRoot,
+    public @Nullable Animator onDisappear(@NonNull ViewGroup sceneRoot,
             @Nullable TransitionValues startValues, int startVisibility,
             @Nullable TransitionValues endValues, int endVisibility) {
         if ((mMode & MODE_OUT) != MODE_OUT) {
@@ -428,7 +424,7 @@ public abstract class Visibility extends Transition {
                 sceneRoot.getLocationOnScreen(loc);
                 overlayView.offsetLeftAndRight((screenX - loc[0]) - overlayView.getLeft());
                 overlayView.offsetTopAndBottom((screenY - loc[1]) - overlayView.getTop());
-                sceneRoot.getOverlay().add(overlayView);
+                ViewCompat.addOverlayView(sceneRoot, overlayView);
             }
             Animator animator = onDisappear(sceneRoot, overlayView, startValues, endValues);
             if (!reusingOverlayView) {
@@ -481,8 +477,7 @@ public abstract class Visibility extends Transition {
      * overall transition for this scene change. A null value means no animation
      * should be run.
      */
-    @Nullable
-    public Animator onDisappear(@NonNull ViewGroup sceneRoot, @NonNull View view,
+    public @Nullable Animator onDisappear(@NonNull ViewGroup sceneRoot, @NonNull View view,
             @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         return null;
     }
@@ -630,7 +625,7 @@ public abstract class Visibility extends Transition {
         @Override
         public void onAnimationResume(Animator animation) {
             if (mOverlayView.getParent() == null) {
-                mOverlayHost.getOverlay().add(mOverlayView);
+                ViewCompat.addOverlayView(mOverlayHost, mOverlayView);
             } else {
                 cancel();
             }
@@ -640,7 +635,7 @@ public abstract class Visibility extends Transition {
         public void onAnimationStart(@NonNull Animator animation, boolean isReverse) {
             if (isReverse) {
                 mStartView.setTag(R.id.save_overlay_view, mOverlayView);
-                mOverlayHost.getOverlay().add(mOverlayView);
+                ViewCompat.addOverlayView(mOverlayHost, mOverlayView);
                 mHasOverlay = true;
             }
         }

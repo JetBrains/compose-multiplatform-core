@@ -37,10 +37,11 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Renders text onto a canvas.
@@ -115,9 +116,9 @@ class TextRenderer {
     private final Rect mBounds = new Rect();
     private TextPaint mPaint;
 
-    @Nullable private String mAmbientModeText;
-    @Nullable private CharSequence mOriginalText;
-    @Nullable private CharSequence mText;
+    private @Nullable String mAmbientModeText;
+    private @Nullable CharSequence mOriginalText;
+    private @Nullable CharSequence mText;
 
     private float mRelativePaddingStart;
     private float mRelativePaddingEnd;
@@ -197,9 +198,8 @@ class TextRenderer {
         mNeedUpdateLayout = true;
     }
 
-    @NonNull
     @VisibleForTesting
-    CharSequence applySpanAllowlist(@NonNull CharSequence text) {
+    @NonNull CharSequence applySpanAllowlist(@NonNull CharSequence text) {
         if (text instanceof Spanned) {
             SpannableStringBuilder builder = new SpannableStringBuilder(text);
             Object[] spans = builder.getSpans(0, text.length(), Object.class);
@@ -232,8 +232,7 @@ class TextRenderer {
         mNeedUpdateLayout = true;
     }
 
-    @NonNull
-    public TextPaint getPaint() {
+    public @NonNull TextPaint getPaint() {
         return mPaint;
     }
 
@@ -310,7 +309,7 @@ class TextRenderer {
      *
      * <p>Pass in {@code null} to cause text to be truncated but not ellipsized.
      */
-    public void setEllipsize(@Nullable TextUtils.TruncateAt ellipsize) {
+    public void setEllipsize(TextUtils.@Nullable TruncateAt ellipsize) {
         if (mEllipsize == ellipsize) {
             return;
         }
@@ -319,7 +318,7 @@ class TextRenderer {
     }
 
     /** Sets the alignment of the text. */
-    public void setAlignment(@Nullable Layout.Alignment alignment) {
+    public void setAlignment(Layout.@Nullable Alignment alignment) {
         if (mAlignment == alignment) {
             return;
         }

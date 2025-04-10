@@ -17,6 +17,7 @@
 package androidx.compose.foundation.text.modifiers
 
 import androidx.compose.foundation.text.DefaultMinLines
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.node.ModifierNodeElement
@@ -28,10 +29,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 
-/**
- * Element for any text that is in a selection container.
- */
-internal data class SelectableTextAnnotatedStringElement(
+/** Element for any text that is in a selection container. */
+internal class SelectableTextAnnotatedStringElement(
     private val text: AnnotatedString,
     private val style: TextStyle,
     private val fontFamilyResolver: FontFamily.Resolver,
@@ -43,27 +42,28 @@ internal data class SelectableTextAnnotatedStringElement(
     private val placeholders: List<AnnotatedString.Range<Placeholder>>? = null,
     private val onPlaceholderLayout: ((List<Rect?>) -> Unit)? = null,
     private val selectionController: SelectionController? = null,
-    private val color: ColorProducer? = null
+    private val color: ColorProducer? = null,
+    private val autoSize: TextAutoSize? = null
 ) : ModifierNodeElement<SelectableTextAnnotatedStringNode>() {
 
-    override fun create(): SelectableTextAnnotatedStringNode = SelectableTextAnnotatedStringNode(
-        text,
-        style,
-        fontFamilyResolver,
-        onTextLayout,
-        overflow,
-        softWrap,
-        maxLines,
-        minLines,
-        placeholders,
-        onPlaceholderLayout,
-        selectionController,
-        color
-    )
+    override fun create(): SelectableTextAnnotatedStringNode =
+        SelectableTextAnnotatedStringNode(
+            text,
+            style,
+            fontFamilyResolver,
+            onTextLayout,
+            overflow,
+            softWrap,
+            maxLines,
+            minLines,
+            placeholders,
+            onPlaceholderLayout,
+            selectionController,
+            color,
+            autoSize
+        )
 
-    override fun update(
-        node: SelectableTextAnnotatedStringNode
-    ) {
+    override fun update(node: SelectableTextAnnotatedStringNode) {
         node.update(
             text = text,
             style = style,
@@ -76,7 +76,8 @@ internal data class SelectableTextAnnotatedStringElement(
             onTextLayout = onTextLayout,
             onPlaceholderLayout = onPlaceholderLayout,
             selectionController = selectionController,
-            color = color
+            color = color,
+            autoSize = autoSize
         )
     }
 
@@ -93,14 +94,15 @@ internal data class SelectableTextAnnotatedStringElement(
 
         // these are equally unlikely to change
         if (fontFamilyResolver != other.fontFamilyResolver) return false
-        if (onTextLayout != other.onTextLayout) return false
+        if (autoSize != other.autoSize) return false
+        if (onTextLayout !== other.onTextLayout) return false
         if (overflow != other.overflow) return false
         if (softWrap != other.softWrap) return false
         if (maxLines != other.maxLines) return false
         if (minLines != other.minLines) return false
 
         // these never change, but check anyway for correctness
-        if (onPlaceholderLayout != other.onPlaceholderLayout) return false
+        if (onPlaceholderLayout !== other.onPlaceholderLayout) return false
         if (selectionController != other.selectionController) return false
 
         return true
@@ -118,6 +120,7 @@ internal data class SelectableTextAnnotatedStringElement(
         result = 31 * result + (placeholders?.hashCode() ?: 0)
         result = 31 * result + (onPlaceholderLayout?.hashCode() ?: 0)
         result = 31 * result + (selectionController?.hashCode() ?: 0)
+        result = 31 * result + (autoSize?.hashCode() ?: 0)
         result = 31 * result + (color?.hashCode() ?: 0)
         return result
     }

@@ -20,35 +20,17 @@ import android.content.res.Resources
 import android.util.TypedValue
 import androidx.annotation.DrawableRes
 import androidx.collection.MutableIntObjectMap
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
-
-/**
- * A composable function that returns the [Resources]. It will be recomposed when [Configuration]
- * gets updated.
- */
-@Composable
-@ReadOnlyComposable
-internal fun resources(): Resources {
-    LocalConfiguration.current
-    return LocalContext.current.resources
-}
 
 internal class ResourceIdCache {
 
     private val resIdPathMap = MutableIntObjectMap<TypedValue>()
 
     /**
-     * Resolve the path of the provided resource identifier within the given resources object.
-     * This first checks its internal cache before attempting to resolve the resource with the
-     * Android resource system
+     * Resolve the path of the provided resource identifier within the given resources object. This
+     * first checks its internal cache before attempting to resolve the resource with the Android
+     * resource system
      */
-    fun resolveResourcePath(
-        res: Resources,
-        @DrawableRes id: Int
-    ): TypedValue {
+    fun resolveResourcePath(res: Resources, @DrawableRes id: Int): TypedValue {
         synchronized(this) {
             var value = resIdPathMap[id]
             if (value == null) {
@@ -61,8 +43,6 @@ internal class ResourceIdCache {
     }
 
     fun clear() {
-        synchronized(this) {
-            resIdPathMap.clear()
-        }
+        synchronized(this) { resIdPathMap.clear() }
     }
 }

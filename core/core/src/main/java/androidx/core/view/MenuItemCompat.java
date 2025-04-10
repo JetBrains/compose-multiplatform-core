@@ -26,11 +26,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.internal.view.SupportMenuItem;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link MenuItem}.
@@ -135,6 +135,7 @@ public final class MenuItemCompat {
      *
      * @deprecated Use {@link MenuItem#setShowAsAction(int)} directly.
      */
+    @androidx.annotation.ReplaceWith(expression = "item.setShowAsAction(actionEnum)")
     @Deprecated
     public static void setShowAsAction(MenuItem item, int actionEnum) {
         item.setShowAsAction(actionEnum);
@@ -153,6 +154,7 @@ public final class MenuItemCompat {
      *
      * @deprecated Use {@link MenuItem#setActionView(View)} directly.
      */
+    @androidx.annotation.ReplaceWith(expression = "item.setActionView(view)")
     @Deprecated
     public static MenuItem setActionView(MenuItem item, View view) {
         return item.setActionView(view);
@@ -175,6 +177,7 @@ public final class MenuItemCompat {
      *
      * @deprecated Use {@link MenuItem#setActionView(int)} directly.
      */
+    @androidx.annotation.ReplaceWith(expression = "item.setActionView(resId)")
     @Deprecated
     public static MenuItem setActionView(MenuItem item, int resId) {
         return item.setActionView(resId);
@@ -188,6 +191,7 @@ public final class MenuItemCompat {
      *
      * @deprecated Use {@link MenuItem#getActionView()} directly.
      */
+    @androidx.annotation.ReplaceWith(expression = "item.getActionView()")
     @Deprecated
     public static View getActionView(MenuItem item) {
         return item.getActionView();
@@ -208,8 +212,7 @@ public final class MenuItemCompat {
      *
      * @see ActionProvider
      */
-    @Nullable
-    public static MenuItem setActionProvider(@NonNull MenuItem item,
+    public static @Nullable MenuItem setActionProvider(@NonNull MenuItem item,
             @Nullable ActionProvider provider) {
         if (item instanceof SupportMenuItem) {
             return ((SupportMenuItem) item).setSupportActionProvider(provider);
@@ -227,8 +230,7 @@ public final class MenuItemCompat {
      * @see ActionProvider
      * @see #setActionProvider(MenuItem, ActionProvider)
      */
-    @Nullable
-    public static ActionProvider getActionProvider(@NonNull MenuItem item) {
+    public static @Nullable ActionProvider getActionProvider(@NonNull MenuItem item) {
         if (item instanceof SupportMenuItem) {
             return ((SupportMenuItem) item).getSupportActionProvider();
         }
@@ -252,6 +254,7 @@ public final class MenuItemCompat {
      *
      * @deprecated Use {@link MenuItem#expandActionView()} directly.
      */
+    @androidx.annotation.ReplaceWith(expression = "item.expandActionView()")
     @Deprecated
     public static boolean expandActionView(MenuItem item) {
         return item.expandActionView();
@@ -271,6 +274,7 @@ public final class MenuItemCompat {
      *
      * @deprecated Use {@link MenuItem#collapseActionView()} directly.
      */
+    @androidx.annotation.ReplaceWith(expression = "item.collapseActionView()")
     @Deprecated
     public static boolean collapseActionView(MenuItem item) {
         return item.collapseActionView();
@@ -287,6 +291,7 @@ public final class MenuItemCompat {
      *
      * @deprecated Use {@link MenuItem#isActionViewExpanded()} directly.
      */
+    @androidx.annotation.ReplaceWith(expression = "item.isActionViewExpanded()")
     @Deprecated
     public static boolean isActionViewExpanded(MenuItem item) {
         return item.isActionViewExpanded();
@@ -341,9 +346,8 @@ public final class MenuItemCompat {
      *
      * @return The content description.
      */
-    @Nullable
     @SuppressWarnings("RedundantCast")
-    public static CharSequence getContentDescription(@NonNull MenuItem item) {
+    public static @Nullable CharSequence getContentDescription(@NonNull MenuItem item) {
         if (item instanceof SupportMenuItem) {
             // Cast required to target SupportMenuItem method declaration.
             return ((SupportMenuItem) item).getContentDescription();
@@ -373,9 +377,8 @@ public final class MenuItemCompat {
      *
      * @return The tooltip text.
      */
-    @Nullable
     @SuppressWarnings("RedundantCast")
-    public static CharSequence getTooltipText(@NonNull MenuItem item) {
+    public static @Nullable CharSequence getTooltipText(@NonNull MenuItem item) {
         if (item instanceof SupportMenuItem) {
             // Cast required to target SupportMenuItem method declaration.
             return ((SupportMenuItem) item).getTooltipText();
@@ -545,9 +548,8 @@ public final class MenuItemCompat {
      * @return the tint applied to the item's icon
      * @see #setIconTintList(MenuItem, ColorStateList)
      */
-    @Nullable
     @SuppressWarnings("RedundantCast")
-    public static ColorStateList getIconTintList(@NonNull MenuItem item) {
+    public static @Nullable ColorStateList getIconTintList(@NonNull MenuItem item) {
         if (item instanceof SupportMenuItem) {
             // Cast required to target SupportMenuItem method declaration.
             return ((SupportMenuItem) item).getIconTintList();
@@ -569,7 +571,7 @@ public final class MenuItemCompat {
      * @see #setIconTintList(MenuItem, ColorStateList)
      */
     @SuppressWarnings("RedundantCast")
-    public static void setIconTintMode(@NonNull MenuItem item, @Nullable PorterDuff.Mode tintMode) {
+    public static void setIconTintMode(@NonNull MenuItem item, PorterDuff.@Nullable Mode tintMode) {
         if (item instanceof SupportMenuItem) {
             // Cast required to target SupportMenuItem method declaration.
             ((SupportMenuItem) item).setIconTintMode(tintMode);
@@ -584,9 +586,8 @@ public final class MenuItemCompat {
      * @return the blending mode used to apply the tint to the item's icon
      * @see #setIconTintMode(MenuItem, PorterDuff.Mode)
      */
-    @Nullable
     @SuppressWarnings("RedundantCast")
-    public static PorterDuff.Mode getIconTintMode(@NonNull MenuItem item) {
+    public static PorterDuff.@Nullable Mode getIconTintMode(@NonNull MenuItem item) {
         if (item instanceof SupportMenuItem) {
             // Cast required to target SupportMenuItem method declaration.
             return ((SupportMenuItem) item).getIconTintMode();
@@ -605,70 +606,57 @@ public final class MenuItemCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static MenuItem setContentDescription(MenuItem menuItem, CharSequence contentDescription) {
             return menuItem.setContentDescription(contentDescription);
         }
 
-        @DoNotInline
         static CharSequence getContentDescription(MenuItem menuItem) {
             return menuItem.getContentDescription();
         }
 
-        @DoNotInline
         static MenuItem setTooltipText(MenuItem menuItem, CharSequence tooltipText) {
             return menuItem.setTooltipText(tooltipText);
         }
 
-        @DoNotInline
         static CharSequence getTooltipText(MenuItem menuItem) {
             return menuItem.getTooltipText();
         }
 
-        @DoNotInline
         static MenuItem setShortcut(MenuItem menuItem, char numericChar, char alphaChar,
                 int numericModifiers, int alphaModifiers) {
             return menuItem.setShortcut(numericChar, alphaChar, numericModifiers, alphaModifiers);
         }
 
-        @DoNotInline
         static MenuItem setNumericShortcut(MenuItem menuItem, char numericChar,
                 int numericModifiers) {
             return menuItem.setNumericShortcut(numericChar, numericModifiers);
         }
 
-        @DoNotInline
         static int getNumericModifiers(MenuItem menuItem) {
             return menuItem.getNumericModifiers();
         }
 
-        @DoNotInline
         static MenuItem setAlphabeticShortcut(MenuItem menuItem, char alphaChar,
                 int alphaModifiers) {
             return menuItem.setAlphabeticShortcut(alphaChar, alphaModifiers);
         }
 
-        @DoNotInline
         static int getAlphabeticModifiers(MenuItem menuItem) {
             return menuItem.getAlphabeticModifiers();
         }
 
-        @DoNotInline
         static MenuItem setIconTintList(MenuItem menuItem, ColorStateList tint) {
             return menuItem.setIconTintList(tint);
         }
 
-        @DoNotInline
         static ColorStateList getIconTintList(MenuItem menuItem) {
             return menuItem.getIconTintList();
         }
 
-        @DoNotInline
         static MenuItem setIconTintMode(MenuItem menuItem, PorterDuff.Mode tintMode) {
             return menuItem.setIconTintMode(tintMode);
         }
 
-        @DoNotInline
         static PorterDuff.Mode getIconTintMode(MenuItem menuItem) {
             return menuItem.getIconTintMode();
         }

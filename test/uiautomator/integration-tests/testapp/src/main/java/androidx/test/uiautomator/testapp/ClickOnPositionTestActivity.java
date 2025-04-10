@@ -21,7 +21,7 @@ import android.os.Bundle;
 import android.view.MotionEvent;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class ClickOnPositionTestActivity extends Activity {
     private String mTouchMessage = "";

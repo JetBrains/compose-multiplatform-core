@@ -21,8 +21,9 @@ import static androidx.wear.watchface.complications.rendering.utils.LayoutUtils.
 import android.graphics.Rect;
 import android.support.wearable.complications.ComplicationData;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Layout helper for {@link ComplicationData#TYPE_LARGE_IMAGE}.

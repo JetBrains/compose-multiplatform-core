@@ -20,17 +20,16 @@ import android.text.method.KeyListener;
 import android.view.KeyEvent;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.emoji2.text.EmojiCompat;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * KeyListener class to handle delete operations correctly.
  *
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-@RequiresApi(19)
 final class EmojiKeyListener implements android.text.method.KeyListener {
     private final android.text.method.KeyListener mKeyListener;
     private final EmojiCompatHandleKeyDownHelper mEmojiCompatHandleKeyDownHelper;
@@ -73,8 +72,8 @@ final class EmojiKeyListener implements android.text.method.KeyListener {
     }
 
     public static class EmojiCompatHandleKeyDownHelper {
-        public boolean handleKeyDown(@NonNull final Editable editable, final int keyCode,
-                @NonNull final KeyEvent event) {
+        public boolean handleKeyDown(final @NonNull Editable editable, final int keyCode,
+                final @NonNull KeyEvent event) {
             return EmojiCompat.handleOnKeyDown(editable, keyCode, event);
         }
     }

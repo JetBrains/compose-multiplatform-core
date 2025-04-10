@@ -20,10 +20,10 @@ import android.content.Context;
 import android.util.Pair;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.InitializationException;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -33,7 +33,6 @@ import java.util.Set;
  * Camera device manager to provide the guaranteed supported stream capabilities related info for
  * all camera devices
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public interface CameraDeviceSurfaceManager {
 
     /**
@@ -49,8 +48,7 @@ public interface CameraDeviceSurfaceManager {
          * @return the factory instance
          * @throws InitializationException if it fails to create the factory
          */
-        @NonNull
-        CameraDeviceSurfaceManager newInstance(@NonNull Context context,
+        @NonNull CameraDeviceSurfaceManager newInstance(@NonNull Context context,
                 @Nullable Object cameraManager, @NonNull Set<String> availableCameraIds)
                 throws InitializationException;
     }
@@ -64,8 +62,7 @@ public interface CameraDeviceSurfaceManager {
      * @param size        the size info for the surface configuration object
      * @return new {@link SurfaceConfig} object
      */
-    @Nullable
-    SurfaceConfig transformSurfaceConfig(
+    @Nullable SurfaceConfig transformSurfaceConfig(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             int imageFormat,
@@ -84,6 +81,7 @@ public interface CameraDeviceSurfaceManager {
      *                                          supported output sizes list that will be given a
      *                                          suggested stream specification
      * @param isPreviewStabilizationOn          whether the preview stabilization is enabled.
+     * @param hasVideoCapture                   whether the use cases has video capture.
      * @return map of suggested stream specifications for given use cases
      * @throws IllegalStateException    if not initialized
      * @throws IllegalArgumentException if {@code newUseCaseConfigs} is an empty list, if
@@ -91,12 +89,12 @@ public interface CameraDeviceSurfaceManager {
      *                                  available, or if the {@code cameraId}
      *                                  is not a valid id.
      */
-    @NonNull
-    Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
+    @NonNull Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
             getSuggestedStreamSpecs(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             @NonNull List<AttachedSurfaceInfo> existingSurfaces,
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap,
-            boolean isPreviewStabilizationOn);
+            boolean isPreviewStabilizationOn,
+            boolean hasVideoCapture);
 }

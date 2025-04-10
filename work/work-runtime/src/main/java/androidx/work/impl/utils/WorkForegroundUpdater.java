@@ -16,6 +16,7 @@
 
 package androidx.work.impl.utils;
 
+import static androidx.work.ListenableFutureKt.executeAsync;
 import static androidx.work.impl.foreground.SystemForegroundDispatcher.createNotifyIntent;
 import static androidx.work.impl.model.WorkSpecKt.generationalId;
 
@@ -23,7 +24,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.ForegroundInfo;
 import androidx.work.ForegroundUpdater;
@@ -32,18 +32,17 @@ import androidx.work.impl.WorkDatabase;
 import androidx.work.impl.foreground.ForegroundProcessor;
 import androidx.work.impl.model.WorkSpec;
 import androidx.work.impl.model.WorkSpecDao;
-import androidx.work.impl.utils.futures.SettableFuture;
 import androidx.work.impl.utils.taskexecutor.TaskExecutor;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
-import java.util.UUID;
+import org.jspecify.annotations.NonNull;
 
+import java.util.UUID;
 
 /**
  * Transitions a {@link androidx.work.ListenableWorker} to run in the context of a foreground
  * {@link android.app.Service}.
- *
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class WorkForegroundUpdater implements ForegroundUpdater {
@@ -71,46 +70,33 @@ public class WorkForegroundUpdater implements ForegroundUpdater {
         mWorkSpecDao = workDatabase.workSpecDao();
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> setForegroundAsync(
-            @NonNull final Context context,
-            @NonNull final UUID id,
-            @NonNull final ForegroundInfo foregroundInfo) {
-
-        final SettableFuture<Void> future = SettableFuture.create();
-        mTaskExecutor.executeOnTaskThread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (!future.isCancelled()) {
-                        String workSpecId = id.toString();
-                        WorkSpec workSpec = mWorkSpecDao.getWorkSpec(workSpecId);
-                        if (workSpec == null || workSpec.state.isFinished()) {
-                            // state == null would mean that the WorkSpec was replaced.
-                            String message =
-                                    "Calls to setForegroundAsync() must complete before a "
-                                            + "ListenableWorker signals completion of work by "
-                                            + "returning an instance of Result.";
-                            throw new IllegalStateException(message);
-                        }
-                        // startForeground() is idempotent
-                        // NOTE: This will fail when the process is subject to foreground service
-                        // restrictions. Propagate the exception to the caller.
-                        mForegroundProcessor.startForeground(workSpecId, foregroundInfo);
-                        // it is safe to take generation from this workspec, because only
-                        // one generation of the same work can run at a time.
-                        Intent intent = createNotifyIntent(context, generationalId(workSpec),
-                                foregroundInfo);
-                        context.startService(intent);
+    public @NonNull ListenableFuture<Void> setForegroundAsync(
+            final @NonNull Context context,
+            final @NonNull UUID id,
+            final @NonNull ForegroundInfo foregroundInfo) {
+        return executeAsync(mTaskExecutor.getSerialTaskExecutor(), "setForegroundAsync",
+                () -> {
+                    String workSpecId = id.toString();
+                    WorkSpec workSpec = mWorkSpecDao.getWorkSpec(workSpecId);
+                    if (workSpec == null || workSpec.state.isFinished()) {
+                        // state == null would mean that the WorkSpec was replaced.
+                        String message =
+                                "Calls to setForegroundAsync() must complete before a "
+                                        + "ListenableWorker signals completion of work by "
+                                        + "returning an instance of Result.";
+                        throw new IllegalStateException(message);
                     }
-                    future.set(null);
-                } catch (Throwable throwable) {
-                    future.setException(throwable);
-                }
-            }
-        });
-
-        return future;
+                    // startForeground() is idempotent
+                    // NOTE: This will fail when the process is subject to foreground service
+                    // restrictions. Propagate the exception to the caller.
+                    mForegroundProcessor.startForeground(workSpecId, foregroundInfo);
+                    // it is safe to take generation from this workspec, because only
+                    // one generation of the same work can run at a time.
+                    Intent intent = createNotifyIntent(context, generationalId(workSpec),
+                            foregroundInfo);
+                    context.startService(intent);
+                    return null;
+                });
     }
 }

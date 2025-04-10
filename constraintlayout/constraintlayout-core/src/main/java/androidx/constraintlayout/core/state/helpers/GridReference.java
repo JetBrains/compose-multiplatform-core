@@ -16,24 +16,23 @@
 
 package androidx.constraintlayout.core.state.helpers;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.constraintlayout.core.state.HelperReference;
 import androidx.constraintlayout.core.state.State;
 import androidx.constraintlayout.core.utils.GridCore;
 import androidx.constraintlayout.core.widgets.HelperWidget;
 
-import java.util.ArrayList;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A HelperReference of a Grid Helper that helps enable Grid in Compose
  */
 public class GridReference extends HelperReference {
 
-    private static final String SPANS_RESPECT_WIDGET_ORDER = "spansrespectwidgetorder";
-    private static final String SUB_GRID_BY_COL_ROW = "subgridbycolrow";
+    private static final String SPANS_RESPECT_WIDGET_ORDER_STRING = "spansrespectwidgetorder";
+    private static final String SUB_GRID_BY_COL_ROW_STRING = "subgridbycolrow";
 
-    public GridReference(@NonNull State state, @NonNull State.Helper type) {
+    public GridReference(@NonNull State state, State.@NonNull Helper type) {
         super(state, type);
         if (type == State.Helper.ROW) {
             this.mRowsSet = 1;
@@ -113,9 +112,9 @@ public class GridReference extends HelperReference {
     private String mSkips;
 
     /**
-     * All the flags of a Grid
+     * An int value containing flag information.
      */
-    private int[] mFlags;
+    private int mFlags;
 
     /**
      * get padding left
@@ -183,18 +182,17 @@ public class GridReference extends HelperReference {
 
     /**
      * Get all the flags of a Grid
-     * @return a String array containing all the flags
+     * @return an int value containing flag information
      */
-    @NonNull
-    public int[] getFlags() {
+    public int getFlags() {
         return mFlags;
     }
 
     /**
      * Set flags of a Grid
-     * @param flags a String array containing all the flags
+     * @param flags an int value containing flag information
      */
-    public void setFlags(@NonNull int[] flags) {
+    public void setFlags(int flags) {
         mFlags = flags;
     }
 
@@ -203,29 +201,22 @@ public class GridReference extends HelperReference {
      * @param flags a String containing all the flags
      */
     public void setFlags(@NonNull String flags) {
-        if (flags.length() == 0) {
+        if (flags.isEmpty()) {
             return;
         }
 
         String[] strArr = flags.split("\\|");
-        ArrayList<Integer> flagList = new ArrayList<>();
-        for (String flag: strArr) {
-            switch (flag.toLowerCase()) {
-                case SUB_GRID_BY_COL_ROW:
-                    flagList.add(0);
+        mFlags = 0;
+        for (String str: strArr) {
+            switch (str.toLowerCase()) {
+                case SUB_GRID_BY_COL_ROW_STRING:
+                    mFlags |= 1;
                     break;
-                case SPANS_RESPECT_WIDGET_ORDER:
-                    flagList.add(1);
+                case SPANS_RESPECT_WIDGET_ORDER_STRING:
+                    mFlags |= 2;
                     break;
             }
         }
-        int[] flagArr = new int[flagList.size()];
-        int i = 0;
-        for (int flag: flagList) {
-            flagArr[i++] = flag;
-        }
-
-        mFlags = flagArr;
     }
 
     /**
@@ -302,8 +293,7 @@ public class GridReference extends HelperReference {
      * Get the row weights
      * @return the row weights
      */
-    @Nullable
-    public String getRowWeights() {
+    public @Nullable String getRowWeights() {
         return mRowWeights;
     }
 
@@ -319,8 +309,7 @@ public class GridReference extends HelperReference {
      * Get the column weights
      * @return the column weights
      */
-    @Nullable
-    public String getColumnWeights() {
+    public @Nullable String getColumnWeights() {
         return mColumnWeights;
     }
 
@@ -336,8 +325,7 @@ public class GridReference extends HelperReference {
      * Get the spans
      * @return the spans
      */
-    @Nullable
-    public String getSpans() {
+    public @Nullable String getSpans() {
         return mSpans;
     }
 
@@ -353,8 +341,7 @@ public class GridReference extends HelperReference {
      * Get the skips
      * @return the skips
      */
-    @Nullable
-    public String getSkips() {
+    public @Nullable String getSkips() {
         return mSkips;
     }
 
@@ -371,8 +358,7 @@ public class GridReference extends HelperReference {
      * @return the helper widget (Grid)
      */
     @Override
-    @NonNull
-    public HelperWidget getHelperWidget() {
+    public @NonNull HelperWidget getHelperWidget() {
         if (mGrid == null) {
             mGrid = new GridCore();
         }
@@ -434,25 +420,28 @@ public class GridReference extends HelperReference {
             mGrid.setVerticalGaps(mVerticalGaps);
         }
 
-        if (mRowWeights != null && !mRowWeights.equals("")) {
+        if (mRowWeights != null && !mRowWeights.isEmpty()) {
             mGrid.setRowWeights(mRowWeights);
         }
 
-        if (mColumnWeights != null && !mColumnWeights.equals("")) {
+        if (mColumnWeights != null && !mColumnWeights.isEmpty()) {
             mGrid.setColumnWeights(mColumnWeights);
         }
 
-        if (mSpans != null && !mSpans.equals("")) {
+        if (mSpans != null && !mSpans.isEmpty()) {
             mGrid.setSpans(mSpans);
         }
 
-        if (mSkips != null && !mSkips.equals("")) {
+        if (mSkips != null && !mSkips.isEmpty()) {
             mGrid.setSkips(mSkips);
         }
 
-        if (mFlags != null && mFlags.length > 0) {
-            mGrid.setFlags(mFlags);
-        }
+        mGrid.setFlags(mFlags);
+
+        mGrid.setPaddingStart(mPaddingStart);
+        mGrid.setPaddingEnd(mPaddingEnd);
+        mGrid.setPaddingTop(mPaddingTop);
+        mGrid.setPaddingBottom(mPaddingBottom);
 
         // General attributes of a widget
         applyBase();

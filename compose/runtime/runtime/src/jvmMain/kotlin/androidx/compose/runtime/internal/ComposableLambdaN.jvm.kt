@@ -15,13 +15,16 @@
  */
 
 @file:OptIn(InternalComposeApi::class)
+
 package androidx.compose.runtime.internal
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposeCompilerApi
 import androidx.compose.runtime.Composer
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.RecomposeScope
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.updateChangedFlags
 import kotlin.jvm.functions.FunctionN
 
@@ -112,33 +115,24 @@ internal class ComposableLambdaNImpl(
         val lastChanged = args[args.size - 1] as Int
         c = c.startRestartGroup(key)
         trackRead(c)
-        val dirty = lastChanged or if (c.changed(this))
-            differentBits(realParams)
-        else
-            sameBits(realParams)
-        @Suppress("UNCHECKED_CAST")
-        val result = (_block as FunctionN<*>)(*allArgsButLast, dirty)
+        val dirty =
+            lastChanged or if (c.changed(this)) differentBits(realParams) else sameBits(realParams)
+        @Suppress("UNCHECKED_CAST") val result = (_block as FunctionN<*>)(*allArgsButLast, dirty)
         c.endRestartGroup()?.updateScope { nc, _ ->
             val params = args.slice(0 until realParams).toTypedArray()
             @Suppress("UNUSED_VARIABLE")
             val changed = updateChangedFlags(args[realParams + 1] as Int)
-            val changedN = Array<Any?>(args.size - realParams - 2) { index ->
-                updateChangedFlags(args[realParams + 2 + index] as Int)
-            }
-            this(
-                *params,
-                nc,
-                changed or 0b1,
-                *changedN
-            )
+            val changedN =
+                Array<Any?>(args.size - realParams - 2) { index ->
+                    updateChangedFlags(args[realParams + 2 + index] as Int)
+                }
+            this(*params, nc, changed or 0b1, *changedN)
         }
         return result
     }
 }
 
-@Stable
-@ComposeCompilerApi
-interface ComposableLambdaN : FunctionN<Any?>
+@Stable @ComposeCompilerApi interface ComposableLambdaN : FunctionN<Any?>
 
 @Suppress("unused")
 @ComposeCompilerApi
@@ -151,18 +145,30 @@ fun composableLambdaN(
 ): ComposableLambdaN {
     composer.startReplaceableGroup(key)
     val slot = composer.rememberedValue()
-    val result = if (slot === Composer.Empty) {
-        val value = ComposableLambdaNImpl(key, tracked, arity)
-        composer.updateRememberedValue(value)
-        value
-    } else {
-        @Suppress("UNCHECKED_CAST")
-        slot as ComposableLambdaNImpl
-    }
+    val result =
+        if (slot === Composer.Empty) {
+            val value = ComposableLambdaNImpl(key, tracked, arity)
+            composer.updateRememberedValue(value)
+            value
+        } else {
+            @Suppress("UNCHECKED_CAST")
+            slot as ComposableLambdaNImpl
+        }
     result.update(block)
     composer.endReplaceableGroup()
     return result
 }
+
+@Suppress
+@ComposeCompilerApi
+@Composable
+fun rememberComposableLambdaN(
+    key: Int,
+    tracked: Boolean,
+    arity: Int,
+    block: Any
+): ComposableLambdaN =
+    remember { ComposableLambdaNImpl(key, tracked, arity) }.also { it.update(block) }
 
 @Suppress("unused")
 @ComposeCompilerApi
@@ -171,8 +177,4 @@ fun composableLambdaNInstance(
     tracked: Boolean,
     arity: Int,
     block: Any
-): ComposableLambdaN = ComposableLambdaNImpl(
-    key,
-    tracked,
-    arity
-).apply { update(block) }
+): ComposableLambdaN = ComposableLambdaNImpl(key, tracked, arity).apply { update(block) }

@@ -18,7 +18,6 @@ package androidx.work.impl.background.systemjob;
 
 import static androidx.work.impl.background.systemjob.SystemJobInfoConverterExtKt.setRequiredNetworkRequest;
 
-import android.annotation.SuppressLint;
 import android.app.job.JobInfo;
 import android.content.ComponentName;
 import android.content.Context;
@@ -27,7 +26,6 @@ import android.net.NetworkRequest;
 import android.os.Build;
 import android.os.PersistableBundle;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.work.BackoffPolicy;
@@ -38,13 +36,14 @@ import androidx.work.NetworkType;
 import androidx.work.impl.WorkManagerImpl;
 import androidx.work.impl.model.WorkSpec;
 
+import org.jspecify.annotations.NonNull;
+
 /**
  * Converts a {@link WorkSpec} into a JobInfo.
  *
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RequiresApi(api = WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL)
-@SuppressLint("ClassVerificationFailure")
 class SystemJobInfoConverter {
     private static final String TAG = Logger.tagWithPrefix("SystemJobInfoConverter");
 
@@ -54,11 +53,14 @@ class SystemJobInfoConverter {
 
     private final ComponentName mWorkServiceComponent;
     private final Clock mClock;
+    private final boolean mMarkImportantWhileForeground;
 
-    SystemJobInfoConverter(@NonNull Context context, Clock clock) {
+    SystemJobInfoConverter(@NonNull Context context,
+            Clock clock, boolean markImportantWhileForeground) {
         mClock = clock;
         Context appContext = context.getApplicationContext();
         mWorkServiceComponent = new ComponentName(appContext, SystemJobService.class);
+        mMarkImportantWhileForeground = markImportantWhileForeground;
     }
 
     /**
@@ -107,7 +109,7 @@ class SystemJobInfoConverter {
             if (offset > 0) {
                 // Only set a minimum latency when applicable.
                 builder.setMinimumLatency(offset);
-            } else if (!workSpec.expedited) {
+            } else if (!workSpec.expedited && mMarkImportantWhileForeground) {
                 // Only set this if the workSpec is not expedited.
                 builder.setImportantWhileForeground(true);
             }
@@ -136,6 +138,13 @@ class SystemJobInfoConverter {
             //noinspection NewApi
             builder.setExpedited(true);
         }
+        if (Build.VERSION.SDK_INT >= 35) {
+            // Add a trace tag that shows the actual worker running.
+            String traceTag = workSpec.getTraceTag();
+            if (traceTag != null) {
+                builder.setTraceTag(traceTag);
+            }
+        }
         return builder.build();
     }
 
@@ -154,7 +163,7 @@ class SystemJobInfoConverter {
      * @param networkType The {@link NetworkType} instance.
      */
     static void setRequiredNetwork(
-            @NonNull JobInfo.Builder builder,
+            JobInfo.@NonNull Builder builder,
             @NonNull NetworkType networkType) {
 
         if (Build.VERSION.SDK_INT >= 30 && networkType == NetworkType.TEMPORARILY_UNMETERED) {

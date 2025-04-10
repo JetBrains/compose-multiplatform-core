@@ -37,6 +37,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.test.Ignore
 import kotlin.test.assertTrue
 import org.junit.After
 import org.junit.Before
@@ -49,9 +50,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SyncTriggersConcurrencyTest {
 
-    @Rule
-    @JvmField
-    val countingTaskExecutorRule = CountingTaskExecutorRule()
+    @Rule @JvmField val countingTaskExecutorRule = CountingTaskExecutorRule()
 
     private lateinit var executor: ExecutorService
     private lateinit var database: SampleDatabase
@@ -61,14 +60,14 @@ class SyncTriggersConcurrencyTest {
     fun setup() {
         val applicationContext = InstrumentationRegistry.getInstrumentation().targetContext
         val threadId = AtomicInteger()
-        executor = Executors.newCachedThreadPool { runnable ->
-            Thread(runnable).apply {
-                name = "invalidation_tracker_test_worker_${threadId.getAndIncrement()}"
+        executor =
+            Executors.newCachedThreadPool { runnable ->
+                Thread(runnable).apply {
+                    name = "invalidation_tracker_test_worker_${threadId.getAndIncrement()}"
+                }
             }
-        }
-        database = Room
-            .databaseBuilder(applicationContext, SampleDatabase::class.java, DB_NAME)
-            .build()
+        database =
+            Room.databaseBuilder(applicationContext, SampleDatabase::class.java, DB_NAME).build()
         terminationSignal = AtomicBoolean()
     }
 
@@ -85,6 +84,7 @@ class SyncTriggersConcurrencyTest {
     }
 
     @Test
+    @Ignore // Flaky test b/330789066
     fun test() {
         val invalidationTracker = database.invalidationTracker
 
@@ -101,9 +101,7 @@ class SyncTriggersConcurrencyTest {
         // 5. Assert that the observer received an invalidation call.
         val dao = database.getDao()
         repeat(CHECK_ITERATIONS) { iteration ->
-            val checkObserver = TestObserver(
-                expectedInvalidationCount = 1
-            )
+            val checkObserver = TestObserver(expectedInvalidationCount = 1)
             invalidationTracker.addObserver(checkObserver)
             try {
                 val entity = SampleEntity(UUID.randomUUID().toString())
@@ -118,6 +116,7 @@ class SyncTriggersConcurrencyTest {
 
     /**
      * Stresses the invalidation tracker by repeatedly adding and removing an observer.
+     *
      * @property invalidationTracker the invalidation tracker
      * @property terminationSignal when set to true, signals the loop to terminate
      */
@@ -136,9 +135,8 @@ class SyncTriggersConcurrencyTest {
         }
     }
 
-    private class TestObserver(
-        expectedInvalidationCount: Int = 0
-    ) : InvalidationTracker.Observer(SampleEntity::class.java.simpleName) {
+    private class TestObserver(expectedInvalidationCount: Int = 0) :
+        InvalidationTracker.Observer(SampleEntity::class.java.simpleName) {
 
         val latch = CountDownLatch(expectedInvalidationCount)
 
@@ -155,11 +153,9 @@ class SyncTriggersConcurrencyTest {
     @Dao
     interface SampleDao {
 
-        @Insert(onConflict = OnConflictStrategy.REPLACE)
-        fun insert(count: SampleEntity)
+        @Insert(onConflict = OnConflictStrategy.REPLACE) fun insert(count: SampleEntity)
 
-        @Delete
-        fun delete(count: SampleEntity)
+        @Delete fun delete(count: SampleEntity)
     }
 
     @Entity

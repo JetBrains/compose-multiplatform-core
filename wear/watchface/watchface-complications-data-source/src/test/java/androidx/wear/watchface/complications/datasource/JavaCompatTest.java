@@ -18,8 +18,9 @@ package androidx.wear.watchface.complications.datasource;
 
 import android.os.RemoteException;
 
-import androidx.annotation.Nullable;
 import androidx.wear.watchface.complications.data.ComplicationData;
+
+import org.jspecify.annotations.Nullable;
 
 /** Tests that Java interfaces implementing kotlin interfaces with defaults compile. */
 public class JavaCompatTest {

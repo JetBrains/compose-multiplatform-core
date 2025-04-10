@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.graphics.vector
 
+import android.app.Activity
 import android.app.Application
 import android.content.ComponentCallbacks2
 import android.content.pm.ActivityInfo
@@ -23,6 +24,7 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.os.Build
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -35,6 +37,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -98,35 +101,28 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class VectorTest {
 
-    @get:Rule
-    val rule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testVectorTint() {
-        rule.setContent {
-            VectorTint()
-        }
+        rule.setContent { VectorTint() }
 
-        takeScreenShot(200).apply {
-            assertEquals(getPixel(100, 100), Color.Cyan.toArgb())
-        }
+        takeScreenShot(200).apply { assertEquals(getPixel(100, 100), Color.Cyan.toArgb()) }
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testVectorIntrinsicTint() {
         rule.setContent {
-            val background = Modifier.paint(
-                createTestVectorPainter(200, Color.Magenta),
-                alignment = Alignment.Center
-            )
-            AtLeastSize(size = 200, modifier = background) {
-            }
+            val background =
+                Modifier.paint(
+                    createTestVectorPainter(200, Color.Magenta),
+                    alignment = Alignment.Center
+                )
+            AtLeastSize(size = 200, modifier = background) {}
         }
-        takeScreenShot(200).apply {
-            assertEquals(getPixel(100, 100), Color.Magenta.toArgb())
-        }
+        takeScreenShot(200).apply { assertEquals(getPixel(100, 100), Color.Magenta.toArgb()) }
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -140,40 +136,26 @@ class VectorTest {
                 val bitmap = ImageBitmap(200, 200)
                 val canvas = Canvas(bitmap)
                 val bitmapSize = Size(200f, 200f)
-                CanvasDrawScope().draw(
-                    Density(1f),
-                    LayoutDirection.Ltr,
-                    canvas,
-                    bitmapSize
-                ) {
-                    with(vector!!) {
-                        draw(bitmapSize)
-                    }
+                CanvasDrawScope().draw(Density(1f), LayoutDirection.Ltr, canvas, bitmapSize) {
+                    with(vector!!) { draw(bitmapSize) }
                 }
                 bitmap
             }
 
             val background = Modifier.paint(BitmapPainter(bitmap))
 
-            AtLeastSize(size = 200, modifier = background) {
-            }
+            AtLeastSize(size = 200, modifier = background) {}
         }
-        takeScreenShot(200).apply {
-            assertEquals(getPixel(100, 100), Color.Magenta.toArgb())
-        }
+        takeScreenShot(200).apply { assertEquals(getPixel(100, 100), Color.Magenta.toArgb()) }
         assertEquals(ImageBitmapConfig.Alpha8, vector!!.bitmapConfig)
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testVectorAlignment() {
-        rule.setContent {
-            VectorTint(minimumSize = 450, alignment = Alignment.BottomEnd)
-        }
+        rule.setContent { VectorTint(minimumSize = 450, alignment = Alignment.BottomEnd) }
 
-        takeScreenShot(450).apply {
-            assertEquals(getPixel(430, 430), Color.Cyan.toArgb())
-        }
+        takeScreenShot(450).apply { assertEquals(getPixel(430, 430), Color.Cyan.toArgb()) }
     }
 
     @Test
@@ -182,36 +164,33 @@ class VectorTest {
         var composeCount = 0
         var vectorComposeCount = 0
 
-        val composeVector: @Composable @VectorComposable (Float, Float) -> Unit = {
-                viewportWidth, viewportHeight ->
-
-            vectorComposeCount++
-            Path(
-                fill = SolidColor(Color.Blue),
-                pathData = PathData {
-                    lineTo(viewportWidth, 0f)
-                    lineTo(viewportWidth, viewportHeight)
-                    lineTo(0f, viewportHeight)
-                    close()
-                }
-            )
-        }
+        val composeVector: @Composable @VectorComposable (Float, Float) -> Unit =
+            { viewportWidth, viewportHeight ->
+                vectorComposeCount++
+                Path(
+                    fill = SolidColor(Color.Blue),
+                    pathData =
+                        PathData {
+                            lineTo(viewportWidth, 0f)
+                            lineTo(viewportWidth, viewportHeight)
+                            lineTo(0f, viewportHeight)
+                            close()
+                        }
+                )
+            }
 
         rule.setContent {
             composeCount++
             // Arbitrary read to force composition here and verify the subcomposition below skips
             state.value
-            val vectorPainter = rememberVectorPainter(
-                defaultWidth = 10.dp,
-                defaultHeight = 10.dp,
-                autoMirror = false,
-                content = composeVector
-            )
-            Image(
-                vectorPainter,
-                null,
-                modifier = Modifier.size(20.dp)
-            )
+            val vectorPainter =
+                rememberVectorPainter(
+                    defaultWidth = 10.dp,
+                    defaultHeight = 10.dp,
+                    autoMirror = false,
+                    content = composeVector
+                )
+            Image(vectorPainter, null, modifier = Modifier.size(20.dp))
         }
 
         state.value = 1
@@ -224,9 +203,7 @@ class VectorTest {
     @Test
     fun testVectorInvalidation() {
         val testCase = VectorInvalidationTestCase()
-        rule.setContent {
-            testCase.TestVector()
-        }
+        rule.setContent { testCase.TestVector() }
 
         rule.waitUntil { testCase.measured }
         val size = testCase.vectorSize
@@ -236,9 +213,7 @@ class VectorTest {
         }
 
         testCase.measured = false
-        rule.runOnUiThread {
-            testCase.toggle()
-        }
+        rule.runOnUiThread { testCase.toggle() }
 
         rule.waitUntil { testCase.measured }
 
@@ -248,19 +223,54 @@ class VectorTest {
         }
     }
 
+    @Test
+    fun testVectorDisposal() {
+        val composeVector = mutableStateOf(true)
+        var initCount = 0
+        var disposeCount = 0
+        val disposeLatch = CountDownLatch(1)
+        rule.setContent {
+            if (composeVector.value) {
+                rememberVectorPainter(
+                    defaultWidth = 16.dp,
+                    defaultHeight = 16.dp,
+                    viewportWidth = 16f,
+                    viewportHeight = 16f,
+                    autoMirror = false,
+                ) { _, _ ->
+                    DisposableEffect(Unit) {
+                        initCount++
+                        onDispose {
+                            disposeCount++
+                            disposeLatch.countDown()
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+
+        composeVector.value = false
+
+        rule.waitForIdle()
+
+        assertTrue(disposeLatch.await(3000, TimeUnit.MILLISECONDS))
+        assertEquals(initCount, disposeCount)
+    }
+
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testVectorRendersOnceOnFirstFrame() {
         var drawCount = 0
         val testTag = "TestTag"
         rule.setContent {
-            Box(modifier = Modifier
-                .wrapContentSize()
-                .drawBehind {
-                    drawCount++
-                }
-                .paint(painterResource(R.drawable.ic_triangle2))
-                .testTag(testTag))
+            Box(
+                modifier =
+                    Modifier.wrapContentSize()
+                        .drawBehind { drawCount++ }
+                        .paint(painterResource(R.drawable.ic_triangle2))
+                        .testTag(testTag)
+            )
         }
 
         rule.onNodeWithTag(testTag).captureToImage().toPixelMap().apply {
@@ -271,9 +281,7 @@ class VectorTest {
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testVectorClipPath() {
-        rule.setContent {
-            VectorClip()
-        }
+        rule.setContent { VectorClip() }
 
         takeScreenShot(200).apply {
             assertEquals(getPixel(100, 50), Color.Cyan.toArgb())
@@ -285,38 +293,27 @@ class VectorTest {
     fun testVectorZeroSizeDoesNotCrash() {
         // Make sure that if we are given the size of zero we should not crash and instead
         // act as a no-op
-        rule.setContent {
-            Box(modifier = Modifier.size(0.dp).paint(createTestVectorPainter()))
-        }
+        rule.setContent { Box(modifier = Modifier.size(0.dp).paint(createTestVectorPainter())) }
     }
 
     @Test
     fun testVectorZeroWidthDoesNotCrash() {
         rule.setContent {
-            Box(
-                modifier = Modifier.width(0.dp).height(100.dp).paint
-                (createTestVectorPainter())
-            )
+            Box(modifier = Modifier.width(0.dp).height(100.dp).paint(createTestVectorPainter()))
         }
     }
 
     @Test
     fun testVectorZeroHeightDoesNotCrash() {
         rule.setContent {
-            Box(
-                modifier = Modifier.width(50.dp).height(0.dp).paint(
-                    createTestVectorPainter()
-                )
-            )
+            Box(modifier = Modifier.width(50.dp).height(0.dp).paint(createTestVectorPainter()))
         }
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testVectorTrimPath() {
-        rule.setContent {
-            VectorTrim()
-        }
+        rule.setContent { VectorTrim() }
 
         takeScreenShot(200).apply {
             assertEquals(Color.Yellow.toArgb(), getPixel(25, 100))
@@ -333,37 +330,43 @@ class VectorTest {
         val viewportWidth = 24f
         val viewportHeight = 24f
 
-        val icon1 = ImageVector.Builder(
-            defaultWidth = defaultWidth,
-            defaultHeight = defaultHeight,
-            viewportWidth = viewportWidth,
-            viewportHeight = viewportHeight
-        )
-            .addPath(
-                fill = SolidColor(Color.Black),
-                pathData = PathData {
-                    lineTo(viewportWidth, 0f)
-                    lineTo(viewportWidth, viewportHeight)
-                    lineTo(0f, 0f)
-                    close()
-                }
-            ).build()
+        val icon1 =
+            ImageVector.Builder(
+                    defaultWidth = defaultWidth,
+                    defaultHeight = defaultHeight,
+                    viewportWidth = viewportWidth,
+                    viewportHeight = viewportHeight
+                )
+                .addPath(
+                    fill = SolidColor(Color.Black),
+                    pathData =
+                        PathData {
+                            lineTo(viewportWidth, 0f)
+                            lineTo(viewportWidth, viewportHeight)
+                            lineTo(0f, 0f)
+                            close()
+                        }
+                )
+                .build()
 
-        val icon2 = ImageVector.Builder(
-            defaultWidth = defaultWidth,
-            defaultHeight = defaultHeight,
-            viewportWidth = viewportWidth,
-            viewportHeight = viewportHeight
-        )
-            .addPath(
-                fill = SolidColor(Color.Black),
-                pathData = PathData {
-                    lineTo(0f, viewportHeight)
-                    lineTo(viewportWidth, viewportHeight)
-                    lineTo(0f, 0f)
-                    close()
-                }
-            ).build()
+        val icon2 =
+            ImageVector.Builder(
+                    defaultWidth = defaultWidth,
+                    defaultHeight = defaultHeight,
+                    viewportWidth = viewportWidth,
+                    viewportHeight = viewportHeight
+                )
+                .addPath(
+                    fill = SolidColor(Color.Black),
+                    pathData =
+                        PathData {
+                            lineTo(0f, viewportHeight)
+                            lineTo(viewportWidth, viewportHeight)
+                            lineTo(0f, 0f)
+                            close()
+                        }
+                )
+                .build()
 
         val testTag = "iconClick"
         rule.setContent {
@@ -371,11 +374,11 @@ class VectorTest {
             Image(
                 imageVector = if (clickState.value) icon1 else icon2,
                 contentDescription = null,
-                modifier = Modifier
-                    .testTag(testTag)
-                    .size(icon1.defaultWidth, icon1.defaultHeight)
-                    .background(Color.Red)
-                    .clickable { clickState.value = !clickState.value },
+                modifier =
+                    Modifier.testTag(testTag)
+                        .size(icon1.defaultWidth, icon1.defaultHeight)
+                        .background(Color.Red)
+                        .clickable { clickState.value = !clickState.value },
                 alignment = Alignment.TopStart,
                 contentScale = ContentScale.FillHeight
             )
@@ -417,27 +420,27 @@ class VectorTest {
 
         var tint: ColorFilter? by mutableStateOf(ColorFilter.tint(Color.Green))
         rule.setContent {
-            vectorPainter = rememberVectorPainter(
-                defaultWidth = defaultWidth,
-                defaultHeight = defaultHeight,
-                autoMirror = false
-            ) { viewportWidth, viewportHeight ->
-                Path(
-                    fill = SolidColor(Color.Blue),
-                    pathData = PathData {
-                        lineTo(viewportWidth, 0f)
-                        lineTo(viewportWidth, viewportHeight)
-                        lineTo(0f, viewportHeight)
-                        close()
-                    }
-                )
-            }
+            vectorPainter =
+                rememberVectorPainter(
+                    defaultWidth = defaultWidth,
+                    defaultHeight = defaultHeight,
+                    autoMirror = false
+                ) { viewportWidth, viewportHeight ->
+                    Path(
+                        fill = SolidColor(Color.Blue),
+                        pathData =
+                            PathData {
+                                lineTo(viewportWidth, 0f)
+                                lineTo(viewportWidth, viewportHeight)
+                                lineTo(0f, viewportHeight)
+                                close()
+                            }
+                    )
+                }
             Image(
                 painter = vectorPainter!!,
                 contentDescription = null,
-                modifier = Modifier
-                    .testTag(testTag)
-                    .background(Color.Red),
+                modifier = Modifier.testTag(testTag).background(Color.Red),
                 contentScale = ContentScale.FillBounds,
                 colorFilter = tint
             )
@@ -461,27 +464,27 @@ class VectorTest {
 
         var tint: ColorFilter? by mutableStateOf(null)
         rule.setContent {
-            vectorPainter = rememberVectorPainter(
-                defaultWidth = defaultWidth,
-                defaultHeight = defaultHeight,
-                autoMirror = false
-            ) { viewportWidth, viewportHeight ->
-                Path(
-                    fill = SolidColor(Color.Blue),
-                    pathData = PathData {
-                        lineTo(viewportWidth, 0f)
-                        lineTo(viewportWidth, viewportHeight)
-                        lineTo(0f, viewportHeight)
-                        close()
-                    }
-                )
-            }
+            vectorPainter =
+                rememberVectorPainter(
+                    defaultWidth = defaultWidth,
+                    defaultHeight = defaultHeight,
+                    autoMirror = false
+                ) { viewportWidth, viewportHeight ->
+                    Path(
+                        fill = SolidColor(Color.Blue),
+                        pathData =
+                            PathData {
+                                lineTo(viewportWidth, 0f)
+                                lineTo(viewportWidth, viewportHeight)
+                                lineTo(0f, viewportHeight)
+                                close()
+                            }
+                    )
+                }
             Image(
                 painter = vectorPainter!!,
                 contentDescription = null,
-                modifier = Modifier
-                    .testTag(testTag)
-                    .background(Color.Red),
+                modifier = Modifier.testTag(testTag).background(Color.Red),
                 contentScale = ContentScale.FillBounds,
                 colorFilter = tint
             )
@@ -700,7 +703,8 @@ class VectorTest {
     @Test
     fun testAlphaMaskWithDrawDstOverBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.DstOver))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.DstOver)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -722,28 +726,32 @@ class VectorTest {
     @Test
     fun testAlphaMaskWithDrawSrcOutBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.SrcOut))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.SrcOut)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testAlphaMaskWithDrawDstOutBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.DstOut))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.DstOut)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testAlphaMaskWithDrawSrcAtopBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.SrcAtop))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.SrcAtop)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testAlphaMaskWithDrawDstAtopBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.DstAtop))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.DstAtop)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -762,84 +770,96 @@ class VectorTest {
     @Test
     fun testAlphaMaskWithDrawModulateBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Modulate))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Modulate)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testAlphaMaskWithDrawScreenBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Screen))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Screen)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testAlphaMaskWithDrawOverlayBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Overlay))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Overlay)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testAlphaMaskWithDrawDarkenBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Darken))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Darken)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testAlphaMaskWithDrawLightenBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Lighten))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Lighten)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testAlphaMaskWithDrawColorDodgeBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.ColorDodge))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.ColorDodge)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testAlphaMaskWithDrawColorBurnBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.ColorBurn))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.ColorBurn)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testAlphaMaskWithDrawHardlightBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Hardlight))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Hardlight)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testAlphaMaskWithDrawSoftLightBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Softlight))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Softlight)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testAlphaMaskWithDrawDifferenceBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Difference))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Difference)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testAlphaMaskWithDrawExclusionBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Exclusion))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Exclusion)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testAlphaMaskWithDrawMultiplyBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Multiply))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Multiply)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -852,21 +872,22 @@ class VectorTest {
     @Test
     fun testAlphaMaskWithDrawSaturationBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Saturation))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Saturation)
+        )
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testAlphaMaskWithDrawColorBlendMode() {
-        verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Color))
+        verifyAlphaMaskWithBlendModes(colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Color))
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testAlphaMaskWithDrawLuminosityBlendMode() {
         verifyAlphaMaskWithBlendModes(
-            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Luminosity))
+            colorFilter = ColorFilter.tint(Color.Yellow, BlendMode.Luminosity)
+        )
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -887,34 +908,36 @@ class VectorTest {
         val solidBlueColor = SolidColor(Color.Blue)
         var targetBrush: Brush by mutableStateOf(solidBlueColor)
         rule.setContent {
-            vectorPainter = rememberVectorPainter(
-                defaultWidth = defaultWidth,
-                defaultHeight = defaultHeight,
-                tintColor = Color.Cyan,
-                tintBlendMode = intrinsicBlendMode,
-                autoMirror = false
-            ) { viewportWidth, viewportHeight ->
-                Path(
-                    fill = targetBrush,
-                    pathData = PathData {
-                        lineTo(viewportWidth, 0f)
-                        lineTo(viewportWidth, viewportHeight)
-                        lineTo(0f, viewportHeight)
-                        close()
-                    }
-                )
-            }
+            vectorPainter =
+                rememberVectorPainter(
+                    defaultWidth = defaultWidth,
+                    defaultHeight = defaultHeight,
+                    tintColor = Color.Cyan,
+                    tintBlendMode = intrinsicBlendMode,
+                    autoMirror = false
+                ) { viewportWidth, viewportHeight ->
+                    Path(
+                        fill = targetBrush,
+                        pathData =
+                            PathData {
+                                lineTo(viewportWidth, 0f)
+                                lineTo(viewportWidth, viewportHeight)
+                                lineTo(0f, viewportHeight)
+                                close()
+                            }
+                    )
+                }
             Image(
                 painter = vectorPainter!!,
                 contentDescription = null,
-                modifier = Modifier
-                    .testTag(testTag)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(Color.Transparent, Color.Yellow, Color.Transparent)
+                modifier =
+                    Modifier.testTag(testTag)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color.Transparent, Color.Yellow, Color.Transparent)
+                            )
                         )
-                    )
-                    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen },
+                        .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen },
                 contentScale = ContentScale.FillBounds,
                 colorFilter = colorFilter
             )
@@ -948,28 +971,30 @@ class VectorTest {
         var vectorPainter: VectorPainter? = null
         var brush: Brush by mutableStateOf(SolidColor(Color.Blue))
         rule.setContent {
-            vectorPainter = rememberVectorPainter(
-                defaultWidth = defaultWidth,
-                defaultHeight = defaultHeight,
-                autoMirror = false
-            ) { viewportWidth, viewportHeight ->
-                Path(
-                    fill = brush,
-                    pathData = PathData {
-                        lineTo(viewportWidth, 0f)
-                        lineTo(viewportWidth, viewportHeight)
-                        lineTo(0f, viewportHeight)
-                        close()
-                    }
-                )
-            }
+            vectorPainter =
+                rememberVectorPainter(
+                    defaultWidth = defaultWidth,
+                    defaultHeight = defaultHeight,
+                    autoMirror = false
+                ) { viewportWidth, viewportHeight ->
+                    Path(
+                        fill = brush,
+                        pathData =
+                            PathData {
+                                lineTo(viewportWidth, 0f)
+                                lineTo(viewportWidth, viewportHeight)
+                                lineTo(0f, viewportHeight)
+                                close()
+                            }
+                    )
+                }
             Image(
                 painter = vectorPainter!!,
                 contentDescription = null,
-                modifier = Modifier
-                    .testTag(testTag)
-                    .size(defaultWidth * 8, defaultHeight * 2)
-                    .background(Color.Red),
+                modifier =
+                    Modifier.testTag(testTag)
+                        .size(defaultWidth * 8, defaultHeight * 2)
+                        .background(Color.Red),
                 contentScale = ContentScale.FillBounds
             )
         }
@@ -991,30 +1016,32 @@ class VectorTest {
         var vectorPainter: VectorPainter? = null
         var brush: Brush by mutableStateOf(SolidColor(Color.Blue))
         rule.setContent {
-            vectorPainter = rememberVectorPainter(
-                defaultWidth = defaultWidth,
-                defaultHeight = defaultHeight,
-                autoMirror = false
-            ) { viewportWidth, viewportHeight ->
-                Group {
-                    Path(
-                        fill = brush,
-                        pathData = PathData {
-                            lineTo(viewportWidth, 0f)
-                            lineTo(viewportWidth, viewportHeight)
-                            lineTo(0f, viewportHeight)
-                            close()
-                        }
-                    )
+            vectorPainter =
+                rememberVectorPainter(
+                    defaultWidth = defaultWidth,
+                    defaultHeight = defaultHeight,
+                    autoMirror = false
+                ) { viewportWidth, viewportHeight ->
+                    Group {
+                        Path(
+                            fill = brush,
+                            pathData =
+                                PathData {
+                                    lineTo(viewportWidth, 0f)
+                                    lineTo(viewportWidth, viewportHeight)
+                                    lineTo(0f, viewportHeight)
+                                    close()
+                                }
+                        )
+                    }
                 }
-            }
             Image(
                 painter = vectorPainter!!,
                 contentDescription = null,
-                modifier = Modifier
-                    .testTag(testTag)
-                    .size(defaultWidth * 8, defaultHeight * 2)
-                    .background(Color.Red),
+                modifier =
+                    Modifier.testTag(testTag)
+                        .size(defaultWidth * 8, defaultHeight * 2)
+                        .background(Color.Red),
                 contentScale = ContentScale.FillBounds
             )
         }
@@ -1035,28 +1062,30 @@ class VectorTest {
         val testTag = "testTag"
         var vectorPainter: VectorPainter? = null
         rule.setContent {
-            vectorPainter = rememberVectorPainter(
-                defaultWidth = defaultWidth,
-                defaultHeight = defaultHeight,
-                autoMirror = false
-            ) { viewportWidth, viewportHeight ->
-                Path(
-                    fill = SolidColor(Color.Blue),
-                    pathData = PathData {
-                        lineTo(viewportWidth, 0f)
-                        lineTo(viewportWidth, viewportHeight)
-                        lineTo(0f, viewportHeight)
-                        close()
-                    }
-                )
-            }
+            vectorPainter =
+                rememberVectorPainter(
+                    defaultWidth = defaultWidth,
+                    defaultHeight = defaultHeight,
+                    autoMirror = false
+                ) { viewportWidth, viewportHeight ->
+                    Path(
+                        fill = SolidColor(Color.Blue),
+                        pathData =
+                            PathData {
+                                lineTo(viewportWidth, 0f)
+                                lineTo(viewportWidth, viewportHeight)
+                                lineTo(0f, viewportHeight)
+                                close()
+                            }
+                    )
+                }
             Image(
                 painter = vectorPainter!!,
                 contentDescription = null,
-                modifier = Modifier
-                    .testTag(testTag)
-                    .size(defaultWidth * 8, defaultHeight * 2)
-                    .background(Color.Red),
+                modifier =
+                    Modifier.testTag(testTag)
+                        .size(defaultWidth * 8, defaultHeight * 2)
+                        .background(Color.Red),
                 contentScale = ContentScale.FillBounds
             )
         }
@@ -1072,12 +1101,13 @@ class VectorTest {
         val color = mutableStateOf(Color.Magenta)
 
         rule.setContent {
-            val background = Modifier.background(Color.Red).paint(
-                createTestVectorPainter(size.value, color.value),
-                alignment = Alignment.TopStart
-            )
-            AtLeastSize(size = 400, modifier = background) {
-            }
+            val background =
+                Modifier.background(Color.Red)
+                    .paint(
+                        createTestVectorPainter(size.value, color.value),
+                        alignment = Alignment.TopStart
+                    )
+            AtLeastSize(size = 400, modifier = background) {}
         }
 
         takeScreenShot(400).apply {
@@ -1110,10 +1140,7 @@ class VectorTest {
             val theme = LocalContext.current.theme
             val imageVectorCache = LocalImageVectorCache.current
             imageVectorCache.clear()
-            Image(
-                painterResource(R.drawable.ic_triangle),
-                contentDescription = null
-            )
+            Image(painterResource(R.drawable.ic_triangle), contentDescription = null)
 
             vectorInCache =
                 imageVectorCache[ImageVectorCache.Key(theme, R.drawable.ic_triangle)] != null
@@ -1133,10 +1160,7 @@ class VectorTest {
             theme = LocalContext.current.theme
             val imageVectorCache = LocalImageVectorCache.current
             imageVectorCache.clear()
-            Image(
-                painterResource(R.drawable.ic_triangle),
-                contentDescription = null
-            )
+            Image(painterResource(R.drawable.ic_triangle), contentDescription = null)
 
             vectorInCache =
                 imageVectorCache[ImageVectorCache.Key(theme!!, R.drawable.ic_triangle)] != null
@@ -1146,38 +1170,58 @@ class VectorTest {
 
         application?.onTrimMemory(0)
 
-        val cacheCleared = vectorCache?.let {
-            it[ImageVectorCache.Key(theme!!, R.drawable.ic_triangle)] == null
-        } ?: false
+        val cacheCleared =
+            vectorCache?.let { it[ImageVectorCache.Key(theme!!, R.drawable.ic_triangle)] == null }
+                ?: false
 
         assertTrue("Vector was not inserted in cache after initial creation", vectorInCache)
         assertTrue("Cache was not cleared after trim memory call", cacheCleared)
     }
 
+    private fun Activity.rotate(rotation: Int): Boolean {
+        var rotationCount = 0
+        var rotateSuccess = false
+        var latch: CountDownLatch? = null
+        val callbacks =
+            object : ComponentCallbacks2 {
+                override fun onConfigurationChanged(p0: Configuration) {
+                    latch?.countDown()
+                }
+
+                @Deprecated("This callback is superseded by onTrimMemory")
+                override fun onLowMemory() {
+                    // NO-OP
+                }
+
+                override fun onTrimMemory(p0: Int) {
+                    // NO-OP
+                }
+            }
+        application.registerComponentCallbacks(callbacks)
+        try {
+            while (rotationCount < 3 && !rotateSuccess) {
+                latch = CountDownLatch(1)
+                this.requestedOrientation = rotation
+                rotateSuccess =
+                    latch.await(3000, TimeUnit.MILLISECONDS) &&
+                        this.requestedOrientation == rotation
+                rotationCount++
+            }
+        } finally {
+            application.unregisterComponentCallbacks(callbacks)
+        }
+        return rotateSuccess
+    }
+
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testImageVectorConfigChange() {
+        if (!rule.activity.rotate(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)) {
+            Log.w(TAG, "device rotation unsuccessful")
+            return
+        }
         val tag = "testTag"
-        rule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-
-        val latch = CountDownLatch(1)
-
-        rule.activity.application.registerComponentCallbacks(object : ComponentCallbacks2 {
-            override fun onConfigurationChanged(p0: Configuration) {
-                latch.countDown()
-            }
-
-            override fun onLowMemory() {
-                // NO-OP
-            }
-
-            override fun onTrimMemory(p0: Int) {
-                // NO-OP
-            }
-        })
-
         try {
-            latch.await(1500, TimeUnit.MILLISECONDS)
             rule.setContent {
                 Image(
                     painterResource(R.drawable.ic_triangle_config),
@@ -1191,7 +1235,7 @@ class VectorTest {
         } catch (e: InterruptedException) {
             fail("Unable to verify vector asset in landscape orientation")
         } finally {
-            rule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            rule.activity.rotate(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
         }
     }
 
@@ -1225,9 +1269,7 @@ class VectorTest {
     @Test
     fun testVectorStrokeWidth() {
         val strokeWidth = mutableStateOf(100)
-        rule.setContent {
-            VectorStroke(strokeWidth = strokeWidth.value)
-        }
+        rule.setContent { VectorStroke(strokeWidth = strokeWidth.value) }
         takeScreenShot(200).apply {
             assertEquals(Color.Yellow.toArgb(), getPixel(100, 25))
             assertEquals(Color.Blue.toArgb(), getPixel(100, 75))
@@ -1246,13 +1288,13 @@ class VectorTest {
         minimumSize: Int = size,
         alignment: Alignment = Alignment.Center
     ) {
-        val background = Modifier.paint(
-            createTestVectorPainter(size),
-            colorFilter = ColorFilter.tint(Color.Cyan),
-            alignment = alignment
-        )
-        AtLeastSize(size = minimumSize, modifier = background) {
-        }
+        val background =
+            Modifier.paint(
+                createTestVectorPainter(size),
+                colorFilter = ColorFilter.tint(Color.Cyan),
+                alignment = alignment
+            )
+        AtLeastSize(size = minimumSize, modifier = background) {}
     }
 
     @Composable
@@ -1268,12 +1310,13 @@ class VectorTest {
             autoMirror = false,
             content = { _, _ ->
                 Path(
-                    pathData = PathData {
-                        lineTo(sizePx, 0.0f)
-                        lineTo(sizePx, sizePx)
-                        lineTo(0.0f, sizePx)
-                        close()
-                    },
+                    pathData =
+                        PathData {
+                            lineTo(sizePx, 0.0f)
+                            lineTo(sizePx, sizePx)
+                            lineTo(0.0f, sizePx)
+                            close()
+                        },
                     fill = SolidColor(Color.Black)
                 )
             },
@@ -1289,50 +1332,53 @@ class VectorTest {
     ) {
         val sizePx = size.toFloat()
         val sizeDp = (size / LocalDensity.current.density).dp
-        val background = Modifier.paint(
-            rememberVectorPainter(
-                defaultWidth = sizeDp,
-                defaultHeight = sizeDp,
-                autoMirror = false
-            ) { _, _ ->
-                Path(
-                    // Cyan background.
-                    pathData = PathData {
-                        lineTo(sizePx, 0.0f)
-                        lineTo(sizePx, sizePx)
-                        lineTo(0.0f, sizePx)
-                        close()
-                    },
-                    fill = SolidColor(Color.Cyan)
-                )
-                Group(
-                    // Only show the top half...
-                    clipPathData = PathData {
-                        lineTo(sizePx, 0.0f)
-                        lineTo(sizePx, sizePx / 2)
-                        lineTo(0.0f, sizePx / 2)
-                        close()
-                    },
-                    // And rotate it, resulting in the bottom half being black.
-                    pivotX = sizePx / 2,
-                    pivotY = sizePx / 2,
-                    rotation = 180f
-                ) {
+        val background =
+            Modifier.paint(
+                rememberVectorPainter(
+                    defaultWidth = sizeDp,
+                    defaultHeight = sizeDp,
+                    autoMirror = false
+                ) { _, _ ->
                     Path(
-                        pathData = PathData {
-                            lineTo(sizePx, 0.0f)
-                            lineTo(sizePx, sizePx)
-                            lineTo(0.0f, sizePx)
-                            close()
-                        },
-                        fill = SolidColor(Color.Black)
+                        // Cyan background.
+                        pathData =
+                            PathData {
+                                lineTo(sizePx, 0.0f)
+                                lineTo(sizePx, sizePx)
+                                lineTo(0.0f, sizePx)
+                                close()
+                            },
+                        fill = SolidColor(Color.Cyan)
                     )
-                }
-            },
-            alignment = alignment
-        )
-        AtLeastSize(size = minimumSize, modifier = background) {
-        }
+                    Group(
+                        // Only show the top half...
+                        clipPathData =
+                            PathData {
+                                lineTo(sizePx, 0.0f)
+                                lineTo(sizePx, sizePx / 2)
+                                lineTo(0.0f, sizePx / 2)
+                                close()
+                            },
+                        // And rotate it, resulting in the bottom half being black.
+                        pivotX = sizePx / 2,
+                        pivotY = sizePx / 2,
+                        rotation = 180f
+                    ) {
+                        Path(
+                            pathData =
+                                PathData {
+                                    lineTo(sizePx, 0.0f)
+                                    lineTo(sizePx, sizePx)
+                                    lineTo(0.0f, sizePx)
+                                    close()
+                                },
+                            fill = SolidColor(Color.Black)
+                        )
+                    }
+                },
+                alignment = alignment
+            )
+        AtLeastSize(size = minimumSize, modifier = background) {}
     }
 
     @Composable
@@ -1343,38 +1389,40 @@ class VectorTest {
     ) {
         val sizePx = size.toFloat()
         val sizeDp = (size / LocalDensity.current.density).dp
-        val background = Modifier.paint(
-            rememberVectorPainter(
-                defaultWidth = sizeDp,
-                defaultHeight = sizeDp,
-                autoMirror = false
-            ) { _, _ ->
-                Path(
-                    pathData = PathData {
-                        lineTo(sizePx, 0.0f)
-                        lineTo(sizePx, sizePx)
-                        lineTo(0.0f, sizePx)
-                        close()
-                    },
-                    fill = SolidColor(Color.Blue)
-                )
-                // A thick stroke
-                Path(
-                    pathData = PathData {
-                        moveTo(0.0f, sizePx / 2)
-                        lineTo(sizePx, sizePx / 2)
-                    },
-                    stroke = SolidColor(Color.Yellow),
-                    strokeLineWidth = sizePx / 2,
-                    trimPathStart = 0.25f,
-                    trimPathEnd = 0.75f,
-                    trimPathOffset = 0.5f
-                )
-            },
-            alignment = alignment
-        )
-        AtLeastSize(size = minimumSize, modifier = background) {
-        }
+        val background =
+            Modifier.paint(
+                rememberVectorPainter(
+                    defaultWidth = sizeDp,
+                    defaultHeight = sizeDp,
+                    autoMirror = false
+                ) { _, _ ->
+                    Path(
+                        pathData =
+                            PathData {
+                                lineTo(sizePx, 0.0f)
+                                lineTo(sizePx, sizePx)
+                                lineTo(0.0f, sizePx)
+                                close()
+                            },
+                        fill = SolidColor(Color.Blue)
+                    )
+                    // A thick stroke
+                    Path(
+                        pathData =
+                            PathData {
+                                moveTo(0.0f, sizePx / 2)
+                                lineTo(sizePx, sizePx / 2)
+                            },
+                        stroke = SolidColor(Color.Yellow),
+                        strokeLineWidth = sizePx / 2,
+                        trimPathStart = 0.25f,
+                        trimPathEnd = 0.75f,
+                        trimPathOffset = 0.5f
+                    )
+                },
+                alignment = alignment
+            )
+        AtLeastSize(size = minimumSize, modifier = background) {}
     }
 
     @Composable
@@ -1387,35 +1435,37 @@ class VectorTest {
         val sizePx = size.toFloat()
         val sizeDp = (size / LocalDensity.current.density).dp
         val strokeWidthPx = strokeWidth.toFloat()
-        val background = Modifier.paint(
-            rememberVectorPainter(
-                defaultWidth = sizeDp,
-                defaultHeight = sizeDp,
-                autoMirror = false
-            ) { _, _ ->
-                Path(
-                    pathData = PathData {
-                        lineTo(sizePx, 0.0f)
-                        lineTo(sizePx, sizePx)
-                        lineTo(0.0f, sizePx)
-                        close()
-                    },
-                    fill = SolidColor(Color.Blue)
-                )
-                // A thick stroke
-                Path(
-                    pathData = PathData {
-                        moveTo(0.0f, 0.0f)
-                        lineTo(sizePx, 0.0f)
-                    },
-                    stroke = SolidColor(Color.Yellow),
-                    strokeLineWidth = strokeWidthPx,
-                )
-            },
-            alignment = alignment
-        )
-        AtLeastSize(size = minimumSize, modifier = background) {
-        }
+        val background =
+            Modifier.paint(
+                rememberVectorPainter(
+                    defaultWidth = sizeDp,
+                    defaultHeight = sizeDp,
+                    autoMirror = false
+                ) { _, _ ->
+                    Path(
+                        pathData =
+                            PathData {
+                                lineTo(sizePx, 0.0f)
+                                lineTo(sizePx, sizePx)
+                                lineTo(0.0f, sizePx)
+                                close()
+                            },
+                        fill = SolidColor(Color.Blue)
+                    )
+                    // A thick stroke
+                    Path(
+                        pathData =
+                            PathData {
+                                moveTo(0.0f, 0.0f)
+                                lineTo(sizePx, 0.0f)
+                            },
+                        stroke = SolidColor(Color.Yellow),
+                        strokeLineWidth = strokeWidthPx,
+                    )
+                },
+                alignment = alignment
+            )
+        AtLeastSize(size = minimumSize, modifier = background) {}
     }
 
     @Composable
@@ -1423,31 +1473,33 @@ class VectorTest {
         val sizePx = size.toFloat()
         val sizeDp = (size / LocalDensity.current.density).dp
         return rememberVectorPainter(
-                defaultWidth = sizeDp,
-                defaultHeight = sizeDp,
-                autoMirror = true
-            ) { _, _ ->
-                Path(
-                    pathData = PathData {
+            defaultWidth = sizeDp,
+            defaultHeight = sizeDp,
+            autoMirror = true
+        ) { _, _ ->
+            Path(
+                pathData =
+                    PathData {
                         lineTo(sizePx / 2, 0f)
                         lineTo(sizePx / 2, sizePx)
                         lineTo(0f, sizePx)
                         close()
                     },
-                    fill = SolidColor(Color.Red)
-                )
+                fill = SolidColor(Color.Red)
+            )
 
-                Path(
-                    pathData = PathData {
+            Path(
+                pathData =
+                    PathData {
                         moveTo(sizePx / 2, 0f)
                         lineTo(sizePx, 0f)
                         lineTo(sizePx, sizePx)
                         lineTo(sizePx / 2, sizePx)
                         close()
                     },
-                    fill = SolidColor(Color.Blue)
-                )
-            }
+                fill = SolidColor(Color.Blue)
+            )
+        }
     }
 
     // captureToImage() requires API level 26
@@ -1458,4 +1510,6 @@ class VectorTest {
         Assert.assertEquals(height, bitmap.height)
         return bitmap
     }
+
+    private val TAG = "VectorTest"
 }

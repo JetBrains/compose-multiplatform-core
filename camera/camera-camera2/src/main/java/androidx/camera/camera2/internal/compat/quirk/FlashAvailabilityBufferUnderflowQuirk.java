@@ -20,9 +20,9 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.os.Build;
 import android.util.Pair;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.NonNull;
 
 import java.nio.BufferUnderflowException;
 import java.util.HashSet;
@@ -42,7 +42,6 @@ import java.util.Set;
  *                  so this violates the API contract.
  *     Device(s): Spreadtrum devices including LEMFO LEMP and DM20C
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class FlashAvailabilityBufferUnderflowQuirk implements Quirk {
     private static final Set<Pair<String, String>> KNOWN_AFFECTED_MODELS = new HashSet<>();
     static {

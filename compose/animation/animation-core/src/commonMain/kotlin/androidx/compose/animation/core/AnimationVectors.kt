@@ -25,12 +25,15 @@ package androidx.compose.animation.core
  * object should be converted to [AnimationVector2D], whereas an object that describes rectangle
  * bounds should convert to [AnimationVector4D].
  */
-sealed class AnimationVector {
+public sealed class AnimationVector {
     internal abstract fun reset()
+
     internal abstract fun newVector(): AnimationVector
 
     internal abstract operator fun get(index: Int): Float
+
     internal abstract operator fun set(index: Int, value: Float)
+
     internal abstract val size: Int
 }
 
@@ -39,7 +42,7 @@ sealed class AnimationVector {
  *
  * @param v1 value to set on the value field of [AnimationVector1D]
  */
-fun AnimationVector(v1: Float) = AnimationVector1D(v1)
+public fun AnimationVector(v1: Float): AnimationVector1D = AnimationVector1D(v1)
 
 /**
  * Factory method to create an [AnimationVector2D]
@@ -47,7 +50,7 @@ fun AnimationVector(v1: Float) = AnimationVector1D(v1)
  * @param v1 value to set on the first dimension
  * @param v2 value to set on the second dimension
  */
-fun AnimationVector(v1: Float, v2: Float) = AnimationVector2D(v1, v2)
+public fun AnimationVector(v1: Float, v2: Float): AnimationVector2D = AnimationVector2D(v1, v2)
 
 /**
  * Factory method to create an [AnimationVector3D]
@@ -56,7 +59,8 @@ fun AnimationVector(v1: Float, v2: Float) = AnimationVector2D(v1, v2)
  * @param v2 value to set on the second dimension
  * @param v3 value to set on the third dimension
  */
-fun AnimationVector(v1: Float, v2: Float, v3: Float) = AnimationVector3D(v1, v2, v3)
+public fun AnimationVector(v1: Float, v2: Float, v3: Float): AnimationVector3D =
+    AnimationVector3D(v1, v2, v3)
 
 /**
  * Factory method to create an [AnimationVector4D]
@@ -66,16 +70,11 @@ fun AnimationVector(v1: Float, v2: Float, v3: Float) = AnimationVector3D(v1, v2,
  * @param v3 value to set on the third dimension
  * @param v4 value to set on the fourth dimension
  */
-fun AnimationVector(
-    v1: Float,
-    v2: Float,
-    v3: Float,
-    v4: Float
-) = AnimationVector4D(v1, v2, v3, v4)
+public fun AnimationVector(v1: Float, v2: Float, v3: Float, v4: Float): AnimationVector4D =
+    AnimationVector4D(v1, v2, v3, v4)
 
 internal fun <T : AnimationVector> T.newInstance(): T {
-    @Suppress("UNCHECKED_CAST")
-    return this.newVector() as T
+    @Suppress("UNCHECKED_CAST") return this.newVector() as T
 }
 
 internal fun <T : AnimationVector> T.copy(): T {
@@ -98,11 +97,9 @@ internal fun <T : AnimationVector> T.copyFrom(source: T) {
  *
  * @param initVal initial value to set the [value] field to.
  */
-class AnimationVector1D(initVal: Float) : AnimationVector() {
-    /**
-     * This field holds the only Float value in this [AnimationVector1D] object.
-     */
-    var value: Float = initVal
+public class AnimationVector1D(initVal: Float) : AnimationVector() {
+    /** This field holds the only Float value in this [AnimationVector1D] object. */
+    public var value: Float = initVal
         internal set
 
     // internal
@@ -111,6 +108,7 @@ class AnimationVector1D(initVal: Float) : AnimationVector() {
     }
 
     override fun newVector(): AnimationVector1D = AnimationVector1D(0f)
+
     override fun get(index: Int): Float {
         if (index == 0) {
             return value
@@ -131,8 +129,7 @@ class AnimationVector1D(initVal: Float) : AnimationVector() {
         return "AnimationVector1D: value = $value"
     }
 
-    override fun equals(other: Any?): Boolean =
-        other is AnimationVector1D && other.value == value
+    override fun equals(other: Any?): Boolean = other is AnimationVector1D && other.value == value
 
     override fun hashCode(): Int = value.hashCode()
 }
@@ -143,17 +140,13 @@ class AnimationVector1D(initVal: Float) : AnimationVector() {
  * @param v1 initial value to set on the first dimension
  * @param v2 initial value to set on the second dimension
  */
-class AnimationVector2D(v1: Float, v2: Float) : AnimationVector() {
-    /**
-     * Float value field for the first dimension of the 2D vector.
-     */
-    var v1: Float = v1
+public class AnimationVector2D(v1: Float, v2: Float) : AnimationVector() {
+    /** Float value field for the first dimension of the 2D vector. */
+    public var v1: Float = v1
         internal set
 
-    /**
-     * Float value field for the second dimension of the 2D vector.
-     */
-    var v2: Float = v2
+    /** Float value field for the second dimension of the 2D vector. */
+    public var v2: Float = v2
         internal set
 
     // internal
@@ -163,6 +156,7 @@ class AnimationVector2D(v1: Float, v2: Float) : AnimationVector() {
     }
 
     override fun newVector(): AnimationVector2D = AnimationVector2D(0f, 0f)
+
     override fun get(index: Int): Float {
         return when (index) {
             0 -> v1
@@ -197,24 +191,18 @@ class AnimationVector2D(v1: Float, v2: Float) : AnimationVector() {
  * @param v2 initial value to set on the second dimension
  * @param v3 initial value to set on the third dimension
  */
-class AnimationVector3D(v1: Float, v2: Float, v3: Float) : AnimationVector() {
+public class AnimationVector3D(v1: Float, v2: Float, v3: Float) : AnimationVector() {
     // Internally mutable, so we don't have to create a number of small objects per anim frame
-    /**
-     * Float value field for the first dimension of the 3D vector.
-     */
-    var v1: Float = v1
+    /** Float value field for the first dimension of the 3D vector. */
+    public var v1: Float = v1
         internal set
 
-    /**
-     * Float value field for the second dimension of the 3D vector.
-     */
-    var v2: Float = v2
+    /** Float value field for the second dimension of the 3D vector. */
+    public var v2: Float = v2
         internal set
 
-    /**
-     * Float value field for the third dimension of the 3D vector.
-     */
-    var v3: Float = v3
+    /** Float value field for the third dimension of the 3D vector. */
+    public var v3: Float = v3
         internal set
 
     // internal
@@ -263,30 +251,22 @@ class AnimationVector3D(v1: Float, v2: Float, v3: Float) : AnimationVector() {
  * @param v3 initial value to set on the third dimension
  * @param v4 initial value to set on the fourth dimension
  */
-class AnimationVector4D(v1: Float, v2: Float, v3: Float, v4: Float) : AnimationVector() {
+public class AnimationVector4D(v1: Float, v2: Float, v3: Float, v4: Float) : AnimationVector() {
     // Internally mutable, so we don't have to create a number of small objects per anim frame
-    /**
-     * Float value field for the first dimension of the 4D vector.
-     */
-    var v1: Float = v1
+    /** Float value field for the first dimension of the 4D vector. */
+    public var v1: Float = v1
         internal set
 
-    /**
-     * Float value field for the second dimension of the 4D vector.
-     */
-    var v2: Float = v2
+    /** Float value field for the second dimension of the 4D vector. */
+    public var v2: Float = v2
         internal set
 
-    /**
-     * Float value field for the third dimension of the 4D vector.
-     */
-    var v3: Float = v3
+    /** Float value field for the third dimension of the 4D vector. */
+    public var v3: Float = v3
         internal set
 
-    /**
-     * Float value field for the fourth dimension of the 4D vector.
-     */
-    var v4: Float = v4
+    /** Float value field for the fourth dimension of the 4D vector. */
+    public var v4: Float = v4
         internal set
 
     override fun reset() {

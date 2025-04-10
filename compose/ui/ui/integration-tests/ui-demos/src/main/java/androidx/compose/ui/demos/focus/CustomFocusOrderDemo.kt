@@ -32,7 +32,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusRequester.Companion.Default
@@ -47,15 +46,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun CustomFocusOrderDemo() {
     Column {
-        Row {
-            Text(
-                "Use the arrow keys to move focus left/right/up/down."
-            )
-        }
+        Row { Text("Use the arrow keys to move focus left/right/up/down.") }
         Column(Modifier.fillMaxSize(), SpaceEvenly) {
             val (item1, item2, item3, item4) = remember { FocusRequester.createRefs() }
             var wrapAround by remember { mutableStateOf(false) }
@@ -64,49 +58,45 @@ fun CustomFocusOrderDemo() {
                 Switch(checked = wrapAround, onCheckedChange = { wrapAround = !wrapAround })
             }
             Row(Modifier.fillMaxWidth(), SpaceEvenly) {
-                    FocusableText(
-                        text = "1",
-                        modifier = Modifier
-                            .focusRequester(item1)
-                            .focusProperties {
-                                left = if (wrapAround) item2 else Default
-                                up = if (wrapAround) item3 else Default
-                            }
-                    )
-                        FocusableText(
-                        text = "2",
-                        modifier = Modifier
-                            .focusRequester(item2)
-                            .focusProperties {
-                                right = if (wrapAround) item1 else Default
-                                up = if (wrapAround) item4 else Default
-                            }
-                    )
-                }
-                Row(Modifier.fillMaxWidth(), SpaceEvenly) {
-                    FocusableText(
-                        text = "3",
-                        modifier = Modifier
-                            .focusRequester(item3)
-                            .focusProperties {
-                                left = if (wrapAround) item4 else Default
-                                down = if (wrapAround) item1 else Default
-                            }
-                    )
-                    FocusableText(
-                        text = "4",
-                        modifier = Modifier
-                            .focusRequester(item4)
-                            .focusProperties {
-                                right = if (wrapAround) item3 else Default
-                                down = if (wrapAround) item2 else Default
-                            }
-                    )
-                }
-                DisposableEffect(Unit) {
-                    item1.requestFocus()
-                    onDispose { }
-                }
+                FocusableText(
+                    text = "1",
+                    modifier =
+                        Modifier.focusRequester(item1).focusProperties {
+                            left = if (wrapAround) item2 else Default
+                            up = if (wrapAround) item3 else Default
+                        }
+                )
+                FocusableText(
+                    text = "2",
+                    modifier =
+                        Modifier.focusRequester(item2).focusProperties {
+                            right = if (wrapAround) item1 else Default
+                            up = if (wrapAround) item4 else Default
+                        }
+                )
+            }
+            Row(Modifier.fillMaxWidth(), SpaceEvenly) {
+                FocusableText(
+                    text = "3",
+                    modifier =
+                        Modifier.focusRequester(item3).focusProperties {
+                            left = if (wrapAround) item4 else Default
+                            down = if (wrapAround) item1 else Default
+                        }
+                )
+                FocusableText(
+                    text = "4",
+                    modifier =
+                        Modifier.focusRequester(item4).focusProperties {
+                            right = if (wrapAround) item3 else Default
+                            down = if (wrapAround) item2 else Default
+                        }
+                )
+            }
+            DisposableEffect(Unit) {
+                item1.requestFocus()
+                onDispose {}
+            }
         }
     }
 }
@@ -116,13 +106,14 @@ private fun FocusableText(text: String, modifier: Modifier = Modifier) {
     var color by remember { mutableStateOf(Black) }
     val focusRequester = remember { FocusRequester() }
     Text(
-        modifier = modifier
-            .border(width = 1.dp, color = Black)
-            .requiredWidth(50.dp)
-            .focusRequester(focusRequester)
-            .onFocusChanged { color = if (it.isFocused) Green else Black }
-            .focusTarget()
-            .pointerInput(Unit) { detectTapGestures { focusRequester.requestFocus() } },
+        modifier =
+            modifier
+                .border(width = 1.dp, color = Black)
+                .requiredWidth(50.dp)
+                .focusRequester(focusRequester)
+                .onFocusChanged { color = if (it.isFocused) Green else Black }
+                .focusTarget()
+                .pointerInput(Unit) { detectTapGestures { focusRequester.requestFocus() } },
         text = text,
         fontSize = 40.sp,
         textAlign = TextAlign.Center,

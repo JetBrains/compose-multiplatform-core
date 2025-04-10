@@ -34,45 +34,64 @@ class AidlCallbackGeneratorTest {
 
     @Test
     fun generate() {
-        val api = ParsedApi(
-            services = setOf(
-                AnnotatedInterface(
-                    type = Type(packageName = "com.mysdk", simpleName = "MySdk"),
-                    methods = listOf(
-                        Method(
-                            name = "doStuff",
-                            parameters = listOf(
-                                Parameter(
-                                    "callback", Type("com.mysdk", "MyCallback")
+        val api =
+            ParsedApi(
+                services =
+                    setOf(
+                        AnnotatedInterface(
+                            type = Type(packageName = "com.mysdk", simpleName = "MySdk"),
+                            methods =
+                                listOf(
+                                    Method(
+                                        name = "doStuff",
+                                        parameters =
+                                            listOf(
+                                                Parameter(
+                                                    "callback",
+                                                    Type("com.mysdk", "MyCallback")
+                                                )
+                                            ),
+                                        returnType = Types.unit,
+                                        isSuspend = false,
+                                    ),
                                 )
-                            ),
-                            returnType = Types.unit,
-                            isSuspend = false,
-                        ),
-                    )
-                )
-            ), callbacks = setOf(
-                AnnotatedInterface(
-                    type = Type(packageName = "com.mysdk", simpleName = "MyCallback"),
-                    methods = listOf(
-                        Method(
-                            name = "onComplete",
-                            parameters = listOf(
-                                Parameter("result", Types.boolean),
-                            ),
-                            returnType = Types.unit,
-                            isSuspend = false,
+                        )
+                    ),
+                callbacks =
+                    setOf(
+                        AnnotatedInterface(
+                            type = Type(packageName = "com.mysdk", simpleName = "MyCallback"),
+                            methods =
+                                listOf(
+                                    Method(
+                                        name = "onComplete",
+                                        parameters =
+                                            listOf(
+                                                Parameter("result", Types.boolean),
+                                            ),
+                                        returnType = Types.unit,
+                                        isSuspend = false,
+                                    ),
+                                    Method(
+                                        name = "getName",
+                                        parameters = listOf(),
+                                        returnType = Types.string,
+                                        isSuspend = true,
+                                    )
+                                )
                         )
                     )
-                )
             )
-        )
 
         val (aidlGeneratedSources, javaGeneratedSources) = AidlTestHelper.runGenerator(api)
         Truth.assertThat(javaGeneratedSources.map { it.packageName to it.interfaceName })
             .containsExactly(
                 "com.mysdk" to "IMySdk",
                 "com.mysdk" to "IMyCallback",
+                "com.mysdk" to "IStringTransactionCallback",
+                "com.mysdk" to "ICancellationSignal",
+                "com.mysdk" to "ParcelableStackFrame",
+                "com.mysdk" to "PrivacySandboxThrowableParcel",
             )
 
         val outputTestDataDir = File("src/test/test-data/aidlcallbackgeneratortest/output")

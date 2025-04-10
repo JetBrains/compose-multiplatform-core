@@ -19,9 +19,10 @@ package androidx.webkit;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Base class for clients to capture Service Worker related callbacks,

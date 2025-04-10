@@ -16,10 +16,10 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.Logger;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,7 +36,6 @@ import java.util.Map;
  * the camera capture, but not currently capturing. Active means the use case is either currently
  * issuing a capture request or one has already been issued.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class UseCaseAttachState {
     private static final String TAG = "UseCaseAttachState";
     /** The name of the camera the use cases are attached to. */
@@ -128,26 +127,22 @@ public final class UseCaseAttachState {
         return useCaseAttachInfo.getAttached();
     }
 
-    @NonNull
-    public Collection<UseCaseConfig<?>> getAttachedUseCaseConfigs() {
+    public @NonNull Collection<UseCaseConfig<?>> getAttachedUseCaseConfigs() {
         return Collections.unmodifiableCollection(
                 getUseCaseConfigs((useCaseAttachInfo) -> useCaseAttachInfo.getAttached()));
     }
 
-    @NonNull
-    public Collection<SessionConfig> getAttachedSessionConfigs() {
+    public @NonNull Collection<SessionConfig> getAttachedSessionConfigs() {
         return Collections.unmodifiableCollection(
                 getSessionConfigs((useCaseAttachInfo) -> useCaseAttachInfo.getAttached()));
     }
 
-    @NonNull
-    public Collection<UseCaseAttachInfo> getAttachedUseCaseInfo() {
+    public @NonNull Collection<UseCaseAttachInfo> getAttachedUseCaseInfo() {
         return Collections.unmodifiableCollection(
                 getUseCaseInfo((useCaseAttachInfo) -> useCaseAttachInfo.getAttached()));
     }
 
-    @NonNull
-    public Collection<SessionConfig> getActiveAndAttachedSessionConfigs() {
+    public @NonNull Collection<SessionConfig> getActiveAndAttachedSessionConfigs() {
         return Collections.unmodifiableCollection(
                 getSessionConfigs((useCaseAttachInfo) ->
                         useCaseAttachInfo.getActive() && useCaseAttachInfo.getAttached()));
@@ -187,8 +182,7 @@ public final class UseCaseAttachState {
     }
 
     /** Returns a session configuration builder for use cases which are both active and attached. */
-    @NonNull
-    public SessionConfig.ValidatingBuilder getActiveAndAttachedBuilder() {
+    public SessionConfig.@NonNull ValidatingBuilder getActiveAndAttachedBuilder() {
         SessionConfig.ValidatingBuilder validatingBuilder = new SessionConfig.ValidatingBuilder();
 
         List<String> list = new ArrayList<>();
@@ -206,8 +200,7 @@ public final class UseCaseAttachState {
     }
 
     /** Returns a session configuration builder for use cases which are attached. */
-    @NonNull
-    public SessionConfig.ValidatingBuilder getAttachedBuilder() {
+    public SessionConfig.@NonNull ValidatingBuilder getAttachedBuilder() {
         SessionConfig.ValidatingBuilder validatingBuilder = new SessionConfig.ValidatingBuilder();
         List<String> list = new ArrayList<>();
         for (Map.Entry<String, UseCaseAttachInfo> attachedUseCase :
@@ -278,17 +271,13 @@ public final class UseCaseAttachState {
     /** The set of state and configuration information for an attached use case. */
     public static final class UseCaseAttachInfo {
         /** The configurations required of the camera for the use case. */
-        @NonNull
-        private final SessionConfig mSessionConfig;
+        private final @NonNull SessionConfig mSessionConfig;
 
-        @NonNull
-        private final UseCaseConfig<?> mUseCaseConfig;
+        private final @NonNull UseCaseConfig<?> mUseCaseConfig;
 
-        @Nullable
-        private final StreamSpec mStreamSpec;
+        private final @Nullable StreamSpec mStreamSpec;
 
-        @Nullable
-        private final List<UseCaseConfigFactory.CaptureType> mCaptureTypes;
+        private final @Nullable List<UseCaseConfigFactory.CaptureType> mCaptureTypes;
 
         /**
          * True if the use case is currently attached (i.e. camera should have a capture session
@@ -312,23 +301,19 @@ public final class UseCaseAttachState {
             mCaptureTypes = captureTypes;
         }
 
-        @NonNull
-        public UseCaseConfig<?> getUseCaseConfig() {
+        public @NonNull UseCaseConfig<?> getUseCaseConfig() {
             return mUseCaseConfig;
         }
 
-        @NonNull
-        public SessionConfig getSessionConfig() {
+        public @NonNull SessionConfig getSessionConfig() {
             return mSessionConfig;
         }
 
-        @Nullable
-        public StreamSpec getStreamSpec() {
+        public @Nullable StreamSpec getStreamSpec() {
             return mStreamSpec;
         }
 
-        @Nullable
-        public List<UseCaseConfigFactory.CaptureType> getCaptureTypes() {
+        public @Nullable List<UseCaseConfigFactory.CaptureType> getCaptureTypes() {
             return mCaptureTypes;
         }
 
@@ -349,9 +334,8 @@ public final class UseCaseAttachState {
         }
 
         @SuppressWarnings("ObjectToString")
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return "UseCaseAttachInfo{" + "mSessionConfig=" + mSessionConfig + ", mUseCaseConfig="
                     + mUseCaseConfig + ", mStreamSpec=" + mStreamSpec + ", mCaptureTypes="
                     + mCaptureTypes + ", mAttached=" + mAttached + ", mActive=" + mActive + '}';

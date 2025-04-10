@@ -19,11 +19,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.leanback.widget.GuidanceStylist.Guidance;
 import androidx.leanback.widget.GuidedAction;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -149,9 +150,8 @@ public class GuidedStepTestSupportFragment extends GuidedStepSupportFragment {
         mProvider.onSaveInstanceState(outState);
     }
 
-    @NonNull
     @Override
-    public Guidance onCreateGuidance(@NonNull Bundle savedInstanceState) {
+    public @NonNull Guidance onCreateGuidance(@NonNull Bundle savedInstanceState) {
         Guidance g = mProvider.onCreateGuidance(savedInstanceState);
         if (g == null) {
             g = new Guidance("", "", "", null);

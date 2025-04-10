@@ -16,7 +16,6 @@
 
 package androidx.appsearch.localstorage;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.localstorage.stats.InitializeStats;
 import androidx.appsearch.localstorage.stats.OptimizeStats;
@@ -33,6 +32,8 @@ import com.google.android.icing.proto.OptimizeStatsProto;
 import com.google.android.icing.proto.PutDocumentStatsProto;
 import com.google.android.icing.proto.QueryStatsProto;
 import com.google.android.icing.proto.SetSchemaResultProto;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Class contains helper functions for logging.
@@ -53,7 +54,7 @@ public final class AppSearchLoggerHelper {
      * @param toStatsBuilder  stats copied to
      */
     static void copyNativeStats(@NonNull PutDocumentStatsProto fromNativeStats,
-            @NonNull PutDocumentStats.Builder toStatsBuilder) {
+            PutDocumentStats.@NonNull Builder toStatsBuilder) {
         Preconditions.checkNotNull(fromNativeStats);
         Preconditions.checkNotNull(toStatsBuilder);
         toStatsBuilder
@@ -70,7 +71,9 @@ public final class AppSearchLoggerHelper {
                 .setNativeQualifiedIdJoinIndexLatencyMillis(
                         fromNativeStats.getQualifiedIdJoinIndexLatencyMs())
                 .setNativeLiteIndexSortLatencyMillis(
-                        fromNativeStats.getLiteIndexSortLatencyMs());
+                        fromNativeStats.getLiteIndexSortLatencyMs())
+                .setMetadataTermIndexLatencyMillis(fromNativeStats.getMetadataTermIndexLatencyMs())
+                .setEmbeddingIndexLatencyMillis(fromNativeStats.getEmbeddingIndexLatencyMs());
     }
 
     /**
@@ -80,7 +83,7 @@ public final class AppSearchLoggerHelper {
      * @param toStatsBuilder  stats copied to
      */
     static void copyNativeStats(@NonNull InitializeStatsProto fromNativeStats,
-            @NonNull InitializeStats.Builder toStatsBuilder) {
+            InitializeStats.@NonNull Builder toStatsBuilder) {
         Preconditions.checkNotNull(fromNativeStats);
         Preconditions.checkNotNull(toStatsBuilder);
         toStatsBuilder
@@ -110,7 +113,7 @@ public final class AppSearchLoggerHelper {
      * @param toStatsBuilder Stats copied to.
      */
     static void copyNativeStats(@NonNull QueryStatsProto fromNativeStats,
-            @NonNull SearchStats.Builder toStatsBuilder) {
+            SearchStats.@NonNull Builder toStatsBuilder) {
         Preconditions.checkNotNull(fromNativeStats);
         Preconditions.checkNotNull(toStatsBuilder);
         toStatsBuilder
@@ -149,7 +152,7 @@ public final class AppSearchLoggerHelper {
      * @param toStatsBuilder Stats copied to.
      */
     static void copyNativeStats(@NonNull DeleteStatsProto fromNativeStats,
-            @NonNull RemoveStats.Builder toStatsBuilder) {
+            RemoveStats.@NonNull Builder toStatsBuilder) {
         Preconditions.checkNotNull(fromNativeStats);
         Preconditions.checkNotNull(toStatsBuilder);
         toStatsBuilder
@@ -165,16 +168,20 @@ public final class AppSearchLoggerHelper {
      * @param toStatsBuilder Stats copied to.
      */
     static void copyNativeStats(@NonNull DeleteByQueryStatsProto fromNativeStats,
-            @NonNull RemoveStats.Builder toStatsBuilder) {
+            RemoveStats.@NonNull Builder toStatsBuilder) {
         Preconditions.checkNotNull(fromNativeStats);
         Preconditions.checkNotNull(toStatsBuilder);
 
-        @SuppressWarnings("deprecation")
-        int deleteType = DeleteStatsProto.DeleteType.Code.DEPRECATED_QUERY.getNumber();
         toStatsBuilder
                 .setNativeLatencyMillis(fromNativeStats.getLatencyMs())
-                .setDeleteType(deleteType)
-                .setDeletedDocumentCount(fromNativeStats.getNumDocumentsDeleted());
+                .setDeleteType(RemoveStats.QUERY)
+                .setDeletedDocumentCount(fromNativeStats.getNumDocumentsDeleted())
+                .setQueryLength(fromNativeStats.getQueryLength())
+                .setNumTerms(fromNativeStats.getNumTerms())
+                .setNumNamespacesFiltered(fromNativeStats.getNumNamespacesFiltered())
+                .setNumSchemaTypesFiltered(fromNativeStats.getNumSchemaTypesFiltered())
+                .setParseQueryLatencyMillis(fromNativeStats.getParseQueryLatencyMs())
+                .setDocumentRemovalLatencyMillis(fromNativeStats.getDocumentRemovalLatencyMs());
     }
 
     /**
@@ -184,7 +191,7 @@ public final class AppSearchLoggerHelper {
      * @param toStatsBuilder Stats copied to.
      */
     static void copyNativeStats(@NonNull OptimizeStatsProto fromNativeStats,
-            @NonNull OptimizeStats.Builder toStatsBuilder) {
+            OptimizeStats.@NonNull Builder toStatsBuilder) {
         Preconditions.checkNotNull(fromNativeStats);
         Preconditions.checkNotNull(toStatsBuilder);
         toStatsBuilder
@@ -197,7 +204,10 @@ public final class AppSearchLoggerHelper {
                 .setExpiredDocumentCount(fromNativeStats.getNumExpiredDocuments())
                 .setStorageSizeBeforeBytes(fromNativeStats.getStorageSizeBefore())
                 .setStorageSizeAfterBytes(fromNativeStats.getStorageSizeAfter())
-                .setTimeSinceLastOptimizeMillis(fromNativeStats.getTimeSinceLastOptimizeMs());
+                .setTimeSinceLastOptimizeMillis(fromNativeStats.getTimeSinceLastOptimizeMs())
+                .setIndexRestorationMode(fromNativeStats.getIndexRestorationMode().getNumber())
+                .setNumOriginalNamespaces(fromNativeStats.getNumOriginalNamespaces())
+                .setNumDeletedNamespaces(fromNativeStats.getNumDeletedNamespaces());
     }
 
     /*
@@ -207,7 +217,7 @@ public final class AppSearchLoggerHelper {
      * @param toStatsBuilder Stats copied to.
      */
     static void copyNativeStats(@NonNull SetSchemaResultProto fromProto,
-            @NonNull SetSchemaStats.Builder toStatsBuilder) {
+            SetSchemaStats.@NonNull Builder toStatsBuilder) {
         Preconditions.checkNotNull(fromProto);
         Preconditions.checkNotNull(toStatsBuilder);
         toStatsBuilder

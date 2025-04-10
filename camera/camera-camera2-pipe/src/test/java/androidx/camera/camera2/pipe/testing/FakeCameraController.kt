@@ -17,19 +17,19 @@
 package androidx.camera.camera2.pipe.testing
 
 import android.view.Surface
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraController
+import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraId
-import androidx.camera.camera2.pipe.CameraStatusMonitor
+import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.StreamId
 
-@RequiresApi(21)
-internal class FakeCameraController : CameraController {
+internal class FakeCameraController(override val cameraGraphId: CameraGraphId) : CameraController {
     var started = false
     var closed = false
     var surfaceMap: Map<StreamId, Surface>? = null
     override val cameraId: CameraId
         get() = CameraId.fromCamera2Id("0")
+
     override var isForeground = true
 
     override fun start() {
@@ -40,11 +40,6 @@ internal class FakeCameraController : CameraController {
         started = false
     }
 
-    override fun tryRestart(cameraStatus: CameraStatusMonitor.CameraStatus) {
-        stop()
-        start()
-    }
-
     override fun close() {
         closed = true
         started = false
@@ -52,5 +47,9 @@ internal class FakeCameraController : CameraController {
 
     override fun updateSurfaceMap(surfaceMap: Map<StreamId, Surface>) {
         this.surfaceMap = surfaceMap
+    }
+
+    override fun getOutputLatency(streamId: StreamId?): StreamGraph.OutputLatency? {
+        return null
     }
 }

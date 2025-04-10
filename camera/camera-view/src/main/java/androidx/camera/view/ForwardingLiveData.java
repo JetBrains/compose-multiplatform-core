@@ -16,10 +16,10 @@
 
 package androidx.camera.view;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A {@link LiveData} whose value is based on a source {@link LiveData} of the same type.
@@ -29,7 +29,6 @@ import androidx.lifecycle.MediatorLiveData;
  *
  * <p> Setting a new source will remove the previous source.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class ForwardingLiveData<T> extends MediatorLiveData<T> {
 
     private LiveData<T> mLiveDataSource;

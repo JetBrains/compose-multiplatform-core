@@ -70,7 +70,7 @@ package androidx.annotation {
 
   @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.VALUE_PARAMETER, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.LOCAL_VARIABLE, kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS}) public @interface Dimension {
     method public abstract int unit() default androidx.annotation.Dimension.PX;
-    property public abstract int unit;
+    property @DimensionUnit public abstract int unit;
     field public static final androidx.annotation.Dimension.Companion Companion;
     field public static final int DP = 0; // 0x0
     field public static final int PX = 1; // 0x1
@@ -78,12 +78,15 @@ package androidx.annotation {
   }
 
   public static final class Dimension.Companion {
+    property public static int DP;
+    property public static int PX;
+    property public static int SP;
     field public static final int DP = 0; // 0x0
     field public static final int PX = 1; // 0x1
     field public static final int SP = 2; // 0x2
   }
 
-  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CONSTRUCTOR, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.VALUE_PARAMETER, kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS, kotlin.annotation.AnnotationTarget.CLASS}) public @interface Discouraged {
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CONSTRUCTOR, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.VALUE_PARAMETER, kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS, kotlin.annotation.AnnotationTarget.CLASS}) public @interface Discouraged {
     method public abstract String message();
     property public abstract String message;
   }
@@ -163,8 +166,6 @@ package androidx.annotation {
   }
 
   @Deprecated public enum InspectableProperty.ValueType {
-    method @Deprecated public static androidx.annotation.InspectableProperty.ValueType valueOf(String value) throws java.lang.IllegalArgumentException, java.lang.NullPointerException;
-    method @Deprecated public static androidx.annotation.InspectableProperty.ValueType[] values();
     enum_constant @Deprecated public static final androidx.annotation.InspectableProperty.ValueType COLOR;
     enum_constant @Deprecated public static final androidx.annotation.InspectableProperty.ValueType GRAVITY;
     enum_constant @Deprecated public static final androidx.annotation.InspectableProperty.ValueType INFERRED;
@@ -241,22 +242,31 @@ package androidx.annotation {
   @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.VALUE_PARAMETER, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.LOCAL_VARIABLE}) public @interface RawRes {
   }
 
+  @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.CONSTRUCTOR}) public @interface ReplaceWith {
+    method public abstract String expression();
+    method public abstract String[] imports();
+    property public abstract String expression;
+    property public abstract String[] imports;
+  }
+
   @java.lang.annotation.Target({java.lang.annotation.ElementType.TYPE, java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.CONSTRUCTOR, java.lang.annotation.ElementType.FIELD, java.lang.annotation.ElementType.PACKAGE}) @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS, kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.CONSTRUCTOR, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.FILE}) public @interface RequiresApi {
     method public abstract int api() default 1;
     method public abstract int value() default 1;
-    property public abstract int api;
-    property public abstract int value;
+    property @IntRange(from=1L) public abstract int api;
+    property @IntRange(from=1L) public abstract int value;
   }
 
   @java.lang.annotation.Target({java.lang.annotation.ElementType.TYPE, java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.CONSTRUCTOR, java.lang.annotation.ElementType.FIELD, java.lang.annotation.ElementType.PACKAGE}) @kotlin.annotation.MustBeDocumented @kotlin.annotation.Repeatable @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS, kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.CONSTRUCTOR, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.FILE}) public @interface RequiresExtension {
     method public abstract int extension();
     method public abstract int version();
-    property public abstract int extension;
-    property public abstract int version;
+    property @IntRange(from=1L) public abstract int extension;
+    property @IntRange(from=1L) public abstract int version;
   }
 
   @java.lang.annotation.Target({java.lang.annotation.ElementType.TYPE, java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.CONSTRUCTOR, java.lang.annotation.ElementType.FIELD, java.lang.annotation.ElementType.PACKAGE}) @kotlin.annotation.MustBeDocumented @kotlin.annotation.Repeatable @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS, kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.CONSTRUCTOR, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.FILE}) public static @interface RequiresExtension.Container {
     method public abstract androidx.annotation.RequiresExtension[] value();
+    property @IntRange(from=1L) public abstract int extension;
+    property @IntRange(from=1L) public abstract int version;
   }
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS, kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER, kotlin.annotation.AnnotationTarget.CONSTRUCTOR}) public @interface RequiresFeature {
@@ -293,8 +303,6 @@ package androidx.annotation {
   }
 
   public enum RestrictTo.Scope {
-    method public static androidx.annotation.RestrictTo.Scope valueOf(String value) throws java.lang.IllegalArgumentException, java.lang.NullPointerException;
-    method public static androidx.annotation.RestrictTo.Scope[] values();
     enum_constant @Deprecated public static final androidx.annotation.RestrictTo.Scope GROUP_ID;
     enum_constant public static final androidx.annotation.RestrictTo.Scope LIBRARY;
     enum_constant public static final androidx.annotation.RestrictTo.Scope LIBRARY_GROUP;
@@ -344,7 +352,7 @@ package androidx.annotation {
 
   @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface VisibleForTesting {
     method public abstract int otherwise() default androidx.annotation.VisibleForTesting.PRIVATE;
-    property public abstract int otherwise;
+    property @ProductionVisibility public abstract int otherwise;
     field public static final androidx.annotation.VisibleForTesting.Companion Companion;
     field public static final int NONE = 5; // 0x5
     field public static final int PACKAGE_PRIVATE = 3; // 0x3
@@ -353,6 +361,10 @@ package androidx.annotation {
   }
 
   public static final class VisibleForTesting.Companion {
+    property public static int NONE;
+    property public static int PACKAGE_PRIVATE;
+    property public static int PRIVATE;
+    property public static int PROTECTED;
     field public static final int NONE = 5; // 0x5
     field public static final int PACKAGE_PRIVATE = 3; // 0x3
     field public static final int PRIVATE = 2; // 0x2

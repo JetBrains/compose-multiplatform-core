@@ -73,7 +73,9 @@ import androidx.test.filters.FlakyTest;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
-import org.jetbrains.annotations.NotNull;
+import com.google.common.collect.Lists;
+
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -502,8 +504,7 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
         assertSame(styleSubclass, style.getClass());
     }
 
-    @NotNull
-    private List<Class<? extends Style>> getStyleSubclasses() {
+    private @NonNull List<Class<? extends Style>> getStyleSubclasses() {
         List<Class<? extends Style>> styleSubclasses = new ArrayList<>();
         for (Class<?> candidate : NotificationCompat.class.getClasses()) {
             try {
@@ -765,6 +766,50 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
             String packageName = mContext.getPackageName();
             assertEquals(packageName + ":layout/notification_template_custom_big", layoutName);
         }
+    }
+
+    @SdkSuppress(minSdkVersion = 24)
+    @Test
+    public void testGetTextsFromContentView() {
+        Notification n1 = new NotificationCompat.Builder(mContext, "channelId")
+                .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
+                .build();
+        List<CharSequence> texts = NotificationCompat.DecoratedCustomViewStyle
+                .getTextsFromContentView(mContext, n1);
+        assertThat(texts).isEmpty();
+
+        Notification n2 = new NotificationCompat.Builder(mContext, "channelId")
+                .setStyle(new NotificationCompat.BigTextStyle())
+                .build();
+        texts = NotificationCompat.DecoratedCustomViewStyle.getTextsFromContentView(mContext, n2);
+        assertThat(texts).isEmpty();
+
+        Notification n3 = new NotificationCompat.Builder(mContext, "channelId")
+                .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
+                .setCustomContentView(new RemoteViews(mContext.getPackageName(),
+                        androidx.core.test.R.layout.notification_custom_content_view))
+                .build();
+        texts = NotificationCompat.DecoratedCustomViewStyle.getTextsFromContentView(mContext, n3);
+        assertThat(texts).isNotEmpty();
+        assertTrue(texts.containsAll(List.of("Test title", "Test info")));
+
+        Notification n4 = new NotificationCompat.Builder(mContext, "channelId")
+                .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
+                .setCustomBigContentView(new RemoteViews(mContext.getPackageName(),
+                        androidx.core.test.R.layout.notification_custom_content_view))
+                .build();
+        texts = NotificationCompat.DecoratedCustomViewStyle.getTextsFromContentView(mContext, n4);
+        assertThat(texts).isNotEmpty();
+        assertTrue(texts.containsAll(List.of("Test title", "Test info")));
+
+        Notification n5 = new NotificationCompat.Builder(mContext, "channelId")
+                .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
+                .setCustomHeadsUpContentView(new RemoteViews(mContext.getPackageName(),
+                        androidx.core.test.R.layout.notification_custom_content_view))
+                .build();
+        texts = NotificationCompat.DecoratedCustomViewStyle.getTextsFromContentView(mContext, n5);
+        assertThat(texts).isNotEmpty();
+        assertTrue(texts.containsAll(List.of("Test title", "Test info")));
     }
 
     @Test
@@ -2429,17 +2474,31 @@ public class NotificationCompatTest extends BaseInstrumentationTestCase<TestActi
                 .setStyle(callStyle)
                 .build();
 
-        Notification.Action[] resultActions = notification.actions;
-        assertThat(resultActions).hasLength(2); // Hang up + custom (fits on all Android versions).
-        // But ordering is different per version.
-        if (Build.VERSION.SDK_INT <= 30 || Build.VERSION.SDK_INT >= 34) {
-            assertThat(resultActions[0].title.toString()).isEqualTo(
-                    mContext.getString(R.string.call_notification_hang_up_action));
-            assertThat(resultActions[1].title.toString()).isEqualTo(customAction.title.toString());
+        // Actions as Hang up + Custom (fits on all Android versions).
+        assertThat(notification.actions).hasLength(2);
+
+        // But order is different per Android version. CallStyle was introduced in SDK 31 and
+        // placed custom actions first. A QPR of SDK 33 switched to system actions first. Pre-31
+        // there is no native CallStyle, so the Compat version uses the newer ordering there too.
+        List<String> actionTitles = Lists.transform(Arrays.asList(notification.actions),
+                a -> a.title.toString());
+        if (Build.VERSION.SDK_INT < 31 || Build.VERSION.SDK_INT >= 34) {
+            assertThat(actionTitles).containsExactly(
+                            mContext.getString(R.string.call_notification_hang_up_action),
+                            customAction.title.toString())
+                    .inOrder();
+        } else if (Build.VERSION.SDK_INT >= 31 && Build.VERSION.SDK_INT <= 32) {
+            assertThat(actionTitles).containsExactly(
+                            customAction.title.toString(),
+                            mContext.getString(R.string.call_notification_hang_up_action))
+                    .inOrder();
+        } else if (Build.VERSION.SDK_INT == 33) {
+            // Could be either, so check presence but not ordering.
+            assertThat(actionTitles).containsExactly(
+                            mContext.getString(R.string.call_notification_hang_up_action),
+                            customAction.title.toString());
         } else {
-            assertThat(resultActions[0].title.toString()).isEqualTo(customAction.title.toString());
-            assertThat(resultActions[1].title.toString()).isEqualTo(
-                    mContext.getString(R.string.call_notification_hang_up_action));
+            throw new AssertionError("All SDK_INT values are covered!");
         }
     }
 

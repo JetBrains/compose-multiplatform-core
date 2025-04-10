@@ -16,64 +16,81 @@
 
 package androidx.room.solver.query.result
 
+import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XPropertySpec
+import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.ArrayLiteral
-import androidx.room.ext.CallableTypeSpecBuilder
 import androidx.room.ext.CommonTypeNames
+import androidx.room.ext.InvokeWithLambdaParameter
+import androidx.room.ext.LambdaSpec
+import androidx.room.ext.SQLiteDriverTypeNames
 import androidx.room.solver.CodeGenScope
 import androidx.room.solver.RxType
 
-/**
- * Binds the result as an RxJava2 Flowable, Publisher and Observable.
- */
+/** Binds the result as an RxJava2 Flowable, Publisher and Observable. */
 internal class RxQueryResultBinder(
     private val rxType: RxType,
     val typeArg: XType,
     val queryTableNames: Set<String>,
     adapter: QueryResultAdapter?
 ) : BaseObservableQueryResultBinder(adapter) {
+
     override fun convertAndReturn(
-        roomSQLiteQueryVar: String,
-        canReleaseQuery: Boolean,
+        sqlQueryVar: String,
         dbProperty: XPropertySpec,
+        bindStatement: (CodeGenScope.(String) -> Unit)?,
+        returnTypeName: XTypeName,
         inTransaction: Boolean,
         scope: CodeGenScope
     ) {
-        val callableImpl = CallableTypeSpecBuilder(scope.language, typeArg.asTypeName()) {
-            addCode(
-                XCodeBlock.builder(language).apply {
-                    createRunQueryAndReturnStatements(
-                        builder = this,
-                        roomSQLiteQueryVar = roomSQLiteQueryVar,
-                        inTransaction = inTransaction,
-                        dbProperty = dbProperty,
-                        scope = scope,
-                        cancellationSignalVar = "null"
-                    )
-                }.build()
+        val connectionVar = scope.getTmpVar("_connection")
+        val performBlock =
+            InvokeWithLambdaParameter(
+                scope = scope,
+                functionName = rxType.factoryMethodName,
+                argFormat = listOf("%N", "%L", "%L"),
+                args =
+                    listOf(
+                        dbProperty,
+                        inTransaction,
+                        ArrayLiteral(CommonTypeNames.STRING, *queryTableNames.toTypedArray())
+                    ),
+                lambdaSpec =
+                    object :
+                        LambdaSpec(
+                            parameterTypeName = SQLiteDriverTypeNames.CONNECTION,
+                            parameterName = connectionVar,
+                            returnTypeName = typeArg.asTypeName(),
+                            javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable
+                        ) {
+                        override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
+                            val statementVar = scope.getTmpVar("_stmt")
+                            addLocalVal(
+                                statementVar,
+                                SQLiteDriverTypeNames.STATEMENT,
+                                "%L.prepare(%L)",
+                                connectionVar,
+                                sqlQueryVar
+                            )
+                            beginControlFlow("try")
+                            bindStatement?.invoke(scope, statementVar)
+                            val outVar = scope.getTmpVar("_result")
+                            adapter?.convert(outVar, statementVar, scope)
+                            applyTo { language ->
+                                when (language) {
+                                    CodeLanguage.JAVA -> addStatement("return %L", outVar)
+                                    CodeLanguage.KOTLIN -> addStatement("%L", outVar)
+                                }
+                            }
+                            nextControlFlow("finally")
+                            addStatement("%L.close()", statementVar)
+                            endControlFlow()
+                        }
+                    }
             )
-        }.apply {
-            if (canReleaseQuery) {
-                createFinalizeMethod(roomSQLiteQueryVar)
-            }
-        }
-        scope.builder.apply {
-            val arrayOfTableNamesLiteral = ArrayLiteral(
-                scope.language,
-                CommonTypeNames.STRING,
-                *queryTableNames.toTypedArray()
-            )
-            addStatement(
-                "return %T.%N(%N, %L, %L, %L)",
-                rxType.version.rxRoomClassName,
-                rxType.factoryMethodName!!,
-                dbProperty,
-                if (inTransaction) "true" else "false",
-                arrayOfTableNamesLiteral,
-                callableImpl.build()
-            )
-        }
+        scope.builder.add("return %L", performBlock)
     }
 }

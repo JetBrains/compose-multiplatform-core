@@ -17,13 +17,14 @@
 package androidx.camera.video.internal.encoder
 
 import android.content.Context
-import android.graphics.SurfaceTexture
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
+import android.media.MediaFormat.KEY_CAPTURE_RATE
+import android.media.MediaFormat.KEY_OPERATING_RATE
+import android.media.MediaFormat.KEY_PRIORITY
 import android.os.Build
 import android.os.SystemClock
-import android.util.Size
 import android.view.Surface
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
@@ -31,22 +32,24 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.Preview
-import androidx.camera.core.Preview.SurfaceProvider
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.impl.CameraInfoInternal
+import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
 import androidx.camera.core.impl.Timebase
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.internal.CameraUseCaseAdapter
+import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraXUtil
 import androidx.camera.testing.impl.SurfaceTextureProvider
-import androidx.camera.testing.impl.SurfaceTextureProvider.SurfaceTextureCallback
 import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.camera.video.internal.compat.quirk.DeactivateEncoderSurfaceBeforeStopEncoderQuirk
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks
 import androidx.camera.video.internal.compat.quirk.ExtraSupportedResolutionQuirk
+import androidx.camera.video.internal.encoder.EncoderImpl.PARAMETER_KEY_TIMELAPSE_ENABLED
+import androidx.camera.video.internal.encoder.EncoderImpl.PARAMETER_KEY_TIMELAPSE_FPS
 import androidx.concurrent.futures.ResolvableFuture
 import androidx.core.content.ContextCompat
 import androidx.test.core.app.ApplicationProvider
@@ -79,6 +82,7 @@ import org.mockito.invocation.InvocationOnMock
 
 private const val MIME_TYPE = MediaFormat.MIMETYPE_VIDEO_AVC
 private const val BIT_RATE = 10 * 1024 * 1024 // 10M
+private const val COLOR_FORMAT = MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface
 private const val FRAME_RATE = 30
 private const val I_FRAME_INTERVAL = 1
 
@@ -92,22 +96,25 @@ class VideoEncoderTest(
 ) {
 
     @get:Rule
-    val cameraPipeConfigTestRule = CameraPipeConfigTestRule(
-        active = implName == CameraPipeConfig::class.simpleName,
-    )
+    val cameraPipeConfigTestRule =
+        CameraPipeConfigTestRule(
+            active = implName == CameraPipeConfig::class.simpleName,
+        )
 
     @get:Rule
-    val cameraRule = CameraUtil.grantCameraPermissionAndPreTest(
-        CameraUtil.PreTestCameraIdList(cameraConfig)
-    )
+    val cameraRule =
+        CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
+            CameraUtil.PreTestCameraIdList(cameraConfig)
+        )
 
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() = listOf(
-            arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-            arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
-        )
+        fun data() =
+            listOf(
+                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+            )
 
         private val INPUT_TIMEBASE = Timebase.UPTIME
     }
@@ -122,8 +129,8 @@ class VideoEncoderTest(
         DeviceQuirks.get(DeactivateEncoderSurfaceBeforeStopEncoderQuirk::class.java) != null
 
     private lateinit var camera: CameraUseCaseAdapter
-    private lateinit var videoEncoderConfig: VideoEncoderConfig
     private lateinit var videoEncoder: EncoderImpl
+    private lateinit var videoEncoderConfig: VideoEncoderConfig
     private lateinit var videoEncoderCallback: EncoderCallback
     private lateinit var previewForVideoEncoder: Preview
     private lateinit var preview: Preview
@@ -146,6 +153,17 @@ class VideoEncoderTest(
                 " resolutions cannot be used when the provided surface is an encoder surface.",
             DeviceQuirks.get(ExtraSupportedResolutionQuirk::class.java) != null
         )
+        // Skip for b/331618729
+        assumeFalse(
+            "Emulator API 28 crashes running this test.",
+            Build.VERSION.SDK_INT == 28 && isEmulator()
+        )
+
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
 
         CameraXUtil.initialize(context, cameraConfig).get()
 
@@ -158,13 +176,10 @@ class VideoEncoderTest(
         // Pixel API 26, it needs a surface texture at least.
         preview = Preview.Builder().build()
         instrumentation.runOnMainSync {
-            preview.setSurfaceProvider(
-                getSurfaceProvider()
-            )
+            preview.surfaceProvider = SurfaceTextureProvider.createSurfaceTextureProvider()
         }
 
         previewForVideoEncoder = Preview.Builder().build()
-        initVideoEncoder()
 
         instrumentation.runOnMainSync {
             // Must put preview before previewForVideoEncoder while addUseCases, otherwise an issue
@@ -185,7 +200,11 @@ class VideoEncoderTest(
 
         if (::latestSurfaceReadyToRelease.isInitialized) {
             latestSurfaceReadyToRelease.addListener(
-                { videoEncoder.release() },
+                {
+                    if (::videoEncoder.isInitialized) {
+                        videoEncoder.release()
+                    }
+                },
                 CameraXExecutors.directExecutor()
             )
         }
@@ -196,12 +215,15 @@ class VideoEncoderTest(
 
     @Test
     fun canGetEncoderInfo() {
+        initVideoEncoder()
+
         assertThat(videoEncoder.encoderInfo).isNotNull()
     }
 
     @Test
     fun canRestartVideoEncoder() {
         // Arrange.
+        initVideoEncoder()
         videoEncoder.start()
         var inOrder = inOrder(videoEncoderCallback)
         inOrder.verify(videoEncoderCallback, timeout(5000L)).onEncodeStart()
@@ -227,6 +249,8 @@ class VideoEncoderTest(
 
     @Test
     fun canPauseResumeVideoEncoder() {
+        initVideoEncoder()
+
         videoEncoder.start()
 
         verify(videoEncoderCallback, timeout(15000L).atLeast(5)).onEncodedData(any())
@@ -244,6 +268,8 @@ class VideoEncoderTest(
 
     @Test
     fun canPauseStopStartVideoEncoder() {
+        initVideoEncoder()
+
         videoEncoder.start()
 
         verify(videoEncoderCallback, timeout(15000L).atLeast(5)).onEncodedData(any())
@@ -265,6 +291,8 @@ class VideoEncoderTest(
 
     @Test
     fun canRestartPauseVideoEncoder() {
+        initVideoEncoder()
+
         videoEncoder.start()
         verify(videoEncoderCallback, timeout(15000L).atLeast(5)).onEncodedData(any())
 
@@ -277,6 +305,8 @@ class VideoEncoderTest(
 
     @Test
     fun pauseResumeVideoEncoder_getChronologicalData() {
+        initVideoEncoder()
+
         val inOrder = inOrder(videoEncoderCallback)
 
         videoEncoder.start()
@@ -289,23 +319,18 @@ class VideoEncoderTest(
         inOrder.verify(videoEncoderCallback, timeout(15000L).atLeast(5)).onEncodedData(any())
 
         val captor = ArgumentCaptor.forClass(EncodedData::class.java)
-        verify(
-            videoEncoderCallback,
-            atLeast(/*start*/5 + /*resume*/5)
-        ).onEncodedData(captor.capture())
+        verify(videoEncoderCallback, atLeast(/*start*/ 5 + /*resume*/ 5))
+            .onEncodedData(captor.capture())
         verifyDataInChronologicalOrder(captor.allValues)
     }
 
     @Test
     fun startVideoEncoder_firstEncodedDataIsKeyFrame() {
-        clearInvocations(videoEncoderCallback)
+        initVideoEncoder()
 
         videoEncoder.start()
         val captor = ArgumentCaptor.forClass(EncodedData::class.java)
-        verify(
-            videoEncoderCallback,
-            timeout(5000L).atLeastOnce()
-        ).onEncodedData(captor.capture())
+        verify(videoEncoderCallback, timeout(5000L).atLeastOnce()).onEncodedData(captor.capture())
 
         assertThat(isKeyFrame(captor.allValues.first().bufferInfo)).isTrue()
 
@@ -316,6 +341,8 @@ class VideoEncoderTest(
 
     @Test
     fun resumeVideoEncoder_firstEncodedDataIsKeyFrame() {
+        initVideoEncoder()
+
         videoEncoder.start()
         verify(videoEncoderCallback, timeout(15000L).atLeast(5)).onEncodedData(any())
 
@@ -333,6 +360,8 @@ class VideoEncoderTest(
 
     @Test
     fun bufferTimeIsUptime() {
+        initVideoEncoder()
+
         // Skip test if the difference between uptime and realtime is too close to avoid test flaky.
         // Note: Devices such as lab devices always have usb-plugged, so the uptime and realtime
         // may always be the same and be skipped.
@@ -353,6 +382,8 @@ class VideoEncoderTest(
 
     @Test
     fun stopVideoEncoder_reachStopTime() {
+        initVideoEncoder()
+
         videoEncoder.start()
         verify(videoEncoderCallback, timeout(15000L).atLeast(5)).onEncodedData(any())
 
@@ -361,56 +392,79 @@ class VideoEncoderTest(
         videoEncoder.stopSafely()
         verify(videoEncoderCallback, timeout(5000L)).onEncodeStop()
 
-        // If the last data timestamp is null, it means the encoding is probably stopped because of timeout.
+        // If the last data timestamp is null, it means the encoding is probably stopped because of
+        // timeout.
         // Skip null since it could be a device performance issue which is out of the test scope.
         assumeTrue(videoEncoder.mLastDataStopTimestamp != null)
         assertThat(videoEncoder.mLastDataStopTimestamp).isAtLeast(stopTimeUs)
     }
 
-    private fun initVideoEncoder() {
+    @Test
+    fun setDifferentCaptureEncodeFrameRates_shouldContainAdditionalKeyValues() {
+        val captureFrameRate = FRAME_RATE
+        val encodeFrameRate = FRAME_RATE / 2
+        initVideoEncoder(captureFrameRate = captureFrameRate, encodeFrameRate = encodeFrameRate)
+
+        val format = videoEncoder.mMediaFormat
+        assertThat(format.getInteger(KEY_CAPTURE_RATE)).isEqualTo(captureFrameRate)
+        assertThat(format.getInteger(KEY_OPERATING_RATE)).isEqualTo(captureFrameRate)
+        assertThat(format.getInteger(KEY_PRIORITY)).isEqualTo(0)
+
+        videoEncoder.start()
+
+        val captor = ArgumentCaptor.forClass(OutputConfig::class.java)
+        verify(videoEncoderCallback, timeout(5000L)).onOutputConfigUpdate(captor.capture())
+
+        val outputFormat = captor.value.mediaFormat!!
+        assertThat(outputFormat.getInteger(PARAMETER_KEY_TIMELAPSE_ENABLED)).isEqualTo(1)
+        assertThat(outputFormat.getInteger(PARAMETER_KEY_TIMELAPSE_FPS)).isEqualTo(captureFrameRate)
+    }
+
+    private fun initVideoEncoder(
+        captureFrameRate: Int = FRAME_RATE,
+        encodeFrameRate: Int = FRAME_RATE
+    ) {
+        // init video encoder
         val cameraInfo = camera.cameraInfo as CameraInfoInternal
         val quality = Quality.LOWEST
         val videoCapabilities = Recorder.getVideoCapabilities(cameraInfo)
         val videoProfile = videoCapabilities.getProfiles(quality, dynamicRange)?.defaultVideoProfile
         assumeTrue(videoProfile != null)
-        val resolution = Size(videoProfile!!.width, videoProfile.height)
+        val resolution = videoProfile!!.resolution
 
-        videoEncoderConfig = VideoEncoderConfig.builder()
-            .setInputTimebase(INPUT_TIMEBASE)
-            .setBitrate(BIT_RATE)
-            .setColorFormat(MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
-            .setFrameRate(FRAME_RATE)
-            .setIFrameInterval(I_FRAME_INTERVAL)
-            .setMimeType(MIME_TYPE)
-            .setResolution(resolution)
-            .build()
+        videoEncoderConfig =
+            VideoEncoderConfig.builder()
+                .setInputTimebase(INPUT_TIMEBASE)
+                .setBitrate(BIT_RATE)
+                .setColorFormat(COLOR_FORMAT)
+                .setCaptureFrameRate(captureFrameRate)
+                .setEncodeFrameRate(encodeFrameRate)
+                .setIFrameInterval(I_FRAME_INTERVAL)
+                .setMimeType(MIME_TYPE)
+                .setResolution(resolution)
+                .build()
 
-        // init video encoder
         videoEncoderCallback = mock(EncoderCallback::class.java)
         doAnswer { args: InvocationOnMock ->
-            val encodedData: EncodedData = args.getArgument(0)
-            encodedData.close()
-            null
-        }.`when`(videoEncoderCallback).onEncodedData(any())
+                val encodedData: EncodedData = args.getArgument(0)
+                encodedData.close()
+                null
+            }
+            .`when`(videoEncoderCallback)
+            .onEncodedData(any())
 
         if (deactivateSurfaceBeforeStop) {
-            doAnswer {
-                encodeStopSemaphore.release()
-            }.`when`(videoEncoderCallback).onEncodeStop()
+            doAnswer { encodeStopSemaphore.release() }.`when`(videoEncoderCallback).onEncodeStop()
         }
 
-        videoEncoder = EncoderImpl(
-            encoderExecutor,
-            videoEncoderConfig
-        )
+        videoEncoder = EncoderImpl(encoderExecutor, videoEncoderConfig, SESSION_TYPE_REGULAR)
 
         videoEncoder.setEncoderCallback(videoEncoderCallback, CameraXExecutors.directExecutor())
 
         latestSurfaceReadyToRelease = ResolvableFuture.create<Void>().apply { set(null) }
 
-        (videoEncoder.input as Encoder.SurfaceInput).setOnSurfaceUpdateListener(
-            mainExecutor
-        ) { surface: Surface ->
+        (videoEncoder.input as Encoder.SurfaceInput).setOnSurfaceUpdateListener(mainExecutor) {
+            surface: Surface ->
             latestSurfaceReadyToRelease = ResolvableFuture.create()
             currentSurface = surface
             setVideoPreviewSurfaceProvider(surface)
@@ -419,10 +473,7 @@ class VideoEncoderTest(
 
     private fun setVideoPreviewSurfaceProvider(surface: Surface) {
         previewForVideoEncoder.setSurfaceProvider { request: SurfaceRequest ->
-            request.provideSurface(
-                surface,
-                mainExecutor
-            ) {
+            request.provideSurface(surface, mainExecutor) {
                 if (it.surface != currentSurface) {
                     it.surface.release()
                 } else {
@@ -430,18 +481,6 @@ class VideoEncoderTest(
                 }
             }
         }
-    }
-
-    private fun getSurfaceProvider(): SurfaceProvider {
-        return SurfaceTextureProvider.createSurfaceTextureProvider(object : SurfaceTextureCallback {
-            override fun onSurfaceTextureReady(surfaceTexture: SurfaceTexture, resolution: Size) {
-                // No-op
-            }
-
-            override fun onSafeToRelease(surfaceTexture: SurfaceTexture) {
-                surfaceTexture.release()
-            }
-        })
     }
 
     private fun verifyDataInChronologicalOrder(encodedDataList: List<EncodedData>) {
@@ -460,8 +499,8 @@ class VideoEncoderTest(
      * Stops safely and removes the Encoder surface from camera repeating request.
      *
      * <p>As described in b/196039619, when encoder is started and repeating request is running,
-     * stop the encoder will get EGL error on pre-API23 devices. The encoder surface needs to
-     * be removed from repeating request before stopping the codec to avoid this failure.
+     * stop the encoder will get EGL error on pre-API23 devices. The encoder surface needs to be
+     * removed from repeating request before stopping the codec to avoid this failure.
      *
      * @see DeactivateEncoderSurfaceBeforeStopEncoderQuirk
      */
@@ -476,9 +515,7 @@ class VideoEncoderTest(
             // Wait for onEncodeStop before removing the surface to ensure the encoder has received
             // enough data.
             assertThat(encodeStopSemaphore.tryAcquire(5000L, TimeUnit.MILLISECONDS)).isTrue()
-            instrumentation.runOnMainSync {
-                previewForVideoEncoder.setSurfaceProvider(null)
-            }
+            instrumentation.runOnMainSync { previewForVideoEncoder.surfaceProvider = null }
             // Wait for the surface to be actually removed from camera repeating request.
             // TODO: It's unlikely but possible that it takes more thant 2 seconds to remove
             //  the surface. We may check CameraCaptureCallback to be sure when the surface

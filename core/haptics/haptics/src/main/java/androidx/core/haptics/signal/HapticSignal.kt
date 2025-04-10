@@ -33,7 +33,7 @@ import androidx.core.haptics.device.HapticDeviceProfile
  * extended or supplemented outside the library, but they can be instantiated from custom extensions
  * via factory methods.
  */
-abstract class HapticSignal internal constructor() : ResolvableSignal {
+public abstract class HapticSignal internal constructor() : ResolvableSignal {
 
     override fun resolve(deviceProfile: HapticDeviceProfile): HapticSignal? = this
 
@@ -43,18 +43,14 @@ abstract class HapticSignal internal constructor() : ResolvableSignal {
      */
     internal abstract fun toVibration(): VibrationWrapper?
 
-    /**
-     * Returns true if the device vibrator can play this signal as intended, false otherwise.
-     */
+    /** Returns true if the device vibrator can play this signal as intended, false otherwise. */
     internal abstract fun isSupportedBy(deviceProfile: HapticDeviceProfile): Boolean
 }
 
-/**
- * A [FiniteSignal] describes a non-infinite haptic signal to be played by a vibrator.
- */
-abstract class FiniteSignal internal constructor() : HapticSignal()
+/** A [FiniteSignal] describes a non-infinite haptic signal to be played by a vibrator. */
+public abstract class FiniteSignal internal constructor() : HapticSignal()
 
 /**
  * A [InfiniteSignal] describes a haptic signal that will be played by a vibrator until canceled.
  */
-abstract class InfiniteSignal internal constructor() : HapticSignal()
+public abstract class InfiniteSignal internal constructor() : HapticSignal()

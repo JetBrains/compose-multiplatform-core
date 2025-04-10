@@ -53,6 +53,7 @@ import androidx.collection.ArrayMap;
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController;
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController.DynamicRouteDescriptor;
 import androidx.mediarouter.media.MediaRouteProvider.RouteController;
+import androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions;
 import androidx.mediarouter.media.MediaRouteProviderService.MediaRouteProviderServiceImplApi30;
 import androidx.mediarouter.media.MediaRouteProviderService.MediaRouteProviderServiceImplApi30.ClientRecord;
 
@@ -135,7 +136,10 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
         int sessionFlags = SessionRecord.SESSION_FLAG_MR2;
         DynamicGroupRouteController controller;
         if (mProviderDescriptor.supportsDynamicGroupRoute()) {
-            controller = provider.onCreateDynamicGroupRouteController(routeId);
+            RouteControllerOptions routeControllerOptions =
+                    new RouteControllerOptions.Builder().setControlHints(sessionHints).build();
+            controller =
+                    provider.onCreateDynamicGroupRouteController(routeId, routeControllerOptions);
             sessionFlags |= SessionRecord.SESSION_FLAG_GROUP | SessionRecord.SESSION_FLAG_DYNAMIC;
             if (controller == null) {
                 Log.w(TAG, "onCreateSession: Couldn't create a dynamic controller");
@@ -853,7 +857,9 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
                 RouteController controller = findControllerByRouteId(routeId);
                 if (controller == null) {
                     controller = getOrCreateRouteController(routeId, groupId);
-                    controller.onSelect();
+                    if (controller != null) {
+                        controller.onSelect();
+                    }
                 }
             }
             for (String routeId : oldRouteIds) {
@@ -872,6 +878,7 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
             MediaRoute2ProviderServiceAdapter.this.notifySessionCreated(mRequestId, mSessionInfo);
         }
 
+        @Nullable
         private RouteController getOrCreateRouteController(String routeId, String routeGroupId) {
             RouteController controller = mRouteIdToControllerMap.get(routeId);
             if (controller != null) {

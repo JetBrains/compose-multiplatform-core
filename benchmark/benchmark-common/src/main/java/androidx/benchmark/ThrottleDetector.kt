@@ -26,23 +26,19 @@ import androidx.test.platform.app.InstrumentationRegistry
 internal object ThrottleDetector {
     private var initNs = 0.0
 
-    /**
-     * Copies 400K, 10 times.
-     */
+    /** Copies 400K, 10 times. */
     private fun copySomeData() {
         val a = ByteArray(400_000)
         val b = ByteArray(400_000)
-        repeat(10) {
-            System.arraycopy(a, 0, b, 0, a.size)
-        }
+        repeat(10) { System.arraycopy(a, 0, b, 0, a.size) }
     }
 
-    internal fun measureWorkNs(): Double {
+    internal fun measureWorkNs1(): Double {
         // Access a non-trivial amount of data to try and 'reset' any cache state.
         // Have observed this to give more consistent performance when clocks are unlocked.
         copySomeData()
 
-        val state = BenchmarkState(simplifiedTimingOnlyMode = true)
+        val state = BenchmarkStateLegacy(simplifiedTimingOnlyMode = true)
         val sourceMatrix = FloatArray(16) { System.nanoTime().toFloat() }
         val resultMatrix = FloatArray(16)
 
@@ -54,17 +50,33 @@ internal object ThrottleDetector {
         return state.getMinTimeNanos()
     }
 
+    internal fun measureWorkNs(): Double =
+        inMemoryTrace("measureWorkNs") {
+            // Access a non-trivial amount of data to try and 'reset' any cache state.
+            // Have observed this to give more consistent performance when clocks are unlocked.
+            copySomeData()
+            val sourceMatrix = FloatArray(16) { System.nanoTime().toFloat() }
+            val resultMatrix = FloatArray(16)
+
+            return measureRepeatedCheckNanosReentrant {
+                // Benchmark a trivial consistent task
+                Matrix.translateM(resultMatrix, 0, sourceMatrix, 0, 1F, 2F, 3F)
+            }
+        }
+
     /**
      * Called to calculate throttling baseline, will be ignored after first call until reset.
      *
      * Does nothing if baseline isn't needed
      */
     fun computeThrottleBaselineIfNeeded() {
-        if (Build.VERSION.SDK_INT < 29 && // can't use PowerManager API yet
-            initNs == 0.0 && // first time
-            !CpuInfo.locked && // CPU locked (presumably to stable values), should be no throttling
-            !IsolationActivity.sustainedPerformanceModeInUse && // trust sustained perf
-            !DeviceInfo.isEmulator // don't bother with emulators, will always be unpredictable
+        if (
+            Build.VERSION.SDK_INT < 29 && // can't use PowerManager API yet
+                initNs == 0.0 && // first time
+                !CpuInfo
+                    .locked && // CPU locked (presumably to stable values), should be no throttling
+                !IsolationActivity.sustainedPerformanceModeInUse && // trust sustained perf
+                !DeviceInfo.isEmulator // don't bother with emulators, will always be unpredictable
         ) {
             initNs = measureWorkNs()
         }
@@ -79,8 +91,8 @@ internal object ThrottleDetector {
     }
 
     /**
-     * Makes a guess as to whether the device is currently thermal throttled based on performance
-     * of single-threaded CPU work.
+     * Makes a guess as to whether the device is currently thermal throttled based on performance of
+     * single-threaded CPU work.
      */
     fun isDeviceThermalThrottled(): Boolean {
         if (Build.VERSION.SDK_INT >= 29) {
@@ -106,10 +118,9 @@ internal object ThrottleDetector {
          * matrix workload.
          */
         fun isDeviceThermalThrottled(): Boolean {
-            return (InstrumentationRegistry
-                .getInstrumentation()
-                .context
-                .getSystemService(Context.POWER_SERVICE) as PowerManager)
+            return (InstrumentationRegistry.getInstrumentation()
+                    .context
+                    .getSystemService(Context.POWER_SERVICE) as PowerManager)
                 .currentThermalStatus > PowerManager.THERMAL_STATUS_NONE
         }
     }

@@ -17,8 +17,8 @@
 package androidx.camera.core.impl;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,7 +27,6 @@ import java.util.Map;
  * Stores {@link CameraConfigProvider} instances which allow building {@link CameraConfig} using
  * keys (extensions modes for example). The provided {@link CameraConfig}s are unique to the device.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class ExtendedCameraConfigProviderStore {
 
     private static final Object LOCK = new Object();
@@ -54,8 +53,7 @@ public final class ExtendedCameraConfigProviderStore {
      * <p>A default {@link CameraConfigProvider#EMPTY} will be returned if there isn't a
      * {@link CameraConfigProvider} associated with the key.
      */
-    @NonNull
-    public static CameraConfigProvider getConfigProvider(@NonNull Object key) {
+    public static @NonNull CameraConfigProvider getConfigProvider(@NonNull Object key) {
         final CameraConfigProvider provider;
         synchronized (LOCK) {
             provider = CAMERA_CONFIG_PROVIDERS.get(key);

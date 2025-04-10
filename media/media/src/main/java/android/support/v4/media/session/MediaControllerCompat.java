@@ -48,8 +48,6 @@ import android.util.Log;
 import android.view.KeyEvent;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.media.AudioAttributesCompat;
@@ -58,6 +56,9 @@ import androidx.media.VolumeProviderCompat;
 import androidx.media.utils.MediaConstants;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -68,37 +69,43 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Allows an app to interact with an ongoing media session. Media buttons and
- * other commands can be sent to the session. A callback may be registered to
- * receive updates from the session, such as metadata and play state changes.
- * <p>
- * A MediaController can be created if you have a {@link MediaSessionCompat.Token}
- * from the session owner.
- * <p>
- * MediaController objects are thread-safe.
- * <p>
- * This is a helper for accessing features in {@link android.media.session.MediaSession}
+ * Allows an app to interact with an ongoing media session. Media buttons and other commands can be
+ * sent to the session. A callback may be registered to receive updates from the session, such as
+ * metadata and play state changes.
+ *
+ * <p>A MediaController can be created if you have a {@link MediaSessionCompat.Token} from the
+ * session owner.
+ *
+ * <p>MediaController objects are thread-safe.
+ *
+ * <p>This is a helper for accessing features in {@link android.media.session.MediaSession}
  * introduced after API level 4 in a backwards compatible fashion.
- * <p class="note">
- * If MediaControllerCompat is created with a {@link MediaSessionCompat.Token session token}
- * from another process, following methods will not work directly after the creation if the
- * {@link MediaSessionCompat.Token session token} is not passed through a
- * {@link MediaBrowserCompat}:
+ *
+ * <p class="note">If MediaControllerCompat is created with a {@link MediaSessionCompat.Token
+ * session token} from another process, following methods will not work directly after the creation
+ * if the {@link MediaSessionCompat.Token session token} is not passed through a {@link
+ * MediaBrowserCompat}:
+ *
  * <ul>
- * <li>{@link #getPlaybackState()}.{@link PlaybackStateCompat#getExtras() getExtras()}</li>
- * <li>{@link #getRatingType()}</li>
- * <li>{@link #getRepeatMode()}</li>
- * <li>{@link #getSessionInfo()}</li>
- * <li>{@link #getShuffleMode()}</li>
- * <li>{@link #isCaptioningEnabled()}</li>
- * </ul></p>
+ *   <li>{@link #getPlaybackState()}.{@link PlaybackStateCompat#getExtras() getExtras()}
+ *   <li>{@link #getRatingType()}
+ *   <li>{@link #getRepeatMode()}
+ *   <li>{@link #getSessionInfo()}
+ *   <li>{@link #getShuffleMode()}
+ *   <li>{@link #isCaptioningEnabled()}
+ * </ul>
  *
  * <div class="special reference">
+ *
  * <h3>Developer Guides</h3>
- * <p>For information about building your media application, read the
- * <a href="{@docRoot}guide/topics/media-apps/index.html">Media Apps</a> developer guide.</p>
- * </div>
+ *
+ * <p>For information about building your media application, read the <a
+ * href="{@docRoot}guide/topics/media-apps/index.html">Media Apps</a> developer guide. </div>
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 public final class MediaControllerCompat {
     static final String TAG = "MediaControllerCompat";
 
@@ -222,7 +229,7 @@ public final class MediaControllerCompat {
      *
      * @param sessionToken The token of the session to be controlled.
      */
-    public MediaControllerCompat(Context context, @NonNull MediaSessionCompat.Token sessionToken) {
+    public MediaControllerCompat(Context context, MediaSessionCompat.@NonNull Token sessionToken) {
         if (sessionToken == null) {
             throw new IllegalArgumentException("sessionToken must not be null");
         }
@@ -490,8 +497,7 @@ public final class MediaControllerCompat {
      * @return The session's token as VersionedParcelable.
      */
     @RestrictTo(LIBRARY)
-    @Nullable
-    public VersionedParcelable getSession2Token() {
+    public @Nullable VersionedParcelable getSession2Token() {
         return mToken.getSession2Token();
     }
 
@@ -639,8 +645,7 @@ public final class MediaControllerCompat {
      * @see #isSessionReady
      * @see Callback#onSessionReady
      */
-    @NonNull
-    public Bundle getSessionInfo() {
+    public @NonNull Bundle getSessionInfo() {
         return mImpl.getSessionInfo();
     }
 
@@ -659,9 +664,13 @@ public final class MediaControllerCompat {
     }
 
     /**
-     * Callback for receiving updates on from the session. A Callback can be
-     * registered using {@link #registerCallback}
+     * Callback for receiving updates on from the session. A Callback can be registered using {@link
+     * #registerCallback}.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static abstract class Callback implements IBinder.DeathRecipient {
         final MediaController.Callback mCallbackFwk;
         MessageHandler mHandler;
@@ -1107,9 +1116,13 @@ public final class MediaControllerCompat {
     }
 
     /**
-     * Interface for controlling media playback on a session. This allows an app
-     * to send media transport commands to the session.
+     * Interface for controlling media playback on a session. This allows an app to send media
+     * transport commands to the session.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static abstract class TransportControls {
         /**
          * Used as an integer extra field in {@link #playFromMediaId(String, Bundle)} or
@@ -1340,7 +1353,11 @@ public final class MediaControllerCompat {
 
     /**
      * Holds information about the way volume is handled for this session.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static final class PlaybackInfo {
         /**
          * The session uses local playback.
@@ -1406,8 +1423,7 @@ public final class MediaControllerCompat {
          *
          * @return The attributes for this session.
          */
-        @NonNull
-        public AudioAttributesCompat getAudioAttributes() {
+        public @NonNull AudioAttributesCompat getAudioAttributes() {
             return mAudioAttrsCompat;
         }
 
@@ -2298,8 +2314,7 @@ public final class MediaControllerCompat {
             activity.setMediaController(controllerFwk);
         }
 
-        @Nullable
-        static MediaControllerCompat getMediaController(@NonNull Activity activity) {
+        static @Nullable MediaControllerCompat getMediaController(@NonNull Activity activity) {
             MediaController controllerFwk = activity.getMediaController();
             if (controllerFwk == null) {
                 return null;

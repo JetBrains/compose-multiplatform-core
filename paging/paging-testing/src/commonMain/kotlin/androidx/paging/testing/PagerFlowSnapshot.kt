@@ -18,21 +18,17 @@ package androidx.paging.testing
 
 import androidx.annotation.VisibleForTesting
 import androidx.paging.CombinedLoadStates
-import androidx.paging.DifferCallback
 import androidx.paging.ItemSnapshotList
 import androidx.paging.LoadState
 import androidx.paging.LoadStates
-import androidx.paging.NullPaddedList
 import androidx.paging.Pager
 import androidx.paging.PagingData
 import androidx.paging.PagingDataEvent
 import androidx.paging.PagingDataPresenter
+import androidx.paging.awaitNotLoading
 import androidx.paging.testing.ErrorRecovery.RETRY
 import androidx.paging.testing.ErrorRecovery.RETURN_CURRENT_SNAPSHOT
 import androidx.paging.testing.ErrorRecovery.THROW
-import androidx.paging.testing.LoaderCallback.CallbackType.ON_CHANGED
-import androidx.paging.testing.LoaderCallback.CallbackType.ON_INSERTED
-import androidx.paging.testing.LoaderCallback.CallbackType.ON_REMOVED
 import kotlin.coroutines.CoroutineContext
 import kotlin.jvm.JvmSuppressWildcards
 import kotlinx.coroutines.cancelAndJoin
@@ -41,100 +37,73 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 /**
- * Runs the [SnapshotLoader] load operations that are passed in and returns a List of data
- * that would be presented to the UI after all load operations are complete.
+ * Runs the [SnapshotLoader] load operations that are passed in and returns a List of data that
+ * would be presented to the UI after all load operations are complete.
  *
  * @param onError The error recovery strategy when PagingSource returns LoadResult.Error. A lambda
- * that returns an [ErrorRecovery] value. The default strategy is [ErrorRecovery.THROW].
- *
+ *   that returns an [ErrorRecovery] value. The default strategy is [ErrorRecovery.THROW].
  * @param loadOperations The block containing [SnapshotLoader] load operations.
  */
 @VisibleForTesting
 public suspend fun <Value : Any> Flow<PagingData<Value>>.asSnapshot(
     onError: LoadErrorHandler = LoadErrorHandler { THROW },
-    loadOperations: suspend SnapshotLoader<Value>.() -> @JvmSuppressWildcards Unit = { }
+    loadOperations: suspend SnapshotLoader<Value>.() -> @JvmSuppressWildcards Unit = {}
 ): @JvmSuppressWildcards List<Value> = coroutineScope {
-
     lateinit var loader: SnapshotLoader<Value>
 
-    val callback = object : DifferCallback {
-        override fun onChanged(position: Int, count: Int) {
-            loader.onDataSetChanged(
-                loader.generations.value,
-                LoaderCallback(ON_CHANGED, position, count)
-            )
-        }
-        override fun onInserted(position: Int, count: Int) {
-            loader.onDataSetChanged(
-                loader.generations.value,
-                LoaderCallback(ON_INSERTED, position, count)
-            )
-        }
-        override fun onRemoved(position: Int, count: Int) {
-            loader.onDataSetChanged(
-                loader.generations.value,
-                LoaderCallback(ON_REMOVED, position, count)
-            )
-        }
-    }
-
     // PagingDataPresenter will collect from coroutineContext instead of main dispatcher
-    val presenter = object : CompletablePagingDataPresenter<Value>(
-        callback, coroutineContext
-    ) {
-        override suspend fun presentNewList(
-            previousList: NullPaddedList<Value>,
-            newList: NullPaddedList<Value>,
-            lastAccessedIndex: Int,
-            onListPresentable: () -> Unit
-        ): Int? {
-            onListPresentable()
-            /**
-             * On new generation, SnapshotLoader needs the latest [ItemSnapshotList]
-             * state so that it can initialize lastAccessedIndex to prepend/append from onwards.
-             *
-             * This initial lastAccessedIndex is necessary because initial load
-             * key may not be 0, for example when [Pager].initialKey != 0. It is calculated
-             * based on [ItemSnapshotList.placeholdersBefore] + [1/2 initial load size] to match
-             * the initial ViewportHint that [PagingDataPresenter.presentNewList] sends on
-             * first generation to auto-trigger prefetches on either direction.
-             *
-             * Any subsequent SnapshotLoader loads are based on the index tracked by
-             * [SnapshotLoader] internally.
-             */
-            val lastLoadedIndex = snapshot().placeholdersBefore + (snapshot().items.size / 2)
-            loader.generations.value.lastAccessedIndex.set(lastLoadedIndex)
-            return null
-        }
-
-        override suspend fun presentPagingDataEvent(event: PagingDataEvent<Value>) {
-            /**
-             * We only care about callbacks for prepend inserts so that we can adjust
-             * the lastAccessedIndex. For more detail, refer to docs on method
-             * #computeIndexOffset in SnapshotLoader.
-             */
-            if (event is PagingDataEvent.Prepend) {
-                val insertSize = event.inserted.size
-                val placeholdersChangedCount = minOf(event.oldPlaceholdersBefore, insertSize)
-                val itemsInsertedCount = insertSize - placeholdersChangedCount
-                val itemsInsertedPos = 0
-
-                if (itemsInsertedCount > 0) {
+    val presenter =
+        object : CompletablePagingDataPresenter<Value>(coroutineContext) {
+            override suspend fun presentPagingDataEvent(event: PagingDataEvent<Value>) {
+                if (event is PagingDataEvent.Refresh) {
+                    /**
+                     * On new generation, SnapshotLoader needs the latest [ItemSnapshotList] state
+                     * so that it can initialize lastAccessedIndex to prepend/append from onwards.
+                     *
+                     * This initial lastAccessedIndex is necessary because initial load key may not
+                     * be 0, for example when [Pager].initialKey != 0. We don't know which items are
+                     * immediately displayed so we can only best-effort estimate that the middle
+                     * item has been presented.
+                     *
+                     * Therefore we calculate the actual index based on
+                     * [ItemSnapshotList.placeholdersBefore] + [1/2 initial load size].
+                     *
+                     * Any subsequent SnapshotLoader loads are based on the index tracked by
+                     * [SnapshotLoader] internally.
+                     */
+                    val lastLoadedIndex =
+                        event.newList.placeholdersBefore + (event.newList.dataCount / 2)
                     loader.onDataSetChanged(
                         loader.generations.value,
-                        LoaderCallback(ON_INSERTED, itemsInsertedPos, itemsInsertedCount)
+                        LoaderCallback(LoadType.REFRESH, lastLoadedIndex, event.newList.size),
+                        this@coroutineScope
                     )
+                }
+                /**
+                 * We only care about callbacks for prepend inserts so that we can adjust the
+                 * lastAccessedIndex. For more detail, refer to docs on method #computeIndexOffset
+                 * in SnapshotLoader.
+                 */
+                if (event is PagingDataEvent.Prepend) {
+                    val insertSize = event.inserted.size
+                    val placeholdersChangedCount = minOf(event.oldPlaceholdersBefore, insertSize)
+                    val itemsInsertedCount = insertSize - placeholdersChangedCount
+                    val itemsInsertedPos = 0
+
+                    if (itemsInsertedCount > 0) {
+                        loader.onDataSetChanged(
+                            loader.generations.value,
+                            LoaderCallback(LoadType.PREPEND, itemsInsertedPos, itemsInsertedCount),
+                            null
+                        )
+                    }
                 }
             }
         }
-    }
 
     loader = SnapshotLoader(presenter, onError)
 
@@ -142,7 +111,7 @@ public suspend fun <Value : Any> Flow<PagingData<Value>>.asSnapshot(
      * Launches collection on this [Pager.flow].
      *
      * The collection job is cancelled automatically after [loadOperations] completes.
-      */
+     */
     val collectPagingData = launch {
         this@asSnapshot.collectLatest {
             incrementGeneration(loader)
@@ -155,8 +124,8 @@ public suspend fun <Value : Any> Flow<PagingData<Value>>.asSnapshot(
      * Runs the input [loadOperations].
      *
      * Awaits for initial refresh to complete before invoking [loadOperations]. Automatically
-     * cancels the collection on this [Pager.flow] after [loadOperations] completes and Paging
-     * is idle.
+     * cancels the collection on this [Pager.flow] after [loadOperations] completes and Paging is
+     * idle.
      */
     try {
         presenter.awaitNotLoading(onError)
@@ -174,54 +143,51 @@ public suspend fun <Value : Any> Flow<PagingData<Value>>.asSnapshot(
 }
 
 internal abstract class CompletablePagingDataPresenter<Value : Any>(
-    differCallback: DifferCallback,
     mainContext: CoroutineContext,
-) : PagingDataPresenter<Value>(differCallback, mainContext) {
+) : PagingDataPresenter<Value>(mainContext) {
     /**
      * Marker that the underlying Flow<PagingData> has completed - e.g., every possible generation
      * of data has been loaded completely.
      */
     val hasCompleted = MutableStateFlow(false)
 
-    val completableLoadStateFlow = loadStateFlow.combine(
-        hasCompleted
-    ) { loadStates, hasCompleted ->
-        if (hasCompleted) {
-            CombinedLoadStates(
-                refresh = LoadState.NotLoading(true),
-                prepend = LoadState.NotLoading(true),
-                append = LoadState.NotLoading(true),
-                source = LoadStates(
+    val completableLoadStateFlow =
+        loadStateFlow.combine(hasCompleted) { loadStates, hasCompleted ->
+            if (hasCompleted) {
+                CombinedLoadStates(
                     refresh = LoadState.NotLoading(true),
                     prepend = LoadState.NotLoading(true),
-                    append = LoadState.NotLoading(true)
+                    append = LoadState.NotLoading(true),
+                    source =
+                        LoadStates(
+                            refresh = LoadState.NotLoading(true),
+                            prepend = LoadState.NotLoading(true),
+                            append = LoadState.NotLoading(true)
+                        )
                 )
-            )
-        } else {
-            loadStates
+            } else {
+                loadStates
+            }
         }
-    }
 }
 
 /**
  * Awaits until both source and mediator states are NotLoading. We do not care about the state of
- * endOfPaginationReached. Source and mediator states need to be checked individually because
- * the aggregated LoadStates can reflect `NotLoading` when source states are `Loading`.
+ * endOfPaginationReached. Source and mediator states need to be checked individually because the
+ * aggregated LoadStates can reflect `NotLoading` when source states are `Loading`.
  *
  * We debounce(1ms) to prevent returning too early if this collected a `NotLoading` from the
- * previous load. Without a way to determine whether the `NotLoading` it collected was from
- * a previous operation or current operation, we debounce 1ms to allow collection on a potential
+ * previous load. Without a way to determine whether the `NotLoading` it collected was from a
+ * previous operation or current operation, we debounce 1ms to allow collection on a potential
  * incoming `Loading` state.
  */
 @OptIn(kotlinx.coroutines.FlowPreview::class)
 internal suspend fun <Value : Any> CompletablePagingDataPresenter<Value>.awaitNotLoading(
     errorHandler: LoadErrorHandler
 ) {
-    val state = completableLoadStateFlow.filterNotNull().debounce(1).filter {
-        it.isIdle() || it.hasError()
-    }.firstOrNull()
+    val state = completableLoadStateFlow.filterNotNull().awaitNotLoading()
 
-    if (state != null && state.hasError()) {
+    if (state != null && state.hasError) {
         handleLoadError(state, errorHandler)
     }
 }
@@ -237,27 +203,8 @@ internal fun <Value : Any> PagingDataPresenter<Value>.handleLoadError(
         RETURN_CURRENT_SNAPSHOT -> throw ReturnSnapshotStub()
     }
 }
+
 private class ReturnSnapshotStub : Exception()
-
-private fun CombinedLoadStates?.isIdle(): Boolean {
-    if (this == null) return false
-    return source.isIdle() && mediator?.isIdle() ?: true
-}
-
-private fun LoadStates.isIdle(): Boolean {
-    return refresh is LoadState.NotLoading && append is LoadState.NotLoading &&
-        prepend is LoadState.NotLoading
-}
-
-private fun CombinedLoadStates?.hasError(): Boolean {
-    if (this == null) return false
-    return source.hasError() || mediator?.hasError() ?: false
-}
-
-private fun LoadStates.hasError(): Boolean {
-    return refresh is LoadState.Error || append is LoadState.Error ||
-        prepend is LoadState.Error
-}
 
 private fun CombinedLoadStates.getErrorState(): LoadState.Error {
     return if (refresh is LoadState.Error) {
@@ -272,8 +219,6 @@ private fun CombinedLoadStates.getErrorState(): LoadState.Error {
 private fun <Value : Any> incrementGeneration(loader: SnapshotLoader<Value>) {
     val currGen = loader.generations.value
     if (currGen.id == loader.generations.value.id) {
-        loader.generations.value = Generation(
-            id = currGen.id + 1
-        )
+        loader.generations.value = Generation(id = currGen.id + 1)
     }
 }

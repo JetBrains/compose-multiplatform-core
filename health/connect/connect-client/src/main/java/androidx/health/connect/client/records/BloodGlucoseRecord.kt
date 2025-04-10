@@ -30,6 +30,7 @@ import java.time.ZoneOffset
 public class BloodGlucoseRecord(
     override val time: Instant,
     override val zoneOffset: ZoneOffset?,
+    override val metadata: Metadata,
     /**
      * Blood glucose level or concentration. Required field. Valid range: 0-50 mmol/L.
      *
@@ -57,7 +58,6 @@ public class BloodGlucoseRecord(
      * @see RelationToMeal
      */
     @property:RelationToMeals public val relationToMeal: Int = RELATION_TO_MEAL_UNKNOWN,
-    override val metadata: Metadata = Metadata.EMPTY,
 ) : InstantaneousRecord {
 
     init {
@@ -137,7 +137,6 @@ public class BloodGlucoseRecord(
     /**
      * List of supported blood glucose specimen sources (type of body fluid used to measure the
      * blood glucose).
-     *
      */
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(
@@ -154,9 +153,7 @@ public class BloodGlucoseRecord(
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     annotation class SpecimenSources
 
-    /**
-     * Temporal relationship of measurement time to a meal.
-     */
+    /** Temporal relationship of measurement time to a meal. */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(
@@ -199,5 +196,9 @@ public class BloodGlucoseRecord(
         result = 31 * result + relationToMeal
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "BloodGlucoseRecord(time=$time, zoneOffset=$zoneOffset, level=$level, specimenSource=$specimenSource, mealType=$mealType, relationToMeal=$relationToMeal, metadata=$metadata)"
     }
 }

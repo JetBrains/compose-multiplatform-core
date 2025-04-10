@@ -40,7 +40,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.autofill.R;
 import androidx.autofill.inline.InlineUiActivity;
 import androidx.autofill.inline.common.ImageViewStyle;
@@ -52,6 +51,7 @@ import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -72,8 +72,7 @@ public class InlineSuggestionUiTest {
 
     @SuppressWarnings("deprecation")
     @Rule
-    @NonNull
-    public final androidx.test.rule.ActivityTestRule<InlineUiActivity> mActivityTestRule =
+    public final androidx.test.rule.@NonNull ActivityTestRule<InlineUiActivity> mActivityTestRule =
             new androidx.test.rule.ActivityTestRule<>(InlineUiActivity.class);
 
     private Instrumentation mInstrumentation;

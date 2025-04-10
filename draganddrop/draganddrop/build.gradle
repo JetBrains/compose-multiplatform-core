@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -22,12 +29,12 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api("androidx.appcompat:appcompat:1.4.0")
     api("androidx.core:core:1.7.0")
     annotationProcessor(libs.nullaway)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy)
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy)
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
@@ -36,16 +43,17 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 24
+        minSdk = 24
     }
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.draganddrop"
+    namespace = "androidx.draganddrop"
 }
 
 androidx {
     name = "Drag and Drop"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "This library makes it easy for developers to accept data dragged-and-dropped from another app, and show a consistent affordance."
-    metalavaK2UastEnabled = true
+    // TODO: b/326456246
+    optOutJSpecify = true
 }

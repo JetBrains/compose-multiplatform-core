@@ -20,9 +20,9 @@ import android.net.TrafficStats;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.net.DatagramSocket;
 import java.net.Socket;
@@ -175,12 +175,10 @@ public final class TrafficStatsCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void tagDatagramSocket(DatagramSocket socket) throws SocketException {
             TrafficStats.tagDatagramSocket(socket);
         }
 
-        @DoNotInline
         static void untagDatagramSocket(DatagramSocket socket) throws SocketException {
             TrafficStats.untagDatagramSocket(socket);
         }

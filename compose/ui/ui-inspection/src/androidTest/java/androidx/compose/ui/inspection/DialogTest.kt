@@ -17,22 +17,17 @@
 package androidx.compose.ui.inspection
 
 import android.view.inspector.WindowInspector
-import androidx.compose.ui.inspection.inspector.InspectorNode
-import androidx.compose.ui.inspection.inspector.MutableInspectorNode
 import androidx.compose.ui.inspection.rules.JvmtiRule
 import androidx.compose.ui.inspection.rules.sendCommand
 import androidx.compose.ui.inspection.testdata.DialogTestActivity
 import androidx.compose.ui.inspection.util.GetComposablesCommand
 import androidx.compose.ui.inspection.util.GetUpdateSettingsCommand
-import androidx.compose.ui.inspection.util.toMap
+import androidx.compose.ui.inspection.util.roots
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.unit.IntRect
 import androidx.inspection.testing.InspectorTester
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
-import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableNode
-import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetComposablesResponse
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -43,8 +38,7 @@ import org.junit.rules.RuleChain
 class DialogTest {
     private val rule = createAndroidComposeRule<DialogTestActivity>()
 
-    @get:Rule
-    val chain = RuleChain.outerRule(JvmtiRule()).around(rule)!!
+    @get:Rule val chain = RuleChain.outerRule(JvmtiRule()).around(rule)!!
 
     private lateinit var inspectorTester: InspectorTester
 
@@ -62,18 +56,16 @@ class DialogTest {
 
     @Test
     fun dialogLocation(): Unit = runBlocking {
-        inspectorTester.sendCommand(
-            GetUpdateSettingsCommand()
-        ).updateSettingsResponse
+        inspectorTester.sendCommand(GetUpdateSettingsCommand()).updateSettingsResponse
 
         val roots = WindowInspector.getGlobalWindowViews()
         assertThat(roots).hasSize(2)
         val appViewId = roots.first().uniqueDrawingId
         val dialogViewId = roots.last().uniqueDrawingId
-        val app = inspectorTester.sendCommand(GetComposablesCommand(appViewId))
-            .getComposablesResponse
-        val dialog = inspectorTester.sendCommand(GetComposablesCommand(dialogViewId))
-            .getComposablesResponse
+        val app =
+            inspectorTester.sendCommand(GetComposablesCommand(appViewId)).getComposablesResponse
+        val dialog =
+            inspectorTester.sendCommand(GetComposablesCommand(dialogViewId)).getComposablesResponse
         val appRoots = app.roots()
         val dialogRoots = dialog.roots()
         val dialogViewRoot = roots.last()
@@ -90,24 +82,4 @@ class DialogTest {
         assertThat(dialogRoots.single().width).isEqualTo(dialogViewRoot.width)
         assertThat(dialogRoots.single().height).isEqualTo(dialogViewRoot.height)
     }
-
-    private fun GetComposablesResponse.roots(): List<InspectorNode> {
-        val strings = stringsList.toMap()
-        return rootsList.flatMap { it.nodesList.convert(strings) }
-    }
-
-    private fun List<ComposableNode>.convert(strings: Map<Int, String>): List<InspectorNode> =
-        map {
-            val node = MutableInspectorNode()
-            node.name = strings[it.name] ?: ""
-            node.box = IntRect(
-                it.bounds.layout.x,
-                it.bounds.layout.y,
-                it.bounds.layout.x + it.bounds.layout.w,
-                it.bounds.layout.y + it.bounds.layout.h
-            )
-            node.children.addAll(it.childrenList.convert(strings))
-            node.inlined = (it.flags and ComposableNode.Flags.INLINED_VALUE) != 0
-            node.build()
-        }
 }

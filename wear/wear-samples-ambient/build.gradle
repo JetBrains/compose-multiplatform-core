@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -30,7 +37,7 @@ dependencies {
 
 androidx {
     name = "Android Wear Ambient Sample"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     mavenVersion = LibraryVersions.WEAR
     inceptionYear = "2021"
     description = "Contains the sample code for the ambient APIs defined in the androidx.wear:wear library"
@@ -38,13 +45,13 @@ androidx {
 
 android {
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
 
     buildTypes {
 	release {
-	    minifyEnabled true
-	    shrinkResources true
+	    minifyEnabled = true
+	    shrinkResources = true
 	    proguardFiles getDefaultProguardFile('proguard-android.txt')
 	}
     }
@@ -53,5 +60,5 @@ android {
         sourceCompatibility 1.8
         targetCompatibility 1.8
     }
-    namespace "androidx.wear.samples.ambient"
+    namespace = "androidx.wear.samples.ambient"
 }

@@ -27,14 +27,13 @@ API level, (2) the latest stable API level, (3) API levels with major changes,
 pre-release API level.
 
 In practice, this is limited by device and emulator availability and
-reliability. As of November 2023, we run tests on the following API levels:
+reliability. As of January 2025, we run tests on the following API levels:
 
 -   API level 21: the lowest API level supported by Firebase Test Lab (FTL)
 -   API level 26: the lowest supported ARM-based emulator FTL runner, which has
     much greater performance and stability
--   API level 28: provides coverage between 26 and 30
--   API levels 30, 31, 33: the latest supported API levels, which represent the
-    majority of devices in the field
+-   API levels 30, 33, 34, 35: the latest supported API levels, which represent
+    the majority of devices in the field
 
 ## Adding tests {#adding}
 
@@ -60,14 +59,6 @@ be distinguishable by their packages.
 NOTE For best practices on writing libraries in a way that makes it easy for end
 users -- and library developers -- to write tests, see the
 [Testability](/docs/testability.md) guide.
-
-### Adding a JVM based screenshot test
-
-For UI heavy libraries, it might make sense to add screenshot tests to verify
-that everything still renders as expected. For that you need to write the test
-([example](https://r.android.com/2428035)) and add new goldens
-([example](https://r.android.com/2428721)). You can run these tests just like
-any other JVM test using `test` Gradle task.
 
 ### Adding screenshots tests using scuba library
 
@@ -173,16 +164,22 @@ Step 1: Click on the “Test” button below:
 Step 2: Click on the “Update scuba goldens” below:
 ![alt_text](onboarding_images/image8.png "Update scuba button")
 
-Step 3: You should see a dashboard similar to the example below. Check-out if
-the new screenshots look as expected and if yes click approve. This will create
-a new CL.
+Step 3: Select the tests for which you want to update the golden images. Confirm
+the images look correct and click on “Approve Changes”
 ![alt_text](onboarding_images/image9.png "Button to approve scuba changes")
 
-Step 4: Link your original CL with the new goldens CL by setting the same Topic
+Step 4: In the Approve changes dialog box, enter the following details and click
+on Approve: \
+Select gerrit host as shown in image below \
+Repo: platform/frameworks/support-golden \
+Branch: androidx-main
+![alt_text](onboarding_images/image10.png "Approve changes dialog box with dropdown field to select gerrit host and textboxes to select repo and branch")
+
+Step 5: Link your original CL with the new goldens CL by setting the same Topic
 field in both CLs (any arbitrary string will do). This tells Gerrit to submit
 the CLs together, effectively providing a reference from the original CL to the
 new goldens. And re-run presubmit. Your tests should now pass!
-![alt_text](onboarding_images/image10.png "Topic for connecting cls")
+![alt_text](onboarding_images/image11.png "Topic for connecting cls, so they can run together")
 
 #### Running manually / debugging
 
@@ -350,7 +347,9 @@ prebuilts/fullsdk-darwin ln -s ~/Library/Android/sdk/emulator emulator ln -s
 ~/Library/Android/sdk/system-images system-images` (substituting `fullsdk-linux`
 and your local SDK path as appropriate)
 
-## Debugging with platform SDK sources {#sources}
+## Debugging tests
+
+### Using custom platform SDK sources {#sources}
 
 The platform SDK sources that are checked into the development branch may not
 match up with the build of Android present on the emulator or your physical
@@ -373,6 +372,29 @@ NOTE The `Project Structure` dialog reachable via `File > Project Structure` is
 **not** the same as the `Project Structure` dialog that will allow you to
 specify the SDK source path. You must use the "Module Settings" action as
 directed above.
+
+### Accessing FTL outputs
+
+When we run tests on Firebase Test Lab devices, we transfer the results and
+logcat output back to Android's test result infrastructure; however, FTL also
+captures screen recordings of the entire test run.
+
+To access these videos from the Android Test Investigate page for a failed test
+run:
+
+-   For the failing test, go to `Artifacts tab` in the Android Test Investigate
+    page
+-   Disable `Hide empty folders` (if enabled) by clicking on it
+-   Under `Run artifacts`, click on "i" icon next to the test module to open the
+    Information tab
+-   In the Information tab to the right, click on the link next to the `logs`
+    property
+
+The full logcat output and screen recording are available from the `Devices` tab
+by clicking on the test device under `Device details` and using the `Logs` and
+`Video` tabs, respectively.
+
+Per-test logcat output and videos are available from the `Test cases` tab.
 
 ## Running unit and integration tests {#running}
 
@@ -409,10 +431,13 @@ from `framework/support`:
 
 # Run instrumentation tests in Firebase Test Lab (remote)
 ./gradlew <project-name>:ftlnexus4api21
-./gradlew <project-name>:ftlpixel2api26
-./gradlew <project-name>:ftlpixel2api28
-./gradlew <project-name>:ftlpixel2api30
-./gradlew <project-name>:ftlpixel2api33
+./gradlew <project-name>:ftlmediumphoneapi26
+./gradlew <project-name>:ftlmediumphoneapi30
+./gradlew <project-name>:ftlmediumphoneapi33
+./gradlew <project-name>:ftlmediumphoneapi34
+./gradlew <project-name>:ftlmediumphoneapi35
+
+./gradlew <project-name>:ftlmediumphoneapi28 (For compose tests only)
 
 # Run local unit tests
 ./gradlew <project-name>:test
@@ -428,7 +453,7 @@ To run a specific instrumentation test in a given project, run
     -Pandroid.testInstrumentationRunnerArguments.class=<fully-qualified-class>[\#testName]
 
 # Run instrumentation tests on in Firebase Test Lab (remote)
-./gradlew <project-name>:ftlpixel2api30 --className=<fully-qualified-class>
+./gradlew <project-name>:ftlmediumphoneapi30 --className=<fully-qualified-class>
 ```
 
 substituting the Gradle project name (ex. `viewpager`) and fully-qualified class

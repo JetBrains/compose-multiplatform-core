@@ -27,9 +27,10 @@ import android.support.customtabs.ICustomTabsCallback;
 import android.support.customtabs.IPostMessageService;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link ServiceConnection} for Custom Tabs providers to use while connecting to a
@@ -44,8 +45,8 @@ public abstract class PostMessageServiceConnection
 
     private final Object mLock = new Object();
     private final ICustomTabsCallback mSessionBinder;
-    @Nullable private IPostMessageService mService;
-    @Nullable private String mPackageName;
+    private @Nullable IPostMessageService mService;
+    private @Nullable String mPackageName;
     // Indicates that a message channel has been opened. We're ready to post messages once this is
     // true and we've connected to the {@link PostMessageService}.
     private boolean mMessageChannelCreated;

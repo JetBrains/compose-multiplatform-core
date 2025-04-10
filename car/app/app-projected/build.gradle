@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -23,10 +30,11 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(project(":car:app:app"))
     annotationProcessor(libs.nullaway)
 
-    implementation("androidx.annotation:annotation:1.2.0")
+    implementation("androidx.annotation:annotation:1.8.1")
 
     testImplementation(libs.junit)
     testImplementation(libs.testCore)
@@ -35,34 +43,28 @@ dependencies {
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.robolectric)
     testImplementation(libs.truth)
-    testImplementation project(path: ':car:app:app-testing')
+    testImplementation(project(":car:app:app-testing"))
 }
 
 android {
-    defaultConfig {
-        minSdkVersion 21
-        multiDexEnabled = true
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-    }
     buildFeatures {
         aidl = true
     }
-    buildTypes.all {
-        consumerProguardFiles "proguard-rules.pro"
+    buildTypes.configureEach {
+        consumerProguardFiles("proguard-rules.pro")
 
         stableAidl {
-            version 1
+            version = 1
         }
     }
 
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.car.app.projected"
+    namespace = "androidx.car.app.projected"
 }
 
 androidx {
     name = "Android for Cars App Projected Extension"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "Android Auto Projected specific funationaltiy to build navigation, parking, and charging apps for cars"
-    metalavaK2UastEnabled = true
 }

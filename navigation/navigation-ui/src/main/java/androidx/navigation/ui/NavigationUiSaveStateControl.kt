@@ -16,10 +16,8 @@
 
 package androidx.navigation.ui
 
-/**
- * @see NavigationUI
- */
-@Retention(AnnotationRetention.RUNTIME)
+/** @see NavigationUI */
+@Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.FUNCTION)
 @RequiresOptIn(level = RequiresOptIn.Level.WARNING)
 public annotation class NavigationUiSaveStateControl

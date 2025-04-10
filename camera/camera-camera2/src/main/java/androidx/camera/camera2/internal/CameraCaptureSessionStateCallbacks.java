@@ -20,9 +20,10 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.os.Build;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.ApiCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,7 +32,6 @@ import java.util.List;
 /**
  * Different implementations of {@link CameraCaptureSession.StateCallback}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class CameraCaptureSessionStateCallbacks {
     private CameraCaptureSessionStateCallbacks() {
     }
@@ -39,16 +39,14 @@ public final class CameraCaptureSessionStateCallbacks {
     /**
      * Returns a session state callback which does nothing.
      */
-    @NonNull
-    public static CameraCaptureSession.StateCallback createNoOpCallback() {
+    public static CameraCaptureSession.@NonNull StateCallback createNoOpCallback() {
         return new NoOpSessionStateCallback();
     }
 
     /**
      * Returns a session state callback which calls a list of other callbacks.
      */
-    @NonNull
-    public static CameraCaptureSession.StateCallback createComboCallback(
+    public static CameraCaptureSession.@NonNull StateCallback createComboCallback(
             @NonNull List<CameraCaptureSession.StateCallback> callbacks) {
         if (callbacks.isEmpty()) {
             return createNoOpCallback();
@@ -61,9 +59,8 @@ public final class CameraCaptureSessionStateCallbacks {
     /**
      * Returns a session state callback which calls a list of other callbacks.
      */
-    @NonNull
-    public static CameraCaptureSession.StateCallback createComboCallback(
-            @NonNull CameraCaptureSession.StateCallback... callbacks) {
+    public static CameraCaptureSession.@NonNull StateCallback createComboCallback(
+            CameraCaptureSession.StateCallback @NonNull ... callbacks) {
         return createComboCallback(Arrays.asList(callbacks));
     }
 
@@ -98,7 +95,6 @@ public final class CameraCaptureSessionStateCallbacks {
         }
     }
 
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     static final class ComboSessionStateCallback
             extends CameraCaptureSession.StateCallback {
         private final List<CameraCaptureSession.StateCallback> mCallbacks = new ArrayList<>();

@@ -18,11 +18,12 @@ package androidx.wear.watchface.style.data;
 
 import android.graphics.RectF;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
 
@@ -30,8 +31,7 @@ import java.util.Map;
 @VersionedParcelize
 public class PerComplicationTypeMargins implements VersionedParcelable {
     @ParcelField(1)
-    @NonNull
-    public Map<Integer, RectF> mPerComplicationTypeMargins;
+    public @NonNull Map<Integer, RectF> mPerComplicationTypeMargins;
 
     PerComplicationTypeMargins() {}
 

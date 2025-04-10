@@ -16,9 +16,10 @@
 
 package androidx.paging.integration.testapp.room;
 
-import androidx.annotation.NonNull;
 import androidx.room.Database;
 import androidx.room.RoomDatabase;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Sample database of customers.
@@ -28,12 +29,10 @@ public abstract class SampleDatabase extends RoomDatabase {
     /**
      * @return customer dao.
      */
-    @NonNull
-    public abstract CustomerDao getCustomerDao();
+    public abstract @NonNull CustomerDao getCustomerDao();
 
     /**
      * @return RemoteKeyDao
      */
-    @NonNull
-    public abstract RemoteKeyDao getRemoteKeyDao();
+    public abstract @NonNull RemoteKeyDao getRemoteKeyDao();
 }

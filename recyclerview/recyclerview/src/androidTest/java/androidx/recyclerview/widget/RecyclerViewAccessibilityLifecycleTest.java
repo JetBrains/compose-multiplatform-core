@@ -36,7 +36,6 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.core.view.AccessibilityDelegateCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
@@ -47,6 +46,7 @@ import androidx.test.filters.LargeTest;
 import androidx.test.filters.MediumTest;
 import androidx.test.filters.SdkSuppress;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -88,8 +88,7 @@ public class RecyclerViewAccessibilityLifecycleTest extends BaseRecyclerViewInst
             public TestViewHolder onCreateViewHolder(@NonNull ViewGroup parent,
                     int viewType) {
                 TestViewHolder vh = super.onCreateViewHolder(parent, viewType);
-                ViewCompat.setImportantForAccessibility(vh.itemView,
-                        ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_YES);
+                vh.itemView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
                 return vh;
             }
         };
@@ -104,10 +103,10 @@ public class RecyclerViewAccessibilityLifecycleTest extends BaseRecyclerViewInst
         lm.waitForLayout(2);
         recyclerView.waitUntilAnimations();
         assertThat(invocations, is(Arrays.asList(
-                ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS,
-                ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS,
-                ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_YES,
-                ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_YES)));
+                View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS,
+                View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS,
+                View.IMPORTANT_FOR_ACCESSIBILITY_YES,
+                View.IMPORTANT_FOR_ACCESSIBILITY_YES)));
 
         assertThat(calledA11DuringLayout.get(), is(false));
     }
@@ -437,7 +436,7 @@ public class RecyclerViewAccessibilityLifecycleTest extends BaseRecyclerViewInst
                     @Override
                     public void run() {
                         View itemView = mRecyclerView.getChildAt(0);
-                        assertTrue(ViewCompat.performAccessibilityAction(itemView, 42, null));
+                        assertTrue(itemView.performAccessibilityAction(42, null));
                     }
                 });
     }
@@ -454,7 +453,7 @@ public class RecyclerViewAccessibilityLifecycleTest extends BaseRecyclerViewInst
                     @Override
                     public void run() {
                         View itemView = mRecyclerView.getChildAt(0);
-                        assertTrue(ViewCompat.performAccessibilityAction(itemView, 42, null));
+                        assertTrue(itemView.performAccessibilityAction(42, null));
                     }
                 },
                 new TextViewCreator() {
@@ -479,9 +478,8 @@ public class RecyclerViewAccessibilityLifecycleTest extends BaseRecyclerViewInst
         };
         recyclerView.setAccessibilityDelegateCompat(
                     new RecyclerViewAccessibilityDelegate(recyclerView) {
-                @NonNull
                 @Override
-                public AccessibilityDelegateCompat getItemDelegate() {
+                public @NonNull AccessibilityDelegateCompat getItemDelegate() {
                     return new RecyclerViewAccessibilityDelegate.ItemDelegate(this) {
                         @Override
                         public void onInitializeAccessibilityNodeInfo(@NonNull View host,

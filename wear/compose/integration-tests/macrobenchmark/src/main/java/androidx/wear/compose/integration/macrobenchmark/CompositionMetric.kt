@@ -17,30 +17,33 @@ package androidx.wear.compose.integration.macrobenchmark
 
 import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.TraceMetric
-import androidx.benchmark.perfetto.ExperimentalPerfettoTraceProcessorApi
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
+import androidx.benchmark.traceprocessor.TraceProcessor
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.DurationUnit
 
 @OptIn(ExperimentalMetricApi::class)
 internal class CompositionMetric(private val composable: String) : TraceMetric() {
-    @OptIn(ExperimentalMetricApi::class, ExperimentalPerfettoTraceProcessorApi::class)
-    override fun getResult(
+    @OptIn(ExperimentalMetricApi::class)
+    override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: PerfettoTraceProcessor.Session
+        traceSession: TraceProcessor.Session
     ): List<Measurement> {
         val shortName = composable.substringAfterLast(".")
 
-        val durationsNs = traceSession.query(
-            """
+        val durationsNs =
+            traceSession
+                .query(
+                    """
                 SELECT * FROM slice
                     INNER JOIN thread_track on slice.track_id = thread_track.id
                     INNER JOIN thread USING(utid)
                     INNER JOIN process USING(upid)
                 WHERE process.name LIKE "${captureInfo.targetPackageName}"
                     AND slice.name LIKE "$composable (%)"
-            """.trimIndent()
-        ).map { it.long("dur") }
+            """
+                        .trimIndent()
+                )
+                .map { it.long("dur") }
 
         return listOf(
             Measurement(

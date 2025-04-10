@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -28,12 +35,11 @@ dependencies {
 
 androidx {
     name = "Hilt Common"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.HILT
     inceptionYear = "2020"
     description = "AndroidX Hilt Extension Annotations"
     // TODO(danysantiago): Remove once @ViewModelInject is deleted.
     // This suppresses the the warning in the generated code by Hilt's GeneratesRootInput processor.
     failOnDeprecationWarnings = false
-    metalavaK2UastEnabled = true
 }

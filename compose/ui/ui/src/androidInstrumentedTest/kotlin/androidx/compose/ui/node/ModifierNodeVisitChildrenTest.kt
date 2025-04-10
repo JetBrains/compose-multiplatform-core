@@ -19,6 +19,7 @@ package androidx.compose.ui.node
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.zIndex
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
@@ -31,24 +32,17 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ModifierNodeVisitChildrenTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun noChildren() {
         // Arrange.
         val testNode = object : Modifier.Node() {}
         val visitedChildren = mutableListOf<Modifier.Node>()
-        rule.setContent {
-            Box(Modifier.elementOf(testNode))
-        }
+        rule.setContent { Box(Modifier.elementOf(testNode)) }
 
         // Act.
-        rule.runOnIdle {
-            testNode.visitChildren(Nodes.Any) {
-                visitedChildren.add(it)
-            }
-        }
+        rule.runOnIdle { testNode.visitChildren(Nodes.Any) { visitedChildren.add(it) } }
 
         // Assert.
         assertThat(visitedChildren).isEmpty()
@@ -59,21 +53,10 @@ class ModifierNodeVisitChildrenTest {
         // Arrange.
         val (node, child1, child2) = List(3) { object : Modifier.Node() {} }
         val visitedChildren = mutableListOf<Modifier.Node>()
-        rule.setContent {
-            Box(
-                Modifier
-                    .elementOf(node)
-                    .elementOf(child1)
-                    .elementOf(child2)
-            )
-        }
+        rule.setContent { Box(Modifier.elementOf(node).elementOf(child1).elementOf(child2)) }
 
         // Act.
-        rule.runOnIdle {
-            node.visitChildren(Nodes.Any) {
-                visitedChildren.add(it)
-            }
-        }
+        rule.runOnIdle { node.visitChildren(Nodes.Any) { visitedChildren.add(it) } }
 
         // Assert.
         assertThat(visitedChildren).containsExactly(child1)
@@ -86,8 +69,7 @@ class ModifierNodeVisitChildrenTest {
         val visitedChildren = mutableListOf<Modifier.Node>()
         rule.setContent {
             Box(
-                Modifier
-                    .elementOf(node)
+                Modifier.elementOf(node)
                     .otherModifier()
                     .elementOf(child1)
                     .otherModifier()
@@ -96,11 +78,7 @@ class ModifierNodeVisitChildrenTest {
         }
 
         // Act.
-        rule.runOnIdle {
-            node.visitChildren(Nodes.Any) {
-                visitedChildren.add(it)
-            }
-        }
+        rule.runOnIdle { node.visitChildren(Nodes.Any) { visitedChildren.add(it) } }
 
         // Assert.
         assertThat(visitedChildren).containsExactly(child1)
@@ -114,27 +92,63 @@ class ModifierNodeVisitChildrenTest {
         val visitedChildren = mutableListOf<Modifier.Node>()
         rule.setContent {
             Box(Modifier.elementOf(node)) {
-                Box(Modifier.elementOf(child1)) {
-                    Box(Modifier.elementOf(grandchild1))
-                }
-                Box(Modifier.elementOf(child2)) {
-                    Box(Modifier.elementOf(grandchild2))
-                }
+                Box(Modifier.elementOf(child1)) { Box(Modifier.elementOf(grandchild1)) }
+                Box(Modifier.elementOf(child2)) { Box(Modifier.elementOf(grandchild2)) }
+                Box(Modifier.elementOf(child3))
+            }
+        }
+
+        // Act.
+        rule.runOnIdle { node.visitChildren(Nodes.Any) { visitedChildren.add(it) } }
+
+        // Assert.
+        assertThat(visitedChildren).containsExactly(child1, child2, child3).inOrder()
+    }
+
+    @Test
+    fun visitChildrenInOtherLayoutNodesInDrawOrder_zIndex() {
+        // Arrange.
+        abstract class TrackedNode : Modifier.Node()
+        val (node, child1, child2, child3) = List(5) { object : TrackedNode() {} }
+        val visitedChildren = mutableListOf<Modifier.Node>()
+        rule.setContent {
+            Box(Modifier.elementOf(node)) {
+                Box(Modifier.elementOf(child1).zIndex(10f))
+                Box(Modifier.elementOf(child2).zIndex(-10f))
                 Box(Modifier.elementOf(child3))
             }
         }
 
         // Act.
         rule.runOnIdle {
-            node.visitChildren(Nodes.Any) {
-                visitedChildren.add(it)
+            node.visitChildren(Nodes.Any, zOrder = true) {
+                @Suppress("KotlinConstantConditions") if (it is TrackedNode) visitedChildren.add(it)
             }
         }
 
         // Assert.
-        assertThat(visitedChildren)
-            .containsExactly(child1, child2, child3)
-            .inOrder()
+        assertThat(visitedChildren).containsExactly(child2, child3, child1).inOrder()
+    }
+
+    @Test
+    fun visitChildrenInOtherLayoutNodesInDrawOrder_subcompose() {
+        // Arrange.
+        val (node, child1, child2, child3) = List(5) { object : Modifier.Node() {} }
+        val visitedChildren = mutableListOf<Modifier.Node>()
+        rule.setContent {
+            ReverseMeasureLayout(
+                Modifier.elementOf(node),
+                { Box(Modifier.elementOf(child1)) },
+                { Box(Modifier.elementOf(child2)) },
+                { Box(Modifier.elementOf(child3)) }
+            )
+        }
+
+        // Act.
+        rule.runOnIdle { node.visitChildren(Nodes.Any, zOrder = true) { visitedChildren.add(it) } }
+
+        // Assert.
+        assertThat(visitedChildren).containsExactly(child1, child2, child3).inOrder()
     }
 
     @Ignore("b/278765590")
@@ -143,29 +157,14 @@ class ModifierNodeVisitChildrenTest {
         // Arrange.
         val (node, child1, child2) = List(3) { object : Modifier.Node() {} }
         val visitedChildren = mutableListOf<Modifier.Node>()
-        rule.setContent {
-            Box(
-                Modifier
-                    .elementOf(node)
-                    .elementOf(child1)
-                    .elementOf(child2)
-            )
-        }
-        rule.runOnIdle {
-            child1.markAsDetached()
-        }
+        rule.setContent { Box(Modifier.elementOf(node).elementOf(child1).elementOf(child2)) }
+        rule.runOnIdle { child1.markAsDetached() }
 
         // Act.
-        rule.runOnIdle {
-            node.visitChildren(Nodes.Any) {
-                visitedChildren.add(it)
-            }
-        }
+        rule.runOnIdle { node.visitChildren(Nodes.Any) { visitedChildren.add(it) } }
 
         // Assert.
-        assertThat(visitedChildren)
-            .containsExactly(child2)
-            .inOrder()
+        assertThat(visitedChildren).containsExactly(child2).inOrder()
     }
 
     @Ignore("b/278765590")
@@ -192,16 +191,10 @@ class ModifierNodeVisitChildrenTest {
         }
 
         // Act.
-        rule.runOnIdle {
-            node.visitChildren(Nodes.Any) {
-                visitedChildren.add(it)
-            }
-        }
+        rule.runOnIdle { node.visitChildren(Nodes.Any) { visitedChildren.add(it) } }
 
         // Assert.
-        assertThat(visitedChildren)
-            .containsExactly(child2, child4)
-            .inOrder()
+        assertThat(visitedChildren).containsExactly(child2, child4).inOrder()
     }
 
     private fun Modifier.otherModifier(): Modifier = this.then(Modifier)

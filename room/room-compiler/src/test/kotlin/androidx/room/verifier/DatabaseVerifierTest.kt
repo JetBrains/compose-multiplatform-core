@@ -24,6 +24,7 @@ import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.XTypeElement
 import androidx.room.compiler.processing.util.XTestInvocation
 import androidx.room.compiler.processing.util.runProcessorTest
+import androidx.room.ext.CommonTypeNames
 import androidx.room.parser.Collate
 import androidx.room.parser.SQLTypeAffinity
 import androidx.room.parser.SqlParser
@@ -34,11 +35,11 @@ import androidx.room.vo.Constructor
 import androidx.room.vo.Database
 import androidx.room.vo.DatabaseView
 import androidx.room.vo.Entity
-import androidx.room.vo.Field
-import androidx.room.vo.FieldGetter
-import androidx.room.vo.FieldSetter
-import androidx.room.vo.Fields
 import androidx.room.vo.PrimaryKey
+import androidx.room.vo.Properties
+import androidx.room.vo.Property
+import androidx.room.vo.PropertyGetter
+import androidx.room.vo.PropertySetter
 import java.sql.Connection
 import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.hasItem
@@ -59,9 +60,7 @@ class DatabaseVerifierTest(private val useLocalizedCollation: Boolean) {
             val verifier = createVerifier(invocation)
             val stmt = verifier.connection.createStatement()
             val rs = stmt.executeQuery("select * from sqlite_master WHERE type='table'")
-            assertThat(
-                rs.collect { set -> set.getString("name") }, hasItem(`is`("User"))
-            )
+            assertThat(rs.collect { set -> set.getString("name") }, hasItem(`is`("User")))
             val table = verifier.connection.prepareStatement("select * from User")
             assertThat(table.columnNames(), `is`(listOf("id", "name", "lastName", "ratio")))
 
@@ -72,8 +71,10 @@ class DatabaseVerifierTest(private val useLocalizedCollation: Boolean) {
     private fun createVerifier(invocation: XTestInvocation): DatabaseVerifier {
         val db = userDb(invocation)
         return DatabaseVerifier.create(
-            invocation.context, mock(XElement::class.java),
-            db.entities, db.views
+            invocation.context,
+            mock(XElement::class.java),
+            db.entities,
+            db.views
         )!!
     }
 
@@ -132,13 +133,16 @@ class DatabaseVerifierTest(private val useLocalizedCollation: Boolean) {
 
     @Test
     fun testColumnSubquery() {
-        validQueryTest("""
+        validQueryTest(
+            """
             SELECT
                 lastName,
                 (SELECT COUNT(*) FROM user AS iu WHERE iu.lastName = u.lastName) = 1 AS isUnique
             FROM user AS u
             GROUP BY lastName
-            """.trimIndent()) {
+            """
+                .trimIndent()
+        ) {
             assertThat(
                 it,
                 `is`(
@@ -266,9 +270,8 @@ class DatabaseVerifierTest(private val useLocalizedCollation: Boolean) {
     fun testCollateBasQuery() {
         runProcessorTest { invocation ->
             val verifier = createVerifier(invocation)
-            val (_, error) = verifier.analyze(
-                "SELECT id, name FROM user ORDER BY name COLLATE LOCALIZEDASC"
-            )
+            val (_, error) =
+                verifier.analyze("SELECT id, name FROM user ORDER BY name COLLATE LOCALIZEDASC")
             assertThat(error, notNullValue())
         }
     }
@@ -294,9 +297,7 @@ class DatabaseVerifierTest(private val useLocalizedCollation: Boolean) {
     fun testViewNoSuchColumn() {
         runProcessorTest { invocation ->
             val verifier = createVerifier(invocation)
-            val (_, error) = verifier.analyze(
-                "SELECT ratio FROM UserSummary"
-            )
+            val (_, error) = verifier.analyze("SELECT ratio FROM UserSummary")
             assertThat(error, notNullValue())
             assertThat(error?.message, containsString("no such column: ratio"))
         }
@@ -305,26 +306,29 @@ class DatabaseVerifierTest(private val useLocalizedCollation: Boolean) {
     @Test
     fun defaultValue_exprError() {
         runProcessorTest { invocation ->
-            val db = database(
-                listOf(
-                    entity(
-                        invocation,
-                        "User",
-                        field(
-                            "id",
-                            primitive(invocation.context, XTypeName.PRIMITIVE_INT),
-                            SQLTypeAffinity.INTEGER
-                        ),
-                        field(
-                            "name",
-                            invocation.context.COMMON_TYPES.STRING,
-                            SQLTypeAffinity.TEXT,
-                            defaultValue = "(NO_SUCH_CONSTANT)"
+            val db =
+                database(
+                    listOf(
+                        entity(
+                            invocation,
+                            "User",
+                            field(
+                                "id",
+                                primitive(invocation.context, XTypeName.PRIMITIVE_INT),
+                                SQLTypeAffinity.INTEGER
+                            ),
+                            field(
+                                "name",
+                                invocation.context.processingEnv.requireType(
+                                    CommonTypeNames.STRING
+                                ),
+                                SQLTypeAffinity.TEXT,
+                                defaultValue = "(NO_SUCH_CONSTANT)"
+                            )
                         )
-                    )
-                ),
-                emptyList()
-            )
+                    ),
+                    emptyList()
+                )
             invocation.assertCompilationResult {
                 hasErrorContaining("default value of column [name]")
             }
@@ -348,20 +352,42 @@ class DatabaseVerifierTest(private val useLocalizedCollation: Boolean) {
                 entity(
                     invocation,
                     "User",
-                    field("id",
-                        primitive(context, XTypeName.PRIMITIVE_INT), SQLTypeAffinity.INTEGER),
-                    field("name", context.COMMON_TYPES.STRING, SQLTypeAffinity.TEXT),
-                    field("lastName", context.COMMON_TYPES.STRING, SQLTypeAffinity.TEXT),
-                    field("ratio",
-                        primitive(context, XTypeName.PRIMITIVE_FLOAT), SQLTypeAffinity.REAL)
+                    field(
+                        "id",
+                        primitive(context, XTypeName.PRIMITIVE_INT),
+                        SQLTypeAffinity.INTEGER
+                    ),
+                    field(
+                        "name",
+                        context.processingEnv.requireType(CommonTypeNames.STRING),
+                        SQLTypeAffinity.TEXT
+                    ),
+                    field(
+                        "lastName",
+                        context.processingEnv.requireType(CommonTypeNames.STRING),
+                        SQLTypeAffinity.TEXT
+                    ),
+                    field(
+                        "ratio",
+                        primitive(context, XTypeName.PRIMITIVE_FLOAT),
+                        SQLTypeAffinity.REAL
+                    )
                 )
             ),
             listOf(
                 view(
-                    "UserSummary", "SELECT id, name FROM User",
-                    field("id",
-                        primitive(context, XTypeName.PRIMITIVE_INT), SQLTypeAffinity.INTEGER),
-                    field("name", context.COMMON_TYPES.STRING, SQLTypeAffinity.TEXT)
+                    "UserSummary",
+                    "SELECT id, name FROM User",
+                    field(
+                        "id",
+                        primitive(context, XTypeName.PRIMITIVE_INT),
+                        SQLTypeAffinity.INTEGER
+                    ),
+                    field(
+                        "name",
+                        context.processingEnv.requireType(CommonTypeNames.STRING),
+                        SQLTypeAffinity.TEXT
+                    )
                 )
             )
         )
@@ -373,40 +399,42 @@ class DatabaseVerifierTest(private val useLocalizedCollation: Boolean) {
             type = mock(XType::class.java),
             entities = entities,
             views = views,
-            daoMethods = emptyList(),
+            daoFunctions = emptyList(),
             version = -1,
             exportSchema = false,
-            enableForeignKeys = false
+            enableForeignKeys = false,
+            overrideClearAllTables = true,
+            constructorObject = null,
         )
     }
 
     private fun entity(
         invocation: XTestInvocation,
         tableName: String,
-        vararg fields: Field
+        vararg fields: Property
     ): Entity {
         val element = invocation.processingEnv.requireTypeElement("java.lang.String")
         return Entity(
             element = element,
             tableName = tableName,
             type = mock(XType::class.java),
-            fields = fields.toList(),
-            embeddedFields = emptyList(),
+            properties = fields.toList(),
+            embeddedProperties = emptyList(),
             indices = emptyList(),
-            primaryKey = PrimaryKey(null, Fields(fields.take(1)), false),
+            primaryKey = PrimaryKey(null, Properties(fields.take(1)), false),
             foreignKeys = emptyList(),
             constructor = Constructor(mock(XConstructorElement::class.java), emptyList()),
             shadowTableName = null
         )
     }
 
-    private fun view(viewName: String, query: String, vararg fields: Field): DatabaseView {
+    private fun view(viewName: String, query: String, vararg fields: Property): DatabaseView {
         return DatabaseView(
             element = mock(XTypeElement::class.java),
             viewName = viewName,
             type = mock(XType::class.java),
             fields = fields.toList(),
-            embeddedFields = emptyList(),
+            embeddedProperties = emptyList(),
             query = SqlParser.parse(query),
             constructor = Constructor(mock(XConstructorElement::class.java), emptyList())
         )
@@ -417,29 +445,31 @@ class DatabaseVerifierTest(private val useLocalizedCollation: Boolean) {
         type: XType,
         affinity: SQLTypeAffinity,
         defaultValue: String? = null
-    ): Field {
+    ): Property {
         val element = mock(XFieldElement::class.java)
         doReturn(type).`when`(element).type
-        val f = Field(
-            element = element,
-            name = name,
-            type = type,
-            columnName = name,
-            affinity = affinity,
-            collate = if (useLocalizedCollation && affinity == SQLTypeAffinity.TEXT) {
-                Collate.LOCALIZED
-            } else {
-                null
-            },
-            defaultValue = defaultValue
-        )
+        val f =
+            Property(
+                element = element,
+                name = name,
+                type = type,
+                columnName = name,
+                affinity = affinity,
+                collate =
+                    if (useLocalizedCollation && affinity == SQLTypeAffinity.TEXT) {
+                        Collate.LOCALIZED
+                    } else {
+                        null
+                    },
+                defaultValue = defaultValue
+            )
         assignGetterSetter(f, name, type)
         return f
     }
 
-    private fun assignGetterSetter(f: Field, name: String, type: XType) {
-        f.getter = FieldGetter(f.name, name, type, CallType.FIELD)
-        f.setter = FieldSetter(f.name, name, type, CallType.FIELD)
+    private fun assignGetterSetter(f: Property, name: String, type: XType) {
+        f.getter = PropertyGetter(f.name, name, type, CallType.PROPERTY)
+        f.setter = PropertySetter(f.name, name, type, CallType.PROPERTY)
     }
 
     private fun primitive(context: Context, typeName: XTypeName): XType {
@@ -449,9 +479,8 @@ class DatabaseVerifierTest(private val useLocalizedCollation: Boolean) {
     private fun getPrimaryKeys(connection: Connection, tableName: String): List<String> {
         val stmt = connection.createStatement()
         val resultSet = stmt.executeQuery("PRAGMA table_info($tableName)")
-        return resultSet.collect {
-            Pair(it.getString("name"), it.getInt("pk"))
-        }
+        return resultSet
+            .collect { Pair(it.getString("name"), it.getInt("pk")) }
             .filter { it.second > 0 }
             .sortedBy { it.second }
             .map { it.first }

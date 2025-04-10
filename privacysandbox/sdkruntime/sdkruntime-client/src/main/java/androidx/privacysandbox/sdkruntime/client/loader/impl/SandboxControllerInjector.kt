@@ -17,22 +17,25 @@
 package androidx.privacysandbox.sdkruntime.client.loader.impl
 
 import android.annotation.SuppressLint
-import android.os.IBinder
+import android.os.Bundle
 import androidx.privacysandbox.sdkruntime.client.loader.impl.injector.AppOwnedSdkInterfaceProxyFactory
+import androidx.privacysandbox.sdkruntime.client.loader.impl.injector.ClientImportanceListenerWrapper
+import androidx.privacysandbox.sdkruntime.client.loader.impl.injector.LoadSdkCallbackWrapper
+import androidx.privacysandbox.sdkruntime.client.loader.impl.injector.SandboxedSdkCompatProxyFactory
 import androidx.privacysandbox.sdkruntime.client.loader.impl.injector.SdkActivityHandlerWrapper
-import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
-import androidx.privacysandbox.sdkruntime.core.SandboxedSdkInfo
+import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
 import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
-import java.lang.reflect.Constructor
+import androidx.privacysandbox.sdkruntime.core.internal.ClientFeature
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
+import java.util.concurrent.Executor
 
 /**
- * Injects local implementation of [SdkSandboxControllerCompat.SandboxControllerImpl]
- * to [SdkSandboxControllerCompat] loaded by SDK Classloader.
- * Using [Proxy] to allow interaction between classes loaded by different classloaders.
+ * Injects local implementation of [SdkSandboxControllerCompat.SandboxControllerImpl] to
+ * [SdkSandboxControllerCompat] loaded by SDK Classloader. Using [Proxy] to allow interaction
+ * between classes loaded by different classloaders.
  */
 internal object SandboxControllerInjector {
 
@@ -48,68 +51,126 @@ internal object SandboxControllerInjector {
         sdkVersion: Int,
         controller: SdkSandboxControllerCompat.SandboxControllerImpl
     ) {
-        val controllerClass = Class.forName(
-            SdkSandboxControllerCompat::class.java.name,
-            false,
-            sdkClassLoader
-        )
+        val controllerClass =
+            Class.forName(
+                "androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat",
+                /* initialize = */ false,
+                sdkClassLoader
+            )
 
-        val controllerImplClass = Class.forName(
-            SdkSandboxControllerCompat.SandboxControllerImpl::class.java.name,
-            false,
-            sdkClassLoader
-        )
+        val controllerImplClass =
+            Class.forName(
+                "androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat\$SandboxControllerImpl",
+                /* initialize = */ false,
+                sdkClassLoader
+            )
 
         val injectMethod = controllerClass.getMethod("injectLocalImpl", controllerImplClass)
-
-        val sdkCompatBuilder = CompatSdkBuilder.createFor(sdkClassLoader)
-
-        val sdkActivityHandlerWrapper = if (sdkVersion >= 3)
-            SdkActivityHandlerWrapper.createFor(sdkClassLoader)
-        else
-            null
-
-        val appOwnedSdkInterfaceProxyFactory = if (sdkVersion >= 4)
-            AppOwnedSdkInterfaceProxyFactory.createFor(sdkClassLoader)
-        else
-            null
-
-        val proxy = Proxy.newProxyInstance(
-            sdkClassLoader,
-            arrayOf(controllerImplClass),
-            Handler(
-                controller,
-                sdkCompatBuilder,
-                appOwnedSdkInterfaceProxyFactory,
-                sdkActivityHandlerWrapper
+        val proxy =
+            Proxy.newProxyInstance(
+                sdkClassLoader,
+                arrayOf(controllerImplClass),
+                buildInvocationHandler(controller, sdkClassLoader, sdkVersion)
             )
-        )
 
         injectMethod.invoke(null, proxy)
     }
 
-    private class Handler(
-        private val controller: SdkSandboxControllerCompat.SandboxControllerImpl,
-        private val compatSdkBuilder: CompatSdkBuilder,
-        private val appOwnedSdkInterfaceProxyFactory: AppOwnedSdkInterfaceProxyFactory?,
-        private val sdkActivityHandlerWrapper: SdkActivityHandlerWrapper?
-    ) : InvocationHandler {
+    /**
+     * Creates [InvocationHandler] for SDK side proxy of [SdkSandboxControllerCompat].
+     * 1) Convert SDK side arguments to App side arguments
+     * 2) Calling App side [controller]
+     * 3) Convert App side result object to SDK side result object.
+     */
+    private fun buildInvocationHandler(
+        controller: SdkSandboxControllerCompat.SandboxControllerImpl,
+        sdkClassLoader: ClassLoader,
+        sdkVersion: Int
+    ): InvocationHandler {
+        val handlerBuilder = HandlerBuilder()
 
-        private val sdkToAppHandlerMap =
-            hashMapOf<Any, SdkSandboxActivityHandlerCompat>()
+        val sandboxedSdkFactory = SandboxedSdkCompatProxyFactory.createFor(sdkClassLoader)
+        handlerBuilder.addHandlerFor("getSandboxedSdks") {
+            controller.getSandboxedSdks().map(sandboxedSdkFactory::createFrom)
+        }
 
-        override fun invoke(proxy: Any, method: Method, args: Array<out Any?>?): Any {
+        val sdkInterfaceFactory = AppOwnedSdkInterfaceProxyFactory.createFor(sdkClassLoader)
+        handlerBuilder.addHandlerFor("getAppOwnedSdkSandboxInterfaces") {
+            controller.getAppOwnedSdkSandboxInterfaces().map(sdkInterfaceFactory::createFrom)
+        }
+
+        val sdkHandlerWrapper = SdkActivityHandlerWrapper.createFor(sdkClassLoader)
+        val activityMethodsHandler = ActivityMethodsHandler(controller, sdkHandlerWrapper)
+        handlerBuilder.addHandlerFor(
+            "registerSdkSandboxActivityHandler",
+            activityMethodsHandler.registerMethodHandler
+        )
+        handlerBuilder.addHandlerFor(
+            "unregisterSdkSandboxActivityHandler",
+            activityMethodsHandler.unregisterMethodHandler
+        )
+
+        val loadSdkCallbackWrapper = LoadSdkCallbackWrapper.createFor(sdkClassLoader)
+        handlerBuilder.addHandlerFor("loadSdk") { args ->
+            controller.loadSdk(
+                sdkName = args!![0] as String,
+                params = args[1] as Bundle,
+                executor = args[2] as Executor,
+                callback = loadSdkCallbackWrapper.wrapLoadSdkCallback(args[3]!!)
+            )
+        }
+
+        if (ClientFeature.GET_CLIENT_PACKAGE_NAME.isAvailable(sdkVersion)) {
+            handlerBuilder.addHandlerFor("getClientPackageName") {
+                controller.getClientPackageName()
+            }
+        }
+
+        if (ClientFeature.CLIENT_IMPORTANCE_LISTENER.isAvailable(sdkVersion)) {
+            val sdkListenerWrapper = ClientImportanceListenerWrapper.createFor(sdkClassLoader)
+            val clientImportanceListenerMethodsHandler =
+                ClientImportanceListenerMethodsHandler(controller, sdkListenerWrapper)
+            handlerBuilder.addHandlerFor(
+                "registerSdkSandboxClientImportanceListener",
+                clientImportanceListenerMethodsHandler.registerMethodHandler
+            )
+            handlerBuilder.addHandlerFor(
+                "unregisterSdkSandboxClientImportanceListener",
+                clientImportanceListenerMethodsHandler.unregisterMethodHandler
+            )
+        }
+
+        return handlerBuilder.build()
+    }
+
+    fun interface MethodHandler {
+        fun onMethodCall(args: Array<out Any?>?): Any?
+    }
+
+    private class HandlerBuilder {
+        private val methodHandlers = hashMapOf<String, MethodHandler>()
+
+        fun addHandlerFor(methodName: String, handler: MethodHandler) {
+            methodHandlers[methodName] = handler
+        }
+
+        fun build(): InvocationHandler {
+            return Handler(methodHandlers)
+        }
+    }
+
+    private class Handler(private val methodHandlers: Map<String, MethodHandler>) :
+        InvocationHandler {
+
+        override fun invoke(proxy: Any, method: Method, args: Array<out Any?>?): Any? {
+            val handler = methodHandlers[method.name]
+            if (handler != null) {
+                return handler.onMethodCall(args)
+            }
             return when (method.name) {
-                "getSandboxedSdks" -> getSandboxedSdks()
-
-                "getAppOwnedSdkSandboxInterfaces" -> getAppOwnedSdkSandboxInterfaces()
-
-                "registerSdkSandboxActivityHandler" ->
-                    registerSdkSandboxActivityHandler(args!![0]!!)
-
-                "unregisterSdkSandboxActivityHandler" ->
-                    unregisterSdkSandboxActivityHandler(args!![0]!!)
-
+                "equals" -> proxy === args?.get(0)
+                "hashCode" -> hashCode()
+                "toString" -> toString()
                 else -> {
                     throw UnsupportedOperationException(
                         "Unexpected method call object:$proxy, method: $method, args: $args"
@@ -117,49 +178,36 @@ internal object SandboxControllerInjector {
                 }
             }
         }
+    }
 
-        private fun getSandboxedSdks(): List<Any> {
-            return controller
-                .getSandboxedSdks()
-                .map { compatSdkBuilder.createFrom(it) }
+    private class ActivityMethodsHandler(
+        private val controller: SdkSandboxControllerCompat.SandboxControllerImpl,
+        private val sdkActivityHandlerWrapper: SdkActivityHandlerWrapper
+    ) {
+        val registerMethodHandler = MethodHandler { args ->
+            registerSdkSandboxActivityHandler(sdkSideHandler = args!![0]!!)
+        }
+        val unregisterMethodHandler = MethodHandler { args ->
+            unregisterSdkSandboxActivityHandler(sdkSideHandler = args!![0]!!)
         }
 
-        private fun getAppOwnedSdkSandboxInterfaces(): List<Any> {
-            if (appOwnedSdkInterfaceProxyFactory == null) {
-                throw IllegalStateException(
-                    "Unexpected call from SDK without AppOwnedInterfaces support"
-                )
-            }
-
-            return controller
-                .getAppOwnedSdkSandboxInterfaces()
-                .map { appOwnedSdkInterfaceProxyFactory.createFrom(it) }
-        }
+        private val sdkToAppHandlerMap = hashMapOf<Any, SdkSandboxActivityHandlerCompat>()
 
         private fun registerSdkSandboxActivityHandler(sdkSideHandler: Any): Any {
             val handlerToRegister = wrapSdkActivityHandler(sdkSideHandler)
-            return controller
-                .registerSdkSandboxActivityHandler(handlerToRegister)
+            return controller.registerSdkSandboxActivityHandler(handlerToRegister)
         }
 
         private fun unregisterSdkSandboxActivityHandler(sdkSideHandler: Any) {
-            val appSideHandler = synchronized(sdkToAppHandlerMap) {
-                sdkToAppHandlerMap.remove(sdkSideHandler)
-            }
+            val appSideHandler =
+                synchronized(sdkToAppHandlerMap) { sdkToAppHandlerMap.remove(sdkSideHandler) }
             if (appSideHandler != null) {
-                controller
-                    .unregisterSdkSandboxActivityHandler(appSideHandler)
+                controller.unregisterSdkSandboxActivityHandler(appSideHandler)
             }
         }
 
         private fun wrapSdkActivityHandler(sdkSideHandler: Any): SdkSandboxActivityHandlerCompat =
             synchronized(sdkToAppHandlerMap) {
-                if (sdkActivityHandlerWrapper == null) {
-                    throw IllegalStateException(
-                        "Unexpected call from SDK without Activity support"
-                    )
-                }
-
                 val existingAppSideHandler = sdkToAppHandlerMap[sdkSideHandler]
                 if (existingAppSideHandler != null) {
                     return existingAppSideHandler
@@ -174,55 +222,58 @@ internal object SandboxControllerInjector {
             }
     }
 
-    private class CompatSdkBuilder(
-        private val sandboxedSdkInfoConstructor: Constructor<out Any>,
-        private val sandboxedSdkCompatConstructor: Constructor<out Any>,
+    private class ClientImportanceListenerMethodsHandler(
+        private val controller: SdkSandboxControllerCompat.SandboxControllerImpl,
+        private val clientImportanceListenerWrapper: ClientImportanceListenerWrapper
     ) {
-        /**
-         * Creates instance of [SandboxedSdkCompat] class loaded by SDK Classloader.
-         *
-         * @param source instance of SandboxedSdkCompat loaded by app classloader.
-         * @return instance of SandboxedSdkCompat loaded by SDK classloader.
-         */
-        fun createFrom(source: SandboxedSdkCompat): Any {
-            val sdkInfo = createSdkInfoFrom(source.getSdkInfo())
-            return sandboxedSdkCompatConstructor.newInstance(source.getInterface(), sdkInfo)
+        val registerMethodHandler = MethodHandler { args ->
+            registerSdkSandboxClientImportanceListener(
+                sdkSideExecutor = args!![0]!!,
+                sdkSideListener = args[1]!!
+            )
+        }
+        val unregisterMethodHandler = MethodHandler { args ->
+            unregisterSdkSandboxClientImportanceListener(sdkSideListener = args!![0]!!)
         }
 
-        fun createSdkInfoFrom(source: SandboxedSdkInfo?): Any? {
-            if (source == null) {
-                return null
-            }
-            return sandboxedSdkInfoConstructor.newInstance(source.name, source.version)
+        private val sdkToAppListenerMap = hashMapOf<Any, SdkSandboxClientImportanceListenerCompat>()
+
+        private fun registerSdkSandboxClientImportanceListener(
+            sdkSideExecutor: Any,
+            sdkSideListener: Any
+        ): Any {
+            val listenerToRegister = wrapSdkClientImportanceListener(sdkSideListener)
+            return controller.registerSdkSandboxClientImportanceListener(
+                sdkSideExecutor as Executor,
+                listenerToRegister
+            )
         }
 
-        companion object {
-            fun createFor(classLoader: ClassLoader): CompatSdkBuilder {
-                val sandboxedSdkCompatClass = Class.forName(
-                    SandboxedSdkCompat::class.java.name,
-                    /* initialize = */ false,
-                    classLoader
-                )
-                val sandboxedSdkInfoClass = Class.forName(
-                    SandboxedSdkInfo::class.java.name,
-                    /* initialize = */ false,
-                    classLoader
-                )
-                val sandboxedSdkCompatConstructor =
-                    sandboxedSdkCompatClass.getConstructor(
-                        /* parameter1 */ IBinder::class.java,
-                        /* parameter2 */ sandboxedSdkInfoClass
-                    )
-                val sandboxedSdkInfoConstructor =
-                    sandboxedSdkInfoClass.getConstructor(
-                        /* parameter1 */ String::class.java,
-                        /* parameter2 */ Long::class.java
-                    )
-                return CompatSdkBuilder(
-                    sandboxedSdkInfoConstructor = sandboxedSdkInfoConstructor,
-                    sandboxedSdkCompatConstructor = sandboxedSdkCompatConstructor
-                )
+        private fun unregisterSdkSandboxClientImportanceListener(sdkSideListener: Any) {
+            val appSideListener =
+                synchronized(sdkToAppListenerMap) { sdkToAppListenerMap.remove(sdkSideListener) }
+            if (appSideListener != null) {
+                controller.unregisterSdkSandboxClientImportanceListener(appSideListener)
             }
         }
+
+        private fun wrapSdkClientImportanceListener(
+            sdkSideListener: Any
+        ): SdkSandboxClientImportanceListenerCompat =
+            synchronized(sdkToAppListenerMap) {
+                val existingAppSideListener = sdkToAppListenerMap[sdkSideListener]
+                if (existingAppSideListener != null) {
+                    return existingAppSideListener
+                }
+
+                val appSideListener =
+                    clientImportanceListenerWrapper.wrapSdkSandboxClientImportanceListenerCompat(
+                        sdkSideListener
+                    )
+
+                sdkToAppListenerMap[sdkSideListener] = appSideListener
+
+                return appSideListener
+            }
     }
 }

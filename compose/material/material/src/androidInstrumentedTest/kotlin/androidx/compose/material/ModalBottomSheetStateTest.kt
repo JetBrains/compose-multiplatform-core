@@ -16,11 +16,9 @@
 
 package androidx.compose.material
 
-import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
@@ -31,11 +29,9 @@ import org.junit.runner.RunWith
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalMaterialApi::class)
 class ModalBottomSheetStateTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
     private val restorationTester = StateRestorationTester(rule)
 
     @Test
@@ -45,11 +41,12 @@ class ModalBottomSheetStateTest {
         val animationSpec = SpringSpec<Float>(visibilityThreshold = 10F)
         lateinit var state: ModalBottomSheetState
         restorationTester.setContent {
-            state = rememberModalBottomSheetState(
-                initialValue = initialValue,
-                skipHalfExpanded = skipHalfExpanded,
-                animationSpec = animationSpec
-            )
+            state =
+                rememberModalBottomSheetState(
+                    initialValue = initialValue,
+                    skipHalfExpanded = skipHalfExpanded,
+                    animationSpec = animationSpec
+                )
         }
 
         assertThat(state.animationSpec).isEqualTo(animationSpec)
@@ -73,9 +70,7 @@ class ModalBottomSheetStateTest {
             )
             fail("ModalBottomSheetState didn't throw an exception")
         } catch (exception: IllegalArgumentException) {
-            assertThat(exception)
-                .hasMessageThat()
-                .isNotEmpty()
+            assertThat(exception).hasMessageThat().isNotEmpty()
         }
     }
 
@@ -96,18 +91,4 @@ class ModalBottomSheetStateTest {
             density = rule.density
         )
     }
-
-    private fun ModalBottomSheetState(
-        initialValue: ModalBottomSheetValue,
-        animationSpec: AnimationSpec<Float> = AnchoredDraggableDefaults.AnimationSpec,
-        isSkipHalfExpanded: Boolean,
-        confirmValueChange: (ModalBottomSheetValue) -> Boolean = { true },
-        density: Density
-    ) = ModalBottomSheetState(
-        initialValue,
-        density,
-        animationSpec,
-        confirmValueChange,
-        isSkipHalfExpanded,
-    )
 }

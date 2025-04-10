@@ -23,11 +23,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.webkit.internal.WebViewGlueCommunicator;
 
 import org.chromium.support_lib_boundary.DropDataContentProviderBoundaryInterface;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.FileNotFoundException;
 
@@ -35,7 +35,7 @@ import java.io.FileNotFoundException;
  * WebView provides partial support for Android
  * <a href="https://developer.android.com/develop/ui/views/touch-and-input/drag-drop">
  * Drag and Drop</a> allowing images, text and links to be dragged out of a WebView.
- *
+ * <p>
  * The content provider is required to make the images drag work, to enable, you should add this
  * class to your manifest, for example:
  *
@@ -56,48 +56,44 @@ public final class DropDataContentProvider extends ContentProvider {
         return true;
     }
 
-    @Nullable
     @Override
-    public ParcelFileDescriptor openFile(@NonNull Uri uri, @NonNull String mode)
+    public @Nullable ParcelFileDescriptor openFile(@NonNull Uri uri, @NonNull String mode)
             throws FileNotFoundException {
         return getDropImpl().openFile(this, uri);
     }
 
-    @Nullable
     @Override
-    public Cursor query(@NonNull Uri uri, @Nullable String[] projection,
-            @Nullable String selection, @Nullable String[] selectionArgs,
+    public @Nullable Cursor query(@NonNull Uri uri, String @Nullable [] projection,
+            @Nullable String selection, String @Nullable [] selectionArgs,
             @Nullable String sortOrder) {
         return getDropImpl().query(uri, projection, selection, selectionArgs, sortOrder);
     }
 
-    @Nullable
     @Override
-    public String getType(@NonNull Uri uri) {
+    public @Nullable String getType(@NonNull Uri uri) {
         return getDropImpl().getType(uri);
     }
 
-    @Nullable
     @Override
-    public Uri insert(@NonNull Uri uri, @Nullable ContentValues contentValues) {
+    public @Nullable Uri insert(@NonNull Uri uri, @Nullable ContentValues contentValues) {
         throw new UnsupportedOperationException("Insert method is not supported.");
     }
 
     @Override
     public int delete(@NonNull Uri uri, @Nullable String selection,
-            @Nullable String[] selectionArgs) {
+            String @Nullable [] selectionArgs) {
         throw new UnsupportedOperationException("delete method is not supported.");
     }
 
     @Override
     public int update(@NonNull Uri uri, @Nullable ContentValues contentValues, @Nullable String s,
-            @Nullable String[] strings) {
+            String @Nullable [] strings) {
         throw new UnsupportedOperationException("update method is not supported.");
     }
 
-    @Nullable
     @Override
-    public Bundle call(@NonNull String method, @Nullable String arg, @Nullable Bundle extras) {
+    public @Nullable Bundle call(@NonNull String method, @Nullable String arg,
+            @Nullable Bundle extras) {
         return getDropImpl().call(method, arg, extras);
     }
 

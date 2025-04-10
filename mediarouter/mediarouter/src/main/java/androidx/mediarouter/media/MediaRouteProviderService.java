@@ -18,6 +18,7 @@ package androidx.mediarouter.media;
 
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_MEMBER_ROUTE_ID;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_MEMBER_ROUTE_IDS;
+import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_ROUTE_CONTROLLER_OPTIONS;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_ROUTE_ID;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_ROUTE_LIBRARY_GROUP;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_UNSELECT_REASON;
@@ -79,18 +80,22 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.collection.ArrayMap;
 import androidx.core.content.ContextCompat;
+import androidx.core.util.Consumer;
 import androidx.core.util.ObjectsCompat;
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController;
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController.DynamicRouteDescriptor;
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController.OnDynamicRoutesChangedListener;
 import androidx.mediarouter.media.MediaRouteProvider.RouteController;
+import androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 /**
  * Base class for media route provider services.
@@ -151,8 +156,14 @@ public abstract class MediaRouteProviderService extends Service {
         boolean onUnregisterClient(Messenger messenger, int requestId);
         boolean onCreateRouteController(Messenger messenger, int requestId,
                 int controllerId, String routeId, String routeGroupId);
-        boolean onCreateDynamicGroupRouteController(Messenger messenger, int requestId,
-                int controllerId, String initialMemberRouteId);
+
+        boolean onCreateDynamicGroupRouteController(
+                Messenger messenger,
+                int requestId,
+                int controllerId,
+                String initialMemberRouteId,
+                RouteControllerOptions routeControllerOptions);
+
         boolean onAddMemberRoute(Messenger messenger, int requestId, int controllerId,
                 String memberId);
         boolean onRemoveMemberRoute(Messenger messenger, int requestId, int controllerId,
@@ -174,6 +185,9 @@ public abstract class MediaRouteProviderService extends Service {
         boolean onSetDiscoveryRequest(Messenger messenger, int requestId,
                 MediaRouteDiscoveryRequest request);
         MediaRouteProvider.Callback getProviderCallback();
+        void addClientInfoListener(Executor listenerExecutor, Consumer<List<ClientInfo>> listener);
+        void removeClientInfoListener(Consumer<List<ClientInfo>> listener);
+        void removeAllClientInfoListeners();
     }
 
     /**
@@ -190,6 +204,31 @@ public abstract class MediaRouteProviderService extends Service {
             mImpl = new MediaRouteProviderServiceImplBase(this);
         }
         mProviderCallback = mImpl.getProviderCallback();
+    }
+
+    /**
+     * Adds a {@link Consumer} that will be used to provide updates when the list of
+     * bound clients changes.
+     *
+     * <p>The {@link Consumer} will be called with the current list of bound clients.</p>
+     *
+     * @param listenerExecutor an {@link Executor} that will be used to dispatch the callback
+     * @param listener a @code{@link Consumer} that takes a list of {@link ClientInfo}
+     */
+    public void addClientInfoListener(
+            @NonNull /* @CallbackExecutor */ Executor listenerExecutor,
+            @NonNull Consumer<List<ClientInfo>> listener) {
+        mImpl.addClientInfoListener(listenerExecutor, listener);
+    }
+
+    /**
+     * Removes the given {@link Consumer} if it was previously set.
+     *
+     * @param listener the {@link Consumer} to remove.
+     * @see #addClientInfoListener(Executor, Consumer)
+     */
+    public void removeClientInfoListener(@NonNull Consumer<List<ClientInfo>> listener) {
+        mImpl.removeClientInfoListener(listener);
     }
 
     /**
@@ -250,6 +289,7 @@ public abstract class MediaRouteProviderService extends Service {
         if (mProvider != null) {
             mProvider.setCallback(null);
         }
+        mImpl.removeAllClientInfoListeners();
         super.onDestroy();
     }
 
@@ -309,6 +349,42 @@ public abstract class MediaRouteProviderService extends Service {
         return "Client connection " + messenger.getBinder().toString();
     }
 
+    /**
+     * Contains information about a client that is bound to this service.
+     */
+    public static final class ClientInfo {
+        private final String packageName;
+
+        private ClientInfo(@NonNull String packageName) {
+            this.packageName = packageName;
+        }
+
+        /**
+         * Returns the package name of the client.
+         *
+         * @return The package name of the client
+         */
+        @NonNull
+        public String getPackageName() {
+            return packageName;
+        }
+
+        /** Builder for {@link ClientInfo}. */
+        public static final class Builder {
+            private final String packageName;
+
+            public Builder(@NonNull String packageName) {
+                this.packageName = packageName;
+            }
+
+            /** Builds and returns the {@link ClientInfo} object. */
+            @NonNull
+            public ClientInfo build() {
+                return new ClientInfo(packageName);
+            }
+        }
+    }
+
     private final class PrivateHandler extends Handler {
         PrivateHandler() {
         }
@@ -352,8 +428,7 @@ public abstract class MediaRouteProviderService extends Service {
                 final Bundle data = msg.peekData();
 
                 String packageName = null;
-                if (what == CLIENT_MSG_REGISTER && Build.VERSION.SDK_INT
-                        >= Build.VERSION_CODES.LOLLIPOP) {
+                if (what == CLIENT_MSG_REGISTER) {
                     String[] packages = mServiceRef.get().getPackageManager()
                             .getPackagesForUid(msg.sendingUid);
                     if (packages != null && packages.length > 0) {
@@ -401,9 +476,20 @@ public abstract class MediaRouteProviderService extends Service {
 
                     case CLIENT_MSG_CREATE_DYNAMIC_GROUP_ROUTE_CONTROLLER: {
                         String initialMemberId = data.getString(CLIENT_DATA_MEMBER_ROUTE_ID);
+                        Bundle routeControllerOptionsBundle =
+                                data.getParcelable(CLIENT_DATA_ROUTE_CONTROLLER_OPTIONS);
+                        RouteControllerOptions routeControllerOptions =
+                                (routeControllerOptionsBundle != null)
+                                        ? new RouteControllerOptions(
+                                                routeControllerOptionsBundle)
+                                        : RouteControllerOptions.EMPTY;
                         if (initialMemberId != null) {
                             return service.mImpl.onCreateDynamicGroupRouteController(
-                                    messenger, requestId, arg, initialMemberId);
+                                    messenger,
+                                    requestId,
+                                    arg,
+                                    initialMemberId,
+                                    routeControllerOptions);
                         }
                         break;
                     }
@@ -491,10 +577,14 @@ public abstract class MediaRouteProviderService extends Service {
 
     static class MediaRouteProviderServiceImplBase implements MediaRouteProviderServiceImpl {
         final MediaRouteProviderService mService;
-        final ArrayList<ClientRecord> mClients = new ArrayList<ClientRecord>();
+        final ArrayList<ClientRecord> mClients = new ArrayList<>();
         MediaRouteDiscoveryRequest mCompositeDiscoveryRequest;
         MediaRouteDiscoveryRequest mBaseDiscoveryRequest;
         long mBaseDiscoveryRequestTimestamp;
+        @Nullable
+        private final Map<Consumer<List<ClientInfo>>, Executor> mClientInfoListeners =
+                new HashMap<>();
+        private final Object mClientInfoListenersLock = new Object();
         private final MediaRouterActiveScanThrottlingHelper mActiveScanThrottlingHelper =
                 new MediaRouterActiveScanThrottlingHelper(new Runnable() {
                     @Override
@@ -538,7 +628,7 @@ public abstract class MediaRouteProviderService extends Service {
                 if (index < 0) {
                     ClientRecord client = createClientRecord(messenger, version, packageName);
                     if (client.register()) {
-                        mClients.add(client);
+                        addClient(client);
                         if (DEBUG) {
                             Log.d(TAG, client + ": Registered, version=" + version);
                         }
@@ -561,7 +651,7 @@ public abstract class MediaRouteProviderService extends Service {
         public boolean onUnregisterClient(Messenger messenger, int requestId) {
             int index = findClient(messenger);
             if (index >= 0) {
-                ClientRecord client = mClients.remove(index);
+                ClientRecord client = removeClient(index);
                 if (DEBUG) {
                     Log.d(TAG, client + ": Unregistered");
                 }
@@ -576,7 +666,7 @@ public abstract class MediaRouteProviderService extends Service {
         public void onBinderDied(Messenger messenger) {
             int index = findClient(messenger);
             if (index >= 0) {
-                ClientRecord client = mClients.remove(index);
+                ClientRecord client = removeClient(index);
                 if (DEBUG) {
                     Log.d(TAG, client + ": Binder died");
                 }
@@ -591,9 +681,15 @@ public abstract class MediaRouteProviderService extends Service {
             if (client != null) {
                 if (client.createRouteController(routeId, routeGroupId, controllerId)) {
                     if (DEBUG) {
-                        Log.d(TAG, client + ": Route controller created, controllerId="
-                                + controllerId + ", routeId=" + routeId
-                                + ", routeGroupId=" + routeGroupId);
+                        Log.d(
+                                TAG,
+                                client
+                                        + ": Route controller created, controllerId="
+                                        + controllerId
+                                        + ", routeId="
+                                        + routeId
+                                        + ", routeGroupId="
+                                        + routeGroupId);
                     }
                     sendGenericSuccess(messenger, requestId);
                     return true;
@@ -603,12 +699,17 @@ public abstract class MediaRouteProviderService extends Service {
         }
 
         @Override
-        public boolean onCreateDynamicGroupRouteController(Messenger messenger, int requestId,
-                int controllerId, String initialMemberRouteId) {
+        public boolean onCreateDynamicGroupRouteController(
+                Messenger messenger,
+                int requestId,
+                int controllerId,
+                String initialMemberRouteId,
+                RouteControllerOptions routeControllerOptions) {
             ClientRecord client = getClient(messenger);
             if (client != null) {
-                Bundle bundle = client.createDynamicGroupRouteController(
-                        initialMemberRouteId, controllerId);
+                Bundle bundle =
+                        client.createDynamicGroupRouteController(
+                                initialMemberRouteId, routeControllerOptions, controllerId);
                 if (bundle != null) {
                     if (DEBUG) {
                         Log.d(TAG, client + ": Route controller created, controllerId="
@@ -1011,11 +1112,14 @@ public abstract class MediaRouteProviderService extends Service {
             }
 
             public Bundle createDynamicGroupRouteController(
-                    String initialMemberRouteId, int controllerId) {
+                    String initialMemberRouteId,
+                    RouteControllerOptions routeControllerOptions,
+                    int controllerId) {
                 if (mControllers.indexOfKey(controllerId) < 0) {
                     MediaRouteProvider.DynamicGroupRouteController controller =
                             mService.getMediaRouteProvider()
-                                    .onCreateDynamicGroupRouteController(initialMemberRouteId);
+                                    .onCreateDynamicGroupRouteController(
+                                            initialMemberRouteId, routeControllerOptions);
                     if (controller != null) {
                         controller.setOnDynamicRoutesChangedListener(
                                 ContextCompat.getMainExecutor(mService.getApplicationContext()),
@@ -1101,10 +1205,70 @@ public abstract class MediaRouteProviderService extends Service {
                 sendMessage(mMessenger, SERVICE_MSG_DYNAMIC_ROUTE_DESCRIPTORS_CHANGED,
                         0, controllerId, bundle, null);
             }
+
+            private ClientInfo getClientInfo() {
+                return new ClientInfo.Builder(mPackageName).build();
+            }
         }
 
         ClientRecord createClientRecord(Messenger messenger, int version, String packageName) {
             return new ClientRecord(messenger, version, packageName);
+        }
+
+        private void addClient(ClientRecord client) {
+            mClients.add(client);
+            notifyClientRecordsChanged();
+        }
+
+        private ClientRecord removeClient(int index) {
+            ClientRecord removedClient = mClients.remove(index);
+            notifyClientRecordsChanged();
+            return removedClient;
+        }
+
+        @Override
+        public void addClientInfoListener (
+                @NonNull /* @CallbackExecutor */ Executor listenerExecutor,
+                @NonNull Consumer<List<ClientInfo>> listener) {
+            synchronized (mClientInfoListenersLock) {
+                mClientInfoListeners.put(listener, listenerExecutor);
+                // Immediately provide the current list of bound clients.
+                notifyClientRecordsChanged();
+            }
+        }
+
+        @Override
+        public void removeClientInfoListener(Consumer<List<ClientInfo>> listener) {
+            synchronized (mClientInfoListenersLock) {
+                mClientInfoListeners.remove(listener);
+            }
+        }
+
+        @Override
+        public void removeAllClientInfoListeners() {
+            synchronized (mClientInfoListenersLock) {
+                mClientInfoListeners.clear();
+            }
+        }
+
+        private void notifyClientRecordsChanged() {
+            if (!mClientInfoListeners.isEmpty()) {
+                ArrayList<ClientInfo> clientInfos = new ArrayList<>();
+                for (ClientRecord client : new ArrayList<>(mClients)) {
+                    clientInfos.add(client.getClientInfo());
+                }
+
+                synchronized (mClientInfoListenersLock) {
+                    for (Map.Entry<Consumer<List<ClientInfo>>, Executor> entry :
+                            mClientInfoListeners.entrySet()) {
+                        Consumer<List<ClientInfo>> listener = entry.getKey();
+                        Executor executor = entry.getValue();
+                        executor.execute(() -> {
+                            listener.accept(clientInfos);
+                        });
+                    }
+                }
+            }
         }
 
         class ProviderCallbackBase extends MediaRouteProvider.Callback {
@@ -1223,9 +1387,12 @@ public abstract class MediaRouteProviderService extends Service {
 
             @Override
             public Bundle createDynamicGroupRouteController(
-                    String initialMemberRouteId, int controllerId) {
+                    String initialMemberRouteId,
+                    RouteControllerOptions routeControllerOptions,
+                    int controllerId) {
                 Bundle result =
-                        super.createDynamicGroupRouteController(initialMemberRouteId, controllerId);
+                        super.createDynamicGroupRouteController(
+                                initialMemberRouteId, routeControllerOptions, controllerId);
                 if (result != null && mPackageName != null) {
                     mMR2ProviderServiceAdapter.notifyRouteControllerAdded(
                             this, mControllers.get(controllerId),

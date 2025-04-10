@@ -19,8 +19,9 @@ package androidx.camera.integration.core;
 import android.content.Intent;
 import android.os.Bundle;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An activity to launch "Camera Core Test App" with Camera Pipe configuration

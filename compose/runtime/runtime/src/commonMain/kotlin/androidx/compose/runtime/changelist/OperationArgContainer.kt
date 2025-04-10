@@ -16,17 +16,23 @@
 
 package androidx.compose.runtime.changelist
 
-/**
- * A container of parameters assigned to the arguments of an [Operation].
- */
-internal interface OperationArgContainer {
-    /**
-     * Returns the assigned value of [parameter] for the current operation.
-     */
-    fun getInt(parameter: Operation.IntParameter): Int
+import androidx.compose.runtime.tooling.ComposeStackTraceFrame
 
-    /**
-     * Returns the assigned value of [parameter] for the current operation.
-     */
+/** A container of parameters assigned to the arguments of an [Operation]. */
+internal interface OperationArgContainer {
+    /** Returns the assigned value of [parameter] for the current operation. */
+    fun getInt(parameter: Int): Int
+
+    /** Returns the assigned value of [parameter] for the current operation. */
     fun <T> getObject(parameter: Operation.ObjectParameter<T>): T
+}
+
+/** Error context to stitch operation execution in case an error is thrown. */
+internal interface OperationErrorContext {
+    /**
+     * Create a stack trace from the root of the enclosing context (composition or slot table) to a
+     * child of the current group that is located at the slot specified by [currentOffset]. Current
+     * group and context root are defined by the operation that is executed during a crash.
+     */
+    fun buildStackTrace(currentOffset: Int?): List<ComposeStackTraceFrame>
 }

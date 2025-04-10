@@ -33,45 +33,50 @@ import androidx.compose.ui.node.Owner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.findViewTreeLifecycleOwner
+import androidx.savedstate.SavedStateRegistryOwner
 import java.lang.ref.WeakReference
 
 /**
- * Base class for custom [android.view.View]s implemented using Jetpack Compose UI.
- * Subclasses should implement the [Content] function with the appropriate content.
- * Calls to [addView] and its variants and overloads will fail with [IllegalStateException].
+ * Base class for custom [android.view.View]s implemented using Jetpack Compose UI. Subclasses
+ * should implement the [Content] function with the appropriate content. Calls to [addView] and its
+ * variants and overloads will fail with [IllegalStateException].
  *
- * By default, the composition is disposed according to [ViewCompositionStrategy.Default].
- * Call [disposeComposition] to dispose of the underlying composition earlier, or if the view is
- * never initially attached to a window. (The requirement to dispose of the composition explicitly
- * in the event that the view is never (re)attached is temporary.)
+ * By default, the composition is disposed according to [ViewCompositionStrategy.Default]. Call
+ * [disposeComposition] to dispose of the underlying composition earlier, or if the view is never
+ * initially attached to a window. (The requirement to dispose of the composition explicitly in the
+ * event that the view is never (re)attached is temporary.)
+ *
+ * [AbstractComposeView] only supports being added into view hierarchies propagating
+ * [LifecycleOwner] and [SavedStateRegistryOwner] via [androidx.lifecycle.setViewTreeLifecycleOwner]
+ * and [androidx.savedstate.setViewTreeSavedStateRegistryOwner]. In most cases you will already have
+ * it set up correctly as [androidx.activity.ComponentActivity], [androidx.fragment.app.Fragment]
+ * and [androidx.navigation.NavController] will provide the correct values.
  */
-abstract class AbstractComposeView @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
-) : ViewGroup(context, attrs, defStyleAttr) {
+abstract class AbstractComposeView
+@JvmOverloads
+constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
+    ViewGroup(context, attrs, defStyleAttr) {
 
     init {
         clipChildren = false
         clipToPadding = false
+        importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
     }
 
     /**
-     * The first time we successfully locate this we'll save it here.
-     * If this View moves to the [android.view.ViewOverlay] we won't be able
-     * to find view tree dependencies; this happens when using transition APIs
-     * to animate views out in particular.
+     * The first time we successfully locate this we'll save it here. If this View moves to the
+     * [android.view.ViewOverlay] we won't be able to find view tree dependencies; this happens when
+     * using transition APIs to animate views out in particular.
      *
      * We only ever set this when we're attached to a window.
      */
     private var cachedViewTreeCompositionContext: WeakReference<CompositionContext>? = null
 
     /**
-     * The [getWindowToken] of the window this view was last attached to.
-     * If we become attached to a new window we clear [cachedViewTreeCompositionContext]
-     * so that we might appeal to the (possibly lazily created) [windowRecomposer]
-     * if [findViewTreeCompositionContext] can't locate one instead of using the previous
-     * [cachedViewTreeCompositionContext].
+     * The [getWindowToken] of the window this view was last attached to. If we become attached to a
+     * new window we clear [cachedViewTreeCompositionContext] so that we might appeal to the
+     * (possibly lazily created) [windowRecomposer] if [findViewTreeCompositionContext] can't locate
+     * one instead of using the previous [cachedViewTreeCompositionContext].
      */
     private var previousAttachedWindowToken: IBinder? = null
         set(value) {
@@ -84,8 +89,8 @@ abstract class AbstractComposeView @JvmOverloads constructor(
     private var composition: Composition? = null
 
     /**
-     * The explicitly set [CompositionContext] to use as the parent of compositions created
-     * for this view. Set by [setParentCompositionContext].
+     * The explicitly set [CompositionContext] to use as the parent of compositions created for this
+     * view. Set by [setParentCompositionContext].
      *
      * If set to a non-null value [cachedViewTreeCompositionContext] will be cleared.
      */
@@ -110,9 +115,9 @@ abstract class AbstractComposeView @JvmOverloads constructor(
         }
 
     /**
-     * Set the [CompositionContext] that should be the parent of this view's composition.
-     * If [parent] is `null` it will be determined automatically from the window the view is
-     * attached to.
+     * Set the [CompositionContext] that should be the parent of this view's composition. If
+     * [parent] is `null` it will be determined automatically from the window the view is attached
+     * to.
      */
     fun setParentCompositionContext(parent: CompositionContext?) {
         parentContext = parent
@@ -125,11 +130,11 @@ abstract class AbstractComposeView @JvmOverloads constructor(
         ViewCompositionStrategy.Default.installFor(this)
 
     /**
-     * Set the strategy for managing disposal of this View's internal composition.
-     * Defaults to [ViewCompositionStrategy.Default].
+     * Set the strategy for managing disposal of this View's internal composition. Defaults to
+     * [ViewCompositionStrategy.Default].
      *
-     * This View's composition is a live resource that must be disposed to ensure that
-     * long-lived references to it do not persist
+     * This View's composition is a live resource that must be disposed to ensure that long-lived
+     * references to it do not persist
      *
      * See [ViewCompositionStrategy] for more information.
      */
@@ -139,19 +144,19 @@ abstract class AbstractComposeView @JvmOverloads constructor(
     }
 
     /**
-     * If `true`, this View's composition will be created when it becomes attached to a
-     * window for the first time. Defaults to `true`.
+     * If `true`, this View's composition will be created when it becomes attached to a window for
+     * the first time. Defaults to `true`.
      *
-     * Subclasses may choose to override this property to prevent this eager initial composition
-     * in cases where the view's content is not yet ready. Initial composition will still occur
-     * when this view is first measured.
+     * Subclasses may choose to override this property to prevent this eager initial composition in
+     * cases where the view's content is not yet ready. Initial composition will still occur when
+     * this view is first measured.
      */
     protected open val shouldCreateCompositionOnAttachedToWindow: Boolean
         get() = true
 
     /**
-     * Enables the display of visual layout bounds for the Compose UI content of this view.
-     * This is typically managed
+     * Enables the display of visual layout bounds for the Compose UI content of this view. This is
+     * typically configured using the system developer setting for "Show layout bounds."
      */
     @OptIn(InternalCoreApi::class)
     @InternalComposeUiApi
@@ -160,28 +165,21 @@ abstract class AbstractComposeView @JvmOverloads constructor(
     var showLayoutBounds: Boolean = false
         set(value) {
             field = value
-            getChildAt(0)?.let {
-                (it as Owner).showLayoutBounds = value
-            }
+            getChildAt(0)?.let { (it as Owner).showLayoutBounds = value }
         }
 
     /**
-     * The Jetpack Compose UI content for this view.
-     * Subclasses must implement this method to provide content. Initial composition will
-     * occur when the view becomes attached to a window or when [createComposition] is called,
-     * whichever comes first.
+     * The Jetpack Compose UI content for this view. Subclasses must implement this method to
+     * provide content. Initial composition will occur when the view becomes attached to a window or
+     * when [createComposition] is called, whichever comes first.
      */
-    @Composable
-    @UiComposable
-    abstract fun Content()
+    @Composable @UiComposable abstract fun Content()
 
     /**
-     * Perform initial composition for this view.
-     * Once this method is called or the view becomes attached to a window,
-     * either [disposeComposition] must be called or the
-     * [LifecycleOwner] returned by [findViewTreeLifecycleOwner] must
-     * reach the [Lifecycle.State.DESTROYED] state for the composition to be cleaned up
-     * properly. (This restriction is temporary.)
+     * Perform initial composition for this view. Once this method is called or the view becomes
+     * attached to a window, either [disposeComposition] must be called or the [LifecycleOwner]
+     * returned by [findViewTreeLifecycleOwner] must reach the [Lifecycle.State.DESTROYED] state for
+     * the composition to be cleaned up properly. (This restriction is temporary.)
      *
      * If this method is called when the composition has already been created it has no effect.
      *
@@ -197,6 +195,7 @@ abstract class AbstractComposeView @JvmOverloads constructor(
     }
 
     private var creatingComposition = false
+
     private fun checkAddView() {
         if (!creatingComposition) {
             throw UnsupportedOperationException(
@@ -207,50 +206,48 @@ abstract class AbstractComposeView @JvmOverloads constructor(
     }
 
     /**
-     * `true` if the [CompositionContext] can be considered to be "alive" for the purposes
-     * of locally caching it in case the view is placed into a ViewOverlay.
-     * [Recomposer]s that are in the [Recomposer.State.ShuttingDown] state or lower should
-     * not be cached or reusedif currently cached, as they will never recompose content.
+     * `true` if the [CompositionContext] can be considered to be "alive" for the purposes of
+     * locally caching it in case the view is placed into a ViewOverlay. [Recomposer]s that are in
+     * the [Recomposer.State.ShuttingDown] state or lower should not be cached or reusedif currently
+     * cached, as they will never recompose content.
      */
     private val CompositionContext.isAlive: Boolean
         get() = this !is Recomposer || currentState.value > Recomposer.State.ShuttingDown
 
     /**
-     * Cache this [CompositionContext] in [cachedViewTreeCompositionContext] if it [isAlive]
-     * and return the [CompositionContext] itself either way.
+     * Cache this [CompositionContext] in [cachedViewTreeCompositionContext] if it [isAlive] and
+     * return the [CompositionContext] itself either way.
      */
     private fun CompositionContext.cacheIfAlive(): CompositionContext = also { context ->
-        context.takeIf { it.isAlive }
-            ?.let { cachedViewTreeCompositionContext = WeakReference(it) }
+        context.takeIf { it.isAlive }?.let { cachedViewTreeCompositionContext = WeakReference(it) }
     }
 
     /**
-     * Determine the correct [CompositionContext] to use as the parent of this view's
-     * composition. This can result in caching a looked-up [CompositionContext] for use
-     * later. See [cachedViewTreeCompositionContext] for more details.
+     * Determine the correct [CompositionContext] to use as the parent of this view's composition.
+     * This can result in caching a looked-up [CompositionContext] for use later. See
+     * [cachedViewTreeCompositionContext] for more details.
      *
      * If [cachedViewTreeCompositionContext] is available but [findViewTreeCompositionContext]
-     * cannot find a parent context, we will use the cached context if present before appealing
-     * to the [windowRecomposer], as [windowRecomposer] can lazily create a recomposer.
-     * If we're reattached to the same window and [findViewTreeCompositionContext] can't find the
-     * context that [windowRecomposer] would install, we might be in the [getOverlay] of some
-     * part of the view hierarchy to animate the disappearance of this and other views. We still
-     * need to be able to compose/recompose in this state without creating a brand new recomposer
-     * to do it, as well as still locate any view tree dependencies.
+     * cannot find a parent context, we will use the cached context if present before appealing to
+     * the [windowRecomposer], as [windowRecomposer] can lazily create a recomposer. If we're
+     * reattached to the same window and [findViewTreeCompositionContext] can't find the context
+     * that [windowRecomposer] would install, we might be in the [getOverlay] of some part of the
+     * view hierarchy to animate the disappearance of this and other views. We still need to be able
+     * to compose/recompose in this state without creating a brand new recomposer to do it, as well
+     * as still locate any view tree dependencies.
      */
-    private fun resolveParentCompositionContext() = parentContext
-        ?: findViewTreeCompositionContext()?.cacheIfAlive()
-        ?: cachedViewTreeCompositionContext?.get()?.takeIf { it.isAlive }
-        ?: windowRecomposer.cacheIfAlive()
+    private fun resolveParentCompositionContext() =
+        parentContext
+            ?: findViewTreeCompositionContext()?.cacheIfAlive()
+            ?: cachedViewTreeCompositionContext?.get()?.takeIf { it.isAlive }
+            ?: windowRecomposer.cacheIfAlive()
 
     @Suppress("DEPRECATION") // Still using ViewGroup.setContent for now
     private fun ensureCompositionCreated() {
         if (composition == null) {
             try {
                 creatingComposition = true
-                composition = setContent(resolveParentCompositionContext()) {
-                    Content()
-                }
+                composition = setContent(resolveParentCompositionContext()) { Content() }
             } finally {
                 creatingComposition = false
             }
@@ -258,9 +255,8 @@ abstract class AbstractComposeView @JvmOverloads constructor(
     }
 
     /**
-     * Dispose of the underlying composition and [requestLayout].
-     * A new composition will be created if [createComposition] is called or when needed to
-     * lay out this view.
+     * Dispose of the underlying composition and [requestLayout]. A new composition will be created
+     * if [createComposition] is called or when needed to lay out this view.
      */
     fun disposeComposition() {
         composition?.dispose()
@@ -269,10 +265,11 @@ abstract class AbstractComposeView @JvmOverloads constructor(
     }
 
     /**
-     * `true` if this View is host to an active Compose UI composition.
-     * An active composition may consume resources.
+     * `true` if this View is host to an active Compose UI composition. An active composition may
+     * consume resources.
      */
-    val hasComposition: Boolean get() = composition != null
+    val hasComposition: Boolean
+        get() = composition != null
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
@@ -319,12 +316,13 @@ abstract class AbstractComposeView @JvmOverloads constructor(
         right: Int,
         bottom: Int
     ) {
-        getChildAt(0)?.layout(
-            paddingLeft,
-            paddingTop,
-            right - left - paddingRight,
-            bottom - top - paddingBottom
-        )
+        getChildAt(0)
+            ?.layout(
+                paddingLeft,
+                paddingTop,
+                right - left - paddingRight,
+                bottom - top - paddingBottom
+            )
     }
 
     override fun onRtlPropertiesChanged(layoutDirection: Int) {
@@ -403,19 +401,24 @@ abstract class AbstractComposeView @JvmOverloads constructor(
 }
 
 /**
- * A [android.view.View] that can host Jetpack Compose UI content.
- * Use [setContent] to supply the content composable function for the view.
+ * A [android.view.View] that can host Jetpack Compose UI content. Use [setContent] to supply the
+ * content composable function for the view.
  *
- * By default, the composition is disposed according to [ViewCompositionStrategy.Default].
- * Call [disposeComposition] to dispose of the underlying composition earlier, or if the view is
- * never initially attached to a window. (The requirement to dispose of the composition explicitly
- * in the event that the view is never (re)attached is temporary.)
+ * By default, the composition is disposed according to [ViewCompositionStrategy.Default]. Call
+ * [disposeComposition] to dispose of the underlying composition earlier, or if the view is never
+ * initially attached to a window. (The requirement to dispose of the composition explicitly in the
+ * event that the view is never (re)attached is temporary.)
+ *
+ * [ComposeView] only supports being added into view hierarchies propagating [LifecycleOwner] and
+ * [SavedStateRegistryOwner] via [androidx.lifecycle.setViewTreeLifecycleOwner] and
+ * [androidx.savedstate.setViewTreeSavedStateRegistryOwner]. In most cases you will already have it
+ * set up correctly as [androidx.activity.ComponentActivity], [androidx.fragment.app.Fragment] and
+ * [androidx.navigation.NavController] will provide the correct values.
  */
-class ComposeView @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
-) : AbstractComposeView(context, attrs, defStyleAttr) {
+class ComposeView
+@JvmOverloads
+constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
+    AbstractComposeView(context, attrs, defStyleAttr) {
 
     private val content = mutableStateOf<(@Composable () -> Unit)?>(null)
 
@@ -433,9 +436,9 @@ class ComposeView @JvmOverloads constructor(
     }
 
     /**
-     * Set the Jetpack Compose UI content for this view.
-     * Initial composition will occur when the view becomes attached to a window or when
-     * [createComposition] is called, whichever comes first.
+     * Set the Jetpack Compose UI content for this view. Initial composition will occur when the
+     * view becomes attached to a window or when [createComposition] is called, whichever comes
+     * first.
      */
     fun setContent(content: @Composable () -> Unit) {
         shouldCreateCompositionOnAttachedToWindow = true

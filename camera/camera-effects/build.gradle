@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import androidx.build.Publish
-import androidx.build.RunApiTasks
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 dependencies {
+    api(libs.jspecify)
     api(project(":camera:camera-core"))
     implementation(libs.autoValueAnnotations)
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
@@ -35,7 +35,6 @@ dependencies {
     testImplementation(libs.testRules)
     testImplementation(libs.testCore)
 
-    androidTestImplementation(libs.multidex)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
@@ -50,18 +49,14 @@ dependencies {
     androidTestImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
 }
 android {
-    defaultConfig {
-        multiDexEnabled = true
-    }
+    compileSdk = 35
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.camera.effects"
+    namespace = "androidx.camera.effects"
 }
 androidx {
     name = "Camera Effects"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2023"
-    runApiTasks = new RunApiTasks.Yes()
     description = "Camera effects components for the Jetpack Camera Library, a library providing " +
             "camera post-processing features such as drawing overlay with the CameraX library."
-    metalavaK2UastEnabled = true
 }

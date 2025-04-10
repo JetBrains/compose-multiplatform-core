@@ -20,15 +20,11 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsActions.OnImeAction
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.semantics.SemanticsPropertyReceiver
-import androidx.compose.ui.semantics.onImeAction
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 
-/**
- * Clears the text in this node in similar way to IME.
- */
+/** Clears the text in this node in similar way to IME. */
 fun SemanticsNodeInteraction.performTextClearance() {
     performTextReplacement("")
 }
@@ -39,26 +35,39 @@ fun SemanticsNodeInteraction.performTextClearance() {
  * @param text Text to send.
  */
 fun SemanticsNodeInteraction.performTextInput(text: String) {
-    @OptIn(ExperimentalTestApi::class)
-    invokeGlobalAssertions()
+    tryPerformAccessibilityChecks()
     getNodeAndFocus()
-    performSemanticsAction(SemanticsActions.InsertTextAtCursor) {
-        it(AnnotatedString(text))
-    }
+    performSemanticsAction(SemanticsActions.InsertTextAtCursor) { it(AnnotatedString(text)) }
 }
 
 /**
  * Sends the given selection to this node in similar way to IME.
  *
- * @param selection selection to send
+ * @param selection the selection to send
  */
-@ExperimentalTestApi
+// Maintained for binary compatibility.
+@Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
 fun SemanticsNodeInteraction.performTextInputSelection(selection: TextRange) {
-    getNodeAndFocus()
+    performTextInputSelection(selection, relativeToOriginalText = true)
+}
+
+/**
+ * Sends the given selection to this node in similar way to IME.
+ *
+ * @param selection the selection to send
+ * @param relativeToOriginalText `true` if the selection is relative to the untransformed, original
+ *   text. `false` if it is relative to the visual text following any transformations.
+ */
+fun SemanticsNodeInteraction.performTextInputSelection(
+    selection: TextRange,
+    relativeToOriginalText: Boolean = true,
+) {
+    getNodeAndFocus(
+        errorOnFail = "Failed to perform text input selection.",
+        requireEditable = false,
+    )
     performSemanticsAction(SemanticsActions.SetSelection) {
-        // Pass true as the last parameter since this range is relative to the text before any
-        // VisualTransformation is applied.
-        it(selection.min, selection.max, true)
+        it(selection.min, selection.max, relativeToOriginalText)
     }
 }
 
@@ -78,28 +87,29 @@ fun SemanticsNodeInteraction.performTextReplacement(text: String) {
  * Sends to this node the IME action associated with it in a similar way to the IME.
  *
  * The node needs to define its IME action in semantics via
- * [SemanticsPropertyReceiver.onImeAction].
+ * [SemanticsPropertyReceiver.onImeAction][androidx.compose.ui.semantics.onImeAction].
  *
  * @throws AssertionError if the node does not support input or does not define IME action.
  * @throws IllegalStateException if the node did is not an editor or would not be able to establish
- * an input connection (e.g. does not define [ImeAction][SemanticsProperties.ImeAction] or
- * [OnImeAction] or is not focused).
+ *   an input connection (e.g. does not define [ImeAction][SemanticsProperties.ImeAction] or
+ *   [OnImeAction] or is not focused).
  */
 fun SemanticsNodeInteraction.performImeAction() {
     val errorOnFail = "Failed to perform IME action."
     assert(hasPerformImeAction()) { errorOnFail }
     assert(!hasImeAction(ImeAction.Default)) { errorOnFail }
-    @OptIn(ExperimentalTestApi::class)
-    invokeGlobalAssertions()
-    val node = getNodeAndFocus(errorOnFail)
+    tryPerformAccessibilityChecks()
+    val node = getNodeAndFocus(errorOnFail, requireEditable = false)
 
     wrapAssertionErrorsWithNodeInfo(selector, node) {
         performSemanticsAction(OnImeAction) {
-            assert(it()) {
-                buildGeneralErrorMessage(
-                    "Failed to perform IME action, handler returned false.",
-                    selector,
-                    node
+            if (!it()) {
+                throw AssertionError(
+                    buildGeneralErrorMessage(
+                        "Failed to perform IME action, handler returned false.",
+                        selector,
+                        node
+                    )
                 )
             }
         }
@@ -107,15 +117,17 @@ fun SemanticsNodeInteraction.performImeAction() {
 }
 
 private fun SemanticsNodeInteraction.getNodeAndFocus(
-    errorOnFail: String = "Failed to perform text input."
+    errorOnFail: String = "Failed to perform text input.",
+    requireEditable: Boolean = true
 ): SemanticsNode {
-    @OptIn(ExperimentalTestApi::class)
-    invokeGlobalAssertions()
+    tryPerformAccessibilityChecks()
     val node = fetchSemanticsNode(errorOnFail)
     assert(isEnabled()) { errorOnFail }
-    assert(hasSetTextAction()) { errorOnFail }
     assert(hasRequestFocusAction()) { errorOnFail }
-    assert(hasInsertTextAtCursorAction()) { errorOnFail }
+    if (requireEditable) {
+        assert(hasSetTextAction()) { errorOnFail }
+        assert(hasInsertTextAtCursorAction()) { errorOnFail }
+    }
 
     if (!isFocused().matches(node)) {
         // Get focus
@@ -125,26 +137,8 @@ private fun SemanticsNodeInteraction.getNodeAndFocus(
     return node
 }
 
-private inline fun <R> wrapAssertionErrorsWithNodeInfo(
+internal expect inline fun <R> wrapAssertionErrorsWithNodeInfo(
     selector: SemanticsSelector,
     node: SemanticsNode,
     block: () -> R
-): R {
-    try {
-        return block()
-    } catch (e: AssertionError) {
-        throw ProxyAssertionError(e.message.orEmpty(), selector, node, e)
-    }
-}
-
-private class ProxyAssertionError(
-    message: String,
-    selector: SemanticsSelector,
-    node: SemanticsNode,
-    cause: Throwable
-) : AssertionError(buildGeneralErrorMessage(message, selector, node), cause) {
-    init {
-        // Duplicate the stack trace to make troubleshooting easier.
-        stackTrace = cause.stackTrace
-    }
-}
+): R

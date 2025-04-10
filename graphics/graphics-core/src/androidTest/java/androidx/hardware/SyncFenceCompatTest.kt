@@ -19,7 +19,6 @@ package androidx.hardware
 import android.opengl.EGL14
 import android.opengl.GLES20
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.graphics.opengl.egl.EGLConfigAttributes
 import androidx.graphics.opengl.egl.EGLManager
 import androidx.graphics.opengl.egl.EGLSpec
@@ -36,7 +35,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @SmallTest
-@RequiresApi(Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 class SyncFenceCompatTest {
     @Test
     fun testSyncFenceCompat_Create() {
@@ -89,14 +88,14 @@ class SyncFenceCompatTest {
                 val start = System.nanoTime()
                 val syncFenceCompat = SyncFenceCompat.createNativeSyncFence()
                 assertTrue(syncFenceCompat.isValid())
-                assertTrue(syncFenceCompat.getSignalTimeNanos() !=
-                    SyncFenceCompat.SIGNAL_TIME_INVALID)
+                assertTrue(
+                    syncFenceCompat.getSignalTimeNanos() != SyncFenceCompat.SIGNAL_TIME_INVALID
+                )
                 assertTrue(syncFenceCompat.awaitForever())
 
                 assertTrue(syncFenceCompat.getSignalTimeNanos() > start)
                 assertTrue(
-                    syncFenceCompat.getSignalTimeNanos() !=
-                        SyncFenceCompat.SIGNAL_TIME_PENDING
+                    syncFenceCompat.getSignalTimeNanos() != SyncFenceCompat.SIGNAL_TIME_PENDING
                 )
 
                 syncFenceCompat.close()
@@ -116,13 +115,10 @@ class SyncFenceCompatTest {
     }
 
     /**
-     * Helper method to ensure EglManager has the corresponding release calls
-     * made to it and verifies that no exceptions were thrown as part of the test.
+     * Helper method to ensure EglManager has the corresponding release calls made to it and
+     * verifies that no exceptions were thrown as part of the test.
      */
-    private fun testEglManager(
-        eglSpec: EGLSpec = EGLSpec.V14,
-        block: EGLManager.() -> Unit = {}
-    ) {
+    private fun testEglManager(eglSpec: EGLSpec = EGLSpec.V14, block: EGLManager.() -> Unit = {}) {
         with(EGLManager(eglSpec)) {
             assertEquals(EGLVersion.Unknown, eglVersion)
             assertEquals(EGL14.EGL_NO_CONTEXT, eglContext)

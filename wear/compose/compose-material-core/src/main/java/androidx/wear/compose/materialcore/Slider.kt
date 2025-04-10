@@ -18,18 +18,19 @@ package androidx.wear.compose.materialcore
 
 import androidx.annotation.RestrictTo
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 
@@ -44,16 +45,17 @@ public fun InlineSliderButton(
     content: @Composable () -> Unit
 ) {
     Box(
-        modifier = Modifier
-            .width(buttonControlSize)
-            .fillMaxHeight()
-            .repeatableClickable(
-                enabled = enabled,
-                onClick = onClick,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = LocalIndication.current
-            )
-            .then(modifier),
+        modifier =
+            Modifier.semantics { role = Role.Button }
+                .width(buttonControlSize)
+                .fillMaxHeight()
+                .repeatableClickable(
+                    enabled = enabled,
+                    onClick = onClick,
+                    interactionSource = null,
+                    indication = LocalIndication.current
+                )
+                .then(modifier),
         contentAlignment = contentAlignment
     ) {
         content()

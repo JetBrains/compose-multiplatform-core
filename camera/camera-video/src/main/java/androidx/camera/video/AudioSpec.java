@@ -21,12 +21,12 @@ import android.media.MediaRecorder;
 import android.util.Range;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -34,7 +34,6 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Audio specification that is options to config audio source and encoding.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @RestrictTo(Scope.LIBRARY)
 @AutoValue
 public abstract class AudioSpec {
@@ -100,8 +99,7 @@ public abstract class AudioSpec {
      * <p>Using this value with {@link AudioSpec.Builder#setBitrate(Range)} informs the device it
      * should choose any appropriate bitrate given the device and codec constraints.
      */
-    @NonNull
-    public static final Range<Integer> BITRATE_RANGE_AUTO = new Range<>(0,
+    public static final @NonNull Range<Integer> BITRATE_RANGE_AUTO = new Range<>(0,
             Integer.MAX_VALUE);
 
     /**
@@ -110,8 +108,7 @@ public abstract class AudioSpec {
      * <p>Using this value with {@link AudioSpec.Builder#setSampleRate(Range)} informs the device it
      * should choose any appropriate sample rate given the device and codec constraints.
      */
-    @NonNull
-    public static final Range<Integer> SAMPLE_RATE_RANGE_AUTO = new Range<>(0,
+    public static final @NonNull Range<Integer> SAMPLE_RATE_RANGE_AUTO = new Range<>(0,
             Integer.MAX_VALUE);
 
     // Restrict constructor to same package
@@ -119,8 +116,7 @@ public abstract class AudioSpec {
     }
 
     /** Returns a build for this config. */
-    @NonNull
-    public static Builder builder() {
+    public static @NonNull Builder builder() {
         return new AutoValue_AudioSpec.Builder()
                 .setSourceFormat(SOURCE_FORMAT_AUTO)
                 .setSource(SOURCE_AUTO)
@@ -130,8 +126,7 @@ public abstract class AudioSpec {
     }
 
     /** Gets the bitrate. */
-    @NonNull
-    public abstract Range<Integer> getBitrate();
+    public abstract @NonNull Range<Integer> getBitrate();
 
     // Configurations for AudioRecord.
     // *********************************************************************************************
@@ -145,8 +140,7 @@ public abstract class AudioSpec {
     public abstract int getSource();
 
     /** Gets the sample bitrate. */
-    @NonNull
-    public abstract Range<Integer> getSampleRate();
+    public abstract @NonNull Range<Integer> getSampleRate();
 
     /** Gets the channel count. */
     @ChannelCount
@@ -157,8 +151,7 @@ public abstract class AudioSpec {
     /**
      * Returns a {@link Builder} instance with the same property values as this instance.
      */
-    @NonNull
-    public abstract Builder toBuilder();
+    public abstract @NonNull Builder toBuilder();
 
     /**
      * The builder of the {@link AudioSpec}.
@@ -176,8 +169,7 @@ public abstract class AudioSpec {
          *
          * <p>If not set, defaults to {@link #BITRATE_RANGE_AUTO}.
          */
-        @NonNull
-        public abstract Builder setBitrate(@NonNull Range<Integer> bitrate);
+        public abstract @NonNull Builder setBitrate(@NonNull Range<Integer> bitrate);
 
         // Configurations for AudioRecord.
         // *****************************************************************************************
@@ -190,8 +182,7 @@ public abstract class AudioSpec {
          *
          * <p>If not set, defaults to {@link #SOURCE_FORMAT_AUTO}.
          */
-        @NonNull
-        public abstract Builder setSourceFormat(@SourceFormat int audioFormat);
+        public abstract @NonNull Builder setSourceFormat(@SourceFormat int audioFormat);
 
         /**
          * Sets the audio source.
@@ -200,16 +191,14 @@ public abstract class AudioSpec {
          *
          * <p>If not set, defaults to {@link #SOURCE_AUTO}.
          */
-        @NonNull
-        public abstract Builder setSource(@Source int source);
+        public abstract @NonNull Builder setSource(@Source int source);
 
         /**
          * Sets the desired range of sample rates to be used by the encoder.
          *
          * <p>If not set, defaults to {@link #SAMPLE_RATE_RANGE_AUTO}.
          */
-        @NonNull
-        public abstract Builder setSampleRate(@NonNull Range<Integer> sampleRate);
+        public abstract @NonNull Builder setSampleRate(@NonNull Range<Integer> sampleRate);
 
         /**
          * Sets the desired number of audio channels.
@@ -220,14 +209,12 @@ public abstract class AudioSpec {
          * <p>Setting to {@link #CHANNEL_COUNT_NONE} is equivalent to requesting that no audio
          * should be present.
          */
-        @NonNull
-        public abstract Builder setChannelCount(@ChannelCount int channelCount);
+        public abstract @NonNull Builder setChannelCount(@ChannelCount int channelCount);
 
         // *****************************************************************************************
 
         /** Builds the AudioSpec instance. */
-        @NonNull
-        public abstract AudioSpec build();
+        public abstract @NonNull AudioSpec build();
     }
 
     /**

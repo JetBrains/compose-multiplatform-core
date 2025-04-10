@@ -17,7 +17,7 @@ package androidx.core.animation;
 
 import android.graphics.Rect;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This evaluator can be used to perform type interpolation between <code>Rect</code> values.
@@ -71,8 +71,8 @@ public class RectEvaluator implements TypeEvaluator<Rect> {
      *         <code>fraction</code> parameter.
      */
     @Override
-    @NonNull
-    public Rect evaluate(float fraction, @NonNull Rect startValue, @NonNull Rect endValue) {
+    public @NonNull Rect evaluate(float fraction, @NonNull Rect startValue,
+            @NonNull Rect endValue) {
         int left = startValue.left + (int) ((endValue.left - startValue.left) * fraction);
         int top = startValue.top + (int) ((endValue.top - startValue.top) * fraction);
         int right = startValue.right + (int) ((endValue.right - startValue.right) * fraction);

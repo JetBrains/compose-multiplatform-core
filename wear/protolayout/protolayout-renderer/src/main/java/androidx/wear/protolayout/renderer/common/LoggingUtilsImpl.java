@@ -3,12 +3,13 @@ package androidx.wear.protolayout.renderer.common;
 import android.content.ComponentName;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 
 import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.FormatString;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Logger used for extensive logging. Note that all logs will contain the component name. To enable
@@ -21,7 +22,7 @@ import com.google.errorprone.annotations.FormatString;
 @RestrictTo(Scope.LIBRARY_GROUP_PREFIX)
 public class LoggingUtilsImpl implements LoggingUtils {
 
-    @NonNull private final ComponentName mComponent;
+    private final @NonNull ComponentName mComponent;
 
     public LoggingUtilsImpl(@NonNull ComponentName component) {
         this.mComponent = component;
@@ -35,9 +36,7 @@ public class LoggingUtilsImpl implements LoggingUtils {
     @Override
     @FormatMethod
     public void logD(
-        @NonNull String tag,
-        @NonNull @FormatString String format,
-        @NonNull Object... args) {
+            @NonNull String tag, @FormatString @NonNull String format, Object @NonNull ... args) {
         logD(tag, String.format(format, args));
     }
 

@@ -16,26 +16,23 @@
 
 package androidx.camera.core;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Result of the {@link CameraControl#startFocusAndMetering(FocusMeteringAction)}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class FocusMeteringResult {
     private boolean mIsFocusSuccessful;
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    public static FocusMeteringResult emptyInstance() {
+    public static @NonNull FocusMeteringResult emptyInstance() {
         return new FocusMeteringResult(false);
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    public static FocusMeteringResult create(boolean isFocusSuccess) {
+    public static @NonNull FocusMeteringResult create(boolean isFocusSuccess) {
         return new FocusMeteringResult(isFocusSuccess);
     }
 

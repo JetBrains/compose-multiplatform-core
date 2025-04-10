@@ -35,9 +35,8 @@
         android:text="@string/biometric_prompt_test_title" />
 
     <Button
-        android:id="@+id/auth_prompt_button"
+        android:id="@+id/auth_result_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/auth_prompt_test_title" />
-
+        android:text="@string/auth_result_test_title" />
 </LinearLayout>

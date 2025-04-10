@@ -18,9 +18,9 @@ package androidx.car.app.sample.showcase.common.screens;
 
 import static androidx.car.app.model.Action.BACK;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.Screen;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.ListTemplate;
 import androidx.car.app.model.Row;
@@ -30,6 +30,8 @@ import androidx.car.app.sample.showcase.common.screens.mapdemos.MapWithContentDe
 import androidx.car.app.sample.showcase.common.screens.mapdemos.PlaceListNavigationTemplateDemoScreen;
 import androidx.car.app.sample.showcase.common.screens.mapdemos.PlaceListTemplateBrowseDemoScreen;
 import androidx.car.app.sample.showcase.common.screens.mapdemos.RoutePreviewDemoScreen;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,9 +43,8 @@ public final class MapDemosScreen extends Screen {
         super(carContext);
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
         List<Row> screenList = new ArrayList<>();
         screenList.add(buildBrowsableRow(new MapWithContentDemoScreen(getCarContext()),
                 R.string.map_with_content_demo_title));
@@ -63,8 +64,10 @@ public final class MapDemosScreen extends Screen {
 
         return new ListTemplate.Builder()
                 .setSingleList(listBuilder.build())
-                .setTitle(getCarContext().getString(R.string.map_demos_title))
-                .setHeaderAction(BACK)
+                .setHeader(new Header.Builder()
+                        .setTitle(getCarContext().getString(R.string.map_demos_title))
+                        .setStartHeaderAction(BACK)
+                        .build())
                 .build();
     }
 

@@ -24,7 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerInputFilter
 import androidx.compose.ui.input.pointer.PointerInputModifier
 import androidx.compose.ui.input.pointer.changedToUp
-import androidx.compose.ui.test.ActivityWithActionBar
+import androidx.compose.ui.test.CustomComposeHostActivity
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -42,10 +42,7 @@ import org.junit.runners.Parameterized
 @MediumTest
 @RunWith(Parameterized::class)
 class SendClickTest(private val config: TestConfig) {
-    data class TestConfig(
-        val position: Offset?,
-        val activityClass: Class<out ComponentActivity>
-    )
+    data class TestConfig(val position: Offset?, val activityClass: Class<out ComponentActivity>)
 
     companion object {
         private const val squareSize = 10.0f
@@ -58,19 +55,16 @@ class SendClickTest(private val config: TestConfig) {
                 for (x in listOf(0.0f, squareSize - 1.0f)) {
                     for (y in listOf(0.0f, squareSize - 1.0f)) {
                         add(TestConfig(Offset(x, y), ComponentActivity::class.java))
-                        add(TestConfig(Offset(x, y), ActivityWithActionBar::class.java))
+                        add(TestConfig(Offset(x, y), CustomComposeHostActivity::class.java))
                     }
                 }
                 add(TestConfig(null, ComponentActivity::class.java))
-                add(TestConfig(null, ActivityWithActionBar::class.java))
+                add(TestConfig(null, CustomComposeHostActivity::class.java))
             }
         }
     }
 
-    private data class ClickData(
-        val componentIndex: Int,
-        val position: Offset
-    )
+    private data class ClickData(val componentIndex: Int, val position: Offset)
 
     private class ClickRecorder(
         private val componentIndex: Int,
@@ -85,19 +79,17 @@ class SendClickTest(private val config: TestConfig) {
         }
     }
 
-    @get:Rule
-    val rule = createAndroidComposeRule(config.activityClass)
+    @get:Rule val rule = createAndroidComposeRule(config.activityClass)
 
     private val recordedClicks = mutableListOf<ClickData>()
-    private val expectedClickPosition =
-        config.position ?: Offset(squareSize / 2, squareSize / 2)
+    private val expectedClickPosition = config.position ?: Offset(squareSize / 2, squareSize / 2)
 
     @Test
     fun testClick() {
         // Given a column of 5 small components
         var contentSet = false
         rule.activityRule.scenario.onActivity {
-            if (it is ActivityWithActionBar) {
+            if (it is CustomComposeHostActivity) {
                 it.setContent { ColumnOfSquares(5) }
                 contentSet = true
             }
@@ -112,12 +104,10 @@ class SendClickTest(private val config: TestConfig) {
 
         // Then those components have registered a click
         rule.runOnIdle {
-            assertThat(recordedClicks).isEqualTo(
-                listOf(
-                    ClickData(0, expectedClickPosition),
-                    ClickData(4, expectedClickPosition)
+            assertThat(recordedClicks)
+                .isEqualTo(
+                    listOf(ClickData(0, expectedClickPosition), ClickData(4, expectedClickPosition))
                 )
-            )
         }
     }
 

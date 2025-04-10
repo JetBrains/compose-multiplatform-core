@@ -28,7 +28,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.PlaceListMapTemplate;
 import androidx.car.app.model.Template;
@@ -41,6 +40,7 @@ import androidx.lifecycle.Lifecycle.State;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.test.core.app.ApplicationProvider;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -338,6 +338,16 @@ public final class ScreenManagerTest {
 
         assertThat(mScreenManager.getScreenStackInternal()).hasSize(1);
         assertThat(mScreen1.getLifecycle().getCurrentState()).isEqualTo(State.RESUMED);
+    }
+
+    @Test
+    public void push_sameScreenMultipleTimes_fails() {
+        mScreenManager.push(mScreen1);
+        mScreenManager.push(mScreen2);
+        mScreenManager.pop(); // Screen 2 moves to DESTROYED state
+
+        // Pushing DESTROYED screen should fail.
+        assertThrows(IllegalStateException.class, () -> mScreenManager.push(mScreen2));
     }
 
     @Test

@@ -26,14 +26,20 @@ import com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.security.MessageDigest
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.file.ArchiveOperations
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.internal.tasks.userinput.UserInputHandler
-import org.gradle.api.plugins.ExtraPropertiesExtension
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.options.Option
 import org.gradle.internal.service.ServiceRegistry
 import org.gradle.process.ExecOperations
 import org.gradle.work.DisableCachingByDefault
@@ -46,11 +52,17 @@ import org.gradle.work.DisableCachingByDefault
 @DisableCachingByDefault(because = "the purpose of this task is to launch Studio")
 abstract class StudioTask : DefaultTask() {
 
+    @get:Input
+    @get:Option(option = "acceptTos", description = "Accept Android Studio Terms of Service")
+    @get:Optional
+    abstract val acceptTos: Property<Boolean>
+
     // TODO: support -y and --update-only options? Can use @Option for this
     @TaskAction
     fun studiow() {
         validateEnvironment()
         install()
+        installKtfmtPlugin()
         launch()
     }
 
@@ -58,7 +70,11 @@ abstract class StudioTask : DefaultTask() {
         StudioPlatformUtilities.get(projectRoot, studioInstallationDir)
     }
 
+    @get:Inject abstract val archiveOperations: ArchiveOperations
+
     @get:Inject abstract val execOperations: ExecOperations
+
+    @get:Inject abstract val fileSystemOperations: FileSystemOperations
 
     /**
      * If `true`, checks for `ANDROIDX_PROJECTS` environment variable to decide which projects need
@@ -97,6 +113,29 @@ abstract class StudioTask : DefaultTask() {
     private val studioArchivePath: String by lazy {
         File(studioInstallationDir.parentFile, studioArchiveName).absolutePath
     }
+
+    /** Directory where Studio downloads plugins to */
+    private val studioPluginDir =
+        File(System.getenv("HOME"), ".AndroidStudioAndroidX/config/plugins").also { it.mkdirs() }
+
+    private val studioKtfmtPluginVersion by lazy { project.getVersionByName("ktfmtIdeaPlugin") }
+
+    /**
+     * This ID changes for each ktfmt plugin version; see
+     * https://plugins.jetbrains.com/plugin/14912-ktfmt/versions/stable and you'll see the number in
+     * the redirection URL when hovering over the [studioKtfmtPluginVersion] you want downloaded
+     */
+    private val studioKtfmtPluginId = "553364"
+
+    private val studioKtfmtPluginDownloadUrl =
+        "https://downloads.marketplace.jetbrains.com/files/14912/$studioKtfmtPluginId/ktfmt_idea_plugin-$studioKtfmtPluginVersion.zip"
+
+    /** Storage location for the ktfmt plugin zip file */
+    private val studioKtfmtPluginZip = File(studioPluginDir, "ktfmt-$studioKtfmtPluginVersion.zip")
+
+    /** Download ktfmt plugin zip file and run `shasum -a 256 ./path/to/zip` to get checksum */
+    private val studioKtfmtPluginChecksum =
+        "79602c7fa94a23df7ca5c06effd50b180bc6518396488e20662f8d5d52b323db"
 
     /** The idea.properties file that we want to tell Studio to use */
     @get:Internal protected abstract val ideaProperties: File
@@ -146,10 +185,43 @@ abstract class StudioTask : DefaultTask() {
             )
             println("Extracting archive...")
             extractStudioArchive()
-            with(platformUtilities) { updateJvmHeapSize() }
             // Finish install process
             successfulInstallFile.createNewFile()
         }
+    }
+
+    private fun installKtfmtPlugin() {
+        // TODO: When upgrading to ktfmt_idea_plugin 1.2.x.x, remove the `instrumented-` prefix from
+        // the plugin jar name
+        if (
+            File(
+                    studioPluginDir,
+                    "ktfmt_idea_plugin/lib/instrumented-ktfmt_idea_plugin-$studioKtfmtPluginVersion.jar"
+                )
+                .exists()
+        ) {
+            return
+        } else {
+            File(studioPluginDir, "ktfmt_idea_plugin").deleteRecursively()
+        }
+
+        println("Downloading ktfmt plugin from $studioKtfmtPluginDownloadUrl")
+        execOperations.exec { execSpec ->
+            with(execSpec) {
+                executable("curl")
+                args(studioKtfmtPluginDownloadUrl, "--output", studioKtfmtPluginZip.absolutePath)
+            }
+        }
+
+        studioKtfmtPluginZip.verifyChecksum()
+
+        println("Installing ktfmt plugin into ${studioPluginDir.absolutePath}")
+        fileSystemOperations.copy {
+            it.from(archiveOperations.zipTree(studioKtfmtPluginZip))
+            it.into(studioPluginDir)
+        }
+        studioKtfmtPluginZip.delete()
+        println("ktfmt plugin installed successfully.")
     }
 
     /** Attempts to symlink the system-images and emulator SDK directories to a canonical SDK. */
@@ -170,7 +242,7 @@ abstract class StudioTask : DefaultTask() {
                 }
             }
 
-        val canonicalSdkPath = File(File(System.getProperty("user.home")).parent, relativeSdkPath)
+        val canonicalSdkPath = File(System.getenv("HOME"), relativeSdkPath)
         if (!canonicalSdkPath.exists()) {
             // In the future, we might want to try a little harder to locate a canonical SDK path.
             println("Failed to locate canonical SDK, not found at: $canonicalSdkPath")
@@ -227,9 +299,7 @@ abstract class StudioTask : DefaultTask() {
             "Invalid Studio vm options file location: ${vmOptions.canonicalPath}"
         }
         val pid = with(platformUtilities) { findProcess() }
-        check(pid == null) {
-            "Found managed instance of Studio already running as PID $pid"
-        }
+        check(pid == null) { "Found managed instance of Studio already running as PID $pid" }
         val logFile = File(System.getProperty("user.home"), ".AndroidXStudioLog")
         ProcessBuilder().apply {
             // Can't just use inheritIO due to https://github.com/gradle/gradle/issues/16719
@@ -255,8 +325,8 @@ abstract class StudioTask : DefaultTask() {
                     // Studio-initiated Gradle tasks are run against the same version of AGP that
                     // was
                     // used to start Studio, which prevents version mismatch after repo sync.
-                    "EXPECTED_AGP_VERSION" to ANDROID_GRADLE_PLUGIN_VERSION
-                ) + additionalEnvironmentProperties
+                    "EXPECTED_AGP_VERSION" to ANDROID_GRADLE_PLUGIN_VERSION,
+                ) + additionalEnvironmentProperties + platformSpecificEnvironmentProperties()
 
             // Append to the existing environment variables set by gradlew and the user.
             environment().putAll(additionalStudioEnvironmentProperties)
@@ -265,18 +335,29 @@ abstract class StudioTask : DefaultTask() {
         println("Studio log at $logFile")
     }
 
+    private fun platformSpecificEnvironmentProperties(): Map<String, String> {
+        return if (System.getenv("QT_QPA_PLATFORM") == "wayland") {
+            // Emulators don't work on Wayland natively, make them go through XWayland
+            mapOf("QT_QPA_PLATFORM" to "xcb")
+        } else {
+            emptyMap()
+        }
+    }
+
     private fun checkLicenseAgreement(services: ServiceRegistry): Boolean {
         if (!licenseAcceptedFile.exists()) {
             val licensePath = with(platformUtilities) { licensePath }
 
             val userInput = services.get(UserInputHandler::class.java)
-            val acceptAgreement =
-                userInput.askYesNoQuestion(
-                    "Do you accept the license agreement at $licensePath?",
-                    /* default answer*/ false
-                )
-            if (!acceptAgreement) {
-                return false
+
+            if (!acceptTos.isPresent) {
+                val acceptAgreement =
+                    userInput.askYesNoQuestion(
+                        "Do you accept the license agreement at $licensePath?"
+                    )
+                if (acceptAgreement == null || !acceptAgreement) {
+                    return false
+                }
             }
             licenseAcceptedFile.createNewFile()
         }
@@ -289,7 +370,12 @@ abstract class StudioTask : DefaultTask() {
         filename: String,
         destinationPath: String
     ) {
-        val url = "https://dl.google.com/dl/android/studio/ide-zips/$studioVersion/$filename"
+        val url =
+            if (filename.contains("-mac")) {
+                "https://dl.google.com/dl/android/studio/install/$studioVersion/$filename"
+            } else {
+                "https://dl.google.com/dl/android/studio/ide-zips/$studioVersion/$filename"
+            }
         val tmpDownloadPath = File("$destinationPath.tmp").absolutePath
         println("Downloading $url to $tmpDownloadPath")
         execOperations.exec { execSpec ->
@@ -307,11 +393,29 @@ abstract class StudioTask : DefaultTask() {
         val fromPath = studioArchivePath
         val toPath = studioInstallationDir.absolutePath
         println("Extracting to $toPath...")
-        execOperations.exec { execSpec ->
-            platformUtilities.extractArchive(fromPath, toPath, execSpec)
-        }
+        platformUtilities.extractArchive(fromPath, toPath, execOperations)
         // Remove studio archive once done
         File(studioArchivePath).delete()
+    }
+
+    private fun File.verifyChecksum() {
+        val actualChecksum =
+            MessageDigest.getInstance("SHA-256")
+                .also { it.update(this.readBytes()) }
+                .digest()
+                .joinToString(separator = "") { "%02x".format(it) }
+
+        if (actualChecksum != studioKtfmtPluginChecksum) {
+            this.delete()
+            throw GradleException(
+                """
+                Checksum mismatch for file: ${this.absolutePath}
+                Expected: $studioKtfmtPluginChecksum
+                Actual:   $actualChecksum
+                """
+                    .trimIndent()
+            )
+        }
     }
 
     companion object {
@@ -340,9 +444,7 @@ abstract class RootStudioTask : StudioTask() {
 abstract class PlaygroundStudioTask : RootStudioTask() {
     @get:Internal
     val supportRootFolder =
-        (project.rootProject.property("ext") as ExtraPropertiesExtension).let {
-            it.get("supportRootFolder") as File
-        }
+        (project.rootProject.extensions.extraProperties).let { it.get("supportRootFolder") as File }
 
     /** Playground projects have only 1 setup so there is no need to specify the project list. */
     override val requiresProjectList

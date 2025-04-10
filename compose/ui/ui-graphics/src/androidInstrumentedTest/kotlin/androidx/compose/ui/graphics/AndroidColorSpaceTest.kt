@@ -179,20 +179,39 @@ class AndroidColorSpaceTest {
         )
     }
 
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun testBt2020HlgColorspace() {
+        colorSpaceTestHelper(
+            ColorSpaces.Bt2020Hlg, // Compose
+            ColorSpace.get(ColorSpace.Named.BT2020_HLG) // Framework
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun testBt2020PqColorspace() {
+        colorSpaceTestHelper(
+            ColorSpaces.Bt2020Pq, // Compose
+            ColorSpace.get(ColorSpace.Named.BT2020_PQ) // Framework
+        )
+    }
+
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun testUnknownColorspace3WhitePointValues() {
         val name = "MyCustomColorSpace"
         val whitePoint = floatArrayOf(1.0f, 2.0f, 3.0f)
-        val transferParameters = ColorSpace.Rgb.TransferParameters(
-            0.1, // a
-            0.2, // b
-            0.3, // c
-            0.4, // d
-            0.5, // e
-            0.6, // f
-            0.7 // g
-        )
+        val transferParameters =
+            ColorSpace.Rgb.TransferParameters(
+                0.1, // a
+                0.2, // b
+                0.3, // c
+                0.4, // d
+                0.5, // e
+                0.6, // f
+                0.7 // g
+            )
         val primaries = floatArrayOf(1f, 2f, 3f, 4f, 5f, 6f)
         colorSpaceTestHelper(
             androidx.compose.ui.graphics.colorspace.Rgb(
@@ -201,12 +220,7 @@ class AndroidColorSpaceTest {
                 WhitePoint(1.0f, 2.0f, 3.0f),
                 TransferParameters(0.7, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6)
             ),
-            ColorSpace.Rgb(
-                name,
-                primaries,
-                whitePoint,
-                transferParameters
-            )
+            ColorSpace.Rgb(name, primaries, whitePoint, transferParameters)
         )
     }
 
@@ -243,15 +257,16 @@ class AndroidColorSpaceTest {
     fun testUnknownColorspace2WhitePointValues() {
         val name = "MyCustomColorSpace"
         val whitePoint = floatArrayOf(1.0f, 2.0f)
-        val transferParameters = ColorSpace.Rgb.TransferParameters(
-            0.1, // a
-            0.2, // b
-            0.3, // c
-            0.4, // d
-            0.5, // e
-            0.6, // f
-            0.7 // g
-        )
+        val transferParameters =
+            ColorSpace.Rgb.TransferParameters(
+                0.1, // a
+                0.2, // b
+                0.3, // c
+                0.4, // d
+                0.5, // e
+                0.6, // f
+                0.7 // g
+            )
         val primaries = floatArrayOf(1f, 2f, 3f, 4f, 5f, 6f)
 
         colorSpaceTestHelper(
@@ -261,12 +276,7 @@ class AndroidColorSpaceTest {
                 WhitePoint(1.0f, 2.0f),
                 TransferParameters(0.7, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6)
             ),
-            ColorSpace.Rgb(
-                name,
-                primaries,
-                whitePoint,
-                transferParameters
-            )
+            ColorSpace.Rgb(name, primaries, whitePoint, transferParameters)
         )
     }
 

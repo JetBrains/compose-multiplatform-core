@@ -19,6 +19,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
 import android.widget.TextView;
+
 /**
  * A view that cannot be inflated on the bg thread because it creates a {@link Handler}.
  */

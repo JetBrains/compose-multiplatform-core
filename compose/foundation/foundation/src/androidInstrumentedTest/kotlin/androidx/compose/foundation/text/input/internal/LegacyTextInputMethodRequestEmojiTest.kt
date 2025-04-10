@@ -44,12 +44,13 @@ class LegacyTextInputMethodRequestEmojiTest {
     fun whenEmojiCompat_addsEditorInfo() = runTest {
         val emojiCompat = mock<EmojiCompat>()
         EmojiCompat.reset(emojiCompat)
-        val textInputService = LegacyTextInputMethodRequest(
-            view = View(getInstrumentation().targetContext),
-            localToScreen = {},
-            inputMethodManager = mock<InputMethodManager>()
-        )
-        textInputService.startInput(TextFieldValue(""), ImeOptions.Default, {}, {})
+        val textInputService =
+            LegacyTextInputMethodRequest(
+                view = View(getInstrumentation().targetContext),
+                localToScreen = {},
+                inputMethodManager = mock<InputMethodManager>()
+            )
+        textInputService.startInput(TextFieldValue(""), null, ImeOptions.Default, {}, {})
 
         val info = EditorInfo()
         textInputService.createInputConnection(info)

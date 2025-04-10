@@ -14,9 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
+    id("AndroidXComposePlugin")
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
@@ -27,16 +28,19 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.6.4")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation(project(":emoji2:emoji2-emojipicker"))
+    implementation("androidx.compose.ui:ui-util:1.6.0")
+    implementation("androidx.compose.ui:ui:1.6.0")
+    implementation("androidx.activity:activity-compose:1.8.2")
+    implementation(project(":compose:foundation:foundation"))
 }
 android {
-    defaultConfig {
-        minSdkVersion 21
-    }
-    namespace "androidx.emoji2.emojipicker.samples"
+    compileSdk = 35
+    namespace = "androidx.emoji2.emojipicker.samples"
 }
+
 androidx {
-    name = "androidx.emoji2:emoji2-emojipicker-samples"
-    type = LibraryType.SAMPLES
+    name = "Emoji Picker Samples"
+    type = SoftwareType.SAMPLES
     inceptionYear = "2022"
-    description = "Contains the sample code for the APIs in the androidx.emoji2:emoji2-emojipicker library"
+    description = "Contains sample code for the Androidx Emoji Picker"
 }

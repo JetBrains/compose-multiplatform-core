@@ -19,8 +19,8 @@ package androidx.compose.ui.owners
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import java.util.concurrent.CountDownLatch
@@ -37,9 +37,8 @@ import org.junit.runner.RunWith
 class LifecycleOwnerInComponentActivityTest {
     @Suppress("DEPRECATION")
     @get:Rule
-    val activityTestRule = androidx.test.rule.ActivityTestRule<ComponentActivity>(
-        ComponentActivity::class.java
-    )
+    val activityTestRule =
+        androidx.test.rule.ActivityTestRule<ComponentActivity>(ComponentActivity::class.java)
     private lateinit var activity: ComponentActivity
 
     @Before

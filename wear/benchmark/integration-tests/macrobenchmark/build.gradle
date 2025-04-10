@@ -16,15 +16,15 @@
 
 plugins {
     id("AndroidXPlugin")
-    id 'com.android.test'
-    id 'kotlin-android'
+    id("com.android.test")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
     defaultConfig {
-        minSdkVersion 29
+        minSdk = 29
     }
-    namespace "androidx.wear.benchmark.integration.macrobenchmark"
+    namespace = "androidx.wear.benchmark.integration.macrobenchmark"
     targetProjectPath = ":wear:benchmark:integration-tests:macrobenchmark-target"
     experimentalProperties["android.experimental.self-instrumenting"] = true
 }

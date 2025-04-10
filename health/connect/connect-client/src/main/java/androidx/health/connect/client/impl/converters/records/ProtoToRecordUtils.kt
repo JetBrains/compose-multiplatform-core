@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:RestrictTo(RestrictTo.Scope.LIBRARY)
+@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 
 package androidx.health.connect.client.impl.converters.records
 
@@ -22,11 +22,13 @@ import androidx.health.connect.client.records.ExerciseLap
 import androidx.health.connect.client.records.ExerciseRoute
 import androidx.health.connect.client.records.ExerciseSegment
 import androidx.health.connect.client.records.ExerciseSegment.Companion.EXERCISE_SEGMENT_TYPE_UNKNOWN
+import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.SleepSessionRecord.Companion.STAGE_TYPE_STRING_TO_INT_MAP
 import androidx.health.connect.client.records.metadata.DataOrigin
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
+import androidx.health.connect.client.units.TemperatureDelta
 import androidx.health.connect.client.units.meters
 import androidx.health.platform.client.proto.DataProto
 import androidx.health.platform.client.proto.DataProto.DataPointOrBuilder
@@ -36,28 +38,28 @@ import java.time.ZoneOffset
 
 /** Internal helper functions to convert proto to records. */
 @get:SuppressWarnings("GoodTime") // Safe to use for deserialization
-internal val DataProto.DataPoint.startTime: Instant
+val DataProto.DataPoint.startTime: Instant
     get() = Instant.ofEpochMilli(startTimeMillis)
 
 @get:SuppressWarnings("GoodTime") // Safe to use for deserialization
-internal val DataProto.DataPoint.endTime: Instant
+val DataProto.DataPoint.endTime: Instant
     get() = Instant.ofEpochMilli(endTimeMillis)
 
 @get:SuppressWarnings("GoodTime") // Safe to use for deserialization
-internal val DataProto.DataPoint.time: Instant
+val DataProto.DataPoint.time: Instant
     get() = Instant.ofEpochMilli(instantTimeMillis)
 
 @get:SuppressWarnings("GoodTime") // Safe to use for deserialization
-internal val DataProto.DataPoint.startZoneOffset: ZoneOffset?
+val DataProto.DataPoint.startZoneOffset: ZoneOffset?
     get() =
         if (hasStartZoneOffsetSeconds()) ZoneOffset.ofTotalSeconds(startZoneOffsetSeconds) else null
 
 @get:SuppressWarnings("GoodTime") // Safe to use for deserialization
-internal val DataProto.DataPoint.endZoneOffset: ZoneOffset?
+val DataProto.DataPoint.endZoneOffset: ZoneOffset?
     get() = if (hasEndZoneOffsetSeconds()) ZoneOffset.ofTotalSeconds(endZoneOffsetSeconds) else null
 
 @get:SuppressWarnings("GoodTime") // HealthDataClientImplSafe to use for deserialization
-internal val DataProto.DataPoint.zoneOffset: ZoneOffset?
+val DataProto.DataPoint.zoneOffset: ZoneOffset?
     get() = if (hasZoneOffsetSeconds()) ZoneOffset.ofTotalSeconds(zoneOffsetSeconds) else null
 
 internal fun DataPointOrBuilder.getLong(key: String, defaultVal: Long = 0): Long =
@@ -93,7 +95,7 @@ internal fun SeriesValueOrBuilder.getString(key: String): String? = valuesMap[ke
 internal fun SeriesValueOrBuilder.getEnum(key: String): String? = valuesMap[key]?.enumVal
 
 @get:SuppressWarnings("GoodTime") // Safe to use for deserialization
-internal val DataProto.DataPoint.metadata: Metadata
+val DataProto.DataPoint.metadata: Metadata
     get() =
         Metadata(
             id = if (hasUid()) uid else Metadata.EMPTY_ID,
@@ -113,12 +115,22 @@ internal fun DataProto.Device.toDevice(): Device {
     )
 }
 
+internal fun DataProto.DataPoint.SubTypeDataList.toDeltasList(): List<SkinTemperatureRecord.Delta> {
+    return valuesList.map {
+        SkinTemperatureRecord.Delta(
+            time = Instant.ofEpochMilli(it.startTimeMillis),
+            delta = TemperatureDelta.celsius(it.valuesMap["temperatureDelta"]?.doubleVal ?: 0.0),
+        )
+    }
+}
+
 internal fun DataProto.DataPoint.SubTypeDataList.toStageList(): List<SleepSessionRecord.Stage> {
     return valuesList.map {
         SleepSessionRecord.Stage(
             startTime = Instant.ofEpochMilli(it.startTimeMillis),
             endTime = Instant.ofEpochMilli(it.endTimeMillis),
-            stage = STAGE_TYPE_STRING_TO_INT_MAP[it.valuesMap["stage"]?.enumVal]
+            stage =
+                STAGE_TYPE_STRING_TO_INT_MAP[it.valuesMap["stage"]?.enumVal]
                     ?: SleepSessionRecord.STAGE_TYPE_UNKNOWN
         )
     }

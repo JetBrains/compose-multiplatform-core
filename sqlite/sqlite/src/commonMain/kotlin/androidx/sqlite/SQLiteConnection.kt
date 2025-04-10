@@ -19,21 +19,22 @@ package androidx.sqlite
 /**
  * SQLite connection definition.
  *
- * A connection to a database is a resource that must be released once it is no longer needed
- * via its [close] function.
+ * A connection to a database is a resource that must be released once it is no longer needed via
+ * its [close] function.
  *
  * See also [Database Connection](https://www.sqlite.org/c3ref/sqlite3.html)
  */
-@Suppress("NotCloseable") // TODO(b/315461431): No common Closeable interface in KMP
-interface SQLiteConnection {
+@Suppress("NotCloseable")
+public interface SQLiteConnection : AutoCloseable {
     /**
      * Prepares a new SQL statement.
      *
      * See also [Compiling a SQL statement](https://www.sqlite.org/c3ref/prepare.html)
      *
+     * @param sql the SQL statement to prepare
      * @return the prepared statement.
      */
-    fun prepare(sql: String): SQLiteStatement
+    public fun prepare(sql: String): SQLiteStatement
 
     /**
      * Closes the database connection.
@@ -41,5 +42,5 @@ interface SQLiteConnection {
      * Once a connection is closed it should no longer be used. Calling this function on an already
      * closed database connection is a no-op.
      */
-    fun close()
+    public override fun close()
 }

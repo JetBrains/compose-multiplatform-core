@@ -27,6 +27,8 @@ import androidx.health.services.client.data.ComparisonType
 import androidx.health.services.client.data.DataType
 import androidx.health.services.client.data.DataTypeAvailability
 import androidx.health.services.client.data.DataTypeCondition
+import androidx.health.services.client.data.DebouncedDataTypeCondition
+import androidx.health.services.client.data.DebouncedGoal
 import androidx.health.services.client.data.ExerciseCapabilities
 import androidx.health.services.client.data.ExerciseConfig
 import androidx.health.services.client.data.ExerciseGoal
@@ -50,6 +52,7 @@ import androidx.health.services.client.impl.ipc.internal.ConnectionManager
 import androidx.health.services.client.impl.request.AutoPauseAndResumeConfigRequest
 import androidx.health.services.client.impl.request.BatchingModeConfigRequest
 import androidx.health.services.client.impl.request.CapabilitiesRequest
+import androidx.health.services.client.impl.request.DebouncedGoalRequest
 import androidx.health.services.client.impl.request.ExerciseGoalRequest
 import androidx.health.services.client.impl.request.FlushRequest
 import androidx.health.services.client.impl.request.PrepareExerciseRequest
@@ -82,8 +85,9 @@ class ExerciseClientTest {
     private val callback = FakeExerciseUpdateCallback()
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    private fun TestScope.advanceMainLooperIdle() =
-        launch { Shadows.shadowOf(Looper.getMainLooper()).idle() }
+    private fun TestScope.advanceMainLooperIdle() = launch {
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+    }
 
     @Before
     fun setUp() {
@@ -94,11 +98,12 @@ class ExerciseClientTest {
 
         val packageName = CLIENT_CONFIGURATION.servicePackageName
         val action = CLIENT_CONFIGURATION.bindAction
-        Shadows.shadowOf(context).setComponentNameAndServiceForBindServiceForIntent(
-            Intent().setPackage(packageName).setAction(action),
-            ComponentName(packageName, CLIENT),
-            service
-        )
+        Shadows.shadowOf(context)
+            .setComponentNameAndServiceForBindServiceForIntent(
+                Intent().setPackage(packageName).setAction(action),
+                ComponentName(packageName, CLIENT),
+                service
+            )
     }
 
     @After
@@ -110,13 +115,15 @@ class ExerciseClientTest {
     @Test
     fun callbackShouldMatchRequested_justSampleType_prepareExerciseSynchronously() = runTest {
         launch {
-            val warmUpConfig = WarmUpConfig(
-                ExerciseType.WALKING,
-                setOf(DataType.HEART_RATE_BPM),
-            )
-            val availabilityEvent = ExerciseUpdateListenerEvent.createAvailabilityUpdateEvent(
-                AvailabilityResponse(DataType.HEART_RATE_BPM, DataTypeAvailability.ACQUIRING)
-            )
+            val warmUpConfig =
+                WarmUpConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                )
+            val availabilityEvent =
+                ExerciseUpdateListenerEvent.createAvailabilityUpdateEvent(
+                    AvailabilityResponse(DataType.HEART_RATE_BPM, DataTypeAvailability.ACQUIRING)
+                )
             client.setUpdateCallback(callback)
             client.prepareExercise(warmUpConfig)
 
@@ -131,69 +138,71 @@ class ExerciseClientTest {
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
-    fun prepareExerciseSynchronously_ThrowsException() =
-        runTest {
-            launch {
-                val warmUpConfig = WarmUpConfig(
+    fun prepareExerciseSynchronously_ThrowsException() = runTest {
+        launch {
+            val warmUpConfig =
+                WarmUpConfig(
                     ExerciseType.WALKING,
                     setOf(DataType.HEART_RATE_BPM),
                 )
-                var exception: Exception? = null
-                client.setUpdateCallback(callback)
-                // Mocking the calling app already has an active exercise in progress
-                service.throwException = true
+            var exception: Exception? = null
+            client.setUpdateCallback(callback)
+            // Mocking the calling app already has an active exercise in progress
+            service.throwException = true
 
-                try {
-                    client.prepareExercise(warmUpConfig)
-                } catch (e: HealthServicesException) {
-                    exception = e
-                }
-
-                Truth.assertThat(exception).isNotNull()
-                Truth.assertThat(exception).isInstanceOf(HealthServicesException::class.java)
+            try {
+                client.prepareExercise(warmUpConfig)
+            } catch (e: HealthServicesException) {
+                exception = e
             }
-            advanceMainLooperIdle()
+
+            Truth.assertThat(exception).isNotNull()
+            Truth.assertThat(exception).isInstanceOf(HealthServicesException::class.java)
         }
+        advanceMainLooperIdle()
+    }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
-    fun prepareExerciseSynchronously_ThrowsSecurityException() =
-        runTest {
-            launch {
-                val warmUpConfig = WarmUpConfig(
+    fun prepareExerciseSynchronously_ThrowsSecurityException() = runTest {
+        launch {
+            val warmUpConfig =
+                WarmUpConfig(
                     ExerciseType.WALKING,
                     setOf(DataType.HEART_RATE_BPM),
                 )
-                var exception: Exception? = null
-                client.setUpdateCallback(callback)
-                // Mocking the calling app does not have the required permissions
-                service.callingAppHasPermissions = false
+            var exception: Exception? = null
+            client.setUpdateCallback(callback)
+            // Mocking the calling app does not have the required permissions
+            service.callingAppHasPermissions = false
 
-                try {
-                    client.prepareExercise(warmUpConfig)
-                } catch (e: SecurityException) {
-                    exception = e
-                }
-
-                Truth.assertThat(exception).isNotNull()
-                Truth.assertThat(exception).isInstanceOf(SecurityException::class.java)
+            try {
+                client.prepareExercise(warmUpConfig)
+            } catch (e: SecurityException) {
+                exception = e
             }
-            advanceMainLooperIdle()
+
+            Truth.assertThat(exception).isNotNull()
+            Truth.assertThat(exception).isInstanceOf(SecurityException::class.java)
         }
+        advanceMainLooperIdle()
+    }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
     fun callbackShouldMatchRequested_justSampleType_startExerciseSynchronously() = runTest {
         launch {
-            val exerciseConfig = ExerciseConfig(
-                ExerciseType.WALKING,
-                setOf(DataType.HEART_RATE_BPM),
-                isAutoPauseAndResumeEnabled = false,
-                isGpsEnabled = false
-            )
-            val availabilityEvent = ExerciseUpdateListenerEvent.createAvailabilityUpdateEvent(
-                AvailabilityResponse(DataType.HEART_RATE_BPM, DataTypeAvailability.ACQUIRING)
-            )
+            val exerciseConfig =
+                ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false
+                )
+            val availabilityEvent =
+                ExerciseUpdateListenerEvent.createAvailabilityUpdateEvent(
+                    AvailabilityResponse(DataType.HEART_RATE_BPM, DataTypeAvailability.ACQUIRING)
+                )
             client.setUpdateCallback(callback)
             client.startExercise(exerciseConfig)
 
@@ -210,18 +219,21 @@ class ExerciseClientTest {
     @Test
     fun callbackShouldMatchRequested_justStatsType_startExerciseSynchronously() = runTest {
         launch {
-            val exerciseConfig = ExerciseConfig(
-                ExerciseType.WALKING,
-                setOf(DataType.HEART_RATE_BPM_STATS),
-                isAutoPauseAndResumeEnabled = false,
-                isGpsEnabled = false
-            )
-            val availabilityEvent = ExerciseUpdateListenerEvent.createAvailabilityUpdateEvent(
-                // Currently the proto form of HEART_RATE_BPM and HEART_RATE_BPM_STATS is identical.
-                // The APK doesn't know about _STATS, so pass the sample type to mimic that
-                // behavior.
-                AvailabilityResponse(DataType.HEART_RATE_BPM, DataTypeAvailability.ACQUIRING)
-            )
+            val exerciseConfig =
+                ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM_STATS),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false
+                )
+            val availabilityEvent =
+                ExerciseUpdateListenerEvent.createAvailabilityUpdateEvent(
+                    // Currently the proto form of HEART_RATE_BPM and HEART_RATE_BPM_STATS is
+                    // identical.
+                    // The APK doesn't know about _STATS, so pass the sample type to mimic that
+                    // behavior.
+                    AvailabilityResponse(DataType.HEART_RATE_BPM, DataTypeAvailability.ACQUIRING)
+                )
             client.setUpdateCallback(callback)
             client.startExercise(exerciseConfig)
 
@@ -238,18 +250,21 @@ class ExerciseClientTest {
     @Test
     fun callbackShouldMatchRequested_statsAndSample_startExerciseSynchronously() = runTest {
         launch {
-            val exerciseConfig = ExerciseConfig(
-                ExerciseType.WALKING,
-                setOf(DataType.HEART_RATE_BPM, DataType.HEART_RATE_BPM_STATS),
-                isAutoPauseAndResumeEnabled = false,
-                isGpsEnabled = false
-            )
-            val availabilityEvent = ExerciseUpdateListenerEvent.createAvailabilityUpdateEvent(
-                // Currently the proto form of HEART_RATE_BPM and HEART_RATE_BPM_STATS is identical.
-                // The APK doesn't know about _STATS, so pass the sample type to mimic that
-                // behavior.
-                AvailabilityResponse(DataType.HEART_RATE_BPM, DataTypeAvailability.ACQUIRING)
-            )
+            val exerciseConfig =
+                ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM, DataType.HEART_RATE_BPM_STATS),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false
+                )
+            val availabilityEvent =
+                ExerciseUpdateListenerEvent.createAvailabilityUpdateEvent(
+                    // Currently the proto form of HEART_RATE_BPM and HEART_RATE_BPM_STATS is
+                    // identical.
+                    // The APK doesn't know about _STATS, so pass the sample type to mimic that
+                    // behavior.
+                    AvailabilityResponse(DataType.HEART_RATE_BPM, DataTypeAvailability.ACQUIRING)
+                )
             client.setUpdateCallback(callback)
             client.startExercise(exerciseConfig)
 
@@ -267,43 +282,44 @@ class ExerciseClientTest {
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
-    fun startExerciseSynchronously_ThrowsSecurityException() =
-        runTest {
-            launch {
-                val exerciseConfig = ExerciseConfig(
+    fun startExerciseSynchronously_ThrowsSecurityException() = runTest {
+        launch {
+            val exerciseConfig =
+                ExerciseConfig(
                     ExerciseType.WALKING,
                     setOf(DataType.HEART_RATE_BPM, DataType.HEART_RATE_BPM_STATS),
                     isAutoPauseAndResumeEnabled = false,
                     isGpsEnabled = false
                 )
-                var exception: Exception? = null
-                client.setUpdateCallback(callback)
-                // Mocking the calling app does not have the required permissions
-                service.callingAppHasPermissions = false
+            var exception: Exception? = null
+            client.setUpdateCallback(callback)
+            // Mocking the calling app does not have the required permissions
+            service.callingAppHasPermissions = false
 
-                try {
-                    client.startExercise(exerciseConfig)
-                } catch (e: SecurityException) {
-                    exception = e
-                }
-
-                Truth.assertThat(exception).isNotNull()
-                Truth.assertThat(exception).isInstanceOf(SecurityException::class.java)
+            try {
+                client.startExercise(exerciseConfig)
+            } catch (e: SecurityException) {
+                exception = e
             }
-            advanceMainLooperIdle()
+
+            Truth.assertThat(exception).isNotNull()
+            Truth.assertThat(exception).isInstanceOf(SecurityException::class.java)
         }
+        advanceMainLooperIdle()
+    }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
     fun callbackShouldMatchRequested_justSampleType_pauseExerciseSynchronously() = runTest {
         val statesList = mutableListOf<TestExerciseStates>()
         val startExercise = async {
-            val exerciseConfig = ExerciseConfig(
-                ExerciseType.WALKING,
-                setOf(DataType.HEART_RATE_BPM),
-                isAutoPauseAndResumeEnabled = false,
-                isGpsEnabled = false
-            )
+            val exerciseConfig =
+                ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false
+                )
             client.setUpdateCallback(callback)
 
             client.startExercise(exerciseConfig)
@@ -312,17 +328,14 @@ class ExerciseClientTest {
         advanceMainLooperIdle()
         startExercise.await()
         val pauseExercise = async {
-
             client.pauseExercise()
             statesList += service.testExerciseStates
         }
         advanceMainLooperIdle()
         pauseExercise.await()
 
-        Truth.assertThat(statesList).containsExactly(
-            TestExerciseStates.STARTED,
-            TestExerciseStates.PAUSED
-        )
+        Truth.assertThat(statesList)
+            .containsExactly(TestExerciseStates.STARTED, TestExerciseStates.PAUSED)
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -330,12 +343,13 @@ class ExerciseClientTest {
     fun callbackShouldMatchRequested_justSampleType_resumeExerciseSynchronously() = runTest {
         val statesList = mutableListOf<TestExerciseStates>()
         val startExercise = async {
-            val exerciseConfig = ExerciseConfig(
-                ExerciseType.WALKING,
-                setOf(DataType.HEART_RATE_BPM),
-                isAutoPauseAndResumeEnabled = false,
-                isGpsEnabled = false
-            )
+            val exerciseConfig =
+                ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false
+                )
             client.setUpdateCallback(callback)
 
             client.startExercise(exerciseConfig)
@@ -344,25 +358,24 @@ class ExerciseClientTest {
         advanceMainLooperIdle()
         startExercise.await()
         val pauseExercise = async {
-
             client.pauseExercise()
             statesList += service.testExerciseStates
         }
         advanceMainLooperIdle()
         pauseExercise.await()
         val resumeExercise = async {
-
             client.resumeExercise()
             statesList += service.testExerciseStates
         }
         advanceMainLooperIdle()
         resumeExercise.await()
 
-        Truth.assertThat(statesList).containsExactly(
-            TestExerciseStates.STARTED,
-            TestExerciseStates.PAUSED,
-            TestExerciseStates.RESUMED
-        )
+        Truth.assertThat(statesList)
+            .containsExactly(
+                TestExerciseStates.STARTED,
+                TestExerciseStates.PAUSED,
+                TestExerciseStates.RESUMED
+            )
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -370,12 +383,13 @@ class ExerciseClientTest {
     fun callbackShouldMatchRequested_justSampleType_endExerciseSynchronously() = runTest {
         val statesList = mutableListOf<TestExerciseStates>()
         val startExercise = async {
-            val exerciseConfig = ExerciseConfig(
-                ExerciseType.WALKING,
-                setOf(DataType.HEART_RATE_BPM),
-                isAutoPauseAndResumeEnabled = false,
-                isGpsEnabled = false
-            )
+            val exerciseConfig =
+                ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false
+                )
             client.setUpdateCallback(callback)
 
             client.startExercise(exerciseConfig)
@@ -384,17 +398,14 @@ class ExerciseClientTest {
         advanceMainLooperIdle()
         startExercise.await()
         val endExercise = async {
-
             client.endExercise()
             statesList += service.testExerciseStates
         }
         advanceMainLooperIdle()
         endExercise.await()
 
-        Truth.assertThat(statesList).containsExactly(
-            TestExerciseStates.STARTED,
-            TestExerciseStates.ENDED
-        )
+        Truth.assertThat(statesList)
+            .containsExactly(TestExerciseStates.STARTED, TestExerciseStates.ENDED)
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -402,12 +413,13 @@ class ExerciseClientTest {
     fun callbackShouldMatchRequested_justSampleType_endPausedExerciseSynchronously() = runTest {
         val statesList = mutableListOf<TestExerciseStates>()
         val startExercise = async {
-            val exerciseConfig = ExerciseConfig(
-                ExerciseType.WALKING,
-                setOf(DataType.HEART_RATE_BPM),
-                isAutoPauseAndResumeEnabled = false,
-                isGpsEnabled = false
-            )
+            val exerciseConfig =
+                ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false
+                )
             client.setUpdateCallback(callback)
 
             client.startExercise(exerciseConfig)
@@ -416,47 +428,45 @@ class ExerciseClientTest {
         advanceMainLooperIdle()
         startExercise.await()
         val pauseExercise = async {
-
             client.pauseExercise()
             statesList += service.testExerciseStates
         }
         advanceMainLooperIdle()
         pauseExercise.await()
         val endExercise = async {
-
             client.endExercise()
             statesList += service.testExerciseStates
         }
         advanceMainLooperIdle()
         endExercise.await()
 
-        Truth.assertThat(statesList).containsExactly(
-            TestExerciseStates.STARTED,
-            TestExerciseStates.PAUSED,
-            TestExerciseStates.ENDED
-        )
+        Truth.assertThat(statesList)
+            .containsExactly(
+                TestExerciseStates.STARTED,
+                TestExerciseStates.PAUSED,
+                TestExerciseStates.ENDED
+            )
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
     fun flushSynchronously() = runTest {
         val startExercise = async {
-            val exerciseConfig = ExerciseConfig(
-                ExerciseType.WALKING,
-                setOf(DataType.HEART_RATE_BPM),
-                isAutoPauseAndResumeEnabled = false,
-                isGpsEnabled = false
-            )
+            val exerciseConfig =
+                ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false
+                )
             client.setUpdateCallback(callback)
 
             client.startExercise(exerciseConfig)
         }
         advanceMainLooperIdle()
         startExercise.await()
-        val flushExercise = async {
+        val flushExercise = async { client.flush() }
 
-            client.flush()
-        }
         advanceMainLooperIdle()
         flushExercise.await()
 
@@ -467,22 +477,21 @@ class ExerciseClientTest {
     @Test
     fun markLapSynchronously() = runTest {
         val startExercise = async {
-            val exerciseConfig = ExerciseConfig(
-                ExerciseType.WALKING,
-                setOf(DataType.HEART_RATE_BPM),
-                isAutoPauseAndResumeEnabled = false,
-                isGpsEnabled = false
-            )
+            val exerciseConfig =
+                ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false
+                )
             client.setUpdateCallback(callback)
 
             client.startExercise(exerciseConfig)
         }
         advanceMainLooperIdle()
         startExercise.await()
-        val markLap = async {
+        val markLap = async { client.markLap() }
 
-            client.markLap()
-        }
         advanceMainLooperIdle()
         markLap.await()
 
@@ -494,21 +503,20 @@ class ExerciseClientTest {
     fun getCurrentExerciseInfoSynchronously() = runTest {
         lateinit var exerciseInfo: ExerciseInfo
         val startExercise = async {
-            val exerciseConfig = ExerciseConfig(
-                ExerciseType.WALKING,
-                setOf(DataType.HEART_RATE_BPM),
-                isAutoPauseAndResumeEnabled = false,
-                isGpsEnabled = false
-            )
+            val exerciseConfig =
+                ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false
+                )
             client.setUpdateCallback(callback)
 
             client.startExercise(exerciseConfig)
         }
         advanceMainLooperIdle()
         startExercise.await()
-        val currentExerciseInfoDeferred = async {
-            exerciseInfo = client.getCurrentExerciseInfo()
-        }
+        val currentExerciseInfoDeferred = async { exerciseInfo = client.getCurrentExerciseInfo() }
         advanceMainLooperIdle()
         currentExerciseInfoDeferred.await()
 
@@ -522,24 +530,21 @@ class ExerciseClientTest {
     fun getCurrentExerciseInfoSynchronously_cancelled() = runTest {
         var isCancellationException = false
         val startExercise = async {
-            val exerciseConfig = ExerciseConfig(
-                ExerciseType.WALKING,
-                setOf(DataType.HEART_RATE_BPM),
-                isAutoPauseAndResumeEnabled = false,
-                isGpsEnabled = false
-            )
+            val exerciseConfig =
+                ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false
+                )
             client.setUpdateCallback(callback)
 
             client.startExercise(exerciseConfig)
         }
         advanceMainLooperIdle()
         startExercise.await()
-        val currentExerciseInfoDeferred = async {
-            client.getCurrentExerciseInfo()
-        }
-        val cancelDeferred = async {
-            currentExerciseInfoDeferred.cancel()
-        }
+        val currentExerciseInfoDeferred = async { client.getCurrentExerciseInfo() }
+        val cancelDeferred = async { currentExerciseInfoDeferred.cancel() }
         try {
             currentExerciseInfoDeferred.await()
         } catch (e: CancellationException) {
@@ -555,12 +560,13 @@ class ExerciseClientTest {
     fun getCurrentExerciseInfoSynchronously_exception() = runTest {
         var isException = false
         val startExercise = async {
-            val exerciseConfig = ExerciseConfig(
-                ExerciseType.WALKING,
-                setOf(DataType.HEART_RATE_BPM),
-                isAutoPauseAndResumeEnabled = false,
-                isGpsEnabled = false
-            )
+            val exerciseConfig =
+                ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false
+                )
             client.setUpdateCallback(callback)
 
             client.startExercise(exerciseConfig)
@@ -590,7 +596,6 @@ class ExerciseClientTest {
         Shadows.shadowOf(Looper.getMainLooper()).idle()
         statesList += (service.listener == null)
         val deferred = async {
-
             client.clearUpdateCallback(callback)
             statesList += (service.listener == null)
         }
@@ -602,28 +607,41 @@ class ExerciseClientTest {
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
+    fun clearUpdateCallback_nothingRegistered_noOp() = runTest {
+        val deferred = async { client.clearUpdateCallback(callback) }
+        advanceMainLooperIdle()
+
+        Truth.assertThat(deferred.await()).isNull()
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
     fun addGoalToActiveExerciseShouldBeInvoked() = runTest {
         val startExercise = async {
-            val exerciseConfig = ExerciseConfig(
-                ExerciseType.WALKING,
-                setOf(DataType.HEART_RATE_BPM),
-                isAutoPauseAndResumeEnabled = false,
-                isGpsEnabled = false,
-                exerciseGoals = listOf(
-                    ExerciseGoal.createOneTimeGoal(
-                        DataTypeCondition(
-                            DataType.DISTANCE_TOTAL, 50.0,
-                            ComparisonType.GREATER_THAN
+            val exerciseConfig =
+                ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false,
+                    exerciseGoals =
+                        listOf(
+                            ExerciseGoal.createOneTimeGoal(
+                                DataTypeCondition(
+                                    DataType.DISTANCE_TOTAL,
+                                    50.0,
+                                    ComparisonType.GREATER_THAN
+                                )
+                            ),
+                            ExerciseGoal.createOneTimeGoal(
+                                DataTypeCondition(
+                                    DataType.DISTANCE_TOTAL,
+                                    150.0,
+                                    ComparisonType.GREATER_THAN
+                                )
+                            ),
                         )
-                    ),
-                    ExerciseGoal.createOneTimeGoal(
-                        DataTypeCondition(
-                            DataType.DISTANCE_TOTAL, 150.0,
-                            ComparisonType.GREATER_THAN
-                        )
-                    ),
                 )
-            )
             client.setUpdateCallback(callback)
 
             client.startExercise(exerciseConfig)
@@ -631,9 +649,15 @@ class ExerciseClientTest {
         advanceMainLooperIdle()
         startExercise.await()
         val addGoalDeferred = async {
-            val proto = ExerciseGoal.createOneTimeGoal(
-                DataTypeCondition(DataType.HEART_RATE_BPM_STATS, 145.0, ComparisonType.GREATER_THAN)
-            ).proto
+            val proto =
+                ExerciseGoal.createOneTimeGoal(
+                        DataTypeCondition(
+                            DataType.HEART_RATE_BPM_STATS,
+                            145.0,
+                            ComparisonType.GREATER_THAN
+                        )
+                    )
+                    .proto
             val goal = ExerciseGoal.fromProto(proto)
 
             client.addGoalToActiveExercise(goal)
@@ -647,38 +671,34 @@ class ExerciseClientTest {
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
     fun removeGoalFromActiveExerciseShouldBeInvoked() = runTest {
-        val goal1 = ExerciseGoal.createOneTimeGoal(
-            DataTypeCondition(
-                DataType.DISTANCE_TOTAL, 50.0,
-                ComparisonType.GREATER_THAN
+        val goal1 =
+            ExerciseGoal.createOneTimeGoal(
+                DataTypeCondition(DataType.DISTANCE_TOTAL, 50.0, ComparisonType.GREATER_THAN)
             )
-        )
-        val goal2 = ExerciseGoal.createOneTimeGoal(
-            DataTypeCondition(
-                DataType.DISTANCE_TOTAL, 150.0,
-                ComparisonType.GREATER_THAN
+        val goal2 =
+            ExerciseGoal.createOneTimeGoal(
+                DataTypeCondition(DataType.DISTANCE_TOTAL, 150.0, ComparisonType.GREATER_THAN)
             )
-        )
         val startExercise = async {
-            val exerciseConfig = ExerciseConfig(
-                ExerciseType.WALKING,
-                setOf(DataType.HEART_RATE_BPM),
-                isAutoPauseAndResumeEnabled = false,
-                isGpsEnabled = false,
-                exerciseGoals = listOf(
-                    goal1,
-                    goal2,
+            val exerciseConfig =
+                ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false,
+                    exerciseGoals =
+                        listOf(
+                            goal1,
+                            goal2,
+                        )
                 )
-            )
             client.setUpdateCallback(callback)
 
             client.startExercise(exerciseConfig)
         }
         advanceMainLooperIdle()
         startExercise.await()
-        val removeGoalDeferred = async {
-            client.removeGoalFromActiveExercise(goal1)
-        }
+        val removeGoalDeferred = async { client.removeGoalFromActiveExercise(goal1) }
         advanceMainLooperIdle()
         removeGoalDeferred.await()
 
@@ -689,9 +709,7 @@ class ExerciseClientTest {
     @Test
     fun getCapabilitiesSynchronously() = runTest {
         lateinit var passiveMonitoringCapabilities: ExerciseCapabilities
-        val deferred = async {
-            passiveMonitoringCapabilities = client.getCapabilities()
-        }
+        val deferred = async { passiveMonitoringCapabilities = client.getCapabilities() }
         advanceMainLooperIdle()
         deferred.await()
 
@@ -705,12 +723,8 @@ class ExerciseClientTest {
     @Test
     fun getCapabilitiesSynchronously_cancelled() = runTest {
         var isCancellationException = false
-        val deferred = async {
-            client.getCapabilities()
-        }
-        val cancellationDeferred = async {
-            deferred.cancel(CancellationException())
-        }
+        val deferred = async { client.getCapabilities() }
+        val cancellationDeferred = async { deferred.cancel(CancellationException()) }
         try {
             deferred.await()
         } catch (e: CancellationException) {
@@ -745,17 +759,15 @@ class ExerciseClientTest {
         val exerciseConfig = ExerciseConfig.builder(ExerciseType.GOLF).build()
         val exerciseTypeConfig =
             GolfExerciseTypeConfig(
-                GolfExerciseTypeConfig
-                    .GolfShotTrackingPlaceInfo.GOLF_SHOT_TRACKING_PLACE_INFO_FAIRWAY
+                GolfExerciseTypeConfig.GolfShotTrackingPlaceInfo
+                    .GOLF_SHOT_TRACKING_PLACE_INFO_FAIRWAY
             )
 
         client.setUpdateCallback(callback)
         var deferred = async { client.startExercise(exerciseConfig) }
         advanceMainLooperIdle()
         deferred.await()
-        deferred = async {
-            client.updateExerciseTypeConfig(exerciseTypeConfig)
-        }
+        deferred = async { client.updateExerciseTypeConfig(exerciseTypeConfig) }
         advanceMainLooperIdle()
         deferred.await()
 
@@ -769,9 +781,7 @@ class ExerciseClientTest {
         batchingMode.add(BatchingMode.HEART_RATE_5_SECONDS)
         client.setUpdateCallback(callback)
 
-        var deferred = async {
-            client.overrideBatchingModesForActiveExercise(batchingMode)
-        }
+        var deferred = async { client.overrideBatchingModesForActiveExercise(batchingMode) }
         advanceMainLooperIdle()
         deferred.await()
 
@@ -800,6 +810,104 @@ class ExerciseClientTest {
         deferred.await()
 
         Truth.assertThat(service.batchingModeOverrides?.size).isEqualTo(0)
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun addDebouncedGoalToActiveExerciseShouldBeInvoked() = runTest {
+        val startExercise = async {
+            val exerciseConfig =
+                ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false,
+                    debouncedGoals =
+                        listOf(
+                            DebouncedGoal.createSampleDebouncedGoal(
+                                DebouncedDataTypeCondition.createDebouncedDataTypeCondition(
+                                    DataType.HEART_RATE_BPM,
+                                    120.0,
+                                    ComparisonType.GREATER_THAN,
+                                    /* initialDelay= */ 60,
+                                    /* durationAtThreshold= */ 5
+                                )
+                            )
+                        )
+                )
+            client.setUpdateCallback(callback)
+
+            client.startExercise(exerciseConfig)
+        }
+        advanceMainLooperIdle()
+        startExercise.await()
+        val addDebouncedGoalDeferred = async {
+            val proto =
+                DebouncedGoal.createAggregateDebouncedGoal(
+                        DebouncedDataTypeCondition.createDebouncedDataTypeCondition(
+                            DataType.HEART_RATE_BPM_STATS,
+                            120.0,
+                            ComparisonType.GREATER_THAN,
+                            /* initialDelay= */ 60,
+                            /* durationAtThreshold= */ 5
+                        )
+                    )
+                    .proto
+            val debouncedGoal = DebouncedGoal.fromProto(proto)
+
+            client.addDebouncedGoalToActiveExercise(debouncedGoal)
+        }
+        advanceMainLooperIdle()
+        addDebouncedGoalDeferred.await()
+
+        Truth.assertThat(service.debouncedGoals).hasSize(2)
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun removeDebouncedGoalFromActiveExerciseShouldBeInvoked() = runTest {
+        val debouncedGoal1 =
+            DebouncedGoal.createAggregateDebouncedGoal(
+                DebouncedDataTypeCondition.createDebouncedDataTypeCondition(
+                    DataType.HEART_RATE_BPM_STATS,
+                    120.0,
+                    ComparisonType.GREATER_THAN,
+                    /* initialDelay= */ 60,
+                    /* durationAtThreshold= */ 5
+                )
+            )
+        val debouncedGoal2 =
+            DebouncedGoal.createSampleDebouncedGoal(
+                DebouncedDataTypeCondition.createDebouncedDataTypeCondition(
+                    DataType.HEART_RATE_BPM,
+                    120.0,
+                    ComparisonType.GREATER_THAN,
+                    /* initialDelay= */ 60,
+                    /* durationAtThreshold= */ 5
+                )
+            )
+        val startExercise = async {
+            val exerciseConfig =
+                ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false,
+                    debouncedGoals = listOf(debouncedGoal1, debouncedGoal2)
+                )
+            client.setUpdateCallback(callback)
+
+            client.startExercise(exerciseConfig)
+        }
+        advanceMainLooperIdle()
+        startExercise.await()
+        val removeGoalDeferred = async {
+            client.removeDebouncedGoalFromActiveExercise(debouncedGoal1)
+        }
+        advanceMainLooperIdle()
+        removeGoalDeferred.await()
+
+        Truth.assertThat(service.debouncedGoals).hasSize(1)
     }
 
     class FakeExerciseUpdateCallback : ExerciseUpdateCallback {
@@ -837,8 +945,11 @@ class ExerciseClientTest {
         var testExerciseStates = TestExerciseStates.UNKNOWN
         var laps = 0
         var exerciseConfig: ExerciseConfig? = null
+
         override fun getApiVersion(): Int = 12
+
         val goals = mutableListOf<ExerciseGoal<*>>()
+        val debouncedGoals = mutableListOf<DebouncedGoal<*>>()
         var throwException = false
         var callingAppHasPermissions = true
         val registerGetCapabilitiesRequests = mutableListOf<CapabilitiesRequest>()
@@ -864,6 +975,7 @@ class ExerciseClientTest {
             if (callingAppHasPermissions) {
                 exerciseConfig = startExerciseRequest?.exerciseConfig
                 exerciseConfig?.exerciseGoals?.let { goals.addAll(it) }
+                exerciseConfig?.debouncedGoals?.let { debouncedGoals.addAll(it) }
                 statusCallbackAction.invoke(statusCallback)
                 testExerciseStates = TestExerciseStates.STARTED
             } else {
@@ -901,10 +1013,7 @@ class ExerciseClientTest {
             if (exerciseConfig == null) {
                 exerciseInfoCallback?.onExerciseInfo(
                     ExerciseInfoResponse(
-                        ExerciseInfo(
-                            ExerciseTrackedStatus.UNKNOWN,
-                            ExerciseType.UNKNOWN
-                        )
+                        ExerciseInfo(ExerciseTrackedStatus.UNKNOWN, ExerciseType.UNKNOWN)
                     )
                 )
             } else {
@@ -933,8 +1042,7 @@ class ExerciseClientTest {
             listener: IExerciseUpdateListener?,
             statusCallback: IStatusCallback?
         ) {
-            if (this.listener == listener)
-                this.listener = null
+            if (this.listener == listener) this.listener = null
             statusCallbackAction.invoke(statusCallback)
         }
 
@@ -954,6 +1062,26 @@ class ExerciseClientTest {
         ) {
             if (request != null) {
                 goals.remove(request.exerciseGoal)
+            }
+            statusCallbackAction.invoke(statusCallback)
+        }
+
+        override fun addDebouncedGoalToActiveExercise(
+            request: DebouncedGoalRequest?,
+            statusCallback: IStatusCallback?
+        ) {
+            if (request != null) {
+                debouncedGoals.add(request.debouncedGoal)
+            }
+            statusCallbackAction.invoke(statusCallback)
+        }
+
+        override fun removeDebouncedGoalFromActiveExercise(
+            request: DebouncedGoalRequest?,
+            statusCallback: IStatusCallback?
+        ) {
+            if (request != null) {
+                debouncedGoals.remove(request.debouncedGoal)
             }
             statusCallbackAction.invoke(statusCallback)
         }
@@ -985,8 +1113,9 @@ class ExerciseClientTest {
         fun getTestCapabilities(): ExerciseCapabilities {
             val exerciseTypeToCapabilitiesMapping =
                 ImmutableMap.of(
-                    ExerciseType.WALKING, ExerciseTypeCapabilities( /* supportedDataTypes= */
-                        ImmutableSet.of(DataType.STEPS),
+                    ExerciseType.WALKING,
+                    ExerciseTypeCapabilities(
+                        /* supportedDataTypes= */ ImmutableSet.of(DataType.STEPS),
                         ImmutableMap.of(
                             DataType.STEPS_TOTAL,
                             ImmutableSet.of(ComparisonType.GREATER_THAN)
@@ -994,10 +1123,11 @@ class ExerciseClientTest {
                         ImmutableMap.of(
                             DataType.STEPS_TOTAL,
                             ImmutableSet.of(ComparisonType.LESS_THAN, ComparisonType.GREATER_THAN)
-                        ), /* supportsAutoPauseAndResume= */
-                        false
+                        ),
+                        /* supportsAutoPauseAndResume= */ false
                     ),
-                    ExerciseType.RUNNING, ExerciseTypeCapabilities(
+                    ExerciseType.RUNNING,
+                    ExerciseTypeCapabilities(
                         ImmutableSet.of(DataType.HEART_RATE_BPM, DataType.SPEED),
                         ImmutableMap.of(
                             DataType.HEART_RATE_BPM_STATS,
@@ -1010,14 +1140,15 @@ class ExerciseClientTest {
                             ImmutableSet.of(ComparisonType.GREATER_THAN_OR_EQUAL),
                             DataType.SPEED_STATS,
                             ImmutableSet.of(ComparisonType.LESS_THAN, ComparisonType.GREATER_THAN)
-                        ), /* supportsAutoPauseAndResume= */
-                        true
+                        ),
+                        /* supportsAutoPauseAndResume= */ true
                     ),
-                    ExerciseType.SWIMMING_POOL, ExerciseTypeCapabilities( /* supportedDataTypes= */
-                        ImmutableSet.of(), /* supportedGoals= */
-                        ImmutableMap.of(), /* supportedMilestones= */
-                        ImmutableMap.of(), /* supportsAutoPauseAndResume= */
-                        true
+                    ExerciseType.SWIMMING_POOL,
+                    ExerciseTypeCapabilities(
+                        /* supportedDataTypes= */ ImmutableSet.of(),
+                        /* supportedGoals= */ ImmutableMap.of(),
+                        /* supportedMilestones= */ ImmutableMap.of(),
+                        /* supportsAutoPauseAndResume= */ true
                     )
                 )
 
@@ -1035,9 +1166,9 @@ class ExerciseClientTest {
         ) {
             val newExerciseTypeConfig = updateExerciseTypeConfigRequest.exerciseTypeConfig
             val newExerciseConfig =
-                ExerciseConfig.builder(
-                    exerciseConfig!!.exerciseType
-                ).setExerciseTypeConfig(newExerciseTypeConfig).build()
+                ExerciseConfig.builder(exerciseConfig!!.exerciseType)
+                    .setExerciseTypeConfig(newExerciseTypeConfig)
+                    .build()
             this.exerciseConfig = newExerciseConfig
             statusCallbackAction.invoke(statusCallback)
         }

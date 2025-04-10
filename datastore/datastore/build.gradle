@@ -14,24 +14,39 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
-android {
-    namespace "androidx.datastore.datastore"
-}
 
 androidXMultiplatform {
     jvm()
     mac()
     ios()
+    watchos()
+    tvos()
     linux()
-    android()
+    androidLibrary {
+        namespace = "androidx.datastore.datastore"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+        withAndroidTestOnJvmBuilder {
+            it.defaultSourceSetName = "androidUnitTest"
+        }
+    }
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -40,7 +55,7 @@ androidXMultiplatform {
             dependencies {
                 api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
-                api("androidx.annotation:annotation:1.2.0")
+                api("androidx.annotation:annotation:1.9.1")
                 api(project(":datastore:datastore-core"))
                 api(project(":datastore:datastore-core-okio"))
             }
@@ -94,23 +109,12 @@ androidXMultiplatform {
             }
 
         }
-
-        targets.all { target ->
-            if (target.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet {
-                    dependsOn(nativeMain)
-                }
-                target.compilations["test"].defaultSourceSet {
-                    dependsOn(nativeTest)
-                }
-            }
-        }
     }
 }
 
 androidx {
     name = "DataStore"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Android DataStore - contains the underlying store used by each serialization " +
             "method along with components that require an Android dependency"

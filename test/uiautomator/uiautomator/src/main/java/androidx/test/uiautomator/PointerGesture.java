@@ -18,7 +18,7 @@ package androidx.test.uiautomator;
 
 import android.graphics.Point;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -31,13 +31,14 @@ class PointerGesture {
     private final Deque<PointerAction> mActions = new ArrayDeque<>();
     private final long mDelay;
     private final int mDisplayId;
+    private final int mWindowId;
     private long mDuration;
 
     /**
      * Constructs a PointerGesture which touches down at the given start point on the given display.
      */
-    public PointerGesture(Point startPoint, int displayId) {
-        this(startPoint, 0, displayId);
+    PointerGesture(Point startPoint, int displayId, int windowId) {
+        this(startPoint, 0, displayId, windowId);
     }
 
     /**
@@ -45,17 +46,22 @@ class PointerGesture {
      * after a given delay.  Used in multi-point gestures when the pointers do not all touch down at
      * the same time.
      */
-    public PointerGesture(Point startPoint, long initialDelay, int displayId) {
+    PointerGesture(Point startPoint, long initialDelay, int displayId, int windowId) {
         if (initialDelay < 0) {
             throw new IllegalArgumentException("initialDelay cannot be negative");
         }
         mActions.addFirst(new PointerPauseAction(startPoint, 0));
         mDelay = initialDelay;
         mDisplayId = displayId;
+        mWindowId = windowId;
     }
 
     public int displayId() {
         return mDisplayId;
+    }
+
+    public int windowId() {
+        return mWindowId;
     }
 
     /** Adds an action which pauses for the specified amount of {@code time} in milliseconds. */
@@ -110,9 +116,8 @@ class PointerGesture {
         return mActions.peekLast().end;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return mActions.toString();
     }
 
@@ -143,9 +148,8 @@ class PointerGesture {
             return new Point(start);
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return String.format("Pause(point=%s, duration=%dms)", start, duration);
         }
     }
@@ -164,9 +168,8 @@ class PointerGesture {
             return ret;
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return String.format("Move(start=%s, end=%s, duration=%dms)", start, end, duration);
         }
 

@@ -33,7 +33,6 @@ internal interface LazyStaggeredGridItemProvider : LazyLayoutItemProvider {
     val keyIndexMap: LazyLayoutKeyIndexMap
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun rememberStaggeredGridItemProviderLambda(
     state: LazyStaggeredGridState,
@@ -41,30 +40,32 @@ internal fun rememberStaggeredGridItemProviderLambda(
 ): () -> LazyStaggeredGridItemProvider {
     val latestContent = rememberUpdatedState(content)
     return remember(state) {
-        val intervalContentState = derivedStateOf(referentialEqualityPolicy()) {
-            LazyStaggeredGridIntervalContent(latestContent.value)
-        }
-        val itemProviderState = derivedStateOf(referentialEqualityPolicy()) {
-            val intervalContent = intervalContentState.value
-            val map = NearestRangeKeyIndexMap(state.nearestRange, intervalContent)
-            LazyStaggeredGridItemProviderImpl(
-                state = state,
-                intervalContent = intervalContent,
-                keyIndexMap = map
-            )
-        }
+        val intervalContentState =
+            derivedStateOf(referentialEqualityPolicy()) {
+                LazyStaggeredGridIntervalContent(latestContent.value)
+            }
+        val itemProviderState =
+            derivedStateOf(referentialEqualityPolicy()) {
+                val intervalContent = intervalContentState.value
+                val map = NearestRangeKeyIndexMap(state.nearestRange, intervalContent)
+                LazyStaggeredGridItemProviderImpl(
+                    state = state,
+                    intervalContent = intervalContent,
+                    keyIndexMap = map
+                )
+            }
         itemProviderState::value
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 private class LazyStaggeredGridItemProviderImpl(
     private val state: LazyStaggeredGridState,
     private val intervalContent: LazyStaggeredGridIntervalContent,
     override val keyIndexMap: LazyLayoutKeyIndexMap,
 ) : LazyStaggeredGridItemProvider {
 
-    override val itemCount: Int get() = intervalContent.itemCount
+    override val itemCount: Int
+        get() = intervalContent.itemCount
 
     override fun getKey(index: Int): Any =
         keyIndexMap.getKey(index) ?: intervalContent.getKey(index)
@@ -82,7 +83,8 @@ private class LazyStaggeredGridItemProviderImpl(
         }
     }
 
-    override val spanProvider get() = intervalContent.spanProvider
+    override val spanProvider
+        get() = intervalContent.spanProvider
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

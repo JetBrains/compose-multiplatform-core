@@ -22,7 +22,6 @@ import androidx.compose.runtime.benchmark.dbmonster.DatabaseList
 import androidx.compose.runtime.benchmark.dbmonster.DatabaseRow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.test.annotation.UiThreadTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import kotlin.random.Random
@@ -33,8 +32,9 @@ import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
 
 /**
- * This is an implementation of a classic web perf benchmark "dbmonster". This can provide insight into apps with
- * lots of updating parts at once. It may also be good tests for the Text and Layout stacks of compose UI.
+ * This is an implementation of a classic web perf benchmark "dbmonster". This can provide insight
+ * into apps with lots of updating parts at once. It may also be good tests for the Text and Layout
+ * stacks of compose UI.
  *
  * See: http://mathieuancelin.github.io/js-repaint-perfs/
  */
@@ -44,17 +44,14 @@ import org.junit.runners.MethodSorters
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class DbMonsterBenchmark : ComposeBenchmarkBase() {
 
-    @UiThreadTest
-    @Test
-    fun dbMonster_count10_mutate10() = dbMonsterBenchmark(count = 10, mutate = 10)
+    @Test fun dbMonster_count10_mutate10() = dbMonsterBenchmark(count = 10, mutate = 10)
 
-    @UiThreadTest
-    @Test
-    fun dbMonster_count20_mutate01() = dbMonsterBenchmark(count = 20, mutate = 1)
+    @Test fun dbMonster_count20_mutate01() = dbMonsterBenchmark(count = 20, mutate = 1)
 
     /**
      * @param count - the number of databases (2x this will be number of rows)
-     * @param mutate - the number of databases to mutate/update on each frame (2x count will be 100%)
+     * @param mutate - the number of databases to mutate/update on each frame (2x count will be
+     *   100%)
      */
     private fun dbMonsterBenchmark(count: Int, mutate: Int) = runBlockingTestWithFrameClock {
         val random = Random(0)
@@ -62,7 +59,7 @@ class DbMonsterBenchmark : ComposeBenchmarkBase() {
         println(mutate)
         println(random)
         val list = DatabaseList(count, random)
-        measureRecomposeSuspending {
+        measureRecompose {
             compose {
                 Column(Modifier.fillMaxHeight()) {
                     for (db in list.databases) {
@@ -70,9 +67,7 @@ class DbMonsterBenchmark : ComposeBenchmarkBase() {
                     }
                 }
             }
-            update {
-                list.update(mutate)
-            }
+            update { list.update(mutate) }
         }
     }
 }

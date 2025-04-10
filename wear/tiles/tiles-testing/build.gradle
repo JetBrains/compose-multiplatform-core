@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("com.google.protobuf")
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api(libs.guavaListenableFuture)
     api(project(":wear:tiles:tiles-renderer"))
 
@@ -51,19 +57,18 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
 
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.wear.tiles.testing"
+    namespace = "androidx.wear.tiles.testing"
 }
 
 androidx {
     name = "Android Wear Tiles Testing Utilities"
-    type = LibraryType.PUBLISHED_TEST_LIBRARY
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2021"
     description = "Testing utilities for Android Wear Tiles."
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

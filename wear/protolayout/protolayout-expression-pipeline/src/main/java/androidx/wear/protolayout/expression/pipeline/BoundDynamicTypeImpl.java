@@ -22,7 +22,10 @@ import android.util.Log;
 
 import androidx.annotation.UiThread;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Dynamic type node implementation that contains a list of {@link DynamicDataNode} created during
@@ -79,8 +82,30 @@ class BoundDynamicTypeImpl implements BoundDynamicType {
     }
 
     @Override
+    public @NonNull List<DynamicTypeAnimator> getAnimations() {
+        List<QuotaAwareAnimator> animators =
+                mNodes.stream()
+                        .filter(n -> n instanceof AnimatableNode)
+                        .map(n -> ((AnimatableNode) n).mQuotaAwareAnimator)
+                        .collect(Collectors.toList());
+
+        if (!animators.isEmpty()) {
+            animators.get(animators.size() - 1).setTerminal();
+        }
+
+        return animators.stream()
+                .map(animator -> (DynamicTypeAnimator) animator)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public int getDynamicNodeCount() {
         return mNodes.size();
+    }
+
+    @Override
+    public int getDynamicNodeCost() {
+        return mNodes.stream().mapToInt(DynamicDataNode::getCost).sum();
     }
 
     @Override
@@ -106,6 +131,6 @@ class BoundDynamicTypeImpl implements BoundDynamicType {
         mNodes.stream()
                 .filter(n -> n instanceof DynamicDataSourceNode)
                 .forEach(n -> ((DynamicDataSourceNode<?>) n).destroy());
-        mDynamicDataNodesQuotaManager.releaseQuota(getDynamicNodeCount());
+        mDynamicDataNodesQuotaManager.releaseQuota(getDynamicNodeCost());
     }
 }

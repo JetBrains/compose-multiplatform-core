@@ -24,12 +24,12 @@ import android.text.Spannable;
 import android.text.Spanned;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.emoji2.text.EmojiCompat;
 import androidx.emoji2.text.EmojiCompat.InitCallback;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -43,12 +43,11 @@ import java.lang.ref.WeakReference;
  *
  */
 @RestrictTo(LIBRARY)
-@RequiresApi(19)
 final class EmojiInputFilter implements android.text.InputFilter {
     private final TextView mTextView;
     private InitCallback mInitCallback;
 
-    EmojiInputFilter(@NonNull final TextView textView) {
+    EmojiInputFilter(final @NonNull TextView textView) {
         mTextView = textView;
     }
 
@@ -100,7 +99,6 @@ final class EmojiInputFilter implements android.text.InputFilter {
     }
 
     @RestrictTo(LIBRARY)
-    @RequiresApi(19)
     static class InitCallbackImpl extends InitCallback implements Runnable  {
         private final Reference<TextView> mViewRef;
         private final Reference<EmojiInputFilter> mEmojiInputFilterReference;
@@ -127,8 +125,8 @@ final class EmojiInputFilter implements android.text.InputFilter {
 
         @Override
         public void run() {
-            @Nullable final TextView textView = mViewRef.get();
-            @Nullable final InputFilter myInputFilter = mEmojiInputFilterReference.get();
+            final TextView textView = mViewRef.get();
+            final InputFilter myInputFilter = mEmojiInputFilterReference.get();
             if (!isInputFilterCurrentlyRegisteredOnTextView(textView, myInputFilter)) return;
             if (textView.isAttachedToWindow()) {
                 final CharSequence originalText = textView.getText();

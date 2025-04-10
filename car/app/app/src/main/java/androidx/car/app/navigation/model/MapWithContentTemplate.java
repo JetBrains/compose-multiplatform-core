@@ -20,16 +20,16 @@ import static androidx.car.app.model.constraints.ActionsConstraints.ACTIONS_CONS
 
 import static java.util.Objects.requireNonNull;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.car.app.annotations.CarProtocol;
-import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.KeepFields;
 import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.ActionStrip;
 import androidx.car.app.model.Template;
 import androidx.car.app.navigation.model.constraints.ContentTemplateConstraints;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -38,28 +38,26 @@ import java.util.Objects;
  * list). The content is usually rendered as an overlay on top of the map tiles, with the map
  * visible and stable areas adjusting to the content.
  *
- * See {@link ContentTemplateConstraints#MAP_WITH_CONTENT_TEMPLATE_CONSTRAINTS}
- * for the list of supported content templates.
+ * <p>See {@link Builder#setContentTemplate(Template)} for the list of supported content templates.
+ * </p>
+ *
+ * <p>In order to use this template your car app <b>MUST</b> declare that it uses <b>EITHER</b> the
+ * {@code androidx.car.app.NAVIGATION_TEMPLATES} permission <b>OR</b> the {@code
+ *  androidx.car.app.MAP_TEMPLATES} in the manifest.</p>
  */
 @CarProtocol
 @KeepFields
-@ExperimentalCarApi
 @RequiresCarApi(7)
 public final class MapWithContentTemplate implements Template {
-    private final boolean mIsLoading;
-    @Nullable
-    private final MapController mMapController;
-    @Nullable
-    private final Template mContentTemplate;
-    @Nullable
-    private final ActionStrip mActionStrip;
+    private final @Nullable MapController mMapController;
+    private final @NonNull Template mContentTemplate;
+    private final @Nullable ActionStrip mActionStrip;
 
     /**
      * Creates a new {@code MapWithContentTemplate}. Please use the {@link Builder} to construct
      * instances of this template.
      */
     MapWithContentTemplate(Builder builder) {
-        mIsLoading = builder.mIsLoading;
         mMapController = builder.mMapController;
         mContentTemplate = builder.mContentTemplate;
         mActionStrip = builder.mActionStrip;
@@ -67,19 +65,9 @@ public final class MapWithContentTemplate implements Template {
 
     /** Constructs an empty instance, used by serialization code. */
     private MapWithContentTemplate() {
-        mIsLoading = false;
         mMapController = null;
-        mContentTemplate = null;
+        mContentTemplate = new Template() {};
         mActionStrip = null;
-    }
-
-    /**
-     * Returns whether the template is loading.
-     *
-     * @see MapWithContentTemplate.Builder#setLoading(boolean)
-     */
-    public boolean isLoading() {
-        return mIsLoading;
     }
 
     /**
@@ -87,8 +75,7 @@ public final class MapWithContentTemplate implements Template {
      *
      * @see Builder#setMapController
      */
-    @Nullable
-    public MapController getMapController() {
+    public @Nullable MapController getMapController() {
         return mMapController;
     }
 
@@ -97,8 +84,7 @@ public final class MapWithContentTemplate implements Template {
      *
      * @see Builder#setContentTemplate(Template)
      */
-    @Nullable
-    public Template getContentTemplate() {
+    public @NonNull Template getContentTemplate() {
         return mContentTemplate;
     }
 
@@ -107,14 +93,13 @@ public final class MapWithContentTemplate implements Template {
      *
      * @see Builder#setActionStrip(ActionStrip)
      */
-    @Nullable
-    public ActionStrip getActionStrip() {
+    public @Nullable ActionStrip getActionStrip() {
         return mActionStrip;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mIsLoading, mMapController, mContentTemplate, mActionStrip);
+        return Objects.hash(mMapController, mContentTemplate, mActionStrip);
     }
 
     @Override
@@ -127,8 +112,7 @@ public final class MapWithContentTemplate implements Template {
         }
         MapWithContentTemplate otherTemplate = (MapWithContentTemplate) other;
 
-        return  mIsLoading == otherTemplate.mIsLoading
-                && Objects.equals(mContentTemplate, otherTemplate.mContentTemplate)
+        return  Objects.equals(mContentTemplate, otherTemplate.mContentTemplate)
                 && Objects.equals(mMapController, otherTemplate.mMapController)
                 && Objects.equals(mActionStrip, otherTemplate.mActionStrip);
     }
@@ -136,29 +120,14 @@ public final class MapWithContentTemplate implements Template {
     /** A builder of {@link MapWithContentTemplate}. */
     public static final class Builder {
 
-        boolean mIsLoading;
-        @Nullable
-        MapController mMapController;
-        @Nullable
-        Template mContentTemplate;
-        @Nullable
-        ActionStrip mActionStrip;
+        @Nullable MapController mMapController;
+        @NonNull Template mContentTemplate;
+        @Nullable ActionStrip mActionStrip;
 
-        /**
-         * Sets whether the template is in a loading state.
-         *
-         * <p>If set to {@code true}, the UI will display a loading indicator where the content
-         * would be otherwise. The caller is expected to call {@link
-         * androidx.car.app.Screen#invalidate()} and send the new template content
-         * to the host once the data is ready.
-         *
-         * <p>If set to {@code false}, the UI will display the contents of the template.
-         */
-        @NonNull
-        public Builder setLoading(boolean isLoading) {
-            mIsLoading = isLoading;
-            return this;
+        public Builder() {
+            mContentTemplate = new Template() {};
         }
+
 
         /**
          * Sets the {@link ActionStrip} for this template.
@@ -181,8 +150,7 @@ public final class MapWithContentTemplate implements Template {
          * @throws IllegalArgumentException if {@code actionStrip} does not meet the requirements
          * @throws NullPointerException     if {@code actionStrip} is {@code null}
          */
-        @NonNull
-        public Builder setActionStrip(@NonNull ActionStrip actionStrip) {
+        public @NonNull Builder setActionStrip(@NonNull ActionStrip actionStrip) {
             ACTIONS_CONSTRAINTS_NAVIGATION
                     .validateOrThrow(requireNonNull(actionStrip).getActions());
             mActionStrip = actionStrip;
@@ -191,9 +159,19 @@ public final class MapWithContentTemplate implements Template {
 
         /**
          * Sets the content to be displayed on top of the map tiles.
+         *
+         * <p>From Car API 7 onward, the following template types are supported as content:
+         * <ul>
+         *     <li>{@code ListTemplate}
+         *     <li>{@code PaneTemplate}
+         *     <li>{@code GridTemplate}
+         *     <li>{@code MessageTemplate}
+         * </ul>
+         *
+         *  @throws NullPointerException     if {@code template} is null
+         *  @throws IllegalArgumentException if {@code template} does not meet the requirements
          */
-        @NonNull
-        public Builder setContentTemplate(@NonNull Template template) {
+        public @NonNull Builder setContentTemplate(@NonNull Template template) {
             mContentTemplate = requireNonNull(template);
             return this;
         }
@@ -201,40 +179,23 @@ public final class MapWithContentTemplate implements Template {
         /**
          * Sets the {@link MapController} for this template.
          */
-        @NonNull
-        public Builder setMapController(@NonNull MapController mapController) {
+        public @NonNull Builder setMapController(@NonNull MapController mapController) {
             mMapController = requireNonNull(mapController);
             return this;
         }
 
         /**
          * Constructs the template defined by this builder.
-         *
+         * <p>
          * <h4>Requirements</h4>
-         *
-         * @throws IllegalStateException if the template is in a loading state but the content is
-         * set or vice versa, or if the template is not loading and the content is not set.
-         *
+         * <p>
          * @throws IllegalArgumentException if the template is not one of the allowed Content types
-         * see {@link ContentTemplateConstraints#MAP_WITH_CONTENT_TEMPLATE_CONSTRAINTS}
-         * for the list of supported content templates.
+         * See {@link Builder#setContentTemplate(Template)} for the list of supported content
+         * templates.
          */
-        @NonNull
-        public MapWithContentTemplate build() {
-            boolean hasContent = mContentTemplate != null;
-            if (mIsLoading == hasContent) {
-                throw new IllegalStateException(
-                        "Template is in a loading state but content is set, or vice versa");
-            }
-            if (!mIsLoading) {
-                if (mContentTemplate == null) {
-                    throw new IllegalStateException(
-                            "The content template cannot be null when the template is not in a "
-                                    + "loading state");
-                }
-                ContentTemplateConstraints.MAP_WITH_CONTENT_TEMPLATE_CONSTRAINTS
-                        .validateOrThrow(mContentTemplate);
-            }
+        public @NonNull MapWithContentTemplate build() {
+            ContentTemplateConstraints.MAP_WITH_CONTENT_TEMPLATE_CONSTRAINTS
+                    .validateOrThrow(mContentTemplate);
             return new MapWithContentTemplate(this);
         }
     }

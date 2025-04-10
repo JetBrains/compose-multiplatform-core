@@ -2,79 +2,139 @@
 package androidx.compose.ui.geometry {
 
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class CornerRadius {
+    ctor public CornerRadius(long packedValue);
     method @androidx.compose.runtime.Stable public inline operator float component1();
     method @androidx.compose.runtime.Stable public inline operator float component2();
     method public long copy(optional float x, optional float y);
     method @androidx.compose.runtime.Stable public operator long div(float operand);
-    method public float getX();
-    method public float getY();
+    method public long getPackedValue();
+    method @androidx.compose.runtime.Stable public inline boolean isCircular();
+    method @androidx.compose.runtime.Stable public inline boolean isZero();
     method @androidx.compose.runtime.Stable public operator long minus(long other);
     method @androidx.compose.runtime.Stable public operator long plus(long other);
     method @androidx.compose.runtime.Stable public operator long times(float operand);
-    method @androidx.compose.runtime.Stable public operator long unaryMinus();
-    property @androidx.compose.runtime.Stable public final float x;
-    property @androidx.compose.runtime.Stable public final float y;
+    method @androidx.compose.runtime.Stable public inline operator long unaryMinus();
+    property public long packedValue;
+    property @androidx.compose.runtime.Stable public inline float x;
+    property @androidx.compose.runtime.Stable public inline float y;
     field public static final androidx.compose.ui.geometry.CornerRadius.Companion Companion;
   }
 
   public static final class CornerRadius.Companion {
     method public long getZero();
-    property public final long Zero;
+    property @androidx.compose.runtime.Stable public long Zero;
   }
 
   public final class CornerRadiusKt {
-    method @androidx.compose.runtime.Stable public static long CornerRadius(float x, optional float y);
+    method @androidx.compose.runtime.Stable public static inline long CornerRadius(float x, optional float y);
     method @androidx.compose.runtime.Stable public static long lerp(long start, long stop, float fraction);
+  }
+
+  public final class InlineClassHelperKt {
+    property @kotlin.PublishedApi internal static long DualFirstNaN;
+    property @kotlin.PublishedApi internal static long DualFloatInfinityBase;
+    property @kotlin.PublishedApi internal static long DualFloatSignBit;
+    property @kotlin.PublishedApi internal static long DualLoadedSignificand;
+    property @kotlin.PublishedApi internal static long DualUnsignedFloatMask;
+    property @kotlin.PublishedApi internal static int FloatInfinityBase;
+    property @kotlin.PublishedApi internal static long Uint64High32;
+    property @kotlin.PublishedApi internal static long Uint64Low32;
+    property @kotlin.PublishedApi internal static long UnspecifiedPackedFloats;
+    field @kotlin.PublishedApi internal static final long DualFirstNaN = 9187343246269874177L; // 0x7f8000017f800001L
+    field @kotlin.PublishedApi internal static final long DualFloatInfinityBase = 9187343241974906880L; // 0x7f8000007f800000L
+    field @kotlin.PublishedApi internal static final long DualFloatSignBit = -9223372034707292160L; // 0x8000000080000000L
+    field @kotlin.PublishedApi internal static final long DualLoadedSignificand = 36028792732385279L; // 0x7fffff007fffffL
+    field @kotlin.PublishedApi internal static final long DualUnsignedFloatMask = 9223372034707292159L; // 0x7fffffff7fffffffL
+    field @kotlin.PublishedApi internal static final int FloatInfinityBase = 2139095040; // 0x7f800000
+    field @kotlin.PublishedApi internal static final long Uint64High32 = -9223372034707292160L; // 0x8000000080000000L
+    field @kotlin.PublishedApi internal static final long Uint64Low32 = 4294967297L; // 0x100000001L
+    field @kotlin.PublishedApi internal static final long UnspecifiedPackedFloats = 9205357640488583168L; // 0x7fc000007fc00000L
   }
 
   public final class MutableRect {
     ctor public MutableRect(float left, float top, float right, float bottom);
     method public operator boolean contains(long offset);
+    method public void deflate(float delta);
     method public float getBottom();
+    method public long getBottomCenter();
+    method public long getBottomLeft();
+    method public long getBottomRight();
+    method public long getCenter();
+    method public long getCenterLeft();
+    method public long getCenterRight();
     method public inline float getHeight();
     method public float getLeft();
+    method public float getMaxDimension();
+    method public float getMinDimension();
     method public float getRight();
     method public long getSize();
     method public float getTop();
+    method public long getTopCenter();
+    method public long getTopLeft();
+    method public long getTopRight();
     method public inline float getWidth();
-    method @androidx.compose.runtime.Stable public void intersect(float left, float top, float right, float bottom);
+    method public void inflate(float delta);
+    method public void intersect(float left, float top, float right, float bottom);
     method public boolean isEmpty();
+    method public boolean isFinite();
+    method public boolean isInfinite();
+    method public boolean overlaps(androidx.compose.ui.geometry.MutableRect other);
+    method public boolean overlaps(androidx.compose.ui.geometry.Rect other);
     method public void set(float left, float top, float right, float bottom);
     method public void setBottom(float);
     method public void setLeft(float);
     method public void setRight(float);
     method public void setTop(float);
-    property public final float bottom;
-    property public final inline float height;
-    property public final boolean isEmpty;
-    property public final float left;
-    property public final float right;
-    property public final long size;
-    property public final float top;
-    property public final inline float width;
+    method public void translate(float translateX, float translateY);
+    method public void translate(long offset);
+    property public float bottom;
+    property public long bottomCenter;
+    property public long bottomLeft;
+    property public long bottomRight;
+    property public long center;
+    property public long centerLeft;
+    property public long centerRight;
+    property public inline float height;
+    property public boolean isEmpty;
+    property public boolean isFinite;
+    property public boolean isInfinite;
+    property public float left;
+    property public float maxDimension;
+    property public float minDimension;
+    property public float right;
+    property public long size;
+    property public float top;
+    property public long topCenter;
+    property public long topLeft;
+    property public long topRight;
+    property public inline float width;
   }
 
   public final class MutableRectKt {
+    method public static androidx.compose.ui.geometry.MutableRect MutableRect(long center, float radius);
+    method public static androidx.compose.ui.geometry.MutableRect MutableRect(long offset, long size);
+    method public static androidx.compose.ui.geometry.MutableRect MutableRect(long topLeft, long bottomRight);
     method public static androidx.compose.ui.geometry.Rect toRect(androidx.compose.ui.geometry.MutableRect);
   }
 
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class Offset {
+    ctor public Offset(long packedValue);
     method @androidx.compose.runtime.Stable public inline operator float component1();
     method @androidx.compose.runtime.Stable public inline operator float component2();
     method public long copy(optional float x, optional float y);
     method @androidx.compose.runtime.Stable public operator long div(float operand);
     method @androidx.compose.runtime.Stable public float getDistance();
     method @androidx.compose.runtime.Stable public float getDistanceSquared();
-    method public float getX();
-    method public float getY();
-    method @androidx.compose.runtime.Stable public boolean isValid();
+    method public long getPackedValue();
+    method @androidx.compose.runtime.Stable public inline boolean isValid();
     method @androidx.compose.runtime.Stable public operator long minus(long other);
     method @androidx.compose.runtime.Stable public operator long plus(long other);
     method @androidx.compose.runtime.Stable public operator long rem(float operand);
     method @androidx.compose.runtime.Stable public operator long times(float operand);
-    method @androidx.compose.runtime.Stable public operator long unaryMinus();
-    property @androidx.compose.runtime.Stable public final float x;
-    property @androidx.compose.runtime.Stable public final float y;
+    method @androidx.compose.runtime.Stable public inline operator long unaryMinus();
+    property public long packedValue;
+    property @androidx.compose.runtime.Stable public inline float x;
+    property @androidx.compose.runtime.Stable public inline float y;
     field public static final androidx.compose.ui.geometry.Offset.Companion Companion;
   }
 
@@ -82,18 +142,21 @@ package androidx.compose.ui.geometry {
     method public long getInfinite();
     method public long getUnspecified();
     method public long getZero();
-    property public final long Infinite;
-    property public final long Unspecified;
-    property public final long Zero;
+    property @androidx.compose.runtime.Stable public long Infinite;
+    property @androidx.compose.runtime.Stable public long Unspecified;
+    property @androidx.compose.runtime.Stable public long Zero;
   }
 
   public final class OffsetKt {
-    method @androidx.compose.runtime.Stable public static long Offset(float x, float y);
-    method public static boolean isFinite(long);
-    method public static boolean isSpecified(long);
-    method public static boolean isUnspecified(long);
+    method @androidx.compose.runtime.Stable public static inline long Offset(float x, float y);
+    method public static inline boolean isFinite(long);
+    method public static inline boolean isSpecified(long);
+    method public static inline boolean isUnspecified(long);
     method @androidx.compose.runtime.Stable public static long lerp(long start, long stop, float fraction);
     method public static inline long takeOrElse(long, kotlin.jvm.functions.Function0<androidx.compose.ui.geometry.Offset> block);
+    property @androidx.compose.runtime.Stable public static inline boolean long.isFinite;
+    property @androidx.compose.runtime.Stable public static inline boolean long.isSpecified;
+    property @androidx.compose.runtime.Stable public static inline boolean long.isUnspecified;
   }
 
   @androidx.compose.runtime.Immutable public final class Rect {
@@ -112,7 +175,7 @@ package androidx.compose.ui.geometry {
     method public long getCenter();
     method public long getCenterLeft();
     method public long getCenterRight();
-    method public float getHeight();
+    method public inline float getHeight();
     method public float getLeft();
     method public float getMaxDimension();
     method public float getMinDimension();
@@ -122,7 +185,7 @@ package androidx.compose.ui.geometry {
     method public long getTopCenter();
     method public long getTopLeft();
     method public long getTopRight();
-    method public float getWidth();
+    method public inline float getWidth();
     method @androidx.compose.runtime.Stable public androidx.compose.ui.geometry.Rect inflate(float delta);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.geometry.Rect intersect(androidx.compose.ui.geometry.Rect other);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.geometry.Rect intersect(float otherLeft, float otherTop, float otherRight, float otherBottom);
@@ -132,33 +195,33 @@ package androidx.compose.ui.geometry {
     method public boolean overlaps(androidx.compose.ui.geometry.Rect other);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.geometry.Rect translate(float translateX, float translateY);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.geometry.Rect translate(long offset);
-    property public final float bottom;
-    property public final long bottomCenter;
-    property public final long bottomLeft;
-    property public final long bottomRight;
-    property public final long center;
-    property public final long centerLeft;
-    property public final long centerRight;
-    property @androidx.compose.runtime.Stable public final float height;
-    property @androidx.compose.runtime.Stable public final boolean isEmpty;
-    property @androidx.compose.runtime.Stable public final boolean isFinite;
-    property @androidx.compose.runtime.Stable public final boolean isInfinite;
-    property public final float left;
-    property public final float maxDimension;
-    property public final float minDimension;
-    property public final float right;
-    property @androidx.compose.runtime.Stable public final long size;
-    property public final float top;
-    property public final long topCenter;
-    property public final long topLeft;
-    property public final long topRight;
-    property @androidx.compose.runtime.Stable public final float width;
+    property @androidx.compose.runtime.Stable public float bottom;
+    property public long bottomCenter;
+    property public long bottomLeft;
+    property public long bottomRight;
+    property public long center;
+    property public long centerLeft;
+    property public long centerRight;
+    property @androidx.compose.runtime.Stable public inline float height;
+    property @androidx.compose.runtime.Stable public boolean isEmpty;
+    property @androidx.compose.runtime.Stable public boolean isFinite;
+    property @androidx.compose.runtime.Stable public boolean isInfinite;
+    property @androidx.compose.runtime.Stable public float left;
+    property public float maxDimension;
+    property public float minDimension;
+    property @androidx.compose.runtime.Stable public float right;
+    property @androidx.compose.runtime.Stable public long size;
+    property @androidx.compose.runtime.Stable public float top;
+    property public long topCenter;
+    property public long topLeft;
+    property public long topRight;
+    property @androidx.compose.runtime.Stable public inline float width;
     field public static final androidx.compose.ui.geometry.Rect.Companion Companion;
   }
 
   public static final class Rect.Companion {
     method public androidx.compose.ui.geometry.Rect getZero();
-    property public final androidx.compose.ui.geometry.Rect Zero;
+    property @androidx.compose.runtime.Stable public androidx.compose.ui.geometry.Rect Zero;
   }
 
   public final class RectKt {
@@ -191,23 +254,22 @@ package androidx.compose.ui.geometry {
     method public long getTopRightCornerRadius();
     method public float getWidth();
     method public static androidx.compose.ui.geometry.RoundRect getZero();
-    property public static final androidx.compose.ui.geometry.RoundRect Zero;
-    property public final float bottom;
-    property public final long bottomLeftCornerRadius;
-    property public final long bottomRightCornerRadius;
-    property public final float height;
-    property public final float left;
-    property public final float right;
-    property public final float top;
-    property public final long topLeftCornerRadius;
-    property public final long topRightCornerRadius;
-    property public final float width;
+    property public float bottom;
+    property public long bottomLeftCornerRadius;
+    property public long bottomRightCornerRadius;
+    property public float height;
+    property public float left;
+    property public float right;
+    property public float top;
+    property public long topLeftCornerRadius;
+    property public long topRightCornerRadius;
+    property public float width;
     field public static final androidx.compose.ui.geometry.RoundRect.Companion Companion;
   }
 
   public static final class RoundRect.Companion {
     method public androidx.compose.ui.geometry.RoundRect getZero();
-    property public final androidx.compose.ui.geometry.RoundRect Zero;
+    property public static androidx.compose.ui.geometry.RoundRect Zero;
   }
 
   public final class RoundRectKt {
@@ -229,35 +291,45 @@ package androidx.compose.ui.geometry {
     method public static boolean isSimple(androidx.compose.ui.geometry.RoundRect);
     method public static androidx.compose.ui.geometry.RoundRect lerp(androidx.compose.ui.geometry.RoundRect start, androidx.compose.ui.geometry.RoundRect stop, float fraction);
     method public static androidx.compose.ui.geometry.RoundRect translate(androidx.compose.ui.geometry.RoundRect, long offset);
+    property public static androidx.compose.ui.geometry.Rect androidx.compose.ui.geometry.RoundRect.boundingRect;
+    property public static long androidx.compose.ui.geometry.RoundRect.center;
+    property public static boolean androidx.compose.ui.geometry.RoundRect.isCircle;
+    property public static boolean androidx.compose.ui.geometry.RoundRect.isEllipse;
+    property public static boolean androidx.compose.ui.geometry.RoundRect.isEmpty;
+    property public static boolean androidx.compose.ui.geometry.RoundRect.isFinite;
+    property public static boolean androidx.compose.ui.geometry.RoundRect.isRect;
+    property public static boolean androidx.compose.ui.geometry.RoundRect.isSimple;
+    property public static float androidx.compose.ui.geometry.RoundRect.maxDimension;
+    property public static float androidx.compose.ui.geometry.RoundRect.minDimension;
+    property public static androidx.compose.ui.geometry.Rect androidx.compose.ui.geometry.RoundRect.safeInnerRect;
   }
 
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class Size {
+    ctor public Size(long packedValue);
     method @androidx.compose.runtime.Stable public inline operator float component1();
     method @androidx.compose.runtime.Stable public inline operator float component2();
     method public long copy(optional float width, optional float height);
     method @androidx.compose.runtime.Stable public operator long div(float operand);
-    method public float getHeight();
-    method public float getMaxDimension();
-    method public float getMinDimension();
-    method public float getWidth();
+    method public long getPackedValue();
     method @androidx.compose.runtime.Stable public boolean isEmpty();
     method @androidx.compose.runtime.Stable public operator long times(float operand);
-    property @androidx.compose.runtime.Stable public final float height;
-    property @androidx.compose.runtime.Stable public final float maxDimension;
-    property @androidx.compose.runtime.Stable public final float minDimension;
-    property @androidx.compose.runtime.Stable public final float width;
+    property @androidx.compose.runtime.Stable public inline float height;
+    property @androidx.compose.runtime.Stable public float maxDimension;
+    property @androidx.compose.runtime.Stable public float minDimension;
+    property public long packedValue;
+    property @androidx.compose.runtime.Stable public inline float width;
     field public static final androidx.compose.ui.geometry.Size.Companion Companion;
   }
 
   public static final class Size.Companion {
     method public long getUnspecified();
     method public long getZero();
-    property public final long Unspecified;
-    property public final long Zero;
+    property @androidx.compose.runtime.Stable public long Unspecified;
+    property @androidx.compose.runtime.Stable public long Zero;
   }
 
   public final class SizeKt {
-    method @androidx.compose.runtime.Stable public static long Size(float width, float height);
+    method @androidx.compose.runtime.Stable public static inline long Size(float width, float height);
     method public static long getCenter(long);
     method public static inline boolean isSpecified(long);
     method public static inline boolean isUnspecified(long);
@@ -267,6 +339,9 @@ package androidx.compose.ui.geometry {
     method @androidx.compose.runtime.Stable public static inline operator long times(float, long size);
     method @androidx.compose.runtime.Stable public static inline operator long times(int, long size);
     method @androidx.compose.runtime.Stable public static androidx.compose.ui.geometry.Rect toRect(long);
+    property @androidx.compose.runtime.Stable public static long long.center;
+    property @androidx.compose.runtime.Stable public static inline boolean long.isSpecified;
+    property @androidx.compose.runtime.Stable public static inline boolean long.isUnspecified;
   }
 
 }

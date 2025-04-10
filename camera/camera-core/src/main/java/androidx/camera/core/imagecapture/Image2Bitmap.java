@@ -22,10 +22,7 @@ import static androidx.camera.core.ImageProcessingUtil.convertYUVToRGB;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
-import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.ImageReaderProxys;
@@ -34,27 +31,28 @@ import androidx.camera.core.internal.utils.ImageUtil;
 import androidx.camera.core.processing.Operation;
 import androidx.camera.core.processing.Packet;
 
+import org.jspecify.annotations.NonNull;
+
 import java.nio.ByteBuffer;
 
 /**
  * Convert an {@link ImageProxy} to a {@link Bitmap}.
  *
  * <p>An {@link ImageCaptureException} will be thrown if the conversion failed.
- * Currently it supports only {@link ImageFormat#YUV_420_888} and
- * {@link ImageFormat#JPEG} image. {@link IllegalArgumentException} will be thrown if the input
+ * Currently it supports only {@link ImageFormat#YUV_420_888}, {@link ImageFormat#JPEG} and
+ * {@link ImageFormat#JPEG_R} image. {@link IllegalArgumentException} will be thrown if the input
  * image format is not supported.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class Image2Bitmap implements
         Operation<Packet<ImageProxy>, Bitmap> {
-    @NonNull
     @Override
-    public Bitmap apply(@NonNull Packet<ImageProxy> imageProxyPacket)
+    public @NonNull Bitmap apply(@NonNull Packet<ImageProxy> imageProxyPacket)
             throws ImageCaptureException {
         Bitmap result;
         SafeCloseImageReaderProxy rgbImageReader = null;
         try {
-            if (imageProxyPacket.getFormat() == ImageFormat.YUV_420_888) {
+            int imageFormat = imageProxyPacket.getFormat();
+            if (imageFormat == ImageFormat.YUV_420_888) {
                 ImageProxy yuvImage = imageProxyPacket.getData();
                 boolean needFlip = (imageProxyPacket.getRotationDegrees() % 180) != 0;
                 int tempImageReaderWidth = needFlip ? yuvImage.getHeight() : yuvImage.getWidth();
@@ -83,7 +81,7 @@ public class Image2Bitmap implements
                 Bitmap bitmap = ImageUtil.createBitmapFromImageProxy(imageProxyRGB);
                 imageProxyRGB.close();
                 result = bitmap;
-            } else if (imageProxyPacket.getFormat() == ImageFormat.JPEG) {
+            } else if (imageFormat == ImageFormat.JPEG || imageFormat == ImageFormat.JPEG_R) {
                 ImageProxy jpegImage = imageProxyPacket.getData();
                 Bitmap bitmap = ImageUtil.createBitmapFromImageProxy(jpegImage);
                 jpegImage.close();

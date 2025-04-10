@@ -47,13 +47,42 @@
             android:id="@+id/VideoCallingCheckBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:padding="16dp"
             android:text="CAPABILITY_SUPPORTS_VIDEO_CALLING" />
 
         <CheckBox
             android:id="@+id/streamingCheckBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:padding="16dp"
             android:text="CAPABILITY_SUPPORTS_CALL_STREAMING" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <CheckBox
+                android:id="@+id/ParticipantsCheckbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:padding="16dp"
+                android:text="Participants" />
+
+            <CheckBox
+                android:id="@+id/RaiseHandCheckbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:text="Raise Hand" />
+            <CheckBox
+                android:id="@+id/KickPartCheckbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:text="Kick" />
+        </LinearLayout>
 
         <Button
             android:id="@+id/registerButton"
@@ -64,6 +93,32 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/preCallAudioEndpointsButton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:backgroundTint="#4CAF50"
+                android:text="Fetch Pre-Call Endpoints" />
+
+            <Button
+                android:id="@+id/cancelFlowButton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:backgroundTint="#D92121"
+                android:text="Stop fetching endpoints" />
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/endpointsRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="164dp" />
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -98,7 +153,7 @@
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/callListRecyclerView"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="273dp"
             tools:itemCount="3" />
 
     </LinearLayout>

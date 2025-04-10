@@ -25,13 +25,13 @@ dependencies {
 
     implementation(project(":appcompat:appcompat"))
     implementation(project(":core:haptics:haptics"))
+    implementation(project(":lifecycle:lifecycle-viewmodel"))
 }
 
 android {
+    compileSdk = 35
     defaultConfig {
-        applicationId "androidx.core.haptics.demos"
-        minSdkVersion 19
-        multiDexEnabled true
+        applicationId = "androidx.core.haptics.demos"
     }
-    namespace "androidx.core.haptics.demos"
+    namespace = "androidx.core.haptics.demos"
 }

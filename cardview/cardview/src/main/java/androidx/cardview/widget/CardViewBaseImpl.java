@@ -19,7 +19,7 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Rect;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 class CardViewBaseImpl implements CardViewImpl {
 

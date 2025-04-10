@@ -26,11 +26,9 @@ import java.nio.file.Path
 import javax.annotation.processing.Filer
 import javax.tools.StandardLocation
 import kotlin.io.path.extension
+import kotlin.io.path.invariantSeparatorsPathString
 
-internal class JavacFiler(
-    private val processingEnv: XProcessingEnv,
-    val delegate: Filer
-) : XFiler {
+internal class JavacFiler(private val processingEnv: XProcessingEnv, val delegate: Filer) : XFiler {
 
     // "mode" is ignored in javac, and only applicable in KSP
     override fun write(javaFile: JavaFile, mode: XFiler.Mode) {
@@ -60,23 +58,23 @@ internal class JavacFiler(
             originatingElements.filterIsInstance<JavacElement>().map { it.element }.toTypedArray()
         return when (extension) {
             "java" -> {
-                val name = if (packageName.isEmpty()) {
-                    fileNameWithoutExtension
-                } else {
-                    "$packageName.$fileNameWithoutExtension"
-                }
-                delegate.createSourceFile(
-                    name,
-                    *javaOriginatingElements
-                ).openOutputStream()
+                val name =
+                    if (packageName.isEmpty()) {
+                        fileNameWithoutExtension
+                    } else {
+                        "$packageName.$fileNameWithoutExtension"
+                    }
+                delegate.createSourceFile(name, *javaOriginatingElements).openOutputStream()
             }
             "kt" -> {
-                delegate.createResource(
-                    StandardLocation.SOURCE_OUTPUT,
-                    packageName,
-                    "$fileNameWithoutExtension.$extension",
-                    *javaOriginatingElements
-                ).openOutputStream()
+                delegate
+                    .createResource(
+                        StandardLocation.SOURCE_OUTPUT,
+                        packageName,
+                        "$fileNameWithoutExtension.$extension",
+                        *javaOriginatingElements
+                    )
+                    .openOutputStream()
             }
             else -> error("file type not supported: $extension")
         }
@@ -93,12 +91,13 @@ internal class JavacFiler(
         }
         val javaOriginatingElements =
             originatingElements.filterIsInstance<JavacElement>().map { it.element }.toTypedArray()
-        val fileObject = delegate.createResource(
-            StandardLocation.CLASS_OUTPUT,
-            "",
-            filePath.toString(),
-            *javaOriginatingElements
-        )
+        val fileObject =
+            delegate.createResource(
+                StandardLocation.CLASS_OUTPUT,
+                "",
+                filePath.invariantSeparatorsPathString,
+                *javaOriginatingElements
+            )
         return fileObject.openOutputStream()
     }
 }

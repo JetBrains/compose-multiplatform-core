@@ -17,26 +17,39 @@
 package androidx.credentials
 
 import android.os.Bundle
-import androidx.annotation.RestrictTo
+import androidx.annotation.RequiresApi
 import androidx.credentials.internal.FrameworkClassParsingException
 
 /**
  * Base class for a credential with which the user consented to authenticate to the app.
  *
  * @sample androidx.credentials.samples.processCredential
- *
  * @property type the credential type determined by the credential-type-specific subclass (e.g.
- * [PasswordCredential.TYPE_PASSWORD_CREDENTIAL] for `PasswordCredential` or
- * [PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL] for `PublicKeyCredential`)
+ *   [PasswordCredential.TYPE_PASSWORD_CREDENTIAL] for `PasswordCredential` or
+ *   [PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL] for `PublicKeyCredential`)
  * @property data the credential data in the [Bundle] format
  */
-abstract class Credential internal constructor(
+@OptIn(ExperimentalDigitalCredentialApi::class)
+abstract class Credential
+internal constructor(
     val type: String,
     val data: Bundle,
 ) {
-    internal companion object {
+    companion object {
+        /**
+         * Parses the raw data into an instance of [Credential].
+         *
+         * It is recommended to construct a Credential by directly instantiating a Credential
+         * subclass, instead of using this API. This API should only be used by a small subset of
+         * system apps that reconstruct an existing object for user interactions such as collecting
+         * consents.
+         *
+         * @param type matches [Credential.type], the credential type
+         * @param data matches [Credential.data], the credential data in the [Bundle] format; this
+         *   should be constructed and retrieved from the a given [Credential] itself and never be
+         *   created from scratch
+         */
         @JvmStatic
-        @RestrictTo(RestrictTo.Scope.LIBRARY) // used from java tests
         fun createFrom(type: String, data: Bundle): Credential {
             return try {
                 when (type) {
@@ -44,6 +57,8 @@ abstract class Credential internal constructor(
                         PasswordCredential.createFrom(data)
                     PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL ->
                         PublicKeyCredential.createFrom(data)
+                    RestoreCredential.TYPE_RESTORE_CREDENTIAL -> RestoreCredential.createFrom(data)
+                    DigitalCredential.TYPE_DIGITAL_CREDENTIAL -> DigitalCredential.createFrom(data)
                     else -> throw FrameworkClassParsingException()
                 }
             } catch (e: FrameworkClassParsingException) {
@@ -51,6 +66,22 @@ abstract class Credential internal constructor(
                 // with the raw framework values.
                 CustomCredential(type, data)
             }
+        }
+
+        /**
+         * Parses the [credential] into an instance of [Credential].
+         *
+         * It is recommended to construct a Credential by directly instantiating a Credential
+         * subclass, instead of using this API. This API should only be used by a small subset of
+         * system apps that reconstruct an existing object for user interactions such as collecting
+         * consents.
+         *
+         * @param credential the framework Credential object
+         */
+        @JvmStatic
+        @RequiresApi(34)
+        fun createFrom(credential: android.credentials.Credential): Credential {
+            return createFrom(credential.type, credential.data)
         }
     }
 }

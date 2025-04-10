@@ -17,16 +17,13 @@
 package androidx.room.solver.query.parameter
 
 import androidx.room.compiler.codegen.XCodeBlock
-import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.beginForEachControlFlow
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.processing.XNullability
 import androidx.room.ext.CollectionsSizeExprCode
 import androidx.room.solver.CodeGenScope
 import androidx.room.solver.types.StatementValueBinder
 
-/**
- * Binds Collection<T> (e.g. List<T>) into String[] query args.
- */
+/** Binds Collection<T> (e.g. List<T>) into String[] query args. */
 class CollectionQueryParameterAdapter(
     private val bindAdapter: StatementValueBinder,
     private val nullability: XNullability,
@@ -41,13 +38,14 @@ class CollectionQueryParameterAdapter(
             fun XCodeBlock.Builder.addForEachBindCode() {
                 val itrVar = scope.getTmpVar("_item")
                 beginForEachControlFlow(
-                    itemVarName = itrVar,
-                    typeName = bindAdapter.typeMirror().asTypeName(),
-                    iteratorVarName = inputVarName
-                ).apply {
-                    bindAdapter.bindToStmt(stmtVarName, startIndexVarName, itrVar, scope)
-                    addStatement("%L++", startIndexVarName)
-                }
+                        itemVarName = itrVar,
+                        typeName = bindAdapter.typeMirror().asTypeName(),
+                        iteratorVarName = inputVarName
+                    )
+                    .apply {
+                        bindAdapter.bindToStmt(stmtVarName, startIndexVarName, itrVar, scope)
+                        addStatement("%L++", startIndexVarName)
+                    }
                 endControlFlow()
             }
             if (nullability == XNullability.NONNULL) {
@@ -63,17 +61,17 @@ class CollectionQueryParameterAdapter(
     }
 
     override fun getArgCount(inputVarName: String, outputVarName: String, scope: CodeGenScope) {
-        val sizeExpr = CollectionsSizeExprCode(scope.language, inputVarName)
-        val countAssignment = if (nullability == XNullability.NONNULL) {
-            sizeExpr
-        } else {
-            XCodeBlock.ofTernaryIf(
-                language = scope.language,
-                condition = XCodeBlock.of(scope.language, "%L == null", inputVarName),
-                leftExpr = XCodeBlock.of(scope.language, "1"),
-                rightExpr = XCodeBlock.of(scope.language, "%L", sizeExpr)
-            )
-        }
+        val sizeExpr = CollectionsSizeExprCode(inputVarName)
+        val countAssignment =
+            if (nullability == XNullability.NONNULL) {
+                sizeExpr
+            } else {
+                XCodeBlock.ofTernaryIf(
+                    condition = XCodeBlock.of("%L == null", inputVarName),
+                    leftExpr = XCodeBlock.of("1"),
+                    rightExpr = XCodeBlock.of("%L", sizeExpr)
+                )
+            }
         scope.builder.addLocalVariable(
             name = outputVarName,
             typeName = XTypeName.PRIMITIVE_INT,

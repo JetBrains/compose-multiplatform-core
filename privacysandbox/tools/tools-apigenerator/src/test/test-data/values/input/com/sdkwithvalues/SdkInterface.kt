@@ -1,10 +1,12 @@
 package com.sdkwithvalues
 
+import android.os.Bundle
 import androidx.privacysandbox.tools.PrivacySandboxInterface
 import androidx.privacysandbox.tools.PrivacySandboxService
 import androidx.privacysandbox.tools.PrivacySandboxValue
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
-import androidx.privacysandbox.ui.core.SdkActivityLauncher
+import androidx.privacysandbox.ui.core.SharedUiAdapter
+import androidx.privacysandbox.activity.core.SdkActivityLauncher
 
 @PrivacySandboxService
 interface SdkInterface {
@@ -13,6 +15,8 @@ interface SdkInterface {
     suspend fun processNullableValues(request: SdkRequest?): SdkResponse?
 
     suspend fun processValueList(x: List<SdkRequest>): List<SdkResponse>
+
+    suspend fun processEnum(requestFlag: RequestFlag): RequestFlag
 }
 
 @PrivacySandboxValue
@@ -26,10 +30,28 @@ data class InnerSdkValue(
     val hugeNumber: Double,
     val myInterface: MyInterface,
     val myUiInterface: MyUiInterface,
+    val mySharedUiInterface: MySharedUiInterface,
     val numbers: List<Int>,
+    val bundle: Bundle,
     val maybeNumber: Int?,
     val maybeInterface: MyInterface?,
-)
+    val maybeBundle: Bundle?,
+) {
+    companion object {
+        const val DEFAULT_USER_ID = 42
+        const val DEFAULT_SEPARATOR = '"'
+    }
+}
+
+@PrivacySandboxValue
+enum class RequestFlag {
+    UP,
+    DOWN;
+
+    companion object {
+        const val STEP_SIZE = 5
+    }
+}
 
 @PrivacySandboxValue
 data class SdkRequest(
@@ -38,6 +60,7 @@ data class SdkRequest(
     val maybeInnerValue: InnerSdkValue?,
     val moreValues: List<InnerSdkValue>,
     val activityLauncher: SdkActivityLauncher,
+    val requestFlag: RequestFlag,
 )
 
 @PrivacySandboxValue
@@ -50,5 +73,10 @@ interface MyInterface {
 
 @PrivacySandboxInterface
 interface MyUiInterface : SandboxedUiAdapter {
+    fun doUiStuff()
+}
+
+@PrivacySandboxInterface
+interface MySharedUiInterface : SharedUiAdapter {
     fun doUiStuff()
 }

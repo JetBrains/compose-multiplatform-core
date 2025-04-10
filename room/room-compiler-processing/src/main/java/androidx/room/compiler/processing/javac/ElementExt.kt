@@ -21,43 +21,62 @@ import com.google.auto.common.MoreElements
 import com.google.auto.common.MoreTypes
 import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
+import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
+import javax.lang.model.type.ExecutableType
+import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
 import kotlin.coroutines.Continuation
 
-private val NONNULL_ANNOTATIONS = arrayOf(
-    "androidx.annotation.NonNull",
-    "org.jetbrains.annotations.NotNull"
-)
+private val NONNULL_ANNOTATIONS =
+    arrayOf(
+        "androidx.annotation.NonNull",
+        "org.jetbrains.annotations.NotNull",
+        "org.jspecify.annotations.NonNull"
+    )
 
-private val NULLABLE_ANNOTATIONS = arrayOf(
-    "androidx.annotation.Nullable",
-    "org.jetbrains.annotations.Nullable"
-)
+private val NULLABLE_ANNOTATIONS =
+    arrayOf(
+        "androidx.annotation.Nullable",
+        "org.jetbrains.annotations.Nullable",
+        "org.jspecify.annotations.Nullable"
+    )
+
+/** Checks if any of the [annotations] are present on the [Element] or its [type]. */
+private fun Element.hasAnyOf(annotations: Array<String>, type: TypeMirror) =
+    annotationMirrors.hasAnyOf(annotations) || type.annotationMirrors.hasAnyOf(annotations)
 
 @Suppress("UnstableApiUsage")
-private fun Element.hasAnyOf(annotations: Array<String>) =
-    annotationMirrors.any { annotationMirror ->
-        val annotationTypeElement = MoreElements.asType(annotationMirror.annotationType.asElement())
-        annotations.any { annotationTypeElement.qualifiedName.contentEquals(it) }
-    }
+private fun List<AnnotationMirror>.hasAnyOf(annotations: Array<String>) = any { annotationMirror ->
+    val annotationTypeElement = MoreElements.asType(annotationMirror.annotationType.asElement())
+    annotations.any { annotationTypeElement.qualifiedName.contentEquals(it) }
+}
 
 internal val Element.nullability: XNullability
-    get() = if (asType().kind.isPrimitive || hasAnyOf(NONNULL_ANNOTATIONS)) {
-        XNullability.NONNULL
-    } else if (hasAnyOf(NULLABLE_ANNOTATIONS)) {
-        XNullability.NULLABLE
-    } else {
-        XNullability.UNKNOWN
+    get() {
+        // Get the type of the element: if this is a method, use the return type instead of the full
+        // method type since the return is what determines nullability.
+        val asType =
+            asType().let {
+                when (it) {
+                    is ExecutableType -> it.returnType
+                    else -> it
+                }
+            }
+        return if (asType.kind.isPrimitive || hasAnyOf(NONNULL_ANNOTATIONS, asType)) {
+            XNullability.NONNULL
+        } else if (hasAnyOf(NULLABLE_ANNOTATIONS, asType)) {
+            XNullability.NULLABLE
+        } else {
+            XNullability.UNKNOWN
+        }
     }
 
 internal fun Element.requireEnclosingType(env: JavacProcessingEnv): JavacTypeElement {
-    return checkNotNull(enclosingType(env)) {
-        "Cannot find required enclosing type for $this"
-    }
+    return checkNotNull(enclosingType(env)) { "Cannot find required enclosing type for $this" }
 }
 
 @Suppress("UnstableApiUsage")
@@ -73,10 +92,10 @@ internal fun Element.enclosingType(env: JavacProcessingEnv): JavacTypeElement? {
  * Tests whether one suspend function, as a member of a given types, overrides another suspend
  * function.
  *
- * This method assumes function one and two are suspend methods, i.e. they both return Object,
- * have at least one parameter and the last parameter is of type Continuation. This method is
- * similar to MoreElements.overrides() but doesn't check isSubsignature() due to Continuation's
- * type arg being covariant, instead the equivalent is done by checking each parameter explicitly.
+ * This method assumes function one and two are suspend methods, i.e. they both return Object, have
+ * at least one parameter and the last parameter is of type Continuation. This method is similar to
+ * MoreElements.overrides() but doesn't check isSubsignature() due to Continuation's type arg being
+ * covariant, instead the equivalent is done by checking each parameter explicitly.
  */
 internal fun suspendOverrides(
     overrider: ExecutableElement,
@@ -97,9 +116,11 @@ internal fun suspendOverrides(
         return false
     }
     val overriddenType = overridden.enclosingElement as? TypeElement ?: return false
-    if (!typeUtils.isSubtype(
+    if (
+        !typeUtils.isSubtype(
             typeUtils.erasure(owner.asType()),
-            typeUtils.erasure(overriddenType.asType()))
+            typeUtils.erasure(overriddenType.asType())
+        )
     ) {
         return false
     }
@@ -111,8 +132,7 @@ internal fun suspendOverrides(
     }
     val continuationTypeName = TypeName.get(Continuation::class.java)
     val overriderLastParamTypeName =
-        (TypeName.get(overriderExecutable.parameterTypes.last()) as? ParameterizedTypeName)
-            ?.rawType
+        (TypeName.get(overriderExecutable.parameterTypes.last()) as? ParameterizedTypeName)?.rawType
     check(overriderLastParamTypeName == continuationTypeName) {
         "Expected $overriderLastParamTypeName to be $continuationTypeName"
     }
@@ -123,22 +143,29 @@ internal fun suspendOverrides(
         "Expected $overriddenLastParamTypeName to be $continuationTypeName"
     }
     val overriderContinuationTypeArg =
-        MoreTypes.asDeclared(overriderExecutable.parameterTypes.last())
-            .typeArguments.single().let { it.extendsBound() ?: it }
+        MoreTypes.asDeclared(overriderExecutable.parameterTypes.last()).typeArguments.single().let {
+            it.extendsBound() ?: it
+        }
     val overriddenContinuationTypeArg =
         MoreTypes.asDeclared(overriddenExecutable.parameterTypes.last())
-            .typeArguments.single().let { it.extendsBound() ?: it }
-    if (!typeUtils.isSameType(
+            .typeArguments
+            .single()
+            .let { it.extendsBound() ?: it }
+    if (
+        !typeUtils.isSameType(
             typeUtils.erasure(overriderContinuationTypeArg),
-            typeUtils.erasure(overriddenContinuationTypeArg))
+            typeUtils.erasure(overriddenContinuationTypeArg)
+        )
     ) {
         return false
     }
     if (overriddenExecutable.parameterTypes.size >= 2) {
-        overriderExecutable.parameterTypes.zip(overriddenExecutable.parameterTypes)
+        overriderExecutable.parameterTypes
+            .zip(overriddenExecutable.parameterTypes)
             .dropLast(1)
             .forEach { (overriderParam, overriddenParam) ->
-                if (!typeUtils.isSameType(
+                if (
+                    !typeUtils.isSameType(
                         typeUtils.erasure(overriderParam),
                         typeUtils.erasure(overriddenParam)
                     )

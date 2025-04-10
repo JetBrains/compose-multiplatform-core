@@ -16,22 +16,24 @@
 
 package androidx.appsearch.playservicesstorage.converter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.Migrator;
 import androidx.appsearch.app.PackageIdentifier;
+import androidx.appsearch.app.SchemaVisibilityConfig;
 import androidx.appsearch.app.SetSchemaRequest;
 import androidx.appsearch.app.SetSchemaResponse;
 import androidx.core.util.Preconditions;
 
+import org.jspecify.annotations.NonNull;
+
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Translates between Gms and Jetpack versions of {@link SetSchemaRequest}.
-
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class SetSchemaRequestToGmsConverter {
@@ -42,8 +44,7 @@ public final class SetSchemaRequestToGmsConverter {
      * Translates a jetpack {@link SetSchemaRequest} into a googleGms
      * {@link com.google.android.gms.appsearch.SetSchemaRequest}.
      */
-    @NonNull
-    public static com.google.android.gms.appsearch.SetSchemaRequest toGmsSetSchemaRequest(
+    public static com.google.android.gms.appsearch.@NonNull SetSchemaRequest toGmsSetSchemaRequest(
             @NonNull SetSchemaRequest jetpackRequest) {
         Preconditions.checkNotNull(jetpackRequest);
         com.google.android.gms.appsearch.SetSchemaRequest.Builder gmsBuilder =
@@ -76,6 +77,28 @@ public final class SetSchemaRequestToGmsConverter {
                 }
             }
         }
+        if (!jetpackRequest.getPubliclyVisibleSchemas().isEmpty()) {
+            for (Map.Entry<String, PackageIdentifier> entry :
+                    jetpackRequest.getPubliclyVisibleSchemas().entrySet()) {
+                PackageIdentifier publiclyVisibleTargetPackage = entry.getValue();
+                gmsBuilder.setPubliclyVisibleSchema(
+                        entry.getKey(),
+                        new com.google.android.gms.appsearch.PackageIdentifier(
+                                publiclyVisibleTargetPackage.getPackageName(),
+                                publiclyVisibleTargetPackage.getSha256Certificate()));
+            }
+        }
+
+        if (!jetpackRequest.getSchemasVisibleToConfigs().isEmpty()) {
+            for (Map.Entry<String, Set<SchemaVisibilityConfig>> entry :
+                    jetpackRequest.getSchemasVisibleToConfigs().entrySet()) {
+                for (SchemaVisibilityConfig jetpackConfig : entry.getValue()) {
+                    com.google.android.gms.appsearch.SchemaVisibilityConfig gmsConfig =
+                            toGmsSchemaVisibilityConfig(jetpackConfig);
+                    gmsBuilder.addSchemaTypeVisibleToConfig(entry.getKey(), gmsConfig);
+                }
+            }
+        }
         for (Map.Entry<String, Migrator> entry : jetpackRequest.getMigrators().entrySet()) {
             Migrator jetpackMigrator = entry.getValue();
             com.google.android.gms.appsearch.Migrator gmsMigrator =
@@ -85,12 +108,11 @@ public final class SetSchemaRequestToGmsConverter {
                             return jetpackMigrator.shouldMigrate(currentVersion, finalVersion);
                         }
 
-                        @NonNull
                         @Override
-                        public com.google.android.gms.appsearch.GenericDocument onUpgrade(
+                        public com.google.android.gms.appsearch.@NonNull GenericDocument onUpgrade(
                                 int currentVersion,
                                 int finalVersion,
-                                @NonNull com.google.android.gms.appsearch.GenericDocument
+                                com.google.android.gms.appsearch.@NonNull GenericDocument
                                         inGmsDocument) {
                             GenericDocument inJetpackDocument =
                                     GenericDocumentToGmsConverter
@@ -106,13 +128,13 @@ public final class SetSchemaRequestToGmsConverter {
                                             outJetpackDocument);
                         }
 
-                        @NonNull
                         @Override
-                        public com.google.android.gms.appsearch.GenericDocument onDowngrade(
-                                int currentVersion,
-                                int finalVersion,
-                                @NonNull com.google.android.gms.appsearch.GenericDocument
-                                        inGmsDocument) {
+                        public com.google.android.gms.appsearch.@NonNull GenericDocument
+                                onDowngrade(
+                                        int currentVersion,
+                                        int finalVersion,
+                                        com.google.android.gms.appsearch.@NonNull GenericDocument
+                                                inGmsDocument) {
                             GenericDocument inJetpackDocument =
                                     GenericDocumentToGmsConverter
                                             .toJetpackGenericDocument(
@@ -140,9 +162,8 @@ public final class SetSchemaRequestToGmsConverter {
      * {@link com.google.android.gms.appsearch.SetSchemaResponse} into a jetpack
      * {@link SetSchemaResponse}.
      */
-    @NonNull
-    public static SetSchemaResponse toJetpackSetSchemaResponse(
-            @NonNull com.google.android.gms.appsearch.SetSchemaResponse
+    public static @NonNull SetSchemaResponse toJetpackSetSchemaResponse(
+            com.google.android.gms.appsearch.@NonNull SetSchemaResponse
                     gmsResponse) {
         Preconditions.checkNotNull(gmsResponse);
         SetSchemaResponse.Builder jetpackBuilder = new SetSchemaResponse.Builder()
@@ -160,5 +181,41 @@ public final class SetSchemaRequestToGmsConverter {
             );
         }
         return jetpackBuilder.build();
+    }
+
+    /**
+     * Translates a jetpack {@link SchemaVisibilityConfig} into a gms
+     * {@link com.google.android.gms.appsearch.SchemaVisibilityConfig}.
+     */
+    private static com.google.android.gms.appsearch.@NonNull SchemaVisibilityConfig
+            toGmsSchemaVisibilityConfig(@NonNull SchemaVisibilityConfig jetpackConfig) {
+        Preconditions.checkNotNull(jetpackConfig);
+        com.google.android.gms.appsearch.SchemaVisibilityConfig.Builder gmsBuilder =
+                new com.google.android.gms.appsearch.SchemaVisibilityConfig.Builder();
+
+        // Translate allowedPackages
+        List<PackageIdentifier> allowedPackages = jetpackConfig.getAllowedPackages();
+        for (int i = 0; i < allowedPackages.size(); i++) {
+            gmsBuilder.addAllowedPackage(new com.google.android.gms.appsearch.PackageIdentifier(
+                    allowedPackages.get(i).getPackageName(),
+                    allowedPackages.get(i).getSha256Certificate()));
+        }
+
+        // Translate requiredPermissions
+        for (Set<Integer> requiredPermissions : jetpackConfig.getRequiredPermissions()) {
+            gmsBuilder.addRequiredPermissions(requiredPermissions);
+        }
+
+        // Translate publiclyVisibleTargetPackage
+        PackageIdentifier publiclyVisibleTargetPackage =
+                jetpackConfig.getPubliclyVisibleTargetPackage();
+        if (publiclyVisibleTargetPackage != null) {
+            gmsBuilder.setPubliclyVisibleTargetPackage(
+                    new com.google.android.gms.appsearch.PackageIdentifier(
+                            publiclyVisibleTargetPackage.getPackageName(),
+                            publiclyVisibleTargetPackage.getSha256Certificate()));
+        }
+
+        return gmsBuilder.build();
     }
 }

@@ -18,8 +18,7 @@ package androidx.camera.extensions.internal.sessionprocessor;
 
 import android.media.Image;
 
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An Image reference container that enables the Image sharing between Camera2/CameraX and OEM
@@ -28,7 +27,6 @@ import androidx.annotation.RequiresApi;
  *
  * <p>Implemented by Camera2/CameraX.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public interface ImageReference {
     /**
      * Increment the reference count. Returns true if the value was incremented.
@@ -47,6 +45,5 @@ public interface ImageReference {
      * Return the Android image. This object MUST not be closed directly.
      * Returns null when the reference count is zero.
      */
-    @Nullable
-    Image get();
+    @Nullable Image get();
 }

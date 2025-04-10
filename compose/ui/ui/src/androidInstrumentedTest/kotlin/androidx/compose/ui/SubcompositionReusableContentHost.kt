@@ -24,19 +24,19 @@ import androidx.compose.ui.layout.SubcomposeSlotReusePolicy
 
 // TODO use ReusableContentHost directly after we fix b/309821523
 @Composable
-fun SubcompositionReusableContentHost(
-    active: Boolean,
-    content: @Composable () -> Unit
-) {
-    SubcomposeLayout(
-        remember { SubcomposeLayoutState(SubcomposeSlotReusePolicy(1)) }
-    ) { constraints ->
-        val placeable = if (active) {
-            subcompose(null, content).map { it.measure(constraints) }
-        } else {
-            emptyList()
-        }
-        layout(0, 0) {
+fun SubcompositionReusableContentHost(active: Boolean, content: @Composable () -> Unit) {
+    SubcomposeLayout(remember { SubcomposeLayoutState(SubcomposeSlotReusePolicy(1)) }) { constraints
+        ->
+        val placeable =
+            if (active) {
+                subcompose(null, content).map { it.measure(constraints) }
+            } else {
+                emptyList()
+            }
+        layout(
+            placeable.maxOfOrNull { it.width } ?: 0,
+            placeable.maxOfOrNull { it.height } ?: 0,
+        ) {
             placeable.forEach { it.place(0, 0) }
         }
     }

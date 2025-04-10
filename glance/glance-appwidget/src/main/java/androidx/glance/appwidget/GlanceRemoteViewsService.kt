@@ -24,20 +24,17 @@ import android.os.Build
 import android.util.Log
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
-import androidx.glance.session.GlanceSessionManager
-import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.runBlocking
 
 /**
  * [RemoteViewsService] to be connected to for a remote adapter that returns RemoteViews for lazy
  * lists / grids.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class GlanceRemoteViewsService : RemoteViewsService() {
-    override fun onGetViewFactory(intent: Intent): RemoteViewsFactory {
+open class GlanceRemoteViewsService : RemoteViewsService() {
+    override fun onGetViewFactory(intent: Intent?): RemoteViewsFactory {
+        requireNotNull(intent) { "Intent is null" }
         val appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
         check(appWidgetId != -1) { "No app widget id was present in the intent" }
 
@@ -50,10 +47,11 @@ class GlanceRemoteViewsService : RemoteViewsService() {
         return GlanceRemoteViewsFactory(this, appWidgetId, viewId, sizeInfo)
     }
 
-    companion object {
-        const val EXTRA_VIEW_ID = "androidx.glance.widget.extra.view_id"
-        const val EXTRA_SIZE_INFO = "androidx.glance.widget.extra.size_info"
-        const val TAG = "GlanceRemoteViewService"
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    internal companion object {
+        internal const val EXTRA_VIEW_ID = "androidx.glance.widget.extra.view_id"
+        internal const val EXTRA_SIZE_INFO = "androidx.glance.widget.extra.size_info"
+        internal const val TAG = "GlanceRemoteViewService"
 
         // An in-memory store containing items to be returned via the adapter when requested.
         private val InMemoryStore = RemoteCollectionItemsInMemoryStore()
@@ -83,9 +81,7 @@ class GlanceRemoteViewsService : RemoteViewsService() {
 
         // Removes items in the store for the requested view in appwidget for the specified size.
         private fun removeItems(appWidgetId: Int, viewId: Int, sizeInfo: String) {
-            synchronized(InMemoryStore) {
-                InMemoryStore.removeItems(appWidgetId, viewId, sizeInfo)
-            }
+            synchronized(InMemoryStore) { InMemoryStore.removeItems(appWidgetId, viewId, sizeInfo) }
         }
     }
 
@@ -112,34 +108,25 @@ class GlanceRemoteViewsService : RemoteViewsService() {
                 val glanceId = AppWidgetId(appWidgetId)
                 try {
                     startSessionIfNeededAndWaitUntilReady(glanceId)
-                } catch (e: ClosedSendChannelException) {
-                    // This catch should no longer be necessary.
-                    // Because we use SessionManager.runWithLock, we are guaranteed that the session
-                    // we create won't be closed by concurrent calls to SessionManager. Currently,
-                    // the only way a session would be closed is if there is an error in the
-                    // composition that happens between the call to `startSession` and
-                    // `waitForReady()` In that case, the composition error will be logged by
-                    // GlanceAppWidget.onCompositionError, but could still cause
-                    // ClosedSendChannelException. This is pretty unlikely, however keeping this
-                    // here to avoid crashes in that scenario.
+                } catch (e: Throwable) {
                     Log.e(TAG, "Error when trying to start session for list items", e)
                 }
             }
         }
 
         private suspend fun startSessionIfNeededAndWaitUntilReady(glanceId: AppWidgetId) {
-            val job = getGlanceAppWidget()?.let { widget ->
-                GlanceSessionManager.runWithLock {
-                    if (isSessionRunning(context, glanceId.toSessionKey())) {
-                        // If session is already running, data must have already been loaded into
-                        // the store during composition.
-                        return@runWithLock null
-                    }
-                    startSession(context, AppWidgetSession(widget, glanceId))
-                    val session = getSession(glanceId.toSessionKey()) as AppWidgetSession
+            val job =
+                getGlanceAppWidget()?.getOrCreateAppWidgetSession(
+                    context = context,
+                    glanceId = glanceId,
+                    options = null
+                ) { session, wasRunning ->
+                    // If session is already running, data must have already been loaded
+                    // into
+                    // the store during composition.
+                    if (wasRunning) return@getOrCreateAppWidgetSession null
                     session.waitForReady()
-                }
-            } ?: UnmanagedSessionReceiver.getSession(appWidgetId)?.waitForReady()
+                } ?: UnmanagedSessionReceiver.getSession(appWidgetId)?.waitForReady()
             // The following join() may throw CancellationException if the session is closed before
             // it is ready. This will have the effect of cancelling the runBlocking scope.
             job?.join()
@@ -150,8 +137,8 @@ class GlanceRemoteViewsService : RemoteViewsService() {
             val providerInfo = appWidgetManager.getAppWidgetInfo(appWidgetId)
             return providerInfo?.provider?.className?.let { className ->
                 val receiverClass = Class.forName(className)
-                (receiverClass.getDeclaredConstructor()
-                    .newInstance() as GlanceAppWidgetReceiver).glanceAppWidget
+                (receiverClass.getDeclaredConstructor().newInstance() as GlanceAppWidgetReceiver)
+                    .glanceAppWidget
             }
         }
 
@@ -190,9 +177,7 @@ class GlanceRemoteViewsService : RemoteViewsService() {
     }
 }
 
-/**
- * An in-memory store holding [RemoteCollectionItems] for each sized lazy view in appWidgets.
- */
+/** An in-memory store holding [RemoteCollectionItems] for each sized lazy view in appWidgets. */
 private class RemoteCollectionItemsInMemoryStore {
     private val items = mutableMapOf<String, RemoteCollectionItems>()
 
@@ -205,16 +190,12 @@ private class RemoteCollectionItemsInMemoryStore {
         items[key(appWidgetId, viewId, sizeInfo)] = remoteCollectionItems
     }
 
-    /**
-     * Returns the collection items corresponding to the requested view in appwidget and size.
-     */
+    /** Returns the collection items corresponding to the requested view in appwidget and size. */
     fun getItems(appWidgetId: Int, viewId: Int, sizeInfo: String): RemoteCollectionItems {
         return items[key(appWidgetId, viewId, sizeInfo)] ?: RemoteCollectionItems.Empty
     }
 
-    /**
-     * Removes the collection items corresponding to the requested view in appwidget and size.
-     */
+    /** Removes the collection items corresponding to the requested view in appwidget and size. */
     fun removeItems(appWidgetId: Int, viewId: Int, sizeInfo: String) {
         items.remove(key(appWidgetId, viewId, sizeInfo))
     }
@@ -233,10 +214,8 @@ private class RemoteCollectionItemsInMemoryStore {
  * GlanceRemoteViewsService using an intent.
  */
 @Suppress("DEPRECATION")
-@DoNotInline
 internal fun RemoteViews.setRemoteAdapter(
-    context: Context,
-    appWidgetId: Int,
+    translationContext: TranslationContext,
     viewId: Int,
     sizeInfo: String,
     items: RemoteCollectionItems
@@ -244,38 +223,34 @@ internal fun RemoteViews.setRemoteAdapter(
     if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S) {
         CollectionItemsApi31Impl.setRemoteAdapter(this, viewId, items)
     } else {
-        val intent = Intent(context, GlanceRemoteViewsService::class.java)
-            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-            .putExtra(GlanceRemoteViewsService.EXTRA_VIEW_ID, viewId)
-            .putExtra(GlanceRemoteViewsService.EXTRA_SIZE_INFO, sizeInfo)
-            .apply {
-                // Set a data Uri to disambiguate Intents for different widget/view ids.
-                data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
-            }
+        val context = translationContext.context
+        val appWidgetId = translationContext.appWidgetId
+        val intent =
+            Intent()
+                .setComponent(translationContext.glanceComponents.remoteViewsService)
+                .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                .putExtra(GlanceRemoteViewsService.EXTRA_VIEW_ID, viewId)
+                .putExtra(GlanceRemoteViewsService.EXTRA_SIZE_INFO, sizeInfo)
+                .apply {
+                    // Set a data Uri to disambiguate Intents for different widget/view ids.
+                    data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
+                }
         check(context.packageManager.resolveService(intent, 0) != null) {
-            "GlanceRemoteViewsService could not be resolved, check the app manifest."
+            "${intent.component} could not be resolved, check the app manifest."
         }
         setRemoteAdapter(viewId, intent)
-        GlanceRemoteViewsService.saveItems(
-            appWidgetId,
-            viewId,
-            sizeInfo,
-            items
-        )
+        GlanceRemoteViewsService.saveItems(appWidgetId, viewId, sizeInfo, items)
         AppWidgetManager.getInstance(context).notifyAppWidgetViewDataChanged(appWidgetId, viewId)
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.S)
 private object CollectionItemsApi31Impl {
-    @DoNotInline
     fun setRemoteAdapter(remoteViews: RemoteViews, viewId: Int, items: RemoteCollectionItems) {
         remoteViews.setRemoteAdapter(viewId, toPlatformCollectionItems(items))
     }
 
-    @DoNotInline
-    fun toPlatformCollectionItems(items: RemoteCollectionItems):
-        RemoteViews.RemoteCollectionItems {
+    fun toPlatformCollectionItems(items: RemoteCollectionItems): RemoteViews.RemoteCollectionItems {
         return RemoteViews.RemoteCollectionItems.Builder()
             .setHasStableIds(items.hasStableIds())
             .setViewTypeCount(items.viewTypeCount)

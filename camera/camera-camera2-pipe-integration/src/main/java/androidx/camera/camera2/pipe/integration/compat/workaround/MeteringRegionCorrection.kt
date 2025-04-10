@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.integration.compat.workaround
 
 import android.graphics.PointF
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.integration.compat.quirk.AfRegionFlipHorizontallyQuirk
 import androidx.camera.camera2.pipe.integration.compat.quirk.CameraQuirks
 import androidx.camera.core.FocusMeteringAction
@@ -27,17 +24,17 @@ import androidx.camera.core.MeteringPoint
 import dagger.Module
 import dagger.Provides
 
-interface MeteringRegionCorrection {
-    fun getCorrectedPoint(
+public interface MeteringRegionCorrection {
+    public fun getCorrectedPoint(
         meteringPoint: MeteringPoint,
         @FocusMeteringAction.MeteringMode meteringMode: Int,
     ): PointF
 
     @Module
-    abstract class Bindings {
-        companion object {
+    public abstract class Bindings {
+        public companion object {
             @Provides
-            fun provideMeteringRegionCorrection(
+            public fun provideMeteringRegionCorrection(
                 cameraQuirks: CameraQuirks
             ): MeteringRegionCorrection {
                 return if (cameraQuirks.quirks.contains(AfRegionFlipHorizontallyQuirk::class.java))
@@ -48,20 +45,19 @@ interface MeteringRegionCorrection {
     }
 }
 
-object MeteringRegionQuirkCorrection : MeteringRegionCorrection {
-    /**
-     * Return corrected normalized point by given MeteringPoint, MeteringMode and Quirks.
-     */
+public object MeteringRegionQuirkCorrection : MeteringRegionCorrection {
+    /** Return corrected normalized point by given MeteringPoint, MeteringMode and Quirks. */
     override fun getCorrectedPoint(
         meteringPoint: MeteringPoint,
         @FocusMeteringAction.MeteringMode meteringMode: Int,
-    ) = when (meteringMode) {
-        FocusMeteringAction.FLAG_AF -> PointF(1f - meteringPoint.x, meteringPoint.y)
-        else -> PointF(meteringPoint.x, meteringPoint.y)
-    }
+    ): PointF =
+        when (meteringMode) {
+            FocusMeteringAction.FLAG_AF -> PointF(1f - meteringPoint.x, meteringPoint.y)
+            else -> PointF(meteringPoint.x, meteringPoint.y)
+        }
 }
 
-object NoOpMeteringRegionCorrection : MeteringRegionCorrection {
-    override fun getCorrectedPoint(meteringPoint: MeteringPoint, meteringMode: Int) =
+public object NoOpMeteringRegionCorrection : MeteringRegionCorrection {
+    override fun getCorrectedPoint(meteringPoint: MeteringPoint, meteringMode: Int): PointF =
         PointF(meteringPoint.x, meteringPoint.y)
 }

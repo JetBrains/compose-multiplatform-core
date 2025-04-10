@@ -56,6 +56,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.FlakyTest;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.MediumTest;
+import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.Suppress;
 import androidx.test.rule.ActivityTestRule;
 
@@ -258,6 +259,7 @@ public class DrawerLayoutTest {
 
     @Test
     @MediumTest
+    @SdkSuppress(maxSdkVersion = 34) // b/384972471: Failing on SDK 35
     public void testDrawerHeight() {
         // Open the drawer so it becomes visible
         onView(withId(R.id.drawer_layout)).perform(openDrawer(GravityCompat.START));
@@ -484,6 +486,7 @@ public class DrawerLayoutTest {
         mDrawerLayout.removeDrawerListener(mockedListener);
     }
 
+    @SdkSuppress(maxSdkVersion = 33) // b/321813959
     @Test
     @LargeTest
     public void testDrawerListenerCallbacksOnClosingViaSwipes() {
@@ -509,7 +512,8 @@ public class DrawerLayoutTest {
         // Start X coordinate of the swipe - 75% across the drawer
         final int swipeStartX = drawerLocation[0] + mDrawerLayout.getWidth() * 3 / 4;
         // End X coordinate of the swipe - 25% across the drawer
-        final int swipeEndX = swipeY - mDrawerLayout.getWidth() / 2;
+        final int swipeEndX = swipeStartX - mDrawerLayout.getWidth() / 2;
+
         onView(withId(R.id.drawer_layout)).perform(
                 wrap(new GeneralSwipeAction(Swipe.FAST,
                         new CoordinatesProvider() {

@@ -18,10 +18,10 @@ package androidx.arch.core.executor.testing;
 
 import android.os.SystemClock;
 
-import androidx.annotation.NonNull;
 import androidx.arch.core.executor.ArchTaskExecutor;
 import androidx.arch.core.executor.DefaultTaskExecutor;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 

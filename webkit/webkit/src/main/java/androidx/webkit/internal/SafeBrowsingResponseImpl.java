@@ -18,12 +18,12 @@ package androidx.webkit.internal;
 
 import android.webkit.SafeBrowsingResponse;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.webkit.SafeBrowsingResponseCompat;
 
 import org.chromium.support_lib_boundary.SafeBrowsingResponseBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;

@@ -20,9 +20,10 @@ import android.webkit.WebResourceError;
 import android.webkit.WebViewClient;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -79,10 +80,9 @@ public abstract class WebResourceErrorCompat {
      *
      * @return The description of the error
      */
-    @NonNull
     @RequiresFeature(name = WebViewFeature.WEB_RESOURCE_ERROR_GET_DESCRIPTION,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public abstract CharSequence getDescription();
+    public abstract @NonNull CharSequence getDescription();
 
     /**
      * This class cannot be created by applications.

@@ -31,12 +31,13 @@ import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.Constraints;
 import androidx.work.Constraints.ContentUriTrigger;
 import androidx.work.NetworkType;
 import androidx.work.impl.utils.NetworkRequest28;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -162,8 +163,7 @@ public class ParcelableConstraints implements Parcelable {
         }
     }
 
-    @NonNull
-    public Constraints getConstraints() {
+    public @NonNull Constraints getConstraints() {
         return mConstraints;
     }
 }

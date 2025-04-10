@@ -23,6 +23,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.RoundScreen
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -43,16 +45,11 @@ import org.junit.Rule
 import org.junit.Test
 
 class TimeTextTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun supports_testtag() {
-        rule.setContentWithTheme {
-            TimeText(
-                modifier = Modifier.testTag(TEST_TAG)
-            )
-        }
+        rule.setContentWithTheme { TimeText(modifier = Modifier.testTag(TEST_TAG)) }
 
         rule.onNodeWithTag(TEST_TAG).assertExists()
     }
@@ -62,14 +59,14 @@ class TimeTextTest {
         val timeState = mutableStateOf("Unchanged")
 
         rule.setContentWithTheme {
-            ConfiguredShapeScreen(false) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(false)) {
                 TimeText(
                     modifier = Modifier.testTag(TEST_TAG),
-                    timeSource = object : TimeSource {
-                        override val currentTime: String
-                            @Composable
-                            get() = timeState.value
-                    },
+                    timeSource =
+                        object : TimeSource {
+                            override val currentTime: String
+                                @Composable get() = timeState.value
+                        },
                 )
             }
         }
@@ -83,14 +80,14 @@ class TimeTextTest {
         val timeState = mutableStateOf("Unchanged")
 
         rule.setContentWithTheme {
-            ConfiguredShapeScreen(true) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(true)) {
                 TimeText(
                     modifier = Modifier.testTag(TEST_TAG),
-                    timeSource = object : TimeSource {
-                        override val currentTime: String
-                            @Composable
-                            get() = timeState.value
-                    },
+                    timeSource =
+                        object : TimeSource {
+                            override val currentTime: String
+                                @Composable get() = timeState.value
+                        },
                 )
             }
         }
@@ -101,7 +98,7 @@ class TimeTextTest {
     @Test
     fun supports_start_linear_text_only_on_square_device() {
         rule.setContentWithTheme {
-            ConfiguredShapeScreen(false) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(false)) {
                 TimeText(
                     startLinearContent = {
                         Text(
@@ -129,7 +126,7 @@ class TimeTextTest {
     @Test
     fun supports_start_curved_text_only_on_round_device() {
         rule.setContentWithTheme {
-            ConfiguredShapeScreen(true) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(true)) {
                 TimeText(
                     startLinearContent = {
                         Text(
@@ -156,7 +153,7 @@ class TimeTextTest {
     @Test
     fun supports_end_linear_text_only_on_square_device() {
         rule.setContentWithTheme {
-            ConfiguredShapeScreen(false) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(false)) {
                 TimeText(
                     endLinearContent = {
                         Text(
@@ -183,7 +180,7 @@ class TimeTextTest {
     @Test
     fun supports_end_curved_text_only_on_round_device() {
         rule.setContentWithTheme {
-            ConfiguredShapeScreen(true) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(true)) {
                 TimeText(
                     endLinearContent = {
                         Text(
@@ -210,7 +207,7 @@ class TimeTextTest {
     @Test
     fun omits_separator_with_only_time_on_square_device() {
         rule.setContentWithTheme {
-            ConfiguredShapeScreen(false) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(false)) {
                 TimeText(
                     textLinearSeparator = {
                         TimeTextDefaults.TextSeparator(
@@ -236,7 +233,7 @@ class TimeTextTest {
     @Test
     fun omits_separator_with_only_time_on_round_device() {
         rule.setContentWithTheme {
-            ConfiguredShapeScreen(true) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(true)) {
                 TimeText(
                     textLinearSeparator = {
                         TimeTextDefaults.TextSeparator(
@@ -262,7 +259,7 @@ class TimeTextTest {
     @Test
     fun shows_only_start_linear_separator_on_square_device() {
         rule.setContentWithTheme {
-            ConfiguredShapeScreen(false) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(false)) {
                 TimeText(
                     startLinearContent = {
                         Text(
@@ -295,7 +292,7 @@ class TimeTextTest {
     @Test
     fun shows_only_start_curved_separator_on_round_device() {
         rule.setContentWithTheme {
-            ConfiguredShapeScreen(true) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(true)) {
                 TimeText(
                     startCurvedContent = {
                         curvedComposable {
@@ -329,7 +326,7 @@ class TimeTextTest {
     @Test
     fun shows_only_end_linear_separator_on_square_device() {
         rule.setContentWithTheme {
-            ConfiguredShapeScreen(false) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(false)) {
                 TimeText(
                     endLinearContent = {
                         Text(
@@ -362,13 +359,9 @@ class TimeTextTest {
     @Test
     fun shows_only_end_curved_separator_on_round_device() {
         rule.setContentWithTheme {
-            ConfiguredShapeScreen(true) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(true)) {
                 TimeText(
-                    endCurvedContent = {
-                        curvedText(
-                            text = "End content"
-                        )
-                    },
+                    endCurvedContent = { curvedText(text = "End content") },
                     textLinearSeparator = {
                         TimeTextDefaults.TextSeparator(
                             modifier = Modifier.testTag(LINEAR_SEPARATOR_ITEM_TAG)
@@ -394,7 +387,7 @@ class TimeTextTest {
     @Test
     fun shows_start_and_end_linear_separators_on_square_device() {
         rule.setContentWithTheme {
-            ConfiguredShapeScreen(false) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(false)) {
                 TimeText(
                     startLinearContent = {
                         Text(
@@ -430,18 +423,10 @@ class TimeTextTest {
     @Test
     fun shows_start_and_end_curved_separators_on_round_device() {
         rule.setContentWithTheme {
-            ConfiguredShapeScreen(true) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(true)) {
                 TimeText(
-                    startCurvedContent = {
-                        curvedText(
-                            text = "Start content"
-                        )
-                    },
-                    endCurvedContent = {
-                        curvedText(
-                            text = "End content"
-                        )
-                    },
+                    startCurvedContent = { curvedText(text = "Start content") },
+                    endCurvedContent = { curvedText(text = "End content") },
                     textLinearSeparator = {
                         TimeTextDefaults.TextSeparator(
                             modifier = Modifier.testTag(LINEAR_SEPARATOR_ITEM_TAG)
@@ -469,19 +454,16 @@ class TimeTextTest {
     fun changes_timeTextStyle_on_square_device() {
         val timeText = "testTime"
 
-        val testTextStyle = TextStyle(
-            color = Color.Green,
-            background = Color.Black,
-            fontSize = 20.sp
-        )
+        val testTextStyle =
+            TextStyle(color = Color.Green, background = Color.Black, fontSize = 20.sp)
         rule.setContentWithTheme {
-            ConfiguredShapeScreen(false) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(false)) {
                 TimeText(
-                    timeSource = object : TimeSource {
-                        override val currentTime: String
-                            @Composable
-                            get() = timeText
-                    },
+                    timeSource =
+                        object : TimeSource {
+                            override val currentTime: String
+                                @Composable get() = timeText
+                        },
                     timeTextStyle = testTextStyle
                 )
             }
@@ -496,26 +478,23 @@ class TimeTextTest {
     fun changes_material_theme_on_square_device() {
         val timeText = "testTime"
 
-        val testTextStyle = TextStyle(
-            color = Color.Green,
-            background = Color.Black,
-            fontStyle = FontStyle.Italic,
-            fontSize = 25.sp,
-            fontFamily = FontFamily.SansSerif
-        )
+        val testTextStyle =
+            TextStyle(
+                color = Color.Green,
+                background = Color.Black,
+                fontStyle = FontStyle.Italic,
+                fontSize = 25.sp,
+                fontFamily = FontFamily.SansSerif
+            )
         rule.setContent {
-            MaterialTheme(
-                typography = MaterialTheme.typography.copy(
-                    caption1 = testTextStyle
-                )
-            ) {
-                ConfiguredShapeScreen(false) {
+            MaterialTheme(typography = MaterialTheme.typography.copy(caption1 = testTextStyle)) {
+                DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(false)) {
                     TimeText(
-                        timeSource = object : TimeSource {
-                            override val currentTime: String
-                                @Composable
-                                get() = timeText
-                        }
+                        timeSource =
+                            object : TimeSource {
+                                override val currentTime: String
+                                    @Composable get() = timeText
+                            }
                     )
                 }
             }
@@ -530,8 +509,7 @@ class TimeTextTest {
 }
 
 class TimeSourceTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun formats_current_time() {
@@ -541,9 +519,7 @@ class TimeSourceTest {
         val convertedTime = DateFormat.format(format, currentCalendar).toString()
 
         var actualTime: String? = null
-        rule.setContentWithTheme {
-            actualTime = currentTime({ currentTimeInMillis }, format).value
-        }
+        rule.setContentWithTheme { actualTime = currentTime({ currentTimeInMillis }, format).value }
         assertEquals(convertedTime, actualTime)
     }
 
@@ -555,10 +531,8 @@ class TimeSourceTest {
 
         var actualTime: String? = null
         rule.setContentWithTheme {
-            actualTime = currentTime(
-                { currentTimeInMillis },
-                TimeTextDefaults.TimeFormat12Hours
-            ).value
+            actualTime =
+                currentTime({ currentTimeInMillis }, TimeTextDefaults.TimeFormat12Hours).value
         }
         assertEquals(expectedTime, actualTime)
     }

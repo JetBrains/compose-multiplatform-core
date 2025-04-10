@@ -18,8 +18,6 @@ package androidx.wear.protolayout.expression.pipeline;
 
 import android.icu.util.ULocale;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.expression.DynamicBuilders;
@@ -30,6 +28,9 @@ import androidx.wear.protolayout.expression.proto.DynamicProto.DynamicFloat;
 import androidx.wear.protolayout.expression.proto.DynamicProto.DynamicInstant;
 import androidx.wear.protolayout.expression.proto.DynamicProto.DynamicInt32;
 import androidx.wear.protolayout.expression.proto.DynamicProto.DynamicString;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -57,9 +58,8 @@ public abstract class DynamicTypeBindingRequest {
    * @param consumer The registered consumer for results of the evaluation. It will be called from
    *   UI thread.
    */
-  @NonNull
-  @RestrictTo(Scope.LIBRARY_GROUP)
-  public static DynamicTypeBindingRequest forDynamicFloatInternal(
+    @RestrictTo(Scope.LIBRARY_GROUP)
+  public static @NonNull DynamicTypeBindingRequest forDynamicFloatInternal(
       @NonNull DynamicFloat floatSource, @NonNull DynamicTypeValueReceiver<Float> consumer) {
     return new DynamicFloatBindingRequest(floatSource, consumer);
   }
@@ -75,9 +75,8 @@ public abstract class DynamicTypeBindingRequest {
    * @param executor The Executor to run the consumer on.
    * @param consumer The registered consumer for results of the evaluation.
    */
-  @NonNull
-  public static DynamicTypeBindingRequest forDynamicFloat(
-      @NonNull DynamicBuilders.DynamicFloat floatSource,
+    public static @NonNull DynamicTypeBindingRequest forDynamicFloat(
+      DynamicBuilders.@NonNull DynamicFloat floatSource,
       @NonNull Executor executor,
       @NonNull DynamicTypeValueReceiver<Float> consumer) {
     return new DynamicFloatBindingRequest(
@@ -92,9 +91,8 @@ public abstract class DynamicTypeBindingRequest {
    * @param consumer The registered consumer for results of the evaluation. It will be called from
    *   UI thread.
    */
-  @NonNull
-  @RestrictTo(Scope.LIBRARY_GROUP)
-  public static DynamicTypeBindingRequest forDynamicInt32Internal(
+    @RestrictTo(Scope.LIBRARY_GROUP)
+  public static @NonNull DynamicTypeBindingRequest forDynamicInt32Internal(
       @NonNull DynamicInt32 int32Source,
       @NonNull DynamicTypeValueReceiver<Integer> consumer) {
     return new DynamicInt32BindingRequest(int32Source, consumer);
@@ -111,9 +109,8 @@ public abstract class DynamicTypeBindingRequest {
    * @param executor The Executor to run the consumer on.
    * @param consumer The registered consumer for results of the evaluation.
    */
-  @NonNull
-  public static DynamicTypeBindingRequest forDynamicInt32(
-      @NonNull DynamicBuilders.DynamicInt32 int32Source,
+    public static @NonNull DynamicTypeBindingRequest forDynamicInt32(
+      DynamicBuilders.@NonNull DynamicInt32 int32Source,
       @NonNull Executor executor,
       @NonNull DynamicTypeValueReceiver<Integer> consumer) {
     return new DynamicInt32BindingRequest(
@@ -128,9 +125,8 @@ public abstract class DynamicTypeBindingRequest {
    * @param consumer The registered consumer for results of the evaluation. It will be called from
    *   UI thread.
    */
-  @NonNull
-  @RestrictTo(Scope.LIBRARY_GROUP)
-  public static DynamicTypeBindingRequest forDynamicColorInternal(
+    @RestrictTo(Scope.LIBRARY_GROUP)
+  public static @NonNull DynamicTypeBindingRequest forDynamicColorInternal(
       @NonNull DynamicColor colorSource,
       @NonNull DynamicTypeValueReceiver<Integer> consumer) {
     return new DynamicColorBindingRequest(colorSource, consumer);
@@ -147,9 +143,8 @@ public abstract class DynamicTypeBindingRequest {
    * @param executor The Executor to run the consumer on.
    * @param consumer The registered consumer for results of the evaluation.
    */
-  @NonNull
-  public static DynamicTypeBindingRequest forDynamicColor(
-      @NonNull DynamicBuilders.DynamicColor colorSource,
+    public static @NonNull DynamicTypeBindingRequest forDynamicColor(
+      DynamicBuilders.@NonNull DynamicColor colorSource,
       @NonNull Executor executor,
       @NonNull DynamicTypeValueReceiver<Integer> consumer) {
     return new DynamicColorBindingRequest(
@@ -164,9 +159,8 @@ public abstract class DynamicTypeBindingRequest {
    * @param consumer The registered consumer for results of the evaluation. It will be called from
    *   UI thread.
    */
-  @NonNull
-  @RestrictTo(Scope.LIBRARY_GROUP)
-  public static DynamicTypeBindingRequest forDynamicBoolInternal(
+    @RestrictTo(Scope.LIBRARY_GROUP)
+  public static @NonNull DynamicTypeBindingRequest forDynamicBoolInternal(
       @NonNull DynamicBool boolSource, @NonNull DynamicTypeValueReceiver<Boolean> consumer) {
     return new DynamicBoolBindingRequest(boolSource, consumer);
   }
@@ -182,9 +176,8 @@ public abstract class DynamicTypeBindingRequest {
    * @param executor The Executor to run the consumer on.
    * @param consumer The registered consumer for results of the evaluation.
    */
-  @NonNull
-  public static DynamicTypeBindingRequest forDynamicBool(
-      @NonNull DynamicBuilders.DynamicBool boolSource,
+    public static @NonNull DynamicTypeBindingRequest forDynamicBool(
+      DynamicBuilders.@NonNull DynamicBool boolSource,
       @NonNull Executor executor,
       @NonNull DynamicTypeValueReceiver<Boolean> consumer) {
     return new DynamicBoolBindingRequest(boolSource.toDynamicBoolProto(), executor, consumer);
@@ -199,9 +192,8 @@ public abstract class DynamicTypeBindingRequest {
    *   UI thread.
    * @param locale The locale used for the given String source.
    */
-  @NonNull
-  @RestrictTo(Scope.LIBRARY_GROUP)
-  public static DynamicTypeBindingRequest forDynamicStringInternal(
+    @RestrictTo(Scope.LIBRARY_GROUP)
+  public static @NonNull DynamicTypeBindingRequest forDynamicStringInternal(
       @NonNull DynamicString stringSource,
       @NonNull ULocale locale,
       @NonNull DynamicTypeValueReceiver<String> consumer) {
@@ -220,9 +212,8 @@ public abstract class DynamicTypeBindingRequest {
    * @param executor The Executor to run the consumer on.
    * @param consumer The registered consumer for results of the evaluation.
    */
-  @NonNull
-  public static DynamicTypeBindingRequest forDynamicString(
-      @NonNull DynamicBuilders.DynamicString stringSource,
+    public static @NonNull DynamicTypeBindingRequest forDynamicString(
+      DynamicBuilders.@NonNull DynamicString stringSource,
       @NonNull ULocale locale,
       @NonNull Executor executor,
       @NonNull DynamicTypeValueReceiver<String> consumer) {
@@ -238,9 +229,8 @@ public abstract class DynamicTypeBindingRequest {
    * @param consumer The registered consumer for results of the evaluation. It will be called from
    *   UI thread.
    */
-  @NonNull
-  @RestrictTo(Scope.LIBRARY_GROUP)
-  public static DynamicTypeBindingRequest forDynamicDurationInternal(
+    @RestrictTo(Scope.LIBRARY_GROUP)
+  public static @NonNull DynamicTypeBindingRequest forDynamicDurationInternal(
       @NonNull DynamicDuration durationSource,
       @NonNull DynamicTypeValueReceiver<Duration> consumer) {
     return new DynamicDurationBindingRequest(durationSource, consumer);
@@ -257,9 +247,8 @@ public abstract class DynamicTypeBindingRequest {
    * @param executor The Executor to run the consumer on.
    * @param consumer The registered consumer for results of the evaluation.
    */
-  @NonNull
-  public static DynamicTypeBindingRequest forDynamicDuration(
-      @NonNull DynamicBuilders.DynamicDuration durationSource,
+    public static @NonNull DynamicTypeBindingRequest forDynamicDuration(
+      DynamicBuilders.@NonNull DynamicDuration durationSource,
       @NonNull Executor executor,
       @NonNull DynamicTypeValueReceiver<Duration> consumer) {
     return new DynamicDurationBindingRequest(
@@ -274,9 +263,8 @@ public abstract class DynamicTypeBindingRequest {
    * @param consumer The registered consumer for results of the evaluation. It will be called from
    *   UI thread.
    */
-  @NonNull
-  @RestrictTo(Scope.LIBRARY_GROUP)
-  public static DynamicTypeBindingRequest forDynamicInstantInternal(
+    @RestrictTo(Scope.LIBRARY_GROUP)
+  public static @NonNull DynamicTypeBindingRequest forDynamicInstantInternal(
       @NonNull DynamicInstant instantSource,
       @NonNull DynamicTypeValueReceiver<Instant> consumer) {
     return new DynamicInstantBindingRequest(instantSource, consumer);
@@ -293,17 +281,15 @@ public abstract class DynamicTypeBindingRequest {
    * @param executor The Executor to run the consumer on.
    * @param consumer The registered consumer for results of the evaluation.
    */
-  @NonNull
-  public static DynamicTypeBindingRequest forDynamicInstant(
-      @NonNull DynamicBuilders.DynamicInstant instantSource,
+    public static @NonNull DynamicTypeBindingRequest forDynamicInstant(
+      DynamicBuilders.@NonNull DynamicInstant instantSource,
       @NonNull Executor executor,
       @NonNull DynamicTypeValueReceiver<Instant> consumer) {
     return new DynamicInstantBindingRequest(
         instantSource.toDynamicInstantProto(), executor, consumer);
   }
 
-  @NonNull
-  private static <T> DynamicTypeValueReceiverOnExecutor<T> createReceiver(
+    private static <T> @NonNull DynamicTypeValueReceiverOnExecutor<T> createReceiver(
       @Nullable Executor executor, @NonNull DynamicTypeValueReceiver<T> consumer) {
     if (executor != null) {
       return new DynamicTypeValueReceiverOnExecutor<>(executor, consumer);
@@ -314,9 +300,9 @@ public abstract class DynamicTypeBindingRequest {
 
   private static class DynamicFloatBindingRequest extends DynamicTypeBindingRequest {
 
-    @NonNull private final DynamicFloat mFloatSource;
-    @Nullable private final Executor mExecutor;
-    @NonNull private final DynamicTypeValueReceiver<Float> mConsumer;
+    private final @NonNull DynamicFloat mFloatSource;
+    private final @Nullable Executor mExecutor;
+    private final @NonNull DynamicTypeValueReceiver<Float> mConsumer;
 
     DynamicFloatBindingRequest(
         @NonNull DynamicFloat floatSource,
@@ -343,9 +329,9 @@ public abstract class DynamicTypeBindingRequest {
 
   private static class DynamicInt32BindingRequest extends DynamicTypeBindingRequest {
 
-    @NonNull private final DynamicInt32 mInt32Source;
-    @Nullable private final Executor mExecutor;
-    @NonNull private final DynamicTypeValueReceiver<Integer> mConsumer;
+    private final @NonNull DynamicInt32 mInt32Source;
+    private final @Nullable Executor mExecutor;
+    private final @NonNull DynamicTypeValueReceiver<Integer> mConsumer;
 
     DynamicInt32BindingRequest(
         @NonNull DynamicInt32 int32Source,
@@ -372,9 +358,9 @@ public abstract class DynamicTypeBindingRequest {
 
   private static class DynamicColorBindingRequest extends DynamicTypeBindingRequest {
 
-    @NonNull private final DynamicColor mColorSource;
-    @Nullable private final Executor mExecutor;
-    @NonNull private final DynamicTypeValueReceiver<Integer> mConsumer;
+    private final @NonNull DynamicColor mColorSource;
+    private final @Nullable Executor mExecutor;
+    private final @NonNull DynamicTypeValueReceiver<Integer> mConsumer;
 
     DynamicColorBindingRequest(
         @NonNull DynamicColor colorSource,
@@ -401,9 +387,9 @@ public abstract class DynamicTypeBindingRequest {
 
   private static class DynamicBoolBindingRequest extends DynamicTypeBindingRequest {
 
-    @NonNull private final DynamicBool mBoolSource;
-    @Nullable private final Executor mExecutor;
-    @NonNull private final DynamicTypeValueReceiver<Boolean> mConsumer;
+    private final @NonNull DynamicBool mBoolSource;
+    private final @Nullable Executor mExecutor;
+    private final @NonNull DynamicTypeValueReceiver<Boolean> mConsumer;
 
     DynamicBoolBindingRequest(
         @NonNull DynamicBool boolSource,
@@ -430,10 +416,10 @@ public abstract class DynamicTypeBindingRequest {
 
   private static class DynamicStringBindingRequest extends DynamicTypeBindingRequest {
 
-    @NonNull private final DynamicString mStringSource;
-    @NonNull private final ULocale mLocale;
-    @Nullable private final Executor mExecutor;
-    @NonNull private final DynamicTypeValueReceiver<String> mConsumer;
+    private final @NonNull DynamicString mStringSource;
+    private final @NonNull ULocale mLocale;
+    private final @Nullable Executor mExecutor;
+    private final @NonNull DynamicTypeValueReceiver<String> mConsumer;
 
     DynamicStringBindingRequest(
         @NonNull DynamicString stringSource,
@@ -465,9 +451,9 @@ public abstract class DynamicTypeBindingRequest {
 
   private static class DynamicDurationBindingRequest extends DynamicTypeBindingRequest {
 
-    @NonNull private final DynamicDuration mDurationSource;
-    @Nullable private final Executor mExecutor;
-    @NonNull private final DynamicTypeValueReceiver<Duration> mConsumer;
+    private final @NonNull DynamicDuration mDurationSource;
+    private final @Nullable Executor mExecutor;
+    private final @NonNull DynamicTypeValueReceiver<Duration> mConsumer;
 
     DynamicDurationBindingRequest(
         @NonNull DynamicDuration durationSource,
@@ -494,9 +480,9 @@ public abstract class DynamicTypeBindingRequest {
 
   private static class DynamicInstantBindingRequest extends DynamicTypeBindingRequest {
 
-    @NonNull private final DynamicInstant mInstantSource;
-    @Nullable private final Executor mExecutor;
-    @NonNull private final DynamicTypeValueReceiver<Instant> mConsumer;
+    private final @NonNull DynamicInstant mInstantSource;
+    private final @Nullable Executor mExecutor;
+    private final @NonNull DynamicTypeValueReceiver<Instant> mConsumer;
 
     DynamicInstantBindingRequest(
         @NonNull DynamicInstant instantSource,
@@ -528,8 +514,8 @@ public abstract class DynamicTypeBindingRequest {
   private static class DynamicTypeValueReceiverOnExecutor<T>
       implements DynamicTypeValueReceiverWithPreUpdate<T> {
 
-    @NonNull private final Executor mExecutor;
-    @NonNull private final DynamicTypeValueReceiver<T> mConsumer;
+    private final @NonNull Executor mExecutor;
+    private final @NonNull DynamicTypeValueReceiver<T> mConsumer;
 
     DynamicTypeValueReceiverOnExecutor(@NonNull DynamicTypeValueReceiver<T> consumer) {
       this(Runnable::run, consumer);

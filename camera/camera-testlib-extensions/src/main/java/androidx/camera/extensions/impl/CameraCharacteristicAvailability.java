@@ -19,15 +19,13 @@ package androidx.camera.extensions.impl;
 import android.hardware.camera2.CameraCharacteristics;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 
 /**
  * A utility class to check the availabilities of camera characteristics.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class CameraCharacteristicAvailability {
     private static final String TAG = "CharacteristicAbility";
 

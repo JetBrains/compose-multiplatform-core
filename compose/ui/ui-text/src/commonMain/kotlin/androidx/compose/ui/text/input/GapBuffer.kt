@@ -16,16 +16,16 @@
 
 package androidx.compose.ui.text.input
 
+import androidx.annotation.RestrictTo
 import androidx.compose.ui.text.InternalTextApi
+import androidx.compose.ui.text.internal.requirePrecondition
 
 /**
- * Like [toCharArray] but copies the entire source string.
- * Workaround for compiler error when giving [toCharArray] above default parameters.
+ * Like [toCharArray] but copies the entire source string. Workaround for compiler error when giving
+ * [toCharArray] above default parameters.
  */
-private fun String.toCharArray(
-    destination: CharArray,
-    destinationOffset: Int
-) = toCharArray(destination, destinationOffset, startIndex = 0, endIndex = this.length)
+private fun String.toCharArray(destination: CharArray, destinationOffset: Int) =
+    toCharArray(destination, destinationOffset, startIndex = 0, endIndex = this.length)
 
 /**
  * Copies characters from this [String] into [destination].
@@ -49,40 +49,28 @@ internal expect fun String.toCharArray(
  * The gap buffer implementation
  *
  * @param initBuffer An initial buffer. This class takes ownership of this object, so do not modify
- *                   array after passing to this constructor
+ *   array after passing to this constructor
  * @param initGapStart An initial inclusive gap start offset of the buffer
  * @param initGapEnd An initial exclusive gap end offset of the buffer
  */
 private class GapBuffer(initBuffer: CharArray, initGapStart: Int, initGapEnd: Int) {
 
-    /**
-     * The current capacity of the buffer
-     */
+    /** The current capacity of the buffer */
     private var capacity = initBuffer.size
 
-    /**
-     * The buffer
-     */
+    /** The buffer */
     private var buffer = initBuffer
 
-    /**
-     * The inclusive start offset of the gap
-     */
+    /** The inclusive start offset of the gap */
     private var gapStart = initGapStart
 
-    /**
-     * The exclusive end offset of the gap
-     */
+    /** The exclusive end offset of the gap */
     private var gapEnd = initGapEnd
 
-    /**
-     * The length of the gap.
-     */
+    /** The length of the gap. */
     private fun gapLength(): Int = gapEnd - gapStart
 
-    /**
-     * [] operator for the character at the index.
-     */
+    /** [] operator for the character at the index. */
     operator fun get(index: Int): Char {
         if (index < gapStart) {
             return buffer[index]
@@ -91,9 +79,7 @@ private class GapBuffer(initBuffer: CharArray, initGapStart: Int, initGapEnd: In
         }
     }
 
-    /**
-     * Check if the gap has a requested size, and allocate new buffer if there is enough space.
-     */
+    /** Check if the gap has a requested size, and allocate new buffer if there is enough space. */
     private fun makeSureAvailableSpace(requestSize: Int) {
         if (requestSize <= gapLength()) {
             return
@@ -117,9 +103,7 @@ private class GapBuffer(initBuffer: CharArray, initGapStart: Int, initGapEnd: In
         gapEnd = newEnd
     }
 
-    /**
-     * Delete the given range of the text.
-     */
+    /** Delete the given range of the text. */
     private fun delete(start: Int, end: Int) {
         if (start < gapStart && end <= gapStart) {
             // The remove happens in the head buffer. Copy the tail part of the head buffer to the
@@ -199,11 +183,12 @@ private class GapBuffer(initBuffer: CharArray, initGapStart: Int, initGapEnd: In
 
     /**
      * Write the current text into outBuf.
+     *
      * @param builder The output string builder
      */
     fun append(builder: StringBuilder) {
-        builder.append(buffer, 0, gapStart)
-        builder.append(buffer, gapEnd, capacity - gapEnd)
+        builder.appendRange(buffer, 0, gapStart)
+        builder.appendRange(buffer, gapEnd, capacity)
     }
 
     /**
@@ -220,13 +205,14 @@ private class GapBuffer(initBuffer: CharArray, initGapStart: Int, initGapEnd: In
  * An editing buffer that uses Gap Buffer only around the cursor location.
  *
  * Different from the original gap buffer, this gap buffer doesn't convert all given text into
- * mutable buffer. Instead, this gap buffer converts cursor around text into mutable gap buffer
- * for saving construction time and memory space. If text modification outside of the gap buffer
- * is requested, this class flush the buffer and create new String, then start new gap buffer.
+ * mutable buffer. Instead, this gap buffer converts cursor around text into mutable gap buffer for
+ * saving construction time and memory space. If text modification outside of the gap buffer is
+ * requested, this class flush the buffer and create new String, then start new gap buffer.
  *
  * @param text The initial text
  */
 @InternalTextApi // "Used by benchmarks"
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 class PartialGapBuffer(var text: String) {
     internal companion object {
         const val BUF_SIZE = 255
@@ -238,9 +224,7 @@ class PartialGapBuffer(var text: String) {
     private var bufStart = NOWHERE
     private var bufEnd = NOWHERE
 
-    /**
-     * The text length
-     */
+    /** The text length */
     val length: Int
         get() {
             val buffer = buffer ?: return text.length
@@ -255,12 +239,10 @@ class PartialGapBuffer(var text: String) {
      * @param text a text to replace
      */
     fun replace(start: Int, end: Int, text: String) {
-        require(start <= end) {
+        requirePrecondition(start <= end) {
             "start index must be less than or equal to end index: $start > $end"
         }
-        require(start >= 0) {
-            "start must be non-negative, but was $start"
-        }
+        requirePrecondition(start >= 0) { "start must be non-negative, but was $start" }
 
         val buffer = buffer
         if (buffer == null) { // First time to create gap buffer
@@ -284,11 +266,12 @@ class PartialGapBuffer(var text: String) {
             // Copy given text into buffer
             text.toCharArray(charArray, leftCopyCount)
 
-            this.buffer = GapBuffer(
-                charArray,
-                initGapStart = leftCopyCount + text.length,
-                initGapEnd = charArray.size - rightCopyCount
-            )
+            this.buffer =
+                GapBuffer(
+                    charArray,
+                    initGapStart = leftCopyCount + text.length,
+                    initGapEnd = charArray.size - rightCopyCount
+                )
             bufStart = start - leftCopyCount
             bufEnd = end + rightCopyCount
             return
@@ -310,9 +293,7 @@ class PartialGapBuffer(var text: String) {
         buffer.replace(bufferStart, bufferEnd, text)
     }
 
-    /**
-     * [] operator for the character at the index.
-     */
+    /** [] operator for the character at the index. */
     operator fun get(index: Int): Char {
         val buffer = buffer ?: return text[index]
         if (index < bufStart) {

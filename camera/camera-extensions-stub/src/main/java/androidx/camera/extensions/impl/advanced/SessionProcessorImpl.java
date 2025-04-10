@@ -23,8 +23,8 @@ import android.hardware.camera2.CaptureResult;
 import android.util.Pair;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -107,8 +107,7 @@ public interface SessionProcessorImpl {
      *
      * @since 1.4
      */
-    @NonNull
-    Camera2SessionConfigImpl initSession(
+    @NonNull Camera2SessionConfigImpl initSession(
             @NonNull String cameraId,
             @NonNull Map<String, CameraCharacteristics> cameraCharacteristicsMap,
             @NonNull Context context,
@@ -159,8 +158,7 @@ public interface SessionProcessorImpl {
      * supported or mandatory stream combination BUT OEM must ensure this list will always
      * produce a valid camera capture session.
      */
-    @NonNull
-    Camera2SessionConfigImpl initSession(
+    @NonNull Camera2SessionConfigImpl initSession(
             @NonNull String cameraId,
             @NonNull Map<String, CameraCharacteristics> cameraCharacteristicsMap,
             @NonNull Context context,
@@ -301,8 +299,7 @@ public interface SessionProcessorImpl {
      * null pair.
      * @since 1.4
      */
-    @Nullable
-    Pair<Long, Long> getRealtimeCaptureLatency();
+    @Nullable Pair<Long, Long> getRealtimeCaptureLatency();
 
     /**
      * Callback for notifying the status of {@link #startCapture(CaptureCallback)} and
@@ -405,5 +402,20 @@ public interface SessionProcessorImpl {
          * @since 1.4
          */
         default void onCaptureProcessProgressed(int progress) {}
+
+        /**
+         * This method is called instead of
+         * {@link #onCaptureProcessStarted} when the camera device failed
+         * to produce the required input for the device-specific extension. The
+         * cause could be a failed camera capture request, a failed
+         * capture result or dropped camera frame.
+         * The callback allows clients to be notified
+         * about failure reason.
+         *
+         * @param captureSequenceId id of the current capture sequence
+         * @param reason            The capture failure reason @see CaptureFailure#FailureReason
+         * @since 1.5
+         */
+        default void onCaptureFailed(int captureSequenceId, int reason) {}
     }
 }

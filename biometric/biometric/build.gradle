@@ -14,48 +14,59 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
-    defaultConfig {
-        multiDexEnabled true
-    }
+    compileSdk = 35
 }
 
 dependencies {
+    api(libs.jspecify)
     // Public API dependencies
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api("androidx.core:core:1.3.2")
     api("androidx.fragment:fragment:1.2.5")
 
     // Internal dependencies
-    implementation("androidx.activity:activity:1.1.0")
     implementation("androidx.appcompat:appcompat:1.2.0")
     implementation("androidx.lifecycle:lifecycle-livedata-core:2.2.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.2.0")
     implementation("androidx.lifecycle:lifecycle-common-java8:2.2.0")
 
+    testImplementation(libs.guavaAndroid)
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.robolectric)
     testImplementation(libs.truth)
+    testImplementation("androidx.fragment:fragment-testing:1.4.1")
+    testImplementation("org.robolectric:annotations:4.14")
+    testImplementation("org.robolectric:shadowapi:4.14")
 
+    androidTestImplementation(libs.guavaAndroid)
+    androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.testMonitor)
     androidTestImplementation(libs.testUiautomator)
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy)
+    androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.multidex)
+    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation("androidx.fragment:fragment-testing:1.4.1")
 }
 
@@ -64,17 +75,18 @@ android {
         noCompress "ttf"
     }
 
-    buildTypes.all {
+    buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.biometric"
+    namespace = "androidx.biometric"
+    compileSdk = 35
 }
 
 androidx {
     name = "Biometric"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
     description = "The Biometric library is a static library that you can add to your Android application. It invokes BiometricPrompt on devices running P and greater, and on older devices will show a compat dialog. Compatible on devices running API 14 or later."
-    metalavaK2UastEnabled = true
+    samples(project(":biometric:biometric-samples"))
 }

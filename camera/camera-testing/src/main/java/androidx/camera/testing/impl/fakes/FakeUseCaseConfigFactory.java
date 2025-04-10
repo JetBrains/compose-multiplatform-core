@@ -17,49 +17,116 @@
 package androidx.camera.testing.impl.fakes;
 
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_CONFIG_UNPACKER;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_DEFAULT_SESSION_CONFIG;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_SESSION_CONFIG_UNPACKER;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_TAKE_PICTURE_MANAGER_PROVIDER;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import android.annotation.SuppressLint;
+import android.hardware.camera2.CameraDevice;
+
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
+import androidx.camera.core.ExperimentalZeroShutterLag;
+import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCapture.CaptureMode;
+import androidx.camera.core.imagecapture.ImageCaptureControl;
+import androidx.camera.core.imagecapture.TakePictureManager;
 import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.OptionsBundle;
+import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
+import androidx.camera.testing.fakes.FakeCamera;
+import androidx.camera.testing.impl.wrappers.TakePictureManagerWrapper;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A fake implementation of {@link UseCaseConfigFactory}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class FakeUseCaseConfigFactory implements UseCaseConfigFactory {
+    private @Nullable CaptureType mLastRequestedCaptureType;
 
-    @NonNull
-    private CaptureType mLastRequestedCaptureType;
+    private final @NonNull List<FakeCamera> mFakeCameras = new ArrayList<>();
+
+    /**
+     * Creates a {@link FakeUseCaseConfigFactory} instance.
+     */
+    public FakeUseCaseConfigFactory() {
+    }
+
+    /**
+     * Creates a {@link FakeUseCaseConfigFactory} instance with the available {@link FakeCamera}
+     * instances.
+     */
+    public FakeUseCaseConfigFactory(@NonNull List<FakeCamera> fakeCameras) {
+        mFakeCameras.addAll(fakeCameras);
+    }
 
     /**
      * Returns the configuration for the given capture type, or <code>null</code> if the
      * configuration cannot be produced.
      */
-    @Nullable
     @Override
-    public Config getConfig(
+    public @NonNull Config getConfig(
             @NonNull CaptureType captureType,
             @CaptureMode int captureMode) {
         mLastRequestedCaptureType = captureType;
         MutableOptionsBundle mutableConfig = MutableOptionsBundle.create();
 
+        SessionConfig.Builder sessionBuilder = new SessionConfig.Builder();
+        sessionBuilder.setTemplateType(getSessionConfigTemplateType(captureType, captureMode));
+
+        mutableConfig.insertOption(OPTION_DEFAULT_SESSION_CONFIG, sessionBuilder.build());
+
         mutableConfig.insertOption(OPTION_CAPTURE_CONFIG_UNPACKER, (config, builder) -> {});
         mutableConfig.insertOption(OPTION_SESSION_CONFIG_UNPACKER,
-                (resolution, config, builder) -> {});
+                new FakeSessionConfigOptionUnpacker());
+
+        if (captureType == CaptureType.IMAGE_CAPTURE) {
+            mutableConfig.insertOption(OPTION_TAKE_PICTURE_MANAGER_PROVIDER,
+                    new TakePictureManager.Provider() {
+                        @Override
+                        public @NonNull TakePictureManager newInstance(
+                                @NonNull ImageCaptureControl imageCaptureControl) {
+                            return new TakePictureManagerWrapper(imageCaptureControl, mFakeCameras);
+                        }
+                    });
+        }
 
         return OptionsBundle.from(mutableConfig);
     }
 
-    @NonNull
-    public CaptureType getLastRequestedCaptureType() {
+    public @Nullable CaptureType getLastRequestedCaptureType() {
         return mLastRequestedCaptureType;
+    }
+
+    /**
+     * Returns the appropriate template type for a session configuration.
+     */
+    @SuppressLint("NullAnnotationGroup")
+    @OptIn(markerClass = ExperimentalZeroShutterLag.class)
+    public static int getSessionConfigTemplateType(
+            UseCaseConfigFactory.@NonNull CaptureType captureType,
+            @ImageCapture.CaptureMode int captureMode
+    ) {
+        switch (captureType) {
+            case IMAGE_CAPTURE:
+                return captureMode == ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
+                        ? CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG :
+                        CameraDevice.TEMPLATE_PREVIEW;
+            case VIDEO_CAPTURE:
+                return CameraDevice.TEMPLATE_RECORD;
+            case STREAM_SHARING:
+            case PREVIEW:
+            case IMAGE_ANALYSIS:
+            default:
+                return CameraDevice.TEMPLATE_PREVIEW;
+        }
     }
 }

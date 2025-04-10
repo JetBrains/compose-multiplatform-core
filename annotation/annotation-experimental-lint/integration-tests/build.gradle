@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 def isIdeBuild() {
@@ -24,11 +31,11 @@ def isIdeBuild() {
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
-    namespace "androidx.annotation.experimental.lint.integrationtests"
+    namespace = "androidx.annotation.experimental.lint.integrationtests"
 }
 
 dependencies {
@@ -41,11 +48,14 @@ tasks.withType(KotlinCompile).configureEach {
     kotlinOptions {
         // Ensure that compilation passes in CLI despite opt-in violations in integration tests.
         if (!isIdeBuild()) {
-            freeCompilerArgs += [ "-opt-in=sample.optin.ExperimentalKotlinAnnotation" ]
+            freeCompilerArgs += [
+                    "-opt-in=sample.optin.ExperimentalKotlinAnnotation",
+                    "-opt-in=sample.kotlin.ExperimentalJavaAnnotation"
+            ]
         }
     }
 }
 
 androidx {
-    type = LibraryType.INTERNAL_TEST_LIBRARY
+    type = SoftwareType.INTERNAL_TEST_LIBRARY
 }

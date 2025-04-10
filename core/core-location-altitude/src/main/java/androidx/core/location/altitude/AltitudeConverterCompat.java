@@ -20,13 +20,13 @@ import android.content.Context;
 import android.location.Location;
 import android.os.Build;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.WorkerThread;
 import androidx.core.location.altitude.impl.AltitudeConverter;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 
@@ -47,8 +47,7 @@ public final class AltitudeConverterCompat {
     private static final Object sLock = new Object();
 
     @GuardedBy("sLock")
-    @Nullable
-    private static AltitudeConverter sAltitudeConverter;
+    private static @Nullable AltitudeConverter sAltitudeConverter;
 
     /** Prevents instantiation. */
     private AltitudeConverterCompat() {
@@ -92,14 +91,12 @@ public final class AltitudeConverterCompat {
         private static final Object sLock = new Object();
 
         @GuardedBy("sLock")
-        @Nullable
-        private static Object sAltitudeConverter;
+        private static @Nullable Object sAltitudeConverter;
 
         /** Prevents instantiation. */
         private Api34Impl() {
         }
 
-        @DoNotInline
         static void addMslAltitudeToLocation(@NonNull Context context,
                 @NonNull Location location) throws IOException {
             android.location.altitude.AltitudeConverter altitudeConverter;

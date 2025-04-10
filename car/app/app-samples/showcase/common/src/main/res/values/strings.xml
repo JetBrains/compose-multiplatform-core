@@ -109,10 +109,10 @@
 
   <!-- ColorDemoScreen -->
   <string name="example_title">Example %d</string>
-  <string name="example_1_text">This text has a red color</string>
-  <string name="example_2_text">This text has a green color</string>
-  <string name="example_3_text">This text has a blue color</string>
-  <string name="example_4_text">This text has a yellow color</string>
+  <string name="example_1_text">This text has a <annotation color="red">red</annotation> color</string>
+  <string name="example_2_text">This text has a <annotation color="green">green</annotation> color</string>
+  <string name="example_3_text">This text has a <annotation color="blue">blue</annotation> color</string>
+  <string name="example_4_text">This text has a <annotation color="yellow">yellow</annotation> color</string>
   <string name="example_5_text">This text uses the primary color</string>
   <string name="example_6_text">This text uses the secondary color</string>
   <string name="color_demo">Color Demo</string>
@@ -293,6 +293,12 @@
   <string name="msg_template_demo_text">Message goes here.\nMore text on second line.</string>
   <string name="short_msg_template_demo_title">Short Message Template Demo</string>
 
+  <!-- SectionedItemTemplateDemo -->
+  <string name="sectioned_item_template_demo_title">Sectioned Item Template Demo</string>
+  <string name="sectioned_item_template_radio_button_section_title">Radio Button Section</string>
+  <string name="sectioned_item_template_toggle_section_title">Toggle Section</string>
+  <string name="sectioned_item_template_lots_of_rows_section_title">Lots of Rows Section</string>
+
   <!-- PaneTemplateDemoScreen -->
   <string name="pane_template_demo_title">Pane Template Demo</string>
 
@@ -305,7 +311,7 @@
   <string name="search_hint">Search here</string>
 
   <!-- SignInTemplateDemoScreen -->
-  <string name="additional_text">Please review our terms of service</string>
+  <string name="additional_text">Please review our <annotation link="terms_of_service">terms of service</annotation></string>
   <string name="google_sign_in">Google sign-in</string>
   <string name="use_pin">Use PIN</string>
   <string name="qr_code">QR Code</string>
@@ -408,6 +414,7 @@
   <string name="secondary_actions_test_subtitle">Only the secondary action can be selected</string>
   <string name="decoration_test_title">Decoration Test</string>
   <string name="secondary_actions_decoration_test_title">Secondary Actions and Decoration</string>
+  <string name="secondary_actions_decoration_test_title_long">Row with Secondary Actions and Decoration with a really long title</string>
   <string name="secondary_actions_decoration_test_subtitle">The row can also be selected</string>
   <string name="secondary_action_toast">Secondary Action is selected</string>
   <string name="row_primary_action_toast">Row primary action is selected</string>

@@ -18,11 +18,15 @@ package androidx.window.extensions.layout;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Bundle;
+import android.view.Display;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.UiContext;
+import androidx.window.extensions.RequiresVendorApiLevel;
 import androidx.window.extensions.WindowExtensions;
 import androidx.window.extensions.core.util.function.Consumer;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * The interface definition that will be used by the WindowManager library to get custom
@@ -41,25 +45,24 @@ import androidx.window.extensions.core.util.function.Consumer;
 public interface WindowLayoutComponent {
     /**
      * @deprecated Use {@link #addWindowLayoutInfoListener(Context, Consumer)}
-     * starting with {@link WindowExtensions#VENDOR_API_LEVEL_2}. Only used if
+     * starting with vendor API level 2. Only used if
      * {@link #addWindowLayoutInfoListener(Context, Consumer)} can't be
-     * called on {@link WindowExtensions#VENDOR_API_LEVEL_1}.
-     * Since {@link WindowExtensions#VENDOR_API_LEVEL_1}
+     * called on vendor API level 1.
      */
+    @RequiresVendorApiLevel(level = 1, deprecatedSince = 2)
     @Deprecated
     void addWindowLayoutInfoListener(@NonNull Activity activity,
-            @NonNull java.util.function.Consumer<WindowLayoutInfo> consumer);
+            java.util.function.@NonNull Consumer<WindowLayoutInfo> consumer);
 
     /**
      * @deprecated Use {@link #removeWindowLayoutInfoListener(Consumer)} starting with
-     * {@link WindowExtensions#VENDOR_API_LEVEL_2}. Only used if
-     * {@link #removeWindowLayoutInfoListener(Consumer)} can't be called on
-     * {@link WindowExtensions#VENDOR_API_LEVEL_1}.
-     * Since {@link WindowExtensions#VENDOR_API_LEVEL_1}
+     * vendor API level 2. Only used if {@link #removeWindowLayoutInfoListener(Consumer)} can't
+     * be called on vendor API level 1.
      */
+    @RequiresVendorApiLevel(level = 1, deprecatedSince = 2)
     @Deprecated
     void removeWindowLayoutInfoListener(
-            @NonNull java.util.function.Consumer<WindowLayoutInfo> consumer);
+            java.util.function.@NonNull Consumer<WindowLayoutInfo> consumer);
 
     /**
      * Adds a listener interested in receiving updates to {@link WindowLayoutInfo}.
@@ -71,15 +74,14 @@ public interface WindowLayoutComponent {
      *
      * @param context a {@link UiContext} that corresponds to a window or an area on the
      *                      screen - an {@link Activity}, a {@link Context} created with
-     *                      {@link Context#createWindowContext(Display, int , Bundle)}, or
+     *                      {@link Context#createWindowContext(Display, int, Bundle)}, or
      *                      {@link android.inputmethodservice.InputMethodService}.
      * @param consumer interested in receiving updates to {@link WindowLayoutInfo}
-     * Since {@link WindowExtensions#VENDOR_API_LEVEL_2}
      */
-    // TODO(b/238905747): Add api guard for extensions.
+    @RequiresVendorApiLevel(level = 2)
     @SuppressWarnings("PairedRegistration")
     // The paired method for unregistering is also removeWindowLayoutInfoListener.
-    default void addWindowLayoutInfoListener(@NonNull @UiContext Context context,
+    default void addWindowLayoutInfoListener(@UiContext @NonNull Context context,
             @NonNull Consumer<WindowLayoutInfo> consumer) {
         throw new UnsupportedOperationException("This method must not be called unless there is a"
                 + " corresponding override implementation on the device.");
@@ -89,10 +91,43 @@ public interface WindowLayoutComponent {
      * Removes a listener no longer interested in receiving updates.
      *
      * @param consumer no longer interested in receiving updates to {@link WindowLayoutInfo}
-     * Since {@link WindowExtensions#VENDOR_API_LEVEL_2}
      */
+    @RequiresVendorApiLevel(level = 2)
     default void removeWindowLayoutInfoListener(@NonNull Consumer<WindowLayoutInfo> consumer) {
         throw new UnsupportedOperationException("This method must not be called unless there is a"
                 + " corresponding override implementation on the device.");
+    }
+
+    /**
+     * Returns the {@link SupportedWindowFeatures} for the device. This value will not change
+     * over time.
+     * @see WindowLayoutComponent#addWindowLayoutInfoListener(Context, Consumer) to register a
+     * listener for features that impact the window.
+     */
+    @RequiresVendorApiLevel(level = 6)
+    default @NonNull SupportedWindowFeatures getSupportedWindowFeatures() {
+        throw new UnsupportedOperationException("This method will not be called unless there is a"
+                + " corresponding override implementation on the device");
+    }
+
+    /**
+     * Returns the current {@link WindowLayoutInfo} for the given {@link Context}.
+     * <p>
+     * This API provides a convenient way to access the current {@link WindowLayoutInfo} without
+     * registering a listener via {@link #addWindowLayoutInfoListener(Context, Consumer)}. It
+     * simplifies the retrieval of {@link WindowLayoutInfo} in scenarios like
+     * {@link Activity#onCreate(Bundle)}.
+     *
+     * @param context a {@link Context} that corresponds to a window or an area on the screen.
+     *                This can be an {@link Activity}, a {@link Context} created with
+     *                {@link Context#createWindowContext(Display, int, Bundle)}, or an
+     *                {@link android.inputmethodservice.InputMethodService}.
+     * @return the current {@link WindowLayoutInfo} for the given {@link Context}.
+     */
+    @RequiresVendorApiLevel(level = 9)
+    default @NonNull WindowLayoutInfo getCurrentWindowLayoutInfo(
+            @UiContext @NonNull Context context) {
+        throw new UnsupportedOperationException("This method will not be called unless there is a"
+                + " corresponding override implementation on the device");
     }
 }

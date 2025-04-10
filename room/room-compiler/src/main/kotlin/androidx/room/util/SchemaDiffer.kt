@@ -16,6 +16,7 @@
 
 package androidx.room.util
 
+import androidx.room.migration.bundle.BaseEntityBundle
 import androidx.room.migration.bundle.DatabaseBundle
 import androidx.room.migration.bundle.DatabaseViewBundle
 import androidx.room.migration.bundle.EntityBundle
@@ -39,9 +40,7 @@ import androidx.room.vo.AutoMigration
  */
 class DiffException(val errorMessage: String) : RuntimeException(errorMessage)
 
-/**
- * Contains the changes detected between the two schema versions provided.
- */
+/** Contains the changes detected between the two schema versions provided. */
 data class SchemaDiffResult(
     val addedColumns: List<AutoMigration.AddedColumn>,
     val deletedColumns: List<AutoMigration.DeletedColumn>,
@@ -55,10 +54,6 @@ data class SchemaDiffResult(
 
 /**
  * Receives the two bundles, detects all changes between the two versions and returns a
- * @SchemaDiffResult.
- *
- * Throws an @DiffException with a detailed error message when an AutoMigration cannot
- * be generated.
  *
  * @param fromSchemaBundle Original database schema to migrate from
  * @param toSchemaBundle New database schema to migrate to
@@ -67,6 +62,9 @@ data class SchemaDiffResult(
  * @param deleteColumnEntries List of repeatable annotations specifying column deletes
  * @param renameTableEntries List of repeatable annotations specifying table renames
  * @param deleteTableEntries List of repeatable annotations specifying table deletes
+ * @SchemaDiffResult.
+ *
+ * Throws an @DiffException with a detailed error message when an AutoMigration cannot be generated.
  */
 class SchemaDiffer(
     private val fromSchemaBundle: DatabaseBundle,
@@ -80,7 +78,7 @@ class SchemaDiffer(
     private val potentiallyDeletedTables = mutableSetOf<String>()
     // Maps FTS tables in the to version to the name of their content tables in the from version
     // for easy lookup.
-    private val contentTableToFtsEntities = mutableMapOf<String, MutableList<EntityBundle>>()
+    private val contentTableToFtsEntities = mutableMapOf<String, MutableList<BaseEntityBundle>>()
 
     private val addedTables = mutableSetOf<AutoMigration.AddedTable>()
     // Any table that has been renamed, but also does not contain any complex changes.
@@ -88,8 +86,7 @@ class SchemaDiffer(
 
     // Map of tables with complex changes, keyed by the table name, note that if the table is
     // renamed, the original table name is used as key.
-    private val complexChangedTables =
-        mutableMapOf<String, AutoMigration.ComplexChangedTable>()
+    private val complexChangedTables = mutableMapOf<String, AutoMigration.ComplexChangedTable>()
     private val deletedTables = deleteTableEntries.map { it.deletedTableName }.toSet()
 
     // Map of columns that have been added in the database, note that the table these columns
@@ -98,8 +95,8 @@ class SchemaDiffer(
     private val deletedColumns = deleteColumnEntries
 
     /**
-     * Compares the two versions of the database based on the schemas provided, and detects
-     * schema changes.
+     * Compares the two versions of the database based on the schemas provided, and detects schema
+     * changes.
      *
      * @return the AutoMigrationResult containing the schema changes detected
      */
@@ -114,22 +111,19 @@ class SchemaDiffer(
             // Check for column related changes. Since we require toTable to not be null, any
             // deleted tables will be skipped here.
             if (toTable != null) {
-                if (fromTable is FtsEntityBundle &&
-                    fromTable.ftsOptions.contentTable.isNotEmpty()
+                if (
+                    fromTable is FtsEntityBundle && fromTable.ftsOptions.contentTable.isNotEmpty()
                 ) {
-                    contentTableToFtsEntities.getOrPut(fromTable.ftsOptions.contentTable) {
-                        mutableListOf()
-                    }.add(fromTable)
+                    contentTableToFtsEntities
+                        .getOrPut(fromTable.ftsOptions.contentTable) { mutableListOf() }
+                        .add(fromTable)
                 }
 
                 val fromColumns = fromTable.fieldsByColumnName
-                val processedColumnsInNewVersion = fromColumns.values.mapNotNull { fromColumn ->
-                    detectColumnLevelChanges(
-                        fromTable,
-                        toTable,
-                        fromColumn
-                    )
-                }
+                val processedColumnsInNewVersion =
+                    fromColumns.values.mapNotNull { fromColumn ->
+                        detectColumnLevelChanges(fromTable, toTable, fromColumn)
+                    }
                 processedTablesAndColumnsInNewVersion[toTable.tableName] =
                     processedColumnsInNewVersion
             }
@@ -142,12 +136,7 @@ class SchemaDiffer(
         }
 
         potentiallyDeletedTables.forEach { tableName ->
-            diffError(
-                deletedOrRenamedTableFound(
-                    className = className,
-                    tableName = tableName
-                )
-            )
+            diffError(deletedOrRenamedTableFound(className = className, tableName = tableName))
         }
         processDeletedColumns()
 
@@ -171,33 +160,31 @@ class SchemaDiffer(
      */
     private fun processContentTables() {
         renameTableEntries.forEach { renamedTable ->
-            contentTableToFtsEntities[renamedTable.originalTableName]?.filter {
-                !complexChangedTables.containsKey(it.tableName)
-            }?.forEach { ftsTable ->
-                complexChangedTables[ftsTable.tableName] =
-                    AutoMigration.ComplexChangedTable(
-                        tableName = ftsTable.tableName,
-                        tableNameWithNewPrefix = ftsTable.newTableName,
-                        oldVersionEntityBundle = ftsTable,
-                        newVersionEntityBundle = ftsTable,
-                        renamedColumnsMap = mutableMapOf()
-                    )
-            }
+            contentTableToFtsEntities[renamedTable.originalTableName]
+                ?.filter { !complexChangedTables.containsKey(it.tableName) }
+                ?.forEach { ftsTable ->
+                    complexChangedTables[ftsTable.tableName] =
+                        AutoMigration.ComplexChangedTable(
+                            tableName = ftsTable.tableName,
+                            tableNameWithNewPrefix = ftsTable.newTableName,
+                            oldVersionEntityBundle = ftsTable,
+                            newVersionEntityBundle = ftsTable,
+                            renamedColumnsMap = mutableMapOf()
+                        )
+                }
         }
     }
 
     /**
-     * Detects any changes at the table-level, independent of any changes that may be present at
-     * the column-level (e.g. column add/rename/delete).
+     * Detects any changes at the table-level, independent of any changes that may be present at the
+     * column-level (e.g. column add/rename/delete).
      *
      * @param fromTable The original version of the table
-     * @return The EntityBundle of the table in the new version of the database. If the
-     * table was renamed, this will be reflected in the return value. If the table was removed, a
-     * null object will be returned.
+     * @return The EntityBundle of the table in the new version of the database. If the table was
+     *   renamed, this will be reflected in the return value. If the table was removed, a null
+     *   object will be returned.
      */
-    private fun detectTableLevelChanges(
-        fromTable: EntityBundle
-    ): EntityBundle? {
+    private fun detectTableLevelChanges(fromTable: BaseEntityBundle): BaseEntityBundle? {
         // Check if the table was renamed. If so, check for other complex changes that could
         // be found on the table level. Save the end result to the complex changed tables map.
         val renamedTable = isTableRenamed(fromTable.tableName)
@@ -205,10 +192,7 @@ class SchemaDiffer(
         if (renamedTable != null) {
             val toTable = toSchemaBundle.entitiesByTableName[renamedTable.newTableName]
             if (toTable != null) {
-                val isComplexChangedTable = tableContainsComplexChanges(
-                    fromTable,
-                    toTable
-                )
+                val isComplexChangedTable = tableContainsComplexChanges(fromTable, toTable)
                 val isFtsEntity = fromTable is FtsEntityBundle
                 if (isComplexChangedTable || isFtsEntity) {
                     if (toSchemaBundle.entitiesByTableName.containsKey(toTable.newTableName)) {
@@ -242,17 +226,13 @@ class SchemaDiffer(
         val isDeletedTable = deletedTables.contains(fromTable.tableName)
         if (toTable != null) {
             if (isDeletedTable) {
-                diffError(
-                    deletedOrRenamedTableFound(className, toTable.tableName)
-                )
+                diffError(deletedOrRenamedTableFound(className, toTable.tableName))
             }
 
             // Check if this table exists in both versions of the schema, hence is not renamed or
             // deleted, but contains other complex changes (index/primary key/foreign key change).
-            val isComplexChangedTable = tableContainsComplexChanges(
-                fromTable = fromTable,
-                toTable = toTable
-            )
+            val isComplexChangedTable =
+                tableContainsComplexChanges(fromTable = fromTable, toTable = toTable)
             if (isComplexChangedTable) {
                 complexChangedTables[fromTable.tableName] =
                     AutoMigration.ComplexChangedTable(
@@ -279,12 +259,12 @@ class SchemaDiffer(
      * @param fromTable The original version of the table
      * @param toTable The new version of the table
      * @param fromColumn The original version of the column
-     * @return The name of the column in the new version of the database. Will return a null
-     * value if the column was deleted.
+     * @return The name of the column in the new version of the database. Will return a null value
+     *   if the column was deleted.
      */
     private fun detectColumnLevelChanges(
-        fromTable: EntityBundle,
-        toTable: EntityBundle,
+        fromTable: BaseEntityBundle,
+        toTable: BaseEntityBundle,
         fromColumn: FieldBundle,
     ): String? {
         // Check if this column was renamed. If so, no need to check further, we can mark this
@@ -300,8 +280,8 @@ class SchemaDiffer(
 
             // If the table is already marked as a complex change, then we want to add a new entry
             // to it's renamedColumnMap
-            val renamedColumnsMap = complexChangedTables[fromTable.tableName]?.renamedColumnsMap
-                ?: mutableMapOf()
+            val renamedColumnsMap =
+                complexChangedTables[fromTable.tableName]?.renamedColumnsMap ?: mutableMapOf()
 
             renamedColumnsMap[renamedToColumn.newColumnName] = fromColumn.columnName
 
@@ -339,9 +319,10 @@ class SchemaDiffer(
             return match.columnName
         }
 
-        val isColumnDeleted = deletedColumns.any {
-            it.tableName == fromTable.tableName && it.columnName == fromColumn.columnName
-        }
+        val isColumnDeleted =
+            deletedColumns.any {
+                it.tableName == fromTable.tableName && it.columnName == fromColumn.columnName
+            }
 
         if (!isColumnDeleted) {
             // We have encountered an ambiguous scenario, need more input from the user.
@@ -359,48 +340,44 @@ class SchemaDiffer(
     }
 
     /**
-     * Checks for complex schema changes at a Table level and returns a ComplexTableChange
-     * including information on which table changes were found on, and whether foreign key or
-     * index related changes have occurred.
+     * Checks for complex schema changes at a Table level and returns a ComplexTableChange including
+     * information on which table changes were found on, and whether foreign key or index related
+     * changes have occurred.
      *
      * @param fromTable The original version of the table
      * @param toTable The new version of the table
      * @return A ComplexChangedTable object, null if complex schema change has not been found
      */
     private fun tableContainsComplexChanges(
-        fromTable: EntityBundle,
-        toTable: EntityBundle
+        fromTable: BaseEntityBundle,
+        toTable: BaseEntityBundle
     ): Boolean {
-        // If we have an FTS table, check if options have changed
-        if (fromTable is FtsEntityBundle &&
-            toTable is FtsEntityBundle &&
-            !fromTable.ftsOptions.isSchemaEqual(toTable.ftsOptions)
-        ) {
-            return true
-        }
-        // Check if the to table or the from table is an FTS table while the other is not.
-        if (fromTable is FtsEntityBundle && toTable !is FtsEntityBundle ||
-            toTable is FtsEntityBundle && fromTable !is FtsEntityBundle
-        ) {
-            return true
-        }
-
-        if (!isForeignKeyBundlesListEqual(fromTable.foreignKeys, toTable.foreignKeys)) {
-            return true
-        }
-        if (!isIndexBundlesListEqual(fromTable.indices, toTable.indices)) {
-            return true
-        }
-
         if (!fromTable.primaryKey.isSchemaEqual(toTable.primaryKey)) {
             return true
         }
-        // Check if any foreign keys are referencing a renamed table.
-        return fromTable.foreignKeys.any { foreignKey ->
-            renameTableEntries.any {
-                it.originalTableName == foreignKey.table
+
+        // If both are FTS tables, check for any changes.
+        if (fromTable is FtsEntityBundle && toTable is FtsEntityBundle) {
+            return !fromTable.isSchemaEqual(toTable)
+        }
+
+        // If both are normal tables, check foreign keys and indices
+        if (fromTable is EntityBundle && toTable is EntityBundle) {
+            if (!isForeignKeyBundlesListEqual(fromTable.foreignKeys, toTable.foreignKeys)) {
+                return true
+            }
+            if (!isIndexBundlesListEqual(fromTable.indices, toTable.indices)) {
+                return true
+            }
+            // Check if any foreign keys are referencing a renamed table.
+            return fromTable.foreignKeys.any { foreignKey ->
+                renameTableEntries.any { it.originalTableName == foreignKey.table }
             }
         }
+
+        // If we reach this check then from and to tables are not of the same type, a change of
+        // table type is complex
+        return true
     }
 
     /**
@@ -443,8 +420,8 @@ class SchemaDiffer(
     }
 
     /**
-     * Takes in two IndexBundle lists, attempts to find potential matches based on the names
-     * of the indexes. Processes these potential matches by checking for schema equality.
+     * Takes in two IndexBundle lists, attempts to find potential matches based on the names of the
+     * indexes. Processes these potential matches by checking for schema equality.
      *
      * @param fromBundle List of indexes in the old schema version
      * @param toBundle List of indexes in the new schema version
@@ -477,16 +454,12 @@ class SchemaDiffer(
      */
     private fun isTableRenamed(tableName: String): AutoMigration.RenamedTable? {
         val annotations = renameTableEntries
-        val renamedTableAnnotations = annotations.filter {
-            it.originalTableName == tableName
-        }
+        val renamedTableAnnotations = annotations.filter { it.originalTableName == tableName }
 
         // Make sure there aren't multiple renames on the same table
         if (renamedTableAnnotations.size > 1) {
             diffError(
-                conflictingRenameTableAnnotationsFound(
-                    renamedTableAnnotations.joinToString(",")
-                )
+                conflictingRenameTableAnnotationsFound(renamedTableAnnotations.joinToString(","))
             )
         }
         return renamedTableAnnotations.firstOrNull()
@@ -504,9 +477,8 @@ class SchemaDiffer(
         tableName: String
     ): AutoMigration.RenamedColumn? {
         val annotations = renameColumnEntries
-        val renamedColumnAnnotations = annotations.filter {
-            it.originalColumnName == columnName && it.tableName == tableName
-        }
+        val renamedColumnAnnotations =
+            annotations.filter { it.originalColumnName == columnName && it.tableName == tableName }
 
         // Make sure there aren't multiple renames on the same column
         if (renamedColumnAnnotations.size > 1) {
@@ -522,21 +494,20 @@ class SchemaDiffer(
      *
      * @param toTable The new version of the table
      * @param processedTablesAndColumnsInNewVersion List of all columns in the new version of the
-     * database that have been already processed
+     *   database that have been already processed
      */
     private fun processAddedTableAndColumns(
-        toTable: EntityBundle,
+        toTable: BaseEntityBundle,
         processedTablesAndColumnsInNewVersion: MutableMap<String, List<String>>
     ) {
         // Old table bundle will be found even if table is renamed.
-        val isRenamed = renameTableEntries.firstOrNull {
-            it.newTableName == toTable.tableName
-        }
-        val fromTable = if (isRenamed != null) {
-            fromSchemaBundle.entitiesByTableName[isRenamed.originalTableName]
-        } else {
-            fromSchemaBundle.entitiesByTableName[toTable.tableName]
-        }
+        val isRenamed = renameTableEntries.firstOrNull { it.newTableName == toTable.tableName }
+        val fromTable =
+            if (isRenamed != null) {
+                fromSchemaBundle.entitiesByTableName[isRenamed.originalTableName]
+            } else {
+                fromSchemaBundle.entitiesByTableName[toTable.tableName]
+            }
 
         if (fromTable == null) {
             // It's a new table
@@ -553,45 +524,38 @@ class SchemaDiffer(
             val match = fromColumns[toColumn.columnName]
             if (match == null) {
                 if (toColumn.isNonNull && toColumn.defaultValue == null) {
-                    diffError(
-                        newNotNullColumnMustHaveDefaultValue(toColumn.columnName)
-                    )
+                    diffError(newNotNullColumnMustHaveDefaultValue(toColumn.columnName))
                 }
                 // Check if the new column is on a table with complex changes. If so, no
                 // need to account for it as the table will be recreated already with the new
                 // table.
                 if (!complexChangedTables.containsKey(fromTable.tableName)) {
-                    addedColumns.add(
-                        AutoMigration.AddedColumn(
-                            toTable.tableName,
-                            toColumn
-                        )
-                    )
+                    addedColumns.add(AutoMigration.AddedColumn(toTable.tableName, toColumn))
                 }
             }
         }
     }
 
     /**
-     * Goes through the deleted columns list and marks the table of each as a complex changed
-     * table if it was not already.
+     * Goes through the deleted columns list and marks the table of each as a complex changed table
+     * if it was not already.
      */
     private fun processDeletedColumns() {
-        deletedColumns.filterNot {
-            complexChangedTables.contains(it.tableName)
-        }.forEach { deletedColumn ->
-            val fromTableBundle =
-                fromSchemaBundle.entitiesByTableName.getValue(deletedColumn.tableName)
-            val toTableBundle =
-                toSchemaBundle.entitiesByTableName.getValue(deletedColumn.tableName)
-            complexChangedTables[deletedColumn.tableName] =
-                AutoMigration.ComplexChangedTable(
-                    tableName = deletedColumn.tableName,
-                    tableNameWithNewPrefix = fromTableBundle.newTableName,
-                    oldVersionEntityBundle = fromTableBundle,
-                    newVersionEntityBundle = toTableBundle,
-                    renamedColumnsMap = mutableMapOf()
-                )
-        }
+        deletedColumns
+            .filterNot { complexChangedTables.contains(it.tableName) }
+            .forEach { deletedColumn ->
+                val fromTableBundle =
+                    fromSchemaBundle.entitiesByTableName.getValue(deletedColumn.tableName)
+                val toTableBundle =
+                    toSchemaBundle.entitiesByTableName.getValue(deletedColumn.tableName)
+                complexChangedTables[deletedColumn.tableName] =
+                    AutoMigration.ComplexChangedTable(
+                        tableName = deletedColumn.tableName,
+                        tableNameWithNewPrefix = fromTableBundle.newTableName,
+                        oldVersionEntityBundle = fromTableBundle,
+                        newVersionEntityBundle = toTableBundle,
+                        renamedColumnsMap = mutableMapOf()
+                    )
+            }
     }
 }

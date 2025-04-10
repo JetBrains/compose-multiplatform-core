@@ -17,9 +17,18 @@
 package androidx.compose.foundation.text
 
 import android.os.Build
-import androidx.compose.foundation.GOLDEN_UI
+import androidx.compose.foundation.GOLDEN_FOUNDATION
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.testutils.assertAgainstGolden
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -30,6 +39,10 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -43,33 +56,78 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 class BasicTextScreenshotTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
-    @get:Rule
-    val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_UI)
+    @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_FOUNDATION)
 
     private val textTag = "text"
+
+    @Test
+    fun basicTextEllipsisCentered_leadingMarginCorrect_doesntMarch_b389707025() {
+        val padding = mutableStateOf(0.dp)
+        rule.setContent {
+            Box(
+                modifier =
+                    Modifier.padding(top = padding.value).fillMaxSize().border(1.dp, Color.Blue),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    BasicText(
+                        text = "I will definitely fill the screen!".repeat(10),
+                        modifier = Modifier.border(1.dp, Color.Red).testTag(textTag),
+                        style =
+                            TextStyle(
+                                textAlign = TextAlign.Center,
+                                letterSpacing = 1.sp,
+                                lineHeight = 24.sp,
+                                lineHeightStyle =
+                                    LineHeightStyle(
+                                        alignment = LineHeightStyle.Alignment.Center,
+                                        trim = LineHeightStyle.Trim.None,
+                                        mode = LineHeightStyle.Mode.Fixed
+                                    ),
+                            ),
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1,
+                        color = { Color.Black }
+                    )
+                }
+            }
+        }
+
+        repeat(2) {
+            // these repaints cause the reproduction of b/389707025
+            rule.waitForIdle()
+            padding.value = padding.value + 1.dp
+        }
+        rule
+            .onNodeWithTag(textTag)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, "leadingMarginForEllipsis")
+    }
 
     @Test
     fun multiStyleText_setFontWeight() {
         rule.setContent {
             BasicText(
-                text = buildAnnotatedString {
-                    append("Hello ")
-                    pushStyle(SpanStyle(fontWeight = FontWeight.Bold))
-                    append("World")
-                    pop()
-                },
+                text =
+                    buildAnnotatedString {
+                        append("Hello ")
+                        pushStyle(SpanStyle(fontWeight = FontWeight.Bold))
+                        append("World")
+                        pop()
+                    },
                 modifier = Modifier.testTag(textTag),
-                style = TextStyle(
-                    fontSize = 24.sp,
-                    fontStyle = FontStyle.Italic,
-                    fontFamily = FontFamily.Monospace
-                )
+                style =
+                    TextStyle(
+                        fontSize = 24.sp,
+                        fontStyle = FontStyle.Italic,
+                        fontFamily = FontFamily.Monospace
+                    )
             )
         }
-        rule.onNodeWithTag(textTag)
+        rule
+            .onNodeWithTag(textTag)
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "multiStyleText_setFontWeight")
     }
@@ -78,22 +136,25 @@ class BasicTextScreenshotTest {
     fun multiStyleText_setFontFamily() {
         rule.setContent {
             BasicText(
-                text = buildAnnotatedString {
-                    append("Hello ")
-                    pushStyle(SpanStyle(fontFamily = FontFamily.SansSerif))
-                    append("World")
-                    pop()
-                },
+                text =
+                    buildAnnotatedString {
+                        append("Hello ")
+                        pushStyle(SpanStyle(fontFamily = FontFamily.SansSerif))
+                        append("World")
+                        pop()
+                    },
                 modifier = Modifier.testTag(textTag),
-                style = TextStyle(
-                    fontSize = 24.sp,
-                    fontStyle = FontStyle.Italic,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
-                )
+                style =
+                    TextStyle(
+                        fontSize = 24.sp,
+                        fontStyle = FontStyle.Italic,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace
+                    )
             )
         }
-        rule.onNodeWithTag(textTag)
+        rule
+            .onNodeWithTag(textTag)
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "multiStyleText_setFontFamily")
     }
@@ -102,21 +163,24 @@ class BasicTextScreenshotTest {
     fun multiStyleText_setFontStyle() {
         rule.setContent {
             BasicText(
-                text = buildAnnotatedString {
-                    append("Hello ")
-                    pushStyle(SpanStyle(fontStyle = FontStyle.Italic))
-                    append("World")
-                    pop()
-                },
+                text =
+                    buildAnnotatedString {
+                        append("Hello ")
+                        pushStyle(SpanStyle(fontStyle = FontStyle.Italic))
+                        append("World")
+                        pop()
+                    },
                 modifier = Modifier.testTag(textTag),
-                style = TextStyle(
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
-                )
+                style =
+                    TextStyle(
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace
+                    )
             )
         }
-        rule.onNodeWithTag(textTag)
+        rule
+            .onNodeWithTag(textTag)
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "multiStyleText_setFontStyle")
     }

@@ -20,18 +20,22 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
 import androidx.wear.watchface.complications.data.ComplicationExperimental;
 
-/** Wire format for BoundingArc. */
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+/** Wire format for BoundingArc.
+ * @deprecated use Watch Face Format instead
+*/
 // TODO(b/230364881): Mark as @RestrictTo when BoundingArc is no longer experimental.
 @VersionedParcelize
 @SuppressLint("BanParcelableUsage")
+@Deprecated
 @ComplicationExperimental
 public final class BoundingArcWireFormat implements VersionedParcelable, Parcelable {
 
@@ -78,8 +82,7 @@ public final class BoundingArcWireFormat implements VersionedParcelable, Parcela
         return 0;
     }
 
-    @NonNull
-    public static final Parcelable.Creator<BoundingArcWireFormat> CREATOR =
+    public static final Parcelable.@NonNull Creator<BoundingArcWireFormat> CREATOR =
             new Parcelable.Creator<BoundingArcWireFormat>() {
                 @SuppressWarnings("deprecation")
                 @Override

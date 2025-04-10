@@ -16,10 +16,6 @@
 
 package androidx.camera.core.imagecapture;
 
-import android.os.Build;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.ImageInfo;
 import androidx.camera.core.ImageProxy;
@@ -27,6 +23,8 @@ import androidx.camera.core.ImmutableImageInfo;
 import androidx.camera.core.SettableImageProxy;
 import androidx.camera.core.processing.Operation;
 import androidx.camera.core.processing.Packet;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Produces a {@link ImageProxy} as in-memory capture result.
@@ -36,12 +34,10 @@ import androidx.camera.core.processing.Packet;
  * in the {@link ProcessingInput2Packet} processor, and the transformation info should be updated
  * by upstream processors.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class JpegImage2Result implements Operation<Packet<ImageProxy>, ImageProxy> {
 
-    @NonNull
     @Override
-    public ImageProxy apply(@NonNull Packet<ImageProxy> input)
+    public @NonNull ImageProxy apply(@NonNull Packet<ImageProxy> input)
             throws ImageCaptureException {
         ImageProxy image = input.getData();
 
@@ -49,7 +45,8 @@ public class JpegImage2Result implements Operation<Packet<ImageProxy>, ImageProx
                 image.getImageInfo().getTagBundle(),
                 image.getImageInfo().getTimestamp(),
                 input.getRotationDegrees(),
-                input.getSensorToBufferTransform());
+                input.getSensorToBufferTransform(),
+                image.getImageInfo().getFlashState());
 
         final ImageProxy imageWithUpdatedInfo = new SettableImageProxy(image,
                 input.getSize(), imageInfo);
