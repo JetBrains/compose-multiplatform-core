@@ -14,24 +14,32 @@
  * limitations under the License.
  */
 
-package androidx.compose.runtime.dispatch
+package androidx.compose.runtime
 
+import androidx.compose.runtime.internal.AtomicInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 
 @ExperimentalCoroutinesApi
 class BroadcastFrameClockTest {
     @Test
     fun sendAndReceiveFrames() =
         runTest(UnconfinedTestDispatcher()) {
-            val clock = androidx.compose.runtime.BroadcastFrameClock()
+            val clock = BroadcastFrameClock()
 
             val frameAwaiter = async { clock.withFrameNanos { it } }
 
@@ -49,7 +57,7 @@ class BroadcastFrameClockTest {
     @Test
     fun cancelClock() =
         runTest(UnconfinedTestDispatcher()) {
-            val clock = androidx.compose.runtime.BroadcastFrameClock()
+            val clock = BroadcastFrameClock()
             val frameAwaiter = async { clock.withFrameNanos { it } }
 
             clock.cancel()
@@ -66,10 +74,7 @@ class BroadcastFrameClockTest {
     @Test
     fun failClockWhenNewAwaitersNotified() =
         runTest(UnconfinedTestDispatcher()) {
-            val clock =
-                androidx.compose.runtime.BroadcastFrameClock {
-                    throw CancellationException("failed frame clock")
-                }
+            val clock = BroadcastFrameClock { throw CancellationException("failed frame clock") }
 
             val failingAwaiter = async { clock.withFrameNanos { it } }
             assertAwaiterCancelled("failingAwaiter", failingAwaiter)
@@ -77,4 +82,37 @@ class BroadcastFrameClockTest {
             val lateAwaiter = async { clock.withFrameNanos { it } }
             assertAwaiterCancelled("lateAwaiter", lateAwaiter)
         }
+
+    @OptIn(InternalCoroutinesApi::class)
+    @Test(timeout = 5_000)
+    fun locklessCancellation() = runTest {
+        val clock = BroadcastFrameClock()
+        val cancellationGate = AtomicInt(1)
+
+        var spin = true
+        async(start = UNDISPATCHED) {
+            clock.withFrameNanos {
+                cancellationGate.add(-1)
+                @Suppress("BanThreadSleep") while (spin) Thread.sleep(100)
+            }
+        }
+
+        val cancellingJob = async(start = UNDISPATCHED) { clock.withFrameNanos {} }
+
+        launch(Dispatchers.Default) { clock.sendFrame(1) }
+
+        // Wait for the spinlock to start
+        while (cancellationGate.get() != 0) yield()
+
+        // Assert that this line doesn't deadlock.
+        cancellingJob.cancelAndJoin()
+
+        // Make sure that we can queue up new jobs for subsequent frames
+        spin = false
+        assertFalse(clock.hasAwaiters)
+        async(start = UNDISPATCHED) { clock.withFrameNanos {} }
+        assertTrue(clock.hasAwaiters)
+
+        clock.cancel()
+    }
 }
