@@ -35,9 +35,7 @@ androidXComposeMultiplatform {
     js()
     wasm()
     darwin()
-
-    linuxX64()
-    linuxArm64()
+    linux()
 }
 
 kotlin {
