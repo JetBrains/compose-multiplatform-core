@@ -71,6 +71,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
         js()
         wasm()
         darwin()
+        linux()
 
         configureDarwinFlags()
     }

@@ -87,6 +87,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
         darwin()
         wasm()
         js()
+        linux()
     }
 
     kotlin {

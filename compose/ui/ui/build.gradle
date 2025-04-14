@@ -144,6 +144,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
         darwin()
         js()
         wasm()
+        linux()
         iosInstrumentedTest()
 
         configureDarwinFlags()
@@ -226,6 +227,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             jsWasmMain.dependsOn(jsNativeMain)
             jsWasmMain.dependsOn(notMobileMain)
             macosMain.dependsOn(notMobileMain)
+            linuxMain.dependsOn(notMobileMain)
 
             jsMain {
                 kotlin.srcDir("src/webCommonW3C/kotlin")
