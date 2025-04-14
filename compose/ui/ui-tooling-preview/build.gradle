@@ -34,6 +34,7 @@ androidXComposeMultiplatform {
     darwin()
     js()
     wasm()
+    linux()
 }
 
 kotlin {
@@ -106,6 +107,10 @@ kotlin {
         desktopTest {
             dependsOn(jvmTest)
             dependsOn(desktopMain)
+        }
+
+        linuxMain {
+            dependsOn(nonJvmMain)
         }
     }
 }
