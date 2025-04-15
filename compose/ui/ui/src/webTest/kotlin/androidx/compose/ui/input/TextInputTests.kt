@@ -40,6 +40,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.w3c.dom.HTMLTextAreaElement
+import org.w3c.dom.css.ElementCSSInlineStyle
 import org.w3c.dom.events.CompositionEvent
 import org.w3c.dom.events.CompositionEventInit
 import org.w3c.dom.events.Event
@@ -86,7 +87,6 @@ abstract class TextInputTests : OnCanvasTests {
     }
 
     @Test
-    @Ignore // TODO: https://youtrack.jetbrains.com/issue/CMP-8094
     fun regularInput() = runApplicationTest {
         val textFieldValue = createApplicationWithHolder()
 

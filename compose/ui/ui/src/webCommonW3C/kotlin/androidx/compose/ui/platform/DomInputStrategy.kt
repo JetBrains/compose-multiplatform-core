@@ -222,14 +222,15 @@ private fun ImeOptions.createDomElement(): HTMLElement {
     htmlElement.setAttribute("inputmode", inputMode)
     htmlElement.setAttribute("enterkeyhint", enterKeyHint)
 
+
     htmlElement.style.apply {
         setProperty("position", "absolute")
         setProperty("user-select", "none")
         setProperty("forced-color-adjust", "none")
         setProperty("white-space", "pre-wrap")
         setProperty("align-content", "center")
-        setProperty("top", "0")
-        setProperty("left", "0")
+        setProperty("top", "calc(var(--compose-internal-web-backing-input-top) * 1px)")
+        setProperty("left", "calc(var(--compose-internal-web-backing-input-left) * 1px")
         setProperty("padding", "0")
         setProperty("opacity", "0")
         setProperty("color", "transparent")

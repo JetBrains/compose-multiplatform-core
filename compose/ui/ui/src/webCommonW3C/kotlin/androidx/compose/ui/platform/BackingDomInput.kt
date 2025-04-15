@@ -24,6 +24,14 @@ import androidx.compose.ui.text.input.TextFieldValue
 import kotlinx.browser.document
 import kotlinx.browser.window
 
+private external interface ElementCSSInlineStyle {
+    val style: CSSStyleDeclaration
+}
+
+private abstract external class CSSStyleDeclaration  {
+    fun getPropertyValue(property: String): Float
+    fun setProperty(property: String, value: Float)
+}
 
 internal interface ComposeCommandCommunicator {
     fun sendEditCommand(commands: List<EditCommand>)
@@ -31,7 +39,6 @@ internal interface ComposeCommandCommunicator {
 
     fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean
 }
-
 
 /**
  * The purpose of this entity is to isolate synchronization between a TextFieldValue
@@ -46,6 +53,28 @@ internal class BackingDomInput(
         imeOptions,
         composeCommunicator
     )
+
+    private companion object {
+        fun getDocumentRoot() = document.documentElement as ElementCSSInlineStyle
+
+        private const val leftPropertyName = "--compose-internal-web-backing-input-left"
+        private const val topPropertyName = "--compose-internal-web-backing-input-top"
+
+        var cssInternalWebBackingInputLeft: Float
+            get() = getDocumentRoot().style.getPropertyValue(leftPropertyName)
+            set(value) = getDocumentRoot().style.setProperty(leftPropertyName, value)
+
+        var cssInternalWebBackingInputTop: Float
+            get() = getDocumentRoot().style.getPropertyValue(topPropertyName)
+            set(value) = getDocumentRoot().style.setProperty(topPropertyName, value)
+
+        init {
+            getDocumentRoot().style.apply {
+                cssInternalWebBackingInputLeft = 0f
+                cssInternalWebBackingInputTop = 0f
+            }
+        }
+    }
 
     private val backingElement = inputStrategy.htmlInput
 
@@ -70,8 +99,8 @@ internal class BackingDomInput(
     }
 
     fun updateHtmlInputPosition(offset: Offset) {
-        backingElement.style.left = "${offset.x}px"
-        backingElement.style.top = "${offset.y}px"
+          cssInternalWebBackingInputLeft = offset.x
+          cssInternalWebBackingInputTop = offset.y
     }
 
     fun updateHtmlInputGeometry(width: Int, height: Int) {
