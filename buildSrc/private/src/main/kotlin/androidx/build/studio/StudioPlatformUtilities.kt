@@ -23,7 +23,7 @@ import java.util.Locale
 import org.gradle.process.ExecOperations
 
 /**
- * Utility class containing helper functions and values that change between Linux and OSX
+ * Utility class containing helper functions and values that change between platforms.
  *
  * @property projectRoot the root directory of the current project
  * @property studioInstallationDir the directory where studio is installed to
@@ -61,6 +61,8 @@ sealed class StudioPlatformUtilities(val projectRoot: File, val studioInstallati
         val osName =
             if (System.getProperty("os.name").lowercase(Locale.ROOT).contains("linux")) {
                 "linux"
+            } else if (System.getProperty("os.name").lowercase(Locale.ROOT).startsWith("win")) {
+                "windows"
             } else {
                 // Only works when using native version of JDK, otherwise it will fallback to x86_64
                 if (System.getProperty("os.arch") == "aarch64") {
@@ -73,6 +75,8 @@ sealed class StudioPlatformUtilities(val projectRoot: File, val studioInstallati
         fun get(projectRoot: File, studioInstallationDir: File): StudioPlatformUtilities {
             return if (osName == "linux") {
                 LinuxUtilities(projectRoot, studioInstallationDir)
+            } else if (osName == "windows") {
+                WindowsUtilities(projectRoot, studioInstallationDir)
             } else {
                 MacOsUtilities(projectRoot, studioInstallationDir)
             }

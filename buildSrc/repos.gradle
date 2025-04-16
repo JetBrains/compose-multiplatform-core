@@ -50,20 +50,7 @@ def addMavenRepositories(RepositoryHandler handler) {
             excludeGroupByRegex "androidx.databinding.*"
         }
     }
-    handler.maven {
-        url = "${repos.prebuiltsRoot}/androidx/external"
-        metadataSources {
-            mavenPom()
-            artifact()
-        }
-        if (metalavaRepoOverride != null) {
-            // When using custom metalava repo, do not resolve metalava artifacts from this repo
-            content {
-                excludeGroup "com.android.tools.metalava"
-            }
-        }
-    }
-    if (System.getenv("ALLOW_PUBLIC_REPOS") != null || System.getProperty("ALLOW_PUBLIC_REPOS") != null) {
+    //if (System.getenv("ALLOW_PUBLIC_REPOS") != null || System.getProperty("ALLOW_PUBLIC_REPOS") != null) {
         handler.mavenCentral()
         handler.google {
             content {
@@ -86,7 +73,7 @@ def addMavenRepositories(RepositoryHandler handler) {
             url = "https://central.sonatype.com/repository/maven-snapshots"
         }
         handler.mavenLocal()
-    }
+   // }
     // Ordering appears to be important: b/229733266
     def androidPluginRepoOverride = System.getenv("GRADLE_PLUGIN_REPO")
     if (androidPluginRepoOverride != null) {
