@@ -140,7 +140,7 @@ private fun TooltipPopup(
                 scope.launch { state.dismiss() }
             }
         },
-        // TODO(https://youtrack.jetbrains.com/issue/COMPOSE-963/Discuss-fix-Tooltipfocusable-true-API) Discuss how to support focusable
+        // TODO(https://youtrack.jetbrains.com/issue/CMP-963) Discuss how to support focusable
         properties = PopupProperties(focusable = false),
     ) {
         Box(

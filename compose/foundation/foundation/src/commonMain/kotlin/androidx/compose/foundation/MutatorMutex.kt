@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation
 
+import androidx.compose.foundation.internal.AtomicReference
 import androidx.compose.foundation.internal.PlatformOptimizedCancellationException
 import androidx.compose.runtime.Stable
 import kotlinx.coroutines.CancellationException

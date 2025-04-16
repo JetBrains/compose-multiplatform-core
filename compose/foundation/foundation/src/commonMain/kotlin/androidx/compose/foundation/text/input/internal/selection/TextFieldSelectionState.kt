@@ -1366,7 +1366,7 @@ internal class TextFieldSelectionState(
      * selected text. Then the selection should collapse, and the new cursor offset should be at the
      * end of the newly added text.
      */
-    private suspend fun pasteAsPlainText() {
+    internal suspend fun pasteAsPlainText() {
         val clipboardText = clipboard?.getClipEntry()?.readText() ?: return
 
         textFieldState.replaceSelectedText(

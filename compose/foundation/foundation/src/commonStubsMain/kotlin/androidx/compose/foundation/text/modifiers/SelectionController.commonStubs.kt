@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package androidx.compose.foundation.text
+package androidx.compose.foundation.text.modifiers
 
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.implementedInJetBrainsFork
+import androidx.compose.foundation.text.selection.SelectionRegistrar
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.LayoutCoordinates
 
-@Composable
-internal actual inline fun rememberClipboardEventsHandler(
-    crossinline onPaste: (String) -> Unit,
-    crossinline onCopy: () -> String?,
-    crossinline onCut: () -> String?,
-    isEnabled: Boolean
-) {
-    // nothing to do
-}
+internal actual fun SelectionRegistrar.makeSelectionModifier(
+    selectableId: Long,
+    layoutCoordinates: () -> LayoutCoordinates?
+): Modifier = implementedInJetBrainsFork()
+

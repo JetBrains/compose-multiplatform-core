@@ -14,18 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.foundation.gestures
+package androidx.compose.foundation.text.selection
 
-import androidx.compose.animation.rememberSplineBasedDecay
-import androidx.compose.animation.splineBasedDecay
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-
-internal actual fun platformDefaultFlingBehavior(): ScrollableDefaultFlingBehavior =
-    DefaultFlingBehavior(splineBasedDecay(UnityDensity))
-
-@Composable
-internal actual fun rememberPlatformDefaultFlingBehavior(): FlingBehavior {
-    val flingSpec = rememberSplineBasedDecay<Float>()
-    return remember(flingSpec) { DefaultFlingBehavior(flingSpec) }
-}
+internal actual val SelectionManager.skipCopyKeyEvent: Boolean
+    get() = false

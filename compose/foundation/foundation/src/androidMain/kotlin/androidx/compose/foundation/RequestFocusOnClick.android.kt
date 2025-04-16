@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package kotlinx.test
 
-annotation class DoNothing
+package androidx.compose.foundation
 
-expect annotation class IgnoreWasmTarget()
-
-@OptionalExpectation
-expect annotation class IgnoreJsTarget()
+internal actual fun isRequestFocusOnClickEnabled(): Boolean = false

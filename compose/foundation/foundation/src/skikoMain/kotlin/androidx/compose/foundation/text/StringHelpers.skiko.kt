@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalNativeApi::class)
+
 package androidx.compose.foundation.text
 
+import kotlin.experimental.ExperimentalNativeApi
 import kotlin.math.absoluteValue
 import kotlin.math.sign
 import org.jetbrains.skia.BreakIterator

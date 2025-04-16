@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-package androidx.compose.foundation.text.selection
+package androidx.compose.foundation.text
 
 import androidx.compose.foundation.implementedInJetBrainsFork
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.text.selection.TextFieldSelectionManager
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.PointerEvent
-import kotlinx.coroutines.CoroutineScope
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.text.input.OffsetMapping
 
-internal actual fun Modifier.textFieldMagnifier(manager: TextFieldSelectionManager): Modifier =
-    implementedInJetBrainsFork()
-
-internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
+@Composable
+internal actual fun Modifier.textFieldPointer(
     manager: TextFieldSelectionManager,
-    coroutineScope: CoroutineScope,
+    enabled: Boolean,
+    interactionSource: MutableInteractionSource?,
+    state: LegacyTextFieldState,
+    focusRequester: FocusRequester,
+    readOnly: Boolean,
+    offsetMapping: OffsetMapping
 ): Modifier = implementedInJetBrainsFork()
-
-internal actual fun TextFieldSelectionManager.isSelectionHandleInVisibleBound(
-    isStartHandle: Boolean
-): Boolean = implementedInJetBrainsFork()
-

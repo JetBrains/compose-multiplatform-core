@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-package androidx.compose.foundation.gestures
+@file:OptIn(ExperimentalMultiplatform::class)
 
-import androidx.compose.animation.rememberSplineBasedDecay
-import androidx.compose.animation.splineBasedDecay
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+package kotlinx.test
 
-internal actual fun platformDefaultFlingBehavior(): ScrollableDefaultFlingBehavior =
-    DefaultFlingBehavior(splineBasedDecay(UnityDensity))
+@OptionalExpectation
+expect annotation class IgnoreWasmTarget()
 
-@Composable
-internal actual fun rememberPlatformDefaultFlingBehavior(): FlingBehavior {
-    val flingSpec = rememberSplineBasedDecay<Float>()
-    return remember(flingSpec) { DefaultFlingBehavior(flingSpec) }
-}
+@OptionalExpectation
+expect annotation class IgnoreJsTarget()

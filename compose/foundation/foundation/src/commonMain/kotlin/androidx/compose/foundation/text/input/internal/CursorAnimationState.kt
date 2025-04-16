@@ -16,7 +16,7 @@
 
 package androidx.compose.foundation.text.input.internal
 
-import androidx.compose.foundation.AtomicReference
+import androidx.compose.foundation.internal.AtomicReference
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,14 @@
  * limitations under the License.
  */
 
-package androidx.compose.foundation
+package androidx.compose.foundation.gestures
 
-internal expect class AtomicReference<V>(value: V) {
-    fun get(): V
+import androidx.compose.foundation.implementedInJetBrainsFork
+import androidx.compose.runtime.Composable
 
-    fun set(value: V)
+internal actual fun platformDefaultFlingBehavior(): ScrollableDefaultFlingBehavior =
+    implementedInJetBrainsFork()
 
-    fun getAndSet(value: V): V
-
-    fun compareAndSet(expect: V, newValue: V): Boolean
-}
-
-internal expect class AtomicLong(value: Long) {
-    fun get(): Long
-
-    fun set(value: Long)
-
-    fun getAndIncrement(): Long
-}
+@Composable
+internal actual fun rememberPlatformDefaultFlingBehavior(): FlingBehavior =
+    implementedInJetBrainsFork()

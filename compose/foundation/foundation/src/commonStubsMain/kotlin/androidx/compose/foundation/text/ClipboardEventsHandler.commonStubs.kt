@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package androidx.compose.foundation.gestures
+package androidx.compose.foundation.text
 
-import androidx.compose.animation.rememberSplineBasedDecay
-import androidx.compose.animation.splineBasedDecay
+import androidx.compose.foundation.implementedInJetBrainsFork
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-
-internal actual fun platformDefaultFlingBehavior(): ScrollableDefaultFlingBehavior =
-    DefaultFlingBehavior(splineBasedDecay(UnityDensity))
 
 @Composable
-internal actual fun rememberPlatformDefaultFlingBehavior(): FlingBehavior {
-    val flingSpec = rememberSplineBasedDecay<Float>()
-    return remember(flingSpec) { DefaultFlingBehavior(flingSpec) }
+internal actual inline fun rememberClipboardEventsHandler(
+    crossinline onPaste: (String) -> Unit,
+    crossinline onCopy: () -> String?,
+    crossinline onCut: () -> String?,
+    isEnabled: Boolean
+) {
+    implementedInJetBrainsFork()
 }

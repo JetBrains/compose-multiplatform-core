@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package kotlinx.test
 
-actual typealias IgnoreWasmTarget = DoNothing
+package androidx.compose.foundation.text.selection
+
+import androidx.compose.runtime.Stable
+import androidx.compose.ui.graphics.Color
+
+/**
+ * Default color used is the blue from the Compose logo, b/172679845 for context
+ */
+private val DefaultSelectionColor = Color(0xFF4286F4)
+
+@Stable
+internal actual val DefaultTextSelectionColors = TextSelectionColors(
+    handleColor = DefaultSelectionColor,
+    backgroundColor = DefaultSelectionColor.copy(alpha = 0.4f)
+)

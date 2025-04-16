@@ -38,7 +38,7 @@ internal fun createIOSTextFieldKeyEventHandler() = object : TextFieldKeyEventHan
         clipboardKeyCommandsHandler: ClipboardKeyCommandsHandler,
         editable: Boolean,
         singleLine: Boolean,
-        onSubmit: () -> Unit
+        onSubmit: () -> Boolean
     ): Boolean {
         return when(commonKeyMapping{
             event.isShiftPressed && event.isMetaPressed

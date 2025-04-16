@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2021 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
-package kotlinx.test
+package androidx.compose.foundation.internal
 
-actual typealias IgnoreWasmTarget = kotlin.test.Ignore
+internal actual typealias AtomicReference<V> = java.util.concurrent.atomic.AtomicReference<V>
+
+internal actual typealias AtomicLong = java.util.concurrent.atomic.AtomicLong

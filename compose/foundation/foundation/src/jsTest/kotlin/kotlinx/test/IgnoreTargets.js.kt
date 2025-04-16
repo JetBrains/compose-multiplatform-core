@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 
-package androidx.compose.animation
+package kotlinx.test
 
-import androidx.compose.animation.core.DecayAnimationSpec
-import androidx.compose.runtime.Composable
-
-@Composable
-@Deprecated("Replace with rememberSplineBasedDecay<Float>")
-actual fun defaultDecayAnimationSpec(): DecayAnimationSpec<Float> {
-    return rememberSplineBasedDecay()
-}
+actual typealias IgnoreJsTarget = kotlin.test.Ignore

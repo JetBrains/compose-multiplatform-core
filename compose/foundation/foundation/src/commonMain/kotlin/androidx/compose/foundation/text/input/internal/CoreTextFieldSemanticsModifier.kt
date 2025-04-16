@@ -18,8 +18,8 @@ package androidx.compose.foundation.text.input.internal
 
 import androidx.compose.foundation.text.LegacyTextFieldState
 import androidx.compose.foundation.text.TextFieldDelegate
-import androidx.compose.foundation.text.selection.TextFieldSelectionManager
 import androidx.compose.foundation.text.requestFocusAndShowKeyboardIfNeeded
+import androidx.compose.foundation.text.selection.TextFieldSelectionManager
 import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.node.DelegatingNode

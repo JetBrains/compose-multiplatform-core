@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
-package kotlinx.test
+package androidx.compose.foundation.text.modifiers
 
-import kotlin.test.Ignore
+import androidx.compose.foundation.text.selection.SelectionRegistrar
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.LayoutCoordinates
 
-actual typealias IgnoreJsTarget = Ignore
+internal actual fun SelectionRegistrar.makeSelectionModifier(
+    selectableId: Long,
+    layoutCoordinates: () -> LayoutCoordinates?
+): Modifier = makeDefaultSelectionModifier(selectableId, layoutCoordinates)

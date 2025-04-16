@@ -19,7 +19,7 @@ package androidx.compose.foundation.text.selection
 import androidx.collection.LongObjectMap
 import androidx.collection.emptyLongObjectMap
 import androidx.collection.mutableLongObjectMapOf
-import androidx.compose.foundation.AtomicLong
+import androidx.compose.foundation.internal.AtomicLong
 import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

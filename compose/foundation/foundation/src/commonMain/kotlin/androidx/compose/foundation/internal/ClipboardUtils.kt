@@ -19,7 +19,7 @@ package androidx.compose.foundation.internal
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.text.AnnotatedString
 
-// TODO: upstreaming the KDoc https://youtrack.jetbrains.com/issue/CMP-7544/Upstream-ClipboardUtils.kt-kdoc
+// TODO: upstreaming the KDoc https://youtrack.jetbrains.com/issue/CMP-7544
 
 /**
  * Returns a string if it's available in the ClipEntry.

@@ -106,7 +106,7 @@ internal fun Modifier.selectionGestureInput(
     mouseSelectionObserver: MouseSelectionObserver,
     textDragObserver: TextDragObserver,
 ): Modifier = composed {
-    // TODO(https://youtrack.jetbrains.com/issue/COMPOSE-79) how we can rewrite this without `composed`?
+    // TODO(https://youtrack.jetbrains.com/issue/CMP-79) how we can rewrite this without `composed`?
     val currentMouseSelectionObserver by rememberUpdatedState(mouseSelectionObserver)
     val currentTextDragObserver by rememberUpdatedState(textDragObserver)
     this.pointerInput(Unit) {
@@ -418,8 +418,8 @@ internal class ClicksCounter(
         // Here and further event means upcoming event (new)
         if (
             currentPrevEvent != null &&
-                timeIsTolerable(currentPrevEvent, event) &&
-                positionIsTolerable(currentPrevEvent, event)
+            timeIsTolerable(currentPrevEvent, event) &&
+            positionIsTolerable(currentPrevEvent, event)
         ) {
             clicks += 1
         } else {
