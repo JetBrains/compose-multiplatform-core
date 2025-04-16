@@ -117,7 +117,8 @@ abstract class StudioTask : DefaultTask() {
     }
 
     private val studioConfigBaseDir =
-        File(System.getenv("HOME"), ".AndroidStudioAndroidX/config").also { it.mkdirs() }
+        File(System.getenv("HOME") ?: System.getProperty("user.home"), ".AndroidStudioAndroidX/config")
+            .also { it.mkdirs() }
 
     /** Directory where Studio downloads plugins to */
     private val studioPluginDir = File(studioConfigBaseDir, "plugins").also { it.mkdirs() }

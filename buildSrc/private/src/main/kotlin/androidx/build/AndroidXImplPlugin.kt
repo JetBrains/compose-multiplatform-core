@@ -718,10 +718,10 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 AndroidMultiplatformApiTaskConfig(variant),
                 androidXExtension,
             )
-            project.configureProjectForKzipTasks(
-                AndroidMultiplatformApiTaskConfig(variant),
-                androidXExtension,
-            )
+//            project.configureProjectForKzipTasks(
+//                AndroidMultiplatformApiTaskConfig(variant),
+//                androidXExtension,
+//            )
             project.configurePublicResourcesStub(variant)
             project.configureMultiplatformSourcesForAndroid(androidXExtension.samplesProjects)
             project.configureVerifyELFRegionAlignment(variant)
@@ -872,10 +872,10 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                     LibraryApiTaskConfig(variant),
                     androidXExtension,
                 )
-                project.configureProjectForKzipTasks(
-                    LibraryApiTaskConfig(variant),
-                    androidXExtension,
-                )
+//                project.configureProjectForKzipTasks(
+//                    LibraryApiTaskConfig(variant),
+//                    androidXExtension,
+//                )
             }
             if (variant.name == DEFAULT_PUBLISH_CONFIG) {
                 project.configureSourceJarForAndroid(variant, androidXExtension.samplesProjects)
@@ -946,7 +946,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             }
 
         project.configureProjectForApiTasks(apiTaskConfig, androidXExtension)
-        project.configureProjectForKzipTasks(apiTaskConfig, androidXExtension)
+//        project.configureProjectForKzipTasks(apiTaskConfig, androidXExtension)
 
         if (project.multiplatformExtension == null) {
             project.addToBuildOnServer("jar")
