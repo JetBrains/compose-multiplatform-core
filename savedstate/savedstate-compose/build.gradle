@@ -8,6 +8,7 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
@@ -17,8 +18,15 @@ plugins {
 
 androidXMultiplatform {
     androidTarget()
-    jvmStubs()
-    linuxX64Stubs()
+    desktop()
+    mingwX64()
+    linux()
+    mac()
+    ios()
+    tvos()
+    watchos()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -26,7 +34,7 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 api(project(":savedstate:savedstate"))
-                api("androidx.compose.runtime:runtime:1.7.5")
+                api(project(":compose:runtime:runtime"))
             }
         }
 
@@ -69,12 +77,15 @@ androidXMultiplatform {
             dependsOn(commonMain)
         }
 
-        jvmStubsMain {
-            dependsOn(nonAndroidMain)
+        nonAndroidTest {
+            dependsOn(commonTest)
         }
 
-        linuxx64StubsMain {
-            dependsOn(nonAndroidMain)
+        targets.configureEach { target ->
+            if (target.platformType !in [KotlinPlatformType.androidJvm, KotlinPlatformType.common]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(nonAndroidMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nonAndroidTest)
+            }
         }
     }
 }
