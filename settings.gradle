@@ -114,7 +114,10 @@ def includeProject(name, filePath) {
 // see /mpp/docs/Stubbed Projects.md
 includeProject(":annotation:annotation", "annotation/annotation-compatibility-stub")
 includeProject(":collection:collection", "collection/collection-compatibility-stub")
-includeProject(":compose:runtime:runtime", "compose/runtime/runtime-compatibility-stub")
+// Stubbing reverted for runtime and runtime-annotation to publish DataSource API in them
+includeProject(":compose:runtime:runtime")
+includeProject(":compose:runtime:runtime-annotation")
+//
 includeProject(":lifecycle:lifecycle-common", "lifecycle/lifecycle-common-compatibility-stub")
 includeProject(":lifecycle:lifecycle-runtime", "lifecycle/lifecycle-runtime-compatibility-stub")
 includeProject(":lifecycle:lifecycle-viewmodel", "lifecycle/lifecycle-viewmodel-compatibility-stub")
