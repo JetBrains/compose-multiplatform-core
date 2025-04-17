@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.inspection.SPAM_LOG_TAG
 import androidx.compose.ui.inspection.inspector.ParameterType.DimensionDp
 import androidx.compose.ui.inspection.util.copy
 import androidx.compose.ui.inspection.util.removeLast
@@ -755,7 +756,7 @@ internal class ParameterFactory(private val inlineClassConverter: InlineClassCon
                     .flatMap { it.declaredMemberProperties.asSequence() }
                     .associateBy { it.name }
             } catch (ex: Throwable) {
-                Log.w("Compose", "Could not decompose ${kClass.simpleName}", ex)
+                Log.w(SPAM_LOG_TAG, "Could not decompose ${kClass.simpleName}")
                 null
             }
         }
@@ -766,9 +767,9 @@ internal class ParameterFactory(private val inlineClassConverter: InlineClassCon
                 // Bug in kotlin reflection API: if the type is a nullable inline type with a null
                 // value, we get an IllegalArgumentException in this line:
                 property.getter.call(instance)
-            } catch (ex: Throwable) {
+            } catch (_: Throwable) {
                 // TODO: Remove this warning since this is expected with nullable inline types
-                Log.w("Compose", "Could not get value of ${property.name}")
+                Log.w(SPAM_LOG_TAG, "Could not get value of ${property.name}")
                 null
             }
 

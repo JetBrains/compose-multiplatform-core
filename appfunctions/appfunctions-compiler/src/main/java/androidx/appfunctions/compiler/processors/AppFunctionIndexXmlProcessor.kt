@@ -19,6 +19,8 @@ package androidx.appfunctions.compiler.processors
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctions
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
+import androidx.appfunctions.compiler.core.createElementWithTextNode
+import androidx.appfunctions.compiler.core.toXmlElement
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
@@ -32,9 +34,6 @@ import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
-import kotlin.reflect.KProperty1
-import org.w3c.dom.Document
-import org.w3c.dom.Element
 
 /**
  * Generates AppFunction's index xml file with all properties of [CompileTimeAppFunctionMetadata]
@@ -102,15 +101,9 @@ class AppFunctionIndexXmlProcessor(
                 appFunctionMetadata.copy(components = AppFunctionComponentsMetadata())
 
             val appFunctionElement =
-                xmlDocument.createElementWithInstance(
-                    APP_FUNCTION_ITEM_TAG,
-                    sanitizedAppFunctionMetadata.toAppFunctionMetadataDocument(),
-                    // Below properties are named differently in platform's
-                    // AppFunctionStaticMetadata GD hence we encode them in XML accordingly.
-                    customTagNames = mapOf("isEnabledByDefault" to "enabledByDefault"),
-                    // Irrelevant properties that do not need to be encoded in XML.
-                    skipProperties = setOf("namespace")
-                )
+                sanitizedAppFunctionMetadata
+                    .toAppFunctionMetadataDocument()
+                    .toXmlElement(xmlDocument, APP_FUNCTION_ITEM_TAG)
             appFunctionElement.appendChild(
                 xmlDocument.createElementWithTextNode(
                     APP_FUNCTION_ID_TAG,
@@ -121,16 +114,9 @@ class AppFunctionIndexXmlProcessor(
         }
 
         val componentElement =
-            xmlDocument.createElementWithInstance(
-                COMPONENT_ITEM_TAG,
-                AppFunctionComponentsMetadata(aggregatedDataTypes)
-                    .toAppFunctionComponentsMetadataDocument(),
-                // Below properties are named differently in platform's
-                // AppFunctionStaticMetadata GD hence we encode them in XML accordingly.
-                customTagNames = mapOf("isEnabledByDefault" to "enabledByDefault"),
-                // Irrelevant properties that do not need to be encoded in XML.
-                skipProperties = setOf("namespace")
-            )
+            AppFunctionComponentsMetadata(aggregatedDataTypes)
+                .toAppFunctionComponentsMetadataDocument()
+                .toXmlElement(doc = xmlDocument, COMPONENT_ITEM_TAG)
         appFunctionsElement.appendChild(componentElement)
 
         val transformer =
@@ -154,66 +140,6 @@ class AppFunctionIndexXmlProcessor(
             .use { stream -> transformer.transform(DOMSource(xmlDocument), StreamResult(stream)) }
     }
 
-    /**
-     * Creates an XML element from [instance], including nested structures and collections.
-     *
-     * This function recursively converts a data class instance into an XML element, handling nested
-     * data classes and collections appropriately. For non-data-class values, it creates text nodes.
-     *
-     * @param elementName The name of the root XML element to create.
-     * @param instance The instance to convert into an XML structure.
-     * @param customTagNames Mapping of property names to customized tag names when creating nodes.
-     * @param skipProperties Property names to skip when creating XML elements.
-     * @return The created XML element representing the instance.
-     */
-    private fun Document.createElementWithInstance(
-        elementName: String,
-        instance: Any,
-        customTagNames: Map<String, String>,
-        skipProperties: Set<String>,
-    ): Element {
-        if (instance.isPrimitiveType()) {
-            return createElementWithTextNode(elementName, instance.toString())
-        }
-
-        val doc = this
-        val element = createElement(elementName)
-
-        for (property in instance::class.members.filterIsInstance<KProperty1<Any, *>>()) {
-
-            if (property.name in skipProperties) continue
-
-            val value = property.get(instance) ?: continue
-            val propertyName = customTagNames[property.name] ?: property.name
-
-            when {
-                value is List<*> ->
-                    value
-                        .filterNotNull()
-                        .map { item ->
-                            doc.createElementWithInstance(
-                                propertyName,
-                                item,
-                                customTagNames,
-                                skipProperties
-                            )
-                        }
-                        .forEach(element::appendChild)
-                else ->
-                    element.appendChild(
-                        doc.createElementWithInstance(
-                            propertyName,
-                            value,
-                            customTagNames,
-                            skipProperties
-                        )
-                    )
-            }
-        }
-
-        return element
-    }
-
     private fun Any.isPrimitiveType(): Boolean {
         return this is Byte ||
             this is Short ||
@@ -225,9 +151,6 @@ class AppFunctionIndexXmlProcessor(
             this is Boolean ||
             this is String
     }
-
-    private fun Document.createElementWithTextNode(elementName: String, text: String): Element =
-        createElement(elementName).apply { appendChild(createTextNode(text)) }
 
     private companion object {
         const val XML_PACKAGE_NAME = "assets"

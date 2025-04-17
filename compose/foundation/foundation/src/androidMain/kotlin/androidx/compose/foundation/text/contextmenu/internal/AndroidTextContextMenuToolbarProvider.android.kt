@@ -247,8 +247,15 @@ internal class AndroidTextContextMenuToolbarProvider(
                 when (component) {
                     is TextContextMenuItem -> {
                         val orderId = currentOrderId++
-                        // itemId (param 2) must be unique.
-                        val menuItem = menu.add(currentGroupId, orderId, orderId, component.label)
+                        val menuItem =
+                            menu.add(
+                                /* groupId = */ currentGroupId,
+                                // itemId must be unique so that onClick listeners
+                                // can be called on the item itself.
+                                /* itemId = */ orderId,
+                                /* order = */ orderId,
+                                /* title = */ component.label
+                            )
                         menuItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
                         menuItem.setOnMenuItemClickListener {
                             with(component) { session.onClick() }

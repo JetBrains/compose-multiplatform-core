@@ -16,9 +16,11 @@
 
 package androidx.compose.ui.inspection.util
 
+import androidx.collection.MutableLongLongMap
 import androidx.compose.ui.inspection.inspector.InspectorNode
 import androidx.compose.ui.inspection.inspector.MutableInspectorNode
 import androidx.compose.ui.unit.IntRect
+import java.util.NoSuchElementException
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Command
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableNode
@@ -97,7 +99,8 @@ internal fun GetParametersByAnchorIdCommand(
 
 internal fun GetAllParametersCommand(
     rootViewId: Long,
-    skipSystemComposables: Boolean = true
+    skipSystemComposables: Boolean = true,
+    generation: Int = 1,
 ): Command =
     Command.newBuilder()
         .apply {
@@ -106,6 +109,7 @@ internal fun GetAllParametersCommand(
                     .apply {
                         this.rootViewId = rootViewId
                         this.skipSystemComposables = skipSystemComposables
+                        this.generation = generation
                     }
                     .build()
         }
@@ -185,17 +189,41 @@ internal fun GetComposablesCommand(
         }
         .build()
 
+internal fun GetComposablesResponse.nodes(): List<ComposableNode> {
+    return rootsList.flatMap { it.nodesList }.flatMap { it.flatten() }
+}
+
 internal fun GetComposablesResponse.filter(name: String): List<ComposableNode> {
     val strings = stringsList.toMap()
-    return rootsList
-        .flatMap { it.nodesList }
-        .flatMap { it.flatten() }
-        .filter { strings[it.name] == name }
+    return nodes().filter { strings[it.name] == name }
 }
 
 internal fun GetComposablesResponse.roots(): List<InspectorNode> {
     val strings = stringsList.toMap()
     return rootsList.flatMap { it.nodesList.convert(strings) }
+}
+
+internal fun ComposableNode.isAncestorOf(
+    ancestor: ComposableNode,
+    tree: GetComposablesResponse
+): Boolean {
+    val pending = mutableListOf<ComposableNode>()
+    val map = MutableLongLongMap()
+    pending.addAll(tree.rootsList.flatMap { it.nodesList })
+    while (pending.isNotEmpty()) {
+        val item = pending.removeAt(pending.size - 1)
+        item.childrenList.forEach { map[it.id] = item.id }
+        pending.addAll(item.childrenList)
+    }
+    try {
+        var id = this.id
+        do {
+            id = map[id]
+        } while (id != ancestor.id)
+        return true
+    } catch (_: NoSuchElementException) {
+        return false
+    }
 }
 
 private fun List<ComposableNode>.convert(strings: Map<Int, String>): List<InspectorNode> = map {

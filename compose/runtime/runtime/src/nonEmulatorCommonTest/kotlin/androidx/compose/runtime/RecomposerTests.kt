@@ -42,7 +42,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.test.IgnoreJsTarget
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RecomposerTests {
@@ -360,7 +359,6 @@ class RecomposerTests {
     }
 
     @Test
-    @IgnoreJsTarget // b/409727145
     fun stateChangesDuringApplyChangesAreNotifiedBeforeFrameFinished() = compositionTest {
         val count = mutableStateOf(0)
         val countFromEffect = mutableStateOf(0)

@@ -36,7 +36,7 @@ import com.squareup.kotlinpoet.javapoet.JTypeName
 import com.squareup.kotlinpoet.javapoet.JTypeVariableName
 import javax.lang.model.element.Modifier
 
-internal class JavaFunSpec(internal val actual: JFunSpec) : XSpec(), XFunSpec {
+internal class JavaFunSpec(override val actual: JFunSpec) : JavaSpec<JFunSpec>(), XFunSpec {
     override val name = XName.of(actual.name)
 
     override fun toString() = actual.toString()

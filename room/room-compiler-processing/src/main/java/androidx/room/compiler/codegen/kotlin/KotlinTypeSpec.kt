@@ -36,7 +36,7 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.javapoet.KTypeSpec
 import com.squareup.kotlinpoet.javapoet.KTypeVariableName
 
-internal class KotlinTypeSpec(internal val actual: KTypeSpec) : XSpec(), XTypeSpec {
+internal class KotlinTypeSpec(override val actual: KTypeSpec) : KotlinSpec<KTypeSpec>(), XTypeSpec {
 
     override val name = actual.name?.let { XName.of(it) }
 

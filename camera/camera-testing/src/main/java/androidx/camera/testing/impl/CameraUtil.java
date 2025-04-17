@@ -63,6 +63,8 @@ import androidx.camera.core.impl.CameraConfigs;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.camera.core.internal.CameraUseCaseAdapter;
+import androidx.camera.core.internal.StreamSpecsCalculator;
+import androidx.camera.core.internal.StreamSpecsCalculatorImpl;
 import androidx.camera.testing.impl.fakes.FakeCameraCoordinator;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.concurrent.futures.CallbackToFutureAdapter.Completer;
@@ -614,6 +616,8 @@ public final class CameraUtil {
                     RetryPolicy.getDefaultRetryTimeoutInMillis() + 2000, TimeUnit.MILLISECONDS);
             CameraInternal camera =
                     cameraSelector.select(cameraX.getCameraRepository().getCameras());
+            StreamSpecsCalculator streamSpecsCalculator = new StreamSpecsCalculatorImpl(
+                    cameraX.getDefaultConfigFactory(), cameraX.getCameraDeviceSurfaceManager());
             return new CameraUseCaseAdapter(camera,
                     null,
                     new AdapterCameraInfo(camera.getCameraInfoInternal(), cameraConfig),
@@ -621,7 +625,7 @@ public final class CameraUtil {
                     CompositionSettings.DEFAULT,
                     CompositionSettings.DEFAULT,
                     cameraCoordinator,
-                    cameraX.getCameraDeviceSurfaceManager(),
+                    streamSpecsCalculator,
                     cameraX.getDefaultConfigFactory());
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
             throw new RuntimeException("Unable to retrieve CameraX instance");

@@ -79,7 +79,7 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
 
         try (NodeTransaction transaction = extensions.createNodeTransaction()) {
             // Make the Entity node a parent of the subspace node.
-            transaction.setParent(mSubspace.getSubspaceNodeActual(), mNode).apply();
+            transaction.setParent(mSubspace.getSubspaceNode(), mNode).apply();
         }
 
         // This is broken up into two steps to limit the size of the Impress Surface

@@ -44,7 +44,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -553,7 +553,7 @@ internal fun IndicatorImpl(
     }
     Box(
         modifier =
-            modifier.size(size()).drawWithCache {
+            modifier.size(size()).drawWithContent {
                 // We need to invert reverseDirection when the screen is round and we are on
                 // the left.
                 val actualReverseDirection =
@@ -577,20 +577,18 @@ internal fun IndicatorImpl(
                 val indicatorStart = indicatorPosition * (1 - sizeFractionAnimatable.value)
 
                 val paddingHorizontalPx = paddingHorizontal.toPx()
-                onDrawWithContent {
-                    drawCurvedIndicator(
-                        screenWidthDp.toPx(),
-                        color,
-                        background,
-                        paddingHorizontalPx,
-                        indicatorOnTheRight,
-                        indicatorHeight,
-                        gapHeight,
-                        indicatorWidthPx,
-                        indicatorStart,
-                        sizeFractionAnimatable.value,
-                    )
-                }
+                drawCurvedIndicator(
+                    screenWidthDp.toPx(),
+                    color,
+                    background,
+                    paddingHorizontalPx,
+                    indicatorOnTheRight,
+                    indicatorHeight,
+                    gapHeight,
+                    indicatorWidthPx,
+                    indicatorStart,
+                    sizeFractionAnimatable.value,
+                )
             }
     )
 }

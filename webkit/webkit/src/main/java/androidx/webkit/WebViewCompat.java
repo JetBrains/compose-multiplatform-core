@@ -1220,7 +1220,7 @@ public class WebViewCompat {
 
     /**
      * Callback interface for
-     * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewStartUpCallback)}.
+     * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewStartUpCallback)}.
      */
     @ExperimentalAsyncStartUp
     public interface WebViewStartUpCallback {
@@ -1258,6 +1258,7 @@ public class WebViewCompat {
      * This is an experimental API and unsuitable for non-experimental use.
      * This method can be removed in future versions of the library.
      *
+     * @param context  Application Context.
      * @param config   configuration for startup.
      * @param callback the callback triggered when WebView startup is complete. This will be called
      *                 on the main looper (Looper.getMainLooper()).
@@ -1265,7 +1266,9 @@ public class WebViewCompat {
     @ExperimentalAsyncStartUp
     @AnyThread
     public static void startUpWebView(
-            @NonNull WebViewStartUpConfig config, @NonNull WebViewStartUpCallback callback) {
+            @NonNull Context context,
+            @NonNull WebViewStartUpConfig config,
+            @NonNull WebViewStartUpCallback callback) {
         config.getBackgroundExecutor().execute(() -> {
             // Invoke provider init.
             WebViewGlueCommunicator.getWebViewClassLoader();
@@ -1283,11 +1286,8 @@ public class WebViewCompat {
                 return;
             }
             if (config.shouldRunUiThreadStartUpTasks()) {
-                // We never access the context in Chromium-based WebView and `startUpWebView` will
-                // only be called on Android API versions where the WebView is Chromium-based, so
-                // passing `null`.
                 // This method implicitly does WebView startup.
-                WebSettings.getDefaultUserAgent(null);
+                WebSettings.getDefaultUserAgent(context.getApplicationContext());
             } else {
                 // On versions of WebView without the underlying support for the API the only part
                 // of startup we can do without blocking the UI thread already happened during

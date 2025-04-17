@@ -170,6 +170,14 @@ constructor(
         }
         if (
             quirkSettings.shouldEnableQuirk(
+                JpegCaptureDownsizingQuirk::class.java,
+                JpegCaptureDownsizingQuirk.isEnabled(cameraMetadata)
+            )
+        ) {
+            quirks.add(JpegCaptureDownsizingQuirk)
+        }
+        if (
+            quirkSettings.shouldEnableQuirk(
                 PreviewOrientationIncorrectQuirk::class.java,
                 PreviewOrientationIncorrectQuirk.isEnabled(cameraMetadata)
             )

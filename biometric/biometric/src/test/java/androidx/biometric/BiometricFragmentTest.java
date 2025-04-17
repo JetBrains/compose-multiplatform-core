@@ -85,13 +85,13 @@ public class BiometricFragmentTest {
     public void setUp() {
         prepareMockHandler(mHandler);
         mViewModel.setClientExecutor(EXECUTOR);
+        mViewModel.setClientCallback(mAuthenticationCallback);
         mViewModel.setAwaitingResult(true);
         mViewModel.setPromptInfo(new BiometricPrompt.PromptInfo.Builder()
                 .setTitle("Title")
                 .setNegativeButtonText("Cancel")
                 .build());
-        mFragmentFactory = new BiometricFragmentFactory(mHandler, mViewModel,
-                mAuthenticationCallback, true, true, true,
+        mFragmentFactory = new BiometricFragmentFactory(mHandler, mViewModel, true, true, true,
                 true);
     }
 
@@ -132,8 +132,7 @@ public class BiometricFragmentTest {
 
         mViewModel.setPromptShowing(true);
         mViewModel.setFingerprintDialogDismissedInstantly(false);
-        mFragmentFactory = new BiometricFragmentFactory(mHandler, mViewModel,
-                mAuthenticationCallback, true, true, true,
+        mFragmentFactory = new BiometricFragmentFactory(mHandler, mViewModel, true, true, true,
                 true);
 
         try (FragmentScenario<BiometricFragment> scenario = FragmentScenario.launchInContainer(
@@ -233,7 +232,6 @@ public class BiometricFragmentTest {
     private static class BiometricFragmentFactory extends FragmentFactory {
         private final Handler mHandler;
         private final BiometricViewModel mViewModel;
-        private BiometricPrompt.AuthenticationCallback mAuthenticationCallback;
         private final boolean mHostedInActivity;
         private final boolean mHasFingerprint;
         private final boolean mHasFace;
@@ -241,12 +239,10 @@ public class BiometricFragmentTest {
 
         BiometricFragmentFactory(@NonNull Handler handler,
                 @NonNull BiometricViewModel viewModel,
-                BiometricPrompt.AuthenticationCallback clientCallback,
                 boolean hostedInActivity, boolean hasFingerprint, boolean hasFace,
                 boolean hasIris) {
             mHandler = handler;
             mViewModel = viewModel;
-            mAuthenticationCallback = clientCallback;
             mHostedInActivity = hostedInActivity;
             mHasFace = hasFace;
             mHasFingerprint = hasFingerprint;
@@ -257,8 +253,7 @@ public class BiometricFragmentTest {
         @NonNull
         public Fragment instantiate(@NonNull ClassLoader classLoader, String className) {
             if (className.equals(BiometricFragment.class.getName())) {
-                return BiometricFragment.newInstance(mHandler, mViewModel, mAuthenticationCallback,
-                        mHostedInActivity,
+                return BiometricFragment.newInstance(mHandler, mViewModel, mHostedInActivity,
                         mHasFingerprint, mHasFace, mHasIris);
             }
             return super.instantiate(classLoader, className);

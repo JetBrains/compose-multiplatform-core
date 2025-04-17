@@ -34,6 +34,7 @@ import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.internal.CameraUseCaseAdapter
+import androidx.camera.core.internal.StreamSpecsCalculatorImpl
 import androidx.camera.core.internal.TargetConfig.OPTION_TARGET_NAME
 import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
@@ -356,7 +357,7 @@ class UseCaseTest {
         return CameraUseCaseAdapter(
             fakeCamera,
             cameraCoordinator,
-            fakeCameraDeviceSurfaceManager,
+            StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeCameraDeviceSurfaceManager),
             useCaseConfigFactory
         )
     }

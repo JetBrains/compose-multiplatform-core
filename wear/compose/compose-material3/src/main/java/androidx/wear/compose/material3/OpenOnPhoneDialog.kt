@@ -275,7 +275,7 @@ public fun CurvedScope.openOnPhoneDialogCurvedText(
     curvedText(
         text = text,
         style = style,
-        maxSweepAngle = CurvedTextDefaults.StaticContentMaxSweepAngle,
+        maxSweepAngle = OpenOnPhoneMaxSweepAngle,
         modifier = CurvedModifier.padding(PaddingDefaults.edgePadding)
     )
 
@@ -498,3 +498,4 @@ private const val HeightPaddingFraction = 0.157f
 private const val SizeFraction = 1 - WidthPaddingFraction * 2
 private val progressIndicatorStrokeWidth = 5.dp
 private val progressIndicatorPadding = 5.dp
+private const val OpenOnPhoneMaxSweepAngle = 130f

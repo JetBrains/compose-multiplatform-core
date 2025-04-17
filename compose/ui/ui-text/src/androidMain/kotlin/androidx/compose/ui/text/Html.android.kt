@@ -142,7 +142,7 @@ private fun AnnotatedString.Builder.addSpan(
             addBullet(
                 start = start,
                 end = end,
-                indentation = DefaultBulletIndentation * span.indentationLevel,
+                indentation = Bullet.DefaultIndentation * span.indentationLevel,
                 bullet = span.bullet
             )
         }
@@ -333,7 +333,7 @@ private class AnnotationContentHandler(
         // <li style="color:red"> is a no-op in terms of applying color. This needs to be handled
         // manually since we can't use default implementation which adds unwanted new lines for us.
         commitCurrentBulletSpan()
-        currentBulletSpan = BulletSpanWithLevel(DefaultBullet, bulletIndentation, output.length)
+        currentBulletSpan = BulletSpanWithLevel(Bullet.Default, bulletIndentation, output.length)
     }
 
     private fun handleLiEnd() {

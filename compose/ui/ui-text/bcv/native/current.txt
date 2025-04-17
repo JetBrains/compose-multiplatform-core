@@ -799,6 +799,10 @@ final class androidx.compose.ui.text/AnnotatedString : kotlin/CharSequence { // 
         final val length // androidx.compose.ui.text/AnnotatedString.Builder.length|{}length[0]
             final fun <get-length>(): kotlin/Int // androidx.compose.ui.text/AnnotatedString.Builder.length.<get-length>|<get-length>(){}[0]
 
+        final fun <#A2: kotlin/Any> (androidx.compose.ui.text/AnnotatedString.Builder.BulletScope).withBulletListItem(androidx.compose.ui.text/Bullet? = ..., kotlin/Function1<androidx.compose.ui.text/AnnotatedString.Builder, #A2>): #A2 // androidx.compose.ui.text/AnnotatedString.Builder.withBulletListItem|withBulletListItem@androidx.compose.ui.text.AnnotatedString.Builder.BulletScope(androidx.compose.ui.text.Bullet?;kotlin.Function1<androidx.compose.ui.text.AnnotatedString.Builder,0:0>){0§<kotlin.Any>}[0]
+        final fun <#A2: kotlin/Any> withBulletList(androidx.compose.ui.unit/TextUnit = ..., androidx.compose.ui.text/Bullet = ..., kotlin/Function1<androidx.compose.ui.text/AnnotatedString.Builder.BulletScope, #A2>): #A2 // androidx.compose.ui.text/AnnotatedString.Builder.withBulletList|withBulletList(androidx.compose.ui.unit.TextUnit;androidx.compose.ui.text.Bullet;kotlin.Function1<androidx.compose.ui.text.AnnotatedString.Builder.BulletScope,0:0>){0§<kotlin.Any>}[0]
+        final fun addBullet(androidx.compose.ui.text/Bullet, androidx.compose.ui.unit/TextUnit, kotlin/Int, kotlin/Int) // androidx.compose.ui.text/AnnotatedString.Builder.addBullet|addBullet(androidx.compose.ui.text.Bullet;androidx.compose.ui.unit.TextUnit;kotlin.Int;kotlin.Int){}[0]
+        final fun addBullet(androidx.compose.ui.text/Bullet, kotlin/Int, kotlin/Int) // androidx.compose.ui.text/AnnotatedString.Builder.addBullet|addBullet(androidx.compose.ui.text.Bullet;kotlin.Int;kotlin.Int){}[0]
         final fun addLink(androidx.compose.ui.text/LinkAnnotation.Clickable, kotlin/Int, kotlin/Int) // androidx.compose.ui.text/AnnotatedString.Builder.addLink|addLink(androidx.compose.ui.text.LinkAnnotation.Clickable;kotlin.Int;kotlin.Int){}[0]
         final fun addLink(androidx.compose.ui.text/LinkAnnotation.Url, kotlin/Int, kotlin/Int) // androidx.compose.ui.text/AnnotatedString.Builder.addLink|addLink(androidx.compose.ui.text.LinkAnnotation.Url;kotlin.Int;kotlin.Int){}[0]
         final fun addStringAnnotation(kotlin/String, kotlin/String, kotlin/Int, kotlin/Int) // androidx.compose.ui.text/AnnotatedString.Builder.addStringAnnotation|addStringAnnotation(kotlin.String;kotlin.String;kotlin.Int;kotlin.Int){}[0]
@@ -814,17 +818,55 @@ final class androidx.compose.ui.text/AnnotatedString : kotlin/CharSequence { // 
         final fun deprecated_append_returning_void(kotlin/Char) // androidx.compose.ui.text/AnnotatedString.Builder.deprecated_append_returning_void|deprecated_append_returning_void(kotlin.Char){}[0]
         final fun pop() // androidx.compose.ui.text/AnnotatedString.Builder.pop|pop(){}[0]
         final fun pop(kotlin/Int) // androidx.compose.ui.text/AnnotatedString.Builder.pop|pop(kotlin.Int){}[0]
+        final fun pushBullet(androidx.compose.ui.text/Bullet): kotlin/Int // androidx.compose.ui.text/AnnotatedString.Builder.pushBullet|pushBullet(androidx.compose.ui.text.Bullet){}[0]
         final fun pushLink(androidx.compose.ui.text/LinkAnnotation): kotlin/Int // androidx.compose.ui.text/AnnotatedString.Builder.pushLink|pushLink(androidx.compose.ui.text.LinkAnnotation){}[0]
         final fun pushStringAnnotation(kotlin/String, kotlin/String): kotlin/Int // androidx.compose.ui.text/AnnotatedString.Builder.pushStringAnnotation|pushStringAnnotation(kotlin.String;kotlin.String){}[0]
         final fun pushStyle(androidx.compose.ui.text/ParagraphStyle): kotlin/Int // androidx.compose.ui.text/AnnotatedString.Builder.pushStyle|pushStyle(androidx.compose.ui.text.ParagraphStyle){}[0]
         final fun pushStyle(androidx.compose.ui.text/SpanStyle): kotlin/Int // androidx.compose.ui.text/AnnotatedString.Builder.pushStyle|pushStyle(androidx.compose.ui.text.SpanStyle){}[0]
         final fun pushTtsAnnotation(androidx.compose.ui.text/TtsAnnotation): kotlin/Int // androidx.compose.ui.text/AnnotatedString.Builder.pushTtsAnnotation|pushTtsAnnotation(androidx.compose.ui.text.TtsAnnotation){}[0]
         final fun toAnnotatedString(): androidx.compose.ui.text/AnnotatedString // androidx.compose.ui.text/AnnotatedString.Builder.toAnnotatedString|toAnnotatedString(){}[0]
+
+        final class BulletScope // androidx.compose.ui.text/AnnotatedString.Builder.BulletScope|null[0]
     }
 
     final object Companion { // androidx.compose.ui.text/AnnotatedString.Companion|null[0]
         final val Saver // androidx.compose.ui.text/AnnotatedString.Companion.Saver|{}Saver[0]
             final fun <get-Saver>(): androidx.compose.runtime.saveable/Saver<androidx.compose.ui.text/AnnotatedString, *> // androidx.compose.ui.text/AnnotatedString.Companion.Saver.<get-Saver>|<get-Saver>(){}[0]
+    }
+}
+
+final class androidx.compose.ui.text/Bullet : androidx.compose.ui.text/AnnotatedString.Annotation { // androidx.compose.ui.text/Bullet|null[0]
+    constructor <init>(androidx.compose.ui.graphics/Shape, androidx.compose.ui.unit/TextUnit, androidx.compose.ui.unit/TextUnit, androidx.compose.ui.unit/TextUnit, androidx.compose.ui.graphics/Brush? = ..., kotlin/Float = ..., androidx.compose.ui.graphics.drawscope/DrawStyle = ...) // androidx.compose.ui.text/Bullet.<init>|<init>(androidx.compose.ui.graphics.Shape;androidx.compose.ui.unit.TextUnit;androidx.compose.ui.unit.TextUnit;androidx.compose.ui.unit.TextUnit;androidx.compose.ui.graphics.Brush?;kotlin.Float;androidx.compose.ui.graphics.drawscope.DrawStyle){}[0]
+
+    final val alpha // androidx.compose.ui.text/Bullet.alpha|{}alpha[0]
+        final fun <get-alpha>(): kotlin/Float // androidx.compose.ui.text/Bullet.alpha.<get-alpha>|<get-alpha>(){}[0]
+    final val brush // androidx.compose.ui.text/Bullet.brush|{}brush[0]
+        final fun <get-brush>(): androidx.compose.ui.graphics/Brush? // androidx.compose.ui.text/Bullet.brush.<get-brush>|<get-brush>(){}[0]
+    final val drawStyle // androidx.compose.ui.text/Bullet.drawStyle|{}drawStyle[0]
+        final fun <get-drawStyle>(): androidx.compose.ui.graphics.drawscope/DrawStyle // androidx.compose.ui.text/Bullet.drawStyle.<get-drawStyle>|<get-drawStyle>(){}[0]
+    final val height // androidx.compose.ui.text/Bullet.height|{}height[0]
+        final fun <get-height>(): androidx.compose.ui.unit/TextUnit // androidx.compose.ui.text/Bullet.height.<get-height>|<get-height>(){}[0]
+    final val padding // androidx.compose.ui.text/Bullet.padding|{}padding[0]
+        final fun <get-padding>(): androidx.compose.ui.unit/TextUnit // androidx.compose.ui.text/Bullet.padding.<get-padding>|<get-padding>(){}[0]
+    final val shape // androidx.compose.ui.text/Bullet.shape|{}shape[0]
+        final fun <get-shape>(): androidx.compose.ui.graphics/Shape // androidx.compose.ui.text/Bullet.shape.<get-shape>|<get-shape>(){}[0]
+    final val width // androidx.compose.ui.text/Bullet.width|{}width[0]
+        final fun <get-width>(): androidx.compose.ui.unit/TextUnit // androidx.compose.ui.text/Bullet.width.<get-width>|<get-width>(){}[0]
+
+    final fun copy(androidx.compose.ui.graphics/Shape = ..., androidx.compose.ui.unit/TextUnit = ..., androidx.compose.ui.unit/TextUnit = ..., androidx.compose.ui.unit/TextUnit = ..., androidx.compose.ui.graphics/Brush? = ..., kotlin/Float = ..., androidx.compose.ui.graphics.drawscope/DrawStyle = ...): androidx.compose.ui.text/Bullet // androidx.compose.ui.text/Bullet.copy|copy(androidx.compose.ui.graphics.Shape;androidx.compose.ui.unit.TextUnit;androidx.compose.ui.unit.TextUnit;androidx.compose.ui.unit.TextUnit;androidx.compose.ui.graphics.Brush?;kotlin.Float;androidx.compose.ui.graphics.drawscope.DrawStyle){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.ui.text/Bullet.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // androidx.compose.ui.text/Bullet.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // androidx.compose.ui.text/Bullet.toString|toString(){}[0]
+
+    final object Companion { // androidx.compose.ui.text/Bullet.Companion|null[0]
+        final val Default // androidx.compose.ui.text/Bullet.Companion.Default|{}Default[0]
+            final fun <get-Default>(): androidx.compose.ui.text/Bullet // androidx.compose.ui.text/Bullet.Companion.Default.<get-Default>|<get-Default>(){}[0]
+        final val DefaultIndentation // androidx.compose.ui.text/Bullet.Companion.DefaultIndentation|{}DefaultIndentation[0]
+            final fun <get-DefaultIndentation>(): androidx.compose.ui.unit/TextUnit // androidx.compose.ui.text/Bullet.Companion.DefaultIndentation.<get-DefaultIndentation>|<get-DefaultIndentation>(){}[0]
+        final val DefaultPadding // androidx.compose.ui.text/Bullet.Companion.DefaultPadding|{}DefaultPadding[0]
+            final fun <get-DefaultPadding>(): androidx.compose.ui.unit/TextUnit // androidx.compose.ui.text/Bullet.Companion.DefaultPadding.<get-DefaultPadding>|<get-DefaultPadding>(){}[0]
+        final val DefaultSize // androidx.compose.ui.text/Bullet.Companion.DefaultSize|{}DefaultSize[0]
+            final fun <get-DefaultSize>(): androidx.compose.ui.unit/TextUnit // androidx.compose.ui.text/Bullet.Companion.DefaultSize.<get-DefaultSize>|<get-DefaultSize>(){}[0]
     }
 }
 

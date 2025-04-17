@@ -16,6 +16,7 @@
 
 package androidx.credentials.playservices.controllers.identitycredentials.createpublickeycredential
 
+import androidx.credentials.CreateCredentialRequest
 import androidx.credentials.CreatePublicKeyCredentialRequest
 import androidx.credentials.ExperimentalDigitalCredentialApi
 import androidx.credentials.playservices.TestCredentialsActivity
@@ -58,15 +59,17 @@ class CreatePublicKeyCredentialControllerTest {
                 request.candidateQueryData
             )
             TestUtils.Companion.equals(convertedRequest.credentialData, request.credentialData)
-            // TODO(b/359049355): Replace with API in CreateCredentialRequest while exposing
-            // Companion
-            // object in that class
-            Truth.assertThat(
-                    convertedRequest.candidateQueryData.getBoolean(
-                        "androidx.credentials.BUNDLE_KEY_IS_CONDITIONAL_REQUEST"
-                    )
+            val jetpackRequestFromConvertedRequest =
+                CreateCredentialRequest.createFrom(
+                    convertedRequest.type,
+                    convertedRequest.candidateQueryData,
+                    convertedRequest.credentialData,
+                    false
                 )
-                .isTrue()
+            Truth.assertThat(jetpackRequestFromConvertedRequest is CreatePublicKeyCredentialRequest)
+            val createPublicKeyReq =
+                jetpackRequestFromConvertedRequest as CreatePublicKeyCredentialRequest
+            Truth.assertThat(createPublicKeyReq.isConditional)
         }
     }
 }

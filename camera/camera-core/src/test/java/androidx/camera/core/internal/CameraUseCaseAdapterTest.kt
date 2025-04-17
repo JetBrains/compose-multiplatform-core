@@ -124,6 +124,7 @@ class CameraUseCaseAdapterTest {
     private lateinit var fakeCameraControl: FakeCameraControl
     private lateinit var fakeCameraInfo: FakeCameraInfoInternal
     private lateinit var adapter: CameraUseCaseAdapter
+    private lateinit var streamSpecsCalculator: StreamSpecsCalculator
     private val imageEffect = GrayscaleImageEffect()
     private val preview = Preview.Builder().build()
     private val video = createFakeVideoCaptureUseCase()
@@ -135,11 +136,13 @@ class CameraUseCaseAdapterTest {
     fun setUp() {
         fakeCameraDeviceSurfaceManager = FakeCameraDeviceSurfaceManager()
         fakeCameraControl = FakeCameraControl()
-        fakeCameraInfo = FakeCameraInfoInternal()
+        useCaseConfigFactory = FakeUseCaseConfigFactory()
+        streamSpecsCalculator =
+            StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeCameraDeviceSurfaceManager)
+        fakeCameraInfo = FakeCameraInfoInternal(streamSpecsCalculator)
         fakeCamera = FakeCamera(CAMERA_ID, fakeCameraControl, fakeCameraInfo)
         fakeSecondaryCamera = FakeCamera(SECONDARY_CAMERA_ID, fakeCameraControl, fakeCameraInfo)
         cameraCoordinator = FakeCameraCoordinator()
-        useCaseConfigFactory = FakeUseCaseConfigFactory()
         executor = Executors.newSingleThreadExecutor()
         surfaceProcessorInternal = FakeSurfaceProcessorInternal(mainThreadExecutor())
         previewEffect = FakeSurfaceEffect(PREVIEW, surfaceProcessorInternal)
@@ -325,8 +328,8 @@ class CameraUseCaseAdapterTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 FakeCameraCoordinator(),
-                fakeManager,
-                FakeUseCaseConfigFactory(),
+                StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeManager),
+                useCaseConfigFactory,
             )
 
         // Act: add ImageCapture that sets Ultra HDR.
@@ -355,8 +358,8 @@ class CameraUseCaseAdapterTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 FakeCameraCoordinator(),
-                fakeManager,
-                FakeUseCaseConfigFactory(),
+                StreamSpecsCalculatorImpl(useCaseConfigFactory, null),
+                useCaseConfigFactory,
             )
 
         // Act: add ImageCapture that sets Ultra HDR.
@@ -374,12 +377,13 @@ class CameraUseCaseAdapterTest {
         fakeManager.setValidSurfaceCombos(
             setOf(listOf(INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE, JPEG_R))
         )
+        val useCaseConfigFactory = FakeUseCaseConfigFactory()
         val adapter =
             CameraUseCaseAdapter(
                 FakeCamera(cameraId),
                 FakeCameraCoordinator(),
-                fakeManager,
-                FakeUseCaseConfigFactory(),
+                StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeManager),
+                useCaseConfigFactory,
             )
         adapter.setEffects(listOf(imageEffect))
 
@@ -399,12 +403,13 @@ class CameraUseCaseAdapterTest {
         fakeManager.setValidSurfaceCombos(
             setOf(listOf(INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE, RAW_SENSOR))
         )
+        val useCaseConfigFactory = FakeUseCaseConfigFactory()
         val adapter =
             CameraUseCaseAdapter(
                 FakeCamera(cameraId),
                 FakeCameraCoordinator(),
-                fakeManager,
-                FakeUseCaseConfigFactory(),
+                StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeManager),
+                useCaseConfigFactory,
             )
         adapter.setEffects(listOf(imageEffect))
 
@@ -1472,7 +1477,7 @@ class CameraUseCaseAdapterTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 cameraCoordinator,
-                fakeCameraDeviceSurfaceManager,
+                streamSpecsCalculator,
                 useCaseConfigFactory
             )
         adaptersToDetach.add(adapter)

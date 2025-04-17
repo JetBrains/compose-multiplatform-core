@@ -431,6 +431,8 @@ public interface JxrPlatformAdapter {
         inputListener: InputEventListener,
     ): PointerCaptureComponent
 
+    public fun createSpatialPointerComponent(): SpatialPointerComponent
+
     /**
      * A factory function to recreate an Anchor entity which was persisted in a previous session.
      *

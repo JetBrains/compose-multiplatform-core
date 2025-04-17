@@ -27,9 +27,9 @@ import androidx.room.compiler.codegen.java.JavaFunSpec
 import androidx.room.compiler.codegen.kotlin.KotlinFunSpec
 
 internal class XFunSpecImpl(
-    val java: JavaFunSpec,
-    val kotlin: KotlinFunSpec,
-) : XSpec(), XFunSpec {
+    override val java: JavaFunSpec,
+    override val kotlin: KotlinFunSpec,
+) : ImplSpec<JavaFunSpec, KotlinFunSpec>(), XFunSpec {
     override val name = XName(java.name.java, kotlin.name.kotlin)
 
     internal class Builder(

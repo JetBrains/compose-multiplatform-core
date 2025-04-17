@@ -38,6 +38,7 @@ import androidx.compose.ui.res.ImageVectorCache
 import androidx.compose.ui.res.ResourceIdCache
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 
 /**
  * The Android [Configuration]. The [Configuration] is useful for determining how to organize the
@@ -81,10 +82,12 @@ actual val LocalLifecycleOwner
     get() = LocalLifecycleOwner
 
 /** The CompositionLocal containing the current [SavedStateRegistryOwner]. */
-val LocalSavedStateRegistryOwner =
-    staticCompositionLocalOf<SavedStateRegistryOwner> {
-        noLocalProvidedFor("LocalSavedStateRegistryOwner")
-    }
+@Deprecated(
+    "Moved to savedstate-compose library in androidx.savedstate.compose package.",
+    ReplaceWith("androidx.savedstate.compose.LocalSavedStateRegistryOwner"),
+)
+val LocalSavedStateRegistryOwner
+    get() = LocalSavedStateRegistryOwner
 
 /** The CompositionLocal containing the current Compose [View]. */
 val LocalView = staticCompositionLocalOf<View> { noLocalProvidedFor("LocalView") }

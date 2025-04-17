@@ -2015,7 +2015,9 @@ private fun SelectableChip(
         border = border,
         interactionSource = interactionSource
     ) {
-        ChipContent(
+        // Selectable chips are animating the leading and trailing icons when they change from
+        // `null` to non-`null` values.
+        AnimatingChipContent(
             label = label,
             labelTextStyle = labelTextStyle,
             leadingIcon = leadingIcon,
@@ -2030,8 +2032,76 @@ private fun SelectableChip(
     }
 }
 
+/**
+ * Chip content.
+ *
+ * Use the [AnimatingChipContent] if you wish to animate the leading and trailing icons when they
+ * change from `null` to non-`null` values. Otherwise, use this version for better performance.
+ */
 @Composable
 private fun ChipContent(
+    label: @Composable () -> Unit,
+    labelTextStyle: TextStyle,
+    labelColor: Color,
+    leadingIcon: @Composable (() -> Unit)?,
+    avatar: @Composable (() -> Unit)?,
+    trailingIcon: @Composable (() -> Unit)?,
+    leadingIconColor: Color,
+    trailingIconColor: Color,
+    minHeight: Dp,
+    paddingValues: PaddingValues
+) {
+    CompositionLocalProvider(
+        LocalContentColor provides labelColor,
+        LocalTextStyle provides labelTextStyle
+    ) {
+        Layout(
+            modifier = Modifier.defaultMinSize(minHeight = minHeight).padding(paddingValues),
+            content = {
+                if (avatar != null || leadingIcon != null) {
+                    Box(
+                        modifier = Modifier.layoutId(LeadingIconLayoutId),
+                        contentAlignment = Alignment.Center,
+                        content = {
+                            val leadingContent =
+                                leadingContent(avatar, leadingIcon, leadingIconColor)
+                            if (leadingContent != null) {
+                                leadingContent()
+                            }
+                        }
+                    )
+                }
+                Row(
+                    modifier =
+                        Modifier.layoutId(LabelLayoutId).padding(HorizontalElementsPadding, 0.dp),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = { label() }
+                )
+                if (trailingIcon != null) {
+                    Box(
+                        modifier = Modifier.layoutId(TrailingIconLayoutId),
+                        contentAlignment = Alignment.Center,
+                        content = {
+                            val trailingContent = trailingContent(trailingIcon, trailingIconColor)
+                            if (trailingContent != null) {
+                                trailingContent()
+                            }
+                        }
+                    )
+                }
+            },
+            measurePolicy = remember { ChipLayoutMeasurePolicy() },
+        )
+    }
+}
+
+/**
+ * Similar to [ChipContent], but animating the leading and trailing icons when they change from
+ * `null` to non-`null` values.
+ */
+@Composable
+private fun AnimatingChipContent(
     label: @Composable () -> Unit,
     labelTextStyle: TextStyle,
     labelColor: Color,
@@ -2075,21 +2145,7 @@ private fun ChipContent(
                     // content gets disposed once the AnimatedVisibility finishes exiting.
                     val leadingContentRetainedState =
                         rememberRetainedState(
-                            targetValue =
-                                // Determine the actual leading content lambda based on priority
-                                // (avatar > leadingIcon)
-                                when {
-                                    avatar != null -> avatar // An avatar takes precedence
-                                    leadingIcon != null -> {
-                                        @Composable {
-                                            CompositionLocalProvider(
-                                                LocalContentColor provides leadingIconColor,
-                                                content = leadingIcon
-                                            )
-                                        }
-                                    }
-                                    else -> null // Neither exists
-                                }
+                            targetValue = leadingContent(avatar, leadingIcon, leadingIconColor)
                         )
 
                     Box(
@@ -2129,17 +2185,7 @@ private fun ChipContent(
                     // content gets disposed once the AnimatedVisibility finishes exiting.
                     val trailingContentRetainedState =
                         rememberRetainedState(
-                            targetValue =
-                                if (trailingIcon != null) {
-                                    @Composable {
-                                        CompositionLocalProvider(
-                                            LocalContentColor provides trailingIconColor,
-                                            content = trailingIcon
-                                        )
-                                    }
-                                } else {
-                                    null
-                                }
+                            targetValue = trailingContent(trailingIcon, trailingIconColor)
                         )
 
                     Box(
@@ -2155,6 +2201,46 @@ private fun ChipContent(
         )
     }
 }
+
+/**
+ * Returns the actual leading content lambda based on priority (avatar > leadingIcon) and applied
+ * with the given content color.
+ */
+@Composable
+private fun leadingContent(
+    avatar: @Composable (() -> Unit)?,
+    leadingIcon: @Composable (() -> Unit)?,
+    leadingIconColor: Color
+): @Composable (() -> Unit)? =
+    when {
+        avatar != null -> avatar // An avatar takes precedence
+        leadingIcon != null -> {
+            @Composable {
+                CompositionLocalProvider(
+                    LocalContentColor provides leadingIconColor,
+                    content = leadingIcon
+                )
+            }
+        }
+        else -> null // Neither exists
+    }
+
+/** Returns the trailing content lambda applied with the given content color. */
+@Composable
+private fun trailingContent(
+    trailingIcon: @Composable (() -> Unit)?,
+    trailingIconColor: Color
+): @Composable (() -> Unit)? =
+    if (trailingIcon != null) {
+        @Composable {
+            CompositionLocalProvider(
+                LocalContentColor provides trailingIconColor,
+                content = trailingIcon
+            )
+        }
+    } else {
+        null
+    }
 
 /**
  * Remembers the last non-null value emitted by the [targetValue]. When [targetValue] becomes null,

@@ -166,7 +166,18 @@ internal open class FileReadScope<T>(
                     // by another process after the initial read attempt but before `file.exists()`
                     // is called. Otherwise file exists but we can't read it; throw
                     // FileNotFoundException because something is wrong.
-                    FileInputStream(file).use { stream -> serializer.readFrom(stream) }
+                    try {
+                        FileInputStream(file).use { stream -> serializer.readFrom(stream) }
+                    } catch (e: Exception) {
+                        throw if (e is FileNotFoundException) {
+                            wrapExceptionIfDueToDirectBoot(
+                                parentDirPath = file.parent,
+                                exception = e
+                            )
+                        } else {
+                            e
+                        }
+                    }
                 } else {
                     serializer.defaultValue
                 }
@@ -189,12 +200,20 @@ internal class FileWriteScope<T>(file: File, serializer: Serializer<T>) :
     override suspend fun writeData(value: T) {
         checkNotClosed()
         runFileDiagnosticsIfNotCorruption(file) {
-            val fos = FileOutputStream(file)
-            fos.use { stream ->
-                serializer.writeTo(value, UncloseableOutputStream(stream))
-                stream.fd.sync()
-                // TODO(b/151635324): fsync the directory, otherwise a badly timed crash could
-                //  result in reverting to a previous state.
+            try {
+                val fos = FileOutputStream(file)
+                fos.use { stream ->
+                    serializer.writeTo(value, UncloseableOutputStream(stream))
+                    stream.fd.sync()
+                    // TODO(b/151635324): fsync the directory, otherwise a badly timed crash could
+                    //  result in reverting to a previous state.
+                }
+            } catch (e: Exception) {
+                throw if (e is FileNotFoundException) {
+                    wrapExceptionIfDueToDirectBoot(parentDirPath = file.parent, exception = e)
+                } else {
+                    e
+                }
             }
         }
     }

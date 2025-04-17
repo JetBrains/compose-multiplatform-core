@@ -36,6 +36,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.xr.compose.platform.DialogManager
 import androidx.xr.compose.platform.LocalDialogManager
 import androidx.xr.compose.spatial.Subspace
@@ -56,6 +57,7 @@ import com.android.extensions.xr.space.ShadowActivityPanel
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -116,6 +118,7 @@ class SpatialPanelTest {
                 Subspace {
                     val context = LocalContext.current
                     val textView = remember { TextView(context).apply { text = "Hello World" } }
+                    @Suppress("DEPRECATION")
                     SpatialPanel(view = textView, SubspaceModifier.testTag("panel"))
                     // The View is not inserted in the compose tree, we need to test it differentlly
                     assertEquals(View.VISIBLE, textView.visibility)
@@ -124,6 +127,28 @@ class SpatialPanelTest {
         }
         // TODO: verify that the TextView is add to the Panel
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+    }
+
+    @Test
+    fun spatialPanel_AndroidViewBasedPanelComposes() {
+        lateinit var view: TextView
+        composeTestRule.setContent {
+            TestSetup {
+                Subspace {
+                    SpatialPanel(
+                        factory = {
+                            TextView(it)
+                                .apply { text = "Hello AndroidView World" }
+                                .also { view = it }
+                        },
+                        SubspaceModifier.testTag("panel"),
+                    )
+                }
+            }
+        }
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertTrue(view.isAttachedToWindow)
     }
 
     @Test

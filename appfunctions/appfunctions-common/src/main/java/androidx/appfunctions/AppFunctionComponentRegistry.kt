@@ -69,6 +69,7 @@ public annotation class AppFunctionComponentRegistry(
     AppFunctionComponentCategory.INVENTORY,
     AppFunctionComponentCategory.INVOKER,
     AppFunctionComponentCategory.FUNCTION,
+    AppFunctionComponentCategory.SCHEMA_DEFINITION,
 )
 @Retention(AnnotationRetention.SOURCE)
 internal annotation class AppFunctionComponentCategory {
@@ -88,5 +89,11 @@ internal annotation class AppFunctionComponentCategory {
          * indexer to index available functions from the app.
          */
         const val FUNCTION: String = "FUNCTION"
+
+        /**
+         * The components in schema definition category are used to generate the statically mapped
+         * function metadata based on the schema.
+         */
+        const val SCHEMA_DEFINITION: String = "SCHEMA_DEFINITION"
     }
 }

@@ -27,8 +27,8 @@ import androidx.room.compiler.codegen.impl.XAnnotationSpecImpl
 internal class JavaParameterSpec(
     override val name: String,
     override val type: XTypeName,
-    internal val actual: JParameterSpec
-) : XSpec(), XParameterSpec {
+    override val actual: JParameterSpec
+) : JavaSpec<JParameterSpec>(), XParameterSpec {
 
     internal class Builder(
         private val name: String,

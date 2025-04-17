@@ -584,7 +584,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
                             primaryCompositionSettings,
                             secondaryCompositionSettings,
                             cameraX!!.cameraFactory.cameraCoordinator,
-                            cameraX!!.cameraDeviceSurfaceManager,
+                            cameraX!!.streamSpecsCalculator,
                             cameraX!!.defaultConfigFactory
                         )
                     )

@@ -232,6 +232,8 @@ class PaneMotionData internal constructor() {
         internal set
 
     internal var isOriginSizeAndPositionSet = false
+
+    internal var isTargetSizeAndPositionSet = false
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)

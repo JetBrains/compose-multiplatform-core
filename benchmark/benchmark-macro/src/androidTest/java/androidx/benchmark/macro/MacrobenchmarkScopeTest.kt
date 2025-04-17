@@ -73,6 +73,23 @@ class MacrobenchmarkScopeTest {
         assertFalse(Shell.isPackageAlive(Packages.TARGET))
     }
 
+    @Test
+    fun killTest_processSuffix() {
+        // regression test for b/408673462, where killall fails
+        // due to each process has a suffix name (com.mypackage:foo)
+        val scope =
+            MacrobenchmarkScope(
+                "com.google.android.googlequicksearchbox",
+                launchWithClearTask = true
+            )
+
+        // test only useful if package is alive
+        assumeTrue(Shell.getPidsForProcess(scope.packageName).isNotEmpty())
+
+        // killProcess shouldn't fail
+        scope.killProcess()
+    }
+
     @SdkSuppress(minSdkVersion = 24)
     @Test
     fun compile_speedProfile() {

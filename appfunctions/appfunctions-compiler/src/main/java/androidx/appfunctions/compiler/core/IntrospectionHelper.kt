@@ -44,6 +44,10 @@ object IntrospectionHelper {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionSerializable")
     }
 
+    object AppFunctionSerializableInterfaceAnnotation {
+        val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionSerializableInterface")
+    }
+
     object AppFunctionSerializableProxyAnnotation {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionSerializableProxy")
         const val PROPERTY_TARGET_CLASS = "targetClass"
@@ -62,12 +66,15 @@ object IntrospectionHelper {
             const val INVENTORY = "INVENTORY"
             const val INVOKER = "INVOKER"
             const val FUNCTION = "FUNCTION"
+            const val SCHEMA_DEFINITION = "SCHEMA_DEFINITION"
         }
     }
 
     // Classes
     val APP_FUNCTION_INVENTORY_CLASS =
         ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "AppFunctionInventory")
+    val SCHEMA_APP_FUNCTION_INVENTORY_CLASS =
+        ClassName(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, "SchemaAppFunctionInventory")
     val APP_FUNCTION_METADATA_CLASS =
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "CompileTimeAppFunctionMetadata")
     val APP_FUNCTION_FUNCTION_NOT_FOUND_EXCEPTION_CLASS =

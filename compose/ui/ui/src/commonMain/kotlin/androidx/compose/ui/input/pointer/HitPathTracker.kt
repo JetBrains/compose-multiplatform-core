@@ -22,7 +22,6 @@ import androidx.collection.MutableObjectList
 import androidx.collection.mutableObjectListOf
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
-import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.util.PointerIdArray
@@ -41,9 +40,7 @@ import androidx.compose.ui.util.fastForEach
  * @property rootCoordinates the root [LayoutCoordinates] that [PointerInputChange]s will be
  *   relative to.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
-
     private var dispatchingEvent = false
     private var dispatchCancelAfterDispatchedEvent = false
     private var clearNodeCacheAfterDispatchedEvent = false
@@ -55,12 +52,6 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
     internal val root: NodeParent = NodeParent()
 
     private val hitPointerIdsAndNodes = MutableLongObjectMap<MutableObjectList<Node>>(10)
-
-    init {
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG HitPathTracker.init()")
-        }
-    }
 
     /**
      * Associates a [pointerId] to a list of hit [pointerInputNodes] and keeps track of them.
@@ -81,10 +72,6 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
         pointerInputNodes: List<Modifier.Node>,
         prunePointerIdsAndChangesNotInNodesList: Boolean = false
     ) {
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG HitPathTracker.addHitPath()")
-        }
-
         var parent: NodeParent = root
         hitPointerIdsAndNodes.clear()
         var merging = true
@@ -138,12 +125,6 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
     }
 
     private fun removePointerInputModifierNode(pointerInputNode: Modifier.Node) {
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG removePointerInputModifierNode()")
-            println("POINTER_INPUT_DEBUG_LOG_TAG \t\tpointerInputNode: $pointerInputNode")
-            println("POINTER_INPUT_DEBUG_LOG_TAG \t\t$dispatchingEvent: $dispatchingEvent")
-        }
-
         if (dispatchingEvent) {
             removeSpecificNodesAfterDispatchedEvent = true
             nodesToRemove.add(pointerInputNode)
@@ -157,9 +138,6 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
         pointerId: Long,
         hitNodes: MutableObjectList<Node>
     ) {
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG removeInvalidPointerIdsAndChanges()")
-        }
         root.removeInvalidPointerIdsAndChanges(pointerId, hitNodes)
     }
 
@@ -173,10 +151,6 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
         internalPointerEvent: InternalPointerEvent,
         isInBounds: Boolean = true
     ): Boolean {
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG dispatchChanges()")
-        }
-
         val changed =
             root.buildCache(
                 internalPointerEvent.changes,
@@ -203,10 +177,6 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
         dispatchHit = root.dispatchFinalEventPass(internalPointerEvent) || dispatchHit
         dispatchingEvent = false
 
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG dispatchChanges() done, starting after calls...")
-        }
-
         if (removeSpecificNodesAfterDispatchedEvent) {
             removeSpecificNodesAfterDispatchedEvent = false
 
@@ -214,50 +184,22 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
                 removePointerInputModifierNode(nodesToRemove[i])
             }
             nodesToRemove.clear()
-
-            if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-                println(
-                    "POINTER_INPUT_DEBUG_LOG_TAG dispatchChanges() finished, " +
-                        "removeSpecificNodesAfterDispatchedEvent, " +
-                        "removePointerInputModifierNode() finished"
-                )
-            }
         }
 
         if (dispatchCancelAfterDispatchedEvent) {
             dispatchCancelAfterDispatchedEvent = false
             processCancel()
-
-            if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-                println(
-                    "POINTER_INPUT_DEBUG_LOG_TAG dispatchChanges() finished, " +
-                        "dispatchCancelAfterDispatchedEvent, processCancel() finished"
-                )
-            }
         }
 
         if (clearNodeCacheAfterDispatchedEvent) {
             clearNodeCacheAfterDispatchedEvent = false
             clearPreviouslyHitModifierNodeCache()
-
-            if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-                println(
-                    "POINTER_INPUT_DEBUG_LOG_TAG dispatchChanges() finished, " +
-                        "clearNodeCacheAfterDispatchedEvent, " +
-                        "clearPreviouslyHitModifierNodeCache() finished"
-                )
-            }
         }
 
         return dispatchHit
     }
 
     fun clearPreviouslyHitModifierNodeCache() {
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG clearPreviouslyHitModifierNodeCache()")
-            println("POINTER_INPUT_DEBUG_LOG_TAG \t\t$dispatchingEvent: $dispatchingEvent")
-        }
-
         if (clearNodeCacheAfterDispatchedEvent) {
             clearNodeCacheAfterDispatchedEvent = true
             return
@@ -272,10 +214,6 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
      * data.
      */
     fun processCancel() {
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG processCancel()")
-            println("POINTER_INPUT_DEBUG_LOG_TAG \t\t$dispatchingEvent: $dispatchingEvent")
-        }
         if (dispatchingEvent) {
             dispatchCancelAfterDispatchedEvent = true
             return

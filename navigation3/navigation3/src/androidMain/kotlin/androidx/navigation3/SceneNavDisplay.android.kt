@@ -245,21 +245,38 @@ public fun <T : Any> SceneNavDisplay(
                 transitionCurrentStateEntries.map { it.key },
                 entries.map { it.key },
             )
+
+        val zIndices = remember { mutableObjectFloatMapOf<Pair<KClass<*>, Any>>() }
+        val initialKey = transition.currentState
+        val targetKey = transition.targetState
+        val initialZIndex = zIndices.getOrPut(initialKey) { 0f }
+        val targetZIndex =
+            when {
+                initialKey == targetKey -> initialZIndex
+                isPop || inPredictiveBack -> initialZIndex - 1f
+                else -> initialZIndex + 1f
+            }
+        zIndices[targetKey] = targetZIndex
+        val transitionEntry =
+            if (initialZIndex >= targetZIndex) {
+                scenes[initialKey]!!.entries.last()
+            } else {
+                scenes[targetKey]!!.entries.last()
+            }
         val finalEnterTransition =
             if (isPop || inPredictiveBack) {
-                entries.lastOrNull()?.metadata[POP_ENTER_TRANSITION_KEY] as? EnterTransition
+                transitionEntry.metadata[POP_ENTER_TRANSITION_KEY] as? EnterTransition
                     ?: popEnterTransition
             } else {
-                entries.lastOrNull()?.metadata[ENTER_TRANSITION_KEY] as? EnterTransition
+                transitionEntry.metadata[ENTER_TRANSITION_KEY] as? EnterTransition
                     ?: enterTransition
             }
         val finalExitTransition =
             if (isPop || inPredictiveBack) {
-                entries.lastOrNull()?.metadata[POP_EXIT_TRANSITION_KEY] as? ExitTransition
+                transitionEntry.metadata[POP_EXIT_TRANSITION_KEY] as? ExitTransition
                     ?: popExitTransition
             } else {
-                entries.lastOrNull()?.metadata[EXIT_TRANSITION_KEY] as? ExitTransition
-                    ?: exitTransition
+                transitionEntry.metadata[EXIT_TRANSITION_KEY] as? ExitTransition ?: exitTransition
             }
 
         if (inPredictiveBack) {
@@ -338,18 +355,6 @@ public fun <T : Any> SceneNavDisplay(
                         }
                 }
             }
-
-        val zIndices = remember { mutableObjectFloatMapOf<Pair<KClass<*>, Any>>() }
-        val initialKey = transition.currentState
-        val targetKey = transition.targetState
-        val initialZIndex = zIndices.getOrPut(initialKey) { 0f }
-        val targetZIndex =
-            when {
-                initialKey == targetKey -> initialZIndex
-                isPop || inPredictiveBack -> initialZIndex - 1f
-                else -> initialZIndex + 1f
-            }
-        zIndices[targetKey] = targetZIndex
 
         transition.AnimatedContent(
             contentAlignment = contentAlignment,

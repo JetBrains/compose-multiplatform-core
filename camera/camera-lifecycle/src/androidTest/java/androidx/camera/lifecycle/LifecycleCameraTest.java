@@ -22,6 +22,7 @@ import androidx.camera.core.concurrent.CameraCoordinator;
 import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.internal.CameraUseCaseAdapter;
+import androidx.camera.core.internal.StreamSpecsCalculatorImpl;
 import androidx.camera.testing.fakes.FakeCamera;
 import androidx.camera.testing.impl.fakes.FakeCameraCoordinator;
 import androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager;
@@ -57,7 +58,8 @@ public class LifecycleCameraTest {
         mCameraUseCaseAdapter = new CameraUseCaseAdapter(
                 mFakeCamera,
                 mCameraCoordinator,
-                new FakeCameraDeviceSurfaceManager(),
+                new StreamSpecsCalculatorImpl(new FakeUseCaseConfigFactory(),
+                        new FakeCameraDeviceSurfaceManager()),
                 new FakeUseCaseConfigFactory());
         mFakeUseCase = new FakeUseCase();
     }
@@ -128,12 +130,14 @@ public class LifecycleCameraTest {
         CameraUseCaseAdapter adapter1 = new CameraUseCaseAdapter(
                 mFakeCamera,
                 mCameraCoordinator,
-                new FakeCameraDeviceSurfaceManager(),
+                new StreamSpecsCalculatorImpl(new FakeUseCaseConfigFactory(),
+                        new FakeCameraDeviceSurfaceManager()),
                 new FakeUseCaseConfigFactory());
         CameraUseCaseAdapter adapter2 = new CameraUseCaseAdapter(
                 mFakeCamera,
                 mCameraCoordinator,
-                new FakeCameraDeviceSurfaceManager(),
+                new StreamSpecsCalculatorImpl(new FakeUseCaseConfigFactory(),
+                        new FakeCameraDeviceSurfaceManager()),
                 new FakeUseCaseConfigFactory());
         LifecycleCamera lifecycleCamera1 = new LifecycleCamera(lifecycle1, adapter1);
         LifecycleCamera lifecycleCamera2 = new LifecycleCamera(lifecycle2, adapter2);

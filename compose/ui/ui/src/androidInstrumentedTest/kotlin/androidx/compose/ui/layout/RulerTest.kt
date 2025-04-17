@@ -627,11 +627,8 @@ class RulerTest {
     @Test
     fun verticalDerivedRuler() {
         var rulerValue = 0f
-        class FixedValueRuler : VerticalRuler(), DerivedRuler {
-            override fun Placeable.PlacementScope.calculate(defaultValue: Float): Float = 10f
-        }
 
-        val myRuler = FixedValueRuler()
+        val myRuler = VerticalRuler.derived { 10f }
         rule.setContent {
             Box(
                 Modifier.fillMaxSize().layout { measurable, constraints ->
@@ -646,11 +643,8 @@ class RulerTest {
     @Test
     fun horizontalDerivedRuler() {
         var rulerValue = 0f
-        class FixedValueRuler : HorizontalRuler(), DerivedRuler {
-            override fun Placeable.PlacementScope.calculate(defaultValue: Float): Float = 10f
-        }
 
-        val myRuler = FixedValueRuler()
+        val myRuler = HorizontalRuler.derived { 10f }
         rule.setContent {
             Box(
                 Modifier.fillMaxSize().layout { measurable, constraints ->

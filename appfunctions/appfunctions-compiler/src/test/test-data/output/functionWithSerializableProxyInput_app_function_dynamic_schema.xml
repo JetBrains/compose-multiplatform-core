@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <appfunctions>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.FunctionWithSerializableProxyInput#simpleFunctionWithLocalDateTime</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>
@@ -28,9 +25,6 @@
         <functionId>com.testdata.FunctionWithSerializableProxyInput#simpleFunctionWithLocalDateTime</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.FunctionWithSerializableProxyInput#simpleFunctionWithSerializableWithProxy</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>

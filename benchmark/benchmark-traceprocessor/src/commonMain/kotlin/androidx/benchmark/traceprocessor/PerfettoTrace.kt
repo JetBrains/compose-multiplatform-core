@@ -77,7 +77,11 @@ public class PerfettoTrace(
                     // sort keys for stability (e.g. in tests)
                     urlParamMap.keys.sorted().forEach { key ->
                         appendDelimiter()
-                        append("${urlEncode(key)}=${urlEncode(urlParamMap[key]!!)}")
+                        // don't encode ":" in keys since it's a supported delimiter for plugin args
+                        val encodedKey =
+                            key.split(":").map { urlEncode(it) }.joinToString(separator = ":")
+                        val encodedValue = urlEncode(urlParamMap[key]!!)
+                        append("$encodedKey=$encodedValue")
                     }
                 }
         )

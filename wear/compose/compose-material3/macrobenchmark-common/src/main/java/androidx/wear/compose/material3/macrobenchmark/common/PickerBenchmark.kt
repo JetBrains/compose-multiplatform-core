@@ -20,21 +20,18 @@ import android.os.SystemClock
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.wear.compose.material3.Picker
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.rememberPickerState
 
 object PickerBenchmark : MacrobenchmarkScreen {
+    val items = listOf("One", "Two", "Three", "Four", "Five")
+
     override val content: @Composable (BoxScope.() -> Unit)
         get() = {
-            val items = listOf("One", "Two", "Three", "Four", "Five")
             val state = rememberPickerState(items.size)
-            val contentDescription by remember {
-                derivedStateOf { "${state.selectedOptionIndex + 1}" }
-            }
+            val contentDescription = remember(state) { { "${state.selectedOptionIndex + 1}" } }
             Picker(
                 state = state,
                 contentDescription = contentDescription,

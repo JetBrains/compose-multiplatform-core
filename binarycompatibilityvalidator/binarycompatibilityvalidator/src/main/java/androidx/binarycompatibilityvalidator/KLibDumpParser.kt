@@ -73,7 +73,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
 
     /** Parse the klib dump tracked by [cursor] into a map of targets to [LibraryAbi]s */
     fun parse(): Map<String, LibraryAbi> {
-        while (cursor.hasNextRow()) {
+        while (!cursor.isFinished()) {
             parseDeclaration(parentQualifiedName = null)?.let { abiDeclaration ->
                 // Find all the targets the current declaration belongs to
                 currentTargets.forEach {
@@ -81,6 +81,9 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
                     it.declarations.add(abiDeclaration)
                 }
             }
+        }
+        if (abiInfoByTarget.isEmpty()) {
+            throw ParseException("No targets were found")
         }
         return abiInfoByTarget
             .map { (target, abiInfo) ->

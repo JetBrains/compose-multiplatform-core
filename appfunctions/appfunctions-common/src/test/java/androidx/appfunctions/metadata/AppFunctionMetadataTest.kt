@@ -122,7 +122,6 @@ class AppFunctionMetadataTest {
                 schemaVersion = schemaMetadata.version,
                 parameters = parameters.map { it.toAppFunctionParameterMetadataDocument() },
                 response = response.toAppFunctionResponseMetadataDocument(),
-                components = components.toAppFunctionComponentsMetadataDocument()
             )
         assertThat(actualAppFunctionMetadataDocument).isEqualTo(expectedAppFunctionMetadataDocument)
     }

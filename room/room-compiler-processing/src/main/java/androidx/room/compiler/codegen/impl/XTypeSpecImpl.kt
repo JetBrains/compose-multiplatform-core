@@ -29,9 +29,9 @@ import androidx.room.compiler.codegen.kotlin.KotlinTypeSpec
 import androidx.room.compiler.processing.XElement
 
 internal class XTypeSpecImpl(
-    val java: JavaTypeSpec,
-    val kotlin: KotlinTypeSpec,
-) : XSpec(), XTypeSpec {
+    override val java: JavaTypeSpec,
+    override val kotlin: KotlinTypeSpec,
+) : ImplSpec<JavaTypeSpec, KotlinTypeSpec>(), XTypeSpec {
     override val name by lazy {
         if (java.name == null || kotlin.name == null) {
             check(java.name == null && kotlin.name == null) {

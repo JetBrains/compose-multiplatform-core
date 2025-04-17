@@ -20,8 +20,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.contextmenu.provider.BasicTextContextMenuProvider
 import androidx.compose.foundation.text.contextmenu.provider.LocalTextContextMenuDropdownProvider
 import androidx.compose.foundation.text.contextmenu.provider.LocalTextContextMenuToolbarProvider
-import androidx.compose.foundation.text.contextmenu.provider.TextContextMenuDataProvider
 import androidx.compose.foundation.text.contextmenu.provider.TextContextMenuProvider
+import androidx.compose.foundation.text.contextmenu.test.FakeTextContextMenuProvider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -35,8 +35,14 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 
+private const val MESSAGE = "FakeTextContextMenuProvider.showTextContextMenu called unexpectedly."
+
 class PlatformDefaultTextContextMenuProvidersTest {
     @get:Rule val rule = createComposeRule()
+
+    private val fakeTextContextMenuProvider = FakeTextContextMenuProvider {
+        throw AssertionError(MESSAGE)
+    }
 
     @Test
     fun testProvidersCreated_noneDefined() =
@@ -55,7 +61,7 @@ class PlatformDefaultTextContextMenuProvidersTest {
         runTest(
             outerContent = { content ->
                 CompositionLocalProvider(
-                    LocalTextContextMenuDropdownProvider provides FakeTextContextMenuProvider,
+                    LocalTextContextMenuDropdownProvider provides fakeTextContextMenuProvider,
                     content = content
                 )
             }
@@ -70,7 +76,7 @@ class PlatformDefaultTextContextMenuProvidersTest {
         runTest(
             outerContent = { content ->
                 CompositionLocalProvider(
-                    LocalTextContextMenuToolbarProvider provides FakeTextContextMenuProvider,
+                    LocalTextContextMenuToolbarProvider provides fakeTextContextMenuProvider,
                     content = content
                 )
             }
@@ -85,8 +91,8 @@ class PlatformDefaultTextContextMenuProvidersTest {
         runTest(
             outerContent = { content ->
                 CompositionLocalProvider(
-                    LocalTextContextMenuToolbarProvider provides FakeTextContextMenuProvider,
-                    LocalTextContextMenuDropdownProvider provides FakeTextContextMenuProvider,
+                    LocalTextContextMenuToolbarProvider provides fakeTextContextMenuProvider,
+                    LocalTextContextMenuDropdownProvider provides fakeTextContextMenuProvider,
                     content = content
                 )
             }
@@ -152,13 +158,5 @@ class PlatformDefaultTextContextMenuProvidersTest {
             isNotNull()
             isInstanceOf(T::class.java)
         }
-    }
-}
-
-private object FakeTextContextMenuProvider : TextContextMenuProvider {
-    const val MESSAGE = "FakeTextContextMenuProvider.showTextContextMenu called unexpectedly."
-
-    override suspend fun showTextContextMenu(dataProvider: TextContextMenuDataProvider) {
-        throw AssertionError(MESSAGE)
     }
 }

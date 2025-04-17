@@ -32,6 +32,7 @@ import androidx.compose.ui.inspection.util.isPrimitiveClass
 import androidx.compose.ui.layout.GraphicLayerInfo
 import androidx.compose.ui.layout.LayoutInfo
 import androidx.compose.ui.layout.view
+import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.InteroperableComposeUiNode
 import androidx.compose.ui.tooling.data.ContextCache
 import androidx.compose.ui.tooling.data.ParameterInformation
@@ -42,6 +43,7 @@ import androidx.compose.ui.tooling.data.mapTree
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.toSize
+import java.lang.reflect.ParameterizedType
 import java.util.ArrayDeque
 import kotlin.math.max
 import kotlin.math.min
@@ -159,8 +161,15 @@ internal class CompositionBuilder(
             ?.let { nodeHostingAndroidView -> parentNode.viewId = nodeHostingAndroidView.viewId }
 
         var id: Long? = null
+        val isUnwantedDrawComposable = isUnwantedDrawComposable(parentNode)
         input.forEach { node ->
             if (node.isUnwanted) {
+                parentNode.hasDrawModifier =
+                    !isUnwantedDrawComposable &&
+                        (parentNode.hasDrawModifier or node.hasDrawModifier)
+                parentNode.hasChildDrawModifier =
+                    !isUnwantedDrawComposable &&
+                        (parentNode.hasChildDrawModifier or node.hasChildDrawModifier)
                 parentNode.children.addAll(node.children)
                 if (node.hasLayerId) {
                     // If multiple siblings with a render ids are dropped:
@@ -168,6 +177,20 @@ internal class CompositionBuilder(
                     id = if (id == null) node.id else UNDEFINED_ID
                 }
             } else {
+                if (
+                    (node.hasDrawModifier || node.hasChildDrawModifier) &&
+                        systemPackages.contains(node.packageHash)
+                ) {
+                    if (isUnwantedDrawComposable) {
+                        updateTree(node) {
+                            it.hasDrawModifier = false
+                            it.hasChildDrawModifier = false
+                        }
+                    } else {
+                        parentNode.hasChildDrawModifier = true
+                        node.hasChildDrawModifier = false
+                    }
+                }
                 node.id = if (node.hasAssignedId) node.id else --generatedId
                 val withSemantics = node.packageHash !in systemPackages
                 val resultNode = node.build(withSemantics)
@@ -394,6 +417,7 @@ internal class CompositionBuilder(
             node.unknownLocation = true
             node.markUnwanted()
         } else {
+            node.hasDrawModifier = layoutInfo.hasDrawModifier
             val topLeft = toIntOffset(coordinates.localToWindow(Offset.Zero))
             val topRight = toIntOffset(coordinates.localToWindow(Offset(size.width, 0f)))
             val bottomRight =
@@ -445,6 +469,37 @@ internal class CompositionBuilder(
         return node
     }
 
+    /**
+     * Return true if this LayoutInfo could be drawing.
+     *
+     * Note: Some drawing could have no effect like drawing a background with color #00000000. We
+     * are not trying to detect this case at this point.
+     *
+     * Checking if any of the modifiers is an implementation of DrawModifier will not work since the
+     * use of DrawModifier is deprecated. Instead check if an actual generic parameter implements
+     * DrawModifierNode.
+     *
+     * Assume: the existence/absence of DrawModifierNode is an accurate determination of whether the
+     * LayoutInfo is drawing.
+     */
+    private val LayoutInfo.hasDrawModifier: Boolean
+        get() =
+            getModifierInfo().any {
+                var modifierClass: Class<*>? = it.modifier.javaClass
+                var hasDrawModifierNode = false
+                while (!hasDrawModifierNode && modifierClass != null) {
+                    val genericClass = modifierClass.genericSuperclass
+                    val types =
+                        (genericClass as? ParameterizedType)?.actualTypeArguments ?: emptyArray()
+                    hasDrawModifierNode =
+                        types.filterIsInstance<Class<*>>().any {
+                            DrawModifierNode::class.java.isAssignableFrom(it)
+                        }
+                    modifierClass = modifierClass.superclass
+                }
+                hasDrawModifierNode
+            }
+
     private fun parseCallLocation(location: SourceLocation?, node: MutableInspectorNode) {
         val fileName = location?.sourceFile ?: return
         node.fileName = fileName
@@ -485,6 +540,32 @@ internal class CompositionBuilder(
         }
         // The anchorId is an Int
         return anchorId.toLong() - Int.MAX_VALUE.toLong() + RESERVED_FOR_GENERATED_IDS
+    }
+
+    /**
+     * Make an update to a InspectorNode tree. Only use this for smaller trees or implement a non
+     * recursive implementation.
+     */
+    private fun updateTree(
+        node: MutableInspectorNode,
+        modification: (MutableInspectorNode) -> Unit
+    ) {
+        val oldChildren = node.children.toList()
+        node.children.clear()
+        oldChildren.mapTo(node.children) { updateTree(it, modification) }
+        modification(node)
+    }
+
+    private fun updateTree(
+        node: InspectorNode,
+        modification: (MutableInspectorNode) -> Unit
+    ): InspectorNode {
+        val newNode = newNode()
+        newNode.shallowCopy(node)
+        node.children.mapTo(newNode.children) { updateTree(it, modification) }
+        modification(newNode)
+        val withSemantics = node.packageHash !in systemPackages
+        return newNode.build(withSemantics)
     }
 
     private fun IntRect.emptyCheck(): IntRect =

@@ -72,7 +72,6 @@ import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
-import kotlinx.test.IgnoreJsTarget
 
 @Composable fun Container(content: @Composable () -> Unit) = content()
 
@@ -2566,7 +2565,6 @@ class CompositionTests {
     }
 
     @Test
-    @IgnoreJsTarget // b/409728274
     fun testRememberObserver_Abandon_Recompose() {
         val abandonedObjects = mutableListOf<RememberObserver>()
         val observed =

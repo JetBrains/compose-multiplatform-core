@@ -56,7 +56,7 @@ class TextContextMenuToolbarHandlerTest {
         lateinit var coordinates: LayoutCoordinates
         var callCount = 0
 
-        val fakeProvider = FakeTextContextMenuProvider {
+        val fakeProvider = TestTextContextMenuProvider {
             callCount++
             val actualContentBounds = it.contentBounds(coordinates)
             assertThat(actualContentBounds).isEqualTo(DefaultRect)
@@ -91,7 +91,7 @@ class TextContextMenuToolbarHandlerTest {
         val channel = Channel<Unit>()
 
         var callCount = 0
-        val fakeProvider = FakeTextContextMenuProvider {
+        val fakeProvider = TestTextContextMenuProvider {
             callCount++
             channel.receive()
         }
@@ -123,7 +123,7 @@ class TextContextMenuToolbarHandlerTest {
         val toolbarRequester = ToolbarRequesterImpl()
 
         var callCount = 0
-        val fakeProvider = FakeTextContextMenuProvider {
+        val fakeProvider = TestTextContextMenuProvider {
             callCount++
             awaitCancellation()
         }
@@ -158,7 +158,7 @@ class TextContextMenuToolbarHandlerTest {
         var showCallCount = 0
         var hideCallCount = 0
 
-        val fakeProvider = FakeTextContextMenuProvider {
+        val fakeProvider = TestTextContextMenuProvider {
             callCount++
             awaitCancellation()
         }
@@ -248,7 +248,7 @@ class TextContextMenuToolbarHandlerTest {
         val toolbarRequester = ToolbarRequesterImpl()
 
         var callCount = 0
-        val fakeProvider = FakeTextContextMenuProvider {
+        val fakeProvider = TestTextContextMenuProvider {
             callCount++
             awaitCancellation()
         }
@@ -313,7 +313,7 @@ class TextContextMenuToolbarHandlerTest {
     }
 }
 
-private class FakeTextContextMenuProvider(
+private class TestTextContextMenuProvider(
     private val onShow: suspend (TextContextMenuDataProvider) -> Unit
 ) : TextContextMenuProvider {
 

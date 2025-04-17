@@ -55,7 +55,6 @@ import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.ParentDataModifierNode
 import androidx.compose.ui.platform.InspectorInfo
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -199,9 +198,7 @@ fun ButtonGroup(
                         overflowIndicator(menuState)
                         DropdownMenu(
                             expanded = menuState.isExpanded,
-                            onDismissRequest = { menuState.dismiss() },
-                            // Need to add testTag for unit and screenshot testing
-                            modifier = Modifier.testTag(buttonGroupMenuTestTag)
+                            onDismissRequest = { menuState.dismiss() }
                         ) {
                             for (i in
                                 overflowState.visibleItemCount until overflowState.totalItemCount) {
@@ -529,7 +526,7 @@ private class NonAdaptiveButtonGroupMeasurePolicy(
 }
 
 private class ButtonGroupMeasurePolicy(
-    val overflowState: OverflowState,
+    val overflowState: ButtonGroupOverflowState,
     val horizontalArrangement: Arrangement.Horizontal,
     val expandedRatio: Float
 ) : MultiContentMeasurePolicy {
@@ -817,19 +814,15 @@ interface ButtonGroupScope {
      *
      * @param onClick The action to perform when the item is clicked.
      * @param label The text label for the item.
-     * @param modifier [Modifier] to be applied to this clickable item.
-     * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
-     *   emitting [Interaction]s for this button. You can use this to change the button's appearance
-     *   or preview the button in different states.
      * @param icon An optional composable representing the item's icon.
+     * @param weight the weight to be applied to this item, please see [ButtonGroupScope.weight]
      * @param enabled Whether the item is enabled.
      */
     fun clickableItem(
         onClick: () -> Unit,
         label: String,
-        modifier: Modifier = Modifier,
-        interactionSource: MutableInteractionSource = MutableInteractionSource(),
         icon: (@Composable () -> Unit)? = null,
+        weight: Float = Float.NaN,
         enabled: Boolean = true
     )
 
@@ -838,21 +831,17 @@ interface ButtonGroupScope {
      *
      * @param checked Whether the item is currently checked.
      * @param onCheckedChange The action to perform when the item's checked state changes.
-     * @param modifier [Modifier] to be applied to this toggleable item.
-     * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
-     *   emitting [Interaction]s for this button. You can use this to change the button's appearance
-     *   or preview the button in different states.
      * @param icon An optional composable representing the item's icon.
      * @param enabled Whether the item is enabled.
+     * @param weight the weight to be applied to this item, please see [ButtonGroupScope.weight]
      * @param label The text label for the item.
      */
     fun toggleableItem(
         checked: Boolean,
         label: String,
         onCheckedChange: (Boolean) -> Unit,
-        modifier: Modifier = Modifier,
-        interactionSource: MutableInteractionSource = MutableInteractionSource(),
         icon: (@Composable () -> Unit)? = null,
+        weight: Float = Float.NaN,
         enabled: Boolean = true
     )
 
@@ -1111,7 +1100,7 @@ internal class CustomButtonGroupItem(
 }
 
 /** State containing information about the overflow in an [ButtonGroup]. */
-internal interface OverflowState {
+private interface ButtonGroupOverflowState {
     /**
      * The total number of items available to show in the [ButtonGroup]'s `content` lambda. This
      * includes items that may not be displayed. This does not include the overflow indicator.
@@ -1124,12 +1113,12 @@ internal interface OverflowState {
 
 /** Remembers and saves the state of the overflow in an [ButtonGroup]. */
 @Composable
-internal fun rememberOverflowState(): OverflowState {
+private fun rememberOverflowState(): ButtonGroupOverflowState {
     return rememberSaveable(saver = OverflowStateImpl.Saver) { OverflowStateImpl() }
 }
 
-/** Implementation of [OverflowState]. */
-private class OverflowStateImpl : OverflowState {
+/** Implementation of [ButtonGroupOverflowState]. */
+private class OverflowStateImpl : ButtonGroupOverflowState {
     override var totalItemCount: Int by mutableIntStateOf(0)
     override var visibleItemCount: Int by mutableIntStateOf(0)
 
@@ -1185,18 +1174,26 @@ private class ButtonGroupScopeImpl(val animationSpec: AnimationSpec<Float>) :
     override fun clickableItem(
         onClick: () -> Unit,
         label: String,
-        modifier: Modifier,
-        interactionSource: MutableInteractionSource,
         icon: (@Composable (() -> Unit))?,
+        weight: Float,
         enabled: Boolean
     ) {
+        val interactionSource = MutableInteractionSource()
         items.add(
             ClickableButtonGroupItem(
                 onClick = onClick,
                 icon = icon,
-                modifier = modifier,
-                interactionSource = interactionSource,
                 enabled = enabled,
+                modifier =
+                    Modifier.animateWidth(interactionSource)
+                        .then(
+                            if (!weight.isNaN()) {
+                                Modifier.weight(weight)
+                            } else {
+                                Modifier
+                            }
+                        ),
+                interactionSource = interactionSource,
                 label = label,
             )
         )
@@ -1206,19 +1203,27 @@ private class ButtonGroupScopeImpl(val animationSpec: AnimationSpec<Float>) :
         checked: Boolean,
         label: String,
         onCheckedChange: (Boolean) -> Unit,
-        modifier: Modifier,
-        interactionSource: MutableInteractionSource,
         icon: (@Composable (() -> Unit))?,
+        weight: Float,
         enabled: Boolean
     ) {
+        val interactionSource = MutableInteractionSource()
         items.add(
             ToggleableButtonGroupItem(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 icon = icon,
-                modifier = modifier,
-                interactionSource = interactionSource,
                 enabled = enabled,
+                modifier =
+                    Modifier.animateWidth(interactionSource)
+                        .then(
+                            if (!weight.isNaN()) {
+                                Modifier.weight(weight)
+                            } else {
+                                Modifier
+                            }
+                        ),
+                interactionSource = interactionSource,
                 label = label,
             )
         )
@@ -1252,5 +1257,3 @@ private class ButtonGroupScopeImpl(val animationSpec: AnimationSpec<Float>) :
             )
         )
 }
-
-internal const val buttonGroupMenuTestTag = "buttonGroupMenuTestTag"

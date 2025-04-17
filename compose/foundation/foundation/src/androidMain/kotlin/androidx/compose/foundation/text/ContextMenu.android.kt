@@ -203,14 +203,17 @@ internal inline fun ContextMenuScope.TextItem(
 internal fun TextContextMenuBuilderScope.textItem(
     resources: Resources,
     item: TextContextMenuItems,
+    enabled: Boolean,
     onClick: TextContextMenuSession.() -> Unit
 ) {
-    item(
-        key = item.key,
-        label = item.resolveString(resources),
-        leadingIcon = item.drawableId,
-        onClick = onClick
-    )
+    if (enabled) {
+        item(
+            key = item.key,
+            label = item.resolveString(resources),
+            leadingIcon = item.drawableId,
+            onClick = onClick
+        )
+    }
 }
 
 internal suspend fun TextFieldSelectionState.getContextMenuItemsAvailability():

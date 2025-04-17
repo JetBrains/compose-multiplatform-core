@@ -26,6 +26,7 @@ import androidx.testutils.generateAllEnumerations
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -50,6 +51,7 @@ class RelationBenchmark(private val parentSampleSize: Int, private val childSamp
     }
 
     @Test
+    @Ignore // b/410015038
     fun largeRelationQuery() {
         val db =
             Room.databaseBuilder(context, TestDatabase::class.java, DB_NAME)

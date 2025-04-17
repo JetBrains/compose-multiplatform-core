@@ -42,6 +42,8 @@ package androidx.compose.ui.text {
     ctor public AnnotatedString.Builder(androidx.compose.ui.text.AnnotatedString text);
     ctor public AnnotatedString.Builder(optional int capacity);
     ctor public AnnotatedString.Builder(String text);
+    method public void addBullet(androidx.compose.ui.text.Bullet bullet, int start, int end);
+    method public void addBullet(androidx.compose.ui.text.Bullet bullet, long indentation, int start, int end);
     method public void addLink(androidx.compose.ui.text.LinkAnnotation.Clickable clickable, int start, int end);
     method public void addLink(androidx.compose.ui.text.LinkAnnotation.Url url, int start, int end);
     method public void addStringAnnotation(String tag, String annotation, int start, int end);
@@ -59,6 +61,7 @@ package androidx.compose.ui.text {
     method public int getLength();
     method public void pop();
     method public void pop(int index);
+    method public int pushBullet(androidx.compose.ui.text.Bullet bullet);
     method public int pushLink(androidx.compose.ui.text.LinkAnnotation link);
     method public int pushStringAnnotation(String tag, String annotation);
     method public int pushStyle(androidx.compose.ui.text.ParagraphStyle style);
@@ -66,7 +69,12 @@ package androidx.compose.ui.text {
     method public int pushTtsAnnotation(androidx.compose.ui.text.TtsAnnotation ttsAnnotation);
     method @Deprecated @SuppressCompatibility @androidx.compose.ui.text.ExperimentalTextApi public int pushUrlAnnotation(androidx.compose.ui.text.UrlAnnotation urlAnnotation);
     method public androidx.compose.ui.text.AnnotatedString toAnnotatedString();
+    method public <R> R withBulletList(optional long indentation, optional androidx.compose.ui.text.Bullet bullet, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Builder.BulletScope,? extends R> block);
+    method public <R> R withBulletListItem(androidx.compose.ui.text.AnnotatedString.Builder.BulletScope, optional androidx.compose.ui.text.Bullet? bullet, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Builder,? extends R> block);
     property public int length;
+  }
+
+  public static final class AnnotatedString.Builder.BulletScope {
   }
 
   public static final class AnnotatedString.Companion {
@@ -106,6 +114,37 @@ package androidx.compose.ui.text {
     method public static inline <R> R withLink(androidx.compose.ui.text.AnnotatedString.Builder, androidx.compose.ui.text.LinkAnnotation link, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Builder,? extends R> block);
     method public static inline <R> R withStyle(androidx.compose.ui.text.AnnotatedString.Builder, androidx.compose.ui.text.ParagraphStyle style, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Builder,? extends R> block);
     method public static inline <R> R withStyle(androidx.compose.ui.text.AnnotatedString.Builder, androidx.compose.ui.text.SpanStyle style, kotlin.jvm.functions.Function1<? super androidx.compose.ui.text.AnnotatedString.Builder,? extends R> block);
+  }
+
+  public final class Bullet implements androidx.compose.ui.text.AnnotatedString.Annotation {
+    ctor public Bullet(androidx.compose.ui.graphics.Shape shape, long width, long height, long padding, optional androidx.compose.ui.graphics.Brush? brush, optional float alpha, optional androidx.compose.ui.graphics.drawscope.DrawStyle drawStyle);
+    method public androidx.compose.ui.text.Bullet copy(optional androidx.compose.ui.graphics.Shape shape, optional long width, optional long height, optional long padding, optional androidx.compose.ui.graphics.Brush? brush, optional float alpha, optional androidx.compose.ui.graphics.drawscope.DrawStyle drawStyle);
+    method public float getAlpha();
+    method public androidx.compose.ui.graphics.Brush? getBrush();
+    method public androidx.compose.ui.graphics.drawscope.DrawStyle getDrawStyle();
+    method public long getHeight();
+    method public long getPadding();
+    method public androidx.compose.ui.graphics.Shape getShape();
+    method public long getWidth();
+    property public float alpha;
+    property public androidx.compose.ui.graphics.Brush? brush;
+    property public androidx.compose.ui.graphics.drawscope.DrawStyle drawStyle;
+    property public long height;
+    property public long padding;
+    property public androidx.compose.ui.graphics.Shape shape;
+    property public long width;
+    field public static final androidx.compose.ui.text.Bullet.Companion Companion;
+  }
+
+  public static final class Bullet.Companion {
+    method public androidx.compose.ui.text.Bullet getDefault();
+    method public long getDefaultIndentation();
+    method public long getDefaultPadding();
+    method public long getDefaultSize();
+    property public androidx.compose.ui.text.Bullet Default;
+    property public long DefaultIndentation;
+    property public long DefaultPadding;
+    property public long DefaultSize;
   }
 
   @kotlin.jvm.JvmInline public final value class EmojiSupportMatch {

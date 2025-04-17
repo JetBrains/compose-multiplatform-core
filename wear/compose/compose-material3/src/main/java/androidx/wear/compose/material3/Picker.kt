@@ -97,11 +97,9 @@ import kotlinx.coroutines.launch
  *
  * @sample androidx.wear.compose.material3.samples.PickerGroupSample
  * @param state The state of the component
- * @param contentDescription Text used by accessibility services to describe what the selected
- *   option represents. This text should be localized, such as by using
- *   [androidx.compose.ui.res.stringResource] or similar. Typically, the content description is
- *   inferred via derivedStateOf to avoid unnecessary recompositions, like this: val description by
- *   remember { derivedStateOf { /* expression using state.selectedOption */ } }
+ * @param contentDescription A block which computes text used by accessibility services to describe
+ *   what the selected option represents. This text should be localized, such as by using
+ *   [androidx.compose.ui.res.stringResource] or similar.
  * @param modifier [Modifier] to be applied to the Picker.
  * @param readOnly Determines whether the [Picker] should display other available options for this
  *   field, inviting the user to scroll to change the value. When readOnly = true, only displays the
@@ -133,7 +131,7 @@ import kotlinx.coroutines.launch
 @Composable
 public fun Picker(
     state: PickerState,
-    contentDescription: String?,
+    contentDescription: (() -> String)?,
     modifier: Modifier = Modifier,
     readOnly: Boolean = false,
     readOnlyLabel: @Composable (BoxScope.() -> Unit)? = null,
@@ -178,7 +176,7 @@ public fun Picker(
                             true
                         }
                         if (!state.isScrollInProgress && contentDescription != null) {
-                            this.contentDescription = contentDescription
+                            this.contentDescription = contentDescription()
                         }
                         focused = !readOnly
                     }

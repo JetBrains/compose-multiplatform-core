@@ -24,6 +24,8 @@ import androidx.appfunctions.AppFunctionContext
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.AppFunctionOpenable
 import androidx.appfunctions.AppFunctionSerializable
+import androidx.appfunctions.schema.notes.AppFunctionNote
+import androidx.appfunctions.schema.notes.CreateNoteAppFunction
 import java.time.LocalDateTime
 
 @AppFunctionSerializable data class SetField<T>(val value: T)
@@ -161,4 +163,25 @@ class TestFactory {
 
     @AppFunction
     fun isCreatedByFactory(appFunctionContext: AppFunctionContext): Boolean = createdByFactory
+}
+
+// TODO(b/411059572): Serializable factory generation would fail when nested in another class
+@AppFunctionSerializable
+class MyNote(override val id: String, override val title: String) : AppFunctionNote
+
+@AppFunctionSerializable
+class Parameters(override val title: String) : CreateNoteAppFunction.Parameters
+
+@AppFunctionSerializable
+class Response(override val createdNote: MyNote) : CreateNoteAppFunction.Response
+
+class NotesFunctions : CreateNoteAppFunction<Parameters, Response> {
+
+    @AppFunction
+    override suspend fun createNote(
+        appFunctionContext: AppFunctionContext,
+        parameters: Parameters
+    ): Response {
+        return Response(MyNote(id = "testId", title = parameters.title))
+    }
 }

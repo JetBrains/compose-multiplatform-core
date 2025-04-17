@@ -140,7 +140,7 @@
     <string name="send_notification_title" msgid="4731688444696028193">"إرسال إشعار"</string>
     <string name="start_notifications_title" msgid="8699668027543530460">"تفعيل الإشعارات"</string>
     <string name="stop_notifications_title" msgid="3703892710275206239">"إيقاف الإشعارات"</string>
-    <string name="notification_title" msgid="5507590705935298176">"الإشعار"</string>
+    <string name="notification_title" msgid="5507590705935298176">"الإشعارات"</string>
     <string name="importance_title" msgid="9034862997821839831">"مدى الأهمية"</string>
     <string name="category_title" msgid="4783851267093259949">"الفئة"</string>
     <string name="ongoing_title" msgid="4957996003270280496">"مستمر"</string>

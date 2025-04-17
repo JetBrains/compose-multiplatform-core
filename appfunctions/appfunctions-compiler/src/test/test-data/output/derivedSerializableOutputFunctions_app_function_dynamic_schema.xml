@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <appfunctions>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.DerivedSerializableOutputFunctions#simpleFunction</id>
         <enabledByDefault>true</enabledByDefault>
         <response>
@@ -18,9 +15,6 @@
         <functionId>com.testdata.DerivedSerializableOutputFunctions#simpleFunction</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.DerivedSerializableOutputFunctions#simpleFunctionNullableSerializable</id>
         <enabledByDefault>true</enabledByDefault>
         <response>
@@ -35,9 +29,6 @@
         <functionId>com.testdata.DerivedSerializableOutputFunctions#simpleFunctionNullableSerializable</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.DerivedSerializableOutputFunctions#simpleFunctionNullableSerializableList</id>
         <enabledByDefault>true</enabledByDefault>
         <response>
@@ -57,9 +48,6 @@
         <functionId>com.testdata.DerivedSerializableOutputFunctions#simpleFunctionNullableSerializableList</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.DerivedSerializableOutputFunctions#simpleFunctionSerializableList</id>
         <enabledByDefault>true</enabledByDefault>
         <response>

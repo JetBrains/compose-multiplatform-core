@@ -20,8 +20,10 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Alarm
@@ -38,6 +40,7 @@ import androidx.compose.material.icons.outlined.DoNotDisturbOn
 import androidx.compose.material.icons.outlined.FlashlightOn
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material.icons.outlined.Wifi
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -161,24 +164,51 @@ fun ButtonGroupDemos() {
                         )
                     }
                 )
-                toggleableItem(
-                    checked = checked[2],
-                    onCheckedChange = { checked[2] = it },
-                    label = "focus",
-                    modifier = Modifier.width(125.dp).animateWidth(interactionSources[2]),
-                    interactionSource = interactionSources[2],
-                    icon = {
-                        if (checked[2]) {
-                            Icon(
-                                Icons.Filled.DoNotDisturbOn,
-                                contentDescription = "Localized description"
-                            )
-                        } else {
-                            Icon(
-                                Icons.Outlined.DoNotDisturbOn,
-                                contentDescription = "Localized description"
-                            )
+                customItem(
+                    buttonGroupContent = {
+                        ToggleButton(
+                            checked = checked[2],
+                            onCheckedChange = { checked[2] = it },
+                            modifier = Modifier.width(125.dp).animateWidth(interactionSources[2]),
+                            interactionSource = interactionSources[2]
+                        ) {
+                            if (checked[2]) {
+                                Icon(
+                                    Icons.Filled.DoNotDisturbOn,
+                                    contentDescription = "Localized description"
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Outlined.DoNotDisturbOn,
+                                    contentDescription = "Localized description"
+                                )
+                            }
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Text("focus")
                         }
+                    },
+                    menuContent = { state ->
+                        DropdownMenuItem(
+                            enabled = true,
+                            text = { Text("Focus") },
+                            leadingIcon = {
+                                if (checked[2]) {
+                                    Icon(
+                                        Icons.Filled.DoNotDisturbOn,
+                                        contentDescription = "Localized description"
+                                    )
+                                } else {
+                                    Icon(
+                                        Icons.Outlined.DoNotDisturbOn,
+                                        contentDescription = "Localized description"
+                                    )
+                                }
+                            },
+                            onClick = {
+                                checked[2] = !checked[2]
+                                state.dismiss()
+                            }
+                        )
                     }
                 )
                 customItem(
@@ -358,57 +388,27 @@ fun ButtonGroupDemos() {
                         }
                     },
                     menuContent = { state ->
-                        ToggleButton(
-                            checked = checked[6],
-                            shapes =
-                                ToggleButtonDefaults.shapes(
-                                    ToggleButtonDefaults.squareShape,
-                                    ToggleButtonDefaults.pressedShape,
-                                    ToggleButtonDefaults.checkedShape
-                                ),
-                            onCheckedChange = {
-                                checked[6] = it
-                                state.dismiss()
+                        DropdownMenuItem(
+                            enabled = true,
+                            text = { Text("Calculator") },
+                            leadingIcon = {
+                                if (checked[6]) {
+                                    Icon(
+                                        Icons.Filled.Calculate,
+                                        contentDescription = "Localized description"
+                                    )
+                                } else {
+                                    Icon(
+                                        Icons.Outlined.Calculate,
+                                        contentDescription = "Localized description"
+                                    )
+                                }
                             },
-                            interactionSource = interactionSources[6],
-                            modifier = Modifier.animateWidth(interactionSources[6])
-                        ) {
-                            if (checked[6]) {
-                                Icon(
-                                    Icons.Filled.Calculate,
-                                    contentDescription = "Localized description"
-                                )
-                            } else {
-                                Icon(
-                                    Icons.Outlined.Calculate,
-                                    contentDescription = "Localized description"
-                                )
+                            onClick = {
+                                checked[6] = !checked[6]
+                                state.dismiss()
                             }
-                        }
-
-                        //                        DropdownMenuItem(
-                        //                            enabled = true,
-                        //                            text = { Text("Calculator") },
-                        //                            leadingIcon = {
-                        //                                if (checked[6]) {
-                        //                                    Icon(
-                        //                                        Icons.Filled.Calculate,
-                        //                                        contentDescription = "Localized
-                        // description"
-                        //                                    )
-                        //                                } else {
-                        //                                    Icon(
-                        //                                        Icons.Outlined.Calculate,
-                        //                                        contentDescription = "Localized
-                        // description"
-                        //                                    )
-                        //                                }
-                        //                            },
-                        //                            onClick = {
-                        //                                checked[6] = !checked[6]
-                        //                                state.dismiss()
-                        //                            }
-                        //                        )
+                        )
                     }
                 )
             }

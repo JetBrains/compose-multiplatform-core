@@ -23,9 +23,11 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.xr.runtime.HandJointType
 import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.internal.Config
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertFailsWith
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -98,6 +100,14 @@ class OpenXrHandTest {
         }
     }
 
+    @Test
+    fun update_handTrackingDisabled_throwsIllegalStateException() = initOpenXrManagerAndRunTest {
+        val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
+        openXrManager.configure(Config(handTracking = Config.HandTrackingMode.Disabled))
+
+        assertFailsWith<IllegalStateException> { underTest.update(xrTime) }
+    }
+
     private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
             val timeSource = OpenXrTimeSource()
@@ -105,6 +115,7 @@ class OpenXrHandTest {
             openXrManager = OpenXrManager(it, perceptionManager, timeSource)
             openXrManager.create()
             openXrManager.resume()
+            openXrManager.configure(Config(handTracking = Config.HandTrackingMode.Enabled))
 
             testBody()
 

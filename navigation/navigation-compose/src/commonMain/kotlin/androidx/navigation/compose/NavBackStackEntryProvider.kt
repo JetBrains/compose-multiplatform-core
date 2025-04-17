@@ -24,6 +24,7 @@ import androidx.compose.runtime.saveable.SaveableStateHolder
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
@@ -58,7 +59,7 @@ public fun NavBackStackEntry.LocalOwnersProvider(
 
 @Composable
 private fun SaveableStateHolder.SaveableStateProvider(content: @Composable () -> Unit) {
-    val viewModel = viewModel<BackStackEntryIdViewModel>()
+    val viewModel = viewModel { BackStackEntryIdViewModel(createSavedStateHandle()) }
     // Stash a reference to the SaveableStateHolder in the ViewModel so that
     // it is available when the ViewModel is cleared, marking the permanent removal of this
     // NavBackStackEntry from the back stack. Which, because of animations,

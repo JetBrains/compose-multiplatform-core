@@ -180,9 +180,6 @@ class SceneNavDisplayScreenshotTest {
             backStack = remember { mutableStateListOf(first, second) }
             SceneNavDisplay(
                 backStack,
-                // both screens slide right to left, exiting screen should be on top
-                popEnterTransition = slideInHorizontally(tween(duration)) { it / 2 },
-                popExitTransition = slideOutHorizontally(tween(duration)) { -it / 2 }
             ) {
                 when (it) {
                     first ->
@@ -195,7 +192,15 @@ class SceneNavDisplayScreenshotTest {
                             }
                         }
                     second ->
-                        NavEntry(second) {
+                        NavEntry(
+                            second,
+                            // both screens slide right to left, exiting screen should be on top
+                            metadata =
+                                SceneNavDisplay.popTransition(
+                                    enter = slideInHorizontally(tween(duration)) { it / 2 },
+                                    exit = slideOutHorizontally(tween(duration)) { -it / 2 }
+                                )
+                        ) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Red),
                                 contentAlignment = Alignment.TopEnd
@@ -428,9 +433,6 @@ class SceneNavDisplayScreenshotTest {
                 // both screens slide left to right, entering screens should be on top
                 enterTransition = slideInHorizontally { -it / 2 },
                 exitTransition = slideOutHorizontally { it },
-                // both screens slide right to left, exiting screen should be on top
-                popEnterTransition = slideInHorizontally(tween(duration)) { it / 2 },
-                popExitTransition = slideOutHorizontally(tween(duration)) { -it / 2 }
             ) {
                 when (it) {
                     first ->
@@ -443,7 +445,15 @@ class SceneNavDisplayScreenshotTest {
                             }
                         }
                     second ->
-                        NavEntry(second) {
+                        NavEntry(
+                            second,
+                            // both screens slide right to left, exiting screen should be on top
+                            metadata =
+                                SceneNavDisplay.popTransition(
+                                    enter = slideInHorizontally(tween(duration)) { it / 2 },
+                                    exit = slideOutHorizontally(tween(duration)) { -it / 2 }
+                                )
+                        ) {
                             Box(
                                 Modifier.fillMaxSize().background(Color.Red),
                                 contentAlignment = Alignment.TopEnd

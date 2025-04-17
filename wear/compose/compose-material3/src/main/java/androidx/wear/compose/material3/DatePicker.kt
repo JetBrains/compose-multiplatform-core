@@ -38,7 +38,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -194,12 +193,12 @@ public fun DatePicker(
 
     val shortMonthNames = remember { getMonthNames("MMM") }
     val fullMonthNames = remember { getMonthNames("MMMM") }
-    val yearContentDescription by
+    val yearContentDescription =
         remember(
             selectedIndex,
             datePickerState.selectedYear,
         ) {
-            derivedStateOf {
+            {
                 createDescriptionDatePicker(
                     selectedIndex,
                     datePickerState.selectedYear,
@@ -207,12 +206,12 @@ public fun DatePicker(
                 )
             }
         }
-    val monthContentDescription by
+    val monthContentDescription =
         remember(
             selectedIndex,
             datePickerState.selectedMonth,
         ) {
-            derivedStateOf {
+            {
                 if (selectedIndex == null) {
                     monthString
                 } else {
@@ -220,12 +219,12 @@ public fun DatePicker(
                 }
             }
         }
-    val dayContentDescription by
+    val dayContentDescription =
         remember(
             selectedIndex,
             datePickerState.selectedDay,
         ) {
-            derivedStateOf {
+            {
                 createDescriptionDatePicker(
                     selectedIndex,
                     datePickerState.selectedDay,

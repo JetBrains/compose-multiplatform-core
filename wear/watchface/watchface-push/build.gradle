@@ -39,8 +39,6 @@ android {
     namespace = "androidx.wear.watchface.push"
     defaultConfig {
         minSdk = 36
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        testInstrumentationRunnerArguments["timeout_msecs"] = "1000"
     }
 }
 

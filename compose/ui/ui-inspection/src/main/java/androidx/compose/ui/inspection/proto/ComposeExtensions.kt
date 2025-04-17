@@ -131,6 +131,12 @@ private fun InspectorNode.flags(): Int {
     if (inlined) {
         flags = flags or ComposableNode.Flags.INLINED_VALUE
     }
+    if (hasDrawModifier) {
+        flags = flags or ComposableNode.Flags.HAS_DRAW_MODIFIER_VALUE
+    }
+    if (hasChildDrawModifier) {
+        flags = flags or ComposableNode.Flags.HAS_CHILD_DRAW_MODIFIER_VALUE
+    }
     return flags
 }
 

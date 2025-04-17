@@ -93,6 +93,7 @@ import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
 import androidx.camera.core.impl.utils.CompareSizesByArea
+import androidx.camera.core.internal.StreamSpecsCalculator
 import androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_1080P
 import androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_1440P
 import androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_720P
@@ -3636,7 +3637,8 @@ class SupportedSurfaceCombinationTest {
                     _: Context?,
                     _: CameraThreadConfig?,
                     _: CameraSelector?,
-                    _: Long ->
+                    _: Long,
+                    _: StreamSpecsCalculator ->
                     cameraFactory!!
                 }
                 .build()

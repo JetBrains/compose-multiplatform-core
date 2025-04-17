@@ -84,12 +84,21 @@ class TransformingLazyColumnSemanticsTest {
             abs(scrollRatio - 0.5f) < 0.001f
         }
 
+        // Scroll to end
         rule.runOnIdle { runBlocking { state.scrollBy(20_000f) } }
         rule.waitForIdle()
 
         rule.onNodeWithTag(TEST_TAG).assertVerticalScrollAxisRange { scrollAxisRange ->
             val scrollRatio = scrollAxisRange.value() / scrollAxisRange.maxValue()
             scrollRatio in 0.99f..1f
+        }
+
+        // Scroll to start
+        rule.runOnIdle { runBlocking { state.scrollBy(-20_000f) } }
+        rule.waitForIdle()
+
+        rule.onNodeWithTag(TEST_TAG).assertVerticalScrollAxisRange { scrollAxisRange ->
+            scrollAxisRange.value() == 0f
         }
     }
 }

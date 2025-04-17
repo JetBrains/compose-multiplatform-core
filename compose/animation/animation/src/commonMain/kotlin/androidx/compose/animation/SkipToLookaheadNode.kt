@@ -28,6 +28,7 @@ import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.ScaleFactor
 import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
@@ -54,12 +55,21 @@ internal class SkipToLookaheadNode(scaleToBounds: ScaleToBoundsImpl?, isEnabled:
         if (isLookingAhead) {
             lookaheadConstraints = constraints
         }
-        val p = measurable.measure(lookaheadConstraints!!)
-        lookaheadSize = IntSize(p.width, p.height)
+        if (!isEnabled()) {
+            return measurable.measure(constraints).run { layout(width, height) { place(0, 0) } }
+        }
+        val p: Placeable =
+            if (isLookingAhead) {
+                measurable.measure(constraints).also {
+                    lookaheadSize = IntSize(it.width, it.height)
+                }
+            } else {
+                measurable.measure(lookaheadConstraints!!)
+            }
         val constrainedSize = constraints.constrain(lookaheadSize)
         return layout(constrainedSize.width, constrainedSize.height) {
             val scaleToBounds = scaleToBounds
-            if (!isEnabled() || scaleToBounds == null) {
+            if (scaleToBounds == null) {
                 p.place(0, 0)
             } else {
                 val contentScale = scaleToBounds.contentScale

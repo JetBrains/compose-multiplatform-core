@@ -16,16 +16,23 @@
 
 package androidx.compose.ui.layout
 
+import androidx.collection.mutableIntSetOf
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
@@ -35,6 +42,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -56,6 +64,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -663,6 +672,157 @@ class RectListIntegrationTest {
         rule.onNodeWithTag("foo20").assertRectTopWithinRange(-4.dp, 4.dp)
     }
 
+    @Test
+    @SmallTest
+    fun testLazyColumn_isConsistentAfterScroll_0() {
+        val lazyListState = LazyListState()
+
+        val rootSizePx = 600f
+        val viewPortCount = 4
+        val pages = 3
+
+        val listItemHeight = rootSizePx / viewPortCount
+
+        setLazyColumnExample(
+            lazyListState = lazyListState,
+            rootSizePx = rootSizePx,
+            viewPortCount = viewPortCount,
+            pages = pages
+        )
+
+        with(rule.density) {
+            // These specific calls lead to a reproducible pattern, without a fix, **all**
+            // visible items would have missing Rects
+            var itemIndex = 2
+            repeat(3) {
+                rule.runOnIdle {
+                    lazyListState.requestScrollToItem(itemIndex)
+                    itemIndex += 2
+                }
+            }
+            rule.waitForIdle()
+
+            // Assert the visual state of the List, itemIndex should be 6 and at the top
+            rule
+                .onNodeWithTag("Item-6")
+                .assertRectDp(
+                    left = 0.dp,
+                    top = 0.dp,
+                    right = rootSizePx.toDp(),
+                    bottom = listItemHeight.toDp()
+                )
+
+            rule.onNodeWithTag("Item-6").assertRectCount(5)
+            rule.onNodeWithTag("Item-7").assertRectCount(5)
+            rule.onNodeWithTag("Item-8").assertRectCount(5)
+            rule.onNodeWithTag("Item-9").assertRectCount(5)
+        }
+    }
+
+    @Test
+    @MediumTest
+    fun testLazyColumn_isConsistentAfterScroll_1() {
+        val lazyListState = LazyListState()
+
+        val rootSizePx = 600f
+        val viewPortCount = 4
+        val pages = 3
+
+        val listItemHeight = rootSizePx / viewPortCount
+
+        setLazyColumnExample(
+            lazyListState = lazyListState,
+            rootSizePx = rootSizePx,
+            viewPortCount = viewPortCount,
+            pages = pages
+        )
+
+        with(rule.density) {
+            // These specific calls lead to a reproducible pattern, without a fix, some of the
+            // visible items will have missing Rects
+            var itemIndex = pages * viewPortCount - viewPortCount
+            rule.runOnIdle {
+                // Scroll to last visible set of items
+                lazyListState.requestScrollToItem(itemIndex)
+            }
+            repeat(2) {
+                // Scroll two items back
+                rule.runOnIdle { lazyListState.requestScrollToItem(--itemIndex) }
+            }
+
+            repeat(2) {
+                // Scroll two items forward
+                rule.runOnIdle { lazyListState.requestScrollToItem(++itemIndex) }
+            }
+            rule.waitForIdle()
+
+            // Assert the visual state of the List, first visible should be the
+            // lastIndex - viewportCount
+            rule
+                .onNodeWithTag("Item-8")
+                .assertRectDp(
+                    left = 0.dp,
+                    top = 0.dp,
+                    right = rootSizePx.toDp(),
+                    bottom = listItemHeight.toDp()
+                )
+
+            rule.onNodeWithTag("Item-8").assertRectCount(5)
+            rule.onNodeWithTag("Item-9").assertRectCount(5)
+            // Originally observed issues on 10 (1 visible) and 11 (0 visible)
+            rule.onNodeWithTag("Item-10").assertRectCount(5)
+            rule.onNodeWithTag("Item-11").assertRectCount(5)
+        }
+    }
+
+    /**
+     * Lazy Column example that can be used to reproduce issues related to re-using LayoutNodes
+     * where each item has the same Layout.
+     */
+    private fun setLazyColumnExample(
+        lazyListState: LazyListState,
+        rootSizePx: Float,
+        viewPortCount: Int,
+        pages: Int,
+    ) {
+        val listItemHeight = rootSizePx / viewPortCount
+
+        with(rule.density) {
+            @Composable
+            fun LazyItemScope.MyItem(index: Int) {
+                Row(
+                    Modifier.testTag("Item-$index")
+                        .fillParentMaxWidth()
+                        .height(listItemHeight.toDp())
+                ) {
+                    Column(Modifier.fillMaxHeight().weight(0.7f, true)) {
+                        Box(
+                            Modifier.fillMaxWidth()
+                                .height((listItemHeight / 2f).toDp())
+                                .drawBehind {
+                                    val alpha = (index + 1f) / (viewPortCount * pages)
+                                    drawRect(Color.Blue.copy(alpha = alpha))
+                                }
+                        )
+                        Box(
+                            Modifier.fillMaxWidth()
+                                .height((listItemHeight / 2f).toDp())
+                                .background(Color.Cyan)
+                        )
+                    }
+                    Box(Modifier.fillMaxHeight().weight(0.3f, true).background(Color.LightGray))
+                }
+            }
+
+            rule.setContent {
+                LazyColumn(state = lazyListState, modifier = Modifier.size(rootSizePx.toDp())) {
+                    items(viewPortCount * pages) { MyItem(it) }
+                }
+            }
+            rule.waitForIdle()
+        }
+    }
+
     internal fun SemanticsNodeInteraction.assertRectDp(
         left: Dp,
         top: Dp,
@@ -716,6 +876,30 @@ class RectListIntegrationTest {
                 error("Node with ${node.id} not found in rectlist")
             }
         }
+    }
+
+    /** Counts Rects from this node down the hierarchy in the RectList. */
+    private fun SemanticsNodeInteraction.assertRectCount(expectedCount: Int) {
+        val node = fetchSemanticsNode()
+        val owner = node.layoutNode.owner
+        val rectList = owner?.rectManager?.rects ?: error("Could not find rect list")
+        val layoutNodes = owner.layoutNodes
+        val nodeId = node.layoutNode.semanticsId
+
+        val ids = mutableIntSetOf()
+
+        rectList.forEachRect { id, _, _, _, _ ->
+            if (id == nodeId) {
+                ids.add(id)
+            } else {
+                layoutNodes[id]?.parent?.semanticsId?.let { parentId ->
+                    if (ids.contains(parentId)) {
+                        ids.add(id)
+                    }
+                }
+            }
+        }
+        assertEquals(expectedCount, ids.count())
     }
 
     private fun Density.convertToDp(px: Int): Dp {

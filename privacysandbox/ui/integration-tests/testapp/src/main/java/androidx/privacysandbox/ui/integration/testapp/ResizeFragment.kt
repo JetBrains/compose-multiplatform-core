@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ui.integration.testapp
 
-import android.graphics.Color
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.LayoutInflater
@@ -24,6 +23,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.Button
+import androidx.core.content.ContextCompat
 import androidx.core.view.setMargins
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdFormat
@@ -78,7 +78,8 @@ class ResizeFragment : BaseFragment() {
                     MarginLayoutParams(adViewLayoutParams).apply {
                         setMargins(convertFromDpToPixels(MARGIN_DP))
                     }
-                adViewBackgroundColor = Color.parseColor(AD_VIEW_BACKGROUND_COLOR)
+                adViewBackgroundColor =
+                    ContextCompat.getColor(context, R.color.ad_view_background_color)
             }
         resizeButton = inflatedView.findViewById(R.id.resize_button)
         setPaddingButton = inflatedView.findViewById(R.id.set_padding_button)
@@ -150,6 +151,5 @@ class ResizeFragment : BaseFragment() {
 
     private companion object {
         const val MARGIN_DP = 16.0f
-        const val AD_VIEW_BACKGROUND_COLOR = "#D3D3D3"
     }
 }

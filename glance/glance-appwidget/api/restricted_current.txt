@@ -84,11 +84,11 @@ package androidx.glance.appwidget {
     method public suspend <T extends androidx.glance.appwidget.GlanceAppWidget> Object? getGlanceIds(Class<T> provider, kotlin.coroutines.Continuation<? super java.util.List<? extends androidx.glance.GlanceId>>);
     method public suspend <T extends androidx.glance.appwidget.GlanceAppWidgetReceiver> Object? requestPinGlanceAppWidget(Class<T> receiver, optional androidx.glance.appwidget.GlanceAppWidget? preview, optional androidx.compose.ui.unit.DpSize? previewSize, optional Object? previewState, optional android.app.PendingIntent? successCallback, kotlin.coroutines.Continuation<? super java.lang.Boolean>);
     method public suspend <T extends androidx.glance.appwidget.GlanceAppWidgetReceiver> Object? requestPinGlanceAppWidget(Class<T> receiver, optional androidx.glance.appwidget.GlanceAppWidget? preview, optional Object? previewState, optional android.app.PendingIntent? successCallback, kotlin.coroutines.Continuation<? super java.lang.Boolean>);
-    method public suspend Object? setWidgetPreviews(kotlin.reflect.KClass<? extends androidx.glance.appwidget.GlanceAppWidgetReceiver> receiver, optional androidx.collection.IntSet widgetCategories, kotlin.coroutines.Continuation<? super java.lang.Boolean>);
+    method @RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) public suspend Object? setWidgetPreviews(kotlin.reflect.KClass<? extends androidx.glance.appwidget.GlanceAppWidgetReceiver> receiver, optional androidx.collection.IntSet widgetCategories, kotlin.coroutines.Continuation<? super java.lang.Boolean>);
   }
 
   public final class GlanceAppWidgetManagerKt {
-    method public static suspend inline <reified T extends androidx.glance.appwidget.GlanceAppWidgetReceiver> Object? setWidgetPreviews(androidx.glance.appwidget.GlanceAppWidgetManager, optional androidx.collection.IntSet widgetCategories, kotlin.coroutines.Continuation<? super java.lang.Boolean>);
+    method @RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) public static suspend inline <reified T extends androidx.glance.appwidget.GlanceAppWidgetReceiver> Object? setWidgetPreviews(androidx.glance.appwidget.GlanceAppWidgetManager, optional androidx.collection.IntSet widgetCategories, kotlin.coroutines.Continuation<? super java.lang.Boolean>);
   }
 
   public abstract class GlanceAppWidgetReceiver extends android.appwidget.AppWidgetProvider {
@@ -129,7 +129,7 @@ package androidx.glance.appwidget {
     method public void onReceive(android.content.Context? context, android.content.Intent? intent);
   }
 
-  public sealed interface PreviewSizeMode extends androidx.glance.appwidget.SizeMode {
+  public interface PreviewSizeMode extends androidx.glance.appwidget.SizeMode {
   }
 
   public final class ProgressIndicatorDefaults {

@@ -19,6 +19,7 @@ package androidx.appfunctions.compiler.processors
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctions
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
+import androidx.appfunctions.compiler.core.createElementWithTextNode
 import androidx.appfunctions.metadata.AppFunctionMetadataDocument
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
@@ -157,9 +158,6 @@ class AppFunctionLegacyIndexXmlProcessor(
                 )
             )
         }
-
-    private fun Document.createElementWithTextNode(elementName: String, text: String): Element =
-        createElement(elementName).apply { appendChild(createTextNode(text)) }
 
     private companion object {
         private const val XML_PACKAGE_NAME = "assets"

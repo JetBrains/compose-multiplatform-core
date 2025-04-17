@@ -31,6 +31,7 @@ import androidx.xr.runtime.internal.PlaneSemantic as RtPlaneSemantic
 import androidx.xr.runtime.internal.PlaneType as RtPlaneType
 import androidx.xr.runtime.internal.ResizeEvent as RuntimeResizeEvent
 import androidx.xr.runtime.internal.SpatialCapabilities as RuntimeSpatialCapabilities
+import androidx.xr.runtime.internal.SpatialPointerIcon as RtSpatialPointerIcon
 import androidx.xr.runtime.internal.SpatialVisibility as RuntimeSpatialVisibility
 import androidx.xr.runtime.internal.TextureSampler as RuntimeTextureSampler
 import androidx.xr.runtime.math.Matrix4
@@ -707,5 +708,30 @@ class UtilsTest {
                 HitTestResult.SurfaceType.PLANE,
                 HitTestResult.SurfaceType.OBJECT,
             )
+    }
+
+    @Test
+    fun spatialPointerIconToRtSpatialPointerIcon_convertsCorrectly() {
+        assertThat(
+                listOf(SpatialPointerIconNone, SpatialPointerIconCircle).map {
+                    it.toRtSpatialPointerIcon()
+                }
+            )
+            .containsExactly(RtSpatialPointerIcon.TYPE_NONE, RtSpatialPointerIcon.TYPE_CIRCLE)
+            .inOrder()
+    }
+
+    @Test
+    fun rtSpatialPointerIconToInt_convertsCorrectly() {
+        assertThat(
+                listOf(
+                        RtSpatialPointerIcon.TYPE_DEFAULT,
+                        RtSpatialPointerIcon.TYPE_NONE,
+                        RtSpatialPointerIcon.TYPE_CIRCLE,
+                    )
+                    .map { it.toSpatialPointerIcon() }
+            )
+            .containsExactly(null, SpatialPointerIconNone, SpatialPointerIconCircle)
+            .inOrder()
     }
 }

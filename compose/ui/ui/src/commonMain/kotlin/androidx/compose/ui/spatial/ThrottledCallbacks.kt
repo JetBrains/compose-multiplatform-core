@@ -26,6 +26,7 @@ import androidx.compose.ui.node.requireCoordinator
 import androidx.compose.ui.node.requireLayoutNode
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.round
+import androidx.compose.ui.unit.toOffset
 import kotlin.math.min
 
 internal class ThrottledCallbacks {
@@ -466,10 +467,15 @@ internal fun rectInfoFor(
     // is accurate.
     val needsTransform = layoutNode.outerCoordinator !== coordinator
     return if (needsTransform) {
-        val transformed = layoutNode.outerCoordinator.coordinates.localBoundingBoxOf(coordinator)
+        val topLeftOffset = IntOffset(topLeft).toOffset()
+        val size = coordinator.coordinates.size
+        val transformedPos =
+            layoutNode.outerCoordinator.coordinates
+                .localPositionOf(coordinator, topLeftOffset)
+                .round()
         RelativeLayoutBounds(
-            transformed.topLeft.round().packedValue,
-            transformed.bottomRight.round().packedValue,
+            transformedPos.packedValue,
+            IntOffset(transformedPos.x + size.width, transformedPos.y + size.height).packedValue,
             windowOffset,
             screenOffset,
             viewToWindowMatrix,

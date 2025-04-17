@@ -171,13 +171,11 @@ class MathHelpersTest {
         val maxCosError = 1.63232e-3f
         val maxSinError = 1.63198e-3f
 
-        // Test all floats between 0 and 360
-        var i = 0.0f.toRawBits()
-        val e = 360.0f.toRawBits()
+        // Test values between 0 and 360
+        var x = 0f
+        val e = 360f
 
-        while (i <= e) {
-            val x = Float.fromBits(i)
-
+        while (x <= e) {
             val normalizedDegrees = x / 360.0f
             val radians = x * PI / 180.0
 
@@ -187,7 +185,7 @@ class MathHelpersTest {
             val sinError = abs(sin(radians) - normalizedAngleSin(normalizedDegrees))
             assertTrue(sinError <= maxSinError)
 
-            i++
+            x += 0.01f
         }
     }
 

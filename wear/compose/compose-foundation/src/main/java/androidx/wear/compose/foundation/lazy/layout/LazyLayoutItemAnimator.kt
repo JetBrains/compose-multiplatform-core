@@ -55,6 +55,8 @@ internal class LazyLayoutItemAnimator<T : LazyLayoutMeasuredItem> {
 
     // stored to not allocate it every pass.
     private val movingAwayKeys = mutableScatterSetOf<Any>()
+    private val movingInFromStartBound = mutableListOf<T>()
+    private val movingInFromEndBound = mutableListOf<T>()
     private val disappearingItems = mutableListOf<LazyLayoutItemAnimation>()
     private var displayingNode: DrawModifierNode? = null
 
@@ -83,6 +85,9 @@ internal class LazyLayoutItemAnimator<T : LazyLayoutMeasuredItem> {
             releaseAnimations()
             return
         }
+
+        val previousFirstVisibleIndex = firstVisibleIndex
+        firstVisibleIndex = positionedItems.firstOrNull()?.index ?: 0
 
         // Only setup animations when we have access to target value in the current pass, which
         // means lookahead pass, or regular pass when not in a lookahead scope.
@@ -118,15 +123,24 @@ internal class LazyLayoutItemAnimator<T : LazyLayoutMeasuredItem> {
                         layoutMaxOffset,
                     )
                     keyToItemInfoMap[item.key] = newItemInfo
-                    initializeAnimation(
-                        item,
-                        item.getOffset(0).let { if (item.isVertical) it.y else it.x },
-                        newItemInfo
-                    )
-                    applyScrollWithoutAnimation(newItemInfo, scrollOffset)
 
-                    if (shouldAnimateAppearance) {
-                        newItemInfo.animations.forEach { it?.animateAppearance() }
+                    if (item.index != previousIndex && previousIndex != -1) {
+                        if (previousIndex < previousFirstVisibleIndex) {
+                            // the larger index will be in the start of the list
+                            movingInFromStartBound.add(item)
+                        } else {
+                            movingInFromEndBound.add(item)
+                        }
+                    } else {
+                        initializeAnimation(
+                            item,
+                            item.getOffset(0).let { if (item.isVertical) it.y else it.x },
+                            newItemInfo
+                        )
+                        applyScrollWithoutAnimation(newItemInfo, scrollOffset)
+                        if (shouldAnimateAppearance) {
+                            newItemInfo.animations.forEach { it?.animateAppearance() }
+                        }
                     }
                 } else {
                     if (shouldSetupAnimation) {
@@ -154,6 +168,61 @@ internal class LazyLayoutItemAnimator<T : LazyLayoutMeasuredItem> {
                 }
             } else {
                 removeInfoForKey(item.key)
+            }
+        }
+
+        if (shouldSetupAnimation && previousKeyToIndexMap != null) {
+            if (movingInFromStartBound.isNotEmpty()) {
+                var accumulatedOffset = 0
+                movingInFromStartBound.sortByDescending { previousKeyToIndexMap.getIndex(it.key) }
+                val startOffset =
+                    positionedItems
+                        .firstOrNull {
+                            // Find the item right below the first moving in item in previous order
+                            // as the anchor item.
+                            previousKeyToIndexMap.getIndex(it.key) ==
+                                previousKeyToIndexMap.getIndex(movingInFromStartBound[0].key) + 1
+                        }
+                        ?.let {
+                            getAnimation(it.key, 0)?.finalOffset?.run {
+                                if (it.isVertical) y else x
+                            }
+                        }
+                        // If the anchor item is removed, fallback to the layoutMinOffset.
+                        ?: layoutMinOffset
+                movingInFromStartBound.fastForEach { item ->
+                    accumulatedOffset += item.mainAxisSizeWithSpacings
+                    val mainAxisOffset = startOffset - accumulatedOffset
+                    initializeAnimation(item, mainAxisOffset)
+                    startPlacementAnimationsIfNeeded(item)
+                }
+            }
+            if (movingInFromEndBound.isNotEmpty()) {
+                var accumulatedOffset = 0
+                movingInFromEndBound.sortBy { previousKeyToIndexMap.getIndex(it.key) }
+                val startOffset =
+                    positionedItems
+                        .firstOrNull {
+                            // Find the item right above the first moving in item in previous order
+                            // as the anchor item.
+                            previousKeyToIndexMap.getIndex(it.key) ==
+                                previousKeyToIndexMap.getIndex(movingInFromEndBound[0].key) - 1
+                        }
+                        ?.let {
+                            getAnimation(it.key, 0)?.finalOffset?.run {
+                                it.mainAxisSizeWithSpacings + if (it.isVertical) y else x
+                            }
+                        }
+                        // If the anchor item is removed, fallback to the layoutMaxOffset.
+                        ?: layoutMaxOffset
+
+                movingInFromEndBound.fastForEach { item ->
+                    accumulatedOffset += item.mainAxisSizeWithSpacings
+                    val mainAxisOffset =
+                        startOffset + accumulatedOffset - item.mainAxisSizeWithSpacings
+                    initializeAnimation(item, mainAxisOffset)
+                    startPlacementAnimationsIfNeeded(item)
+                }
             }
         }
 
@@ -197,6 +266,8 @@ internal class LazyLayoutItemAnimator<T : LazyLayoutMeasuredItem> {
             }
         }
 
+        movingInFromStartBound.clear()
+        movingInFromEndBound.clear()
         movingAwayKeys.clear()
     }
 

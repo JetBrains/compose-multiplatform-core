@@ -190,7 +190,8 @@ public final class AppSearchImpl implements Closeable {
     private static final String TAG = "AppSearchImpl";
 
     /** A value 0 means that there're no more pages in the search results. */
-    private static final long EMPTY_PAGE_TOKEN = 0;
+    public static final long EMPTY_PAGE_TOKEN = 0;
+
     @VisibleForTesting
     static final int CHECK_OPTIMIZE_INTERVAL = 100;
 

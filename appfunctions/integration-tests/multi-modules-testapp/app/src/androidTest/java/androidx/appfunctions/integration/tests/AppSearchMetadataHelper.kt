@@ -52,6 +52,31 @@ internal object AppSearchMetadataHelper {
         return functionIds
     }
 
+    suspend fun isDynamicIndexerAvailable(context: Context): Boolean =
+        createSearchSession(context).use { session ->
+            val searchResults =
+                session.search(
+                    "",
+                    SearchSpec.Builder()
+                        .addFilterNamespaces("app_functions")
+                        .addFilterPackageNames("android")
+                        .addFilterSchemas("AppFunctionStaticMetadata")
+                        .build()
+                )
+            var nextPage = searchResults.nextPageAsync.await()
+            while (nextPage.isNotEmpty()) {
+                for (result in nextPage) {
+                    val packageName = result.genericDocument.getPropertyString("packageName")
+                    if (packageName != context.packageName) {
+                        continue
+                    }
+                    return result.genericDocument.getPropertyDocument("response") != null
+                }
+                nextPage = searchResults.nextPageAsync.await()
+            }
+            throw IllegalStateException("No functions found for package ${context.packageName}")
+        }
+
     private suspend fun createSearchSession(context: Context): GlobalSearchSession {
         return PlatformStorage.createGlobalSearchSessionAsync(
                 PlatformStorage.GlobalSearchContext.Builder(context).build()

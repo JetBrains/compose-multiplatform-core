@@ -107,6 +107,7 @@ class UiAutomatorTestScopeTest {
         onView { id == "clazz" && className == "android.widget.TextView" }
     }
 
+    @SdkSuppress(minSdkVersion = 22)
     @Test
     @LargeTest
     fun composeTest() = uiAutomator {

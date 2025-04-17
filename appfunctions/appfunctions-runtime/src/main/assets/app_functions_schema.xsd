@@ -102,8 +102,6 @@
         <xs:element name="description" cardinality="2" type="xs:string" />
         <xs:element name="parameters" cardinality="1"
             type="appfn:AppFunctionParameterMetadataDocument" />
-        <xs:element name="components" cardinality="2"
-            type="appfn:AppFunctionComponentMetadataDocument" />
         <xs:element name="response" cardinality="2"
             type="appfn:AppFunctionResponseMetadataDocument" />
     </xs:documentType>

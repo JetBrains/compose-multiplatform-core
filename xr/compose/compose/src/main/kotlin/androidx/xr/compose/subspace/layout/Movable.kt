@@ -59,20 +59,36 @@ import kotlinx.coroutines.asExecutor
  * @param scaleWithDistance true if this composable should scale in size when moved in depth. When
  *   this scaleWithDistance is enabled, the subspace element moved will grow or shrink. It will also
  *   maintain any explicit scale that it had before movement.
- * @param onPoseChange a callback to process the pose change during movement, with translation in
- *   pixels. This will only be called if [enabled] is true. If the callback returns false or isn't
- *   specified, the default behavior of moving this composable's subspace hierarchy will be
- *   executed. If it returns true, it is the responsibility of the callback to process the event.
- * @see [PoseChangeEvent]
+ * @param onMoveStart a callback to process the start of a move event. This will only be called if
+ *   [enabled] is true. The callback will be called with the [MoveStartEvent] type
+ * @param onMoveEnd a callback to process the end of a move event. This will only be called if
+ *   [enabled] is true. The callback will be called with the [MoveEndEvent] type
+ * @param onMove a callback to process the pose change during movement, with translation in pixels.
+ *   This will only be called if [enabled] is true. If the callback returns false the default
+ *   behavior of moving this composable's subspace hierarchy will be executed. If it returns true,
+ *   it is the responsibility of the callback to process the event. The callback will be called with
+ *   the [MoveEvent] type @see [MoveEvent].
+ *     @see [MoveEvent].
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.movable(
     enabled: Boolean = true,
     stickyPose: Boolean = false,
     scaleWithDistance: Boolean = true,
-    onPoseChange: ((PoseChangeEvent) -> Boolean)? = null,
+    onMoveStart: ((MoveStartEvent) -> Unit)? = null,
+    onMoveEnd: ((MoveEndEvent) -> Unit)? = null,
+    onMove: ((MoveEvent) -> Boolean)? = null,
 ): SubspaceModifier =
-    this.then(MovableElement(enabled, onPoseChange, stickyPose, scaleWithDistance))
+    this.then(
+        MovableElement(enabled, onMoveStart, onMoveEnd, onMove, stickyPose, scaleWithDistance)
+    )
+
+@Deprecated(
+    message = "Use MoveEvent instead",
+    replaceWith = ReplaceWith("MoveEvent"),
+    level = DeprecationLevel.WARNING,
+)
+public typealias PoseChangeEvent = MoveEvent
 
 /**
  * An event representing a change in pose, scale, and size.
@@ -83,21 +99,20 @@ public fun SubspaceModifier.movable(
  *   with the composable's depth when scaleWithDistance is true on the modifier.
  * @property size The [IntVolumeSize] value that includes the width, height and depth of the
  *   composable, factoring in shrinking or stretching due to [scale].
+ * @property type The type of move event.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class PoseChangeEvent(
+open public class MoveEvent(
     public var pose: Pose = Pose.Identity,
     public var scale: Float = 1.0F,
     public var size: IntVolumeSize = IntVolumeSize.Zero,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is PoseChangeEvent) return false
-
+        if (other !is MoveEvent) return false
         if (pose != other.pose) return false
         if (scale != other.scale) return false
         if (size != other.size) return false
-
         return true
     }
 
@@ -109,28 +124,87 @@ public class PoseChangeEvent(
     }
 
     override fun toString(): String {
-        return "PoseChangeEvent(pose=$pose, scale=$scale, size=$size)"
+        return "MoveEvent(pose=$pose, scale=$scale, size=$size)"
+    }
+}
+
+/**
+ * An event representing the start of a move event.
+ *
+ * @property pose The initial pose of the composable in the subspace, relative to its parent, with
+ *   its translation being expressed in pixels.
+ * @property scale The initial scale of the composable as a result of its motion. This value will
+ *   change with the composable's depth when scaleWithDistance is true on the modifier.
+ * @property size The [IntVolumeSize] value that includes the width, height and depth of the
+ *   composable, factoring in shrinking or stretching due to [scale].
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class MoveStartEvent(
+    pose: Pose = Pose.Identity,
+    scale: Float = 1.0F,
+    size: IntVolumeSize = IntVolumeSize.Zero,
+) : MoveEvent(pose, scale, size) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is MoveStartEvent) return false
+        return super.equals(other)
+    }
+
+    override fun toString(): String {
+        return "OnMoveStart(pose=$pose, scale=$scale, size=$size)"
+    }
+}
+
+/**
+ * An event representing the end of a move event.
+ *
+ * @property pose The final pose of the composable in the subspace, relative to its parent, with its
+ *   translation being expressed in pixels.
+ * @property scale The final scale of the composable as a result of its motion. This value will
+ *   change with the composable's depth when scaleWithDistance is true on the modifier.
+ * @property size The [IntVolumeSize] value that includes the width, height and depth of the
+ *   composable, factoring in shrinking or stretching due to [scale].
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class MoveEndEvent(
+    pose: Pose = Pose.Identity,
+    scale: Float = 1.0F,
+    size: IntVolumeSize = IntVolumeSize.Zero,
+) : MoveEvent(pose, scale, size) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is MoveEndEvent) return false
+        return super.equals(other)
+    }
+
+    override fun toString(): String {
+        return "OnMoveEnd(pose=$pose, scale=$scale, size=$size)"
     }
 }
 
 private class MovableElement(
     private val enabled: Boolean,
-    private val onPoseChange: ((PoseChangeEvent) -> Boolean)?,
+    private val onMoveStart: ((MoveStartEvent) -> Unit)?,
+    private val onMoveEnd: ((MoveEndEvent) -> Unit)?,
+    private val onMove: ((MoveEvent) -> Boolean)?,
     private val stickyPose: Boolean,
     private val scaleWithDistance: Boolean,
 ) : SubspaceModifierNodeElement<MovableNode>() {
-
     override fun create(): MovableNode =
         MovableNode(
             enabled = enabled,
             stickyPose = stickyPose,
-            onPoseChange = onPoseChange,
+            onMoveStart = onMoveStart,
+            onMoveEnd = onMoveEnd,
+            onMove = onMove,
             scaleWithDistance = scaleWithDistance,
         )
 
     override fun update(node: MovableNode) {
         node.enabled = enabled
-        node.onPoseChange = onPoseChange
+        node.onMoveStart = onMoveStart
+        node.onMoveEnd = onMoveEnd
+        node.onMove = onMove
         node.stickyPose = stickyPose
         node.scaleWithDistance = scaleWithDistance
     }
@@ -138,18 +212,20 @@ private class MovableElement(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is MovableElement) return false
-
         if (enabled != other.enabled) return false
-        if (onPoseChange !== other.onPoseChange) return false
+        if (onMoveStart !== other.onMoveStart) return false
+        if (onMoveEnd !== other.onMoveEnd) return false
+        if (onMove !== other.onMove) return false
         if (stickyPose != other.stickyPose) return false
         if (scaleWithDistance != other.scaleWithDistance) return false
-
         return true
     }
 
     override fun hashCode(): Int {
         var result = enabled.hashCode()
-        result = 31 * result + onPoseChange.hashCode()
+        result = 31 * result + onMoveStart.hashCode()
+        result = 31 * result + onMoveEnd.hashCode()
+        result = 31 * result + onMove.hashCode()
         result = 31 * result + stickyPose.hashCode()
         result = 31 * result + scaleWithDistance.hashCode()
         return result
@@ -160,7 +236,9 @@ internal class MovableNode(
     public var enabled: Boolean,
     public var stickyPose: Boolean,
     public var scaleWithDistance: Boolean,
-    public var onPoseChange: ((PoseChangeEvent) -> Boolean)?,
+    public var onMoveStart: ((MoveStartEvent) -> Unit)?,
+    public var onMoveEnd: ((MoveEndEvent) -> Unit)?,
+    public var onMove: ((MoveEvent) -> Boolean)?,
 ) :
     SubspaceModifier.Node(),
     CompositionLocalConsumerSubspaceModifierNode,
@@ -168,7 +246,6 @@ internal class MovableNode(
     LayoutCoordinatesAwareModifierNode,
     MoveListener,
     SubspaceLayoutModifierNode {
-
     private inline val density: Density
         get() = currentValueOf(LocalDensity)
 
@@ -177,17 +254,13 @@ internal class MovableNode(
 
     /** The previous pose of this entity from the last MoveEvent. */
     private var previousPose: Pose = Pose.Identity
-
     /** Pose based on user adjustments from MoveEvents from SceneCore. */
     private var userPose: Pose = Pose.Identity
-
     /** The scale of this entity when it is moved. */
     private var scaleFromMovement: Float = 1.0F
-
     private var component: MovableComponent? = null
 
     override fun CoreEntityScope.modifyCoreEntity() {
-        updateState()
         setOrAppendScale(scaleFromMovement)
     }
 
@@ -201,6 +274,9 @@ internal class MovableNode(
         measurable: Measurable,
         constraints: VolumeConstraints,
     ): MeasureResult {
+        // modifyCoreEntity happens during placement, so we need to update the component state here
+        // before measurement
+        updateState()
         val placeable = measurable.measure(constraints)
         return layout(placeable.measuredWidth, placeable.measuredHeight, placeable.measuredDepth) {
             placeable.place(userPose)
@@ -246,7 +322,6 @@ internal class MovableNode(
         component = null
         if (!stickyPose) {
             userPose = Pose.Identity
-            requestRelayout()
         }
     }
 
@@ -257,8 +332,15 @@ internal class MovableNode(
         initialScale: Float,
         initialParent: Entity,
     ) {
-        // updatePoseOnMove() not called because there is no previous pose to compare to.
         previousPose = initialPose
+
+        updatePoseOnMove(
+            previousPose,
+            initialPose,
+            initialScale,
+            IntVolumeSize.Zero,
+            ::MoveStartEvent
+        )
     }
 
     override fun onMoveUpdate(
@@ -275,6 +357,7 @@ internal class MovableNode(
                 is BasePanelEntity<*> -> entity.getSize().toIntVolumeSize(density)
                 else -> IntVolumeSize.Zero
             },
+            ::MoveEvent,
         )
         previousPose = currentPose
     }
@@ -286,15 +369,12 @@ internal class MovableNode(
         finalScale: Float,
         updatedParent: Entity?,
     ) {
-        updatePoseOnMove(
-            previousPose,
-            finalPose,
-            finalScale,
+        val finalSize: IntVolumeSize =
             when (entity) {
                 is BasePanelEntity<*> -> entity.getSize().toIntVolumeSize(density)
                 else -> IntVolumeSize.Zero
-            },
-        )
+            }
+        updatePoseOnMove(previousPose, finalPose, finalScale, finalSize, ::MoveEndEvent)
         previousPose = Pose.Identity
     }
 
@@ -304,20 +384,24 @@ internal class MovableNode(
         nextPose: Pose,
         scale: Float,
         size: IntVolumeSize,
+        eventCreator: (pose: Pose, scale: Float, size: IntVolumeSize) -> MoveEvent,
     ) {
         if (!enabled) {
             return
         }
-
         // SceneCore uses meters, Compose XR uses pixels.
         val previousCorePose = previousPose.convertMetersToPixels(density)
         val corePose = nextPose.convertMetersToPixels(density)
-
-        if (onPoseChange?.invoke(PoseChangeEvent(corePose, scale, size)) == true) {
+        val moveEvent = eventCreator(corePose, scale, size)
+        if (moveEvent is MoveStartEvent) {
+            onMoveStart?.invoke(moveEvent)
+        } else if (moveEvent is MoveEndEvent) {
+            onMoveEnd?.invoke(moveEvent)
+        }
+        if (onMove?.invoke(moveEvent) == true) {
             // We're done, the user app will handle the event.
             return
         }
-
         // Find the delta from the previous move event.
         val coreDeltaPose =
             Pose(

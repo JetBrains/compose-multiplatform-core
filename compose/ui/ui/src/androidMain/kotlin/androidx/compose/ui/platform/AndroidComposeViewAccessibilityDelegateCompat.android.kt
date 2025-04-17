@@ -680,17 +680,20 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             info.isHeading = true
         }
 
-        if (!drawingOrder.containsKey(semanticsNode.id)) {
-            Log.w(LogTag, "AccessibilityNodeInfo should not be requested for a child before parent")
-            semanticsNode.layoutNode.parent?.zSortedChildren?.forEachIndexed { i, child ->
-                drawingOrder[child.semanticsId] = i
+        // Drawing order is not applicable for the root node.
+        if (virtualViewId != AccessibilityNodeProviderCompat.HOST_VIEW_ID) {
+            val drawingOrderForNode = drawingOrder.getOrDefault(semanticsNode.id, -1)
+            if (drawingOrderForNode != -1) {
+                info.drawingOrder = drawingOrderForNode
+            } else {
+                Log.w(
+                    LogTag,
+                    "Drawing order is not available, was AccessibilityNodeInfo requested " +
+                        "for a child node before its parent?"
+                )
             }
         }
-        if (drawingOrder.contains(semanticsNode.id)) {
-            info.drawingOrder = drawingOrder[semanticsNode.id]
-        } else {
-            Log.w(LogTag, "Drawing order for node with id ${semanticsNode.id} is not available")
-        }
+
         info.isPassword = semanticsNode.unmergedConfig.contains(SemanticsProperties.Password)
         info.isEditable = semanticsNode.unmergedConfig.contains(SemanticsProperties.IsEditable)
         info.maxTextLength =

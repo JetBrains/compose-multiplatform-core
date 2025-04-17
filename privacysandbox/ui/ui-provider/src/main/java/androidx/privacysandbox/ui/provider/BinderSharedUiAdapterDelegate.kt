@@ -21,6 +21,7 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
+import androidx.privacysandbox.ui.core.ClientAdapterWrapper
 import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.IRemoteSharedUiSessionClient
 import androidx.privacysandbox.ui.core.IRemoteSharedUiSessionController
@@ -37,6 +38,11 @@ import java.util.concurrent.Executor
 @SuppressLint("NullAnnotationGroup")
 @ExperimentalFeatures.SharedUiPresentationApi
 fun SharedUiAdapter.toCoreLibInfo(): Bundle {
+    // If the ui adapter has already been wrapped as a client SharedUiAdapter
+    // at some point it needs no further wrapping
+    if (this is ClientAdapterWrapper) {
+        return this.getSourceBundle()
+    }
     val binderAdapter = BinderSharedUiAdapterDelegate(this)
     // TODO(b/350445624): Add version info
     val bundle = Bundle()

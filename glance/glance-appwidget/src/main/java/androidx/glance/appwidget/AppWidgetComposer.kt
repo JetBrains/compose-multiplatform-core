@@ -171,6 +171,12 @@ fun GlanceAppWidget.runComposition(
  * [AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN],
  * [AppWidgetProviderInfo.WIDGET_CATEGORY_KEYGUARD], or
  * [AppWidgetProviderInfo.WIDGET_CATEGORY_SEARCHBOX].
+ *
+ * @param context context to provide to [GlanceAppWidget.providePreview]
+ * @param widgetCategory widget category to provide to [GlanceAppWidget.providePreview]
+ * @param info the size of the composition is determined by the minimum width defined in this
+ *   [AppWidgetProviderInfo]
+ * @return the preview composition translated to a [RemoteViews]
  */
 suspend fun GlanceAppWidget.composeForPreview(
     context: Context,

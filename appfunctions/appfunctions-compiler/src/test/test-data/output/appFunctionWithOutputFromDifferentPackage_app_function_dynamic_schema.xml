@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <appfunctions>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.AppFunctionWithOutputFromDifferentPackage#functionWithAnotherDiffPackageOutput</id>
         <enabledByDefault>true</enabledByDefault>
         <response>
@@ -26,9 +23,6 @@
         <functionId>com.testdata.AppFunctionWithOutputFromDifferentPackage#functionWithAnotherDiffPackageOutput</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.AppFunctionWithOutputFromDifferentPackage#functionWithDiffPackageOutput</id>
         <enabledByDefault>true</enabledByDefault>
         <response>

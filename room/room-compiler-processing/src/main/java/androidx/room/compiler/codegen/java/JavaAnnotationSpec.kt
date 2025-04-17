@@ -23,7 +23,8 @@ import androidx.room.compiler.codegen.XSpec
 import androidx.room.compiler.codegen.impl.XCodeBlockImpl
 import com.squareup.kotlinpoet.javapoet.JAnnotationSpec
 
-internal class JavaAnnotationSpec(internal val actual: JAnnotationSpec) : XSpec(), XAnnotationSpec {
+internal class JavaAnnotationSpec(override val actual: JAnnotationSpec) :
+    JavaSpec<JAnnotationSpec>(), XAnnotationSpec {
 
     internal class Builder(internal val actual: JAnnotationSpecBuilder) :
         XSpec.Builder(), XAnnotationSpec.Builder {
