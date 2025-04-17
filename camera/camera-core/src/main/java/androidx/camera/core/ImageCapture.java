@@ -1477,7 +1477,7 @@ public final class ImageCapture extends UseCase {
         if (postviewSizeSelector != null) {
             Collections.sort(sizes, new CompareSizesByArea(true));
             CameraInternal camera = getCamera();
-            Rect sensorRect = camera.getCameraControlInternal().getSensorRect();
+            Rect sensorRect = camera.getCameraInfoInternal().getSensorRect();
             CameraInfoInternal cameraInfo = camera.getCameraInfoInternal();
             Rational fullFov = new Rational(sensorRect.width(), sensorRect.height());
             List<Size> result =

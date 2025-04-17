@@ -42,8 +42,8 @@ class StartupInsightsTest {
             path = "/fake/output/relative/path.perfetto-trace",
             urlParamMap =
                 mapOf(
-                    "AndroidStartup:packageName" to targetPackage,
-                    "AndroidStartup:slowStartReasonId" to reasonId
+                    "dev.perfetto.AndroidStartup:packageName" to targetPackage,
+                    "dev.perfetto.AndroidStartup:slowStartReason" to reasonId
                 )
         )
 
@@ -91,7 +91,7 @@ class StartupInsightsTest {
                 observedV2 =
                     "seen in iterations: [6](file:///fake/output/relative/path.perfetto-trace)(123305107ns)",
                 observedV3 =
-                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?AndroidStartup%3ApackageName=androidx.compose.integration.hero.macrobenchmark.target&AndroidStartup%3AslowStartReasonId=POTENTIAL_CPU_CONTENTION_WITH_ANOTHER_PROCESS)(123305107ns)"
+                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?dev.perfetto.AndroidStartup:packageName=androidx.compose.integration.hero.macrobenchmark.target&dev.perfetto.AndroidStartup:slowStartReason=POTENTIAL_CPU_CONTENTION_WITH_ANOTHER_PROCESS)(123305107ns)"
             ),
             InsightSummary(
                 category =
@@ -99,7 +99,7 @@ class StartupInsightsTest {
                 observedV2 =
                     "seen in iterations: [6](file:///fake/output/relative/path.perfetto-trace)(328462261ns)",
                 observedV3 =
-                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?AndroidStartup%3ApackageName=androidx.compose.integration.hero.macrobenchmark.target&AndroidStartup%3AslowStartReasonId=JIT_ACTIVITY)(328462261ns)"
+                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?dev.perfetto.AndroidStartup:packageName=androidx.compose.integration.hero.macrobenchmark.target&dev.perfetto.AndroidStartup:slowStartReason=JIT_ACTIVITY)(328462261ns)"
             ),
             InsightSummary(
                 category =
@@ -107,7 +107,7 @@ class StartupInsightsTest {
                 observedV2 =
                     "seen in iterations: [6](file:///fake/output/relative/path.perfetto-trace)(150 count)",
                 observedV3 =
-                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?AndroidStartup%3ApackageName=androidx.compose.integration.hero.macrobenchmark.target&AndroidStartup%3AslowStartReasonId=JIT_COMPILED_METHODS)(150 count)"
+                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?dev.perfetto.AndroidStartup:packageName=androidx.compose.integration.hero.macrobenchmark.target&dev.perfetto.AndroidStartup:slowStartReason=JIT_COMPILED_METHODS)(150 count)"
             ),
         )
 

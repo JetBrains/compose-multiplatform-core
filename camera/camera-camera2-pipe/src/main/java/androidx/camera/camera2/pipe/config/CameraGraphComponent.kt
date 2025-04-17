@@ -25,6 +25,7 @@ import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraSurfaceManager
+import androidx.camera.camera2.pipe.Parameters
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.SurfaceTracker
@@ -68,6 +69,8 @@ import kotlinx.coroutines.CoroutineScope
 internal interface CameraGraphComponent {
     fun cameraGraph(): CameraGraph
 
+    fun frameGraphComponentBuilder(): FrameGraphComponent.Builder
+
     @Subcomponent.Builder
     interface Builder {
         fun cameraGraphConfigModule(config: CameraGraphConfigModule): Builder
@@ -99,10 +102,7 @@ internal abstract class SharedCameraGraphModules {
     @Binds
     abstract fun bindSurfaceTracker(surfaceGraph: SurfaceGraph): SurfaceTracker
 
-    @Binds
-    abstract fun bindCameraGraphParameters(
-        parameters: CameraGraphParametersImpl
-    ): CameraGraph.Parameters
+    @Binds abstract fun bindCameraGraphParameters(parameters: CameraGraphParametersImpl): Parameters
 
     companion object {
         @CameraGraphScope

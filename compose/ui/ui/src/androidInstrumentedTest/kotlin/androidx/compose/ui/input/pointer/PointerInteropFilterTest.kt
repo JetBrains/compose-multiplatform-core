@@ -54,9 +54,6 @@ class PointerInteropFilterTest {
     private lateinit var pointerInteropFilter: PointerInteropFilter
     private val dispatchedMotionEvents = mutableListOf<MotionEvent>()
     private val disallowInterceptRequester = RequestDisallowInterceptTouchEvent()
-
-    // Returned boolean indicator that views use to show they'd like to keep receiving touch
-    // events in onTouchEvent
     private var retVal = true
 
     @Before
@@ -3314,7 +3311,7 @@ class PointerInteropFilterTest {
     }
 
     @Test
-    fun onPointerEvent_pointerMove_dispatchedDuringInitialTunnel() {
+    fun onPointerEvent_pointerMove_dispatchedDuringPostTunnel() {
         val down = down(1, 2, 3f, 4f)
         val motionEvent1 =
             MotionEvent(
@@ -3339,21 +3336,20 @@ class PointerInteropFilterTest {
             pointerEventOf(down, motionEvent = motionEvent1)
         )
         dispatchedMotionEvents.clear()
-        val event = pointerEventOf(move, motionEvent = motionEvent2)
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverPasses(
-            event,
+            pointerEventOf(move, motionEvent = motionEvent2),
             PointerEventPass.Initial,
             PointerEventPass.Main
         )
 
-        assertThat(dispatchedMotionEvents).hasSize(1)
+        assertThat(dispatchedMotionEvents).hasSize(0)
 
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverPass(
-            event,
+            pointerEventOf(move, motionEvent = motionEvent2),
             PointerEventPass.Final
         )
 
-        assertThat(dispatchedMotionEvents).hasSize(1) // no new events
+        assertThat(dispatchedMotionEvents).hasSize(1)
     }
 
     @Test
@@ -3395,7 +3391,7 @@ class PointerInteropFilterTest {
     }
 
     @Test
-    fun onPointerEvent_disallowInterceptRequestedUpDownMove_moveDispatchedDuringInitialTunnel() {
+    fun onPointerEvent_disallowInterceptRequestedUpDownMove_moveDispatchedDuringPostTunnel() {
         val downA = down(1, 2, 3f, 4f)
         val motionEvent1 =
             MotionEvent(
@@ -3448,25 +3444,25 @@ class PointerInteropFilterTest {
             pointerEventOf(downB, motionEvent = motionEvent3)
         )
         dispatchedMotionEvents.clear()
-        val event = pointerEventOf(moveB, motionEvent = motionEvent4)
+
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverPasses(
-            event,
+            pointerEventOf(moveB, motionEvent = motionEvent4),
             PointerEventPass.Initial,
             PointerEventPass.Main
         )
 
-        assertThat(dispatchedMotionEvents).hasSize(1)
+        assertThat(dispatchedMotionEvents).hasSize(0)
 
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverPass(
-            event,
+            pointerEventOf(moveB, motionEvent = motionEvent4),
             PointerEventPass.Final
         )
 
-        assertThat(dispatchedMotionEvents).hasSize(1) // no new events
+        assertThat(dispatchedMotionEvents).hasSize(1)
     }
 
     @Test
-    fun onPointerEvent_disallowInterceptTrueThenFalseThenMove_moveDispatchedDuringInitialTunnel() {
+    fun onPointerEvent_disallowInterceptTrueThenFalseThenMove_moveDispatchedDuringPostTunnel() {
         val down = down(1, 2, 3f, 4f)
         val motionEvent1 =
             MotionEvent(
@@ -3494,21 +3490,20 @@ class PointerInteropFilterTest {
         disallowInterceptRequester.invoke(false)
         dispatchedMotionEvents.clear()
 
-        val event = pointerEventOf(move, motionEvent = motionEvent2)
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverPasses(
-            event,
+            pointerEventOf(move, motionEvent = motionEvent2),
             PointerEventPass.Initial,
             PointerEventPass.Main
         )
 
-        assertThat(dispatchedMotionEvents).hasSize(1)
+        assertThat(dispatchedMotionEvents).hasSize(0)
 
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverPass(
-            event,
+            pointerEventOf(move, motionEvent = motionEvent2),
             PointerEventPass.Final
         )
 
-        assertThat(dispatchedMotionEvents).hasSize(1) // no new events
+        assertThat(dispatchedMotionEvents).hasSize(1)
     }
 
     @Test
@@ -3949,9 +3944,8 @@ class PointerInteropFilterTest {
             pointerEventOf(down, motionEvent = motionEvent1)
         )
 
-        val event = pointerEventOf(move, motionEvent = motionEvent2)
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverPasses(
-            event,
+            pointerEventOf(move, motionEvent = motionEvent2),
             PointerEventPass.Initial,
             PointerEventPass.Main
         )
@@ -3959,7 +3953,7 @@ class PointerInteropFilterTest {
         PointerInputChangeSubject.assertThat(move).changeNotConsumed()
 
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverPass(
-            event,
+            pointerEventOf(move, motionEvent = motionEvent2),
             PointerEventPass.Final
         )
 

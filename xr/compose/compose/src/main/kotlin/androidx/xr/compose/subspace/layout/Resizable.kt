@@ -195,7 +195,6 @@ internal class ResizableNode(
             coreEntity.removeComponent(component)
             isComponentAttached = false
             userSize = null
-            requestRelayout()
         }
     }
 

@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   Copyright 2025 The Android Open Source Project
 
   Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +14,7 @@
   limitations under the License.
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
     <application>
         <!--TODO(b/395589225): Provide platform implementation service based on API level-->
         <service
@@ -25,16 +25,17 @@
             <property
                 android:name="android.app.appfunctions"
                 android:value="app_functions.xml" />
+            <!--            TODO: b/410550886 - Enable dynamic indexer-->
             <!-- XSD & XML file properties for Dynamic AppSearch Indexer.-->
-            <property
-                android:name="android.app.appfunctions.schema"
-                android:value="app_functions_schema.xsd" />
-            <property
-                android:name="android.app.appfunctions.v2"
-                android:value="app_functions_v2.xml" />
+            <!--            <property-->
+            <!--                android:name="android.app.appfunctions.schema"-->
+            <!--                android:value="app_functions_schema.xsd" />-->
+            <!--            <property-->
+            <!--                android:name="android.app.appfunctions.v2"-->
+            <!--                android:value="app_functions_v2.xml" />-->
             <!--TODO: Renable this after resolve test conflict -->
             <intent-filter>
-                <action android:name="android.app.appfunctions.AppFunctionService"/>
+                <action android:name="android.app.appfunctions.AppFunctionService" />
             </intent-filter>
         </service>
     </application>

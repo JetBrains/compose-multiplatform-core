@@ -171,11 +171,8 @@ class AnimatedTest {
     }
 
     @Test
-    fun testPop() {
+    fun testPopAnimationsCustom() {
         lateinit var backStack: MutableList<Any>
-        lateinit var firstLifecycle: Lifecycle
-        lateinit var secondLifecycle: Lifecycle
-
         val testDuration = DEFAULT_TRANSITION_DURATION_MILLISECOND / 5
         composeTestRule.setContent {
             backStack = remember { mutableStateListOf(first, second) }
@@ -184,20 +181,18 @@ class AnimatedTest {
                     first ->
                         NavEntry(
                             first,
+                        ) {
+                            Text(first)
+                        }
+                    second ->
+                        NavEntry(
+                            second,
                             metadata =
                                 SceneNavDisplay.popTransition(
                                     enter = fadeIn(tween(testDuration)),
                                     exit = fadeOut(tween(testDuration))
                                 )
                         ) {
-                            firstLifecycle = LocalLifecycleOwner.current.lifecycle
-                            Text(first)
-                        }
-                    second ->
-                        NavEntry(
-                            second,
-                        ) {
-                            secondLifecycle = LocalLifecycleOwner.current.lifecycle
                             Text(second)
                         }
                     else -> error("Invalid key passed")
@@ -207,28 +202,19 @@ class AnimatedTest {
 
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText(second).assertIsDisplayed()
-        assertThat(secondLifecycle.currentState).isEqualTo(Lifecycle.State.RESUMED)
         assertThat(backStack).containsExactly(first, second)
 
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.runOnIdle { backStack.removeAt(1) }
 
-        // advance half way between animations
-        composeTestRule.mainClock.advanceTimeBy(testDuration.toLong() / 2)
-
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText(first).assertExists()
-        assertThat(firstLifecycle.currentState).isEqualTo(Lifecycle.State.STARTED)
-        composeTestRule.onNodeWithText(second).assertExists()
-        assertThat(secondLifecycle.currentState).isEqualTo(Lifecycle.State.CREATED)
-
-        composeTestRule.mainClock.autoAdvance = true
+        // advance by a duration that is much shorter than the default duration
+        // to ensure that the custom animation is used and has completed after this
+        composeTestRule.mainClock.advanceTimeBy((testDuration * 1.5).toLong())
 
         composeTestRule.waitForIdle()
         // pop to first
         assertThat(backStack).containsExactly(first)
         composeTestRule.onNodeWithText(first).assertIsDisplayed()
-        assertThat(firstLifecycle.currentState).isEqualTo(Lifecycle.State.RESUMED)
         composeTestRule.onNodeWithText(second).assertDoesNotExist()
     }
 
@@ -243,11 +229,6 @@ class AnimatedTest {
                     first ->
                         NavEntry(
                             first,
-                            metadata =
-                                SceneNavDisplay.popTransition(
-                                    enter = fadeIn(tween(testDuration)),
-                                    exit = fadeOut(tween(testDuration))
-                                )
                         ) {
                             Text(first)
                         }
@@ -260,6 +241,11 @@ class AnimatedTest {
                     third ->
                         NavEntry(
                             third,
+                            metadata =
+                                SceneNavDisplay.popTransition(
+                                    enter = fadeIn(tween(testDuration)),
+                                    exit = fadeOut(tween(testDuration))
+                                )
                         ) {
                             Text(third)
                         }
@@ -968,6 +954,64 @@ class AnimatedTest {
         composeTestRule.onAllNodesWithText(sharedText).assertCountEquals(2)
         assertTrue(transitionScope?.isTransitionActive == true)
         sharedStates.forEach { state -> assertTrue(state.isMatchFound) }
+    }
+
+    @Test
+    fun testPopLifecycle() {
+        lateinit var backStack: MutableList<Any>
+        lateinit var firstLifecycle: Lifecycle
+        lateinit var secondLifecycle: Lifecycle
+
+        composeTestRule.setContent {
+            backStack = remember { mutableStateListOf(first, second) }
+            SceneNavDisplay(backStack) {
+                when (it) {
+                    first ->
+                        NavEntry(
+                            first,
+                        ) {
+                            firstLifecycle = LocalLifecycleOwner.current.lifecycle
+                            Text(first)
+                        }
+                    second ->
+                        NavEntry(
+                            second,
+                        ) {
+                            secondLifecycle = LocalLifecycleOwner.current.lifecycle
+                            Text(second)
+                        }
+                    else -> error("Invalid key passed")
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(second).assertIsDisplayed()
+        assertThat(secondLifecycle.currentState).isEqualTo(Lifecycle.State.RESUMED)
+        assertThat(backStack).containsExactly(first, second)
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.runOnIdle { backStack.removeAt(1) }
+
+        // advance half way between animations
+        composeTestRule.mainClock.advanceTimeBy(
+            (DEFAULT_TRANSITION_DURATION_MILLISECOND / 2).toLong()
+        )
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(first).assertExists()
+        assertThat(firstLifecycle.currentState).isEqualTo(Lifecycle.State.STARTED)
+        composeTestRule.onNodeWithText(second).assertExists()
+        assertThat(secondLifecycle.currentState).isEqualTo(Lifecycle.State.CREATED)
+
+        composeTestRule.mainClock.autoAdvance = true
+
+        composeTestRule.waitForIdle()
+        // pop to first
+        assertThat(backStack).containsExactly(first)
+        composeTestRule.onNodeWithText(first).assertIsDisplayed()
+        assertThat(firstLifecycle.currentState).isEqualTo(Lifecycle.State.RESUMED)
+        composeTestRule.onNodeWithText(second).assertDoesNotExist()
     }
 }
 

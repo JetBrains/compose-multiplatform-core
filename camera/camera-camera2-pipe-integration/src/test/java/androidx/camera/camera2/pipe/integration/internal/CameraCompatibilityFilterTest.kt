@@ -27,6 +27,7 @@ import androidx.camera.camera2.pipe.integration.adapter.CameraFactoryProvider
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.impl.CameraThreadConfig
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
+import androidx.camera.core.internal.StreamSpecsCalculator.Companion.NO_OP_STREAM_SPECS_CALCULATOR
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth
 import org.junit.Test
@@ -76,7 +77,8 @@ class CameraCompatibilityFilterTest {
                         Handler(Looper.getMainLooper())
                     ),
                     null,
-                    -1L
+                    -1L,
+                    NO_OP_STREAM_SPECS_CALCULATOR
                 )
 
         Truth.assertThat(cameraFactoryAdapter.availableCameraIds).containsExactly("0", "1", "2")
@@ -99,7 +101,8 @@ class CameraCompatibilityFilterTest {
                         Handler(Looper.getMainLooper())
                     ),
                     CameraSelector.DEFAULT_BACK_CAMERA,
-                    -1L
+                    -1L,
+                    NO_OP_STREAM_SPECS_CALCULATOR
                 )
 
         Truth.assertThat(cameraFactoryAdapter.availableCameraIds).containsExactly("0", "2")
@@ -118,7 +121,8 @@ class CameraCompatibilityFilterTest {
                         Handler(Looper.getMainLooper())
                     ),
                     null,
-                    -1L
+                    -1L,
+                    NO_OP_STREAM_SPECS_CALCULATOR
                 )
 
         Truth.assertThat(cameraFactoryAdapter.availableCameraIds)

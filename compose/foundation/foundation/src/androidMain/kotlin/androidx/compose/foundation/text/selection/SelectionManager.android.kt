@@ -23,7 +23,10 @@ import androidx.compose.foundation.isPlatformMagnifierSupported
 import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.text.KeyCommand
 import androidx.compose.foundation.text.TextContextMenuItems
+import androidx.compose.foundation.text.TextContextMenuItems.Copy
+import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
 import androidx.compose.foundation.text.TextItem
+import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
 import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithResources
 import androidx.compose.foundation.text.platformDefaultKeyMapping
 import androidx.compose.foundation.text.textItem
@@ -73,39 +76,41 @@ internal actual fun Modifier.selectionMagnifier(manager: SelectionManager): Modi
 internal fun SelectionManager.contextMenuBuilder(
     state: ContextMenuState,
 ): ContextMenuScope.() -> Unit = {
+    fun selectionItem(label: TextContextMenuItems, enabled: Boolean, operation: () -> Unit) {
+        TextItem(state, label, enabled, operation)
+    }
+
     listOf(
-        TextItem(
-            state = state,
-            label = TextContextMenuItems.Copy,
-            enabled = isNonEmptySelection(),
-        ) {
-            copy()
-        },
-        TextItem(
-            state = state,
-            label = TextContextMenuItems.SelectAll,
-            enabled = !isEntireContainerSelected(),
-        ) {
-            selectAll()
-        },
+        selectionItem(Copy, enabled = isNonEmptySelection()) { copy() },
+        selectionItem(SelectAll, enabled = !isEntireContainerSelected()) { selectAll() },
     )
 }
 
 internal actual fun Modifier.addSelectionContainerTextContextMenuComponents(
     selectionManager: SelectionManager,
 ): Modifier = addTextContextMenuComponentsWithResources { resources ->
-    separator()
-    if (selectionManager.isNonEmptySelection()) {
-        textItem(resources, TextContextMenuItems.Copy) {
-            selectionManager.copy()
-            close()
+    fun TextContextMenuBuilderScope.selectionContainerItem(
+        item: TextContextMenuItems,
+        enabled: Boolean,
+        closePredicate: (() -> Boolean)? = null,
+        onClick: () -> Unit
+    ) {
+        textItem(resources, item, enabled) {
+            onClick()
+            if (closePredicate?.invoke() ?: true) close()
         }
     }
-    if (!selectionManager.isEntireContainerSelected()) {
-        textItem(resources, TextContextMenuItems.SelectAll) {
-            selectionManager.selectAll()
-            if (!selectionManager.showToolbar || !selectionManager.isInTouchMode) close()
+
+    with(selectionManager) {
+        separator()
+        selectionContainerItem(Copy, enabled = isNonEmptySelection()) { copy() }
+        selectionContainerItem(
+            item = SelectAll,
+            enabled = !isEntireContainerSelected(),
+            closePredicate = { !showToolbar || !isInTouchMode },
+        ) {
+            selectAll()
         }
+        separator()
     }
-    separator()
 }

@@ -2,11 +2,9 @@
 //    frameworks/support/compose/ui/ui-inspection/generate-packages/generate_compose_packages.py -r
 package androidx.compose.ui.inspection.inspector
 
-import androidx.annotation.VisibleForTesting
 import androidx.collection.intSetOf
 import kotlin.math.absoluteValue
 
-@VisibleForTesting
 fun packageNameHash(packageName: String) =
     packageName.fold(0) { hash, char -> hash * 31 + char.code }.absoluteValue
 

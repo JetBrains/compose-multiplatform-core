@@ -71,7 +71,6 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -841,14 +840,11 @@ private fun SliderImpl(
         val isOnFirstOrLastStep =
             valueAsFraction == state.tickFractions.firstOrNull() ||
                 valueAsFraction == state.tickFractions.lastOrNull()
-        var trackCornerSize =
+        val trackCornerSize =
             trackPlaceable[CornerSizeAlignmentLine].let {
                 if (it != AlignmentLine.Unspecified) it else 0
             }
 
-        if (layoutDirection == LayoutDirection.Rtl && trackCornerSize != 0) {
-            trackCornerSize = trackPlaceable.width - trackCornerSize
-        }
         if (state.orientation == Vertical) {
             sliderWidth = max(trackPlaceable.width, thumbPlaceable.width)
             sliderHeight = thumbPlaceable.height + trackPlaceable.height
@@ -1077,14 +1073,10 @@ private fun RangeSliderImpl(
             endValueAsFraction == state.tickFractions.firstOrNull() ||
                 endValueAsFraction == state.tickFractions.lastOrNull()
         val trackOffsetX = startThumbPlaceable.width / 2
-        var trackCornerSize =
+        val trackCornerSize =
             trackPlaceable[CornerSizeAlignmentLine].let {
                 if (it != AlignmentLine.Unspecified) it else 0
             }
-
-        if (layoutDirection == LayoutDirection.Rtl && trackCornerSize != 0) {
-            trackCornerSize = trackPlaceable.width - trackCornerSize
-        }
 
         val startThumbOffsetX =
             if (state.steps > 0 && !isStartOnFirstOrLastStep) {
@@ -1559,9 +1551,7 @@ object SliderDefaults {
                         if (sliderState.reverseVerticalDirection) it.scale(1f, -1f) else it
                     }
                 } else {
-                    modifier.fillMaxWidth().height(TrackHeight).let {
-                        if (sliderState.isRtl) it.scale(-1f, 1f) else it
-                    }
+                    modifier.fillMaxWidth().height(TrackHeight)
                 }
                 .then(
                     Modifier.layout { measurable, constraints ->
@@ -1693,21 +1683,17 @@ object SliderDefaults {
         val activeTickColor = colors.tickColor(enabled, active = true)
         var trackCornerSize by remember { mutableIntStateOf(0) }
         Canvas(
-            modifier
-                .fillMaxWidth()
-                .height(TrackHeight)
-                .rotate(if (rangeSliderState.isRtl) 180f else 0f)
-                .layout { measurable, constraints ->
-                    val placeable = measurable.measure(constraints)
-                    trackCornerSize = placeable.height / 2
-                    layout(
-                        width = placeable.width,
-                        height = placeable.height,
-                        alignmentLines = mapOf(CornerSizeAlignmentLine to trackCornerSize)
-                    ) {
-                        placeable.place(0, 0)
-                    }
+            modifier.fillMaxWidth().height(TrackHeight).layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints)
+                trackCornerSize = placeable.height / 2
+                layout(
+                    width = placeable.width,
+                    height = placeable.height,
+                    alignmentLines = mapOf(CornerSizeAlignmentLine to trackCornerSize)
+                ) {
+                    placeable.place(0, 0)
                 }
+            }
         ) {
             drawTrack(
                 tickFractions = rangeSliderState.tickFractions,
@@ -1726,7 +1712,7 @@ object SliderDefaults {
                 trackCornerSize = trackCornerSize.toDp(),
                 drawStopIndicator = drawStopIndicator,
                 drawTick = drawTick,
-                isRangeSlider = true,
+                isRangeSlider = true
             )
         }
     }
@@ -1750,9 +1736,11 @@ object SliderDefaults {
         drawTick: DrawScope.(Offset, Color) -> Unit,
         isRangeSlider: Boolean,
         enableCornerShrinking: Boolean = false,
-        orientation: Orientation = Horizontal
+        orientation: Orientation = Horizontal,
     ) {
         val isVertical = orientation == Vertical
+        val isRtl = layoutDirection == LayoutDirection.Rtl
+        val isRtlHorizontal = isRtl && !isVertical
         val cornerSize = trackCornerSize.toPx()
         val sliderStart = 0f
         val sliderEnd = if (isVertical) size.height else size.width
@@ -1799,21 +1787,38 @@ object SliderDefaults {
             rangeInactiveTrackThreshold += cornerSize
         }
         if (isRangeSlider && sliderValueStart > rangeInactiveTrackThreshold) {
+            val startCornerRadius = if (isRtlHorizontal) insideCornerSize else cornerSize
+            val endCornerRadius = if (isRtlHorizontal) cornerSize else insideCornerSize
             val start = sliderStart
             val end = sliderValueStart - startGap
-            val size =
-                if (isVertical) Size(size.width, end - start) else Size(end - start, size.height)
+            val trackOffset =
+                if (isRtlHorizontal) {
+                    Offset(size.width - end, 0f)
+                } else {
+                    Offset(0f, 0f)
+                }
+            val trackSize =
+                if (isVertical) {
+                    Size(size.width, end - start)
+                } else {
+                    Size(end - start, size.height)
+                }
             drawTrackPath(
                 orientation,
-                Offset.Zero,
-                size,
+                trackOffset,
+                trackSize,
                 inactiveTrackColor,
-                cornerSize,
-                insideCornerSize
+                startCornerRadius,
+                endCornerRadius
             )
             val stopIndicatorOffset =
-                if (isVertical) Offset(center.x, start + cornerSize)
-                else Offset(start + cornerSize, center.y)
+                if (isVertical) {
+                    Offset(center.x, start + cornerSize)
+                } else if (isRtl) {
+                    Offset(size.width - start - cornerSize, center.y)
+                } else {
+                    Offset(start + cornerSize, center.y)
+                }
             drawStopIndicator?.invoke(this, stopIndicatorOffset)
         }
         // inactive track
@@ -1822,46 +1827,83 @@ object SliderDefaults {
             inactiveTrackThreshold -= cornerSize
         }
         if (sliderValueEnd < inactiveTrackThreshold) {
+            val startCornerRadius = if (isRtlHorizontal) cornerSize else insideCornerSize
+            val endCornerRadius = if (isRtlHorizontal) insideCornerSize else cornerSize
             val start = sliderValueEnd + endGap
             val end = sliderEnd
             val inactiveTrackWidth = end - start
-            val trackOffset = if (isVertical) Offset(0f, start) else Offset(start, 0f)
+            val trackOffset =
+                if (isVertical) {
+                    Offset(0f, start)
+                } else if (isRtl) {
+                    Offset(0f, 0f)
+                } else {
+                    Offset(start, 0f)
+                }
             val size =
-                if (isVertical) Size(size.width, inactiveTrackWidth)
-                else Size(inactiveTrackWidth, size.height)
+                if (isVertical) {
+                    Size(size.width, inactiveTrackWidth)
+                } else if (isRtl && !isRangeSlider) {
+                    Size(size.width - start, size.height)
+                } else {
+                    Size(inactiveTrackWidth, size.height)
+                }
             drawTrackPath(
                 orientation,
                 trackOffset,
                 size,
                 inactiveTrackColor,
-                insideCornerSize,
-                cornerSize
+                startCornerRadius,
+                endCornerRadius,
             )
             val stopIndicatorOffset =
-                if (isVertical) Offset(center.x, end - cornerSize)
-                else Offset(end - cornerSize, center.y)
+                if (isVertical) {
+                    Offset(center.x, end - cornerSize)
+                } else if (isRtl) {
+                    Offset(cornerSize, center.y)
+                } else {
+                    Offset(end - cornerSize, center.y)
+                }
             drawStopIndicator?.invoke(this, stopIndicatorOffset)
         }
         // active track
         val activeTrackStart = if (isRangeSlider) sliderValueStart + startGap else 0f
         val activeTrackEnd = sliderValueEnd - endGap
-        val startCornerRadius = if (isRangeSlider) insideCornerSize else cornerSize
-        val activeTrackWidth = activeTrackEnd - activeTrackStart
+        val startCornerRadius =
+            if (isRtlHorizontal || isRangeSlider) insideCornerSize else cornerSize
+        val endCornerRadius =
+            if (isRtlHorizontal && !isRangeSlider) cornerSize else insideCornerSize
+        val activeTrackWidth =
+            if (isRtlHorizontal && !isRangeSlider) activeTrackEnd
+            else activeTrackEnd - activeTrackStart
+
         val activeTrackThreshold =
             if (!enableCornerShrinking || tickFractions.isNotEmpty()) startCornerRadius else 0f
         if (activeTrackWidth > activeTrackThreshold) {
             val trackOffset =
-                if (isVertical) Offset(0f, activeTrackStart) else Offset(activeTrackStart, 0f)
+                if (isVertical) {
+                    Offset(0f, activeTrackStart)
+                } else if (isRtl) {
+                    Offset(size.width - activeTrackEnd, 0f)
+                } else {
+                    Offset(activeTrackStart, 0f)
+                }
+
             val size =
-                if (isVertical) Size(size.width, activeTrackWidth)
-                else Size(activeTrackWidth, size.height)
+                if (isVertical) {
+                    Size(size.width, activeTrackWidth)
+                } else if (isRtl && !isRangeSlider) {
+                    Size(activeTrackEnd, size.height)
+                } else {
+                    Size(activeTrackWidth, size.height)
+                }
             drawTrackPath(
                 orientation,
                 trackOffset,
                 size,
                 activeTrackColor,
                 startCornerRadius,
-                insideCornerSize
+                endCornerRadius
             )
         }
 
@@ -1884,7 +1926,13 @@ object SliderDefaults {
                 return@forEachIndexed
             }
             val offset =
-                if (isVertical) Offset(center.x, centerTick) else Offset(centerTick, center.y)
+                if (isVertical) {
+                    Offset(center.x, centerTick)
+                } else if (isRtl) {
+                    Offset(size.width - centerTick, center.y)
+                } else {
+                    Offset(centerTick, center.y)
+                }
             drawTick(
                 this,
                 offset, // offset

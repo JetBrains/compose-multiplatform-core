@@ -93,6 +93,16 @@ class SharedSessionIntegrationTests(private val invokeBackwardsCompatFlow: Boole
     }
 
     @Test
+    fun testBinderAdapter_notReWrapped() {
+        val adapter = TestSharedUiAdapter()
+        val binderAdapter = getCoreLibInfoFromAdapter(adapter)
+        val adapterFromCoreLibInfo = SharedUiAdapterFactory.createFromCoreLibInfo(binderAdapter)
+        // send this back to the SDK and see if the same binder is sent back to the app.
+        val binderAdapter2 = getCoreLibInfoFromAdapter(adapterFromCoreLibInfo)
+        assertThat(binderAdapter).isEqualTo(binderAdapter2)
+    }
+
+    @Test
     fun testOpenSession_fromAdapter() {
         val client = TestSessionClient()
 

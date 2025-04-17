@@ -22,6 +22,7 @@ import androidx.savedstate.savedState
 import androidx.savedstate.write
 import kotlin.jvm.JvmOverloads
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -34,12 +35,17 @@ import kotlinx.serialization.serializer
  * Serializes the [value] of type [T] into an equivalent [SavedState] using [KSerializer] retrieved
  * from the reified type parameter.
  *
+ * **Format not stable:** The internal structure of the returned [SavedState] is subject to change
+ * in future releases for optimization. While it is guaranteed to be compatible with
+ * [decodeFromSavedState], direct manipulation of its encoded format using keys is not recommended.
+ *
  * @sample androidx.savedstate.encode
  * @param value The serializable object to encode.
  * @param configuration The [SavedStateConfiguration] to use. Defaults to
  *   [SavedStateConfiguration.DEFAULT].
  * @return The encoded [SavedState].
  * @throws SerializationException in case of any encoding-specific error.
+ * @see decodeFromSavedState
  */
 public inline fun <reified T : Any> encodeToSavedState(
     value: T,
@@ -50,6 +56,10 @@ public inline fun <reified T : Any> encodeToSavedState(
 /**
  * Serializes and encodes the given [value] to [SavedState] using the given [serializer].
  *
+ * **Format not stable:** The internal structure of the returned [SavedState] is subject to change
+ * in future releases for optimization. While it is guaranteed to be compatible with
+ * [decodeFromSavedState], direct manipulation of its encoded format using keys is not recommended.
+ *
  * @sample androidx.savedstate.encodeWithExplicitSerializerAndConfig
  * @param serializer The serializer to use.
  * @param value The serializable object to encode.
@@ -57,6 +67,7 @@ public inline fun <reified T : Any> encodeToSavedState(
  *   [SavedStateConfiguration.DEFAULT].
  * @return The encoded [SavedState].
  * @throws SerializationException in case of any encoding-specific error.
+ * @see decodeFromSavedState
  */
 @JvmOverloads
 public fun <T : Any> encodeToSavedState(

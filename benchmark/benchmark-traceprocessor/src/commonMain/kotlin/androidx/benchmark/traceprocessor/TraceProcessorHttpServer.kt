@@ -197,11 +197,23 @@ internal class TraceProcessorHttpServer(
                 encodeBlock(outputStream)
                 outputStream.close()
             }
-            val value = decodeBlock(inputStream)
+
             if (responseCode != 200) {
-                throw IllegalStateException(responseMessage)
+                val exceptionMessage = "${responseCode}:${responseMessage}."
+                if (usingProxy()) {
+                    throw IllegalStateException(
+                        "$exceptionMessage " +
+                            "The request executed with proxying, " +
+                            "perhaps http-proxy are configured on device incorrectly. " +
+                            "Please, try to add ${HTTP_ADDRESS}:${port} to exclusion list, " +
+                            "or to verify other routing rules."
+                    )
+                }
+
+                throw IllegalStateException(exceptionMessage)
             }
-            return value
+
+            return decodeBlock(inputStream)
         }
     }
 }

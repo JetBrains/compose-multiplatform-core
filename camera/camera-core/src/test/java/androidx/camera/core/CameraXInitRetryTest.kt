@@ -37,6 +37,7 @@ import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.CameraThreadConfig
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.impl.utils.ContextUtilTest
+import androidx.camera.core.internal.StreamSpecsCalculator
 import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
 import androidx.camera.testing.impl.fakes.FakeCameraCoordinator
@@ -558,6 +559,10 @@ class CameraXInitRetryTest {
                                 override fun getCameraManager(): Any? {
                                     throw testException
                                 }
+
+                                override fun getStreamSpecsCalculator(): StreamSpecsCalculator {
+                                    throw testException
+                                }
                             }
                     )
                 )
@@ -668,7 +673,12 @@ class CameraXInitRetryTest {
         useCaseConfigFactory: UseCaseConfigFactory? = FakeUseCaseConfigFactory()
     ): CameraXConfig {
         val cameraFactoryProvider =
-            Provider { _: Context?, _: CameraThreadConfig?, _: CameraSelector?, _: Long ->
+            Provider {
+                _: Context?,
+                _: CameraThreadConfig?,
+                _: CameraSelector?,
+                _: Long,
+                _: StreamSpecsCalculator ->
                 cameraFactory
             }
         return CameraXConfig.Builder()

@@ -331,7 +331,7 @@ public interface IcingOptionsConfig {
                                 ? Math.max(0, getCompressionThresholdBytes()) : 0)
                 .setCompressionMemLevel(
                         (Flags.enableCompressionMemLevelOne() || isVMEnabled) ? 1
-                                : DEFAULT_COMPRESSION_MEM_LEVEL)
+                                : getCompressionMemLevel())
                 .build();
     }
 }

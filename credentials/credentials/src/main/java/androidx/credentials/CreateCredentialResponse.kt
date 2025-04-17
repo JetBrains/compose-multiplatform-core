@@ -35,9 +35,21 @@ internal constructor(
     val type: String,
     val data: Bundle,
 ) {
-    internal companion object {
+    companion object {
+
+        /**
+         * Parses the raw data into an instance of [CreateCredentialResponse].
+         *
+         * It is recommended to construct a CreateCredentialResponse by directly instantiating a
+         * CreateCredentialResponse subclass, instead of using this API. This API should only be
+         * used by a small subset of system apps that reconstruct an existing object across IPC.
+         *
+         * @param type matches [CreateCredentialResponse.type], the credential type of the response
+         * @param data matches [CreateCredentialResponse.data], the credential response data in the
+         *   [Bundle] format; this should be constructed and retrieved from the a given
+         *   [CreateCredentialResponse] itself and never be created from scratch
+         */
         @JvmStatic
-        @RestrictTo(RestrictTo.Scope.LIBRARY) // used from java tests
         fun createFrom(type: String, data: Bundle): CreateCredentialResponse {
             return try {
                 when (type) {

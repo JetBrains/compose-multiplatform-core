@@ -25,6 +25,7 @@ import androidx.compose.material3.internal.getString
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -41,7 +42,7 @@ internal fun DateRangeInputContent(
     dateFormatter: DatePickerFormatter,
     selectableDates: SelectableDates,
     colors: DatePickerColors,
-    requestFocus: Boolean
+    focusRequester: FocusRequester?
 ) {
     // Obtain the DateInputFormat for the default Locale.
     val dateInputFormat =
@@ -95,7 +96,7 @@ internal fun DateRangeInputContent(
             dateInputFormat = dateInputFormat,
             locale = calendarModel.locale,
             colors = colors,
-            requestFocus = requestFocus
+            focusRequester = focusRequester
         )
         val endRangeText = getString(string = Strings.DateRangePickerEndHeadline)
         DateInputTextField(
@@ -118,9 +119,9 @@ internal fun DateRangeInputContent(
             dateInputFormat = dateInputFormat,
             locale = calendarModel.locale,
             colors = colors,
-            // Setting false to the second field, as only one input field should request focus by
-            // default and true was passed to the first field.
-            requestFocus = false
+            // Setting null to the second field, as only one input field should request focus by
+            // default and a possible non-null requester was passed to the first field.
+            focusRequester = null
         )
     }
 }

@@ -51,7 +51,7 @@ import androidx.camera.view.PreviewView
 import androidx.camera.view.video.AudioConfig
 import androidx.fragment.app.Fragment
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.effect.Brightness
+import androidx.media3.effect.Contrast
 
 /** Fragment for testing effects integration. */
 @OptIn(UnstableApi::class)
@@ -89,7 +89,7 @@ class Media3EffectsFragment : Fragment() {
         slider.setOnSeekBarChangeListener(
             object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                    media3Effect.setEffects(listOf(Brightness(progress / 100f)))
+                    media3Effect.setEffects(listOf(Contrast(progress / 100f)))
                 }
 
                 override fun onStartTrackingTouch(seekBar: SeekBar) = Unit

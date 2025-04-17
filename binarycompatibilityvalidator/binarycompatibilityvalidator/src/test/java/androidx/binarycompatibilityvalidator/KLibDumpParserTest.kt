@@ -323,6 +323,13 @@ class KlibDumpParserTest {
     }
 
     @Test
+    fun parseSingleTopLevelDeclaration() {
+        val input = "$exampleMetadata\nfinal fun my.lib/foo(kotlin/Int, kotlin/Int): kotlin/Int"
+        val parsed = KlibDumpParser(input, "current.txt").parse()
+        assertThat(parsed.values.first().topLevelDeclarations.declarations).hasSize(1)
+    }
+
+    @Test
     fun parsesSignatureVersion() {
         val parsed = KlibDumpParser(exampleMetadata).parse()
         assertThat(parsed).isNotNull()

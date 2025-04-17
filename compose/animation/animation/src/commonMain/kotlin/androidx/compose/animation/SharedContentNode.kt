@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.roundToIntSize
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.fastRoundToInt
 
 internal data class SharedBoundsNodeElement(val sharedElementState: SharedElementInternalState) :
@@ -74,12 +75,34 @@ internal data class SharedBoundsNodeElement(val sharedElementState: SharedElemen
  */
 internal class SharedBoundsNode(
     state: SharedElementInternalState,
-) : ApproachLayoutModifierNode, Modifier.Node(), DrawModifierNode, ModifierLocalModifierNode {
+) :
+    ApproachLayoutModifierNode,
+    Modifier.Node(),
+    DrawModifierNode,
+    ModifierLocalModifierNode,
+    BoundsProvider {
+
+    override val lastBoundsInSharedTransitionScope: Rect?
+        get() {
+            // If the node was detached, or detached and re-attached between the query and
+            // last placement, the last position is no longer attainable. Early return.
+            if (!isAttached || !isPlaced) return null
+            // TODO: Use the local bounding box and convert the size back to local size to
+            // animate constraints when we build support for matrix transform in lookahead
+            // coordinates, hence shared elements.
+            return Rect(
+                rootCoords.localPositionOf(approachCoordinates),
+                approachCoordinates.size.toSize()
+            )
+        }
+
+    private val approachCoordinates: LayoutCoordinates
+        get() = requireLayoutCoordinates()
+
+    private var isPlaced: Boolean = false
+
     private val rootCoords: LayoutCoordinates
         get() = sharedElement.scope.root
-
-    private val rootLookaheadCoords: LayoutCoordinates
-        get() = sharedElement.scope.lookaheadRoot
 
     var state: SharedElementInternalState = state
         internal set(value) {
@@ -87,10 +110,7 @@ internal class SharedBoundsNode(
                 // State changed!
                 field = value
                 if (isAttached) {
-                    provide(ModifierLocalSharedElementInternalState, value)
-                    state.parentState = ModifierLocalSharedElementInternalState.current
-                    state.layer = layer
-                    state.lookaheadCoords = { requireLookaheadLayoutCoordinates() }
+                    setup()
                 }
             }
         }
@@ -117,19 +137,25 @@ internal class SharedBoundsNode(
     override val providedValues =
         modifierLocalMapOf(ModifierLocalSharedElementInternalState to state)
 
-    override fun onAttach() {
-        super.onAttach()
+    private fun setup() {
         provide(ModifierLocalSharedElementInternalState, state)
         state.parentState = ModifierLocalSharedElementInternalState.current
         layer = requireGraphicsContext().createGraphicsLayer()
-        state.lookaheadCoords = { requireLookaheadLayoutCoordinates() }
+        isPlaced = false
+        state.boundsProvider = this
+    }
+
+    override fun onAttach() {
+        super.onAttach()
+        setup()
     }
 
     override fun onDetach() {
         super.onDetach()
         layer = null
         state.parentState = null
-        state.lookaheadCoords = { null }
+        state.boundsProvider = null
+        isPlaced = false
     }
 
     override fun onReset() {
@@ -145,79 +171,104 @@ internal class SharedBoundsNode(
     ): MeasureResult {
         // Lookahead pass: Record lookahead size and lookahead coordinates
         val placeable = measurable.measure(constraints)
-        val lookaheadSize = Size(placeable.width.toFloat(), placeable.height.toFloat())
         return layout(placeable.width, placeable.height) {
-            val topLeft =
-                coordinates?.let {
-                    rootLookaheadCoords.localPositionOf(it, Offset.Zero).also { topLeft ->
-                        if (sharedElement.currentBounds == null) {
-                            sharedElement.currentBounds = Rect(topLeft, lookaheadSize)
-                        }
-                    }
-                }
             placeable.place(0, 0)
             // Update the lookahead result after child placement, so that child has an
             // opportunity to use its placement to influence the bounds animation.
-            topLeft?.let { sharedElement.onLookaheadResult(state, lookaheadSize, it) }
+            sharedElement.onLookaheadPlaced(this, state)
         }
     }
 
-    private fun MeasureScope.approachPlace(placeable: Placeable): MeasureResult {
-        if (!sharedElement.foundMatch || !sharedElement.scope.isTransitionActive) {
-            // If there is one or more matches (in shared element key) when the transition is
-            // inactive, all matches will be measured and placed using the constraints and position
-            // derived from the target bounds.
-            return layout(placeable.width, placeable.height) {
-                if (boundsAnimation.target || !sharedElement.foundMatch) {
-                    // Update currentBounds
-                    coordinates?.updateCurrentBounds()
-                    placeable.place(0, 0)
-                } else {
-                    // Match is found, but is not visible: Derive measured size & position
-                    // from the target bounds.
-                    val bounds = sharedElement.currentBounds!!
-                    val positionInScope =
-                        coordinates?.let { rootCoords.localPositionOf(it, Offset.Zero) }
-                    val (x, y) =
-                        positionInScope?.let { bounds.topLeft - it }?.round() ?: IntOffset.Zero
-                    placeable.place(x, y)
-                }
+    // Match outlives transition. i.e. user didn't remove the not-visible shared element from
+    // the tree. In this case, the not visible shared element follows the visible shared
+    // element layout.
+    private fun Placeable.PlacementScope.approachPlaceMatchBeyondTransition(placeable: Placeable) {
+        if (!boundsAnimation.target) {
+            // Match is found, but is not visible: Derive measured size & position
+            // from the target bounds.
+            val bounds = sharedElement.currentBoundsWhenMatched
+            if (bounds != null) {
+                // If current bounds is null in this case, it means the target has never
+                // been placed.
+                val (x, y) =
+                    coordinates?.let {
+                        val positionInScope = rootCoords.localPositionOf(it, Offset.Zero)
+                        (bounds.topLeft - positionInScope).round()
+                    } ?: IntOffset.Zero
+
+                placeable.place(x, y)
+            } else {
+                placeable.place(0, 0)
             }
         } else {
+            if (boundsAnimation.target || !sharedElement.foundMatch) {
+                placeable.place(0, 0)
+            }
+        }
+    }
+
+    /**
+     * Places *matched* shared element during transition. In this placement, we will be placing
+     * based on the bounds transform of shared elements. Animations are also initialized in this
+     * placement.
+     */
+    private fun Placeable.PlacementScope.approachPlaceMatchInTransition(placeable: Placeable) {
+        val coordinates = coordinates
+        if (coordinates == null) {
+            // Shallow placement. Skip this placement and defer to the real placement.
+            placeable.place(0, 0)
+            return
+        }
+
+        val positionInScope = rootCoords.localPositionOf(coordinates, Offset.Zero)
+        // Start animation if needed
+        if (sharedElement.targetBounds != null) {
+            val bounds =
+                sharedElement.currentBoundsWhenMatched
+                    ?: positionInScope.let {
+                        Rect(it, Size(placeable.width.toFloat(), placeable.height.toFloat()))
+                    }
+            boundsAnimation.animate(bounds, sharedElement.targetBounds!!)
+        }
+
+        val animatedBounds = boundsAnimation.value
+        val topLeft: Offset
+        if (boundsAnimation.target) {
+            // The visible shared element defines the current bounds, either through animation
+            // or when the animation is finished through its own position.
+            val bounds = animatedBounds ?: Rect(positionInScope, coordinates.size.toSize())
+            sharedElement.currentBoundsWhenMatched = bounds
+            topLeft = bounds.topLeft
+        } else {
+            topLeft = animatedBounds?.topLeft ?: sharedElement.currentBoundsWhenMatched!!.topLeft
+        }
+
+        val (x, y) = positionInScope.let { topLeft - it }
+        placeable.place(x.fastRoundToInt(), y.fastRoundToInt())
+    }
+
+    private fun MeasureScope.approachPlace(placeable: Placeable): MeasureResult {
+        isPlaced = true
+        if (!sharedElement.foundMatch) {
+            // No modification to placement if no match is found.
+            sharedElement.currentBoundsWhenMatched = null
+            return layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+        }
+
+        // Match outlives transition. i.e. user didn't remove the not-visible shared element from
+        // the tree. In this case, the not visible shared element follows the visible shared
+        // element layout.
+        if (!sharedElement.scope.isTransitionActive) {
+            return layout(placeable.width, placeable.height) {
+                approachPlaceMatchBeyondTransition(placeable)
+            }
+        } else { // found match && actively animating
             val (w, h) =
                 state.placeHolderSize.calculateSize(
                     requireLookaheadLayoutCoordinates().size,
                     IntSize(placeable.width, placeable.height)
                 )
-            return layout(w, h) {
-                // Start animation if needed
-                if (sharedElement.targetBounds != null) {
-                    boundsAnimation.animate(
-                        sharedElement.currentBounds!!,
-                        sharedElement.targetBounds!!
-                    )
-                }
-                val animatedBounds = boundsAnimation.value
-                val positionInScope =
-                    coordinates?.let { rootCoords.localPositionOf(it, Offset.Zero) }
-                val topLeft: Offset
-
-                // animation finished at visible
-                if (animatedBounds != null) {
-                    // Update CurrentBounds as needed
-                    if (boundsAnimation.target) {
-                        sharedElement.currentBounds = animatedBounds
-                    }
-                    topLeft = animatedBounds.topLeft
-                } else {
-                    if (boundsAnimation.target) {
-                        coordinates?.updateCurrentBounds()
-                    }
-                    topLeft = sharedElement.currentBounds!!.topLeft
-                }
-                val (x, y) = positionInScope?.let { topLeft - it } ?: Offset.Zero
-                placeable.place(x.fastRoundToInt(), y.fastRoundToInt())
-            }
+            return layout(w, h) { approachPlaceMatchInTransition(placeable) }
         }
     }
 
@@ -237,12 +288,12 @@ internal class SharedBoundsNode(
             } else {
                 // When a match is found, all matches will be measured using the constraints
                 // created by the target bounds, **even when there is no active transition**.
-                (boundsAnimation.value ?: sharedElement.currentBounds)?.let {
+                (boundsAnimation.value ?: sharedElement.tryInitializingCurrentBounds())?.let {
                     val (width, height) = it.size.roundToIntSize()
                     require(width != Constraints.Infinity && height != Constraints.Infinity) {
                         "Error: Infinite width/height is invalid. " +
                             "animated bounds: ${boundsAnimation.value}," +
-                            " current bounds: ${sharedElement.currentBounds}"
+                            " current bounds: ${sharedElement.currentBoundsWhenMatched}"
                     }
                     Constraints.fixed(width.coerceAtLeast(0), height.coerceAtLeast(0))
                 } ?: constraints
@@ -251,24 +302,19 @@ internal class SharedBoundsNode(
         return approachPlace(placeable)
     }
 
-    private fun LayoutCoordinates.updateCurrentBounds() {
-        sharedElement.currentBounds =
-            Rect(
-                rootCoords.localPositionOf(this, Offset.Zero),
-                Size(this.size.width.toFloat(), this.size.height.toFloat())
-            )
-    }
-
     override fun ContentDrawScope.draw() {
-        state.firstFrameDrawn = true
         // Update clipPath
         state.clipPathInOverlay =
-            state.overlayClip.getClipPath(
-                state.userState,
-                sharedElement.currentBounds!!,
-                layoutDirection,
-                requireDensity()
-            )
+            if (sharedElement.foundMatch && sharedElement.currentBoundsWhenMatched != null) {
+                state.overlayClip.getClipPath(
+                    state.userState,
+                    sharedElement.currentBoundsWhenMatched!!,
+                    layoutDirection,
+                    requireDensity()
+                )
+            } else {
+                null
+            }
         val layer =
             requireNotNull(state.layer) {
                 "Error: Layer is null when accessed for shared bounds/element : ${sharedElement.key}," +

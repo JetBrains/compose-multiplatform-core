@@ -19,7 +19,6 @@ package androidx.privacysandbox.ui.client
 import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.IRemoteSharedUiSessionClient
@@ -42,10 +41,14 @@ import java.util.concurrent.Executor
 @ExperimentalFeatures.SharedUiPresentationApi
 object SharedUiAdapterFactory {
 
-    private const val TAG = "PrivacySandboxUiLib"
     // Bundle key is a binary compatibility requirement
     private const val SHARED_UI_ADAPTER_BINDER = "sharedUiAdapterBinder"
-    private const val TEST_ONLY_USE_REMOTE_ADAPTER = "testOnlyUseRemoteAdapter"
+
+    private val uiAdapterFactoryDelegate =
+        object : UiAdapterFactoryDelegate() {
+            override val uiAdapterBinderKey: String = SHARED_UI_ADAPTER_BINDER
+            override val adapterDescriptor: String = ISharedUiAdapter.DESCRIPTOR
+        }
 
     /**
      * Creates a [SharedUiAdapter] from a supplied [coreLibInfo] that acts as a proxy between the
@@ -54,27 +57,18 @@ object SharedUiAdapterFactory {
      * @throws IllegalArgumentException if `coreLibInfo` does not contain a Binder corresponding to
      *   [SharedUiAdapter]
      */
-    // TODO(b/365553832): add shim support to generate client proxy.
     @SuppressLint("NullAnnotationGroup")
     @ExperimentalFeatures.SharedUiPresentationApi
     fun createFromCoreLibInfo(coreLibInfo: Bundle): SharedUiAdapter {
-        val uiAdapterBinder =
-            requireNotNull(coreLibInfo.getBinder(SHARED_UI_ADAPTER_BINDER)) {
-                "Invalid bundle, missing $SHARED_UI_ADAPTER_BINDER."
-            }
-        val adapterInterface = ISharedUiAdapter.Stub.asInterface(uiAdapterBinder)
-
-        val forceUseRemoteAdapter = coreLibInfo.getBoolean(TEST_ONLY_USE_REMOTE_ADAPTER)
-        val isLocalBinder = uiAdapterBinder.queryLocalInterface(ISharedUiAdapter.DESCRIPTOR) != null
-        val useLocalAdapter = !forceUseRemoteAdapter && isLocalBinder
-        Log.d(TAG, "useLocalAdapter=$useLocalAdapter")
+        val uiAdapterBinder = uiAdapterFactoryDelegate.requireNotNullAdapterBinder(coreLibInfo)
 
         return if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && !useLocalAdapter
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                !uiAdapterFactoryDelegate.shouldUseLocalAdapter(coreLibInfo)
         ) {
-            RemoteAdapter(adapterInterface)
+            RemoteAdapter(coreLibInfo)
         } else {
-            LocalAdapter(adapterInterface)
+            LocalAdapter(coreLibInfo)
         }
     }
 
@@ -83,8 +77,10 @@ object SharedUiAdapterFactory {
      * different class loader.
      */
     @SuppressLint("BanUncheckedReflection") // using reflection on library classes
-    private class LocalAdapter(adapterInterface: ISharedUiAdapter) : SharedUiAdapter {
-        private val uiProviderBinder = adapterInterface.asBinder()
+    private class LocalAdapter(adapterBundle: Bundle) :
+        SharedUiAdapter, ClientAdapter(adapterBundle) {
+        private val uiProviderBinder =
+            uiAdapterFactoryDelegate.requireNotNullAdapterBinder(adapterBundle)
 
         private val targetSharedSessionClientClass =
             Class.forName(
@@ -169,7 +165,11 @@ object SharedUiAdapterFactory {
      * [RemoteAdapter] maintains a shared session with a UI provider living in a different process.
      */
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private class RemoteAdapter(private val adapterInterface: ISharedUiAdapter) : SharedUiAdapter {
+    private class RemoteAdapter(adapterBundle: Bundle) :
+        SharedUiAdapter, ClientAdapter(adapterBundle) {
+        val uiAdapterBinder = uiAdapterFactoryDelegate.requireNotNullAdapterBinder(adapterBundle)
+        val adapterInterface: ISharedUiAdapter = ISharedUiAdapter.Stub.asInterface(uiAdapterBinder)
+
         override fun openSession(clientExecutor: Executor, client: SharedUiAdapter.SessionClient) {
             tryToCallRemoteObject(adapterInterface) {
                 this.openRemoteSession(RemoteSharedUiSessionClient(client, clientExecutor))

@@ -259,19 +259,10 @@ public class AppSearchSessionLocalCtsTest extends AppSearchSessionCtsTestBase {
         // Get second(empty) page
         logger.mSearchStats = null;
         page = searchResults.getNextPageAsync().get();
-        assertThat(page).hasSize(0);
+        assertThat(page).isEmpty();
 
-        // Check searchStats has been set. We won't check all the fields here.
-        assertThat(logger.mSearchStats).isNotNull();
-        assertThat(logger.mSearchStats.getDatabase()).isEqualTo(DB_NAME_2);
-        assertThat(logger.mSearchStats.getStatusCode()).isEqualTo(AppSearchResult.RESULT_OK);
-        // Query length is 0 for getNextPage in IcingLib
-        assertThat(logger.mSearchStats.getQueryLength()).isEqualTo(0);
-        assertThat(logger.mSearchStats.isFirstPage()).isEqualTo(false);
-        assertThat(logger.mSearchStats.getVisibilityScope()).isEqualTo(
-                SearchStats.VISIBILITY_SCOPE_LOCAL);
-        assertThat(logger.mSearchStats.getRequestedPageSize()).isEqualTo(0);
-        assertThat(logger.mSearchStats.getCurrentPageReturnedResultCount()).isEqualTo(0);
+        // Check searchStats won't be set because now empty page token will avoid binder call.
+        assertThat(logger.mSearchStats).isNull();
     }
 
     // TODO(b/194207451) This test can be moved to CtsTestBase if customized logger is

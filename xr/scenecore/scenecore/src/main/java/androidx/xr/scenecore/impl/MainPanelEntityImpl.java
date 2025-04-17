@@ -94,7 +94,7 @@ final class MainPanelEntityImpl extends BasePanelEntity implements PanelEntity {
                 mRuntimeActivity,
                 dimensions.width,
                 dimensions.height,
-                (result) -> {},
-                Runnable::run);
+                Runnable::run,
+                (result) -> {});
     }
 }

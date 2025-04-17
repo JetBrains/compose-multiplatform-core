@@ -86,12 +86,12 @@ class AnnotatedStringFromHtmlTest {
                         ParagraphStyle(
                             textIndent =
                                 TextIndent(
-                                    DefaultBulletIndentation * level,
-                                    DefaultBulletIndentation * level
+                                    Bullet.DefaultIndentation * level,
+                                    Bullet.DefaultIndentation * level
                                 )
                         )
                     )
-                    pushBullet(DefaultBullet)
+                    pushBullet(Bullet.Default)
                     append("a")
                     pop()
                     pop()
@@ -391,18 +391,18 @@ class AnnotatedStringFromHtmlTest {
         val spannable = SpannableStringBuilder()
         spannable.append(
             "a",
-            BulletSpanWithLevel(DefaultBullet, 1, 0),
+            BulletSpanWithLevel(Bullet.Default, 1, 0),
             Spanned.SPAN_INCLUSIVE_INCLUSIVE
         )
 
         val expected = buildAnnotatedString {
             withStyle(
                 ParagraphStyle(
-                    textIndent = TextIndent(DefaultBulletIndentation, DefaultBulletIndentation)
+                    textIndent = TextIndent(Bullet.DefaultIndentation, Bullet.DefaultIndentation)
                 )
             ) {
                 append("a")
-                addBullet(DefaultBullet, 0, 1)
+                addBullet(Bullet.Default, 0, 1)
             }
         }
         assertThat(spannable.toAnnotatedString().text).isEqualTo(expected.text)

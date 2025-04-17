@@ -54,7 +54,7 @@ public interface WebViewStartUpResult {
      * <p>
      * This is as a debug tool to enable apps to catch code locations where WebView is suboptimally
      * started up even when
-     * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+     * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
      * is used.
      * <p>
      * The list will be chronologically ordered based on the time of creation of the stacktrace.

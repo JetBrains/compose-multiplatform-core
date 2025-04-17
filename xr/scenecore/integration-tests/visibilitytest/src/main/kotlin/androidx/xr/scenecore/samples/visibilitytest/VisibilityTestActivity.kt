@@ -34,6 +34,8 @@ import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.PixelDimensions
+import androidx.xr.scenecore.SpatialPointerComponent
+import androidx.xr.scenecore.SpatialPointerIconNone
 import androidx.xr.scenecore.scene
 
 class VisibilityTestActivity : AppCompatActivity() {
@@ -48,6 +50,8 @@ class VisibilityTestActivity : AppCompatActivity() {
     private var childPanelEntity1: PanelEntity? = null
     private var childPanelEntity2: PanelEntity? = null
 
+    private lateinit var childPanel1PointerComponent: SpatialPointerComponent
+
     private var isFsm = true // launch in FSM
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +60,11 @@ class VisibilityTestActivity : AppCompatActivity() {
 
         parentPanelEntity = createPanelEntity(session, "Parent Panel", session.scene.activitySpace)
         childPanelEntity1 = createPanelEntity(session, "Child Panel 1", parentPanelEntity)
+        childPanel1PointerComponent = SpatialPointerComponent.create(session)
+        if (!childPanelEntity1!!.addComponent(childPanel1PointerComponent)) {
+            throw RuntimeException("Failed to add spatial pointer component to child panel 1")
+        }
+
         childPanelEntity2 = createPanelEntity(session, "Child Panel 2", childPanelEntity1)
         val sharkModelFuture = GltfModel.create(session, "models/GreatWhiteShark.glb")
         sharkModelFuture.addListener(
@@ -116,6 +125,12 @@ class VisibilityTestActivity : AppCompatActivity() {
         }
         findViewById<Switch>(R.id.hide_panel1).setOnCheckedChangeListener { _, isChecked: Boolean ->
             childPanelEntity1?.setHidden(isChecked)
+        }
+        findViewById<Switch>(R.id.hide_panel1_pointer).setOnCheckedChangeListener {
+            _,
+            isChecked: Boolean ->
+            childPanel1PointerComponent.spatialPointerIcon =
+                if (isChecked) SpatialPointerIconNone else null
         }
         findViewById<Switch>(R.id.hide_panel2).setOnCheckedChangeListener { _, isChecked: Boolean ->
             childPanelEntity2?.setHidden(isChecked)

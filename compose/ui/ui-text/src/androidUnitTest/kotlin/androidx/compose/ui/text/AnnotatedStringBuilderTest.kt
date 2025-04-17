@@ -1213,24 +1213,24 @@ class AnnotatedStringBuilderTest {
     @Test
     fun pushBullet() {
         val buildResult = buildAnnotatedString {
-            pushBullet(DefaultBullet)
+            pushBullet(Bullet.Default)
             append("text")
             pop()
         }
 
         assertThat(buildResult.text).isEqualTo("text")
-        assertThat(buildResult.annotations).containsExactly(Range(DefaultBullet, 0, 4))
+        assertThat(buildResult.annotations).containsExactly(Range(Bullet.Default, 0, 4))
     }
 
     @Test
     fun addBullet() {
         val buildResult = buildAnnotatedString {
             append("text text")
-            addBullet(DefaultBullet, 0, 4)
+            addBullet(Bullet.Default, 0, 4)
         }
 
         assertThat(buildResult.text).isEqualTo("text text")
-        assertThat(buildResult.annotations).containsExactly(Range(DefaultBullet, 0, 4))
+        assertThat(buildResult.annotations).containsExactly(Range(Bullet.Default, 0, 4))
     }
 
     @Test
@@ -1262,7 +1262,7 @@ class AnnotatedStringBuilderTest {
             .containsExactly(
                 Range(ParagraphStyle(textIndent = TextIndent(10.sp, 10.sp)), 0, 4),
                 Range(ParagraphStyle(textIndent = TextIndent(10.sp, 10.sp)), 0, 4),
-                Range(DefaultBullet, 0, 4)
+                Range(Bullet.Default, 0, 4)
             )
             .inOrder()
     }
@@ -1281,10 +1281,10 @@ class AnnotatedStringBuilderTest {
             .containsExactly(
                 Range(ParagraphStyle(textIndent = TextIndent(10.sp, 10.sp)), 0, 8),
                 Range(ParagraphStyle(textIndent = TextIndent(10.sp, 10.sp)), 0, 4),
-                Range(DefaultBullet, 0, 4),
+                Range(Bullet.Default, 0, 4),
                 Range(ParagraphStyle(textIndent = TextIndent(15.sp, 15.sp)), 4, 8),
                 Range(ParagraphStyle(textIndent = TextIndent(15.sp, 15.sp)), 4, 8),
-                Range(DefaultBullet, 4, 8),
+                Range(Bullet.Default, 4, 8),
             )
             .inOrder()
     }

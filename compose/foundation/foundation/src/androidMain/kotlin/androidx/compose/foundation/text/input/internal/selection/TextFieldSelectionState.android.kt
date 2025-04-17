@@ -29,6 +29,7 @@ import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
 import androidx.compose.foundation.text.TextItem
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
 import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithResources
+import androidx.compose.foundation.text.textItem
 import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.CoroutineScope
@@ -40,15 +41,18 @@ internal fun TextFieldSelectionState.contextMenuBuilder(
     itemsAvailability: State<MenuItemsAvailability>,
     onMenuItemClicked: TextFieldSelectionState.(TextContextMenuItems) -> Unit
 ): ContextMenuScope.() -> Unit = {
+    fun textFieldItem(label: TextContextMenuItems, enabled: Boolean) {
+        TextItem(state, label, enabled) { onMenuItemClicked(label) }
+    }
+
     val availability: MenuItemsAvailability = itemsAvailability.value
-    TextItem(state, Cut, enabled = availability.canCut) { onMenuItemClicked(Cut) }
-    TextItem(state, Copy, enabled = availability.canCopy) { onMenuItemClicked(Copy) }
-    TextItem(state, Paste, enabled = availability.canPaste) { onMenuItemClicked(Paste) }
-    TextItem(state, SelectAll, enabled = availability.canSelectAll) { onMenuItemClicked(SelectAll) }
+
+    textFieldItem(Cut, enabled = availability.canCut)
+    textFieldItem(Copy, enabled = availability.canCopy)
+    textFieldItem(Paste, enabled = availability.canPaste)
+    textFieldItem(SelectAll, enabled = availability.canSelectAll)
     if (Build.VERSION.SDK_INT >= 26) {
-        TextItem(state, Autofill, enabled = availability.canAutofill) {
-            onMenuItemClicked(Autofill)
-        }
+        textFieldItem(Autofill, enabled = availability.canAutofill)
     }
 }
 
@@ -59,53 +63,44 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
 ): Modifier = addTextContextMenuComponentsWithResources { resources ->
     fun TextContextMenuBuilderScope.textFieldItem(
         item: TextContextMenuItems,
+        enabled: Boolean,
         desiredState: TextToolbarState = TextToolbarState.None,
         closePredicate: (() -> Boolean)? = null,
         onClick: () -> Unit
     ) {
-        item(
-            key = item.key,
-            label = item.resolveString(resources),
-            leadingIcon = item.drawableId,
-            onClick = {
-                onClick()
-                if (closePredicate?.invoke() ?: true) close()
-                state.updateTextToolbarState(desiredState)
-            }
-        )
+        textItem(resources, item, enabled) {
+            onClick()
+            if (closePredicate?.invoke() ?: true) close()
+            state.updateTextToolbarState(desiredState)
+        }
     }
 
     fun TextContextMenuBuilderScope.textFieldSuspendItem(
         item: TextContextMenuItems,
+        enabled: Boolean,
         onClick: suspend () -> Unit
     ) {
-        textFieldItem(item) {
+        textFieldItem(item, enabled) {
             coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) { onClick() }
         }
     }
 
-    separator()
-    if (state.canCut()) {
-        textFieldSuspendItem(Cut) { state.cut() }
-    }
-    if (state.canCopy()) {
-        textFieldSuspendItem(Copy) { state.copy(cancelSelection = state.textToolbarShown) }
-    }
-    if (state.canPaste()) {
-        textFieldSuspendItem(Paste) { state.paste() }
-    }
-    if (state.canSelectAll()) {
+    with(state) {
+        separator()
+        textFieldSuspendItem(Cut, enabled = canCut()) { cut() }
+        textFieldSuspendItem(Copy, enabled = canCopy()) { copy(cancelSelection = textToolbarShown) }
+        textFieldSuspendItem(Paste, enabled = canPaste()) { paste() }
         textFieldItem(
             item = SelectAll,
+            enabled = canSelectAll(),
             desiredState = TextToolbarState.Selection,
-            closePredicate = { !state.textToolbarShown },
+            closePredicate = { !textToolbarShown },
         ) {
-            state.selectAll()
-            state.updateTextToolbarState(TextToolbarState.Selection)
+            selectAll()
         }
+        if (Build.VERSION.SDK_INT >= 26) {
+            textFieldItem(Autofill, enabled = canAutofill()) { autofill() }
+        }
+        separator()
     }
-    if (Build.VERSION.SDK_INT >= 26 && state.canAutofill()) {
-        textFieldItem(Autofill) { state.autofill() }
-    }
-    separator()
 }

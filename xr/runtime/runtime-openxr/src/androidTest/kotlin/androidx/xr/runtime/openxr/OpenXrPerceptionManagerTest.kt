@@ -32,6 +32,7 @@ import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
 import java.util.UUID
+import kotlin.test.assertFailsWith
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -124,6 +125,18 @@ class OpenXrPerceptionManagerTest {
     }
 
     @Test
+    fun updatePlanes_planeTrackingDisabled_doesNotAddPlane() = initOpenXrManagerAndRunTest {
+        // TODO: b/345314278 -- Add more meaningful tests once trackables are implemented properly
+        // and
+        // a fake perception library can be used mock trackables.
+        openXrManager.configure(Config(planeTracking = Config.PlaneTrackingMode.Disabled))
+
+        underTest.updatePlanes(XR_TIME)
+
+        assertThat(underTest.trackables).hasSize(0)
+    }
+
+    @Test
     fun update_updatesTrackables() = initOpenXrManagerAndRunTest {
         // TODO: b/345314278 -- Add more meaningful tests once trackables are implemented properly
         // and a
@@ -211,6 +224,17 @@ class OpenXrPerceptionManagerTest {
             .isEqualTo(Pose(Vector3(0f, 0f, 2.0f), Quaternion(0f, 1.0f, 0f, 1.0f)))
         assertThat(hitResults.first().trackable).isEqualTo(trackable)
         assertThat(hitResults.first().distance).isEqualTo(5f) // sqrt((4-0)^2 + (3-0)^2 + (2-2)^2)
+    }
+
+    @Test
+    fun hitTest_planeTrackingDisabled_throwsIllegalStateException() = initOpenXrManagerAndRunTest {
+        openXrManager.configure(Config(planeTracking = Config.PlaneTrackingMode.Disabled))
+        underTest.updatePlanes(XR_TIME)
+        underTest.update(XR_TIME)
+
+        assertFailsWith<IllegalStateException> {
+            underTest.hitTest(Ray(Vector3(4f, 3f, 2f), Vector3(2f, 1f, 0f)))
+        }
     }
 
     @Test

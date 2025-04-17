@@ -215,6 +215,10 @@ class Camera2CameraInfoTest {
                     throw NotImplementedError("Not used in testing")
                 }
 
+                override fun getSensorRect(): Rect {
+                    throw NotImplementedError("Not used in testing")
+                }
+
                 override fun getSupportedOutputFormats(): MutableSet<Int> {
                     throw NotImplementedError("Not used in testing")
                 }

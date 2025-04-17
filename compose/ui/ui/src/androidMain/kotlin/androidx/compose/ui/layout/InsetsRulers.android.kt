@@ -282,40 +282,15 @@ sealed interface BasicAnimatableInsetsRulers : RectRulers {
 }
 
 /**
- * A class similar to [MergedVerticalRuler] that returns default values when
- * [BasicAnimatableInsetsRulers.isAnimating] is `false`
- */
-private class MergedOnlyWhenAnimatingVerticalRuler(
-    val useGreater: Boolean,
-    val rulers: Array<VerticalRuler>,
-    val animatableRulers: Array<out RectRulers>
-) : VerticalRuler(), DerivedRuler {
-    override fun Placeable.PlacementScope.calculate(defaultValue: Float): Float =
-        calculateRulerValueWhenAnimating(useGreater, defaultValue, animatableRulers, rulers)
-}
-
-/**
- * A class similar to [MergedHorizontalRuler] that returns default values when
- * [BasicAnimatableInsetsRulers.isAnimating] is `false`
- */
-private class MergedOnlyWhenAnimatingHorizontalRuler(
-    val useGreater: Boolean,
-    val rulers: Array<HorizontalRuler>,
-    val animatableRulers: Array<out RectRulers>
-) : HorizontalRuler(), DerivedRuler {
-    override fun Placeable.PlacementScope.calculate(defaultValue: Float): Float =
-        calculateRulerValueWhenAnimating(useGreater, defaultValue, animatableRulers, rulers)
-}
-
-/**
  * Calculates values for a merged [Ruler] or returns the default value when
  * [BasicAnimatableInsetsRulers.isAnimating] is `false` for all [animatingRulers].
  */
-private fun Placeable.PlacementScope.calculateRulerValueWhenAnimating(
+private inline fun Placeable.PlacementScope.calculateRulerValueWhenAnimating(
     useGreater: Boolean,
     defaultValue: Float,
     animatingRulers: Array<out RectRulers>,
-    rulers: Array<out Ruler>,
+    valueRulers: Array<RectRulers>,
+    rulerChooser: (RectRulers) -> Ruler
 ): Float {
     val insetsValues = coordinates.findValues() ?: return defaultValue
     val isAnimating = animatingRulers.any { insetsValues[it]?.isAnimating == true }
@@ -323,7 +298,8 @@ private fun Placeable.PlacementScope.calculateRulerValueWhenAnimating(
         return defaultValue
     }
     var value = Float.NaN
-    rulers.forEach { ruler ->
+    valueRulers.forEach { rectRulers ->
+        val ruler = rulerChooser(rectRulers)
         val rulerValue = ruler.current(Float.NaN)
         if (!rulerValue.isNaN()) {
             if (value.isNaN() || ((rulerValue > value) == useGreater)) {
@@ -343,30 +319,22 @@ private class InnerOnlyWhenAnimatingRectRulers(
     val rulers: Array<out RectRulers>,
     val valueRulers: Array<RectRulers>
 ) : RectRulers {
-    override val left: VerticalRuler =
-        MergedOnlyWhenAnimatingVerticalRuler(
-            useGreater = true,
-            rulers = Array(valueRulers.size) { valueRulers[it].left },
-            animatableRulers = rulers
-        )
-    override val top: HorizontalRuler =
-        MergedOnlyWhenAnimatingHorizontalRuler(
-            useGreater = true,
-            rulers = Array(valueRulers.size) { valueRulers[it].top },
-            animatableRulers = rulers
-        )
-    override val right: VerticalRuler =
-        MergedOnlyWhenAnimatingVerticalRuler(
-            useGreater = false,
-            rulers = Array(valueRulers.size) { valueRulers[it].right },
-            animatableRulers = rulers
-        )
-    override val bottom: HorizontalRuler =
-        MergedOnlyWhenAnimatingHorizontalRuler(
-            useGreater = false,
-            rulers = Array(valueRulers.size) { valueRulers[it].bottom },
-            animatableRulers = rulers
-        )
+    override val left =
+        VerticalRuler.derived { defaultValue ->
+            calculateRulerValueWhenAnimating(true, defaultValue, rulers, valueRulers) { it.left }
+        }
+    override val top =
+        HorizontalRuler.derived { defaultValue ->
+            calculateRulerValueWhenAnimating(true, defaultValue, rulers, valueRulers) { it.top }
+        }
+    override val right =
+        VerticalRuler.derived { defaultValue ->
+            calculateRulerValueWhenAnimating(false, defaultValue, rulers, valueRulers) { it.right }
+        }
+    override val bottom =
+        HorizontalRuler.derived { defaultValue ->
+            calculateRulerValueWhenAnimating(false, defaultValue, rulers, valueRulers) { it.bottom }
+        }
 
     override fun toString(): String = name
 }
@@ -377,14 +345,13 @@ private class InnerOnlyWhenAnimatingRectRulers(
  * [rulers] are [BasicAnimatableInsetsRulers] and are animating.
  */
 class InnerInsetsRulers(vararg val rulers: RectRulers) : BasicAnimatableInsetsRulers {
-    override val left: VerticalRuler =
-        MergedVerticalRuler(shouldUseGreater = true, *Array(rulers.size) { rulers[it].left })
+    override val left: VerticalRuler = VerticalRuler.maxOf(*Array(rulers.size) { rulers[it].left })
     override val top: HorizontalRuler =
-        MergedHorizontalRuler(shouldUseGreater = true, *Array(rulers.size) { rulers[it].top })
+        HorizontalRuler.maxOf(*Array(rulers.size) { rulers[it].top })
     override val right: VerticalRuler =
-        MergedVerticalRuler(shouldUseGreater = false, *Array(rulers.size) { rulers[it].right })
+        VerticalRuler.minOf(*Array(rulers.size) { rulers[it].right })
     override val bottom: HorizontalRuler =
-        MergedHorizontalRuler(shouldUseGreater = false, *Array(rulers.size) { rulers[it].bottom })
+        HorizontalRuler.minOf(*Array(rulers.size) { rulers[it].bottom })
 
     override val source: RectRulers =
         InnerOnlyWhenAnimatingRectRulers(

@@ -257,7 +257,7 @@ public interface MotionScheme {
 internal val LocalMotionScheme = staticCompositionLocalOf { MotionScheme.standard() }
 
 // TODO - These values should come from Tokens.
-private const val StandardSpatialDampingRatio = 0.9f
+private const val StandardSpatialDampingRatio = 1.0f
 private const val EffectsDampingRatio = Spring.DampingRatioNoBouncy
 
 internal const val EffectsDefaultStiffness = 500f

@@ -29,7 +29,6 @@ import kotlin.coroutines.resume
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CancellableContinuation
@@ -357,40 +356,36 @@ class PausableCompositionTests {
         )
     }
 
-    @Test
+    @Test(expected = IllegalStateException::class)
     fun pausableComposition_throwInResume() = runTest {
-        assertFailsWith<IllegalStateException> {
-            val recomposer = Recomposer(coroutineContext)
-            val pausableComposition = PausableComposition(EmptyApplier(), recomposer)
+        val recomposer = Recomposer(coroutineContext)
+        val pausableComposition = PausableComposition(EmptyApplier(), recomposer)
 
-            try {
-                val handle = pausableComposition.setPausableContent { error("Test error") }
-                handle.resume { false }
-                handle.apply()
-            } finally {
-                recomposer.cancel()
-                recomposer.close()
-            }
+        try {
+            val handle = pausableComposition.setPausableContent { error("Test error") }
+            handle.resume { false }
+            handle.apply()
+        } finally {
+            recomposer.cancel()
+            recomposer.close()
         }
     }
 
-    @Test
+    @Test(expected = IllegalStateException::class)
     fun pausableComposition_throwInApply() = runTest {
-        assertFailsWith<IllegalStateException> {
-            val recomposer = Recomposer(coroutineContext)
-            val pausableComposition = PausableComposition(EmptyApplier(), recomposer)
+        val recomposer = Recomposer(coroutineContext)
+        val pausableComposition = PausableComposition(EmptyApplier(), recomposer)
 
-            try {
-                val handle =
-                    pausableComposition.setPausableContent {
-                        DisposableEffect(Unit) { throw IllegalStateException("test") }
-                    }
-                handle.resume { false }
-                handle.apply()
-            } finally {
-                recomposer.cancel()
-                recomposer.close()
-            }
+        try {
+            val handle =
+                pausableComposition.setPausableContent {
+                    DisposableEffect(Unit) { throw IllegalStateException("test") }
+                }
+            handle.resume { false }
+            handle.apply()
+        } finally {
+            recomposer.cancel()
+            recomposer.close()
         }
     }
 }

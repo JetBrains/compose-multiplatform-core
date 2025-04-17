@@ -66,10 +66,14 @@ import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Unknown
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.UpdateSettingsCommand
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.UpdateSettingsResponse
 
+// The ".studio" prefix prevents logs from showing in logcat,
+// unless the "logcat.ignore.studio.tags" flag is disabled.
+internal const val LOG_TAG = "ComposeInspector"
+internal const val SPAM_LOG_TAG = "studio.$LOG_TAG"
+
 private const val LAYOUT_INSPECTION_ID = "layoutinspector.compose.inspection"
 private const val MAX_RECURSIONS = 2
 private const val MAX_ITERABLE_SIZE = 5
-private const val TAG = "ComposeLayoutInspector"
 
 // created by java.util.ServiceLoader
 class ComposeLayoutInspectorFactory :
@@ -576,7 +580,7 @@ class ComposeLayoutInspector(
                 field.isAccessible = true
                 field.setBoolean(null, true)
             } catch (ex: Exception) {
-                Log.w(TAG, "Could not access isDebugInspectorInfoEnabled.", ex)
+                Log.w(LOG_TAG, "Could not access isDebugInspectorInfoEnabled.", ex)
             }
         }
     }

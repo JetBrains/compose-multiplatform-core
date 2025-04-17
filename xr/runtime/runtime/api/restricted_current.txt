@@ -372,20 +372,23 @@ package androidx.xr.runtime.internal {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Config {
     ctor public Config();
-    ctor public Config(optional androidx.xr.runtime.internal.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.internal.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.internal.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.internal.Config.AnchorPersistenceMode anchorPersistence, optional androidx.xr.runtime.internal.Config.HeadTrackingMode headTracking);
+    ctor public Config(optional androidx.xr.runtime.internal.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.internal.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.internal.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.internal.Config.AnchorPersistenceMode anchorPersistence, optional androidx.xr.runtime.internal.Config.HeadTrackingMode headTracking, optional androidx.xr.runtime.internal.Config.GeospatialMode geospatial);
     method public androidx.xr.runtime.internal.Config copy();
     method public androidx.xr.runtime.internal.Config copy(optional androidx.xr.runtime.internal.Config.PlaneTrackingMode planeTracking);
     method public androidx.xr.runtime.internal.Config copy(optional androidx.xr.runtime.internal.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.internal.Config.HandTrackingMode handTracking);
     method public androidx.xr.runtime.internal.Config copy(optional androidx.xr.runtime.internal.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.internal.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.internal.Config.DepthEstimationMode depthEstimation);
     method public androidx.xr.runtime.internal.Config copy(optional androidx.xr.runtime.internal.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.internal.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.internal.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.internal.Config.AnchorPersistenceMode anchorPersistence);
     method public androidx.xr.runtime.internal.Config copy(optional androidx.xr.runtime.internal.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.internal.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.internal.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.internal.Config.AnchorPersistenceMode anchorPersistence, optional androidx.xr.runtime.internal.Config.HeadTrackingMode headTracking);
+    method public androidx.xr.runtime.internal.Config copy(optional androidx.xr.runtime.internal.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.internal.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.internal.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.internal.Config.AnchorPersistenceMode anchorPersistence, optional androidx.xr.runtime.internal.Config.HeadTrackingMode headTracking, optional androidx.xr.runtime.internal.Config.GeospatialMode geospatial);
     method public androidx.xr.runtime.internal.Config.AnchorPersistenceMode getAnchorPersistence();
     method public androidx.xr.runtime.internal.Config.DepthEstimationMode getDepthEstimation();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.internal.Config.GeospatialMode getGeospatial();
     method public androidx.xr.runtime.internal.Config.HandTrackingMode getHandTracking();
     method public androidx.xr.runtime.internal.Config.HeadTrackingMode getHeadTracking();
     method public androidx.xr.runtime.internal.Config.PlaneTrackingMode getPlaneTracking();
     property public androidx.xr.runtime.internal.Config.AnchorPersistenceMode anchorPersistence;
     property public androidx.xr.runtime.internal.Config.DepthEstimationMode depthEstimation;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.internal.Config.GeospatialMode geospatial;
     property public androidx.xr.runtime.internal.Config.HandTrackingMode handTracking;
     property public androidx.xr.runtime.internal.Config.HeadTrackingMode headTracking;
     property public androidx.xr.runtime.internal.Config.PlaneTrackingMode planeTracking;
@@ -415,6 +418,19 @@ package androidx.xr.runtime.internal {
   public static final class Config.DepthEstimationMode.Companion {
     property public androidx.xr.runtime.internal.Config.DepthEstimationMode Disabled;
     property public androidx.xr.runtime.internal.Config.DepthEstimationMode Enabled;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static final class Config.GeospatialMode {
+    method public int getMode();
+    property public int mode;
+    field public static final androidx.xr.runtime.internal.Config.GeospatialMode.Companion Companion;
+    field public static final androidx.xr.runtime.internal.Config.GeospatialMode Disabled;
+    field public static final androidx.xr.runtime.internal.Config.GeospatialMode Enabled;
+  }
+
+  public static final class Config.GeospatialMode.Companion {
+    property public androidx.xr.runtime.internal.Config.GeospatialMode Disabled;
+    property public androidx.xr.runtime.internal.Config.GeospatialMode Enabled;
   }
 
   public static final class Config.HandTrackingMode {
@@ -689,6 +705,7 @@ package androidx.xr.runtime.internal {
     method public androidx.xr.runtime.internal.AnchorEntity createPersistedAnchorEntity(java.util.UUID uuid, java.time.Duration searchTimeout);
     method public androidx.xr.runtime.internal.PointerCaptureComponent createPointerCaptureComponent(java.util.concurrent.Executor executor, androidx.xr.runtime.internal.PointerCaptureComponent.StateListener stateListener, androidx.xr.runtime.internal.InputEventListener inputListener);
     method public androidx.xr.runtime.internal.ResizableComponent createResizableComponent(androidx.xr.runtime.internal.Dimensions minimumSize, androidx.xr.runtime.internal.Dimensions maximumSize);
+    method public androidx.xr.runtime.internal.SpatialPointerComponent createSpatialPointerComponent();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.internal.SubspaceNodeEntity createSubspaceNodeEntity(com.google.androidxr.splitengine.SubspaceNode subspaceNode, androidx.xr.runtime.internal.Dimensions size);
     method public androidx.xr.runtime.internal.SurfaceEntity createSurfaceEntity(int stereoMode, androidx.xr.runtime.internal.SurfaceEntity.CanvasShape canvasShape, androidx.xr.runtime.math.Pose pose, androidx.xr.runtime.internal.Entity parentEntity);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.MaterialResource>? createWaterMaterial(boolean isAlphaMapVersion);
@@ -1156,6 +1173,24 @@ package androidx.xr.runtime.internal {
     property public androidx.xr.runtime.internal.ExrImageResource? skybox;
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface SpatialPointerComponent extends androidx.xr.runtime.internal.Component {
+    method @androidx.xr.runtime.internal.SpatialPointerIconType public int getSpatialPointerIcon();
+    method public void setSpatialPointerIcon(@androidx.xr.runtime.internal.SpatialPointerIconType int iconType);
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SpatialPointerIcon {
+    property public static int TYPE_CIRCLE;
+    property public static int TYPE_DEFAULT;
+    property public static int TYPE_NONE;
+    field public static final androidx.xr.runtime.internal.SpatialPointerIcon INSTANCE;
+    field public static final int TYPE_CIRCLE = 2; // 0x2
+    field public static final int TYPE_DEFAULT = 1; // 0x1
+    field public static final int TYPE_NONE = 0; // 0x0
+  }
+
+  @IntDef({androidx.xr.runtime.internal.SpatialPointerIcon.TYPE_NONE, androidx.xr.runtime.internal.SpatialPointerIcon.TYPE_DEFAULT, androidx.xr.runtime.internal.SpatialPointerIcon.TYPE_CIRCLE}) @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) public @interface SpatialPointerIconType {
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SpatialVisibility {
     ctor public SpatialVisibility(int visibility);
     method public int getVisibility();
@@ -1502,6 +1537,19 @@ package androidx.xr.runtime.java {
 }
 
 package androidx.xr.runtime.math {
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class GeospatialPose {
+    ctor public GeospatialPose();
+    ctor public GeospatialPose(optional double latitude, optional double longitude, optional double altitude, optional androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion);
+    method public double getAltitude();
+    method public androidx.xr.runtime.math.Quaternion getEastUpSouthQuaternion();
+    method public double getLatitude();
+    method public double getLongitude();
+    property public double altitude;
+    property public androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion;
+    property public double latitude;
+    property public double longitude;
+  }
 
   public final class MathHelper {
     method public static float clamp(float x, float min, float max);

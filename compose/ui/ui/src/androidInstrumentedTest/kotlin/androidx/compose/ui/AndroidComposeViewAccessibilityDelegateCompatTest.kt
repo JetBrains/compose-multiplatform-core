@@ -1991,93 +1991,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
 
     @Test
     @SdkSuppress(minSdkVersion = 24)
-    fun drawingOrder_parentNodeNotAccessed_defaultOrder() {
-        // Arrange.
-        rule.setContentWithAccessibilityEnabled {
-            Column {
-                Box(
-                    Modifier.size(10.dp).semantics {
-                        testTag = "item0"
-                        text = AnnotatedString("item0")
-                    }
-                )
-                Box(
-                    Modifier.size(10.dp).semantics {
-                        testTag = "item1"
-                        text = AnnotatedString("item1")
-                    }
-                )
-                Box(
-                    Modifier.size(10.dp).semantics {
-                        testTag = "item2"
-                        text = AnnotatedString("item2")
-                    }
-                )
-            }
-        }
-        val item0Id = rule.onNodeWithTag("item0").semanticsId()
-        val item1Id = rule.onNodeWithTag("item1").semanticsId()
-        val item2Id = rule.onNodeWithTag("item2").semanticsId()
-
-        // Act.
-        val info0 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item0Id) }
-        val info1 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item1Id) }
-        val info2 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item2Id) }
-
-        // Assert.
-        rule.runOnIdle {
-            assertThat(info0.drawingOrder).isEqualTo(0)
-            assertThat(info1.drawingOrder).isEqualTo(1)
-            assertThat(info2.drawingOrder).isEqualTo(2)
-        }
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = 24)
-    fun drawingOrder_parentNodeNotAccessed_customZIndex() {
-        // Arrange.
-        rule.setContentWithAccessibilityEnabled {
-            Column {
-                Box(
-                    Modifier.zIndex(100f).size(10.dp).semantics {
-                        testTag = "item0"
-                        text = AnnotatedString("item0")
-                    }
-                )
-                Box(
-                    Modifier.size(10.dp).semantics {
-                        testTag = "item1"
-                        text = AnnotatedString("item1")
-                    }
-                )
-                Box(
-                    Modifier.size(10.dp).semantics {
-                        testTag = "item2"
-                        text = AnnotatedString("item2")
-                    }
-                )
-            }
-        }
-        val item0Id = rule.onNodeWithTag("item0").semanticsId()
-        val item1Id = rule.onNodeWithTag("item1").semanticsId()
-        val item2Id = rule.onNodeWithTag("item2").semanticsId()
-
-        // Act.
-        val info0 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item0Id) }
-        val info1 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item1Id) }
-        val info2 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item2Id) }
-
-        // Assert.
-        rule.runOnIdle {
-            assertThat(info0.drawingOrder).isEqualTo(2)
-            assertThat(info1.drawingOrder).isEqualTo(0)
-            assertThat(info2.drawingOrder).isEqualTo(1)
-        }
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = 24)
-    fun drawingOrder_parentNodeAccessedFirst_defaultOrder() {
+    fun drawingOrder_defaultOrder() {
         // Arrange.
         rule.setContentWithAccessibilityEnabled {
             Column(
@@ -2127,7 +2041,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
 
     @Test
     @SdkSuppress(minSdkVersion = 24)
-    fun drawingOrder_parentNodeAccessedFirst_customZIndex() {
+    fun drawingOrder_customZIndex() {
         // Arrange.
         rule.setContentWithAccessibilityEnabled {
             Column(

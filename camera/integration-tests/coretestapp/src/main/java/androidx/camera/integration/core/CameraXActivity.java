@@ -135,6 +135,8 @@ import androidx.camera.core.impl.Quirks;
 import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.utils.AspectRatioUtil;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
+import androidx.camera.core.resolutionselector.AspectRatioStrategy;
+import androidx.camera.core.resolutionselector.ResolutionSelector;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.testing.impl.StreamSharingForceEnabledEffect;
 import androidx.camera.video.ExperimentalPersistentRecording;
@@ -2048,7 +2050,11 @@ public class CameraXActivity extends AppCompatActivity {
         if (mPreviewToggle.isChecked()) {
             Preview preview = new Preview.Builder()
                     .setTargetName("Preview")
-                    .setTargetAspectRatio(mTargetAspectRatio)
+                    .setResolutionSelector(
+                            new ResolutionSelector.Builder()
+                                    .setAspectRatioStrategy(getTargetAspectRatioStrategy())
+                                    .build()
+                    )
                     .setPreviewStabilizationEnabled(mIsPreviewStabilizationOn)
                     .setDynamicRange(
                             mVideoToggle.isChecked() ? DynamicRange.UNSPECIFIED : mDynamicRange)
@@ -2075,7 +2081,11 @@ public class CameraXActivity extends AppCompatActivity {
             ImageCapture imageCapture = new ImageCapture.Builder()
                     .setFlashType(flashType)
                     .setCaptureMode(getCaptureMode())
-                    .setTargetAspectRatio(mTargetAspectRatio)
+                    .setResolutionSelector(
+                            new ResolutionSelector.Builder()
+                                    .setAspectRatioStrategy(getTargetAspectRatioStrategy())
+                                    .build()
+                    )
                     .setOutputFormat(mImageOutputFormat)
                     .setTargetName("ImageCapture")
                     .build();
@@ -2085,7 +2095,11 @@ public class CameraXActivity extends AppCompatActivity {
         if (mAnalysisToggle.isChecked()) {
             ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
                     .setTargetName("ImageAnalysis")
-                    .setTargetAspectRatio(mTargetAspectRatio)
+                    .setResolutionSelector(
+                            new ResolutionSelector.Builder()
+                                    .setAspectRatioStrategy(getTargetAspectRatioStrategy())
+                                    .build()
+                    )
                     .build();
             useCases.add(imageAnalysis);
             // Make the analysis idling resource non-idle, until the required frames received.
@@ -2528,6 +2542,15 @@ public class CameraXActivity extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    private AspectRatioStrategy getTargetAspectRatioStrategy() {
+        if (mTargetAspectRatio == AspectRatio.RATIO_DEFAULT) {
+            // Since there's no easy way to get the default aspect ratio strategy,
+            // resolution selector default builder is used.
+            return new ResolutionSelector.Builder().build().getAspectRatioStrategy();
+        }
+        return new AspectRatioStrategy(mTargetAspectRatio, AspectRatioStrategy.FALLBACK_RULE_AUTO);
     }
 
     private static class DynamicRangeUi {

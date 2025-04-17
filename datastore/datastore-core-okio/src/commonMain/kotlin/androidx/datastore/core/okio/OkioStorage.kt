@@ -23,6 +23,7 @@ import androidx.datastore.core.StorageConnection
 import androidx.datastore.core.WriteScope
 import androidx.datastore.core.createSingleProcessCoordinator
 import androidx.datastore.core.use
+import androidx.datastore.core.wrapExceptionIfDueToDirectBoot
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import okio.FileNotFoundException
@@ -170,7 +171,16 @@ internal open class OkioReadScope<T>(
                 // Attempt a second read in case a race condition resulted in the file being created
                 // by a different process. If we can't read again, a FileNotFoundException is
                 // thrown.
-                fileSystem.read(file = path) { serializer.readFrom(this) }
+                try {
+                    fileSystem.read(file = path) { serializer.readFrom(this) }
+                } catch (e: Exception) {
+                    throw if (e is FileNotFoundException) {
+                        wrapExceptionIfDueToDirectBoot(
+                            parentDirPath = path.parent.toString(),
+                            exception = e
+                        )
+                    } else e
+                }
             } else {
                 // File does not exist, return default value.
                 serializer.defaultValue
@@ -195,12 +205,21 @@ internal class OkioWriteScope<T>(
 
     override suspend fun writeData(value: T) {
         checkClose()
-        val fileHandle = fileSystem.openReadWrite(path)
-        fileHandle.use { handle ->
-            handle.sink().buffer().use { sink ->
-                serializer.writeTo(value, sink)
-                handle.flush()
+        try {
+            val fileHandle = fileSystem.openReadWrite(path)
+            fileHandle.use { handle ->
+                handle.sink().buffer().use { sink ->
+                    serializer.writeTo(value, sink)
+                    handle.flush()
+                }
             }
+        } catch (e: Exception) {
+            throw if (e is FileNotFoundException) {
+                wrapExceptionIfDueToDirectBoot(
+                    parentDirPath = path.parent.toString(),
+                    exception = e
+                )
+            } else e
         }
     }
 }

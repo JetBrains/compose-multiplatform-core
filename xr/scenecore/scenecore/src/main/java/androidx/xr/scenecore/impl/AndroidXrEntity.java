@@ -281,6 +281,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
         }
         getNode()
                 .requestPointerCapture(
+                        executor,
                         (pcState) -> {
                             if (pcState == Node.POINTER_CAPTURE_STATE_PAUSED) {
                                 stateListener.onStateChanged(
@@ -297,8 +298,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
                             } else {
                                 Log.e("Runtime", "Invalid state received for pointer capture");
                             }
-                        },
-                        executor);
+                        });
 
         addPointerCaptureInputListener(executor, eventListener);
         return true;
@@ -314,6 +314,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
     private void maybeSetupInputListeners() {
         if (mInputEventListenerMap.isEmpty() && mPointerCaptureInputEventListener.isEmpty()) {
             mNode.listenForInput(
+                    mExecutor,
                     (xrInputEvent) -> {
                         if (xrInputEvent.getDispatchFlags()
                                 == InputEvent.DISPATCH_FLAG_CAPTURED_POINTER) {
@@ -338,8 +339,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
                                                                             xrInputEvent,
                                                                             mEntityManager))));
                         }
-                    },
-                    mExecutor);
+                    });
         }
     }
 
@@ -418,7 +418,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
                                         consumerExecutor.execute(
                                                 () -> eventConsumer.accept(reformEvent)));
                     };
-            mReformOptions = mExtensions.createReformOptions(reformEventConsumer, mExecutor);
+            mReformOptions = mExtensions.createReformOptions(mExecutor, reformEventConsumer);
         }
         return mReformOptions;
     }

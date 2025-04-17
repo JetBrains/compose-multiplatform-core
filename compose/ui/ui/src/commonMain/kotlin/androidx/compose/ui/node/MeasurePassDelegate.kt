@@ -76,7 +76,9 @@ internal class MeasurePassDelegate(private val layoutNodeLayoutDelegate: LayoutN
     internal var measuredByParent: LayoutNode.UsageByParent = LayoutNode.UsageByParent.NotUsed
     internal var duringAlignmentLinesQuery = false
 
-    private var lastPosition: IntOffset = IntOffset.Zero
+    internal var lastPosition: IntOffset = IntOffset.Zero
+        private set
+
     private var lastLayerBlock: (GraphicsLayerScope.() -> Unit)? = null
     private var lastExplicitLayer: GraphicsLayer? = null
     private var lastZIndex: Float = 0f

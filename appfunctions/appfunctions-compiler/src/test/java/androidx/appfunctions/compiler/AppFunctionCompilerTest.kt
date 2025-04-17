@@ -462,10 +462,38 @@ class AppFunctionCompilerTest {
     }
 
     @Test
+    fun testFunctionWithInvalidSerializableInterface_fail() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("FunctionWithInvalidSerializableInterface.KT")
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report = report,
+            expectedErrorMessage =
+                "AppFunctionSerializable properties must be one of the following types:\n"
+        )
+    }
+
+    @Test
     fun testFunctionWithInvalidGenericSerializable_fail() {
         val report =
             compilationTestHelper.compileAll(
                 sourceFileNames = listOf("FunctionWithInvalidGenericSerializable.KT")
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report = report,
+            expectedErrorMessage =
+                "AppFunctionSerializable properties must be one of the following types:\n"
+        )
+    }
+
+    @Test
+    fun testFunctionWithInvalidGenericSerializableInterface_fail() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("FunctionWithInvalidGenericSerializableInterface.KT")
             )
 
         compilationTestHelper.assertErrorWithMessage(
@@ -775,9 +803,59 @@ class AppFunctionCompilerTest {
     }
 
     @Test
-    fun testGenerateSchemaInventory() {
-        compilationTestHelper.compileAll(sourceFileNames = listOf("NoteSchemaDefinitions.KT"))
+    fun testGenerateSchemaDefinitionRegistry() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames =
+                    listOf(
+                        "NoteSchemaDefinitions.KT",
+                        "FakeSchemas.KT",
+                        "DiffPackageSerializable.KT",
+                        "DiffPackageSchemas.KT",
+                        "AnotherDiffPackageSerializable.KT",
+                    )
+            )
 
-        // TODO(b/403525399): Examine test content
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}Main_SchemaDefinitionComponentRegistry.kt",
+            goldenFileName = "${'$'}Main_SchemaDefinitionComponentRegistry.KT",
+        )
+    }
+
+    @Test
+    fun testGenerateSchemaInventory() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("NoteSchemaDefinitions.KT"),
+                processorOptions = mapOf("appfunctions:generateMetadataFromSchema" to "true")
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}SchemaAppFunctionInventory_Impl.kt",
+            goldenFileName = "${'$'}SchemaAppFunctionInventory_Impl.KT"
+        )
+    }
+
+    @Test
+    fun testSimpleFunctionWithEmptySerializable_genAppFunctionInventory_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("FunctionWithEmptySerializable.KT"),
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true")
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName =
+                "${'$'}FunctionWithEmptySerializable_AppFunctionInventory.kt",
+            goldenFileName = "${'$'}FunctionWithEmptySerializable_AppFunctionInventory.KT",
+        )
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions_v2.xml",
+            goldenFileName = "functionWithEmptySerializable_app_function_dynamic_schema.xml",
+        )
     }
 }

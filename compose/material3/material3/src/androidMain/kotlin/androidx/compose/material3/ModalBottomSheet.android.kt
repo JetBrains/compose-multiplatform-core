@@ -58,6 +58,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -94,16 +95,63 @@ import kotlinx.coroutines.launch
  */
 @Immutable
 @ExperimentalMaterial3Api
-actual class ModalBottomSheetProperties(
-    val securePolicy: SecureFlagPolicy = SecureFlagPolicy.Inherit,
-    actual val shouldDismissOnBackPress: Boolean = true,
-) {
+actual class ModalBottomSheetProperties {
+    val securePolicy: SecureFlagPolicy
+    actual val shouldDismissOnBackPress: Boolean
+    internal val isAppearanceLightStatusBars: Boolean?
+    internal val isAppearanceLightNavigationBars: Boolean?
+
+    constructor() {
+        this.securePolicy = SecureFlagPolicy.Inherit
+        this.shouldDismissOnBackPress = true
+        this.isAppearanceLightStatusBars = null
+        this.isAppearanceLightNavigationBars = null
+    }
+
+    constructor(
+        securePolicy: SecureFlagPolicy = SecureFlagPolicy.Inherit,
+        shouldDismissOnBackPress: Boolean = true,
+    ) {
+        this.securePolicy = securePolicy
+        this.shouldDismissOnBackPress = shouldDismissOnBackPress
+        this.isAppearanceLightNavigationBars = null
+        this.isAppearanceLightStatusBars = null
+    }
+
+    /**
+     * Properties used to customize the behavior of a [ModalBottomSheet].
+     *
+     * @param isAppearanceLightStatusBars If true, changes the foreground color of the status bars
+     *   to light so that the items on the bar can be read clearly. If false, reverts to the default
+     *   appearance.
+     * @param isAppearanceLightNavigationBars If true, changes the foreground color of the
+     *   navigation bars to light so that the items on the bar can be read clearly. If false,
+     *   reverts to the default appearance.
+     * @param securePolicy Policy for setting [WindowManager.LayoutParams.FLAG_SECURE] on the bottom
+     *   sheet's window.
+     * @param shouldDismissOnBackPress Whether the modal bottom sheet can be dismissed by pressing
+     *   the back button. If true, pressing the back button will call onDismissRequest.
+     */
+    constructor(
+        isAppearanceLightStatusBars: Boolean,
+        isAppearanceLightNavigationBars: Boolean,
+        securePolicy: SecureFlagPolicy = SecureFlagPolicy.Inherit,
+        shouldDismissOnBackPress: Boolean = true,
+    ) {
+        this.shouldDismissOnBackPress = shouldDismissOnBackPress
+        this.securePolicy = securePolicy
+        this.isAppearanceLightStatusBars = isAppearanceLightStatusBars
+        this.isAppearanceLightNavigationBars = isAppearanceLightNavigationBars
+    }
+
     actual constructor(
         shouldDismissOnBackPress: Boolean,
-    ) : this(
-        securePolicy = SecureFlagPolicy.Inherit,
-        shouldDismissOnBackPress = shouldDismissOnBackPress,
-    )
+    ) {
+        this.securePolicy = SecureFlagPolicy.Inherit
+        this.shouldDismissOnBackPress = shouldDismissOnBackPress
+        this.isAppearanceLightNavigationBars = null
+        this.isAppearanceLightStatusBars = null
+    }
 
     @Deprecated(
         message = "'isFocusable' param is no longer used. Use constructor without this parameter.",
@@ -116,32 +164,19 @@ actual class ModalBottomSheetProperties(
         securePolicy: SecureFlagPolicy,
         isFocusable: Boolean,
         shouldDismissOnBackPress: Boolean,
-    ) : this(
-        securePolicy = securePolicy,
-        shouldDismissOnBackPress = shouldDismissOnBackPress,
-    )
-
-    @Deprecated(
-        level = DeprecationLevel.HIDDEN,
-        message = "Android-specific parameters have been removed",
-        replaceWith =
-            ReplaceWith("ModalBottomSheetProperties(securePolicy, shouldDismissOnBackPress)")
-    )
-    @Suppress("UNUSED_PARAMETER")
-    constructor(
-        securePolicy: SecureFlagPolicy = SecureFlagPolicy.Inherit,
-        shouldDismissOnBackPress: Boolean = true,
-        isAppearanceLightStatusBars: Boolean = true,
-        isAppearanceLightNavigationBars: Boolean = true,
-    ) : this(
-        securePolicy = securePolicy,
-        shouldDismissOnBackPress = shouldDismissOnBackPress,
-    )
+    ) {
+        this.securePolicy = securePolicy
+        this.shouldDismissOnBackPress = shouldDismissOnBackPress
+        this.isAppearanceLightNavigationBars = null
+        this.isAppearanceLightStatusBars = null
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ModalBottomSheetProperties) return false
         if (securePolicy != other.securePolicy) return false
+        if (isAppearanceLightStatusBars != other.isAppearanceLightStatusBars) return false
+        if (isAppearanceLightNavigationBars != other.isAppearanceLightNavigationBars) return false
 
         return true
     }
@@ -149,6 +184,8 @@ actual class ModalBottomSheetProperties(
     override fun hashCode(): Int {
         var result = securePolicy.hashCode()
         result = 31 * result + shouldDismissOnBackPress.hashCode()
+        result = 31 * result + (isAppearanceLightStatusBars?.hashCode() ?: 0)
+        result = 31 * result + (isAppearanceLightNavigationBars?.hashCode() ?: 0)
         return result
     }
 }
@@ -183,7 +220,11 @@ actual object ModalBottomSheetDefaults {
         securePolicy: SecureFlagPolicy = SecureFlagPolicy.Inherit,
         isFocusable: Boolean = true,
         shouldDismissOnBackPress: Boolean = true
-    ) = ModalBottomSheetProperties(securePolicy, shouldDismissOnBackPress)
+    ) =
+        ModalBottomSheetProperties(
+            securePolicy = securePolicy,
+            shouldDismissOnBackPress = shouldDismissOnBackPress,
+        )
 }
 
 /**
@@ -554,8 +595,10 @@ private class ModalBottomSheetDialogWrapper(
         WindowCompat.getInsetsController(window, window.decorView).apply {
             // Theme system bars based on content color. Light system bars provide dark icons
             // and vice-versa. This maintains visible system bars for the bottom sheet window.
-            isAppearanceLightStatusBars = contentColor.isDark()
-            isAppearanceLightNavigationBars = contentColor.isDark()
+            isAppearanceLightStatusBars =
+                properties.isAppearanceLightStatusBars ?: contentColor.isDark()
+            isAppearanceLightNavigationBars =
+                properties.isAppearanceLightNavigationBars ?: contentColor.isDark()
         }
         // Due to how the onDismissRequest callback works
         // (it enforces a just-in-time decision on whether to update the state to hide the dialog)
@@ -645,4 +688,9 @@ internal fun View.isFlagSecureEnabled(): Boolean {
         return (windowParams.flags and WindowManager.LayoutParams.FLAG_SECURE) != 0
     }
     return false
+}
+
+/** Determines if a color should be considered light or dark. */
+internal fun Color.isDark(): Boolean {
+    return this != Color.Transparent && luminance() <= 0.5
 }

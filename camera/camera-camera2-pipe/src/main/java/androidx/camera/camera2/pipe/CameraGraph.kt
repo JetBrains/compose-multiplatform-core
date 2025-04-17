@@ -33,9 +33,6 @@ import androidx.camera.camera2.pipe.CameraGraph.OperatingMode.Companion.HIGH_SPE
 import androidx.camera.camera2.pipe.CameraGraph.OperatingMode.Companion.NORMAL
 import androidx.camera.camera2.pipe.CameraGraph.RepeatingRequestRequirementsBeforeCapture.CompletionBehavior.AT_LEAST
 import androidx.camera.camera2.pipe.CameraGraph.RepeatingRequestRequirementsBeforeCapture.CompletionBehavior.EXACT
-import androidx.camera.camera2.pipe.GraphState.GraphStateStarting
-import androidx.camera.camera2.pipe.GraphState.GraphStateStopped
-import androidx.camera.camera2.pipe.GraphState.GraphStateStopping
 import androidx.camera.camera2.pipe.compat.Camera2Quirks
 import androidx.camera.camera2.pipe.core.Log
 import kotlinx.coroutines.CancellationException
@@ -45,51 +42,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 /** A [CameraGraph] represents the combined configuration and state of a camera. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public interface CameraGraph : AutoCloseable {
-    /**
-     * A unique identifier for this CameraGraph instance. This can be used to identify the graph
-     * without holding a hard reference to the CameraGraph itself.
-     */
-    public val id: CameraGraphId
-
-    /** The [StreamGraph] for this CameraGraph instance. */
-    public val streams: StreamGraph
-
-    /**
-     * Returns the state flow of [GraphState], which emits the current state of the [CameraGraph],
-     * including when a [CameraGraph] is stopped, starting or started.
-     */
-    public val graphState: StateFlow<GraphState>
-
-    /**
-     * This is a hint an app can give to a camera graph to indicate whether the camera is being used
-     * in a foreground setting, for example whether the user could see the app itself. This would
-     * inform the underlying implementation to open cameras more actively (e.g., longer timeout).
-     */
-    public var isForeground: Boolean
-
-    /**
-     * This enables setting parameter values directly without having callers of [CameraGraph] to
-     * acquire sessions manually, but instead session is acquired on callers' behalf when making
-     * changes in [Parameters]. For detailed usage see [Parameters].
-     */
-    public val parameters: Parameters
-
-    /**
-     * This will cause the [CameraGraph] to start opening the [CameraDevice] and configuring a
-     * [CameraCaptureSession]. While the CameraGraph is alive it will attempt to keep the camera
-     * open, active, and in a configured running state.
-     */
-    public fun start()
-
-    /**
-     * This will cause the [CameraGraph] to stop executing requests and close the current Camera2
-     * [CameraCaptureSession] (if one is active). The most recent repeating request will be
-     * preserved, and any calls to submit a request to a session will be enqueued. To stop requests
-     * from being enqueued, close the [CameraGraph].
-     */
-    public fun stop()
-
+public interface CameraGraph : BaseGraph {
     /**
      * Used exclusively interact with the camera via a [Session] from within an existing suspending
      * function. This function will suspend until the internal mutex lock can be acquired and
@@ -160,23 +113,6 @@ public interface CameraGraph : AutoCloseable {
         scope: CoroutineScope,
         action: suspend CoroutineScope.(Session) -> T
     ): Deferred<T>
-
-    /**
-     * This configures the camera graph to use a specific Surface for the given stream.
-     *
-     * Changing a surface may cause the camera to stall and/or reconfigure.
-     */
-    public fun setSurface(stream: StreamId, surface: Surface?)
-
-    /**
-     * CameraPipe allows setting the global audio restriction through [CameraPipe] and audio
-     * restrictions on individual [CameraGraph]s. When multiple settings are present, the highest
-     * level of audio restriction across global and individual [CameraGraph]s is used as the
-     * device's audio restriction.
-     *
-     * Sets the audio restriction of CameraGraph.
-     */
-    public fun updateAudioRestrictionMode(mode: AudioRestrictionMode)
 
     /**
      * This defines the configuration, flags, and pre-defined structure of a [CameraGraph] instance.
@@ -741,63 +677,71 @@ public interface CameraGraph : AutoCloseable {
          */
         public suspend fun unlock3APostCapture(cancelAf: Boolean = true): Deferred<Result3A>
     }
+}
+
+/** A [BaseGraph] represents common properties and methods to operate a camera graph. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface BaseGraph : AutoCloseable {
+    /**
+     * This will cause the camera graph to start opening the [CameraDevice] and configuring a
+     * [CameraCaptureSession]. While the camera graph is alive it will attempt to keep the camera
+     * open, active, and in a configured running state.
+     */
+    public fun start()
 
     /**
-     * [Parameters] is a Map-like interface that stores the key-value parameter pairs from
-     * [CaptureRequest] and [Metadata] for each [CameraGraph]. Parameter are read/set directly using
-     * get/set methods in this interface.
-     *
-     * During an active [CameraGraph.Session], changes in [Parameters] may not be applied right
-     * away. Instead, the change will be applied after [CameraGraph.Session] closes. When there is
-     * no active [CameraGraph.Session], the change will be applied without having to wait for the
-     * session to close. When applying parameter changes, it will overwrite parameter values that
-     * were configured when building the request, and overwrite [Config.defaultParameters]. It will
-     * not overwrite [Config.requiredParameters].
-     *
-     * Note that [Parameters] only store values that is a result of methods from this interface. The
-     * parameter values that were set from implicit template values, or from building a request
-     * directly will not be reflected here.
+     * This will cause the camera graph to stop executing requests and close the current Camera2
+     * [CameraCaptureSession] (if one is active). The most recent repeating request will be
+     * preserved, and any calls to submit a request to a session will be enqueued. To stop requests
+     * from being enqueued, close the camera graph.
      */
-    public interface Parameters {
-        /** Get the value correspond to the given [CaptureRequest.Key]. */
-        public operator fun <T> get(key: CaptureRequest.Key<T>): T?
+    public fun stop()
 
-        /** Get the value correspond to the given [Metadata.Key]. */
-        public operator fun <T> get(key: Metadata.Key<T>): T?
+    /**
+     * A unique identifier for this camera graph instance. This can be used to identify the graph
+     * without holding a hard reference to the camera graph itself.
+     */
+    public val id: CameraGraphId
 
-        /** Store the [CaptureRequest] key value pair in the class. */
-        public operator fun <T : Any> set(key: CaptureRequest.Key<T>, value: T?)
+    /** The [StreamGraph] for this camera graph instance. */
+    public val streams: StreamGraph
 
-        /** Store the [Metadata] key value pair in the class. */
-        public operator fun <T : Any> set(key: Metadata.Key<T>, value: T?)
+    /**
+     * Returns the state flow of [GraphState], which emits the current state of the camera graph,
+     * including when a camera graph is stopped, starting or started.
+     */
+    public val graphState: StateFlow<GraphState>
 
-        /**
-         * Store the key value pairs in the class. The key is either [CaptureRequest.Key] or
-         * [Metadata.Key].
-         */
-        public fun setAll(newParameters: Map<Any, Any?>)
+    /**
+     * This is a hint an app can give to a camera graph to indicate whether the camera is being used
+     * in a foreground setting, for example whether the user could see the app itself. This would
+     * inform the underlying implementation to open cameras more actively (e.g., longer timeout).
+     */
+    public var isForeground: Boolean
 
-        /** Clear all [CaptureRequest] and [Metadata] parameters stored in the class. */
-        public fun clear()
+    /**
+     * This enables setting parameter values directly without having callers of camera graph to
+     * acquire sessions manually, but instead session is acquired on callers' behalf when making
+     * changes in [Parameters]. For detailed usage see [Parameters].
+     */
+    public val parameters: Parameters
 
-        /**
-         * Remove the [CaptureRequest] key value pair associated with the given key. Returns true if
-         * a key was present and removed.
-         */
-        public fun <T> remove(key: CaptureRequest.Key<T>): Boolean
+    /**
+     * This configures the camera graph to use a specific Surface for the given stream.
+     *
+     * Changing a surface may cause the camera to stall and/or reconfigure.
+     */
+    public fun setSurface(stream: StreamId, surface: Surface?)
 
-        /**
-         * Remove the [Metadata] key value pair associated with the given key. Returns true if a key
-         * was present and removed.
-         */
-        public fun <T> remove(key: Metadata.Key<T>): Boolean
-
-        /**
-         * Remove all parameters that match the given keys. The key is either [CaptureRequest.Key]
-         * or [Metadata.Key].
-         */
-        public fun removeAll(keys: Set<*>): Boolean
-    }
+    /**
+     * CameraPipe allows setting the global audio restriction through [CameraPipe] and audio
+     * restrictions on individual camera graphs. When multiple settings are present, the highest
+     * level of audio restriction across global and individual camera graphs is used as the device's
+     * audio restriction.
+     *
+     * Sets the audio restriction of camera graph.
+     */
+    public fun updateAudioRestrictionMode(mode: AudioRestrictionMode)
 }
 
 /**

@@ -20,13 +20,16 @@ import android.content.Intent
 import android.content.res.Resources.NotFoundException
 import android.os.Build
 import android.os.Bundle
+import android.os.OutcomeReceiver
 import android.os.Parcel
 import android.os.ResultReceiver
 import androidx.annotation.IntDef
+import androidx.annotation.NonNull
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.wear.remote.interactions.RemoteInteractionsUtil.isCurrentDeviceAWatch
+import androidx.wear.remote.interactions.RemoteInteractionsUtil.logDOrNotUser
 import com.google.android.gms.wearable.NodeClient
 import com.google.android.gms.wearable.Wearable
 import com.google.common.util.concurrent.ListenableFuture
@@ -113,6 +116,8 @@ constructor(
 
         private const val EXTRA_RESULT_RECEIVER: String =
             "com.google.android.wearable.intent.extra.RESULT_RECEIVER"
+
+        private var sUseWearSdkImpl: Boolean = false
 
         /**
          * Result code passed to [ResultReceiver.send] when a remote intent was sent successfully.
@@ -254,6 +259,9 @@ constructor(
      * CATEGORY_BROWSABLE, any other specified categories, and the provided data URI will be
      * delivered to the remote devices.
      *
+     * From Wear 6, the Wear SDK on the Watch will be used for starting remote activities on the
+     * connected companion.
+     *
      * @param targetIntent The intent to open on the remote device. Action must be set to
      *   [android.content.Intent.ACTION_VIEW], a data URI must be populated using
      *   [android.content.Intent.setData], and the category
@@ -270,18 +278,34 @@ constructor(
         targetIntent: Intent,
         targetNodeId: String? = null,
     ): ListenableFuture<Void> {
-        return CallbackToFutureAdapter.getFuture {
-            require(Intent.ACTION_VIEW == targetIntent.action) {
-                "Only ${Intent.ACTION_VIEW} action is currently supported for starting a" +
-                    " remote activity"
-            }
-            requireNotNull(targetIntent.data) {
-                "Data URI is required when starting a remote activity"
-            }
-            require(targetIntent.categories?.contains(Intent.CATEGORY_BROWSABLE) == true) {
-                "The category ${Intent.CATEGORY_BROWSABLE} must be present on the intent"
-            }
+        if (remoteInteractionsManager.isStartRemoteActivityApiSupported) {
+            return startRemoteActivity(remoteInteractionsManager, targetIntent, executor)
+        }
+        return startRemoteActivityLegacy(targetIntent, targetNodeId)
+    }
 
+    private fun checkTargetIntentPrecondition(targetIntent: Intent) {
+        require(Intent.ACTION_VIEW == targetIntent.action) {
+            "Only ${Intent.ACTION_VIEW} action is currently supported for starting a" +
+                " remote activity"
+        }
+        requireNotNull(targetIntent.data) { "Data URI is required when starting a remote activity" }
+        require(targetIntent.categories?.contains(Intent.CATEGORY_BROWSABLE) == true) {
+            "The category ${Intent.CATEGORY_BROWSABLE} must be present on the intent"
+        }
+    }
+
+    /**
+     * The legacy implementation of startRemoteActivity and will be called when the sdk version is
+     * older than API 36 / Wear SDK version 6.
+     */
+    @VisibleForTesting
+    internal fun startRemoteActivityLegacy(
+        targetIntent: Intent,
+        targetNodeId: String? = null,
+    ): ListenableFuture<Void> {
+        return CallbackToFutureAdapter.getFuture {
+            checkTargetIntentPrecondition(targetIntent)
             startCreatingIntentForRemoteActivity(
                 targetIntent,
                 targetNodeId,
@@ -297,6 +321,34 @@ constructor(
                     }
                 }
             )
+        }
+    }
+
+    @RequiresApi(36)
+    private fun startRemoteActivity(
+        @NonNull remoteInteractionsManager: IRemoteInteractionsManager,
+        targetIntent: Intent,
+        @NonNull executor: Executor
+    ): ListenableFuture<Void> {
+        return CallbackToFutureAdapter.getFuture { completer ->
+            checkTargetIntentPrecondition(targetIntent)
+            remoteInteractionsManager.startRemoteActivity(
+                targetIntent.data!!, // Already checked previously so it's safe.
+                targetIntent.categories!!.toList(), // Already checked previously so it's safe.
+                executor,
+                object : OutcomeReceiver<Void, Throwable> {
+                    override fun onResult(result: Void) {
+                        logDOrNotUser("startRemoteActivity", "onResult")
+                        completer.set(null)
+                    }
+
+                    override fun onError(error: Throwable) {
+                        logDOrNotUser("startRemoteActivity", "onError:$error")
+                        completer.setException(error)
+                    }
+                }
+            )
+            "startRemoteActivity"
         }
     }
 

@@ -54,8 +54,7 @@ import org.jetbrains.kotlin.gradle.targets.js.ir.DefaultIncrementalSyncTask
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsEnvSpec
 import org.jetbrains.kotlin.gradle.targets.js.testing.KotlinJsTest
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
-import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootEnvSpec
-import org.jetbrains.kotlin.gradle.targets.js.yarn.yarn
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
@@ -766,14 +765,14 @@ private fun Project.configureNode() {
     }
 
     // https://youtrack.jetbrains.com/issue/KT-73913/K-Wasm-yarn-version-per-project
-    rootProject.extensions.findByType(YarnRootEnvSpec::class.java)?.let {
-        it.version.set(getVersionByName("yarn"))
-        it.yarnLockMismatchReport.set(YarnLockMismatchReport.FAIL)
-    }
-
-    if (!ProjectLayoutType.isPlayground(this)) {
-        // https://youtrack.jetbrains.com/issue/KT-73913/K-Wasm-yarn-version-per-project
-        yarn.lockFileDirectory = File(project.getPrebuiltsRoot(), "androidx/javascript-for-kotlin")
+    rootProject.extensions.findByType(YarnRootExtension::class.java)?.let { yarn ->
+        @Suppress("DEPRECATION")
+        yarn.version = getVersionByName("yarn")
+        yarn.yarnLockMismatchReport = YarnLockMismatchReport.FAIL
+        if (!ProjectLayoutType.isPlayground(this)) {
+            yarn.lockFileDirectory =
+                File(project.getPrebuiltsRoot(), "androidx/javascript-for-kotlin")
+        }
     }
 }
 

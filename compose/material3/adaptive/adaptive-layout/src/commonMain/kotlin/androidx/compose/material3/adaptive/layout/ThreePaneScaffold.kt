@@ -233,7 +233,7 @@ private object DefaultThreePaneScaffoldOverride : ThreePaneScaffoldOverride {
                     )
                 }
                 .apply {
-                    this.scaffoldDirective = scaffoldDirective
+                    this.scaffoldDirective = this@ThreePaneScaffold.scaffoldDirective
                     this.scaffoldValue = scaffoldState.targetState
                     this.paneOrder = ltrPaneOrder
                 }
@@ -776,12 +776,23 @@ private class ThreePaneContentMeasurePolicy(
             // During animation remeasuring can happen multiple times, with the measuring result
             // equals to the lookahead measure. We don't want to override the original measurement
             // so we only use the very first measurement
-            paneMotionData.originSize = paneMotionData.targetSize
-            paneMotionData.originPosition = paneMotionData.targetPosition
+            paneMotionData.originSize =
+                if (paneMotionData.isTargetSizeAndPositionSet) {
+                    paneMotionData.targetSize
+                } else {
+                    size
+                }
+            paneMotionData.originPosition =
+                if (paneMotionData.isTargetSizeAndPositionSet) {
+                    paneMotionData.targetPosition
+                } else {
+                    topLeft
+                }
             paneMotionData.isOriginSizeAndPositionSet = true
         }
         paneMotionData.targetSize = size
         paneMotionData.targetPosition = topLeft
+        paneMotionData.isTargetSizeAndPositionSet = true
     }
 
     private fun Placeable.PlacementScope.getLocalBounds(bounds: Rect): IntRect {

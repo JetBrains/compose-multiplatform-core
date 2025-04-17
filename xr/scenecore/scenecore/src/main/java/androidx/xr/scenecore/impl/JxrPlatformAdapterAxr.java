@@ -62,6 +62,7 @@ import androidx.xr.runtime.internal.SoundPoolExtensionsWrapper;
 import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.internal.SpatialCapabilities;
 import androidx.xr.runtime.internal.SpatialEnvironment;
+import androidx.xr.runtime.internal.SpatialPointerComponent;
 import androidx.xr.runtime.internal.SpatialVisibility;
 import androidx.xr.runtime.internal.SurfaceEntity;
 import androidx.xr.runtime.internal.TextureResource;
@@ -360,7 +361,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         Node taskWindowLeashNode = extensions.createNode();
         // TODO: b/376934871 - Check async results.
         extensions.attachSpatialScene(
-                activity, rootSceneNode, taskWindowLeashNode, (result) -> {}, Runnable::run);
+                activity, rootSceneNode, taskWindowLeashNode, Runnable::run, (result) -> {});
         try (NodeTransaction transaction = extensions.createNodeTransaction()) {
             transaction
                     .setParent(taskWindowLeashNode, rootSceneNode)
@@ -483,7 +484,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     private void setSpatialStateCallback() {
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mExtensions.setSpatialStateCallback(
-                mActivity, this::onSpatialStateChanged, mainHandler::post);
+                mActivity, mainHandler::post, this::onSpatialStateChanged);
     }
 
     private synchronized void initPerceptionLibrary() {
@@ -536,10 +537,10 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         try {
             mExtensions.setVisibilityStateCallback(
                     mActivity,
+                    callbackExecutor,
                     (spatialVisibilityEvent) ->
                             listener.accept(
-                                    RuntimeUtils.convertSpatialVisibility(spatialVisibilityEvent)),
-                    callbackExecutor);
+                                    RuntimeUtils.convertSpatialVisibility(spatialVisibilityEvent)));
         } catch (RuntimeException e) {
             Log.e(
                     TAG,
@@ -656,14 +657,14 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     public void requestFullSpaceMode() {
         // TODO: b/376934871 - Check async results.
         mExtensions.requestFullSpaceMode(
-                mActivity, /* requestEnter= */ true, (result) -> {}, Runnable::run);
+                mActivity, /* requestEnter= */ true, Runnable::run, (result) -> {});
     }
 
     @Override
     public void requestHomeSpaceMode() {
         // TODO: b/376934871 - Check async results.
         mExtensions.requestFullSpaceMode(
-                mActivity, /* requestEnter= */ false, (result) -> {}, Runnable::run);
+                mActivity, /* requestEnter= */ false, Runnable::run, (result) -> {});
     }
 
     // ResolvableFuture is marked as RestrictTo(LIBRARY_GROUP_PREFIX), which is intended for classes
@@ -1162,6 +1163,12 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @Override
     @NonNull
+    public SpatialPointerComponent createSpatialPointerComponent() {
+        return new SpatialPointerComponentImpl(mExtensions);
+    }
+
+    @Override
+    @NonNull
     public ActivityPanelEntity createActivityPanelEntity(
             @NonNull Pose pose,
             @NonNull PixelDimensions windowBoundsPx,
@@ -1275,7 +1282,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     public void setPreferredAspectRatio(@NonNull Activity activity, float preferredRatio) {
         // TODO: b/376934871 - Check async results.
         mExtensions.setPreferredAspectRatio(
-                activity, preferredRatio, (result) -> {}, Runnable::run);
+                activity, preferredRatio, Runnable::run, (result) -> {});
     }
 
     @Override
@@ -1303,7 +1310,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         mExtensions.clearSpatialStateCallback(mActivity);
         clearSpatialVisibilityChangedListener();
         // TODO: b/376934871 - Check async results.
-        mExtensions.detachSpatialScene(mActivity, (result) -> {}, Runnable::run);
+        mExtensions.detachSpatialScene(mActivity, Runnable::run, (result) -> {});
         mActivity = null;
         mEntityManager.getAllEntities().forEach(Entity::dispose);
         mEntityManager.clear();

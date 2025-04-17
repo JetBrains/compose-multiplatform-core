@@ -37,7 +37,7 @@ import kotlinx.coroutines.flow.StateFlow
  * [composable].
  */
 @Navigator.Name("composable")
-public class ComposeNavigator constructor() : Navigator<Destination>() {
+public class ComposeNavigator constructor() : Navigator<Destination>(NAME) {
 
     /** Get the map of transitions currently in progress from the [state]. */
     internal val transitionsInProgress

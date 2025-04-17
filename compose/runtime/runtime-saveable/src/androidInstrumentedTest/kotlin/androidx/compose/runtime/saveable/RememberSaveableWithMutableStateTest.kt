@@ -74,6 +74,27 @@ class RememberSaveableWithMutableStateTest {
     }
 
     @Test
+    fun restoreWithSerializer() {
+        var state: MutableState<Holder>? = null
+        restorationTester.setContent {
+            state =
+                rememberSaveable(stateSerializer = HolderSerializer) { mutableStateOf(Holder(0)) }
+        }
+
+        rule.runOnIdle {
+            assertThat(state!!.value).isEqualTo(Holder(0))
+
+            state!!.value.value = 1
+            // we null it to ensure recomposition happened
+            state = null
+        }
+
+        restorationTester.emulateSavedInstanceStateRestore()
+
+        rule.runOnIdle { assertThat(state!!.value).isEqualTo(Holder(1)) }
+    }
+
+    @Test
     fun nullableStateRestoresNonNullValue() {
         var state: MutableState<String?>? = null
         restorationTester.setContent { state = rememberSaveable { mutableStateOf(null) } }

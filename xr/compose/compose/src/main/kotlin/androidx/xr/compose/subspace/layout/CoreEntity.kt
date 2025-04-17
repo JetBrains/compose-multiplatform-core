@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.subspace.layout
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.unit.Density
 import androidx.xr.compose.subspace.SpatialPanelDefaults
@@ -32,6 +33,7 @@ import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.PixelDimensions
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.scene
+import kotlin.math.max
 
 /**
  * Wrapper class for Entities from SceneCore to provide convenience methods for working with
@@ -217,10 +219,34 @@ internal class CoreMainPanelEntity(session: Session, density: Density) :
      *
      * Note that a non-hidden entity may still not be visible if its alpha is 0.
      */
-    public var hidden
+    public var hidden: Boolean
         get() = entity.isHidden(includeParents = true)
         set(value) {
             entity.setHidden(value)
+        }
+
+    /**
+     * The size of the [CoreMainPanelEntity] in pixels.
+     *
+     * This value is used to set the size of the CoreMainPanelEntity. If the width or height is zero
+     * or negative, the main panel will be hidden and its size will be adjusted to 1 because the
+     * underlying implementation of the main panel entity does not allow for zero or negative sizes.
+     */
+    override var size: IntVolumeSize
+        get() = super.size
+        set(value) {
+            hidden = value.width <= 0 || value.height <= 0
+            if (hidden) {
+                Log.w(
+                    "MainPanel",
+                    "Main panel size is zero or negative. The main panel will be hidden."
+                )
+            }
+
+            val clampedWidth = max(value.width, 1)
+            val clampedHeight = max(value.height, 1)
+
+            super.size = IntVolumeSize(clampedWidth, clampedHeight, value.depth)
         }
 
     override fun dispose() {

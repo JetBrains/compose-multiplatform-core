@@ -34,6 +34,8 @@ import androidx.xr.runtime.internal.PlaneType as RtPlaneType
 import androidx.xr.runtime.internal.ResizeEvent as RtResizeEvent
 import androidx.xr.runtime.internal.Space as RtSpace
 import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.runtime.internal.SpatialPointerIcon as RtSpatialPointerIcon
+import androidx.xr.runtime.internal.SpatialPointerIconType as RtSpatialPointerIconType
 import androidx.xr.runtime.internal.SpatialVisibility as RtSpatialVisibility
 import androidx.xr.runtime.internal.TextureSampler as RtTextureSampler
 import androidx.xr.runtime.math.Ray
@@ -304,4 +306,21 @@ internal fun Int.toHitTestSurfaceType(): Int {
 /** Extension function that converts a [RtHitTestResult] to a [HitTestResult]. */
 internal fun RtHitTestResult.toHitTestResult(): HitTestResult {
     return HitTestResult(hitPosition, surfaceNormal, surfaceType.toHitTestSurfaceType(), distance)
+}
+
+@RtSpatialPointerIconType
+internal fun SpatialPointerIcon.toRtSpatialPointerIcon(): Int {
+    return when (this) {
+        SpatialPointerIconNone -> RtSpatialPointerIcon.TYPE_NONE
+        SpatialPointerIconCircle -> RtSpatialPointerIcon.TYPE_CIRCLE
+    }
+}
+
+internal fun Int.toSpatialPointerIcon(): SpatialPointerIcon? {
+    return when (this) {
+        RtSpatialPointerIcon.TYPE_NONE -> SpatialPointerIconNone
+        RtSpatialPointerIcon.TYPE_CIRCLE -> SpatialPointerIconCircle
+        RtSpatialPointerIcon.TYPE_DEFAULT -> null
+        else -> error("Unknown spatial pointer icon type: $this")
+    }
 }

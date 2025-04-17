@@ -58,4 +58,13 @@ internal object Dependencies {
             NullTranslatorSelector()
         }
     }
+
+    internal val schemaAppFunctionInventory: SchemaAppFunctionInventory? by lazy {
+        try {
+            SchemaAppFunctionInventory::class.java.findImpl(prefix = "$", suffix = "_Impl")
+        } catch (e: Exception) {
+            Log.d(APP_FUNCTIONS_TAG, "Cannot find SchemaAppFunctionInventory implementation")
+            null
+        }
+    }
 }

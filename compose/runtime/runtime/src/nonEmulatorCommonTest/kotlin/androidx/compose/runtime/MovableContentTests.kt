@@ -1546,6 +1546,7 @@ class MovableContentTests {
 
         condition = true
         expectChanges()
+        println("Done")
         revalidate()
         verifyConsistent()
     }

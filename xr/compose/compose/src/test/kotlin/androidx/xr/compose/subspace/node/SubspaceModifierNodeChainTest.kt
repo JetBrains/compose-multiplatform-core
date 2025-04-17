@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.subspace.node
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
@@ -27,12 +28,18 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.CoreEntityNode
 import androidx.xr.compose.subspace.layout.CoreEntityScope
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.offset
+import androidx.xr.compose.subspace.layout.onPointSourceParams
+import androidx.xr.compose.subspace.layout.size
+import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.TestSetup
 import com.google.common.truth.Truth.assertThat
@@ -52,6 +59,87 @@ class SubspaceModifierNodeChainTest {
     @Before
     fun setUp() {
         nodeCount = 0
+    }
+
+    @Test
+    fun nodeChain_structuralUpdateReusesModifiers_differentSize() {
+        var executionCounter = 0
+        val modifier =
+            mutableStateOf(
+                SubspaceModifier.size(300.dp).offset(x = 1.dp).onPointSourceParams {
+                    executionCounter += 1
+                }
+            )
+        composeTestRule.setContent {
+            TestSetup { Subspace { SpatialPanel(modifier = modifier.value) { Box {} } } }
+        }
+
+        composeTestRule.waitForIdle()
+        assertThat(executionCounter).isEqualTo(1)
+
+        // Update modifier chain. Width, offset, and onPointSourceParams will be re-used and not
+        // execute
+        // again.
+        modifier.value =
+            SubspaceModifier.width(300.dp).height(200.dp).offset(x = 1.dp).onPointSourceParams {
+                executionCounter += 1
+            }
+        composeTestRule.waitForIdle()
+        assertThat(executionCounter).isEqualTo(1)
+    }
+
+    @Test
+    fun nodeChain_structuralUpdateReusesModifiers_sameSize() {
+        var executionCounter = 0
+        val modifier =
+            mutableStateOf(
+                SubspaceModifier.size(300.dp).offset(x = 1.dp).onPointSourceParams {
+                    executionCounter += 1
+                }
+            )
+        composeTestRule.setContent {
+            TestSetup { Subspace { SpatialPanel(modifier = modifier.value) { Box {} } } }
+        }
+
+        composeTestRule.waitForIdle()
+        assertThat(executionCounter).isEqualTo(1)
+
+        // Update modifier chain. width and onPointSourceParams should be re-used and not execute
+        // again.
+        modifier.value =
+            SubspaceModifier.width(300.dp).height(200.dp).onPointSourceParams {
+                executionCounter += 1
+            }
+        composeTestRule.waitForIdle()
+        assertThat(executionCounter).isEqualTo(1)
+    }
+
+    @Test
+    fun nodeChain_moveOperationReconstructsModifier() {
+        var executionCounter = 0
+        val modifier =
+            mutableStateOf(
+                SubspaceModifier.size(300.dp).offset(x = 1.dp).onPointSourceParams {
+                    executionCounter += 1
+                }
+            )
+        composeTestRule.setContent {
+            TestSetup { Subspace { SpatialPanel(modifier = modifier.value) { Box {} } } }
+        }
+
+        composeTestRule.waitForIdle()
+        assertThat(executionCounter).isEqualTo(1)
+
+        // Update modifier chain. onPointSourceParams will be reconstructed because it is moved,
+        // causing
+        // the callback to increase count to execute again.
+        modifier.value =
+            SubspaceModifier.onPointSourceParams { executionCounter += 1 }
+                .width(300.dp)
+                .size(300.dp)
+                .offset(x = 1.dp)
+        composeTestRule.waitForIdle()
+        assertThat(executionCounter).isEqualTo(2)
     }
 
     @Test

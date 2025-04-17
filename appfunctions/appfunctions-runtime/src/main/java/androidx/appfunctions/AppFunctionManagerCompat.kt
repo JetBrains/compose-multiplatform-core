@@ -241,7 +241,7 @@ internal constructor(
                 AppFunctionManagerCompat(
                     context,
                     Dependencies.translatorSelector,
-                    AppSearchAppFunctionReader(context),
+                    AppSearchAppFunctionReader(context, Dependencies.schemaAppFunctionInventory),
                     ExtensionAppFunctionManagerApi(context),
                 )
             } else {

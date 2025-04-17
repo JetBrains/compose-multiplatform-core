@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <appfunctions>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.SerializableInputFunctions#simpleFunction</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>
@@ -28,9 +25,6 @@
         <functionId>com.testdata.SerializableInputFunctions#simpleFunction</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.SerializableInputFunctions#simpleFunctionBothSerializableListAndListItemNullable</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>
@@ -60,9 +54,6 @@
         <functionId>com.testdata.SerializableInputFunctions#simpleFunctionBothSerializableListAndListItemNullable</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.SerializableInputFunctions#simpleFunctionNullableSerializable</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>
@@ -87,9 +78,6 @@
         <functionId>com.testdata.SerializableInputFunctions#simpleFunctionNullableSerializable</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.SerializableInputFunctions#simpleFunctionNullableSerializableList</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>
@@ -119,9 +107,6 @@
         <functionId>com.testdata.SerializableInputFunctions#simpleFunctionNullableSerializableList</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.SerializableInputFunctions#simpleFunctionSerializableList</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>
@@ -151,9 +136,6 @@
         <functionId>com.testdata.SerializableInputFunctions#simpleFunctionSerializableList</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.SerializableInputFunctions#simpleFunctionSerializableListItemNullable</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>

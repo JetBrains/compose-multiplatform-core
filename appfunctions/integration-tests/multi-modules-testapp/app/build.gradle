@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import androidx.build.KotlinTarget
-
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
@@ -30,6 +27,7 @@ android {
         minSdk = 33
         ksp {
             arg("appfunctions:aggregateAppFunctions", "true")
+            arg("appfunctions:generateMetadataFromSchema", "true")
         }
     }
     buildTypes {
@@ -60,11 +58,5 @@ dependencies {
     androidTestImplementation("androidx.appsearch:appsearch-platform-storage:1.1.0-beta01")
     androidTestImplementation('androidx.concurrent:concurrent-futures-ktx:1.1.0')
     androidTestImplementation(project(":appfunctions:integration-tests:multi-modules-testapp:shared-library"))
-    // TODO(b/408436534): Re-enable once the issue has resolved.
-//    kspAndroidTest(project(":appfunctions:appfunctions-compiler"))
-}
-
-androidx {
-    //TODO(b/407637586): Target Kotlin 2. Fails :appfunctions:integration-tests:multi-modules-testapp:app:kspDebugAndroidTestKotlin
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
+   kspAndroidTest(project(":appfunctions:appfunctions-compiler"))
 }

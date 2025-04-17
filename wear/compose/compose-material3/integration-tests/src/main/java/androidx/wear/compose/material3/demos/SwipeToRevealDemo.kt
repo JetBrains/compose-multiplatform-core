@@ -22,8 +22,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MoreVert
@@ -40,8 +40,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.GestureInclusion
-import androidx.wear.compose.foundation.RevealActionType
-import androidx.wear.compose.foundation.RevealValue
 import androidx.wear.compose.foundation.SwipeToDismissBoxState
 import androidx.wear.compose.foundation.edgeSwipeToDismiss
 import androidx.wear.compose.foundation.rememberRevealState
@@ -278,10 +276,19 @@ fun SwipeToRevealTwoActionsWithUndo() {
 
 @Composable
 fun SwipeToRevealInScalingLazyColumn() {
-    val namesList = remember { mutableStateListOf("Alice", "Bob", "Charlie", "Dave", "Eve") }
+    data class ListItem(val name: String, var undoButtonClicked: Boolean = false)
+    val listState = remember {
+        mutableStateListOf(
+            ListItem("Alice"),
+            ListItem("Bob"),
+            ListItem("Charlie"),
+            ListItem("Dave"),
+            ListItem("Eve"),
+        )
+    }
     val coroutineScope = rememberCoroutineScope()
     ScalingLazyDemo(contentPadding = PaddingValues(0.dp)) {
-        items(namesList.size, key = { namesList[it] }) {
+        items(listState.size, key = { listState[it].name }) { index ->
             val revealState =
                 rememberRevealState(
                     anchors =
@@ -289,7 +296,7 @@ fun SwipeToRevealInScalingLazyColumn() {
                             anchorWidth = SwipeToRevealDefaults.DoubleActionAnchorWidth
                         )
                 )
-            val name = remember { namesList[it] }
+            val item = remember { listState[index] }
             SwipeToReveal(
                 revealState = revealState,
                 actions = {
@@ -297,11 +304,11 @@ fun SwipeToRevealInScalingLazyColumn() {
                         onClick = {
                             coroutineScope.launch {
                                 delay(2000)
-                                // After a delay, remove the item from the list if the last action
-                                // performed by the user is still the primary action, so the user
-                                // didn't press "Undo".
-                                if (revealState.lastActionType == RevealActionType.PrimaryAction) {
-                                    namesList.remove(name)
+                                // After a delay, remove the item from the list if the last
+                                // action performed by the user is still the primary action, so
+                                // the user didn't press "Undo".
+                                if (!item.undoButtonClicked) {
+                                    listState.remove(item)
                                 }
                             }
                         },
@@ -309,17 +316,14 @@ fun SwipeToRevealInScalingLazyColumn() {
                         text = { Text("Delete") }
                     )
                     secondaryAction(
-                        onClick = {
-                            // Add a duplicate item to the list, if it doesn't exist already
-                            val nextName = "$name+"
-                            if (!namesList.contains(nextName)) {
-                                namesList.add(namesList.indexOf(name) + 1, nextName)
-                                coroutineScope.launch { revealState.animateTo(RevealValue.Covered) }
-                            }
+                        onClick = { /* This block is called when the secondary action is executed. */
                         },
-                        icon = { Icon(Icons.Filled.Add, contentDescription = "Duplicate") }
+                        icon = { Icon(Icons.Filled.MoreVert, contentDescription = "Duplicate") }
                     )
-                    undoPrimaryAction(onClick = {}, text = { Text("Undo Delete") })
+                    undoPrimaryAction(
+                        onClick = { item.undoButtonClicked = true },
+                        text = { Text("Undo Delete") }
+                    )
                 }
             ) {
                 Button(
@@ -339,7 +343,7 @@ fun SwipeToRevealInScalingLazyColumn() {
                             )
                     }
                 ) {
-                    Text(name)
+                    Text(item.name)
                 }
             }
         }

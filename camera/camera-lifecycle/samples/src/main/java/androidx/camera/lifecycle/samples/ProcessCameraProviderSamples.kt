@@ -26,6 +26,7 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ConcurrentCamera.SingleCameraConfig
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
+import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.ProcessCameraProvider.Companion.configureInstance
 import androidx.camera.view.PreviewView
@@ -88,6 +89,7 @@ fun getCameraXConfigSample(executor: Executor, handler: Handler) {
 fun configureAndGetInstanceSample(executor: Executor, scheduleHandler: Handler) {
     var configured = false // Whether the camera provider has been configured or not.
 
+    @androidx.annotation.OptIn(ExperimentalCameraProviderConfiguration::class)
     suspend fun getInstance(context: Context): ProcessCameraProvider {
         synchronized(CameraProvider::class.java) {
             if (!configured) {

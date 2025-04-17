@@ -56,15 +56,19 @@ import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.OrbiterEdge
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialExternalSurface
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.StereoMode
+import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SpatialSmoothFeatheringEffect
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.movable
+import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.onPointSourceParams
 import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.width
@@ -452,18 +456,7 @@ class VideoPlayerActivity : ComponentActivity() {
                         if (stereoMode == StereoMode.TopBottom) videoHeight / 2 else videoHeight
                     )
                     .onPointSourceParams {
-                        mediaPlayer = MediaPlayer()
-                        mediaPlayer.setDataSource(this@VideoPlayerActivity, mediaUriState.value!!)
-                        mediaPlayer.isLooping = true
-                        mediaPlayer.setOnVideoSizeChangedListener { _, width, height ->
-                            // Keeps the width of the video locked to 600dp and updates the height
-                            // to match video
-                            // aspect ratio.
-                            videoHeight = videoWidth * height / width
-                        }
-                        mediaPlayer.setOnPreparedListener { mediaPlayer.start() }
                         SpatialMediaPlayer.setPointSourceParams(session!!, mediaPlayer, it)
-
                         mediaPlayer.prepareAsync()
                     }
                     .movable()
@@ -489,9 +482,29 @@ class VideoPlayerActivity : ComponentActivity() {
                         )
                 },
         ) {
-            DisposableEffect(true) {
-                mediaPlayer.setSurface(surface)
-                onDispose { mediaPlayer.release() }
+            onSurfaceCreated {
+                mediaPlayer = MediaPlayer()
+                mediaPlayer.setDataSource(this@VideoPlayerActivity, mediaUriState.value!!)
+                mediaPlayer.isLooping = true
+                mediaPlayer.setOnVideoSizeChangedListener { _, width, height ->
+                    // Keeps the width of the video locked to 600dp and updates the height to match
+                    // video
+                    // aspect ratio.
+                    videoHeight = videoWidth * height / width
+                }
+                mediaPlayer.setOnPreparedListener { mediaPlayer.start() }
+                mediaPlayer.setSurface(it)
+            }
+
+            onSurfaceDestroyed { mediaPlayer.release() }
+
+            SpatialBox(
+                modifier = SubspaceModifier.fillMaxSize(),
+                alignment = SpatialAlignment.TopRight
+            ) {
+                SpatialPanel(SubspaceModifier.offset(z = 30.dp)) {
+                    Button(onClick = { videoPlayingState.value = false }) { Text("Close") }
+                }
             }
 
             // Offset avoids depth perception issues when playing stereoscopic video.

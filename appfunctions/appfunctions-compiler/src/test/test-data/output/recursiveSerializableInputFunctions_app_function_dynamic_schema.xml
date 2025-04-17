@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <appfunctions>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.RecursiveSerializableInputFunctions#simpleFunction</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>
@@ -28,9 +25,6 @@
         <functionId>com.testdata.RecursiveSerializableInputFunctions#simpleFunction</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.RecursiveSerializableInputFunctions#simpleFunctionNullableSerializable</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>
@@ -55,9 +49,6 @@
         <functionId>com.testdata.RecursiveSerializableInputFunctions#simpleFunctionNullableSerializable</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.RecursiveSerializableInputFunctions#simpleFunctionNullableSerializableList</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>
@@ -87,9 +78,6 @@
         <functionId>com.testdata.RecursiveSerializableInputFunctions#simpleFunctionNullableSerializableList</functionId>
     </appfunction>
     <appfunction>
-        <components>
-            <id>unused</id>
-        </components>
         <id>com.testdata.RecursiveSerializableInputFunctions#simpleFunctionSerializableList</id>
         <enabledByDefault>true</enabledByDefault>
         <parameters>

@@ -16,7 +16,13 @@
 
 package androidx.appfunctions
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.appsearch.annotation.Document
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 @Document(name = "com.google.android.appfunctions.schema.common.v1.types.Attachment")
 data class LegacyAttachment(
@@ -48,7 +54,15 @@ data class LegacyDateTime(
     @Document.DocumentProperty(required = true) val date: LegacyDate,
     /** The time. */
     @Document.DocumentProperty(required = true) val timeOfDay: LegacyTimeOfDay,
-)
+) {
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun toZonedDateTime(): ZonedDateTime =
+        ZonedDateTime.of(
+            LocalDate.of(date.year, date.month, date.day),
+            LocalTime.of(timeOfDay.hours, timeOfDay.minutes, timeOfDay.seconds, timeOfDay.nanos),
+            ZoneId.of(timeZone)
+        )
+}
 
 /** A date. */
 @Document(name = "com.google.android.appfunctions.schema.common.v1.types.Date")
@@ -110,3 +124,18 @@ data class LegacySetAttachmentListField(
     @Document.Id val id: String = "", // unused
     @Document.DocumentProperty override val value: List<LegacyAttachment>,
 ) : LegacySetField<List<LegacyAttachment>>
+
+@RequiresApi(26)
+fun ZonedDateTime.toLegacyDateTime(): LegacyDateTime {
+    return LegacyDateTime(
+        timeZone = this.zone.id,
+        date = LegacyDate(year = this.year, month = this.monthValue, day = this.dayOfMonth),
+        timeOfDay =
+            LegacyTimeOfDay(
+                hours = this.hour,
+                minutes = this.minute,
+                seconds = this.second,
+                nanos = this.nano
+            )
+    )
+}

@@ -65,7 +65,7 @@ internal fun DateInputContent(
     dateFormatter: DatePickerFormatter,
     selectableDates: SelectableDates,
     colors: DatePickerColors,
-    requestFocus: Boolean
+    focusRequester: FocusRequester?
 ) {
     // Obtain the DateInputFormat for the default Locale.
     val dateInputFormat =
@@ -109,7 +109,7 @@ internal fun DateInputContent(
         dateInputFormat = dateInputFormat,
         locale = calendarModel.locale,
         colors = colors,
-        requestFocus = requestFocus
+        focusRequester = focusRequester
     )
 }
 
@@ -127,7 +127,7 @@ internal fun DateInputTextField(
     dateInputFormat: DateInputFormat,
     locale: CalendarLocale,
     colors: DatePickerColors,
-    requestFocus: Boolean
+    focusRequester: FocusRequester?
 ) {
     var text by
         rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue()) }
@@ -162,7 +162,6 @@ internal fun DateInputTextField(
             InputTextNonErroneousBottomPadding -
                 (textFieldPadding.calculateBottomPadding() + textFieldPadding.calculateTopPadding())
         }
-    val focusRequester = if (requestFocus) remember { FocusRequester() } else null
     OutlinedTextField(
         value = text,
         onValueChange = { input ->

@@ -26,6 +26,7 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.core.internal.CameraUseCaseAdapter
+import androidx.camera.core.internal.StreamSpecsCalculatorImpl
 import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
@@ -259,7 +260,10 @@ class LifecycleCameraProviderTest(
                 CameraUseCaseAdapter(
                     FakeCamera("2"),
                     FakeCameraCoordinator(),
-                    FakeCameraDeviceSurfaceManager(),
+                    StreamSpecsCalculatorImpl(
+                        FakeUseCaseConfigFactory(),
+                        FakeCameraDeviceSurfaceManager()
+                    ),
                     FakeUseCaseConfigFactory(),
                 )
             )

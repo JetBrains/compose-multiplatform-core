@@ -24,7 +24,7 @@ import androidx.room.compiler.codegen.XFileSpec
 import androidx.room.compiler.codegen.impl.XCodeBlockImpl
 import androidx.room.compiler.processing.XFiler
 
-class KotlinFileSpec(internal val actual: KFileSpec) : XFileSpec {
+internal class KotlinFileSpec(override val actual: KFileSpec) : KotlinSpec<KFileSpec>(), XFileSpec {
 
     override fun writeTo(language: CodeLanguage, generator: XFiler, mode: XFiler.Mode) {
         generator.write(actual, mode)

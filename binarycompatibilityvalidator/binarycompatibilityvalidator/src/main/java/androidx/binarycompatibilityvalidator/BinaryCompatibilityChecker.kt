@@ -292,14 +292,25 @@ class BinaryCompatibilityChecker(
             "Return type"
         )
 
-        valueParameters.isBinaryCompatibleWith(
-            otherFunction.valueParameters,
+        // bake the index into the data type for clearer reporting in error messages
+        val decoratedValueParameters: List<DecoratedAbiValueParameter> =
+            valueParameters.mapIndexed { index, valueParameter ->
+                DecoratedAbiValueParameter(index, valueParameter)
+            }
+        // by the time we get here, we already know that there are the same number of value
+        // parameters and that they have the same type. If they didn't they would be considered
+        // to be different functions. The following check is to give more detailed compatibility
+        // details on things like whether a param has a default, is vararg, etc
+        decoratedValueParameters.isBinaryCompatibleWith(
+            otherFunction.valueParameters.mapIndexed { index, valueParameter ->
+                DecoratedAbiValueParameter(index, valueParameter)
+            },
             entityName = "valueParameter",
             isAllowedAddition = { false },
-            uniqueId = AbiValueParameter::asString,
-            isBinaryCompatibleWith = AbiValueParameter::isBinaryCompatibleWith,
+            uniqueId = DecoratedAbiValueParameter::asString,
+            isBinaryCompatibleWith = DecoratedAbiValueParameter::isBinaryCompatibleWith,
             parentQualifiedName = qualifiedName.toString(),
-            errors = errors
+            errors = errors,
         )
         typeParameters.isBinaryCompatibleWith(
             otherFunction.typeParameters,
@@ -433,8 +444,8 @@ private val AbiType?.valueAsString: String
 private fun List<AbiType>.isUnbounded(): Boolean =
     isEmpty() || single().className?.toString() == "kotlin/Any"
 
-private fun AbiValueParameter.isBinaryCompatibleWith(
-    otherParam: AbiValueParameter,
+private fun DecoratedAbiValueParameter.isBinaryCompatibleWith(
+    otherParam: DecoratedAbiValueParameter,
     parentQualifiedName: String,
     errors: CompatibilityErrors
 ) {
@@ -442,7 +453,7 @@ private fun AbiValueParameter.isBinaryCompatibleWith(
     if (isVararg != otherParam.isVararg) {
         errors.add(
             "isVararg changed from ${otherParam.isVararg} to $isVararg for parameter " +
-                "${type.classNameOrTag} of $parentQualifiedName"
+                "${asString()} of $parentQualifiedName"
         )
     }
     if (hasDefaultArg != otherParam.hasDefaultArg) {
@@ -451,20 +462,20 @@ private fun AbiValueParameter.isBinaryCompatibleWith(
             else ->
                 errors.add(
                     "hasDefaultArg changed from ${otherParam.hasDefaultArg} to $hasDefaultArg for " +
-                        "parameter ${type.classNameOrTag} of $parentQualifiedName"
+                        "parameter ${asString()} of $parentQualifiedName"
                 )
         }
     }
     if (isNoinline != otherParam.isNoinline) {
         errors.add(
             "isNoinline changed from ${otherParam.isNoinline} to $isNoinline for " +
-                "parameter ${type.classNameOrTag} of $parentQualifiedName"
+                "parameter ${asString()} of $parentQualifiedName"
         )
     }
     if (isCrossinline != otherParam.isCrossinline) {
         errors.add(
             "isCrossinline changed from ${otherParam.isCrossinline} to $isCrossinline for " +
-                "parameter ${type.classNameOrTag} of $parentQualifiedName"
+                "parameter ${asString()} of $parentQualifiedName"
         )
     }
 }
@@ -579,7 +590,7 @@ private fun AbiType.asString() =
             }
     }
 
-private fun AbiValueParameter.asString() = type.asString()
+private fun DecoratedAbiValueParameter.asString() = "$index: ${type.asString()}"
 
 private fun AbiTypeArgument.asString() =
     when (this) {
@@ -678,3 +689,6 @@ private fun File.asBaselineErrors(): Set<String> =
             else -> throw RuntimeException("Unrecognized baseline format: '$formatVersion'")
         }
     }
+
+private class DecoratedAbiValueParameter(val index: Int, param: AbiValueParameter) :
+    AbiValueParameter by param

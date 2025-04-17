@@ -370,6 +370,12 @@ internal interface Owner : PositionCalculator {
      */
     fun decrementSensitiveComponentCount() {}
 
+    /** Increments count of modifiers requesting to stop the screen from going to sleep */
+    fun incrementKeepScreenOnCount() {}
+
+    /** Decrements count of modifiers requesting to stop the screen from going to sleep */
+    fun decrementKeepScreenOnCount() {}
+
     /** On Android it is only available when the view is attached. */
     val outOfFrameExecutor: OutOfFrameExecutor?
         get() = null

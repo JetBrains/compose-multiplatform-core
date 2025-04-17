@@ -30,6 +30,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
@@ -1856,5 +1857,38 @@ class GraphicsLayerTest {
         }
 
         rule.runOnIdle { assertThat(bounds).isEqualTo(Rect(10f, 10f, 20f, 20f)) }
+    }
+
+    @MediumTest
+    @Test
+    @SdkSuppress(minSdkVersion = 26)
+    fun reusedLayerIsRedrawn() {
+        val drawRed = mutableStateOf(true)
+        rule.setContent {
+            Box(Modifier.graphicsLayer().testTag("content")) {
+                ReusableContent(drawRed.value) {
+                    val thirtyPixelsInDp = with(LocalDensity.current) { 30.toDp() }
+                    Box(Modifier.size(thirtyPixelsInDp).graphicsLayer()) {
+                        if (drawRed.value) {
+                            Box(Modifier.fillMaxSize().background(Color.Red))
+                        } else {
+                            Box(Modifier.fillMaxSize().background(Color.Blue))
+                        }
+                    }
+                }
+            }
+        }
+        rule.onNodeWithTag("content").captureToImage().asAndroidBitmap().apply {
+            assertThat(width).isEqualTo(30)
+            assertThat(height).isEqualTo(30)
+            assertThat(getPixel(15, 15)).isEqualTo(Color.Red.toArgb())
+        }
+        drawRed.value = false
+        rule.waitForIdle()
+        rule.onNodeWithTag("content").captureToImage().asAndroidBitmap().apply {
+            assertThat(width).isEqualTo(30)
+            assertThat(height).isEqualTo(30)
+            assertThat(getPixel(15, 15)).isEqualTo(Color.Blue.toArgb())
+        }
     }
 }

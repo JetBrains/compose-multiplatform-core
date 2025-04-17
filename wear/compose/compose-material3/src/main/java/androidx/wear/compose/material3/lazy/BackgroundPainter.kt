@@ -18,6 +18,7 @@ package androidx.wear.compose.material3.lazy
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.addOutline
@@ -51,8 +52,15 @@ internal class BackgroundPainter(
                         this@onDraw
                     )
 
-                // TODO: b/376693576 - cache the path.
-                clipPath(Path().apply { addOutline(shapeOutline) }) {
+                if (shapeOutline != previousOutline) {
+                    previousOutline = shapeOutline
+                    cachedPath.run {
+                        reset()
+                        addOutline(shapeOutline)
+                    }
+                }
+
+                clipPath(cachedPath) {
                     if (border != null) {
                         drawOutline(
                             outline = shapeOutline,
@@ -68,4 +76,7 @@ internal class BackgroundPainter(
             }
         }
     }
+
+    private val cachedPath: Path = Path()
+    private var previousOutline: Outline? = null
 }

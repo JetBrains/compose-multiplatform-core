@@ -121,6 +121,19 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
         return lifecycleCameraProvider.getCameraInfo(cameraSelector)
     }
 
+    /**
+     * Allows shutting down this ProcessCameraProvider instance so a new instance can be retrieved
+     * by [getInstance].
+     *
+     * Once shutdownAsync is invoked, a new instance can be retrieved with [getInstance].
+     *
+     * This method should be used for testing purposes only. Along with [configureInstance], this
+     * allows the process camera provider to be used in test suites which may need to initialize
+     * CameraX in different ways in between tests.
+     *
+     * @return A [ListenableFuture] representing the shutdown status. Cancellation of this future is
+     *   a no-op.
+     */
     @VisibleForTesting
     public fun shutdownAsync(): ListenableFuture<Void> {
         return lifecycleCameraProvider.shutdownAsync()

@@ -150,4 +150,4 @@ sealed interface SizeMode {
 }
 
 /** This marker interface determines which [SizeMode]s can be used for preview compositions. */
-sealed interface PreviewSizeMode : SizeMode
+interface PreviewSizeMode : SizeMode

@@ -51,7 +51,7 @@ class DisplayInfoManagerTest {
 
         // Act
         val size = Point()
-        displayInfoManager.defaultDisplay.getRealSize(size)
+        displayInfoManager.getMaxSizeDisplay().getRealSize(size)
 
         // Assert
         assertEquals(currentDisplaySize, size)

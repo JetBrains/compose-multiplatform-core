@@ -22,6 +22,7 @@ import static androidx.appcompat.widget.ViewUtils.SDK_LEVEL_SUPPORTS_AUTOSIZE;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
@@ -44,6 +45,7 @@ import androidx.annotation.Px;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
+import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.graphics.TypefaceCompat;
 import androidx.core.text.PrecomputedTextCompat;
@@ -216,6 +218,25 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
         }
     }
 
+    private int mFontWeightAdjustmentForTesting = -1;
+
+    @VisibleForTesting
+    int getFontWeightAdjustment() {
+        if (mFontWeightAdjustmentForTesting != -1) {
+            return mFontWeightAdjustmentForTesting;
+        }
+        if (Build.VERSION.SDK_INT >= 31) {
+            return getContext().getResources().getConfiguration().fontWeightAdjustment;
+        } else {
+            return Configuration.FONT_WEIGHT_ADJUSTMENT_UNDEFINED;
+        }
+    }
+
+    @VisibleForTesting
+    void setFontWeightAdjustmentForTesting(int fontWeightAdjustmentForTesting) {
+        mFontWeightAdjustmentForTesting = fontWeightAdjustmentForTesting;
+    }
+
     /**
      * This should be accessed via
      * {@link androidx.core.view.ViewCompat#getBackgroundTintMode(android.view.View)}
@@ -260,8 +281,12 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
             // Best effort: use that new Typeface instead.
             baseTypeface = getPaint().getTypeface();
         }
+        int fontAdjustment = getFontWeightAdjustment();
+        if (fontAdjustment == Configuration.FONT_WEIGHT_ADJUSTMENT_UNDEFINED) {
+            fontAdjustment = 0;
+        }
         Typeface variationTypefaceInstance = AppCompatTextHelper.Api26Impl.createVariationInstance(
-                baseTypeface, fontVariationSettings);
+                baseTypeface, fontVariationSettings, fontAdjustment);
         if (variationTypefaceInstance != null) {
             setTypefaceInternal(variationTypefaceInstance);
             mFontVariationSettings = fontVariationSettings;

@@ -22,6 +22,7 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraUnavailableException;
 import androidx.camera.core.InitializationException;
 import androidx.camera.core.concurrent.CameraCoordinator;
+import androidx.camera.core.internal.StreamSpecsCalculator;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -40,18 +41,22 @@ public interface CameraFactory {
         /**
          * Creates a new, initialized instance of a CameraFactory.
          *
-         * @param context the android context
-         * @param threadConfig the thread config to run the camera operations
-         * @param availableCamerasLimiter a CameraSelector used to specify which cameras will be
-         *                                 loaded and available to CameraX.
+         * @param context                       the android context
+         * @param threadConfig                  the thread config to run the camera operations
+         * @param availableCamerasLimiter       a CameraSelector used to specify which cameras will
+         *                                      be loaded and available to CameraX.
          * @param cameraOpenRetryMaxTimeoutInMs the max timeout for camera open retry.
+         * @param streamSpecsCalculator         the {@link StreamSpecsCalculator} instance to use.
          * @return the factory instance
          * @throws InitializationException if it fails to create the factory.
          */
-        @NonNull CameraFactory newInstance(@NonNull Context context,
+        @NonNull
+        CameraFactory newInstance(@NonNull Context context,
                 @NonNull CameraThreadConfig threadConfig,
                 @Nullable CameraSelector availableCamerasLimiter,
-                long cameraOpenRetryMaxTimeoutInMs) throws InitializationException;
+                long cameraOpenRetryMaxTimeoutInMs,
+                @NonNull StreamSpecsCalculator streamSpecsCalculator)
+                throws InitializationException;
     }
 
     /**
@@ -88,4 +93,12 @@ public interface CameraFactory {
      * other implementation.
      */
     @Nullable Object getCameraManager();
+
+    /**
+     * Gets the {@link StreamSpecsCalculator} instance that is used to calculate the stream specs
+     * based on CameraX configurations and camera device capabilities.
+     */
+    default @NonNull StreamSpecsCalculator getStreamSpecsCalculator() {
+        return StreamSpecsCalculator.NO_OP_STREAM_SPECS_CALCULATOR;
+    }
 }
