@@ -36,10 +36,8 @@ import androidx.compose.runtime.internal.trace
 import androidx.compose.runtime.platform.SynchronizedObject
 import androidx.compose.runtime.platform.makeSynchronizedObject
 import androidx.compose.runtime.platform.synchronized
-import androidx.compose.runtime.snapshots.MutableSnapshot
 import androidx.compose.runtime.snapshots.ReaderKind
 import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.runtime.snapshots.SnapshotApplyResult
 import androidx.compose.runtime.snapshots.StateObjectImpl
 import androidx.compose.runtime.snapshots.TransparentObserverMutableSnapshot
 import androidx.compose.runtime.snapshots.TransparentObserverSnapshot
@@ -1121,11 +1119,11 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
             val callingJob = coroutineContext.job
             registerRunnerJob(callingJob)
 
-            // Observe snapshot changes and propagate them to known composers only from
+            // Observe data source invalidations and propagate them to known composers only from
             // this caller's dispatcher, never working with the same composer in parallel.
             // unregisterApplyObserver is called as part of the big finally below
             val unregisterApplyObserver =
-                Snapshot.registerApplyObserver { changed, _ ->
+                DataSource.registerInvalidator { changed ->
                     synchronized(stateLock) {
                             if (_state.value >= State.Idle) {
                                 val snapshotInvalidations = snapshotInvalidations
@@ -1465,8 +1463,8 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         }
     }
 
-    private fun readObserverOf(composition: ControlledComposition): (Any) -> Unit {
-        return { value -> composition.recordReadOf(value) }
+    private fun readObserverOf(composition: ControlledComposition): (Any) -> Boolean {
+        return { value -> composition.tryRecordReadOf(value) }
     }
 
     private fun writeObserverOf(
@@ -1484,29 +1482,11 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         modifiedValues: MutableScatterSet<Any>?,
         block: () -> T,
     ): T {
-        val snapshot =
-            Snapshot.takeMutableSnapshot(
-                readObserverOf(composition),
-                writeObserverOf(composition, modifiedValues),
+        return DataSource.isolate(writeObserverOf(composition, modifiedValues)) {
+            DataSource.observe(
+                recordDependency = readObserverOf(composition),
+                block = block,
             )
-        try {
-            return snapshot.enter(block)
-        } finally {
-            applyAndCheck(snapshot)
-        }
-    }
-
-    private fun applyAndCheck(snapshot: MutableSnapshot) {
-        try {
-            val applyResult = snapshot.apply()
-            if (applyResult is SnapshotApplyResult.Failure) {
-                error(
-                    "Unsupported concurrent change during composition. A state object was " +
-                        "modified by composition as well as being modified outside composition."
-                )
-            }
-        } finally {
-            snapshot.dispose()
         }
     }
 
