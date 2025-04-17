@@ -1,11 +1,9 @@
 // Baseline format: 1.0
-AddedAbstractMethod: androidx.compose.runtime.ControlledComposition#getAndSetShouldPauseCallback(androidx.compose.runtime.ShouldPauseCallback):
-    Added method androidx.compose.runtime.ControlledComposition.getAndSetShouldPauseCallback(androidx.compose.runtime.ShouldPauseCallback)
+AddedAbstractMethod: androidx.compose.runtime.ControlledComposition#getCompositionLocalMap():
+    Added method androidx.compose.runtime.ControlledComposition.getCompositionLocalMap()
+AddedAbstractMethod: androidx.compose.runtime.ControlledComposition#tryRecordReadOf(Object):
+    Added method androidx.compose.runtime.ControlledComposition.tryRecordReadOf(Object)
 
 
-BecameUnchecked: androidx.compose.runtime.Composer#compoundKeyHash:
-    Removed property Composer.compoundKeyHash from compatibility checked API surface
-BecameUnchecked: androidx.compose.runtime.Composer#recomposeScope:
-    Removed property Composer.recomposeScope from compatibility checked API surface
-BecameUnchecked: androidx.compose.runtime.internal.LiveLiteralKt#isLiveLiteralsEnabled:
-    Removed property LiveLiteralKt.isLiveLiteralsEnabled from compatibility checked API surface
+RemovedMethod: androidx.compose.runtime.snapshots.Snapshot.Companion#restoreNonObservable(androidx.compose.runtime.snapshots.Snapshot, androidx.compose.runtime.snapshots.Snapshot, kotlin.jvm.functions.Function1<java.lang.Object,kotlin.Unit>):
+    Removed method androidx.compose.runtime.snapshots.Snapshot.Companion.restoreNonObservable(androidx.compose.runtime.snapshots.Snapshot,androidx.compose.runtime.snapshots.Snapshot,kotlin.jvm.functions.Function1<java.lang.Object,kotlin.Unit>)

@@ -176,10 +176,9 @@ class SnapshotStateObserverBenchmark : ComposeBenchmarkBase() {
         assumeTrue(Build.VERSION.SDK_INT != 29)
         val states = mutableSetOf<Int>()
         repeat(50) { states += random.nextInt(StateCount) }
-        val snapshot: Snapshot = Snapshot.current
         benchmarkRule.measureRepeatedOnMainThread {
             random = Random(0)
-            stateObserver.notifyChanges(states, snapshot)
+            stateObserver.notifyChanges(states)
             runWithTimingDisabled {
                 stateObserver.clear()
                 setupObservations()

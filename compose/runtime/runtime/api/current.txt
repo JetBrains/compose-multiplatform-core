@@ -294,11 +294,33 @@ package androidx.compose.runtime {
     method public void prepareCompose(kotlin.jvm.functions.Function0<kotlin.Unit> block);
     method public boolean recompose();
     method public void recordModificationsOf(java.util.Set<?> values);
-    method public void recordReadOf(Object value);
+    method @Deprecated public void recordReadOf(Object value);
     method public void recordWriteOf(Object value);
+    method public boolean tryRecordReadOf(Object value);
     method @SuppressCompatibility @androidx.compose.runtime.InternalComposeApi public void verifyConsistent();
     property public abstract boolean hasPendingChanges;
     property public abstract boolean isComposing;
+  }
+
+  public interface DataSource<T, U> {
+    method public void endIsolation(Throwable? throwable, U previousIsolation);
+    method public void endObservation(T previousObservation);
+    method public static void invalidateDependants(java.util.Set<?> identifiers);
+    method public T pauseCurrentObservation();
+    method public static androidx.compose.runtime.ObserverHandle registerInvalidator(kotlin.jvm.functions.Function1<? super java.util.Set<?>,kotlin.Unit> invalidator);
+    method public void resumeCurrentObservation(T pausedObservation);
+    method public U startIsolation(kotlin.jvm.functions.Function1<java.lang.Object,kotlin.Unit>? recordChange);
+    method public T startObservation(kotlin.jvm.functions.Function1<java.lang.Object,java.lang.Boolean> recordDependency);
+    field public static final androidx.compose.runtime.DataSource.Companion Companion;
+  }
+
+  public static final class DataSource.Companion {
+    method public void invalidateDependants(java.util.Set<?> identifiers);
+    method public inline <T> T isolate(optional kotlin.jvm.functions.Function1<java.lang.Object,kotlin.Unit>? recordChange, kotlin.jvm.functions.Function0<? extends T> block);
+    method public inline <T> T observe(kotlin.jvm.functions.Function1<java.lang.Object,java.lang.Boolean> recordDependency, kotlin.jvm.functions.Function0<? extends T> block);
+    method public <T, U> androidx.compose.runtime.ObserverHandle register(androidx.compose.runtime.DataSource<T,U> dataSource);
+    method public androidx.compose.runtime.ObserverHandle registerInvalidator(kotlin.jvm.functions.Function1<? super java.util.Set<?>,kotlin.Unit> invalidator);
+    method public inline <T> T withoutReadObservation(kotlin.jvm.functions.Function0<? extends T> block);
   }
 
   @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.TYPE) public @interface DisallowComposableCalls {
@@ -467,6 +489,10 @@ package androidx.compose.runtime {
   }
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER}) public @interface NonSkippableComposable {
+  }
+
+  public fun interface ObserverHandle {
+    method public void dispose();
   }
 
   public sealed interface PausableComposition extends androidx.compose.runtime.ReusableComposition {
@@ -1055,7 +1081,8 @@ package androidx.compose.runtime.snapshots {
     method public void clear();
     method public void clear(Object scope);
     method public void clearIf(kotlin.jvm.functions.Function1<java.lang.Object,java.lang.Boolean> predicate);
-    method @org.jetbrains.annotations.TestOnly public void notifyChanges(java.util.Set<?> changes, androidx.compose.runtime.snapshots.Snapshot snapshot);
+    method @org.jetbrains.annotations.TestOnly public void notifyChanges(java.util.Set<?> changes);
+    method @Deprecated @org.jetbrains.annotations.TestOnly public void notifyChanges(java.util.Set<?> changes, androidx.compose.runtime.snapshots.Snapshot snapshot);
     method public <T> void observeReads(T scope, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> onValueChangedForScope, kotlin.jvm.functions.Function0<kotlin.Unit> block);
     method public void start();
     method public void stop();

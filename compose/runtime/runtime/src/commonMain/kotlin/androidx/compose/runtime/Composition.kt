@@ -206,12 +206,25 @@ sealed interface ControlledComposition : Composition {
 
     /**
      * Record that [value] has been read. This is used primarily by the [Recomposer] to inform the
-     * composer when the a [MutableState] instance has been read implying it should be observed for
+     * composer when a [MutableState] instance has been read implying it should be observed for
      * changes.
      *
      * @param value the instance from which a property was read
      */
-    fun recordReadOf(value: Any)
+    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    fun recordReadOf(value: Any) {
+        tryRecordReadOf(value)
+    }
+
+    /**
+     * Record that [value] has been read. This is used primarily by the [Recomposer] to inform the
+     * composer when a [MutableState] instance has been read implying it should be observed for
+     * changes.
+     *
+     * @param value the instance from which a property was read
+     * @return `true` if a read dependency was recorded, `false` otherwise
+     */
+    fun tryRecordReadOf(value: Any): Boolean
 
     /**
      * Record that [value] has been modified. This is used primarily by the [Recomposer] to inform
@@ -939,10 +952,15 @@ internal class CompositionImpl(
         }
     }
 
+    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
     override fun recordReadOf(value: Any) {
+        tryRecordReadOf(value)
+    }
+
+    override fun tryRecordReadOf(value: Any): Boolean {
         // Not acquiring lock since this happens during composition with it already held
-        if (!areChildrenComposing) {
-            composer.currentRecomposeScope?.let {
+        return if (!areChildrenComposing) {
+            composer.currentRecomposeScope?.also {
                 it.used = true
                 val alreadyRead = it.recordRead(value)
                 if (!alreadyRead) {
@@ -965,7 +983,9 @@ internal class CompositionImpl(
                         it.recordDerivedStateValue(value, record.currentValue)
                     }
                 }
-            }
+            } != null
+        } else {
+            false
         }
     }
 

@@ -4806,10 +4806,11 @@ internal fun extractMovableContentAtCurrent(
                     // Nothing to do
                 }
 
-                // [recordReadOf] this is also something that would happen only during active
+                // [tryRecordReadOf] this is also something that would happen only during active
                 // recomposition which doesn't happened to a slot table that is moving.
-                override fun recordReadOf(value: Any) {
+                override fun tryRecordReadOf(value: Any): Boolean {
                     // Nothing to do
+                    return false
                 }
             }
         slotTable.write { writer ->
