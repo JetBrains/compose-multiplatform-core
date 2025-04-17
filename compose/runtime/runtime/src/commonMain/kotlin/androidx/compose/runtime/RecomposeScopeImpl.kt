@@ -73,7 +73,12 @@ internal interface RecomposeScopeOwner {
 
     fun recomposeScopeReleased(scope: RecomposeScopeImpl)
 
-    fun recordReadOf(value: Any)
+    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    fun recordReadOf(value: Any) {
+        tryRecordReadOf(value)
+    }
+
+    fun tryRecordReadOf(value: Any): Boolean
 }
 
 private val callbackLock = makeSynchronizedObject()
@@ -423,7 +428,7 @@ internal class RecomposeScopeImpl(owner: RecomposeScopeOwner?) : ScopeUpdateScop
             trackedInstances?.let { trackedInstances ->
                 rereading = true
                 try {
-                    trackedInstances.forEach { value, _ -> owner.recordReadOf(value) }
+                    trackedInstances.forEach { value, _ -> owner.tryRecordReadOf(value) }
                 } finally {
                     rereading = false
                 }

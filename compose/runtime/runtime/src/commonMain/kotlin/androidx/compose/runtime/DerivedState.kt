@@ -69,9 +69,9 @@ internal interface DerivedState<T> : State<T> {
          * Map of the dependencies used to produce [value] or [currentValue] to nested read level.
          *
          * This map can be used to determine if the state could affect value of this derived state,
-         * when a [StateObject] appears in the apply observer set.
+         * when a value appears in the apply observer set.
          */
-        val dependencies: ObjectIntMap<StateObject>
+        val dependencies: ObjectIntMap<Any>
     }
 }
 
@@ -95,10 +95,11 @@ private class DerivedSnapshotState<T>(
             val Unset = Any()
         }
 
+        var alwaysInvalid = false
         var validSnapshotId: SnapshotId = SnapshotIdZero
         var validSnapshotWriteCount: Int = 0
 
-        override var dependencies: ObjectIntMap<StateObject> = emptyObjectIntMap()
+        override var dependencies: ObjectIntMap<Any> = emptyObjectIntMap()
         var result: Any? = Unset
         var resultHash: Int = 0
 
@@ -114,6 +115,8 @@ private class DerivedSnapshotState<T>(
         override fun create(snapshotId: SnapshotId): StateRecord = ResultRecord<T>(snapshotId)
 
         fun isValid(derivedState: DerivedState<*>, snapshot: Snapshot): Boolean {
+            if (alwaysInvalid) return false
+
             val snapshotChanged = sync {
                 validSnapshotId != snapshot.snapshotId ||
                     validSnapshotWriteCount != snapshot.writeCount
@@ -137,21 +140,21 @@ private class DerivedSnapshotState<T>(
             val dependencies = sync { dependencies }
             if (dependencies.isNotEmpty()) {
                 notifyObservers(derivedState) {
-                    dependencies.forEach { stateObject, readLevel ->
-                        if (readLevel != 1) {
+                    dependencies.forEach { dependency, readLevel ->
+                        if (readLevel != 1 || dependency !is StateObject) {
                             return@forEach
                         }
 
                         // Find the first record without triggering an observer read.
                         val record =
-                            if (stateObject is DerivedSnapshotState<*>) {
+                            if (dependency is DerivedSnapshotState<*>) {
                                 // eagerly access the parent derived states without recording the
                                 // read
                                 // that way we can be sure derived states in deps were recalculated,
                                 // and are updated to the last values
-                                stateObject.current(snapshot)
+                                dependency.current(snapshot)
                             } else {
-                                current(stateObject.firstStateRecord, snapshot)
+                                current(dependency.firstStateRecord, snapshot)
                             }
 
                         hash = 31 * hash + identityHashCode(record)
@@ -200,26 +203,28 @@ private class DerivedSnapshotState<T>(
             return readable
         }
 
-        val newDependencies = MutableObjectIntMap<StateObject>()
+        val newDependencies = MutableObjectIntMap<Any>()
+        var alwaysInvalid = false
         val result = withCalculationNestedLevel { calculationLevelRef ->
             val nestedCalculationLevel = calculationLevelRef.element
             notifyObservers(this) {
                 calculationLevelRef.element = nestedCalculationLevel + 1
 
                 val result =
-                    Snapshot.observe(
+                    DataSource.observe(
                         {
                             if (it === this) error("A derived state calculation cannot read itself")
-                            if (it is StateObject) {
-                                val readNestedLevel = calculationLevelRef.element
-                                newDependencies[it] =
-                                    min(
-                                        readNestedLevel - nestedCalculationLevel,
-                                        newDependencies.getOrDefault(it, Int.MAX_VALUE)
-                                    )
+                            if (it !is StateObject) {
+                                alwaysInvalid = true
                             }
+                            val readNestedLevel = calculationLevelRef.element
+                            newDependencies[it] =
+                                min(
+                                    readNestedLevel - nestedCalculationLevel,
+                                    newDependencies.getOrDefault(it, Int.MAX_VALUE)
+                                )
+                            true
                         },
-                        null,
                         calculation
                     )
 
@@ -237,11 +242,13 @@ private class DerivedSnapshotState<T>(
                         true
             ) {
                 readable.dependencies = newDependencies
+                readable.alwaysInvalid = alwaysInvalid
                 readable.resultHash = readable.readableHash(this, currentSnapshot)
                 readable
             } else {
                 val writable = first.newWritableRecord(this, currentSnapshot)
                 writable.dependencies = newDependencies
+                writable.alwaysInvalid = alwaysInvalid
                 writable.resultHash = writable.readableHash(this, currentSnapshot)
                 writable.result = result
                 writable
@@ -251,10 +258,12 @@ private class DerivedSnapshotState<T>(
         if (calculationBlockNestedLevel.get()?.element == 0) {
             Snapshot.notifyObjectsInitialized()
 
-            sync {
-                val currentSnapshot = Snapshot.current
-                record.validSnapshotId = currentSnapshot.snapshotId
-                record.validSnapshotWriteCount = currentSnapshot.writeCount
+            if (!record.alwaysInvalid) {
+                sync {
+                    val currentSnapshot = Snapshot.current
+                    record.validSnapshotId = currentSnapshot.snapshotId
+                    record.validSnapshotWriteCount = currentSnapshot.writeCount
+                }
             }
         }
 

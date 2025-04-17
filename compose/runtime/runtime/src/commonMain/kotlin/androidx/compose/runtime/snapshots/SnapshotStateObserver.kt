@@ -19,8 +19,10 @@ package androidx.compose.runtime.snapshots
 import androidx.collection.MutableObjectIntMap
 import androidx.collection.MutableScatterMap
 import androidx.collection.MutableScatterSet
+import androidx.compose.runtime.DataSource
 import androidx.compose.runtime.DerivedState
 import androidx.compose.runtime.DerivedStateObserver
+import androidx.compose.runtime.ObserverHandle
 import androidx.compose.runtime.TestOnly
 import androidx.compose.runtime.collection.ScopeMap
 import androidx.compose.runtime.collection.fastForEach
@@ -46,7 +48,7 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
     private val pendingChanges = AtomicReference<Any?>(null)
     private var sendingNotifications = false
 
-    private val applyObserver: (Set<Any>, Snapshot) -> Unit = { applied, _ ->
+    private val applyObserver: (Set<Any>) -> Unit = { applied ->
         addChanges(applied)
         if (drainChanges()) sendNotifications()
     }
@@ -160,9 +162,12 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
     private fun report(): Nothing = composeRuntimeError("Unexpected notification")
 
     /** The observer used by this [SnapshotStateObserver] during [observeReads]. */
-    private val readObserver: (Any) -> Unit = { state ->
+    private val readObserver: (Any) -> Boolean = { state ->
         if (!isPaused) {
             synchronized(observedScopeMapsLock) { currentMap!!.recordRead(state) }
+            true
+        } else {
+            false
         }
     }
 
@@ -294,7 +299,7 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
 
     /** Starts watching for state commits. */
     fun start() {
-        applyUnsubscribe = Snapshot.registerApplyObserver(applyObserver)
+        applyUnsubscribe = DataSource.registerInvalidator(applyObserver)
     }
 
     /** Stops watching for state commits. */
@@ -307,8 +312,20 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
      * [snapshot].
      */
     @TestOnly
+    @Deprecated(
+        "Maintained for binary compatibility",
+        ReplaceWith("notifyChanges(changes)"),
+        DeprecationLevel.HIDDEN,
+    )
+    @Suppress("unused", "UNUSED_PARAMETER")
     fun notifyChanges(changes: Set<Any>, snapshot: Snapshot) {
-        applyObserver(changes, snapshot)
+        applyObserver(changes)
+    }
+
+    /** This method is only used for testing. It notifies that [changes] have been made. */
+    @TestOnly
+    fun notifyChanges(changes: Set<Any>) {
+        applyObserver(changes)
     }
 
     /** Remove all observations. */
@@ -445,7 +462,7 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
         }
 
         /** Setup new scope for state read observation, observe them, and cleanup afterwards */
-        fun observe(scope: Any, readObserver: (Any) -> Unit, block: () -> Unit) {
+        fun observe(scope: Any, readObserver: (Any) -> Boolean, block: () -> Unit) {
             val previousScope = currentScope
             val previousReads = currentScopeReads
             val previousToken = currentToken
@@ -457,7 +474,10 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
             }
 
             observeDerivedStateRecalculations(derivedStateObserver) {
-                Snapshot.observe(readObserver, null, block)
+                DataSource.observe(
+                    recordDependency = readObserver,
+                    block = block,
+                )
             }
 
             clearObsoleteStateReads(currentScope!!)
