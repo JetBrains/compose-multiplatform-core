@@ -29,7 +29,7 @@ public final class androidx/lifecycle/compose/LifecycleExtKt {
 }
 
 public final class androidx/lifecycle/compose/LifecycleOwnerKt {
-	public static final fun LifecycleOwner (Landroidx/lifecycle/Lifecycle$State;Landroidx/lifecycle/LifecycleOwner;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun rememberLifecycleOwner (Landroidx/lifecycle/Lifecycle$State;Landroidx/lifecycle/LifecycleOwner;Landroidx/compose/runtime/Composer;II)Landroidx/lifecycle/LifecycleOwner;
 }
 
 public abstract interface class androidx/lifecycle/compose/LifecyclePauseOrDisposeEffectResult {

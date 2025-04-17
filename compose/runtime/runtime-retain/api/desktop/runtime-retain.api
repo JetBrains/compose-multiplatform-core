@@ -1,0 +1,82 @@
+public final class androidx/compose/runtime/retain/ForgetfulRetainedValuesStore : androidx/compose/runtime/retain/RetainedValuesStore {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/runtime/retain/ForgetfulRetainedValuesStore;
+	public fun consumeExitedValueOrDefault (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun onContentEnteredComposition ()V
+	public fun onContentExitComposition ()V
+	public fun saveExitingValue (Ljava/lang/Object;Ljava/lang/Object;)V
+}
+
+public final class androidx/compose/runtime/retain/LocalRetainedValuesStoreKt {
+	public static final fun LocalRetainedValuesStoreProvider (Landroidx/compose/runtime/retain/RetainedValuesStore;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
+	public static final fun getLocalRetainedValuesStore ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+}
+
+public final class androidx/compose/runtime/retain/ManagedRetainedValuesStore : androidx/compose/runtime/retain/RetainedValuesStore {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun consumeExitedValueOrDefault (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun disableRetainingExitedValues ()V
+	public final fun dispose ()V
+	public final fun enableRetainingExitedValues ()V
+	public final fun isRetainingExitedValues ()Z
+	public fun onContentEnteredComposition ()V
+	public fun onContentExitComposition ()V
+	public fun saveExitingValue (Ljava/lang/Object;Ljava/lang/Object;)V
+}
+
+public final class androidx/compose/runtime/retain/ManagedRetainedValuesStoreKt {
+	public static final fun retainManagedRetainedValuesStore (Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/retain/ManagedRetainedValuesStore;
+}
+
+public final class androidx/compose/runtime/retain/RetainKt {
+	public static final fun retain (ILkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;I)Ljava/lang/Object;
+	public static final fun retain (I[Ljava/lang/Object;Lkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;I)Ljava/lang/Object;
+}
+
+public abstract interface class androidx/compose/runtime/retain/RetainObserver {
+	public abstract fun onEnteredComposition ()V
+	public abstract fun onExitedComposition ()V
+	public abstract fun onRetained ()V
+	public abstract fun onRetired ()V
+	public abstract fun onUnused ()V
+}
+
+public final class androidx/compose/runtime/retain/RetainedEffectKt {
+	public static final fun RetainedEffect (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;I)V
+	public static final fun RetainedEffect (Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;I)V
+	public static final fun RetainedEffect (Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;I)V
+	public static final fun RetainedEffect (Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;I)V
+	public static final fun RetainedEffect ([Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;I)V
+}
+
+public abstract interface class androidx/compose/runtime/retain/RetainedEffectResult {
+	public abstract fun retire ()V
+}
+
+public final class androidx/compose/runtime/retain/RetainedEffectScope {
+	public static final field $stable I
+	public fun <init> ()V
+	public final fun onRetire (Lkotlin/jvm/functions/Function0;)Landroidx/compose/runtime/retain/RetainedEffectResult;
+}
+
+public abstract interface class androidx/compose/runtime/retain/RetainedValuesStore {
+	public abstract fun consumeExitedValueOrDefault (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+	public abstract fun onContentEnteredComposition ()V
+	public abstract fun onContentExitComposition ()V
+	public abstract fun saveExitingValue (Ljava/lang/Object;Ljava/lang/Object;)V
+}
+
+public final class androidx/compose/runtime/retain/RetainedValuesStoreRegistry {
+	public static final field $stable I
+	public fun <init> ()V
+	public final fun LocalRetainedValuesStoreProvider (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
+	public final fun clearChild (Ljava/lang/Object;)V
+	public final fun clearChildren (Lkotlin/jvm/functions/Function1;)V
+	public final fun dispose ()V
+}
+
+public final class androidx/compose/runtime/retain/RetainedValuesStoreRegistryKt {
+	public static final fun retainRetainedValuesStoreRegistry (Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/retain/RetainedValuesStoreRegistry;
+}
+

@@ -40,6 +40,9 @@ object JetBrainsPublication {
             ComposeComponent(":compose:material:material-navigation"),
             ComposeComponent(":compose:material:material-ripple"),
             ComposeComponent(":compose:runtime:runtime", supportedPlatforms = ComposePlatforms.ALL),
+            // Brought back along with reverted stubbing to publish the DataSource API
+            ComposeComponent(":compose:runtime:runtime-annotation", supportedPlatforms = ComposePlatforms.ALL),
+            ComposeComponent(":compose:runtime:runtime-retain", supportedPlatforms = ComposePlatforms.ALL),
             ComposeComponent(":compose:runtime:runtime-saveable", supportedPlatforms = ComposePlatforms.ALL),
             ComposeComponent(":compose:ui:ui"),
             ComposeComponent(":compose:ui:ui-geometry"),
@@ -118,6 +121,7 @@ object JetBrainsPublication {
         ),
         "NAVIGATION_3" to listOf(
             ComposeComponent(":navigation3:navigation3-ui"),
+            ComposeComponent(":navigation3:navigation3-runtime"),
         ),
         "NAVIGATION_EVENT" to listOf(
             ComposeComponent(":navigationevent:navigationevent-compose"),

@@ -21,45 +21,55 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.SoftwareType
-import androidx.build.PlatformIdentifier
+
+import androidx.build.AndroidXComposePlugin
+import androidx.build.LibraryType
+import org.jetbrains.androidx.build.JetBrainsAndroidXPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
+    id("com.android.library")
     alias(libs.plugins.kotlinSerialization)
+    id("JetBrainsAndroidXPlugin")
 }
 
-androidXMultiplatform {
-    androidLibrary {
-        compileSdk = 36
-        namespace = "androidx.navigation3.runtime"
-        androidResources.enable = true
-    }
-    desktop()
-    mingwX64()
-    linux()
-    mac()
-    ios()
-    tvos()
-    watchos()
-    js()
-    wasmJs()
+AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
+JetBrainsAndroidXPlugin.applyAndConfigure(project)
 
-    defaultPlatform(PlatformIdentifier.ANDROID)
+androidXComposeMultiplatform {
+    android()
+    desktop()
+    linux()
+    darwin()
+    js()
+    wasm()
+}
+
+kotlin {
+    watchosArm64()
+    watchosArm32()
+    watchosX64()
+    watchosSimulatorArm64()
+    tvosArm64()
+    tvosX64()
+    tvosSimulatorArm64()
+    mingwX64()
 
     sourceSets {
+        def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
         commonMain {
             dependencies {
+                api(libs.kotlinStdlib)
                 api(libs.kotlinSerializationCore)
-                api("androidx.compose.runtime:runtime:1.9.3")
-                api("androidx.compose.runtime:runtime-saveable:1.9.3")
-                api("androidx.savedstate:savedstate:1.3.2")
-                api("androidx.savedstate:savedstate-compose:1.3.2")
+                api(project(":compose:runtime:runtime"))
+                api(project(":compose:runtime:runtime-saveable"))
+                api(project(":savedstate:savedstate"))
+                api(project(":savedstate:savedstate-compose"))
                 implementation("androidx.collection:collection:1.5.0")
                 implementation("androidx.lifecycle:lifecycle-runtime:2.9.4")
-                api("androidx.navigationevent:navigationevent:1.0.0-rc01")
+                api("androidx.navigationevent:navigationevent:$navigationEventVersion")
             }
         }
 
@@ -68,7 +78,7 @@ androidXMultiplatform {
                 implementation(libs.kotlinTest)
                 implementation(project(":kruth:kruth"))
                 implementation(project(":compose:runtime:runtime-test-utils"))
-                implementation("androidx.navigationevent:navigationevent-testing:1.0.0-rc01")
+                implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
             }
         }
 
@@ -135,10 +145,16 @@ androidXMultiplatform {
 
 androidx {
     name = "Androidx Navigation 3 Runtime"
-    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "Provides the building blocks for a Compose first Navigation solution that " +
             "easily supports extensions."
-    samples(project(":navigation3:navigation3-runtime:navigation3-runtime-samples"))
-    addGoldenImageAssets()
+//    samples(project(":navigation3:navigation3-runtime:navigation3-runtime-samples"))
+//    addGoldenImageAssets()
+}
+
+android {
+//    compileSdk = 36
+    namespace = "androidx.navigation3.runtime"
+//    androidResources.enable = true
 }

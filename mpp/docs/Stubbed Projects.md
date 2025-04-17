@@ -3,7 +3,7 @@
 ### List:
 - `:annotation:annotation` is stubbed by `:annotation:annotation-compatibility-stubs`, it depends on `androidx.annotation`
 - `:collection:collection` is stubbed by `:collection:collection-compatibility-stubs`, it depends on `androidx.collection`
-- `:compose:runtime:runtime` is stubbed by `:compose:runtime:runtime-compatibility-stubs`, it depends on `androidx.compose.runtime:runtime`
+- `:compose:runtime:runtime` would normally be stubbed by `:compose:runtime:runtime-compatibility-stubs` but it is published again in this prototype because it contains the DataSource API
 - `:compose:runtime:runtime-saveable` is stubbed by `:compose:runtime:runtime-saveable-compatibility-stubs`, it depends on `androidx.compose.runtime:runtime-saveable`
 - `:lifecycle:lifecycle-common` is stubbed by `lifecycle/lifecycle-common-compatibility-stub`, it depends on `androidx.lifecycle:lifecycle-common`
 - `:lifecycle:lifecycle-runtime` is stubbed by `lifecycle/lifecycle-runtime-compatibility-stub`, it depends on `androidx.lifecycle:lifecycle-runtime`
