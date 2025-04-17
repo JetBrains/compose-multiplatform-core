@@ -85,6 +85,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             }
             androidMain.dependencies {
                 api("androidx.annotation:annotation:1.1.0")
+                implementation("androidx.collection:collection:1.5.0")
             }
 
             nonAndroidMain.dependsOn(commonMain)

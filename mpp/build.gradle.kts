@@ -40,6 +40,8 @@ val libraryToComponents = mapOf(
         //ComposeComponent(":compose:material:material-icons-core"),
         ComposeComponent(":compose:material:material-ripple"),
         ComposeComponent(":compose:runtime:runtime", supportedPlatforms = ComposePlatforms.ALL),
+        // Brought back along with reverted stubbing to publish the DataSource API
+        ComposeComponent(":compose:runtime:runtime-annotation", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":compose:runtime:runtime-saveable", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":compose:ui:ui"),
         ComposeComponent(":compose:ui:ui-geometry"),
