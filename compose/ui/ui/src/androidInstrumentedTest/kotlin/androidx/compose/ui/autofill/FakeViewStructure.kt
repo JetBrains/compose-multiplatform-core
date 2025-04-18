@@ -21,109 +21,83 @@ import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.os.LocaleList
-import android.os.Parcel
 import android.view.View
 import android.view.ViewStructure
 import android.view.autofill.AutofillId
 import android.view.autofill.AutofillValue
-import androidx.annotation.GuardedBy
 import androidx.annotation.RequiresApi
 
 /**
  * A fake implementation of [ViewStructure] to use in tests.
  *
- * @param virtualId An ID that is unique for each viewStructure node in the viewStructure tree.
- * @param packageName The package name of the app (Used as an autofill heuristic).
- * @param typeName The type name of the view's identifier, or null if there is none.
- * @param entryName The entry name of the view's identifier, or null if there is none.
- * @param children A list of [ViewStructure]s that are children of the current [ViewStructure].
- * @param bounds The bounds (Dimensions) of the component represented by this [ViewStructure].
- * @param autofillId The [autofillId] for the parent component. The same autofillId is used for
- *   other child components.
- * @param autofillType The data type. Can be one of the following: [View.AUTOFILL_TYPE_DATE],
- *   [View.AUTOFILL_TYPE_LIST], [View.AUTOFILL_TYPE_TEXT], [View.AUTOFILL_TYPE_TOGGLE] or
- *   [View.AUTOFILL_TYPE_NONE].
- * @param autofillHints The autofill hint. If this value not specified, we use heuristics to
- *   determine what data to use while performing autofill.
+ * We use a data class to get an equals and toString implementation. The properties are marked as
+ *
+ * @JvmField so that they don't clash with the set* functions in the ViewStructure interface that
+ *   this class implements.
  */
 @RequiresApi(Build.VERSION_CODES.M)
 internal data class FakeViewStructure(
-    var virtualId: Int = 0,
-    var packageName: String? = null,
-    var typeName: String? = null,
-    var entryName: String? = null,
-    var children: MutableList<FakeViewStructure> = mutableListOf(),
-    var bounds: Rect? = null,
-    private val autofillId: AutofillId? =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) generateAutofillId() else null,
-    internal var autofillType: Int = View.AUTOFILL_TYPE_NONE,
-    internal var autofillHints: Array<out String> = arrayOf()
+    @JvmField var virtualId: Int = 0,
+    @JvmField var packageName: String? = null,
+    @JvmField var typeName: String? = null,
+    @JvmField var entryName: String? = null,
+    @JvmField var children: MutableList<FakeViewStructure> = mutableListOf(),
+    @JvmField var bounds: Rect? = null,
+    @JvmField var autofillId: AutofillId? = null,
+    @JvmField var isCheckable: Boolean = false,
+    @JvmField var isFocusable: Boolean = false,
+    @JvmField var autofillType: Int = View.AUTOFILL_TYPE_NONE,
+    @JvmField var autofillHints: MutableList<String> = mutableListOf(),
+    @JvmField var activated: Boolean = false,
+    @JvmField var alpha: Float = 1f,
+    @JvmField var autofillOptions: MutableList<CharSequence>? = null,
+    @JvmField var autofillValue: AutofillValue? = null,
+    @JvmField var className: String? = null,
+    @JvmField var contentDescription: CharSequence? = null,
+    @JvmField var dataIsSensitive: Boolean = false,
+    @JvmField var elevation: Float = 0f,
+    @JvmField var hint: CharSequence? = null,
+    @JvmField var htmlInfo: HtmlInfo? = null,
+    @JvmField var inputType: Int = 0,
+    @JvmField var isEnabled: Boolean = true,
+    @JvmField var isAccessibilityFocused: Boolean = false,
+    @JvmField var isChecked: Boolean = false,
+    @JvmField var isClickable: Boolean = false,
+    @JvmField var isContextClickable: Boolean = false,
+    @JvmField var isFocused: Boolean = false,
+    @JvmField var isLongClickable: Boolean = false,
+    @JvmField var isOpaque: Boolean = false,
+    @JvmField var isSelected: Boolean = false,
+    @JvmField var text: CharSequence = "",
+    @JvmField var textLinesCharOffsets: MutableList<Int>? = null,
+    @JvmField var textLinesBaselines: MutableList<Int>? = null,
+    @JvmField var transformation: Matrix? = null,
+    @JvmField var visibility: Int = View.VISIBLE,
+    @JvmField var maxTextLength: Int = -1,
+    @JvmField var webDomain: String? = null,
 ) : ViewStructure() {
-
-    private var activated: Boolean = false
-    private var alpha: Float = 1f
-    private var autofillOptions: Array<CharSequence>? = null
-    private var autofillValue: AutofillValue? = null
-    private var className: String? = null
-    private var contentDescription: CharSequence? = null
-    private var dataIsSensitive: Boolean = false
-    private var elevation: Float = 0f
-    private var extras: Bundle = Bundle()
-    private var hint: CharSequence? = null
-    private var htmlInfo: HtmlInfo? = null
-    private var inputType: Int = 0
-    private var isEnabled: Boolean = true
-    private var isAccessibilityFocused: Boolean = false
-    private var isCheckable: Boolean = false
-    private var isChecked: Boolean = false
-    private var isClickable: Boolean = true
-    private var isContextClickable: Boolean = false
-    private var isFocused: Boolean = false
-    private var isFocusable: Boolean = false
-    private var isLongClickable: Boolean = false
-    private var isOpaque: Boolean = false
-    private var selected: Boolean = false
-    private var text: CharSequence = ""
-    private var textLines: IntArray? = null
-    private var transformation: Matrix? = null
-    private var visibility: Int = View.VISIBLE
-    private var webDomain: String? = null
-
-    internal companion object {
-        @GuardedBy("this") private var previousId = 0
-        private val NO_SESSION = 0
-
-        // Android API level 26 introduced Autofill. Prior to API level 26, no autofill ID will be
-        // provided.
-        @RequiresApi(Build.VERSION_CODES.O)
-        @Synchronized
-        private fun generateAutofillId(): AutofillId {
-            var autofillId: AutofillId? = null
-            useParcel { parcel ->
-                parcel.writeInt(++previousId) // View Id.
-                parcel.writeInt(NO_SESSION) // Flag.
-                parcel.setDataPosition(0)
-                autofillId = AutofillId.CREATOR.createFromParcel(parcel)
-            }
-            return autofillId ?: error("Could not generate autofill id")
-        }
-    }
+    @JvmField var extras: Bundle = Bundle()
 
     override fun getChildCount() = children.count()
 
     override fun addChildCount(childCount: Int): Int {
-        repeat(childCount) { children.add(FakeViewStructure(autofillId = autofillId)) }
-        return children.count() - childCount
+        repeat(childCount) { children.add(FakeViewStructure()) }
+        return children.size - childCount
     }
 
     override fun newChild(index: Int): FakeViewStructure {
-        if (index >= children.count()) error("Call addChildCount() before calling newChild()")
+        if (index >= children.size) error("Call addChildCount() before calling newChild()")
         return children[index]
     }
 
-    override fun getAutofillId() = autofillId
+    override fun getAutofillId(): AutofillId? = autofillId
+
+    override fun setAutofillId(id: AutofillId) {
+        autofillId = id
+    }
 
     override fun setAutofillId(rootId: AutofillId, virtualId: Int) {
+        autofillId = rootId
         this.virtualId = virtualId
     }
 
@@ -144,52 +118,12 @@ internal data class FakeViewStructure(
     }
 
     override fun setAutofillHints(autofillHints: Array<out String>?) {
-        autofillHints?.let { this.autofillHints = it }
+        autofillHints?.let { this.autofillHints = it.toMutableList() }
     }
 
     override fun setDimens(left: Int, top: Int, x: Int, y: Int, width: Int, height: Int) {
-        this.bounds = Rect(left, top, width - left, height - top)
+        this.bounds = Rect(left, top, left + width, top + height)
     }
-
-    override fun equals(other: Any?) =
-        other is FakeViewStructure &&
-            other.virtualId == virtualId &&
-            other.packageName == packageName &&
-            other.typeName == typeName &&
-            other.entryName == entryName &&
-            other.autofillType == autofillType &&
-            other.autofillHints.contentEquals(autofillHints) &&
-            other.bounds.contentEquals(bounds) &&
-            other.activated == activated &&
-            other.alpha == alpha &&
-            other.autofillOptions.contentEquals(autofillOptions) &&
-            other.autofillValue == autofillValue &&
-            other.className == className &&
-            other.children.count() == children.count() &&
-            other.contentDescription == contentDescription &&
-            other.dataIsSensitive == dataIsSensitive &&
-            other.elevation == elevation &&
-            other.hint == hint &&
-            other.htmlInfo == htmlInfo &&
-            other.inputType == inputType &&
-            other.isEnabled == isEnabled &&
-            other.isCheckable == isCheckable &&
-            other.isChecked == isChecked &&
-            other.isClickable == isClickable &&
-            other.isContextClickable == isContextClickable &&
-            other.isAccessibilityFocused == isAccessibilityFocused &&
-            other.isFocused == isFocused &&
-            other.isLongClickable == isLongClickable &&
-            other.isOpaque == isOpaque &&
-            other.isFocusable == isFocusable &&
-            other.selected == selected &&
-            other.text == text &&
-            other.textLines.contentEquals(textLines) &&
-            other.transformation == transformation &&
-            other.visibility == visibility &&
-            other.webDomain == webDomain
-
-    override fun hashCode() = super.hashCode()
 
     override fun getExtras() = extras
 
@@ -199,116 +133,121 @@ internal data class FakeViewStructure(
 
     override fun hasExtras() = !extras.isEmpty
 
-    override fun setActivated(p0: Boolean) {
-        activated = p0
+    override fun setActivated(state: Boolean) {
+        activated = state
     }
 
-    override fun setAccessibilityFocused(p0: Boolean) {
-        isAccessibilityFocused = p0
+    override fun setAccessibilityFocused(state: Boolean) {
+        isAccessibilityFocused = state
     }
 
-    override fun setAlpha(p0: Float) {
-        alpha = p0
+    override fun setAlpha(alpha: Float) {
+        this.alpha = alpha
     }
 
-    override fun setAutofillOptions(p0: Array<CharSequence>?) {
-        autofillOptions = p0
+    override fun setAutofillOptions(options: Array<CharSequence>?) {
+        autofillOptions = options?.toMutableList()
     }
 
-    override fun setAutofillValue(p0: AutofillValue?) {
-        autofillValue = p0
+    override fun setAutofillValue(value: AutofillValue?) {
+        autofillValue = value
     }
 
-    override fun setCheckable(p0: Boolean) {
-        isCheckable = p0
+    override fun setCheckable(state: Boolean) {
+        isCheckable = state
     }
 
-    override fun setChecked(p0: Boolean) {
-        isChecked = p0
+    override fun setChecked(state: Boolean) {
+        isChecked = state
     }
 
-    override fun setClassName(p0: String?) {
-        className = p0
+    override fun setClassName(className: String?) {
+        this.className = className
     }
 
-    override fun setClickable(p0: Boolean) {
-        isClickable = p0
+    override fun setClickable(state: Boolean) {
+        isClickable = state
     }
 
-    override fun setContentDescription(p0: CharSequence?) {
-        contentDescription = p0
+    override fun setContentDescription(contentDescription: CharSequence?) {
+        this.contentDescription = contentDescription
     }
 
-    override fun setContextClickable(p0: Boolean) {
-        isContextClickable = p0
+    override fun setContextClickable(state: Boolean) {
+        isContextClickable = state
     }
 
-    override fun setDataIsSensitive(p0: Boolean) {
-        dataIsSensitive = p0
+    override fun setDataIsSensitive(sensitive: Boolean) {
+        dataIsSensitive = sensitive
     }
 
-    override fun setElevation(p0: Float) {
-        elevation = p0
+    override fun setElevation(elevation: Float) {
+        this.elevation = elevation
     }
 
-    override fun setEnabled(p0: Boolean) {
-        isEnabled = p0
+    override fun setEnabled(state: Boolean) {
+        isEnabled = state
     }
 
-    override fun setFocusable(p0: Boolean) {
-        isFocusable = p0
+    override fun setFocusable(state: Boolean) {
+        isFocusable = state
     }
 
-    override fun setFocused(p0: Boolean) {
-        isFocused = p0
+    override fun setFocused(state: Boolean) {
+        isFocused = state
     }
 
-    override fun setHtmlInfo(p0: HtmlInfo) {
-        htmlInfo = p0
+    override fun setHtmlInfo(htmlInfo: HtmlInfo) {
+        this.htmlInfo = htmlInfo
     }
 
-    override fun setHint(p0: CharSequence?) {
-        hint = p0
+    override fun setHint(hint: CharSequence?) {
+        this.hint = hint
     }
 
-    override fun setInputType(p0: Int) {
-        inputType = p0
+    override fun setInputType(inputType: Int) {
+        this.inputType = inputType
     }
 
-    override fun setLongClickable(p0: Boolean) {
-        isLongClickable = p0
+    override fun setLongClickable(state: Boolean) {
+        isLongClickable = state
     }
 
-    override fun setOpaque(p0: Boolean) {
-        isOpaque = p0
+    override fun setMaxTextLength(maxLength: Int) {
+        maxTextLength = maxLength
     }
 
-    override fun setSelected(p0: Boolean) {
-        selected = p0
+    override fun setOpaque(opaque: Boolean) {
+        isOpaque = opaque
     }
 
-    override fun setText(p0: CharSequence?) {
-        p0?.let { text = it }
+    override fun setSelected(state: Boolean) {
+        isSelected = state
     }
 
-    override fun setText(p0: CharSequence?, p1: Int, p2: Int) {
-        p0?.let { text = it.subSequence(p1, p2) }
+    override fun setText(charSequence: CharSequence?) {
+        charSequence?.let { text = it }
     }
 
-    override fun setTextLines(p0: IntArray?, p1: IntArray?) {
-        textLines = p0
+    override fun setText(charSequence: CharSequence?, selectionStart: Int, selectionEnd: Int) {
+        charSequence?.let { text = it.subSequence(selectionStart, selectionEnd) }
     }
 
-    override fun setTransformation(p0: Matrix?) {
-        transformation = p0
+    override fun setTextLines(charOffsets: IntArray?, baselines: IntArray?) {
+        textLinesCharOffsets = charOffsets?.toMutableList()
+        textLinesBaselines = baselines?.toMutableList()
     }
 
-    override fun setVisibility(p0: Int) {
-        visibility = p0
+    override fun setTransformation(matrix: Matrix?) {
+        transformation = matrix
     }
 
-    override fun setWebDomain(p0: String?) {
-        webDomain = p0
+    override fun setVisibility(visibility: Int) {
+        this.visibility = visibility
+    }
+
+    override fun setWebDomain(domain: String?) {
+        webDomain = domain
     }
 
     // Unimplemented methods.
@@ -316,7 +255,7 @@ internal data class FakeViewStructure(
         TODO("not implemented")
     }
 
-    override fun asyncNewChild(p0: Int): ViewStructure {
+    override fun asyncNewChild(index: Int): ViewStructure {
         TODO("not implemented")
     }
 
@@ -328,42 +267,19 @@ internal data class FakeViewStructure(
         TODO("not implemented")
     }
 
-    override fun newHtmlInfoBuilder(p0: String): HtmlInfo.Builder {
+    override fun newHtmlInfoBuilder(tagName: String): HtmlInfo.Builder {
         TODO("not implemented")
     }
 
-    override fun setAutofillId(p0: AutofillId) {
+    override fun setChildCount(num: Int) {
         TODO("not implemented")
     }
 
-    override fun setChildCount(p0: Int) {
+    override fun setLocaleList(localeList: LocaleList?) {
         TODO("not implemented")
     }
 
-    override fun setLocaleList(p0: LocaleList?) {
+    override fun setTextStyle(size: Float, fgColor: Int, bgColor: Int, style: Int) {
         TODO("not implemented")
-    }
-
-    override fun setTextStyle(p0: Float, p1: Int, p2: Int, p3: Int) {
-        TODO("not implemented")
-    }
-}
-
-private fun Rect?.contentEquals(other: Rect?) =
-    when {
-        (other == null && this == null) -> true
-        (other == null || this == null) -> false
-        else ->
-            other.left == left && other.right == right && other.bottom == bottom && other.top == top
-    }
-
-/** Obtains a parcel and then recycles it correctly whether an exception is thrown or not. */
-private fun useParcel(block: (Parcel) -> Unit) {
-    var parcel: Parcel? = null
-    try {
-        parcel = Parcel.obtain()
-        block(parcel)
-    } finally {
-        parcel?.recycle()
     }
 }

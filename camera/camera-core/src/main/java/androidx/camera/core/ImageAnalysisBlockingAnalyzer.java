@@ -16,14 +16,15 @@
 
 package androidx.camera.core;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.ImageReaderProxy;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.FutureCallback;
 import androidx.camera.core.impl.utils.futures.Futures;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * OnImageAvailableListener with blocking behavior. It never drops image without analyzing it.
@@ -32,9 +33,8 @@ import com.google.common.util.concurrent.ListenableFuture;
  */
 final class ImageAnalysisBlockingAnalyzer extends ImageAnalysisAbstractAnalyzer {
 
-    @Nullable
     @Override
-    ImageProxy acquireImage(@NonNull ImageReaderProxy imageReaderProxy) {
+    @Nullable ImageProxy acquireImage(@NonNull ImageReaderProxy imageReaderProxy) {
         // Use acquireNextImage() so it never drops older images.
         return imageReaderProxy.acquireNextImage();
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("NOTHING_TO_INLINE")
+@file:Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
 
 package androidx.compose.ui.spatial
 
@@ -28,7 +28,7 @@ import kotlin.math.min
  * objects contained in it, but it does so just by storing all of the information packed into a
  * single LongArray. Because of the simplicity and tight loops / locality of information, this ends
  * up being faster than most other data structures in most things for the size data sets that we
- * will be using this for. For O(10**2) items, this outperformas other data structures. Each
+ * will be using this for. For O(10**2) items, this outperforms other data structures. Each
  * meta/rect pair is stored contiguously as 3 Longs in an LongArray. This makes insert and update
  * extremely cheap. Query operations require scanning the entire array, but due to cache locality
  * and fairly efficient math, it is competitive with data structures which use mechanisms to prune
@@ -98,17 +98,21 @@ internal class RectList {
      * keep this in mind if you call this method and have cached any of those values in a local
      * variable, you may need to refresh them.
      */
-    internal fun allocateItemsIndex(): Int {
+    private inline fun allocateItemsIndex(): Int {
         val currentItems = items
         val currentSize = itemsSize
         itemsSize = currentSize + LongsPerItem
         val actualSize = currentItems.size
         if (actualSize <= currentSize + LongsPerItem) {
-            val newSize = max(actualSize * 2, currentSize + LongsPerItem)
-            items = currentItems.copyOf(newSize)
-            stack = stack.copyOf(newSize)
+            resizeStorage(actualSize, currentSize, currentItems)
         }
         return currentSize
+    }
+
+    private fun resizeStorage(actualSize: Int, currentSize: Int, currentItems: LongArray) {
+        val newSize = max(actualSize * 2, currentSize + LongsPerItem)
+        items = currentItems.copyOf(newSize)
+        stack = stack.copyOf(newSize)
     }
 
     /**
@@ -231,6 +235,30 @@ internal class RectList {
                 items[i + 0] = packXY(l, t)
                 items[i + 1] = packXY(r, b)
                 items[i + 2] = metaMarkUpdated(meta)
+                return true
+            }
+            i += LongsPerItem
+        }
+        return false
+    }
+
+    /**
+     * Updates the focusable and/or gesturable flags associated with this value (item id).
+     *
+     * @return true if the value was found and updated, false if this value is not currently in the
+     *   collection
+     */
+    fun updateFlagsFor(value: Int, focusable: Boolean, gesturable: Boolean): Boolean {
+        val value = value and Lower26Bits
+        val items = items
+        val size = itemsSize
+        var i = 0
+        while (i < items.size - 2) {
+            if (i >= size) break
+            val meta = items[i + 2]
+            // NOTE: We are assuming that the value can only be here once.
+            if (unpackMetaValue(meta) == value) {
+                items[i + 2] = metaMarkFlags(meta, focusable, gesturable)
                 return true
             }
             i += LongsPerItem
@@ -397,6 +425,28 @@ internal class RectList {
         return false
     }
 
+    /**
+     * Returns the first index for the item that matches the metadata value of [value], returns -1
+     * if the item wasn't found.
+     *
+     * Note that returned index corresponds to the Long that contains the topLeft data of the item.
+     */
+    fun indexOf(value: Int): Int {
+        val value = value and Lower26Bits
+        val items = items
+        val size = itemsSize
+        var i = 0
+        while (i < items.size - 2) {
+            if (i >= size) break
+            val meta = items[i + 2]
+            if (unpackMetaValue(meta) == value) {
+                return i
+            }
+            i += LongsPerItem
+        }
+        return -1
+    }
+
     fun metaFor(value: Int): Long {
         val value = value and Lower26Bits
         val items = items
@@ -439,6 +489,41 @@ internal class RectList {
                 //  code may want to filter this list using that geometry, and it would be
                 //  beneficial to not have to look up the layout node in order to do so.
                 block(unpackMetaValue(items[i + 2]))
+            }
+            i += LongsPerItem
+        }
+    }
+
+    /**
+     * For each value in the collection, checks first if it is gesturable. If it is and it
+     * intersects with the provided rectangle, the function executes [block]. The argument passed
+     * into [block] will be the value (item id).
+     */
+    inline fun forEachGesturableIntersection(
+        l: Int,
+        t: Int,
+        r: Int,
+        b: Int,
+        block: (Int) -> Unit,
+    ) {
+        val destTopLeft = packXY(l, t)
+        val destTopRight = packXY(r, b)
+        val items = items
+        val size = itemsSize
+
+        var i = 0
+        while (i < items.size - 2) {
+            if (i >= size) break
+            if (unpackMetaGesturable(items[i + 2]) != 0) { // Checks gesturable is true
+                val topLeft = items[i + 0]
+                val bottomRight = items[i + 1]
+
+                if (rectIntersectsRect(topLeft, bottomRight, destTopLeft, destTopRight)) {
+                    // TODO: it might make sense to include the rectangle in the block since calling
+                    //  code may want to filter this list using that geometry, and it would be
+                    //  beneficial to not have to look up the layout node in order to do so.
+                    block(unpackMetaValue(items[i + 2]))
+                }
             }
             i += LongsPerItem
         }
@@ -487,6 +572,42 @@ internal class RectList {
             if (rectIntersectsRect(topLeft, bottomRight, destXY, destXY)) {
                 val meta = items[i + 2]
                 block(unpackMetaValue(meta))
+            }
+            i += LongsPerItem
+        }
+    }
+
+    /**
+     * For the rectangle at the given [index], calls [block] for each other rectangles that
+     * intersects with it. The parameters in [block] are the intersecting rect and its 'value'.
+     */
+    inline fun forEachIntersectingRectWithValueAt(
+        index: Int,
+        block: (Int, Int, Int, Int, Int) -> Unit
+    ) {
+        val items = items
+        val size = itemsSize
+
+        val destTopLeft = items[index]
+        val destBottomRight = items[index + 1]
+
+        var i = 0
+        while (i < items.size - 2) {
+            if (i >= size) break
+            if (i == index) {
+                i += LongsPerItem
+                continue
+            }
+            val topLeft = items[i + 0]
+            val bottomRight = items[i + 1]
+            if (rectIntersectsRect(topLeft, bottomRight, destTopLeft, destBottomRight)) {
+                block(
+                    unpackX(topLeft),
+                    unpackY(topLeft),
+                    unpackX(bottomRight),
+                    unpackY(bottomRight),
+                    unpackMetaValue(items[i + 2])
+                )
             }
             i += LongsPerItem
         }
@@ -735,7 +856,7 @@ internal inline fun packMeta(
     //     26 bits: item id
     //     26 bits: parent id
     //     9 bits: last child offset
-    //      1 bits: updated
+    //      1 bits: updated - means the bounds have been updated
     //      1 bits: focusable
     //      1 bits: gesturable
     (gesturable.toLong() shl 63) or
@@ -761,6 +882,12 @@ internal inline fun metaWithUpdated(meta: Long, updated: Boolean): Long =
 internal inline fun metaMarkUpdated(meta: Long): Long = meta or (1L shl 61)
 
 internal inline fun metaUnMarkUpdated(meta: Long): Long = meta and (1L shl 61).inv()
+
+internal inline fun metaMarkFlags(meta: Long, focusable: Boolean, gesturable: Boolean): Long {
+    return (meta and (1L shl 62).inv() and (1L shl 63).inv()) or
+        ((1L shl 62) * focusable.toInt()) or
+        ((1L shl 63) * gesturable.toInt())
+}
 
 internal inline fun metaWithLastChildOffset(meta: Long, lastChildOffset: Int): Long =
     (meta and EverythingButLastChildOffset.toLong()) or

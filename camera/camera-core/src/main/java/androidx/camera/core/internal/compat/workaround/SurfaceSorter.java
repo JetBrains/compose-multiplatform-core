@@ -18,12 +18,13 @@ package androidx.camera.core.internal.compat.workaround;
 
 import android.media.MediaCodec;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.Preview;
 import androidx.camera.core.impl.DeferrableSurface;
 import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.core.internal.compat.quirk.SurfaceOrderQuirk;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.List;

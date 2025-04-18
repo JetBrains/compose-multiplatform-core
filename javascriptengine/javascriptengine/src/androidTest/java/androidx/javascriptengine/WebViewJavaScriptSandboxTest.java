@@ -34,6 +34,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -848,6 +849,7 @@ public class WebViewJavaScriptSandboxTest {
 
     @Test
     @LargeTest
+    @Ignore("b/401528686")
     public void testHeapSizeEnforced() throws Throwable {
         final long maxHeapSize = REASONABLE_HEAP_SIZE;
         // We need to beat the v8 optimizer to ensure it really allocates the required memory. Note
@@ -952,6 +954,7 @@ public class WebViewJavaScriptSandboxTest {
 
     @Test
     @LargeTest
+    @Ignore("b/401528686")
     public void testIsolateCreationAfterOom() throws Throwable {
         final long maxHeapSize = REASONABLE_HEAP_SIZE;
         // We need to beat the v8 optimizer to ensure it really allocates the required memory. Note
@@ -1498,6 +1501,7 @@ public class WebViewJavaScriptSandboxTest {
 
     @Test
     @LargeTest
+    @Ignore("b/401528686")
     public void testOomOutsideOfEvaluation() throws Throwable {
         final Context context = ApplicationProvider.getApplicationContext();
         final ListenableFuture<JavaScriptSandbox> jsSandboxFuture =

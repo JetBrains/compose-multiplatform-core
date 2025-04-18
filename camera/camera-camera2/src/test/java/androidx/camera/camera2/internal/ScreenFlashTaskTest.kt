@@ -353,8 +353,8 @@ class ScreenFlashTaskTest {
             return screenFlash
         }
 
-        override fun enableTorchInternal(torch: Boolean) {
-            isTorchEnabled = torch
+        override fun enableTorchInternal(torchState: Int) {
+            isTorchEnabled = torchState != TorchControl.OFF
         }
 
         override fun addCaptureResultListener(listener: CaptureResultListener) {

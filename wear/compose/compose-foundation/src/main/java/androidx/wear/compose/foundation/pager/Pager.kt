@@ -27,12 +27,10 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerDefaults as ComposePagerDefaults
-import androidx.compose.foundation.pager.PagerScope
-import androidx.compose.foundation.pager.PagerSnapDistance
+import androidx.compose.foundation.pager.PagerSnapDistance as ComposePagerSnapDistance
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,27 +39,30 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.findRootCoordinates
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.semantics.ScrollAxisRange
 import androidx.compose.ui.semantics.horizontalScrollAxisRange
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.CustomTouchSlopProvider
+import androidx.wear.compose.foundation.DefaultTouchExplorationStateProvider
+import androidx.wear.compose.foundation.GestureInclusion
 import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
 import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
-import kotlinx.coroutines.coroutineScope
 
 /**
- * A full-screen horizontally scrolling Pager optimized for Wear OS devices. This component wraps
- * the standard Compose Foundation [HorizontalPager] and provides Wear-specific enhancements to
- * improve performance, usability, and adherence to Wear OS design guidelines.
+ * A horizontally scrolling Pager optimized for Wear OS devices. This component wraps the standard
+ * Compose Foundation [HorizontalPager] and provides Wear-specific enhancements to improve
+ * performance, usability, and adherence to Wear OS design guidelines.
  *
  * Please refer to the samples to learn how to use this API.
  *
@@ -81,17 +82,17 @@ import kotlinx.coroutines.coroutineScope
  * @param userScrollEnabled whether the scrolling via the user gestures or accessibility actions is
  *   allowed. You can still scroll programmatically using [PagerState.scroll] even when it is
  *   disabled.
+ * @param gestureInclusion When userScrollEnabled=true, this function provides more fine-grained
+ *   control so that touch gestures can be excluded when they start in a certain region. An instance
+ *   of [GestureInclusion] can be passed in here which will determine via
+ *   [GestureInclusion.ignoreGestureStart] whether the gesture should proceed or not. By default,
+ *   [gestureInclusion] allows gestures everywhere except a zone on the left edge of the first page,
+ *   which is used for swipe-to-dismiss (see [PagerDefaults.gestureInclusion]).
  * @param reverseLayout reverse the direction of scrolling and layout.
  * @param key a stable and unique key representing the item. When you specify the key the scroll
  *   position will be maintained based on the key, which means if you add/remove items before the
  *   current visible item the item with the given key will be kept as the first visible one. If null
  *   is passed the position in the list will represent the key.
- * @param swipeToDismissEdgeZoneFraction A float which controls the size of the screen edge area
- *   used for the Wear system's swipe to dismiss gesture. This value, between 0 and 1, represents
- *   the fraction of the screen width that will be sensitive to the gesture. For example, 0.25 means
- *   the leftmost 25% of the screen will trigger the gesture. Even when RTL mode is enabled, this
- *   parameter only ever applies to the left edge of the screen. Setting this to 0 will disable the
- *   gesture.
  * @param rotaryScrollableBehavior Parameter for changing rotary behavior. By default rotary support
  *   is disabled for [HorizontalPager]. It can be enabled by passing
  *   [RotaryScrollableDefaults.snapBehavior] with pagerState parameter.
@@ -99,32 +100,24 @@ import kotlinx.coroutines.coroutineScope
  *   Pager. This is where the UI elements that should appear within each page should be placed.
  */
 @Composable
-fun HorizontalPager(
+public fun HorizontalPager(
     state: PagerState,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     beyondViewportPageCount: Int = PagerDefaults.BeyondViewportPageCount,
     flingBehavior: TargetedFlingBehavior = PagerDefaults.snapFlingBehavior(state = state),
     userScrollEnabled: Boolean = true,
+    gestureInclusion: GestureInclusion = PagerDefaults.gestureInclusion(state),
     reverseLayout: Boolean = false,
     key: ((index: Int) -> Any)? = null,
-    @FloatRange(from = 0.0, to = 1.0)
-    swipeToDismissEdgeZoneFraction: Float = PagerDefaults.SwipeToDismissEdgeZoneFraction,
     rotaryScrollableBehavior: RotaryScrollableBehavior? = null,
     content: @Composable PagerScope.(page: Int) -> Unit
 ) {
-    val swipeToDismissEnabled = swipeToDismissEdgeZoneFraction != 0f
     var allowPaging by remember { mutableStateOf(true) }
-    val screenWidth =
-        with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
-    val edgeBoundary = screenWidth * swipeToDismissEdgeZoneFraction.coerceIn(0f, 1f)
+    var pagerCoordinates = remember { mutableStateOf<LayoutCoordinates?>(null) }
 
     val originalTouchSlop = LocalViewConfiguration.current.touchSlop
-    CustomTouchSlopProvider(
-        newTouchSlop =
-            if (swipeToDismissEnabled) originalTouchSlop * CustomTouchSlopMultiplier
-            else originalTouchSlop
-    ) {
+    CustomTouchSlopProvider(newTouchSlop = originalTouchSlop * CustomTouchSlopMultiplier) {
         val rotaryModifier =
             if (rotaryScrollableBehavior != null && userScrollEnabled)
                 Modifier.rotaryScrollable(
@@ -135,18 +128,24 @@ fun HorizontalPager(
             else Modifier
 
         HorizontalPager(
-            state = state,
+            state = state.pagerState,
             modifier =
                 modifier
-                    .fillMaxSize()
-                    .pointerInput(screenWidth, swipeToDismissEnabled) {
-                        coroutineScope {
-                            awaitEachGesture {
-                                allowPaging = true
-                                val firstDown = awaitFirstDown(false, PointerEventPass.Initial)
-                                val xPosition = firstDown.position.x
-                                allowPaging = !swipeToDismissEnabled || xPosition > edgeBoundary
-                            }
+                    .onPlaced { layoutCoordinates -> pagerCoordinates.value = layoutCoordinates }
+                    .pointerInput(gestureInclusion, userScrollEnabled) {
+                        if (!userScrollEnabled || pagerCoordinates.value == null) {
+                            allowPaging = false
+                            return@pointerInput
+                        }
+                        awaitEachGesture {
+                            allowPaging = true
+                            val firstDown = awaitFirstDown(false, PointerEventPass.Initial)
+
+                            allowPaging =
+                                !gestureInclusion.ignoreGestureStart(
+                                    firstDown.position,
+                                    pagerCoordinates.value!!
+                                )
                         }
                     }
                     .semantics {
@@ -178,7 +177,7 @@ fun HorizontalPager(
                     requiresFocus = {
                         rotaryScrollableBehavior == null && state.currentPage == page
                     },
-                    content = { content(page) }
+                    content = { WearPagerScopeImpl.content(page) }
                 )
             }
         }
@@ -186,8 +185,8 @@ fun HorizontalPager(
 }
 
 /**
- * A full-screen vertically scrolling Pager optimized for Wear OS devices. This component wraps the
- * standard Compose Foundation [VerticalPager] and provides Wear-specific enhancements to improve
+ * A vertically scrolling Pager optimized for Wear OS devices. This component wraps the standard
+ * Compose Foundation [VerticalPager] and provides Wear-specific enhancements to improve
  * performance, usability, and adherence to Wear OS design guidelines.
  *
  * [VerticalPager] supports rotary input by default. Rotary input allows users to scroll through the
@@ -224,7 +223,7 @@ fun HorizontalPager(
  *   Pager. This is where the UI elements that should appear within each page should be placed.
  */
 @Composable
-fun VerticalPager(
+public fun VerticalPager(
     state: PagerState,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -247,8 +246,8 @@ fun VerticalPager(
         else Modifier
 
     VerticalPager(
-        state = state,
-        modifier = modifier.fillMaxSize().then(rotaryModifier),
+        state = state.pagerState,
+        modifier = modifier.then(rotaryModifier),
         contentPadding = contentPadding,
         pageSize = PageSize.Fill,
         beyondViewportPageCount = beyondViewportPageCount,
@@ -262,21 +261,61 @@ fun VerticalPager(
     ) { page ->
         HierarchicalFocusCoordinator(
             requiresFocus = { rotaryScrollableBehavior == null && state.currentPage == page },
-            content = { content(page) }
+            content = { WearPagerScopeImpl.content(page) }
         )
     }
 }
 
 /** Contains the default values used by [Pager]. These are optimised for Wear. */
-object PagerDefaults {
+public object PagerDefaults {
+    /**
+     * The default behaviour for when [HorizontalPager] should handle gestures. In this
+     * implementation of [gestureInclusion], scroll events that originate in the left edge of the
+     * first page of the Pager (as determined by [LeftEdgeZoneFraction]) will be ignored. This
+     * allows swipe-to-dismiss handlers (if present) to handle the gesture in this region. However
+     * if talkback is enabled then the Pager will always handle gestures, never allowing swipe to
+     * dismiss handlers to take over.
+     *
+     * @param state The state of the [HorizontalPager]. Used to determine the current page.
+     * @param edgeZoneFraction The fraction of the screen width from the left edge where gestures
+     *   should be ignored on the first page. Defaults to [LeftEdgeZoneFraction].
+     */
+    @Composable
+    public fun gestureInclusion(
+        state: PagerState,
+        edgeZoneFraction: Float = LeftEdgeZoneFraction
+    ): GestureInclusion {
+        val touchExplorationStateProvider = remember { DefaultTouchExplorationStateProvider() }
+        val touchExplorationServicesEnabled by touchExplorationStateProvider.touchExplorationState()
+
+        return remember(state, touchExplorationServicesEnabled, edgeZoneFraction) {
+            object : GestureInclusion {
+                override fun ignoreGestureStart(
+                    offset: Offset,
+                    layoutCoordinates: LayoutCoordinates
+                ): Boolean {
+                    if (touchExplorationServicesEnabled || state.currentPage != 0) {
+                        return false
+                    }
+
+                    // On Page 0 - only allow gestures to be consumed by Pager if they are on the
+                    // right of edgeZoneFraction, gestures to the left of this can be ignored and
+                    // handled by swipe to dismiss handlers
+                    val screenOffset = layoutCoordinates.localToScreen(offset)
+                    val screenWidth = layoutCoordinates.findRootCoordinates().size.width
+                    return screenOffset.x <= screenWidth * edgeZoneFraction
+                }
+            }
+        }
+    }
+
     /**
      * Default fling behavior for pagers on Wear, snaps at most one page at a time.
      *
      * @param state The [PagerState] that controls the [Pager] to which this FlingBehavior will be
      *   applied to.
-     * @param pagerSnapDistance A way to control the snapping destination for this [Pager]. Use
-     *   [PagerSnapDistance.atMost] to define a maximum number of pages this [Pager] is allowed to
-     *   fling after scrolling is finished and fling has started.
+     * @param maxFlingPages the maximum number of pages this [Pager] is allowed to fling after
+     *   scrolling is finished and fling has started.
      * @param decayAnimationSpec The animation spec used to approach the target offset. When the
      *   fling velocity is large enough. Large enough means large enough to naturally decay. For
      *   single page snapping this usually never happens since there won't be enough space to run a
@@ -297,17 +336,16 @@ object PagerDefaults {
      *   the next page in the direction of the fling.
      */
     @Composable
-    fun snapFlingBehavior(
+    public fun snapFlingBehavior(
         state: PagerState,
-        pagerSnapDistance: PagerSnapDistance = PagerSnapDistance.atMost(1),
+        maxFlingPages: Int = 1,
         decayAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay(),
-        snapAnimationSpec: AnimationSpec<Float> =
-            spring(Spring.DampingRatioNoBouncy, PagerDefaults.Stiffness),
+        snapAnimationSpec: AnimationSpec<Float> = PagerDefaults.SnapAnimationSpec,
         @FloatRange(from = 0.0, to = 1.0) snapPositionalThreshold: Float = 0.5f
     ): TargetedFlingBehavior {
         return ComposePagerDefaults.flingBehavior(
-            state = state,
-            pagerSnapDistance = pagerSnapDistance,
+            state = state.pagerState,
+            pagerSnapDistance = ComposePagerSnapDistance.atMost(maxFlingPages),
             decayAnimationSpec = decayAnimationSpec,
             snapAnimationSpec = snapAnimationSpec,
             snapPositionalThreshold = snapPositionalThreshold,
@@ -315,23 +353,32 @@ object PagerDefaults {
     }
 
     /**
-     * The default value of swipeToDismissEdgeZoneFraction used to configure the size of the edge
-     * zone in a [HorizontalPager].
+     * The recommended medium-high stiffness used by default for the spring stiffness parameter in
+     * the Pager's snap animation.
      */
-    const val SwipeToDismissEdgeZoneFraction: Float = 0.15f
+    private val MediumHighStiffness: Float = 2000f
+
+    /**
+     * The default spring animation used for the Pager's snap animation spec - a spring based
+     * animation with medium-high stiffness and no bounce.
+     */
+    public val SnapAnimationSpec: AnimationSpec<Float> =
+        spring(Spring.DampingRatioNoBouncy, MediumHighStiffness)
+
+    /**
+     * The default value used to configure the size of the left edge zone in a [HorizontalPager].
+     * The left edge zone in this case refers to the leftmost edge of the screen, in this region in
+     * a [Pager] it is common to disable scrolling in order for swipe-to-dismiss handlers to take
+     * over.
+     */
+    public val LeftEdgeZoneFraction: Float = 0.15f
 
     /**
      * The default value of beyondViewportPageCount used to specify the number of pages to compose
      * and layout before and after the visible pages. It does not include the pages automatically
      * composed and laid out by the pre-fetcher in the direction of the scroll during scroll events.
      */
-    const val BeyondViewportPageCount = 0
-
-    /**
-     * The recommended medium-high stiffness used by default for the spring stiffness parameter in
-     * the Pager's snap animation
-     */
-    const val Stiffness = 2000f
+    public val BeyondViewportPageCount: Int = 0
 }
 
-internal const val CustomTouchSlopMultiplier = 1.10f
+internal val CustomTouchSlopMultiplier = 1.10f

@@ -82,7 +82,8 @@ fun <T : Fragment> AndroidFragment(
     onUpdate: (T) -> Unit = {}
 ) {
     val updateCallback = rememberUpdatedState(onUpdate)
-    val hashKey = currentCompositeKeyHash
+    // TODO: After upgrading Compose Runtime, replace with `currentCompositeKeyHashCode.hashCode()`
+    val hashKey = @Suppress("Deprecation") currentCompositeKeyHash
     val view = LocalView.current
     val fragmentManager = remember(view) { FragmentManager.findFragmentManager(view) }
     val context = LocalContext.current

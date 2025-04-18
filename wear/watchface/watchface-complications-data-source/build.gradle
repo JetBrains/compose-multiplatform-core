@@ -21,7 +21,9 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.KotlinTarget
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -46,6 +48,10 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinTest)
+    testImplementation(libs.kotlinCoroutinesTest)
+
+    compileOnly files("../../wear_sdk/wear-sdk.jar")
+    testImplementation files("../../wear_sdk/wear-sdk.jar")
 }
 
 android {
@@ -63,7 +69,9 @@ android {
 
 androidx {
     name = "Android Wear Complications Data Source"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
+    //TODO(b/407632515): Target Kotlin 2. Fails :wear:watchface:watchface-complications-data-source-ktx:generateApi
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
     inceptionYear = "2020"
     description = "Android Wear Complications Data Source"
     legacyDisableKotlinStrictApiMode = true

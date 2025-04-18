@@ -140,7 +140,7 @@ class LevelIndicatorScreenshotTest {
                         Modifier.size(screenSizeDp.dp)
                             .background(MaterialTheme.colorScheme.background)
                 ) {
-                    LevelIndicator(
+                    StepperLevelIndicator(
                         value = { value },
                         valueRange = valueRange,
                         modifier = Modifier.align(Alignment.CenterStart).testTag(TEST_TAG),

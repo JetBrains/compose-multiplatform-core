@@ -20,8 +20,9 @@ import static android.os.Build.VERSION.SDK_INT;
 
 import android.view.ViewStructure;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing features in {@link ViewStructure}.
@@ -44,8 +45,7 @@ public class ViewStructureCompat {
      * @return wrapped class
      */
     @RequiresApi(23)
-    @NonNull
-    public static ViewStructureCompat toViewStructureCompat(
+    public static @NonNull ViewStructureCompat toViewStructureCompat(
             @NonNull ViewStructure contentCaptureSession) {
         return new ViewStructureCompat(contentCaptureSession);
     }
@@ -60,8 +60,7 @@ public class ViewStructureCompat {
      * @see ViewStructureCompat#toViewStructureCompat(ViewStructure)
      */
     @RequiresApi(23)
-    @NonNull
-    public ViewStructure toViewStructure() {
+    public @NonNull ViewStructure toViewStructure() {
         return (ViewStructure) mWrappedObj;
     }
 

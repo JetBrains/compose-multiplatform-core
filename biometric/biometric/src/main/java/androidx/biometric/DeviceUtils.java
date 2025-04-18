@@ -19,7 +19,7 @@ package androidx.biometric;
 import android.content.Context;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utility class for specifying custom behavior based on the vendor and model of the device.

@@ -142,7 +142,7 @@ class MultiTypedPagingSourceTest(
                 .containsExactlyElementsIn(
                     items.createExpected(
                         // Paging 3 implementation loads starting from initial key
-                        fromIndex = 98,
+                        fromIndex = 91,
                         toIndex = 100
                     )
                 )
@@ -579,7 +579,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
                 .containsExactlyElementsIn(
                     items.createExpected(
                         // Paging 3 implementation loads starting from initial key
-                        fromIndex = 98,
+                        fromIndex = 91,
                         toIndex = 100
                     )
                 )

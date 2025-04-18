@@ -65,6 +65,7 @@ abstract class StableAidlCheckApi : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val dependencyImportDirs: SetProperty<FileSystemLocation>
 
+    @get:Optional
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val aidlFrameworkProvider: RegularFileProperty
@@ -114,7 +115,7 @@ abstract class StableAidlCheckApi : DefaultTask() {
         aidlCheckApiDelegate(
             workerExecutor,
             aidlExecutable.get().asFile,
-            aidlFrameworkProvider.get().asFile,
+            aidlFrameworkProvider.orNull?.asFile,
             extraArgs,
             importDirs.get(),
             dependencyImportDirs.get().map { it.asFile }
@@ -141,7 +142,7 @@ abstract class StableAidlCheckApi : DefaultTask() {
 
             callStableAidlProcessor(
                 parameters.aidlExecutable.get().asFile.canonicalPath,
-                parameters.frameworkLocation.get().asFile.canonicalPath,
+                parameters.frameworkLocation.orNull?.asFile?.canonicalPath,
                 parameters.importFolders.asIterable(),
                 parameters.extraArgs.get(),
                 executor,
@@ -158,7 +159,7 @@ abstract class StableAidlCheckApi : DefaultTask() {
         fun aidlCheckApiDelegate(
             workerExecutor: WorkerExecutor,
             aidlExecutable: File,
-            frameworkLocation: File,
+            frameworkLocation: File?,
             extraArgs: List<String>,
             projectImportList: Collection<Directory>,
             dependencyImportList: Collection<File>

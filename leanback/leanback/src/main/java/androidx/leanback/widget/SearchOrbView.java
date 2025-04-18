@@ -33,10 +33,11 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * <p>A widget that draws a search affordance, represented by a round background and an icon.</p>
@@ -273,8 +274,7 @@ public class SearchOrbView extends FrameLayout implements View.OnClickListener {
      *
      * @return the drawable used as the icon
      */
-    @Nullable
-    public Drawable getOrbIcon() {
+    public @Nullable Drawable getOrbIcon() {
         return mIconDrawable;
     }
 
@@ -335,8 +335,7 @@ public class SearchOrbView extends FrameLayout implements View.OnClickListener {
     /**
      * Returns the {@link Colors} used to display the search orb.
      */
-    @Nullable
-    public Colors getOrbColors() {
+    public @Nullable Colors getOrbColors() {
         return mColors;
     }
 

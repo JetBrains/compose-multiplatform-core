@@ -18,11 +18,13 @@ package androidx.compose.material
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertTextEquals
@@ -109,6 +111,25 @@ class TextTest {
             assertThat(fontStyle).isEqualTo(ExpectedTextStyle.fontStyle)
             assertThat(letterSpacing).isEqualTo(ExpectedTextStyle.letterSpacing)
         }
+    }
+
+    @Test
+    fun testChangingFontSizeDoesNotInvalidateSemantics() {
+        val fontSize = mutableStateOf(16.sp)
+        var count = 0
+        val countModifier = Modifier.semantics { count++ }
+        rule.setContent {
+            ProvideTextStyle(ExpectedTextStyle) {
+                Box(Modifier.background(Color.White)) {
+                    Text(modifier = countModifier, text = TestText, fontSize = fontSize.value)
+                }
+            }
+        }
+        rule.runOnIdle {
+            count = 0
+            fontSize.value = 20.sp
+        }
+        rule.runOnIdle { assertThat(count).isEqualTo(0) }
     }
 
     @Test

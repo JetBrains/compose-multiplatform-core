@@ -16,7 +16,7 @@
 
 // Need to access Impl classes from 'org.jetbrains.kotlin.library.abi.impl.'
 // ideally the parser would also live alongside that project to access to impl classes
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407928023
 @file:OptIn(ExperimentalLibraryAbiReader::class)
 
 package androidx.binarycompatibilityvalidator

@@ -19,11 +19,9 @@ package androidx.build.checkapi
 import androidx.build.AndroidXExtension
 import androidx.build.Release
 import androidx.build.RunApiTasks
-import androidx.build.Version
 import androidx.build.binarycompatibilityvalidator.BinaryCompatibilityValidation
 import androidx.build.getSupportRootFolder
 import androidx.build.isWriteVersionedApiFilesEnabled
-import androidx.build.java.JavaCompileInputs
 import androidx.build.metalava.MetalavaTasks
 import androidx.build.multiplatformExtension
 import androidx.build.resources.ResourceTasks
@@ -37,11 +35,13 @@ import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition
+import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.Usage
 import org.gradle.api.file.RegularFile
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.getByType
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 sealed class ApiTaskConfig
 
@@ -61,63 +61,21 @@ fun AndroidXExtension.shouldConfigureApiTasks(): Boolean {
         )
     }
 
-    // API behavior is default for type
-    if (type.checkApi is RunApiTasks.No && runApiTasks is RunApiTasks.No) {
-        project.logger.info("Projects of type ${type.name} do not track API.")
-        return false
-    }
-
-    when (runApiTasks) {
-        // API behavior for type must have been overridden, because previous check did not trigger
+    return when (type.checkApi) {
         is RunApiTasks.No -> {
-            project.logger.info(
-                "Project ${project.name} has explicitly disabled API tasks with " +
-                    "reason: ${(runApiTasks as RunApiTasks.No).reason}"
-            )
-            return false
+            project.logger.info("Projects of type ${type.name} do not track API.")
+            false
         }
         is RunApiTasks.Yes -> {
-            // API behavior is default for type; not overridden
-            if (type.checkApi is RunApiTasks.Yes) {
-                return true
-            }
-            // API behavior for type is overridden
-            (runApiTasks as RunApiTasks.Yes).reason?.let { reason ->
+            (type.checkApi as RunApiTasks.Yes).reason?.let { reason ->
                 project.logger.info(
                     "Project ${project.name} has explicitly enabled API tasks " +
                         "with reason: $reason"
                 )
             }
-            return true
+            true
         }
-        else -> {}
     }
-
-    if (project.version !is Version) {
-        project.logger.info("Project ${project.name} has no version set, ignoring API tasks.")
-        return false
-    }
-
-    // If the project has an "api" directory, either because they used to track APIs or they
-    // added one manually to force tracking (as recommended below), continue tracking APIs.
-    if (project.hasApiFileDirectory() && !shouldRelease()) {
-        project.logger.error(
-            "Project ${project.name} is not published, but has an existing API " +
-                "directory. Forcing API tasks enabled. Please migrate to runApiTasks=Yes."
-        )
-        return true
-    }
-
-    if (!shouldRelease()) {
-        project.logger.info(
-            "Project ${project.name} is not published, ignoring API tasks. " +
-                "If you still want to track APIs, create an \"api\" directory in your project" +
-                " root and run the updateApi task."
-        )
-        return false
-    }
-
-    return true
 }
 
 /**
@@ -162,14 +120,14 @@ fun Project.configureProjectForApiTasks(config: ApiTaskConfig, extension: Androi
                 listOf(currentApiLocation)
             }
 
-        val (javaInputs, androidManifest) =
-            configureJavaInputsAndManifest(config) ?: return@afterEvaluate
+        val (compilationInputs, androidManifest) =
+            configureCompilationInputsAndManifest(config) ?: return@afterEvaluate
         val baselinesApiLocation = ApiBaselinesLocation.fromApiLocation(currentApiLocation)
         val generateApiDependencies = createReleaseApiConfiguration()
 
         MetalavaTasks.setupProject(
             project,
-            javaInputs,
+            compilationInputs,
             generateApiDependencies,
             extension,
             androidManifest,
@@ -204,27 +162,27 @@ fun Project.configureProjectForApiTasks(config: ApiTaskConfig, extension: Androi
     }
 }
 
-internal fun Project.configureJavaInputsAndManifest(
+internal fun Project.configureCompilationInputsAndManifest(
     config: ApiTaskConfig
-): Pair<JavaCompileInputs, Provider<RegularFile>?>? {
+): Pair<CompilationInputs, Provider<RegularFile>?>? {
     return when (config) {
         is LibraryApiTaskConfig -> {
             if (config.variant.name != Release.DEFAULT_PUBLISH_CONFIG) {
                 return null
             }
-            JavaCompileInputs.fromLibraryVariant(config.variant, project) to
+            CompilationInputs.fromLibraryVariant(config.variant, project) to
                 config.variant.artifacts.get(SingleArtifact.MERGED_MANIFEST)
         }
         is AndroidMultiplatformApiTaskConfig -> {
-            JavaCompileInputs.fromKmpAndroidTarget(project) to null
+            CompilationInputs.fromKmpAndroidTarget(project) to null
         }
         is KmpApiTaskConfig -> {
-            JavaCompileInputs.fromKmpJvmTarget(project) to null
+            CompilationInputs.fromKmpJvmTarget(project) to null
         }
         is JavaApiTaskConfig -> {
             val javaExtension = extensions.getByType<JavaPluginExtension>()
             val mainSourceSet = javaExtension.sourceSets.getByName("main")
-            JavaCompileInputs.fromSourceSet(mainSourceSet, this) to null
+            CompilationInputs.fromSourceSet(mainSourceSet, this) to null
         }
     }
 }
@@ -247,6 +205,21 @@ internal fun Project.createReleaseApiConfiguration(): Configuration {
                     ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE,
                     ArtifactTypeDefinition.JAR_TYPE
                 )
+                // If this is a KMP project targeting android, make sure to select the android
+                // compilation and not a different jvm target compilation
+                multiplatformExtension?.let { extension ->
+                    if (
+                        extension.targets.any { it.platformType == KotlinPlatformType.androidJvm }
+                    ) {
+                        it.attributes.attribute(
+                            Attribute.of(
+                                "org.jetbrains.kotlin.platform.type",
+                                KotlinPlatformType::class.java
+                            ),
+                            KotlinPlatformType.androidJvm
+                        )
+                    }
+                }
             }
             .apply { project.dependencies.add(name, project.project(path)) }
 }

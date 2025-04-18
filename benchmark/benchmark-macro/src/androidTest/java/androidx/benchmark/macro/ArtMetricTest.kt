@@ -18,7 +18,7 @@ package androidx.benchmark.macro
 
 import androidx.benchmark.DeviceInfo
 import androidx.benchmark.perfetto.PerfettoHelper
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
+import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
@@ -91,7 +91,7 @@ class ArtMetricTest {
                 )
             metric.configure(captureInfo)
             val result =
-                PerfettoTraceProcessor.runSingleSessionServer(tracePath) {
+                TraceProcessor.runSingleSessionServer(tracePath) {
                     metric.getMeasurements(
                         // note that most args are incorrect here, but currently
                         // only targetPackageName matters in this context

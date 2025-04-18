@@ -58,6 +58,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.error
@@ -66,6 +67,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.lerp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
+import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
 
@@ -243,8 +245,7 @@ internal fun CommonDecorationBox(
                     supporting = decoratedSupporting,
                     singleLine = singleLine,
                     labelPosition = labelPosition,
-                    // TODO(b/271000818): progress state read should be deferred to layout phase
-                    labelProgress = labelProgress.value,
+                    labelProgress = labelProgress::value,
                     paddingValues = contentPadding
                 )
             }
@@ -291,8 +292,7 @@ internal fun CommonDecorationBox(
                         }
                     },
                     labelPosition = labelPosition,
-                    // TODO(b/271000818): progress state read should be deferred to layout phase
-                    labelProgress = labelProgress.value,
+                    labelProgress = labelProgress::value,
                     container = borderContainerWithId,
                     paddingValues = contentPadding
                 )
@@ -348,6 +348,21 @@ internal fun Modifier.textFieldBackground(
     this.drawWithCache {
         val outline = shape.createOutline(size, layoutDirection, this)
         onDrawBehind { drawOutline(outline, color = color()) }
+    }
+
+/**
+ * Replacement for Modifier.heightIn which takes the constraint lazily to avoid recomposition while
+ * animating.
+ */
+internal fun Modifier.textFieldLabelMinHeight(minHeight: () -> Dp): Modifier =
+    this.layout { measurable, constraints ->
+        @Suppress("NAME_SHADOWING") val minHeight = minHeight()
+        val resolvedMinHeight =
+            constraints.constrainHeight(
+                if (minHeight != Dp.Unspecified) minHeight.roundToPx() else 0
+            )
+        val placeable = measurable.measure(constraints.copy(minHeight = resolvedMinHeight))
+        layout(placeable.width, placeable.height) { placeable.place(0, 0) }
     }
 
 @Suppress("BanInlineOptIn")

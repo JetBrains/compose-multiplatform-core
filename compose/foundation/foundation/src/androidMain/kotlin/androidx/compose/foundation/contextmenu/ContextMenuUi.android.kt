@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.sizeIn
@@ -65,7 +66,6 @@ import androidx.compose.ui.window.PopupProperties
 /**
  * Layout constants from the [Material 3 Menu Spec](https://m3.material.io/components/menus/specs).
  */
-@VisibleForTesting
 internal object ContextMenuSpec {
     // dimensions
     val ContainerWidthMin = 112.dp
@@ -78,6 +78,8 @@ internal object ContextMenuSpec {
     val HorizontalPadding = 12.dp // left/right of column and between elements in rows
     val VerticalPadding = 8.dp // top/bottom of column and around dividers
     val IconSize = 24.dp
+    val DividerHeight = 1.dp
+    val DividerVerticalPadding = 8.dp
 
     // text
     val FontSize = 14.sp
@@ -128,13 +130,22 @@ internal fun ContextMenuPopup(
         onDismissRequest = onDismiss,
         properties = DefaultPopupProperties,
     ) {
-        ContextMenuColumn(colors, modifier) {
-            val scope = remember { ContextMenuScope() }
-            with(scope) {
-                clear()
-                contextMenuBuilderBlock()
-                Content(colors)
-            }
+        ContextMenuColumnBuilder(modifier, colors, contextMenuBuilderBlock)
+    }
+}
+
+@Composable
+internal fun ContextMenuColumnBuilder(
+    modifier: Modifier = Modifier,
+    colors: ContextMenuColors = DefaultContextMenuColors,
+    contextMenuBuilderBlock: ContextMenuScope.() -> Unit,
+) {
+    ContextMenuColumn(colors, modifier) {
+        val scope = remember { ContextMenuScope() }
+        with(scope) {
+            clear()
+            contextMenuBuilderBlock()
+            Content(colors)
         }
     }
 }
@@ -289,6 +300,18 @@ internal class ContextMenuScope internal constructor() {
                 colors = colors,
                 leadingIcon = leadingIcon,
                 onClick = onClick
+            )
+        }
+    }
+
+    fun separator() {
+        composables += { colors ->
+            Box(
+                modifier =
+                    Modifier.padding(vertical = ContextMenuSpec.DividerVerticalPadding)
+                        .fillMaxWidth()
+                        .height(ContextMenuSpec.DividerHeight)
+                        .background(colors.iconColor)
             )
         }
     }

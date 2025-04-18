@@ -38,7 +38,7 @@ class LiveEditApiTests : BaseComposeTest() {
         invalidateGroupsWithKey(key)
     }
 
-    private fun compositionErrors(): List<Pair<Exception, Boolean>> = currentCompositionErrors()
+    private fun compositionErrors(): List<Pair<Throwable, Boolean>> = getCurrentCompositionErrors()
 
     @Before
     fun setUp() {
@@ -49,6 +49,7 @@ class LiveEditApiTests : BaseComposeTest() {
     @After
     fun tearDown() {
         clearCompositionErrors()
+        disableHotReloadMode()
     }
 
     // IMPORTANT: This must be the first test as the lambda key will change if the lambda is

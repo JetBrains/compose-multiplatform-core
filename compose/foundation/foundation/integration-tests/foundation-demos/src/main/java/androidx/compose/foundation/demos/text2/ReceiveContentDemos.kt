@@ -334,7 +334,7 @@ private fun KeyValueEntry(key: String, value: String) {
     }
 }
 
-@Suppress("ClassVerificationFailure", "DEPRECATION")
+@Suppress("DEPRECATION")
 private fun Uri.readImageBitmap(context: Context): ImageBitmap? {
     return try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {

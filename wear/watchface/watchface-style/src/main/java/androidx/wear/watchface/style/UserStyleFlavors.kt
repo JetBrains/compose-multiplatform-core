@@ -39,7 +39,12 @@ import org.xmlpull.v1.XmlPullParserException
  * @param complications Specifies complication data source policy represented by
  *   [DefaultComplicationDataSourcePolicy] for each [ComplicationSlot.id] presented in map. For
  *   absent complication slots default policies are used.
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class UserStyleFlavor(
     public val id: String,
     public val style: UserStyleData,
@@ -174,7 +179,12 @@ public class UserStyleFlavor(
  * Collection of watch face flavors, represented by [UserStyleFlavor] class.
  *
  * @param flavors List of flavors.
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class UserStyleFlavors(public val flavors: List<UserStyleFlavor>) {
     /** Constructs empty flavors collection. */
     constructor() : this(emptyList()) {}

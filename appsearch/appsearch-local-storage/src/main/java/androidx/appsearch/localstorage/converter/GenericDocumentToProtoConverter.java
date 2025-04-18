@@ -16,7 +16,6 @@
 
 package androidx.appsearch.localstorage.converter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchBlobHandle;
@@ -35,6 +34,8 @@ import com.google.android.icing.proto.DocumentProtoOrBuilder;
 import com.google.android.icing.proto.PropertyProto;
 import com.google.android.icing.proto.SchemaTypeConfigProto;
 import com.google.android.icing.protobuf.ByteString;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,10 +64,9 @@ public final class GenericDocumentToProtoConverter {
     /**
      * Converts a {@link GenericDocument} into a {@link DocumentProto}.
      */
-    @NonNull
     @SuppressWarnings("unchecked")
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    public static DocumentProto toDocumentProto(@NonNull GenericDocument document) {
+    public static @NonNull DocumentProto toDocumentProto(@NonNull GenericDocument document) {
         Preconditions.checkNotNull(document);
         DocumentProto.Builder mProtoBuilder = DocumentProto.newBuilder();
         mProtoBuilder.setUri(document.getId())
@@ -151,10 +151,9 @@ public final class GenericDocumentToProtoConverter {
      * @param prefix        the package + database prefix used searching the {@code schemaTypeMap}.
      * @param schemaCache   The SchemaCache instance held in AppSearch.
      */
-    @NonNull
     @SuppressWarnings("deprecation")
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    public static GenericDocument toGenericDocument(@NonNull DocumentProtoOrBuilder proto,
+    public static @NonNull GenericDocument toGenericDocument(@NonNull DocumentProtoOrBuilder proto,
             @NonNull String prefix,
             @NonNull SchemaCache schemaCache,
             @NonNull AppSearchConfig config) throws AppSearchException {
@@ -255,9 +254,8 @@ public final class GenericDocumentToProtoConverter {
     /**
      * Converts a {@link PropertyProto.VectorProto} into an {@link EmbeddingVector}.
      */
-    @NonNull
-    public static EmbeddingVector vectorProtoToEmbeddingVector(
-            @NonNull PropertyProto.VectorProto vectorProto) {
+    public static @NonNull EmbeddingVector vectorProtoToEmbeddingVector(
+            PropertyProto.@NonNull VectorProto vectorProto) {
         Preconditions.checkNotNull(vectorProto);
 
         float[] values = new float[vectorProto.getValuesCount()];
@@ -270,8 +268,7 @@ public final class GenericDocumentToProtoConverter {
     /**
      * Converts an {@link EmbeddingVector} into a {@link PropertyProto.VectorProto}.
      */
-    @NonNull
-    public static PropertyProto.VectorProto embeddingVectorToVectorProto(
+    public static PropertyProto.@NonNull VectorProto embeddingVectorToVectorProto(
             @NonNull EmbeddingVector embedding) {
         Preconditions.checkNotNull(embedding);
 
@@ -284,7 +281,7 @@ public final class GenericDocumentToProtoConverter {
     }
 
     private static void setEmptyProperty(@NonNull String propertyName,
-            @NonNull GenericDocument.Builder<?> documentBuilder,
+            GenericDocument.@NonNull Builder<?> documentBuilder,
             @NonNull SchemaTypeConfigProto schema) {
         @AppSearchSchema.PropertyConfig.DataType int dataType = 0;
         for (int i = 0; i < schema.getPropertiesCount(); ++i) {

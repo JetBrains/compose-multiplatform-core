@@ -229,8 +229,6 @@ src/sample/optin/UseJavaExperimentalFromKt.kt:116: Error: This declaration is op
                 javaSample("sample.optin.UseKtExperimentalFromJava")
             )
 
-        // TODO(b/210881073): Access to annotated property `field` is still not detected.
-
         val expected =
             """
 src/sample/optin/UseKtExperimentalFromJava.java:28: Error: This declaration is opt-in and its usage should be marked with @sample.optin.ExperimentalKotlinAnnotation or @OptIn(markerClass = sample.optin.ExperimentalKotlinAnnotation.class) [UnsafeOptInUsageError]

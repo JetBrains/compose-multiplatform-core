@@ -115,8 +115,8 @@ fun Project.getPrebuiltsRoot(): File {
 }
 
 /** @return the project's Android SDK stub JAR as a File. */
-fun Project.getAndroidJar(): FileCollection {
-    val compileSdk = "android-${project.defaultAndroidConfig.compileSdk}"
+fun Project.getAndroidJar(sdkNum: Int = project.defaultAndroidConfig.compileSdk): FileCollection {
+    val compileSdk = "android-${sdkNum}"
     return files(
         arrayOf(
             File(getSdkPath(), "platforms/$compileSdk/android.jar"),

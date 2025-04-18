@@ -23,7 +23,6 @@ import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteStatement
 import androidx.sqlite.driver.AndroidSQLiteConnection
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import androidx.sqlite.use
 
 /**
  * An implementation of a connection pool used when an [AndroidSQLiteDriver] is provided. This impl

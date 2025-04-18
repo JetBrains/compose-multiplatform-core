@@ -676,14 +676,14 @@ private inline fun LiveEditTestScope.recordErrors(block: () -> Unit) {
     } catch (e: Exception) {
         addError(e)
     }
-    currentCompositionErrors().forEach { addError(it.first) }
+    getCurrentCompositionErrors().forEach { addError(it.first) }
 }
 
 @Stable
 class LiveEditTestScope {
     private val targetKeys = mutableSetOf<Int>()
     private val checks = mutableListOf<() -> Unit>()
-    private val errors = mutableSetOf<Exception>()
+    private val errors = mutableSetOf<Throwable>()
     private val logs = mutableListOf<Pair<String, String>>()
 
     fun invalidateTargets() {
@@ -706,7 +706,7 @@ class LiveEditTestScope {
         logs.add(ref to msg)
     }
 
-    fun addError(e: Exception) {
+    fun addError(e: Throwable) {
         errors.add(e)
     }
 

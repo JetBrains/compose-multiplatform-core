@@ -28,6 +28,7 @@ import static org.junit.Assert.fail;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -870,5 +871,40 @@ public class CustomTabsIntentTest {
                 .build()
                 .intent;
         assertTrue(intent.getBooleanExtra(CustomTabsIntent.EXTRA_ENABLE_EPHEMERAL_BROWSING, false));
+    }
+
+    @Test
+    public void testEnableCloseButtonInCustomTab() {
+        Intent intent = new CustomTabsIntent.Builder()
+                .setCloseButtonEnabled(true)
+                .build()
+                .intent;
+        assertTrue(CustomTabsIntent.isCloseButtonEnabled(intent));
+    }
+
+    @Test
+    public void testDisableCloseButtonInCustomTab() {
+        Intent intent = new CustomTabsIntent.Builder()
+                .setCloseButtonEnabled(false)
+                .build()
+                .intent;
+        assertFalse(CustomTabsIntent.isCloseButtonEnabled(intent));
+    }
+
+    @Test
+    public void testCloseButtonByDefaultInCustomTab() {
+        Bitmap icon = Bitmap.createBitmap(/* width= */ 16, /* height= */ 16,
+                    Bitmap.Config.ARGB_8888);
+        Intent intent = new CustomTabsIntent.Builder()
+                .setCloseButtonPosition(CustomTabsIntent.CLOSE_BUTTON_POSITION_START)
+                .setCloseButtonIcon(icon)
+                .build()
+                .intent;
+        assertTrue(CustomTabsIntent.isCloseButtonEnabled(intent));
+        assertEquals(CustomTabsIntent.CLOSE_BUTTON_POSITION_START,
+                intent.getIntExtra(CustomTabsIntent.EXTRA_CLOSE_BUTTON_POSITION,
+                        CustomTabsIntent.CLOSE_BUTTON_POSITION_DEFAULT));
+        Bundle extras = intent.getExtras();
+        assertEquals(icon, (Bitmap) extras.getParcelable(CustomTabsIntent.EXTRA_CLOSE_BUTTON_ICON));
     }
 }

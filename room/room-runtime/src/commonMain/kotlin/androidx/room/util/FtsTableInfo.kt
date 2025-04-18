@@ -18,23 +18,22 @@ package androidx.room.util
 
 import androidx.annotation.RestrictTo
 import androidx.sqlite.SQLiteConnection
-import kotlin.jvm.JvmField
 import kotlin.jvm.JvmStatic
 
 /** A data class that holds the information about an FTS table. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 expect class FtsTableInfo {
     /** The table name */
-    @JvmField val name: String
+    val name: String
 
     /** The column names */
-    @JvmField val columns: Set<String>
+    val columns: Set<String>
 
     /**
      * The set of options. Each value in the set contains the option in the following format: <key,
      * value>.
      */
-    @JvmField val options: Set<String>
+    val options: Set<String>
 
     constructor(name: String, columns: Set<String>, createSql: String)
 

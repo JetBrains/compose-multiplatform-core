@@ -17,7 +17,6 @@
 package androidx.privacysandbox.sdkruntime.core.controller
 
 import android.os.ext.SdkExtensions
-import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresExtension
 import androidx.core.os.BuildCompat
 import androidx.test.filters.SdkSuppress
@@ -53,7 +52,7 @@ class SdkSandboxControllerClientPackageNameTest {
     }
 
     @Test
-    @RequiresApi(34)
+    @SdkSuppress(minSdkVersion = 34)
     @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 8)
     fun getClientPackageName_withApiAvailable_returnsResultFromPlatformApi() {
         Assume.assumeTrue(

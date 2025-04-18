@@ -20,6 +20,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.asContextElement
 
 /** Container of thread-local data. */
+@Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
 actual typealias ThreadLocal<T> = java.lang.ThreadLocal<T>
 
 /**

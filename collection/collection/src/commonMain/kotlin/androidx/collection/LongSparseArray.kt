@@ -504,7 +504,7 @@ internal inline fun <E> LongSparseArray<E>.commonToString(): String {
 }
 
 /** Returns the number of key/value pairs in the collection. */
-@Suppress("NOTHING_TO_INLINE")
+@Suppress("EXTENSION_SHADOWED_BY_MEMBER")
 public inline val <T> LongSparseArray<T>.size: Int
     get() = size()
 

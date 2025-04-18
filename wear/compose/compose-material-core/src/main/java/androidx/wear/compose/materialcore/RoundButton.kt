@@ -63,7 +63,7 @@ import androidx.compose.ui.unit.Dp
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun RoundButton(
+public fun RoundButton(
     onClick: () -> Unit,
     modifier: Modifier,
     enabled: Boolean,

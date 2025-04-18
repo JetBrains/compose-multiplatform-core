@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:JvmName("ExposedDropdownMenu_androidKt")
+
 package androidx.compose.material
 
 import androidx.compose.animation.animateColorAsState
@@ -61,6 +63,7 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntRect
+import kotlin.jvm.JvmName
 import kotlin.math.max
 
 /**
@@ -497,7 +500,7 @@ private class DefaultTextFieldForExposedDropdownMenusColors(
     private val disabledPlaceholderColor: Color
 ) : TextFieldColors {
 
-    @Suppress("OVERRIDE_DEPRECATION")
+    @Suppress("OVERRIDE_DEPRECATION") // b/407490794
     @Composable
     override fun leadingIconColor(enabled: Boolean, isError: Boolean): State<Color> {
         return rememberUpdatedState(
@@ -509,7 +512,7 @@ private class DefaultTextFieldForExposedDropdownMenusColors(
         )
     }
 
-    @Suppress("OVERRIDE_DEPRECATION")
+    @Suppress("OVERRIDE_DEPRECATION") // b/407490794
     @Composable
     override fun trailingIconColor(enabled: Boolean, isError: Boolean): State<Color> {
         return rememberUpdatedState(

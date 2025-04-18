@@ -45,14 +45,14 @@ import java.io.IOException;
  * </p>
  */
 @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
-@SuppressWarnings("HiddenSuperclass")
+// TODO(b/384721898): Switch to JSpecify annotations
+@SuppressWarnings({"HiddenSuperclass", "JSpecifyNullness"})
 @SafeParcelable.Class(creator = "OpenBlobForReadResponseCreator")
 @ExperimentalAppSearchApi
 public final class OpenBlobForReadResponse extends AbstractSafeParcelable implements
         Closeable {
 
-    @NonNull
-    public static final Parcelable.Creator<OpenBlobForReadResponse> CREATOR =
+    public static final @NonNull Parcelable.Creator<OpenBlobForReadResponse> CREATOR =
             new OpenBlobForReadResponseCreator();
 
     @Field(id = 1)
@@ -85,8 +85,7 @@ public final class OpenBlobForReadResponse extends AbstractSafeParcelable implem
      * there was an error, the result contains an {@link AppSearchResult} with details of the
      * failure.
      */
-    @NonNull
-    public AppSearchBatchResult<AppSearchBlobHandle, ParcelFileDescriptor> getResult() {
+    public @NonNull AppSearchBatchResult<AppSearchBlobHandle, ParcelFileDescriptor> getResult() {
         return mResultParcel.getResult();
     }
 

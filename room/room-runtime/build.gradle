@@ -23,7 +23,7 @@
  */
 
 
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.konan.target.Family
@@ -58,7 +58,7 @@ android {
         aidl = true
     }
     buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
+        consumerProguardFiles("src/androidMain/proguard-rules.pro")
         stableAidl {
             version = 1
         }
@@ -69,7 +69,7 @@ android {
 }
 
 androidXMultiplatform {
-    android()
+    androidTarget()
     ios() {
         // Link to sqlite3 available in iOS
         binaries.configureEach {
@@ -109,7 +109,6 @@ androidXMultiplatform {
                 api("androidx.collection:collection:1.4.2")
                 api("androidx.annotation:annotation:1.8.1")
                 api(libs.kotlinCoroutinesCore)
-                implementation(libs.atomicFu)
             }
         }
         commonTest {
@@ -139,6 +138,7 @@ androidXMultiplatform {
         androidMain {
             dependsOn(jvmAndroidMain)
             dependencies {
+                api(libs.jspecify)
                 api(project(":sqlite:sqlite-framework"))
                 api(libs.kotlinCoroutinesAndroid)
                 implementation("androidx.arch.core:core-runtime:2.2.0")
@@ -179,6 +179,7 @@ androidXMultiplatform {
             dependsOn(jvmNativeMain)
             dependencies {
                 api(project(":sqlite:sqlite-framework"))
+                implementation(libs.atomicFu)
             }
         }
         nativeTest {
@@ -220,9 +221,10 @@ dependencies {
 
 androidx {
     name = "Room-Runtime"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Room-Runtime"
     legacyDisableKotlinStrictApiMode = true
     metalavaK2UastEnabled = false
 }
+

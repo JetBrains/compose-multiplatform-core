@@ -210,7 +210,7 @@ class TwoDimensionalFocusTraversalEnterTest {
         val (child, grandchild) = List(2) { mutableStateOf(false) }
         rule.setContentForTest {
             FocusableBox(focusedItem, 0, 0, 30, 30, initialFocus) {
-                val customEnter = Modifier.focusProperties { onEnter = { cancelFocus() } }
+                val customEnter = Modifier.focusProperties { onEnter = { cancelFocusChange() } }
                 FocusableBox(child, 10, 10, 10, 10, deactivated = true, modifier = customEnter) {
                     FocusableBox(grandchild, 10, 10, 10, 10)
                 }

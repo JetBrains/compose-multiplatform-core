@@ -102,6 +102,32 @@ import java.util.concurrent.ExecutionException;
 @RestrictTo(Scope.LIBRARY_GROUP_PREFIX)
 public class ProtoLayoutViewInstance implements AutoCloseable {
 
+    /** The parameters for a render request. */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public static final class RenderRequestParams {
+
+        /**
+         * The render request id. It is required to be unique for each render request and an
+         * increasing value.
+         */
+        private final long mId;
+
+        /**
+         * Creates a new render request params.
+         *
+         * @param renderRequestId the render request id. It is required to be unique for each render
+         *     request and an increasing value.
+         */
+        public RenderRequestParams(long renderRequestId) {
+            this.mId = renderRequestId;
+        }
+
+        /** Returns the render request id. */
+        public long getId() {
+            return mId;
+        }
+    }
+
     /**
      * Returns list of all ProtoAnimations contained in this ProtoLayout. Used by ui-tooling library
      * for inspection amd modification of animations.
@@ -203,6 +229,12 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
     private boolean mCanReattachWithoutRendering = false;
 
     private static final int DYNAMIC_NODES_MAX_COUNT = 200;
+
+    /**
+     * Tracks the most recent render request id. It is a unique increasing value for each render
+     * request. It ensures the layout update flag remains set during concurrent rendering.
+     */
+    private long mLastRenderRequestId;
 
     /**
      * This is used to provide a {@link ResourceResolvers} object to the {@link
@@ -939,14 +971,35 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
     }
 
     @UiThread
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RestrictTo(Scope.LIBRARY_GROUP)
     public @NonNull ListenableFuture<RenderingArtifact> renderLayoutAndAttach(
             @NonNull Layout layout,
             ResourceProto.@NonNull Resources resources,
-            @NonNull ViewGroup attachParent) {
-
-        return renderAndAttach(
-                layout, resources, attachParent, mProviderStatsLogger.createInflaterStatsLogger());
+            @NonNull ViewGroup attachParent,
+            @NonNull RenderRequestParams renderRequestParams) {
+        try {
+            ListenableFuture<RenderingArtifact> renderAndAttachFuture =
+                    renderAndAttach(
+                            layout,
+                            resources,
+                            attachParent,
+                            mProviderStatsLogger.createInflaterStatsLogger());
+            if (!renderAndAttachFuture.isDone()) {
+                renderAndAttachFuture.addListener(
+                        () ->
+                                setLayoutUpdatePending(
+                                        renderRequestParams.getId(),
+                                        /* isLayoutUpdatePending= */ false),
+                        mUiExecutorService);
+            } else {
+                setLayoutUpdatePending(
+                        renderRequestParams.getId(), /* isLayoutUpdatePending= */ false);
+            }
+            return renderAndAttachFuture;
+        } catch (IllegalStateException e) {
+            setLayoutUpdatePending(renderRequestParams.getId(), /* isLayoutUpdatePending= */ false);
+            throw e;
+        }
     }
 
     /**
@@ -975,7 +1028,11 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
             @NonNull ViewGroup attachParent) {
         SettableFuture<Void> result = SettableFuture.create();
         ListenableFuture<RenderingArtifact> future =
-                renderLayoutAndAttach(layout, resources, attachParent);
+                renderLayoutAndAttach(
+                        layout,
+                        resources,
+                        attachParent,
+                        new RenderRequestParams(mLastRenderRequestId));
         if (future.isDone()) {
             if (future.isCancelled()) {
                 return immediateCancelledFuture();
@@ -1060,7 +1117,7 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
                 ProtoLayoutInflater.clearRenderedMetadata(checkNotNull(prevInflateParent));
             }
 
-                        RenderedMetadata prevRenderedMetadata =
+            RenderedMetadata prevRenderedMetadata =
                     prevInflateParent != null
                             ? ProtoLayoutInflater.getRenderedMetadata(prevInflateParent)
                             : null;
@@ -1339,6 +1396,16 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
                 mDataPipeline.setFullyVisible(false);
                 mWasFullyVisibleBefore = false;
             }
+        }
+    }
+
+    /** Sets whether a new layout is pending. This is used to update the data pipeline. */
+    @RestrictTo(Scope.LIBRARY)
+    @UiThread
+    public void setLayoutUpdatePending(long renderRequestId, boolean isLayoutUpdatePending) {
+        if (mDataPipeline != null && mLastRenderRequestId <= renderRequestId) {
+            mDataPipeline.setLayoutUpdatePending(isLayoutUpdatePending);
+            mLastRenderRequestId = renderRequestId;
         }
     }
 

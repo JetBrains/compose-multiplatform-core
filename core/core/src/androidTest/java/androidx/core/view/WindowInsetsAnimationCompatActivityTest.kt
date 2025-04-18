@@ -20,7 +20,6 @@ import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
-import androidx.annotation.RequiresApi
 import androidx.core.test.R
 import androidx.core.view.WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE
 import androidx.core.view.WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_STOP
@@ -46,7 +45,6 @@ import org.junit.Before
 import org.junit.Test
 
 @SdkSuppress(minSdkVersion = 21)
-@RequiresApi(21)
 @LargeTest
 public class WindowInsetsAnimationCompatActivityTest {
 

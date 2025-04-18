@@ -22,7 +22,6 @@ import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.ImageCaptureException;
@@ -30,6 +29,8 @@ import androidx.camera.core.processing.Operation;
 import androidx.camera.core.processing.Packet;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.ByteArrayOutputStream;
 
@@ -41,9 +42,8 @@ import java.io.ByteArrayOutputStream;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Bitmap2JpegBytes implements Operation<Bitmap2JpegBytes.In, Packet<byte[]>> {
 
-    @NonNull
     @Override
-    public Packet<byte[]> apply(@NonNull In in) throws ImageCaptureException {
+    public @NonNull Packet<byte[]> apply(@NonNull In in) throws ImageCaptureException {
         Packet<Bitmap> packet = in.getPacket();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         packet.getData().compress(Bitmap.CompressFormat.JPEG, in.getJpegQuality(), outputStream);
@@ -88,8 +88,7 @@ public class Bitmap2JpegBytes implements Operation<Bitmap2JpegBytes.In, Packet<b
 
         abstract int getJpegQuality();
 
-        @NonNull
-        public static In of(@NonNull Packet<Bitmap> imagePacket, int jpegQuality) {
+        public static @NonNull In of(@NonNull Packet<Bitmap> imagePacket, int jpegQuality) {
             return new AutoValue_Bitmap2JpegBytes_In(imagePacket, jpegQuality);
         }
     }

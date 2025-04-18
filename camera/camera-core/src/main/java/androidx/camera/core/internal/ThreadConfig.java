@@ -16,9 +16,10 @@
 
 package androidx.camera.core.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.ReadableConfig;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 
@@ -45,8 +46,7 @@ public interface ThreadConfig extends ReadableConfig {
      * @return The stored value or <code>valueIfMissing</code> if the value does not exist in this
      * configuration.
      */
-    @Nullable
-    default Executor getBackgroundExecutor(@Nullable Executor valueIfMissing) {
+    default @Nullable Executor getBackgroundExecutor(@Nullable Executor valueIfMissing) {
         return retrieveOption(OPTION_BACKGROUND_EXECUTOR, valueIfMissing);
     }
 
@@ -57,8 +57,7 @@ public interface ThreadConfig extends ReadableConfig {
      * @return The stored value, if it exists in this configuration.
      * @throws IllegalArgumentException if the option does not exist in this configuration.
      */
-    @NonNull
-    default Executor getBackgroundExecutor() {
+    default @NonNull Executor getBackgroundExecutor() {
         return retrieveOption(OPTION_BACKGROUND_EXECUTOR);
     }
 
@@ -75,7 +74,6 @@ public interface ThreadConfig extends ReadableConfig {
          * @param executor The executor which will be used for background tasks.
          * @return the current Builder.
          */
-        @NonNull
-        B setBackgroundExecutor(@NonNull Executor executor);
+        @NonNull B setBackgroundExecutor(@NonNull Executor executor);
     }
 }

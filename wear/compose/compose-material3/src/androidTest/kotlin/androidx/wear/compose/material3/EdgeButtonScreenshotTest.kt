@@ -27,6 +27,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
@@ -41,6 +43,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import androidx.wear.compose.foundation.GestureInclusion
 import androidx.wear.compose.foundation.pager.HorizontalPager
 import androidx.wear.compose.foundation.pager.rememberPagerState
 import org.junit.Rule
@@ -81,7 +84,16 @@ class EdgeButtonScreenshotTest {
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.testTag("Pager"),
-                swipeToDismissEdgeZoneFraction = 0f,
+                gestureInclusion =
+                    object : GestureInclusion {
+                        override fun ignoreGestureStart(
+                            offset: Offset,
+                            layoutCoordinates: LayoutCoordinates
+                        ): Boolean {
+                            return false
+                        }
+                    },
+                // disable swipe to dismiss
             ) { page ->
                 EdgeButton(
                     // Only check the EdgeButton on the third page (index == 2)

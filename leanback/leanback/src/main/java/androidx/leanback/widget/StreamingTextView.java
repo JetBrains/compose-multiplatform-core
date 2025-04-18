@@ -34,9 +34,10 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.core.widget.TextViewCompat;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Random;

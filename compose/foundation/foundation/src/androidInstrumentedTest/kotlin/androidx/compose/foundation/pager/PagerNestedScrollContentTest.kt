@@ -402,8 +402,10 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
         val rowColumnContent: @Composable (Int) -> Unit = { page ->
             repeat(DefaultPageCount) { item ->
                 val columnFocusRequester =
-                    FocusRequester().apply {
-                        if (item == 3 && page == 5) innerListFocusRequester = this
+                    remember(item, page) {
+                        FocusRequester().apply {
+                            if (item == 3 && page == 5) innerListFocusRequester = this
+                        }
                     }
                 Box(
                     modifier =
@@ -428,7 +430,9 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
             pageSize = { PageSize.Fixed(100.dp) }
         ) { page ->
             val focusRequester =
-                FocusRequester().apply { if (page == 5) pagerFocusRequester = this }
+                remember(page) {
+                    FocusRequester().apply { if (page == 5) pagerFocusRequester = this }
+                }
             val rowColumnModifier =
                 Modifier.focusRequester(focusRequester).verticalScroll(rememberScrollState())
 

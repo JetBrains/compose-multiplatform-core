@@ -17,8 +17,9 @@
 package androidx.camera.core;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -109,8 +110,7 @@ public final class DynamicRange {
      *   Bit Depth: BIT_DEPTH_UNSPECIFIED
      * </pre>
      */
-    @NonNull
-    public static final DynamicRange UNSPECIFIED = new DynamicRange(ENCODING_UNSPECIFIED,
+    public static final @NonNull DynamicRange UNSPECIFIED = new DynamicRange(ENCODING_UNSPECIFIED,
             BIT_DEPTH_UNSPECIFIED);
 
     /**
@@ -122,8 +122,7 @@ public final class DynamicRange {
      *   Bit Depth: BIT_DEPTH_8_BIT
      * </pre>
      */
-    @NonNull
-    public static final DynamicRange SDR = new DynamicRange(ENCODING_SDR, BIT_DEPTH_8_BIT);
+    public static final @NonNull DynamicRange SDR = new DynamicRange(ENCODING_SDR, BIT_DEPTH_8_BIT);
 
     /**
      * A dynamic range representing 10-bit high dynamic range (HDR) with unspecified encoding.
@@ -138,8 +137,7 @@ public final class DynamicRange {
      *   Bit Depth: BIT_DEPTH_10_BIT
      * </pre>
      */
-    @NonNull
-    public static final DynamicRange HDR_UNSPECIFIED_10_BIT =
+    public static final @NonNull DynamicRange HDR_UNSPECIFIED_10_BIT =
             new DynamicRange(ENCODING_HDR_UNSPECIFIED, BIT_DEPTH_10_BIT);
 
     /**
@@ -151,8 +149,8 @@ public final class DynamicRange {
      *   Bit Depth: BIT_DEPTH_10_BIT
      * </pre>
      */
-    @NonNull
-    public static final DynamicRange HLG_10_BIT = new DynamicRange(ENCODING_HLG, BIT_DEPTH_10_BIT);
+    public static final @NonNull DynamicRange HLG_10_BIT =
+            new DynamicRange(ENCODING_HLG, BIT_DEPTH_10_BIT);
 
     /**
      * A 10-bit high-dynamic range with HDR10 encoding.
@@ -163,8 +161,7 @@ public final class DynamicRange {
      *   Bit Depth: BIT_DEPTH_10_BIT
      * </pre>
      */
-    @NonNull
-    public static final DynamicRange HDR10_10_BIT = new DynamicRange(ENCODING_HDR10,
+    public static final @NonNull DynamicRange HDR10_10_BIT = new DynamicRange(ENCODING_HDR10,
             BIT_DEPTH_10_BIT);
 
     /**
@@ -176,9 +173,8 @@ public final class DynamicRange {
      *   Bit Depth: BIT_DEPTH_10_BIT
      * </pre>
      */
-    @NonNull
-    public static final DynamicRange HDR10_PLUS_10_BIT = new DynamicRange(ENCODING_HDR10_PLUS,
-            BIT_DEPTH_10_BIT);
+    public static final @NonNull DynamicRange HDR10_PLUS_10_BIT =
+            new DynamicRange(ENCODING_HDR10_PLUS, BIT_DEPTH_10_BIT);
 
     /**
      * A 10-bit high-dynamic range with Dolby Vision encoding.
@@ -189,9 +185,8 @@ public final class DynamicRange {
      *   Bit Depth: BIT_DEPTH_10_BIT
      * </pre>
      */
-    @NonNull
-    public static final DynamicRange DOLBY_VISION_10_BIT = new DynamicRange(ENCODING_DOLBY_VISION,
-            BIT_DEPTH_10_BIT);
+    public static final @NonNull DynamicRange DOLBY_VISION_10_BIT =
+            new DynamicRange(ENCODING_DOLBY_VISION, BIT_DEPTH_10_BIT);
 
     /**
      * An 8-bit high-dynamic range with Dolby Vision encoding.
@@ -202,9 +197,8 @@ public final class DynamicRange {
      *   Bit Depth: BIT_DEPTH_8_BIT
      * </pre>
      */
-    @NonNull
-    public static final DynamicRange DOLBY_VISION_8_BIT = new DynamicRange(ENCODING_DOLBY_VISION,
-            BIT_DEPTH_8_BIT);
+    public static final @NonNull DynamicRange DOLBY_VISION_8_BIT =
+            new DynamicRange(ENCODING_DOLBY_VISION, BIT_DEPTH_8_BIT);
     //------------------------------------------------------------------------------//
 
     private final @DynamicRangeEncoding int mEncoding;
@@ -274,9 +268,8 @@ public final class DynamicRange {
                 && getBitDepth() == BIT_DEPTH_10_BIT;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "DynamicRange@" + Integer.toHexString(System.identityHashCode(this)) + "{"
                 + "encoding=" + getEncodingLabel(mEncoding) + ", "
                 + "bitDepth=" + mBitDepth
@@ -306,8 +299,7 @@ public final class DynamicRange {
         return hashCode;
     }
 
-    @NonNull
-    private static String getEncodingLabel(@DynamicRangeEncoding int encoding) {
+    private static @NonNull String getEncodingLabel(@DynamicRangeEncoding int encoding) {
         switch (encoding) {
             case ENCODING_UNSPECIFIED: return "UNSPECIFIED";
             case ENCODING_SDR: return "SDR";

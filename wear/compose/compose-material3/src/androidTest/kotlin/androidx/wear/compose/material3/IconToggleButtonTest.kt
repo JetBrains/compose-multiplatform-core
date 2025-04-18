@@ -59,6 +59,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.test.filters.SdkSuppress
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
@@ -241,7 +242,7 @@ class IconToggleButtonTest {
         rule.onNodeWithTag(TEST_TAG).assertIsOff().performClick().assertIsOff()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun is_circular_under_ltr() =
         rule.isShape(
@@ -258,7 +259,7 @@ class IconToggleButtonTest {
             )
         }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun is_circular_under_rtl() =
         rule.isShape(
@@ -275,7 +276,7 @@ class IconToggleButtonTest {
             )
         }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun allows_shape_overrides() =
         rule.isShape(
@@ -301,7 +302,7 @@ class IconToggleButtonTest {
                 checked = true,
                 onCheckedChange = {},
                 content = {},
-                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.DefaultButtonSize)
+                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.Size)
             )
         }
 
@@ -313,7 +314,7 @@ class IconToggleButtonTest {
                 checked = true,
                 onCheckedChange = {},
                 content = {},
-                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.SmallButtonSize)
+                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.SmallSize)
             )
         }
 
@@ -325,7 +326,7 @@ class IconToggleButtonTest {
                 checked = true,
                 onCheckedChange = {},
                 content = {},
-                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.LargeButtonSize)
+                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.LargeSize)
             )
         }
 
@@ -337,7 +338,7 @@ class IconToggleButtonTest {
                 checked = true,
                 onCheckedChange = {},
                 content = {},
-                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.ExtraLargeButtonSize)
+                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.ExtraLargeSize)
             )
         }
 
@@ -349,7 +350,7 @@ class IconToggleButtonTest {
                 checked = true,
                 onCheckedChange = {},
                 content = {},
-                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.DefaultButtonSize)
+                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.Size)
             )
         }
 
@@ -361,7 +362,7 @@ class IconToggleButtonTest {
                 checked = true,
                 onCheckedChange = {},
                 content = {},
-                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.SmallButtonSize)
+                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.SmallSize)
             )
         }
 
@@ -373,7 +374,7 @@ class IconToggleButtonTest {
                 checked = true,
                 onCheckedChange = {},
                 content = {},
-                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.ExtraLargeButtonSize)
+                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.ExtraLargeSize)
             )
         }
 
@@ -385,59 +386,59 @@ class IconToggleButtonTest {
                 checked = true,
                 onCheckedChange = {},
                 content = {},
-                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.LargeButtonSize)
+                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.LargeSize)
             )
         }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_checked_primary_colors() =
         rule.verifyIconToggleButtonColors(
             status = Status.Enabled,
             checked = true,
-            colors = { IconToggleButtonDefaults.iconToggleButtonColors() },
+            colors = { IconToggleButtonDefaults.colors() },
             containerColor = { MaterialTheme.colorScheme.primary },
             contentColor = { MaterialTheme.colorScheme.onPrimary }
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_unchecked_surface_colors() =
         rule.verifyIconToggleButtonColors(
             status = Status.Enabled,
             checked = false,
-            colors = { IconToggleButtonDefaults.iconToggleButtonColors() },
+            colors = { IconToggleButtonDefaults.colors() },
             containerColor = { MaterialTheme.colorScheme.surfaceContainer },
             contentColor = { MaterialTheme.colorScheme.onSurfaceVariant }
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_unchecked_surface_colors_with_alpha() =
         rule.verifyIconToggleButtonColors(
             status = Status.Disabled,
             checked = false,
-            colors = { IconToggleButtonDefaults.iconToggleButtonColors() },
+            colors = { IconToggleButtonDefaults.colors() },
             containerColor = {
                 MaterialTheme.colorScheme.onSurface.toDisabledColor(DisabledContainerAlpha)
             },
             contentColor = { MaterialTheme.colorScheme.onSurface.toDisabledColor() }
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_primary_checked_contrasting_content_color() =
         rule.verifyIconToggleButtonColors(
             status = Status.Disabled,
             checked = true,
-            colors = { IconToggleButtonDefaults.iconToggleButtonColors() },
+            colors = { IconToggleButtonDefaults.colors() },
             containerColor = {
                 MaterialTheme.colorScheme.onSurface.toDisabledColor(DisabledContainerAlpha)
             },
             contentColor = { MaterialTheme.colorScheme.onSurface.toDisabledColor() },
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun allows_custom_checked_background_override() {
         val overrideColor = Color.Yellow
@@ -445,17 +446,13 @@ class IconToggleButtonTest {
         rule.verifyIconToggleButtonColors(
             status = Status.Enabled,
             checked = true,
-            colors = {
-                IconToggleButtonDefaults.iconToggleButtonColors(
-                    checkedContainerColor = overrideColor
-                )
-            },
+            colors = { IconToggleButtonDefaults.colors(checkedContainerColor = overrideColor) },
             containerColor = { overrideColor },
             contentColor = { MaterialTheme.colorScheme.onPrimary }
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun allows_custom_checked_content_override() {
         val overrideColor = Color.Green
@@ -463,15 +460,13 @@ class IconToggleButtonTest {
         rule.verifyIconToggleButtonColors(
             status = Status.Enabled,
             checked = true,
-            colors = {
-                IconToggleButtonDefaults.iconToggleButtonColors(checkedContentColor = overrideColor)
-            },
+            colors = { IconToggleButtonDefaults.colors(checkedContentColor = overrideColor) },
             containerColor = { MaterialTheme.colorScheme.primary },
             contentColor = { overrideColor }
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun allows_custom_unchecked_background_override() {
         val overrideColor = Color.Red
@@ -479,17 +474,13 @@ class IconToggleButtonTest {
         rule.verifyIconToggleButtonColors(
             status = Status.Enabled,
             checked = false,
-            colors = {
-                IconToggleButtonDefaults.iconToggleButtonColors(
-                    uncheckedContainerColor = overrideColor
-                )
-            },
+            colors = { IconToggleButtonDefaults.colors(uncheckedContainerColor = overrideColor) },
             containerColor = { overrideColor },
             contentColor = { MaterialTheme.colorScheme.onSurfaceVariant }
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun allows_custom_unchecked_content_override() {
         val overrideColor = Color.Green
@@ -497,17 +488,13 @@ class IconToggleButtonTest {
         rule.verifyIconToggleButtonColors(
             status = Status.Enabled,
             checked = false,
-            colors = {
-                IconToggleButtonDefaults.iconToggleButtonColors(
-                    uncheckedContentColor = overrideColor
-                )
-            },
+            colors = { IconToggleButtonDefaults.colors(uncheckedContentColor = overrideColor) },
             containerColor = { MaterialTheme.colorScheme.surfaceContainer },
             contentColor = { overrideColor }
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun allows_custom_checked_disabled_background_override() {
         val overrideColor = Color.Yellow
@@ -516,7 +503,7 @@ class IconToggleButtonTest {
             status = Status.Disabled,
             checked = true,
             colors = {
-                IconToggleButtonDefaults.iconToggleButtonColors(
+                IconToggleButtonDefaults.colors(
                     // Apply the content color override for the content alpha to be applied
                     disabledCheckedContainerColor = overrideColor
                 )
@@ -526,7 +513,7 @@ class IconToggleButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun allows_custom_checked_disabled_content_override() {
         val overrideColor = Color.Green
@@ -535,7 +522,7 @@ class IconToggleButtonTest {
             status = Status.Disabled,
             checked = true,
             colors = {
-                IconToggleButtonDefaults.iconToggleButtonColors(
+                IconToggleButtonDefaults.colors(
                     // Apply the content color override for the content alpha to be applied
                     disabledCheckedContentColor = overrideColor
                 )
@@ -547,7 +534,7 @@ class IconToggleButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun allows_custom_unchecked_disabled_background_override() {
         val overrideColor = Color.Red
@@ -556,7 +543,7 @@ class IconToggleButtonTest {
             status = Status.Disabled,
             checked = false,
             colors = {
-                IconToggleButtonDefaults.iconToggleButtonColors(
+                IconToggleButtonDefaults.colors(
                     // Apply the content color override for the content alpha to be applied
                     disabledUncheckedContainerColor = overrideColor
                 )
@@ -566,7 +553,7 @@ class IconToggleButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun allows_custom_unchecked_disabled_content_override() {
         val overrideColor = Color.Green
@@ -575,7 +562,7 @@ class IconToggleButtonTest {
             status = Status.Disabled,
             checked = false,
             colors = {
-                IconToggleButtonDefaults.iconToggleButtonColors(
+                IconToggleButtonDefaults.colors(
                     // Apply the content color override for the content alpha to be applied
                     disabledUncheckedContentColor = overrideColor
                 )
@@ -623,7 +610,7 @@ class IconToggleButtonTest {
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, overrideRole))
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun animates_corners_to_75_percent_on_click() {
         val uncheckedShape = RoundedCornerShape(20.dp)
@@ -659,7 +646,7 @@ class IconToggleButtonTest {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun changes_unchecked_to_checked_shape_on_click() {
         val uncheckedShape = RoundedCornerShape(20.dp)
@@ -683,7 +670,7 @@ class IconToggleButtonTest {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun changes_checked_to_unchecked_shape_on_click() {
         val uncheckedShape = RoundedCornerShape(10.dp)
@@ -708,7 +695,7 @@ class IconToggleButtonTest {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun changes_to_unchecked_pressed_shape_when_pressed_on_unchecked() {
         val uncheckedShape = RoundedCornerShape(20.dp)
@@ -741,7 +728,7 @@ class IconToggleButtonTest {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun changes_to_checked_pressed_shape_when_pressed_on_checked() {
         val uncheckedShape = RoundedCornerShape(10.dp)
@@ -801,7 +788,7 @@ class IconToggleButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun changes_unchecked_to_checked_shape_when_checked_changed() {
         val uncheckedShape = RoundedCornerShape(20.dp)
@@ -826,7 +813,7 @@ class IconToggleButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun changes_checked_to_unchecked_shape_when_checked_changed() {
         val uncheckedShape = RoundedCornerShape(20.dp)
@@ -853,7 +840,7 @@ class IconToggleButtonTest {
 
     @Composable
     private fun shapeColor(checked: Boolean = true): Color {
-        return IconToggleButtonDefaults.iconToggleButtonColors()
+        return IconToggleButtonDefaults.colors()
             .containerColor(enabled = true, checked = checked)
             .value
     }

@@ -21,26 +21,39 @@ import com.google.auto.common.MoreElements
 import com.google.auto.common.MoreTypes
 import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
+import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.ExecutableType
+import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
 import kotlin.coroutines.Continuation
 
 private val NONNULL_ANNOTATIONS =
-    arrayOf("androidx.annotation.NonNull", "org.jetbrains.annotations.NotNull")
+    arrayOf(
+        "androidx.annotation.NonNull",
+        "org.jetbrains.annotations.NotNull",
+        "org.jspecify.annotations.NonNull"
+    )
 
 private val NULLABLE_ANNOTATIONS =
-    arrayOf("androidx.annotation.Nullable", "org.jetbrains.annotations.Nullable")
+    arrayOf(
+        "androidx.annotation.Nullable",
+        "org.jetbrains.annotations.Nullable",
+        "org.jspecify.annotations.Nullable"
+    )
+
+/** Checks if any of the [annotations] are present on the [Element] or its [type]. */
+private fun Element.hasAnyOf(annotations: Array<String>, type: TypeMirror) =
+    annotationMirrors.hasAnyOf(annotations) || type.annotationMirrors.hasAnyOf(annotations)
 
 @Suppress("UnstableApiUsage")
-private fun Element.hasAnyOf(annotations: Array<String>) =
-    annotationMirrors.any { annotationMirror ->
-        val annotationTypeElement = MoreElements.asType(annotationMirror.annotationType.asElement())
-        annotations.any { annotationTypeElement.qualifiedName.contentEquals(it) }
-    }
+private fun List<AnnotationMirror>.hasAnyOf(annotations: Array<String>) = any { annotationMirror ->
+    val annotationTypeElement = MoreElements.asType(annotationMirror.annotationType.asElement())
+    annotations.any { annotationTypeElement.qualifiedName.contentEquals(it) }
+}
 
 internal val Element.nullability: XNullability
     get() {
@@ -53,9 +66,9 @@ internal val Element.nullability: XNullability
                     else -> it
                 }
             }
-        return if (asType.kind.isPrimitive || hasAnyOf(NONNULL_ANNOTATIONS)) {
+        return if (asType.kind.isPrimitive || hasAnyOf(NONNULL_ANNOTATIONS, asType)) {
             XNullability.NONNULL
-        } else if (hasAnyOf(NULLABLE_ANNOTATIONS)) {
+        } else if (hasAnyOf(NULLABLE_ANNOTATIONS, asType)) {
             XNullability.NULLABLE
         } else {
             XNullability.UNKNOWN

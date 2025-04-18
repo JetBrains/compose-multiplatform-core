@@ -16,7 +16,6 @@
 
 package androidx.window.extensions.embedding;
 
-import android.annotation.SuppressLint;
 import android.os.Build;
 import android.view.WindowMetrics;
 
@@ -102,7 +101,6 @@ public abstract class SplitRule extends EmbeddingRule {
      * @param parentMetrics the {@link WindowMetrics} of the parent window.
      * @return whether the parent window satisfied the {@link SplitRule} requirements.
      */
-    @SuppressLint("ClassVerificationFailure") // Only called by Extensions implementation on device.
     @RequiresApi(api = Build.VERSION_CODES.N)
     public boolean checkParentMetrics(@NonNull WindowMetrics parentMetrics) {
         return mParentWindowMetricsPredicate.test(parentMetrics);

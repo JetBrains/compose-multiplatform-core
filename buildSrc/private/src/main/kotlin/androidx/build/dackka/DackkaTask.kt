@@ -170,43 +170,51 @@ constructor(private val workerExecutor: WorkerExecutor, private val objects: Obj
                 ?.let { metadataFile ->
                     val metadata =
                         gson.fromJson(metadataFile.readText(), ProjectStructureMetadata::class.java)
-                    metadata.sourceSets.mapNotNull { sourceSet ->
-                        val sourceDir = multiplatformSourcesDir.get().asFile.resolve(sourceSet.name)
-                        if (!sourceDir.exists()) return@mapNotNull null
-                        val analysisPlatform =
-                            DokkaAnalysisPlatform.valueOf(sourceSet.analysisPlatform.uppercase())
-                        DokkaInputModels.SourceSet(
-                            id = sourceSetIdForSourceSet(sourceSet.name),
-                            displayName = sourceSet.name,
-                            analysisPlatform = analysisPlatform.jsonName,
-                            sourceRoots = objects.fileCollection().from(sourceDir),
-                            // TODO(b/181224204): KMP samples aren't supported, dackka assumes all
-                            // samples are in common
-                            samples =
-                                if (analysisPlatform == DokkaAnalysisPlatform.COMMON) {
-                                    objects
-                                        .fileCollection()
-                                        .from(
-                                            samplesDeprecatedDir,
-                                            samplesJvmDir,
-                                            samplesKmpDir,
-                                            frameworkSamplesDir.get().asFile
-                                        )
-                                } else {
-                                    objects.fileCollection()
-                                },
-                            includes = objects.fileCollection().from(includesFiles(sourceDir)),
-                            classpath = dependenciesClasspath,
-                            externalDocumentationLinks = externalDocs,
-                            dependentSourceSets =
-                                sourceSet.dependencies.map { sourceSetIdForSourceSet(it) },
-                            noJdkLink = !analysisPlatform.androidOrJvm(),
-                            noAndroidSdkLink = analysisPlatform != DokkaAnalysisPlatform.ANDROID,
-                            noStdlibLink = false,
-                            // Dackka source link configuration doesn't use the Dokka version
-                            sourceLinks = emptyList()
-                        )
-                    }
+                    // Sort to ensure that child sourceSets come after their parents, b/404784813
+                    metadata.sourceSets
+                        .sortedWith(compareBy({ it.dependencies.size }, { it.name }))
+                        .mapNotNull { sourceSet ->
+                            val sourceDir =
+                                multiplatformSourcesDir.get().asFile.resolve(sourceSet.name)
+                            if (!sourceDir.exists()) return@mapNotNull null
+                            val analysisPlatform =
+                                DokkaAnalysisPlatform.valueOf(
+                                    sourceSet.analysisPlatform.uppercase()
+                                )
+                            DokkaInputModels.SourceSet(
+                                id = sourceSetIdForSourceSet(sourceSet.name),
+                                displayName = sourceSet.name,
+                                analysisPlatform = analysisPlatform.jsonName,
+                                sourceRoots = objects.fileCollection().from(sourceDir),
+                                // TODO(b/181224204): KMP samples aren't supported, dackka assumes
+                                // all
+                                // samples are in common
+                                samples =
+                                    if (analysisPlatform == DokkaAnalysisPlatform.COMMON) {
+                                        objects
+                                            .fileCollection()
+                                            .from(
+                                                samplesDeprecatedDir,
+                                                samplesJvmDir,
+                                                samplesKmpDir,
+                                                frameworkSamplesDir.get().asFile
+                                            )
+                                    } else {
+                                        objects.fileCollection()
+                                    },
+                                includes = objects.fileCollection().from(includesFiles(sourceDir)),
+                                classpath = dependenciesClasspath,
+                                externalDocumentationLinks = externalDocs,
+                                dependentSourceSets =
+                                    sourceSet.dependencies.map { sourceSetIdForSourceSet(it) },
+                                noJdkLink = !analysisPlatform.androidOrJvm(),
+                                noAndroidSdkLink =
+                                    analysisPlatform != DokkaAnalysisPlatform.ANDROID,
+                                noStdlibLink = false,
+                                // Dackka source link configuration doesn't use the Dokka version
+                                sourceLinks = emptyList()
+                            )
+                        }
                 } ?: emptyList()
         return listOf(
             DokkaInputModels.SourceSet(

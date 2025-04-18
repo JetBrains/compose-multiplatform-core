@@ -706,6 +706,7 @@ class CanvasDrawScope : DrawScope {
      * individually
      */
     @PublishedApi
+    @Suppress("DataClassDefinition")
     internal data class DrawParams(
         var density: Density = DefaultDensity,
         var layoutDirection: LayoutDirection = LayoutDirection.Ltr,

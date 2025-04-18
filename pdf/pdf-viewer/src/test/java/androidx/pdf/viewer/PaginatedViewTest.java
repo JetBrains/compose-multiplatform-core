@@ -26,7 +26,6 @@ import androidx.pdf.viewer.PageViewFactory.PageView;
 import androidx.pdf.viewer.loader.PdfLoader;
 import androidx.pdf.widget.MosaicView.BitmapSource;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.filters.SmallTest;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -40,7 +39,6 @@ import org.robolectric.RobolectricTestRunner;
 import java.util.List;
 
 /** Tests for {@link PaginatedView}. */
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
 public class PaginatedViewTest {
 

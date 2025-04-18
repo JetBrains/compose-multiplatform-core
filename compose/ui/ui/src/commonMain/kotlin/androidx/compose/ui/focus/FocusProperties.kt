@@ -143,7 +143,7 @@ interface FocusProperties {
      * When you set the [onEnter] property, provide a lambda with the [FocusEnterExitScope] scope,
      * having the [FocusEnterExitScope.requestedFocusDirection] that triggered the enter as an
      * input. If redirection is required, use [FocusRequester.requestFocus] and if the focus change
-     * should be canceled, use [FocusEnterExitScope.cancelFocus].
+     * should be canceled, use [FocusEnterExitScope.cancelFocusChange].
      *
      * @sample androidx.compose.ui.samples.CustomFocusEnterSample
      */
@@ -185,7 +185,7 @@ interface FocusProperties {
      * When you set the [onExit] property, provide a lambda with the [FocusEnterExitScope] scope,
      * having the [FocusEnterExitScope.requestedFocusDirection] that triggered the exit as an input.
      * If redirection is required, use [FocusRequester.requestFocus] and if the focus change should
-     * be canceled, use [FocusEnterExitScope.cancelFocus].
+     * be canceled, use [FocusEnterExitScope.cancelFocusChange].
      *
      * @sample androidx.compose.ui.samples.CustomFocusExitSample
      */
@@ -202,7 +202,7 @@ private fun ((FocusDirection) -> FocusRequester).toUsingEnterExitScope():
     FocusEnterExitScope.() -> Unit = {
     val focusRequester = invoke(requestedFocusDirection)
     if (focusRequester === FocusRequester.Cancel) {
-        cancelFocus()
+        cancelFocusChange()
     } else if (focusRequester !== FocusRequester.Default) {
         focusRequester.requestFocus()
     }
@@ -210,8 +210,8 @@ private fun ((FocusDirection) -> FocusRequester).toUsingEnterExitScope():
 
 /**
  * Receiver scope for [FocusProperties.onEnter] and [FocusProperties.onExit]. Developers can change
- * focus with [FocusRequester.requestFocus] to change the focus or [cancelFocus] to stop the focus
- * from changing.
+ * focus with [FocusRequester.requestFocus] to change the focus or [cancelFocusChange] to stop the
+ * focus from changing.
  */
 sealed interface FocusEnterExitScope {
     /**
@@ -221,7 +221,11 @@ sealed interface FocusEnterExitScope {
     val requestedFocusDirection: FocusDirection
 
     /** Stop focus from changing. */
-    fun cancelFocus()
+    fun cancelFocusChange()
+
+    @ExperimentalComposeUiApi
+    @Deprecated("Use cancelFocusChange instead", replaceWith = ReplaceWith("cancelFocusChange"))
+    fun cancelFocus() = cancelFocusChange()
 }
 
 internal class CancelIndicatingFocusBoundaryScope(
@@ -230,7 +234,7 @@ internal class CancelIndicatingFocusBoundaryScope(
     var isCanceled = false
         private set
 
-    override fun cancelFocus() {
+    override fun cancelFocusChange() {
         isCanceled = true
     }
 }

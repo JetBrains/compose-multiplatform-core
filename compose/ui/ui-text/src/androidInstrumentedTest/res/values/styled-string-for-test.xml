@@ -33,6 +33,7 @@
         &lt;sup>a&lt;/sup>
         &lt;tt>a&lt;/tt>
         &lt;u>a&lt;/u>
+        &lt;ul>&lt;li>a&lt;ul>&lt;li>a&lt;/li>&lt;/ul>&lt;/li>&lt;li>a&lt;/li>&lt;/ul>
     </string>
     <string name="formatting">Hello, &lt;b>%s&lt;/b>!</string>
 </resources>

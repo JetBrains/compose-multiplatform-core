@@ -26,11 +26,12 @@ import android.view.View;
 import android.webkit.WebView;
 import android.widget.Toast;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.concurrent.Executors;
@@ -84,7 +85,7 @@ public class DefaultTrafficStatsTaggingActivity extends AppCompatActivity {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
-    private @Nullable NetworkStats.Bucket fetchTrafficStatsBucket(int transportType,
+    private NetworkStats.@Nullable Bucket fetchTrafficStatsBucket(int transportType,
             NetworkStatsManager statsManager) {
         try (NetworkStats stats = statsManager.queryDetailsForUidTag(transportType, null,
                 Long.MIN_VALUE, Long.MAX_VALUE, Process.myUid(), TRAFFIC_TAG)) {

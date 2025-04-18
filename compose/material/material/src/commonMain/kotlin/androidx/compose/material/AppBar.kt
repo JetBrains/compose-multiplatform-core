@@ -51,8 +51,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.sqrt
 
 /**
- * <a href="https://material.io/components/app-bars-top" class="external" target="_blank">Material
- * Design top app bar</a>.
+ * [Material Design top app bar](https://material.io/components/app-bars-top)
  *
  * The top app bar displays information and actions relating to the current screen.
  *
@@ -133,8 +132,7 @@ fun TopAppBar(
 }
 
 /**
- * <a href="https://material.io/components/app-bars-top" class="external" target="_blank">Material
- * Design top app bar</a>.
+ * [Material Design top app bar](https://material.io/components/app-bars-top)
  *
  * The top app bar displays information and actions relating to the current screen.
  *
@@ -182,8 +180,7 @@ fun TopAppBar(
 }
 
 /**
- * <a href="https://material.io/components/app-bars-top" class="external" target="_blank">Material
- * Design top app bar</a>.
+ * [Material Design top app bar](https://material.io/components/app-bars-top)
  *
  * The top app bar displays information and actions relating to the current screen.
  *
@@ -236,8 +233,7 @@ fun TopAppBar(
 }
 
 /**
- * <a href="https://material.io/components/app-bars-top" class="external" target="_blank">Material
- * Design top app bar</a>.
+ * [Material Design top app bar](https://material.io/components/app-bars-top)
  *
  * The top app bar displays information and actions relating to the current screen.
  *
@@ -285,8 +281,7 @@ fun TopAppBar(
 }
 
 /**
- * <a href="https://material.io/components/app-bars-bottom" class="external"
- * target="_blank">Material Design bottom app bar</a>.
+ * [Material Design bottom app bar](https://material.io/components/app-bars-bottom)
  *
  * A bottom app bar displays navigation and key actions at the bottom of screens.
  *
@@ -360,8 +355,7 @@ fun BottomAppBar(
 }
 
 /**
- * <a href="https://material.io/components/app-bars-bottom" class="external"
- * target="_blank">Material Design bottom app bar</a>.
+ * [Material Design bottom app bar](https://material.io/components/app-bars-bottom)
  *
  * A bottom app bar displays navigation and key actions at the bottom of screens.
  *
@@ -625,7 +619,8 @@ internal inline fun calculateCutoutCircleYIntercept(
  * This returns the relative offset from the center of a circle with radius that is half the height
  * of the cutout.
  *
- * Explanation and derivation comes from the Flutter team: https://goo.gl/Ufzrqn
+ * Explanation and derivation comes from the Flutter team:
+ * [Computing a smooth circular notch](https://goo.gl/Ufzrqn)
  *
  * @param controlPointX the horizontal offset of the control point from the center of the circle
  * @param verticalOffset the vertical offset of the top edge of the app bar from the center of the

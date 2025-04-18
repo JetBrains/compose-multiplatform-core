@@ -27,9 +27,10 @@ import android.content.Intent;
 import android.content.pm.ProviderInfo;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Version of ContentProvider that can be used as a {@link CallbackReceiver}.
@@ -57,9 +58,9 @@ public abstract class ContentProviderWithCallbacks<T extends ContentProviderWith
         mAuthority = info.authority;
     }
 
-    @Nullable
     @Override
-    public Bundle call(@NonNull String method, @Nullable String arg, @Nullable Bundle extras) {
+    public @Nullable Bundle call(@NonNull String method, @Nullable String arg,
+            @Nullable Bundle extras) {
         if (ProviderRelayReceiver.METHOD_PROVIDER_CALLBACK.equals(method)) {
             CallbackHandlerRegistry.sInstance.invokeCallback(getContext(), this, extras);
             return null;
@@ -67,18 +68,16 @@ public abstract class ContentProviderWithCallbacks<T extends ContentProviderWith
         return super.call(method, arg, extras);
     }
 
-    @NonNull
     @Override
-    public T createRemoteCallback(@NonNull Context context) {
+    public @NonNull T createRemoteCallback(@NonNull Context context) {
         return CallbackHandlerRegistry.sInstance.getAndResetStub(getClass(), context, mAuthority);
     }
 
     /**
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     @Override
-    public RemoteCallback toRemoteCallback(@NonNull Class<T> cls, @NonNull Context context,
+    public @NonNull RemoteCallback toRemoteCallback(@NonNull Class<T> cls, @NonNull Context context,
             @Nullable String authority,
             @NonNull Bundle args, @NonNull String method) {
 

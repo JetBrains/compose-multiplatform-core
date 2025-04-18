@@ -56,9 +56,7 @@ private val mavenNameAllowlist =
     )
 
 /** Validates the project's Maven name against Jetpack guidelines. */
-fun Project.validateProjectMavenName(mavenName: String?, groupId: String) {
-    if (mavenName == null) return
-
+fun Project.validateProjectMavenName(mavenName: String, groupId: String) {
     // Tokenize the Maven name into components. This is *very* permissive regarding separators, and
     // we may want to revisit that policy in the future.
     val nameComponents =
@@ -122,14 +120,9 @@ fun Project.validateProjectStructure(groupId: String) {
     val actualDir =
         canonicalProjectDir.toRelativeString(project.getSupportRootFolder().canonicalFile)
     if (expectDir != actualDir) {
-        // If we're allowing optional projects, try stripping any leading "../../".
-        val includeOptionalProjects =
-            providers.gradleProperty(INCLUDE_OPTIONAL_PROJECTS).getOrElse("false").toBoolean()
-        if (!includeOptionalProjects || expectDir != actualDir.removePrefix("../../")) {
-            throw GradleException(
-                "Invalid project structure! Expected $expectDir as project directory, found " +
-                    actualDir
-            )
-        }
+        throw GradleException(
+            "Invalid project structure! Expected $expectDir as project directory, found " +
+                actualDir
+        )
     }
 }

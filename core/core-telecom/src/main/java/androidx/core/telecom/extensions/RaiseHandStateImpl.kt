@@ -40,7 +40,7 @@ import kotlinx.coroutines.flow.onEach
  */
 @OptIn(ExperimentalAppActions::class)
 internal class RaiseHandStateImpl(
-    private val participants: StateFlow<Set<Participant>>,
+    private val participants: StateFlow<List<Participant>>,
     initialRaisedHands: List<Participant>,
     private val onHandRaisedChanged: suspend (Boolean) -> Unit
 ) : RaiseHandState {

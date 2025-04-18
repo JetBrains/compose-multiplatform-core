@@ -16,9 +16,10 @@
 
 package androidx.camera.extensions;
 
-import androidx.annotation.Nullable;
 import androidx.camera.core.CameraInfo;
 import androidx.lifecycle.LiveData;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * A camera extensions info instance that allows to observe or monitor capture request settings
@@ -56,8 +57,7 @@ public interface CameraExtensionsInfo {
      * changes when {@link #isExtensionStrengthAvailable()} returns {@code true}. Otherwise,
      * returns {@code null}.
      */
-    @Nullable
-    default LiveData<Integer> getExtensionStrength() {
+    default @Nullable LiveData<Integer> getExtensionStrength() {
         return null;
     }
 
@@ -90,8 +90,7 @@ public interface CameraExtensionsInfo {
      * when {@link #isCurrentExtensionModeAvailable()} returns {@code true}. Otherwise, returns
      * {@code null}.
      */
-    @Nullable
-    default LiveData<Integer> getCurrentExtensionMode() {
+    default @Nullable LiveData<Integer> getCurrentExtensionMode() {
         return null;
     }
 }

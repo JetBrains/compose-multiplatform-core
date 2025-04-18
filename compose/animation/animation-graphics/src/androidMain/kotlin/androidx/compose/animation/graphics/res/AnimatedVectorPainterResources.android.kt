@@ -34,6 +34,7 @@ import androidx.compose.ui.util.fastForEach
  * at the start or the end of all the animations depending on the [atEnd]. Changes to [atEnd] are
  * animated.
  *
+ * @param [animatedImageVector] An [AnimatedImageVector] object to be remembered and animated.
  * @param atEnd Whether the animated vector should be rendered at the end of all its animations.
  * @sample androidx.compose.animation.graphics.samples.AnimatedVectorSample
  */

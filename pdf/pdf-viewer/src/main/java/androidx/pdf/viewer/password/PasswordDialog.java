@@ -55,8 +55,8 @@ import org.jspecify.annotations.Nullable;
  * <ul>
  * <li>Exit, exits the application,
  * <li>Open, tries to open the document with the given password. If this is not successful, the
- *     dialog stays up, and offers to try again (the controller should call {@link #retry}).
- *     If successful, the controller should call {@link #dismiss}.
+ *     dialog stays up, and offers to try again (the controller should call
+ *     {@link #showIncorrectMessage}).If successful, the controller should call {@link #dismiss}.
  * </ul>
  * <p>
  */
@@ -223,18 +223,20 @@ public abstract class PasswordDialog extends DialogFragment {
     public abstract void showErrorOnDialogCancel();
 
     /** The given password didn't work, perhaps try again? */
-    public void retry() {
-        // TODO: Track incorrect password input.
+    public void showIncorrectMessage() {
+
         mIncorrect = true;
-        EditText textField = (EditText) getDialog().findViewById(R.id.password);
+        Dialog passwordDialog = getDialog();
+        EditText textField = passwordDialog.findViewById(R.id.password);
         textField.selectAll();
 
-        Accessibility.get().announce(getActivity(), getDialog().getCurrentFocus(),
+        Accessibility.get().announce(getActivity(), textField,
                 R.string.desc_password_incorrect_message);
 
-        TextInputLayout passwordLayout = (TextInputLayout) getDialog().findViewById(
+        TextInputLayout passwordLayout = passwordDialog.findViewById(
                 R.id.pdf_password_layout);
         passwordLayout.setError(getString(R.string.label_password_incorrect));
+
     }
 
     private void clearIncorrect() {

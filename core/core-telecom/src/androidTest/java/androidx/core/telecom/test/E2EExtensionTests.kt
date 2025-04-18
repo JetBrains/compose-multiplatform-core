@@ -21,6 +21,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.media.AudioManager
+import android.net.Uri
 import android.os.Build
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
@@ -29,6 +30,7 @@ import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallControlResult
 import androidx.core.telecom.InCallServiceCompat
 import androidx.core.telecom.extensions.CallExtensionScope
+import androidx.core.telecom.extensions.CallIconExtensionImpl
 import androidx.core.telecom.extensions.Capability
 import androidx.core.telecom.extensions.Extensions
 import androidx.core.telecom.extensions.LocalCallSilenceExtensionImpl
@@ -37,6 +39,7 @@ import androidx.core.telecom.extensions.ParticipantExtensionImpl
 import androidx.core.telecom.extensions.ParticipantExtensionRemote
 import androidx.core.telecom.test.VoipAppWithExtensions.VoipAppWithExtensionsControl
 import androidx.core.telecom.test.VoipAppWithExtensions.VoipAppWithExtensionsControlLocal
+import androidx.core.telecom.test.VoipAppWithExtensions.VoipCall.Companion.INITIAL_CALL_ICON_URI
 import androidx.core.telecom.test.utils.BaseTelecomTest
 import androidx.core.telecom.test.utils.TestCallCallbackListener
 import androidx.core.telecom.test.utils.TestMuteStateReceiver
@@ -47,6 +50,8 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.rule.ServiceTestRule
+import java.io.File
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.delay
@@ -141,6 +146,32 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
         }
     }
 
+    internal class CachedMeetingSummary(scope: CallExtensionScope) {
+        private val participantState = MutableStateFlow<Int>(0)
+        private val activeParticipantState = MutableStateFlow<CharSequence?>("")
+        val extension =
+            scope.addMeetingSummaryExtension(
+                onCurrentSpeakerChanged = activeParticipantState::emit,
+                onParticipantCountChanged = participantState::emit
+            )
+
+        suspend fun waitForParticipantCount(expected: Int) {
+            val result =
+                withTimeoutOrNull(ICS_EXTENSION_UPDATE_TIMEOUT_MS) {
+                    participantState.first { it == expected }
+                }
+            assertEquals("Never received expected participant count update", expected, result)
+        }
+
+        suspend fun waitForActiveParticipant(expected: String?) {
+            val result =
+                withTimeoutOrNull(ICS_EXTENSION_UPDATE_TIMEOUT_MS) {
+                    activeParticipantState.first { it == expected }
+                }
+            assertEquals("Never received expected active participant", expected, result)
+        }
+    }
+
     // TODO:: b/364316364 should assert on a per call basis
     internal class CachedLocalSilence(scope: CallExtensionScope) {
         private val isLocallySilenced = MutableStateFlow(false)
@@ -154,6 +185,19 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                     isLocallySilenced.first { it == expected }
                 }
             assertEquals("Never received local call silence state", expected, result)
+        }
+    }
+
+    internal class CachedCallIcon(scope: CallExtensionScope) {
+        private val callIconUri: MutableStateFlow<Uri> = MutableStateFlow(Uri.EMPTY)
+        val extension = scope.addCallIconSupport(callIconUri::emit)
+
+        suspend fun waitForLocalCallSilenceState(expected: Uri) {
+            val result =
+                withTimeoutOrNull(ICS_EXTENSION_UPDATE_TIMEOUT_MS) {
+                    callIconUri.first { it == expected }
+                }
+            assertEquals("Never received Call Icon state", expected, result)
         }
     }
 
@@ -268,6 +312,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
             with(ics) {
                 connectExtensions(call) {
                     val participants = CachedParticipants(this)
+                    val meetingSummary = CachedMeetingSummary(this)
                     onConnected {
                         hasConnected = true
                         assertTrue(
@@ -276,18 +321,29 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                         )
                         // Wait for initial state
                         participants.waitForParticipants(emptySet())
+                        meetingSummary.waitForParticipantCount(0)
                         participants.waitForActiveParticipant(null)
+                        meetingSummary.waitForActiveParticipant(null)
                         // Test VOIP -> ICS connection by updating state
                         val currentParticipants = TestUtils.generateParticipants(2)
+                        // add a duplicate element to verify duplicates are removed internally
+                        val participantsWithDuplicate =
+                            currentParticipants.toMutableList().apply {
+                                add(currentParticipants.first())
+                            }
                         voipAppControl.updateParticipants(
-                            currentParticipants.map { it.toParticipantParcelable() }
+                            participantsWithDuplicate.map { it.toParticipantParcelable() }
                         )
                         participants.waitForParticipants(currentParticipants.toSet())
+                        assertEquals(2, currentParticipants.size)
+                        meetingSummary.waitForParticipantCount(currentParticipants.size)
                         voipAppControl.updateActiveParticipant(
                             currentParticipants[0].toParticipantParcelable()
                         )
                         participants.waitForActiveParticipant(currentParticipants[0])
-
+                        meetingSummary.waitForActiveParticipant(
+                            currentParticipants[0].name.toString()
+                        )
                         call.disconnect()
                     }
                 }
@@ -401,6 +457,49 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                         raiseHandAction.action.requestRaisedHandStateChange(true)
                         callback.waitForRaiseHandState(voipCallId, true)
 
+                        call.disconnect()
+                    }
+                }
+            }
+            assertTrue("onConnected never received", hasConnected)
+        }
+    }
+
+    /**
+     * This test verifies the functionality of the Call Icon extension. It checks if the extension
+     * can successfully connect to the In-Call Service (ICS), receive and update the call icon URI,
+     * and handle URI updates sent by the VoIP app.
+     */
+    @LargeTest
+    @Test(timeout = 10000)
+    fun testCallIconExtension(): Unit = runBlocking {
+        usingIcs { ics ->
+            val voipAppControl = bindToVoipAppWithExtensions()
+            val callback = TestCallCallbackListener(this)
+            voipAppControl.setCallback(callback)
+            createAndVerifyVoipCall(
+                voipAppControl,
+                callback,
+                listOf(getCallIconCapability(setOf())),
+                parameters.direction
+            )
+            val call = TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)!!
+            var hasConnected = false
+            with(ics) {
+                connectExtensions(call) {
+                    val callIconExtension = CachedCallIcon(this)
+                    onConnected {
+                        hasConnected = true
+                        assertTrue(callIconExtension.extension.isSupported)
+                        // verify the remote service gets the initial URI
+                        callIconExtension.waitForLocalCallSilenceState(INITIAL_CALL_ICON_URI)
+                        // create a fake URI file
+                        val uniqueFileName = UUID.randomUUID().toString() + ".jpg"
+                        val file = File(mContext.filesDir, uniqueFileName)
+                        val fileUri = Uri.fromFile(file)
+                        // Send new Uri update to the remote surface
+                        voipAppControl.updateCallIcon(fileUri)
+                        callIconExtension.waitForLocalCallSilenceState(fileUri)
                         call.disconnect()
                     }
                 }
@@ -644,6 +743,14 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
         return createCapability(
             id = Extensions.LOCAL_CALL_SILENCE,
             version = LocalCallSilenceExtensionImpl.VERSION,
+            actions = actions
+        )
+    }
+
+    private fun getCallIconCapability(actions: Set<Int>): Capability {
+        return createCapability(
+            id = Extensions.CALL_ICON,
+            version = CallIconExtensionImpl.VERSION,
             actions = actions
         )
     }

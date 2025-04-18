@@ -385,6 +385,7 @@ public sealed interface AnimatedContentTransitionScope<S> : Transition.Segment<S
      *
      * @sample androidx.compose.animation.samples.SlideIntoContainerSample
      */
+    @Suppress("EXTENSION_SHADOWED_BY_MEMBER")
     public val ExitTransition.Companion.KeepUntilTransitionsFinished: ExitTransition
         get() = KeepUntilTransitionsFinished
 

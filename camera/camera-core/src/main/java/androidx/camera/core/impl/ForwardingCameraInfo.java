@@ -19,8 +19,7 @@ package androidx.camera.core.impl;
 import android.util.Range;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.IntRange;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraState;
@@ -30,6 +29,9 @@ import androidx.camera.core.ExposureState;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.ZoomState;
 import androidx.lifecycle.LiveData;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Set;
@@ -66,33 +68,54 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
         return mCameraInfoInternal.hasFlashUnit();
     }
 
-    @NonNull
     @Override
-    public LiveData<Integer> getTorchState() {
+    public @NonNull LiveData<Integer> getTorchState() {
         return mCameraInfoInternal.getTorchState();
     }
 
-    @NonNull
     @Override
-    public LiveData<ZoomState> getZoomState() {
+    public @NonNull LiveData<Integer> getTorchStrengthLevel() {
+        return mCameraInfoInternal.getTorchStrengthLevel();
+    }
+
+    @Override
+    @IntRange(from = 0)
+    public int getMaxTorchStrengthLevel() {
+        return mCameraInfoInternal.getMaxTorchStrengthLevel();
+    }
+
+    @Override
+    public boolean isTorchStrengthSupported() {
+        return mCameraInfoInternal.isTorchStrengthSupported();
+    }
+
+    @Override
+    public boolean isLowLightBoostSupported() {
+        return mCameraInfoInternal.isLowLightBoostSupported();
+    }
+
+    @Override
+    public @NonNull LiveData<Integer> getLowLightBoostState() {
+        return mCameraInfoInternal.getLowLightBoostState();
+    }
+
+    @Override
+    public @NonNull LiveData<ZoomState> getZoomState() {
         return mCameraInfoInternal.getZoomState();
     }
 
-    @NonNull
     @Override
-    public ExposureState getExposureState() {
+    public @NonNull ExposureState getExposureState() {
         return mCameraInfoInternal.getExposureState();
     }
 
-    @NonNull
     @Override
-    public LiveData<CameraState> getCameraState() {
+    public @NonNull LiveData<CameraState> getCameraState() {
         return mCameraInfoInternal.getCameraState();
     }
 
-    @NonNull
     @Override
-    public String getImplementationType() {
+    public @NonNull String getImplementationType() {
         return mCameraInfoInternal.getImplementationType();
     }
 
@@ -117,9 +140,8 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
         return mCameraInfoInternal.isZslSupported();
     }
 
-    @NonNull
     @Override
-    public Set<Range<Integer>> getSupportedFrameRateRanges() {
+    public @NonNull Set<Range<Integer>> getSupportedFrameRateRanges() {
         return mCameraInfoInternal.getSupportedFrameRateRanges();
     }
 
@@ -133,9 +155,8 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
         return mCameraInfoInternal.isLogicalMultiCameraSupported();
     }
 
-    @NonNull
     @Override
-    public String getCameraId() {
+    public @NonNull String getCameraId() {
         return mCameraInfoInternal.getCameraId();
     }
 
@@ -150,64 +171,79 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
         mCameraInfoInternal.removeSessionCaptureCallback(callback);
     }
 
-    @NonNull
     @Override
-    public Quirks getCameraQuirks() {
+    public @NonNull Quirks getCameraQuirks() {
         return mCameraInfoInternal.getCameraQuirks();
     }
 
-    @NonNull
     @Override
-    public EncoderProfilesProvider getEncoderProfilesProvider() {
+    public @NonNull EncoderProfilesProvider getEncoderProfilesProvider() {
         return mCameraInfoInternal.getEncoderProfilesProvider();
     }
 
-    @NonNull
     @Override
-    public Timebase getTimebase() {
+    public @NonNull Timebase getTimebase() {
         return mCameraInfoInternal.getTimebase();
     }
 
-    @NonNull
     @Override
-    public Set<Integer> getSupportedOutputFormats() {
+    public @NonNull Set<Integer> getSupportedOutputFormats() {
         return mCameraInfoInternal.getSupportedOutputFormats();
     }
 
-    @NonNull
     @Override
-    public List<Size> getSupportedResolutions(int format) {
+    public @NonNull List<Size> getSupportedResolutions(int format) {
         return mCameraInfoInternal.getSupportedResolutions(format);
     }
 
-    @NonNull
     @Override
-    public List<Size> getSupportedHighResolutions(int format) {
+    public @NonNull List<Size> getSupportedHighResolutions(int format) {
         return mCameraInfoInternal.getSupportedHighResolutions(format);
     }
 
-    @NonNull
     @Override
-    public Set<DynamicRange> getSupportedDynamicRanges() {
+    public @NonNull Set<DynamicRange> getSupportedDynamicRanges() {
         return mCameraInfoInternal.getSupportedDynamicRanges();
     }
 
-    @NonNull
     @Override
-    public Set<DynamicRange> querySupportedDynamicRanges(
+    public boolean isHighSpeedSupported() {
+        return mCameraInfoInternal.isHighSpeedSupported();
+    }
+
+    @Override
+    public @NonNull Set<Range<Integer>> getSupportedHighSpeedFrameRateRanges() {
+        return mCameraInfoInternal.getSupportedHighSpeedFrameRateRanges();
+    }
+
+    @Override
+    public @NonNull Set<Range<Integer>> getSupportedHighSpeedFrameRateRangesFor(@NonNull Size size) {
+        return mCameraInfoInternal.getSupportedHighSpeedFrameRateRangesFor(size);
+    }
+
+    @Override
+    public @NonNull List<Size> getSupportedHighSpeedResolutions() {
+        return mCameraInfoInternal.getSupportedHighSpeedResolutions();
+    }
+
+    @Override
+    public @NonNull List<Size> getSupportedHighSpeedResolutionsFor(@NonNull Range<Integer> fpsRange) {
+        return mCameraInfoInternal.getSupportedHighSpeedResolutionsFor(fpsRange);
+    }
+
+    @Override
+    public @NonNull Set<DynamicRange> querySupportedDynamicRanges(
             @NonNull Set<DynamicRange> candidateDynamicRanges) {
         return mCameraInfoInternal.querySupportedDynamicRanges(candidateDynamicRanges);
     }
 
-    @NonNull
     @Override
-    public CameraInfoInternal getImplementation() {
+    public @NonNull CameraInfoInternal getImplementation() {
         return mCameraInfoInternal.getImplementation();
     }
 
-    @NonNull
     @Override
-    public CameraSelector getCameraSelector() {
+    public @NonNull CameraSelector getCameraSelector() {
         return mCameraInfoInternal.getCameraSelector();
     }
 
@@ -221,21 +257,18 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
         return mCameraInfoInternal.isVideoStabilizationSupported();
     }
 
-    @NonNull
     @Override
-    public Object getCameraCharacteristics() {
+    public @NonNull Object getCameraCharacteristics() {
         return mCameraInfoInternal.getCameraCharacteristics();
     }
 
-    @Nullable
     @Override
-    public Object getPhysicalCameraCharacteristics(@NonNull String physicalCameraId) {
+    public @Nullable Object getPhysicalCameraCharacteristics(@NonNull String physicalCameraId) {
         return mCameraInfoInternal.getPhysicalCameraCharacteristics(physicalCameraId);
     }
 
-    @NonNull
     @Override
-    public Set<CameraInfo> getPhysicalCameraInfos() {
+    public @NonNull Set<CameraInfo> getPhysicalCameraInfos() {
         return mCameraInfoInternal.getPhysicalCameraInfos();
     }
 }

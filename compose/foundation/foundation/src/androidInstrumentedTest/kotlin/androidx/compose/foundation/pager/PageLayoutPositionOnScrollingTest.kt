@@ -51,7 +51,7 @@ class PageLayoutPositionOnScrollingTest : SingleParamBasePagerTest() {
             }
 
             forEachParameter(ParamsToTest) { param ->
-                val delta = pagerSize * 0.4f * param.scrollForwardSign
+                val delta = pagerSize * 0.45f * param.scrollForwardSign
 
                 // Act and Assert - forward
                 repeat(DefaultAnimationRepetition) {

@@ -17,19 +17,21 @@
 package androidx.camera.camera2.pipe.integration.interop
 
 import android.hardware.camera2.CameraCharacteristics
+import android.util.Pair
 import androidx.annotation.RestrictTo
 import androidx.camera.camera2.pipe.integration.adapter.CameraInfoAdapter.Companion.unwrapAs
 import androidx.camera.camera2.pipe.integration.compat.workaround.getSafely
 import androidx.camera.camera2.pipe.integration.impl.CameraProperties
 import androidx.camera.core.CameraInfo
+import androidx.camera.core.impl.AdapterCameraInfo
 
 /** An interface for retrieving Camera2-related camera information. */
 @ExperimentalCamera2Interop
 public class Camera2CameraInfo
 private constructor(
     private val cameraProperties: CameraProperties,
+    private val extensionsSpecificChars: List<Pair<CameraCharacteristics.Key<*>, Any>>? = null
 ) {
-
     /**
      * Gets a camera characteristic value.
      *
@@ -41,6 +43,11 @@ private constructor(
      * @return the value of the characteristic. </T>
      */
     public fun <T> getCameraCharacteristic(key: CameraCharacteristics.Key<T>): T? {
+        extensionsSpecificChars?.forEach {
+            if (it.first == key) {
+                @Suppress("UNCHECKED_CAST") return it.second as T
+            }
+        }
         return cameraProperties.metadata.getSafely(key)
     }
 
@@ -67,6 +74,10 @@ private constructor(
         /**
          * Gets the [Camera2CameraInfo] from a [CameraInfo].
          *
+         * If the [CameraInfo] is retrieved by an Extensions-enabled
+         * [androidx.camera.core.CameraSelector], calling [getCameraCharacteristic] will return any
+         * available Extensions-specific characteristics if exists.
+         *
          * @param cameraInfo The [CameraInfo] to get from.
          * @return The camera information with Camera2 implementation.
          * @throws IllegalArgumentException if the camera info does not contain the camera2
@@ -75,9 +86,19 @@ private constructor(
          */
         @JvmStatic
         public fun from(cameraInfo: CameraInfo): Camera2CameraInfo {
-            val camera2CameraInfo = cameraInfo.unwrapAs(Camera2CameraInfo::class)
+            var camera2CameraInfo = cameraInfo.unwrapAs(Camera2CameraInfo::class)
             requireNotNull(camera2CameraInfo) {
                 "Could not unwrap $cameraInfo as Camera2CameraInfo!"
+            }
+
+            if (cameraInfo is AdapterCameraInfo) {
+                if (cameraInfo.sessionProcessor != null) {
+                    camera2CameraInfo =
+                        Camera2CameraInfo(
+                            camera2CameraInfo.cameraProperties,
+                            cameraInfo.sessionProcessor?.availableCharacteristicsKeyValues
+                        )
+                }
             }
             return camera2CameraInfo
         }

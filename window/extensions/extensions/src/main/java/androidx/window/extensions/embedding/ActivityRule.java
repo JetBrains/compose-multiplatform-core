@@ -16,7 +16,6 @@
 
 package androidx.window.extensions.embedding;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
@@ -51,7 +50,6 @@ public class ActivityRule extends EmbeddingRule {
     /**
      * Checks if the rule is applicable to the provided activity.
      */
-    @SuppressLint("ClassVerificationFailure") // Only called by Extensions implementation on device.
     @RequiresApi(api = Build.VERSION_CODES.N)
     public boolean matchesActivity(@NonNull Activity activity) {
         return mActivityPredicate.test(activity);
@@ -60,7 +58,6 @@ public class ActivityRule extends EmbeddingRule {
     /**
      * Checks if the rule is applicable to the provided activity intent.
      */
-    @SuppressLint("ClassVerificationFailure") // Only called by Extensions implementation on device.
     @RequiresApi(api = Build.VERSION_CODES.N)
     public boolean matchesIntent(@NonNull Intent intent) {
         return mIntentPredicate.test(intent);
@@ -156,6 +153,6 @@ public class ActivityRule extends EmbeddingRule {
     @Override
     public @NonNull String toString() {
         return "ActivityRule{mTag=" + getTag()
-                + "mShouldAlwaysExpand=" + mShouldAlwaysExpand + '}';
+                + ", mShouldAlwaysExpand=" + mShouldAlwaysExpand + '}';
     }
 }

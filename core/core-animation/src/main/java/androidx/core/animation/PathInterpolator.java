@@ -24,13 +24,12 @@ import android.util.AttributeSet;
 import android.view.InflateException;
 
 import androidx.annotation.FloatRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.res.TypedArrayUtils;
 import androidx.core.graphics.PathParser;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
-
 
 /**
  * An interpolator that can traverse a Path that extends from <code>Point</code>

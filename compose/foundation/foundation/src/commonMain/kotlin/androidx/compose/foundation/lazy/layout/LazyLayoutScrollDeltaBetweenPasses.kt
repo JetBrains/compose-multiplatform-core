@@ -27,6 +27,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
@@ -42,6 +43,11 @@ internal class LazyLayoutScrollDeltaBetweenPasses {
 
     internal val scrollDeltaBetweenPasses: Float
         get() = _scrollDeltaBetweenPasses.value
+
+    internal var job: Job? = null
+
+    internal val isActive: Boolean
+        get() = _scrollDeltaBetweenPasses.value != 0f
 
     private var _scrollDeltaBetweenPasses: AnimationState<Float, AnimationVector1D> =
         AnimationState(Float.VectorConverter, 0f, 0f)
@@ -62,17 +68,13 @@ internal class LazyLayoutScrollDeltaBetweenPasses {
         Snapshot.withoutReadObservation {
             val currentDelta = _scrollDeltaBetweenPasses.value
 
+            job?.cancel()
             if (_scrollDeltaBetweenPasses.isRunning) {
                 _scrollDeltaBetweenPasses = _scrollDeltaBetweenPasses.copy(currentDelta - delta)
-                coroutineScope.launch {
-                    _scrollDeltaBetweenPasses.animateTo(
-                        0f,
-                        spring(stiffness = Spring.StiffnessMediumLow, visibilityThreshold = 0.5f),
-                        true
-                    )
-                }
             } else {
                 _scrollDeltaBetweenPasses = AnimationState(Float.VectorConverter, -delta)
+            }
+            job =
                 coroutineScope.launch {
                     _scrollDeltaBetweenPasses.animateTo(
                         0f,
@@ -80,8 +82,12 @@ internal class LazyLayoutScrollDeltaBetweenPasses {
                         true
                     )
                 }
-            }
         }
+    }
+
+    internal fun stop() {
+        job?.cancel()
+        _scrollDeltaBetweenPasses = AnimationState(Float.VectorConverter, 0f)
     }
 }
 

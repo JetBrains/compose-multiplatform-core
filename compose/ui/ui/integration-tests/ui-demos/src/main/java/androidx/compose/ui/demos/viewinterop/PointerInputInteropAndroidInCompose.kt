@@ -17,6 +17,7 @@
 package androidx.compose.ui.demos.viewinterop
 
 import android.graphics.Color
+import android.graphics.Color.argb
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -40,12 +41,15 @@ import androidx.compose.integration.demos.common.DemoCategory
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.demos.R
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputFilter
@@ -56,6 +60,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import kotlin.random.Random
 
 val AndroidInComposeDemos =
     DemoCategory(
@@ -63,6 +68,9 @@ val AndroidInComposeDemos =
         listOf(
             ComposableDemo("4 Android tap in Compose") { FourAndroidTapInCompose() },
             ComposableDemo("Android tap in Compose tap") { AndroidTapInComposeTap() },
+            ComposableDemo("Android tap in Compose with Compose sibling") {
+                AndroidTapInComposeWithComposeSibling()
+            },
             ComposableDemo("Android tap in Compose scroll") { AndroidTapInComposeScroll() },
             ComposableDemo("Android scroll in Compose scroll (different orientation)") {
                 AndroidScrollInComposeScrollDifferentOrientation()
@@ -151,6 +159,87 @@ private fun AndroidTapInComposeTap() {
                     }
             })
         }
+    }
+}
+
+private fun randomComposeColor(): ComposeColor {
+    return ComposeColor(
+        red = Random.nextInt(256),
+        green = Random.nextInt(256),
+        blue = Random.nextInt(256)
+    )
+}
+
+private fun randomViewColor(): Int {
+    return argb(255, Random.nextInt(256), Random.nextInt(256), Random.nextInt(256))
+}
+
+@Composable
+private fun AndroidTapInComposeWithComposeSibling() {
+    var theView: View?
+
+    var backgroundColorForPureComposeBox by remember { mutableStateOf(randomComposeColor()) }
+
+    val onTapPureCompose: (Offset) -> Unit = {
+        backgroundColorForPureComposeBox = randomComposeColor()
+    }
+
+    Box(
+        modifier =
+            Modifier.fillMaxSize()
+                .background(backgroundColorForPureComposeBox)
+                .padding(10.dp)
+                .pointerInput(Unit) { detectTapGestures(onTap = onTapPureCompose) }
+    ) {
+        Text(
+            "Pure Compose Box behind another Box containing an AndroidView.\n\n" +
+                "The grey Box overlaying this box (sibling) contains a View. While the button in " +
+                "that View consumes the input tap event, the rest of the View will not, and, " +
+                "because we are sharing the event with the sibling (see code), it allows the " +
+                "event to pass down to Box below (changing the color)."
+        )
+    }
+
+    Box(
+        Modifier.fillMaxSize()
+            .wrapContentSize(Alignment.Center)
+            .size(240.dp)
+            .background(ComposeColor.Gray)
+            .padding(10.dp)
+            // Shares events with the sibling. If a click on the View inside this Box does not
+            // consume it, the other box (sibling) will take it.
+            .then(
+                object : PointerInputModifier {
+                    override val pointerInputFilter: PointerInputFilter =
+                        object : PointerInputFilter() {
+                            override fun onPointerEvent(
+                                pointerEvent: PointerEvent,
+                                pass: PointerEventPass,
+                                bounds: IntSize
+                            ) {}
+
+                            override fun onCancel() {}
+
+                            override val shareWithSiblings: Boolean = true
+                        }
+                }
+            )
+    ) {
+        Text("Box containing AndroidView")
+        AndroidView(
+            modifier = Modifier.fillMaxSize().padding(30.dp),
+            factory = { context ->
+                LayoutInflater.from(context)
+                    .inflate(R.layout.android_tap_in_compose_with_compose_sibling, null)
+                    .let { view ->
+                        theView = view
+                        view.findViewById<View>(R.id.myButton).setOnClickListener {
+                            theView?.setBackgroundColor(randomViewColor())
+                        }
+                        view
+                    }
+            },
+        )
     }
 }
 

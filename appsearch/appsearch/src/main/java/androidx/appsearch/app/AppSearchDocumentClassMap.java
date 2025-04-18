@@ -20,12 +20,13 @@ import android.util.Log;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.WorkerThread;
 import androidx.appsearch.annotation.Document;
 import androidx.collection.ArrayMap;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -68,9 +69,8 @@ public abstract class AppSearchDocumentClassMap {
      * <p>Since every call to this method should return the same map, the value of this map will
      * be internally cached, so that only the first call will perform disk I/O.
      */
-    @NonNull
     @WorkerThread
-    public static Map<String, List<String>> getGlobalMap() {
+    public static @NonNull Map<String, List<String>> getGlobalMap() {
         if (sGlobalMap == null) {
             synchronized (sLock) {
                 if (sGlobalMap == null) {
@@ -85,9 +85,8 @@ public abstract class AppSearchDocumentClassMap {
      * Looks up the provided map to find a class for {@code schemaName} that is assignable to
      * {@code documentClass}. Returns null if such class is not found.
      */
-    @Nullable
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public static <T> Class<? extends T> getAssignableClassBySchemaName(
+    public static <T> @Nullable Class<? extends T> getAssignableClassBySchemaName(
             @NonNull Map<String, List<String>> map, @NonNull String schemaName,
             @NonNull Class<T> documentClass) {
         List<String> classNames = map.get(schemaName);
@@ -116,11 +115,9 @@ public abstract class AppSearchDocumentClassMap {
      * Returns the map from schema type names to the list of the fully qualified names of the
      * corresponding document classes.
      */
-    @NonNull
-    protected abstract Map<String, List<String>> getMap();
+    protected abstract @NonNull Map<String, List<String>> getMap();
 
-    @NonNull
-    private static Class<?> getAppSearchDocumentClass(@NonNull String className)
+    private static @NonNull Class<?> getAppSearchDocumentClass(@NonNull String className)
             throws ClassNotFoundException {
         Class<?> result;
         synchronized (sLock) {
@@ -141,9 +138,8 @@ public abstract class AppSearchDocumentClassMap {
      * build and return the merged map. The keys are schema type names, and the values are the
      * lists of the corresponding document classes.
      */
-    @NonNull
     @GuardedBy("AppSearchDocumentClassMap.sLock")
-    private static Map<String, List<String>> buildGlobalMapLocked() {
+    private static @NonNull Map<String, List<String>> buildGlobalMapLocked() {
         ServiceLoader<AppSearchDocumentClassMap> loader = ServiceLoader.load(
                 AppSearchDocumentClassMap.class, AppSearchDocumentClassMap.class.getClassLoader());
         Map<String, List<String>> result = new ArrayMap<>();

@@ -42,6 +42,7 @@ class ControlZoomRatioRangeAssertionErrorQuirkTest(
     }
 
     companion object {
+        @Suppress("TYPE_INTERSECTION_AS_REIFIED_WARNING")
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "Brand: {0}, Model: {1}")
         fun data() =

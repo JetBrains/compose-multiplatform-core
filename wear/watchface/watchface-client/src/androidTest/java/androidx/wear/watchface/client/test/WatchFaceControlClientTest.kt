@@ -38,6 +38,7 @@ import androidx.core.util.Consumer
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.assertAgainstGolden
 import androidx.wear.watchface.BoundingArc
@@ -277,7 +278,7 @@ fun rangedValueComplicationBuilder() =
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
-@RequiresApi(Build.VERSION_CODES.O_MR1)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
 class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
 
     private val exampleCanvasAnalogWatchFaceComponentName =
@@ -1360,7 +1361,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
     }
 
     @Test
-    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
     fun overrideComplicationData() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O_MR1) {
             return
@@ -1393,7 +1394,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
     }
 
     @Test
-    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
     fun clearComplicationDataOverride() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O_MR1) {
             return
@@ -1427,7 +1428,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
     }
 
     @Test
-    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
     fun pauseAnimation() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O_MR1) {
             return
@@ -1443,7 +1444,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
     }
 
     @Test
-    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
     fun unpauseAnimation() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O_MR1) {
             return
@@ -1460,7 +1461,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
     }
 
     @Test
-    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
     fun closing_instance_unpausesAnimation() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O_MR1) {
             return
@@ -1479,11 +1480,11 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
-@RequiresApi(Build.VERSION_CODES.O_MR1)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
 class WatchFaceControlClientScreenshotTest : WatchFaceControlClientTestBase() {
     @get:Rule
     val screenshotRule: AndroidXScreenshotTestRule =
-        AndroidXScreenshotTestRule("wear/wear-watchface-client")
+        AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
     private val exampleOpenGLWatchFaceComponentName =
         componentOf<ExampleOpenGLBackgroundInitWatchFaceService>()
@@ -1694,7 +1695,7 @@ class WatchFaceControlClientScreenshotTest : WatchFaceControlClientTestBase() {
     }
 
     @Test
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun userStyleFlavors() {
         val interactiveInstance = getOrCreateTestSubject()
 

@@ -24,6 +24,7 @@ import androidx.compose.foundation.internal.checkPreconditionNotNull
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
@@ -275,7 +276,9 @@ class PagerAccessibilityTest(config: ParamConfig) : BasePagerTest(config = confi
             pageCount = { DefaultPageCount },
             pageContent = { page ->
                 val focusRequester =
-                    FocusRequester().also { if (page == 0) initialFocusedItem = it }
+                    remember(page) {
+                        FocusRequester().also { if (page == 0) initialFocusedItem = it }
+                    }
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Box(modifier = Modifier.size(30.dp).focusRequester(focusRequester).focusable())
                 }
@@ -310,7 +313,9 @@ class PagerAccessibilityTest(config: ParamConfig) : BasePagerTest(config = confi
             pageCount = { DefaultPageCount },
             pageContent = { page ->
                 val focusRequester =
-                    FocusRequester().also { if (page == 0) initialFocusedItem = it }
+                    remember(page) {
+                        FocusRequester().also { if (page == 0) initialFocusedItem = it }
+                    }
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Box(modifier = Modifier.size(30.dp).focusRequester(focusRequester).focusable())
                 }
@@ -347,7 +352,8 @@ class PagerAccessibilityTest(config: ParamConfig) : BasePagerTest(config = confi
             pageCount = { DefaultPageCount },
             pageSize = { PageSize.Fixed(50.dp) },
             pageContent = { page ->
-                val focusRequester = FocusRequester().also { focusRequesters[page] = it }
+                val focusRequester =
+                    remember(page) { FocusRequester().also { focusRequesters[page] = it } }
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     // focus bounds is smaller than page itself
                     Box(modifier = Modifier.size(30.dp).focusRequester(focusRequester).focusable())
@@ -391,7 +397,8 @@ class PagerAccessibilityTest(config: ParamConfig) : BasePagerTest(config = confi
             pageCount = { DefaultPageCount },
             pageSize = { PageSize.Fixed(50.dp) },
             pageContent = { page ->
-                val focusRequester = FocusRequester().also { focusRequesters[page] = it }
+                val focusRequester =
+                    remember(page) { FocusRequester().also { focusRequesters[page] = it } }
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     // focus bounds is smaller than page itself
                     Box(modifier = Modifier.size(30.dp).focusRequester(focusRequester).focusable())

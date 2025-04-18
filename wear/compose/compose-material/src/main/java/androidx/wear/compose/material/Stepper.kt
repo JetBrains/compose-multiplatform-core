@@ -61,7 +61,7 @@ import kotlin.math.roundToInt
  * @param content Content body for the Stepper.
  */
 @Composable
-fun Stepper(
+public fun Stepper(
     value: Float,
     onValueChange: (Float) -> Unit,
     steps: Int,
@@ -146,7 +146,7 @@ fun Stepper(
  * @param content Content body for the Stepper.
  */
 @Composable
-fun Stepper(
+public fun Stepper(
     value: Int,
     onValueChange: (Int) -> Unit,
     valueProgression: IntProgression,
@@ -219,7 +219,7 @@ public fun Stepper(
     contentColor: Color = contentColorFor(backgroundColor),
     iconColor: Color = contentColor,
     content: @Composable BoxScope.() -> Unit
-) =
+): Unit =
     Stepper(
         value = value,
         onValueChange = onValueChange,
@@ -273,7 +273,7 @@ public fun Stepper(
     level = DeprecationLevel.HIDDEN
 )
 @Composable
-fun Stepper(
+public fun Stepper(
     value: Int,
     onValueChange: (Int) -> Unit,
     valueProgression: IntProgression,
@@ -303,8 +303,8 @@ fun Stepper(
 /** Defaults used by stepper */
 public object StepperDefaults {
     /** Decrease [ImageVector] */
-    public val Decrease = androidx.wear.compose.materialcore.RangeIcons.Minus
+    public val Decrease: ImageVector = androidx.wear.compose.materialcore.RangeIcons.Minus
 
     /** Increase [ImageVector] */
-    public val Increase = Icons.Filled.Add
+    public val Increase: ImageVector = Icons.Filled.Add
 }

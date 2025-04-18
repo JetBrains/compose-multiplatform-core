@@ -39,12 +39,12 @@ class FakeSessionProcessor : SessionProcessor {
 
     override fun initSession(
         cameraInfo: CameraInfo,
-        outputSurfaceConfiguration: OutputSurfaceConfiguration,
+        outputSurfaceConfiguration: OutputSurfaceConfiguration?,
     ): SessionConfig {
         Log.debug { "$this#initSession" }
         val previewSurface =
             SessionProcessorSurface(
-                    outputSurfaceConfiguration.previewOutputSurface.surface,
+                    outputSurfaceConfiguration!!.previewOutputSurface.surface,
                     previewOutputConfigId
                 )
                 .also { it.setContainerClass(Preview::class.java) }

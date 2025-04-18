@@ -58,6 +58,7 @@ sealed interface IntervalList<out T> {
      * @param fromIndex we will start iterating from the interval containing this index.
      * @param toIndex the last interval we iterate through will contain this index. This index
      *   should be not smaller than [fromIndex].
+     * @param block will be invoked on each interval within the defined indexes
      * @throws IndexOutOfBoundsException if the indexes are not within 0..[size] - 1 range.
      */
     fun forEach(fromIndex: Int = 0, toIndex: Int = size - 1, block: (Interval<T>) -> Unit)
@@ -125,6 +126,7 @@ class MutableIntervalList<T> : IntervalList<T> {
      * @param fromIndex we will start iterating from the interval containing this index.
      * @param toIndex the last interval we iterate through will contain this index. This index
      *   should be not smaller than [fromIndex].
+     * @param block will be invoked on each interval within the defined indexes
      * @throws IndexOutOfBoundsException if the indexes are not within 0..[size] - 1 range.
      */
     override fun forEach(fromIndex: Int, toIndex: Int, block: (IntervalList.Interval<T>) -> Unit) {

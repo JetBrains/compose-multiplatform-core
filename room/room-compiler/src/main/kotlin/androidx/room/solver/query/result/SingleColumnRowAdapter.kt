@@ -17,21 +17,19 @@
 package androidx.room.solver.query.result
 
 import androidx.room.solver.CodeGenScope
-import androidx.room.solver.types.CursorValueReader
+import androidx.room.solver.types.StatementValueReader
 import androidx.room.vo.ColumnIndexVar
 
 /** Wraps a row adapter when there is only 1 item with 1 column in the response. */
-class SingleColumnRowAdapter(val reader: CursorValueReader) : RowAdapter(reader.typeMirror()) {
+class SingleColumnRowAdapter(val reader: StatementValueReader) : RowAdapter(reader.typeMirror()) {
 
-    override fun isMigratedToDriver(): Boolean = true
-
-    override fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope) {
-        reader.readFromCursor(outVarName, cursorVarName, "0", scope)
+    override fun convert(outVarName: String, stmtVarName: String, scope: CodeGenScope) {
+        reader.readFromStatement(outVarName, stmtVarName, "0", scope)
     }
 
     override fun getDefaultIndexAdapter() =
         object : IndexAdapter {
-            override fun onCursorReady(cursorVarName: String, scope: CodeGenScope) {}
+            override fun onStatementReady(stmtVarName: String, scope: CodeGenScope) {}
 
             override fun getIndexVars() = listOf(ColumnIndexVar(null, "0"))
         }

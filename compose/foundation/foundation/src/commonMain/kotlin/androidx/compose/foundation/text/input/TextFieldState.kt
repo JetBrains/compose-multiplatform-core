@@ -24,6 +24,7 @@ import androidx.compose.foundation.internal.checkPrecondition
 import androidx.compose.foundation.text.input.internal.undo.TextFieldEditUndoBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.annotation.RememberInComposition
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.getValue
@@ -63,6 +64,7 @@ internal constructor(
     initialTextUndoManager: TextUndoManager
 ) {
 
+    @RememberInComposition
     constructor(
         initialText: String = "",
         initialSelection: TextRange = TextRange(initialText.length)

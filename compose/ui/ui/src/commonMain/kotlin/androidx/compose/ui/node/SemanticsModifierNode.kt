@@ -83,6 +83,10 @@ interface SemanticsModifierNode : DelegatableNode {
      * simplifies the structure based on [shouldMergeDescendantSemantics] and
      * [shouldClearDescendantSemantics]. For most purposes (especially accessibility, or the testing
      * of accessibility), the merged semantics tree should be used.
+     *
+     * Note: The implementation of [applySemantics] should be used to set semantic properties or
+     * semantic actions. Don't call applySemantics() from within applySemantics(). It will result in
+     * an infinite loop.
      */
     fun SemanticsPropertyReceiver.applySemantics()
 }

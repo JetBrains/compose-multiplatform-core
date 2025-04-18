@@ -29,8 +29,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
@@ -245,6 +252,8 @@ fun TextDemoSelection2DArrayVertical() {
 fun TextDemoSelectionEnableAndDisable() {
     val textSelectable = "This text is selectable."
     val textNotSelectable = "This text is not selectable."
+    var textEditable by remember { mutableStateOf("This text is editable.") }
+    var clickCount by remember { mutableIntStateOf(0) }
 
     OutlinedSelectionContainer {
         Column(Modifier.fillMaxHeight()) {
@@ -262,6 +271,23 @@ fun TextDemoSelectionEnableAndDisable() {
             }
             Text(
                 text = textSelectable,
+                modifier = textBorderModifier,
+                style = TextStyle(fontSize = fontSize8)
+            )
+            TextField(
+                value = textEditable,
+                onValueChange = { textEditable = it },
+                modifier = textBorderModifier,
+                textStyle = TextStyle(fontSize = fontSize8)
+            )
+            Row {
+                OutlinedDisableSelection {
+                    OutlinedButton(onClick = { clickCount++ }) { Text("Clicks Count: $clickCount") }
+                }
+                OutlinedButton(onClick = { clickCount++ }) { Text("Clicks Count: $clickCount") }
+            }
+            Text(
+                text = textSelectable + "\n" + textSelectable,
                 modifier = textBorderModifier,
                 style = TextStyle(fontSize = fontSize8)
             )

@@ -97,6 +97,10 @@ internal class EmptySemanticsModifier : Modifier.Node(), SemanticsModifierNode {
  *   with [SemanticsConfiguration.isMergingSemanticsOfDescendants].
  * @param properties properties to add to the semantics. [SemanticsPropertyReceiver] will be
  *   provided in the scope to allow access for common properties and its values.
+ *
+ *   Note: The [properties] block should be used to set semantic properties or semantic actions.
+ *   Don't call [SemanticsModifierNode.applySemantics] from within the [properties] block. It will
+ *   result in an infinite loop.
  */
 fun Modifier.semantics(
     mergeDescendants: Boolean = false,
@@ -105,7 +109,7 @@ fun Modifier.semantics(
     this then AppendedSemanticsElement(mergeDescendants = mergeDescendants, properties = properties)
 
 // Implement SemanticsModifier to allow tooling to inspect the semantics configuration
-internal data class AppendedSemanticsElement(
+internal class AppendedSemanticsElement(
     val mergeDescendants: Boolean,
     val properties: (SemanticsPropertyReceiver.() -> Unit)
 ) : ModifierNodeElement<CoreSemanticsModifierNode>(), SemanticsModifier {
@@ -136,6 +140,22 @@ internal data class AppendedSemanticsElement(
         properties["mergeDescendants"] = mergeDescendants
         addSemanticsPropertiesFrom(semanticsConfiguration)
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AppendedSemanticsElement) return false
+
+        if (mergeDescendants != other.mergeDescendants) return false
+        if (properties !== other.properties) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = mergeDescendants.hashCode()
+        result = 31 * result + properties.hashCode()
+        return result
+    }
 }
 
 /**
@@ -152,14 +172,17 @@ internal data class AppendedSemanticsElement(
  *
  * @param properties properties to add to the semantics. [SemanticsPropertyReceiver] will be
  *   provided in the scope to allow access for common properties and its values.
+ *
+ *   Note: The [properties] lambda should be used to set semantic properties or semantic actions.
+ *   Don't call [SemanticsModifierNode.applySemantics] from within the [properties] block. It will
+ *   result in an infinite loop.
  */
 fun Modifier.clearAndSetSemantics(properties: (SemanticsPropertyReceiver.() -> Unit)): Modifier =
     this then ClearAndSetSemanticsElement(properties)
 
 // Implement SemanticsModifier to allow tooling to inspect the semantics configuration
-internal data class ClearAndSetSemanticsElement(
-    val properties: SemanticsPropertyReceiver.() -> Unit
-) : ModifierNodeElement<CoreSemanticsModifierNode>(), SemanticsModifier {
+internal class ClearAndSetSemanticsElement(val properties: SemanticsPropertyReceiver.() -> Unit) :
+    ModifierNodeElement<CoreSemanticsModifierNode>(), SemanticsModifier {
 
     // This should only ever be called by layout inspector
     override val semanticsConfiguration: SemanticsConfiguration
@@ -185,6 +208,19 @@ internal data class ClearAndSetSemanticsElement(
     override fun InspectorInfo.inspectableProperties() {
         name = "clearAndSetSemantics"
         addSemanticsPropertiesFrom(semanticsConfiguration)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ClearAndSetSemanticsElement) return false
+
+        if (properties !== other.properties) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return properties.hashCode()
     }
 }
 

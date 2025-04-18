@@ -6,10 +6,8 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 
 plugins {
     id("AndroidXPlugin")
@@ -18,13 +16,9 @@ plugins {
 }
 
 androidXMultiplatform {
-    android()
+    androidTarget()
     jvmStubs()
     linuxX64Stubs()
-
-    kotlin {
-        explicitApi = ExplicitApiMode.Strict
-    }
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -95,11 +89,9 @@ android {
 
 androidx {
     name = "Saved State Compose"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     samples(project(":savedstate:savedstate-compose"))
     inceptionYear = "2018"
     description = "Compose integration with Saved State"
-    legacyDisableKotlinStrictApiMode = true
     metalavaK2UastEnabled = false
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

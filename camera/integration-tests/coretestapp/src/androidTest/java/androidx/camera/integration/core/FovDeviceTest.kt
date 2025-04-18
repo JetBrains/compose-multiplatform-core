@@ -18,7 +18,6 @@ package androidx.camera.integration.core
 
 import android.content.Context
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraInfo
@@ -117,7 +116,7 @@ class FovDeviceTest(
         CameraXUtil.shutdown()[10000, TimeUnit.MILLISECONDS]
     }
 
-    @RequiresApi(Build.VERSION_CODES.R)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
     @Test
     fun intrinsicZoomRatio_greaterThanZero() {
         Truth.assertThat(cameraUseCaseAdapter.cameraInfo.intrinsicZoomRatio).isGreaterThan(0)

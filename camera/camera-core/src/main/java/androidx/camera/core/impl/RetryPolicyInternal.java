@@ -16,9 +16,10 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.ExperimentalRetryPolicy;
 import androidx.camera.core.RetryPolicy;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Internal interface for constructing tailored RetryPolicies.
@@ -34,6 +35,5 @@ public interface RetryPolicyInternal extends RetryPolicy {
      * @return A RetryPolicy that seamlessly integrates the inherited retry logic with the
      * newly specified timeout.
      */
-    @NonNull
-    RetryPolicy copy(long timeoutInMillis);
+    @NonNull RetryPolicy copy(long timeoutInMillis);
 }

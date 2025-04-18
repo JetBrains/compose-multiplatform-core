@@ -21,3 +21,5 @@ import androidx.compose.ui.input.pointer.PointerEvent
 
 internal actual val PointerEvent.isDeepPress: Boolean
     get() = classification == MotionEvent.CLASSIFICATION_DEEP_PRESS
+
+internal actual fun firstDownRefersToPrimaryMouseButtonOnly() = false

@@ -24,9 +24,10 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.os.Build;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.ApiCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,8 +41,7 @@ public final class Camera2CaptureCallbacks {
     }
 
     /** Returns a session capture callback which does nothing. */
-    @NonNull
-    public static CameraCaptureSession.CaptureCallback createNoOpCallback() {
+    public static CameraCaptureSession.@NonNull CaptureCallback createNoOpCallback() {
         return new NoOpSessionCaptureCallback();
     }
 
@@ -52,9 +52,8 @@ public final class Camera2CaptureCallbacks {
     }
 
     /** Returns a session capture callback which calls a list of other callbacks. */
-    @NonNull
-    public static CameraCaptureSession.CaptureCallback createComboCallback(
-            @NonNull CameraCaptureSession.CaptureCallback... callbacks) {
+    public static CameraCaptureSession.@NonNull CaptureCallback createComboCallback(
+            CameraCaptureSession.CaptureCallback @NonNull ... callbacks) {
         return createComboCallback(Arrays.asList(callbacks));
     }
 

@@ -682,21 +682,16 @@ public abstract class MediaRouteProvider {
             static final String KEY_IS_GROUPABLE = "isGroupable";
             static final String KEY_IS_TRANSFERABLE = "isTransferable";
 
-            /**
-             */
+            /** */
             @RestrictTo(LIBRARY)
-            @IntDef({
-                    UNSELECTING,
-                    UNSELECTED,
-                    SELECTING,
-                    SELECTED
-            })
+            @IntDef({UNSELECTING, UNSELECTED, SELECTING, SELECTED, NOT_IN_GROUP})
             @Retention(RetentionPolicy.SOURCE)
             public @interface SelectionState {}
+
             /**
              * After a user unselects a route, it might take some time for a provider to complete
-             * the operation. This state is used in this between time. MediaRouter can either
-             * block the UI or show the route as unchecked.
+             * the operation. This state is used in this between time. MediaRouter can either block
+             * the UI or show the route as unchecked.
              */
             public static final int UNSELECTING = 0;
 
@@ -722,6 +717,17 @@ public abstract class MediaRouteProvider {
              * </p>
              */
             public static final int SELECTED = 3;
+
+            /**
+             * The route is not in a dynamic group.
+             *
+             * <p>The NOT_IN_GROUP selection state is different from the UNSELECTED state. The
+             * former represents a route that is not in a dynamic group. The latter represents an
+             * unselected route which could be selected to be part of the dynamic group.
+             *
+             * @see MediaRouter.GroupRouteInfo#getSelectionState(MediaRouter.RouteInfo)
+             */
+            public static final int NOT_IN_GROUP = 4;
 
             //TODO: mMediaRouteDescriptor could have an old info. We should provide a way to
             // update it or use only the route ID.

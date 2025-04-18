@@ -29,9 +29,9 @@ class CompositeAdapter(
     val intoStatementConverter: TypeConverter?,
     val fromCursorConverter: TypeConverter?
 ) : ColumnTypeAdapter(out, columnTypeAdapter.typeAffinity) {
-    override fun readFromCursor(
+    override fun readFromStatement(
         outVarName: String,
-        cursorVarName: String,
+        stmtVarName: String,
         indexVarName: String,
         scope: CodeGenScope
     ) {
@@ -40,7 +40,7 @@ class CompositeAdapter(
         }
         val tmpCursorValue = scope.getTmpVar()
         scope.builder.addLocalVariable(tmpCursorValue, columnTypeAdapter.outTypeName)
-        columnTypeAdapter.readFromCursor(tmpCursorValue, cursorVarName, indexVarName, scope)
+        columnTypeAdapter.readFromStatement(tmpCursorValue, stmtVarName, indexVarName, scope)
         fromCursorConverter.convert(tmpCursorValue, outVarName, scope)
     }
 

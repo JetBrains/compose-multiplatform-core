@@ -16,15 +16,20 @@
 package androidx.compose.ui.window
 
 import android.graphics.Point
+import android.os.Build
 import android.util.DisplayMetrics
 import android.view.Gravity
+import android.view.InputDevice
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.MotionEvent.ACTION_DOWN
 import android.view.MotionEvent.ACTION_UP
 import android.view.View
+import android.view.Window
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.appcompat.view.ContextThemeWrapper
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -42,6 +47,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -51,11 +58,13 @@ import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.gesture.MotionEvent
 import androidx.compose.ui.gesture.PointerProperties
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.PointerCoords
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
@@ -64,6 +73,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyChild
 import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -74,17 +84,24 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
+import org.junit.After
+import org.junit.AfterClass
 import org.junit.Assert.assertEquals
+import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@OptIn(ExperimentalComposeUiApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class DialogTest {
@@ -94,14 +111,53 @@ class DialogTest {
     private val testTag = "tag"
     private lateinit var dispatcher: OnBackPressedDispatcher
 
-    @Test
-    fun dialogTest_isShowingContent() {
-        setupDialogTest(closeDialogOnDismiss = false)
-        rule.onNodeWithTag(testTag).assertIsDisplayed()
+    @Before
+    fun setup() {
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            val activeDeviceIds = InputDevice.getDeviceIds()
+
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG DialogTest.setup(), " +
+                    "activeDeviceIds = $activeDeviceIds"
+            )
+        }
+    }
+
+    @After
+    fun tearDown() {
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            val activeDeviceIds = InputDevice.getDeviceIds()
+
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG DialogTest.tearDown(), " +
+                    "activeDeviceIds = $activeDeviceIds"
+            )
+        }
     }
 
     @Test
+    fun dialogTest_isShowingContent() {
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println("POINTER_INPUT_DEBUG_LOG_TAG DialogTest.dialogTest_isShowingContent() START")
+        }
+        setupDialogTest(closeDialogOnDismiss = false)
+        rule.onNodeWithTag(testTag).assertIsDisplayed()
+
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println("POINTER_INPUT_DEBUG_LOG_TAG DialogTest.dialogTest_isShowingContent() END")
+        }
+    }
+
+    // Hits code path of b/399055247
+    @Test
     fun dialogTest_isNotDismissed_whenClicked() {
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG " +
+                    "DialogTest.dialogTest_isNotDismissed_whenClicked() START"
+            )
+        }
+
         var clickCount = 0
         setupDialogTest { DefaultDialogContent(Modifier.clickable { clickCount++ }) }
 
@@ -111,14 +167,30 @@ class DialogTest {
 
         // Click inside the dialog
         interaction.performClick()
+        rule.waitForIdle()
 
         // Check that the Clickable was pressed and the Dialog is still visible.
         interaction.assertIsDisplayed()
         assertThat(clickCount).isEqualTo(1)
+
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG " +
+                    "DialogTest.dialogTest_isNotDismissed_whenClicked() END"
+            )
+        }
     }
 
+    // Hits code path of b/399055247
     @Test
     fun dialogTest_isNotDismissed_whenClicked_noClickableContent() {
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG " +
+                    "DialogTest.dialogTest_isNotDismissed_whenClicked_noClickableContent() START"
+            )
+        }
+
         setupDialogTest { DefaultDialogContent() }
 
         val interaction = rule.onNodeWithTag(testTag)
@@ -126,33 +198,98 @@ class DialogTest {
 
         // Click inside the dialog
         interaction.performClick()
+        rule.waitForIdle()
 
         // Check that the Clickable was pressed and the Dialog is still visible.
         interaction.assertIsDisplayed()
+
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG " +
+                    "DialogTest.dialogTest_isNotDismissed_whenClicked_noClickableContent() END"
+            )
+        }
     }
 
     @Test
     fun dialogTest_isDismissed_whenSpecified() {
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG " +
+                    "DialogTest.dialogTest_isDismissed_whenSpecified() START"
+            )
+        }
+
         setupDialogTest()
         val textInteraction = rule.onNodeWithTag(testTag)
         textInteraction.assertIsDisplayed()
 
         clickOutsideDialog()
+        rule.waitForIdle()
+
+        // Wait for the dialog to disappear AND events to fully propagate. The cancel event to
+        // pointer input will wait until any other events (clicks) are finished before executing.
+        rule.mainClock.autoAdvance = false
+        rule.mainClock.advanceTimeBy(1000)
+
+        // Wait for the ui to disappear AND events to fully propagate through the non-standard
+        // input system used in this test. We can't rely on waitForIdle() or other methods related
+        // to the ui, because the input events aren't going through that standard input system..
+        rule.waitUntil(timeoutMillis = 2000) { textInteraction.isNotDisplayed() }
+
         textInteraction.assertDoesNotExist()
+
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG " +
+                    "DialogTest.dialogTest_isDismissed_whenSpecified() END"
+            )
+        }
     }
 
     @Test
     fun dialogTest_isDismissed_whenSpecified_decorFitsFalse() {
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG " +
+                    "DialogTest.dialogTest_isDismissed_whenSpecified_decorFitsFalse() START"
+            )
+        }
         setupDialogTest(dialogProperties = DialogProperties(decorFitsSystemWindows = false))
         val textInteraction = rule.onNodeWithTag(testTag)
         textInteraction.assertIsDisplayed()
 
         clickOutsideDialog()
+        rule.waitForIdle()
+
+        // Wait for the dialog to disappear AND events to fully propagate. The cancel event to
+        // pointer input will wait until any other events (clicks) are finished before executing.
+        rule.mainClock.autoAdvance = false
+        rule.mainClock.advanceTimeBy(1000)
+
+        // Wait for the ui to disappear AND events to fully propagate through the non-standard
+        // input system used in this test. We can't rely on waitForIdle() or other methods related
+        // to the ui, because the input events aren't going through that standard input system.
+        rule.waitUntil(timeoutMillis = 2000) { textInteraction.isNotDisplayed() }
+
         textInteraction.assertDoesNotExist()
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG " +
+                    "DialogTest.dialogTest_isDismissed_whenSpecified_decorFitsFalse() END"
+            )
+        }
     }
 
     @Test
     fun dialogTest_isNotDismissed_whenNotSpecified() {
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG " +
+                    "DialogTest.dialogTest_isNotDismissed_whenNotSpecified() START"
+            )
+        }
+
         setupDialogTest(closeDialogOnDismiss = false)
         val textInteraction = rule.onNodeWithTag(testTag)
         textInteraction.assertIsDisplayed()
@@ -160,6 +297,13 @@ class DialogTest {
         clickOutsideDialog()
         // The Dialog should still be visible
         textInteraction.assertIsDisplayed()
+
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG " +
+                    "DialogTest.dialogTest_isNotDismissed_whenNotSpecified() END"
+            )
+        }
     }
 
     @Test
@@ -183,6 +327,52 @@ class DialogTest {
         textInteraction.assertIsDisplayed()
 
         clickOutsideDialog()
+        // The Dialog should still be visible
+        textInteraction.assertIsDisplayed()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+    @Test
+    fun dialogTest_isNotDismissed_whenPressOutside_releaseInside() {
+        setupDialogTest(dialogProperties = DialogProperties())
+        val textInteraction = rule.onNodeWithTag(testTag)
+        textInteraction.assertIsDisplayed()
+
+        clickDialog(pressOutside = true, releaseOutside = false)
+        // The Dialog should still be visible
+        textInteraction.assertIsDisplayed()
+    }
+
+    @Test
+    fun dialogTest_isNotDismissed_whenPressInside_releaseOutside() {
+        setupDialogTest(dialogProperties = DialogProperties())
+        val textInteraction = rule.onNodeWithTag(testTag)
+        textInteraction.assertIsDisplayed()
+
+        clickDialog(pressOutside = false, releaseOutside = true)
+        // The Dialog should still be visible
+        textInteraction.assertIsDisplayed()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+    @Test
+    fun dialogTest_isNotDismissed_whenPressOutside_releaseInside_decorFitsFalse() {
+        setupDialogTest(dialogProperties = DialogProperties(decorFitsSystemWindows = false))
+        val textInteraction = rule.onNodeWithTag(testTag)
+        textInteraction.assertIsDisplayed()
+
+        clickDialog(pressOutside = true, releaseOutside = false)
+        // The Dialog should still be visible
+        textInteraction.assertIsDisplayed()
+    }
+
+    @Test
+    fun dialogTest_isNotDismissed_whenPressInside_releaseOutside_decorFitsFalse() {
+        setupDialogTest(dialogProperties = DialogProperties(decorFitsSystemWindows = false))
+        val textInteraction = rule.onNodeWithTag(testTag)
+        textInteraction.assertIsDisplayed()
+
+        clickDialog(pressOutside = false, releaseOutside = true)
         // The Dialog should still be visible
         textInteraction.assertIsDisplayed()
     }
@@ -513,8 +703,16 @@ class DialogTest {
         }
     }
 
+    // Hits code path of b/399055247
     @Test
     fun dismissWhenClickingOutsideContent() {
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG " +
+                    "DialogTest.dismissWhenClickingOutsideContent() START"
+            )
+        }
+
         var dismissed = false
         var clicked = false
         lateinit var composeView: View
@@ -532,7 +730,6 @@ class DialogTest {
 
         // click inside the compose view
         rule.onNodeWithTag(clickBoxTag).performClick()
-
         rule.waitForIdle()
 
         assertThat(dismissed).isFalse()
@@ -577,10 +774,25 @@ class DialogTest {
 
         assertThat(dismissed).isTrue()
         assertThat(clicked).isFalse()
+
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG " +
+                    "DialogTest.dismissWhenClickingOutsideContent() END"
+            )
+        }
     }
 
+    // Hits code path of b/399055247
     @Test
     fun dismissWhenClickingOutsideContentNoDecorFitsSystemWindows() {
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG " +
+                    "DialogTest.dismissWhenClickingOutsideContentNoDecorFitsSystemWindows() START"
+            )
+        }
+
         var dismissed = false
         var clicked = false
         lateinit var composeView: View
@@ -646,6 +858,96 @@ class DialogTest {
 
         assertThat(dismissed).isTrue()
         assertThat(clicked).isFalse()
+
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG " +
+                    "DialogTest.dismissWhenClickingOutsideContentNoDecorFitsSystemWindows() END"
+            )
+        }
+    }
+
+    // Hits code path of b/399055247
+    @Test
+    fun dismissWhenClickingWithNaNEvent() {
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG " +
+                    "DialogTest.dismissWhenClickingWithNaNEvent() START"
+            )
+        }
+
+        var dismissed = false
+        var clicked = false
+        lateinit var composeView: View
+        val clickBoxTag = "clickBox"
+        rule.setContent {
+            Dialog(
+                onDismissRequest = { dismissed = true },
+                properties =
+                    DialogProperties(
+                        usePlatformDefaultWidth = false,
+                        decorFitsSystemWindows = false
+                    )
+            ) {
+                composeView = LocalView.current
+                Box(Modifier.size(10.dp).testTag(clickBoxTag).clickable { clicked = true })
+            }
+        }
+
+        // click inside the compose view
+        rule.onNodeWithTag(clickBoxTag).performClick()
+
+        rule.waitForIdle()
+
+        assertThat(dismissed).isFalse()
+        assertThat(clicked).isTrue()
+
+        clicked = false
+
+        // click outside the compose view
+        rule.waitForIdle()
+        var root = composeView
+        while (root.parent is View) {
+            root = root.parent as View
+        }
+
+        rule.runOnIdle {
+            val x = Float.NaN
+            val y = Float.NaN
+            val down =
+                MotionEvent(
+                    eventTime = 0,
+                    action = ACTION_DOWN,
+                    numPointers = 1,
+                    actionIndex = 0,
+                    pointerProperties = arrayOf(PointerProperties(0)),
+                    pointerCoords = arrayOf(PointerCoords(x, y)),
+                    root
+                )
+            root.dispatchTouchEvent(down)
+            val up =
+                MotionEvent(
+                    eventTime = 10,
+                    action = ACTION_UP,
+                    numPointers = 1,
+                    actionIndex = 0,
+                    pointerProperties = arrayOf(PointerProperties(0)),
+                    pointerCoords = arrayOf(PointerCoords(x, y)),
+                    root
+                )
+            root.dispatchTouchEvent(up)
+        }
+        rule.waitForIdle()
+
+        assertThat(dismissed).isTrue()
+        assertThat(clicked).isFalse()
+
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG " + "DialogTest.dismissWhenClickingWithNaNEvent() END"
+            )
+        }
     }
 
     @Test
@@ -703,6 +1005,47 @@ class DialogTest {
         }
     }
 
+    @Test
+    @SdkSuppress(maxSdkVersion = 34)
+    fun dialogThemeCanBeOverridden() {
+        lateinit var window: Window
+        rule.setContent {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { context ->
+                    ComposeView(
+                            ContextThemeWrapper(
+                                context,
+                                androidx.compose.ui.tests.R.style.CustomDialogTheme
+                            )
+                        )
+                        .apply {
+                            setContent {
+                                Dialog(
+                                    onDismissRequest = {},
+                                    properties =
+                                        DialogProperties(
+                                            decorFitsSystemWindows = false,
+                                            usePlatformDefaultWidth = false
+                                        )
+                                ) {
+                                    var parent = LocalView.current
+                                    while (parent !is DialogWindowProvider) {
+                                        parent = parent.parent as View
+                                    }
+                                    window = (parent as DialogWindowProvider).window
+                                    Box(Modifier.fillMaxSize().background(Color.Blue))
+                                }
+                            }
+                        }
+                }
+            )
+        }
+        rule.runOnIdle {
+            @Suppress("DEPRECATION") assertThat(window.statusBarColor).isEqualTo(Color.Red.toArgb())
+        }
+    }
+
     private fun setupDialogTest(
         closeDialogOnDismiss: Boolean = true,
         dialogProperties: DialogProperties = DialogProperties(),
@@ -744,16 +1087,58 @@ class DialogTest {
 
     /** Try to dismiss the dialog by clicking between the topLefts of the dialog and the root. */
     private fun clickOutsideDialog() {
+        clickDialog()
+    }
+
+    private fun clickDialog(pressOutside: Boolean = true, releaseOutside: Boolean = true) {
         val dialogBounds = rule.onNode(isRoot().and(hasAnyChild(isDialog()))).boundsOnScreen()
         val rootBounds = rule.onNode(isRoot().and(hasAnyChild(isDialog()).not())).boundsOnScreen()
-        val clickPosition = lerp(dialogBounds.topLeft, rootBounds.topLeft, 0.5f).round()
-        UiDevice.getInstance(getInstrumentation()).click(clickPosition.x, clickPosition.y)
+        val outsidePosition = lerp(dialogBounds.topLeft, rootBounds.topLeft, 0.5f).round()
+        val insidePosition = lerp(dialogBounds.topLeft, dialogBounds.bottomRight, 0.5f).round()
+        val uiDevice = UiDevice.getInstance(getInstrumentation())
+        if (pressOutside && releaseOutside) {
+            uiDevice.click(outsidePosition.x, outsidePosition.y)
+        } else if (!pressOutside && !releaseOutside) {
+            uiDevice.click(insidePosition.x, insidePosition.y)
+        } else if (pressOutside) {
+            uiDevice.drag(
+                outsidePosition.x,
+                outsidePosition.y,
+                insidePosition.x,
+                insidePosition.y,
+                10
+            )
+        } else {
+            uiDevice.drag(
+                insidePosition.x,
+                insidePosition.y,
+                outsidePosition.x,
+                outsidePosition.y,
+                10
+            )
+        }
     }
 
     private fun SemanticsNodeInteraction.boundsOnScreen(): Rect {
         val bounds = with(rule.density) { getUnclippedBoundsInRoot().toRect() }
         val positionOnScreen = fetchSemanticsNode().positionOnScreen
         return bounds.translate(positionOnScreen)
+    }
+
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun enableComposeUiFlags() {
+            ComposeUiFlags.isHitPathTrackerLoggingEnabled = true
+            println("POINTER_INPUT_DEBUG_LOG_TAG DialogTest.enableComposeUiFlags()")
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun disableComposeUiFlags() {
+            println("POINTER_INPUT_DEBUG_LOG_TAG DialogTest.disableComposeUiFlags()")
+            ComposeUiFlags.isHitPathTrackerLoggingEnabled = false
+        }
     }
 }
 

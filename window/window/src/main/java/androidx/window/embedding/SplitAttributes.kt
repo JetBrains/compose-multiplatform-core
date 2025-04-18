@@ -46,31 +46,29 @@ import androidx.window.embedding.SplitAttributes.SplitType.Companion.SPLIT_TYPE_
  * - Setting `splitRatio`, `splitLayoutDirection`, and `animationParams` attributes in
  *   `<SplitPairRule>` or `<SplitPlaceholderRule>` tags in an XML configuration file. The attributes
  *   are parsed as [SplitType], [LayoutDirection], and [EmbeddingAnimationParams], respectively.
- *   Note that [SplitType.HingeSplitType] is not supported XML format.
- * - Using [SplitAttributesCalculator.computeSplitAttributesForParams] to customize the
- *   `SplitAttributes` for a given device and window state.
+ *   Note that [SplitType.SPLIT_TYPE_HINGE] is not supported XML format.
+ * - Using [SplitController.setSplitAttributesCalculator] to customize the `SplitAttributes` for a
+ *   given device and window state.
  *
  * @property splitType The split type attribute. Defaults to an equal split of the parent window for
  *   the primary and secondary containers.
  * @property layoutDirection The layout direction of the parent window split. The default is based
  *   on locale value.
- * @property animationParams The animation params to specify the animation background of the split
+ * @property animationParams The animation params to specify the animation transitions of the split
  *   involving this `SplitAttributes` object. The default is to use the current theme window
- *   background color.
+ *   background color and system transitions.
  * @property dividerAttributes The [DividerAttributes] for this split. Defaults to
  *   [DividerAttributes.NO_DIVIDER], which means no divider is requested.
+ * @see Builder
  * @see SplitAttributes.SplitType
  * @see SplitAttributes.LayoutDirection
- * @see EmbeddingAnimationBackground
- * @see EmbeddingAnimationBackground.createColorBackground
- * @see EmbeddingAnimationBackground.DEFAULT
+ * @see EmbeddingAnimationParams
  */
 class SplitAttributes
-@JvmOverloads
-constructor(
+private constructor(
     val splitType: SplitType = SPLIT_TYPE_EQUAL,
     val layoutDirection: LayoutDirection = LOCALE,
-    val animationParams: EmbeddingAnimationParams = EmbeddingAnimationParams(),
+    val animationParams: EmbeddingAnimationParams = EmbeddingAnimationParams.Builder().build(),
     val dividerAttributes: DividerAttributes = DividerAttributes.NO_DIVIDER,
 ) {
 
@@ -241,6 +239,17 @@ constructor(
          */
         override fun toString(): String = description
 
+        override fun equals(other: Any?): Boolean {
+            if (other === this) return true
+            if (other !is LayoutDirection) return false
+            return description == other.description && value == other.value
+        }
+
+        override fun hashCode(): Int {
+            var result = description.hashCode()
+            return 31 * result + value
+        }
+
         /** Non-public properties and methods. */
         companion object {
             /**
@@ -375,20 +384,21 @@ constructor(
      * Builder for creating an instance of [SplitAttributes].
      * - The default split type is an equal split between primary and secondary containers.
      * - The default layout direction is based on locale.
-     * - The default animation background color is to use the current theme window background color.
+     * - The default animation params is to use the current theme window background color and system
+     *   transitions.
      * - The default divider attributes is not to use divider.
      */
     class Builder() {
         private var splitType = SPLIT_TYPE_EQUAL
         private var layoutDirection = LOCALE
-        private var animationParams = EmbeddingAnimationParams()
+        private var animationParams = EmbeddingAnimationParams.Builder().build()
         private var dividerAttributes: DividerAttributes = DividerAttributes.NO_DIVIDER
 
         /** Creates a Builder with values initialized from the original [SplitAttributes] */
         internal constructor(original: SplitAttributes) : this() {
             this.setSplitType(original.splitType)
                 .setLayoutDirection(original.layoutDirection)
-                .setAnimationParams(animationParams)
+                .setAnimationParams(original.animationParams)
                 .setDividerAttributes(original.dividerAttributes)
         }
 
@@ -418,23 +428,33 @@ constructor(
 
         /**
          * Sets the animation params to use during animation of the split involving this
-         * `SplitAttributes` object if the animation requires a background.
-         *
-         * The default is to use the current theme window background color.
+         * `SplitAttributes` object if the animation requires a background color or non-default
+         * transitions.
          *
          * [EmbeddingAnimationParams] can be supported only if the Window Extensions version of the
          * target device is equals or higher than required API level. Otherwise, it would be no-op
          * when setting the [EmbeddingAnimationParams] on a target device that has lower API level.
          *
-         * @param params The animation params.
-         * @return This `Builder`.
+         * @param params the animation params.
+         * @return this `Builder`.
          */
         @RequiresWindowSdkExtension(5)
         fun setAnimationParams(params: EmbeddingAnimationParams): Builder = apply {
-            animationParams = params
+            this.animationParams = params
         }
 
-        /** Sets the [DividerAttributes]. */
+        /**
+         * Sets the [DividerAttributes] for this split.
+         *
+         * The default is [DividerAttributes.NO_DIVIDER], which means no divider is requested.
+         *
+         * Divider can be supported only if the Window Extensions version of the target device is
+         * equals or higher than required API level. Otherwise, it would be no-op on a target device
+         * that has lower API level.
+         *
+         * @param dividerAttributes The divider attributes.
+         * @return This `Builder`.
+         */
         @RequiresWindowSdkExtension(6)
         fun setDividerAttributes(dividerAttributes: DividerAttributes): Builder = apply {
             this.dividerAttributes = dividerAttributes

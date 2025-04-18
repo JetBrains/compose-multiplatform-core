@@ -20,8 +20,6 @@ import android.text.TextUtils;
 import android.view.Surface;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.CameraState;
 import androidx.camera.core.Logger;
@@ -45,6 +43,9 @@ import androidx.camera.testing.impl.CaptureSimulationKt;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -80,12 +81,10 @@ public class FakeCamera implements CameraInternal {
     private boolean mHasTransform = true;
     private boolean mIsPrimary = true;
 
-    @Nullable
-    private SessionConfig mSessionConfig;
+    private @Nullable SessionConfig mSessionConfig;
 
     private List<DeferrableSurface> mConfiguredDeferrableSurfaces = Collections.emptyList();
-    @Nullable
-    private ListenableFuture<List<Surface>> mSessionConfigurationFuture = null;
+    private @Nullable ListenableFuture<List<Surface>> mSessionConfigurationFuture = null;
 
     private CameraConfig mCameraConfig = CameraConfigs.defaultConfig();
 
@@ -190,8 +189,7 @@ public class FakeCamera implements CameraInternal {
     }
 
     @Override
-    @NonNull
-    public ListenableFuture<Void> release() {
+    public @NonNull ListenableFuture<Void> release() {
         if (mState == State.OPEN) {
             close();
         }
@@ -202,9 +200,8 @@ public class FakeCamera implements CameraInternal {
         return Futures.immediateFuture(null);
     }
 
-    @NonNull
     @Override
-    public Observable<CameraInternal.State> getCameraState() {
+    public @NonNull Observable<CameraInternal.State> getCameraState() {
         return mObservableState;
     }
 
@@ -257,7 +254,7 @@ public class FakeCamera implements CameraInternal {
      * capture requests from the use case.
      */
     @Override
-    public void attachUseCases(@NonNull final Collection<UseCase> useCases) {
+    public void attachUseCases(final @NonNull Collection<UseCase> useCases) {
         if (useCases.isEmpty()) {
             return;
         }
@@ -286,7 +283,7 @@ public class FakeCamera implements CameraInternal {
      * handle capture requests from the use case.
      */
     @Override
-    public void detachUseCases(@NonNull final Collection<UseCase> useCases) {
+    public void detachUseCases(final @NonNull Collection<UseCase> useCases) {
         if (useCases.isEmpty()) {
             return;
         }
@@ -314,22 +311,19 @@ public class FakeCamera implements CameraInternal {
      * @see #attachUseCases
      * @see #detachUseCases
      */
-    @NonNull
-    public Set<UseCase> getAttachedUseCases() {
+    public @NonNull Set<UseCase> getAttachedUseCases() {
         return mAttachedUseCases;
     }
 
     // Returns fixed CameraControlInternal instance in order to verify the instance is correctly
     // attached.
-    @NonNull
     @Override
-    public CameraControlInternal getCameraControlInternal() {
+    public @NonNull CameraControlInternal getCameraControlInternal() {
         return mCameraControlInternal;
     }
 
-    @NonNull
     @Override
-    public CameraInfoInternal getCameraInfoInternal() {
+    public @NonNull CameraInfoInternal getCameraInfoInternal() {
         return mCameraInfoInternal;
     }
 
@@ -337,8 +331,7 @@ public class FakeCamera implements CameraInternal {
      * Returns a list of active use cases ordered chronologically according to
      * {@link #onUseCaseActive} invocations.
      */
-    @NonNull
-    public List<UseCase> getUseCaseActiveHistory() {
+    public @NonNull List<UseCase> getUseCaseActiveHistory() {
         return mUseCaseActiveHistory;
     }
 
@@ -346,8 +339,7 @@ public class FakeCamera implements CameraInternal {
      * Returns a list of inactive use cases ordered chronologically according to
      * {@link #onUseCaseInactive} invocations.
      */
-    @NonNull
-    public List<UseCase> getUseCaseInactiveHistory() {
+    public @NonNull List<UseCase> getUseCaseInactiveHistory() {
         return mUseCaseInactiveHistory;
     }
 
@@ -356,8 +348,7 @@ public class FakeCamera implements CameraInternal {
      * Returns a list of updated use cases ordered chronologically according to
      * {@link #onUseCaseUpdated} invocations.
      */
-    @NonNull
-    public List<UseCase> getUseCaseUpdateHistory() {
+    public @NonNull List<UseCase> getUseCaseUpdateHistory() {
         return mUseCaseUpdateHistory;
     }
 
@@ -366,8 +357,7 @@ public class FakeCamera implements CameraInternal {
      * Returns a list of reset use cases ordered chronologically according to
      * {@link #onUseCaseReset} invocations.
      */
-    @NonNull
-    public List<UseCase> getUseCaseResetHistory() {
+    public @NonNull List<UseCase> getUseCaseResetHistory() {
         return mUseCaseResetHistory;
     }
 
@@ -495,9 +485,8 @@ public class FakeCamera implements CameraInternal {
         mConfiguredDeferrableSurfaces.clear();
     }
 
-    @NonNull
     @Override
-    public CameraConfig getExtendedConfig() {
+    public @NonNull CameraConfig getExtendedConfig() {
         return mCameraConfig;
     }
 
@@ -570,9 +559,8 @@ public class FakeCamera implements CameraInternal {
      * Simulates a capture frame being drawn on the session config surfaces to imitate a real
      * camera.
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public ListenableFuture<Void> simulateCaptureFrameAsync() {
+    public @NonNull ListenableFuture<Void> simulateCaptureFrameAsync() {
         return simulateCaptureFrameAsync(null);
     }
 
@@ -583,9 +571,8 @@ public class FakeCamera implements CameraInternal {
      * <p> This method uses the provided {@link Executor} for the asynchronous operations in case
      * of specific thread requirements.
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public ListenableFuture<Void> simulateCaptureFrameAsync(@Nullable Executor executor) {
+    public @NonNull ListenableFuture<Void> simulateCaptureFrameAsync(@Nullable Executor executor) {
         // Since capture session is not configured synchronously and may be dependent on when a
         // surface can be obtained from DeferrableSurface, we should wait for the session
         // configuration here just-in-case.

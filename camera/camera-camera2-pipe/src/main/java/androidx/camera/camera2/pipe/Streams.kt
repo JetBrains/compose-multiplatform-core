@@ -439,6 +439,7 @@ public interface OutputStream {
             public val VIDEO_RECORD: StreamUseCase = StreamUseCase(3)
             public val PREVIEW_VIDEO_STILL: StreamUseCase = StreamUseCase(4)
             public val VIDEO_CALL: StreamUseCase = StreamUseCase(5)
+            public val CROPPED_RAW: StreamUseCase = StreamUseCase(6)
         }
     }
 
@@ -466,12 +467,12 @@ public interface OutputStream {
      */
     public fun isValidForHighSpeedOperatingMode(): Boolean {
         return this.streamUseCase == null ||
-            this.streamUseCase == OutputStream.StreamUseCase.DEFAULT ||
-            this.streamUseCase == OutputStream.StreamUseCase.PREVIEW ||
-            this.streamUseCase == OutputStream.StreamUseCase.VIDEO_RECORD ||
+            this.streamUseCase == DEFAULT ||
+            this.streamUseCase == StreamUseCase.PREVIEW ||
+            this.streamUseCase == StreamUseCase.VIDEO_RECORD ||
             this.streamUseHint == null ||
-            this.streamUseHint == OutputStream.StreamUseHint.DEFAULT ||
-            this.streamUseHint == OutputStream.StreamUseHint.VIDEO_RECORD
+            this.streamUseHint == StreamUseHint.DEFAULT ||
+            this.streamUseHint == StreamUseHint.VIDEO_RECORD
     }
 }
 

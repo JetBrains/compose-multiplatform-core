@@ -26,6 +26,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import android.animation.PropertyValuesHolder;
+import android.app.Fragment;
 import android.app.UiAutomation;
 import android.content.Context;
 import android.content.Intent;
@@ -45,8 +46,6 @@ import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
-import androidx.annotation.NonNull;
-import android.app.Fragment;
 import androidx.leanback.graphics.FitWidthBitmapDrawable;
 import androidx.leanback.media.MediaPlayerGlue;
 import androidx.leanback.media.PlaybackGlueHost;
@@ -66,6 +65,7 @@ import androidx.test.filters.LargeTest;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;

@@ -34,10 +34,10 @@ import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.core.streamsharing.StreamSharing
 import androidx.camera.lifecycle.LifecycleCamera
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.AndroidUtil.skipVideoRecordingTestIfNotSupportedByEmulator
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
+import androidx.camera.testing.impl.IgnoreVideoRecordingProblematicDeviceRule
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.SurfaceTextureProvider.SurfaceTextureCallback
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
@@ -60,6 +60,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
@@ -79,6 +80,8 @@ class StreamSharingTest(private val implName: String, private val cameraConfig: 
     @get:Rule
     val temporaryFolder =
         TemporaryFolder(ApplicationProvider.getApplicationContext<Context>().cacheDir)
+
+    @get:Rule val skipRule: TestRule = IgnoreVideoRecordingProblematicDeviceRule()
 
     companion object {
         private const val VIDEO_TIMEOUT_SEC = 10L
@@ -102,7 +105,6 @@ class StreamSharingTest(private val implName: String, private val cameraConfig: 
     @Before
     fun setUp() {
         assumeTrue(CameraUtil.hasCameraWithLensFacing(DEFAULT_CAMERA_SELECTOR.lensFacing!!))
-        skipVideoRecordingTestIfNotSupportedByEmulator()
         ProcessCameraProvider.configureInstance(cameraConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
     }

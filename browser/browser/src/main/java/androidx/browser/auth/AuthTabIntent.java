@@ -19,16 +19,21 @@ package androidx.browser.auth;
 import static androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_DARK;
 import static androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_LIGHT;
 import static androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_SYSTEM;
+import static androidx.browser.customtabs.CustomTabsIntent.EXTRA_CLOSE_BUTTON_ICON;
 import static androidx.browser.customtabs.CustomTabsIntent.EXTRA_COLOR_SCHEME;
 import static androidx.browser.customtabs.CustomTabsIntent.EXTRA_COLOR_SCHEME_PARAMS;
 import static androidx.browser.customtabs.CustomTabsIntent.EXTRA_ENABLE_EPHEMERAL_BROWSING;
 import static androidx.browser.customtabs.CustomTabsIntent.EXTRA_SESSION;
+import static androidx.browser.customtabs.CustomTabsIntent.EXTRA_SESSION_ID;
 
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.SparseArray;
 
 import androidx.activity.result.ActivityResultCallback;
@@ -40,6 +45,8 @@ import androidx.annotation.IntRange;
 import androidx.annotation.RestrictTo;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.browser.customtabs.ExperimentalEphemeralBrowsing;
+import androidx.browser.customtabs.ExperimentalPendingSession;
+import androidx.core.content.IntentCompat;
 import androidx.core.os.BundleCompat;
 
 import org.jspecify.annotations.NonNull;
@@ -147,6 +154,9 @@ public class AuthTabIntent {
     /** An {@link Intent} used to start the Auth Tab Activity. */
     public final @NonNull Intent intent;
 
+    private final @Nullable AuthTabSession mSession;
+    private final AuthTabSession.@Nullable PendingSession mPendingSession;
+
     /**
      * Launches an Auth Tab Activity. Must be used for flows that result in a redirect with a custom
      * scheme.
@@ -220,8 +230,29 @@ public class AuthTabIntent {
         return defaults;
     }
 
-    private AuthTabIntent(@NonNull Intent intent) {
+    @Nullable
+    public AuthTabSession getSession() {
+        return mSession;
+    }
+
+    @ExperimentalPendingSession
+    public AuthTabSession.@Nullable PendingSession getPendingSession() {
+        return mPendingSession;
+    }
+
+    /**
+     * Returns the close button icon {@link Bitmap}.
+     */
+    @Nullable
+    public Bitmap getCloseButtonIcon() {
+        return IntentCompat.getParcelableExtra(intent, EXTRA_CLOSE_BUTTON_ICON, Bitmap.class);
+    }
+
+    private AuthTabIntent(@NonNull Intent intent, @Nullable AuthTabSession session,
+            AuthTabSession.@Nullable PendingSession pendingSession) {
         this.intent = intent;
+        mSession = session;
+        mPendingSession = pendingSession;
     }
 
     /**
@@ -233,8 +264,49 @@ public class AuthTabIntent {
                 new AuthTabColorSchemeParams.Builder();
         private @Nullable SparseArray<Bundle> mColorSchemeParamBundles;
         private @Nullable Bundle mDefaultColorSchemeBundle;
+        private @Nullable AuthTabSession mSession;
+        private AuthTabSession.@Nullable PendingSession mPendingSession;
 
         public Builder() {
+        }
+
+        /**
+         * Associates the {@link Intent} with the given {@link AuthTabSession}.
+         *
+         * Guarantees that the {@link Intent} will be sent to the same component as the one the
+         * session is associated with.
+         *
+         * @param session The {@link AuthTabSession} to associate the intent with.
+         */
+        public @NonNull Builder setSession(@NonNull AuthTabSession session) {
+            mSession = session;
+            mIntent.setPackage(session.getComponentName().getPackageName());
+            setSessionParameters(session.getBinder(), session.getId());
+            return this;
+        }
+
+        /**
+         * Associates the {@link Intent} with the given {@link AuthTabSession.PendingSession}.
+         * Overrides the effect of {@link #setSession}.
+         *
+         * @param session The {@link AuthTabSession.PendingSession} to associate the intent with.
+         */
+        @ExperimentalPendingSession
+        public @NonNull Builder setPendingSession(AuthTabSession.@NonNull PendingSession session) {
+            mPendingSession = session;
+            setSessionParameters(null, session.getId());
+            return this;
+        }
+
+        private void setSessionParameters(@Nullable IBinder binder,
+                @Nullable PendingIntent sessionId) {
+            Bundle bundle = new Bundle();
+            bundle.putBinder(EXTRA_SESSION, binder);
+            if (sessionId != null) {
+                bundle.putParcelable(EXTRA_SESSION_ID, sessionId);
+            }
+
+            mIntent.putExtras(bundle);
         }
 
         /**
@@ -337,6 +409,20 @@ public class AuthTabIntent {
         }
 
         /**
+         * Sets the close button icon for the Auth Tab.
+         *
+         * A 24x24dp icon is recommended, though it may be scaled to fit the toolbar. The icon will
+         * be tinted according to the toolbar's color scheme; its original color is ignored, but the
+         * alpha channel is preserved.
+         *
+         * @param icon The icon {@link Bitmap}.
+         */
+        public @NonNull Builder setCloseButtonIcon(@NonNull Bitmap icon) {
+            mIntent.putExtra(EXTRA_CLOSE_BUTTON_ICON, icon);
+            return this;
+        }
+
+        /**
          * Combines all the options that have been set and returns a new {@link AuthTabIntent}
          * object.
          */
@@ -345,10 +431,8 @@ public class AuthTabIntent {
 
             // Put a null EXTRA_SESSION as a fallback so that this is interpreted as a Custom Tab
             // intent by browser implementations that don't support Auth Tab.
-            {
-                Bundle bundle = new Bundle();
-                bundle.putBinder(EXTRA_SESSION, null);
-                mIntent.putExtras(bundle);
+            if (!mIntent.hasExtra(EXTRA_SESSION)) {
+                setSessionParameters(null, null);
             }
 
             mIntent.putExtras(mDefaultColorSchemeBuilder.build().toBundle());
@@ -363,7 +447,7 @@ public class AuthTabIntent {
                 mIntent.putExtras(bundle);
             }
 
-            return new AuthTabIntent(mIntent);
+            return new AuthTabIntent(mIntent, mSession, mPendingSession);
         }
     }
 

@@ -29,12 +29,13 @@ import android.os.CancellationSignal;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.res.FontResourcesParserCompat;
 import androidx.core.provider.FontsContractCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -83,11 +84,10 @@ public class TypefaceCompatApi29Impl extends TypefaceCompatBaseImpl {
         throw new RuntimeException("Do not use this function in API 29 or later.");
     }
 
-    @Nullable
     @Override
-    public Typeface createFromFontInfo(Context context,
+    public @Nullable Typeface createFromFontInfo(Context context,
             @Nullable CancellationSignal cancellationSignal,
-            @NonNull FontsContractCompat.FontInfo[] fonts, int style) {
+            FontsContractCompat.FontInfo @NonNull [] fonts, int style) {
         final ContentResolver resolver = context.getContentResolver();
         try {
             final FontFamily family = getFontFamily(cancellationSignal, fonts, resolver);
@@ -103,7 +103,7 @@ public class TypefaceCompatApi29Impl extends TypefaceCompatBaseImpl {
 
     private static @Nullable FontFamily getFontFamily(
             @Nullable CancellationSignal cancellationSignal,
-            @NonNull FontsContractCompat.FontInfo[] fonts, ContentResolver resolver) {
+            FontsContractCompat.FontInfo @NonNull [] fonts, ContentResolver resolver) {
         FontFamily.Builder familyBuilder = null;
         for (FontsContractCompat.FontInfo font : fonts) {
             try (ParcelFileDescriptor pfd = resolver.openFileDescriptor(font.getUri(), "r",
@@ -134,9 +134,8 @@ public class TypefaceCompatApi29Impl extends TypefaceCompatBaseImpl {
         return family;
     }
 
-    @Nullable
     @Override
-    public Typeface createFromFontInfoWithFallback(@NonNull Context context,
+    public @Nullable Typeface createFromFontInfoWithFallback(@NonNull Context context,
             @Nullable CancellationSignal cancellationSignal,
             @NonNull List<FontsContractCompat.FontInfo[]> fonts, int style) {
         final ContentResolver resolver = context.getContentResolver();
@@ -163,9 +162,8 @@ public class TypefaceCompatApi29Impl extends TypefaceCompatBaseImpl {
         }
     }
 
-    @Nullable
     @Override
-    public Typeface createFromFontFamilyFilesResourceEntry(Context context,
+    public @Nullable Typeface createFromFontFamilyFilesResourceEntry(Context context,
             FontResourcesParserCompat.FontFamilyFilesResourceEntry familyEntry, Resources resources,
             int style) {
         try {
@@ -204,9 +202,8 @@ public class TypefaceCompatApi29Impl extends TypefaceCompatBaseImpl {
     /**
      * Used by Resources to load a font resource of type font file.
      */
-    @Nullable
     @Override
-    public Typeface createFromResourcesFontFile(
+    public @Nullable Typeface createFromResourcesFontFile(
             Context context, Resources resources, int id, String path, int style) {
         FontFamily family = null;
         Font font = null;
@@ -223,9 +220,8 @@ public class TypefaceCompatApi29Impl extends TypefaceCompatBaseImpl {
         }
     }
 
-    @NonNull
     @Override
-    Typeface createWeightStyle(@NonNull Context context,
+    @NonNull Typeface createWeightStyle(@NonNull Context context,
             @NonNull Typeface base, int weight, boolean italic) {
         return Typeface.create(base, weight, italic);
     }

@@ -32,7 +32,6 @@ import androidx.room.migration.Migration
 import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
-import androidx.sqlite.use
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull

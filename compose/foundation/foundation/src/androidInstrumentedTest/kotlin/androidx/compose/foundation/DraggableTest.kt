@@ -164,7 +164,6 @@ class DraggableTest {
     }
 
     @Test
-    @Ignore("b/303237627")
     fun draggable_verticalDrag_newState() {
         var total = 0f
         setDraggableContent { Modifier.draggable(Orientation.Vertical) { total += it } }
@@ -530,7 +529,6 @@ class DraggableTest {
     }
 
     @Test
-    @Ignore("b/303237627")
     fun draggable_resumesNormally_whenInterruptedWithHigherPriority() = runBlocking {
         var total = 0f
         var dragStopped = 0f

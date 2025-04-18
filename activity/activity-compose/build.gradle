@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -36,7 +36,7 @@ dependencies {
     implementation(libs.kotlinCoroutinesCore)
     api("androidx.compose.runtime:runtime:1.7.0")
     api("androidx.compose.runtime:runtime-saveable:1.7.0")
-    api(project(":activity:activity-ktx"))
+    api(project(":activity:activity"))
     api("androidx.compose.ui:ui:1.0.1")
     api("androidx.core:core-ktx:1.13.0")
     api("androidx.lifecycle:lifecycle-viewmodel:2.6.1")
@@ -46,9 +46,9 @@ dependencies {
 
     androidTestImplementation("androidx.annotation:annotation:1.8.1")
     androidTestImplementation("androidx.compose.foundation:foundation-layout:1.6.0")
-    androidTestImplementation project(":compose:ui:ui-test-junit4")
-    androidTestImplementation project(":compose:material:material")
-    androidTestRuntimeOnly project(":compose:test-utils")
+    androidTestImplementation(project(":compose:ui:ui-test-junit4"))
+    androidTestImplementation(project(":compose:material:material"))
+    androidTestRuntimeOnly(project(":compose:test-utils"))
     androidTestImplementation(project(":compose:foundation:foundation"))
     androidTestImplementation(project(":compose:runtime:runtime"))
     androidTestImplementation(project(":compose:ui:ui"))
@@ -57,7 +57,7 @@ dependencies {
     androidTestImplementation(project(":compose:ui:ui-text"))
     androidTestImplementation(project(":lifecycle:lifecycle-common"))
     androidTestImplementation(project(":lifecycle:lifecycle-runtime"))
-    androidTestImplementation project(":lifecycle:lifecycle-runtime-testing")
+    androidTestImplementation(project(":lifecycle:lifecycle-runtime-testing"))
     androidTestImplementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.2")
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
@@ -71,7 +71,7 @@ dependencies {
 
 androidx {
     name = "Activity Compose"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2020"
     description = "Compose integration with Activity"
     legacyDisableKotlinStrictApiMode = true
@@ -79,6 +79,6 @@ androidx {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
     namespace = "androidx.activity.compose"
 }

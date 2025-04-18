@@ -25,11 +25,9 @@ import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.box
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.ArrayLiteral
-import androidx.room.ext.CallableTypeSpecBuilder
 import androidx.room.ext.CommonTypeNames
 import androidx.room.ext.InvokeWithLambdaParameter
 import androidx.room.ext.LambdaSpec
-import androidx.room.ext.RoomCoroutinesTypeNames.COROUTINES_ROOM
 import androidx.room.ext.RoomTypeNames
 import androidx.room.ext.SQLiteDriverTypeNames
 import androidx.room.solver.CodeGenScope
@@ -40,53 +38,6 @@ class CoroutineFlowResultBinder(
     val tableNames: Set<String>,
     adapter: QueryResultAdapter?
 ) : BaseObservableQueryResultBinder(adapter) {
-
-    override fun convertAndReturn(
-        roomSQLiteQueryVar: String,
-        canReleaseQuery: Boolean,
-        dbProperty: XPropertySpec,
-        inTransaction: Boolean,
-        scope: CodeGenScope
-    ) {
-        val callableImpl =
-            CallableTypeSpecBuilder(typeArg.asTypeName()) {
-                    addCode(
-                        XCodeBlock.builder()
-                            .apply {
-                                createRunQueryAndReturnStatements(
-                                    builder = this,
-                                    roomSQLiteQueryVar = roomSQLiteQueryVar,
-                                    dbProperty = dbProperty,
-                                    inTransaction = inTransaction,
-                                    scope = scope,
-                                    cancellationSignalVar = "null"
-                                )
-                            }
-                            .build()
-                    )
-                }
-                .apply {
-                    if (canReleaseQuery) {
-                        createFinalizeMethod(roomSQLiteQueryVar)
-                    }
-                }
-                .build()
-
-        scope.builder.apply {
-            val arrayOfTableNamesLiteral =
-                ArrayLiteral(CommonTypeNames.STRING, *tableNames.toTypedArray())
-            addStatement(
-                "return %T.createFlow(%N, %L, %L, %L)",
-                COROUTINES_ROOM,
-                dbProperty,
-                if (inTransaction) "true" else "false",
-                arrayOfTableNamesLiteral,
-                callableImpl
-            )
-        }
-    }
-
-    override fun isMigratedToDriver() = adapter?.isMigratedToDriver() == true
 
     override fun convertAndReturn(
         sqlQueryVar: String,

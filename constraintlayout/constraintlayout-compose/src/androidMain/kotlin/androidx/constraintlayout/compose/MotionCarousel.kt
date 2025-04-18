@@ -125,6 +125,7 @@ import androidx.constraintlayout.compose.carousel.rememberCarouselSwipeableState
  * index than startIndex, and at the end of the Carousel, we will not populate the slots that have a
  * higher index than startIndex.
  *
+ * @param motionScene the MotionScene which holds slots and can be used to customize the carousel
  * @param initialSlotIndex the slot index that holds the current element
  * @param numSlots the number of slots in the scene
  * @param backwardTransition the name of the previous transition (default "previous")
@@ -137,7 +138,7 @@ import androidx.constraintlayout.compose.carousel.rememberCarouselSwipeableState
 @Composable
 @Suppress("UnavailableSymbol")
 fun MotionCarousel(
-    @Suppress("HiddenTypeParameter") motionScene: MotionScene,
+    motionScene: MotionScene,
     initialSlotIndex: Int,
     numSlots: Int,
     backwardTransition: String = "backward",

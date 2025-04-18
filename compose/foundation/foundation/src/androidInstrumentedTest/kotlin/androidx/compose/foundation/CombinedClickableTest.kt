@@ -2062,6 +2062,8 @@ class CombinedClickableTest {
             assertThat(modifier.valueOverride).isNull()
             assertThat(modifier.inspectableElements.map { it.name }.asIterable())
                 .containsExactly(
+                    "interactionSource",
+                    "indicationNodeFactory",
                     "enabled",
                     "onClickLabel",
                     "role",
@@ -2208,6 +2210,27 @@ class CombinedClickableTest {
 
         rule.onNodeWithTag("clickable").performKeyInput { pressKey(Key.Backspace) }
         rule.runOnIdle { assertThat(interactions).isEmpty() }
+    }
+
+    @Test
+    fun localIndication_interactionSource_eagerlyCreated() {
+        val interactionSource = MutableInteractionSource()
+        var created = false
+        val indication = TestIndicationNodeFactory { _, _ -> created = true }
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "ClickableText",
+                        modifier =
+                            Modifier.testTag("clickable").combinedClickable(
+                                interactionSource = interactionSource
+                            ) {}
+                    )
+                }
+            }
+        }
+        rule.runOnIdle { assertThat(created).isTrue() }
     }
 
     // Regression test for b/332814226

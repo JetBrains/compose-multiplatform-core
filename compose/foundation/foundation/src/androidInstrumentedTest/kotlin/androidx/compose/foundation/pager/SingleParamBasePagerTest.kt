@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.testutils.createParameterizedComposeTestRule
 import androidx.compose.ui.Alignment
@@ -154,7 +155,11 @@ open class SingleParamBasePagerTest {
     @Composable
     internal fun Page(index: Int, orientation: Orientation, initialFocusedItemIndex: Int = 0) {
         val focusRequester =
-            FocusRequester().also { if (index == initialFocusedItemIndex) initialFocusedItem = it }
+            remember(index) {
+                FocusRequester().also {
+                    if (index == initialFocusedItemIndex) initialFocusedItem = it
+                }
+            }
         Box(
             modifier =
                 Modifier.focusRequester(focusRequester)

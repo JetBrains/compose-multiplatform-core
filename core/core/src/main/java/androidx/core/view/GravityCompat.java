@@ -20,7 +20,7 @@ package androidx.core.view;
 import android.graphics.Rect;
 import android.view.Gravity;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Compatibility shim for accessing newer functionality from {@link Gravity}.

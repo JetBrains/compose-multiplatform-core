@@ -88,9 +88,9 @@ class IconButtonTest {
     @Test
     fun iconButton_xsmall_visualBounds() {
         val expectedWidth =
-            with(rule.density) { IconButtonDefaults.xSmallContainerSize().width.roundToPx() }
+            with(rule.density) { IconButtonDefaults.extraSmallContainerSize().width.roundToPx() }
         val expectedHeight =
-            with(rule.density) { IconButtonDefaults.xSmallContainerSize().height.roundToPx() }
+            with(rule.density) { IconButtonDefaults.extraSmallContainerSize().height.roundToPx() }
         val expectedSize = IntSize(expectedWidth, expectedHeight)
 
         assertVisualBounds(
@@ -99,7 +99,7 @@ class IconButtonTest {
                     onClick = { /* doSomething() */ },
                     modifier =
                         Modifier.minimumInteractiveComponentSize()
-                            .size(IconButtonDefaults.xSmallContainerSize())
+                            .size(IconButtonDefaults.extraSmallContainerSize())
                             .testTag(IconButtonTestTag),
                     shape = IconButtonDefaults.smallRoundShape
                 ) {
@@ -118,7 +118,7 @@ class IconButtonTest {
                     onClick = { /* doSomething() */ },
                     modifier =
                         Modifier.minimumInteractiveComponentSize()
-                            .size(IconButtonDefaults.xSmallContainerSize())
+                            .size(IconButtonDefaults.extraSmallContainerSize())
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -206,7 +206,7 @@ class IconButtonTest {
         var size = DpSize.Zero
         rule
             .setMaterialContentForSizeAssertions {
-                size = IconButtonDefaults.xLargeContainerSize()
+                size = IconButtonDefaults.extraLargeContainerSize()
                 IconButton(onClick = { /* doSomething() */ }, modifier = Modifier.size(size)) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -579,23 +579,23 @@ class IconButtonTest {
     @Test
     fun filledIconButton_xsmall_visualBounds() {
         val expectedWidth =
-            with(rule.density) { IconButtonDefaults.xSmallContainerSize().width.roundToPx() }
+            with(rule.density) { IconButtonDefaults.extraSmallContainerSize().width.roundToPx() }
         val expectedHeight =
-            with(rule.density) { IconButtonDefaults.xSmallContainerSize().height.roundToPx() }
+            with(rule.density) { IconButtonDefaults.extraSmallContainerSize().height.roundToPx() }
         val expectedSize = IntSize(expectedWidth, expectedHeight)
 
         // The bounds of a testTag on a box that contains the progress indicator are not affected
         // by the padding added on the layout of the progress bar.
         assertVisualBounds(
             {
-                val size = IconButtonDefaults.xSmallContainerSize()
+                val size = IconButtonDefaults.extraSmallContainerSize()
                 FilledIconButton(
                     onClick = { /* doSomething() */ },
                     modifier =
                         Modifier.minimumInteractiveComponentSize()
                             .size(size)
                             .testTag(IconButtonTestTag),
-                    shape = IconButtonDefaults.xSmallRoundShape
+                    shape = IconButtonDefaults.extraSmallRoundShape
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -612,8 +612,8 @@ class IconButtonTest {
                     onClick = { /* doSomething() */ },
                     modifier =
                         Modifier.minimumInteractiveComponentSize()
-                            .size(IconButtonDefaults.xSmallContainerSize()),
-                    shape = IconButtonDefaults.xSmallRoundShape
+                            .size(IconButtonDefaults.extraSmallContainerSize()),
+                    shape = IconButtonDefaults.extraSmallRoundShape
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
@@ -705,7 +705,7 @@ class IconButtonTest {
         var size = DpSize.Zero
         rule
             .setMaterialContentForSizeAssertions {
-                size = IconButtonDefaults.xLargeContainerSize()
+                size = IconButtonDefaults.extraLargeContainerSize()
                 FilledIconButton(
                     onClick = { /* doSomething() */ },
                     modifier = Modifier.size(size)
@@ -753,6 +753,47 @@ class IconButtonTest {
                 shape = shape,
                 shapeColor = iconButtonColor,
                 backgroundColor = background,
+                antiAliasingGap = with(rule.density) { 1.dp.toPx() }
+            )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun filledIconButton_medium_pressedShape() {
+        lateinit var shape: Shape
+        val backgroundColor = Color.Yellow
+        val shapeColor = Color.Blue
+        rule.setMaterialContent(lightColorScheme()) {
+            shape = IconButtonDefaults.mediumPressedShape
+            Surface(color = backgroundColor) {
+                FilledIconButton(
+                    onClick = { /* doSomething() */ },
+                    shapes =
+                        IconButtonShapes(
+                            shape = IconButtonDefaults.mediumRoundShape,
+                            pressedShape = IconButtonDefaults.mediumPressedShape
+                        ),
+                    modifier =
+                        Modifier.testTag(IconTestTag)
+                            .size(IconButtonDefaults.mediumContainerSize()),
+                    colors =
+                        IconButtonDefaults.iconButtonVibrantColors(
+                            containerColor = shapeColor,
+                            contentColor = shapeColor
+                        ),
+                ) {}
+            }
+        }
+        rule.onNodeWithTag(IconTestTag).performTouchInput { down(center) }
+
+        rule
+            .onNodeWithTag(IconTestTag)
+            .captureToImage()
+            .assertShape(
+                density = rule.density,
+                shape = shape,
+                shapeColor = shapeColor,
+                backgroundColor = backgroundColor,
                 antiAliasingGap = with(rule.density) { 1.dp.toPx() }
             )
     }
@@ -1039,7 +1080,7 @@ class IconButtonTest {
                         checked = true,
                         onCheckedChange = { /* doSomething() */ },
                         shapes =
-                            IconButtonShapes(
+                            IconToggleButtonShapes(
                                 shape = IconButtonDefaults.mediumSquareShape,
                                 pressedShape = IconButtonDefaults.mediumPressedShape,
                                 checkedShape = IconButtonDefaults.mediumSquareShape
@@ -1399,7 +1440,7 @@ class IconButtonTest {
                 .isEqualTo(
                     BorderStroke(
                         SmallIconButtonTokens.OutlinedOutlineWidth,
-                        outlineColor.copy(alpha = OutlinedIconButtonTokens.DisabledContainerOpacity)
+                        outlineColor.copy(alpha = OutlinedIconButtonTokens.DisabledOpacity)
                     )
                 )
         }

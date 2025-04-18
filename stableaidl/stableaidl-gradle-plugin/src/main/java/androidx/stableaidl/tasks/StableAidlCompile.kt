@@ -77,6 +77,7 @@ abstract class StableAidlCompile : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val dependencyImportDirs: SetProperty<FileSystemLocation>
 
+    @get:Optional
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val aidlFrameworkProvider: RegularFileProperty
@@ -142,7 +143,7 @@ abstract class StableAidlCompile : DefaultTask() {
         aidlCompileDelegate(
             workerExecutor,
             aidlExecutable.get().asFile,
-            aidlFrameworkProvider.get().asFile,
+            aidlFrameworkProvider.orNull?.asFile,
             destinationDir,
             parcelableDir?.asFile,
             extraArgsWithSdk,
@@ -198,7 +199,7 @@ abstract class StableAidlCompile : DefaultTask() {
             for (request in processingRequests) {
                 callStableAidlProcessor(
                     parameters.aidlExecutable.get().asFile.canonicalPath,
-                    parameters.frameworkLocation.get().asFile.canonicalPath,
+                    parameters.frameworkLocation.orNull?.asFile?.canonicalPath,
                     parameters.importFolders.asIterable(),
                     parameters.extraArgs.get(),
                     executor,
@@ -218,7 +219,7 @@ abstract class StableAidlCompile : DefaultTask() {
         fun aidlCompileDelegate(
             workerExecutor: WorkerExecutor,
             aidlExecutable: File,
-            frameworkLocation: File,
+            frameworkLocation: File?,
             destinationDir: File,
             parcelableDir: File?,
             extraArgs: List<String>,

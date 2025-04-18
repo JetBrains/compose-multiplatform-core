@@ -29,8 +29,9 @@
     <string name="desc_page_single" msgid="8459583146661044094">"ទំព័រទី <xliff:g id="PAGE">%1$d</xliff:g> នៃ <xliff:g id="TOTAL">%2$d</xliff:g>"</string>
     <string name="desc_zoom" msgid="7318480946145947242">"ពង្រីកបង្រួម <xliff:g id="FIRST">%1$d</xliff:g> ភាគរយ"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"ទៅទំព័រទី <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>"</string>
-    <string name="desc_page" msgid="5684226167093594168">"ទំព័រទី <xliff:g id="PAGE">%1$d</xliff:g>"</string>
+    <string name="desc_page" msgid="6702471448987833953">"ទំព័រទី <xliff:g id="PAGE">%1$d</xliff:g>"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"ទំព័រទទេ"</string>
+    <string name="desc_page_with_text" msgid="2564017005407577604">"ទំព័រទី <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>៖ <xliff:g id="PAGE_TEXT">%2$s</xliff:g>"</string>
     <string name="error_file_format_pdf" msgid="7567006188638831878">"មិនអាច​បង្ហាញ PDF បានទេ (<xliff:g id="TITLE">%1$s</xliff:g> មានទម្រង់មិន​ត្រឹមត្រូវ)"</string>
     <string name="error_on_page" msgid="1592475819957182385">"មិនអាចបង្ហាញទំព័រទី <xliff:g id="PAGE">%1$d</xliff:g> បានទេ (បញ្ហាឯកសារ)"</string>
     <string name="desc_web_link_shortened_to_domain" msgid="3323639528531061592">"តំណ៖ ទំព័របណ្ដាញនៅ <xliff:g id="DESTINATION_DOMAIN">%1$s</xliff:g>"</string>
@@ -59,4 +60,7 @@
     <string name="page_broken" msgid="2968770793669433462">"ទំព័រ​មិនដំណើរការ​សម្រាប់​ឯកសារ PDF"</string>
     <string name="needs_more_data" msgid="3520133467908240802">"មានទិន្នន័យ​មិនគ្រប់គ្រាន់​សម្រាប់​ដំណើរការ​ឯកសារ PDF"</string>
     <string name="error_cannot_open_pdf" msgid="2361919778558145071">"មិនអាចបើកឯកសារ PDF បានទេ"</string>
+    <string name="cannot_edit_pdf" msgid="7677598370087228978">"មិនអាចកែ PDF នេះបានទេ"</string>
+    <string name="clipboard_label" msgid="8943155331324944981">"បានចម្លងខ្លឹមសារពី PDF"</string>
+    <string name="fast_scroller_thumb" msgid="6712048991132846541">"របាររំកិល"</string>
 </resources>

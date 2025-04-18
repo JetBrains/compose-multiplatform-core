@@ -15,11 +15,9 @@
  */
 
 @file:JvmName("IntentHandlerConverters")
-@file:SuppressLint("ClassVerificationFailure")
 
 package androidx.credentials.provider
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.service.credentials.CredentialProviderService
 import androidx.annotation.RequiresApi

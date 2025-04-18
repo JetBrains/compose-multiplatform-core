@@ -17,10 +17,13 @@
 package androidx.compose.foundation.selection
 
 import androidx.compose.foundation.ClickableNode
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Indication
 import androidx.compose.foundation.IndicationNodeFactory
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickableWithIndicationIfNeeded
+import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.runtime.remember
@@ -56,6 +59,11 @@ import androidx.compose.ui.state.ToggleableState
  *   the state in requested.
  * @see [Modifier.triStateToggleable] if you require support for an indeterminate state.
  */
+@Deprecated(
+    message =
+        "Replaced with new overload that only supports IndicationNodeFactory instances inside LocalIndication, and does not use composed",
+    level = DeprecationLevel.HIDDEN
+)
 fun Modifier.toggleable(
     value: Boolean,
     enabled: Boolean = true,
@@ -92,6 +100,90 @@ fun Modifier.toggleable(
             onValueChange = onValueChange
         )
     }
+
+/**
+ * Configure component to make it toggleable via input and accessibility events
+ *
+ * This overload will use the [Indication] from [LocalIndication]. Use the other overload to
+ * explicitly provide an [Indication] instance. Note that this overload only supports
+ * [IndicationNodeFactory] instances provided through [LocalIndication] - it is strongly recommended
+ * to migrate to [IndicationNodeFactory], but you can use the other overload if you still need to
+ * support [Indication] instances that are not [IndicationNodeFactory].
+ *
+ * If [interactionSource] is `null`, an internal [MutableInteractionSource] will be lazily created
+ * only when needed. This reduces the performance cost of toggleable during composition, as creating
+ * the [indication] can be delayed until there is an incoming
+ * [androidx.compose.foundation.interaction.Interaction]. If you are only passing a remembered
+ * [MutableInteractionSource] and you are never using it outside of toggleable, it is recommended to
+ * instead provide `null` to enable lazy creation. If you need the [Indication] to be created
+ * eagerly, provide a remembered [MutableInteractionSource].
+ *
+ * @sample androidx.compose.foundation.samples.ToggleableSample
+ * @param value whether Toggleable is on or off
+ * @param enabled whether or not this [toggleable] will handle input events and appear enabled for
+ *   semantics purposes
+ * @param role the type of user interface element. Accessibility services might use this to describe
+ *   the element or do customizations
+ * @param interactionSource [MutableInteractionSource] that will be used to dispatch
+ *   [PressInteraction.Press] when this toggleable is pressed. If `null`, an internal
+ *   [MutableInteractionSource] will be created if needed.
+ * @param onValueChange callback to be invoked when toggleable is clicked, therefore the change of
+ *   the state in requested.
+ * @see [Modifier.triStateToggleable] if you require support for an indeterminate state.
+ */
+fun Modifier.toggleable(
+    value: Boolean,
+    enabled: Boolean = true,
+    role: Role? = null,
+    interactionSource: MutableInteractionSource? = null,
+    onValueChange: (Boolean) -> Unit
+): Modifier {
+    @OptIn(ExperimentalFoundationApi::class)
+    return if (ComposeFoundationFlags.isNonComposedClickableEnabled) {
+        this.then(
+            ToggleableElement(
+                value = value,
+                interactionSource = interactionSource,
+                indicationNodeFactory = null,
+                useLocalIndication = true,
+                enabled = enabled,
+                role = role,
+                onValueChange = onValueChange
+            )
+        )
+    } else
+        composed(
+            inspectorInfo =
+                debugInspectorInfo {
+                    name = "toggleable"
+                    properties["value"] = value
+                    properties["enabled"] = enabled
+                    properties["role"] = role
+                    properties["onValueChange"] = onValueChange
+                }
+        ) {
+            val localIndication = LocalIndication.current
+            val intSource =
+                interactionSource
+                    ?: if (localIndication is IndicationNodeFactory) {
+                        // We can fast path here as it will be created inside clickable lazily
+                        null
+                    } else {
+                        // We need an interaction source to pass between the indication modifier and
+                        // clickable, so
+                        // by creating here we avoid another composed down the line
+                        remember { MutableInteractionSource() }
+                    }
+            Modifier.toggleable(
+                value = value,
+                interactionSource = intSource,
+                indication = localIndication,
+                enabled = enabled,
+                role = role,
+                onValueChange = onValueChange
+            )
+        }
+}
 
 /**
  * Configure component to make it toggleable via input and accessibility events.
@@ -141,6 +233,7 @@ fun Modifier.toggleable(
             value = value,
             interactionSource = intSource,
             indicationNodeFactory = indicationNodeFactory,
+            useLocalIndication = false,
             enabled = enabled,
             role = role,
             onValueChange = onValueChange
@@ -151,6 +244,7 @@ private class ToggleableElement(
     private val value: Boolean,
     private val interactionSource: MutableInteractionSource?,
     private val indicationNodeFactory: IndicationNodeFactory?,
+    private val useLocalIndication: Boolean,
     private val enabled: Boolean,
     private val role: Role?,
     private val onValueChange: (Boolean) -> Unit
@@ -160,6 +254,7 @@ private class ToggleableElement(
             value = value,
             interactionSource = interactionSource,
             indicationNodeFactory = indicationNodeFactory,
+            useLocalIndication = useLocalIndication,
             enabled = enabled,
             role = role,
             onValueChange = onValueChange
@@ -170,6 +265,7 @@ private class ToggleableElement(
             value = value,
             interactionSource = interactionSource,
             indicationNodeFactory = indicationNodeFactory,
+            useLocalIndication = useLocalIndication,
             enabled = enabled,
             role = role,
             onValueChange = onValueChange
@@ -196,6 +292,7 @@ private class ToggleableElement(
         if (value != other.value) return false
         if (interactionSource != other.interactionSource) return false
         if (indicationNodeFactory != other.indicationNodeFactory) return false
+        if (useLocalIndication != other.useLocalIndication) return false
         if (enabled != other.enabled) return false
         if (role != other.role) return false
         if (onValueChange !== other.onValueChange) return false
@@ -207,6 +304,7 @@ private class ToggleableElement(
         var result = value.hashCode()
         result = 31 * result + (interactionSource?.hashCode() ?: 0)
         result = 31 * result + (indicationNodeFactory?.hashCode() ?: 0)
+        result = 31 * result + useLocalIndication.hashCode()
         result = 31 * result + enabled.hashCode()
         result = 31 * result + (role?.hashCode() ?: 0)
         result = 31 * result + onValueChange.hashCode()
@@ -218,6 +316,7 @@ private class ToggleableNode(
     private var value: Boolean,
     interactionSource: MutableInteractionSource?,
     indicationNodeFactory: IndicationNodeFactory?,
+    useLocalIndication: Boolean,
     enabled: Boolean,
     role: Role?,
     private var onValueChange: (Boolean) -> Unit
@@ -225,6 +324,7 @@ private class ToggleableNode(
     ClickableNode(
         interactionSource = interactionSource,
         indicationNodeFactory = indicationNodeFactory,
+        useLocalIndication = useLocalIndication,
         enabled = enabled,
         onClickLabel = null,
         role = role,
@@ -242,6 +342,7 @@ private class ToggleableNode(
         value: Boolean,
         interactionSource: MutableInteractionSource?,
         indicationNodeFactory: IndicationNodeFactory?,
+        useLocalIndication: Boolean,
         enabled: Boolean,
         role: Role?,
         onValueChange: (Boolean) -> Unit
@@ -254,6 +355,7 @@ private class ToggleableNode(
         super.update(
             interactionSource = interactionSource,
             indicationNodeFactory = indicationNodeFactory,
+            useLocalIndication = useLocalIndication,
             enabled = enabled,
             onClickLabel = null,
             role = role,
@@ -290,6 +392,11 @@ private class ToggleableNode(
  * @param onClick will be called when user clicks the toggleable.
  * @see [Modifier.toggleable] if you want to support only two states: on and off
  */
+@Deprecated(
+    message =
+        "Replaced with new overload that only supports IndicationNodeFactory instances inside LocalIndication, and does not use composed",
+    level = DeprecationLevel.HIDDEN
+)
 fun Modifier.triStateToggleable(
     state: ToggleableState,
     enabled: Boolean = true,
@@ -326,6 +433,93 @@ fun Modifier.triStateToggleable(
             onClick = onClick
         )
     }
+
+/**
+ * Configure component to make it toggleable via input and accessibility events with three states:
+ * On, Off and Indeterminate.
+ *
+ * TriStateToggleable should be used when there are dependent Toggleables associated to this
+ * component and those can have different values.
+ *
+ * This overload will use the [Indication] from [LocalIndication]. Use the other overload to
+ * explicitly provide an [Indication] instance. Note that this overload only supports
+ * [IndicationNodeFactory] instances provided through [LocalIndication] - it is strongly recommended
+ * to migrate to [IndicationNodeFactory], but you can use the other overload if you still need to
+ * support [Indication] instances that are not [IndicationNodeFactory].
+ *
+ * If [interactionSource] is `null`, an internal [MutableInteractionSource] will be lazily created
+ * only when needed. This reduces the performance cost of triStateToggleable during composition, as
+ * creating the [indication] can be delayed until there is an incoming
+ * [androidx.compose.foundation.interaction.Interaction]. If you are only passing a remembered
+ * [MutableInteractionSource] and you are never using it outside of triStateToggleable, it is
+ * recommended to instead provide `null` to enable lazy creation. If you need the [Indication] to be
+ * created eagerly, provide a remembered [MutableInteractionSource].
+ *
+ * @sample androidx.compose.foundation.samples.TriStateToggleableSample
+ * @param state current value for the component
+ * @param enabled whether or not this [triStateToggleable] will handle input events and appear
+ *   enabled for semantics purposes
+ * @param role the type of user interface element. Accessibility services might use this to describe
+ *   the element or do customizations
+ * @param interactionSource [MutableInteractionSource] that will be used to dispatch
+ *   [PressInteraction.Press] when this toggleable is pressed. If `null`, an internal
+ *   [MutableInteractionSource] will be created if needed.
+ * @param onClick will be called when user clicks the toggleable.
+ * @see [Modifier.toggleable] if you want to support only two states: on and off
+ */
+fun Modifier.triStateToggleable(
+    state: ToggleableState,
+    enabled: Boolean = true,
+    role: Role? = null,
+    interactionSource: MutableInteractionSource? = null,
+    onClick: () -> Unit
+): Modifier {
+    @OptIn(ExperimentalFoundationApi::class)
+    return if (ComposeFoundationFlags.isNonComposedClickableEnabled) {
+        this.then(
+            TriStateToggleableElement(
+                state = state,
+                interactionSource = interactionSource,
+                indicationNodeFactory = null,
+                useLocalIndication = true,
+                enabled = enabled,
+                role = role,
+                onClick = onClick
+            )
+        )
+    } else
+        composed(
+            inspectorInfo =
+                debugInspectorInfo {
+                    name = "triStateToggleable"
+                    properties["state"] = state
+                    properties["enabled"] = enabled
+                    properties["role"] = role
+                    properties["onClick"] = onClick
+                }
+        ) {
+            val localIndication = LocalIndication.current
+            val intSource =
+                interactionSource
+                    ?: if (localIndication is IndicationNodeFactory) {
+                        // We can fast path here as it will be created inside clickable lazily
+                        null
+                    } else {
+                        // We need an interaction source to pass between the indication modifier and
+                        // clickable, so
+                        // by creating here we avoid another composed down the line
+                        remember { MutableInteractionSource() }
+                    }
+            Modifier.triStateToggleable(
+                state = state,
+                interactionSource = intSource,
+                indication = localIndication,
+                enabled = enabled,
+                role = role,
+                onClick = onClick
+            )
+        }
+}
 
 /**
  * Configure component to make it toggleable via input and accessibility events with three states:
@@ -379,6 +573,7 @@ fun Modifier.triStateToggleable(
             state = state,
             interactionSource = intSource,
             indicationNodeFactory = indicationNodeFactory,
+            useLocalIndication = false,
             enabled = enabled,
             role = role,
             onClick = onClick
@@ -389,6 +584,7 @@ private class TriStateToggleableElement(
     private val state: ToggleableState,
     private val interactionSource: MutableInteractionSource?,
     private val indicationNodeFactory: IndicationNodeFactory?,
+    private val useLocalIndication: Boolean,
     private val enabled: Boolean,
     private val role: Role?,
     private val onClick: () -> Unit
@@ -398,6 +594,7 @@ private class TriStateToggleableElement(
             state = state,
             interactionSource = interactionSource,
             indicationNodeFactory = indicationNodeFactory,
+            useLocalIndication = useLocalIndication,
             enabled = enabled,
             role = role,
             onClick = onClick
@@ -408,6 +605,7 @@ private class TriStateToggleableElement(
             state = state,
             interactionSource = interactionSource,
             indicationNodeFactory = indicationNodeFactory,
+            useLocalIndication = useLocalIndication,
             enabled = enabled,
             role = role,
             onClick = onClick
@@ -435,6 +633,7 @@ private class TriStateToggleableElement(
         if (state != other.state) return false
         if (interactionSource != other.interactionSource) return false
         if (indicationNodeFactory != other.indicationNodeFactory) return false
+        if (useLocalIndication != other.useLocalIndication) return false
         if (enabled != other.enabled) return false
         if (role != other.role) return false
         if (onClick !== other.onClick) return false
@@ -446,6 +645,7 @@ private class TriStateToggleableElement(
         var result = state.hashCode()
         result = 31 * result + (interactionSource?.hashCode() ?: 0)
         result = 31 * result + (indicationNodeFactory?.hashCode() ?: 0)
+        result = 31 * result + useLocalIndication.hashCode()
         result = 31 * result + enabled.hashCode()
         result = 31 * result + (role?.hashCode() ?: 0)
         result = 31 * result + onClick.hashCode()
@@ -457,6 +657,7 @@ private class TriStateToggleableNode(
     private var state: ToggleableState,
     interactionSource: MutableInteractionSource?,
     indicationNodeFactory: IndicationNodeFactory?,
+    useLocalIndication: Boolean,
     enabled: Boolean,
     role: Role?,
     onClick: () -> Unit
@@ -464,6 +665,7 @@ private class TriStateToggleableNode(
     ClickableNode(
         interactionSource = interactionSource,
         indicationNodeFactory = indicationNodeFactory,
+        useLocalIndication = useLocalIndication,
         enabled = enabled,
         onClickLabel = null,
         role = role,
@@ -473,6 +675,7 @@ private class TriStateToggleableNode(
         state: ToggleableState,
         interactionSource: MutableInteractionSource?,
         indicationNodeFactory: IndicationNodeFactory?,
+        useLocalIndication: Boolean,
         enabled: Boolean,
         role: Role?,
         onClick: () -> Unit
@@ -484,6 +687,7 @@ private class TriStateToggleableNode(
         super.update(
             interactionSource = interactionSource,
             indicationNodeFactory = indicationNodeFactory,
+            useLocalIndication = useLocalIndication,
             enabled = enabled,
             onClickLabel = null,
             role = role,

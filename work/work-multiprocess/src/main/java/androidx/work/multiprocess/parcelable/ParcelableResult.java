@@ -20,10 +20,11 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.Data;
 import androidx.work.ListenableWorker;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * {@link androidx.work.ListenableWorker.Result}, but parcelable.
@@ -34,7 +35,7 @@ import androidx.work.ListenableWorker;
 public class ParcelableResult implements Parcelable {
     private final ListenableWorker.Result mResult;
 
-    public ParcelableResult(@NonNull ListenableWorker.Result result) {
+    public ParcelableResult(ListenableWorker.@NonNull Result result) {
         mResult = result;
     }
 
@@ -49,8 +50,7 @@ public class ParcelableResult implements Parcelable {
     public static final Creator<ParcelableResult> CREATOR =
             new Creator<ParcelableResult>() {
                 @Override
-                @NonNull
-                public ParcelableResult createFromParcel(Parcel in) {
+                public @NonNull ParcelableResult createFromParcel(Parcel in) {
                     return new ParcelableResult(in);
                 }
 
@@ -76,8 +76,7 @@ public class ParcelableResult implements Parcelable {
         parcelableOutputData.writeToParcel(parcel, flags);
     }
 
-    @NonNull
-    public ListenableWorker.Result getResult() {
+    public ListenableWorker.@NonNull Result getResult() {
         return mResult;
     }
 
@@ -94,8 +93,8 @@ public class ParcelableResult implements Parcelable {
         }
     }
 
-    @NonNull
-    private static ListenableWorker.Result intToResultType(int resultType, @NonNull Data data) {
+    private static ListenableWorker.@NonNull Result intToResultType(int resultType,
+            @NonNull Data data) {
         ListenableWorker.Result result = null;
         if (resultType == 1) {
             result = ListenableWorker.Result.retry();

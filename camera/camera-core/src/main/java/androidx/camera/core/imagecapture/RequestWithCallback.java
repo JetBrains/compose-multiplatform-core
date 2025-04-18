@@ -24,8 +24,6 @@ import static java.util.Objects.requireNonNull;
 import android.graphics.Bitmap;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
@@ -33,6 +31,9 @@ import androidx.camera.core.ImageProxy;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A wrapper of a {@link TakePictureRequest} and its {@link TakePictureCallback}.
@@ -54,11 +55,10 @@ public class RequestWithCallback implements TakePictureCallback {
     // propagating callbacks to the app.
     private boolean mIsAborted = false;
     private boolean mIsStarted = false;
-    @Nullable
-    private ListenableFuture<Void> mCaptureRequestFuture;
+    private @Nullable ListenableFuture<Void> mCaptureRequestFuture;
 
     RequestWithCallback(@NonNull TakePictureRequest takePictureRequest,
-            @NonNull TakePictureRequest.RetryControl retryControl) {
+            TakePictureRequest.@NonNull RetryControl retryControl) {
         mTakePictureRequest = takePictureRequest;
         mRetryControl = retryControl;
         mCaptureFuture = CallbackToFutureAdapter.getFuture(
@@ -126,7 +126,7 @@ public class RequestWithCallback implements TakePictureCallback {
 
     @MainThread
     @Override
-    public void onFinalResult(@NonNull ImageCapture.OutputFileResults outputFileResults) {
+    public void onFinalResult(ImageCapture.@NonNull OutputFileResults outputFileResults) {
         checkMainThread();
         if (mIsAborted) {
             // Do not deliver result if the request has been aborted.
@@ -253,8 +253,7 @@ public class RequestWithCallback implements TakePictureCallback {
      * <p>Send the next request after this one completes.
      */
     @MainThread
-    @NonNull
-    ListenableFuture<Void> getCaptureFuture() {
+    @NonNull ListenableFuture<Void> getCaptureFuture() {
         checkMainThread();
         return mCaptureFuture;
     }
@@ -265,15 +264,13 @@ public class RequestWithCallback implements TakePictureCallback {
      * <p>A request is completed when it gets either a result or an unrecoverable error.
      */
     @MainThread
-    @NonNull
-    ListenableFuture<Void> getCompleteFuture() {
+    @NonNull ListenableFuture<Void> getCompleteFuture() {
         checkMainThread();
         return mCompleteFuture;
     }
 
     @VisibleForTesting
-    @NonNull
-    public TakePictureRequest getTakePictureRequest() {
+    public @NonNull TakePictureRequest getTakePictureRequest() {
         return mTakePictureRequest;
     }
 

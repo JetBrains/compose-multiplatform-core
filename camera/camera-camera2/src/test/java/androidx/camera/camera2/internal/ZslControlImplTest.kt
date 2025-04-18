@@ -30,6 +30,7 @@ import androidx.camera.camera2.internal.ZslControlImpl.MAX_IMAGES
 import androidx.camera.camera2.internal.ZslControlImpl.RING_BUFFER_CAPACITY
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat
 import androidx.camera.core.impl.SessionConfig
+import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -73,7 +74,8 @@ class ZslControlImplTest {
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
                     isJpegValidOutputFormat = true
-                )
+                ),
+                CameraXExecutors.mainThreadExecutor()
             )
 
         zslControl.addZslConfig(sessionConfigBuilder)
@@ -98,7 +100,8 @@ class ZslControlImplTest {
                     isYuvReprocessingSupported = true,
                     isPrivateReprocessingSupported = false,
                     isJpegValidOutputFormat = true
-                )
+                ),
+                CameraXExecutors.mainThreadExecutor()
             )
 
         zslControl.addZslConfig(sessionConfigBuilder)
@@ -116,7 +119,8 @@ class ZslControlImplTest {
                     isYuvReprocessingSupported = true,
                     isPrivateReprocessingSupported = false,
                     isJpegValidOutputFormat = false
-                )
+                ),
+                CameraXExecutors.mainThreadExecutor()
             )
 
         zslControl.addZslConfig(sessionConfigBuilder)
@@ -134,7 +138,8 @@ class ZslControlImplTest {
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = false,
                     isJpegValidOutputFormat = false
-                )
+                ),
+                CameraXExecutors.mainThreadExecutor()
             )
 
         zslControl.addZslConfig(sessionConfigBuilder)
@@ -152,7 +157,8 @@ class ZslControlImplTest {
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
                     isJpegValidOutputFormat = true
-                )
+                ),
+                CameraXExecutors.mainThreadExecutor()
             )
         zslControl.isZslDisabledByUserCaseConfig = true
 
@@ -171,7 +177,8 @@ class ZslControlImplTest {
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
                     isJpegValidOutputFormat = true
-                )
+                ),
+                CameraXExecutors.mainThreadExecutor()
             )
         zslControl.isZslDisabledByFlashMode = true
 
@@ -197,7 +204,8 @@ class ZslControlImplTest {
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
                     isJpegValidOutputFormat = true
-                )
+                ),
+                CameraXExecutors.mainThreadExecutor()
             )
 
         zslControl.addZslConfig(sessionConfigBuilder)
@@ -220,7 +228,8 @@ class ZslControlImplTest {
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
                     isJpegValidOutputFormat = true
-                )
+                ),
+                CameraXExecutors.mainThreadExecutor()
             )
 
         zslControl.addZslConfig(sessionConfigBuilder)
@@ -241,7 +250,8 @@ class ZslControlImplTest {
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
                     isJpegValidOutputFormat = true
-                )
+                ),
+                CameraXExecutors.mainThreadExecutor()
             )
 
         zslControl.addZslConfig(sessionConfigBuilder)

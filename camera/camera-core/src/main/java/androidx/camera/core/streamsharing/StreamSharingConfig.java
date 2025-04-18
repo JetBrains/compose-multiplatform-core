@@ -16,7 +16,6 @@
 
 package androidx.camera.core.streamsharing;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.impl.MutableConfig;
@@ -24,6 +23,8 @@ import androidx.camera.core.impl.OptionsBundle;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.internal.ThreadConfig;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -48,14 +49,12 @@ public class StreamSharingConfig implements UseCaseConfig<StreamSharing>,
         mConfig = config;
     }
 
-    @NonNull
     @Override
-    public Config getConfig() {
+    public @NonNull Config getConfig() {
         return mConfig;
     }
 
-    @NonNull
-    public List<UseCaseConfigFactory.CaptureType> getCaptureTypes() {
+    public @NonNull List<UseCaseConfigFactory.CaptureType> getCaptureTypes() {
         return retrieveOption(OPTION_CAPTURE_TYPES);
     }
 }

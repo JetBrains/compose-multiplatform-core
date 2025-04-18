@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("DEPRECATION")
 
 package androidx.compose.ui.node
 
@@ -21,9 +20,7 @@ import androidx.annotation.RestrictTo
 import androidx.collection.IntObjectMap
 import androidx.compose.runtime.Applier
 import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.autofill.Autofill
 import androidx.compose.ui.autofill.AutofillManager
-import androidx.compose.ui.autofill.AutofillTree
 import androidx.compose.ui.draganddrop.DragAndDropManager
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusOwner
@@ -40,17 +37,17 @@ import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.PlacementScope
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.AccessibilityManager
-import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.PlatformTextInputModifierNode
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
+import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.input.TextInputService
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
@@ -86,7 +83,13 @@ internal interface Owner : PositionCalculator {
     val inputModeManager: InputModeManager
 
     /** Provide clipboard manager to the user. Use the Android version of clipboard manager. */
-    val clipboardManager: ClipboardManager
+    val clipboardManager: @Suppress("Deprecation") androidx.compose.ui.platform.ClipboardManager
+
+    /**
+     * Provide clipboard manager with suspend function to the user. Use the Android version of
+     * clipboard manager.
+     */
+    val clipboard: Clipboard
 
     /**
      * Provide accessibility manager to the user. Use the Android version of accessibility manager.
@@ -106,17 +109,14 @@ internal interface Owner : PositionCalculator {
     /**
      * A data structure used to store autofill information. It is used by components that want to
      * provide autofill semantics.
-     *
-     * TODO(ralu): Replace with SemanticsTree. This is a temporary hack until we have a semantics
-     *   tree implemented.
      */
-    val autofillTree: AutofillTree
+    val autofillTree: @Suppress("Deprecation") androidx.compose.ui.autofill.AutofillTree
 
     /**
-     * The [Autofill] class can be used to perform autofill operations. It is used as a
-     * CompositionLocal.
+     * The [Autofill][androidx.compose.ui.autofill.Autofill] class can be used to perform autofill
+     * operations. It is used as a CompositionLocal.
      */
-    val autofill: Autofill?
+    val autofill: @Suppress("Deprecation") androidx.compose.ui.autofill.Autofill?
 
     /**
      * The [AutofillManager] class can be used to perform autofill operations. It is used as a
@@ -126,11 +126,18 @@ internal interface Owner : PositionCalculator {
 
     val density: Density
 
-    val textInputService: TextInputService
+    val textInputService: @Suppress("Deprecation") androidx.compose.ui.text.input.TextInputService
 
     val softwareKeyboardController: SoftwareKeyboardController
 
     val pointerIconService: PointerIconService
+
+    /**
+     * Semantics owner that provides access to
+     * [SemanticsInfo][androidx.compose.ui.semantics.SemanticsInfo] and
+     * [SemanticListeners][androidx.compose.ui.semantics.SemanticsListener].
+     */
+    val semanticsOwner: SemanticsOwner
 
     /** Provide a focus owner that controls focus within Compose. */
     val focusOwner: FocusOwner
@@ -194,7 +201,13 @@ internal interface Owner : PositionCalculator {
      * used by [Owner] to track which nodes are associated with it. It will only be called when
      * [node] is not already attached to an owner.
      */
-    fun onAttach(node: LayoutNode)
+    fun onPreAttach(node: LayoutNode)
+
+    /**
+     * Called by [LayoutNode] when all children have been attached, and the modifier node's attach
+     * lifecycles have been run. It will only be called after [onPreAttach].
+     */
+    fun onPostAttach(node: LayoutNode)
 
     /**
      * Called by [LayoutNode] when it is detached from the view system, such as during
@@ -223,6 +236,9 @@ internal interface Owner : PositionCalculator {
      * @return true if the system granted focus to this owner. False otherwise.
      */
     fun requestFocus(): Boolean
+
+    /** Ask the system to request autofill values to this owner. */
+    fun requestAutofill(node: LayoutNode)
 
     /**
      * Iterates through all LayoutNodes that have requested layout and measures and lays them out.
@@ -268,8 +284,18 @@ internal interface Owner : PositionCalculator {
 
     fun onLayoutNodeDeactivated(layoutNode: LayoutNode)
 
-    /** Called to do internal upkeep when a [layoutNode] is reused. */
-    fun onLayoutNodeReused(layoutNode: LayoutNode, oldSemanticsId: Int) {}
+    /**
+     * Called to do internal upkeep when a [layoutNode] is reused. The modifier nodes of this layout
+     * node have not been attached by the time this method finishes running.
+     */
+    fun onPreLayoutNodeReused(layoutNode: LayoutNode, oldSemanticsId: Int) {}
+
+    /**
+     * Called to do internal upkeep when a [layoutNode] is reused. This is only called after
+     * [onPreLayoutNodeReused], at which point the modifier nodes of this layout node have been
+     * attached.
+     */
+    fun onPostLayoutNodeReused(layoutNode: LayoutNode, oldSemanticsId: Int) {}
 
     /**
      * The position and/or size of an interop view (typically, an android.view.View) has changed. On
@@ -343,6 +369,12 @@ internal interface Owner : PositionCalculator {
      * (username, password etc) to remote viewer during screen share.
      */
     fun decrementSensitiveComponentCount() {}
+
+    val outOfFrameExecutor: OutOfFrameExecutor?
+        get() = null
+
+    /** This can be used to Vote for a preferred frame rate. */
+    fun voteFrameRate(frameRate: Float) {}
 
     companion object {
         /**

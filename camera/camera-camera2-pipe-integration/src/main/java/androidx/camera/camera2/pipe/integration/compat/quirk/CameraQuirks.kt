@@ -250,11 +250,11 @@ constructor(
         }
         if (
             quirkSettings.shouldEnableQuirk(
-                LockAeAndCaptureImageBreakCameraQuirk::class.java,
-                LockAeAndCaptureImageBreakCameraQuirk.isEnabled(cameraMetadata)
+                AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk::class.java,
+                AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk.isEnabled()
             )
         ) {
-            quirks.add(LockAeAndCaptureImageBreakCameraQuirk())
+            quirks.add(AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk())
         }
 
         Quirks(quirks).also {

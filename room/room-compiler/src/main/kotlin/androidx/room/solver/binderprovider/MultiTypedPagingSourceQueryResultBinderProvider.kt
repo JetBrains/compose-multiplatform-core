@@ -31,6 +31,7 @@ import androidx.room.solver.QueryResultBinderProvider
 import androidx.room.solver.TypeAdapterExtras
 import androidx.room.solver.query.result.ListQueryResultAdapter
 import androidx.room.solver.query.result.MultiTypedPagingSourceQueryResultBinder
+import androidx.room.solver.query.result.Paging3PagingSourceQueryResultBinder
 import androidx.room.solver.query.result.QueryResultBinder
 
 class MultiTypedPagingSourceQueryResultBinderProvider(
@@ -70,25 +71,28 @@ class MultiTypedPagingSourceQueryResultBinderProvider(
             ((listAdapter?.accessedTableNames() ?: emptyList()) + query.tables.map { it.name })
                 .toSet()
 
-        val convertRowsOverrideInfo =
-            if (pagingSourceTypeName == PagingTypeNames.PAGING_SOURCE) {
+        return if (pagingSourceTypeName == PagingTypeNames.PAGING_SOURCE) {
+            val convertRowsOverrideInfo =
                 ConvertRowsOverrideInfo(
-                    method = convertExecutableElement,
+                    function = convertExecutableElement,
                     continuationParamName = convertExecutableElement.parameters.last().name,
                     owner =
                         context.processingEnv.getDeclaredType(roomPagingSourceTypeElement, typeArg),
                     returnTypeName = LIST.parametrizedBy(typeArg.asTypeName())
                 )
-            } else {
-                null
-            }
-
-        return MultiTypedPagingSourceQueryResultBinder(
-            listAdapter = listAdapter,
-            tableNames = tableNames,
-            className = roomPagingClassName,
-            convertRowsOverrideInfo = convertRowsOverrideInfo
-        )
+            Paging3PagingSourceQueryResultBinder(
+                listAdapter = listAdapter,
+                tableNames = tableNames,
+                className = roomPagingClassName,
+                convertRowsOverrideInfo = convertRowsOverrideInfo
+            )
+        } else {
+            MultiTypedPagingSourceQueryResultBinder(
+                listAdapter = listAdapter,
+                tableNames = tableNames,
+                className = roomPagingClassName
+            )
+        }
     }
 
     override fun matches(declared: XType): Boolean {
@@ -120,10 +124,12 @@ class MultiTypedPagingSourceQueryResultBinderProvider(
     }
 }
 
-/** Data class used to store necessary info when generating the suspending `convertRows` method. */
+/**
+ * Data class used to store necessary info when generating the suspending `convertRows` function.
+ */
 class ConvertRowsOverrideInfo(
     val continuationParamName: String,
-    val method: XMethodElement,
+    val function: XMethodElement,
     val owner: XType,
     val returnTypeName: XTypeName
 )

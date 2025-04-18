@@ -100,8 +100,7 @@ internal constructor(private val method: Method, private val composableInfo: Com
 
     /** Returns method parameters excluding the utility Compose-specific parameters. */
     val parameters: Array<Parameter>
-        @Suppress("ClassVerificationFailure", "NewApi")
-        get() = method.parameters.copyOfRange(0, composableInfo.realParamsCount)
+        @Suppress("NewApi") get() = method.parameters.copyOfRange(0, composableInfo.realParamsCount)
 
     /** Returns method parameters types excluding the utility Compose-specific parameters. */
     val parameterTypes: Array<Class<*>>

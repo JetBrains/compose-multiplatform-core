@@ -1,0 +1,136 @@
+// Signature format: 4.0
+package @RequiresApi(34) androidx.xr.compose.unit {
+
+  public final class DpVolumeSize {
+    ctor public DpVolumeSize(float width, float height, float depth);
+    method public float getDepth();
+    method public float getHeight();
+    method public float getWidth();
+    property public float depth;
+    property public float height;
+    property public float width;
+    field public static final androidx.xr.compose.unit.DpVolumeSize.Companion Companion;
+  }
+
+  public static final class DpVolumeSize.Companion {
+    method public androidx.xr.compose.unit.DpVolumeSize getZero();
+    property public androidx.xr.compose.unit.DpVolumeSize Zero;
+  }
+
+  public final class IntVolumeSize {
+    ctor public IntVolumeSize(int width, int height, int depth);
+    method public int getDepth();
+    method public int getHeight();
+    method public int getWidth();
+    property public int depth;
+    property public int height;
+    property public int width;
+    field public static final androidx.xr.compose.unit.IntVolumeSize.Companion Companion;
+  }
+
+  public static final class IntVolumeSize.Companion {
+    method public androidx.xr.compose.unit.IntVolumeSize getZero();
+    property public androidx.xr.compose.unit.IntVolumeSize Zero;
+  }
+
+  @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class Meter implements java.lang.Comparable<androidx.xr.compose.unit.Meter> {
+    ctor public Meter(float value);
+    method public int compareTo(float other);
+    method public inline operator float div(double other);
+    method public inline operator float div(float other);
+    method public inline operator float div(int other);
+    method public float getValue();
+    method public inline operator float minus(float other);
+    method public inline operator float plus(float other);
+    method public inline int roundToPx(androidx.compose.ui.unit.Density density);
+    method public inline operator float times(double other);
+    method public inline operator float times(float other);
+    method public inline operator float times(int other);
+    method public inline float toCm();
+    method public inline float toDp();
+    method public inline float toM();
+    method public inline float toMm();
+    method public inline float toPx(androidx.compose.ui.unit.Density density);
+    property public inline boolean isFinite;
+    property public inline boolean isSpecified;
+    property public float value;
+    field public static final androidx.xr.compose.unit.Meter.Companion Companion;
+  }
+
+  public static final class Meter.Companion {
+    method public inline float fromPixel(float px, androidx.compose.ui.unit.Density density);
+    method public float getCentimeters(double);
+    method public float getCentimeters(float);
+    method public float getCentimeters(int);
+    method public float getInfinity();
+    method public float getMeters(double);
+    method public float getMeters(float);
+    method public float getMeters(int);
+    method public float getMillimeters(double);
+    method public float getMillimeters(float);
+    method public float getMillimeters(int);
+    method public float getNaN();
+    property public float Infinity;
+    property public float NaN;
+    property public float int.centimeters;
+    property public float float.centimeters;
+    property public float double.centimeters;
+    property public float int.meters;
+    property public float float.meters;
+    property public float double.meters;
+    property public float int.millimeters;
+    property public float float.millimeters;
+    property public float double.millimeters;
+  }
+
+  public final class MeterKt {
+    method public static inline operator float div(double, float other);
+    method public static inline operator float div(float, float other);
+    method public static inline operator float div(int, float other);
+    method public static inline operator float times(double, float other);
+    method public static inline operator float times(float, float other);
+    method public static inline operator float times(int, float other);
+    method public static inline float toMeter(float);
+  }
+
+  public final class VolumeConstraints {
+    ctor public VolumeConstraints(int minWidth, int maxWidth, int minHeight, int maxHeight, optional int minDepth, optional int maxDepth);
+    method public androidx.xr.compose.unit.VolumeConstraints copy(optional int minWidth, optional int maxWidth, optional int minHeight, optional int maxHeight, optional int minDepth, optional int maxDepth);
+    method public int getMaxDepth();
+    method public int getMaxHeight();
+    method public int getMaxWidth();
+    method public int getMinDepth();
+    method public int getMinHeight();
+    method public int getMinWidth();
+    method public boolean hasBoundedDepth();
+    method public boolean hasBoundedHeight();
+    method public boolean hasBoundedWidth();
+    property public boolean hasBoundedDepth;
+    property public boolean hasBoundedHeight;
+    property public boolean hasBoundedWidth;
+    property public int maxDepth;
+    property public int maxHeight;
+    property public int maxWidth;
+    property public int minDepth;
+    property public int minHeight;
+    property public int minWidth;
+    field public static final androidx.xr.compose.unit.VolumeConstraints.Companion Companion;
+    field public static final int INFINITY = 2147483647; // 0x7fffffff
+  }
+
+  public static final class VolumeConstraints.Companion {
+    method public androidx.xr.compose.unit.VolumeConstraints getUnbounded();
+    property public static int INFINITY;
+    property public androidx.xr.compose.unit.VolumeConstraints Unbounded;
+  }
+
+  public final class VolumeConstraintsKt {
+    method public static androidx.xr.compose.unit.VolumeConstraints constrain(androidx.xr.compose.unit.VolumeConstraints, androidx.xr.compose.unit.VolumeConstraints otherConstraints);
+    method public static int constrainDepth(androidx.xr.compose.unit.VolumeConstraints, int depth);
+    method public static int constrainHeight(androidx.xr.compose.unit.VolumeConstraints, int height);
+    method public static int constrainWidth(androidx.xr.compose.unit.VolumeConstraints, int width);
+    method public static androidx.xr.compose.unit.VolumeConstraints offset(androidx.xr.compose.unit.VolumeConstraints, optional int horizontal, optional int vertical, optional int depth, optional boolean resetMins);
+  }
+
+}
+

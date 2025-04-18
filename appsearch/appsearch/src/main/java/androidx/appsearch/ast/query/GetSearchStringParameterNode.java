@@ -16,13 +16,14 @@
 
 package androidx.appsearch.ast.query;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.SearchSpec;
 import androidx.appsearch.ast.FunctionNode;
 import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * {@link FunctionNode} that represents the getSearchStringParameter function.
@@ -65,10 +66,9 @@ public final class GetSearchStringParameterNode implements FunctionNode {
     /**
      * Returns the name of the function represented by {@link GetSearchStringParameterNode}.
      */
-    @NonNull
     @FunctionName
     @Override
-    public String getFunctionName() {
+    public @NonNull String getFunctionName() {
         return FUNCTION_NAME_GET_SEARCH_STRING_PARAMETER;
     }
 
@@ -98,9 +98,8 @@ public final class GetSearchStringParameterNode implements FunctionNode {
      * followed by the {@code searchStringIndex} surrounded by parentheses. For example, the string
      * representation of {@code GetSearchStringParameterNode(1)} is `getSearchStringParameter(1)`.
      */
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return FunctionNode.FUNCTION_NAME_GET_SEARCH_STRING_PARAMETER
                 + "(" + mSearchStringIndex + ")";
     }

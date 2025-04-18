@@ -30,10 +30,13 @@ class DataSourceFactoryQueryResultBinder(
 
     val typeName: XTypeName = positionalDataSourceQueryResultBinder.itemTypeName
 
+    override val usesCompatQueryWriter = true
+
     override fun convertAndReturn(
-        roomSQLiteQueryVar: String,
-        canReleaseQuery: Boolean,
+        sqlQueryVar: String,
         dbProperty: XPropertySpec,
+        bindStatement: (CodeGenScope.(String) -> Unit)?,
+        returnTypeName: XTypeName,
         inTransaction: Boolean,
         scope: CodeGenScope
     ) {
@@ -48,8 +51,10 @@ class DataSourceFactoryQueryResultBinder(
                             )
                         )
                         addCreateMethod(
-                            roomSQLiteQueryVar = roomSQLiteQueryVar,
+                            roomSQLiteQueryVar = sqlQueryVar,
                             dbProperty = dbProperty,
+                            bindStatement = bindStatement,
+                            returnTypeName = returnTypeName,
                             inTransaction = inTransaction,
                             scope = scope
                         )
@@ -63,7 +68,9 @@ class DataSourceFactoryQueryResultBinder(
         roomSQLiteQueryVar: String,
         dbProperty: XPropertySpec,
         inTransaction: Boolean,
-        scope: CodeGenScope
+        scope: CodeGenScope,
+        bindStatement: (CodeGenScope.(String) -> Unit)?,
+        returnTypeName: XTypeName
     ) {
         addFunction(
             XFunSpec.builder(
@@ -75,9 +82,10 @@ class DataSourceFactoryQueryResultBinder(
                     returns(positionalDataSourceQueryResultBinder.typeName)
                     val countedBinderScope = scope.fork()
                     positionalDataSourceQueryResultBinder.convertAndReturn(
-                        roomSQLiteQueryVar = roomSQLiteQueryVar,
-                        canReleaseQuery = true,
+                        sqlQueryVar = roomSQLiteQueryVar,
                         dbProperty = dbProperty,
+                        bindStatement = bindStatement,
+                        returnTypeName = returnTypeName,
                         inTransaction = inTransaction,
                         scope = countedBinderScope
                     )

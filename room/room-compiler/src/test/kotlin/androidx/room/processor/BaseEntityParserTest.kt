@@ -19,7 +19,7 @@ package androidx.room.processor
 import androidx.room.compiler.processing.XTypeElement
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
-import androidx.room.runProcessorTestWithK1
+import androidx.room.compiler.processing.util.runProcessorTest
 import androidx.room.testing.context
 import androidx.room.vo.Entity
 import java.io.File
@@ -61,7 +61,7 @@ abstract class BaseEntityParserTest {
         } else {
             baseClassReplacement = " extends $baseClass"
         }
-        runProcessorTestWithK1(
+        runProcessorTest(
             sources =
                 sources +
                     Source.java(
@@ -72,6 +72,7 @@ abstract class BaseEntityParserTest {
                                 ENTITY_SUFFIX
                     ),
             options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
+            kotlincArguments = listOf("-jvm-target=11"),
             classpath = classpathFiles
         ) { invocation ->
             val entity =

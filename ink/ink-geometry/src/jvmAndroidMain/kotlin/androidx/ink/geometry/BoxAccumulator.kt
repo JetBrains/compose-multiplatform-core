@@ -93,7 +93,7 @@ public class BoxAccumulator {
      * @return `this`
      */
     public fun add(other: BoxAccumulator?): BoxAccumulator {
-        BoxAccumulatorNative.nativeAddOptionalBox(
+        BoxAccumulatorNative.addOptionalBox(
             envelopeHasBounds = hasBounds,
             envelopeBoundsXMin = _bounds.xMin,
             envelopeBoundsYMin = _bounds.yMin,
@@ -115,7 +115,7 @@ public class BoxAccumulator {
      * @return `this`
      */
     public fun add(point: Vec): BoxAccumulator {
-        BoxAccumulatorNative.nativeAddPoint(
+        BoxAccumulatorNative.addPoint(
             envelopeHasBounds = hasBounds,
             envelopeBoundsXMin = _bounds.xMin,
             envelopeBoundsYMin = _bounds.yMin,
@@ -134,7 +134,7 @@ public class BoxAccumulator {
      * @return `this`
      */
     public fun add(segment: Segment): BoxAccumulator {
-        BoxAccumulatorNative.nativeAddSegment(
+        BoxAccumulatorNative.addSegment(
             envelopeHasBounds = hasBounds,
             envelopeBoundsXMin = _bounds.xMin,
             envelopeBoundsYMin = _bounds.yMin,
@@ -155,7 +155,7 @@ public class BoxAccumulator {
      * @return `this`
      */
     public fun add(triangle: Triangle): BoxAccumulator {
-        BoxAccumulatorNative.nativeAddTriangle(
+        BoxAccumulatorNative.addTriangle(
             envelopeHasBounds = hasBounds,
             envelopeBoundsXMin = _bounds.xMin,
             envelopeBoundsYMin = _bounds.yMin,
@@ -179,7 +179,7 @@ public class BoxAccumulator {
      * @return `this`
      */
     public fun add(box: Box?): BoxAccumulator {
-        BoxAccumulatorNative.nativeAddOptionalBox(
+        BoxAccumulatorNative.addOptionalBox(
             envelopeHasBounds = hasBounds,
             envelopeBoundsXMin = _bounds.xMin,
             envelopeBoundsYMin = _bounds.yMin,
@@ -202,7 +202,7 @@ public class BoxAccumulator {
      * @return `this`
      */
     public fun add(parallelogram: Parallelogram): BoxAccumulator {
-        BoxAccumulatorNative.nativeAddParallelogram(
+        BoxAccumulatorNative.addParallelogram(
             envelopeHasBounds = hasBounds,
             envelopeBoundsXMin = _bounds.xMin,
             envelopeBoundsYMin = _bounds.yMin,
@@ -276,6 +276,7 @@ public class BoxAccumulator {
 }
 
 /** Helper object to contain native JNI calls */
+@UsedByNative
 private object BoxAccumulatorNative {
 
     init {
@@ -287,7 +288,7 @@ private object BoxAccumulatorNative {
      * the native [Envelope], and update [output] using the result.
      */
     @UsedByNative
-    external fun nativeAddSegment(
+    external fun addSegment(
         envelopeHasBounds: Boolean,
         envelopeBoundsXMin: Float,
         envelopeBoundsYMin: Float,
@@ -305,7 +306,7 @@ private object BoxAccumulatorNative {
      * to the native [Envelope], and update [output] using the result.
      */
     @UsedByNative
-    external fun nativeAddTriangle(
+    external fun addTriangle(
         envelopeHasBounds: Boolean,
         envelopeBoundsXMin: Float,
         envelopeBoundsYMin: Float,
@@ -325,7 +326,7 @@ private object BoxAccumulatorNative {
      * [Parallelogram] to the native [Envelope], and update [output] using the result.
      */
     @UsedByNative
-    external fun nativeAddParallelogram(
+    external fun addParallelogram(
         envelopeHasBounds: Boolean,
         envelopeBoundsXMin: Float,
         envelopeBoundsYMin: Float,
@@ -345,7 +346,7 @@ private object BoxAccumulatorNative {
      * native [Envelope], and update [output] using the result.
      */
     @UsedByNative
-    external fun nativeAddPoint(
+    external fun addPoint(
         envelopeHasBounds: Boolean,
         envelopeBoundsXMin: Float,
         envelopeBoundsYMin: Float,
@@ -361,7 +362,7 @@ private object BoxAccumulatorNative {
      * native [Envelope], and update [output] using the result.
      */
     @UsedByNative
-    external fun nativeAddOptionalBox(
+    external fun addOptionalBox(
         envelopeHasBounds: Boolean,
         envelopeBoundsXMin: Float,
         envelopeBoundsYMin: Float,

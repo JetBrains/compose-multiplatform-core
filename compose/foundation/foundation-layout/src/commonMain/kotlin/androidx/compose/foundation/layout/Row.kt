@@ -86,6 +86,7 @@ import androidx.compose.ui.unit.LayoutDirection
  * @param modifier The modifier to be applied to the Row.
  * @param horizontalArrangement The horizontal arrangement of the layout's children.
  * @param verticalAlignment The vertical alignment of the layout's children.
+ * @param content The content of the Row
  * @see Column
  * @see [androidx.compose.foundation.lazy.LazyRow]
  */
@@ -330,14 +331,14 @@ interface RowScope {
 
     /**
      * Position the element vertically such that its [alignmentLine] aligns with sibling elements
-     * also configured to [alignBy]. [alignBy] is a form of [align], so both modifiers will not work
-     * together if specified for the same layout. [alignBy] can be used to align two layouts by
+     * also configured to `alignBy`. `alignBy` is a form of [align], so both modifiers will not work
+     * together if specified for the same layout. `alignBy` can be used to align two layouts by
      * baseline inside a [Row], using `alignBy(FirstBaseline)`. Within a [Row], all components with
-     * [alignBy] will align vertically using the specified [HorizontalAlignmentLine]s or values
-     * provided using the other [alignBy] overload, forming a sibling group. At least one element of
+     * `alignBy` will align vertically using the specified [HorizontalAlignmentLine]s or values
+     * provided using the other `alignBy` overload, forming a sibling group. At least one element of
      * the sibling group will be placed as it had [Alignment.Top] align in [Row], and the alignment
      * of the other siblings will be then determined such that the alignment lines coincide. Note
-     * that if only one element in a [Row] has the [alignBy] modifier specified the element will be
+     * that if only one element in a [Row] has the `alignBy` modifier specified the element will be
      * positioned as if it had [Alignment.Top] align.
      *
      * Example usage:
@@ -349,9 +350,9 @@ interface RowScope {
 
     /**
      * Position the element vertically such that its first baseline aligns with sibling elements
-     * also configured to [alignByBaseline] or [alignBy]. This modifier is a form of [align], so
-     * both modifiers will not work together if specified for the same layout. [alignByBaseline] is
-     * a particular case of [alignBy]. See [alignBy] for more details.
+     * also configured to `alignByBaseline` or `alignBy`. This modifier is a form of [align], so
+     * both modifiers will not work together if specified for the same layout. `alignByBaseline` is
+     * a particular case of `alignBy`. See `alignBy` for more details.
      *
      * Example usage:
      *
@@ -362,13 +363,13 @@ interface RowScope {
 
     /**
      * Position the element vertically such that the alignment line for the content as determined by
-     * [alignmentLineBlock] aligns with sibling elements also configured to [alignBy]. [alignBy] is
+     * [alignmentLineBlock] aligns with sibling elements also configured to `alignBy`. `alignBy` is
      * a form of [align], so both modifiers will not work together if specified for the same layout.
-     * Within a [Row], all components with [alignBy] will align vertically using the specified
+     * Within a [Row], all components with `alignBy` will align vertically using the specified
      * [HorizontalAlignmentLine]s or values obtained from [alignmentLineBlock], forming a sibling
      * group. At least one element of the sibling group will be placed as it had [Alignment.Top]
      * align in [Row], and the alignment of the other siblings will be then determined such that the
-     * alignment lines coincide. Note that if only one element in a [Row] has the [alignBy] modifier
+     * alignment lines coincide. Note that if only one element in a [Row] has the `alignBy` modifier
      * specified the element will be positioned as if it had [Alignment.Top] align.
      *
      * Example usage:

@@ -16,6 +16,7 @@
 
 package androidx.ink.authoring
 
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
@@ -33,6 +34,7 @@ import androidx.annotation.UiThread
 import androidx.annotation.VisibleForTesting
 import androidx.collection.MutableIntObjectMap
 import androidx.core.graphics.withMatrix
+import androidx.core.view.ViewCompat
 import androidx.ink.authoring.internal.CanvasInProgressStrokesRenderHelperV21
 import androidx.ink.authoring.internal.CanvasInProgressStrokesRenderHelperV29
 import androidx.ink.authoring.internal.CanvasInProgressStrokesRenderHelperV33
@@ -109,10 +111,6 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      * something that does load and store texture images, it must be set before the first call to
      * [startStroke] or [eagerInit].
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
-
     // Needed on both property and on getter for AndroidX build, but the Kotlin compiler doesn't
     // like it on the getter so suppress its complaint.
     @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
@@ -137,6 +135,7 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
         set(value) {
             check(!isInitialized()) { "Cannot set rendererFactory after initialization." }
             field = value
+            finishedStrokesView.rendererFactory = value
         }
 
     /**
@@ -291,7 +290,8 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
 
     private var renderHelper: InProgressStrokesRenderHelper? = null
 
-    private val finishedStrokesView = FinishedStrokesView(context, createRenderer = rendererFactory)
+    private val finishedStrokesView =
+        FinishedStrokesView(context, rendererFactory = rendererFactory)
 
     // The simplified version of the API assumes that there is only one stroke in progress with a
     // given pointer ID at a time (i.e. that each stroke in a gesture is finished or cancelled
@@ -401,10 +401,68 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      *   is not invertible.
      */
     @JvmOverloads
+    @OptIn(androidx.ink.brush.ExperimentalInkCustomBrushApi::class)
     public fun startStroke(
         event: MotionEvent,
         pointerId: Int,
         brush: Brush,
+        motionEventToWorldTransform: Matrix = IDENTITY_MATRIX,
+        strokeToWorldTransform: Matrix = IDENTITY_MATRIX,
+    ): InProgressStrokeId =
+        startStroke(
+            event,
+            pointerId,
+            brush,
+            { 0f },
+            motionEventToWorldTransform,
+            strokeToWorldTransform,
+        )
+
+    /**
+     * Same as [startStroke], but for a stroke whose [Brush] includes a texture animation driven by
+     * a [ValueAnimator].
+     *
+     * @param textureAnimationProgress An animator for the progress (from 0 to 1) of this stroke's
+     *   texture animation. Values outside [0, 1] are wrapped. Non-finite values are not allowed. A
+     *   null animator is treated as always 0.
+     */
+    @JvmOverloads
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    @ExperimentalInkCustomBrushApi
+    public fun startStroke(
+        event: MotionEvent,
+        pointerId: Int,
+        brush: Brush,
+        textureAnimationProgress: ValueAnimator?,
+        motionEventToWorldTransform: Matrix = IDENTITY_MATRIX,
+        strokeToWorldTransform: Matrix = IDENTITY_MATRIX,
+    ): InProgressStrokeId =
+        startStroke(
+            event,
+            pointerId,
+            brush,
+            { textureAnimationProgress?.animatedValue as Float? ?: 0f },
+            motionEventToWorldTransform,
+            strokeToWorldTransform,
+        )
+
+    /**
+     * Same as [startStroke], but for a stroke whose [Brush] includes a texture animation.
+     *
+     * @param textureAnimationProgress A lambda that, at any given time, will return the current
+     *   progress (from 0 to 1) of this stroke's texture animation. Values outside [0, 1] are
+     *   wrapped. Non-finite values are not allowed. This lambda will be called on the UI thread,
+     *   potentially multiple times per frame, so it should be fast, stateless, and side-effect
+     *   free.
+     */
+    @JvmOverloads
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    @ExperimentalInkCustomBrushApi
+    public fun startStroke(
+        event: MotionEvent,
+        pointerId: Int,
+        brush: Brush,
+        textureAnimationProgress: () -> Float,
         motionEventToWorldTransform: Matrix = IDENTITY_MATRIX,
         strokeToWorldTransform: Matrix = IDENTITY_MATRIX,
     ): InProgressStrokeId =
@@ -415,6 +473,7 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
                 motionEventToWorldTransform,
                 strokeToWorldTransform,
                 brush,
+                textureAnimationProgress,
                 strokeUnitLengthCm =
                     strokeUnitLengthCm(motionEventToWorldTransform, strokeToWorldTransform),
             )
@@ -432,9 +491,9 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
                 }
                 // Compute (stroke -> MotionEvent) = (world -> MotionEvent) * (stroke -> world)
                 it.preConcat(strokeToWorldTransform)
-                // Compute (stroke -> cm) = (MotionEvent -> cm) * (stroke -> MotionEvent)
-                // This assumes that MotionEvent's coordinate space is hardware pixels.
-                // TODO: b/380927473 - Take into account ancestor transforms.
+                // Compute (stroke -> screen) = (MotionEvent -> screen) * (stroke -> MotionEvent)
+                ViewCompat.transformMatrixToGlobal(this, it)
+                // Compute (stroke -> cm) = (screen -> cm) * (stroke -> screen)
                 val metrics = context.resources.displayMetrics
                 it.postScale(CM_PER_INCH / metrics.xdpi, CM_PER_INCH / metrics.ydpi)
             }
@@ -805,12 +864,13 @@ private class FinishedStrokesView(
     context: Context,
     attrs: AttributeSet? = null,
     @AttrRes defStyleAttr: Int = 0,
-    // Lazy, since many clients will call removeFinishedStrokes immediately with the callback and
-    // never need to render strokes within this holding view.
-    createRenderer: () -> CanvasStrokeRenderer,
+    // Since many clients will call removeFinishedStrokes immediately with the callback, this
+    // holding
+    // view may never need to render strokes within this holding view.
+    var rendererFactory: () -> CanvasStrokeRenderer,
 ) : View(context, attrs, defStyleAttr) {
 
-    private val renderer by lazy(createRenderer)
+    private lateinit var renderer: CanvasStrokeRenderer
 
     private val finishedStrokes = mutableMapOf<InProgressStrokeId, FinishedStroke>()
 
@@ -825,6 +885,12 @@ private class FinishedStrokesView(
     }
 
     override fun onDraw(canvas: Canvas) {
+        // Only initialize the renderer if there are strokes to draw, to avoid unnecessary
+        // initialization if the client never adds any strokes.
+        // NOMUTANTS -- only initialize the renderer once to optimize performance.
+        if (!::renderer.isInitialized && finishedStrokes.isNotEmpty()) {
+            renderer = rendererFactory()
+        }
         for ((_, finishedStroke) in finishedStrokes) {
             canvas.withMatrix(finishedStroke.strokeToViewTransform) {
                 renderer.draw(canvas, finishedStroke.stroke, finishedStroke.strokeToViewTransform)

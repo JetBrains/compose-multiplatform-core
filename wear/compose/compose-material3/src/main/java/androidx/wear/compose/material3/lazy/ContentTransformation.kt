@@ -16,10 +16,10 @@
 
 package androidx.wear.compose.material3.lazy
 
-import androidx.compose.runtime.State
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
@@ -29,44 +29,48 @@ import androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollPro
 
 internal fun GraphicsLayerScope.contentTransformation(
     behavior: TransformingLazyColumnScrollTransformBehavior,
-    scrollProgress: () -> TransformingLazyColumnItemScrollProgress?
+    scrollProgress: () -> TransformingLazyColumnItemScrollProgress
 ) =
     with(behavior) {
-        scrollProgress()?.let {
-            clip = true
-            shape =
-                object : Shape {
-                    override fun createOutline(
-                        size: Size,
-                        layoutDirection: LayoutDirection,
-                        density: Density
-                    ): Outline =
-                        Outline.Rounded(
-                            RoundRect(
-                                rect =
-                                    Rect(
-                                        left = 0f,
-                                        top = 0f,
-                                        right =
-                                            size.width -
-                                                2f * size.width * it.contentXOffsetFraction,
-                                        bottom = it.morphedHeight(size.height)
-                                    ),
+        scrollProgress()
+            .takeIf { it != TransformingLazyColumnItemScrollProgress.Unspecified }
+            ?.let {
+                compositingStrategy = CompositingStrategy.Offscreen
+                clip = true
+                shape =
+                    object : Shape {
+                        override fun createOutline(
+                            size: Size,
+                            layoutDirection: LayoutDirection,
+                            density: Density
+                        ): Outline =
+                            Outline.Rounded(
+                                RoundRect(
+                                    rect =
+                                        Rect(
+                                            left = 0f,
+                                            top = 0f,
+                                            right =
+                                                size.width -
+                                                    2f * size.width * it.contentXOffsetFraction,
+                                            bottom = it.morphedHeight(size.height)
+                                        ),
+                                )
                             )
-                        )
-                }
-            translationX = size.width * it.contentXOffsetFraction * it.scale
-            translationY = -1f * size.height * (1f - it.scale) / 2f
-            alpha = it.contentAlpha.coerceAtMost(0.99f) // Alpha hack.
-            scaleX = it.scale
-            scaleY = it.scale
-        }
+                    }
+                translationX = size.width * it.contentXOffsetFraction * it.scale
+                translationY = -1f * size.height * (1f - it.scale) / 2f
+                alpha = it.contentAlpha
+                scaleX = it.scale
+                scaleY = it.scale
+            }
     }
 
 internal fun GraphicsLayerScope.contentTransformation(
-    transformState: State<TransformationState?>,
+    transformState: TransformationState?,
 ) =
-    transformState.value?.let {
+    transformState?.let {
+        compositingStrategy = CompositingStrategy.Offscreen
         clip = true
         shape =
             object : Shape {
@@ -81,16 +85,14 @@ internal fun GraphicsLayerScope.contentTransformation(
                                 Rect(
                                     left = 0f,
                                     top = 0f,
-                                    right =
-                                        size.width - 2f * size.width * it.contentXOffsetFraction,
-                                    bottom = it.morphedHeight
+                                    right = size.width,
+                                    bottom = it.itemHeight
                                 ),
                         )
                     )
             }
-        translationX = size.width * it.contentXOffsetFraction * it.scale
         translationY = -1f * size.height * (1f - it.scale) / 2f
-        alpha = it.contentAlpha.coerceAtMost(0.99f) // Alpha hack.
+        alpha = it.contentAlpha
         scaleX = it.scale
         scaleY = it.scale
     }

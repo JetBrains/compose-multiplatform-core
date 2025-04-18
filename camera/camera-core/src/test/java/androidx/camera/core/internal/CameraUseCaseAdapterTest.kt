@@ -60,6 +60,7 @@ import androidx.camera.core.impl.OptionsBundle
 import androidx.camera.core.impl.PreviewConfig
 import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.StreamSpec
+import androidx.camera.core.impl.UseCaseConfig.OPTION_TARGET_HIGH_SPEED_FRAME_RATE
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
@@ -81,6 +82,7 @@ import androidx.camera.testing.impl.fakes.FakeUseCaseConfig
 import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory
 import androidx.camera.testing.impl.fakes.GrayscaleImageEffect
 import androidx.concurrent.futures.await
+import androidx.test.filters.SdkSuppress
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.ExecutorService
@@ -275,7 +277,7 @@ class CameraUseCaseAdapterTest {
         assertThat(fakeCamera.extendedConfig).isSameInstanceAs(cameraConfig1)
     }
 
-    @RequiresApi(33) // 10-bit HDR only supported on API 33+
+    @SdkSuppress(minSdkVersion = 33) // 10-bit HDR only supported on API 33+
     @Test
     fun canUseHdrWithoutExtensions() {
         // Act: add UseCase that uses HDR.
@@ -287,7 +289,7 @@ class CameraUseCaseAdapterTest {
         )
     }
 
-    @RequiresApi(33) // 10-bit HDR only supported on API 33+
+    @SdkSuppress(minSdkVersion = 33) // 10-bit HDR only supported on API 33+
     @Test
     fun useHDRWithExtensions_throwsException() {
         // Arrange: enable extensions.
@@ -333,7 +335,7 @@ class CameraUseCaseAdapterTest {
         assertThrows<CameraException> { adapter.addUseCases(setOf(imageCapture)) }
     }
 
-    @RequiresApi(23)
+    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun useRawWithExtensions_throwsException() {
         // Arrange: enable extensions.
@@ -363,7 +365,7 @@ class CameraUseCaseAdapterTest {
         assertThrows<CameraException> { adapter.addUseCases(setOf(imageCapture)) }
     }
 
-    @RequiresApi(34) // Ultra HDR only supported on API 34+
+    @SdkSuppress(minSdkVersion = 34) // Ultra HDR only supported on API 34+
     @Test
     fun useUltraHdrWithCameraEffect_throwsException() {
         // Arrange: add an image effect.
@@ -538,7 +540,7 @@ class CameraUseCaseAdapterTest {
         assertThat(streamSharing.camera).isNull()
     }
 
-    @RequiresApi(23)
+    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun extensionEnabledAndVideoCaptureExisted_streamSharingOn() {
         // Arrange: enable extensions.
@@ -555,7 +557,7 @@ class CameraUseCaseAdapterTest {
         assertThat(streamSharing.camera).isNotNull()
     }
 
-    @RequiresApi(23)
+    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun extensionEnabledAndOnlyVideoCaptureAttached_streamSharingOn() {
         // Arrange: enable extensions.
@@ -1010,11 +1012,8 @@ class CameraUseCaseAdapterTest {
     private fun createAdapterWithSupportedCameraOperations(
         @AdapterCameraInfo.CameraOperation supportedOps: Set<Int>
     ): CameraUseCaseAdapter {
-        val fakeSessionProcessor = FakeSessionProcessor()
-        // no camera operations are supported.
-        fakeSessionProcessor.restrictedCameraOperations = supportedOps
+        val fakeSessionProcessor = FakeSessionProcessor(supportedCameraOperations = supportedOps)
         val cameraConfig: CameraConfig = FakeCameraConfig(fakeSessionProcessor)
-
         return createCameraUseCaseAdapter(fakeCamera, cameraConfig)
     }
 
@@ -1349,7 +1348,7 @@ class CameraUseCaseAdapterTest {
         assertThat(cameraInfoInternal.isCaptureProcessProgressSupported).isTrue()
     }
 
-    @RequiresApi(23)
+    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun returnsCorrectSessionProcessorFromAdapterCameraControl() {
         val fakeSessionProcessor = FakeSessionProcessor()
@@ -1375,6 +1374,24 @@ class CameraUseCaseAdapterTest {
         val cameraUseCaseAdapter1 = createCameraUseCaseAdapter(fakeCamera)
         val cameraUseCaseAdapter2 = createCameraUseCaseAdapter(fakeCamera, secondaryCamera = null)
         assertThat(cameraUseCaseAdapter1.cameraId).isEqualTo(cameraUseCaseAdapter2.cameraId)
+    }
+
+    @Test
+    fun setTargetHighSpeedFrameRate_updatesUseCaseConfig() {
+        // Arrange: create use cases.
+        val fakeUseCase1 = FakeUseCase()
+        val fakeUseCase2 = FakeUseCase()
+
+        // Act: set target high speed frame rate and add use cases.
+        val frameRate = Range(120, 120)
+        adapter.setTargetHighSpeedFrameRate(frameRate)
+        adapter.addUseCases(listOf(fakeUseCase1, fakeUseCase2))
+
+        // Assert: use case configs are updated.
+        assertThat(fakeUseCase1.currentConfig.retrieveOption(OPTION_TARGET_HIGH_SPEED_FRAME_RATE))
+            .isEqualTo(frameRate)
+        assertThat(fakeUseCase2.currentConfig.retrieveOption(OPTION_TARGET_HIGH_SPEED_FRAME_RATE))
+            .isEqualTo(frameRate)
     }
 
     private fun createFakeVideoCaptureUseCase(): FakeUseCase {

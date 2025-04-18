@@ -20,10 +20,11 @@ import android.os.Build;
 import android.util.Range;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.Quirk;
 import androidx.camera.core.impl.SurfaceConfig;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -74,8 +75,7 @@ public class ExtraCroppingQuirk implements Quirk {
      * @return null if no resolution provided, in which case the calling code should fallback to
      * user provided target resolution.
      */
-    @Nullable
-    public Size getVerifiedResolution(@NonNull SurfaceConfig.ConfigType configType) {
+    public @Nullable Size getVerifiedResolution(SurfaceConfig.@NonNull ConfigType configType) {
         if (isSamsungDistortion()) {
             // The following resolutions are needed for both the front and the back camera.
             switch (configType) {

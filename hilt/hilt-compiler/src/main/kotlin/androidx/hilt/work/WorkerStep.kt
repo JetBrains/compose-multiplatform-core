@@ -145,6 +145,7 @@ class WorkerStep : XProcessingStep {
     }
 
     companion object {
+        @Suppress("DATA_CLASS_INVISIBLE_COPY_USAGE_WARNING")
         val ENV_CONFIG = XProcessingEnvConfig.DEFAULT.copy(disableAnnotatedElementValidation = true)
     }
 }

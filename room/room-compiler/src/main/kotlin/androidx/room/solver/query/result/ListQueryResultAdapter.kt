@@ -27,8 +27,8 @@ import androidx.room.solver.CodeGenScope
 
 class ListQueryResultAdapter(private val typeArg: XType, private val rowAdapter: RowAdapter) :
     QueryResultAdapter(listOf(rowAdapter)) {
-    override fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope) {
-        rowAdapter.onCursorReady(cursorVarName = cursorVarName, scope = scope)
+    override fun convert(outVarName: String, stmtVarName: String, scope: CodeGenScope) {
+        rowAdapter.onStatementReady(stmtVarName = stmtVarName, scope = scope)
         scope.builder
             .applyTo { language ->
                 val listTypeName = CommonTypeNames.MUTABLE_LIST.parametrizedBy(typeArg.asTypeName())
@@ -53,15 +53,12 @@ class ListQueryResultAdapter(private val typeArg: XType, private val rowAdapter:
             }
             .apply {
                 val tmpVarName = scope.getTmpVar("_item")
-                val stepName = if (scope.useDriverApi) "step" else "moveToNext"
-                beginControlFlow("while (%L.$stepName())", cursorVarName).apply {
+                beginControlFlow("while (%L.step())", stmtVarName).apply {
                     addLocalVariable(name = tmpVarName, typeName = typeArg.asTypeName())
-                    rowAdapter.convert(tmpVarName, cursorVarName, scope)
+                    rowAdapter.convert(tmpVarName, stmtVarName, scope)
                     addStatement("%L.add(%L)", outVarName, tmpVarName)
                 }
                 endControlFlow()
             }
     }
-
-    override fun isMigratedToDriver(): Boolean = rowAdapter.isMigratedToDriver()
 }

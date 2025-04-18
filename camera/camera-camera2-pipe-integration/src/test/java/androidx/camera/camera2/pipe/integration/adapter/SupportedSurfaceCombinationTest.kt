@@ -26,6 +26,7 @@ import android.hardware.camera2.CameraCharacteristics.REQUEST_RECOMMENDED_TEN_BI
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
+import android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_CONSTRAINED_HIGH_SPEED_VIDEO
 import android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT
 import android.hardware.camera2.params.DynamicRangeProfiles
 import android.hardware.camera2.params.StreamConfigurationMap
@@ -80,12 +81,19 @@ import androidx.camera.core.impl.EncoderProfilesProxy
 import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy
 import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.core.impl.ImageInputConfig
+import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
+import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
 import androidx.camera.core.impl.StreamSpec
+import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
+import androidx.camera.core.impl.SurfaceCombination
 import androidx.camera.core.impl.SurfaceConfig
+import androidx.camera.core.impl.SurfaceConfig.ConfigSize
+import androidx.camera.core.impl.SurfaceConfig.ConfigType
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
-import androidx.camera.core.internal.utils.SizeUtil
+import androidx.camera.core.impl.utils.CompareSizesByArea
+import androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_1080P
 import androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_1440P
 import androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_720P
 import androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_VGA
@@ -140,14 +148,10 @@ class SupportedSurfaceCombinationTest {
     private val recordSize = Size(3840, 2160)
     private val maximumSize = Size(4032, 3024)
     private val legacyVideoMaximumSize = Size(1920, 1080)
-    private val mod16Size = Size(960, 544)
-    private val profileUhd =
-        EncoderProfilesUtil.createFakeEncoderProfilesProxy(recordSize.width, recordSize.height)
-    private val profileFhd = EncoderProfilesUtil.createFakeEncoderProfilesProxy(1920, 1080)
-    private val profileHd =
-        EncoderProfilesUtil.createFakeEncoderProfilesProxy(previewSize.width, previewSize.height)
-    private val profileSd =
-        EncoderProfilesUtil.createFakeEncoderProfilesProxy(vgaSize.width, vgaSize.height)
+    private val profileUhd = EncoderProfilesUtil.createFakeEncoderProfilesProxy(recordSize)
+    private val profileFhd = EncoderProfilesUtil.createFakeEncoderProfilesProxy(Size(1920, 1080))
+    private val profileHd = EncoderProfilesUtil.createFakeEncoderProfilesProxy(previewSize)
+    private val profileSd = EncoderProfilesUtil.createFakeEncoderProfilesProxy(vgaSize)
     private val supportedSizes =
         arrayOf(
             Size(4032, 3024), // 4:3
@@ -174,6 +178,25 @@ class SupportedSurfaceCombinationTest {
             Size(7200, 4050), // 16:9
         )
     private val maximumResolutionHighResolutionSupportedSizes = arrayOf(Size(8000, 6000))
+    private val commonHighSpeedSupportedSizeFpsMap =
+        mapOf(
+            RESOLUTION_1080P to
+                listOf(
+                    Range.create(30, 120),
+                    Range.create(120, 120),
+                    Range.create(30, 240),
+                    Range.create(240, 240),
+                ),
+            RESOLUTION_720P to
+                listOf(
+                    Range.create(30, 120),
+                    Range.create(120, 120),
+                    Range.create(30, 240),
+                    Range.create(240, 240),
+                    Range.create(30, 480),
+                    Range.create(480, 480)
+                )
+        )
 
     private val streamUseCaseOverrideValue = 3L
     private val context = InstrumentationRegistry.getInstrumentation().context
@@ -196,6 +219,7 @@ class SupportedSurfaceCombinationTest {
         whenever(mockEncoderProfilesAdapter.hasProfile(ArgumentMatchers.anyInt())).thenReturn(true)
         whenever(mockVideoProfileProxy.width).thenReturn(3840)
         whenever(mockVideoProfileProxy.height).thenReturn(2160)
+        whenever(mockVideoProfileProxy.resolution).thenReturn(Size(3840, 2160))
         whenever(mockEncoderProfilesProxy.videoProfiles).thenReturn(listOf(mockVideoProfileProxy))
         whenever(mockEncoderProfilesAdapter.getAll(ArgumentMatchers.anyInt()))
             .thenReturn(mockEncoderProfilesProxy)
@@ -294,7 +318,7 @@ class SupportedSurfaceCombinationTest {
 
     @Test
     fun checkLimitedSurfaceCombinationSupportedInLimitedDevice() {
-        setupCamera(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED)
+        setupCamera(INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED)
         val supportedSurfaceCombination =
             SupportedSurfaceCombination(context, fakeCameraMetadata, mockEncoderProfilesAdapter)
         val combinationList = getLimitedSupportedCombinationList()
@@ -313,7 +337,7 @@ class SupportedSurfaceCombinationTest {
 
     @Test
     fun checkFullSurfaceCombinationNotSupportedInLimitedDevice() {
-        setupCamera(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED)
+        setupCamera(INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED)
         val supportedSurfaceCombination =
             SupportedSurfaceCombination(context, fakeCameraMetadata, mockEncoderProfilesAdapter)
         val combinationList = getFullSupportedCombinationList()
@@ -332,7 +356,7 @@ class SupportedSurfaceCombinationTest {
 
     @Test
     fun checkLevel3SurfaceCombinationNotSupportedInLimitedDevice() {
-        setupCamera(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED)
+        setupCamera(INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED)
         val supportedSurfaceCombination =
             SupportedSurfaceCombination(context, fakeCameraMetadata, mockEncoderProfilesAdapter)
         val combinationList = getLevel3SupportedCombinationList()
@@ -543,6 +567,69 @@ class SupportedSurfaceCombinationTest {
         }
     }
 
+    @Config(minSdk = Build.VERSION_CODES.M)
+    @Test
+    fun checkSurfaceCombinationSupportForHighSpeed() {
+        setupCamera(
+            capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_CONSTRAINED_HIGH_SPEED_VIDEO),
+            supportedHighSpeedSizeAndFpsMap = commonHighSpeedSupportedSizeFpsMap
+        )
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(context, fakeCameraMetadata, mockEncoderProfilesAdapter)
+        val featureSettings =
+            SupportedSurfaceCombination.FeatureSettings(
+                CameraMode.DEFAULT,
+                DynamicRange.BIT_DEPTH_8_BIT,
+                isHighSpeedOn = true
+            )
+
+        // The expected SurfaceConfig is PRIV + RECORD because the max high speed size 1920x1080 is
+        // between PREVIEW and RECORD size.
+        val shouldSupportCombinations =
+            listOf(
+                SurfaceCombination().apply {
+                    addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.RECORD))
+                },
+                SurfaceCombination().apply {
+                    addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW))
+                    addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW))
+                }
+            )
+        shouldSupportCombinations.forEach {
+            assertThat(
+                    supportedSurfaceCombination.checkSupported(
+                        featureSettings,
+                        it.surfaceConfigList
+                    )
+                )
+                .isTrue()
+        }
+
+        val shouldNotSupportCombinations =
+            listOf(
+                SurfaceCombination().apply {
+                    addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.MAXIMUM))
+                },
+                SurfaceCombination().apply {
+                    addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW))
+                    addSurfaceConfig(SurfaceConfig.create(ConfigType.JPEG, ConfigSize.MAXIMUM))
+                },
+                SurfaceCombination().apply {
+                    addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW))
+                    addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.PREVIEW))
+                }
+            )
+        shouldNotSupportCombinations.forEach {
+            assertThat(
+                    supportedSurfaceCombination.checkSupported(
+                        featureSettings,
+                        it.surfaceConfigList
+                    )
+                )
+                .isFalse()
+        }
+    }
+
     // //////////////////////////////////////////////////////////////////////////////////////////
     //
     // Surface config transformation tests
@@ -560,8 +647,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.YUV_420_888,
                 vgaSize
             )
-        val expectedSurfaceConfig =
-            SurfaceConfig.create(SurfaceConfig.ConfigType.YUV, SurfaceConfig.ConfigSize.VGA)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.YUV, ConfigSize.VGA)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -576,8 +662,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.YUV_420_888,
                 previewSize
             )
-        val expectedSurfaceConfig =
-            SurfaceConfig.create(SurfaceConfig.ConfigType.YUV, SurfaceConfig.ConfigSize.PREVIEW)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.YUV, ConfigSize.PREVIEW)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -592,8 +677,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.YUV_420_888,
                 recordSize
             )
-        val expectedSurfaceConfig =
-            SurfaceConfig.create(SurfaceConfig.ConfigType.YUV, SurfaceConfig.ConfigSize.RECORD)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.YUV, ConfigSize.RECORD)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -608,8 +692,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.YUV_420_888,
                 maximumSize
             )
-        val expectedSurfaceConfig =
-            SurfaceConfig.create(SurfaceConfig.ConfigType.YUV, SurfaceConfig.ConfigSize.MAXIMUM)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.YUV, ConfigSize.MAXIMUM)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -624,8 +707,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.JPEG,
                 vgaSize
             )
-        val expectedSurfaceConfig =
-            SurfaceConfig.create(SurfaceConfig.ConfigType.JPEG, SurfaceConfig.ConfigSize.VGA)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.JPEG, ConfigSize.VGA)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -640,8 +722,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.JPEG,
                 previewSize
             )
-        val expectedSurfaceConfig =
-            SurfaceConfig.create(SurfaceConfig.ConfigType.JPEG, SurfaceConfig.ConfigSize.PREVIEW)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.JPEG, ConfigSize.PREVIEW)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -656,8 +737,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.JPEG,
                 recordSize
             )
-        val expectedSurfaceConfig =
-            SurfaceConfig.create(SurfaceConfig.ConfigType.JPEG, SurfaceConfig.ConfigSize.RECORD)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.JPEG, ConfigSize.RECORD)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -672,8 +752,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.JPEG,
                 maximumSize
             )
-        val expectedSurfaceConfig =
-            SurfaceConfig.create(SurfaceConfig.ConfigType.JPEG, SurfaceConfig.ConfigSize.MAXIMUM)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.JPEG, ConfigSize.MAXIMUM)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -688,10 +767,9 @@ class SupportedSurfaceCombinationTest {
             supportedSurfaceCombination.transformSurfaceConfig(
                 CameraMode.CONCURRENT_CAMERA,
                 ImageFormat.PRIVATE,
-                SizeUtil.RESOLUTION_720P
+                RESOLUTION_720P
             )
-        val expectedSurfaceConfig =
-            SurfaceConfig.create(SurfaceConfig.ConfigType.PRIV, SurfaceConfig.ConfigSize.s720p)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s720p)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -706,10 +784,9 @@ class SupportedSurfaceCombinationTest {
             supportedSurfaceCombination.transformSurfaceConfig(
                 CameraMode.CONCURRENT_CAMERA,
                 ImageFormat.YUV_420_888,
-                SizeUtil.RESOLUTION_720P
+                RESOLUTION_720P
             )
-        val expectedSurfaceConfig =
-            SurfaceConfig.create(SurfaceConfig.ConfigType.YUV, SurfaceConfig.ConfigSize.s720p)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.YUV, ConfigSize.s720p)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -724,10 +801,9 @@ class SupportedSurfaceCombinationTest {
             supportedSurfaceCombination.transformSurfaceConfig(
                 CameraMode.CONCURRENT_CAMERA,
                 ImageFormat.JPEG,
-                SizeUtil.RESOLUTION_720P
+                RESOLUTION_720P
             )
-        val expectedSurfaceConfig =
-            SurfaceConfig.create(SurfaceConfig.ConfigType.JPEG, SurfaceConfig.ConfigSize.s720p)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.JPEG, ConfigSize.s720p)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -744,8 +820,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.PRIVATE,
                 RESOLUTION_1440P
             )
-        val expectedSurfaceConfig =
-            SurfaceConfig.create(SurfaceConfig.ConfigType.PRIV, SurfaceConfig.ConfigSize.s1440p)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -762,8 +837,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.YUV_420_888,
                 RESOLUTION_1440P
             )
-        val expectedSurfaceConfig =
-            SurfaceConfig.create(SurfaceConfig.ConfigType.YUV, SurfaceConfig.ConfigSize.s1440p)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -780,8 +854,7 @@ class SupportedSurfaceCombinationTest {
                 ImageFormat.JPEG,
                 RESOLUTION_1440P
             )
-        val expectedSurfaceConfig =
-            SurfaceConfig.create(SurfaceConfig.ConfigType.JPEG, SurfaceConfig.ConfigSize.s1440p)
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.JPEG, ConfigSize.s1440p)
         assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
@@ -806,12 +879,7 @@ class SupportedSurfaceCombinationTest {
                     ultraHighMaximumSize
                 )
             )
-            .isEqualTo(
-                SurfaceConfig.create(
-                    SurfaceConfig.ConfigType.PRIV,
-                    SurfaceConfig.ConfigSize.ULTRA_MAXIMUM
-                )
-            )
+            .isEqualTo(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.ULTRA_MAXIMUM))
         assertThat(
                 supportedSurfaceCombination.transformSurfaceConfig(
                     CameraMode.DEFAULT,
@@ -819,12 +887,7 @@ class SupportedSurfaceCombinationTest {
                     ultraHighMaximumSize
                 )
             )
-            .isEqualTo(
-                SurfaceConfig.create(
-                    SurfaceConfig.ConfigType.YUV,
-                    SurfaceConfig.ConfigSize.ULTRA_MAXIMUM
-                )
-            )
+            .isEqualTo(SurfaceConfig.create(ConfigType.YUV, ConfigSize.ULTRA_MAXIMUM))
         assertThat(
                 supportedSurfaceCombination.transformSurfaceConfig(
                     CameraMode.DEFAULT,
@@ -832,12 +895,45 @@ class SupportedSurfaceCombinationTest {
                     ultraHighMaximumSize
                 )
             )
-            .isEqualTo(
-                SurfaceConfig.create(
-                    SurfaceConfig.ConfigType.JPEG,
-                    SurfaceConfig.ConfigSize.ULTRA_MAXIMUM
-                )
+            .isEqualTo(SurfaceConfig.create(ConfigType.JPEG, ConfigSize.ULTRA_MAXIMUM))
+    }
+
+    @Test
+    fun transformSurfaceConfigWithUnsupportedFormatRecordSize() {
+        setupCamera(
+            CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
+            supportedFormats =
+                intArrayOf(ImageFormat.YUV_420_888, ImageFormat.JPEG, ImageFormat.PRIVATE)
+        )
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(context, fakeCameraMetadata, mockEncoderProfilesAdapter)
+        val surfaceConfig =
+            supportedSurfaceCombination.transformSurfaceConfig(
+                CameraMode.DEFAULT,
+                JPEG_R,
+                recordSize
             )
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.JPEG_R, ConfigSize.RECORD)
+        assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
+    }
+
+    @Test
+    fun transformSurfaceConfigWithUnsupportedFormatMaximumSize() {
+        setupCamera(
+            CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
+            supportedFormats =
+                intArrayOf(ImageFormat.YUV_420_888, ImageFormat.JPEG, ImageFormat.PRIVATE)
+        )
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(context, fakeCameraMetadata, mockEncoderProfilesAdapter)
+        val surfaceConfig =
+            supportedSurfaceCombination.transformSurfaceConfig(
+                CameraMode.DEFAULT,
+                JPEG_R,
+                maximumSize
+            )
+        val expectedSurfaceConfig = SurfaceConfig.create(ConfigType.JPEG_R, ConfigSize.MAXIMUM)
+        assertThat(surfaceConfig).isEqualTo(expectedSurfaceConfig)
     }
 
     // //////////////////////////////////////////////////////////////////////////////////////////
@@ -849,7 +945,7 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/MAXIMUM */
     @Test
     fun canSelectCorrectSize_singlePrivStream_inLegacyDevice() {
-        val privUseCase = createUseCase(UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE)
+        val privUseCase = createUseCase(CaptureType.VIDEO_CAPTURE)
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply { put(privUseCase, maximumSize) }
         getSuggestedSpecsAndVerify(useCaseExpectedResultMap)
@@ -858,7 +954,7 @@ class SupportedSurfaceCombinationTest {
     /** JPEG/MAXIMUM */
     @Test
     fun canSelectCorrectSize_singleJpegStream_inLegacyDevice() {
-        val jpegUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE)
+        val jpegUseCase = createUseCase(CaptureType.IMAGE_CAPTURE)
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply { put(jpegUseCase, maximumSize) }
         getSuggestedSpecsAndVerify(useCaseExpectedResultMap)
@@ -867,7 +963,7 @@ class SupportedSurfaceCombinationTest {
     /** YUV/MAXIMUM */
     @Test
     fun canSelectCorrectSize_singleYuvStream_inLegacyDevice() {
-        val yuvUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS)
+        val yuvUseCase = createUseCase(CaptureType.IMAGE_ANALYSIS)
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply { put(yuvUseCase, maximumSize) }
         getSuggestedSpecsAndVerify(useCaseExpectedResultMap)
@@ -876,8 +972,8 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/PREVIEW + JPEG/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_privPlusJpeg_inLegacyDevice() {
-        val privUseCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW)
-        val jpegUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE)
+        val privUseCase = createUseCase(CaptureType.PREVIEW)
+        val jpegUseCase = createUseCase(CaptureType.IMAGE_CAPTURE)
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(privUseCase, if (Build.VERSION.SDK_INT == 21) RESOLUTION_VGA else previewSize)
@@ -889,8 +985,8 @@ class SupportedSurfaceCombinationTest {
     /** YUV/PREVIEW + JPEG/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_yuvPlusJpeg_inLegacyDevice() {
-        val yuvUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
-        val jpegUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE) // JPEG
+        val yuvUseCase = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
+        val jpegUseCase = createUseCase(CaptureType.IMAGE_CAPTURE) // JPEG
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(yuvUseCase, if (Build.VERSION.SDK_INT == 21) RESOLUTION_VGA else previewSize)
@@ -902,8 +998,8 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/PREVIEW + PRIV/PREVIEW */
     @Test
     fun canSelectCorrectSizes_privPlusPriv_inLegacyDevice() {
-        val privUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val privUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE) // PRIV
+        val privUseCase1 = createUseCase(CaptureType.PREVIEW) // PRIV
+        val privUseCase2 = createUseCase(CaptureType.VIDEO_CAPTURE) // PRIV
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(privUseCase1, if (Build.VERSION.SDK_INT == 21) RESOLUTION_VGA else previewSize)
@@ -915,8 +1011,8 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/PREVIEW + YUV/PREVIEW */
     @Test
     fun canSelectCorrectSizes_privPlusYuv_inLegacyDevice() {
-        val privUseCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val yuvUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
+        val privUseCase = createUseCase(CaptureType.PREVIEW) // PRIV
+        val yuvUseCase = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(privUseCase, if (Build.VERSION.SDK_INT == 21) RESOLUTION_VGA else previewSize)
@@ -928,9 +1024,9 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/PREVIEW + YUV/PREVIEW + JPEG/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_privPlusYuvPlusJpeg_inLegacyDevice() {
-        val privUseCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val yuvUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
-        val jpegUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE) // JPEG
+        val privUseCase = createUseCase(CaptureType.PREVIEW) // PRIV
+        val yuvUseCase = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
+        val jpegUseCase = createUseCase(CaptureType.IMAGE_CAPTURE) // JPEG
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(privUseCase, if (Build.VERSION.SDK_INT == 21) RESOLUTION_VGA else previewSize)
@@ -943,9 +1039,9 @@ class SupportedSurfaceCombinationTest {
     /** Unsupported PRIV + JPEG + PRIV for legacy level devices */
     @Test
     fun throwsException_unsupportedConfiguration_inLegacyDevice() {
-        val privUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val jpegUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE) // JPEG
-        val privUseCas2 = createUseCase(UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE) // PRIV
+        val privUseCase1 = createUseCase(CaptureType.PREVIEW) // PRIV
+        val jpegUseCase = createUseCase(CaptureType.IMAGE_CAPTURE) // JPEG
+        val privUseCas2 = createUseCase(CaptureType.VIDEO_CAPTURE) // PRIV
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(privUseCase1, RESOLUTION_VGA)
@@ -966,8 +1062,8 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/PREVIEW + PRIV/RECORD */
     @Test
     fun canSelectCorrectSizes_privPlusPriv_inLimitedDevice() {
-        val privUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE) // PRIV
-        val privUseCas2 = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
+        val privUseCase1 = createUseCase(CaptureType.VIDEO_CAPTURE) // PRIV
+        val privUseCas2 = createUseCase(CaptureType.PREVIEW) // PRIV
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(privUseCase1, recordSize)
@@ -975,15 +1071,15 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
         )
     }
 
     /** PRIV/PREVIEW + YUV/RECORD */
     @Test
     fun canSelectCorrectSizes_privPlusYuv_inLimitedDevice() {
-        val privUseCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val yuvUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
+        val privUseCase = createUseCase(CaptureType.PREVIEW) // PRIV
+        val yuvUseCase = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(privUseCase, previewSize)
@@ -991,15 +1087,15 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
         )
     }
 
     /** YUV/PREVIEW + YUV/RECORD */
     @Test
     fun canSelectCorrectSizes_yuvPlusYuv_inLimitedDevice() {
-        val yuvUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
-        val yuvUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
+        val yuvUseCase1 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
+        val yuvUseCase2 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(yuvUseCase1, recordSize)
@@ -1007,16 +1103,16 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
         )
     }
 
     /** PRIV/PREVIEW + PRIV/RECORD + JPEG/RECORD */
     @Test
     fun canSelectCorrectSizes_privPlusPrivPlusJpeg_inLimitedDevice() {
-        val privUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE) // PRIV
-        val privUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val jpegUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE) // JPEG
+        val privUseCase1 = createUseCase(CaptureType.VIDEO_CAPTURE) // PRIV
+        val privUseCase2 = createUseCase(CaptureType.PREVIEW) // PRIV
+        val jpegUseCase = createUseCase(CaptureType.IMAGE_CAPTURE) // JPEG
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(privUseCase1, recordSize)
@@ -1025,16 +1121,16 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
         )
     }
 
     /** PRIV/PREVIEW + YUV/RECORD + JPEG/RECORD */
     @Test
     fun canSelectCorrectSizes_privPlusYuvPlusJpeg_inLimitedDevice() {
-        val privUseCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val yuvUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
-        val jpegUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE) // JPEG
+        val privUseCase = createUseCase(CaptureType.PREVIEW) // PRIV
+        val yuvUseCase = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
+        val jpegUseCase = createUseCase(CaptureType.IMAGE_CAPTURE) // JPEG
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(privUseCase, previewSize)
@@ -1043,16 +1139,16 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
         )
     }
 
     /** YUV/PREVIEW + YUV/PREVIEW + JPEG/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_yuvPlusYuvPlusJpeg_inLimitedDevice() {
-        val yuvUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
-        val yuvUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
-        val jpegUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE) // JPEG
+        val yuvUseCase1 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
+        val yuvUseCase2 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
+        val jpegUseCase = createUseCase(CaptureType.IMAGE_CAPTURE) // JPEG
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(yuvUseCase1, previewSize)
@@ -1061,16 +1157,16 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
         )
     }
 
     /** Unsupported YUV + PRIV + YUV for limited level devices */
     @Test
     fun throwsException_unsupportedConfiguration_inLimitedDevice() {
-        val yuvUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
-        val privUseCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val yuvUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
+        val yuvUseCase1 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
+        val privUseCase = createUseCase(CaptureType.PREVIEW) // PRIV
+        val yuvUseCase2 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(yuvUseCase1, RESOLUTION_VGA)
@@ -1080,7 +1176,7 @@ class SupportedSurfaceCombinationTest {
         Assert.assertThrows(IllegalArgumentException::class.java) {
             getSuggestedSpecsAndVerify(
                 useCaseExpectedResultMap,
-                hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
+                hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
             )
         }
     }
@@ -1094,8 +1190,8 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/PREVIEW + PRIV/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_privPlusPriv_inFullDevice() {
-        val privUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE) // PRIV
-        val privUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
+        val privUseCase1 = createUseCase(CaptureType.VIDEO_CAPTURE) // PRIV
+        val privUseCase2 = createUseCase(CaptureType.PREVIEW) // PRIV
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(privUseCase1, maximumSize)
@@ -1110,8 +1206,8 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/PREVIEW + YUV/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_privPlusYuv_inFullDevice() {
-        val privUseCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val yuvUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
+        val privUseCase = createUseCase(CaptureType.PREVIEW) // PRIV
+        val yuvUseCase = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(privUseCase, previewSize)
@@ -1126,8 +1222,8 @@ class SupportedSurfaceCombinationTest {
     /** YUV/PREVIEW + YUV/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_yuvPlusYuv_inFullDevice() {
-        val yuvUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
-        val yuvUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
+        val yuvUseCase1 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
+        val yuvUseCase2 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(yuvUseCase1, maximumSize)
@@ -1142,9 +1238,9 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/PREVIEW + PRIV/PREVIEW + JPEG/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_privPlusPrivPlusJpeg_inFullDevice() {
-        val jpegUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE) // JPEG
-        val privUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE) // PRIV
-        val privUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
+        val jpegUseCase = createUseCase(CaptureType.IMAGE_CAPTURE) // JPEG
+        val privUseCase1 = createUseCase(CaptureType.VIDEO_CAPTURE) // PRIV
+        val privUseCase2 = createUseCase(CaptureType.PREVIEW) // PRIV
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(jpegUseCase, maximumSize)
@@ -1160,9 +1256,9 @@ class SupportedSurfaceCombinationTest {
     /** YUV/VGA + PRIV/PREVIEW + YUV/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_yuvPlusPrivPlusYuv_inFullDevice() {
-        val privUseCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val yuvUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
-        val yuvUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
+        val privUseCase = createUseCase(CaptureType.PREVIEW) // PRIV
+        val yuvUseCase1 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
+        val yuvUseCase2 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(privUseCase, previewSize)
@@ -1178,9 +1274,9 @@ class SupportedSurfaceCombinationTest {
     /** YUV/VGA + YUV/PREVIEW + YUV/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_yuvPlusYuvPlusYuv_inFullDevice() {
-        val yuvUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
-        val yuvUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
-        val yuvUseCase3 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
+        val yuvUseCase1 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
+        val yuvUseCase2 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
+        val yuvUseCase3 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(yuvUseCase1, maximumSize)
@@ -1196,9 +1292,9 @@ class SupportedSurfaceCombinationTest {
     /** Unsupported PRIV + PRIV + YUV + RAW for full level devices */
     @Test
     fun throwsException_unsupportedConfiguration_inFullDevice() {
-        val privUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE) // PRIV
-        val privUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val yuvUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
+        val privUseCase1 = createUseCase(CaptureType.VIDEO_CAPTURE) // PRIV
+        val privUseCase2 = createUseCase(CaptureType.PREVIEW) // PRIV
+        val yuvUseCase = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
         val rawUseCase = createRawUseCase() // RAW
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
@@ -1210,7 +1306,7 @@ class SupportedSurfaceCombinationTest {
         assertThrows(IllegalArgumentException::class.java) {
             getSuggestedSpecsAndVerify(
                 useCaseExpectedResultMap,
-                hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
+                hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
             )
         }
     }
@@ -1224,9 +1320,9 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/PREVIEW + PRIV/VGA + YUV/MAXIMUM + RAW/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_privPlusPrivPlusYuvPlusRaw_inLevel3Device() {
-        val privUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE) // PRIV
-        val privUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val yuvUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
+        val privUseCase1 = createUseCase(CaptureType.VIDEO_CAPTURE) // PRIV
+        val privUseCase2 = createUseCase(CaptureType.PREVIEW) // PRIV
+        val yuvUseCase = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
         val rawUseCase = createRawUseCase() // RAW
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
@@ -1245,9 +1341,9 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/PREVIEW + PRIV/VGA + JPEG/MAXIMUM + RAW/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_privPlusPrivPlusJpegPlusRaw_inLevel3Device() {
-        val privUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE) // PRIV
-        val privUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val jpegUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE) // JPEG
+        val privUseCase1 = createUseCase(CaptureType.VIDEO_CAPTURE) // PRIV
+        val privUseCase2 = createUseCase(CaptureType.PREVIEW) // PRIV
+        val jpegUseCase = createUseCase(CaptureType.IMAGE_CAPTURE) // JPEG
         val rawUseCase = createRawUseCase() // RAW
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
@@ -1266,9 +1362,9 @@ class SupportedSurfaceCombinationTest {
     /** Unsupported PRIV + YUV + YUV + RAW for level-3 devices */
     @Test
     fun throwsException_unsupportedConfiguration_inLevel3Device() {
-        val privUseCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val yuvUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
-        val yuvUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
+        val privUseCase = createUseCase(CaptureType.PREVIEW) // PRIV
+        val yuvUseCase1 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
+        val yuvUseCase2 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
         val rawUseCase = createRawUseCase() // RAW
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
@@ -1294,8 +1390,8 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/PREVIEW + PRIV/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_privPlusPriv_inLimitedDevice_withBurstCapability() {
-        val privUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE) // PRIV
-        val privUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
+        val privUseCase1 = createUseCase(CaptureType.VIDEO_CAPTURE) // PRIV
+        val privUseCase2 = createUseCase(CaptureType.PREVIEW) // PRIV
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(privUseCase1, maximumSize)
@@ -1303,7 +1399,7 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             capabilities =
                 intArrayOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_BURST_CAPTURE)
         )
@@ -1312,8 +1408,8 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/PREVIEW + YUV/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_privPlusYuv_inLimitedDevice_withBurstCapability() {
-        val privUseCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val yuvUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
+        val privUseCase = createUseCase(CaptureType.PREVIEW) // PRIV
+        val yuvUseCase = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(privUseCase, previewSize)
@@ -1321,7 +1417,7 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             capabilities =
                 intArrayOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_BURST_CAPTURE)
         )
@@ -1330,8 +1426,8 @@ class SupportedSurfaceCombinationTest {
     /** YUV/PREVIEW + YUV/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_yuvPlusYuv_inLimitedDevice_withBurstCapability() {
-        val yuvUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
-        val yuvUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
+        val yuvUseCase1 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
+        val yuvUseCase2 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(yuvUseCase1, maximumSize)
@@ -1339,7 +1435,7 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             capabilities =
                 intArrayOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_BURST_CAPTURE)
         )
@@ -1359,7 +1455,7 @@ class SupportedSurfaceCombinationTest {
             mutableMapOf<UseCase, Size>().apply { put(rawUseCase, maximumSize) }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             capabilities = intArrayOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)
         )
     }
@@ -1367,7 +1463,7 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/PREVIEW + RAW/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_privPlusRAW_inLimitedDevice_withRawCapability() {
-        val privUseCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
+        val privUseCase = createUseCase(CaptureType.PREVIEW) // PRIV
         val rawUseCase = createRawUseCase() // RAW
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
@@ -1376,7 +1472,7 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             capabilities = intArrayOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)
         )
     }
@@ -1384,8 +1480,8 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/PREVIEW + PRIV/PREVIEW + RAW/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_privPlusPrivPlusRAW_inLimitedDevice_withRawCapability() {
-        val privUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE) // PRIV
-        val privUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
+        val privUseCase1 = createUseCase(CaptureType.VIDEO_CAPTURE) // PRIV
+        val privUseCase2 = createUseCase(CaptureType.PREVIEW) // PRIV
         val rawUseCase = createRawUseCase() // RAW
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
@@ -1395,7 +1491,7 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             capabilities = intArrayOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)
         )
     }
@@ -1403,8 +1499,8 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/PREVIEW + YUV/PREVIEW + RAW/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_privPlusYuvPlusRAW_inLimitedDevice_withRawCapability() {
-        val privUseCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val yuvUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
+        val privUseCase = createUseCase(CaptureType.PREVIEW) // PRIV
+        val yuvUseCase = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
         val rawUseCase = createRawUseCase() // RAW
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
@@ -1414,7 +1510,7 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             capabilities = intArrayOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)
         )
     }
@@ -1422,8 +1518,8 @@ class SupportedSurfaceCombinationTest {
     /** YUV/PREVIEW + YUV/PREVIEW + RAW/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_yuvPlusYuvPlusRAW_inLimitedDevice_withRawCapability() {
-        val yuvUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
-        val yuvUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
+        val yuvUseCase1 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
+        val yuvUseCase2 = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
         val rawUseCase = createRawUseCase() // RAW
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
@@ -1433,7 +1529,7 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             capabilities = intArrayOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)
         )
     }
@@ -1441,8 +1537,8 @@ class SupportedSurfaceCombinationTest {
     /** PRIV/PREVIEW + JPEG/MAXIMUM + RAW/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_privPlusJpegPlusRAW_inLimitedDevice_withRawCapability() {
-        val privUseCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
-        val jpegUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE) // JPEG
+        val privUseCase = createUseCase(CaptureType.PREVIEW) // PRIV
+        val jpegUseCase = createUseCase(CaptureType.IMAGE_CAPTURE) // JPEG
         val rawUseCase = createRawUseCase() // RAW
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
@@ -1452,7 +1548,7 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             capabilities = intArrayOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)
         )
     }
@@ -1460,8 +1556,8 @@ class SupportedSurfaceCombinationTest {
     /** YUV/PREVIEW + JPEG/MAXIMUM + RAW/MAXIMUM */
     @Test
     fun canSelectCorrectSizes_yuvPlusJpegPlusRAW_inLimitedDevice_withRawCapability() {
-        val yuvUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
-        val jpegUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE) // JPEG
+        val yuvUseCase = createUseCase(CaptureType.IMAGE_ANALYSIS) // YUV
+        val jpegUseCase = createUseCase(CaptureType.IMAGE_CAPTURE) // JPEG
         val rawUseCase = createRawUseCase() // RAW
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
@@ -1471,7 +1567,7 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             capabilities = intArrayOf(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)
         )
     }
@@ -1504,8 +1600,26 @@ class SupportedSurfaceCombinationTest {
         getSuggestedSpecsAndVerify(useCaseExpectedResultMap, hasVideoCapture = false)
     }
 
+    private fun getSuggestedSpecsAndVerifyForHighSpeed(
+        useCasesExpectedSizeMap: Map<UseCase, Size>,
+        useCasesOutputSizesMap: Map<UseCase, List<Size>>? = null,
+        supportedHighSpeedSizeAndFpsMap: Map<Size, List<Range<Int>>>? =
+            commonHighSpeedSupportedSizeFpsMap,
+        compareExpectedFps: Range<Int>? = null,
+    ) {
+        getSuggestedSpecsAndVerify(
+            useCasesExpectedSizeMap,
+            capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_CONSTRAINED_HIGH_SPEED_VIDEO),
+            useCasesOutputSizesMap = useCasesOutputSizesMap,
+            supportedHighSpeedSizeAndFpsMap = supportedHighSpeedSizeAndFpsMap,
+            compareExpectedFps = compareExpectedFps,
+            expectedSessionType = SESSION_TYPE_HIGH_SPEED
+        )
+    }
+
     private fun getSuggestedSpecsAndVerify(
         useCasesExpectedResultMap: Map<UseCase, Size>,
+        useCasesOutputSizesMap: Map<UseCase, List<Size>>? = null,
         attachedSurfaceInfoList: List<AttachedSurfaceInfo> = emptyList(),
         hardwareLevel: Int = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
         capabilities: IntArray? = null,
@@ -1514,24 +1628,29 @@ class SupportedSurfaceCombinationTest {
         cameraMode: Int = CameraMode.DEFAULT,
         useCasesExpectedDynamicRangeMap: Map<UseCase, DynamicRange> = emptyMap(),
         supportedOutputFormats: IntArray? = null,
+        supportedHighSpeedSizeAndFpsMap: Map<Size, List<Range<Int>>>? = null,
         dynamicRangeProfiles: DynamicRangeProfiles? = null,
         default10BitProfile: Long? = null,
         isPreviewStabilizationOn: Boolean = false,
-        hasVideoCapture: Boolean = false
+        hasVideoCapture: Boolean = false,
+        expectedSessionType: Int = SESSION_TYPE_REGULAR
     ): Pair<Map<UseCaseConfig<*>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>> {
         setupCamera(
             hardwareLevel = hardwareLevel,
             capabilities = capabilities,
             dynamicRangeProfiles = dynamicRangeProfiles,
             default10BitProfile = default10BitProfile,
-            supportedFormats = supportedOutputFormats
+            supportedFormats = supportedOutputFormats,
+            supportedHighSpeedSizeAndFpsMap = supportedHighSpeedSizeAndFpsMap,
         )
         val supportedSurfaceCombination =
             SupportedSurfaceCombination(context, fakeCameraMetadata, mockEncoderProfilesAdapter)
 
         val useCaseConfigMap = getUseCaseToConfigMap(useCasesExpectedResultMap.keys.toList())
         val useCaseConfigToOutputSizesMap =
-            getUseCaseConfigToOutputSizesMap(useCaseConfigMap.values.toList())
+            useCaseConfigMap.entries.associate { (useCase, config) ->
+                config to (useCasesOutputSizesMap?.get(useCase) ?: supportedSizes.toList())
+            }
         val resultPair =
             supportedSurfaceCombination.getSuggestedStreamSpecifications(
                 cameraMode,
@@ -1560,7 +1679,10 @@ class SupportedSurfaceCombinationTest {
                     .isEqualTo(compareExpectedFps)
             }
             val zslDisabled = suggestedStreamSpecsForNewUseCases[useCaseConfigMap[it]]!!.zslDisabled
-            assertThat(zslDisabled == hasVideoCapture)
+            assertThat(zslDisabled).isEqualTo(hasVideoCapture)
+
+            val sessionType = suggestedStreamSpecsForNewUseCases[useCaseConfigMap[it]]!!.sessionType
+            assertThat(sessionType).isEqualTo(expectedSessionType)
         }
 
         useCasesExpectedDynamicRangeMap.keys.forEach {
@@ -1610,17 +1732,6 @@ class SupportedSurfaceCombinationTest {
                 useCases.forEach { put(it, it.currentConfig) }
             }
         return useCaseConfigMap
-    }
-
-    private fun getUseCaseConfigToOutputSizesMap(
-        useCaseConfigs: List<UseCaseConfig<*>>
-    ): Map<UseCaseConfig<*>, List<Size>> {
-        val resultMap =
-            mutableMapOf<UseCaseConfig<*>, List<Size>>().apply {
-                useCaseConfigs.forEach { put(it, supportedSizes.toList()) }
-            }
-
-        return resultMap
     }
 
     /** Helper function that returns whether size is <= maxSize */
@@ -1777,10 +1888,7 @@ class SupportedSurfaceCombinationTest {
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun check10BitDynamicRangeCombinationsSupported() {
-        setupCamera(
-            capabilities =
-                intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT)
-        )
+        setupCamera(capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT))
         val supportedSurfaceCombination =
             SupportedSurfaceCombination(context, fakeCameraMetadata, mockEncoderProfilesAdapter)
 
@@ -1789,7 +1897,7 @@ class SupportedSurfaceCombinationTest {
                     supportedSurfaceCombination.checkSupported(
                         SupportedSurfaceCombination.FeatureSettings(
                             CameraMode.DEFAULT,
-                            DynamicRange.BIT_DEPTH_10_BIT
+                            BIT_DEPTH_10_BIT
                         ),
                         it.surfaceConfigList
                     )
@@ -1802,10 +1910,7 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun getSupportedStreamSpecThrows_whenUsingUnsupportedDynamicRange() {
         val useCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                dynamicRange = DynamicRange.HDR_UNSPECIFIED_10_BIT
-            )
+            createUseCase(CaptureType.PREVIEW, dynamicRange = DynamicRange.HDR_UNSPECIFIED_10_BIT)
         val useCaseExpectedResultMap =
             mapOf(
                 useCase to Size(0, 0) // Should throw before verifying size
@@ -1814,8 +1919,7 @@ class SupportedSurfaceCombinationTest {
         Assert.assertThrows(IllegalArgumentException::class.java) {
             getSuggestedSpecsAndVerify(
                 useCaseExpectedResultMap,
-                capabilities =
-                    intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT)
+                capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT)
             )
         }
     }
@@ -1826,10 +1930,7 @@ class SupportedSurfaceCombinationTest {
         Shadows.shadowOf(context.packageManager)
             .setSystemFeature(PackageManager.FEATURE_CAMERA_CONCURRENT, true)
         val useCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                dynamicRange = DynamicRange.HDR_UNSPECIFIED_10_BIT
-            )
+            createUseCase(CaptureType.PREVIEW, dynamicRange = DynamicRange.HDR_UNSPECIFIED_10_BIT)
         val useCaseExpectedSizeMap =
             mapOf(
                 useCase to Size(0, 0) // Should throw before verifying size
@@ -1850,10 +1951,7 @@ class SupportedSurfaceCombinationTest {
         Shadows.shadowOf(context.packageManager)
             .setSystemFeature(PackageManager.FEATURE_CAMERA_CONCURRENT, true)
         val useCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                dynamicRange = DynamicRange.HDR_UNSPECIFIED_10_BIT
-            )
+            createUseCase(CaptureType.PREVIEW, dynamicRange = DynamicRange.HDR_UNSPECIFIED_10_BIT)
         val useCaseExpectedSizeMap =
             mapOf(
                 useCase to Size(0, 0) // Should throw before verifying size
@@ -1872,18 +1970,14 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun dynamicRangeResolver_returnsHlg_dueToMandatory10Bit() {
         val useCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                dynamicRange = DynamicRange.HDR_UNSPECIFIED_10_BIT
-            )
+            createUseCase(CaptureType.PREVIEW, dynamicRange = DynamicRange.HDR_UNSPECIFIED_10_BIT)
         val useCaseExpectedSizeMap = mapOf(useCase to maximumSize)
-        val useCaseExpectedDynamicRangeMap = mapOf(useCase to DynamicRange.HLG_10_BIT)
+        val useCaseExpectedDynamicRangeMap = mapOf(useCase to HLG_10_BIT)
 
         getSuggestedSpecsAndVerify(
             useCaseExpectedSizeMap,
             dynamicRangeProfiles = HLG10_CONSTRAINED,
-            capabilities =
-                intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
+            capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
             useCasesExpectedDynamicRangeMap = useCaseExpectedDynamicRangeMap
         )
     }
@@ -1892,18 +1986,14 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun dynamicRangeResolver_returnsHdr10_dueToRecommended10BitDynamicRange() {
         val useCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                dynamicRange = DynamicRange.HDR_UNSPECIFIED_10_BIT
-            )
+            createUseCase(CaptureType.PREVIEW, dynamicRange = DynamicRange.HDR_UNSPECIFIED_10_BIT)
         val useCaseExpectedSizeMap = mapOf(useCase to maximumSize)
         val useCaseExpectedDynamicRangeMap = mapOf(useCase to DynamicRange.HDR10_10_BIT)
 
         getSuggestedSpecsAndVerify(
             useCaseExpectedSizeMap,
             dynamicRangeProfiles = HDR10_UNCONSTRAINED,
-            capabilities =
-                intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
+            capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
             useCasesExpectedDynamicRangeMap = useCaseExpectedDynamicRangeMap,
             default10BitProfile = DynamicRangeProfiles.HDR10
         )
@@ -1914,7 +2004,7 @@ class SupportedSurfaceCombinationTest {
     fun dynamicRangeResolver_returnsDolbyVision8_dueToSupportedDynamicRanges() {
         val useCase =
             createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
+                CaptureType.PREVIEW,
                 dynamicRange =
                     DynamicRange(
                         DynamicRange.ENCODING_HDR_UNSPECIFIED,
@@ -1936,7 +2026,7 @@ class SupportedSurfaceCombinationTest {
     fun dynamicRangeResolver_returnsDolbyVision8_fromUnspecifiedBitDepth() {
         val useCase =
             createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
+                CaptureType.PREVIEW,
                 dynamicRange =
                     DynamicRange(
                         DynamicRange.ENCODING_DOLBY_VISION,
@@ -1958,7 +2048,7 @@ class SupportedSurfaceCombinationTest {
     fun dynamicRangeResolver_returnsDolbyVision10_fromUnspecifiedBitDepth() {
         val useCase =
             createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
+                CaptureType.PREVIEW,
                 dynamicRange =
                     DynamicRange(
                         DynamicRange.ENCODING_DOLBY_VISION,
@@ -1971,8 +2061,7 @@ class SupportedSurfaceCombinationTest {
         getSuggestedSpecsAndVerify(
             useCaseExpectedSizeMap,
             dynamicRangeProfiles = DOLBY_VISION_10B_UNCONSTRAINED,
-            capabilities =
-                intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
+            capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
             useCasesExpectedDynamicRangeMap = useCaseExpectedDynamicRangeMap
         )
     }
@@ -1982,7 +2071,7 @@ class SupportedSurfaceCombinationTest {
     fun dynamicRangeResolver_returnsDolbyVision8_fromUnspecifiedHdrWithUnspecifiedBitDepth() {
         val useCase =
             createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
+                CaptureType.PREVIEW,
                 dynamicRange =
                     DynamicRange(
                         DynamicRange.ENCODING_HDR_UNSPECIFIED,
@@ -2004,7 +2093,7 @@ class SupportedSurfaceCombinationTest {
     fun dynamicRangeResolver_returnsDolbyVision10_fromUnspecifiedHdrWithUnspecifiedBitDepth() {
         val useCase =
             createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
+                CaptureType.PREVIEW,
                 dynamicRange =
                     DynamicRange(
                         DynamicRange.ENCODING_HDR_UNSPECIFIED,
@@ -2017,8 +2106,7 @@ class SupportedSurfaceCombinationTest {
         getSuggestedSpecsAndVerify(
             useCaseExpectedSizeMap,
             dynamicRangeProfiles = DOLBY_VISION_CONSTRAINED,
-            capabilities =
-                intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
+            capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
             useCasesExpectedDynamicRangeMap = useCaseExpectedDynamicRangeMap,
             default10BitProfile = DynamicRangeProfiles.DOLBY_VISION_10B_HDR_OEM
         )
@@ -2027,14 +2115,10 @@ class SupportedSurfaceCombinationTest {
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun dynamicRangeResolver_returnsDolbyVision8_withUndefinedBitDepth_andFullyDefinedHlg10() {
-        val videoUseCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE,
-                dynamicRange = DynamicRange.HLG_10_BIT
-            )
+        val videoUseCase = createUseCase(CaptureType.VIDEO_CAPTURE, dynamicRange = HLG_10_BIT)
         val previewUseCase =
             createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
+                CaptureType.PREVIEW,
                 dynamicRange =
                     DynamicRange(
                         DynamicRange.ENCODING_DOLBY_VISION,
@@ -2044,16 +2128,12 @@ class SupportedSurfaceCombinationTest {
         val useCaseExpectedSizeMap =
             mutableMapOf(videoUseCase to recordSize, previewUseCase to previewSize)
         val useCaseExpectedDynamicRangeMap =
-            mapOf(
-                videoUseCase to DynamicRange.HLG_10_BIT,
-                previewUseCase to DynamicRange.DOLBY_VISION_8_BIT
-            )
+            mapOf(videoUseCase to HLG_10_BIT, previewUseCase to DynamicRange.DOLBY_VISION_8_BIT)
 
         getSuggestedSpecsAndVerify(
             useCaseExpectedSizeMap,
             dynamicRangeProfiles = DOLBY_VISION_8B_UNCONSTRAINED_HLG10_UNCONSTRAINED,
-            capabilities =
-                intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
+            capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
             useCasesExpectedDynamicRangeMap = useCaseExpectedDynamicRangeMap
         )
     }
@@ -2064,13 +2144,13 @@ class SupportedSurfaceCombinationTest {
         // VideoCapture partially defined dynamic range
         val videoUseCase =
             createUseCase(
-                UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE,
+                CaptureType.VIDEO_CAPTURE,
                 dynamicRange = DynamicRange.HDR_UNSPECIFIED_10_BIT
             )
         // Preview fully defined dynamic range
         val previewUseCase =
             createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
+                CaptureType.PREVIEW,
                 dynamicRange = DynamicRange.DOLBY_VISION_8_BIT,
             )
         val useCaseExpectedSizeMap =
@@ -2084,8 +2164,7 @@ class SupportedSurfaceCombinationTest {
         getSuggestedSpecsAndVerify(
             useCaseExpectedSizeMap,
             dynamicRangeProfiles = DOLBY_VISION_CONSTRAINED,
-            capabilities =
-                intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
+            capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
             useCasesExpectedDynamicRangeMap = useCaseExpectedDynamicRangeMap
         )
     }
@@ -2096,25 +2175,21 @@ class SupportedSurfaceCombinationTest {
         // VideoCapture partially defined dynamic range
         val videoUseCase =
             createUseCase(
-                UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE,
+                CaptureType.VIDEO_CAPTURE,
                 dynamicRange = DynamicRange.HDR_UNSPECIFIED_10_BIT
             )
         // Preview unspecified dynamic range
-        val previewUseCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW)
+        val previewUseCase = createUseCase(CaptureType.PREVIEW)
 
         val useCaseExpectedSizeMap =
             mutableMapOf(videoUseCase to recordSize, previewUseCase to previewSize)
         val useCaseExpectedDynamicRangeMap =
-            mapOf(
-                previewUseCase to DynamicRange.HLG_10_BIT,
-                videoUseCase to DynamicRange.HLG_10_BIT
-            )
+            mapOf(previewUseCase to HLG_10_BIT, videoUseCase to HLG_10_BIT)
 
         getSuggestedSpecsAndVerify(
             useCaseExpectedSizeMap,
             dynamicRangeProfiles = HLG10_UNCONSTRAINED,
-            capabilities =
-                intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
+            capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
             useCasesExpectedDynamicRangeMap = useCaseExpectedDynamicRangeMap
         )
     }
@@ -2123,7 +2198,7 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun dynamicRangeResolver_resolvesUnspecifiedDynamicRangeToSdr() {
         // Preview unspecified dynamic range
-        val useCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW)
+        val useCase = createUseCase(CaptureType.PREVIEW)
 
         val useCaseExpectedSizeMap = mutableMapOf(useCase to maximumSize)
         val useCaseExpectedDynamicRangeMap = mapOf(useCase to DynamicRange.SDR)
@@ -2131,8 +2206,7 @@ class SupportedSurfaceCombinationTest {
         getSuggestedSpecsAndVerify(
             useCaseExpectedSizeMap,
             dynamicRangeProfiles = HLG10_CONSTRAINED,
-            capabilities =
-                intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
+            capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
             useCasesExpectedDynamicRangeMap = useCaseExpectedDynamicRangeMap
         )
     }
@@ -2140,7 +2214,7 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun dynamicRangeResolver_resolvesToSdr_when10BitNotSupported() {
         // Preview unspecified dynamic range
-        val useCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW)
+        val useCase = createUseCase(CaptureType.PREVIEW)
 
         val useCaseExpectedSizeMap = mutableMapOf(useCase to maximumSize)
         val useCaseExpectedDynamicRangeMap = mapOf(useCase to DynamicRange.SDR)
@@ -2156,7 +2230,7 @@ class SupportedSurfaceCombinationTest {
         // Preview unspecified dynamic range
         val useCase =
             createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
+                CaptureType.PREVIEW,
                 dynamicRange =
                     DynamicRange(DynamicRange.ENCODING_SDR, DynamicRange.BIT_DEPTH_UNSPECIFIED)
             )
@@ -2176,13 +2250,13 @@ class SupportedSurfaceCombinationTest {
         // VideoCapture has 10-bit HDR range with constraint for 8-bit non-SDR range
         val videoUseCase =
             createUseCase(
-                UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE,
+                CaptureType.VIDEO_CAPTURE,
                 dynamicRange = DynamicRange.DOLBY_VISION_10_BIT
             )
         // Preview unspecified encoding but 8-bit bit depth
         val previewUseCase =
             createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
+                CaptureType.PREVIEW,
                 dynamicRange =
                     DynamicRange(DynamicRange.ENCODING_UNSPECIFIED, DynamicRange.BIT_DEPTH_8_BIT)
             )
@@ -2199,8 +2273,7 @@ class SupportedSurfaceCombinationTest {
         getSuggestedSpecsAndVerify(
             useCaseExpectedSizeMap,
             useCasesExpectedDynamicRangeMap = useCaseExpectedDynamicRangeMap,
-            capabilities =
-                intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
+            capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
             dynamicRangeProfiles = DOLBY_VISION_CONSTRAINED
         )
     }
@@ -2210,7 +2283,7 @@ class SupportedSurfaceCombinationTest {
     fun dynamicRangeResolver_resolvesToSdr_forUnspecified8Bit_whenNoOtherDynamicRangesPresent() {
         val useCase =
             createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
+                CaptureType.PREVIEW,
                 dynamicRange =
                     DynamicRange(DynamicRange.ENCODING_UNSPECIFIED, DynamicRange.BIT_DEPTH_8_BIT)
             )
@@ -2231,16 +2304,10 @@ class SupportedSurfaceCombinationTest {
     fun dynamicRangeResolver_resolvesUnspecified8BitToDolbyVision8Bit_whenAlreadyPresent() {
         // VideoCapture fully resolved Dolby Vision 8-bit
         val videoUseCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE,
-                dynamicRange = DynamicRange.DOLBY_VISION_8_BIT
-            )
+            createUseCase(CaptureType.VIDEO_CAPTURE, dynamicRange = DynamicRange.DOLBY_VISION_8_BIT)
         // Preview unspecified encoding / 8-bit
         val previewUseCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                dynamicRange = DynamicRange.UNSPECIFIED
-            )
+            createUseCase(CaptureType.PREVIEW, dynamicRange = DynamicRange.UNSPECIFIED)
 
         // Since there are no 10-bit dynamic ranges, the 10-bit resolution table isn't used.
         // Instead, this will use the camera default LIMITED table which is limited to preview
@@ -2265,11 +2332,7 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun tenBitTable_isUsed_whenAttaching10BitUseCaseToAlreadyAttachedSdrUseCases() {
         // JPEG use case can't be attached with an existing PRIV + YUV in the 10-bit tables
-        val useCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE,
-                dynamicRange = DynamicRange.HLG_10_BIT
-            )
+        val useCase = createUseCase(CaptureType.IMAGE_CAPTURE, dynamicRange = HLG_10_BIT)
         val useCaseExpectedSizeMap =
             mapOf(
                 // Size would be valid for LIMITED table
@@ -2278,26 +2341,25 @@ class SupportedSurfaceCombinationTest {
         // existing surfaces (Preview + ImageAnalysis)
         val attachedPreview =
             AttachedSurfaceInfo.create(
-                SurfaceConfig.create(
-                    SurfaceConfig.ConfigType.PRIV,
-                    SurfaceConfig.ConfigSize.PREVIEW
-                ),
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW),
                 ImageFormat.PRIVATE,
                 previewSize,
                 DynamicRange.SDR,
-                listOf(UseCaseConfigFactory.CaptureType.PREVIEW),
+                listOf(CaptureType.PREVIEW),
                 useCase.currentConfig,
-                /*targetFrameRate=*/ null
+                /*targetFrameRate=*/ null,
+                FRAME_RATE_RANGE_UNSPECIFIED
             )
         val attachedAnalysis =
             AttachedSurfaceInfo.create(
-                SurfaceConfig.create(SurfaceConfig.ConfigType.YUV, SurfaceConfig.ConfigSize.RECORD),
+                SurfaceConfig.create(ConfigType.YUV, ConfigSize.RECORD),
                 ImageFormat.YUV_420_888,
                 recordSize,
                 DynamicRange.SDR,
-                listOf(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS),
+                listOf(CaptureType.IMAGE_ANALYSIS),
                 useCase.currentConfig,
-                /*targetFrameRate=*/ null
+                /*targetFrameRate=*/ null,
+                FRAME_RATE_RANGE_UNSPECIFIED
             )
 
         Assert.assertThrows(IllegalArgumentException::class.java) {
@@ -2305,10 +2367,9 @@ class SupportedSurfaceCombinationTest {
                 useCaseExpectedSizeMap,
                 attachedSurfaceInfoList = listOf(attachedPreview, attachedAnalysis),
                 // LIMITED allows this combination, but 10-bit table does not
-                hardwareLevel = CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+                hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
                 dynamicRangeProfiles = HLG10_SDR_CONSTRAINED,
-                capabilities =
-                    intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT)
+                capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT)
             )
         }
     }
@@ -2316,11 +2377,7 @@ class SupportedSurfaceCombinationTest {
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun dynamicRangeConstraints_causeAutoResolutionToThrow() {
-        val useCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE,
-                dynamicRange = DynamicRange.HLG_10_BIT
-            )
+        val useCase = createUseCase(CaptureType.IMAGE_CAPTURE, dynamicRange = HLG_10_BIT)
         val useCaseExpectedSizeMap =
             mapOf(
                 // Size would be valid for 10-bit table within constraints
@@ -2329,29 +2386,25 @@ class SupportedSurfaceCombinationTest {
         // existing surfaces (PRIV + PRIV)
         val attachedPriv1 =
             AttachedSurfaceInfo.create(
-                SurfaceConfig.create(
-                    SurfaceConfig.ConfigType.PRIV,
-                    SurfaceConfig.ConfigSize.PREVIEW
-                ),
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW),
                 ImageFormat.PRIVATE,
                 previewSize,
                 DynamicRange.HDR10_10_BIT,
-                listOf(UseCaseConfigFactory.CaptureType.PREVIEW),
+                listOf(CaptureType.PREVIEW),
                 useCase.currentConfig,
-                /*targetFrameRate=*/ null
+                /*targetFrameRate=*/ null,
+                FRAME_RATE_RANGE_UNSPECIFIED
             )
         val attachedPriv2 =
             AttachedSurfaceInfo.create(
-                SurfaceConfig.create(
-                    SurfaceConfig.ConfigType.PRIV,
-                    SurfaceConfig.ConfigSize.RECORD
-                ),
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.RECORD),
                 ImageFormat.YUV_420_888,
                 recordSize,
                 DynamicRange.HDR10_PLUS_10_BIT,
-                listOf(UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE),
+                listOf(CaptureType.VIDEO_CAPTURE),
                 useCase.currentConfig,
-                /*targetFrameRate=*/ null
+                /*targetFrameRate=*/ null,
+                FRAME_RATE_RANGE_UNSPECIFIED
             )
 
         // These constraints say HDR10 and HDR10_PLUS can be combined, but not HLG
@@ -2375,8 +2428,7 @@ class SupportedSurfaceCombinationTest {
                 useCaseExpectedSizeMap,
                 attachedSurfaceInfoList = listOf(attachedPriv1, attachedPriv2),
                 dynamicRangeProfiles = constraintsTable,
-                capabilities =
-                    intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT)
+                capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT)
             )
         }
     }
@@ -2385,11 +2437,7 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun canAttachHlgDynamicRange_toExistingSdrStreams() {
         // JPEG use case can be attached with an existing PRIV + PRIV in the 10-bit tables
-        val useCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE,
-                dynamicRange = DynamicRange.HLG_10_BIT
-            )
+        val useCase = createUseCase(CaptureType.IMAGE_CAPTURE, dynamicRange = HLG_10_BIT)
         val useCaseExpectedSizeMap =
             mapOf(
                 // Size is valid for 10-bit table within constraints
@@ -2398,37 +2446,32 @@ class SupportedSurfaceCombinationTest {
         // existing surfaces (PRIV + PRIV)
         val attachedPriv1 =
             AttachedSurfaceInfo.create(
-                SurfaceConfig.create(
-                    SurfaceConfig.ConfigType.PRIV,
-                    SurfaceConfig.ConfigSize.PREVIEW
-                ),
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW),
                 ImageFormat.PRIVATE,
                 previewSize,
                 DynamicRange.SDR,
-                listOf(UseCaseConfigFactory.CaptureType.PREVIEW),
+                listOf(CaptureType.PREVIEW),
                 useCase.currentConfig,
-                /*targetFrameRate=*/ null
+                /*targetFrameRate=*/ null,
+                FRAME_RATE_RANGE_UNSPECIFIED
             )
         val attachedPriv2 =
             AttachedSurfaceInfo.create(
-                SurfaceConfig.create(
-                    SurfaceConfig.ConfigType.PRIV,
-                    SurfaceConfig.ConfigSize.RECORD
-                ),
+                SurfaceConfig.create(ConfigType.PRIV, ConfigSize.RECORD),
                 ImageFormat.YUV_420_888,
                 recordSize,
                 DynamicRange.SDR,
-                listOf(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS),
+                listOf(CaptureType.IMAGE_ANALYSIS),
                 useCase.currentConfig,
-                /*targetFrameRate=*/ null
+                /*targetFrameRate=*/ null,
+                FRAME_RATE_RANGE_UNSPECIFIED
             )
 
         getSuggestedSpecsAndVerify(
             useCaseExpectedSizeMap,
             attachedSurfaceInfoList = listOf(attachedPriv1, attachedPriv2),
             dynamicRangeProfiles = HLG10_SDR_CONSTRAINED,
-            capabilities =
-                intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT)
+            capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT)
         )
     }
 
@@ -2436,14 +2479,9 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun requiredSdrDynamicRangeThrows_whenCombinedWithConstrainedHlg() {
         // VideoCapture HLG dynamic range
-        val videoUseCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE,
-                dynamicRange = DynamicRange.HLG_10_BIT
-            )
+        val videoUseCase = createUseCase(CaptureType.VIDEO_CAPTURE, dynamicRange = HLG_10_BIT)
         // Preview SDR dynamic range
-        val previewUseCase =
-            createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW, dynamicRange = DynamicRange.SDR)
+        val previewUseCase = createUseCase(CaptureType.PREVIEW, dynamicRange = DynamicRange.SDR)
 
         val useCaseExpectedSizeMap =
             mutableMapOf(videoUseCase to recordSize, previewUseCase to previewSize)
@@ -2453,8 +2491,7 @@ class SupportedSurfaceCombinationTest {
             getSuggestedSpecsAndVerify(
                 useCaseExpectedSizeMap,
                 dynamicRangeProfiles = HLG10_CONSTRAINED,
-                capabilities =
-                    intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
+                capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
             )
         }
     }
@@ -2463,14 +2500,9 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun requiredSdrDynamicRange_canBeCombinedWithUnconstrainedHlg() {
         // VideoCapture HLG dynamic range
-        val videoUseCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE,
-                dynamicRange = DynamicRange.HLG_10_BIT
-            )
+        val videoUseCase = createUseCase(CaptureType.VIDEO_CAPTURE, dynamicRange = HLG_10_BIT)
         // Preview SDR dynamic range
-        val previewUseCase =
-            createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW, dynamicRange = DynamicRange.SDR)
+        val previewUseCase = createUseCase(CaptureType.PREVIEW, dynamicRange = DynamicRange.SDR)
 
         val useCaseExpectedSizeMap =
             mutableMapOf(videoUseCase to recordSize, previewUseCase to previewSize)
@@ -2479,8 +2511,7 @@ class SupportedSurfaceCombinationTest {
         getSuggestedSpecsAndVerify(
             useCaseExpectedSizeMap,
             dynamicRangeProfiles = HLG10_UNCONSTRAINED,
-            capabilities =
-                intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
+            capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
         )
     }
 
@@ -2489,16 +2520,10 @@ class SupportedSurfaceCombinationTest {
     fun multiple10BitUnconstrainedDynamicRanges_canBeCombined() {
         // VideoCapture HDR10 dynamic range
         val videoUseCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE,
-                dynamicRange = DynamicRange.HDR10_10_BIT
-            )
+            createUseCase(CaptureType.VIDEO_CAPTURE, dynamicRange = DynamicRange.HDR10_10_BIT)
         // Preview HDR10_PLUS dynamic range
         val previewUseCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                dynamicRange = DynamicRange.HDR10_PLUS_10_BIT
-            )
+            createUseCase(CaptureType.PREVIEW, dynamicRange = DynamicRange.HDR10_PLUS_10_BIT)
 
         val useCaseExpectedSizeMap =
             mutableMapOf(videoUseCase to recordSize, previewUseCase to previewSize)
@@ -2507,8 +2532,7 @@ class SupportedSurfaceCombinationTest {
         getSuggestedSpecsAndVerify(
             useCaseExpectedSizeMap,
             dynamicRangeProfiles = HDR10_HDR10_PLUS_UNCONSTRAINED,
-            capabilities =
-                intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
+            capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
         )
     }
 
@@ -2521,48 +2545,32 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun getSupportedOutputSizes_single_valid_targetFPS() {
         // a valid target means the device is capable of that fps
-        val useCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(25, 30)
-            )
+        val useCase = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(25, 30))
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply { put(useCase, Size(3840, 2160)) }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
         )
     }
 
     @Test
     fun getSuggestedStreamSpec_single_invalid_targetFPS() {
         // an invalid target means the device would neve be able to reach that fps
-        val useCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(65, 70)
-            )
+        val useCase = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(65, 70))
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply { put(useCase, Size(800, 450)) }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
         )
     }
 
     @Test
     fun getSuggestedStreamSpec_multiple_targetFPS_first_is_larger() {
         // a valid target means the device is capable of that fps
-        val useCase1 =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(30, 35)
-            )
-        val useCase2 =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(15, 25)
-            )
+        val useCase1 = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(30, 35))
+        val useCase2 = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(15, 25))
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 // both selected size should be no larger than 1920 x 1445
@@ -2579,16 +2587,8 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun getSuggestedStreamSpec_multiple_targetFPS_first_is_smaller() {
         // a valid target means the device is capable of that fps
-        val useCase1 =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(30, 35)
-            )
-        val useCase2 =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(45, 50)
-            )
+        val useCase1 = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(30, 35))
+        val useCase2 = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(45, 50))
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 // both selected size should be no larger than 1920 x 1440
@@ -2597,7 +2597,7 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             compareWithAtMost = true
         )
     }
@@ -2605,16 +2605,8 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun getSuggestedStreamSpec_multiple_targetFPS_intersect() {
         // first and second new use cases have target fps that intersect each other
-        val useCase1 =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(30, 40)
-            )
-        val useCase2 =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(35, 45)
-            )
+        val useCase1 = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(30, 40))
+        val useCase2 = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(35, 45))
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 // effective target fps becomes 35-40
@@ -2624,7 +2616,7 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             compareWithAtMost = true
         )
     }
@@ -2632,12 +2624,8 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun getSuggestedStreamSpec_multiple_cases_first_has_targetFPS() {
         // first new use case has a target fps, second new use case does not
-        val useCase1 =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(30, 35)
-            )
-        val useCase2 = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW)
+        val useCase1 = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(30, 35))
+        val useCase2 = createUseCase(CaptureType.PREVIEW)
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 // both selected size should be no larger than 1920 x 1440
@@ -2646,7 +2634,7 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             compareWithAtMost = true
         )
     }
@@ -2654,12 +2642,8 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun getSuggestedStreamSpec_multiple_cases_second_has_targetFPS() {
         // second new use case does not have a target fps, first new use case does not
-        val useCase1 = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW)
-        val useCase2 =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(30, 35)
-            )
+        val useCase1 = createUseCase(CaptureType.PREVIEW)
+        val useCase2 = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(30, 35))
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 // both selected size should be no larger than 1920 x 1440
@@ -2668,7 +2652,7 @@ class SupportedSurfaceCombinationTest {
             }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             compareWithAtMost = true
         )
     }
@@ -2676,7 +2660,7 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun getSuggestedStreamSpec_attached_with_targetFPS_no_new_targetFPS() {
         // existing surface with target fps + new use case without a target fps
-        val useCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW)
+        val useCase = createUseCase(CaptureType.PREVIEW)
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 // size should be no larger than 1280 x 960
@@ -2685,21 +2669,19 @@ class SupportedSurfaceCombinationTest {
         // existing surface w/ target fps
         val attachedSurfaceInfo =
             AttachedSurfaceInfo.create(
-                SurfaceConfig.create(
-                    SurfaceConfig.ConfigType.JPEG,
-                    SurfaceConfig.ConfigSize.PREVIEW
-                ),
+                SurfaceConfig.create(ConfigType.JPEG, ConfigSize.PREVIEW),
                 ImageFormat.JPEG,
                 Size(1280, 720),
                 DynamicRange.SDR,
-                listOf(UseCaseConfigFactory.CaptureType.PREVIEW),
+                listOf(CaptureType.PREVIEW),
                 useCase.currentConfig,
-                Range(40, 50)
+                Range(40, 50),
+                FRAME_RATE_RANGE_UNSPECIFIED
             )
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
             attachedSurfaceInfoList = listOf(attachedSurfaceInfo),
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             compareWithAtMost = true
         )
     }
@@ -2707,11 +2689,7 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun getSuggestedStreamSpec_attached_with_targetFPS_and_new_targetFPS_no_intersect() {
         // existing surface with target fps + new use case with target fps that does not intersect
-        val useCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(30, 35)
-            )
+        val useCase = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(30, 35))
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 // size of new surface should be no larger than 1280 x 960
@@ -2720,21 +2698,19 @@ class SupportedSurfaceCombinationTest {
         // existing surface w/ target fps
         val attachedSurfaceInfo =
             AttachedSurfaceInfo.create(
-                SurfaceConfig.create(
-                    SurfaceConfig.ConfigType.JPEG,
-                    SurfaceConfig.ConfigSize.PREVIEW
-                ),
+                SurfaceConfig.create(ConfigType.JPEG, ConfigSize.PREVIEW),
                 ImageFormat.JPEG,
                 Size(1280, 720),
                 DynamicRange.SDR,
-                listOf(UseCaseConfigFactory.CaptureType.PREVIEW),
+                listOf(CaptureType.PREVIEW),
                 useCase.currentConfig,
-                Range(40, 50)
+                Range(40, 50),
+                FRAME_RATE_RANGE_UNSPECIFIED
             )
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
             attachedSurfaceInfoList = listOf(attachedSurfaceInfo),
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             compareWithAtMost = true
         )
     }
@@ -2742,11 +2718,7 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun getSuggestedStreamSpec_attached_with_targetFPS_and_new_targetFPS_with_intersect() {
         // existing surface with target fps + new use case with target fps that intersect each other
-        val useCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(45, 50)
-            )
+        val useCase = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(45, 50))
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 // size of new surface should be no larger than 1280 x 720
@@ -2755,21 +2727,19 @@ class SupportedSurfaceCombinationTest {
         // existing surface w/ target fps
         val attachedSurfaceInfo =
             AttachedSurfaceInfo.create(
-                SurfaceConfig.create(
-                    SurfaceConfig.ConfigType.JPEG,
-                    SurfaceConfig.ConfigSize.PREVIEW
-                ),
+                SurfaceConfig.create(ConfigType.JPEG, ConfigSize.PREVIEW),
                 ImageFormat.JPEG,
                 Size(1280, 720),
                 DynamicRange.SDR,
-                listOf(UseCaseConfigFactory.CaptureType.PREVIEW),
+                listOf(CaptureType.PREVIEW),
                 useCase.currentConfig,
-                Range(40, 50)
+                Range(40, 50),
+                FRAME_RATE_RANGE_UNSPECIFIED
             )
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
             attachedSurfaceInfoList = listOf(attachedSurfaceInfo),
-            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
             compareWithAtMost = true
         )
     }
@@ -2777,11 +2747,7 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun getSuggestedStreamSpec_has_device_supported_expectedFrameRateRange() {
         // use case with target fps
-        val useCase1 =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(15, 25)
-            )
+        val useCase1 = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(15, 25))
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply { put(useCase1, Size(4032, 3024)) }
         getSuggestedSpecsAndVerify(
@@ -2796,11 +2762,7 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun getSuggestedStreamSpec_has_exact_device_supported_expectedFrameRateRange() {
         // use case with target fps
-        val useCase1 =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(30, 40)
-            )
+        val useCase1 = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(30, 30))
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply { put(useCase1, Size(1920, 1440)) }
         getSuggestedSpecsAndVerify(
@@ -2809,17 +2771,13 @@ class SupportedSurfaceCombinationTest {
             compareWithAtMost = true,
             compareExpectedFps = Range(30, 30)
         )
-        // expected fps 30,30 because the fps ceiling is 30
+        // expected fps 30,30 because it is an exact intersection
     }
 
     @Test
     fun getSuggestedStreamSpec_has_no_device_supported_expectedFrameRateRange() {
         // use case with target fps
-        val useCase1 =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(65, 65)
-            )
+        val useCase1 = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(65, 65))
 
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply { put(useCase1, Size(800, 450)) }
@@ -2836,11 +2794,7 @@ class SupportedSurfaceCombinationTest {
     fun getSuggestedStreamSpec_has_multiple_device_supported_expectedFrameRateRange() {
 
         // use case with target fps
-        val useCase1 =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(36, 45)
-            )
+        val useCase1 = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(36, 45))
 
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply { put(useCase1, Size(1280, 960)) }
@@ -2861,11 +2815,7 @@ class SupportedSurfaceCombinationTest {
         // target fps is between ranges, but within device capability (for some reason lol)
 
         // use case with target fps
-        val useCase1 =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(26, 27)
-            )
+        val useCase1 = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(26, 27))
 
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply { put(useCase1, Size(1920, 1440)) }
@@ -2882,11 +2832,7 @@ class SupportedSurfaceCombinationTest {
     fun getSuggestedStreamSpec_has_no_device_intersection_equidistant_expectedFrameRateRange() {
 
         // use case with target fps
-        val useCase1 =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                targetFrameRate = Range<Int>(26, 26)
-            )
+        val useCase1 = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(26, 26))
 
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply { put(useCase1, Size(1920, 1440)) }
@@ -2906,7 +2852,7 @@ class SupportedSurfaceCombinationTest {
         // a valid target means the device is capable of that fps
 
         // use case with no target fps
-        val useCase1 = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW)
+        val useCase1 = createUseCase(CaptureType.PREVIEW)
 
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply { put(useCase1, Size(4032, 3024)) }
@@ -2926,7 +2872,7 @@ class SupportedSurfaceCombinationTest {
         // use case with no target fps
         val useCase1 =
             createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
+                CaptureType.PREVIEW,
                 targetFrameRate = StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
             )
 
@@ -3107,7 +3053,7 @@ class SupportedSurfaceCombinationTest {
     fun applyResolutionCorrectorWorkaroundCorrectly() {
         ReflectionHelpers.setStaticField(Build::class.java, "BRAND", "Samsung")
         ReflectionHelpers.setStaticField(Build::class.java, "MODEL", "SM-J710MN")
-        setupCamera(hardwareLevel = CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED)
+        setupCamera(hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED)
         val supportedSurfaceCombination =
             SupportedSurfaceCombination(context, fakeCameraMetadata, mockEncoderProfilesAdapter)
         val resultList =
@@ -3141,10 +3087,7 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun canPopulateStreamUseCaseStreamSpecOption_jpeg() {
         val jpegUseCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE,
-                streamUseCaseOverride = true
-            ) // JPEG
+            createUseCase(CaptureType.IMAGE_CAPTURE, streamUseCaseOverride = true) // JPEG
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply { put(jpegUseCase, landscapePixelArraySize) }
         val resultPair = getSuggestedSpecsAndVerify(useCaseExpectedResultMap)
@@ -3161,15 +3104,9 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun throwException_PopulateStreamUseCaseStreamSpecOption_notFullyOverride() {
         val jpegUseCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE,
-                streamUseCaseOverride = true
-            ) // JPEG
+            createUseCase(CaptureType.IMAGE_CAPTURE, streamUseCaseOverride = true) // JPEG
         val yuvUseCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                streamUseCaseOverride = false
-            ) // PREVIEW
+            createUseCase(CaptureType.PREVIEW, streamUseCaseOverride = false) // PREVIEW
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(jpegUseCase, landscapePixelArraySize)
@@ -3183,16 +3120,8 @@ class SupportedSurfaceCombinationTest {
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedCombination() {
-        val useCase1 =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                streamUseCaseOverride = true
-            ) // PREVIEW
-        val useCase2 =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.PREVIEW,
-                streamUseCaseOverride = true
-            ) // PREVIEW
+        val useCase1 = createUseCase(CaptureType.PREVIEW, streamUseCaseOverride = true) // PREVIEW
+        val useCase2 = createUseCase(CaptureType.PREVIEW, streamUseCaseOverride = true) // PREVIEW
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply {
                 put(useCase1, previewSize)
@@ -3223,10 +3152,7 @@ class SupportedSurfaceCombinationTest {
     @Test
     fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedOs() {
         val jpegUseCase =
-            createUseCase(
-                UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE,
-                streamUseCaseOverride = true
-            ) // JPEG
+            createUseCase(CaptureType.IMAGE_CAPTURE, streamUseCaseOverride = true) // JPEG
         val useCaseExpectedResultMap =
             mutableMapOf<UseCase, Size>().apply { put(jpegUseCase, landscapePixelArraySize) }
         val resultPair =
@@ -3242,6 +3168,168 @@ class SupportedSurfaceCombinationTest {
             .isFalse()
     }
 
+    @Config(minSdk = Build.VERSION_CODES.M)
+    @Test
+    fun getSuggestedStreamSpec_highSpeed_returnsCorrectSizeAndFpsRange() {
+        val targetHighSpeedFrameRate = Range.create(240, 240)
+        val previewUseCase =
+            createUseCase(
+                CaptureType.PREVIEW,
+                surfaceOccupancyPriority = 2,
+                targetHighSpeedFrameRate = targetHighSpeedFrameRate
+            )
+        val videoUseCase =
+            createUseCase(
+                CaptureType.VIDEO_CAPTURE,
+                surfaceOccupancyPriority = 5,
+                targetHighSpeedFrameRate = targetHighSpeedFrameRate
+            )
+        val useCasesOutputSizesMap =
+            mapOf(
+                previewUseCase to listOf(RESOLUTION_VGA, RESOLUTION_1080P, RESOLUTION_720P),
+                videoUseCase to listOf(RESOLUTION_1440P, RESOLUTION_720P, RESOLUTION_1080P)
+            )
+        // videoUseCase has higher surface priority so the expected size should be the first
+        // common size of videoUseCase. i.e. RESOLUTION_720P.
+        val useCaseExpectedResultMap =
+            mapOf(previewUseCase to RESOLUTION_720P, videoUseCase to RESOLUTION_720P)
+        getSuggestedSpecsAndVerifyForHighSpeed(
+            useCaseExpectedResultMap,
+            useCasesOutputSizesMap = useCasesOutputSizesMap,
+            compareExpectedFps = Range.create(240, 240)
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.M)
+    @Test
+    fun getSuggestedStreamSpec_highSpeed_singleSurface_returnsCorrectSizeAndClosestFps() {
+        val previewUseCase =
+            createUseCase(CaptureType.PREVIEW, targetHighSpeedFrameRate = Range.create(30, 480))
+        val useCasesOutputSizesMap = mapOf(previewUseCase to listOf(RESOLUTION_1080P))
+        val useCaseExpectedResultMap = mapOf(previewUseCase to RESOLUTION_1080P)
+        getSuggestedSpecsAndVerifyForHighSpeed(
+            useCaseExpectedResultMap,
+            useCasesOutputSizesMap = useCasesOutputSizesMap,
+            compareExpectedFps = Range.create(30, 240) // Find the closest supported fps.
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.M)
+    @Test
+    fun getSuggestedStreamSpec_highSpeed_multipleSurfaces_returnsCorrectSizeAndClosetMaxFps() {
+        val targetHighSpeedFrameRate = Range.create(30, 480)
+        val previewUseCase =
+            createUseCase(CaptureType.PREVIEW, targetHighSpeedFrameRate = targetHighSpeedFrameRate)
+        val videoUseCase =
+            createUseCase(
+                CaptureType.VIDEO_CAPTURE,
+                targetHighSpeedFrameRate = targetHighSpeedFrameRate
+            )
+        val useCasesOutputSizesMap =
+            mapOf(
+                previewUseCase to listOf(RESOLUTION_1080P),
+                videoUseCase to listOf(RESOLUTION_1080P)
+            )
+        val useCaseExpectedResultMap =
+            mapOf(previewUseCase to RESOLUTION_1080P, videoUseCase to RESOLUTION_1080P)
+        getSuggestedSpecsAndVerifyForHighSpeed(
+            useCaseExpectedResultMap,
+            useCasesOutputSizesMap = useCasesOutputSizesMap,
+            compareExpectedFps = Range.create(240, 240) // Find the closest max supported fps.
+        )
+    }
+
+    @Config(minSdk = 21, maxSdk = 22)
+    @Test
+    fun getSuggestedStreamSpec_highSpeed_unsupportedSdkVersion_throwException() {
+        val useCase =
+            createUseCase(CaptureType.PREVIEW, targetHighSpeedFrameRate = Range.create(240, 240))
+        val useCaseExpectedResultMap = mapOf(useCase to RESOLUTION_1080P)
+        Assert.assertThrows(IllegalArgumentException::class.java) {
+            getSuggestedSpecsAndVerifyForHighSpeed(useCaseExpectedResultMap)
+        }
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.M)
+    @Test
+    fun getSuggestedStreamSpec_highSpeed_useCasesWithDifferentFrameRate_throwException() {
+        val previewUseCase =
+            createUseCase(CaptureType.PREVIEW, targetHighSpeedFrameRate = Range.create(30, 120))
+        val videoUseCase =
+            createUseCase(
+                CaptureType.VIDEO_CAPTURE,
+                targetHighSpeedFrameRate = Range.create(120, 120)
+            )
+        val useCasesOutputSizesMap =
+            mapOf(
+                previewUseCase to listOf(RESOLUTION_1080P),
+                videoUseCase to listOf(RESOLUTION_1080P)
+            )
+        val useCaseExpectedResultMap =
+            mapOf(previewUseCase to RESOLUTION_1080P, videoUseCase to RESOLUTION_1080P)
+        Assert.assertThrows(IllegalArgumentException::class.java) {
+            getSuggestedSpecsAndVerifyForHighSpeed(
+                useCaseExpectedResultMap,
+                useCasesOutputSizesMap = useCasesOutputSizesMap
+            )
+        }
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.M)
+    @Test
+    fun getSuggestedStreamSpec_highSpeed_noCommonSize_throwException() {
+        val targetHighSpeedFrameRate = Range.create(240, 240)
+        val previewUseCase =
+            createUseCase(CaptureType.PREVIEW, targetHighSpeedFrameRate = targetHighSpeedFrameRate)
+        val videoUseCase =
+            createUseCase(
+                CaptureType.VIDEO_CAPTURE,
+                targetHighSpeedFrameRate = targetHighSpeedFrameRate
+            )
+        val useCasesOutputSizesMap =
+            mapOf(
+                previewUseCase to listOf(RESOLUTION_VGA, RESOLUTION_720P),
+                videoUseCase to listOf(RESOLUTION_1440P, RESOLUTION_1080P)
+            )
+        val useCaseExpectedResultMap =
+            mapOf(previewUseCase to RESOLUTION_VGA, videoUseCase to RESOLUTION_1440P)
+        Assert.assertThrows(IllegalArgumentException::class.java) {
+            getSuggestedSpecsAndVerifyForHighSpeed(
+                useCaseExpectedResultMap,
+                useCasesOutputSizesMap = useCasesOutputSizesMap
+            )
+        }
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.M)
+    @Test
+    fun getSuggestedStreamSpec_highSpeed_tooManyUseCases_throwException() {
+        val targetHighSpeedFrameRate = Range.create(240, 240)
+        val previewUseCase1 =
+            createUseCase(CaptureType.PREVIEW, targetHighSpeedFrameRate = targetHighSpeedFrameRate)
+        val previewUseCase2 =
+            createUseCase(CaptureType.PREVIEW, targetHighSpeedFrameRate = targetHighSpeedFrameRate)
+        val videoUseCase = createUseCase(CaptureType.VIDEO_CAPTURE)
+        val useCasesOutputSizesMap =
+            mapOf(
+                previewUseCase1 to listOf(RESOLUTION_1080P),
+                previewUseCase2 to listOf(RESOLUTION_1080P),
+                videoUseCase to listOf(RESOLUTION_1080P)
+            )
+        val useCaseExpectedResultMap =
+            mapOf(
+                previewUseCase1 to RESOLUTION_1080P,
+                previewUseCase2 to RESOLUTION_1080P,
+                videoUseCase to RESOLUTION_1080P
+            )
+        Assert.assertThrows(IllegalArgumentException::class.java) {
+            getSuggestedSpecsAndVerifyForHighSpeed(
+                useCaseExpectedResultMap,
+                useCasesOutputSizesMap = useCasesOutputSizesMap
+            )
+        }
+    }
+
     private fun setupCamera(
         hardwareLevel: Int = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
         sensorOrientation: Int = sensorOrientation90,
@@ -3249,6 +3337,7 @@ class SupportedSurfaceCombinationTest {
         supportedSizes: Array<Size> = this.supportedSizes,
         supportedFormats: IntArray? = null,
         highResolutionSupportedSizes: Array<Size>? = null,
+        supportedHighSpeedSizeAndFpsMap: Map<Size, List<Range<Int>>>? = null,
         maximumResolutionSupportedSizes: Array<Size>? = null,
         maximumResolutionHighResolutionSupportedSizes: Array<Size>? = null,
         dynamicRangeProfiles: DynamicRangeProfiles? = null,
@@ -3358,7 +3447,14 @@ class SupportedSurfaceCombinationTest {
             characteristics
         )
 
-        whenever(mockMap.getOutputSizes(ArgumentMatchers.anyInt())).thenReturn(supportedSizes)
+        whenever(
+                mockMap.getOutputSizes(
+                    ArgumentMatchers.intThat { format ->
+                        supportedFormats?.contains(format) != false
+                    }
+                )
+            )
+            .thenReturn(supportedSizes)
         // ImageFormat.PRIVATE was supported since API level 23. Before that, the supported
         // output sizes need to be retrieved via SurfaceTexture.class.
         whenever(mockMap.getOutputSizes(SurfaceTexture::class.java)).thenReturn(supportedSizes)
@@ -3371,6 +3467,36 @@ class SupportedSurfaceCombinationTest {
             if (Build.VERSION.SDK_INT >= 23) {
                 whenever(mockMap.getHighResolutionOutputSizes(ArgumentMatchers.anyInt()))
                     .thenReturn(it)
+            }
+        }
+
+        if (
+            supportedHighSpeedSizeAndFpsMap != null &&
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+        ) {
+            // Mock highSpeedVideoSizes
+            whenever(mockMap.highSpeedVideoSizes)
+                .thenReturn(supportedHighSpeedSizeAndFpsMap.keys.toTypedArray())
+
+            // Mock highSpeedVideoFpsRanges
+            val allFpsRanges = supportedHighSpeedSizeAndFpsMap.values.flatten().distinct()
+            whenever(mockMap.highSpeedVideoFpsRanges).thenReturn(allFpsRanges.toTypedArray())
+
+            // Mock getHighSpeedVideoSizesFor
+            allFpsRanges.forEach { fpsRange ->
+                val sizesForRange =
+                    supportedHighSpeedSizeAndFpsMap.entries
+                        .filter { (_, fpsRanges) -> fpsRanges.contains(fpsRange) }
+                        .map { it.key }
+                        .sortedWith(CompareSizesByArea(false)) // Descending order
+                        .toTypedArray()
+                whenever(mockMap.getHighSpeedVideoSizesFor(fpsRange)).thenReturn(sizesForRange)
+            }
+
+            // Mock getHighSpeedVideoFpsRangesFor
+            supportedHighSpeedSizeAndFpsMap.forEach { (size, fpsRanges) ->
+                whenever(mockMap.getHighSpeedVideoFpsRangesFor(size))
+                    .thenReturn(fpsRanges.toTypedArray())
             }
         }
 
@@ -3517,41 +3643,58 @@ class SupportedSurfaceCombinationTest {
         val cameraX: CameraX =
             try {
                 CameraXUtil.getOrCreateInstance(context) { cameraXConfig }.get()
-            } catch (e: ExecutionException) {
+            } catch (_: ExecutionException) {
                 throw IllegalStateException("Unable to initialize CameraX for test.")
-            } catch (e: InterruptedException) {
+            } catch (_: InterruptedException) {
                 throw IllegalStateException("Unable to initialize CameraX for test.")
             }
         useCaseConfigFactory = cameraX.defaultConfigFactory
     }
 
     private fun createUseCase(
-        captureType: UseCaseConfigFactory.CaptureType,
+        captureType: CaptureType,
         targetFrameRate: Range<Int>? = null,
-        dynamicRange: DynamicRange = DynamicRange.UNSPECIFIED
+        targetHighSpeedFrameRate: Range<Int>? = null,
+        dynamicRange: DynamicRange = DynamicRange.UNSPECIFIED,
+        surfaceOccupancyPriority: Int? = null
     ): UseCase {
-        return createUseCase(captureType, targetFrameRate, dynamicRange, false)
+        return createUseCase(
+            captureType,
+            targetFrameRate,
+            targetHighSpeedFrameRate,
+            dynamicRange,
+            streamUseCaseOverride = false,
+            surfaceOccupancyPriority = surfaceOccupancyPriority
+        )
     }
 
     private fun createUseCase(
-        captureType: UseCaseConfigFactory.CaptureType,
+        captureType: CaptureType,
         targetFrameRate: Range<Int>? = null,
+        targetHighSpeedFrameRate: Range<Int>? = null,
         dynamicRange: DynamicRange? = DynamicRange.UNSPECIFIED,
         streamUseCaseOverride: Boolean = false,
-        imageFormat: Int? = null
+        imageFormat: Int? = null,
+        surfaceOccupancyPriority: Int? = null,
     ): UseCase {
         val builder =
             FakeUseCaseConfig.Builder(
                 captureType,
                 imageFormat
                     ?: when (captureType) {
-                        UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE -> ImageFormat.JPEG
-                        UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS -> ImageFormat.YUV_420_888
+                        CaptureType.IMAGE_CAPTURE -> ImageFormat.JPEG
+                        CaptureType.IMAGE_ANALYSIS -> ImageFormat.YUV_420_888
                         else -> ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE
                     }
             )
         targetFrameRate?.let {
             builder.mutableConfig.insertOption(UseCaseConfig.OPTION_TARGET_FRAME_RATE, it)
+        }
+        targetHighSpeedFrameRate?.let {
+            builder.mutableConfig.insertOption(
+                UseCaseConfig.OPTION_TARGET_HIGH_SPEED_FRAME_RATE,
+                it
+            )
         }
         builder.mutableConfig.insertOption(
             ImageInputConfig.OPTION_INPUT_DYNAMIC_RANGE,
@@ -3560,6 +3703,9 @@ class SupportedSurfaceCombinationTest {
         if (streamUseCaseOverride) {
             builder.mutableConfig.insertOption(streamUseCaseOption, streamUseCaseOverrideValue)
         }
+
+        surfaceOccupancyPriority?.let { builder.setSurfaceOccupancyPriority(it) }
+
         return builder.build()
     }
 

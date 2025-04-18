@@ -154,7 +154,7 @@ public class PdfLoaderCallbacksImpl(
 
             passwordDialog.setListener(
                 object : PdfPasswordDialog.PasswordDialogEventsListener {
-                    override fun onPasswordTextChange(password: String) {
+                    override fun onPasswordSubmit(password: String) {
                         pdfLoader?.applyPassword(password)
                     }
 
@@ -164,11 +164,15 @@ public class PdfLoaderCallbacksImpl(
                             false
                         )
                     }
+
+                    override fun onDialogShown() {
+                        eventCallback?.onPasswordRequested()
+                    }
                 }
             )
 
             if (incorrect) {
-                passwordDialog.retry()
+                passwordDialog.showIncorrectMessage()
             }
         }
     }

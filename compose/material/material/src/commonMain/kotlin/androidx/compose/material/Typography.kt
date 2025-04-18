@@ -26,8 +26,8 @@ import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.sp
 
 /**
- * <a href="https://material.io/design/typography/the-type-system.html#type-scale" class="external"
- * target="_blank">Material Design type scale</a>.
+ * [Material Design type
+ * scale](https://material.io/design/typography/the-type-system.html#type-scale)
  *
  * The Material Design type scale includes a range of contrasting styles that support the needs of
  * your product and its content.

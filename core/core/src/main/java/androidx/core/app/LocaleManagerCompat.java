@@ -24,10 +24,11 @@ import android.os.Build;
 import android.os.LocaleList;
 
 import androidx.annotation.AnyThread;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.os.LocaleListCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Locale;
 
@@ -47,9 +48,8 @@ public final class LocaleManagerCompat {
      * is set, this method helps cater to rare use-cases which might require specifically knowing
      * the system locale.
      */
-    @NonNull
     @AnyThread
-    public static LocaleListCompat getSystemLocales(@NonNull Context context) {
+    public static @NonNull LocaleListCompat getSystemLocales(@NonNull Context context) {
         LocaleListCompat systemLocales = LocaleListCompat.getEmptyLocaleList();
         // TODO: modify the check to Build.Version.SDK_INT >= 33.
         if (Build.VERSION.SDK_INT >= 33) {
@@ -74,8 +74,7 @@ public final class LocaleManagerCompat {
      * set.
      */
     @AnyThread
-    @NonNull
-    public static LocaleListCompat getApplicationLocales(@NonNull Context context) {
+    public static @NonNull LocaleListCompat getApplicationLocales(@NonNull Context context) {
         if (Build.VERSION.SDK_INT >= 33) {
             // If the API version is 33 or above we want to redirect the call to the framework API.
             Object localeManager = getLocaleManagerForApplication(context);

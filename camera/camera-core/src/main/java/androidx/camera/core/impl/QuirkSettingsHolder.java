@@ -16,11 +16,12 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Logger;
 import androidx.core.util.Consumer;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -48,8 +49,7 @@ public final class QuirkSettingsHolder {
     /**
      * Returns the singleton instance of {@link QuirkSettingsHolder}.
      */
-    @NonNull
-    public static QuirkSettingsHolder instance() {
+    public static @NonNull QuirkSettingsHolder instance() {
         return sInstance;
     }
 
@@ -60,8 +60,7 @@ public final class QuirkSettingsHolder {
      *
      * @return The current global QuirkSettings instance.
      */
-    @NonNull
-    public QuirkSettings get() {
+    public @NonNull QuirkSettings get() {
         try {
             return mObservable.fetchData().get();
         } catch (ExecutionException | InterruptedException e) {

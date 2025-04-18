@@ -183,7 +183,7 @@ fun SemanticsNodeInteraction.assertTextEquals(
 /**
  * Asserts that the node's text contains the given [value].
  *
- * This will also search in [SemanticsProperties.EditableText].
+ * This will also search in [SemanticsProperties.EditableText] and [SemanticsProperties.InputText].
  *
  * Note that in merged semantics tree there can be a list of text items that got merged from the
  * child nodes. Typically an accessibility tooling will decide based on its heuristics which ones to

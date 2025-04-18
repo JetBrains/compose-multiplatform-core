@@ -69,6 +69,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.test.filters.SdkSuppress
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
@@ -289,7 +290,7 @@ class ToggleButtonTest {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun round_toggle_button_gives_correct_colors_when_enabled() =
         verifyToggleButtonColors(
@@ -303,7 +304,7 @@ class ToggleButtonTest {
             Color.Blue
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun round_toggle_button_gives_correct_colors_when_disabled() =
         verifyToggleButtonColors(
@@ -317,7 +318,7 @@ class ToggleButtonTest {
             Color.Yellow,
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun round_toggle_button_gives_correct_colors_when_checked() =
         verifyToggleButtonColors(
@@ -331,7 +332,7 @@ class ToggleButtonTest {
             Color.Blue,
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun round_toggle_button_gives_correct_colors_when_unchecked() =
         verifyToggleButtonColors(
@@ -539,7 +540,7 @@ class ToggleButtonTest {
         rule.onNodeWithText(textContent).assertExists()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun toggle_button_allows_checked_background_color_override() =
         verifyToggleButtonBackgroundColor(
@@ -548,7 +549,7 @@ class ToggleButtonTest {
             expectedColor = CHECKED_COLOR
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun toggle_button_allows_unchecked_background_color_override() =
         verifyToggleButtonBackgroundColor(
@@ -557,7 +558,7 @@ class ToggleButtonTest {
             expectedColor = UNCHECKED_COLOR
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun toggle_button_allows_disabled_checked_background_color_override() =
         verifyToggleButtonBackgroundColor(
@@ -566,7 +567,7 @@ class ToggleButtonTest {
             expectedColor = DISABLED_CHECKED_COLOR
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun toggle_button_allows_disabled_unchecked_background_color_override() =
         verifyToggleButtonBackgroundColor(
@@ -721,7 +722,7 @@ class ToggleButtonTest {
         rule.onNodeWithText(textContent).assertExists()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun split_toggle_button_allows_checked_background_color_override() =
         verifySplitToggleButtonBackgroundColor(
@@ -730,7 +731,7 @@ class ToggleButtonTest {
             expectedColor = CHECKED_COLOR
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun split_toggle_button_allows_unchecked_background_color_override() =
         verifySplitToggleButtonBackgroundColor(
@@ -739,7 +740,7 @@ class ToggleButtonTest {
             expectedColor = UNCHECKED_COLOR
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun split_toggle_button_allows_disabled_checked_background_color_override() =
         verifySplitToggleButtonBackgroundColor(
@@ -748,7 +749,7 @@ class ToggleButtonTest {
             expectedColor = DISABLED_CHECKED_COLOR
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun split_toggle_button_allows_disabled_unchecked_background_color_override() =
         verifySplitToggleButtonBackgroundColor(

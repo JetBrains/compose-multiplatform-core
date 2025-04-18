@@ -66,8 +66,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://m3.material.io/components/date-pickers/overview" class="external"
- * target="_blank">Material Design date range picker</a>.
+ * [Material Design date range picker](https://m3.material.io/components/date-pickers/overview)
  *
  * Date range pickers let people select a range of dates and can be embedded into Dialogs.
  *
@@ -176,8 +175,7 @@ fun DateRangePicker(
 }
 
 /**
- * <a href="https://m3.material.io/components/date-pickers/overview" class="external"
- * target="_blank">Material Design date range picker</a>.
+ * [Material Design date range picker](https://m3.material.io/components/date-pickers/overview)
  *
  * Date range pickers let people select a range of dates and can be embedded into Dialogs.
  *

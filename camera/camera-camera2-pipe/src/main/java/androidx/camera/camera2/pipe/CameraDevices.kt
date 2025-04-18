@@ -28,6 +28,14 @@ import kotlinx.coroutines.flow.flow
 /** Methods for querying, iterating, and selecting the Cameras that are available on the device. */
 public interface CameraDevices {
     /**
+     * A flow of the list of currently openable [CameraId]s from the provided CameraBackend. It
+     * should continuously return a list of current cameras, and the list should be updated camera
+     * availability changes, e.g., an external camera is plugged or unplugged. The flow should also
+     * replay the most recent value for each new subscriber.
+     */
+    public fun cameraIdsFlow(cameraBackendId: CameraBackendId? = null): Flow<List<CameraId>>
+
+    /**
      * Read the list of currently openable [CameraId]s from the provided CameraBackend, suspending
      * if needed. By default this will load the list of openable [CameraId]s from the default
      * backend.

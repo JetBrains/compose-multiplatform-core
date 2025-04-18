@@ -90,9 +90,6 @@ class ComposeCameraActivity : ComponentActivity() {
                     latchForState.countDown()
                 }
             }
-            else -> {
-                Log.e(TAG, "Wrong PreviewView.StreamState in ${screen.name}! Return IDLE")
-            }
         }
     }
 

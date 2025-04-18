@@ -66,7 +66,7 @@ fun LargeTextToggleButtonSample() {
     ) {
         Text(
             text = if (checked) "On" else "Off",
-            style = TextToggleButtonDefaults.largeButtonTextStyle,
+            style = TextToggleButtonDefaults.largeTextStyle,
         )
     }
 }

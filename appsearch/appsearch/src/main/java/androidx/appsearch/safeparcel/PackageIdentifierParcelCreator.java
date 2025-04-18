@@ -20,9 +20,10 @@ import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -45,8 +46,7 @@ public class PackageIdentifierParcelCreator implements Parcelable.Creator<Packag
     /**
      * Creates a {@link PackageIdentifierParcel} from a {@link Bundle}
      */
-    @NonNull
-    private static PackageIdentifierParcel createPackageIdentifierFromBundle(
+    private static @NonNull PackageIdentifierParcel createPackageIdentifierFromBundle(
             @NonNull Bundle packageIdentifierBundle) {
         Objects.requireNonNull(packageIdentifierBundle);
         String packageName =
@@ -59,8 +59,7 @@ public class PackageIdentifierParcelCreator implements Parcelable.Creator<Packag
     }
 
     /** Creates a {@link Bundle} from a {@link PackageIdentifierParcel}. */
-    @NonNull
-    private static Bundle createBundleFromPackageIdentifier(
+    private static @NonNull Bundle createBundleFromPackageIdentifier(
             @NonNull PackageIdentifierParcel packageIdentifierParcel) {
         Objects.requireNonNull(packageIdentifierParcel);
         Bundle packageIdentifierBundle = new Bundle();
@@ -72,22 +71,20 @@ public class PackageIdentifierParcelCreator implements Parcelable.Creator<Packag
         return packageIdentifierBundle;
     }
 
-    @NonNull
     @Override
-    public PackageIdentifierParcel createFromParcel(Parcel parcel) {
+    public @NonNull PackageIdentifierParcel createFromParcel(Parcel parcel) {
         Bundle bundle = Preconditions.checkNotNull(parcel.readBundle(getClass().getClassLoader()));
         return createPackageIdentifierFromBundle(bundle);
     }
 
-    @NonNull
     @Override
-    public PackageIdentifierParcel[] newArray(int size) {
+    public PackageIdentifierParcel @NonNull [] newArray(int size) {
         return new PackageIdentifierParcel[size];
     }
 
     /** Writes a {@link PackageIdentifierParcel} to a {@link Parcel}. */
     public static void writeToParcel(@NonNull PackageIdentifierParcel packageIdentifierParcel,
-            @NonNull android.os.Parcel parcel, int flags) {
+            android.os.@NonNull Parcel parcel, int flags) {
         parcel.writeBundle(createBundleFromPackageIdentifier(packageIdentifierParcel));
     }
 }

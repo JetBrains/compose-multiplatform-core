@@ -16,13 +16,14 @@
 
 package androidx.appsearch.ast.query;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.PropertyPath;
 import androidx.appsearch.ast.FunctionNode;
 import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -39,41 +40,39 @@ import java.util.Objects;
 @ExperimentalAppSearchApi
 @FlaggedApi(Flags.FLAG_ENABLE_ABSTRACT_SYNTAX_TREES)
 public final class PropertyDefinedNode implements FunctionNode {
-    private PropertyPath mProperty;
+    private PropertyPath mPropertyPath;
 
     /**
      * Constructor for a {@link PropertyDefinedNode} representing the query function
      * `propertyDefined` that takes in a {@link PropertyPath}.
      */
-    public PropertyDefinedNode(@NonNull PropertyPath property) {
-        mProperty = Preconditions.checkNotNull(property);
+    public PropertyDefinedNode(@NonNull PropertyPath propertyPath) {
+        mPropertyPath = Preconditions.checkNotNull(propertyPath);
     }
 
     /**
      * Returns the name of the function represented by {@link PropertyDefinedNode}.
      */
-    @NonNull
     @Override
     @FunctionName
-    public String getFunctionName() {
+    public @NonNull String getFunctionName() {
         return FUNCTION_NAME_PROPERTY_DEFINED;
     }
 
     /**
-     * Returns the {@link PropertyDefinedNode} representing the property being checked for in the
+     * Returns the {@link PropertyPath} representing the property being checked for in the
      * document.
      */
-    @NonNull
-    public PropertyPath getProperty() {
-        return mProperty;
+    public @NonNull PropertyPath getPropertyPath() {
+        return mPropertyPath;
     }
 
     /**
      * Sets the property being checked for in the document, as represented by
      * {@link PropertyDefinedNode}.
      */
-    public void setProperty(@NonNull PropertyPath property) {
-        mProperty = Preconditions.checkNotNull(property);
+    public void setPropertyPath(@NonNull PropertyPath property) {
+        mPropertyPath = Preconditions.checkNotNull(property);
     }
 
     /**
@@ -82,10 +81,9 @@ public final class PropertyDefinedNode implements FunctionNode {
      * <p>The string representation of {@link PropertyDefinedNode} is the function name followed by
      * the property path in quotes surrounded by parentheses.
      */
-    @NonNull
     @Override
-    public String toString() {
-        return FUNCTION_NAME_PROPERTY_DEFINED + "(\"" + mProperty + "\")";
+    public @NonNull String toString() {
+        return FUNCTION_NAME_PROPERTY_DEFINED + "(\"" + mPropertyPath + "\")";
     }
 
     @Override
@@ -93,11 +91,11 @@ public final class PropertyDefinedNode implements FunctionNode {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PropertyDefinedNode that = (PropertyDefinedNode) o;
-        return Objects.equals(mProperty, that.mProperty);
+        return Objects.equals(mPropertyPath, that.mPropertyPath);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(mProperty);
+        return Objects.hashCode(mPropertyPath);
     }
 }

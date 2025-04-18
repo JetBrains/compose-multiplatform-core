@@ -18,13 +18,14 @@ package androidx.camera.camera2.internal.compat.quirk;
 
 import android.hardware.camera2.CameraCharacteristics;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.Quirk;
 import androidx.camera.core.impl.QuirkSettings;
 import androidx.camera.core.impl.QuirkSettingsHolder;
 import androidx.camera.core.impl.Quirks;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,9 +47,8 @@ public class CameraQuirks {
      * @return List of quirks associated with the camera identified by its id and
      * {@link CameraCharacteristics}.
      */
-    @NonNull
-    public static Quirks get(@NonNull final String cameraId,
-            @NonNull final CameraCharacteristicsCompat cameraCharacteristicsCompat) {
+    public static @NonNull Quirks get(final @NonNull String cameraId,
+            final @NonNull CameraCharacteristicsCompat cameraCharacteristicsCompat) {
         QuirkSettings quirkSettings = QuirkSettingsHolder.instance().get();
         final List<Quirk> quirks = new ArrayList<>();
         // Go through all defined camera quirks, and add them to `quirks` if they should be loaded
@@ -166,6 +166,11 @@ public class CameraQuirks {
                 CaptureSessionStuckWhenCreatingBeforeClosingCameraQuirk.load(
                         cameraCharacteristicsCompat))) {
             quirks.add(new CaptureSessionStuckWhenCreatingBeforeClosingCameraQuirk());
+        }
+        if (quirkSettings.shouldEnableQuirk(
+                AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk.class,
+                AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk.load())) {
+            quirks.add(new AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk());
         }
 
         Quirks cameraQuirks = new Quirks(quirks);

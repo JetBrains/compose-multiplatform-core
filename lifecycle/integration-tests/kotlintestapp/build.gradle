@@ -50,9 +50,6 @@ dependencies {
 }
 
 android {
-    kotlinOptions {
-        jvmTarget = "1.8" // necessary to use espresso kotlin extensions
-    }
     sourceSets {
         test.java.srcDirs += "src/test-common/java"
         androidTest.java.srcDirs += "src/test-common/java"

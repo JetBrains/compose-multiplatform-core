@@ -16,17 +16,17 @@
 
 package androidx.core.location.altitude.impl.db;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.room.Dao;
 import androidx.room.Query;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /** Provides data access for entities within the Tiles table. */
 @Dao
 public interface TilesDao {
 
     /** Returns the tile associated with the provided token. */
-    @Nullable
     @Query("SELECT * FROM Tiles WHERE token = :token LIMIT 1")
-    TilesEntity get(@NonNull String token);
+    @Nullable TilesEntity get(@NonNull String token);
 }

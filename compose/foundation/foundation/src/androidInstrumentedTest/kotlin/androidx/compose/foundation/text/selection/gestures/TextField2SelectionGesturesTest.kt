@@ -56,6 +56,7 @@ internal abstract class TextField2SelectionGesturesTest(
                 textContent = textFieldState.text.toString(),
                 rule = rule,
                 textToolbar = textToolbar,
+                spyTextActionModeCallback = spyTextActionModeCallback,
                 hapticFeedback = hapticFeedback,
                 getActual = { textFieldState }
             )

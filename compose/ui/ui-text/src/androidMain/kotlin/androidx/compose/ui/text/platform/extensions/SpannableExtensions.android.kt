@@ -37,7 +37,7 @@ import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.Bullet
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.android.InternalPlatformTextApi
@@ -58,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intersect
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.text.platform.style.CustomBulletSpan
 import androidx.compose.ui.text.platform.style.DrawStyleSpan
 import androidx.compose.ui.text.platform.style.ShaderBrushSpan
 import androidx.compose.ui.text.style.BaselineShift
@@ -111,7 +112,75 @@ internal fun Spannable.setTextIndent(
     }
 }
 
-@OptIn(InternalPlatformTextApi::class, ExperimentalTextApi::class)
+/**
+ * This implementation of the bullet span only draws the bullet. The actual indentation is added
+ * already inside the [setTextIndent] call since each bullet is a paragraph. The only exception is
+ * when there isn't enough space to put the bullet with its padding, in that case a minimum required
+ * space will be added.
+ *
+ * @param contextFontSize the font size that all text in this paragraph is drawn with
+ */
+internal fun Spannable.setBulletSpans(
+    annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
+    contextFontSize: Float,
+    density: Density,
+    textIndent: TextIndent?
+) {
+    val textIndentPx =
+        textIndent?.let {
+            with(density) {
+                when (textIndent.firstLine.type) {
+                    TextUnitType.Sp -> textIndent.firstLine.toPx()
+                    TextUnitType.Em -> textIndent.firstLine.value * contextFontSize
+                    else -> 0f
+                }
+            }
+        } ?: 0f
+    annotations.fastForEach {
+        (it.item as? Bullet)?.let { bullet ->
+            val bulletSize = resolveBulletTextUnitToPx(bullet.size, contextFontSize, density)
+            val gapWidthPx = resolveBulletTextUnitToPx(bullet.padding, contextFontSize, density)
+            if (!bulletSize.isNaN() && !gapWidthPx.isNaN()) {
+                setSpan(
+                    CustomBulletSpan(
+                        shape = bullet.shape,
+                        bulletWidthPx = bulletSize,
+                        bulletHeightPx = bulletSize,
+                        gapWidthPx = gapWidthPx,
+                        density = density,
+                        brush = bullet.brush,
+                        alpha = bullet.alpha,
+                        drawStyle = bullet.drawStyle,
+                        textIndentPx = textIndentPx
+                    ),
+                    it.start,
+                    it.end
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Resolves bullet's size or gap size [size] to pixels. If unknown [TextUnitType] is used, returns
+ * [Float.NaN] that needs to be handled on caller site.
+ */
+private fun resolveBulletTextUnitToPx(
+    size: TextUnit,
+    contextFontSize: Float,
+    density: Density
+): Float {
+    if (size == TextUnit.Unspecified) return contextFontSize
+    return when (size.type) {
+        TextUnitType.Sp -> {
+            // if non-linear font scaling is enabled, this is handled by toPx() conversion already
+            with(density) { size.toPx() }
+        }
+        TextUnitType.Em -> size.value * contextFontSize
+        else -> Float.NaN
+    }
+}
+
 internal fun Spannable.setLineHeight(
     lineHeight: TextUnit,
     contextFontSize: Float,

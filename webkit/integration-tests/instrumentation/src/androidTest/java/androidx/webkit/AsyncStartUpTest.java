@@ -23,6 +23,8 @@ import androidx.concurrent.futures.ResolvableFuture;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.webkit.internal.WebViewGlueCommunicator;
+import androidx.webkit.test.common.WebViewOnUiThread;
+import androidx.webkit.test.common.WebkitUtils;
 
 import org.junit.Assert;
 import org.junit.Assume;
@@ -139,7 +141,7 @@ public class AsyncStartUpTest {
         // Triggers provider init.
         new Handler(Looper.getMainLooper()).post(WebViewGlueCommunicator::getWebViewClassLoader);
         WebViewCompat.startUpWebView(config,
-                    startUpFinishedFuture::set);
+                startUpFinishedFuture::set);
         // Wait until the callback has triggered.
         WebViewStartUpResult result = WebkitUtils.waitForFuture(startUpFinishedFuture);
         Assert.assertNotNull(result);
@@ -269,7 +271,7 @@ public class AsyncStartUpTest {
     @MediumTest
     @Ignore("b/376656739")
     public void
-            testAsyncStartUp_withoutRunningUiThreadStartUpLoadsWebViewWithoutStartingChromium()
+    testAsyncStartUp_withoutRunningUiThreadStartUpLoadsWebViewWithoutStartingChromium()
             throws Throwable {
         Assume.assumeFalse(webViewCurrentlyLoaded());
         WebViewStartUpConfig config = new WebViewStartUpConfig.Builder(
@@ -299,7 +301,7 @@ public class AsyncStartUpTest {
     @MediumTest
     @Ignore("b/376656739")
     public void
-            testAsyncStartUp_withoutRunningUiThreadStartUpReturnsBlockingLocationWithProviderInit()
+    testAsyncStartUp_withoutRunningUiThreadStartUpReturnsBlockingLocationWithProviderInit()
             throws Throwable {
         Assume.assumeFalse(webViewCurrentlyLoaded());
         WebViewStartUpConfig config = new WebViewStartUpConfig.Builder(

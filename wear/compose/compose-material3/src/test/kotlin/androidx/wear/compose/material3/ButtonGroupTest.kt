@@ -31,13 +31,13 @@ class ButtonGroupTest {
 
     @Test
     fun OneButtonCase() {
-        checkResult(listOf(200f), computeWidths(listOf(40f to 1f), 0, 200))
+        checkResult(listOf(200), computeWidths(listOf(40f to 1f), 0, 200))
     }
 
     @Test
     fun SimpleCase() {
         checkResult(
-            listOf(100f, 50f, 50f),
+            listOf(100, 50, 50),
             computeWidths(listOf(40f to 2f, 40f to 1f, 40f to 1f), 0, 200)
         )
     }
@@ -45,7 +45,7 @@ class ButtonGroupTest {
     @Test
     fun UsesSpacing() {
         checkResult(
-            listOf(80f, 40f, 40f),
+            listOf(80, 40, 40),
             computeWidths(listOf(40f to 2f, 40f to 1f, 40f to 1f), 20, 200)
         )
     }
@@ -55,7 +55,7 @@ class ButtonGroupTest {
         checkResult(
             // The weights alone will give 64 64 32, but that will put the last one under the
             // minimum
-            listOf(60f, 60f, 40f),
+            listOf(60, 60, 40),
             computeWidths(listOf(40f to 2f, 40f to 2f, 40f to 1f), 20, 200)
         )
     }
@@ -66,7 +66,7 @@ class ButtonGroupTest {
             // The weights alone will give 90 60 30, but that will put the last one under the
             // minimum, they give according to their weight
             // (they need to give 10, so they give 6 & 4)
-            listOf(84f, 56f, 40f),
+            listOf(84, 56, 40),
             computeWidths(listOf(40f to 3f, 40f to 2f, 40f to 1f), 0, 180)
         )
     }
@@ -77,7 +77,7 @@ class ButtonGroupTest {
             // The weights alone will give: 36.956 40.652 44.347 48.043
             // Setting the first to 40 and redistributing gives: 40 39.722 43.333 46.444
             // Doing that again gives the final result.
-            listOf(40f, 40f, 43.2f, 46.8f),
+            listOf(40, 40, 43, 47),
             computeWidths(
                 listOf(
                     40f to 1f,
@@ -95,7 +95,7 @@ class ButtonGroupTest {
     fun ZeroWeight() {
         checkResult(
             // Only items with weight > 0 grow
-            listOf(80f, 80f, 40f),
+            listOf(80, 80, 40),
             computeWidths(listOf(40f to 1f, 40f to 1f, 40f to 0f), 0, 200)
         )
     }
@@ -104,15 +104,15 @@ class ButtonGroupTest {
     fun ZeroWeightPlusVariedWeights() {
         checkResult(
             // Only items with weight > 0 grow, first item should be twice as big as second one.
-            listOf(100f, 50f, 50f),
+            listOf(100, 50, 50),
             computeWidths(listOf(40f to 2f, 40f to 1f, 50f to 0f), 0, 200)
         )
     }
 
-    private fun checkResult(expected: List<Float>, actual: FloatArray) {
+    private fun checkResult(expected: List<Int>, actual: IntArray) {
         assertEquals(expected.size, actual.size)
         for (i in expected.indices) {
-            assertEquals("Index $i", expected[i], actual[i], 1e-4f)
+            assertEquals("Index $i", expected[i], actual[i])
         }
     }
 }

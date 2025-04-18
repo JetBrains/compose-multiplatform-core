@@ -237,7 +237,7 @@ class NavigationDrawerItemTest {
                 .getUnclippedBoundsInRoot()
 
         (itemBounds.bottom - trailingContentBounds.bottom).assertIsEqualTo(
-            16.dp,
+            12.dp,
             "padding between the bottom of the trailing content and the bottom of the nav " +
                 "drawer item"
         )
@@ -360,7 +360,7 @@ class NavigationDrawerItemTest {
 
     @Test
     fun navigationDrawerItem_oneLineHeight() {
-        val expectedHeightNoIcon = 56.dp
+        val expectedHeightNoIcon = 48.dp
 
         rule.setContent {
             DrawerScope {

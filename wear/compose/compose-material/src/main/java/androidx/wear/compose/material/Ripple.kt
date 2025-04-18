@@ -66,7 +66,7 @@ import androidx.compose.ui.unit.Dp
  *   default ripple color instead.
  */
 @Stable
-fun ripple(
+public fun ripple(
     bounded: Boolean = true,
     radius: Dp = Dp.Unspecified,
     color: Color = Color.Unspecified
@@ -113,7 +113,7 @@ fun ripple(
  *   calculated based on the target layout size.
  */
 @Stable
-fun ripple(
+public fun ripple(
     color: ColorProducer,
     bounded: Boolean = true,
     radius: Dp = Dp.Unspecified

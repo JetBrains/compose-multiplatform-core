@@ -35,7 +35,12 @@ import java.time.ZonedDateTime
  * @param textureWidth The width of the texture in pixels to create.
  * @param textureHeight The height of the texture in pixels to create.
  * @param textureType The texture type, e.g. [GLES20.GL_TEXTURE_2D].
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class GlesTextureComplication(
     public val complicationSlot: ComplicationSlot,
     @Px textureWidth: Int,

@@ -46,6 +46,7 @@ class QuickSuccessiveImageCaptureFailsRepeatingRequestQuirkTest(
     private val isEnabledExpected: Boolean
 ) {
     companion object {
+        @Suppress("TYPE_INTERSECTION_AS_REIFIED_WARNING")
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(
             name = "Model: {0}, lens facing: {1}, external ae mode: {2}, enabled: {3}"

@@ -20,7 +20,6 @@ import static androidx.core.util.Preconditions.checkNotNull;
 
 import static java.lang.Math.max;
 
-import android.annotation.SuppressLint;
 import android.graphics.Rect;
 import android.graphics.Region;
 import android.os.Build.VERSION;
@@ -126,7 +125,6 @@ class TouchDelegateComposite extends TouchDelegate {
         return eventForwarded;
     }
 
-    @SuppressLint("ClassVerificationFailure")
     @Override
     public AccessibilityNodeInfo.@NonNull TouchDelegateInfo getTouchDelegateInfo() {
         if (VERSION.SDK_INT >= VERSION_CODES.Q && !mDelegates.isEmpty()) {

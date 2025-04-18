@@ -22,9 +22,10 @@ import android.util.Log;
 import android.view.Surface;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -44,9 +45,8 @@ final class ImageWriterCompatApi26Impl {
         }
     }
 
-    @NonNull
-    static ImageWriter newInstance(@NonNull Surface surface, @IntRange(from = 1) int maxImages,
-            int format) {
+    static @NonNull ImageWriter newInstance(@NonNull Surface surface,
+            @IntRange(from = 1) int maxImages, int format) {
         Throwable t = null;
         if (Build.VERSION.SDK_INT >= 26) {
             try {

@@ -36,6 +36,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicatorDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.internal.FloatProducer
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.tokens.ElevationTokens
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
@@ -77,8 +78,8 @@ import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.progressBarRangeInfo
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
@@ -186,7 +187,7 @@ fun Modifier.pullToRefresh(
         )
 
 @OptIn(ExperimentalMaterial3Api::class)
-internal data class PullToRefreshElement(
+internal class PullToRefreshElement(
     val isRefreshing: Boolean,
     val onRefresh: () -> Unit,
     val enabled: Boolean,
@@ -220,6 +221,28 @@ internal data class PullToRefreshElement(
         properties["enabled"] = enabled
         properties["state"] = state
         properties["threshold"] = threshold
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is PullToRefreshElement) return false
+
+        if (isRefreshing != other.isRefreshing) return false
+        if (enabled != other.enabled) return false
+        if (onRefresh !== other.onRefresh) return false
+        if (state != other.state) return false
+        if (threshold != other.threshold) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = isRefreshing.hashCode()
+        result = 31 * result + enabled.hashCode()
+        result = 31 * result + onRefresh.hashCode()
+        result = 31 * result + state.hashCode()
+        result = 31 * result + threshold.hashCode()
+        return result
     }
 }
 
@@ -284,7 +307,11 @@ internal class PullToRefreshModifierNode(
             // Swiping down
             source == NestedScrollSource.UserInput -> {
                 val newOffset = consumeAvailableOffset(available)
-                coroutineScope.launch { state.snapTo(verticalOffset / thresholdPx) }
+                coroutineScope.launch {
+                    if (!state.isAnimating) {
+                        state.snapTo(verticalOffset / thresholdPx)
+                    }
+                }
 
                 newOffset
             }
@@ -327,22 +354,22 @@ internal class PullToRefreshModifierNode(
             onRefresh()
         }
 
-        animateToHidden()
-
         val consumed =
             when {
                 // We are flinging without having dragged the pull refresh (for example a fling
-                // inside
-                // a list) - don't consume
+                // inside a list) - don't consume
                 distancePulled == 0f -> 0f
                 // If the velocity is negative, the fling is upwards, and we don't want to prevent
-                // the
                 // the list from scrolling
                 velocity < 0f -> 0f
                 // We are showing the indicator, and the fling is downwards - consume everything
                 else -> velocity
             }
+
+        animateToHidden()
+
         distancePulled = 0f
+
         return consumed
     }
 
@@ -364,15 +391,21 @@ internal class PullToRefreshModifierNode(
         }
 
     private suspend fun animateToThreshold() {
-        state.animateToThreshold()
-        distancePulled = thresholdPx.toFloat()
-        verticalOffset = thresholdPx.toFloat()
+        try {
+            state.animateToThreshold()
+        } finally {
+            distancePulled = thresholdPx.toFloat()
+            verticalOffset = thresholdPx.toFloat()
+        }
     }
 
     private suspend fun animateToHidden() {
-        state.animateToHidden()
-        distancePulled = 0f
-        verticalOffset = 0f
+        try {
+            state.animateToHidden()
+        } finally {
+            distancePulled = 0f
+            verticalOffset = 0f
+        }
     }
 }
 
@@ -705,7 +738,7 @@ private constructor(private val anim: Animatable<Float, AnimationVector1D>) : Pu
 /** The default pull indicator for [PullToRefreshBox] */
 @Composable
 private fun CircularArrowProgressIndicator(
-    progress: () -> Float,
+    progress: FloatProducer,
     color: Color,
 ) {
     val path = remember { Path().apply { fillType = PathFillType.EvenOdd } }
@@ -717,11 +750,15 @@ private fun CircularArrowProgressIndicator(
             targetValue = targetAlpha,
             animationSpec = MotionSchemeKeyTokens.DefaultEffects.value()
         )
+
     Canvas(
-        Modifier.semantics(mergeDescendants = true) {
-                progressBarRangeInfo = ProgressBarRangeInfo(progress(), 0f..1f, 0)
-            }
-            .size(SpinnerSize)
+        modifier =
+            Modifier.clearAndSetSemantics {
+                    if (progress() > 0f) {
+                        progressBarRangeInfo = ProgressBarRangeInfo(progress(), 0f..1f, 0)
+                    }
+                }
+                .size(SpinnerSize)
     ) {
         val values = ArrowValues(progress())
         val alpha = alphaState.value

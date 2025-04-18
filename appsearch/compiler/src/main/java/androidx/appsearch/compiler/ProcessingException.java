@@ -15,9 +15,10 @@
  */
 package androidx.appsearch.compiler;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,8 +34,7 @@ import javax.tools.Diagnostic;
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class ProcessingException extends Exception {
-    @Nullable
-    private final Element mCulprit;
+    private final @Nullable Element mCulprit;
 
     /**
      * Warnings associated with this error which should be reported alongside it at a lower level.

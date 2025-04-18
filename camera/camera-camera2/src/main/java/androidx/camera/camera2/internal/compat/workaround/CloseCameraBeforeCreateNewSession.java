@@ -16,10 +16,11 @@
 
 package androidx.camera.camera2.internal.compat.workaround;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.quirk.CaptureSessionStuckWhenCreatingBeforeClosingCameraQuirk;
 import androidx.camera.camera2.internal.compat.quirk.LegacyCameraOutputConfigNullPointerQuirk;
 import androidx.camera.core.impl.Quirks;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A workaround to determine whether the camera device should be closed before creating a new

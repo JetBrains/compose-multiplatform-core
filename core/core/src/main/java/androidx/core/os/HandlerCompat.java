@@ -22,9 +22,10 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -57,8 +58,7 @@ public final class HandlerCompat {
      * @see Handler#createAsync(Looper)
      */
     @SuppressWarnings("JavaReflectionMemberAccess")
-    @NonNull
-    public static Handler createAsync(@NonNull Looper looper) {
+    public static @NonNull Handler createAsync(@NonNull Looper looper) {
         Exception wrappedException;
 
         if (Build.VERSION.SDK_INT >= 28) {
@@ -116,8 +116,8 @@ public final class HandlerCompat {
      * @see Handler#createAsync(Looper, Handler.Callback)
      */
     @SuppressWarnings("JavaReflectionMemberAccess")
-    @NonNull
-    public static Handler createAsync(@NonNull Looper looper, @NonNull Handler.Callback callback) {
+    public static @NonNull Handler createAsync(@NonNull Looper looper,
+            Handler.@NonNull Callback callback) {
         Exception wrappedException;
 
         if (Build.VERSION.SDK_INT >= 28) {

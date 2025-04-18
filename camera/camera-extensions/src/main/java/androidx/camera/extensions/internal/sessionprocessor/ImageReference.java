@@ -18,7 +18,7 @@ package androidx.camera.extensions.internal.sessionprocessor;
 
 import android.media.Image;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An Image reference container that enables the Image sharing between Camera2/CameraX and OEM
@@ -45,6 +45,5 @@ public interface ImageReference {
      * Return the Android image. This object MUST not be closed directly.
      * Returns null when the reference count is zero.
      */
-    @Nullable
-    Image get();
+    @Nullable Image get();
 }

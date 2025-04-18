@@ -6,7 +6,7 @@
  * modifying its settings.
  */
 import androidx.build.BundleInsideHelper
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -44,7 +44,6 @@ dependencies {
 android {
     sourceSets {
         main {
-            res.srcDirs += "src/main/res-public"
             resources {
                 srcDirs += [fontDir.getAbsolutePath()]
                 includes += ["LICENSE_UNICODE", "LICENSE_OFL"]
@@ -63,7 +62,7 @@ android {
 
 androidx {
     name = "Emoji"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.EMOJI
     inceptionYear = "2017"
     description = "Core library to enable emoji compatibility in Kitkat and newer devices to avoid the empty emoji characters."

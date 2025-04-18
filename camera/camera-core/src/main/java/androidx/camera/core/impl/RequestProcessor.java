@@ -16,7 +16,7 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -76,14 +76,12 @@ public interface RequestProcessor {
          * Gets the target ids of the outputConfig which identifies corresponding
          * Surface to be the targeted for the request.
          */
-        @NonNull
-        List<Integer> getTargetOutputConfigIds();
+        @NonNull List<Integer> getTargetOutputConfigIds();
 
         /**
          * Gets all the parameters.
          */
-        @NonNull
-        Config getParameters();
+        @NonNull Config getParameters();
 
         /**
          * Gets the template id.

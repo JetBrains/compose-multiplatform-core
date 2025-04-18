@@ -50,10 +50,10 @@ import androidx.camera.core.DynamicRange
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
-import androidx.camera.integration.core.util.CameraPipeUtil
-import androidx.camera.integration.core.util.CameraPipeUtil.builder
-import androidx.camera.integration.core.util.CameraPipeUtil.from
-import androidx.camera.integration.core.util.CameraPipeUtil.setCameraCaptureSessionCallback
+import androidx.camera.integration.core.util.Camera2InteropUtil
+import androidx.camera.integration.core.util.Camera2InteropUtil.builder
+import androidx.camera.integration.core.util.Camera2InteropUtil.from
+import androidx.camera.integration.core.util.Camera2InteropUtil.setCameraCaptureSessionCallback
 import androidx.camera.integration.core.util.doTempRecording
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
@@ -274,7 +274,7 @@ class VideoRecordingEffectTest(
                 val camera =
                     camProvider.bindToLifecycle(lifecycleOwner, cameraSelector, useCaseGroup)
 
-                CameraPipeUtil.Camera2CameraControlWrapper.from(implName, camera.cameraControl)
+                Camera2InteropUtil.Camera2CameraControlWrapper.from(implName, camera.cameraControl)
                     .apply {
                         setCaptureRequestOptions(
                             createMinimalProcessedSolidColorCaptureRequestOptions(
@@ -343,7 +343,7 @@ class VideoRecordingEffectTest(
             Build.VERSION.SDK_INT == 30 && AndroidUtil.isEmulator()
         )
 
-        with(CameraPipeUtil.Camera2CameraInfoWrapper.from(implName, cameraInfo)) {
+        with(Camera2InteropUtil.Camera2CameraInfoWrapper.from(implName, cameraInfo)) {
             val availableTestPatterns = getCameraCharacteristic(SENSOR_AVAILABLE_TEST_PATTERN_MODES)
             if (availableTestPatterns?.contains(SENSOR_TEST_PATTERN_MODE_SOLID_COLOR) == false) {
                 throw AssumptionViolatedException(
@@ -356,7 +356,7 @@ class VideoRecordingEffectTest(
     private fun createMinimalProcessedSolidColorCaptureRequestOptions(
         colorChannel: ColorChannel,
         cameraInfo: CameraInfo
-    ): CameraPipeUtil.CaptureRequestOptionsWrapper {
+    ): Camera2InteropUtil.CaptureRequestOptionsWrapper {
         val sensorData =
             when (colorChannel) {
                 ColorChannel.RED -> {
@@ -388,7 +388,7 @@ class VideoRecordingEffectTest(
                 }
             }
 
-        return CameraPipeUtil.CaptureRequestOptionsWrapper.builder(implName)
+        return Camera2InteropUtil.CaptureRequestOptionsWrapper.builder(implName)
             .apply {
                 setCaptureRequestOption(CaptureRequest.SENSOR_TEST_PATTERN_DATA, sensorData)
 
@@ -397,7 +397,7 @@ class VideoRecordingEffectTest(
                     CaptureRequest.SENSOR_TEST_PATTERN_MODE_SOLID_COLOR
                 )
 
-                with(CameraPipeUtil.Camera2CameraInfoWrapper.from(implName, cameraInfo)) {
+                with(Camera2InteropUtil.Camera2CameraInfoWrapper.from(implName, cameraInfo)) {
                     val availableAberrationModes =
                         getCameraCharacteristic(
                             CameraCharacteristics.COLOR_CORRECTION_AVAILABLE_ABERRATION_MODES

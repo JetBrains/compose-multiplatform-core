@@ -22,6 +22,7 @@ import androidx.annotation.GuardedBy
 import androidx.annotation.UiContext
 import androidx.annotation.VisibleForTesting
 import androidx.core.util.Consumer
+import androidx.window.RequiresWindowSdkExtension
 import androidx.window.core.ConsumerAdapter
 import androidx.window.extensions.layout.WindowLayoutComponent
 import androidx.window.layout.WindowLayoutInfo
@@ -29,6 +30,7 @@ import java.util.concurrent.Executor
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
+@RequiresWindowSdkExtension(version = 2)
 internal open class ExtensionWindowBackendApi2(
     component: WindowLayoutComponent,
     adapter: ConsumerAdapter

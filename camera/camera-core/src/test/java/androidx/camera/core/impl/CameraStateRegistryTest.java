@@ -25,14 +25,14 @@ import static org.mockito.Mockito.when;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.concurrent.CameraCoordinator;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.testing.impl.fakes.FakeCameraCoordinator;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -600,8 +600,7 @@ public final class CameraStateRegistryTest {
         assertThat(registry.tryOpenCaptureSession(camera2Id, pairedCamera2Id)).isTrue();
     }
 
-    @NonNull
-    private static Camera createMockedCamera(
+    private static @NonNull Camera createMockedCamera(
             @NonNull String cameraId,
             @NonNull FakeCameraCoordinator cameraCoordinator,
             @Nullable String pairedCameraId) {

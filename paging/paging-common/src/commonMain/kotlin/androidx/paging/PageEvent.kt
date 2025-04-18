@@ -81,7 +81,7 @@ internal sealed class PageEvent<T : Any> {
     }
 
     // Intentional to prefer Refresh, Prepend, Append constructors from Companion.
-    @Suppress("DataClassPrivateConstructor")
+    @Suppress("DATA_CLASS_COPY_VISIBILITY_WILL_BE_CHANGED_WARNING")
     data class Insert<T : Any>
     private constructor(
         val loadType: LoadType,

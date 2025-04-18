@@ -158,7 +158,7 @@ public fun ScalingLazyListScope.expandableItem(
     state: ExpandableState,
     key: Any? = null,
     content: @Composable (expanded: Boolean) -> Unit
-) = expandableItemImpl(state, key, content = content)
+): Unit = expandableItemImpl(state, key, content = content)
 
 /**
  * Adds a single item, for the button that controls expandable item(s). The button will be animated
@@ -179,7 +179,7 @@ public fun ScalingLazyListScope.expandableButton(
     state: ExpandableState,
     key: Any? = null,
     content: @Composable () -> Unit
-) = expandableItemImpl(state, key, invertProgress = true, content = { if (it) content() })
+): Unit = expandableItemImpl(state, key, invertProgress = true, content = { if (it) content() })
 
 private fun ScalingLazyListScope.expandableItemImpl(
     state: ExpandableState,
@@ -240,7 +240,7 @@ internal constructor(
      * (expanded), or the other way around. If no animation is running, it's either 0f if the extra
      * content is not showing, or 1f if the extra content is showing.
      */
-    val expandProgress
+    public val expandProgress: Float
         get() = _expandProgress.value
 
     /**
@@ -250,7 +250,7 @@ internal constructor(
      *
      * Modifying this value triggers a change to show/hide the extra information.
      */
-    var expanded
+    public var expanded: Boolean
         @JvmName("isExpanded") get() = _expandProgress.targetValue == 1f
         set(newValue) {
             if (expanded != newValue) {
@@ -264,10 +264,10 @@ internal constructor(
             }
         }
 
-    companion object {
+    public companion object {
         /** The default [Saver] implementation for [ExpandableState]. */
         @Composable
-        fun saver(
+        public fun saver(
             expandAnimationSpec: AnimationSpec<Float>,
             collapseAnimationSpec: AnimationSpec<Float>,
         ): Saver<ExpandableState, Boolean> {
@@ -308,7 +308,7 @@ internal constructor(
      * parameters used to create the new [ExpandableState] are the ones passed to
      * [rememberExpandableStateMapping]
      */
-    public fun getOrPutNew(key: T) =
+    public fun getOrPutNew(key: T): ExpandableState =
         states.getOrPut(key) {
             ExpandableState(
                 initiallyExpanded(key),
@@ -322,8 +322,8 @@ internal constructor(
 /** Contains the default values used by Expandable components. */
 public object ExpandableItemsDefaults {
     /** Default animation used to show extra information. */
-    val expandAnimationSpec: AnimationSpec<Float> = TweenSpec(1000)
+    public val expandAnimationSpec: AnimationSpec<Float> = TweenSpec(1000)
 
     /** Default animation used to hide extra information. */
-    val collapseAnimationSpec: AnimationSpec<Float> = TweenSpec(1000)
+    public val collapseAnimationSpec: AnimationSpec<Float> = TweenSpec(1000)
 }

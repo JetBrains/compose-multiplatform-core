@@ -45,8 +45,7 @@ inline fun <reified T : Record> ReadRecordsRequest(
     )
 
 /**
- * Request object to read [Record]s in Android Health Platform determined by time range and other
- * filters.
+ * Request object to read [Record]s in Health Connect determined by time range and other filters.
  *
  * Returned collection will contain a
  * [androidx.health.connect.client.response.ReadRecordsResponse.pageToken] if number of records

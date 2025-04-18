@@ -35,7 +35,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.wear.compose.material3.internal.Strings
-import androidx.wear.compose.material3.samples.DatePickerMinDateMaxDateSample
+import androidx.wear.compose.material3.samples.DatePickerFutureOnlySample
 import androidx.wear.compose.material3.samples.DatePickerSample
 import androidx.wear.compose.material3.samples.DatePickerYearMonthDaySample
 import com.google.common.truth.Truth.assertThat
@@ -70,7 +70,7 @@ class DatePickerTest {
         rule.setContentWithTheme {
             DatePickerSample()
             DatePickerYearMonthDaySample()
-            DatePickerMinDateMaxDateSample()
+            DatePickerFutureOnlySample()
         }
     }
 
@@ -275,8 +275,8 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.DayMonthYear,
-                minDate = minDate,
-                maxDate = maxDate
+                minValidDate = minDate,
+                maxValidDate = maxDate
             )
         }
 
@@ -315,7 +315,7 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                minDate = minDate,
+                minValidDate = minDate,
             )
         }
 
@@ -342,7 +342,7 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                maxDate = maxDate,
+                maxValidDate = maxDate,
             )
         }
 
@@ -369,7 +369,7 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                minDate = minDate,
+                minValidDate = minDate,
             )
         }
 
@@ -396,7 +396,7 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                maxDate = maxDate
+                maxValidDate = maxDate
             )
         }
 
@@ -424,7 +424,7 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                minDate = minDate,
+                minValidDate = minDate,
             )
         }
 
@@ -455,7 +455,7 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                maxDate = maxDate
+                maxValidDate = maxDate
             )
         }
 
@@ -483,7 +483,7 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                minDate = minDate,
+                minValidDate = minDate,
             )
         }
 
@@ -511,7 +511,7 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                maxDate = maxDate,
+                maxValidDate = maxDate,
             )
         }
 
@@ -540,7 +540,7 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                minDate = minDate,
+                minValidDate = minDate,
             )
         }
 
@@ -573,7 +573,7 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                maxDate = maxDate,
+                maxValidDate = maxDate,
             )
         }
 
@@ -605,7 +605,7 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                maxDate = maxDate,
+                maxValidDate = maxDate,
             )
         }
 
@@ -637,7 +637,7 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                maxDate = maxDate,
+                maxValidDate = maxDate,
             )
         }
 
@@ -666,8 +666,8 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                minDate = minDate,
-                maxDate = maxDate,
+                minValidDate = minDate,
+                maxValidDate = maxDate,
             )
         }
 
@@ -695,7 +695,7 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                minDate = minDate,
+                minValidDate = minDate,
             )
         }
 
@@ -729,7 +729,7 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                maxDate = maxDate,
+                maxValidDate = maxDate,
             )
         }
 
@@ -764,8 +764,8 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                minDate = minDate,
-                maxDate = maxDate,
+                minValidDate = minDate,
+                maxValidDate = maxDate,
             )
         }
 
@@ -794,8 +794,8 @@ class DatePickerTest {
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                minDate = minDate,
-                maxDate = maxDate,
+                minValidDate = minDate,
+                maxValidDate = maxDate,
             )
         }
 

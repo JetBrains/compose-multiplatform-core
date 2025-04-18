@@ -32,6 +32,7 @@ package androidx.compose.ui.graphics.colorspace
  * * The function is not constant
  * * The function is positive and increasing
  */
+@Suppress("DataClassDefinition")
 data class TransferParameters(
     /** Value g in the equation of the EOTF described above. */
     val gamma: Double,

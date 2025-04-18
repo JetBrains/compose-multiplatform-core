@@ -18,6 +18,8 @@ package androidx.compose.ui.focus
 
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.focus.FocusDirection.Companion.Next
 import androidx.compose.ui.focus.FocusDirection.Companion.Previous
 import androidx.compose.ui.focus.FocusStateImpl.Active
@@ -28,6 +30,7 @@ import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.node.nearestAncestor
 import androidx.compose.ui.node.requireLayoutNode
+import androidx.compose.ui.node.requireOwner
 import androidx.compose.ui.node.visitChildren
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
@@ -113,9 +116,14 @@ private fun FocusTargetNode.generateAndSearchChildren(
 
     val focusTransactionManager = requireTransactionManager()
     val generationBeforeSearch = focusTransactionManager.generation
+    val activeNodeBeforeSearch = requireOwner().focusOwner.activeFocusTargetNode
     // Generate more items until searchChildren() finds a result.
     return searchBeyondBounds(direction) {
-        if (generationBeforeSearch != focusTransactionManager.generation) {
+        if (
+            generationBeforeSearch != focusTransactionManager.generation ||
+                (@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isTrackFocusEnabled &&
+                    activeNodeBeforeSearch !== requireOwner().focusOwner.activeFocusTargetNode)
+        ) {
             // A new focus change was triggered during searchBeyondBounds.
             true
         } else {

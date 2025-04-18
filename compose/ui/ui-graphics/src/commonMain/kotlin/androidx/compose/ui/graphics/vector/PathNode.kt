@@ -30,23 +30,36 @@ sealed class PathNode(val isCurve: Boolean = false, val isQuad: Boolean = false)
     // for simplicity and to make equals comparisons robust.
     @Immutable object Close : PathNode()
 
-    @Immutable data class RelativeMoveTo(val dx: Float, val dy: Float) : PathNode()
-
-    @Immutable data class MoveTo(val x: Float, val y: Float) : PathNode()
-
-    @Immutable data class RelativeLineTo(val dx: Float, val dy: Float) : PathNode()
-
-    @Immutable data class LineTo(val x: Float, val y: Float) : PathNode()
-
-    @Immutable data class RelativeHorizontalTo(val dx: Float) : PathNode()
-
-    @Immutable data class HorizontalTo(val x: Float) : PathNode()
-
-    @Immutable data class RelativeVerticalTo(val dy: Float) : PathNode()
-
-    @Immutable data class VerticalTo(val y: Float) : PathNode()
+    @Immutable
+    @Suppress("DataClassDefinition")
+    data class RelativeMoveTo(val dx: Float, val dy: Float) : PathNode()
 
     @Immutable
+    @Suppress("DataClassDefinition")
+    data class MoveTo(val x: Float, val y: Float) : PathNode()
+
+    @Immutable
+    @Suppress("DataClassDefinition")
+    data class RelativeLineTo(val dx: Float, val dy: Float) : PathNode()
+
+    @Immutable
+    @Suppress("DataClassDefinition")
+    data class LineTo(val x: Float, val y: Float) : PathNode()
+
+    @Immutable
+    @Suppress("DataClassDefinition")
+    data class RelativeHorizontalTo(val dx: Float) : PathNode()
+
+    @Immutable @Suppress("DataClassDefinition") data class HorizontalTo(val x: Float) : PathNode()
+
+    @Immutable
+    @Suppress("DataClassDefinition")
+    data class RelativeVerticalTo(val dy: Float) : PathNode()
+
+    @Immutable @Suppress("DataClassDefinition") data class VerticalTo(val y: Float) : PathNode()
+
+    @Immutable
+    @Suppress("DataClassDefinition")
     data class RelativeCurveTo(
         val dx1: Float,
         val dy1: Float,
@@ -57,6 +70,7 @@ sealed class PathNode(val isCurve: Boolean = false, val isQuad: Boolean = false)
     ) : PathNode(isCurve = true)
 
     @Immutable
+    @Suppress("DataClassDefinition")
     data class CurveTo(
         val x1: Float,
         val y1: Float,
@@ -67,6 +81,7 @@ sealed class PathNode(val isCurve: Boolean = false, val isQuad: Boolean = false)
     ) : PathNode(isCurve = true)
 
     @Immutable
+    @Suppress("DataClassDefinition")
     data class RelativeReflectiveCurveTo(
         val dx1: Float,
         val dy1: Float,
@@ -75,23 +90,30 @@ sealed class PathNode(val isCurve: Boolean = false, val isQuad: Boolean = false)
     ) : PathNode(isCurve = true)
 
     @Immutable
+    @Suppress("DataClassDefinition")
     data class ReflectiveCurveTo(val x1: Float, val y1: Float, val x2: Float, val y2: Float) :
         PathNode(isCurve = true)
 
     @Immutable
+    @Suppress("DataClassDefinition")
     data class RelativeQuadTo(val dx1: Float, val dy1: Float, val dx2: Float, val dy2: Float) :
         PathNode(isQuad = true)
 
     @Immutable
+    @Suppress("DataClassDefinition")
     data class QuadTo(val x1: Float, val y1: Float, val x2: Float, val y2: Float) :
         PathNode(isQuad = true)
 
     @Immutable
+    @Suppress("DataClassDefinition")
     data class RelativeReflectiveQuadTo(val dx: Float, val dy: Float) : PathNode(isQuad = true)
 
-    @Immutable data class ReflectiveQuadTo(val x: Float, val y: Float) : PathNode(isQuad = true)
+    @Immutable
+    @Suppress("DataClassDefinition")
+    data class ReflectiveQuadTo(val x: Float, val y: Float) : PathNode(isQuad = true)
 
     @Immutable
+    @Suppress("DataClassDefinition")
     data class RelativeArcTo(
         val horizontalEllipseRadius: Float,
         val verticalEllipseRadius: Float,
@@ -103,6 +125,7 @@ sealed class PathNode(val isCurve: Boolean = false, val isQuad: Boolean = false)
     ) : PathNode()
 
     @Immutable
+    @Suppress("DataClassDefinition")
     data class ArcTo(
         val horizontalEllipseRadius: Float,
         val verticalEllipseRadius: Float,

@@ -21,6 +21,7 @@ import androidx.paging.LoadState.NotLoading
 import kotlin.jvm.JvmName
 
 /** Collection of pagination [LoadState]s - refresh, prepend, and append. */
+@Suppress("DataClassDefinition")
 public data class LoadStates(
     /** [LoadState] corresponding to [LoadType.REFRESH] loads. */
     public val refresh: LoadState,

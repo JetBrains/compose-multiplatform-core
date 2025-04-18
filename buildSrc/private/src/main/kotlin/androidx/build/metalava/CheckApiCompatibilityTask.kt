@@ -128,7 +128,6 @@ abstract class CheckApiCompatibilityTask @Inject constructor(workerExecutor: Wor
                     CompatibilityCheckError
                 },
                 "--warnings-as-errors",
-                "--format=v3"
             )
         if (baselineFile.exists()) {
             args = args + listOf("--baseline", baselineFile.toString())

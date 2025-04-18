@@ -35,7 +35,6 @@ import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo
  * @param adRenderId ad render id for server auctions
  */
 @OptIn(ExperimentalFeatures.Ext8OptIn::class, ExperimentalFeatures.Ext10OptIn::class)
-@SuppressLint("ClassVerificationFailure")
 class AdData
 @ExperimentalFeatures.Ext10OptIn
 public constructor(

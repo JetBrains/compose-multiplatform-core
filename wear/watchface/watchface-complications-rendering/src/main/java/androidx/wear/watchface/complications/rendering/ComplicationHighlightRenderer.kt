@@ -27,7 +27,15 @@ import androidx.annotation.ColorInt
 import androidx.annotation.Px
 import kotlin.math.floor
 
-/** Helper for rendering a thick outline around a complication to highlight it. */
+/**
+ * Helper for rendering a thick outline around a complication to highlight it.
+ *
+ * @deprecated use Watch Face Format instead
+ */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class ComplicationHighlightRenderer(
     @Px private val outlineExpansion: Float,
     @Px outlineStrokeWidth: Float

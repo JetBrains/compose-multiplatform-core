@@ -111,6 +111,8 @@ private class LazyLayoutPinnableItem(
     /** Handle associated with the current [parentPinnableContainer]. */
     private var parentHandle: PinnableContainer.PinnedHandle? = null
 
+    private var isDisposed = false
+
     /**
      * Current parent [PinnableContainer]. Note that we should correctly re-pin if we pinned the
      * previous container.
@@ -132,6 +134,7 @@ private class LazyLayoutPinnableItem(
         }
 
     override fun pin(): PinnableContainer.PinnedHandle {
+        checkPrecondition(!isDisposed) { "Pin should not be called on an already disposed item " }
         if (pinsCount == 0) {
             pinnedItemList.pin(this)
             parentHandle = parentPinnableContainer?.pin()
@@ -141,6 +144,7 @@ private class LazyLayoutPinnableItem(
     }
 
     override fun release() {
+        if (isDisposed) return // already during item disposal.
         checkPrecondition(pinsCount > 0) { "Release should only be called once" }
         pinsCount--
         if (pinsCount == 0) {
@@ -151,6 +155,6 @@ private class LazyLayoutPinnableItem(
     }
 
     fun onDisposed() {
-        repeat(pinsCount) { release() }
+        isDisposed = true
     }
 }

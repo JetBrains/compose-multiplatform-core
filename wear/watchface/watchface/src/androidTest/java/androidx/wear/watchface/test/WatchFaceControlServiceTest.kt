@@ -25,7 +25,6 @@ import android.graphics.Rect
 import android.os.Build
 import android.support.wearable.watchface.SharedMemoryImage
 import android.view.SurfaceHolder
-import androidx.annotation.RequiresApi
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -175,13 +174,12 @@ val DEVICE_CONFIG =
         /* digitalPreviewReferenceTimeMillis = */ 0
     )
 
-@SdkSuppress(maxSdkVersion = 32) // b/271922712
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1, maxSdkVersion = 32) // b/271922712
 @RunWith(AndroidJUnit4::class)
-@RequiresApi(Build.VERSION_CODES.O_MR1)
 @MediumTest
 public class WatchFaceControlServiceTest {
 
-    @get:Rule internal val screenshotRule = AndroidXScreenshotTestRule("wear/wear-watchface")
+    @get:Rule internal val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
     private lateinit var instance: IHeadlessWatchFace
 

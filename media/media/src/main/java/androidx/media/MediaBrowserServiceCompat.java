@@ -102,17 +102,16 @@ import java.util.List;
 
 /**
  * Base class for media browse services.
- * <p>
- * Media browse services enable applications to browse media content provided by an application
- * and ask the application to start playing it. They may also be used to control content that
- * is already playing by way of a {@link MediaSessionCompat}.
- * </p>
  *
- * To extend this class, you must declare the service in your manifest file with
- * an intent filter with the {@link #SERVICE_INTERFACE} action.
+ * <p>Media browse services enable applications to browse media content provided by an application
+ * and ask the application to start playing it. They may also be used to control content that is
+ * already playing by way of a {@link MediaSessionCompat}. To extend this class, you must declare
+ * the service in your manifest file with an intent filter with the {@link #SERVICE_INTERFACE}
+ * action.
  *
- * For example:
- * </p><pre>
+ * <p>For example:
+ *
+ * <pre>
  * &lt;service android:name=".MyMediaBrowserServiceCompat"
  *          android:label="&#64;string/service_name" >
  *     &lt;intent-filter>
@@ -122,11 +121,16 @@ import java.util.List;
  * </pre>
  *
  * <div class="special reference">
+ *
  * <h3>Developer Guides</h3>
- * <p>For information about building your media application, read the
- * <a href="{@docRoot}guide/topics/media-apps/index.html">Media Apps</a> developer guide.</p>
- * </div>
+ *
+ * <p>For information about building your media application, read the <a
+ * href="{@docRoot}guide/topics/media-apps/index.html">Media Apps</a> developer guide. </div>
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 public abstract class MediaBrowserServiceCompat extends Service {
     static final String TAG = "MBServiceCompat";
     static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
@@ -757,24 +761,27 @@ public abstract class MediaBrowserServiceCompat extends Service {
 
     /**
      * Completion handler for asynchronous callback methods in {@link MediaBrowserServiceCompat}.
-     * <p>
-     * Each of the methods that takes one of these to send the result must call either
-     * {@link #sendResult} or {@link #sendError} to respond to the caller with the given results or
-     * errors. If those functions return without calling {@link #sendResult} or {@link #sendError},
-     * they must instead call {@link #detach} before returning, and then may call
-     * {@link #sendResult} or {@link #sendError} when they are done. If {@link #sendResult},
-     * {@link #sendError}, or {@link #detach} is called twice, an exception will be thrown.
-     * </p><p>
-     * Those functions might also want to call {@link #sendProgressUpdate} to send interim updates
-     * to the caller. If it is called after calling {@link #sendResult} or {@link #sendError}, an
-     * exception will be thrown.
-     * </p>
+     *
+     * <p>Each of the methods that takes one of these to send the result must call either {@link
+     * #sendResult} or {@link #sendError} to respond to the caller with the given results or errors.
+     * If those functions return without calling {@link #sendResult} or {@link #sendError}, they
+     * must instead call {@link #detach} before returning, and then may call {@link #sendResult} or
+     * {@link #sendError} when they are done. If {@link #sendResult}, {@link #sendError}, or {@link
+     * #detach} is called twice, an exception will be thrown.
+     *
+     * <p>Those functions might also want to call {@link #sendProgressUpdate} to send interim
+     * updates to the caller. If it is called after calling {@link #sendResult} or {@link
+     * #sendError}, an exception will be thrown.
      *
      * @see MediaBrowserServiceCompat#onLoadChildren
      * @see MediaBrowserServiceCompat#onLoadItem
      * @see MediaBrowserServiceCompat#onSearch
      * @see MediaBrowserServiceCompat#onCustomAction
+     * @param <T> The type of the result
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static class Result<T> {
         private final Object mDebug;
         private boolean mDetachCalled;
@@ -1895,9 +1902,13 @@ public abstract class MediaBrowserServiceCompat extends Service {
     }
 
     /**
-     * Contains information that the browser service needs to send to the client
-     * when first connected.
+     * Contains information that the browser service needs to send to the client when first
+     * connected.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static final class BrowserRoot {
         /**
          * The lookup key for a boolean that indicates whether the browser service should return a

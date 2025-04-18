@@ -50,8 +50,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @Suppress("DEPRECATION")
-@SdkSuppress(minSdkVersion = 23)
-@RequiresApi(23) // ViewCompat.getRootWindowInsets()
+@SdkSuppress(minSdkVersion = 23) // ViewCompat.getRootWindowInsets()
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 public class WindowInsetsControllerCompatActivityTest {

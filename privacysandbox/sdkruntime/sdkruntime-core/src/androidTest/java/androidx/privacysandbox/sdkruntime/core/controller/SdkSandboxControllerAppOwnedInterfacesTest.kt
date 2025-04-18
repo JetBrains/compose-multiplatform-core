@@ -20,7 +20,6 @@ import android.os.Binder
 import android.os.ext.SdkExtensions
 import androidx.annotation.RequiresExtension
 import androidx.core.os.BuildCompat
-import androidx.privacysandbox.sdkruntime.core.AdServicesInfo
 import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
@@ -71,6 +70,5 @@ class SdkSandboxControllerAppOwnedInterfacesTest {
         assertThat(resultObj.getInterface()).isEqualTo(expectedObj.getInterface())
     }
 
-    private fun isAppOwnedInterfacesApiAvailable() =
-        BuildCompat.AD_SERVICES_EXTENSION_INT >= 8 || AdServicesInfo.isDeveloperPreview()
+    private fun isAppOwnedInterfacesApiAvailable() = BuildCompat.AD_SERVICES_EXTENSION_INT >= 8
 }

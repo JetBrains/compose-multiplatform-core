@@ -47,7 +47,7 @@ internal class DepthSortedSet(private val extraAssertions: Boolean) {
     // Created and used only when extraAssertions == true
     private var mapOfOriginalDepth: MutableObjectIntMap<LayoutNode>? = null
 
-    private val set = TreeSet(DepthComparator)
+    private val set = SortedSet(DepthComparator)
 
     fun contains(node: LayoutNode): Boolean {
         val contains = set.contains(node)
@@ -119,8 +119,25 @@ internal class DepthSortedSet(private val extraAssertions: Boolean) {
 }
 
 internal class DepthSortedSetsForDifferentPasses(extraAssertions: Boolean) {
+    /**
+     * [outOfLookaheadScopeSet] contains nodes that are out of lookaheadScope.
+     *
+     * The invalidation order is always: [outOfLookaheadScopeSet] then [lookaheadSet] before
+     * [approachSet].
+     *
+     * When no LookaheadScope is present in the tree, the latter two sets will be empty, all the
+     * invalidations will come from nodes in the [outOfLookaheadScopeSet].
+     */
+    private val outOfLookaheadScopeSet = DepthSortedSet(extraAssertions)
+
+    /** [lookaheadSet] contains nodes that require lookahead invalidation */
     private val lookaheadSet = DepthSortedSet(extraAssertions)
-    private val set = DepthSortedSet(extraAssertions)
+
+    /**
+     * [approachSet] contains nodes that only requires approach invalidations. Only nodes in a
+     * LookaheadScope can ever be put in this set.
+     */
+    private val approachSet = DepthSortedSet(extraAssertions)
 
     /**
      * Checks if the given node exists in the corresponding set based on the provided
@@ -131,12 +148,17 @@ internal class DepthSortedSetsForDifferentPasses(extraAssertions: Boolean) {
         return if (affectsLookahead) {
             constainsInLookahead
         } else {
-            constainsInLookahead || set.contains(node)
+            constainsInLookahead ||
+                outOfLookaheadScopeSet.contains(node) ||
+                approachSet.contains(node)
         }
     }
 
     /** Checks if the node exists in either set. */
-    fun contains(node: LayoutNode): Boolean = lookaheadSet.contains(node) || set.contains(node)
+    fun contains(node: LayoutNode): Boolean =
+        outOfLookaheadScopeSet.contains(node) ||
+            lookaheadSet.contains(node) ||
+            approachSet.contains(node)
 
     /**
      * Adds the given node to the corresponding set based on whether its lookahead
@@ -149,36 +171,24 @@ internal class DepthSortedSetsForDifferentPasses(extraAssertions: Boolean) {
     fun add(node: LayoutNode, affectsLookahead: Boolean) {
         if (affectsLookahead) {
             lookaheadSet.add(node)
-            set.add(node)
+            approachSet.add(node)
         } else {
-            if (!lookaheadSet.contains(node)) {
-                // Only add the node to set if it's not already in the lookahead set. Nodes in
-                // lookaheadSet will get a remeasure/relayout call after lookahead.
-                set.add(node)
-            }
-        }
-    }
-
-    fun remove(node: LayoutNode, affectsLookahead: Boolean): Boolean {
-        val contains =
-            if (affectsLookahead) {
-                lookaheadSet.remove(node)
+            if (node.lookaheadRoot != null) {
+                // In a lookahead scope && the invalidation doesn't affect lookahead, therefore
+                // the node needs to be added to approachSet.
+                approachSet.add(node)
             } else {
-                set.remove(node)
+                // Not in a lookahead scope
+                outOfLookaheadScopeSet.add(node)
             }
-        return contains
-    }
-
-    fun remove(node: LayoutNode): Boolean {
-        val containsInLookahead = lookaheadSet.remove(node)
-        return set.remove(node) || containsInLookahead
-    }
-
-    fun pop(): LayoutNode {
-        if (lookaheadSet.isNotEmpty()) {
-            return lookaheadSet.pop()
         }
-        return set.pop()
+    }
+
+    /** Remove the [node] from all the sets. */
+    fun remove(node: LayoutNode): Boolean {
+        val removedFromNonLookaheadSet = outOfLookaheadScopeSet.remove(node)
+        val removedFromLookaheadSet = lookaheadSet.remove(node)
+        return approachSet.remove(node) || removedFromLookaheadSet || removedFromNonLookaheadSet
     }
 
     /**
@@ -186,17 +196,34 @@ internal class DepthSortedSetsForDifferentPasses(extraAssertions: Boolean) {
      * empty, before handling nodes that only require invalidation for the main pass.
      */
     inline fun popEach(crossinline block: (node: LayoutNode, affectsLookahead: Boolean) -> Unit) {
-        while (isNotEmpty()) {
-            val affectsLookahead = lookaheadSet.isNotEmpty()
-            val node = if (affectsLookahead) lookaheadSet.pop() else set.pop()
+        // Sequence for invalidation: outOfLookaheadScopeSet, lookaheadSet, approachSet
+        while (true) {
+            val affectsLookahead: Boolean
+            val node =
+                if (outOfLookaheadScopeSet.isNotEmpty()) {
+                    affectsLookahead = false
+                    outOfLookaheadScopeSet.pop()
+                } else {
+                    if (lookaheadSet.isNotEmpty()) {
+                        affectsLookahead = true
+                        lookaheadSet.pop()
+                    } else if (approachSet.isNotEmpty()) {
+                        affectsLookahead = false
+                        approachSet.pop()
+                    } else {
+                        break
+                    }
+                }
             block(node, affectsLookahead)
         }
     }
 
-    fun isEmpty(): Boolean = set.isEmpty() && lookaheadSet.isEmpty()
+    fun isEmpty(): Boolean =
+        outOfLookaheadScopeSet.isEmpty() && approachSet.isEmpty() && lookaheadSet.isEmpty()
 
     fun isEmpty(affectsLookahead: Boolean): Boolean =
-        if (affectsLookahead) lookaheadSet.isEmpty() else set.isEmpty()
+        if (affectsLookahead) lookaheadSet.isEmpty()
+        else outOfLookaheadScopeSet.isEmpty() && approachSet.isEmpty()
 
     fun isNotEmpty(): Boolean = !isEmpty()
 }

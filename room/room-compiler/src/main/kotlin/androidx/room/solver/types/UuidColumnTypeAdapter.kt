@@ -55,9 +55,9 @@ class UuidColumnTypeAdapter(
         }
     }
 
-    override fun readFromCursor(
+    override fun readFromStatement(
         outVarName: String,
-        cursorVarName: String,
+        stmtVarName: String,
         indexVarName: String,
         scope: CodeGenScope
     ) {
@@ -67,14 +67,14 @@ class UuidColumnTypeAdapter(
                     "%L = %M(%L.getBlob(%L))",
                     outVarName,
                     RoomTypeNames.UUID_UTIL.packageMember("convertByteToUUID"),
-                    cursorVarName,
+                    stmtVarName,
                     indexVarName
                 )
             }
             if (out.nullability == XNullability.NONNULL) {
                 addGetBlobStatement()
             } else {
-                beginControlFlow("if (%L.isNull(%L))", cursorVarName, indexVarName)
+                beginControlFlow("if (%L.isNull(%L))", stmtVarName, indexVarName)
                     .addStatement("%L = null", outVarName)
                 nextControlFlow("else").addGetBlobStatement()
                 endControlFlow()

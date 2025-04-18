@@ -41,10 +41,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Playback state for a {@link MediaSessionCompat}. This includes a state like
- * {@link PlaybackStateCompat#STATE_PLAYING}, the current playback position,
- * and the current control capabilities.
+ * Playback state for a {@link MediaSessionCompat}. This includes a state like {@link
+ * PlaybackStateCompat#STATE_PLAYING}, the current playback position, and the current control
+ * capabilities.
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 @SuppressLint("BanParcelableUsage")
 public final class PlaybackStateCompat implements Parcelable {
 
@@ -879,10 +883,14 @@ public final class PlaybackStateCompat implements Parcelable {
     };
 
     /**
-     * {@link PlaybackStateCompat.CustomAction CustomActions} can be used to
-     * extend the capabilities of the standard transport controls by exposing
-     * app specific actions to {@link MediaControllerCompat Controllers}.
+     * {@link PlaybackStateCompat.CustomAction CustomActions} can be used to extend the capabilities
+     * of the standard transport controls by exposing app specific actions to {@link
+     * MediaControllerCompat Controllers}.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static final class CustomAction implements Parcelable {
         private final String mAction;
         private final CharSequence mName;
@@ -1103,7 +1111,11 @@ public final class PlaybackStateCompat implements Parcelable {
 
     /**
      * Builder for {@link PlaybackStateCompat} objects.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static final class Builder {
         private final List<PlaybackStateCompat.CustomAction> mCustomActions = new ArrayList<>();
 

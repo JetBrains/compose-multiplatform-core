@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
@@ -84,7 +85,7 @@ public fun ToggleButton(
     colors: ToggleButtonColors = ToggleButtonDefaults.toggleButtonColors(),
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     content: @Composable BoxScope.() -> Unit,
-) =
+): Unit =
     ToggleButton(
         checked,
         onCheckedChange,
@@ -150,7 +151,7 @@ public fun ToggleButton(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     shape: Shape = CircleShape,
     content: @Composable BoxScope.() -> Unit,
-) =
+): Unit =
     ToggleButton(
         checked,
         onCheckedChange,
@@ -267,22 +268,22 @@ public object ToggleButtonDefaults {
      * The recommended size for a small [ToggleButton]. You can apply this value for the size by
      * overriding Modifier.size directly on [ToggleButton].
      */
-    public val SmallToggleButtonSize = 48.dp
+    public val SmallToggleButtonSize: Dp = 48.dp
 
     /**
      * The default size applied for the [ToggleButton]. Note that you can override it by applying
      * Modifier.size directly on [ToggleButton].
      */
-    public val DefaultToggleButtonSize = 52.dp
+    public val DefaultToggleButtonSize: Dp = 52.dp
 
     /** The size of an icon when used inside a small-sized [ToggleButton]. */
-    public val SmallIconSize = 24.dp
+    public val SmallIconSize: Dp = 24.dp
 
     /** The default size of an icon when used inside a default-sized [ToggleButton]. */
-    public val DefaultIconSize = 26.dp
+    public val DefaultIconSize: Dp = 26.dp
 
     /** Role semantics that accessibility services can use to provide more context to users. */
-    public val DefaultRole = Role.Checkbox
+    public val DefaultRole: Role = Role.Checkbox
 
     /**
      * Creates a [ToggleButtonColors] that represents the background and content colors used in a

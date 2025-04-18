@@ -144,7 +144,7 @@ class LocalContextCastIssueDetectorTest : LintDetectorTest() {
         lint()
             .files(
                 kotlin(
-                    """
+                        """
                 package com.example
 
                 import android.app.Activity
@@ -160,8 +160,8 @@ class LocalContextCastIssueDetectorTest : LintDetectorTest() {
                     val activity3 = LocalContext.current as? MyActivity
                 }
             """
-                        .trimIndent()
-                ),
+                    )
+                    .indented(),
                 Stubs.Composable,
                 Stubs.CompositionLocal,
                 LocalContextStub,
@@ -190,7 +190,7 @@ class LocalContextCastIssueDetectorTest : LintDetectorTest() {
         lint()
             .files(
                 kotlin(
-                    """
+                        """
                 package com.example
 
                 import android.app.Activity
@@ -206,8 +206,8 @@ class LocalContextCastIssueDetectorTest : LintDetectorTest() {
                     val activity2 = LocalContext.current as ComponentActivity
                 }
                 """
-                        .trimIndent()
-                ),
+                    )
+                    .indented(),
                 Stubs.Composable,
                 Stubs.CompositionLocal,
                 LocalActivityStub,

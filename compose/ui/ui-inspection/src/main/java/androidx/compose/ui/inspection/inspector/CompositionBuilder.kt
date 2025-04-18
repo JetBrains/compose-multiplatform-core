@@ -43,6 +43,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.toSize
 import java.util.ArrayDeque
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
@@ -54,6 +56,7 @@ import kotlin.math.roundToInt
  * The interval -10000..-2 is reserved for the generated ids.
  */
 @VisibleForTesting const val RESERVED_FOR_GENERATED_IDS = -10000L
+private const val LAZY_ITEM = "LazyLayoutPinnableItem"
 
 private val unwantedCalls =
     setOf(
@@ -74,6 +77,7 @@ internal class CompositionBuilder(
     private val subCompositions = mutableMapOf<Any?, MutableList<SubCompositionResult>>()
     private var capturingSubCompositions =
         mutableMapOf<MutableInspectorNode, MutableList<SubCompositionResult>>()
+    private var listIndex = -1
 
     /**
      * Build a list of [InspectorNode] trees from a single [root] composition, and insert the
@@ -87,7 +91,7 @@ internal class CompositionBuilder(
         reset(root, childCompositions)
         val node = root.mapTree(::convert, contextCache) ?: newNode()
         updateSubCompositionsAtEnd(node)
-        val result = SubCompositionResult(composition, ownerView, node.children.toList())
+        val result = SubCompositionResult(composition, ownerView, node.children.toList(), listIndex)
         release(node)
         reset(null, emptyList())
         return result
@@ -103,6 +107,7 @@ internal class CompositionBuilder(
                 subCompositions.getOrPut(result.group) { mutableListOf() }.add(result)
             }
         capturingSubCompositions.clear()
+        listIndex = -1
     }
 
     /**
@@ -219,6 +224,10 @@ internal class CompositionBuilder(
         node.inlined = context.isInline
         node.box = context.bounds.emptyCheck()
 
+        if (node.name == LAZY_ITEM) {
+            listIndex = getListIndexOfLazyItem(context)
+        }
+
         // If this node is associated with an android View, set the node's viewId to point to
         // the hosted view. We use the parent's uniqueDrawingId since the interopView returned here
         // will be the view itself, but we want to use the `AndroidViewHolder` that hosts the view
@@ -233,6 +242,22 @@ internal class CompositionBuilder(
         if (layoutInfo != null) {
             return parseLayoutInfo(layoutInfo, context, node)
         }
+
+        // If any of the children has an unknown location, we need to:
+        // - change the calculated size to the children with known location
+        // - or mark this node as an unknown location and unwanted if the size
+        //   originates from children with unknown locations.
+        if (children.any { it.unknownLocation } && !node.box.isEmpty) {
+            var box = emptyBox
+            children.filter { !it.unknownLocation }.forEach { child -> box = box.union(child.box) }
+            if (box.isEmpty) {
+                node.unknownLocation = true
+                node.markUnwanted()
+            } else {
+                node.box = box
+            }
+        }
+
         // Keep an empty node if we are capturing nodes into sub-compositions.
         // Mark it unwanted after copying the node to the sub-compositions.
         if (
@@ -251,6 +276,27 @@ internal class CompositionBuilder(
             addParameters(context, node)
         }
         return node
+    }
+
+    /**
+     * LazyLayoutPinnableItem is used in reusable compositions and has the index as the 2nd
+     * parameter.
+     */
+    private fun getListIndexOfLazyItem(context: SourceContext): Int {
+        val parameters = context.parameters
+        if (parameters.size < 2) return -1
+        return (parameters[1].value as? Int) ?: -1
+    }
+
+    private fun IntRect.union(other: IntRect): IntRect {
+        if (this == emptyBox) return other else if (other == emptyBox) return this
+
+        return IntRect(
+            left = min(left, other.left),
+            top = min(top, other.top),
+            bottom = max(bottom, other.bottom),
+            right = max(right, other.right)
+        )
     }
 
     /**
@@ -342,7 +388,12 @@ internal class CompositionBuilder(
         val size = box.size.toSize()
         val coordinates = layoutInfo.coordinates
         var bounds: QuadBounds? = null
-        if (layoutInfo.isAttached && coordinates.isAttached) {
+        if (!layoutInfo.isAttached || !coordinates.isAttached || !layoutInfo.isPlaced) {
+            // This could happen for extra items generated for reusable content like the
+            // items in a LazyColumn. Mark these nodes unwanted i.e. filter them out.
+            node.unknownLocation = true
+            node.markUnwanted()
+        } else {
             val topLeft = toIntOffset(coordinates.localToWindow(Offset.Zero))
             val topRight = toIntOffset(coordinates.localToWindow(Offset(size.width, 0f)))
             val bottomRight =
@@ -482,7 +533,13 @@ internal class SubCompositionResult(
     val ownerView: View?,
 
     /** The parsed sub-composition, that may be replaced later */
-    var nodes: List<InspectorNode>
+    var nodes: List<InspectorNode>,
+
+    /**
+     * The index of this reusable sub-composition or -1 if this is not reusable content. Example: an
+     * item in a LazyColumn.
+     */
+    val listIndex: Int
 ) {
     /**
      * The identity of the parent [CompositionGroup] where this composition belongs in a parent

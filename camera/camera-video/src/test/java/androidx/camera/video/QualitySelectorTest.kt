@@ -21,6 +21,7 @@ import android.media.CamcorderProfile.QUALITY_720P
 import android.media.CamcorderProfile.QUALITY_HIGH
 import android.media.CamcorderProfile.QUALITY_LOW
 import android.os.Build
+import android.util.Range
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.DynamicRange.HLG_10_BIT
 import androidx.camera.core.DynamicRange.SDR
@@ -417,6 +418,13 @@ class QualitySelectorTest {
             }
 
             override fun isQualitySupported(quality: Quality, dynamicRange: DynamicRange): Boolean {
+                throw UnsupportedOperationException("Not supported.")
+            }
+
+            override fun getSupportedFrameRateRanges(
+                quality: Quality,
+                dynamicRange: DynamicRange
+            ): Set<Range<Int>> {
                 throw UnsupportedOperationException("Not supported.")
             }
 

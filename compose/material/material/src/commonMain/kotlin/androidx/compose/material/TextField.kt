@@ -40,6 +40,7 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits.MultiLine
 import androidx.compose.foundation.text.input.TextFieldLineLimits.SingleLine
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.TextFieldDefaults.indicatorLine
+import androidx.compose.material.internal.subtractConstraintSafely
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -79,8 +80,8 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * <a href="https://m2.material.io/components/text-fields#filled-text-field" class="external"
- * target="_blank">Material Design filled text field</a>.
+ * [Material Design filled text
+ * field](https://m2.material.io/components/text-fields#filled-text-field).
  *
  * Filled text fields have more visual emphasis than outlined text fields, making them stand out
  * when surrounded by other content and components.
@@ -201,7 +202,6 @@ fun TextField(
     val textColor = textStyle.color.takeOrElse { colors.textColor(enabled).value }
     val mergedTextStyle = textStyle.merge(TextStyle(color = textColor))
 
-    @OptIn(ExperimentalMaterialApi::class)
     BasicTextField(
         state = state,
         modifier =
@@ -257,8 +257,8 @@ fun TextField(
 }
 
 /**
- * <a href="https://m2.material.io/components/text-fields#filled-text-field" class="external"
- * target="_blank">Material Design filled text field</a>.
+ * [Material Design filled text
+ * field](https://m2.material.io/components/text-fields#filled-text-field).
  *
  * Filled text fields have more visual emphasis than outlined text fields, making them stand out
  * when surrounded by other content and components.
@@ -349,7 +349,6 @@ fun TextField(
     val textColor = textStyle.color.takeOrElse { colors.textColor(enabled).value }
     val mergedTextStyle = textStyle.merge(TextStyle(color = textColor))
 
-    @OptIn(ExperimentalMaterialApi::class)
     BasicTextField(
         value = value,
         modifier =
@@ -446,8 +445,8 @@ fun TextField(
 }
 
 /**
- * <a href="https://m2.material.io/components/text-fields#filled-text-field" class="external"
- * target="_blank">Material Design filled text field</a>.
+ * [Material Design filled text
+ * field](https://m2.material.io/components/text-fields#filled-text-field).
  *
  * Filled text fields have more visual emphasis than outlined text fields, making them stand out
  * when surrounded by other content and components.
@@ -540,7 +539,6 @@ fun TextField(
     val textColor = textStyle.color.takeOrElse { colors.textColor(enabled).value }
     val mergedTextStyle = textStyle.merge(TextStyle(color = textColor))
 
-    @OptIn(ExperimentalMaterialApi::class)
     BasicTextField(
         value = value,
         modifier =
@@ -914,7 +912,7 @@ private class TextFieldMeasurePolicy(
                 .fastFirstOrNull { it.layoutId == LeadingId }
                 ?.let {
                     remainingWidth =
-                        remainingWidth.substractConstraintSafely(
+                        remainingWidth.subtractConstraintSafely(
                             it.maxIntrinsicWidth(Constraints.Infinity)
                         )
                     intrinsicMeasurer(it, width)
@@ -924,7 +922,7 @@ private class TextFieldMeasurePolicy(
                 .fastFirstOrNull { it.layoutId == TrailingId }
                 ?.let {
                     remainingWidth =
-                        remainingWidth.substractConstraintSafely(
+                        remainingWidth.subtractConstraintSafely(
                             it.maxIntrinsicWidth(Constraints.Infinity)
                         )
                     intrinsicMeasurer(it, width)
@@ -954,13 +952,6 @@ private class TextFieldMeasurePolicy(
             paddingValues = paddingValues
         )
     }
-}
-
-private fun Int.substractConstraintSafely(from: Int): Int {
-    if (this == Constraints.Infinity) {
-        return this
-    }
-    return this - from
 }
 
 private fun calculateWidth(

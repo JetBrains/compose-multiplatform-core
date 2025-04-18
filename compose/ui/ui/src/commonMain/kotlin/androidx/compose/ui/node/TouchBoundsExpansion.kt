@@ -153,6 +153,7 @@ value class TouchBoundsExpansion internal constructor(private val packedValue: L
  *
  * @see PointerInputModifierNode.touchBoundsExpansion
  */
+@Suppress("DataClassDefinition")
 data class DpTouchBoundsExpansion(
     val start: Dp,
     val top: Dp,

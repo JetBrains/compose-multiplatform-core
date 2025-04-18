@@ -198,6 +198,7 @@ internal class CallSessionLegacy(
         callChannels.availableEndpointChannel.trySend(availableEndpoints).getOrThrow()
     }
 
+    @Suppress("OVERRIDE_DEPRECATION") // b/407498327
     override fun onCallAudioStateChanged(state: CallAudioState) {
         if (VERSION.SDK_INT >= VERSION_CODES.P) {
             Api28PlusImpl.refreshBluetoothDeviceCache(mCachedBluetoothDevices, state)

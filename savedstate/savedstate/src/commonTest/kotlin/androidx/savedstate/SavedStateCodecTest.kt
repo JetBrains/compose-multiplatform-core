@@ -19,6 +19,7 @@ package androidx.savedstate
 import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
 import androidx.savedstate.SavedStateCodecTestUtils.encodeDecode
+import androidx.savedstate.serialization.SavedStateConfiguration
 import androidx.savedstate.serialization.decodeFromSavedState
 import androidx.savedstate.serialization.encodeToSavedState
 import androidx.savedstate.serialization.serializers.SavedStateSerializer
@@ -26,15 +27,21 @@ import kotlin.jvm.JvmInline
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration
+import kotlinx.serialization.ContextualSerializer
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.IntArraySerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
+import kotlinx.serialization.modules.subclass
 import kotlinx.serialization.serializer
 
 @ExperimentalSerializationApi
@@ -67,7 +74,6 @@ internal class SavedStateCodecTest : RobolectricTest() {
         }
         Long.MIN_VALUE.encodeDecode {
             assertThat(size()).isEqualTo(1)
-            assertThat(source)
             assertThat(getLong("")).isEqualTo(Long.MIN_VALUE)
         }
         Long.MAX_VALUE.encodeDecode {
@@ -233,7 +239,7 @@ internal class SavedStateCodecTest : RobolectricTest() {
             assertThat(isNull("1")).isTrue()
         }
 
-        MyColor(0, 128, 255).encodeDecode(MyColorIntArraySerializer) {
+        MyColor(0, 128, 255).encodeDecode(serializer = MyColorIntArraySerializer) {
             assertThat(size()).isEqualTo(1)
             assertThat(getIntArray("")).isEqualTo(intArrayOf(0, 128, 255))
         }
@@ -260,11 +266,9 @@ internal class SavedStateCodecTest : RobolectricTest() {
             assertThat(size()).isEqualTo(3)
             assertThat(getString("0")).isEqualTo("a")
             assertThat(isNull("1")).isTrue()
-            assertThrows(IllegalStateException::class) { getString("1") }
+            assertThrows(IllegalArgumentException::class) { getString("1") }
                 .hasMessageThat()
-                .contains(
-                    "The saved state value associated with the key '1' is either null or not of the expected type. This might happen if the value was saved with a different type or if the saved state has been modified unexpectedly."
-                )
+                .contains(keyOrValueNotFoundErrorMessage("1"))
             assertThat(getString("2")).isEqualTo("c")
         }
 
@@ -312,11 +316,11 @@ internal class SavedStateCodecTest : RobolectricTest() {
 
         // Custom list is not a list.
         val myDelegatedList = MyDelegatedList(arrayListOf(1, 3, 5))
-        myDelegatedList.encodeDecode(serializer<MyDelegatedList<Int>>()) {
+        myDelegatedList.encodeDecode(serializer = serializer<MyDelegatedList<Int>>()) {
             assertThat(size()).isEqualTo(1)
             assertThat(getIntList("values")).isEqualTo(listOf(1, 3, 5))
         }
-        myDelegatedList.encodeDecode(serializer<List<Int>>()) {
+        myDelegatedList.encodeDecode(serializer = serializer<List<Int>>()) {
             assertThat(size()).isEqualTo(1)
             assertThat(getIntList("")).isEqualTo(listOf(1, 3, 5))
         }
@@ -401,15 +405,19 @@ internal class SavedStateCodecTest : RobolectricTest() {
 
     @Test
     fun sealedClasses() {
-        Node.Add(Node.Operand(3), Node.Operand(5)).encodeDecode {
+        // Should use base type for encoding/decoding.
+        Node.Add(Node.Operand(3), Node.Operand(5)).encodeDecode<Node> {
             assertThat(size()).isEqualTo(2)
-            getSavedState("lhs").read {
-                assertThat(size()).isEqualTo(1)
-                assertThat(getInt("value")).isEqualTo(3)
-            }
-            getSavedState("rhs").read {
-                assertThat(size()).isEqualTo(1)
-                assertThat(getInt("value")).isEqualTo(5)
+            assertThat(getString("type")).isEqualTo("androidx.savedstate.Node.Add")
+            getSavedState("value").read {
+                getSavedState("lhs").read {
+                    assertThat(size()).isEqualTo(1)
+                    assertThat(getInt("value")).isEqualTo(3)
+                }
+                getSavedState("rhs").read {
+                    assertThat(size()).isEqualTo(1)
+                    assertThat(getInt("value")).isEqualTo(5)
+                }
             }
         }
     }
@@ -425,11 +433,23 @@ internal class SavedStateCodecTest : RobolectricTest() {
         }
 
         // Nullable with default value.
-        @Serializable data class B(val s: String? = "foo")
-        B().encodeDecode()
-        B(s = "bar").encodeDecode {
+        @Serializable data class B(val s: String? = "foo", val i: Int)
+        B(i = 3).encodeDecode {
             assertThat(size()).isEqualTo(1)
+            assertThat(getInt("i")).isEqualTo(3)
+        }
+        B(s = null, i = 3).encodeDecode {
+            assertThat(size()).isEqualTo(2)
+            assertThat(isNull("s")).isTrue()
+        }
+        B(s = "bar", i = 3).encodeDecode {
+            assertThat(size()).isEqualTo(2)
             assertThat(getString("s")).isEqualTo("bar")
+        }
+        // The value of `s` is the same as its default value so it's omitted from encoding.
+        B(s = "foo", i = 3).encodeDecode {
+            assertThat(size()).isEqualTo(1)
+            assertThat(getInt("i")).isEqualTo(3)
         }
 
         // Nullable without default value
@@ -450,6 +470,22 @@ internal class SavedStateCodecTest : RobolectricTest() {
             assertThat(getInt("i")).isEqualTo(5)
             assertThat(getString("s")).isEqualTo("foo")
         }
+
+        // Nullable with null as default value.
+        @Serializable data class E(val s: String? = null)
+        // Even though we encode `null`s in general as we don't encode default values
+        // nothing is encoded.
+        E().encodeDecode()
+
+        // Nullable in parent
+        G(i = 3).encodeDecode<F> {
+            assertThat(size()).isEqualTo(2)
+            assertThat(getString("type")).isEqualTo("androidx.savedstate.G")
+            getSavedState("value").read {
+                assertThat(size()).isEqualTo(1)
+                assertThat(getInt("i")).isEqualTo(3)
+            }
+        }
     }
 
     @Test
@@ -464,36 +500,39 @@ internal class SavedStateCodecTest : RobolectricTest() {
                     putSavedState("ss", savedState { putString("s", "bar") })
                 }
             )
-            .encodeDecode {
-                assertThat(size()).isEqualTo(1)
-                getSavedState("s").read {
-                    assertThat(size()).isEqualTo(4)
-                    assertThat(getInt("i")).isEqualTo(1)
-                    assertThat(getString("s")).isEqualTo("foo")
-                    assertThat(getIntArray("a")).isEqualTo(intArrayOf(1, 3, 5))
-                    getSavedState("ss").read {
-                        assertThat(size()).isEqualTo(1)
-                        assertThat(getString("s")).isEqualTo("bar")
+            .encodeDecode(
+                checkDecoded = { decoded, original ->
+                    assertThat(decoded.s.read { contentDeepEquals(original.s) })
+                },
+                checkEncoded = {
+                    assertThat(size()).isEqualTo(1)
+                    getSavedState("s").read {
+                        assertThat(size()).isEqualTo(4)
+                        assertThat(getInt("i")).isEqualTo(1)
+                        assertThat(getString("s")).isEqualTo("foo")
+                        assertThat(getIntArray("a")).isEqualTo(intArrayOf(1, 3, 5))
+                        getSavedState("ss").read {
+                            assertThat(size()).isEqualTo(1)
+                            assertThat(getString("s")).isEqualTo("bar")
+                        }
                     }
                 }
-            }
+            )
 
         val origin = savedState {
             putInt("i", 1)
             putString("s", "foo")
             putIntArray("a", intArrayOf(1, 3, 5))
         }
-        val restored =
-            decodeFromSavedState(
-                SavedStateSerializer(),
-                encodeToSavedState(SavedStateSerializer(), origin).read {
-                    assertThat(size()).isEqualTo(3)
-                    assertThat(getInt("i")).isEqualTo(1)
-                    assertThat(getString("s")).isEqualTo("foo")
-                    assertThat(getIntArray("a")).isEqualTo(intArrayOf(1, 3, 5))
-                    source
-                }
-            )
+        val encoded = encodeToSavedState(SavedStateSerializer, origin)
+        val restored = decodeFromSavedState(SavedStateSerializer, encoded)
+
+        encoded.read {
+            assertThat(size()).isEqualTo(3)
+            assertThat(getInt("i")).isEqualTo(1)
+            assertThat(getString("s")).isEqualTo("foo")
+            assertThat(getIntArray("a")).isEqualTo(intArrayOf(1, 3, 5))
+        }
         assertThat(restored.read { contentDeepEquals(origin) }).isTrue()
         assertThat(restored).isNotSameInstanceAs(origin)
     }
@@ -510,15 +549,16 @@ internal class SavedStateCodecTest : RobolectricTest() {
     // Users shouldn't do this. The test is just to document the behavior.
     @Test
     fun typeMismatchInDecodingWorks() {
-        assertThat(decodeFromSavedState<Int>(savedState { putBoolean("", true) }))
-            .isEqualTo(0) // This is the default value from `SavedStateReader.getInt(String)`.
-        assertThrows(IllegalStateException::class) {
+        assertThrows(IllegalArgumentException::class) {
+                decodeFromSavedState<Int>(savedState { putBoolean("", true) })
+            }
+            .hasMessageThat()
+            .contains(keyOrValueNotFoundErrorMessage(""))
+        assertThrows(IllegalArgumentException::class) {
                 decodeFromSavedState<String>(savedState { putBoolean("", true) })
             }
             .hasMessageThat()
-            .contains(
-                "The saved state value associated with the key '' is either null or not of the expected type. This might happen if the value was saved with a different type or if the saved state has been modified unexpectedly."
-            )
+            .contains(keyOrValueNotFoundErrorMessage(""))
         @Serializable data class Foo(val i: Int)
         @Serializable data class Bar(val i: Int)
         assertEquals(Bar(3), decodeFromSavedState<Bar>(encodeToSavedState(Foo(3))))
@@ -528,7 +568,7 @@ internal class SavedStateCodecTest : RobolectricTest() {
     fun decodeMissingKey() {
         assertThrows(IllegalArgumentException::class) { decodeFromSavedState<Int>(savedState()) }
             .hasMessageThat()
-            .contains("No saved state was found associated with the key ''")
+            .contains(keyOrValueNotFoundErrorMessage(""))
     }
 
     // This is not ideal. The test is just to document the behavior.
@@ -536,10 +576,165 @@ internal class SavedStateCodecTest : RobolectricTest() {
     fun illegalWrite() {
         val savedState = encodeToSavedState(3)
         savedState.write { putString("", "foo") }
-        // Got the default value of Int instead of 3 because the savedState got manipulated after
+        // Got exception instead of `3` because the savedState got manipulated after
         // encoding.
-        assertThat(decodeFromSavedState<Int>(savedState)).isEqualTo(0)
+        assertThrows<IllegalArgumentException> { decodeFromSavedState<Int>(savedState) }
+            .hasMessageThat()
+            .contains(keyOrValueNotFoundErrorMessage(""))
     }
+
+    @Test
+    fun encodingClassesWithoutSerializersThrowsException() {
+        assertThrows<SerializationException> {
+                MyColor(1, 3, 5).encodeDecode {
+                    assertThat(size()).isEqualTo(1)
+                    assertThat(getIntArray("")).isEqualTo(intArrayOf(1, 3, 5))
+                }
+            }
+            .hasMessageThat()
+            .contains("Serializer for class 'MyColor' is not found.")
+    }
+
+    @Test
+    fun canEncodeWithContextualSerialization() {
+        val config = SavedStateConfiguration {
+            serializersModule = SerializersModule {
+                contextual(MyColor::class, MyColorIntArraySerializer)
+            }
+        }
+
+        // Specifying `ContextualSerializer` explicitly.
+        MyColor(1, 3, 5).encodeDecode(
+            configuration = config,
+            serializer = ContextualSerializer(MyColor::class)
+        ) {
+            assertThat(size()).isEqualTo(1)
+            assertThat(getIntArray("")).isEqualTo(intArrayOf(1, 3, 5))
+        }
+    }
+
+    @Test
+    fun canEncodeTopLevelObjectsWithImplicitContextualSerialization() {
+        val config = SavedStateConfiguration {
+            serializersModule = SerializersModule {
+                contextual(MyColor::class, MyColorIntArraySerializer)
+            }
+        }
+
+        // Fallback to contextual serializer as `MyColor` doesn't have an associated serializer.
+        MyColor(1, 3, 5).encodeDecode(configuration = config) {
+            assertThat(size()).isEqualTo(1)
+            assertThat(getIntArray("")).isEqualTo(intArrayOf(1, 3, 5))
+        }
+    }
+
+    @Test
+    fun canEncodeWithPolymorphicSerialization() {
+        val config = SavedStateConfiguration {
+            serializersModule = SerializersModule {
+                polymorphic(Shape::class) {
+                    subclass(Circle::class, Circle.serializer())
+                    subclass(Rectangle::class, Rectangle.serializer())
+                }
+            }
+        }
+
+        Circle(3).encodeDecode<Shape>(
+            configuration = config,
+            // This is needed only in Kotlin/Native.
+            serializer = PolymorphicSerializer(Shape::class)
+        ) {
+            assertThat(size()).isEqualTo(2)
+            assertThat(getString("type")).isEqualTo("androidx.savedstate.Circle")
+            getSavedState("value").read {
+                assertThat(size()).isEqualTo(1)
+                assertThat(getInt("radius")).isEqualTo(3)
+            }
+        }
+        Rectangle(3, 5).encodeDecode<Shape>(
+            configuration = config,
+            // This is needed only in Kotlin/Native.
+            serializer = PolymorphicSerializer(Shape::class)
+        ) {
+            assertThat(size()).isEqualTo(2)
+            assertThat(getString("type")).isEqualTo("androidx.savedstate.Rectangle")
+            getSavedState("value").read {
+                assertThat(size()).isEqualTo(2)
+                assertThat(getInt("width")).isEqualTo(3)
+                assertThat(getInt("height")).isEqualTo(5)
+            }
+        }
+    }
+
+    // Encode a `List<Any>` with `SerializersModule`.
+    @Test
+    fun canUseContextualSerializationWithPolymorphicSerialization() {
+        val config = SavedStateConfiguration {
+            serializersModule = SerializersModule {
+                contextual(Any::class, PolymorphicSerializer(Any::class))
+                polymorphic(Any::class) {
+                    subclass(String::class)
+                    subclass(Int::class)
+                }
+            }
+        }
+        listOf("foo", 123).encodeDecode<List<Any>>(configuration = config) {
+            assertThat(size()).isEqualTo(2)
+            getSavedState("0").read {
+                assertThat(size()).isEqualTo(2)
+                assertThat(getString("type")).isEqualTo("kotlin.String")
+                assertThat(getString("value")).isEqualTo("foo")
+            }
+            getSavedState("1").read {
+                assertThat(size()).isEqualTo(2)
+                assertThat(getString("type")).isEqualTo("kotlin.Int")
+                assertThat(getInt("value")).isEqualTo(123)
+            }
+        }
+    }
+
+    @Test
+    fun canUseBuiltInSerializersAutomatically() {
+        savedState {
+                putString("name", "foo")
+                putInt("age", 99)
+            }
+            .encodeDecode(
+                checkDecoded = { decoded, original ->
+                    assertThat(decoded.read { contentDeepEquals(original) }).isTrue()
+                },
+                checkEncoded = {
+                    assertThat(size()).isEqualTo(2)
+                    assertThat(getString("name")).isEqualTo("foo")
+                    assertThat(getInt("age")).isEqualTo(99)
+                }
+            )
+    }
+
+    @Test
+    fun canUseContextualSerializer() {
+        savedState {
+                putString("name", "foo")
+                putInt("age", 99)
+            }
+            .encodeDecode(
+                serializer = ContextualSerializer(SavedState::class),
+                checkDecoded = { decoded, original ->
+                    assertThat(decoded.read { contentDeepEquals(original) }).isTrue()
+                },
+                checkEncoded = {
+                    assertThat(size()).isEqualTo(2)
+                    assertThat(getString("name")).isEqualTo("foo")
+                    assertThat(getInt("age")).isEqualTo(99)
+                }
+            )
+    }
+}
+
+private fun keyOrValueNotFoundErrorMessage(key: String): String {
+    return "No valid saved state was found for the key '$key'. It may be missing, null, or not " +
+        "of the expected type. This can occur if the value was saved with a different type or if " +
+        "the saved state was modified unexpectedly."
 }
 
 @Serializable
@@ -563,6 +758,7 @@ private typealias MyTypeAliasToInt = Int
 
 private typealias MyNestedTypeAlias = MyTypeAliasToInt
 
+@Serializable
 private sealed class Node {
     @Serializable data class Add(val lhs: Operand, val rhs: Operand) : Node()
 
@@ -588,7 +784,7 @@ object MyObject {
     val foo = "bar"
 }
 
-@Serializable private data class MyColor(val r: Int, val g: Int, val b: Int)
+private data class MyColor(val r: Int, val g: Int, val b: Int)
 
 @OptIn(ExperimentalSerializationApi::class)
 private object MyColorIntArraySerializer : KSerializer<MyColor> {
@@ -605,3 +801,16 @@ private object MyColorIntArraySerializer : KSerializer<MyColor> {
         return MyColor(array[0], array[1], array[2])
     }
 }
+
+@Serializable
+private sealed class F {
+    val s: String? = null
+}
+
+@Serializable private data class G(val i: Int) : F()
+
+interface Shape
+
+@Serializable data class Circle(val radius: Int) : Shape
+
+@Serializable data class Rectangle(val width: Int, val height: Int) : Shape

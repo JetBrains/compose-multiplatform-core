@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // TODO(): Remove when migrating from PagedList
+
 package androidx.paging.rxjava3
 
 import androidx.paging.Config

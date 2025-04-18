@@ -20,9 +20,10 @@ import static androidx.core.provider.FontsContractCompat.FontRequestCallback.Fon
 
 import android.graphics.Typeface;
 
-import androidx.annotation.NonNull;
 import androidx.core.provider.FontRequestWorker.TypefaceResult;
 import androidx.core.provider.FontsContractCompat.FontRequestCallback;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -33,8 +34,8 @@ import java.util.concurrent.Executor;
  * If no Executor is provided, {@link CalleeHandler#create()} is used instead.
  */
 class CallbackWrapper {
-    @NonNull private final FontRequestCallback mCallback;
-    @NonNull private final Executor mExecutor;
+    private final @NonNull FontRequestCallback mCallback;
+    private final @NonNull Executor mExecutor;
 
     /**
      * Run callbacks in {@param executor}
@@ -57,7 +58,7 @@ class CallbackWrapper {
     /**
      * Mirrors {@link FontRequestCallback#onTypefaceRetrieved(Typeface)}
      */
-    private void onTypefaceRetrieved(@NonNull final Typeface typeface) {
+    private void onTypefaceRetrieved(final @NonNull Typeface typeface) {
         final FontRequestCallback callback = this.mCallback;
         mExecutor.execute(new Runnable() {
             @Override

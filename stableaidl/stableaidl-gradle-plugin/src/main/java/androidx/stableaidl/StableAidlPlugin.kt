@@ -17,10 +17,14 @@
 package androidx.stableaidl
 
 import androidx.stableaidl.api.StableAidlExtension
+import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.SdkComponents
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.DslExtension
 import com.android.build.api.variant.Variant
+import com.android.build.gradle.AppPlugin
+import com.android.build.gradle.LibraryPlugin
+import com.android.build.gradle.api.KotlinMultiplatformAndroidPlugin
 import com.android.utils.usLocaleCapitalize
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -35,47 +39,61 @@ private const val PLUGIN_DIRNAME = "stable_aidl"
 private const val GENERATED_PATH = "generated/source/$PLUGIN_DIRNAME"
 private const val INTERMEDIATES_PATH = "intermediates/${PLUGIN_DIRNAME}_parcelable"
 
-@Suppress("unused", "UnstableApiUsage")
+@Suppress("unused")
 abstract class StableAidlPlugin : Plugin<Project> {
-
     override fun apply(project: Project) {
-        val androidComponents =
-            project.extensions.getByType(AndroidComponentsExtension::class.java)
-                ?: throw GradleException("Stable AIDL plugin requires Android Gradle Plugin")
+        project.plugins.configureEach { plugin ->
+            @Suppress("UnstableApiUsage") // for KotlinMultiplatformAndroidPlugin
+            when (plugin) {
+                is AppPlugin -> applyAfterAgp(project)
+                is KotlinMultiplatformAndroidPlugin -> applyAfterAgp(project)
+                is LibraryPlugin -> applyAfterAgp(project)
+            }
+        }
+    }
 
+    // Suppress UnstableApiUsage for SdkComponents.getAidl(), Aidl, and DSL extension methods
+    @Suppress("UnstableApiUsage")
+    private fun applyAfterAgp(project: Project) {
+        val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
         val extension =
             project.extensions.create(EXTENSION_NAME, StableAidlExtensionImpl::class.java)
 
+        // Tests using `ProjectSetupRule` don't populate `compileSdk`, so we use a CLI property.
+        val compileSdk =
+            project.extensions.getByType(CommonExtension::class.java).compileSdk
+                ?: project.providers.gradleProperty("stableaidl.compilesdk").orNull?.toInt()
+                ?: throw RuntimeException("Failed to obtain compile SDK")
+
         val aidl = androidComponents.sdkComponents.aidl.get()
         val aidlExecutable = aidl.executable
-        val aidlFramework = aidl.framework
         val aidlVersion = aidl.version
+
+        // The framework supports Stable AIDL definitions starting in SDK 36. Prior to that, we'll
+        // need to use manually-defined stubs.
+        val aidlFramework = project.objects.fileProperty()
+        val shadowFramework = project.objects.directoryProperty()
+        if (compileSdk >= 36) {
+            aidlFramework.set(aidl.framework)
+        } else {
+            shadowFramework.set(extension.shadowFrameworkDir)
+        }
 
         // Extend the android sourceSet.
         androidComponents.registerSourceType(SOURCE_TYPE_STABLE_AIDL)
         androidComponents.registerSourceType(SOURCE_TYPE_STABLE_AIDL_IMPORTS)
 
-        // Extend AGP's project (e.g. android) and buildType DSLs.
+        // Register the DSL extensions.
         androidComponents.registerExtension(
             DslExtension.Builder("stableAidl")
                 .extendProjectWith(StableAidlProjectDslExtension::class.java)
                 .extendBuildTypeWith(StableAidlBuildTypeDslExtension::class.java)
                 .build()
-        ) { variantExtensionConfig ->
-            // Propagate project and buildType configuration to variant.
-            project.objects.newInstance(StableAidlVariantExtension::class.java).also {
-                variantExtension ->
-                variantExtension.version.set(
-                    variantExtensionConfig
-                        .buildTypeExtension(StableAidlBuildTypeDslExtension::class.java)
-                        .version
-                        ?: variantExtensionConfig
-                            .projectExtension(StableAidlProjectDslExtension::class.java)
-                            .version
-                )
-            }
+        ) { config ->
+            project.objects.newInstance(StableAidlVariantExtension::class.java, config, project)
         }
 
+        // Set up per-variant tasks.
         androidComponents.onVariants { variant ->
             val sourceDir = variant.sources.getByName(SOURCE_TYPE_STABLE_AIDL)
             val importsDir = variant.sources.getByName(SOURCE_TYPE_STABLE_AIDL_IMPORTS)
@@ -94,6 +112,7 @@ abstract class StableAidlPlugin : Plugin<Project> {
                     variant,
                     aidlExecutable,
                     aidlFramework,
+                    shadowFramework,
                     aidlVersion,
                     sourceDir,
                     packagedDir,
@@ -112,6 +131,7 @@ abstract class StableAidlPlugin : Plugin<Project> {
                     variant,
                     aidlExecutable,
                     aidlFramework,
+                    shadowFramework,
                     aidlVersion,
                     sourceDir,
                     importsDir,
@@ -125,6 +145,7 @@ abstract class StableAidlPlugin : Plugin<Project> {
                     variant,
                     aidlExecutable,
                     aidlFramework,
+                    shadowFramework,
                     importsDir,
                     depImports,
                     frozenApiDir,
@@ -136,6 +157,7 @@ abstract class StableAidlPlugin : Plugin<Project> {
                     variant,
                     aidlExecutable,
                     aidlFramework,
+                    shadowFramework,
                     importsDir,
                     depImports,
                     frozenApiDir,

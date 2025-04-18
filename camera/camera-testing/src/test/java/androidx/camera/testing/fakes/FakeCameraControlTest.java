@@ -24,7 +24,6 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
@@ -42,6 +41,7 @@ import androidx.camera.testing.impl.mocks.MockScreenFlash;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

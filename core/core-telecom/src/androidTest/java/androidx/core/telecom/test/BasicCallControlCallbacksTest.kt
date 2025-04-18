@@ -20,7 +20,6 @@ import android.os.Build.VERSION_CODES
 import android.telecom.Call
 import android.telecom.CallAttributes
 import android.telecom.DisconnectCause
-import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallControlResult
 import androidx.core.telecom.internal.utils.Utils
 import androidx.core.telecom.test.utils.BaseTelecomTest
@@ -47,7 +46,6 @@ import org.junit.runner.RunWith
  * create a [CallControlCallback] request before changing the call state.
  */
 @SdkSuppress(minSdkVersion = VERSION_CODES.O)
-@RequiresApi(VERSION_CODES.O)
 @RunWith(AndroidJUnit4::class)
 class BasicCallControlCallbacksTest : BaseTelecomTest() {
 

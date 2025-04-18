@@ -20,7 +20,7 @@ import static androidx.core.util.Preconditions.checkArgument;
 
 import android.util.Range;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A VideoEncoderInfo wrapper that swaps the width and height constraints internally.
@@ -39,9 +39,8 @@ public class SwappedVideoEncoderInfo implements VideoEncoderInfo {
         mVideoEncoderInfo = videoEncoderInfo;
     }
 
-    @NonNull
     @Override
-    public String getName() {
+    public @NonNull String getName() {
         return mVideoEncoderInfo.getName();
     }
 
@@ -55,27 +54,23 @@ public class SwappedVideoEncoderInfo implements VideoEncoderInfo {
         return mVideoEncoderInfo.isSizeSupported(height, width);
     }
 
-    @NonNull
     @Override
-    public Range<Integer> getSupportedWidths() {
+    public @NonNull Range<Integer> getSupportedWidths() {
         return mVideoEncoderInfo.getSupportedHeights();
     }
 
-    @NonNull
     @Override
-    public Range<Integer> getSupportedHeights() {
+    public @NonNull Range<Integer> getSupportedHeights() {
         return mVideoEncoderInfo.getSupportedWidths();
     }
 
-    @NonNull
     @Override
-    public Range<Integer> getSupportedWidthsFor(int height) {
+    public @NonNull Range<Integer> getSupportedWidthsFor(int height) {
         return mVideoEncoderInfo.getSupportedHeightsFor(height);
     }
 
-    @NonNull
     @Override
-    public Range<Integer> getSupportedHeightsFor(int width) {
+    public @NonNull Range<Integer> getSupportedHeightsFor(int width) {
         return mVideoEncoderInfo.getSupportedWidthsFor(width);
     }
 
@@ -89,9 +84,8 @@ public class SwappedVideoEncoderInfo implements VideoEncoderInfo {
         return mVideoEncoderInfo.getWidthAlignment();
     }
 
-    @NonNull
     @Override
-    public Range<Integer> getSupportedBitrateRange() {
+    public @NonNull Range<Integer> getSupportedBitrateRange() {
         return mVideoEncoderInfo.getSupportedBitrateRange();
     }
 }

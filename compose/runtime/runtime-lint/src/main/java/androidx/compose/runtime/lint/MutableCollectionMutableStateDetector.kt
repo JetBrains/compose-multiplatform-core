@@ -123,18 +123,28 @@ private fun KtAnalysisSession.isMutableCollection(ktType: KtType): Boolean {
             "kotlin.collections.Map",
         )
 
+    val guavaImmutableTypePrefix = "com.google.common.collect.Immutable"
+
     val kotlinMutableTypes =
         listOf("kotlin.collections.MutableCollection", "kotlin.collections.MutableMap")
 
     val javaMutableTypes = listOf("java.util.Collection", "java.util.Map")
 
     // Check `this`
+    if (fqn(ktType)?.startsWith(guavaImmutableTypePrefix) == true) return false
     if (kotlinMutableTypes.any { it == fqn(ktType) }) return true
     if (kotlinImmutableTypes.any { it == fqn(ktType) }) return false
     if (javaMutableTypes.any { it == fqn(ktType) }) return true
 
     // Check supertypes
+    // Preserve order of checks here - they are tied to inheritance order. I.e. since
+    // MutableCollection : Collection, we need to check for MutableCollection first.
+    // Since MutableCollection and Collection (in Kotlin) are both Collection in Java, we need to
+    // check Guava before either of them, since when using Kotlin analysis APIs the Guava
+    // collections will appear to implement the Kotlin mutable types.
     val supertypes = ktType.getAllSuperTypes()
+    if (supertypes.any { type -> fqn(type)?.startsWith(guavaImmutableTypePrefix) == true })
+        return false
     if (supertypes.any { type -> kotlinMutableTypes.any { it == fqn(type) } }) return true
     if (supertypes.any { type -> kotlinImmutableTypes.any { it == fqn(type) } }) return false
     if (supertypes.any { type -> javaMutableTypes.any { it == fqn(type) } }) return true
@@ -143,5 +153,11 @@ private fun KtAnalysisSession.isMutableCollection(ktType: KtType): Boolean {
 }
 
 private fun KtAnalysisSession.fqn(ktType: KtType): String? {
-    return ktType.expandedClassSymbol?.classIdIfNonLocal?.asFqNameString()
+    return ktType
+        // For platform types (Java types with unknown nullability) try and get a concrete type
+        // first - lower bound will match the non-null type.
+        .lowerBoundIfFlexible()
+        .expandedClassSymbol
+        ?.classIdIfNonLocal
+        ?.asFqNameString()
 }

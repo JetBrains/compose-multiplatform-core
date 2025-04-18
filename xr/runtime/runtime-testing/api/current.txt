@@ -1,0 +1,14 @@
+// Signature format: 4.0
+package androidx.xr.runtime.testing.math {
+
+  public final class MathAssertions {
+    method public static void assertPose(androidx.xr.runtime.math.Pose actual, androidx.xr.runtime.math.Pose expected);
+    method public static void assertPose(androidx.xr.runtime.math.Pose actual, androidx.xr.runtime.math.Pose expected, optional float epsilon);
+    method public static void assertRotation(androidx.xr.runtime.math.Quaternion actual, androidx.xr.runtime.math.Quaternion expected);
+    method public static void assertRotation(androidx.xr.runtime.math.Quaternion actual, androidx.xr.runtime.math.Quaternion expected, optional float epsilon);
+    method public static void assertVector3(androidx.xr.runtime.math.Vector3 actual, androidx.xr.runtime.math.Vector3 expected);
+    method public static void assertVector3(androidx.xr.runtime.math.Vector3 actual, androidx.xr.runtime.math.Vector3 expected, optional float epsilon);
+  }
+
+}
+

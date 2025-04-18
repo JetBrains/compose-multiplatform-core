@@ -53,7 +53,7 @@ object AlertDialogBenchmark : MacrobenchmarkScreen {
                 }
             }
             AlertDialog(
-                show = showDialog.value,
+                visible = showDialog.value,
                 onDismissRequest = { showDialog.value = false },
                 title = { Text("Title") },
                 confirmButton = {

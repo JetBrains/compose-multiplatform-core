@@ -29,8 +29,6 @@ import android.util.ArraySet;
 import android.util.Log;
 import android.util.SparseArray;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.concurrent.futures.ResolvableFuture;
 
@@ -44,6 +42,8 @@ import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -282,7 +282,7 @@ class ChecksumsApiSImpl {
         }
     }
 
-    private static @NonNull android.content.pm.Checksum readFromStream(@NonNull DataInputStream dis)
+    private static android.content.pm.@NonNull Checksum readFromStream(@NonNull DataInputStream dis)
             throws IOException {
         final int type = dis.readInt();
 
@@ -301,7 +301,7 @@ class ChecksumsApiSImpl {
     }
 
     private static void writeToStream(@NonNull DataOutputStream dos,
-            @NonNull android.content.pm.Checksum checksum) throws IOException {
+            android.content.pm.@NonNull Checksum checksum) throws IOException {
         dos.writeInt(checksum.getType());
 
         final byte[] valueBytes = checksum.getValue();
@@ -339,7 +339,7 @@ class ChecksumsApiSImpl {
      * @param signature detached PKCS7 signature in DER format
      * @return all certificates that passed verification
      */
-    private static @NonNull Certificate[] verifySignature(android.content.pm.Checksum[] checksums,
+    private static Certificate @NonNull [] verifySignature(android.content.pm.Checksum[] checksums,
             byte[] signature) throws NoSuchAlgorithmException, IOException, SignatureException {
         final byte[] blob;
         try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {

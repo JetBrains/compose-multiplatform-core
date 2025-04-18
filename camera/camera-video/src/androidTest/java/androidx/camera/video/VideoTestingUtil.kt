@@ -26,13 +26,20 @@ import androidx.camera.camera2.internal.compat.quirk.ExtraCroppingQuirk as Camer
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks as PipeDeviceQuirks
 import androidx.camera.camera2.pipe.integration.compat.quirk.ExtraCroppingQuirk as PipeExtraCroppingQuirk
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.UseCase
+import androidx.camera.core.UseCaseGroup
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.testing.impl.StreamSharingForceEnabledEffect
 import androidx.camera.testing.impl.getRotatedResolution
 import androidx.camera.testing.impl.useAndRelease
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks
 import androidx.camera.video.internal.compat.quirk.StopCodecAfterSurfaceRemovalCrashMediaServerQuirk
+import androidx.lifecycle.LifecycleOwner
 import com.google.common.truth.Truth.assertThat
+import com.google.common.util.concurrent.ListenableFuture
 import java.io.File
 import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
@@ -67,13 +74,6 @@ fun assumeSuccessfulSurfaceProcessing() {
     )
 }
 
-fun assumeNotBrokenEmulator() {
-    assumeFalse(
-        "Skip tests for Emulator API 30 crashing issue",
-        Build.MODEL.contains("gphone") && Build.VERSION.SDK_INT == 30
-    )
-}
-
 fun getRotationNeeded(videoCapture: VideoCapture<Recorder>, cameraInfo: CameraInfo) =
     cameraInfo.getSensorRotationDegrees(videoCapture.targetRotation)
 
@@ -88,3 +88,39 @@ fun isStreamSharingEnabled(useCase: UseCase) = !useCase.camera!!.hasTransform
 
 fun isSurfaceProcessingEnabled(videoCapture: VideoCapture<*>) =
     videoCapture.node != null || isStreamSharingEnabled(videoCapture)
+
+class ProcessCameraProviderWrapper(
+    private val cameraProvider: ProcessCameraProvider,
+    private val forceEnableStreamSharing: Boolean
+) {
+
+    fun bindToLifecycle(
+        lifecycleOwner: LifecycleOwner,
+        cameraSelector: CameraSelector,
+        vararg useCases: UseCase
+    ): Camera {
+        if (useCases.isEmpty()) {
+            return cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, *useCases)
+        }
+        val useCaseGroup =
+            UseCaseGroup.Builder()
+                .apply {
+                    useCases.forEach { useCase -> addUseCase(useCase) }
+                    if (forceEnableStreamSharing) {
+                        addEffect(StreamSharingForceEnabledEffect())
+                    }
+                }
+                .build()
+        return cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, useCaseGroup)
+    }
+
+    fun unbind(vararg useCases: UseCase) {
+        cameraProvider.unbind(*useCases)
+    }
+
+    fun unbindAll() {
+        cameraProvider.unbindAll()
+    }
+
+    fun shutdownAsync(): ListenableFuture<Void> = cameraProvider.shutdownAsync()
+}

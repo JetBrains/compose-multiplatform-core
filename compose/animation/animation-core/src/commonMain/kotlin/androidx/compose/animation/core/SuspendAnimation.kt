@@ -31,6 +31,8 @@ import kotlinx.coroutines.CancellationException
  * the animation such as start time, target, etc, consider using [AnimationState.animateTo]. To
  * animate non-[Float] data types, consider the [animate] overload/variant for generic types.
  *
+ * @param initialValue The initial value to animate from.
+ * @param targetValue The target value to animate to.
  * @param initialVelocity The velocity to use for the animation. 0f by default.
  * @param animationSpec The animation configuration that will be used. [spring] by default.
  * @param block Will be invoked on every frame with the current value and velocity of the animation
@@ -55,6 +57,8 @@ public suspend fun animate(
  * This is a convenient method for decay animation. If there's a need to access more info related to
  * the animation such as start time, target, etc, consider using [AnimationState.animateDecay].
  *
+ * @param initialValue The initial value to animate from.
+ * @param initialVelocity The initial velocity of the animation.
  * @param animationSpec Defines the decay animation that will be used for this animation. Some
  *   options for this [animationSpec] include:
  *   [splineBasedDecay][androidx.compose.animation.splineBasedDecay] and [exponentialDecay].

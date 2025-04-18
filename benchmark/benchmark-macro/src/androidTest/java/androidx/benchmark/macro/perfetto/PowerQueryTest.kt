@@ -20,8 +20,9 @@ import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.PowerCategory
 import androidx.benchmark.macro.PowerMetric.Companion.MEASURE_BLOCK_SECTION_NAME
 import androidx.benchmark.macro.createTempFileFromAsset
+import androidx.benchmark.macro.runSingleSessionServer
 import androidx.benchmark.perfetto.PerfettoHelper.Companion.isAbiSupported
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
+import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
@@ -41,7 +42,7 @@ class PowerQueryTest {
 
         val traceFile = createTempFileFromAsset("api32_odpm_rails", ".perfetto-trace")
         val actualMetrics =
-            PerfettoTraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
+            TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
                 PowerQuery.getPowerMetrics(
                     this,
                     querySlices(MEASURE_BLOCK_SECTION_NAME, packageName = null).first()
@@ -198,7 +199,7 @@ class PowerQueryTest {
         val traceFile = createTempFileFromAsset("api31_odpm_rails_empty", ".perfetto-trace")
 
         val actualMetrics =
-            PerfettoTraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
+            TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
                 PowerQuery.getPowerMetrics(
                     this,
                     querySlices(MEASURE_BLOCK_SECTION_NAME, packageName = null).first()

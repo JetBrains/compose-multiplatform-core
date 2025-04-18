@@ -21,7 +21,6 @@ import static androidx.core.util.Preconditions.checkArgument;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.imagecapture.CameraCapturePipeline;
 import androidx.camera.core.impl.CameraControlInternal;
@@ -32,6 +31,8 @@ import androidx.camera.core.impl.utils.futures.FutureChain;
 import androidx.camera.core.impl.utils.futures.Futures;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -46,14 +47,13 @@ public class VirtualCameraControl extends ForwardingCameraControl {
     private final StreamSharing.Control mStreamSharingControl;
 
     VirtualCameraControl(@NonNull CameraControlInternal parent,
-            @NonNull StreamSharing.Control streamSharingControl) {
+            StreamSharing.@NonNull Control streamSharingControl) {
         super(parent);
         mStreamSharingControl = streamSharingControl;
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<List<Void>> submitStillCaptureRequests(
+    public @NonNull ListenableFuture<List<Void>> submitStillCaptureRequests(
             @NonNull List<CaptureConfig> captureConfigs,
             @ImageCapture.CaptureMode int captureMode,
             @ImageCapture.FlashType int flashType) {

@@ -20,7 +20,7 @@ import android.content.res.ColorStateList;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Interface which allows a {@link android.widget.CompoundButton} to receive tinting
@@ -50,8 +50,7 @@ public interface TintableCompoundButton {
      *
      * @see #setSupportButtonTintList(ColorStateList)
      */
-    @Nullable
-    ColorStateList getSupportButtonTintList();
+    @Nullable ColorStateList getSupportButtonTintList();
 
     /**
      * Specifies the blending mode which should be used to apply the tint specified by
@@ -65,13 +64,12 @@ public interface TintableCompoundButton {
      * @see androidx.core.graphics.drawable.DrawableCompat#setTintMode(Drawable,
      * PorterDuff.Mode)
      */
-    void setSupportButtonTintMode(@Nullable PorterDuff.Mode tintMode);
+    void setSupportButtonTintMode(PorterDuff.@Nullable Mode tintMode);
 
     /**
      * Returns the blending mode used to apply the tint to the button drawable
      *
      * @see #setSupportButtonTintMode(PorterDuff.Mode)
      */
-    @Nullable
-    PorterDuff.Mode getSupportButtonTintMode();
+    PorterDuff.@Nullable Mode getSupportButtonTintMode();
 }

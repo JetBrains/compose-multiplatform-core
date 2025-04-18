@@ -65,6 +65,7 @@ private class RecyclerViewAdapter(val items: Int) :
     override fun getItemCount(): Int = items
 }
 
+@Suppress("PROPERTY_HIDES_JAVA_FIELD")
 private class RecyclerViewAsPagerViewHolder(val itemView: View) :
     RecyclerView.ViewHolder(itemView) {
     fun bind(item: String) {

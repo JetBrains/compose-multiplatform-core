@@ -50,7 +50,7 @@ import androidx.compose.ui.unit.dp
 // TODO: Add link to Chip for a clickable icon
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun Icon(painter: Painter, contentDescription: String?, modifier: Modifier, tint: Color) {
+public fun Icon(painter: Painter, contentDescription: String?, modifier: Modifier, tint: Color) {
     val colorFilter =
         remember(tint) { if (tint == Color.Unspecified) null else ColorFilter.tint(tint) }
     val semantics =

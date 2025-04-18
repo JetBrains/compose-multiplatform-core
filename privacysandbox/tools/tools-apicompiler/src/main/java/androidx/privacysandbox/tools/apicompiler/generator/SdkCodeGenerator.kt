@@ -124,7 +124,7 @@ internal class SdkCodeGenerator(
         val valueConverterFileGenerator = ValueConverterFileGenerator(binderCodeConverter, target)
         api.values.map(valueConverterFileGenerator::generate).forEach(::write)
         api.interfaces
-            .filter { it.inheritsSandboxedUiAdapter }
+            .filter { it.inheritsUiAdapter }
             .map { CoreLibInfoAndBinderWrapperConverterGenerator.generate(it).also(::write) }
     }
 

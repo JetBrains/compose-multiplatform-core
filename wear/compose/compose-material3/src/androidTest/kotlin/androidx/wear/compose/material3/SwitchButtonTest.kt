@@ -55,6 +55,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.material3.samples.SplitSwitchButtonSample
 import androidx.wear.compose.material3.samples.SwitchButtonSample
 import org.junit.Assert
@@ -547,7 +548,7 @@ class SwitchButtonTest {
         Assert.assertEquals(2, secondaryLabelMaxLines)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun switch_button_allows_checked_background_color_override() =
         verifySwitchButtonBackgroundColor(
@@ -556,7 +557,7 @@ class SwitchButtonTest {
             expectedColor = CHECKED_COLOR
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun switch_button_allows_unchecked_background_color_override() =
         verifySwitchButtonBackgroundColor(
@@ -565,7 +566,7 @@ class SwitchButtonTest {
             expectedColor = UNCHECKED_COLOR
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun split_switch_button_allows_checked_background_color_override() =
         verifySplitSwitchButtonBackgroundColor(
@@ -574,7 +575,7 @@ class SwitchButtonTest {
             expectedColor = CHECKED_COLOR
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun split_switch_button_allows_unchecked_background_color_override() =
         verifySplitSwitchButtonBackgroundColor(
@@ -583,55 +584,55 @@ class SwitchButtonTest {
             expectedColor = UNCHECKED_COLOR
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun verify_switch_button_colors_enabled_and_checked() {
         rule.verifySwitchButtonColors(checked = true, enabled = true)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun verify_switch_button_colors_enabled_and_unchecked() {
         rule.verifySwitchButtonColors(checked = false, enabled = true)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun verify_switch_button_colors_disabled_and_checked() {
         rule.verifySwitchButtonColors(checked = true, enabled = false)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun verify_switch_button_colors_disabled_and_unchecked() {
         rule.verifySwitchButtonColors(checked = false, enabled = false)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun verify_split_switch_button_colors_enabled_and_checked() {
         rule.verifySplitToggleButtonColors(checked = true, enabled = true)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun verify_split_switch_button_colors_enabled_and_unchecked() {
         rule.verifySplitToggleButtonColors(checked = false, enabled = true)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun verify_split_switch_button_colors_disabled_and_checked() {
         rule.verifySplitToggleButtonColors(checked = true, enabled = false)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun verify_split_toggle_button_colors_disabled_and_unchecked() {
         rule.verifySplitToggleButtonColors(checked = false, enabled = false)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun switch_checked_colors_are_customisable() {
         val thumbColor = Color.Green
@@ -660,7 +661,7 @@ class SwitchButtonTest {
         image.assertContainsColor(trackBorderColor)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun switch_unchecked_colors_are_customisable() {
         val thumbColor = Color.Green
@@ -688,7 +689,7 @@ class SwitchButtonTest {
         image.assertContainsColor(trackBorderColor)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun disabled_switch_checked_colors_are_customisable() {
         val thumbColor = Color.Green
@@ -717,7 +718,7 @@ class SwitchButtonTest {
         image.assertContainsColor(trackBorderColor)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun disabled_switch_unchecked_colors_are_customisable() {
         val thumbColor = Color.Green

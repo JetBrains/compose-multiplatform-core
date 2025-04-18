@@ -21,13 +21,13 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.R;
 import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
+
+import org.jspecify.annotations.Nullable;
 
 @RequiresApi(30)
 public class ImeSecondarySplitViewCompatTestActivity extends Activity {

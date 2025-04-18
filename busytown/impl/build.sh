@@ -70,38 +70,6 @@ if [ "$USE_ANDROIDX_REMOTE_BUILD_CACHE" == "" ]; then
   export USE_ANDROIDX_REMOTE_BUILD_CACHE=gcp
 fi
 
-# Make sure that our native dependencies are new enough for KMP/konan
-# If our existing native libraries are newer, then we don't downgrade them because
-# something else (like Bash) might be requiring the newer version.
-function areNativeLibsNewEnoughForKonan() {
-  if [[ "$(uname)" == Darwin* ]]; then
-    # we don't have any Macs having native dependencies too old to build KMP/konan
-    true
-  elif [[ -f /etc/os-release ]]; then
-    . /etc/os-release
-    version=${VERSION_ID//./}  # Remove dots for comparison
-    if (( version >= 2004 )); then
-      true
-    else
-      # on Ubuntu < 20.04 we check whether we have a sufficiently new GLIBCXX
-      gcc --print-file-name=libstdc++.so.6 | xargs readelf -a -W | grep GLIBCXX_3.4.21 >/dev/null
-    fi
-  else
-    true
-  fi
-}
-
-if ! areNativeLibsNewEnoughForKonan; then
-  KONAN_HOST_LIBS="$OUT_DIR/konan-host-libs"
-  LOG="$KONAN_HOST_LIBS.log"
-  if $SCRIPT_DIR/prepare-linux-sysroot.sh "$KONAN_HOST_LIBS" > $LOG 2>$LOG; then
-    export LD_LIBRARY_PATH=$KONAN_HOST_LIBS
-  else
-    cat $LOG >&2
-    exit 1
-  fi
-fi
-
 # list kotlin sessions in case there are several, b/279739438
 function checkForLeftoverKotlinSessions() {
   KOTLIN_SESSIONS_DIR=$OUT_DIR/gradle-project-cache/kotlin/sessions
@@ -160,5 +128,8 @@ if [ -d "$CONFIGURATION_CACHE_REPORTS" ]; then
     rm -rf "$CONFIGURATION_CACHE_REPORTS_EXPORTED"
     cp -r "$CONFIGURATION_CACHE_REPORTS" "$CONFIGURATION_CACHE_REPORTS_EXPORTED"
 fi
+
+# stop Gradle daemon to clean up after ourselves
+./gradlew --stop
 
 exit "$BUILD_STATUS"

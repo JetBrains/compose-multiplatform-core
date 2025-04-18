@@ -76,6 +76,7 @@ import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.ScaleFactor
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.approachLayout
@@ -2765,6 +2766,69 @@ class SharedTransitionTest {
         )
     }
 
+    @SdkSuppress(minSdkVersion = 26)
+    @Test
+    fun testSharedElementsDroppedFromOverlayAfterTransition() {
+        // Test that shared elements are dropped from overlay after transition **even if their
+        // match is still in the tree**.
+        val duration = 500
+        var showOverlay by mutableStateOf(false)
+        rule.setContent {
+            SharedTransitionLayout(Modifier.requiredSize(120.dp).testTag("root")) {
+                Box(
+                    modifier =
+                        Modifier.sharedElementWithCallerManagedVisibility(
+                                sharedContentState = rememberSharedContentState("box"),
+                                visible = !showOverlay,
+                                boundsTransform = BoundsTransform { _, _ -> tween(duration) }
+                            )
+                            .background(Color.LightGray)
+                            .fillMaxSize(),
+                )
+                Box(
+                    modifier =
+                        Modifier.sharedElementWithCallerManagedVisibility(
+                                sharedContentState = rememberSharedContentState("box"),
+                                visible = showOverlay,
+                                boundsTransform = BoundsTransform { _, _ -> tween(duration) }
+                            )
+                            .background(Color.LightGray)
+                            .size(110.dp)
+                )
+                Box(
+                    modifier =
+                        Modifier.renderInSharedTransitionScopeOverlay(zIndexInOverlay = 1f)
+                            .size(100.dp)
+                            .background(Color.Black)
+                )
+            }
+        }
+
+        rule.runOnIdle {
+            rule.mainClock.autoAdvance = false
+            showOverlay = !showOverlay
+        }
+        rule.waitForIdle()
+
+        repeat(6) {
+            rule.mainClock.advanceTimeBy(100)
+            rule.onNodeWithTag("root").captureToImage().assertContainsColor(Color.Black)
+        }
+
+        rule.mainClock.autoAdvance = true
+
+        rule.runOnIdle {
+            rule.mainClock.autoAdvance = false
+            showOverlay = !showOverlay
+        }
+        rule.waitForIdle()
+
+        repeat(6) {
+            rule.mainClock.advanceTimeBy(100)
+            rule.onNodeWithTag("root").captureToImage().assertContainsColor(Color.Black)
+        }
+    }
+
     // Regression test for b/347520198, SharedTransitionLayout onDraw would not get invalidated
     // in some cases.
     @SdkSuppress(minSdkVersion = 26)
@@ -2895,6 +2959,27 @@ class SharedTransitionTest {
         target = !target
         rule.mainClock.advanceTimeByFrame()
         rule.waitForIdle()
+    }
+
+    @Test
+    fun intrinsicsQueryComingFromAboveLookaheadRoot() {
+        var intrinsicWidth = 0
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Layout(
+                    content = {
+                        SharedTransitionLayout { Box(Modifier.skipToLookaheadSize().size(100.dp)) }
+                    },
+                ) { measurables, constraints ->
+                    val measurable = measurables[0]
+                    intrinsicWidth = measurable.maxIntrinsicWidth(constraints.maxHeight)
+                    val placeable = measurable.measure(constraints)
+                    layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(0, 0) }
+                }
+            }
+        }
+        rule.waitForIdle()
+        assertEquals(100, intrinsicWidth)
     }
 }
 

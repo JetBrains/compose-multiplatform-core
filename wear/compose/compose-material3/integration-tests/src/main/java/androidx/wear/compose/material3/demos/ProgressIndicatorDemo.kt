@@ -58,7 +58,7 @@ import androidx.wear.compose.material3.Stepper
 import androidx.wear.compose.material3.StepperDefaults
 import androidx.wear.compose.material3.SwitchButton
 import androidx.wear.compose.material3.Text
-import androidx.wear.compose.material3.samples.CircularProgressIndicatorContentSample
+import androidx.wear.compose.material3.samples.CircularProgressIndicatorCustomAnimationSample
 import androidx.wear.compose.material3.samples.FullScreenProgressIndicatorSample
 import androidx.wear.compose.material3.samples.IndeterminateProgressArcSample
 import androidx.wear.compose.material3.samples.IndeterminateProgressIndicatorSample
@@ -67,6 +67,7 @@ import androidx.wear.compose.material3.samples.MediaButtonProgressIndicatorSampl
 import androidx.wear.compose.material3.samples.OverflowProgressIndicatorSample
 import androidx.wear.compose.material3.samples.SegmentedProgressIndicatorBinarySample
 import androidx.wear.compose.material3.samples.SegmentedProgressIndicatorSample
+import androidx.wear.compose.material3.samples.SmallSegmentedProgressIndicatorBinarySample
 import androidx.wear.compose.material3.samples.SmallSegmentedProgressIndicatorSample
 import androidx.wear.compose.material3.samples.SmallValuesProgressIndicatorSample
 
@@ -117,7 +118,7 @@ val ProgressIndicatorDemos =
                     Centralize { CircularProgressCustomisableFullScreenDemo() }
                 },
                 ComposableDemo("Custom animation") {
-                    Centralize { CircularProgressIndicatorContentSample() }
+                    Centralize { CircularProgressIndicatorCustomAnimationSample() }
                 },
             )
         ),
@@ -130,6 +131,9 @@ val ProgressIndicatorDemos =
                 },
                 ComposableDemo("Small size") {
                     Centralize { SmallSegmentedProgressIndicatorSample() }
+                },
+                ComposableDemo("Small size binary") {
+                    Centralize { SmallSegmentedProgressIndicatorBinarySample() }
                 },
                 ComposableDemo("Binary with switch") {
                     Centralize { SegmentedProgressIndicatorBinarySwitchDemo() }

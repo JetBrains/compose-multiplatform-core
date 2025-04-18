@@ -52,9 +52,12 @@ val LocalAccessibilityManager = staticCompositionLocalOf<AccessibilityManager?> 
  * The CompositionLocal that can be used to trigger autofill actions. Eg.
  * [Autofill.requestAutofillForNode].
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalComposeUiApi
-@ExperimentalComposeUiApi
+@Deprecated(
+    """
+        Use the new semantics-based Autofill APIs androidx.compose.ui.autofill.ContentType and
+        androidx.compose.ui.autofill.ContentDataType instead.
+        """
+)
 val LocalAutofill = staticCompositionLocalOf<Autofill?> { null }
 
 /**
@@ -62,21 +65,31 @@ val LocalAutofill = staticCompositionLocalOf<Autofill?> { null }
  * androidx.compose.ui.autofill.AutofillNode]s to the autofill tree. The [AutofillTree] is a
  * temporary data structure that will be replaced by Autofill Semantics (b/138604305).
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
+@Deprecated(
+    """
+        Use the new semantics-based Autofill APIs androidx.compose.ui.autofill.ContentType and
+        androidx.compose.ui.autofill.ContentDataType instead.
+        """
+)
 val LocalAutofillTree =
     staticCompositionLocalOf<AutofillTree> { noLocalProvidedFor("LocalAutofillTree") }
 
 /**
- * The CompositionLocal that can be used to trigger autofill actions. Eg.
- * [LocalAutofillManager.commit].
+ * The CompositionLocal that can be used to trigger autofill actions. Eg. [AutofillManager.commit].
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
 val LocalAutofillManager =
     staticCompositionLocalOf<AutofillManager?> { noLocalProvidedFor("LocalAutofillManager") }
 
 /** The CompositionLocal to provide communication with platform clipboard service. */
+@Deprecated(
+    "Use LocalClipboard instead which supports suspend functions",
+    ReplaceWith("LocalClipboard", "androidx.compose.ui.platform.LocalClipboard")
+)
 val LocalClipboardManager =
     staticCompositionLocalOf<ClipboardManager> { noLocalProvidedFor("LocalClipboardManager") }
+
+/** The CompositionLocal to provide communication with platform clipboard service. */
+val LocalClipboard = staticCompositionLocalOf<Clipboard> { noLocalProvidedFor("LocalClipboard") }
 
 /**
  * The CompositionLocal to provide access to a [GraphicsContext] instance for creation of
@@ -85,8 +98,9 @@ val LocalClipboardManager =
  * Consumers that access this Local directly and call [GraphicsContext.createGraphicsLayer] are
  * responsible for calling [GraphicsContext.releaseGraphicsLayer].
  *
- * It is recommended that consumers invoke [rememberGraphicsLayer] instead to ensure that a
- * [GraphicsLayer] is released when the corresponding composable is disposed.
+ * It is recommended that consumers invoke [rememberGraphicsLayer][import
+ * androidx.compose.ui.graphics.rememberGraphicsLayer] instead to ensure that a [GraphicsLayer] is
+ * released when the corresponding composable is disposed.
  */
 val LocalGraphicsContext =
     staticCompositionLocalOf<GraphicsContext> { noLocalProvidedFor("LocalGraphicsContext") }
@@ -205,6 +219,7 @@ internal fun ProvideCommonCompositionLocals(
         LocalAutofillManager provides owner.autofillManager,
         LocalAutofillTree provides owner.autofillTree,
         LocalClipboardManager provides owner.clipboardManager,
+        LocalClipboard provides owner.clipboard,
         LocalDensity provides owner.density,
         LocalFocusManager provides owner.focusOwner,
         @Suppress("DEPRECATION") LocalFontLoader providesDefault

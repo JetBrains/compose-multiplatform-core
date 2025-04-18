@@ -22,8 +22,7 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
@@ -33,15 +32,22 @@ plugins {
 }
 
 androidXMultiplatform {
-    jvm() {
-        withJava()
-    }
+    jvm()
     mac()
     linux()
     ios()
     watchos()
     tvos()
-    // NOTE, if you add android target here, make sure to add the proguard file as well.
+    androidLibrary {
+        namespace = "androidx.datastore.preferences.core"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(
+                    new File("src/jvmMain/resources/META-INF/proguard/androidx.datastore_datastore-preferences-core.pro")
+            )
+        }
+        experimentalProperties["android.lint.useK2Uast"] = false
+    }
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -61,6 +67,7 @@ androidXMultiplatform {
         commonTest {
             dependencies {
                 implementation(libs.kotlinTestCommon)
+                implementation(libs.kotlinTest)
                 implementation(libs.kotlinTestAnnotationsCommon)
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":datastore:datastore-core"))
@@ -68,19 +75,22 @@ androidXMultiplatform {
                 implementation(project(":internal-testutils-datastore"))
             }
         }
-        jvmMain {
+        jvmAndroidMain {
             dependsOn(commonMain)
             dependencies {
                 implementation(project(":datastore:datastore-preferences-proto"))
             }
         }
-        jvmTest {
+        jvmMain {
+            dependsOn(jvmAndroidMain)
+        }
+        androidMain {
+            dependsOn(jvmAndroidMain)
+        }
+        jvmAndroidTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.junit)
-                implementation(libs.kotlinTest)
-                implementation(project(":internal-testutils-datastore"))
-                implementation(project(":kruth:kruth"))
             }
         }
         nativeMain {
@@ -90,7 +100,9 @@ androidXMultiplatform {
                 implementation(libs.kotlinSerializationProtobuf)
             }
         }
-
+        jvmTest {
+            dependsOn(jvmAndroidTest)
+        }
         nativeTest {
             dependsOn(commonTest)
             dependencies {
@@ -115,10 +127,9 @@ androidXMultiplatform {
 
 androidx {
     name = "Preferences DataStore Core"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Android Preferences DataStore without the Android Dependencies"
     legacyDisableKotlinStrictApiMode = true
     metalavaK2UastEnabled = false
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

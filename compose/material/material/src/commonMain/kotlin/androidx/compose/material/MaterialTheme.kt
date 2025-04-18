@@ -24,8 +24,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 
 /**
- * <a href="https://material.io/design/material-theming/overview.html" class="external"
- * target="_blank">Material Theming</a>.
+ * [Material Theming](https://material.io/design/material-theming/overview.html)
  *
  * Material Theming refers to the customization of your Material Design app to better reflect your
  * product’s brand.

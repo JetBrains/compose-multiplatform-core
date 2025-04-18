@@ -16,6 +16,7 @@
 
 package androidx.health.connect.client.records
 
+import androidx.health.connect.client.records.metadata.Metadata
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import java.time.Instant
@@ -34,6 +35,7 @@ class HeartRateRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     samples = listOf()
                 )
             )
@@ -43,6 +45,7 @@ class HeartRateRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     samples = listOf()
                 )
             )
@@ -56,6 +59,7 @@ class HeartRateRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1234L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     samples = listOf()
                 )
             )
@@ -65,6 +69,7 @@ class HeartRateRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1234L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     samples = listOf()
                 )
             )
@@ -78,6 +83,7 @@ class HeartRateRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(1234L),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 samples = listOf()
             )
         }
@@ -111,6 +117,7 @@ class HeartRateRecordTest {
                         startZoneOffset = null,
                         endTime = Instant.ofEpochMilli(1236L),
                         endZoneOffset = null,
+                        metadata = Metadata.unknownRecordingMethod(),
                         samples =
                             listOf(
                                 HeartRateRecord.Sample(

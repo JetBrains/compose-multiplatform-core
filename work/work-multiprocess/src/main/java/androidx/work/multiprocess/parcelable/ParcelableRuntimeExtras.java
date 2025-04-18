@@ -26,10 +26,11 @@ import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.work.WorkerParameters;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +44,7 @@ import java.util.List;
 public class ParcelableRuntimeExtras implements Parcelable {
     private WorkerParameters.RuntimeExtras mRuntimeExtras;
 
-    public ParcelableRuntimeExtras(@NonNull WorkerParameters.RuntimeExtras runtimeExtras) {
+    public ParcelableRuntimeExtras(WorkerParameters.@NonNull RuntimeExtras runtimeExtras) {
         mRuntimeExtras = runtimeExtras;
     }
 
@@ -89,8 +90,7 @@ public class ParcelableRuntimeExtras implements Parcelable {
     public static final Creator<ParcelableRuntimeExtras> CREATOR =
             new Creator<ParcelableRuntimeExtras>() {
                 @Override
-                @NonNull
-                public ParcelableRuntimeExtras createFromParcel(Parcel in) {
+                public @NonNull ParcelableRuntimeExtras createFromParcel(Parcel in) {
                     return new ParcelableRuntimeExtras(in);
                 }
 
@@ -144,8 +144,7 @@ public class ParcelableRuntimeExtras implements Parcelable {
         }
     }
 
-    @NonNull
-    public WorkerParameters.RuntimeExtras getRuntimeExtras() {
+    public WorkerParameters.@NonNull RuntimeExtras getRuntimeExtras() {
         return mRuntimeExtras;
     }
 

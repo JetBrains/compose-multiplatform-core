@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress(
-    "UnstableApiUsage",
-    "TYPEALIAS_EXPANSION_DEPRECATION"
-) // // KotlinMultiplatformAndroidTarget / DeprecatedKotlinMultiplatformAndroidTarget
+@file:Suppress("UnstableApiUsage") // b/393137152
 
 package androidx.build
 
@@ -25,14 +22,17 @@ import androidx.build.clang.AndroidXClang
 import androidx.build.clang.MultiTargetNativeCompilation
 import androidx.build.clang.NativeLibraryBundler
 import androidx.build.clang.configureCinterop
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.gradle.api.KotlinMultiplatformAndroidPlugin
 import groovy.lang.Closure
 import java.io.File
+import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.NamedDomainObjectCollection
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.kotlin.dsl.findByType
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
@@ -47,10 +47,11 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithHostTests
+import org.jetbrains.kotlin.gradle.targets.js.binaryen.BinaryenRootExtension
 import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinJsTargetDsl
 import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinWasmTargetDsl
 import org.jetbrains.kotlin.gradle.targets.js.ir.DefaultIncrementalSyncTask
-import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsEnvSpec
 import org.jetbrains.kotlin.gradle.targets.js.testing.KotlinJsTest
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
@@ -63,7 +64,9 @@ import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
  * of wrapping is to prevent targets from being added when the platform has not been enabled. e.g.
  * the `macosX64` target is gated on a `project.enableMac` check.
  */
-open class AndroidXMultiplatformExtension(val project: Project) {
+abstract class AndroidXMultiplatformExtension(val project: Project) {
+
+    @get:Inject abstract val buildFeatures: BuildFeatures
 
     var enableBinaryCompatibilityValidator = true
 
@@ -78,10 +81,10 @@ open class AndroidXMultiplatformExtension(val project: Project) {
         // make sure to initialize the kotlin extension by accessing the property
         val extension = (kotlinExtension as ExtensionAware)
         project.plugins.apply(KotlinMultiplatformAndroidPlugin::class.java)
-        extension.extensions.getByType(DeprecatedKotlinMultiplatformAndroidTarget::class.java)
+        extension.extensions.getByType(KotlinMultiplatformAndroidLibraryTarget::class.java)
     }
 
-    val agpKmpExtension: DeprecatedKotlinMultiplatformAndroidTarget by agpKmpExtensionDelegate
+    val agpKmpExtension: KotlinMultiplatformAndroidLibraryTarget by agpKmpExtensionDelegate
 
     /**
      * The list of platforms that have been declared as supported in the build configuration.
@@ -353,7 +356,7 @@ open class AndroidXMultiplatformExtension(val project: Project) {
 
     @OptIn(ExperimentalKotlinGradlePluginApi::class)
     @JvmOverloads
-    fun android(block: Action<KotlinAndroidTarget>? = null): KotlinAndroidTarget? {
+    fun androidTarget(block: Action<KotlinAndroidTarget>? = null): KotlinAndroidTarget? {
         supportedPlatforms.add(PlatformIdentifier.ANDROID)
         return if (project.enableJvm()) {
             kotlinExtension.androidTarget {
@@ -420,8 +423,8 @@ open class AndroidXMultiplatformExtension(val project: Project) {
 
     @JvmOverloads
     fun androidLibrary(
-        block: Action<DeprecatedKotlinMultiplatformAndroidTarget>? = null
-    ): DeprecatedKotlinMultiplatformAndroidTarget? {
+        block: Action<KotlinMultiplatformAndroidLibraryTarget>? = null
+    ): KotlinMultiplatformAndroidLibraryTarget? {
         supportedPlatforms.add(PlatformIdentifier.ANDROID)
         return if (project.enableJvm()) {
             agpKmpExtension.also { block?.execute(it) }
@@ -640,8 +643,6 @@ open class AndroidXMultiplatformExtension(val project: Project) {
 
     @JvmOverloads
     fun linuxX64Stubs(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
-        // don't enable binary compatibility validator for stubs
-        enableBinaryCompatibilityValidator = false
         supportedPlatforms.add(PlatformIdentifier.LINUX_X_64_STUBS)
         return if (project.enableLinux()) {
             kotlinExtension.linuxX64("linuxx64Stubs") {
@@ -658,6 +659,7 @@ open class AndroidXMultiplatformExtension(val project: Project) {
 
     @JvmOverloads
     fun js(block: Action<KotlinJsTargetDsl>? = null): KotlinJsTargetDsl? {
+        if (buildFeatures.isIsolatedProjectsEnabled()) return null
         supportedPlatforms.add(PlatformIdentifier.JS)
         return if (project.enableJs()) {
             kotlinExtension.js() {
@@ -675,6 +677,7 @@ open class AndroidXMultiplatformExtension(val project: Project) {
     @OptIn(ExperimentalWasmDsl::class)
     @JvmOverloads
     fun wasmJs(block: Action<KotlinJsTargetDsl>? = null): KotlinWasmTargetDsl? {
+        if (buildFeatures.isIsolatedProjectsEnabled()) return null
         supportedPlatforms.add(PlatformIdentifier.WASM_JS)
         return if (project.enableWasmJs()) {
             kotlinExtension.wasmJs("wasmJs") {
@@ -716,6 +719,7 @@ open class AndroidXMultiplatformExtension(val project: Project) {
 
 private fun Project.configureJs() {
     configureNode()
+    configureBinaryen()
     // Use DSL API when https://youtrack.jetbrains.com/issue/KT-70029 is closed for all tasks below
     tasks.named("jsDevelopmentLibraryCompileSync", DefaultIncrementalSyncTask::class.java) {
         it.destinationDirectory.set(file(layout.buildDirectory.dir("js/packages/js/dev/kotlin")))
@@ -727,6 +731,7 @@ private fun Project.configureJs() {
 
 private fun Project.configureWasm() {
     configureNode()
+    configureBinaryen()
     // Use DSL API when https://youtrack.jetbrains.com/issue/KT-70029 is closed for all tasks below
     tasks.named("wasmJsDevelopmentLibraryCompileSync", DefaultIncrementalSyncTask::class.java) {
         it.destinationDirectory.set(
@@ -748,23 +753,37 @@ private fun Project.configureWasm() {
 }
 
 private fun Project.configureNode() {
-    rootProject.extensions.findByType<NodeJsRootExtension>()?.let { nodeJs ->
-        nodeJs.version = getVersionByName("node")
+    extensions.findByType<NodeJsEnvSpec>()?.let { nodeJs ->
+        nodeJs.version.set(getVersionByName("node"))
         if (!ProjectLayoutType.isPlayground(this)) {
-            nodeJs.downloadBaseUrl =
+            nodeJs.downloadBaseUrl.set(
                 File(project.getPrebuiltsRoot(), "androidx/external/org/nodejs/node")
                     .toURI()
                     .toString()
+            )
         }
     }
 
+    // https://youtrack.jetbrains.com/issue/KT-73913/K-Wasm-yarn-version-per-project
     rootProject.extensions.findByType(YarnRootExtension::class.java)?.let { yarn ->
+        @Suppress("DEPRECATION")
         yarn.version = getVersionByName("yarn")
         yarn.yarnLockMismatchReport = YarnLockMismatchReport.FAIL
         if (!ProjectLayoutType.isPlayground(this)) {
             yarn.lockFileDirectory =
                 File(project.getPrebuiltsRoot(), "androidx/javascript-for-kotlin")
         }
+    }
+}
+
+private fun Project.configureBinaryen() {
+    // https://youtrack.jetbrains.com/issue/KT-74840
+    rootProject.extensions.findByType<BinaryenRootExtension>()?.let { binaryen ->
+        @Suppress("DEPRECATION")
+        binaryen.downloadBaseUrl =
+            File(project.getPrebuiltsRoot(), "androidx/javascript-for-kotlin/binaryen")
+                .toURI()
+                .toString()
     }
 }
 
@@ -783,6 +802,9 @@ private fun Project.configureKotlinJsTests() =
                 )
             }
         }
+        task.testLogging.showStandardStreams = true
+        // From: https://nodejs.org/api/cli.html
+        task.nodeJsArgs.addAll(listOf("--trace-warnings", "--trace-uncaught", "--trace-sigint"))
     }
 
 fun Project.validatePublishedMultiplatformHasDefault() {

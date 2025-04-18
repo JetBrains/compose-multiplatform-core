@@ -198,7 +198,7 @@ class ModelValidatorTest {
                     setOf(
                         AnnotatedInterface(
                             type = Type(packageName = "com.mysdk", simpleName = "MySdk"),
-                            superTypes = listOf(Types.sandboxedUiAdapter),
+                            superTypes = listOf(Types.sandboxedUiAdapter, Types.sharedUiAdapter),
                         ),
                     )
             )
@@ -207,7 +207,7 @@ class ModelValidatorTest {
         assertThat(validationResult.errors)
             .containsExactly(
                 "Interfaces annotated with @PrivacySandboxService may not extend any other " +
-                    "interface. To define a SandboxedUiAdapter, use @PrivacySandboxInterface and " +
+                    "interface. To define a SandboxedUiAdapter or a SharedUiAdapter, use @PrivacySandboxInterface and " +
                     "return it from this service."
             )
     }

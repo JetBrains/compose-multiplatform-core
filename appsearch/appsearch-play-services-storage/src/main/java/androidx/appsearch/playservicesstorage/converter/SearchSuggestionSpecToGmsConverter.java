@@ -18,11 +18,12 @@ package androidx.appsearch.playservicesstorage.converter;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.SearchSuggestionSpec;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Map;
@@ -40,9 +41,8 @@ public class SearchSuggestionSpecToGmsConverter {
     // methods are not defined as returning the same constants as the corresponding setter
     // expects, but they do
     @SuppressLint("WrongConstant")
-    @NonNull
-    public static com.google.android.gms.appsearch.SearchSuggestionSpec toGmsSearchSuggestionSpec(
-            @NonNull SearchSuggestionSpec jetpackSearchSuggestionSpec) {
+    public static com.google.android.gms.appsearch.@NonNull SearchSuggestionSpec
+            toGmsSearchSuggestionSpec(@NonNull SearchSuggestionSpec jetpackSearchSuggestionSpec) {
         Preconditions.checkNotNull(jetpackSearchSuggestionSpec);
 
         com.google.android.gms.appsearch.SearchSuggestionSpec.Builder gmsBuilder =

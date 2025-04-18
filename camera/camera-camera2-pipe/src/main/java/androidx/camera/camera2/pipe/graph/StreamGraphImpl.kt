@@ -227,7 +227,8 @@ constructor(
         val deferrable: Boolean
             get() = deferredOutputType != null
 
-        val surfaceSharing = streamBuilder.size > 1
+        val surfaceSharing: Boolean
+            get() = streamBuilder.size > 1
 
         override fun toString(): String = id.toString()
     }

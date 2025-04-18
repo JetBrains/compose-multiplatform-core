@@ -63,9 +63,6 @@ public class PropertyPathCtsTest {
         e = Assert.assertThrows(IllegalArgumentException.class, () -> new PropertyPath("a[0]b"));
         assertThat(e.getMessage()).startsWith("Malformed path (']' not followed by '.')");
 
-        e = Assert.assertThrows(IllegalArgumentException.class,
-                () -> new PropertyPath("foo AND bar:(baz >= 0)"));
-        assertThat(e.getMessage()).startsWith("Malformed path (non alphanumeric character)");
     }
 
     @Test

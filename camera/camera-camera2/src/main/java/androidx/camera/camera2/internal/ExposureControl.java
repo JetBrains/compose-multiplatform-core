@@ -21,8 +21,6 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.util.Range;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
 import androidx.camera.camera2.internal.annotation.CameraExecutor;
@@ -37,6 +35,9 @@ import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 
@@ -59,22 +60,17 @@ public class ExposureControl {
 
     private static final int DEFAULT_EXPOSURE_COMPENSATION = 0;
 
-    @NonNull
-    private final Camera2CameraControlImpl mCameraControl;
+    private final @NonNull Camera2CameraControlImpl mCameraControl;
 
-    @NonNull
-    private final ExposureStateImpl mExposureStateImpl;
+    private final @NonNull ExposureStateImpl mExposureStateImpl;
 
-    @NonNull
     @CameraExecutor
-    private final Executor mExecutor;
+    private final @NonNull Executor mExecutor;
 
     private boolean mIsActive = false;
 
-    @Nullable
-    private CallbackToFutureAdapter.Completer<Integer> mRunningCompleter;
-    @Nullable
-    private Camera2CameraControlImpl.CaptureResultListener mRunningCaptureResultListener;
+    private CallbackToFutureAdapter.@Nullable Completer<Integer> mRunningCompleter;
+    private Camera2CameraControlImpl.@Nullable CaptureResultListener mRunningCaptureResultListener;
 
     /**
      * Constructs a ExposureControl.
@@ -127,19 +123,17 @@ public class ExposureControl {
      */
     @ExecutedBy("mExecutor")
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
-    void setCaptureRequestOption(@NonNull Camera2ImplConfig.Builder configBuilder) {
+    void setCaptureRequestOption(Camera2ImplConfig.@NonNull Builder configBuilder) {
         configBuilder.setCaptureRequestOptionWithPriority(
                 CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION,
                 mExposureStateImpl.getExposureCompensationIndex(), Config.OptionPriority.REQUIRED);
     }
 
-    @NonNull
-    ExposureState getExposureState() {
+    @NonNull ExposureState getExposureState() {
         return mExposureStateImpl;
     }
 
-    @NonNull
-    ListenableFuture<Integer> setExposureCompensationIndex(int exposure) {
+    @NonNull ListenableFuture<Integer> setExposureCompensationIndex(int exposure) {
         if (!mExposureStateImpl.isExposureCompensationSupported()) {
             return Futures.immediateFailedFuture(new IllegalArgumentException(
                     "ExposureCompensation is not supported"));

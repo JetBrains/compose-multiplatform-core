@@ -19,8 +19,9 @@ package androidx.remotecallback;
 import android.content.Context;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Generates a {@link RemoteCallback} when a RemoteCallback is being triggered, should only
@@ -41,9 +42,8 @@ public interface CallbackBase<T> {
      * Generates a {@link RemoteCallback} when a RemoteCallback is being triggered, should only
      * be used in the context on {@link CallbackReceiver#createRemoteCallback}.
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    RemoteCallback toRemoteCallback(@NonNull Class<T> cls, @NonNull Context context,
+    @NonNull RemoteCallback toRemoteCallback(@NonNull Class<T> cls, @NonNull Context context,
             @NonNull String authority, @NonNull Bundle args,
             @NonNull String method);
 }

@@ -51,12 +51,14 @@ import androidx.compose.ui.node.Owner
 import androidx.compose.ui.node.OwnerSnapshotObserver
 import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.platform.AccessibilityManager
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
+import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -2844,6 +2846,10 @@ private class TestOwner : Owner {
 
     override fun requestFocus(): Boolean = false
 
+    override fun requestAutofill(node: LayoutNode) {
+        TODO("Not yet implemented")
+    }
+
     override val rootForTest: RootForTest
         get() = TODO("Not yet implemented")
 
@@ -2857,6 +2863,9 @@ private class TestOwner : Owner {
         get() = TODO("Not yet implemented")
 
     override val clipboardManager: ClipboardManager
+        get() = TODO("Not yet implemented")
+
+    override val clipboard: Clipboard
         get() = TODO("Not yet implemented")
 
     override val accessibilityManager: AccessibilityManager
@@ -2904,6 +2913,9 @@ private class TestOwner : Owner {
     }
 
     override val pointerIconService: PointerIconService
+        get() = TODO("Not yet implemented")
+
+    override val semanticsOwner: SemanticsOwner
         get() = TODO("Not yet implemented")
 
     override val focusOwner: FocusOwner
@@ -2961,7 +2973,9 @@ private class TestOwner : Owner {
         TODO("Not yet implemented")
     }
 
-    override fun onAttach(node: LayoutNode) {}
+    override fun onPreAttach(node: LayoutNode) {}
+
+    override fun onPostAttach(node: LayoutNode) {}
 
     override fun onDetach(node: LayoutNode) {}
 

@@ -355,6 +355,39 @@ class PausableCompositionTests {
             "Expected enter order",
         )
     }
+
+    @Test(expected = IllegalStateException::class)
+    fun pausableComposition_throwInResume() = runTest {
+        val recomposer = Recomposer(coroutineContext)
+        val pausableComposition = PausableComposition(EmptyApplier(), recomposer)
+
+        try {
+            val handle = pausableComposition.setPausableContent { error("Test error") }
+            handle.resume { false }
+            handle.apply()
+        } finally {
+            recomposer.cancel()
+            recomposer.close()
+        }
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun pausableComposition_throwInApply() = runTest {
+        val recomposer = Recomposer(coroutineContext)
+        val pausableComposition = PausableComposition(EmptyApplier(), recomposer)
+
+        try {
+            val handle =
+                pausableComposition.setPausableContent {
+                    DisposableEffect(Unit) { throw IllegalStateException("test") }
+                }
+            handle.resume { false }
+            handle.apply()
+        } finally {
+            recomposer.cancel()
+            recomposer.close()
+        }
+    }
 }
 
 fun String.splitRecording() = split(", ")
@@ -415,7 +448,7 @@ private inline fun recordTest(block: () -> Unit): String {
 }
 
 private fun report(message: String) {
-    synchronized(recorder) { recorder.log(message) }
+    recorder.log(message)
 }
 
 private inline fun report(message: String, block: () -> Unit) {

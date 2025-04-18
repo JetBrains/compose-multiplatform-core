@@ -172,7 +172,13 @@ import org.xmlpull.v1.XmlPullParserException
  * instance, a short text complication with an icon that is drawn on square bounds would draw the
  * icon above the short text, but a short text complication with an icon that is drawn on wide
  * rectangular bounds might draw the icon to the left of the short text instead.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class ComplicationDrawable : Drawable {
     /** Returns the [Context] used to render the complication. */
     public var context: Context? = null

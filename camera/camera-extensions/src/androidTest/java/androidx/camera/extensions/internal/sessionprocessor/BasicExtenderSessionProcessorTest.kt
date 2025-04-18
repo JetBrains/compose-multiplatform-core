@@ -60,6 +60,7 @@ import androidx.camera.core.impl.TagBundle
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.impl.utils.Exif
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
+import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.impl.CaptureProcessorImpl
 import androidx.camera.extensions.impl.CaptureStageImpl
 import androidx.camera.extensions.impl.ExtenderStateListener
@@ -118,6 +119,7 @@ class BasicExtenderSessionProcessorTest(
     private val previewProcessorType: ProcessorType
 ) {
     companion object {
+        @Suppress("TYPE_INTERSECTION_AS_REIFIED_WARNING")
         @Parameterized.Parameters(name = "hasCaptureProcessor = {0}, previewProcessorType = {1}")
         @JvmStatic
         fun parameters() =
@@ -184,7 +186,8 @@ class BasicExtenderSessionProcessorTest(
                 fakeCaptureExtenderImpl,
                 emptyList(),
                 basicVendorExtender,
-                context
+                context,
+                ExtensionMode.NONE
             )
     }
 
@@ -237,7 +240,8 @@ class BasicExtenderSessionProcessorTest(
                 fakeCaptureExtenderImpl,
                 emptyList(),
                 basicVendorExtender,
-                context
+                context,
+                ExtensionMode.NONE
             )
 
         val preview = Preview.Builder().build()
@@ -343,7 +347,8 @@ class BasicExtenderSessionProcessorTest(
                 fakeCaptureExtenderImpl,
                 emptyList(),
                 BasicVendorExtender(fakeCaptureExtenderImpl, fakePreviewExtenderImpl),
-                context
+                context,
+                ExtensionMode.NONE
             )
         val preview = Preview.Builder().build()
         val imageCapture = ImageCapture.Builder().build()
@@ -452,7 +457,8 @@ class BasicExtenderSessionProcessorTest(
                 fakeCaptureExtenderImpl,
                 emptyList(),
                 BasicVendorExtender(fakeCaptureExtenderImpl, fakePreviewExtenderImpl),
-                context
+                context,
+                ExtensionMode.NONE
             )
 
         assertThat(basicExtenderSessionProcessor.realtimeCaptureLatency).isEqualTo(Pair(1000L, 10L))

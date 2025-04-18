@@ -21,4 +21,4 @@ package androidx.wear.compose.material
     "Was moved to androidx.wear.compose.foundation.lazy package. " + "Please use it instead"
 )
 @DslMarker
-annotation class ScalingLazyScopeMarker
+public annotation class ScalingLazyScopeMarker

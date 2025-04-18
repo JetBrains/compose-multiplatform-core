@@ -60,7 +60,6 @@ class TextActionModeCallbackTest {
 
     @Test
     @SdkSuppress(minSdkVersion = 26)
-    @RequiresApi(26)
     fun onCreateActionMode_afterApi26() {
         // TODO(mnuzen): investigate why `NullDevice` has API level 0
         if (Build.VERSION.SDK_INT == 0) {

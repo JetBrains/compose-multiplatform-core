@@ -22,8 +22,9 @@ import android.os.Looper;
 import android.os.Message;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing features in {@link Message}.

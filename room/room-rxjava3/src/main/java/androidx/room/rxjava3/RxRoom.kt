@@ -21,7 +21,7 @@ import androidx.annotation.RestrictTo
 import androidx.room.InvalidationTracker
 import androidx.room.RoomDatabase
 import androidx.room.coroutines.createFlow
-import androidx.room.util.performBlocking
+import androidx.room.util.performSuspending
 import androidx.sqlite.SQLiteConnection
 import io.reactivex.rxjava3.core.BackpressureStrategy
 import io.reactivex.rxjava3.core.Completable
@@ -35,8 +35,12 @@ import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.util.concurrent.Callable
 import java.util.concurrent.Executor
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.rx3.asObservable
+import kotlinx.coroutines.rx3.rxCompletable
+import kotlinx.coroutines.rx3.rxMaybe
+import kotlinx.coroutines.rx3.rxSingle
 
 /** Marker class used by annotation processor to identify dependency is in the classpath. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) class Rx3RoomArtifactMarker private constructor()
@@ -74,7 +78,9 @@ fun <T : Any> createMaybe(
     inTransaction: Boolean,
     block: (SQLiteConnection) -> T?
 ): Maybe<T> =
-    Maybe.fromCallable(Callable<T> { performBlocking(db, isReadOnly, inTransaction, block) })
+    rxMaybe(db.getQueryContext().minusKey(Job)) {
+        performSuspending(db, isReadOnly, inTransaction, block)
+    }
 
 /** Helper function used by generated code to create a [Completable] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -83,7 +89,10 @@ fun createCompletable(
     isReadOnly: Boolean,
     inTransaction: Boolean,
     block: (SQLiteConnection) -> Unit
-): Completable = Completable.fromCallable { performBlocking(db, isReadOnly, inTransaction, block) }
+): Completable =
+    rxCompletable(db.getQueryContext().minusKey(Job)) {
+        performSuspending(db, isReadOnly, inTransaction, block)
+    }
 
 /** Helper function used by generated code to create a [Single] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -93,18 +102,9 @@ fun <T : Any> createSingle(
     inTransaction: Boolean,
     block: (SQLiteConnection) -> T?
 ): Single<T> =
-    Single.create { emitter ->
-        if (emitter.isDisposed) return@create
-        try {
-            val result = performBlocking(db, isReadOnly, inTransaction, block)
-            if (result != null) {
-                emitter.onSuccess(result)
-            } else {
-                throw EmptyResultSetException("Query returned empty result set.")
-            }
-        } catch (e: EmptyResultSetException) {
-            emitter.tryOnError(e)
-        }
+    rxSingle(db.getQueryContext().minusKey(Job)) {
+        performSuspending(db, isReadOnly, inTransaction, block)
+            ?: throw EmptyResultSetException("Query returned empty result set.")
     }
 
 /**

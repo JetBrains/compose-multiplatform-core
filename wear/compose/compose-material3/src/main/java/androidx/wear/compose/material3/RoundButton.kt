@@ -19,7 +19,6 @@ package androidx.wear.compose.material3
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Indication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -40,8 +39,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -51,7 +48,6 @@ import kotlinx.coroutines.launch
  * This is a copy of RoundButton from materialcore, with additional onLongClick callback and usage
  * of combinedClickable.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun RoundButton(
     onClick: () -> Unit,
@@ -67,8 +63,6 @@ internal fun RoundButton(
     content: @Composable BoxScope.() -> Unit,
 ) {
     val borderStroke = border(enabled)
-    val hapticFeedback = LocalHapticFeedback.current
-
     Box(
         contentAlignment = Alignment.Center,
         modifier =
@@ -77,13 +71,7 @@ internal fun RoundButton(
                 .clip(shape) // Clip for the touch area (e.g. for Ripple).
                 .combinedClickable(
                     onClick = onClick,
-                    onLongClick =
-                        onLongClick?.let {
-                            {
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                it()
-                            }
-                        },
+                    onLongClick = onLongClick, // NB combinedClickable calls LongPress haptic
                     onLongClickLabel = onLongClickLabel,
                     enabled = enabled,
                     interactionSource = interactionSource,
@@ -150,45 +138,44 @@ internal fun rememberAnimatedPressedButtonShape(
 
 @Composable
 internal fun animateButtonShape(
-    defaultShape: Shape,
-    pressedShape: Shape?,
+    shape: Shape,
+    pressedShape: Shape,
     onPressAnimationSpec: FiniteAnimationSpec<Float>,
     onReleaseAnimationSpec: FiniteAnimationSpec<Float>,
     interactionSource: MutableInteractionSource?
 ) =
-    if (defaultShape is CornerBasedShape && pressedShape is CornerBasedShape) {
+    if (shape is CornerBasedShape && pressedShape is CornerBasedShape && shape !== pressedShape) {
         val finalInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
 
         val finalShape =
             rememberAnimatedPressedButtonShape(
                 interactionSource = finalInteractionSource,
-                shape = defaultShape,
+                shape = shape,
                 pressedShape = pressedShape,
                 onPressAnimationSpec = onPressAnimationSpec,
                 onReleaseAnimationSpec = onReleaseAnimationSpec
             )
-
-        Pair(finalShape, finalInteractionSource)
+        finalShape to finalInteractionSource
     } else {
         // Fallback to static uncheckedShape if no other shapes, or not animatable
-        Pair(defaultShape, interactionSource)
+        shape to interactionSource
     }
 
 @Composable
 internal fun animateToggleButtonShape(
     uncheckedShape: Shape,
-    checkedShape: Shape?,
-    uncheckedPressedShape: Shape?,
-    checkedPressedShape: Shape?,
+    checkedShape: Shape,
+    uncheckedPressedShape: Shape,
+    checkedPressedShape: Shape,
     onPressAnimationSpec: FiniteAnimationSpec<Float>,
     onReleaseAnimationSpec: FiniteAnimationSpec<Float>,
     checked: Boolean,
     interactionSource: MutableInteractionSource?
 ): Pair<Shape, MutableInteractionSource?> {
-    return if (checkedShape == null) {
+    return if (checkedShape === uncheckedShape) {
         // Reuse pressed animation
         return animateButtonShape(
-            defaultShape = uncheckedShape,
+            shape = uncheckedShape,
             pressedShape = uncheckedPressedShape,
             onPressAnimationSpec = onPressAnimationSpec,
             onReleaseAnimationSpec = onReleaseAnimationSpec,
@@ -204,22 +191,19 @@ internal fun animateToggleButtonShape(
 
         val finalInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
 
-        val finalShape =
-            rememberAnimatedToggleRoundedCornerShape(
-                interactionSource = finalInteractionSource,
-                uncheckedCornerSize = uncheckedShape.topEnd,
-                checkedCornerSize = checkedShape.topEnd,
-                uncheckedPressedCornerSize = uncheckedPressedShape.topEnd,
-                checkedPressedCornerSize = checkedPressedShape.topEnd,
-                checked = checked,
-                onPressAnimationSpec = onPressAnimationSpec,
-                onReleaseAnimationSpec = onReleaseAnimationSpec,
-            )
-
-        Pair(finalShape, finalInteractionSource)
+        rememberAnimatedToggleRoundedCornerShape(
+            interactionSource = finalInteractionSource,
+            uncheckedCornerSize = uncheckedShape.topEnd,
+            checkedCornerSize = checkedShape.topEnd,
+            uncheckedPressedCornerSize = uncheckedPressedShape.topEnd,
+            checkedPressedCornerSize = checkedPressedShape.topEnd,
+            checked = checked,
+            onPressAnimationSpec = onPressAnimationSpec,
+            onReleaseAnimationSpec = onReleaseAnimationSpec,
+        ) to finalInteractionSource
     } else {
         // Fallback to static uncheckedShape if no other shapes, or not animatable
-        Pair(uncheckedShape, interactionSource)
+        uncheckedShape to interactionSource
     }
 }
 

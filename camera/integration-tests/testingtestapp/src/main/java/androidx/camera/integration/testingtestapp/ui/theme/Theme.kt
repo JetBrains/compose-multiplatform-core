@@ -50,6 +50,7 @@ private val LightColorScheme =
         */
     )
 
+@Suppress("DEPRECATION") // setStatusBarColor
 @Composable
 fun MultimoduleTemplateTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

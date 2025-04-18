@@ -16,6 +16,11 @@
 
 package androidx.lifecycle.viewmodel.testing
 
+import android.os.Bundle
+import android.os.Parcel
+import android.os.Parcelable
+import androidx.core.os.bundleOf
+import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -32,5 +37,53 @@ internal class AndroidViewModelScenarioTest : RobolectricTest() {
         assertThrows<IllegalStateException> { scenario.recreate() }
     }
 
+    @Test
+    fun recreate_bundle() {
+        val expectedParcelable = TestParcelable(value = 1)
+        val scenario = viewModelScenario { TestViewModel(handle = createSavedStateHandle()) }
+        scenario.viewModel.handle["key"] = bundleOf("key" to expectedParcelable)
+
+        scenario.recreate()
+
+        val actualBundle = scenario.viewModel.handle.get<Bundle>("key")!!
+        @Suppress("DEPRECATION") val actualParcelable = actualBundle["key"]!!
+        assertThat(actualParcelable).isNotSameInstanceAs(expectedParcelable)
+        assertThat(actualParcelable).isEqualTo(expectedParcelable)
+    }
+
+    @Test
+    fun recreate_parcelable() {
+        val expectedParcelable = TestParcelable(value = 1)
+        val scenario = viewModelScenario { TestViewModel(handle = createSavedStateHandle()) }
+        scenario.viewModel.handle["key"] = expectedParcelable
+
+        scenario.recreate()
+
+        val actualParcelable = scenario.viewModel.handle.get<TestParcelable>("key")!!
+        assertThat(actualParcelable).isNotSameInstanceAs(expectedParcelable)
+        assertThat(actualParcelable).isEqualTo(expectedParcelable)
+    }
+
     private class TestViewModel(val handle: SavedStateHandle = SavedStateHandle()) : ViewModel()
+
+    private data class TestParcelable(val value: Int) : Parcelable {
+
+        override fun describeContents(): Int = 0
+
+        override fun writeToParcel(dest: Parcel, flags: Int) {
+            dest.writeInt(value)
+        }
+
+        companion object {
+            @Suppress("unused")
+            @JvmField
+            val CREATOR =
+                object : Parcelable.Creator<TestParcelable> {
+                    override fun createFromParcel(source: Parcel) =
+                        TestParcelable(value = source.readInt())
+
+                    override fun newArray(size: Int) = arrayOfNulls<TestParcelable>(size)
+                }
+        }
+    }
 }

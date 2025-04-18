@@ -28,14 +28,12 @@ import androidx.pdf.data.Range;
 import androidx.pdf.models.Dimensions;
 import androidx.pdf.models.PageSelection;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.filters.SmallTest;
 
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
 public class PageSelectionValueObserverTest {
     private final PaginatedView mMockPaginatedView = mock(PaginatedView.class);

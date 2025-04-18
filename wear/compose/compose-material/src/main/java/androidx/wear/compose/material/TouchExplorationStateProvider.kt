@@ -44,7 +44,7 @@ public fun interface TouchExplorationStateProvider {
      * attach the state to itself. This will allow composables to react to change in service state,
      * if required.
      */
-    @Composable fun touchExplorationState(): State<Boolean>
+    @Composable public fun touchExplorationState(): State<Boolean>
 }
 
 /**

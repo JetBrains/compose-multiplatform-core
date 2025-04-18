@@ -26,24 +26,21 @@ import androidx.compose.foundation.MutatePriority
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.PointerInputScope
-import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
 import androidx.compose.ui.input.pointer.util.VelocityTracker1D
-import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
-import androidx.compose.ui.node.DelegatingNode
-import androidx.compose.ui.node.currentValueOf
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
-import kotlin.coroutines.coroutineContext
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sign
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
@@ -51,69 +48,25 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withTimeoutOrNull
 
-internal class MouseWheelScrollNode(
+internal class MouseWheelScrollingLogic(
     private val scrollingLogic: ScrollingLogic,
+    private val mouseWheelScrollConfig: ScrollConfig,
     private val onScrollStopped: suspend (velocity: Velocity) -> Unit,
-    private var enabled: Boolean,
-) : DelegatingNode(), CompositionLocalConsumerModifierNode {
-
-    // Need to wait until onAttach to read the scroll config. Currently this is static, so we
-    // don't need to worry about observation / updating this over time.
-    private lateinit var mouseWheelScrollConfig: ScrollConfig
-
-    override fun onAttach() {
-        mouseWheelScrollConfig = platformScrollConfig()
-        coroutineScope.launch { receiveMouseWheelEvents() }
+    private var density: Density,
+) {
+    fun updateDensity(density: Density) {
+        this.density = density
     }
 
-    // Note that when `MouseWheelScrollNode` is used as a delegate of `ScrollableNode`,
-    // pointerInputNode does not get dispatched pointer events to in the standard manner because
-    // Modifier.Node.dispatchForKind does not dispatch to child/delegate nodes of the matching type,
-    // and `ScrollableNode` is already an instance of `PointerInputModifierNode`.
-    // This is worked around by having `MouseWheelScrollNode` simply forward the corresponding calls
-    // to pointerInputNode (hence its need to be `internal`).
-    internal val pointerInputNode =
-        delegate(
-            SuspendingPointerInputModifierNode {
-                if (enabled) {
-                    mouseWheelInput()
-                }
-            }
-        )
-
-    fun update(
-        enabled: Boolean,
-    ) {
-        var resetPointerInputHandling = false
-        if (this.enabled != enabled) {
-            this.enabled = enabled
-            resetPointerInputHandling = true
-        }
-        if (resetPointerInputHandling) {
-            pointerInputNode.resetPointerInputHandler()
-        }
-    }
-
-    private suspend fun PointerInputScope.mouseWheelInput() {
-        awaitPointerEventScope {
-            while (coroutineScope.isActive) {
-                val event = awaitScrollEvent()
-                if (!event.isConsumed) {
-                    val consumed = onMouseWheel(event)
-                    if (consumed) {
-                        event.consume()
-                    }
+    fun onPointerEvent(pointerEvent: PointerEvent, pass: PointerEventPass, bounds: IntSize) {
+        if (pass == PointerEventPass.Main && pointerEvent.type == PointerEventType.Scroll) {
+            if (!pointerEvent.isConsumed) {
+                val consumed = onMouseWheel(pointerEvent, bounds)
+                if (consumed) {
+                    pointerEvent.consume()
                 }
             }
         }
-    }
-
-    private suspend fun AwaitPointerEventScope.awaitScrollEvent(): PointerEvent {
-        var event: PointerEvent
-        do {
-            event = awaitPointerEvent()
-        } while (event.type != PointerEventType.Scroll)
-        return event
     }
 
     private inline val PointerEvent.isConsumed: Boolean
@@ -143,13 +96,23 @@ internal class MouseWheelScrollNode(
     private val channel = Channel<MouseWheelScrollDelta>(capacity = Channel.UNLIMITED)
     private var isScrolling = false
 
-    private suspend fun receiveMouseWheelEvents() {
-        while (coroutineContext.isActive) {
-            val scrollDelta = channel.receive()
-            val density = currentValueOf(LocalDensity)
-            val threshold = with(density) { AnimationThreshold.toPx() }
-            val speed = with(density) { AnimationSpeed.toPx() }
-            scrollingLogic.dispatchMouseWheelScroll(scrollDelta, threshold, speed)
+    private var receivingMouseWheelEventsJob: Job? = null
+
+    fun startReceivingMouseWheelEvents(coroutineScope: CoroutineScope) {
+        if (receivingMouseWheelEventsJob == null) {
+            receivingMouseWheelEventsJob =
+                coroutineScope.launch {
+                    try {
+                        while (coroutineContext.isActive) {
+                            val scrollDelta = channel.receive()
+                            val threshold = with(density) { AnimationThreshold.toPx() }
+                            val speed = with(density) { AnimationSpeed.toPx() }
+                            scrollingLogic.dispatchMouseWheelScroll(scrollDelta, threshold, speed)
+                        }
+                    } finally {
+                        receivingMouseWheelEventsJob = null
+                    }
+                }
         }
     }
 
@@ -160,9 +123,11 @@ internal class MouseWheelScrollNode(
         isScrolling = false
     }
 
-    private fun PointerInputScope.onMouseWheel(pointerEvent: PointerEvent): Boolean {
+    private fun onMouseWheel(pointerEvent: PointerEvent, bounds: IntSize): Boolean {
         val scrollDelta =
-            with(mouseWheelScrollConfig) { calculateMouseWheelScroll(pointerEvent, size) }
+            with(mouseWheelScrollConfig) {
+                with(density) { calculateMouseWheelScroll(pointerEvent, bounds) }
+            }
         return if (scrollingLogic.canConsumeDelta(scrollDelta)) {
             channel
                 .trySend(

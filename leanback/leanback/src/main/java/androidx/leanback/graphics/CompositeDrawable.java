@@ -23,10 +23,11 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.util.Property;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.leanback.graphics.BoundsRule.ValueRule;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 
@@ -52,9 +53,8 @@ public class CompositeDrawable extends Drawable implements Drawable.Callback {
             }
         }
 
-        @NonNull
         @Override
-        public Drawable newDrawable() {
+        public @NonNull Drawable newDrawable() {
             return new CompositeDrawable(this);
         }
 
@@ -77,14 +77,12 @@ public class CompositeDrawable extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    @NonNull
-    public ConstantState getConstantState() {
+    public @NonNull ConstantState getConstantState() {
         return mState;
     }
 
     @Override
-    @NonNull
-    public Drawable mutate() {
+    public @NonNull Drawable mutate() {
         if (!mMutated && super.mutate() == this) {
             mState = new CompositeState(mState, this, null);
             final ArrayList<ChildDrawable> children = mState.mChildren;
@@ -116,16 +114,14 @@ public class CompositeDrawable extends Drawable implements Drawable.Callback {
     /**
      * Returns the {@link Drawable} for the given index.
      */
-    @NonNull
-    public Drawable getDrawable(int index) {
+    public @NonNull Drawable getDrawable(int index) {
         return mState.mChildren.get(index).mDrawable;
     }
 
     /**
      * Returns the {@link ChildDrawable} at the given index.
      */
-    @NonNull
-    public ChildDrawable getChildAt(int index) {
+    public @NonNull ChildDrawable getChildAt(int index) {
         return mState.mChildren.get(index);
     }
 
@@ -288,16 +284,14 @@ public class CompositeDrawable extends Drawable implements Drawable.Callback {
         /**
          * Returns the instance of {@link BoundsRule}.
          */
-        @NonNull
-        public BoundsRule getBoundsRule() {
+        public @NonNull BoundsRule getBoundsRule() {
             return this.mBoundsRule;
         }
 
         /**
          * Returns the {@link Drawable}.
          */
-        @NonNull
-        public Drawable getDrawable() {
+        public @NonNull Drawable getDrawable() {
             return mDrawable;
         }
 

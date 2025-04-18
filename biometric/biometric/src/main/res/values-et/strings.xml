@@ -30,6 +30,7 @@
     <string name="generic_error_no_device_credential" msgid="3791785319221634505">"PIN-koodi, mustrit ega parooli pole määratud."</string>
     <string name="generic_error_no_keyguard" msgid="1807436368654974044">"See seade ei toeta PIN-koodi, mustrit ega parooli."</string>
     <string name="fingerprint_dialog_icon_description" msgid="5462024216548165325">"Sõrmejälje ikoon"</string>
+    <string name="content_view_more_options_button_clicked" msgid="5031325658202184259">"Sisuvaates klõpsatakse nupul Rohkem valikuid."</string>
     <string name="use_fingerprint_label" msgid="6961788485681412417">"Kasuta sõrmejälge"</string>
     <string name="use_face_label" msgid="6533512708069459542">"Kasuta nägu"</string>
     <string name="use_biometric_label" msgid="6524145989441579428">"Kasuta biomeetrilisi andmeid"</string>

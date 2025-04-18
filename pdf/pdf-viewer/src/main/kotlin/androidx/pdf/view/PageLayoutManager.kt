@@ -17,8 +17,12 @@
 package androidx.pdf.view
 
 import android.graphics.Point
+import android.graphics.PointF
 import android.graphics.Rect
+import android.graphics.RectF
+import android.os.DeadObjectException
 import android.util.Range
+import android.util.SparseArray
 import androidx.pdf.PdfDocument
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -42,11 +46,11 @@ import kotlinx.coroutines.withContext
 internal class PageLayoutManager(
     private val pdfDocument: PdfDocument,
     private val backgroundScope: CoroutineScope,
-    private val pagePrefetchRadius: Int,
-    // TODO(b/376299551) - Make page margin configurable via XML attribute
+    topPageMarginPx: Int = 0,
     pageSpacingPx: Int = DEFAULT_PAGE_SPACING_PX,
     internal val paginationModel: PaginationModel =
-        PaginationModel(pageSpacingPx, pdfDocument.pageCount)
+        PaginationModel(pageSpacingPx, pdfDocument.pageCount, topPageMarginPx),
+    private val errorFlow: MutableSharedFlow<Throwable>
 ) {
     /** The 0-indexed maximum page number whose dimensions are known to this model */
     val reach
@@ -61,15 +65,25 @@ internal class PageLayoutManager(
     val dimensions: SharedFlow<Pair<Int, Point>>
         get() = _dimensions
 
-    private val _visiblePages = MutableStateFlow<Range<Int>>(Range(0, 0))
+    private val _visiblePages = MutableStateFlow<PagesInViewport>(PagesInViewport(Range(0, 0)))
 
     /**
      * A [StateFlow] representing the [Range] of pages that are currently visible in the window.
      *
      * Values in the range are 0-indexed.
      */
-    val visiblePages: StateFlow<Range<Int>>
+    val visiblePages: StateFlow<PagesInViewport>
         get() = _visiblePages
+
+    private val _fullyVisiblePages = MutableStateFlow<Range<Int>>(Range(0, 0))
+
+    /**
+     * A [StateFlow] emitting the range of pages considered to be in the viewport.
+     *
+     * Values in the range are 0-indexed.
+     */
+    val fullyVisiblePages: StateFlow<Range<Int>>
+        get() = _fullyVisiblePages
 
     /** The 0-indexed maximum page whose dimensions have been requested */
     private var requestedReach: Int = paginationModel.reach
@@ -91,7 +105,31 @@ internal class PageLayoutManager(
             }
         }
 
-        increaseReach(pagePrefetchRadius - 1)
+        increaseReach(DEFAULT_PREFETCH_RADIUS)
+    }
+
+    /**
+     * Returns a [SparseArray] containing [Rect]s indicating the visible region of each visible
+     * page, in page coordinates.
+     */
+    fun getVisiblePageAreas(pages: Range<Int>, viewport: Rect): SparseArray<Rect> {
+        val ret = SparseArray<Rect>(pages.upper - pages.lower + 1)
+        for (i in pages.lower..pages.upper) {
+            ret.put(i, getPageVisibleArea(i, viewport))
+        }
+        return ret
+    }
+
+    private fun getPageVisibleArea(pageNum: Int, viewport: Rect): Rect {
+        val pageLocation = getPageLocation(pageNum, viewport)
+        val pageWidth = pageLocation.right - pageLocation.left
+        val pageHeight = pageLocation.bottom - pageLocation.top
+        return Rect(
+            maxOf(viewport.left - pageLocation.left, 0),
+            maxOf(viewport.top - pageLocation.top, 0),
+            minOf(viewport.right - pageLocation.left, pageWidth),
+            minOf(viewport.bottom - pageLocation.top, pageHeight),
+        )
     }
 
     /**
@@ -99,6 +137,50 @@ internal class PageLayoutManager(
      */
     fun getPageLocation(pageNum: Int, viewport: Rect): Rect {
         return paginationModel.getPageLocation(pageNum, viewport)
+    }
+
+    /** Returns the size of the page at [pageNum], or null if we don't know that page's size yet */
+    fun getPageSize(pageNum: Int): Point? {
+        val size = paginationModel.getPageSize(pageNum)
+        if (size == PaginationModel.UNKNOWN_SIZE) return null
+        return size
+    }
+
+    /**
+     * Returns the [PdfPoint] that exists at [contentCoordinates], or null if no page content is
+     * laid out at [contentCoordinates].
+     *
+     * @param contentCoordinates the content coordinates to check (View coordinates that are scaled
+     *   up or down by the current zoom level)
+     * @param viewport the current viewport in content coordinates
+     */
+    fun getPdfPointAt(contentCoordinates: PointF, viewport: Rect): PdfPoint? {
+        val visiblePages = visiblePages.value
+        for (pageIndex in visiblePages.pages.lower..visiblePages.pages.upper) {
+            val pageBounds = paginationModel.getPageLocation(pageIndex, viewport)
+            if (RectF(pageBounds).contains(contentCoordinates.x, contentCoordinates.y)) {
+                return PdfPoint(
+                    pageIndex,
+                    PointF(
+                        contentCoordinates.x - pageBounds.left,
+                        contentCoordinates.y - pageBounds.top,
+                    )
+                )
+            }
+        }
+        return null
+    }
+
+    /**
+     * Returns a View-relative [RectF] corresponding to a page-relative [PdfRect], or null if the
+     * page hasn't been laid out
+     */
+    fun getViewRect(pdfRect: PdfRect, viewport: Rect): RectF? {
+        if (pdfRect.pageNum > paginationModel.reach) return null
+        val pageBounds = paginationModel.getPageLocation(pdfRect.pageNum, viewport)
+        val out = RectF(pdfRect.pageRect)
+        out.offset(pageBounds.left.toFloat(), pageBounds.top.toFloat())
+        return out
     }
 
     /**
@@ -111,10 +193,23 @@ internal class PageLayoutManager(
         // Try emit will always succeed for MutableStateFlow
         val prevVisiblePages = _visiblePages.value
         val newVisiblePages = paginationModel.getPagesInViewport(contentTop, contentBottom)
-        if (prevVisiblePages != newVisiblePages) {
+
+        val fullyVisiblePageRange =
+            paginationModel.getPagesInViewport(contentTop, contentBottom, includePartial = false)
+        if (fullyVisiblePageRange.pages != _fullyVisiblePages.value) {
+            _fullyVisiblePages.tryEmit(fullyVisiblePageRange.pages)
+        }
+
+        if (prevVisiblePages != newVisiblePages || newVisiblePages.layoutInProgress) {
             _visiblePages.tryEmit(newVisiblePages)
+            val peekAhead =
+                if (newVisiblePages.layoutInProgress) {
+                    minOf(newVisiblePages.pages.upper + 2, 100)
+                } else {
+                    DEFAULT_PREFETCH_RADIUS
+                }
             increaseReach(
-                minOf(newVisiblePages.upper + pagePrefetchRadius, paginationModel.numPages - 1)
+                minOf(newVisiblePages.pages.upper + peekAhead, paginationModel.numPages - 1)
             )
         }
     }
@@ -138,15 +233,22 @@ internal class PageLayoutManager(
         currentDimensionsJob =
             backgroundScope.launch {
                 previousDimensionsJob?.join()
-                val pageMetadata = pdfDocument.getPageInfo(pageNum)
-                val size = Point(pageMetadata.width, pageMetadata.height)
-                // Add the value to the model before emitting, and on the main thread
-                withContext(Dispatchers.Main) { paginationModel.addPage(pageNum, size) }
-                _dimensions.emit(pageNum to Point(pageMetadata.width, pageMetadata.height))
+                try {
+                    val pageMetadata = pdfDocument.getPageInfo(pageNum)
+                    val size = Point(pageMetadata.width, pageMetadata.height)
+                    // Add the value to the model before emitting, and on the main thread
+                    withContext(Dispatchers.Main) { paginationModel.addPage(pageNum, size) }
+                    _dimensions.emit(pageNum to Point(pageMetadata.width, pageMetadata.height))
+                } catch (e: DeadObjectException) {
+                    // An exception happened above because of service disconnection. Propagate
+                    // error event to UI to take appropriate action.
+                    errorFlow.emit(e)
+                }
             }
     }
 
     companion object {
-        private const val DEFAULT_PAGE_SPACING_PX: Int = 20
+        internal const val DEFAULT_PREFETCH_RADIUS = 4
+        private const val DEFAULT_PAGE_SPACING_PX = 20
     }
 }

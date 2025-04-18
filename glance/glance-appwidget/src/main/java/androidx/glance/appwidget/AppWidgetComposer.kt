@@ -215,13 +215,14 @@ suspend fun GlanceAppWidget.composeForPreview(
         recomposer.join()
     }
     normalizeCompositionTree(root, isPreviewComposition = true)
+    val layoutConfig = LayoutConfiguration.create(context, appWidgetId = -1)
     val remoteViews =
         translateComposition(
             context = context,
             appWidgetId = -1,
             element = root,
-            layoutConfiguration = null,
-            rootViewIndex = 0,
+            layoutConfiguration = layoutConfig,
+            rootViewIndex = layoutConfig.addLayout(root),
             layoutSize = DpSize.Unspecified,
         )
     return remoteViews

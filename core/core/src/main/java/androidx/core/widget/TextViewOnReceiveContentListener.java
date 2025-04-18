@@ -29,13 +29,14 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.view.ContentInfoCompat;
 import androidx.core.view.ContentInfoCompat.Flags;
 import androidx.core.view.ContentInfoCompat.Source;
 import androidx.core.view.OnReceiveContentListener;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Default implementation inserting content into editable {@link TextView} components. This class
@@ -46,9 +47,8 @@ import androidx.core.view.OnReceiveContentListener;
 public final class TextViewOnReceiveContentListener implements OnReceiveContentListener {
     private static final String LOG_TAG = "ReceiveContent";
 
-    @Nullable
     @Override
-    public ContentInfoCompat onReceiveContent(@NonNull View view,
+    public @Nullable ContentInfoCompat onReceiveContent(@NonNull View view,
             @NonNull ContentInfoCompat payload) {
         if (Log.isLoggable(LOG_TAG, Log.DEBUG)) {
             Log.d(LOG_TAG, "onReceive: " + payload);
@@ -86,7 +86,7 @@ public final class TextViewOnReceiveContentListener implements OnReceiveContentL
         return null;
     }
 
-    private static CharSequence coerceToText(@NonNull Context context, @NonNull ClipData.Item item,
+    private static CharSequence coerceToText(@NonNull Context context, ClipData.@NonNull Item item,
             @Flags int flags) {
         if ((flags & FLAG_CONVERT_TO_PLAIN_TEXT) != 0) {
             CharSequence text = item.coerceToText(context);

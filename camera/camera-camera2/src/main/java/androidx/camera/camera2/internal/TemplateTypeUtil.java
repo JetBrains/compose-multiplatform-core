@@ -18,13 +18,14 @@ package androidx.camera.camera2.internal;
 
 import android.hardware.camera2.CameraDevice;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.PreviewUnderExposureQuirk;
 import androidx.camera.core.ExperimentalZeroShutterLag;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.impl.UseCaseConfigFactory;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A class that contains utility methods for template type.
@@ -40,7 +41,7 @@ public class TemplateTypeUtil {
      */
     @OptIn(markerClass = ExperimentalZeroShutterLag.class)
     public static int getSessionConfigTemplateType(
-            @NonNull UseCaseConfigFactory.CaptureType captureType,
+            UseCaseConfigFactory.@NonNull CaptureType captureType,
             @ImageCapture.CaptureMode int captureMode
     ) {
         switch (captureType) {
@@ -66,7 +67,7 @@ public class TemplateTypeUtil {
      */
     @OptIn(markerClass = ExperimentalZeroShutterLag.class)
     public static int getCaptureConfigTemplateType(
-            @NonNull UseCaseConfigFactory.CaptureType captureType,
+            UseCaseConfigFactory.@NonNull CaptureType captureType,
             @ImageCapture.CaptureMode int captureMode
     ) {
         switch (captureType) {

@@ -18,24 +18,16 @@ package androidx.room.solver.query.result
 
 import androidx.room.solver.CodeGenScope
 
-/** Gets a Cursor and converts it into the return type of a method annotated with @Query. */
+/** Gets a Statement and converts it into the return type of a function annotated with @Query. */
 abstract class QueryResultAdapter(val rowAdapters: List<RowAdapter>) {
 
     val mappings: List<QueryMappedRowAdapter.Mapping>
         get() = rowAdapters.filterIsInstance<QueryMappedRowAdapter>().map { it.mapping }
 
-    abstract fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope)
-
-    // Indicates whether the cursor should be copied before converting.
-    // This is important for performance reasons if the Cursor will be traverse more than once.
-    fun shouldCopyCursor(): Boolean =
-        rowAdapters.filterIsInstance<PojoRowAdapter>().any { it.relationCollectors.isNotEmpty() }
+    abstract fun convert(outVarName: String, stmtVarName: String, scope: CodeGenScope)
 
     // Gets a list of additionally accessed table names in sub queries done by the adapter
     // (e.g. does done to satisfy @Relation fields).
     fun accessedTableNames(): List<String> =
-        rowAdapters.filterIsInstance<PojoRowAdapter>().flatMap { it.relationTableNames() }
-
-    // TODO(b/319660042): Remove once migration to driver API is done.
-    open fun isMigratedToDriver(): Boolean = false
+        rowAdapters.filterIsInstance<DataClassRowAdapter>().flatMap { it.relationTableNames() }
 }

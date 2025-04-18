@@ -228,7 +228,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
     }
 
     @Test
-    fun textField_redisplaysSelectionHandlesAndToolbar_whenWindowRegainsFocus() {
+    fun textField_redisplaysSelectionHandles_whenWindowRegainsFocus() {
         state = TextFieldState("hello, world", initialSelection = TextRange(2, 5))
         val focusWindow = mutableStateOf(true)
         val windowInfo =
@@ -259,6 +259,39 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
 
         // regain window focus
         focusWindow.value = true
+        rule.waitForIdle()
+
+        assertHandlesDisplayed()
+    }
+
+    @Test
+    fun textField_redisplaysSelectionHandles_whenTextFieldStateChanges() {
+        val tfsState =
+            mutableStateOf(TextFieldState("hello, world", initialSelection = TextRange(2, 5)))
+
+        rule.setContent {
+            BasicTextField(
+                tfsState.value,
+                textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
+                modifier = Modifier.testTag(TAG).width(100.dp)
+            )
+        }
+
+        // selection handles displayed
+        focusAndWait()
+        assertHandlesDisplayed()
+
+        // change state to something without initial selection, assert that handles are disappeared
+        tfsState.value = TextFieldState("hello", initialSelection = TextRange.Zero)
+        rule.waitForIdle()
+
+        assertHandlesNotExist()
+
+        // create selection via touch, assert that handles are displayed
+        focusAndWait()
+        rule.onNodeWithTag(TAG).performTouchInput {
+            longClick(Offset(fontSizePx * 2, fontSizePx / 2))
+        }
         rule.waitForIdle()
 
         assertHandlesDisplayed()

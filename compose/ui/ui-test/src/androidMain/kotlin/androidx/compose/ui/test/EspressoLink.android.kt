@@ -55,7 +55,7 @@ internal class EspressoLink(private val registry: IdlingResourceRegistry) :
 
     fun getDiagnosticMessageIfBusy(): String? = registry.getDiagnosticMessageIfBusy()
 
-    override fun <R> withStrategy(block: () -> R): R {
+    override suspend fun <R> withStrategy(block: suspend () -> R): R {
         @Suppress("DEPRECATION") // See comment below
         try {
             // TODO(b/205550018): remove usage of deprecated API when b/205550018 is fixed

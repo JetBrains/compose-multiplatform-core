@@ -69,4 +69,9 @@ internal class WindowInfoTrackerImpl(
             windowSdkExtensions.requireExtensionVersion(6)
             return windowBackend.supportedPostures
         }
+
+    override fun getCurrentWindowLayoutInfo(@UiContext context: Context): WindowLayoutInfo {
+        windowSdkExtensions.requireExtensionVersion(9)
+        return windowBackend.getCurrentWindowLayoutInfo(context)
+    }
 }

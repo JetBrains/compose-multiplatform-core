@@ -349,10 +349,10 @@ public object InlineSliderDefaults {
         )
 
     /** Decrease [ImageVector] */
-    public val Decrease = androidx.wear.compose.materialcore.RangeIcons.Minus
+    public val Decrease: ImageVector = androidx.wear.compose.materialcore.RangeIcons.Minus
 
     /** Increase [ImageVector] */
-    public val Increase = Icons.Filled.Add
+    public val Increase: ImageVector = Icons.Filled.Add
 }
 
 @Immutable

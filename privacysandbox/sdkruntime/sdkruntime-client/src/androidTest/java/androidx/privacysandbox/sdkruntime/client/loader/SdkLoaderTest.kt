@@ -67,22 +67,40 @@ class SdkLoaderTest {
 
     @Test
     fun loadSdk_withCustomVersionHandshake_performsCustomHandShake() {
-        val customVersionHandshake = VersionHandshake(overrideApiVersion = Int.MAX_VALUE)
+        val customVersionHandshake = VersionHandshake(overrideClientVersion = Int.MAX_VALUE)
         val loadedSdk = sdkLoader.loadSdk(testSdkConfig, customVersionHandshake)
 
         assertThat(loadedSdk.extractClientVersion()).isEqualTo(Int.MAX_VALUE)
     }
 
     @Test
-    fun loadSdk_forUnsupportedApiVersion_throwsLoadSdkCompatException() {
+    fun loadSdk_forUnsupportedSdkApiVersion_throwsLoadSdkCompatException() {
         val customVersionHandshake =
-            VersionHandshake(overrideApiVersion = ClientApiVersion.MIN_SUPPORTED.apiLevel - 1)
+            VersionHandshake(
+                overrideSdkVersion = ClientApiVersion.MIN_SUPPORTED_SDK_VERSION.apiLevel - 1
+            )
 
         assertThrows(LoadSdkCompatException::class.java) {
                 sdkLoader.loadSdk(testSdkConfig, customVersionHandshake)
             }
             .hasMessageThat()
             .startsWith("SDK built with unsupported version of sdkruntime-provider library")
+    }
+
+    @Test
+    fun loadSdk_forUnsupportedClientApiVersion_throwsLoadSdkCompatException() {
+        val customVersionHandshake =
+            VersionHandshake(
+                overrideClientVersion = ClientApiVersion.MIN_SUPPORTED_CLIENT_VERSION.apiLevel - 1
+            )
+
+        assertThrows(LoadSdkCompatException::class.java) {
+                sdkLoader.loadSdk(testSdkConfig, customVersionHandshake)
+            }
+            .hasMessageThat()
+            .startsWith(
+                "Failed to perform version handshake: Unsupported version of sdkruntime-client library"
+            )
     }
 
     @Test

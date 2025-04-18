@@ -28,6 +28,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 
@@ -43,7 +46,8 @@ public fun InlineSliderButton(
 ) {
     Box(
         modifier =
-            Modifier.width(buttonControlSize)
+            Modifier.semantics { role = Role.Button }
+                .width(buttonControlSize)
                 .fillMaxHeight()
                 .repeatableClickable(
                     enabled = enabled,

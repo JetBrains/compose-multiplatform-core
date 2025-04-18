@@ -1,11 +1,11 @@
 // Baseline format: 1.0
-AddedAbstractMethod: androidx.compose.runtime.ControlledComposition#getAndSetShouldPauseCallback(androidx.compose.runtime.ShouldPauseCallback):
-    Added method androidx.compose.runtime.ControlledComposition.getAndSetShouldPauseCallback(androidx.compose.runtime.ShouldPauseCallback)
+AddedAbstractMethod: androidx.compose.runtime.Composer#getCompositeKeyHashCode():
+    Added method androidx.compose.runtime.Composer.getCompositeKeyHashCode()
 
 
-BecameUnchecked: androidx.compose.runtime.Composer#compoundKeyHash:
-    Removed property Composer.compoundKeyHash from compatibility checked API surface
-BecameUnchecked: androidx.compose.runtime.Composer#recomposeScope:
-    Removed property Composer.recomposeScope from compatibility checked API surface
-BecameUnchecked: androidx.compose.runtime.internal.LiveLiteralKt#isLiveLiteralsEnabled:
-    Removed property LiveLiteralKt.isLiveLiteralsEnabled from compatibility checked API surface
+RemovedClass: androidx.compose.runtime.Immutable:
+    Removed class androidx.compose.runtime.Immutable
+RemovedClass: androidx.compose.runtime.Stable:
+    Removed class androidx.compose.runtime.Stable
+RemovedClass: androidx.compose.runtime.StableMarker:
+    Removed class androidx.compose.runtime.StableMarker

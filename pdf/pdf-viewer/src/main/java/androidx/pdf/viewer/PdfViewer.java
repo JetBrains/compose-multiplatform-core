@@ -614,7 +614,7 @@ public class PdfViewer extends LoadingViewer {
                             }
 
                             if (incorrect) {
-                                passwordDialog.retry();
+                                passwordDialog.showIncorrectMessage();
                             }
                         }
                     }

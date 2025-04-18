@@ -29,8 +29,6 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.camera.core.ImageCapture;
@@ -38,6 +36,9 @@ import androidx.camera.core.ImageCapture.ScreenFlash;
 import androidx.camera.core.Logger;
 import androidx.camera.view.internal.ScreenFlashUiInfo;
 import androidx.fragment.app.Fragment;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Custom View that implements a basic UI for screen flash photo capture.
@@ -183,7 +184,7 @@ public final class ScreenFlashView extends View {
 
                 @Override
                 public void apply(long expirationTimeMillis,
-                        @NonNull ImageCapture.ScreenFlashListener screenFlashListener) {
+                        ImageCapture.@NonNull ScreenFlashListener screenFlashListener) {
                     Logger.d(TAG, "ScreenFlash#apply");
 
                     mPreviousBrightness = getBrightness();
@@ -308,8 +309,7 @@ public final class ScreenFlashView extends View {
      * {@code Window} instance hasn't been set.
      */
     @UiThread
-    @Nullable
-    public ScreenFlash getScreenFlash() {
+    public @Nullable ScreenFlash getScreenFlash() {
         return mScreenFlash;
     }
 

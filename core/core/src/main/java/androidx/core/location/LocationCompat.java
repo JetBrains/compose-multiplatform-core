@@ -24,9 +24,10 @@ import android.os.Build.VERSION;
 import android.os.Bundle;
 
 import androidx.annotation.FloatRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -76,16 +77,11 @@ public final class LocationCompat {
     public static final String EXTRA_MSL_ALTITUDE_ACCURACY =
             "androidx.core.location.extra.MSL_ALTITUDE_ACCURACY";
 
-    @Nullable
-    private static Method sSetIsFromMockProviderMethod;
-    @Nullable
-    private static Field sFieldsMaskField;
-    @Nullable
-    private static Integer sHasSpeedAccuracyMask;
-    @Nullable
-    private static Integer sHasBearingAccuracyMask;
-    @Nullable
-    private static Integer sHasVerticalAccuracyMask;
+    private static @Nullable Method sSetIsFromMockProviderMethod;
+    private static @Nullable Field sFieldsMaskField;
+    private static @Nullable Integer sHasSpeedAccuracyMask;
+    private static @Nullable Integer sHasBearingAccuracyMask;
+    private static @Nullable Integer sHasVerticalAccuracyMask;
 
     private LocationCompat() {
     }

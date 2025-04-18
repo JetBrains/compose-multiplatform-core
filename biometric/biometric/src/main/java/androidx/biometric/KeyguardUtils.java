@@ -20,9 +20,10 @@ import android.app.KeyguardManager;
 import android.content.Context;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utilities related to the {@link KeyguardManager} system service.
@@ -37,8 +38,7 @@ class KeyguardUtils {
      * @param context The application or activity context.
      * @return An instance of {@link KeyguardManager}.
      */
-    @Nullable
-    static KeyguardManager getKeyguardManager(@NonNull Context context) {
+    static @Nullable KeyguardManager getKeyguardManager(@NonNull Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             return Api23Impl.getKeyguardManager(context);
         }
@@ -77,8 +77,7 @@ class KeyguardUtils {
          * @param context The application or activity context.
          * @return An instance of {@link KeyguardManager}.
          */
-        @Nullable
-        static KeyguardManager getKeyguardManager(@NonNull Context context) {
+        static @Nullable KeyguardManager getKeyguardManager(@NonNull Context context) {
             return context.getSystemService(KeyguardManager.class);
         }
 

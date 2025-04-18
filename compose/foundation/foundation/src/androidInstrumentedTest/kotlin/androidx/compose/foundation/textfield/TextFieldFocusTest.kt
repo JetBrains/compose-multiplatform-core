@@ -223,7 +223,6 @@ class TextFieldFocusTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun textInputStarted_forFieldInActivity_whenFocusRequestedImmediately_fromLaunchedEffect() {
         textInputStarted_whenFocusRequestedImmediately_fromEffect(
@@ -231,7 +230,6 @@ class TextFieldFocusTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun textInputStarted_forFieldInActivity_whenFocusRequestedImmediately_fromDisposableEffect() {
         textInputStarted_whenFocusRequestedImmediately_fromEffect(
@@ -295,7 +293,6 @@ class TextFieldFocusTest {
         inputMethodInterceptor.assertSessionActive()
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onDPadLeft_DPadDevice() {
         setupAndEnableBasicTextField()
@@ -311,7 +308,6 @@ class TextFieldFocusTest {
         rule.onNodeWithTag("test-button-left").assertIsFocused()
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onDPadRight_DPadDevice() {
         setupAndEnableBasicTextField()
@@ -327,7 +323,6 @@ class TextFieldFocusTest {
         rule.onNodeWithTag("test-button-right").assertIsFocused()
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onDPadUp_DPadDevice() {
         setupAndEnableBasicTextField()
@@ -343,7 +338,6 @@ class TextFieldFocusTest {
         rule.onNodeWithTag("test-button-top").assertIsFocused()
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onDPadDown_DPadDevice() {
         setupAndEnableBasicTextField()
@@ -375,7 +369,6 @@ class TextFieldFocusTest {
     }
 
     @Ignore("339495780")
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onDPadLeft_hardwareKeyboard() {
         setupAndEnableBasicTextField()
@@ -396,7 +389,6 @@ class TextFieldFocusTest {
     }
 
     @Ignore("339495780")
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onDPadRight_hardwareKeyboard() {
         setupAndEnableBasicTextField()
@@ -419,7 +411,6 @@ class TextFieldFocusTest {
     }
 
     @Ignore("339495780")
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onDPadUp_hardwareKeyboard() {
         setupAndEnableBasicTextField()
@@ -440,7 +431,6 @@ class TextFieldFocusTest {
     }
 
     @Ignore("339495780")
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onDPadDown_hardwareKeyboard() {
         setupAndEnableBasicTextField()
@@ -462,7 +452,6 @@ class TextFieldFocusTest {
         rule.onNodeWithTag("test-text-field-1").assertSelection(TextRange(2))
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onTab() {
         setupAndEnableBasicTextField(singleLine = true)
@@ -475,7 +464,6 @@ class TextFieldFocusTest {
         rule.onNodeWithTag("test-button-right").assertIsFocused()
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_withImeActionNext_checkFocusNavigation_onEnter() {
         setupAndEnableBasicTextField(singleLine = true)
@@ -488,7 +476,6 @@ class TextFieldFocusTest {
         rule.onNodeWithTag("test-button-right").assertIsFocused()
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onShiftTab() {
         setupAndEnableBasicTextField(singleLine = true)

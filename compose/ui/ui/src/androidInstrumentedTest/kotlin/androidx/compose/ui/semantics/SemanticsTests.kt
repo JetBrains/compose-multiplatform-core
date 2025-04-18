@@ -26,12 +26,16 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.RecomposeScope
 import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.currentRecomposeScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.autofill.ContentType
@@ -132,6 +136,40 @@ class SemanticsTests {
         rule
             .onNodeWithTag(TestTag)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, paneTitleString))
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun testSemanticsCalculatedOncePerComposition() {
+        var recomposeScope: RecomposeScope? = null
+        var count = 0
+        fun Modifier.count() = semantics { count++ }
+        rule.setContent {
+            recomposeScope = currentRecomposeScope
+            Box(
+                modifier = Modifier.count().count().count(),
+            )
+        }
+        rule.runOnIdle {
+            if (ComposeUiFlags.isSemanticAutofillEnabled) {
+                // with autofill on, semantics is eagerly evaluated
+                assertThat(count).isEqualTo(3)
+            } else {
+                // before autofill, semantics was lazily evaluated
+                assertThat(count).isEqualTo(0)
+            }
+            count = 0
+            recomposeScope!!.invalidate()
+        }
+        rule.runOnIdle {
+            if (ComposeUiFlags.isSemanticAutofillEnabled) {
+                // with autofill on, semantics is eagerly evaluated
+                assertThat(count).isEqualTo(3)
+            } else {
+                // before autofill, semantics was lazily evaluated
+                assertThat(count).isEqualTo(0)
+            }
+        }
     }
 
     @Test

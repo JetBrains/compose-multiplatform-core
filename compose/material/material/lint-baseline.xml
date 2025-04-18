@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.6.0-beta01" type="baseline" client="gradle" dependencies="false" name="AGP (8.6.0-beta01)" variant="all" version="8.6.0-beta01">
+<issues format="6" by="lint 8.10.0-alpha07" type="baseline" client="gradle" dependencies="false" name="AGP (8.10.0-alpha07)" variant="all" version="8.10.0-alpha07">
 
     <issue
         id="BanThreadSleep"
@@ -116,6 +116,141 @@
         errorLine2="                   ~~~~~">
         <location
             file="src/androidInstrumentedTest/kotlin/androidx/compose/material/TabScreenshotTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedMaterialScaffoldPaddingParameter"
+        message="Content padding parameter it is not used"
+        errorLine1="                Scaffold { Text(&quot;Scaffold body&quot;) }"
+        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material/ScaffoldTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedMaterialScaffoldPaddingParameter"
+        message="Content padding parameter it is not used"
+        errorLine1="            Scaffold {"
+        errorLine2="                     ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material/ScaffoldTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedMaterialScaffoldPaddingParameter"
+        message="Content padding parameter it is not used"
+        errorLine1="            ) {"
+        errorLine2="              ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material/ScaffoldTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedMaterialScaffoldPaddingParameter"
+        message="Content padding parameter it is not used"
+        errorLine1="            ) {"
+        errorLine2="              ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material/ScaffoldTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedMaterialScaffoldPaddingParameter"
+        message="Content padding parameter it is not used"
+        errorLine1="                ) {"
+        errorLine2="                  ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material/ScaffoldTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedMaterialScaffoldPaddingParameter"
+        message="Content padding parameter it is not used"
+        errorLine1="                ) {"
+        errorLine2="                  ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material/ScaffoldTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedMaterialScaffoldPaddingParameter"
+        message="Content padding parameter it is not used"
+        errorLine1="            ) {"
+        errorLine2="              ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material/ScaffoldTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedMaterialScaffoldPaddingParameter"
+        message="Content padding parameter it is not used"
+        errorLine1="            ) {"
+        errorLine2="              ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material/ScaffoldTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedMaterialScaffoldPaddingParameter"
+        message="Content padding parameter it is not used"
+        errorLine1="            ) {"
+        errorLine2="              ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material/ScaffoldTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedMaterialScaffoldPaddingParameter"
+        message="Content padding parameter it is not used"
+        errorLine1="                ) {"
+        errorLine2="                  ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material/ScaffoldTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedMaterialScaffoldPaddingParameter"
+        message="Content padding parameter it is not used"
+        errorLine1="            ) {"
+        errorLine2="              ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material/ScaffoldTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedMaterialScaffoldPaddingParameter"
+        message="Content padding parameter it is not used"
+        errorLine1="            ) {"
+        errorLine2="              ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material/ScaffoldTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedMaterialScaffoldPaddingParameter"
+        message="Content padding parameter it is not used"
+        errorLine1="                ) {"
+        errorLine2="                  ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material/ScaffoldTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedMaterialScaffoldPaddingParameter"
+        message="Content padding parameter it is not used"
+        errorLine1="                ) {"
+        errorLine2="                  ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material/ScaffoldTest.kt"/>
+    </issue>
+
+    <issue
+        id="UnusedMaterialScaffoldPaddingParameter"
+        message="Content padding parameter it is not used"
+        errorLine1="                Scaffold {"
+        errorLine2="                         ^">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material/ScaffoldTest.kt"/>
     </issue>
 
     <issue

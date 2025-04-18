@@ -16,7 +16,6 @@
 
 package androidx.appsearch.localstorage.visibilitystore;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.appsearch.app.AppSearchResult;
@@ -29,6 +28,8 @@ import androidx.appsearch.localstorage.AppSearchImpl;
 import androidx.appsearch.localstorage.util.PrefixUtil;
 import androidx.collection.ArrayMap;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -126,8 +127,7 @@ public class VisibilityStoreMigrationHelperFromV0 {
      * @param databaseName Database to which the visibility doc refers.
      * @return deprecated visibility document's id.
      */
-    @NonNull
-    static String getDeprecatedVisibilityDocumentId(
+    static @NonNull String getDeprecatedVisibilityDocumentId(
             @NonNull String packageName, @NonNull String databaseName) {
         return DEPRECATED_ID_PREFIX + PrefixUtil.createPrefix(packageName, databaseName);
     }
@@ -176,8 +176,7 @@ public class VisibilityStoreMigrationHelperFromV0 {
      *
      * @param visibilityDocumentV0s          The deprecated Visibility Document we found.
      */
-    @NonNull
-    static List<VisibilityDocumentV1> toVisibilityDocumentV1(
+    static @NonNull List<VisibilityDocumentV1> toVisibilityDocumentV1(
             @NonNull List<GenericDocument> visibilityDocumentV0s) {
         Map<String, VisibilityDocumentV1.Builder> documentBuilderMap = new ArrayMap<>();
 
@@ -247,8 +246,7 @@ public class VisibilityStoreMigrationHelperFromV0 {
         return false;
     }
 
-    @NonNull
-    private static VisibilityDocumentV1.Builder getOrCreateBuilder(
+    private static VisibilityDocumentV1.@NonNull Builder getOrCreateBuilder(
             @NonNull Map<String, VisibilityDocumentV1.Builder> documentBuilderMap,
             @NonNull String schemaType) {
         VisibilityDocumentV1.Builder builder = documentBuilderMap.get(schemaType);

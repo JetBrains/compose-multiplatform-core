@@ -28,6 +28,8 @@ import android.webkit.WebSettings;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
+import androidx.webkit.test.common.WebViewOnUiThread;
+import androidx.webkit.test.common.WebkitUtils;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -52,7 +54,7 @@ public class WebSettingsCompatTest {
 
     @Before
     public void setUp() {
-        mWebViewOnUiThread = new androidx.webkit.WebViewOnUiThread();
+        mWebViewOnUiThread = new WebViewOnUiThread();
     }
 
     @After
@@ -291,22 +293,28 @@ public class WebSettingsCompatTest {
         WebkitUtils.checkFeature(WebViewFeature.WEB_AUTHENTICATION);
         WebSettings settings = mWebViewOnUiThread.getSettings();
         mWebViewOnUiThread.setCleanupTask(
-                () -> WebSettingsCompat.setWebAuthenticationSupport(settings,
-                        WebSettingsCompat.WEB_AUTHENTICATION_SUPPORT_NONE));
+                () ->
+                        WebkitUtils.onMainThreadSync(() ->
+                                WebSettingsCompat.setWebAuthenticationSupport(settings,
+                                        WebSettingsCompat.WEB_AUTHENTICATION_SUPPORT_NONE)
+                        )
+        );
 
-        Assert.assertEquals("NONE is the expected default",
-                WebSettingsCompat.WEB_AUTHENTICATION_SUPPORT_NONE,
-                WebSettingsCompat.getWebAuthenticationSupport(settings));
+        WebkitUtils.onMainThreadSync(() -> {
+            Assert.assertEquals("NONE is the expected default",
+                    WebSettingsCompat.WEB_AUTHENTICATION_SUPPORT_NONE,
+                    WebSettingsCompat.getWebAuthenticationSupport(settings));
 
-        WebSettingsCompat.setWebAuthenticationSupport(settings,
-                WebSettingsCompat.WEB_AUTHENTICATION_SUPPORT_FOR_APP);
-        Assert.assertEquals(WebSettingsCompat.WEB_AUTHENTICATION_SUPPORT_FOR_APP,
-                WebSettingsCompat.getWebAuthenticationSupport(settings));
+            WebSettingsCompat.setWebAuthenticationSupport(settings,
+                    WebSettingsCompat.WEB_AUTHENTICATION_SUPPORT_FOR_APP);
+            Assert.assertEquals(WebSettingsCompat.WEB_AUTHENTICATION_SUPPORT_FOR_APP,
+                    WebSettingsCompat.getWebAuthenticationSupport(settings));
 
-        WebSettingsCompat.setWebAuthenticationSupport(settings,
-                WebSettingsCompat.WEB_AUTHENTICATION_SUPPORT_FOR_BROWSER);
-        Assert.assertEquals(WebSettingsCompat.WEB_AUTHENTICATION_SUPPORT_FOR_BROWSER,
-                WebSettingsCompat.getWebAuthenticationSupport(settings));
+            WebSettingsCompat.setWebAuthenticationSupport(settings,
+                    WebSettingsCompat.WEB_AUTHENTICATION_SUPPORT_FOR_BROWSER);
+            Assert.assertEquals(WebSettingsCompat.WEB_AUTHENTICATION_SUPPORT_FOR_BROWSER,
+                    WebSettingsCompat.getWebAuthenticationSupport(settings));
+        });
     }
 
     @Test
@@ -338,5 +346,35 @@ public class WebSettingsCompatTest {
 
         WebSettingsCompat.setBackForwardCacheEnabled(settings, true);
         Assert.assertTrue(WebSettingsCompat.getBackForwardCacheEnabled(settings));
+    }
+
+    @Test
+    public void testPaymentRequestSupport() {
+        WebkitUtils.checkFeature(WebViewFeature.PAYMENT_REQUEST);
+        WebSettings settings = mWebViewOnUiThread.getSettings();
+
+        assertFalse("PaymentRequest API should be disabled by default.",
+                WebSettingsCompat.getPaymentRequestEnabled(settings));
+
+        WebSettingsCompat.setPaymentRequestEnabled(settings, true);
+        assertTrue(WebSettingsCompat.getPaymentRequestEnabled(settings));
+
+        // Reset to the default state to avoid leaking state to the other test cases.
+        WebSettingsCompat.setPaymentRequestEnabled(settings, false);
+    }
+
+    @Test
+    public void testPaymentRequestHasEnrolledInstrumentSupport() {
+        WebkitUtils.checkFeature(WebViewFeature.PAYMENT_REQUEST);
+        WebSettings settings = mWebViewOnUiThread.getSettings();
+
+        assertTrue("PaymentRequest.hasEnrolledInstrument() should be enabled by default.",
+                WebSettingsCompat.getHasEnrolledInstrumentEnabled(settings));
+
+        WebSettingsCompat.setHasEnrolledInstrumentEnabled(settings, false);
+        assertFalse(WebSettingsCompat.getHasEnrolledInstrumentEnabled(settings));
+
+        // Reset to the default state to avoid leaking state to the other test cases.
+        WebSettingsCompat.setHasEnrolledInstrumentEnabled(settings, true);
     }
 }

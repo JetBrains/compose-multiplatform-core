@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -59,13 +59,18 @@ dependencies {
     implementation("androidx.core:core:1.1.0")
 }
 
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions.suppressWarnings = true
+}
+
+tasks.withType(JavaCompile){
+    options.compilerArgs <<"-Xlint:-deprecation"
+}
+
 android {
     defaultConfig {
         minSdk = 26
     }
-    sourceSets.androidTest.assets.srcDirs +=
-            project.rootDir.absolutePath + "/../../golden/wear/wear-watchface-client"
-
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.wear.watchface.client"
@@ -73,8 +78,10 @@ android {
 
 androidx {
     name = "Android Wear Watchface Client"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Client library for controlling androidx watchfaces"
     legacyDisableKotlinStrictApiMode = true
+    addGoldenImageAssets()
+    failOnDeprecationWarnings = false
 }

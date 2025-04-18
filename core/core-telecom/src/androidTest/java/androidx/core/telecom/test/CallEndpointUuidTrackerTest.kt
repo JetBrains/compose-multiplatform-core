@@ -18,7 +18,6 @@ package androidx.core.telecom.test
 
 import android.os.Build.VERSION_CODES
 import android.os.ParcelUuid
-import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.internal.CallEndpointUuidTracker
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -32,7 +31,6 @@ import org.junit.runner.RunWith
 
 @SdkSuppress(minSdkVersion = VERSION_CODES.O /* api=26 */)
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-@RequiresApi(VERSION_CODES.O)
 @RunWith(AndroidJUnit4::class)
 class CallEndpointUuidTrackerTest {
     /** Verify that the non bluetooth [CallEndpointCompat] types all return the expected UUID */

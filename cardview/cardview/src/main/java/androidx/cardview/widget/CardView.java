@@ -29,11 +29,12 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.Px;
 import androidx.cardview.R;
 import androidx.core.view.ViewCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A FrameLayout with a rounded corner background and shadow.
@@ -301,8 +302,7 @@ public class CardView extends FrameLayout {
      *
      * @return The background color state list of the CardView.
      */
-    @NonNull
-    public ColorStateList getCardBackgroundColor() {
+    public @NonNull ColorStateList getCardBackgroundColor() {
         return IMPL.getBackgroundColor(mCardViewDelegate);
     }
 

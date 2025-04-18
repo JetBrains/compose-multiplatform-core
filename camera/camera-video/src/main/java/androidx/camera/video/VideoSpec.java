@@ -18,12 +18,13 @@ package androidx.camera.video;
 
 import android.util.Range;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.core.AspectRatio;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 
@@ -41,8 +42,7 @@ public abstract class VideoSpec {
      * <p>Using this value with {@link Builder#setFrameRate(Range)} informs the video frame producer
      * it should choose any appropriate frame rate given the device and codec constraints.
      */
-    @NonNull
-    public static final Range<Integer> FRAME_RATE_RANGE_AUTO = new Range<>(0,
+    public static final @NonNull Range<Integer> FRAME_RATE_RANGE_AUTO = new Range<>(0,
             Integer.MAX_VALUE);
 
     /**
@@ -51,8 +51,7 @@ public abstract class VideoSpec {
      * <p>Using this value with {@link Builder#setBitrate(Range)} informs the video frame producer
      * it should choose any appropriate bitrate given the device and codec constraints.
      */
-    @NonNull
-    public static final Range<Integer> BITRATE_RANGE_AUTO = new Range<>(0,
+    public static final @NonNull Range<Integer> BITRATE_RANGE_AUTO = new Range<>(0,
             Integer.MAX_VALUE);
 
     /**
@@ -61,8 +60,7 @@ public abstract class VideoSpec {
      * <p>Using this value with {@link Builder#setQualitySelector(QualitySelector)} allows the
      * video frame producer to choose video quality based on its current state.
      */
-    @NonNull
-    public static final QualitySelector QUALITY_SELECTOR_AUTO =
+    public static final @NonNull QualitySelector QUALITY_SELECTOR_AUTO =
             QualitySelector.fromOrderedList(Arrays.asList(Quality.FHD, Quality.HD, Quality.SD),
                     FallbackStrategy.higherQualityOrLowerThan(Quality.FHD));
 
@@ -71,8 +69,7 @@ public abstract class VideoSpec {
     }
 
     /** Returns a build for this config. */
-    @NonNull
-    public static Builder builder() {
+    public static @NonNull Builder builder() {
         return new AutoValue_VideoSpec.Builder()
                 .setQualitySelector(QUALITY_SELECTOR_AUTO)
                 .setFrameRate(FRAME_RATE_RANGE_AUTO)
@@ -81,16 +78,13 @@ public abstract class VideoSpec {
     }
 
     /** Gets the {@link QualitySelector}. */
-    @NonNull
-    public abstract QualitySelector getQualitySelector();
+    public abstract @NonNull QualitySelector getQualitySelector();
 
     /** Gets the frame rate. */
-    @NonNull
-    public abstract Range<Integer> getFrameRate();
+    public abstract @NonNull Range<Integer> getFrameRate();
 
     /** Gets the bitrate. */
-    @NonNull
-    public abstract Range<Integer> getBitrate();
+    public abstract @NonNull Range<Integer> getBitrate();
 
     /** Gets the aspect ratio. */
     @AspectRatio.Ratio
@@ -99,8 +93,7 @@ public abstract class VideoSpec {
     /**
      * Returns a {@link Builder} instance with the same property values as this instance.
      */
-    @NonNull
-    public abstract Builder toBuilder();
+    public abstract @NonNull Builder toBuilder();
 
     /**
      * The builder of the {@link VideoSpec}.
@@ -123,24 +116,22 @@ public abstract class VideoSpec {
          *
          * <p>If not set, defaults to {@link #QUALITY_SELECTOR_AUTO}.
          */
-        @NonNull
-        public abstract Builder setQualitySelector(@NonNull QualitySelector qualitySelector);
+        public abstract @NonNull Builder setQualitySelector(
+                @NonNull QualitySelector qualitySelector);
 
         /**
          * Sets the frame rate.
          *
          * <p>If not set, defaults to {@link #FRAME_RATE_RANGE_AUTO}.
          */
-        @NonNull
-        public abstract Builder setFrameRate(@NonNull Range<Integer> frameRate);
+        public abstract @NonNull Builder setFrameRate(@NonNull Range<Integer> frameRate);
 
         /**
          * Sets the bitrate.
          *
          * <p>If not set, defaults to {@link #BITRATE_RANGE_AUTO}.
          */
-        @NonNull
-        public abstract Builder setBitrate(@NonNull Range<Integer> bitrate);
+        public abstract @NonNull Builder setBitrate(@NonNull Range<Integer> bitrate);
 
         /**
          * Sets the aspect ratio.
@@ -150,11 +141,9 @@ public abstract class VideoSpec {
          *
          * <p>If not set, defaults to {@link AspectRatio#RATIO_DEFAULT}.
          */
-        @NonNull
-        abstract Builder setAspectRatio(@AspectRatio.Ratio int aspectRatio);
+        abstract @NonNull Builder setAspectRatio(@AspectRatio.Ratio int aspectRatio);
 
         /** Builds the VideoSpec instance. */
-        @NonNull
-        public abstract VideoSpec build();
+        public abstract @NonNull VideoSpec build();
     }
 }

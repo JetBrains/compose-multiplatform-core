@@ -21,8 +21,9 @@ import android.os.Build;
 import android.view.animation.Interpolator;
 import android.view.animation.PathInterpolator;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for creating path-based {@link Interpolator} instances. On API 21 or newer, the
@@ -47,8 +48,7 @@ public final class PathInterpolatorCompat {
      * @param path the {@link Path} to use to make the line representing the {@link Interpolator}
      * @return the {@link Interpolator} representing the {@link Path}
      */
-    @NonNull
-    public static Interpolator create(@NonNull Path path) {
+    public static @NonNull Interpolator create(@NonNull Path path) {
         if (Build.VERSION.SDK_INT >= 21) {
             return Api21Impl.createPathInterpolator(path);
         }
@@ -63,8 +63,7 @@ public final class PathInterpolatorCompat {
      * @param controlY the y coordinate of the quadratic Bezier control point
      * @return the {@link Interpolator} representing the quadratic Bezier curve
      */
-    @NonNull
-    public static Interpolator create(float controlX, float controlY) {
+    public static @NonNull Interpolator create(float controlX, float controlY) {
         if (Build.VERSION.SDK_INT >= 21) {
             return Api21Impl.createPathInterpolator(controlX, controlY);
         }
@@ -81,8 +80,7 @@ public final class PathInterpolatorCompat {
      * @param controlY2 the y coordinate of the second control point of the cubic Bezier
      * @return the {@link Interpolator} representing the cubic Bezier curve
      */
-    @NonNull
-    public static Interpolator create(float controlX1, float controlY1,
+    public static @NonNull Interpolator create(float controlX1, float controlY1,
             float controlX2, float controlY2) {
         if (Build.VERSION.SDK_INT >= 21) {
             return Api21Impl.createPathInterpolator(controlX1, controlY1, controlX2, controlY2);

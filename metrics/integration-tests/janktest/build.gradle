@@ -15,9 +15,9 @@
  */
 
 plugins {
-    id 'AndroidXPlugin'
-    id 'com.android.application'
-    id 'kotlin-android'
+    id("AndroidXPlugin")
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
@@ -30,11 +30,11 @@ android {
 
 dependencies {
     implementation(libs.kotlinStdlib)
-    implementation project(':recyclerview:recyclerview')
-    implementation project(':navigation:navigation-fragment-ktx')
-    implementation project(':navigation:navigation-ui-ktx')
+    implementation(project(":recyclerview:recyclerview"))
+    implementation(project(":navigation:navigation-fragment-ktx"))
+    implementation(project(":navigation:navigation-ui-ktx"))
     implementation("androidx.appcompat:appcompat:1.1.0")
-    implementation project(path: ':metrics:metrics-performance')
-    implementation 'com.google.android.material:material:1.2.1'
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
+    implementation(project(":metrics:metrics-performance"))
+    implementation("com.google.android.material:material:1.2.1")
+    implementation("androidx.constraintlayout:constraintlayout:2.0.1")
 }

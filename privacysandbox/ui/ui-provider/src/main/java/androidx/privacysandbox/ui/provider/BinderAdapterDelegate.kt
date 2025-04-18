@@ -23,10 +23,10 @@ import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
-import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import android.view.Display
+import android.view.MotionEvent
 import android.view.SurfaceControlViewHost
 import android.view.View
 import androidx.annotation.RequiresApi
@@ -36,14 +36,16 @@ import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.IDelegateChangeListener
 import androidx.privacysandbox.ui.core.IDelegatingSandboxedUiAdapter
 import androidx.privacysandbox.ui.core.IDelegatorCallback
+import androidx.privacysandbox.ui.core.IMotionEventTransferCallback
 import androidx.privacysandbox.ui.core.IRemoteSessionClient
 import androidx.privacysandbox.ui.core.IRemoteSessionController
 import androidx.privacysandbox.ui.core.ISandboxedUiAdapter
 import androidx.privacysandbox.ui.core.ProtocolConstants
+import androidx.privacysandbox.ui.core.RemoteCallManager.tryToCallRemoteObject
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
+import androidx.privacysandbox.ui.core.SessionData
 import androidx.privacysandbox.ui.core.SessionObserver
 import androidx.privacysandbox.ui.core.SessionObserverContext
-import androidx.privacysandbox.ui.core.SessionObserverFactory
 import androidx.privacysandbox.ui.provider.impl.DeferredSessionClient
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
@@ -79,20 +81,22 @@ private class BinderDelegatingAdapter(private var adapter: DelegatingSandboxedUi
 
         override suspend fun onDelegateChanged(delegate: Bundle) {
             suspendCancellableCoroutine { continuation ->
-                binder.onDelegateChanged(
-                    delegate,
-                    object : IDelegatorCallback.Stub() {
-                        override fun onDelegateChangeResult(success: Boolean) {
-                            if (success) {
-                                continuation.resume(Unit)
-                            } else {
-                                continuation.resumeWithException(
-                                    IllegalStateException("Client failed to switch")
-                                )
+                tryToCallRemoteObject(binder) {
+                    onDelegateChanged(
+                        delegate,
+                        object : IDelegatorCallback.Stub() {
+                            override fun onDelegateChangeResult(success: Boolean) {
+                                if (success) {
+                                    continuation.resume(Unit)
+                                } else {
+                                    continuation.resumeWithException(
+                                        IllegalStateException("Client failed to switch")
+                                    )
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -121,7 +125,7 @@ private class BinderAdapterDelegate(
     /** Called in local mode via reflection. */
     override fun openSession(
         context: Context,
-        windowInputToken: IBinder,
+        sessionData: SessionData,
         initialWidth: Int,
         initialHeight: Int,
         isZOrderOnTop: Boolean,
@@ -135,7 +139,7 @@ private class BinderAdapterDelegate(
             val displayContext = sandboxContext.createDisplayContext(display)
             openSessionInternal(
                 displayContext,
-                windowInputToken,
+                sessionData,
                 initialWidth,
                 initialHeight,
                 isZOrderOnTop,
@@ -145,13 +149,9 @@ private class BinderAdapterDelegate(
         }
     }
 
-    override fun addObserverFactory(sessionObserverFactory: SessionObserverFactory) {}
-
-    override fun removeObserverFactory(sessionObserverFactory: SessionObserverFactory) {}
-
     /** Called in remote mode via binder call. */
     override fun openRemoteSession(
-        windowInputToken: IBinder,
+        sessionData: Bundle,
         displayId: Int,
         initialWidth: Int,
         initialHeight: Int,
@@ -159,10 +159,12 @@ private class BinderAdapterDelegate(
         remoteSessionClient: IRemoteSessionClient
     ) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            remoteSessionClient.onRemoteSessionError("openRemoteSession() requires API34+")
+            tryToCallRemoteObject(remoteSessionClient) {
+                onRemoteSessionError("openRemoteSession() requires API34+")
+            }
             return
         }
-
+        val constants = SessionData.fromBundle(sessionData)
         MainThreadExecutor.execute {
             try {
                 val displayManager =
@@ -173,21 +175,25 @@ private class BinderAdapterDelegate(
                 val deferredClient =
                     DeferredSessionClient.create(
                         clientFactory = {
-                            Api34PlusImpl.createSessionClientProxy(
+                            RemoteCompatImpl.createSessionClientProxy(
                                 displayContext,
                                 display,
-                                windowInputToken,
+                                constants,
                                 isZOrderOnTop,
                                 remoteSessionClient
                             )
                         },
                         clientInit = { it.initialize(initialWidth, initialHeight) },
-                        errorHandler = { remoteSessionClient.onRemoteSessionError(it.message) }
+                        errorHandler = {
+                            tryToCallRemoteObject(remoteSessionClient) {
+                                onRemoteSessionError(it.message)
+                            }
+                        }
                     )
 
                 openSessionInternal(
                     displayContext,
-                    windowInputToken,
+                    constants,
                     initialWidth,
                     initialHeight,
                     isZOrderOnTop,
@@ -197,14 +203,16 @@ private class BinderAdapterDelegate(
 
                 deferredClient.preloadClient()
             } catch (exception: Throwable) {
-                remoteSessionClient.onRemoteSessionError(exception.message)
+                tryToCallRemoteObject(remoteSessionClient) {
+                    onRemoteSessionError(exception.message)
+                }
             }
         }
     }
 
     private fun openSessionInternal(
         context: Context,
-        windowInputToken: IBinder,
+        sessionData: SessionData,
         initialWidth: Int,
         initialHeight: Int,
         isZOrderOnTop: Boolean,
@@ -213,7 +221,7 @@ private class BinderAdapterDelegate(
     ) {
         adapter.openSession(
             context,
-            windowInputToken,
+            sessionData,
             initialWidth,
             initialHeight,
             isZOrderOnTop,
@@ -237,7 +245,7 @@ private class BinderAdapterDelegate(
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private class SessionClientProxy(
-        private val touchTransferringView: TouchFocusTransferringView,
+        private val providerViewWrapper: ProviderViewWrapper,
         private val surfaceControlViewHost: SurfaceControlViewHost,
         private val isZOrderOnTop: Boolean,
         private val remoteSessionClient: IRemoteSessionClient
@@ -248,16 +256,16 @@ private class BinderAdapterDelegate(
          * step duration and interference with actual openSession() logic (reduce potential delays).
          */
         fun initialize(initialWidth: Int, initialHeight: Int) {
-            surfaceControlViewHost.setView(touchTransferringView, initialWidth, initialHeight)
+            surfaceControlViewHost.setView(providerViewWrapper, initialWidth, initialHeight)
         }
 
         override fun onSessionOpened(session: SandboxedUiAdapter.Session) {
             val view = session.view
 
-            if (touchTransferringView.childCount > 0) {
-                touchTransferringView.removeAllViews()
+            if (providerViewWrapper.childCount > 0) {
+                providerViewWrapper.removeAllViews()
             }
-            touchTransferringView.addView(view)
+            providerViewWrapper.addView(view)
 
             // This var is not locked as it will be set to false by the first event that can trigger
             // sending the remote session opened callback.
@@ -285,27 +293,31 @@ private class BinderAdapterDelegate(
         }
 
         override fun onSessionError(throwable: Throwable) {
-            remoteSessionClient.onRemoteSessionError(throwable.message)
+            tryToCallRemoteObject(remoteSessionClient) { onRemoteSessionError(throwable.message) }
         }
 
         override fun onResizeRequested(width: Int, height: Int) {
-            remoteSessionClient.onResizeRequested(width, height)
+            tryToCallRemoteObject(remoteSessionClient) { onResizeRequested(width, height) }
         }
 
         private fun sendRemoteSessionOpened(session: SandboxedUiAdapter.Session) {
             val surfacePackage = surfaceControlViewHost.surfacePackage
             val remoteSessionController = RemoteSessionController(surfaceControlViewHost, session)
-            remoteSessionClient.onRemoteSessionOpened(
-                surfacePackage,
-                remoteSessionController,
-                isZOrderOnTop,
-                session.signalOptions.isNotEmpty()
-            )
+            tryToCallRemoteObject(remoteSessionClient) {
+                onRemoteSessionOpened(
+                    surfacePackage,
+                    remoteSessionController,
+                    isZOrderOnTop,
+                    session.signalOptions.toList()
+                )
+            }
         }
 
         private fun sendSurfacePackage() {
             if (surfaceControlViewHost.surfacePackage != null) {
-                remoteSessionClient.onSessionUiFetched(surfaceControlViewHost.surfacePackage)
+                tryToCallRemoteObject(remoteSessionClient) {
+                    onSessionUiFetched(surfaceControlViewHost.surfacePackage)
+                }
             }
         }
 
@@ -339,6 +351,22 @@ private class BinderAdapterDelegate(
                 session.notifyUiChanged(uiContainerInfo)
             }
 
+            override fun notifySessionRendered(supportedSignalOptions: List<String>) {
+                session.notifySessionRendered(supportedSignalOptions.toSet())
+            }
+
+            override fun notifyMotionEvent(
+                motionEvent: MotionEvent,
+                eventTargetFrameTime: Long,
+                eventTransferCallback: IMotionEventTransferCallback?
+            ) {
+                providerViewWrapper.scheduleMotionEventProcessing(
+                    motionEvent,
+                    eventTargetFrameTime,
+                    eventTransferCallback
+                )
+            }
+
             override fun close() {
                 val mHandler = Handler(Looper.getMainLooper())
                 mHandler.post {
@@ -358,10 +386,14 @@ private class BinderAdapterDelegate(
 
         override fun onSessionOpened(session: SandboxedUiAdapter.Session) {
             val sessionObservers: MutableList<SessionObserver> = mutableListOf()
-            if (adapter is AbstractSandboxedUiAdapter) {
-                adapter.sessionObserverFactories.forEach { sessionObservers.add(it.create()) }
+            val signalOptions: MutableSet<String> = mutableSetOf()
+            if (adapter is SessionObserverFactoryRegistry) {
+                adapter.sessionObserverFactories.forEach {
+                    sessionObservers.add(it.create())
+                    signalOptions.addAll(it.signalOptions)
+                }
             }
-            client.onSessionOpened(SessionForObservers(session, sessionObservers))
+            client.onSessionOpened(SessionForObservers(session, sessionObservers, signalOptions))
         }
     }
 
@@ -371,29 +403,22 @@ private class BinderAdapterDelegate(
      */
     private class SessionForObservers(
         val session: SandboxedUiAdapter.Session,
-        val sessionObservers: List<SessionObserver>
+        val sessionObservers: List<SessionObserver>,
+        override val signalOptions: Set<String>
     ) : SandboxedUiAdapter.Session by session {
-
-        init {
-            if (sessionObservers.isNotEmpty()) {
-                val sessionObserverContext = SessionObserverContext(view)
-                sessionObservers.forEach { it.onSessionOpened(sessionObserverContext) }
-            }
-        }
 
         override val view: View
             get() = session.view
 
-        override val signalOptions: Set<String>
-            get() =
-                if (sessionObservers.isEmpty()) {
-                    setOf()
-                } else {
-                    setOf("someOptions")
-                }
+        override fun notifySessionRendered(supportedSignalOptions: Set<String>) {
+            sessionObservers.forEach {
+                it.onSessionOpened(SessionObserverContext(view, supportedSignalOptions))
+            }
+        }
 
         override fun notifyUiChanged(uiContainerInfo: Bundle) {
-            sessionObservers.forEach { it.onUiContainerChanged(uiContainerInfo) }
+            // Copy the bundle in case [SandboxedSdkViewUiInfo.pruneBundle] alters the bundle.
+            sessionObservers.forEach { it.onUiContainerChanged(Bundle(uiContainerInfo)) }
         }
 
         override fun close() {
@@ -402,25 +427,68 @@ private class BinderAdapterDelegate(
         }
     }
 
+    /**
+     * Provides backward compat support for APIs.
+     *
+     * If the API is available, it's called from a version-specific static inner class gated with
+     * version check, otherwise a fallback action is taken depending on the situation.
+     */
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private object Api34PlusImpl {
+    private object RemoteCompatImpl {
+
         fun createSessionClientProxy(
             displayContext: Context,
             display: Display,
-            windowInputToken: IBinder,
+            sessionData: SessionData,
             isZOrderOnTop: Boolean,
             remoteSessionClient: IRemoteSessionClient
         ): SessionClientProxy {
             val surfaceControlViewHost =
-                SurfaceControlViewHost(displayContext, display, windowInputToken)
-            val touchTransferringView =
-                TouchFocusTransferringView(displayContext, surfaceControlViewHost)
+                checkNotNull(createSurfaceControlViewHost(displayContext, display, sessionData)) {
+                    "Failed to create SurfaceControlViewHost"
+                }
             return SessionClientProxy(
-                touchTransferringView,
+                ProviderViewWrapper(displayContext),
                 surfaceControlViewHost,
                 isZOrderOnTop,
                 remoteSessionClient
             )
+        }
+
+        fun createSurfaceControlViewHost(
+            displayContext: Context,
+            display: Display,
+            sessionData: SessionData
+        ): SurfaceControlViewHost? {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                Api35PlusImpl.createSurfaceControlViewHost(displayContext, display, sessionData)
+            } else Api34PlusImpl.createSurfaceControlViewHost(displayContext, display, sessionData)
+        }
+
+        @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+        private object Api35PlusImpl {
+
+            @JvmStatic
+            fun createSurfaceControlViewHost(
+                context: Context,
+                display: Display,
+                sessionData: SessionData
+            ): SurfaceControlViewHost {
+                return SurfaceControlViewHost(context, display, sessionData.inputTransferToken)
+            }
+        }
+
+        @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+        private object Api34PlusImpl {
+
+            @JvmStatic
+            fun createSurfaceControlViewHost(
+                context: Context,
+                display: Display,
+                sessionData: SessionData
+            ): SurfaceControlViewHost {
+                return SurfaceControlViewHost(context, display, sessionData.windowInputToken)
+            }
         }
     }
 }

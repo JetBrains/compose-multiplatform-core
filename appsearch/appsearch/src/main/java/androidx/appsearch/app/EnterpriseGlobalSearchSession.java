@@ -18,10 +18,11 @@ package androidx.appsearch.app;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresFeature;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Provides a connection to all enterprise (work profile) AppSearch databases the querying
@@ -58,8 +59,7 @@ public interface EnterpriseGlobalSearchSession {
      * @param databaseName the name of the database to get from
      * @param request a request containing a namespace and IDs of the documents to retrieve.
      */
-    @NonNull
-    ListenableFuture<AppSearchBatchResult<String, GenericDocument>> getByDocumentIdAsync(
+    @NonNull ListenableFuture<AppSearchBatchResult<String, GenericDocument>> getByDocumentIdAsync(
             @NonNull String packageName,
             @NonNull String databaseName,
             @NonNull GetByDocumentIdRequest request);
@@ -88,8 +88,7 @@ public interface EnterpriseGlobalSearchSession {
      *                        match type, etc.
      * @return a {@link SearchResults} object for retrieved matched documents.
      */
-    @NonNull
-    SearchResults search(@NonNull String queryExpression, @NonNull SearchSpec searchSpec);
+    @NonNull SearchResults search(@NonNull String queryExpression, @NonNull SearchSpec searchSpec);
 
     /**
      * Retrieves the collection of schemas most recently successfully provided to
@@ -108,14 +107,12 @@ public interface EnterpriseGlobalSearchSession {
      */
     // This call hits disk; async API prevents us from treating these calls as properties.
     @SuppressLint("KotlinPropertyAccess")
-    @NonNull
-    ListenableFuture<GetSchemaResponse> getSchemaAsync(@NonNull String packageName,
+    @NonNull ListenableFuture<GetSchemaResponse> getSchemaAsync(@NonNull String packageName,
             @NonNull String databaseName);
 
     /**
      * Returns the {@link Features} to check for the availability of certain features
      * for this session.
      */
-    @NonNull
-    Features getFeatures();
+    @NonNull Features getFeatures();
 }

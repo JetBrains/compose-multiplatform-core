@@ -18,8 +18,8 @@ package androidx.room.gradle.integration
 
 import androidx.room.gradle.RoomArgumentProvider
 import androidx.room.gradle.RoomExtension.SchemaConfiguration
-import androidx.room.gradle.RoomGradlePlugin.Companion.isKspTask
 import androidx.room.gradle.RoomOptions
+import androidx.room.gradle.util.isKspTask
 import org.gradle.api.Task
 import org.gradle.api.file.Directory
 import org.gradle.api.file.ProjectLayout

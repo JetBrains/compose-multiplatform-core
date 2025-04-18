@@ -22,6 +22,12 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
+import android.media.ApplicationMediaCapabilities
+import android.media.MediaFeature.HdrType.DOLBY_VISION
+import android.media.MediaFeature.HdrType.HDR10
+import android.media.MediaFeature.HdrType.HDR10_PLUS
+import android.media.MediaFeature.HdrType.HLG
+import android.media.MediaFormat
 import android.net.Uri
 import android.os.Build
 import android.os.ext.SdkExtensions.getExtensionVersion
@@ -41,7 +47,9 @@ import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult.Companion.ACTION_INTENT_SENDER_REQUEST
 import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult.Companion.EXTRA_SEND_INTENT_EXCEPTION
 import androidx.annotation.CallSuper
+import androidx.annotation.IntDef
 import androidx.annotation.RequiresApi
+import androidx.annotation.RestrictTo
 import androidx.core.content.ContextCompat
 import kotlin.math.min
 
@@ -601,7 +609,7 @@ class ActivityResultContracts private constructor() {
              * Note that this does not check for any Intent handled by
              * [ACTION_SYSTEM_FALLBACK_PICK_IMAGES].
              */
-            @SuppressLint("ClassVerificationFailure", "NewApi")
+            @SuppressLint("NewApi")
             @Deprecated(
                 message =
                     "This method is deprecated in favor of isPhotoPickerAvailable(context) " +
@@ -687,7 +695,7 @@ class ActivityResultContracts private constructor() {
              * Android version, the SDK extension version or the picker provided by a system app
              * implementing [ACTION_SYSTEM_FALLBACK_PICK_IMAGES].
              */
-            @SuppressLint("ClassVerificationFailure", "NewApi")
+            @SuppressLint("NewApi")
             @JvmStatic
             fun isPhotoPickerAvailable(context: Context): Boolean {
                 return isSystemPickerAvailable() || isSystemFallbackPickerAvailable(context)
@@ -700,7 +708,7 @@ class ActivityResultContracts private constructor() {
              * Note that this does not check for any Intent handled by
              * [ACTION_SYSTEM_FALLBACK_PICK_IMAGES].
              */
-            @SuppressLint("ClassVerificationFailure", "NewApi")
+            @SuppressLint("NewApi")
             @JvmStatic
             internal fun isSystemPickerAvailable(): Boolean {
                 return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -756,6 +764,89 @@ class ActivityResultContracts private constructor() {
          */
         class SingleMimeType(val mimeType: String) : VisualMediaType
 
+        /**
+         * Represents the media capabilities of an application.
+         *
+         * This class allows you to specify the media capabilities that your application can handle,
+         * such as the HDR type of the media. By providing this information to
+         * [PickVisualMediaRequest], the photo picker can provide a more appropriate media format
+         * when possible.
+         *
+         * @see PickVisualMediaRequest.Builder.setMediaCapabilitiesForTranscoding
+         */
+        class MediaCapabilities internal constructor() {
+
+            companion object {
+                /** Defines the type of HDR (high dynamic range). */
+                @Retention(AnnotationRetention.SOURCE)
+                @IntDef(TYPE_HLG10, TYPE_HDR10, TYPE_HDR10_PLUS, TYPE_DOLBY_VISION)
+                @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+                @Target(
+                    AnnotationTarget.TYPE,
+                    AnnotationTarget.PROPERTY,
+                    AnnotationTarget.VALUE_PARAMETER
+                )
+                annotation class HdrType
+
+                /** HDR type for HLG10. */
+                const val TYPE_HLG10 = 0
+                /** HDR type for HDR10. */
+                const val TYPE_HDR10 = 1
+                /** HDR type for HDR10+. */
+                const val TYPE_HDR10_PLUS = 2
+                /** HDR type for Dolby-Vision. */
+                const val TYPE_DOLBY_VISION = 3
+            }
+
+            var supportedHdrTypes: Set<@HdrType Int> = emptySet()
+                internal set
+
+            @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+            internal fun toApplicationMediaCapabilities(): ApplicationMediaCapabilities {
+                return ApplicationMediaCapabilities.Builder()
+                    .apply {
+                        addSupportedVideoMimeType(MediaFormat.MIMETYPE_VIDEO_HEVC)
+                        supportedHdrTypes.forEach {
+                            when (it) {
+                                TYPE_HLG10 -> addSupportedHdrType(HLG)
+                                TYPE_HDR10 -> addSupportedHdrType(HDR10)
+                                TYPE_HDR10_PLUS -> addSupportedHdrType(HDR10_PLUS)
+                                TYPE_DOLBY_VISION -> addSupportedHdrType(DOLBY_VISION)
+                            }
+                        }
+                    }
+                    .build()
+            }
+
+            /** A builder for constructing [MediaCapabilities] instances. */
+            class Builder {
+
+                private var supportedHdrTypes: MutableSet<@HdrType Int> = mutableSetOf()
+
+                /**
+                 * Adds the supported HDR (High Dynamic Range) types for media capabilities.
+                 *
+                 * @param hdrType A supported HDR type from the [HdrType].
+                 * @return This Builder.
+                 * @throws IllegalArgumentException if an invalid hdrType is provided.
+                 */
+                fun addSupportedHdrType(hdrType: @HdrType Int): Builder {
+                    this.supportedHdrTypes.add(hdrType)
+                    return this
+                }
+
+                /**
+                 * Build the MediaCapabilities specified by this builder.
+                 *
+                 * @return the newly constructed MediaCapabilities.
+                 */
+                fun build(): MediaCapabilities =
+                    MediaCapabilities().apply {
+                        this.supportedHdrTypes = this@Builder.supportedHdrTypes
+                    }
+            }
+        }
+
         /** Represents filter input type accepted by the photo picker. */
         abstract class DefaultTab private constructor() {
             abstract val value: Int
@@ -784,6 +875,15 @@ class ActivityResultContracts private constructor() {
 
                     if (input.isCustomAccentColorApplied) {
                         putExtra(MediaStore.EXTRA_PICK_IMAGES_ACCENT_COLOR, input.accentColor)
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        input.mediaCapabilitiesForTranscoding?.let { capabilities ->
+                            putExtra(
+                                MediaStore.EXTRA_MEDIA_CAPABILITIES,
+                                capabilities.toApplicationMediaCapabilities()
+                            )
+                        }
                     }
                 }
             } else if (isSystemFallbackPickerAvailable(context)) {
@@ -871,7 +971,7 @@ class ActivityResultContracts private constructor() {
         }
 
         @CallSuper
-        @SuppressLint("NewApi", "ClassVerificationFailure")
+        @SuppressLint("NewApi")
         override fun createIntent(context: Context, input: PickVisualMediaRequest): Intent {
             // Check to see if the photo picker is available
             return if (PickVisualMedia.isSystemPickerAvailable()) {
@@ -892,6 +992,15 @@ class ActivityResultContracts private constructor() {
 
                     if (input.isCustomAccentColorApplied) {
                         putExtra(MediaStore.EXTRA_PICK_IMAGES_ACCENT_COLOR, input.accentColor)
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        input.mediaCapabilitiesForTranscoding?.let { capabilities ->
+                            putExtra(
+                                MediaStore.EXTRA_MEDIA_CAPABILITIES,
+                                capabilities.toApplicationMediaCapabilities()
+                            )
+                        }
                     }
                 }
             } else if (PickVisualMedia.isSystemFallbackPickerAvailable(context)) {
@@ -949,7 +1058,7 @@ class ActivityResultContracts private constructor() {
              *
              * @see MediaStore.EXTRA_PICK_IMAGES_MAX
              */
-            @SuppressLint("NewApi", "ClassVerificationFailure")
+            @SuppressLint("NewApi")
             internal fun getMaxItems() =
                 if (PickVisualMedia.isSystemPickerAvailable()) {
                     MediaStore.getPickImagesMaxLimit()

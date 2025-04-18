@@ -24,6 +24,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
+import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.BasalBodyTemperatureRecord
 import androidx.health.connect.client.records.BasalMetabolicRateRecord
@@ -47,6 +48,7 @@ import androidx.health.connect.client.records.IntermenstrualBleedingRecord
 import androidx.health.connect.client.records.LeanBodyMassRecord
 import androidx.health.connect.client.records.MenstruationFlowRecord
 import androidx.health.connect.client.records.MenstruationPeriodRecord
+import androidx.health.connect.client.records.MindfulnessSessionRecord
 import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.OvulationTestRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
@@ -66,6 +68,7 @@ import androidx.health.connect.client.records.Vo2MaxRecord
 import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.WheelchairPushesRecord
 import androidx.health.connect.client.records.isAtLeastSdkExtension13
+import androidx.health.connect.client.records.isAtLeastSdkExtension15
 import kotlin.reflect.KClass
 
 @SuppressLint("NewApi") // Guarded by sdk extension
@@ -76,6 +79,19 @@ internal val SDK_TO_PLATFORM_RECORD_CLASS_EXT_13:
         mapOf(
             PlannedExerciseSessionRecord::class to PlatformPlannedExerciseSessionRecord::class.java,
             SkinTemperatureRecord::class to PlatformSkinTemperatureRecord::class.java
+        )
+    } else {
+        emptyMap()
+    }
+
+@OptIn(ExperimentalMindfulnessSessionApi::class)
+@SuppressLint("NewApi") // Guarded by sdk extension
+@RequiresExtension(Build.VERSION_CODES.UPSIDE_DOWN_CAKE, 15)
+internal val SDK_TO_PLATFORM_RECORD_CLASS_EXT_15:
+    Map<KClass<out Record>, Class<out PlatformRecord>> =
+    if (isAtLeastSdkExtension15()) {
+        mapOf(
+            MindfulnessSessionRecord::class to PlatformMindfulnessSessionRecord::class.java,
         )
     } else {
         emptyMap()

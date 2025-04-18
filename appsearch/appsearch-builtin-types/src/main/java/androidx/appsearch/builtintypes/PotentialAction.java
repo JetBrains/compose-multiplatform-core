@@ -16,11 +16,12 @@
 
 package androidx.appsearch.builtintypes;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appsearch.annotation.Document;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An AppSearch document representing an action. This action schema type is used for the nested
@@ -75,8 +76,7 @@ public class PotentialAction {
     }
 
     /** Returns a string describing the action. */
-    @Nullable
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return mDescription;
     }
 
@@ -86,8 +86,7 @@ public class PotentialAction {
      * developer.android.com/reference/app-actions/built-in-intents/bii-index</a>. For example,
      * the "Start Exercise" BII has an action id of "actions.intent.START_EXERCISE".
      */
-    @Nullable
-    public String getName() {
+    public @Nullable String getName() {
         return mName;
     }
 
@@ -101,16 +100,15 @@ public class PotentialAction {
      * deeplink URI, and adding intent extras, can be done by building an intent and calling
      * {@link android.content.Intent#toUri}.
      */
-    @Nullable
-    public String getUri() {
+    public @Nullable String getUri() {
         return mUri;
     }
 
     /** Builder for {@link PotentialAction}. */
     public static final class Builder {
-        @Nullable private String mName;
-        @Nullable private String mDescription;
-        @Nullable private String mUri;
+        private @Nullable String mName;
+        private @Nullable String mDescription;
+        private @Nullable String mUri;
 
         /**
          * Constructor for {@link PotentialAction.Builder}.
@@ -133,15 +131,13 @@ public class PotentialAction {
         }
 
         /** Sets the name of the action. */
-        @NonNull
-        public Builder setName(@Nullable String name) {
+        public @NonNull Builder setName(@Nullable String name) {
             mName = name;
             return this;
         }
 
         /** Sets the description of the action, such as "Call". */
-        @NonNull
-        public Builder setDescription(@Nullable String description) {
+        public @NonNull Builder setDescription(@Nullable String description) {
             mDescription = description;
             return this;
         }
@@ -157,15 +153,13 @@ public class PotentialAction {
          * and adding intent extras, can be done by building an intent and calling
          * {@link android.content.Intent#toUri}.
          */
-        @NonNull
-        public Builder setUri(@Nullable String uri) {
+        public @NonNull Builder setUri(@Nullable String uri) {
             mUri = uri;
             return this;
         }
 
         /** Builds the {@link PotentialAction}. */
-        @NonNull
-        public PotentialAction build() {
+        public @NonNull PotentialAction build() {
             // As PotentialAction is used as a DocumentProperty of Thing, it does not need an id or
             // namespace.
             return new PotentialAction(/*namespace=*/"", /*id=*/"", mName, mDescription, mUri);

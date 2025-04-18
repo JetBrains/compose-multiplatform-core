@@ -49,6 +49,7 @@ import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.ui.FrameRateCategory
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -320,6 +321,12 @@ internal abstract class NodeCoordinator(
         }
     }
 
+    fun onUnplaced() {
+        if (hasNode(Nodes.Unplaced)) {
+            visitNodes(Nodes.Unplaced) { it.onUnplaced() }
+        }
+    }
+
     /** Places the modified child. */
     /*@CallSuper*/
     override fun placeAt(
@@ -381,6 +388,7 @@ internal abstract class NodeCoordinator(
             updateLayerBlock(layerBlock)
         }
         if (this.position != position) {
+            layoutNode.requireOwner().voteFrameRate(FrameRateCategory.High.value)
             this.position = position
             layoutNode.layoutDelegate.measurePassDelegate
                 .notifyChildrenUsingCoordinatesWhilePlacing()
@@ -395,7 +403,7 @@ internal abstract class NodeCoordinator(
         }
         this.zIndex = zIndex
         if (!isPlacingForAlignment) {
-            captureRulers(measureResult)
+            captureRulersIfNeeded(measureResult)
         }
     }
 
@@ -1512,7 +1520,7 @@ internal abstract class NodeCoordinator(
                 override fun interceptOutOfBoundsChildEvents(node: Modifier.Node) = false
 
                 override fun shouldHitTestChildren(parentLayoutNode: LayoutNode) =
-                    parentLayoutNode.collapsedSemantics?.isClearingSemantics != true
+                    parentLayoutNode.semanticsConfiguration?.isClearingSemantics != true
 
                 override fun childHitTest(
                     layoutNode: LayoutNode,
@@ -1534,7 +1542,7 @@ internal abstract class NodeCoordinator(
 @Suppress("PrimitiveInCollection")
 private fun compareEquals(
     a: MutableObjectIntMap<AlignmentLine>?,
-    b: Map<out AlignmentLine, Int>
+    b: Map<AlignmentLine, Int>
 ): Boolean {
     if (a == null) return false
     if (a.size != b.size) return false

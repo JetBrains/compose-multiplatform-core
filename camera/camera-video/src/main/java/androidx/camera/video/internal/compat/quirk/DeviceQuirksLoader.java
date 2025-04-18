@@ -16,9 +16,10 @@
 
 package androidx.camera.video.internal.compat.quirk;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.Quirk;
 import androidx.camera.core.impl.QuirkSettings;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,8 +36,7 @@ public class DeviceQuirksLoader {
      * Goes through all defined video related quirks, and returns those that should be loaded
      * on the current device.
      */
-    @NonNull
-    static List<Quirk> loadQuirks(@NonNull QuirkSettings quirkSettings) {
+    static @NonNull List<Quirk> loadQuirks(@NonNull QuirkSettings quirkSettings) {
         final List<Quirk> quirks = new ArrayList<>();
 
         // Load all video specific quirks
@@ -149,6 +149,21 @@ public class DeviceQuirksLoader {
                 PrematureEndOfStreamVideoQuirk.class,
                 PrematureEndOfStreamVideoQuirk.load())) {
             quirks.add(PrematureEndOfStreamVideoQuirk.INSTANCE);
+        }
+        if (quirkSettings.shouldEnableQuirk(
+                MediaCodecDefaultDataSpaceQuirk.class,
+                MediaCodecDefaultDataSpaceQuirk.load())) {
+            quirks.add(new MediaCodecDefaultDataSpaceQuirk());
+        }
+        if (quirkSettings.shouldEnableQuirk(
+                HdrRepeatingRequestFailureQuirk.class,
+                HdrRepeatingRequestFailureQuirk.load())) {
+            quirks.add(new HdrRepeatingRequestFailureQuirk());
+        }
+        if (quirkSettings.shouldEnableQuirk(
+                PreviewFreezeAfterHighSpeedRecordingQuirk.class,
+                PreviewFreezeAfterHighSpeedRecordingQuirk.load())) {
+            quirks.add(PreviewFreezeAfterHighSpeedRecordingQuirk.INSTANCE);
         }
         return quirks;
     }

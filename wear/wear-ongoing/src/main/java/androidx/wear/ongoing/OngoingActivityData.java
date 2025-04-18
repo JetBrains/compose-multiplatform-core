@@ -18,13 +18,14 @@ package androidx.wear.ongoing;
 import android.app.PendingIntent;
 import android.graphics.drawable.Icon;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.LocusIdCompat;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This class is used internally by the library to represent the data of an OngoingActivity and
@@ -33,43 +34,35 @@ import androidx.versionedparcelable.VersionedParcelize;
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @VersionedParcelize
 class OngoingActivityData implements VersionedParcelable {
-    @Nullable
     @ParcelField(value = 1, defaultValue = "null")
-    Icon mAnimatedIcon;
+    @Nullable Icon mAnimatedIcon;
 
-    @NonNull
     @ParcelField(value = 2)
-    Icon mStaticIcon;
+    @NonNull Icon mStaticIcon;
 
-    @Nullable
     @ParcelField(value = 3, defaultValue = "null")
-    OngoingActivityStatus mStatus;
+    @Nullable OngoingActivityStatus mStatus;
 
-    @NonNull
     @ParcelField(value = 4)
-    PendingIntent mTouchIntent;
+    @NonNull PendingIntent mTouchIntent;
 
-    @Nullable
     @ParcelField(value = 5, defaultValue = "null")
-    String mLocusId;
+    @Nullable String mLocusId;
 
     @ParcelField(value = 6, defaultValue = "-1")
     int mOngoingActivityId;
 
-    @Nullable
     @ParcelField(value = 7, defaultValue = "null")
-    String mCategory;
+    @Nullable String mCategory;
 
     @ParcelField(value = 8)
     long mTimestamp;
 
-    @Nullable
     @ParcelField(value = 9, defaultValue = "null")
-    String mTitle;
+    @Nullable String mTitle;
 
-    @Nullable
     @ParcelField(value = 10, defaultValue = "null")
-    String mContentDescription;
+    @Nullable String mContentDescription;
 
     // Required by VersionedParcelable
     OngoingActivityData() {
@@ -99,28 +92,23 @@ class OngoingActivityData implements VersionedParcelable {
         mContentDescription = contentDescription;
     }
 
-    @Nullable
-    Icon getAnimatedIcon() {
+    @Nullable Icon getAnimatedIcon() {
         return mAnimatedIcon;
     }
 
-    @NonNull
-    Icon getStaticIcon() {
+    @NonNull Icon getStaticIcon() {
         return mStaticIcon;
     }
 
-    @Nullable
-    OngoingActivityStatus getStatus() {
+    @Nullable OngoingActivityStatus getStatus() {
         return mStatus;
     }
 
-    @NonNull
-    PendingIntent getTouchIntent() {
+    @NonNull PendingIntent getTouchIntent() {
         return mTouchIntent;
     }
 
-    @Nullable
-    LocusIdCompat getLocusId() {
+    @Nullable LocusIdCompat getLocusId() {
         return mLocusId == null ? null : new LocusIdCompat(mLocusId);
     }
 
@@ -128,8 +116,7 @@ class OngoingActivityData implements VersionedParcelable {
         return mOngoingActivityId;
     }
 
-    @Nullable
-    String getCategory() {
+    @Nullable String getCategory() {
         return mCategory;
     }
 
@@ -137,13 +124,11 @@ class OngoingActivityData implements VersionedParcelable {
         return mTimestamp;
     }
 
-    @Nullable
-    String getTitle() {
+    @Nullable String getTitle() {
         return mTitle;
     }
 
-    @Nullable
-    String getContentDescription() {
+    @Nullable String getContentDescription() {
         return mContentDescription;
     }
 

@@ -25,8 +25,6 @@ import android.util.Size;
 import android.view.Surface;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.OutputSurface;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
@@ -37,6 +35,9 @@ import androidx.camera.extensions.internal.ExtensionVersion;
 import androidx.camera.extensions.internal.Version;
 import androidx.camera.extensions.internal.compat.workaround.CaptureOutputSurfaceForCaptureProcessor;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -61,15 +62,13 @@ import java.util.Map;
 class StillCaptureProcessor {
     private static final String TAG = "StillCaptureProcessor";
     private static final long UNSPECIFIED_TIMESTAMP = -1;
-    @NonNull
-    final CaptureProcessorImpl mCaptureProcessorImpl;
-    @NonNull
-    final CaptureResultImageMatcher mCaptureResultImageMatcher = new CaptureResultImageMatcher();
+    final @NonNull CaptureProcessorImpl mCaptureProcessorImpl;
+    final @NonNull CaptureResultImageMatcher mCaptureResultImageMatcher =
+            new CaptureResultImageMatcher();
     private boolean mIsPostviewConfigured;
     final Object mLock = new Object();
     @GuardedBy("mLock")
-    @NonNull
-    HashMap<Integer, Pair<ImageReference, TotalCaptureResult>> mCaptureResults =
+    @NonNull HashMap<Integer, Pair<ImageReference, TotalCaptureResult>> mCaptureResults =
             new HashMap<>();
 
     @GuardedBy("mLock")

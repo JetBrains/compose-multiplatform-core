@@ -44,6 +44,10 @@ fun action(
     key: String? = null,
     block: () -> Unit,
 ): Action {
-    val finalKey = if (!key.isNullOrEmpty()) key else currentCompositeKeyHash.toString()
+    // TODO: After upgrading Compose Runtime, replace the usage of currentCompositeKeyHash with
+    //  `currentCompositeKeyHashCode.toString(16)`
+    val finalKey =
+        if (!key.isNullOrEmpty()) key
+        else @Suppress("Deprecation") currentCompositeKeyHash.toString()
     return LambdaAction(finalKey, block)
 }

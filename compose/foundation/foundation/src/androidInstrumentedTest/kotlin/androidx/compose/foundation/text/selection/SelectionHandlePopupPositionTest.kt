@@ -316,6 +316,7 @@ private class SingleSelectionHandleMatcher : TypeSafeMatcher<Root>() {
     override fun matchesSafely(item: Root?): Boolean {
         val matches = item != null && isPopupLayout(item.decorView)
         if (matches) {
+            @Suppress("DEPRECATION")
             lastSeenWindowParams = item!!.windowLayoutParams.get()
         }
         return matches

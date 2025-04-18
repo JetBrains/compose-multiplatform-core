@@ -17,7 +17,9 @@
 package androidx.compose.material3.samples
 
 import androidx.annotation.Sampled
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,10 +33,8 @@ import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Work
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.ButtonShapes
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ShapeDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
@@ -54,7 +54,7 @@ import androidx.compose.ui.util.fastForEachIndexed
 @Sampled
 @Composable
 fun ButtonGroupSample() {
-    ButtonGroup {
+    ButtonGroup(modifier = Modifier.padding(horizontal = 8.dp)) {
         val options = listOf("A", "B", "C", "D")
         val checked = remember { mutableStateListOf(false, false, false, false) }
         val modifiers =
@@ -64,11 +64,13 @@ fun ButtonGroupSample() {
                 Modifier.width(90.dp),
                 Modifier.weight(1f)
             )
+        val interactionSources = List(4) { MutableInteractionSource() }
         options.fastForEachIndexed { index, label ->
             ToggleButton(
                 checked = checked[index],
                 onCheckedChange = { checked[index] = it },
-                modifier = modifiers[index]
+                interactionSource = interactionSources[index],
+                modifier = modifiers[index].animateWidth(interactionSources[index])
             ) {
                 Text(label)
             }
@@ -80,41 +82,29 @@ fun ButtonGroupSample() {
 @Sampled
 @Composable
 fun SingleSelectConnectedButtonGroupSample() {
-    val startButtonShapes =
-        ButtonShapes(
-            shape = ButtonGroupDefaults.connectedLeadingButtonShape,
-            pressedShape = ButtonGroupDefaults.connectedLeadingButtonPressShape,
-            checkedShape = ToggleButtonDefaults.checkedShape
-        )
-    val middleButtonShapes =
-        ButtonShapes(
-            shape = ShapeDefaults.Small,
-            pressedShape = ToggleButtonDefaults.pressedShape,
-            checkedShape = ToggleButtonDefaults.checkedShape
-        )
-    val endButtonShapes =
-        ButtonShapes(
-            shape = ButtonGroupDefaults.connectedTrailingButtonShape,
-            pressedShape = ButtonGroupDefaults.connectedTrailingButtonPressShape,
-            checkedShape = ToggleButtonDefaults.checkedShape
-        )
     val options = listOf("Work", "Restaurant", "Coffee")
     val unCheckedIcons =
         listOf(Icons.Outlined.Work, Icons.Outlined.Restaurant, Icons.Outlined.Coffee)
     val checkedIcons = listOf(Icons.Filled.Work, Icons.Filled.Restaurant, Icons.Filled.Coffee)
-    val shapes = listOf(startButtonShapes, middleButtonShapes, endButtonShapes)
     var selectedIndex by remember { mutableIntStateOf(0) }
 
-    ButtonGroup(
-        modifier = Modifier.padding(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.connectedSpaceBetween),
-        animateFraction = 0f
+    Row(
+        Modifier.padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
     ) {
+        val modifiers = listOf(Modifier.weight(1f), Modifier.weight(1.5f), Modifier.weight(1f))
+
         options.forEachIndexed { index, label ->
             ToggleButton(
                 checked = selectedIndex == index,
                 onCheckedChange = { selectedIndex = index },
-                shapes = shapes[index]
+                modifier = modifiers[index],
+                shapes =
+                    when (index) {
+                        0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                        options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                        else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                    }
             ) {
                 Icon(
                     if (selectedIndex == index) checkedIcons[index] else unCheckedIcons[index],
@@ -131,41 +121,28 @@ fun SingleSelectConnectedButtonGroupSample() {
 @Sampled
 @Composable
 fun MultiSelectConnectedButtonGroupSample() {
-    val startButtonShapes =
-        ButtonShapes(
-            shape = ButtonGroupDefaults.connectedLeadingButtonShape,
-            pressedShape = ButtonGroupDefaults.connectedLeadingButtonPressShape,
-            checkedShape = ToggleButtonDefaults.checkedShape
-        )
-    val middleButtonShapes =
-        ButtonShapes(
-            shape = ShapeDefaults.Small,
-            pressedShape = ToggleButtonDefaults.pressedShape,
-            checkedShape = ToggleButtonDefaults.checkedShape
-        )
-    val endButtonShapes =
-        ButtonShapes(
-            shape = ButtonGroupDefaults.connectedTrailingButtonShape,
-            pressedShape = ButtonGroupDefaults.connectedTrailingButtonPressShape,
-            checkedShape = ToggleButtonDefaults.checkedShape
-        )
     val options = listOf("Work", "Restaurant", "Coffee")
     val unCheckedIcons =
         listOf(Icons.Outlined.Work, Icons.Outlined.Restaurant, Icons.Outlined.Coffee)
     val checkedIcons = listOf(Icons.Filled.Work, Icons.Filled.Restaurant, Icons.Filled.Coffee)
-    val shapes = listOf(startButtonShapes, middleButtonShapes, endButtonShapes)
     val checked = remember { mutableStateListOf(false, false, false) }
 
-    ButtonGroup(
-        modifier = Modifier.padding(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.connectedSpaceBetween),
-        animateFraction = 0f
+    Row(
+        Modifier.padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
     ) {
+        val modifiers = listOf(Modifier.weight(1f), Modifier.weight(1.5f), Modifier.weight(1f))
         options.forEachIndexed { index, label ->
             ToggleButton(
                 checked = checked[index],
                 onCheckedChange = { checked[index] = it },
-                shapes = shapes[index]
+                modifier = modifiers[index],
+                shapes =
+                    when (index) {
+                        0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                        options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                        else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                    }
             ) {
                 Icon(
                     if (checked[index]) checkedIcons[index] else unCheckedIcons[index],

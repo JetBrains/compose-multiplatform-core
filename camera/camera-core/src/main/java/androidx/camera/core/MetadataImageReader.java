@@ -21,14 +21,15 @@ import android.util.LongSparseArray;
 import android.view.Surface;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.impl.CameraCaptureCallback;
 import androidx.camera.core.impl.CameraCaptureResult;
 import androidx.camera.core.impl.ImageReaderProxy;
 import androidx.camera.core.internal.CameraCaptureResultImageInfo;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -88,12 +89,10 @@ public class MetadataImageReader implements ImageReaderProxy,
     private final ImageReaderProxy mImageReaderProxy;
 
     @GuardedBy("mLock")
-    @Nullable
-    ImageReaderProxy.OnImageAvailableListener mListener;
+    ImageReaderProxy.@Nullable OnImageAvailableListener mListener;
 
     @GuardedBy("mLock")
-    @Nullable
-    private Executor mExecutor;
+    private @Nullable Executor mExecutor;
 
     /** ImageInfos haven't been matched with Image. */
     @GuardedBy("mLock")
@@ -150,8 +149,7 @@ public class MetadataImageReader implements ImageReaderProxy,
     }
 
     @Override
-    @Nullable
-    public ImageProxy acquireLatestImage() {
+    public @Nullable ImageProxy acquireLatestImage() {
         synchronized (mLock) {
             if (mMatchedImageProxies.isEmpty()) {
                 return null;
@@ -181,8 +179,7 @@ public class MetadataImageReader implements ImageReaderProxy,
     }
 
     @Override
-    @Nullable
-    public ImageProxy acquireNextImage() {
+    public @Nullable ImageProxy acquireNextImage() {
         synchronized (mLock) {
             if (mMatchedImageProxies.isEmpty()) {
                 return null;
@@ -246,9 +243,8 @@ public class MetadataImageReader implements ImageReaderProxy,
         }
     }
 
-    @Nullable
     @Override
-    public Surface getSurface() {
+    public @Nullable Surface getSurface() {
         synchronized (mLock) {
             return mImageReaderProxy.getSurface();
         }
@@ -326,8 +322,7 @@ public class MetadataImageReader implements ImageReaderProxy,
     }
 
     // Return the necessary CameraCaptureCallback, which needs to register to capture session.
-    @NonNull
-    public CameraCaptureCallback getCameraCaptureCallback() {
+    public @NonNull CameraCaptureCallback getCameraCaptureCallback() {
         return mCameraCaptureCallback;
     }
 

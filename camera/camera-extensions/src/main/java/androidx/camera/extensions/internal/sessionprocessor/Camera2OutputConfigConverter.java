@@ -16,11 +16,12 @@
 
 package androidx.camera.extensions.internal.sessionprocessor;
 
-import androidx.annotation.NonNull;
 import androidx.camera.extensions.impl.advanced.Camera2OutputConfigImpl;
 import androidx.camera.extensions.impl.advanced.ImageReaderOutputConfigImpl;
 import androidx.camera.extensions.impl.advanced.MultiResolutionImageReaderOutputConfigImpl;
 import androidx.camera.extensions.impl.advanced.SurfaceOutputConfigImpl;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,8 +36,7 @@ class Camera2OutputConfigConverter {
     /**
      * Create a {@link Camera2OutputConfig} from the {@link Camera2OutputConfigImpl}.
      */
-    @NonNull
-    static Camera2OutputConfig fromImpl(@NonNull Camera2OutputConfigImpl impl) {
+    static @NonNull Camera2OutputConfig fromImpl(@NonNull Camera2OutputConfigImpl impl) {
         List<Camera2OutputConfig> sharedOutputConfigs = new ArrayList<>();
         if (impl.getSurfaceSharingOutputConfigs() != null) {
             for (Camera2OutputConfigImpl surfaceSharingOutputConfig :

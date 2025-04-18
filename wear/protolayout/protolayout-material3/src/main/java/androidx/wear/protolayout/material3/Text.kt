@@ -16,15 +16,20 @@
 
 package androidx.wear.protolayout.material3
 
-import androidx.wear.protolayout.ColorBuilders.ColorProp
+import androidx.wear.protolayout.LayoutElementBuilders.FontSetting
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
-import androidx.wear.protolayout.LayoutElementBuilders.Text
+import androidx.wear.protolayout.LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE
+import androidx.wear.protolayout.LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE_END
 import androidx.wear.protolayout.LayoutElementBuilders.TextAlignment
 import androidx.wear.protolayout.LayoutElementBuilders.TextOverflow
-import androidx.wear.protolayout.ModifiersBuilders.Modifiers
-import androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint
-import androidx.wear.protolayout.TypeBuilders.StringProp
+import androidx.wear.protolayout.expression.RequiresSchemaVersion
+import androidx.wear.protolayout.layout.basicText
 import androidx.wear.protolayout.material3.Typography.TypographyToken
+import androidx.wear.protolayout.material3.Versions.hasTextOverflowEllipsizeSupport
+import androidx.wear.protolayout.modifiers.LayoutModifier
+import androidx.wear.protolayout.modifiers.contentDescription
+import androidx.wear.protolayout.types.LayoutColor
+import androidx.wear.protolayout.types.LayoutString
 
 /**
  * ProtoLayout component that represents text object holding any information.
@@ -32,50 +37,84 @@ import androidx.wear.protolayout.material3.Typography.TypographyToken
  * There are pre-defined typography styles that can be obtained from Materials token system in
  * [Typography].
  *
+ * This text, when added to the `titleSlot`, `bottomSlot` and `labelForBottomSlot` in
+ * [primaryLayout], is considered as important for accessibility automatically and gets read out by
+ * the screen reader even without content description provided in the [modifier]. This behavior can
+ * be removed with [LayoutModifier.clearSemantics] if not desired. In all other places, this text is
+ * considered as not important for accessibility by default unless content description is
+ * specifically provided in the [modifier].
+ *
  * @param text The text content for this component.
- * @param stringLayoutConstraint The layout constraints used to correctly measure Text view size and
- *   align text when `text` has dynamic value.
+ * @param modifier Modifiers to set to this element.
  * @param typography The typography from [Typography] to be applied to this text. This will have
  *   predefined default value specified by each components that uses this text, to achieve the
- *   recommended look.
+ *   recommended look. If using some of `Typography.NUMERAL_` styles and the provided text is
+ *   animating, the [settings] should include [FontSetting.tabularNum] font feature setting for the
+ *   best results and to avoid text changing its width based on the number present.
  * @param color The color to be applied to this text. It is recommended to use predefined default
  *   styles created by each component or `getColorProp(token)`.
  * @param italic Whether text should be displayed as italic.
  * @param underline Whether text should be displayed as underlined.
  * @param scalable Whether text should scale with the user font size.
  * @param maxLines The maximum number of lines that text can occupy.
- * @param multilineAlignment The horizontal alignment of the multiple lines of text.
+ * @param alignment The horizontal alignment of the multiple lines of text or one line of text when
+ *   text overflows.
  * @param overflow The overflow strategy when text doesn't have enough space to be shown.
- * @param modifiers The additional [Modifiers] for this text.
+ * @param settings The collection of font settings to be applied. If more than one Setting with the
+ *   same axis tag is specified, the first one will be used. Supported settings depend on the font
+ *   used and renderer version. Each default typography will apply appropriate default setting axes
+ *   for it ([FontSetting.weight], [FontSetting.width] and [FontSetting.roundness].
  * @sample androidx.wear.protolayout.material3.samples.helloWorldTextDefault
  * @sample androidx.wear.protolayout.material3.samples.helloWorldTextDynamicCustom
  */
+@Suppress("DEPRECATION") // Intentionally using deprecated fallback for old renderer
 public fun MaterialScope.text(
-    text: StringProp,
-    stringLayoutConstraint: StringLayoutConstraint =
-        StringLayoutConstraint.Builder(text.value).build(),
+    text: LayoutString,
+    modifier: LayoutModifier = LayoutModifier,
     @TypographyToken typography: Int = defaultTextElementStyle.typography,
-    color: ColorProp = defaultTextElementStyle.color,
+    color: LayoutColor = defaultTextElementStyle.color,
     italic: Boolean = defaultTextElementStyle.italic,
     underline: Boolean = defaultTextElementStyle.underline,
-    scalable: Boolean = defaultTextElementStyle.scalable,
+    scalable: Boolean =
+        defaultTextElementStyle.scalable ?: TypographyFontSelection.getFontScalability(typography),
     maxLines: Int = defaultTextElementStyle.maxLines,
-    @TextAlignment multilineAlignment: Int = defaultTextElementStyle.multilineAlignment,
+    @TextAlignment alignment: Int = defaultTextElementStyle.alignment,
     @TextOverflow overflow: Int = defaultTextElementStyle.overflow,
-    modifiers: Modifiers = Modifiers.Builder().build()
+    @RequiresSchemaVersion(major = 1, minor = 400) settings: List<FontSetting> = emptyList()
 ): LayoutElement =
-    Text.Builder()
-        .setText(text)
-        .setLayoutConstraintsForDynamicText(stringLayoutConstraint)
-        .setFontStyle(
-            createFontStyleBuilder(typographyToken = typography, deviceConfiguration, scalable)
-                .setColor(color)
+    basicText(
+        text = text,
+        fontStyle =
+            createFontStyleBuilder(
+                    typographyToken = typography,
+                    deviceConfiguration = deviceConfiguration,
+                    isScalable = scalable,
+                    settings = settings
+                )
+                .setColor(color.prop)
                 .setItalic(italic)
                 .setUnderline(underline)
-                .build()
-        )
-        .setMaxLines(maxLines)
-        .setMultilineAlignment(multilineAlignment)
-        .setOverflow(overflow)
-        .setModifiers(modifiers)
-        .build()
+                .build(),
+        maxLines = maxLines,
+        alignment = alignment,
+        overflow =
+            if (overflow == TEXT_OVERFLOW_ELLIPSIZE) {
+                if (deviceConfiguration.rendererSchemaVersion.hasTextOverflowEllipsizeSupport()) {
+                    overflow
+                } else {
+                    TEXT_OVERFLOW_ELLIPSIZE_END
+                }
+            } else {
+                overflow
+            },
+        modifier =
+            // Text by default is not important for accessibility. In M3 spec, text in primaryLayout
+            // tileSlot, bottomSlot and labelForBottomSlot should be important for accessibility by
+            // default.
+            if (defaultTextElementStyle.importantForAccessibility) {
+                LayoutModifier.contentDescription(text.staticValue, text.dynamicValue) then modifier
+            } else {
+                modifier
+            },
+        lineHeight = theme.getLineHeight(typography).value,
+    )

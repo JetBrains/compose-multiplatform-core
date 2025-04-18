@@ -26,14 +26,13 @@ import com.android.build.api.dsl.ManagedVirtualDevice
 plugins {
     id("AndroidXPlugin")
     id("com.android.test")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("androidx.baselineprofile")
 }
 
 android {
     defaultConfig {
         minSdk = 23
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     testOptions.managedDevices.allDevices {
         pixel6Api31(ManagedVirtualDevice) {

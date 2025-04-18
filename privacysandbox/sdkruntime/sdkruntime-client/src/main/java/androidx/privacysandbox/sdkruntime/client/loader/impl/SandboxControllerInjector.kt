@@ -94,36 +94,30 @@ internal object SandboxControllerInjector {
             controller.getSandboxedSdks().map(sandboxedSdkFactory::createFrom)
         }
 
-        if (ClientFeature.APP_OWNED_INTERFACES.isAvailable(sdkVersion)) {
-            val sdkInterfaceFactory = AppOwnedSdkInterfaceProxyFactory.createFor(sdkClassLoader)
-            handlerBuilder.addHandlerFor("getAppOwnedSdkSandboxInterfaces") {
-                controller.getAppOwnedSdkSandboxInterfaces().map(sdkInterfaceFactory::createFrom)
-            }
+        val sdkInterfaceFactory = AppOwnedSdkInterfaceProxyFactory.createFor(sdkClassLoader)
+        handlerBuilder.addHandlerFor("getAppOwnedSdkSandboxInterfaces") {
+            controller.getAppOwnedSdkSandboxInterfaces().map(sdkInterfaceFactory::createFrom)
         }
 
-        if (ClientFeature.SDK_ACTIVITY_HANDLER.isAvailable(sdkVersion)) {
-            val sdkHandlerWrapper = SdkActivityHandlerWrapper.createFor(sdkClassLoader)
-            val activityMethodsHandler = ActivityMethodsHandler(controller, sdkHandlerWrapper)
-            handlerBuilder.addHandlerFor(
-                "registerSdkSandboxActivityHandler",
-                activityMethodsHandler.registerMethodHandler
-            )
-            handlerBuilder.addHandlerFor(
-                "unregisterSdkSandboxActivityHandler",
-                activityMethodsHandler.unregisterMethodHandler
-            )
-        }
+        val sdkHandlerWrapper = SdkActivityHandlerWrapper.createFor(sdkClassLoader)
+        val activityMethodsHandler = ActivityMethodsHandler(controller, sdkHandlerWrapper)
+        handlerBuilder.addHandlerFor(
+            "registerSdkSandboxActivityHandler",
+            activityMethodsHandler.registerMethodHandler
+        )
+        handlerBuilder.addHandlerFor(
+            "unregisterSdkSandboxActivityHandler",
+            activityMethodsHandler.unregisterMethodHandler
+        )
 
-        if (ClientFeature.LOAD_SDK.isAvailable(sdkVersion)) {
-            val loadSdkCallbackWrapper = LoadSdkCallbackWrapper.createFor(sdkClassLoader)
-            handlerBuilder.addHandlerFor("loadSdk") { args ->
-                controller.loadSdk(
-                    sdkName = args!![0] as String,
-                    params = args[1] as Bundle,
-                    executor = args[2] as Executor,
-                    callback = loadSdkCallbackWrapper.wrapLoadSdkCallback(args[3]!!)
-                )
-            }
+        val loadSdkCallbackWrapper = LoadSdkCallbackWrapper.createFor(sdkClassLoader)
+        handlerBuilder.addHandlerFor("loadSdk") { args ->
+            controller.loadSdk(
+                sdkName = args!![0] as String,
+                params = args[1] as Bundle,
+                executor = args[2] as Executor,
+                callback = loadSdkCallbackWrapper.wrapLoadSdkCallback(args[3]!!)
+            )
         }
 
         if (ClientFeature.GET_CLIENT_PACKAGE_NAME.isAvailable(sdkVersion)) {

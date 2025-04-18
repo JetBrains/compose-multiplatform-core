@@ -31,18 +31,16 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 enum class ClientApiVersion(
     val apiLevel: Int,
+    val stable: Boolean = false,
     private val newFeatures: Set<ClientFeature> = emptySet()
 ) {
-    V4__1_0_ALPHA05(
-        apiLevel = 4,
-        newFeatures =
-            setOf(
-                ClientFeature.SDK_ACTIVITY_HANDLER,
-                ClientFeature.APP_OWNED_INTERFACES,
-            )
+    V5__1_0_ALPHA13(apiLevel = 5),
+    V6__1_0_ALPHA14(
+        apiLevel = 6,
+        /** Temporary mark as stable to run tests for V6 and V7 */
+        stable = true,
+        newFeatures = setOf(ClientFeature.GET_CLIENT_PACKAGE_NAME)
     ),
-    V5__1_0_ALPHA13(apiLevel = 5, newFeatures = setOf(ClientFeature.LOAD_SDK)),
-    V6__1_0_ALPHA14(apiLevel = 6, newFeatures = setOf(ClientFeature.GET_CLIENT_PACKAGE_NAME)),
     V7__1_0_ALPHA16(apiLevel = 7, newFeatures = setOf(ClientFeature.CLIENT_IMPORTANCE_LISTENER)),
 
     /**
@@ -52,8 +50,21 @@ enum class ClientApiVersion(
     FUTURE_VERSION(apiLevel = Int.MAX_VALUE);
 
     companion object {
-        val MIN_SUPPORTED = values().minBy { v -> v.apiLevel }
+        /**
+         * Minimal version of sdkruntime-client lib that could load SDK built with current version
+         * of sdkruntime-provider lib.
+         */
+        val MIN_SUPPORTED_CLIENT_VERSION = V6__1_0_ALPHA14
+
+        /**
+         * Minimal version of sdkruntime-provider lib that could be loaded by current version of
+         * sdkruntime-client lib.
+         */
+        val MIN_SUPPORTED_SDK_VERSION = values().minBy { v -> v.apiLevel }
+
         val CURRENT_VERSION = values().filter { v -> v != FUTURE_VERSION }.maxBy { v -> v.apiLevel }
+
+        val LATEST_STABLE_VERSION = values().filter { v -> v.stable }.maxBy { v -> v.apiLevel }
 
         private val FEATURE_TO_VERSION_MAP = buildFeatureMap()
 
@@ -65,6 +76,13 @@ enum class ClientApiVersion(
         private fun buildFeatureMap(): Map<ClientFeature, ClientApiVersion> {
             if (FUTURE_VERSION.newFeatures.isNotEmpty()) {
                 throw IllegalStateException("FUTURE_VERSION MUST NOT define any features")
+            }
+            if (MIN_SUPPORTED_SDK_VERSION.newFeatures.isNotEmpty()) {
+                throw IllegalStateException(
+                    "$MIN_SUPPORTED_SDK_VERSION MUST NOT define any features. " +
+                        "Features added in this version are available without version checks because " +
+                        "it is minimum supported version."
+                )
             }
             return buildMap {
                 values().forEach { version ->

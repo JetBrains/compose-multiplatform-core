@@ -19,8 +19,6 @@ package androidx.wear.compose.material3.demos
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CutCornerShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -113,7 +111,7 @@ fun TextButtonDemo() {
         }
         item { ListHeader { Text("With onLongClick") } }
         item { TextButtonWithOnLongClickSample { showOnLongClickToast(context) } }
-        item { ListHeader { Text("Corner Animation") } }
+        item { ListHeader { Text("Animated") } }
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 TextButton(
@@ -128,34 +126,6 @@ fun TextButtonDemo() {
                     onClick = {},
                     colors = TextButtonDefaults.filledVariantTextButtonColors(),
                     shapes = TextButtonDefaults.animatedShapes(),
-                ) {
-                    Text(text = "ABC")
-                }
-            }
-        }
-        item { ListHeader { Text("Morphed Animation") } }
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(
-                    onClick = {},
-                    colors = TextButtonDefaults.filledTextButtonColors(),
-                    shapes =
-                        TextButtonDefaults.animatedShapes(
-                            shape = CutCornerShape(5.dp),
-                            pressedShape = RoundedCornerShape(5.dp)
-                        ),
-                ) {
-                    Text(text = "ABC")
-                }
-                Spacer(modifier = Modifier.width(5.dp))
-                TextButton(
-                    onClick = {},
-                    colors = TextButtonDefaults.filledVariantTextButtonColors(),
-                    shapes =
-                        TextButtonDefaults.animatedShapes(
-                            shape = CutCornerShape(5.dp),
-                            pressedShape = RoundedCornerShape(5.dp)
-                        ),
                 ) {
                     Text(text = "ABC")
                 }

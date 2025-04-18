@@ -163,7 +163,8 @@ private constructor(
             }
         }
 
-        internal fun extractCallingAppInfo(bundle: Bundle): CallingAppInfo? {
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        fun extractCallingAppInfo(bundle: Bundle): CallingAppInfo? {
             val origin = bundle.getString(EXTRA_CREDENTIAL_REQUEST_ORIGIN)
             val packageName = bundle.getString(EXTRA_CREDENTIAL_REQUEST_PACKAGE_NAME) ?: return null
             return if (Build.VERSION.SDK_INT >= 28) {

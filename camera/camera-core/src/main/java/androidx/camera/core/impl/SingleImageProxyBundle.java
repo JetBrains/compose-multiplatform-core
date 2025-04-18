@@ -16,12 +16,13 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.ImageInfo;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.impl.utils.futures.Futures;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -75,8 +76,7 @@ public final class SingleImageProxyBundle implements ImageProxyBundle {
     }
 
     @Override
-    @NonNull
-    public ListenableFuture<ImageProxy> getImageProxy(int captureId) {
+    public @NonNull ListenableFuture<ImageProxy> getImageProxy(int captureId) {
         if (captureId != mCaptureId) {
             return Futures.immediateFailedFuture(
                     new IllegalArgumentException("Capture id does not exist in the bundle"));
@@ -85,8 +85,7 @@ public final class SingleImageProxyBundle implements ImageProxyBundle {
     }
 
     @Override
-    @NonNull
-    public List<Integer> getCaptureIds() {
+    public @NonNull List<Integer> getCaptureIds() {
         return Collections.singletonList(mCaptureId);
     }
 }

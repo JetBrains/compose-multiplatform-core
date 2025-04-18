@@ -69,14 +69,21 @@ data class BenchmarkData(val context: Context, val benchmarks: List<TestResult>)
                 sustainedPerformanceModeEnabled = IsolationActivity.sustainedPerformanceModeInUse,
                 artMainlineVersion = DeviceInfo.artMainlineVersion,
                 osCodenameAbbreviated =
-                    if (android.os.Build.VERSION.CODENAME != "REL") {
-                            // non-release build, use codename
-                            android.os.Build.VERSION.CODENAME
-                        } else {
-                            // release build, use start of build ID
-                            android.os.Build.ID
-                        }
-                        .substring(0, 1),
+                    if (
+                        android.os.Build.VERSION.SDK_INT >= 35 &&
+                            android.os.Build.VERSION.CODENAME == "REL"
+                    ) {
+                        "REL" // OS doesn't support codename letters anymore
+                    } else {
+                        if (android.os.Build.VERSION.CODENAME != "REL") {
+                                // non-release build, use codename
+                                android.os.Build.VERSION.CODENAME
+                            } else {
+                                // release build, use start of build ID
+                                android.os.Build.ID
+                            }
+                            .substring(0, 1)
+                    },
                 compilationMode = PackageInfo.compilationMode,
                 payload = Arguments.payload
             )

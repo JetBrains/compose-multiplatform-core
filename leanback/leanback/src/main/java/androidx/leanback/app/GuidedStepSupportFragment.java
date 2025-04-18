@@ -30,8 +30,6 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
@@ -50,6 +48,9 @@ import androidx.leanback.widget.GuidedActionAdapterGroup;
 import androidx.leanback.widget.GuidedActionsStylist;
 import androidx.leanback.widget.NonOverlappingLinearLayout;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -243,9 +244,8 @@ public class GuidedStepSupportFragment extends Fragment implements GuidedActionA
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     public static class DummyFragment extends Fragment {
-        @NonNull
         @Override
-        public View onCreateView(
+        public @NonNull View onCreateView(
                 @NonNull LayoutInflater inflater,
                 @Nullable ViewGroup container,
                 @Nullable Bundle savedInstanceState
@@ -277,8 +277,7 @@ public class GuidedStepSupportFragment extends Fragment implements GuidedActionA
      * a basic GuidanceStylist.
      * @return The GuidanceStylist used in this fragment.
      */
-    @NonNull
-    public GuidanceStylist onCreateGuidanceStylist() {
+    public @NonNull GuidanceStylist onCreateGuidanceStylist() {
         return new GuidanceStylist();
     }
 
@@ -287,8 +286,7 @@ public class GuidedStepSupportFragment extends Fragment implements GuidedActionA
      * returns a basic GuidedActionsStylist.
      * @return The GuidedActionsStylist used in this fragment.
      */
-    @NonNull
-    public GuidedActionsStylist onCreateActionsStylist() {
+    public @NonNull GuidedActionsStylist onCreateActionsStylist() {
         return new GuidedActionsStylist();
     }
 
@@ -297,8 +295,7 @@ public class GuidedStepSupportFragment extends Fragment implements GuidedActionA
      * The default implementation returns a basic GuidedActionsStylist.
      * @return The GuidedActionsStylist used in this fragment.
      */
-    @NonNull
-    public GuidedActionsStylist onCreateButtonActionsStylist() {
+    public @NonNull GuidedActionsStylist onCreateButtonActionsStylist() {
         GuidedActionsStylist stylist = new GuidedActionsStylist();
         stylist.setAsButtonActions();
         return stylist;
@@ -690,8 +687,7 @@ public class GuidedStepSupportFragment extends Fragment implements GuidedActionA
      * Returns the current GuidedStepSupportFragment on the fragment transaction stack.
      * @return The current GuidedStepSupportFragment, if any, on the fragment transaction stack.
      */
-    @Nullable
-    public static GuidedStepSupportFragment getCurrentGuidedStepSupportFragment(
+    public static @Nullable GuidedStepSupportFragment getCurrentGuidedStepSupportFragment(
             @NonNull FragmentManager fm
     ) {
         Fragment f = fm.findFragmentByTag(TAG_LEAN_BACK_ACTIONS_FRAGMENT);
@@ -705,8 +701,7 @@ public class GuidedStepSupportFragment extends Fragment implements GuidedActionA
      * Returns the GuidanceStylist that displays guidance information for the user.
      * @return The GuidanceStylist for this fragment.
      */
-    @NonNull
-    public GuidanceStylist getGuidanceStylist() {
+    public @NonNull GuidanceStylist getGuidanceStylist() {
         return mGuidanceStylist;
     }
 
@@ -714,8 +709,7 @@ public class GuidedStepSupportFragment extends Fragment implements GuidedActionA
      * Returns the GuidedActionsStylist that displays the actions the user may take.
      * @return The GuidedActionsStylist for this fragment.
      */
-    @NonNull
-    public GuidedActionsStylist getGuidedActionsStylist() {
+    public @NonNull GuidedActionsStylist getGuidedActionsStylist() {
         return mActionsStylist;
     }
 
@@ -723,8 +717,7 @@ public class GuidedStepSupportFragment extends Fragment implements GuidedActionA
      * Returns the list of button GuidedActions that the user may take in this fragment.
      * @return The list of button GuidedActions for this fragment.
      */
-    @NonNull
-    public List<GuidedAction> getButtonActions() {
+    public @NonNull List<GuidedAction> getButtonActions() {
         return mButtonActions;
     }
 
@@ -733,8 +726,7 @@ public class GuidedStepSupportFragment extends Fragment implements GuidedActionA
      * @param id  Id of the button action to search.
      * @return  GuidedAction object or null if not found.
      */
-    @Nullable
-    public GuidedAction findButtonActionById(long id) {
+    public @Nullable GuidedAction findButtonActionById(long id) {
         int index = findButtonActionPositionById(id);
         return index >= 0 ? mButtonActions.get(index) : null;
     }
@@ -759,8 +751,7 @@ public class GuidedStepSupportFragment extends Fragment implements GuidedActionA
      * Returns the GuidedActionsStylist that displays the button actions the user may take.
      * @return The GuidedActionsStylist for this fragment.
      */
-    @NonNull
-    public GuidedActionsStylist getGuidedButtonActionsStylist() {
+    public @NonNull GuidedActionsStylist getGuidedButtonActionsStylist() {
         return mButtonActionsStylist;
     }
 
@@ -792,8 +783,7 @@ public class GuidedStepSupportFragment extends Fragment implements GuidedActionA
      * @return The View corresponding to the button action at the indicated position, or null if
      * that action is not currently onscreen.
      */
-    @Nullable
-    public View getButtonActionItemView(int position) {
+    public @Nullable View getButtonActionItemView(int position) {
         final RecyclerView.ViewHolder holder = mButtonActionsStylist.getActionsGridView()
                     .findViewHolderForPosition(position);
         return holder == null ? null : holder.itemView;
@@ -819,8 +809,7 @@ public class GuidedStepSupportFragment extends Fragment implements GuidedActionA
      * Returns the list of GuidedActions that the user may take in this fragment.
      * @return The list of GuidedActions for this fragment.
      */
-    @NonNull
-    public List<GuidedAction> getActions() {
+    public @NonNull List<GuidedAction> getActions() {
         return mActions;
     }
 
@@ -829,8 +818,7 @@ public class GuidedStepSupportFragment extends Fragment implements GuidedActionA
      * @param id  Id of the action to search.
      * @return  GuidedAction object or null if not found.
      */
-    @Nullable
-    public GuidedAction findActionById(long id) {
+    public @Nullable GuidedAction findActionById(long id) {
         int index = findActionPositionById(id);
         return index >= 0 ? mActions.get(index) : null;
     }
@@ -893,8 +881,7 @@ public class GuidedStepSupportFragment extends Fragment implements GuidedActionA
      * @return The View corresponding to the action at the indicated position, or null if that
      * action is not currently onscreen.
      */
-    @Nullable
-    public View getActionItemView(int position) {
+    public @Nullable View getActionItemView(int position) {
         final RecyclerView.ViewHolder holder = mActionsStylist.getActionsGridView()
                     .findViewHolderForPosition(position);
         return holder == null ? null : holder.itemView;
@@ -1003,8 +990,7 @@ public class GuidedStepSupportFragment extends Fragment implements GuidedActionA
      * @param savedInstanceState
      * @return Created background view or null if no background.
      */
-    @Nullable
-    public View onCreateBackgroundView(
+    public @Nullable View onCreateBackgroundView(
             @NonNull LayoutInflater inflater,
             @Nullable ViewGroup container,
             @Nullable Bundle savedInstanceState
@@ -1106,9 +1092,8 @@ public class GuidedStepSupportFragment extends Fragment implements GuidedActionA
      * {@inheritDoc}
      */
     @Override
-    @Nullable
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
+    public @Nullable View onCreateView(@NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         if (DEBUG) Log.v(TAG, "onCreateView");
 
         resolveTheme();

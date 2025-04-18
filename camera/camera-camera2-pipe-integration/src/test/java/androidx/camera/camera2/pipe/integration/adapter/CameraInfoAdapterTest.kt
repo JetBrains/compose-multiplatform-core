@@ -21,6 +21,8 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraCharacteristics.CONTROL_VIDEO_STABILIZATION_MODE_OFF
 import android.hardware.camera2.CameraCharacteristics.CONTROL_VIDEO_STABILIZATION_MODE_ON
 import android.hardware.camera2.CameraCharacteristics.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
+import android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_OFF
+import android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
 import android.os.Build
 import android.util.Range
 import android.util.Size
@@ -29,6 +31,8 @@ import androidx.camera.camera2.pipe.CameraBackendId
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.integration.adapter.CameraInfoAdapter.Companion.unwrapAs
+import androidx.camera.camera2.pipe.integration.config.CameraConfig
+import androidx.camera.camera2.pipe.integration.impl.CameraPipeCameraProperties
 import androidx.camera.camera2.pipe.integration.impl.ZoomControl
 import androidx.camera.camera2.pipe.integration.internal.DOLBY_VISION_10B_UNCONSTRAINED
 import androidx.camera.camera2.pipe.integration.internal.HLG10_UNCONSTRAINED
@@ -723,5 +727,49 @@ class CameraInfoAdapterTest {
 
         val cameraMetadata = adapterCameraInfo.unwrapAs(CameraMetadata::class)
         assertThat(cameraMetadata).isNotNull()
+    }
+
+    @Test
+    @Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    fun returnLowLightBoostSupported_whenAeModeOnLowLightBoostBrightnessPriorityAvailable() {
+        val cameraInfo: CameraInfo =
+            createCameraInfoAdapter(
+                cameraProperties =
+                    CameraPipeCameraProperties(
+                        CameraConfig(CameraId(defaultCameraId)),
+                        FakeCameraMetadata(
+                            characteristics =
+                                mapOf(
+                                    CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES to
+                                        intArrayOf(
+                                            CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                                        )
+                                )
+                        )
+                    )
+            )
+
+        assertThat(cameraInfo.isLowLightBoostSupported).isTrue()
+    }
+
+    @Test
+    @Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    fun returnLowLightBoostSupported_whenAeModeOnLowLightBoostBrightnessPriorityUnavailable() {
+        val cameraInfo: CameraInfo =
+            createCameraInfoAdapter(
+                cameraProperties =
+                    CameraPipeCameraProperties(
+                        CameraConfig(CameraId(defaultCameraId)),
+                        FakeCameraMetadata(
+                            characteristics =
+                                mapOf(
+                                    CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES to
+                                        intArrayOf(CONTROL_AE_MODE_OFF)
+                                )
+                        )
+                    )
+            )
+
+        assertThat(cameraInfo.isLowLightBoostSupported).isFalse()
     }
 }

@@ -18,11 +18,12 @@ package androidx.camera.camera2.internal.compat.quirk;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.workaround.ExtraSupportedSurfaceCombinationsContainer;
 import androidx.camera.core.impl.Quirk;
 import androidx.camera.core.impl.SurfaceCombination;
 import androidx.camera.core.impl.SurfaceConfig;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -110,8 +111,8 @@ public class ExtraSupportedSurfaceCombinationsQuirk implements Quirk {
     /**
      * Returns the extra supported surface combinations for specific camera on the device.
      */
-    @NonNull
-    public List<SurfaceCombination> getExtraSupportedSurfaceCombinations(@NonNull String cameraId) {
+    public @NonNull List<SurfaceCombination> getExtraSupportedSurfaceCombinations(
+            @NonNull String cameraId) {
         if (isSamsungS7()) {
             return getSamsungS7ExtraCombinations(cameraId);
         }
@@ -124,8 +125,8 @@ public class ExtraSupportedSurfaceCombinationsQuirk implements Quirk {
         return Collections.emptyList();
     }
 
-    @NonNull
-    private List<SurfaceCombination> getSamsungS7ExtraCombinations(@NonNull String cameraId) {
+    private @NonNull List<SurfaceCombination> getSamsungS7ExtraCombinations(
+            @NonNull String cameraId) {
         List<SurfaceCombination> extraCombinations = new ArrayList<>();
 
         if (cameraId.equals("1")) {
@@ -136,8 +137,7 @@ public class ExtraSupportedSurfaceCombinationsQuirk implements Quirk {
         return extraCombinations;
     }
 
-    @NonNull
-    private static SurfaceCombination createFullYuvPrivYuvConfiguration() {
+    private static @NonNull SurfaceCombination createFullYuvPrivYuvConfiguration() {
         // (YUV, ANALYSIS) + (PRIV, PREVIEW) + (YUV, MAXIMUM)
         SurfaceCombination surfaceCombination = new SurfaceCombination();
         surfaceCombination.addSurfaceConfig(SurfaceConfig.create(SurfaceConfig.ConfigType.YUV,

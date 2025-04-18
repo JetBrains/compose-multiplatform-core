@@ -22,9 +22,10 @@ import android.app.AppOpsManager;
 import android.content.Context;
 import android.os.Binder;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link android.app.AppOpsManager}.
@@ -72,8 +73,7 @@ public final class AppOpsManagerCompat {
      * @param permission The permission.
      * @return The app op associated with the permission or null.
      */
-    @Nullable
-    public static String permissionToOp(@NonNull String permission) {
+    public static @Nullable String permissionToOp(@NonNull String permission) {
         if (SDK_INT >= 23) {
             return Api23Impl.permissionToOp(permission);
         } else {

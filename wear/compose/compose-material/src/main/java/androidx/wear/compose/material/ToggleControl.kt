@@ -65,7 +65,7 @@ public fun Checkbox(
     enabled: Boolean = true,
     onCheckedChange: ((Boolean) -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
-) =
+): Unit =
     androidx.wear.compose.materialcore.Checkbox(
         checked = checked,
         modifier = modifier,
@@ -113,7 +113,7 @@ public fun Switch(
     enabled: Boolean = true,
     onCheckedChange: ((Boolean) -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
-) =
+): Unit =
     androidx.wear.compose.materialcore.Switch(
         modifier = modifier,
         checked = checked,
@@ -172,7 +172,7 @@ public fun RadioButton(
     enabled: Boolean = true,
     onClick: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
-) =
+): Unit =
     androidx.wear.compose.materialcore.RadioButton(
         modifier = modifier,
         selected = selected,

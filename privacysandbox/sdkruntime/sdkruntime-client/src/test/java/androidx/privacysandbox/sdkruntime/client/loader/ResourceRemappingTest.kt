@@ -118,6 +118,7 @@ class ResourceRemappingTest {
         assertThrows(expectedThrowable.java) { ResourceRemapping.apply(classLoader, config) }
     }
 
+    @Suppress("MISSING_DEPENDENCY_CLASS_IN_EXPRESSION_TYPE")
     private fun compileAndLoad(source: Source): ClassLoader {
         val compilationResult =
             compile(

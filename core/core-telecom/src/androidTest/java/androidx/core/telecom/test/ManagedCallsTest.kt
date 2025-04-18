@@ -22,7 +22,6 @@ import android.os.Build
 import android.telecom.DisconnectCause
 import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
-import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.internal.utils.Utils
 import androidx.core.telecom.test.utils.BaseTelecomTest
@@ -49,7 +48,6 @@ import org.junit.runner.RunWith
  * [ManagedCallsTest] should be used to test core-telecom with traditional sim calling.
  */
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
-@RequiresApi(Build.VERSION_CODES.Q)
 @RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalCoroutinesApi::class)
 class ManagedCallsTest : BaseTelecomTest() {

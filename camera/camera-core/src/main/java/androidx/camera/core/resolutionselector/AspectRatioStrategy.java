@@ -20,12 +20,13 @@ import static androidx.camera.core.AspectRatio.RATIO_16_9;
 import static androidx.camera.core.AspectRatio.RATIO_4_3;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.UseCase;
 import androidx.lifecycle.LifecycleOwner;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -79,8 +80,7 @@ public final class AspectRatioStrategy {
      * <a href="https://source.android.com/docs/core/camera/camera3_crop_reprocess">Output streams,
      * Cropping, and Zoom</a> introduction to know more about the camera FOV.
      */
-    @NonNull
-    public static final AspectRatioStrategy RATIO_4_3_FALLBACK_AUTO_STRATEGY =
+    public static final @NonNull AspectRatioStrategy RATIO_4_3_FALLBACK_AUTO_STRATEGY =
             new AspectRatioStrategy(RATIO_4_3, FALLBACK_RULE_AUTO);
 
     /**
@@ -92,8 +92,7 @@ public final class AspectRatioStrategy {
      * <a href="https://source.android.com/docs/core/camera/camera3_crop_reprocess">Output streams,
      * Cropping, and Zoom</a> introduction to know more about the camera FOV.
      */
-    @NonNull
-    public static final AspectRatioStrategy RATIO_16_9_FALLBACK_AUTO_STRATEGY =
+    public static final @NonNull AspectRatioStrategy RATIO_16_9_FALLBACK_AUTO_STRATEGY =
             new AspectRatioStrategy(RATIO_16_9, FALLBACK_RULE_AUTO);
 
     @AspectRatio.Ratio

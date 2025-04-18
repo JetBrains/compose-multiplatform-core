@@ -27,11 +27,11 @@ import android.util.TypedValue;
 
 import androidx.annotation.AnyRes;
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StyleableRes;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 
 /**
@@ -134,7 +134,7 @@ public class TypedArrayUtils {
      * or containing {@code defaultValue} if it does not exist.
      */
     public static ComplexColorCompat getNamedComplexColor(@NonNull TypedArray a,
-            @NonNull XmlPullParser parser, @Nullable Resources.Theme theme,
+            @NonNull XmlPullParser parser, Resources.@Nullable Theme theme,
             @NonNull String attrName, @StyleableRes int resId, @ColorInt int defaultValue) {
         if (hasAttribute(parser, attrName)) {
             // first check if is a simple color
@@ -160,9 +160,8 @@ public class TypedArrayUtils {
      * @return a color state list object form the {@link TypedArray} with the specified
      * {@code resId}, or null if it does not exist.
      */
-    @Nullable
-    public static ColorStateList getNamedColorStateList(@NonNull TypedArray a,
-            @NonNull XmlPullParser parser, @Nullable Resources.Theme theme,
+    public static @Nullable ColorStateList getNamedColorStateList(@NonNull TypedArray a,
+            @NonNull XmlPullParser parser, Resources.@Nullable Theme theme,
             @NonNull String attrName, @StyleableRes int resId) {
         if (hasAttribute(parser, attrName)) {
             final TypedValue value = new TypedValue();
@@ -181,8 +180,8 @@ public class TypedArrayUtils {
         return null;
     }
 
-    @NonNull
-    private static ColorStateList getNamedColorStateListFromInt(@NonNull TypedValue value) {
+    private static @NonNull ColorStateList getNamedColorStateListFromInt(
+            @NonNull TypedValue value) {
         // This is copied from ResourcesImpl#getNamedColorStateListFromInt in the platform, but the
         // ComplexColor caching mechanism has been removed. The practical implication of this is
         // minimal, since platform caching is only used by Zygote-preloaded resources.
@@ -214,9 +213,8 @@ public class TypedArrayUtils {
      * @return a string value in the {@link TypedArray} with the specified {@code resId}, or
      * null if it does not exist.
      */
-    @Nullable
-    public static String getNamedString(@NonNull TypedArray a, @NonNull XmlPullParser parser,
-            @NonNull String attrName, @StyleableRes int resId) {
+    public static @Nullable String getNamedString(@NonNull TypedArray a,
+            @NonNull XmlPullParser parser, @NonNull String attrName, @StyleableRes int resId) {
         final boolean hasAttr = hasAttribute(parser, attrName);
         if (!hasAttr) {
             return null;
@@ -230,9 +228,8 @@ public class TypedArrayUtils {
      * and return a temporary object holding its data.  This object is only
      * valid until the next call on to {@link TypedArray}.
      */
-    @Nullable
-    public static TypedValue peekNamedValue(@NonNull TypedArray a, @NonNull XmlPullParser parser,
-            @NonNull String attrName, int resId) {
+    public static @Nullable TypedValue peekNamedValue(@NonNull TypedArray a,
+            @NonNull XmlPullParser parser, @NonNull String attrName, int resId) {
         final boolean hasAttr = hasAttribute(parser, attrName);
         if (!hasAttr) {
             return null;
@@ -245,9 +242,8 @@ public class TypedArrayUtils {
      * Obtains styled attributes from the theme, if available, or unstyled
      * resources if the theme is null.
      */
-    @NonNull
-    public static TypedArray obtainAttributes(@NonNull Resources res,
-            @Nullable Resources.Theme theme, @NonNull AttributeSet set, @NonNull int[] attrs) {
+    public static @NonNull TypedArray obtainAttributes(@NonNull Resources res,
+            Resources.@Nullable Theme theme, @NonNull AttributeSet set, int @NonNull [] attrs) {
         if (theme == null) {
             return res.obtainAttributes(set, attrs);
         }
@@ -268,8 +264,7 @@ public class TypedArrayUtils {
      * @return a drawable value of {@code index}. If it does not exist, a drawable value of
      * {@code fallbackIndex}. If it still does not exist, {@code null}.
      */
-    @Nullable
-    public static Drawable getDrawable(@NonNull TypedArray a, @StyleableRes int index,
+    public static @Nullable Drawable getDrawable(@NonNull TypedArray a, @StyleableRes int index,
             @StyleableRes int fallbackIndex) {
         Drawable val = a.getDrawable(index);
         if (val == null) {
@@ -303,8 +298,7 @@ public class TypedArrayUtils {
      * @return a string value of {@code index}. If it does not exist, a string value of
      * {@code fallbackIndex}. If it still does not exist, {@code null}.
      */
-    @Nullable
-    public static String getString(@NonNull TypedArray a, @StyleableRes int index,
+    public static @Nullable String getString(@NonNull TypedArray a, @StyleableRes int index,
             @StyleableRes int fallbackIndex) {
         String val = a.getString(index);
         if (val == null) {
@@ -319,8 +313,7 @@ public class TypedArrayUtils {
      * @return a text value of {@code index}. If it does not exist, a text value of
      * {@code fallbackIndex}. If it still does not exist, {@code null}.
      */
-    @Nullable
-    public static CharSequence getText(@NonNull TypedArray a, @StyleableRes int index,
+    public static @Nullable CharSequence getText(@NonNull TypedArray a, @StyleableRes int index,
             @StyleableRes int fallbackIndex) {
         CharSequence val = a.getText(index);
         if (val == null) {
@@ -335,9 +328,8 @@ public class TypedArrayUtils {
      * @return a string array value of {@code index}. If it does not exist, a string array value
      * of {@code fallbackIndex}. If it still does not exist, {@code null}.
      */
-    @Nullable
-    public static CharSequence[] getTextArray(@NonNull TypedArray a, @StyleableRes int index,
-            @StyleableRes int fallbackIndex) {
+    public static CharSequence @Nullable [] getTextArray(@NonNull TypedArray a,
+            @StyleableRes int index, @StyleableRes int fallbackIndex) {
         CharSequence[] val = a.getTextArray(index);
         if (val == null) {
             val = a.getTextArray(fallbackIndex);

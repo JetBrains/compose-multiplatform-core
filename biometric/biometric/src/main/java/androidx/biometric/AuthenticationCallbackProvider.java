@@ -18,9 +18,10 @@ package androidx.biometric;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Uses a common listener interface provided by the client to create and cache authentication
@@ -41,7 +42,7 @@ class AuthenticationCallbackProvider {
          *
          * @param result An object containing authentication-related data.
          */
-        void onSuccess(@NonNull BiometricPrompt.AuthenticationResult result) {}
+        void onSuccess(BiometricPrompt.@NonNull AuthenticationResult result) {}
 
         /**
          * See {@link BiometricPrompt.AuthenticationCallback#onAuthenticationError(int,
@@ -69,23 +70,22 @@ class AuthenticationCallbackProvider {
      * An authentication callback object that is compatible with
      * {@link android.hardware.biometrics.BiometricPrompt}.
      */
-    @Nullable
-    private android.hardware.biometrics.BiometricPrompt.AuthenticationCallback mBiometricCallback;
+    private android.hardware.biometrics.BiometricPrompt.@Nullable AuthenticationCallback
+            mBiometricCallback;
 
     /**
      * An authentication callback object that is compatible with
      * {@link androidx.core.hardware.fingerprint.FingerprintManagerCompat}.
      */
-    @Nullable
-    private androidx.core.hardware.fingerprint.FingerprintManagerCompat.AuthenticationCallback
+    private androidx.core.hardware.fingerprint.FingerprintManagerCompat.@Nullable
+            AuthenticationCallback
             mFingerprintCallback;
 
     /**
      * A common listener object that will receive all authentication events.
      */
     @SuppressWarnings("WeakerAccess") /* synthetic access */
-    @NonNull
-    final Listener mListener;
+    final @NonNull Listener mListener;
 
     /**
      * Constructs a callback provider that delegates events to the given listener.
@@ -107,8 +107,8 @@ class AuthenticationCallbackProvider {
      * {@link android.hardware.biometrics.BiometricPrompt}.
      */
     @RequiresApi(Build.VERSION_CODES.P)
-    @NonNull
-    android.hardware.biometrics.BiometricPrompt.AuthenticationCallback getBiometricCallback() {
+    android.hardware.biometrics.BiometricPrompt.@NonNull AuthenticationCallback
+            getBiometricCallback() {
         if (mBiometricCallback == null) {
             mBiometricCallback = Api28Impl.createCallback(mListener);
         }
@@ -125,8 +125,7 @@ class AuthenticationCallbackProvider {
      * @return A callback object that can be passed to
      * {@link androidx.core.hardware.fingerprint.FingerprintManagerCompat}.
      */
-    @NonNull
-    androidx.core.hardware.fingerprint.FingerprintManagerCompat.AuthenticationCallback
+    androidx.core.hardware.fingerprint.FingerprintManagerCompat.@NonNull AuthenticationCallback
             getFingerprintCallback() {
         if (mFingerprintCallback == null) {
             mFingerprintCallback = new androidx.core.hardware.fingerprint.FingerprintManagerCompat
@@ -184,8 +183,10 @@ class AuthenticationCallbackProvider {
          * for the given result object.
          */
         @BiometricPrompt.AuthenticationResultType
+        // This is expected because AndroidX and framework annotation are not identical
+        @SuppressWarnings("WrongConstant")
         static int getAuthenticationType(
-                @NonNull android.hardware.biometrics.BiometricPrompt.AuthenticationResult result) {
+                android.hardware.biometrics.BiometricPrompt.@NonNull AuthenticationResult result) {
             return result.getAuthenticationType();
         }
     }
@@ -206,9 +207,9 @@ class AuthenticationCallbackProvider {
          * @return A new instance of
          * {@link android.hardware.biometrics.BiometricPrompt.AuthenticationCallback}.
          */
-        @NonNull
-        static android.hardware.biometrics.BiometricPrompt.AuthenticationCallback createCallback(
-                @NonNull final Listener listener) {
+        static android.hardware.biometrics.BiometricPrompt.@NonNull AuthenticationCallback
+                    createCallback(
+                        final @NonNull Listener listener) {
             return new android.hardware.biometrics.BiometricPrompt.AuthenticationCallback() {
                 @Override
                 public void onAuthenticationError(int errorCode, CharSequence errString) {
@@ -262,9 +263,8 @@ class AuthenticationCallbackProvider {
          * android.hardware.biometrics.BiometricPrompt.AuthenticationResult#getCryptoObject()} for
          * the given result object.
          */
-        @Nullable
-        static android.hardware.biometrics.BiometricPrompt.CryptoObject getCryptoObject(
-                @NonNull android.hardware.biometrics.BiometricPrompt.AuthenticationResult result) {
+        static android.hardware.biometrics.BiometricPrompt.@Nullable CryptoObject getCryptoObject(
+                android.hardware.biometrics.BiometricPrompt.@NonNull AuthenticationResult result) {
             return result.getCryptoObject();
         }
     }

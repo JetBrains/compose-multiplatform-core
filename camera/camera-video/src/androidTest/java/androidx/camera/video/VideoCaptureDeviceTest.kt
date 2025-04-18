@@ -19,7 +19,6 @@ package androidx.camera.video
 import android.content.Context
 import android.graphics.SurfaceTexture
 import android.os.Build
-import android.util.Size
 import android.view.Surface
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
@@ -221,7 +220,7 @@ class VideoCaptureDeviceTest(
             qualityList.forEach loop@{ quality ->
                 val profile =
                     videoCapabilities.getProfiles(quality, dynamicRange)!!.defaultVideoProfile
-                val targetResolution = Size(profile.width, profile.height)
+                val targetResolution = profile.resolution
                 val videoOutput =
                     createTestVideoOutput(
                         mediaSpec =
@@ -383,9 +382,6 @@ class VideoCaptureDeviceTest(
     @SdkSuppress(minSdkVersion = 33) // HLG10 only supported on API 33+
     @Test
     fun dynamicRange_isSetInSessionConfig(): Unit = runBlocking {
-        // TODO(b/275632219): Disabled on camera-pipe until automatic dynamic range
-        //  selection is supported
-        assumeTrue(implName != CameraPipeConfig::class.simpleName)
         assumeTrue(
             "Device does not support HLG10",
             cameraInfo.supportedDynamicRanges.contains(HLG_10_BIT)
@@ -424,9 +420,6 @@ class VideoCaptureDeviceTest(
     @SdkSuppress(minSdkVersion = 33) // 10-bit HDR only supported on API 33+
     @Test
     fun dynamicRangeHlg_selectsAndAppliesHlgForConcurrentPreview(): Unit = runBlocking {
-        // TODO(b/275632219): Disabled on camera-pipe until automatic dynamic range
-        //  selection is supported
-        assumeTrue(implName != CameraPipeConfig::class.simpleName)
         assumeTrue(
             "Device does not support HLG10",
             cameraInfo.supportedDynamicRanges.contains(HLG_10_BIT)
@@ -463,9 +456,6 @@ class VideoCaptureDeviceTest(
         requestedDynamicRange: DynamicRange? = null,
         assertBlock: (selectedDynamicRange: DynamicRange) -> Unit
     ) {
-        // TODO(b/275632219): Disabled on camera-pipe until automatic dynamic range
-        //  selection is supported
-        assumeTrue(implName != CameraPipeConfig::class.simpleName)
         // Arrange.
         val videoOutput = createTestVideoOutput()
         val videoCapture =
@@ -518,7 +508,10 @@ class VideoCaptureDeviceTest(
 
         override fun getMediaSpec(): Observable<MediaSpec> = mediaSpecObservable
 
-        override fun getMediaCapabilities(cameraInfo: CameraInfo): VideoCapabilities {
+        override fun getMediaCapabilities(
+            cameraInfo: CameraInfo,
+            sessionType: Int
+        ): VideoCapabilities {
             return videoCapabilities
         }
 

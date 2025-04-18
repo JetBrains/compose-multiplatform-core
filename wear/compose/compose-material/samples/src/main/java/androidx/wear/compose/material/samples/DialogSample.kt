@@ -17,7 +17,6 @@
 package androidx.wear.compose.material.samples
 
 import androidx.annotation.Sampled
-import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
@@ -115,7 +114,6 @@ fun AlertDialogSample() {
     }
 }
 
-@OptIn(ExperimentalAnimationGraphicsApi::class)
 @Sampled
 @Composable
 fun ConfirmationDialogSample() {
@@ -240,7 +238,6 @@ fun AlertWithChips() {
     }
 }
 
-@OptIn(ExperimentalAnimationGraphicsApi::class)
 @Sampled
 @Composable
 fun ConfirmationWithAnimation() {

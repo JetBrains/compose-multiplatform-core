@@ -18,7 +18,6 @@
 
 package androidx.core.graphics
 
-import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.ColorSpace
@@ -101,7 +100,6 @@ public inline fun createBitmap(
  * @param colorSpace The new bitmap's color space
  * @return A new bitmap with the specified dimensions and config
  */
-@SuppressLint("ClassVerificationFailure") // Inline fun
 @RequiresApi(26)
 public inline fun createBitmap(
     width: Int,

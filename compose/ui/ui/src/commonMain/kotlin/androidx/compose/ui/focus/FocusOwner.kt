@@ -16,10 +16,15 @@
 
 package androidx.compose.ui.focus
 
+import androidx.collection.MutableObjectList
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.indirect.IndirectTouchEvent
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
+
+internal const val FocusWarning = "FocusRelatedWarning"
 
 /** The focus owner provides some internal APIs that are not exposed by focus manager. */
 internal interface FocusOwner : FocusManager {
@@ -135,6 +140,13 @@ internal interface FocusOwner : FocusManager {
         onFocusedItem: () -> Boolean = { false }
     ): Boolean
 
+    /** Dispatches an indirect touch event through the compose hierarchy. */
+    @ExperimentalComposeUiApi
+    fun dispatchIndirectTouchEvent(
+        event: IndirectTouchEvent,
+        onFocusedItem: () -> Boolean = { false }
+    ): Boolean
+
     /** Schedule a FocusTarget node to be invalidated after onApplyChanges. */
     fun scheduleInvalidation(node: FocusTargetNode)
 
@@ -144,6 +156,18 @@ internal interface FocusOwner : FocusManager {
     /** Schedule a FocusProperties node to be invalidated after onApplyChanges. */
     fun scheduleInvalidation(node: FocusPropertiesModifierNode)
 
+    /** Schedule the owner to be invalidated after onApplyChanges. */
+    fun scheduleInvalidationForOwner()
+
+    /** Listeners that will be notified when the active item changes. */
+    val listeners: MutableObjectList<FocusListener>
+
     /** The focus state of the root focus node. */
     val rootState: FocusState
+
+    /** The currently active [FocusTargetNode] or null if no node has focus. */
+    var activeFocusTargetNode: FocusTargetNode?
+
+    /** Whether the active focus target node has requested focus capture. */
+    var isFocusCaptured: Boolean
 }

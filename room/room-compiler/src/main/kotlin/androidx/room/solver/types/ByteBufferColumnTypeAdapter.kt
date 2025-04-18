@@ -25,9 +25,9 @@ import androidx.room.solver.CodeGenScope
 
 class ByteBufferColumnTypeAdapter constructor(out: XType) :
     ColumnTypeAdapter(out = out, typeAffinity = SQLTypeAffinity.BLOB) {
-    override fun readFromCursor(
+    override fun readFromStatement(
         outVarName: String,
-        cursorVarName: String,
+        stmtVarName: String,
         indexVarName: String,
         scope: CodeGenScope
     ) {
@@ -37,14 +37,14 @@ class ByteBufferColumnTypeAdapter constructor(out: XType) :
                     "%L = %T.wrap(%L.getBlob(%L))",
                     outVarName,
                     CommonTypeNames.BYTE_BUFFER,
-                    cursorVarName,
+                    stmtVarName,
                     indexVarName
                 )
             }
             if (out.nullability == XNullability.NONNULL) {
                 addGetBlobStatement()
             } else {
-                beginControlFlow("if (%L.isNull(%L))", cursorVarName, indexVarName)
+                beginControlFlow("if (%L.isNull(%L))", stmtVarName, indexVarName)
                     .addStatement("%L = null", outVarName)
                 nextControlFlow("else").addGetBlobStatement()
                 endControlFlow()

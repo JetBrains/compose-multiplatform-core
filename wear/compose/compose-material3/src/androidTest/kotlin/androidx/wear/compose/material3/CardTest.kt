@@ -17,17 +17,19 @@
 package androidx.wear.compose.material3
 
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertContainsColor
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -48,6 +50,8 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.test.filters.SdkSuppress
+import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -167,6 +171,29 @@ class CardTest {
     }
 
     @Test
+    fun card_long_click_triggers_haptic() {
+        val results = mutableMapOf<HapticFeedbackType, Int>()
+        val haptics = hapticFeedback(collectResultsFromHapticFeedback(results))
+
+        rule.setContentWithTheme {
+            CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                Card(
+                    onClick = { /* Do nothing */ },
+                    onLongClick = {},
+                    enabled = true,
+                    modifier = Modifier.testTag(TEST_TAG)
+                ) {}
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { longClick() }
+
+        assertThat(results).hasSize(1)
+        assertThat(results).containsKey(HapticFeedbackType.LongPress)
+        assertThat(results[HapticFeedbackType.LongPress]).isEqualTo(1)
+    }
+
+    @Test
     fun card_does_not_respond_to_long_click_when_disabled() {
         var longClicked = false
 
@@ -206,6 +233,33 @@ class CardTest {
         rule.onNodeWithTag(TEST_TAG).performTouchInput { longClick() }
 
         rule.runOnIdle { assertEquals(true, longClicked) }
+    }
+
+    @Test
+    fun appCard_triggers_haptic_when_long_clicked() {
+        val results = mutableMapOf<HapticFeedbackType, Int>()
+        val haptics = hapticFeedback(collectResultsFromHapticFeedback(results))
+
+        rule.setContentWithTheme {
+            CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                AppCard(
+                    onClick = { /* Do nothing */ },
+                    onLongClick = {},
+                    appName = {},
+                    title = {},
+                    enabled = true,
+                    modifier = Modifier.testTag(TEST_TAG)
+                ) {
+                    TestImage()
+                }
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { longClick() }
+
+        assertThat(results).hasSize(1)
+        assertThat(results).containsKey(HapticFeedbackType.LongPress)
+        assertThat(results[HapticFeedbackType.LongPress]).isEqualTo(1)
     }
 
     @Test
@@ -249,6 +303,32 @@ class CardTest {
         rule.onNodeWithTag(TEST_TAG).performTouchInput { longClick() }
 
         rule.runOnIdle { assertEquals(true, longClicked) }
+    }
+
+    @Test
+    fun titleCard_triggers_haptic_when_long_clicked() {
+        val results = mutableMapOf<HapticFeedbackType, Int>()
+        val haptics = hapticFeedback(collectResultsFromHapticFeedback(results))
+
+        rule.setContentWithTheme {
+            CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                TitleCard(
+                    onClick = { /* Do nothing */ },
+                    onLongClick = {},
+                    title = {},
+                    enabled = true,
+                    modifier = Modifier.testTag(TEST_TAG)
+                ) {
+                    TestImage()
+                }
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { longClick() }
+
+        assertThat(results).hasSize(1)
+        assertThat(results).containsKey(HapticFeedbackType.LongPress)
+        assertThat(results[HapticFeedbackType.LongPress]).isEqualTo(1)
     }
 
     @Test
@@ -433,7 +513,7 @@ class CardTest {
     }
 
     @Test
-    public fun title_card_with_time_and_subtitle_gives_default_colors() {
+    fun title_card_with_time_and_subtitle_gives_default_colors() {
         var expectedTimeColor = Color.Transparent
         var expectedSubtitleColor = Color.Transparent
         var expectedTitleColor = Color.Transparent
@@ -462,7 +542,7 @@ class CardTest {
         assertEquals(expectedTitleColor, actualTitleColor)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun outlined_card_has_outlined_border_and_transparent() {
         val outlineColor = Color.Red
@@ -486,7 +566,7 @@ class CardTest {
             .assertColorInPercentageRange(testBackground, 93f..97f)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun outlined_titlecard_has_outlined_border_and_transparent() {
         val outlineColor = Color.Red
@@ -512,7 +592,7 @@ class CardTest {
             .assertColorInPercentageRange(testBackground, 93f..97f)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun outlined_appcard_has_outlined_border_and_transparent() {
         val outlineColor = Color.Red
@@ -616,7 +696,7 @@ class CardTest {
         assertEquals(expectedContentTextStyle, actuaContentTextStyle)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun outlined_app_card_gives_correct_text_style_base() {
         var actualAppTextStyle = TextStyle.Default

@@ -16,7 +16,6 @@
 
 package androidx.appsearch.playservicesstorage;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.SearchResult;
 import androidx.appsearch.app.SearchResults;
@@ -25,6 +24,8 @@ import androidx.appsearch.playservicesstorage.util.AppSearchTaskFutures;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -40,15 +41,14 @@ class SearchResultsImpl implements SearchResults {
     private final Executor mExecutor;
 
     SearchResultsImpl(
-            @NonNull com.google.android.gms.appsearch.SearchResults gmsResults,
+            com.google.android.gms.appsearch.@NonNull SearchResults gmsResults,
             @NonNull Executor executor) {
         mGmsResults = Preconditions.checkNotNull(gmsResults);
         mExecutor = Preconditions.checkNotNull(executor);
     }
 
     @Override
-    @NonNull
-    public ListenableFuture<List<SearchResult>> getNextPageAsync() {
+    public @NonNull ListenableFuture<List<SearchResult>> getNextPageAsync() {
         return AppSearchTaskFutures.toListenableFuture(
                 mGmsResults.getNextPage(),
                 SearchResultToGmsConverter::toJetpackSearchResultList,

@@ -86,6 +86,13 @@ internal abstract class LazyGridMeasuredLineProvider(
     }
 
     /**
+     * Utility method to be used during the keep around pass. This may change implementations in the
+     * future so we created a new method to show the separation between keep around and
+     * getAndMeasure.
+     */
+    fun keepAround(lineIndex: Int) = getAndMeasure(lineIndex)
+
+    /**
      * Contains the mapping between the key and the index. It could contain not all the items of the
      * list as an optimization.
      */

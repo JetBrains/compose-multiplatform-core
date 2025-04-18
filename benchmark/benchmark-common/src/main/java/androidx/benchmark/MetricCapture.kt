@@ -26,6 +26,8 @@ import android.os.Debug
  *
  * This class may be initialized on a different thread from where measurement occurs, but all
  * `capture` methods must be invoked from the same thread.
+ *
+ * @sample androidx.benchmark.samples.metricCaptureMultiMetricSample
  */
 @ExperimentalBenchmarkConfigApi
 abstract class MetricCapture(
@@ -51,16 +53,7 @@ abstract class MetricCapture(
      * Mark the end of a run, and store offset metrics in the output array, per sub metric.
      *
      * To output values, store them in the output array offset by both the parameter offset, and
-     * their submetric index, for example:
-     * ```
-     * class MyMetricCapture("firstSubMetricName", "secondSubMetricName") {
-     *     //...
-     *     override fun captureStop(timeNs: Long, output: LongArray, offset: Int) {
-     *         output[offset + 0] = firstSubMetricValue
-     *         output[offset + 1] = secondSubMetricValue
-     *     }
-     * }
-     * ```
+     * their submetric index.
      *
      * @param timeNs Time of metric capture start, in monotonic time ([java.lang.System.nanoTime])
      * @param output LongArray sized to hold all simultaneous sub metric outputs, use `offset` as

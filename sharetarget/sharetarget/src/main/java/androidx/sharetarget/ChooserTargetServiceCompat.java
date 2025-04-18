@@ -24,13 +24,14 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.content.pm.ShortcutManagerCompat;
 import androidx.core.graphics.drawable.IconCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -104,8 +105,7 @@ public class ChooserTargetServiceCompat extends android.service.chooser.ChooserT
     }
 
     @VisibleForTesting
-    @NonNull
-    static List<android.service.chooser.ChooserTarget> convertShortcutsToChooserTargets(
+    static @NonNull List<android.service.chooser.ChooserTarget> convertShortcutsToChooserTargets(
             @NonNull ShortcutInfoCompatSaverImpl shortcutSaver,
             @NonNull List<ShortcutHolder> matchedShortcuts) {
         if (matchedShortcuts.isEmpty()) {

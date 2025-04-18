@@ -17,6 +17,7 @@
 package androidx.compose.foundation.selection
 
 import android.os.Build.VERSION.SDK_INT
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.TapIndicationDelay
 import androidx.compose.foundation.TestIndication
 import androidx.compose.foundation.TestIndicationNodeFactory
@@ -35,6 +36,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.setFocusableContent
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -636,6 +638,8 @@ class ToggleableTest {
             assertThat(modifier.inspectableElements.map { it.name }.asIterable())
                 .containsExactly(
                     "value",
+                    "interactionSource",
+                    "indicationNodeFactory",
                     "enabled",
                     "role",
                     "onValueChange",
@@ -679,6 +683,8 @@ class ToggleableTest {
             assertThat(modifier.inspectableElements.map { it.name }.asIterable())
                 .containsExactly(
                     "state",
+                    "interactionSource",
+                    "indicationNodeFactory",
                     "enabled",
                     "role",
                     "onClick",
@@ -1306,6 +1312,28 @@ class ToggleableTest {
     }
 
     @Test
+    fun toggleableTest_localIndication_interactionSource_eagerlyCreated() {
+        val interactionSource = MutableInteractionSource()
+        var created = false
+        val indication = TestIndicationNodeFactory { _, _ -> created = true }
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "Toggleable",
+                        modifier =
+                            Modifier.testTag("toggleable").toggleable(
+                                value = false,
+                                interactionSource = interactionSource
+                            ) {}
+                    )
+                }
+            }
+        }
+        rule.runOnIdle { assertThat(created).isTrue() }
+    }
+
+    @Test
     fun toggleableTest_noInteractionSource_lazilyCreated_pointerInput() {
         var created = false
         lateinit var interactionSource: InteractionSource
@@ -1344,6 +1372,29 @@ class ToggleableTest {
             assertThat(interactions).hasSize(1)
             assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
         }
+    }
+
+    @Test
+    fun triStateToggleable_localIndication_interactionSource_eagerlyCreated() {
+        val interactionSource = MutableInteractionSource()
+        var created = false
+        val state = ToggleableState(value = false)
+        val indication = TestIndicationNodeFactory { _, _ -> created = true }
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "Toggleable",
+                        modifier =
+                            Modifier.testTag("toggleable").triStateToggleable(
+                                state = state,
+                                interactionSource = interactionSource
+                            ) {}
+                    )
+                }
+            }
+        }
+        rule.runOnIdle { assertThat(created).isTrue() }
     }
 
     @Test
@@ -1389,13 +1440,28 @@ class ToggleableTest {
     }
 
     @Test
-    fun toggleable_composedOverload_nonEquality() {
+    fun toggleable_nullInteractionSource_equality() {
         val onValueChange: (Boolean) -> Unit = {}
-        val modifier1 = Modifier.toggleable(value = true, onValueChange = onValueChange)
-        val modifier2 = Modifier.toggleable(value = true, onValueChange = onValueChange)
+        assertModifierIsPure { toggleInput ->
+            Modifier.toggleable(
+                value = toggleInput,
+                interactionSource = null,
+                onValueChange = onValueChange
+            )
+        }
+    }
 
-        // The composed overload can never compare equal
-        assertThat(modifier1).isNotEqualTo(modifier2)
+    @Test
+    fun toggleable_nonNullInteractionSource_equality() {
+        val onValueChange: (Boolean) -> Unit = {}
+        val interactionSource = MutableInteractionSource()
+        assertModifierIsPure { toggleInput ->
+            Modifier.toggleable(
+                value = toggleInput,
+                interactionSource = interactionSource,
+                onValueChange = onValueChange
+            )
+        }
     }
 
     @Test
@@ -1502,13 +1568,28 @@ class ToggleableTest {
     }
 
     @Test
-    fun triStateToggleable_composedOverload_nonEquality() {
+    fun triStateToggleable_nullInteractionSource_equality() {
         val onClick = {}
-        val modifier1 = Modifier.triStateToggleable(state = ToggleableState.On, onClick = onClick)
-        val modifier2 = Modifier.triStateToggleable(state = ToggleableState.On, onClick = onClick)
+        assertModifierIsPure { toggleInput ->
+            Modifier.triStateToggleable(
+                state = ToggleableState(toggleInput),
+                interactionSource = null,
+                onClick = onClick
+            )
+        }
+    }
 
-        // The composed overload can never compare equal
-        assertThat(modifier1).isNotEqualTo(modifier2)
+    @Test
+    fun triStateToggleable_nonNullInteractionSource_equality() {
+        val onClick = {}
+        val interactionSource = MutableInteractionSource()
+        assertModifierIsPure { toggleInput ->
+            Modifier.triStateToggleable(
+                state = ToggleableState(toggleInput),
+                interactionSource = interactionSource,
+                onClick = onClick
+            )
+        }
     }
 
     @Test

@@ -33,7 +33,7 @@
         <androidx.pdf.widget.SearchEditText
             android:id="@+id/searchQueryBox"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_weight="1"
             android:background="@null"
@@ -45,7 +45,8 @@
             android:paddingStart="14dp"
             android:textAppearance="?attr/textAppearanceTitleMedium"
             android:textColor="?attr/colorOnSurface"
-            android:textColorHint="?attr/colorOnSurfaceVariant" />
+            android:textColorHint="?attr/colorOnSurfaceVariant"
+            android:minHeight="48dp" />
 
         <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/matchStatusTextView"

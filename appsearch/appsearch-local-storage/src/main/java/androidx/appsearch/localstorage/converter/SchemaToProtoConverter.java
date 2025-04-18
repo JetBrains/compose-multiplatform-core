@@ -18,7 +18,6 @@ package androidx.appsearch.localstorage.converter;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchSchema;
@@ -34,6 +33,8 @@ import com.google.android.icing.proto.SchemaTypeConfigProto;
 import com.google.android.icing.proto.SchemaTypeConfigProtoOrBuilder;
 import com.google.android.icing.proto.StringIndexingConfig;
 import com.google.android.icing.proto.TermMatchType;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -52,10 +53,9 @@ public final class SchemaToProtoConverter {
      * {@link SchemaTypeConfigProto}.
      */
     // TODO(b/284356266): Consider handling addition of schema name prefixes in this function.
-    @NonNull
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    public static SchemaTypeConfigProto toSchemaTypeConfigProto(@NonNull AppSearchSchema schema,
-            int version) {
+    public static @NonNull SchemaTypeConfigProto toSchemaTypeConfigProto(
+            @NonNull AppSearchSchema schema, int version) {
         Preconditions.checkNotNull(schema);
         SchemaTypeConfigProto.Builder protoBuilder = SchemaTypeConfigProto.newBuilder()
                 .setSchemaType(schema.getSchemaType())
@@ -70,10 +70,9 @@ public final class SchemaToProtoConverter {
         return protoBuilder.build();
     }
 
-    @NonNull
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    private static PropertyConfigProto toPropertyConfigProto(
-            @NonNull AppSearchSchema.PropertyConfig property) {
+    private static @NonNull PropertyConfigProto toPropertyConfigProto(
+            AppSearchSchema.@NonNull PropertyConfig property) {
         Preconditions.checkNotNull(property);
         PropertyConfigProto.Builder builder = PropertyConfigProto.newBuilder()
                 .setPropertyName(property.getName())
@@ -182,9 +181,9 @@ public final class SchemaToProtoConverter {
      * {@link androidx.appsearch.app.AppSearchSchema}.
      */
     // TODO(b/284356266): Consider handling removal of schema name prefixes in this function.
-    @NonNull
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    public static AppSearchSchema toAppSearchSchema(@NonNull SchemaTypeConfigProtoOrBuilder proto) {
+    public static @NonNull AppSearchSchema toAppSearchSchema(
+            @NonNull SchemaTypeConfigProtoOrBuilder proto) {
         Preconditions.checkNotNull(proto);
         AppSearchSchema.Builder builder =
                 new AppSearchSchema.Builder(proto.getSchemaType());
@@ -201,9 +200,8 @@ public final class SchemaToProtoConverter {
         return builder.build();
     }
 
-    @NonNull
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    private static AppSearchSchema.PropertyConfig toPropertyConfig(
+    private static AppSearchSchema.@NonNull PropertyConfig toPropertyConfig(
             @NonNull PropertyConfigProto proto) {
         Preconditions.checkNotNull(proto);
         switch (proto.getDataType()) {
@@ -247,9 +245,8 @@ public final class SchemaToProtoConverter {
         }
     }
 
-    @NonNull
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    private static AppSearchSchema.StringPropertyConfig toStringPropertyConfig(
+    private static AppSearchSchema.@NonNull StringPropertyConfig toStringPropertyConfig(
             @NonNull PropertyConfigProto proto) {
         AppSearchSchema.StringPropertyConfig.Builder builder =
                 new AppSearchSchema.StringPropertyConfig.Builder(proto.getPropertyName())
@@ -271,9 +268,8 @@ public final class SchemaToProtoConverter {
         return builder.build();
     }
 
-    @NonNull
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    private static AppSearchSchema.DocumentPropertyConfig toDocumentPropertyConfig(
+    private static AppSearchSchema.@NonNull DocumentPropertyConfig toDocumentPropertyConfig(
             @NonNull PropertyConfigProto proto) {
         AppSearchSchema.DocumentPropertyConfig.Builder builder =
                 new AppSearchSchema.DocumentPropertyConfig.Builder(
@@ -287,9 +283,8 @@ public final class SchemaToProtoConverter {
         return builder.build();
     }
 
-    @NonNull
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    private static AppSearchSchema.LongPropertyConfig toLongPropertyConfig(
+    private static AppSearchSchema.@NonNull LongPropertyConfig toLongPropertyConfig(
             @NonNull PropertyConfigProto proto) {
         AppSearchSchema.LongPropertyConfig.Builder builder =
                 new AppSearchSchema.LongPropertyConfig.Builder(proto.getPropertyName())
@@ -306,9 +301,8 @@ public final class SchemaToProtoConverter {
         return builder.build();
     }
 
-    @NonNull
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    private static AppSearchSchema.EmbeddingPropertyConfig toEmbeddingPropertyConfig(
+    private static AppSearchSchema.@NonNull EmbeddingPropertyConfig toEmbeddingPropertyConfig(
             @NonNull PropertyConfigProto proto) {
         AppSearchSchema.EmbeddingPropertyConfig.Builder builder =
                 new AppSearchSchema.EmbeddingPropertyConfig.Builder(proto.getPropertyName())
@@ -331,8 +325,7 @@ public final class SchemaToProtoConverter {
         return builder.build();
     }
 
-    @NonNull
-    private static JoinableConfig.ValueType.Code convertJoinableValueTypeToProto(
+    private static JoinableConfig.ValueType.@NonNull Code convertJoinableValueTypeToProto(
             @AppSearchSchema.StringPropertyConfig.JoinableValueType int joinableValueType) {
         switch (joinableValueType) {
             case AppSearchSchema.StringPropertyConfig.JOINABLE_VALUE_TYPE_NONE:
@@ -347,7 +340,7 @@ public final class SchemaToProtoConverter {
 
     @AppSearchSchema.StringPropertyConfig.JoinableValueType
     private static int convertJoinableValueTypeFromProto(
-            @NonNull JoinableConfig.ValueType.Code joinableValueType) {
+            JoinableConfig.ValueType.@NonNull Code joinableValueType) {
         switch (joinableValueType) {
             case NONE:
                 return AppSearchSchema.StringPropertyConfig.JOINABLE_VALUE_TYPE_NONE;
@@ -360,10 +353,11 @@ public final class SchemaToProtoConverter {
         return AppSearchSchema.StringPropertyConfig.JOINABLE_VALUE_TYPE_NONE;
     }
 
-    @NonNull
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    private static JoinableConfig.DeletePropagationType.Code convertDeletePropagationTypeToProto(
-            @AppSearchSchema.StringPropertyConfig.DeletePropagationType int deletePropagationType) {
+    private static JoinableConfig.DeletePropagationType.@NonNull Code
+            convertDeletePropagationTypeToProto(
+                    @AppSearchSchema.StringPropertyConfig.DeletePropagationType
+                    int deletePropagationType) {
         switch (deletePropagationType) {
             case AppSearchSchema.StringPropertyConfig.DELETE_PROPAGATION_TYPE_NONE:
                 return JoinableConfig.DeletePropagationType.Code.NONE;
@@ -378,7 +372,7 @@ public final class SchemaToProtoConverter {
     @AppSearchSchema.StringPropertyConfig.DeletePropagationType
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     private static int convertDeletePropagationTypeFromProto(
-            @NonNull JoinableConfig.DeletePropagationType.Code deletePropagationType) {
+            JoinableConfig.DeletePropagationType.@NonNull Code deletePropagationType) {
         switch (deletePropagationType) {
             case NONE:
                 return AppSearchSchema.StringPropertyConfig.DELETE_PROPAGATION_TYPE_NONE;
@@ -391,8 +385,7 @@ public final class SchemaToProtoConverter {
         return AppSearchSchema.StringPropertyConfig.DELETE_PROPAGATION_TYPE_NONE;
     }
 
-    @NonNull
-    private static TermMatchType.Code convertTermMatchTypeToProto(
+    private static TermMatchType.@NonNull Code convertTermMatchTypeToProto(
             @AppSearchSchema.StringPropertyConfig.IndexingType int indexingType) {
         switch (indexingType) {
             case AppSearchSchema.StringPropertyConfig.INDEXING_TYPE_NONE:
@@ -407,7 +400,7 @@ public final class SchemaToProtoConverter {
     }
 
     @AppSearchSchema.StringPropertyConfig.IndexingType
-    private static int convertTermMatchTypeFromProto(@NonNull TermMatchType.Code termMatchType) {
+    private static int convertTermMatchTypeFromProto(TermMatchType.@NonNull Code termMatchType) {
         switch (termMatchType) {
             case UNKNOWN:
                 return AppSearchSchema.StringPropertyConfig.INDEXING_TYPE_NONE;
@@ -423,8 +416,7 @@ public final class SchemaToProtoConverter {
         }
     }
 
-    @NonNull
-    private static StringIndexingConfig.TokenizerType.Code convertTokenizerTypeToProto(
+    private static StringIndexingConfig.TokenizerType.@NonNull Code convertTokenizerTypeToProto(
             @AppSearchSchema.StringPropertyConfig.TokenizerType int tokenizerType) {
         StringIndexingConfig.TokenizerType.Code tokenizerTypeProto =
                 StringIndexingConfig.TokenizerType.Code.forNumber(tokenizerType);
@@ -434,9 +426,9 @@ public final class SchemaToProtoConverter {
         return tokenizerTypeProto;
     }
 
-    @NonNull
-    private static IntegerIndexingConfig.NumericMatchType.Code convertNumericMatchTypeToProto(
-            @AppSearchSchema.LongPropertyConfig.IndexingType int indexingType) {
+    private static IntegerIndexingConfig.NumericMatchType.@NonNull Code
+            convertNumericMatchTypeToProto(
+                    @AppSearchSchema.LongPropertyConfig.IndexingType int indexingType) {
         switch (indexingType) {
             case AppSearchSchema.LongPropertyConfig.INDEXING_TYPE_NONE:
                 return IntegerIndexingConfig.NumericMatchType.Code.UNKNOWN;
@@ -449,7 +441,7 @@ public final class SchemaToProtoConverter {
 
     @AppSearchSchema.LongPropertyConfig.IndexingType
     private static int convertNumericMatchTypeFromProto(
-            @NonNull IntegerIndexingConfig.NumericMatchType.Code numericMatchType) {
+            IntegerIndexingConfig.NumericMatchType.@NonNull Code numericMatchType) {
         switch (numericMatchType) {
             case UNKNOWN:
                 return AppSearchSchema.LongPropertyConfig.INDEXING_TYPE_NONE;
@@ -463,8 +455,7 @@ public final class SchemaToProtoConverter {
         }
     }
 
-    @NonNull
-    private static EmbeddingIndexingConfig.EmbeddingIndexingType.Code
+    private static EmbeddingIndexingConfig.EmbeddingIndexingType.@NonNull Code
             convertEmbeddingIndexingTypeToProto(
             @AppSearchSchema.EmbeddingPropertyConfig.IndexingType int indexingType) {
         switch (indexingType) {
@@ -479,7 +470,7 @@ public final class SchemaToProtoConverter {
 
     @AppSearchSchema.EmbeddingPropertyConfig.IndexingType
     private static int convertEmbeddingIndexingTypeFromProto(
-            @NonNull EmbeddingIndexingConfig.EmbeddingIndexingType.Code indexingType) {
+            EmbeddingIndexingConfig.EmbeddingIndexingType.@NonNull Code indexingType) {
         switch (indexingType) {
             case UNKNOWN:
                 return AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_NONE;
@@ -493,9 +484,8 @@ public final class SchemaToProtoConverter {
         }
     }
 
-    @NonNull
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    private static EmbeddingIndexingConfig.QuantizationType.Code
+    private static EmbeddingIndexingConfig.QuantizationType.@NonNull Code
             convertEmbeddingQuantizationTypeToProto(
             @AppSearchSchema.EmbeddingPropertyConfig.QuantizationType int quantizationType) {
         switch (quantizationType) {
@@ -511,7 +501,7 @@ public final class SchemaToProtoConverter {
     @AppSearchSchema.EmbeddingPropertyConfig.QuantizationType
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     private static int convertEmbeddingQuantizationTypeTypeFromProto(
-            @NonNull EmbeddingIndexingConfig.QuantizationType.Code quantizationType) {
+            EmbeddingIndexingConfig.QuantizationType.@NonNull Code quantizationType) {
         switch (quantizationType) {
             case NONE:
                 return AppSearchSchema.EmbeddingPropertyConfig.QUANTIZATION_TYPE_NONE;

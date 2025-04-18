@@ -19,7 +19,6 @@ import androidx.annotation.RestrictTo
 import androidx.room.util.getLastInsertedRowId
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.use
 
 /**
  * Implementations of this class knows how to insert a particular entity.
@@ -30,7 +29,7 @@ import androidx.sqlite.use
  * @constructor Creates an InsertionAdapter that can insert the entity type T into the given
  *   database.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 abstract class EntityInsertAdapter<T> {
     /**
      * Create the query.

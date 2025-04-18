@@ -419,7 +419,11 @@ internal fun perfettoConfig(
                     "track_event",
                     track_event_config =
                         TrackEventConfig(
-                            enabled_categories = listOf("*") // required by tracing-perfetto
+                            // currently `tracing:tracing-perfetto` records all events as part of
+                            // the "rendering" category. In the future we should consider only
+                            // setting this if sdk tracing is requested.
+                            enabled_categories = listOf("rendering"),
+                            disabled_categories = listOf("*")
                         )
                 )
             )

@@ -16,11 +16,13 @@
 
 package androidx.appsearch.localstorage.stats;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.stats.BaseStats;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,15 +41,15 @@ import java.util.List;
  * @exportToFramework:hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public final class SearchSessionStats {
-    @NonNull private final String mPackageName;
+public final class SearchSessionStats extends BaseStats {
+    private final @NonNull String mPackageName;
 
-    @Nullable private final String mDatabase;
+    private final @Nullable String mDatabase;
 
-    @NonNull private final List<SearchIntentStats> mSearchIntentsStats;
+    private final @NonNull List<SearchIntentStats> mSearchIntentsStats;
 
     SearchSessionStats(@NonNull Builder builder) {
-        Preconditions.checkNotNull(builder);
+        super(builder);
         mPackageName = builder.mPackageName;
         mDatabase = builder.mDatabase;
         mSearchIntentsStats = builder.mSearchIntentsStats;
@@ -67,8 +69,7 @@ public final class SearchSessionStats {
      * <p>This stats is useful to determine whether the user ended the search session with
      * satisfaction (i.e. had found desired result documents) or not.
      */
-    @Nullable
-    public SearchIntentStats getEndSessionSearchIntentStats() {
+    public @Nullable SearchIntentStats getEndSessionSearchIntentStats() {
         if (mSearchIntentsStats.isEmpty()) {
             return null;
         }
@@ -82,8 +83,7 @@ public final class SearchSessionStats {
     }
 
     /** Returns calling package name. */
-    @NonNull
-    public String getPackageName() {
+    public @NonNull String getPackageName() {
         return mPackageName;
     }
 
@@ -92,24 +92,22 @@ public final class SearchSessionStats {
      *
      * <p>For global search, database name will be null.
      */
-    @Nullable
-    public String getDatabase() {
+    public @Nullable String getDatabase() {
         return mDatabase;
     }
 
     /** Returns the list of {@link SearchIntentStats} in this search session. */
-    @NonNull
-    public List<SearchIntentStats> getSearchIntentsStats() {
+    public @NonNull List<SearchIntentStats> getSearchIntentsStats() {
         return mSearchIntentsStats;
     }
 
     /** Builder for {@link SearchSessionStats}. */
-    public static final class Builder {
-        @NonNull private final String mPackageName;
+    public static final class Builder extends BaseStats.Builder<SearchSessionStats.Builder> {
+        private final @NonNull String mPackageName;
 
-        @Nullable private String mDatabase;
+        private @Nullable String mDatabase;
 
-        @NonNull private List<SearchIntentStats> mSearchIntentsStats = new ArrayList<>();
+        private @NonNull List<SearchIntentStats> mSearchIntentsStats = new ArrayList<>();
 
         private boolean mBuilt = false;
 
@@ -124,8 +122,7 @@ public final class SearchSessionStats {
          * <p>For global search, database name will be null.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setDatabase(@Nullable String database) {
+        public @NonNull Builder setDatabase(@Nullable String database) {
             resetIfBuilt();
             mDatabase = database;
             return this;
@@ -133,8 +130,8 @@ public final class SearchSessionStats {
 
         /** Adds one or more {@link SearchIntentStats} objects to this search intent. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder addSearchIntentsStats(@NonNull SearchIntentStats... searchIntentsStats) {
+        public @NonNull Builder addSearchIntentsStats(
+                SearchIntentStats @NonNull ... searchIntentsStats) {
             Preconditions.checkNotNull(searchIntentsStats);
             resetIfBuilt();
             return addSearchIntentsStats(Arrays.asList(searchIntentsStats));
@@ -142,8 +139,7 @@ public final class SearchSessionStats {
 
         /** Adds a collection of {@link SearchIntentStats} objects to this search intent. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder addSearchIntentsStats(
+        public @NonNull Builder addSearchIntentsStats(
                 @NonNull Collection<? extends SearchIntentStats> searchIntentsStats) {
             Preconditions.checkNotNull(searchIntentsStats);
             resetIfBuilt();
@@ -162,8 +158,8 @@ public final class SearchSessionStats {
         }
 
         /** Builds a new {@link SearchSessionStats} from the {@link Builder}. */
-        @NonNull
-        public SearchSessionStats build() {
+        @Override
+        public @NonNull SearchSessionStats build() {
             mBuilt = true;
             return new SearchSessionStats(/* builder= */ this);
         }

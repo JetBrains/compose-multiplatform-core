@@ -16,7 +16,6 @@
 
 package androidx.core.i18n
 
-import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
 import androidx.core.i18n.DateTimeFormatterSkeletonOptions as SkeletonOptions
@@ -40,7 +39,6 @@ import org.junit.runner.RunWith
 
 /** Must execute on an Android device. */
 @RunWith(AndroidJUnit4::class)
-@SuppressLint("ClassVerificationFailure")
 class DateTimeFormatterTest {
     companion object {
         // Lollipop introduced Locale.toLanguageTag and Locale.forLanguageTag

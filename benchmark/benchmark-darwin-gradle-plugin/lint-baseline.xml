@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.7.0-alpha02" type="baseline" client="gradle" dependencies="false" name="AGP (8.7.0-alpha02)" variant="all" version="8.7.0-alpha02">
+<issues format="6" by="lint 8.9.0-alpha01" type="baseline" client="gradle" dependencies="false" name="AGP (8.9.0-alpha01)" variant="all" version="8.9.0-alpha01">
 
     <issue
         id="GradleProjectIsolation"
@@ -12,7 +12,7 @@
 
     <issue
         id="GradleProjectIsolation"
-        message="Avoid using method getRootProject"
+        message="Use isolated.rootProject instead of getRootProject"
         errorLine1="                            project.rootProject.projectDir, // frameworks/support"
         errorLine2="                                    ~~~~~~~~~~~">
         <location

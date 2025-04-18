@@ -22,13 +22,12 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     id("AndroidXComposePlugin")
     id("dagger.hilt.android.plugin")
@@ -45,7 +44,7 @@ android {
 dependencies {
 
     implementation(libs.kotlinStdlib)
-    api project(":hilt:hilt-navigation")
+    api(project(":hilt:hilt-navigation"))
     api("androidx.compose.runtime:runtime:1.0.1")
     api("androidx.compose.ui:ui:1.0.1")
     api("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
@@ -74,11 +73,11 @@ hilt {
 
 androidx {
     name = "Navigation Compose Hilt Integration"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     mavenVersion = LibraryVersions.HILT_NAVIGATION_COMPOSE
     inceptionYear = "2021"
     description = "Navigation Compose Hilt Integration"
     legacyDisableKotlinStrictApiMode = true
     samples(project(":hilt:hilt-navigation-compose-samples"))
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }
+

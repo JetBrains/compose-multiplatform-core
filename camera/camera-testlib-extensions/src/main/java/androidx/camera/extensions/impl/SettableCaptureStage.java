@@ -19,7 +19,7 @@ package androidx.camera.extensions.impl;
 import android.hardware.camera2.CaptureRequest;
 import android.util.Pair;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,9 +50,8 @@ final class SettableCaptureStage implements CaptureStageImpl {
         return mId;
     }
 
-    @NonNull
     @Override
-    public List<Pair<CaptureRequest.Key, Object>> getParameters() {
+    public @NonNull List<Pair<CaptureRequest.Key, Object>> getParameters() {
         List<Pair<CaptureRequest.Key, Object>> parameters = new ArrayList<>();
 
         for (Map.Entry<CaptureRequest.Key, Object> entry : mCaptureRequestKeyValueMap.entrySet()) {

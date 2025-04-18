@@ -11,6 +11,7 @@ attr embeddingDividerWidthDp
 attr finishPrimaryWithPlaceholder
 attr finishPrimaryWithSecondary
 attr finishSecondaryWithPrimary
+attr isDraggingToFullscreenAllowed
 attr placeholderActivityName
 attr primaryActivityName
 attr secondaryActivityAction

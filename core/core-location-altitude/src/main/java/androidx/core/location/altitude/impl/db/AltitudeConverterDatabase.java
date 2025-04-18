@@ -16,11 +16,12 @@
 
 package androidx.core.location.altitude.impl.db;
 
-import androidx.annotation.NonNull;
 import androidx.core.location.altitude.impl.AltitudeConverter;
 import androidx.room.Database;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
+
+import org.jspecify.annotations.NonNull;
 
 /** Defines the resource database for {@link AltitudeConverter}. */
 @Database(entities = {MapParamsEntity.class, TilesEntity.class}, version = 1, exportSchema = false)
@@ -28,10 +29,8 @@ import androidx.room.TypeConverters;
 public abstract class AltitudeConverterDatabase extends RoomDatabase {
 
     /** Returns the data access object for the MapParams table. */
-    @NonNull
-    public abstract MapParamsDao mapParamsDao();
+    public abstract @NonNull MapParamsDao mapParamsDao();
 
     /** Returns the data access object for the Tiles table. */
-    @NonNull
-    public abstract TilesDao tilesDao();
+    public abstract @NonNull TilesDao tilesDao();
 }

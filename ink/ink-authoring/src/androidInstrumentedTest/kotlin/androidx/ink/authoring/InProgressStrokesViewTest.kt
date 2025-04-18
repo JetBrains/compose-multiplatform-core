@@ -16,7 +16,10 @@
 
 package androidx.ink.authoring
 
+import android.graphics.Canvas
 import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.Path
 import android.view.MotionEvent
 import android.view.MotionEvent.PointerCoords
 import android.view.MotionEvent.PointerProperties
@@ -25,6 +28,12 @@ import androidx.ink.authoring.testing.MultiTouchInputBuilder
 import androidx.ink.brush.Brush
 import androidx.ink.brush.InputToolType
 import androidx.ink.brush.StockBrushes
+import androidx.ink.geometry.AffineTransform
+import androidx.ink.geometry.BoxAccumulator
+import androidx.ink.geometry.toMatrix
+import androidx.ink.geometry.toRectF
+import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
+import androidx.ink.strokes.InProgressStroke
 import androidx.ink.strokes.MutableStrokeInputBatch
 import androidx.ink.strokes.Stroke
 import androidx.ink.strokes.StrokeInput
@@ -106,11 +115,43 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
         assertThat(finishedStrokeCohorts[0]).hasSize(1)
         val stroke = finishedStrokeCohorts[0].values.iterator().next()
 
-        // Stroke units are set to pixels, so the stroke unit length should be 1/dpi inches, which
-        // is
-        // 2.54/dpi cm.
+        // Stroke units are set to view coordinate units which by default is screen pixels, so the
+        // stroke unit length should be 1/dpi inches, which is 2.54/dpi cm.
         val metrics = InstrumentationRegistry.getInstrumentation().context.resources.displayMetrics
         assertThat(stroke.inputs.getStrokeUnitLengthCm()).isWithin(1e-5f).of(2.54f / metrics.xdpi)
+    }
+
+    @Test
+    fun startAndFinishStroke_strokeUnitLengthFactorsInViewScale() {
+        val stylusInputStream =
+            InputStreamBuilder.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
+        activityScenarioRule.scenario.onActivity { activity ->
+            activity.inProgressStrokesView.scaleX = 0.5f
+            activity.inProgressStrokesView.scaleY = 0.5f
+            val downEvent = stylusInputStream.getDownEvent()
+            val strokeId =
+                activity.inProgressStrokesView.startStroke(
+                    downEvent,
+                    downEvent.getPointerId(0),
+                    basicBrush(TestColors.AVOCADO_GREEN),
+                )
+            val upEvent = stylusInputStream.getUpEvent()
+            activity.inProgressStrokesView.finishStroke(upEvent, upEvent.getPointerId(0), strokeId)
+        }
+
+        assertThatTakingScreenshotMatchesGolden("start_and_finish_scaled")
+        assertThat(finishedStrokeCohorts).hasSize(1)
+        assertThat(finishedStrokeCohorts[0]).hasSize(1)
+        val stroke = finishedStrokeCohorts[0].values.iterator().next()
+
+        // Stroke units are set to view coordinate units which by default is screen pixels, but the
+        // view
+        // is scaled down by half, so the stroke unit length should be 0.5/dpi inches, which is
+        // 0.5*2.54/dpi cm.
+        val metrics = InstrumentationRegistry.getInstrumentation().context.resources.displayMetrics
+        assertThat(stroke.inputs.getStrokeUnitLengthCm())
+            .isWithin(1e-5f)
+            .of(0.5f * 2.54f / metrics.xdpi)
     }
 
     @Test
@@ -858,5 +899,94 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
             activity.inProgressStrokesView.removeFinishedStrokes(strokeIds)
         }
         assertThatTakingScreenshotMatchesGolden("remove_finished")
+    }
+
+    @Test
+    fun setRendererFactory_usesCustomRenderer() {
+        /** Draws in-progress strokes as ovals, and finished strokes as rectangles. */
+        class CustomRenderer : CanvasStrokeRenderer {
+            override fun draw(
+                canvas: Canvas,
+                stroke: Stroke,
+                strokeToScreenTransform: AffineTransform,
+                textureAnimationProgress: Float,
+            ) = draw(canvas, stroke, strokeToScreenTransform.toMatrix(), textureAnimationProgress)
+
+            override fun draw(
+                canvas: Canvas,
+                stroke: Stroke,
+                strokeToScreenTransform: Matrix,
+                textureAnimationProgress: Float,
+            ) {
+                val androidRect = stroke.shape.computeBoundingBox()?.toRectF() ?: return
+                canvas.drawRect(androidRect, Paint().apply { color = stroke.brush.colorIntArgb })
+            }
+
+            override fun draw(
+                canvas: Canvas,
+                inProgressStroke: InProgressStroke,
+                strokeToScreenTransform: AffineTransform,
+                textureAnimationProgress: Float,
+            ) =
+                draw(
+                    canvas,
+                    inProgressStroke,
+                    strokeToScreenTransform.toMatrix(),
+                    textureAnimationProgress
+                )
+
+            override fun draw(
+                canvas: Canvas,
+                inProgressStroke: InProgressStroke,
+                strokeToScreenTransform: Matrix,
+                textureAnimationProgress: Float,
+            ) {
+                val bounds =
+                    BoxAccumulator().apply {
+                        for (coatIndex in 0 until inProgressStroke.getBrushCoatCount()) {
+                            val coatBounds = BoxAccumulator()
+                            inProgressStroke.populateMeshBounds(coatIndex, coatBounds)
+                            add(coatBounds)
+                        }
+                    }
+                val androidRect = bounds.box?.toRectF() ?: return
+                val brushColor = inProgressStroke.brush?.colorIntArgb ?: return
+                canvas.drawPath(
+                    Path().apply { addOval(androidRect, Path.Direction.CCW) },
+                    Paint().apply { color = brushColor },
+                )
+            }
+        }
+
+        val stylusInputStream =
+            InputStreamBuilder.stylusLine(startX = 15F, startY = 45F, endX = 400F, endY = 600F)
+        lateinit var strokeId: InProgressStrokeId
+        activityScenarioRule.scenario.onActivity { activity ->
+            activity.inProgressStrokesView.rendererFactory = { CustomRenderer() }
+
+            val downEvent = stylusInputStream.getDownEvent()
+            strokeId =
+                activity.inProgressStrokesView.startStroke(
+                    downEvent,
+                    downEvent.getPointerId(0),
+                    basicBrush(TestColors.LIGHT_ORANGE),
+                )
+            val moveEvent = stylusInputStream.getNextMoveEvent()
+            activity.inProgressStrokesView.addToStroke(
+                moveEvent,
+                moveEvent.getPointerId(0),
+                strokeId,
+                prediction = null,
+            )
+        }
+        assertThatTakingScreenshotMatchesGolden("custom_renderer_start_and_add")
+
+        activityScenarioRule.scenario.onActivity { activity ->
+            val upEvent = stylusInputStream.getUpEvent()
+            activity.inProgressStrokesView.finishStroke(upEvent, upEvent.getPointerId(0), strokeId)
+        }
+        assertThatTakingScreenshotMatchesGolden("custom_renderer_finished")
+        assertThat(finishedStrokeCohorts).hasSize(1)
+        assertThat(finishedStrokeCohorts[0]).hasSize(1)
     }
 }

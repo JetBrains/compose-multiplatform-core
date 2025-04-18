@@ -36,7 +36,7 @@ class GuavaImmutableMultimapQueryResultAdapter(
     private val mapType =
         immutableClassName.parametrizedBy(keyTypeArg.asTypeName(), valueTypeArg.asTypeName())
 
-    override fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope) {
+    override fun convert(outVarName: String, stmtVarName: String, scope: CodeGenScope) {
         val mapVarName = scope.getTmpVar("_mapBuilder")
 
         scope.builder.apply {
@@ -46,20 +46,20 @@ class GuavaImmutableMultimapQueryResultAdapter(
                 // us with the indices resolved and pass it to the adapters so it can retrieve
                 // the index of each column used by it.
                 dupeColumnsIndexAdapter = AmbiguousColumnIndexAdapter(mappings, parsedQuery)
-                dupeColumnsIndexAdapter.onCursorReady(cursorVarName, scope)
+                dupeColumnsIndexAdapter.onStatementReady(stmtVarName, scope)
                 rowAdapters.forEach {
                     check(it is QueryMappedRowAdapter)
                     val indexVarNames = dupeColumnsIndexAdapter.getIndexVarsForMapping(it.mapping)
-                    it.onCursorReady(
+                    it.onStatementReady(
                         indices = indexVarNames,
-                        cursorVarName = cursorVarName,
+                        stmtVarName = stmtVarName,
                         scope = scope
                     )
                 }
             } else {
                 dupeColumnsIndexAdapter = null
                 rowAdapters.forEach {
-                    it.onCursorReady(cursorVarName = cursorVarName, scope = scope)
+                    it.onStatementReady(stmtVarName = stmtVarName, scope = scope)
                 }
             }
 
@@ -88,10 +88,9 @@ class GuavaImmutableMultimapQueryResultAdapter(
 
             val tmpKeyVarName = scope.getTmpVar("_key")
             val tmpValueVarName = scope.getTmpVar("_value")
-            val stepName = if (scope.useDriverApi) "step" else "moveToNext"
-            beginControlFlow("while (%L.$stepName())", cursorVarName).apply {
+            beginControlFlow("while (%L.step())", stmtVarName).apply {
                 addLocalVariable(name = tmpKeyVarName, typeName = keyTypeArg.asTypeName())
-                keyRowAdapter.convert(tmpKeyVarName, cursorVarName, scope)
+                keyRowAdapter.convert(tmpKeyVarName, stmtVarName, scope)
 
                 // Iterate over all matched fields to check if all are null. If so, we continue in
                 // the while loop to the next iteration.
@@ -100,17 +99,14 @@ class GuavaImmutableMultimapQueryResultAdapter(
                     dupeColumnsIndexAdapter?.getIndexVarsForMapping(valueRowAdapter.mapping)
                         ?: valueRowAdapter.getDefaultIndexAdapter().getIndexVars()
                 val columnNullCheckCodeBlock =
-                    getColumnNullCheckCode(
-                        cursorVarName = cursorVarName,
-                        indexVars = valueIndexVars
-                    )
+                    getColumnNullCheckCode(stmtVarName = stmtVarName, indexVars = valueIndexVars)
                 // Perform column null check
                 beginControlFlow("if (%L)", columnNullCheckCodeBlock)
                     .apply { addStatement("continue") }
                     .endControlFlow()
 
                 addLocalVariable(name = tmpValueVarName, typeName = valueTypeArg.asTypeName())
-                valueRowAdapter.convert(tmpValueVarName, cursorVarName, scope)
+                valueRowAdapter.convert(tmpValueVarName, stmtVarName, scope)
                 addStatement("%L.put(%L, %L)", mapVarName, tmpKeyVarName, tmpValueVarName)
             }
             endControlFlow()
@@ -121,6 +117,4 @@ class GuavaImmutableMultimapQueryResultAdapter(
             )
         }
     }
-
-    override fun isMigratedToDriver() = true
 }

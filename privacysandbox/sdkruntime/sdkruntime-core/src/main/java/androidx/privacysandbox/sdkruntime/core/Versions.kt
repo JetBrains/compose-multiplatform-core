@@ -38,6 +38,12 @@ object Versions {
 
     @JvmStatic
     fun handShake(clientVersion: Int): Int {
+        if (clientVersion < ClientApiVersion.MIN_SUPPORTED_CLIENT_VERSION.apiLevel) {
+            throw IllegalArgumentException(
+                "Unsupported version of sdkruntime-client library. To load this SDK please use a more recent version."
+            )
+        }
+
         CLIENT_VERSION = clientVersion
         return API_VERSION
     }

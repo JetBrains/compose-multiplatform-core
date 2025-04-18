@@ -45,8 +45,6 @@ constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
         group = "Build"
     }
 
-    // ServiceReference is @Incubating since 8.0 https://github.com/gradle/gradle/issues/30858
-    @Suppress("UnstableApiUsage")
     @get:ServiceReference(KonanBuildService.KEY)
     abstract val konanBuildService: Property<KonanBuildService>
 

@@ -24,12 +24,13 @@ import android.util.LayoutDirection;
 import android.util.Rational;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.ViewPort;
 import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.internal.utils.ImageUtil;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -58,8 +59,7 @@ public class ViewPorts {
      * @param useCaseStreamSpecs    The stream specifications of the UseCases
      * @return The set of Viewports that should be set for each UseCase
      */
-    @NonNull
-    public static Map<UseCase, Rect> calculateViewPortRects(
+    public static @NonNull Map<UseCase, Rect> calculateViewPortRects(
             @NonNull Rect fullSensorRect,
             boolean isFrontCamera,
             @NonNull Rational viewPortAspectRatio,
@@ -127,8 +127,7 @@ public class ViewPorts {
      * <p> For FIT, returns the largest possible rect shared by all use cases.
      */
     @SuppressLint("SwitchIntDef")
-    @NonNull
-    public static RectF getScaledRect(
+    public static @NonNull RectF getScaledRect(
             @NonNull RectF fittingRect,
             @NonNull Rational containerAspectRatio,
             @ViewPort.ScaleType int scaleType,

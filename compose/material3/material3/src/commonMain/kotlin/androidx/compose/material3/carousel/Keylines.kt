@@ -31,8 +31,8 @@ import kotlin.math.min
  * pleasing and opinionated way, this strategy finds the nearest number of large items that will fit
  * into an approved arrangement that requires the least amount of size adjustment necessary.
  *
- * For more information, see <a href="https://material.io/components/carousel/overview">design
- * guidelines</a>.
+ * For more information, see
+ * [design guidelines](https://m3.material.io/components/carousel/overview)
  *
  * @param density The [Density] object that provides pixel density information of the device
  * @param carouselMainAxisSize The carousel container's pixel size in the main scrolling axis
@@ -167,8 +167,8 @@ internal fun createLeftAlignedKeylineList(
  * and with the remaining space adds a cut off item with size constraints to ensure enough motion
  * when scrolling off-screen.
  *
- * For more information, see <a href="https://material.io/components/carousel/overview">design
- * guidelines</a>.
+ * For more information, see
+ * [design guidelines](https://m3.material.io/components/carousel/overview)
  *
  * @param density The [Density] object that provides pixel density information of the device
  * @param carouselMainAxisSize The carousel container's pixel size in the main scrolling axis

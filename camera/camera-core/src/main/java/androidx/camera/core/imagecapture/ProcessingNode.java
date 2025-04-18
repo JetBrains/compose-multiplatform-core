@@ -34,8 +34,6 @@ import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.hardware.camera2.CameraCharacteristics;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import androidx.camera.core.ImageCapture;
@@ -55,6 +53,9 @@ import androidx.camera.core.processing.Packet;
 
 import com.google.auto.value.AutoValue;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -66,17 +67,13 @@ import java.util.concurrent.Executor;
  */
 public class ProcessingNode implements Node<ProcessingNode.In, Void> {
     private static final String TAG = "ProcessingNode";
-    @NonNull
-    final Executor mBlockingExecutor;
-    @Nullable
-    final InternalImageProcessor mImageProcessor;
+    final @NonNull Executor mBlockingExecutor;
+    final @Nullable InternalImageProcessor mImageProcessor;
 
-    @Nullable
-    private final CameraCharacteristics mCameraCharacteristics;
+    private final @Nullable CameraCharacteristics mCameraCharacteristics;
 
     @VisibleForTesting
-    @Nullable
-    DngImage2Disk mDngImage2Disk;
+    @Nullable DngImage2Disk mDngImage2Disk;
 
     private ProcessingNode.In mInputEdge;
     private Operation<InputPacket, Packet<ImageProxy>> mInput2Packet;
@@ -136,9 +133,8 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
         mHasIncorrectJpegMetadataQuirk = quirks.contains(IncorrectJpegMetadataQuirk.class);
     }
 
-    @NonNull
     @Override
-    public Void transform(@NonNull ProcessingNode.In inputEdge) {
+    public @NonNull Void transform(ProcessingNode.@NonNull In inputEdge) {
         mInputEdge = inputEdge;
         // Listen to the input edge.
         inputEdge.getEdge().setListener(
@@ -241,9 +237,8 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
         }
     }
 
-    @NonNull
     @WorkerThread
-    ImageCapture.OutputFileResults processOnDiskCapture(@NonNull InputPacket inputPacket)
+    ImageCapture.@NonNull OutputFileResults processOnDiskCapture(@NonNull InputPacket inputPacket)
             throws ImageCaptureException {
         List<Integer> outputFormats = mInputEdge.getOutputFormats();
         checkArgument(!outputFormats.isEmpty());
@@ -295,10 +290,9 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
         }
     }
 
-    @NonNull
-    private ImageCapture.OutputFileResults saveRawToDisk(
+    private ImageCapture.@NonNull OutputFileResults saveRawToDisk(
             @NonNull Packet<ImageProxy> originalImage,
-            @NonNull ImageCapture.OutputFileOptions outputFileOptions)
+            ImageCapture.@NonNull OutputFileOptions outputFileOptions)
             throws ImageCaptureException {
 
         if (mDngImage2Disk == null) {
@@ -320,10 +314,9 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
                 requireNonNull(outputFileOptions)));
     }
 
-    @NonNull
-    private ImageCapture.OutputFileResults saveJpegToDisk(
+    private ImageCapture.@NonNull OutputFileResults saveJpegToDisk(
             @NonNull Packet<ImageProxy> originalImage,
-            @NonNull ImageCapture.OutputFileOptions outputFileOptions,
+            ImageCapture.@NonNull OutputFileOptions outputFileOptions,
             int jpegQuality) throws ImageCaptureException {
         Packet<byte[]> jpegBytes = mImage2JpegBytes.apply(
                 Image2JpegBytes.In.of(originalImage, jpegQuality));
@@ -334,9 +327,8 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
                 JpegBytes2Disk.In.of(jpegBytes, requireNonNull(outputFileOptions)));
     }
 
-    @NonNull
     @WorkerThread
-    ImageProxy processInMemoryCapture(@NonNull InputPacket inputPacket)
+    @NonNull ImageProxy processInMemoryCapture(@NonNull InputPacket inputPacket)
             throws ImageCaptureException {
         ProcessingRequest request = inputPacket.getProcessingRequest();
         Packet<ImageProxy> image = mInput2Packet.apply(inputPacket);
@@ -395,11 +387,9 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
     @AutoValue
     abstract static class InputPacket {
 
-        @NonNull
-        abstract ProcessingRequest getProcessingRequest();
+        abstract @NonNull ProcessingRequest getProcessingRequest();
 
-        @NonNull
-        abstract ImageProxy getImageProxy();
+        abstract @NonNull ImageProxy getImageProxy();
 
         static InputPacket of(@NonNull ProcessingRequest processingRequest,
                 @NonNull ImageProxy imageProxy) {
@@ -416,15 +406,13 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
         /**
          * Get the main input edge that contains a {@link InputPacket} flow.
          */
-        @NonNull
-        abstract Edge<InputPacket> getEdge();
+        abstract @NonNull Edge<InputPacket> getEdge();
 
 
         /**
          * Get the postview input edge.
          */
-        @NonNull
-        abstract Edge<InputPacket> getPostviewEdge();
+        abstract @NonNull Edge<InputPacket> getPostviewEdge();
 
         /**
          * Gets the format of the image in {@link InputPacket}.
@@ -439,8 +427,7 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
          * capture in tests.
          */
         @SuppressWarnings("AutoValueImmutableFields")
-        @NonNull
-        abstract List<Integer> getOutputFormats();
+        abstract @NonNull List<Integer> getOutputFormats();
 
         static In of(int inputFormat,
                 @NonNull List<Integer> outputFormats) {

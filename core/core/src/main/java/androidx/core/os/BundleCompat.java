@@ -23,9 +23,10 @@ import android.os.IBinder;
 import android.os.Parcelable;
 import android.util.SparseArray;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -62,9 +63,8 @@ public final class BundleCompat {
      * @param clazz The type of the object expected
      * @return a Parcelable value, or {@code null}
      */
-    @Nullable
     @SuppressWarnings({"deprecation", "unchecked"})
-    public static <T> T getParcelable(@NonNull Bundle in, @Nullable String key,
+    public static <T> @Nullable T getParcelable(@NonNull Bundle in, @Nullable String key,
             @NonNull Class<T> clazz) {
         // Even though API was introduced in 33, we use 34 as 33 is bugged in some scenarios.
         if (Build.VERSION.SDK_INT >= 34) {
@@ -98,11 +98,10 @@ public final class BundleCompat {
      * @param clazz The type of the items inside the array. This is only verified when unparceling.
      * @return a Parcelable[] value, or {@code null}
      */
-    @Nullable
     @SuppressWarnings({"deprecation"})
     @SuppressLint({"ArrayReturn", "NullableCollection"})
-    public static Parcelable[] getParcelableArray(@NonNull Bundle in, @Nullable String key,
-            @NonNull Class<? extends Parcelable> clazz) {
+    public static Parcelable @Nullable [] getParcelableArray(@NonNull Bundle in,
+            @Nullable String key, @NonNull Class<? extends Parcelable> clazz) {
         // Even though API was introduced in 33, we use 34 as 33 is bugged in some scenarios.
         if (Build.VERSION.SDK_INT >= 34) {
             return Api33Impl.getParcelableArray(in, key, clazz);
@@ -135,11 +134,10 @@ public final class BundleCompat {
      *     unparceling.
      * @return an ArrayList<T> value, or {@code null}
      */
-    @Nullable
     @SuppressWarnings({"deprecation", "unchecked"})
     @SuppressLint({"ConcreteCollection", "NullableCollection"})
-    public static  <T> ArrayList<T> getParcelableArrayList(@NonNull Bundle in, @Nullable String key,
-            @NonNull Class<? extends T> clazz) {
+    public static  <T> @Nullable ArrayList<T> getParcelableArrayList(@NonNull Bundle in,
+            @Nullable String key, @NonNull Class<? extends T> clazz) {
         // Even though API was introduced in 33, we use 34 as 33 is bugged in some scenarios.
         if (Build.VERSION.SDK_INT >= 34) {
             return Api33Impl.getParcelableArrayList(in, key, clazz);
@@ -169,8 +167,7 @@ public final class BundleCompat {
      * @return a SparseArray of T values, or null
      */
     @SuppressWarnings({"deprecation", "unchecked"})
-    @Nullable
-    public static <T> SparseArray<T> getSparseParcelableArray(@NonNull Bundle in,
+    public static <T> @Nullable SparseArray<T> getSparseParcelableArray(@NonNull Bundle in,
             @Nullable String key, @NonNull Class<? extends T> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
             return Api33Impl.getSparseParcelableArray(in, key, clazz);
@@ -191,8 +188,7 @@ public final class BundleCompat {
      */
     @androidx.annotation.ReplaceWith(expression = "bundle.getBinder(key)")
     @Deprecated
-    @Nullable
-    public static IBinder getBinder(@NonNull Bundle bundle, @Nullable String key) {
+    public static @Nullable IBinder getBinder(@NonNull Bundle bundle, @Nullable String key) {
         return bundle.getBinder(key);
     }
 
@@ -233,8 +229,7 @@ public final class BundleCompat {
      * @return a Serializable value, or {@code null}
      */
     @SuppressWarnings({"deprecation", "unchecked"})
-    @Nullable
-    public static <T extends Serializable> T getSerializable(@NonNull Bundle in,
+    public static <T extends Serializable> @Nullable T getSerializable(@NonNull Bundle in,
             @Nullable String key, @NonNull Class<T> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
             return Api33Impl.getSerializable(in, key, clazz);

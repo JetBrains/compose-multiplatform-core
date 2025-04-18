@@ -20,8 +20,9 @@ import android.content.Context;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraManager;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A Android framework based {@link CameraDeviceSetupCompat} implementation.
@@ -35,9 +36,8 @@ class Camera2CameraDeviceSetupCompatProvider implements CameraDeviceSetupCompatP
         mCameraManager = context.getSystemService(CameraManager.class);
     }
 
-    @NonNull
     @Override
-    public CameraDeviceSetupCompat getCameraDeviceSetupCompat(@NonNull String cameraId)
+    public @NonNull CameraDeviceSetupCompat getCameraDeviceSetupCompat(@NonNull String cameraId)
             throws CameraAccessException {
         return new Camera2CameraDeviceSetupCompat(mCameraManager, cameraId);
     }

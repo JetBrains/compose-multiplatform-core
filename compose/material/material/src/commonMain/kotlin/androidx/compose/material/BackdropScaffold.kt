@@ -280,8 +280,7 @@ fun rememberBackdropScaffoldState(
 }
 
 /**
- * <a href="https://material.io/components/backdrop" class="external" target="_blank">Material
- * Design backdrop</a>.
+ * [Material Design backdrop](https://material.io/components/backdrop)
  *
  * A backdrop appears behind all other surfaces in an app, displaying contextual and actionable
  * content.

@@ -18,7 +18,6 @@ package androidx.benchmark.macro.perfetto
 
 import android.os.Build
 import android.util.JsonReader
-import androidx.annotation.RequiresApi
 import androidx.benchmark.Outputs
 import androidx.benchmark.Shell
 import androidx.benchmark.macro.MacrobenchmarkScope
@@ -29,6 +28,7 @@ import androidx.benchmark.perfetto.PerfettoCapture
 import androidx.benchmark.perfetto.PerfettoCapture.PerfettoSdkConfig
 import androidx.benchmark.perfetto.PerfettoCapture.PerfettoSdkConfig.InitialProcessState
 import androidx.benchmark.perfetto.PerfettoHelper.Companion.isAbiSupported
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.tracing.perfetto.handshake.PerfettoSdkHandshake
 import androidx.tracing.perfetto.handshake.protocol.ResponseResultCodes.RESULT_CODE_ALREADY_ENABLED
@@ -57,7 +57,7 @@ private const val minSupportedSdk = Build.VERSION_CODES.R // TODO(234351579): Su
  *
  * @see [androidx.tracing.perfetto.TracingReceiver]
  */
-@RequiresApi(Build.VERSION_CODES.R) // TODO(234351579): Support API < 30
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.R) // TODO(234351579): Support API < 30
 class PerfettoSdkHandshakeTest(private val testConfig: TestConfig) {
     private val perfettoCapture = PerfettoCapture()
     private val targetPackage = Packages.TARGET

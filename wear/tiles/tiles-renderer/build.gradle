@@ -22,13 +22,13 @@
  * modifying its settings.
  */
 
-import androidx.build.LibraryType
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("com.google.protobuf")
 }
 
@@ -81,9 +81,6 @@ android {
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
 
-    sourceSets {
-        androidTest.assets.srcDirs += project.rootDir.absolutePath + "/../../golden/wear/wear-tiles-renderer"
-    }
     namespace = "androidx.wear.tiles.renderer"
 }
 
@@ -103,10 +100,11 @@ protobuf {
 
 androidx {
     name = "Android Wear Tiles Renderer"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "Android Wear Tiles Renderer components. These components can be used to parse " +
             "and render an already constructed Wear Tile."
     legacyDisableKotlinStrictApiMode = true
+    addGoldenImageAssets()
 }
 

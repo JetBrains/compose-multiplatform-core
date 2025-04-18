@@ -65,8 +65,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * <a href="https://m3.material.io/components/menus/overview" class="external"
- * target="_blank">Material Design dropdown menu</a>.
+ * [Material Design dropdown menu](https://m3.material.io/components/menus/overview)
  *
  * Menus display a list of choices on a temporary surface. They appear when users interact with a
  * button, action, or other control.
@@ -137,8 +136,7 @@ expect fun DropdownMenu(
 )
 
 /**
- * <a href="https://m3.material.io/components/menus/overview" class="external"
- * target="_blank">Material Design dropdown menu</a> item.
+ * [Material Design dropdown menu](https://m3.material.io/components/menus/overview)
  *
  * Menus display a list of choices on a temporary surface. They appear when users interact with a
  * button, action, or other control.

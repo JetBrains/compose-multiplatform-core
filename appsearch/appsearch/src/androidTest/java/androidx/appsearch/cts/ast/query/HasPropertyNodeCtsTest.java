@@ -79,7 +79,7 @@ public class HasPropertyNodeCtsTest {
     }
 
     @Test
-    public void testGetProperty_returnsCorrectProperty() {
+    public void testGetPropertyPath_returnsCorrectPropertyPath() {
         List<PropertyPath.PathSegment> pathSegmentList = List.of(
                 PropertyPath.PathSegment.create("property"),
                 PropertyPath.PathSegment.create("path"));
@@ -88,11 +88,11 @@ public class HasPropertyNodeCtsTest {
         HasPropertyNode hasPropertyNode =
                 new HasPropertyNode(propertyPath);
 
-        assertThat(hasPropertyNode.getProperty()).isEqualTo(propertyPath);
+        assertThat(hasPropertyNode.getPropertyPath()).isEqualTo(propertyPath);
     }
 
     @Test
-    public void testSetProperty_throwsOnNullPointer() {
+    public void testSetPropertyPath_throwsOnNullPointer() {
         List<PropertyPath.PathSegment> pathSegmentList = List.of(
                 PropertyPath.PathSegment.create("property"),
                 PropertyPath.PathSegment.create("path"));
@@ -101,11 +101,11 @@ public class HasPropertyNodeCtsTest {
         HasPropertyNode hasPropertyNode =
                 new HasPropertyNode(propertyPath);
 
-        assertThrows(NullPointerException.class, () -> hasPropertyNode.setProperty(null));
+        assertThrows(NullPointerException.class, () -> hasPropertyNode.setPropertyPath(null));
     }
 
     @Test
-    public void testSetProperty_replaceOldProperty() {
+    public void testSetPropertyPath_replaceOldPropertyPath() {
         List<PropertyPath.PathSegment> pathSegmentList = List.of(
                 PropertyPath.PathSegment.create("property"),
                 PropertyPath.PathSegment.create("path"));
@@ -117,9 +117,9 @@ public class HasPropertyNodeCtsTest {
                 PropertyPath.PathSegment.create("another"),
                 PropertyPath.PathSegment.create("path"));
         PropertyPath newPropertyPath = new PropertyPath(newPathSegmentList);
-        hasPropertyNode.setProperty(newPropertyPath);
+        hasPropertyNode.setPropertyPath(newPropertyPath);
 
-        assertThat(hasPropertyNode.getProperty()).isEqualTo(newPropertyPath);
+        assertThat(hasPropertyNode.getPropertyPath()).isEqualTo(newPropertyPath);
     }
 
     @Test

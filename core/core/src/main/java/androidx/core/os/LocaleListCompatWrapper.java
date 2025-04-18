@@ -19,10 +19,11 @@ package androidx.core.os;
 import android.os.Build;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,14 +37,12 @@ final class LocaleListCompatWrapper implements LocaleListInterface {
     // This is a comma-separated list of the locales in the LocaleListHelper created at construction
     // time, basically the result of running each locale's toLanguageTag() method and concatenating
     // them with commas in between.
-    @NonNull
-    private final String mStringRepresentation;
+    private final @NonNull String mStringRepresentation;
 
     private static final Locale[] sEmptyList = new Locale[0];
 
-    @Nullable
     @Override
-    public Object getLocaleList() {
+    public @Nullable Object getLocaleList() {
         return null;
     }
 
@@ -101,9 +100,8 @@ final class LocaleListCompatWrapper implements LocaleListInterface {
         return result;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         for (int i = 0; i < mList.length; i++) {
@@ -121,7 +119,7 @@ final class LocaleListCompatWrapper implements LocaleListInterface {
         return mStringRepresentation;
     }
 
-    LocaleListCompatWrapper(@NonNull Locale... list) {
+    LocaleListCompatWrapper(Locale @NonNull ... list) {
         if (list.length == 0) {
             mList = sEmptyList;
             mStringRepresentation = "";
@@ -265,7 +263,7 @@ final class LocaleListCompatWrapper implements LocaleListInterface {
     }
 
     @Override
-    public Locale getFirstMatch(@NonNull String[] supportedLocales) {
+    public Locale getFirstMatch(String @NonNull [] supportedLocales) {
         return computeFirstMatch(Arrays.asList(supportedLocales),
                 false /* assume English is not supported */);
     }

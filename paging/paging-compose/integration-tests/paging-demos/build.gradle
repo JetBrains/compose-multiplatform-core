@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -50,7 +50,7 @@ dependencies {
 
 androidx {
     name = "Compose Paging Demos"
-    publish = Publish.NONE
+    type = SoftwareType.TEST_APPLICATION
     inceptionYear = "2020"
     description = "This is a project for Paging demos."
 }

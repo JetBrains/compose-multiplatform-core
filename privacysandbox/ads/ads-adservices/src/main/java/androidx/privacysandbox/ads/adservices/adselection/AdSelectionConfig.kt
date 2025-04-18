@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ads.adservices.adselection
 
-import android.annotation.SuppressLint
 import android.net.Uri
 import android.os.Build
 import android.os.ext.SdkExtensions
@@ -47,7 +46,6 @@ import androidx.privacysandbox.ads.adservices.common.AdTechIdentifier
  * @param trustedScoringSignalsUri URI endpoint of sell-side trusted signal from which creative
  *   specific realtime information can be fetched from.
  */
-@SuppressLint("ClassVerificationFailure")
 class AdSelectionConfig
 public constructor(
     val seller: AdTechIdentifier,

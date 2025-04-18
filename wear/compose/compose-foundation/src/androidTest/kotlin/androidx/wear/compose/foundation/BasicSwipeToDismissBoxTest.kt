@@ -485,6 +485,28 @@ class BasicSwipeToDismissBoxTest {
         }
     }
 
+    @Test
+    fun dragged_right() {
+        lateinit var state: SwipeToDismissBoxState
+        rule.setContent {
+            state = rememberSwipeToDismissBoxState()
+            BasicSwipeToDismissBox(
+                state = state,
+                modifier = Modifier.testTag(TEST_TAG),
+                onDismissed = {}
+            ) {
+                MessageContent()
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput {
+            down(Offset(x = 0f, y = height / 2f))
+            moveTo(Offset(x = 100f, y = height / 2f))
+        }
+
+        rule.runOnIdle { assertTrue(state.offset > 0f) }
+    }
+
     private fun testBothDirectionScroll(
         initialTouch: Long,
         duration: Long,

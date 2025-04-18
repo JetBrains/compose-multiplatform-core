@@ -57,6 +57,30 @@ class HierarchicalFocusCoordinatorTest {
         rule.runOnIdle { checkFocus(selected, focused) }
     }
 
+    @Test fun basic_UpdateFocus_works_0_to_0_of_3() = basic_UpdateFocus_works(0, 0, 3)
+
+    @Test fun basic_UpdateFocus_works_0_to_1_of_3() = basic_UpdateFocus_works(0, 1, 3)
+
+    @Test fun basic_UpdateFocus_works_2_to_0_of_5() = basic_UpdateFocus_works(2, 0, 5)
+
+    private fun basic_UpdateFocus_works(initiallySelected: Int, selected: Int, numItems: Int) {
+        var focused = BooleanArray(numItems)
+
+        var currentlySelected by mutableStateOf(initiallySelected)
+
+        rule.setContent {
+            repeat(numItems) { ix ->
+                HierarchicalFocusCoordinator({ ix == currentlySelected }) {
+                    ActiveFocusListener(onFocusChanged = { focused[ix] = it })
+                }
+            }
+        }
+
+        rule.runOnIdle { currentlySelected = selected }
+
+        rule.runOnIdle { checkFocus(selected, focused) }
+    }
+
     @Test fun basic_selection_works_1_of_3() = basic_selection_works(0, 3)
 
     @Test fun basic_selection_works_2_of_5() = basic_selection_works(1, 5)

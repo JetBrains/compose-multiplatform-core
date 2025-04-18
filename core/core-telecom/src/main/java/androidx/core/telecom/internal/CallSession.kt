@@ -49,7 +49,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 
 @RequiresApi(34)
-@Suppress("ClassVerificationFailure")
 internal class CallSession(
     val coroutineContext: CoroutineContext,
     val attributes: CallAttributesCompat,
@@ -135,7 +134,7 @@ internal class CallSession(
                 platformEndpoint.endpointType,
                 jetpackUuid
             )
-        Log.d(TAG, " n=[${platformEndpoint.endpointName}]  plat=[${platformEndpoint}] --> jet=[$j]")
+        Log.i(TAG, " n=[${platformEndpoint.endpointName}]  plat=[${platformEndpoint}] --> jet=[$j]")
         return j
     }
 

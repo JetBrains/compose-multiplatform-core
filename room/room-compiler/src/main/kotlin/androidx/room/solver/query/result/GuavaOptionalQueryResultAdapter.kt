@@ -29,10 +29,10 @@ class GuavaOptionalQueryResultAdapter(
     private val typeArg: XType,
     private val resultAdapter: SingleItemQueryResultAdapter
 ) : QueryResultAdapter(resultAdapter.rowAdapters) {
-    override fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope) {
+    override fun convert(outVarName: String, stmtVarName: String, scope: CodeGenScope) {
         scope.builder.apply {
             val valueVarName = scope.getTmpVar("_value")
-            resultAdapter.convert(valueVarName, cursorVarName, scope)
+            resultAdapter.convert(valueVarName, stmtVarName, scope)
             addLocalVariable(
                 name = outVarName,
                 typeName = GuavaTypeNames.OPTIONAL.parametrizedBy(typeArg.asTypeName()),
@@ -45,6 +45,4 @@ class GuavaOptionalQueryResultAdapter(
             )
         }
     }
-
-    override fun isMigratedToDriver() = true
 }

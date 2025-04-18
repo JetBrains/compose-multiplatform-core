@@ -51,7 +51,7 @@ class WebTriggerParams public constructor(val registrationUri: Uri, val debugKey
     }
 
     internal companion object {
-        @SuppressLint("ClassVerificationFailure", "NewApi")
+        @SuppressLint("NewApi")
         @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 4)
         @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)
         internal fun convertWebTriggerParams(

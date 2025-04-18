@@ -21,9 +21,10 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 import android.os.Bundle;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Functional interface used to create a custom accessibility action.
@@ -38,7 +39,7 @@ public interface AccessibilityViewCommand {
      * @param arguments Optional action arguments
      */
     boolean perform(@NonNull View view,
-            @Nullable AccessibilityViewCommand.CommandArguments arguments);
+            AccessibilityViewCommand.@Nullable CommandArguments arguments);
 
     /**
      * Object containing arguments passed into an {@link AccessibilityViewCommand}
@@ -99,8 +100,7 @@ public interface AccessibilityViewCommand {
         /**
          * @return HTML element type, for example BUTTON, INPUT, TABLE, etc.
          */
-        @Nullable
-        public String getHTMLElement() {
+        public @Nullable String getHTMLElement() {
             return mBundle.getString(
                     AccessibilityNodeInfoCompat.ACTION_ARGUMENT_HTML_ELEMENT_STRING);
         }
@@ -135,8 +135,7 @@ public interface AccessibilityViewCommand {
         /**
          * @return The text content to set.
          */
-        @Nullable
-        public CharSequence getText() {
+        public @Nullable CharSequence getText() {
             return mBundle.getCharSequence(
                     AccessibilityNodeInfoCompat.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE);
         }

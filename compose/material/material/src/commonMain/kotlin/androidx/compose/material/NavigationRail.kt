@@ -61,8 +61,7 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * <a href="https://material.io/components/navigation-rail" class="external"
- * target="_blank">Material Design navigation rail</a>.
+ * [Material Design navigation rail](https://material.io/components/navigation-rail)
  *
  * A Navigation Rail is a side navigation component that allows movement between primary
  * destinations in an app. A navigation rail should be used to display three to seven app
@@ -131,8 +130,7 @@ fun NavigationRail(
 }
 
 /**
- * <a href="https://material.io/components/navigation-rail" class="external"
- * target="_blank">Material Design navigation rail</a>.
+ * [Material Design navigation rail](https://material.io/components/navigation-rail)
  *
  * A Navigation Rail is a side navigation component that allows movement between primary
  * destinations in an app. A navigation rail should be used to display three to seven app
@@ -177,8 +175,7 @@ fun NavigationRail(
 }
 
 /**
- * <a href="https://material.io/components/navigation-rail" class="external"
- * target="_blank">Material Design navigation rail</a> item.
+ * [Material Design navigation rail](https://material.io/components/navigation-rail)
  *
  * A NavigationRailItem always shows text labels (if it exists) when selected. Showing text labels
  * if not selected is controlled by [alwaysShowLabel].

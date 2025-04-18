@@ -19,9 +19,10 @@ package androidx.camera.camera2.internal.compat;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 @RequiresApi(23)
 class StreamConfigurationMapCompatApi23Impl extends StreamConfigurationMapCompatBaseImpl {
@@ -30,9 +31,8 @@ class StreamConfigurationMapCompatApi23Impl extends StreamConfigurationMapCompat
         super(map);
     }
 
-    @Nullable
     @Override
-    public Size[] getOutputSizes(int format) {
+    public Size @Nullable [] getOutputSizes(int format) {
         return mStreamConfigurationMap.getOutputSizes(format);
     }
 }

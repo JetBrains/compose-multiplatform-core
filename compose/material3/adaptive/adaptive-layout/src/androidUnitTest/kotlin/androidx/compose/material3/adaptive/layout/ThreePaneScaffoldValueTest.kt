@@ -159,6 +159,241 @@ class ThreePaneScaffoldValueTest {
         scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Expanded)
     }
 
+    @Test
+    fun calculateWithReflow_onePaneLayout_reflowCurrentDestination() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 1,
+                maxVerticalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Reflow(ThreePaneScaffoldRole.Tertiary),
+                        AdaptStrategy.Hide
+                    ),
+                currentDestination =
+                    ThreePaneScaffoldDestinationItem<Any>(ThreePaneScaffoldRole.Secondary)
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Hidden)
+        scaffoldState.assertState(
+            ThreePaneScaffoldRole.Secondary,
+            PaneAdaptedValue.Reflowed(ThreePaneScaffoldRole.Tertiary)
+        )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Expanded)
+    }
+
+    @Test
+    fun calculateWithReflow_onePaneLayout_currentDestinationIsReflowAnchor() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 1,
+                maxVerticalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Reflow(ThreePaneScaffoldRole.Secondary)
+                    ),
+                currentDestination =
+                    ThreePaneScaffoldDestinationItem<Any>(ThreePaneScaffoldRole.Secondary)
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Hidden)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(
+            ThreePaneScaffoldRole.Tertiary,
+            PaneAdaptedValue.Reflowed(ThreePaneScaffoldRole.Secondary)
+        )
+    }
+
+    @Test
+    fun calculateWithReflow_onePaneLayout_currentDestinationIsNotReflowAnchor() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 1,
+                maxVerticalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Reflow(ThreePaneScaffoldRole.Secondary)
+                    ),
+                currentDestination =
+                    ThreePaneScaffoldDestinationItem<Any>(ThreePaneScaffoldRole.Primary)
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Hidden)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Hidden)
+    }
+
+    @Test
+    fun calculateWithReflowAndHistory_onePaneLayout_reflowCurrentDestination() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 1,
+                maxVerticalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Reflow(ThreePaneScaffoldRole.Secondary),
+                    ),
+                destinationHistory =
+                    listOf(
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Secondary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Primary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Tertiary, null)
+                    )
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Hidden)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(
+            ThreePaneScaffoldRole.Tertiary,
+            PaneAdaptedValue.Reflowed(ThreePaneScaffoldRole.Secondary)
+        )
+    }
+
+    @Test
+    fun calculateWithReflowAndHistory_onePaneLayout_expandedPaneIsReflowAnchor() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 1,
+                maxVerticalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Reflow(ThreePaneScaffoldRole.Primary)
+                    ),
+                destinationHistory =
+                    listOf(
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Tertiary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Secondary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Primary, null),
+                    )
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Hidden)
+        scaffoldState.assertState(
+            ThreePaneScaffoldRole.Tertiary,
+            PaneAdaptedValue.Reflowed(ThreePaneScaffoldRole.Primary)
+        )
+    }
+
+    @Test
+    fun calculateWithReflowAndHistory_onePaneLayout_expandedPaneIsNotReflowAnchor() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 1,
+                maxVerticalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Reflow(ThreePaneScaffoldRole.Secondary)
+                    ),
+                destinationHistory =
+                    listOf(
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Tertiary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Secondary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Primary, null),
+                    )
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Hidden)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Hidden)
+    }
+
+    @Test
+    fun calculateWithReflow_onePaneLayout_reflowPrimaryPaneWhenNoCurrentDestination() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 1,
+                maxVerticalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Reflow(ThreePaneScaffoldRole.Tertiary),
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Hide
+                    ),
+                currentDestination = null
+            )
+        scaffoldState.assertState(
+            ThreePaneScaffoldRole.Primary,
+            PaneAdaptedValue.Reflowed(ThreePaneScaffoldRole.Tertiary)
+        )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Hidden)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Expanded)
+    }
+
+    @Test
+    fun calculateWithReflow_onePaneLayoutWithOneVerticalPartition_neverReflow() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 1,
+                maxVerticalPartitions = 1,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Reflow(ThreePaneScaffoldRole.Tertiary),
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Hide
+                    ),
+                currentDestination = null
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Hidden)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Hidden)
+    }
+
+    @Test
+    fun calculateWithReflow_twoPaneLayout_neverReflow() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 2,
+                maxVerticalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Reflow(ThreePaneScaffoldRole.Primary),
+                        AdaptStrategy.Hide
+                    ),
+                destinationHistory =
+                    listOf(
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Primary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Tertiary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Secondary, null),
+                    )
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Hidden)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Expanded)
+    }
+
+    @Test
+    fun calculateWithReflow_threePaneLayout_neverReflow() {
+        val scaffoldState =
+            calculateThreePaneScaffoldValue(
+                maxHorizontalPartitions = 3,
+                maxVerticalPartitions = 2,
+                adaptStrategies =
+                    ThreePaneScaffoldAdaptStrategies(
+                        AdaptStrategy.Hide,
+                        AdaptStrategy.Reflow(ThreePaneScaffoldRole.Primary),
+                        AdaptStrategy.Hide
+                    ),
+                destinationHistory =
+                    listOf(
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Primary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Tertiary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Secondary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Primary, null),
+                        ThreePaneScaffoldDestinationItem(ThreePaneScaffoldRole.Tertiary, null)
+                    )
+            )
+        scaffoldState.assertState(ThreePaneScaffoldRole.Primary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Secondary, PaneAdaptedValue.Expanded)
+        scaffoldState.assertState(ThreePaneScaffoldRole.Tertiary, PaneAdaptedValue.Expanded)
+    }
+
     private fun ThreePaneScaffoldValue.assertState(
         role: ThreePaneScaffoldRole,
         state: PaneAdaptedValue

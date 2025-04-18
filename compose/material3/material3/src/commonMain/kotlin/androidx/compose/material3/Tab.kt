@@ -53,8 +53,7 @@ import androidx.compose.ui.util.fastFirst
 import kotlin.math.max
 
 /**
- * <a href="https://m3.material.io/components/tabs/overview" class="external"
- * target="_blank">Material Design tab.</a>
+ * [Material Design tab](https://m3.material.io/components/tabs/overview)
  *
  * A default Tab, also known as a Primary Navigation Tab. Tabs organize content across different
  * screens, data sets, and other interactions.
@@ -124,8 +123,7 @@ fun Tab(
 }
 
 /**
- * <a href="https://m3.material.io/components/tabs/overview" class="external"
- * target="_blank">Material Design tab.</a>
+ * [Material Design tab](https://m3.material.io/components/tabs/overview)
  *
  * Tabs organize content across different screens, data sets, and other interactions.
  *
@@ -198,8 +196,7 @@ fun LeadingIconTab(
 }
 
 /**
- * <a href="https://m3.material.io/components/tabs/overview" class="external"
- * target="_blank">Material Design tab.</a>
+ * [Material Design tab](https://m3.material.io/components/tabs/overview)
  *
  * Tabs organize content across different screens, data sets, and other interactions.
  *

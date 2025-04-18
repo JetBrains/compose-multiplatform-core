@@ -19,12 +19,13 @@ package androidx.camera.testing.impl.fakes;
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.SurfaceOutput;
 import androidx.camera.core.SurfaceProcessor;
 import androidx.camera.core.SurfaceRequest;
 import androidx.camera.core.impl.DeferrableSurface;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,10 +41,8 @@ public class FakeSurfaceProcessor implements SurfaceProcessor {
     private final Executor mExecutor;
     private final boolean mAutoCloseSurfaceOutput;
 
-    @Nullable
-    private SurfaceRequest mSurfaceRequest;
-    @NonNull
-    private final Map<Integer, SurfaceOutput> mSurfaceOutputs = new HashMap<>();
+    private @Nullable SurfaceRequest mSurfaceRequest;
+    private final @NonNull Map<Integer, SurfaceOutput> mSurfaceOutputs = new HashMap<>();
     boolean mIsInputSurfaceReleased;
     private final Map<Integer, Boolean> mIsOutputSurfaceRequestedToClose = new HashMap<>();
 
@@ -94,23 +93,19 @@ public class FakeSurfaceProcessor implements SurfaceProcessor {
         ));
     }
 
-    @Nullable
-    public SurfaceRequest getSurfaceRequest() {
+    public @Nullable SurfaceRequest getSurfaceRequest() {
         return mSurfaceRequest;
     }
 
-    @NonNull
-    public Map<Integer, SurfaceOutput> getSurfaceOutputs() {
+    public @NonNull Map<Integer, SurfaceOutput> getSurfaceOutputs() {
         return mSurfaceOutputs;
     }
 
-    @NonNull
-    public Surface getInputSurface() {
+    public @NonNull Surface getInputSurface() {
         return mInputSurface;
     }
 
-    @NonNull
-    public Map<Integer, Surface> getOutputSurfaces() {
+    public @NonNull Map<Integer, Surface> getOutputSurfaces() {
         return mOutputSurfaces;
     }
 
@@ -118,8 +113,7 @@ public class FakeSurfaceProcessor implements SurfaceProcessor {
         return mIsInputSurfaceReleased;
     }
 
-    @NonNull
-    public Map<Integer, Boolean> isOutputSurfaceRequestedToClose() {
+    public @NonNull Map<Integer, Boolean> isOutputSurfaceRequestedToClose() {
         return mIsOutputSurfaceRequestedToClose;
     }
 

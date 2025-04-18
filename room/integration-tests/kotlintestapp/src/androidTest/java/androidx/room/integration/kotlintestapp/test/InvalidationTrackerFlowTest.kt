@@ -125,7 +125,7 @@ class InvalidationTrackerFlowTest {
             booksDao.addBooks(TestUtil.BOOK_1)
         }
 
-        advanceUntilIdle()
+        testScheduler.advanceUntilIdle()
 
         val result = resultChannel.receive()
         assertThat(result).containsExactly("author", "publisher", "book")

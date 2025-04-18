@@ -72,7 +72,10 @@ internal class LocalSdkProviderTest(
 
         val overrideVersionHandshake =
             if (originalSdkVersion != forcedSdkVersion) {
-                VersionHandshake(forcedSdkVersion)
+                VersionHandshake(
+                    overrideClientVersion = forcedSdkVersion,
+                    overrideSdkVersion = forcedSdkVersion
+                )
             } else {
                 null
             }
@@ -146,8 +149,6 @@ internal class LocalSdkProviderTest(
 
     @Test
     fun getAppOwnedSdkSandboxInterfaces_delegateToSdkController() {
-        assumeFeatureAvailable(ClientFeature.APP_OWNED_INTERFACES)
-
         val expectedResult =
             AppOwnedSdkSandboxInterfaceCompat(
                 name = "TestAppOwnedSdk",
@@ -168,8 +169,6 @@ internal class LocalSdkProviderTest(
 
     @Test
     fun registerSdkSandboxActivityHandler_delegateToSdkController() {
-        assumeFeatureAvailable(ClientFeature.SDK_ACTIVITY_HANDLER)
-
         val catchingHandler = CatchingSdkActivityHandler()
 
         val testSdk = loadedSdk.loadTestSdk()
@@ -190,8 +189,6 @@ internal class LocalSdkProviderTest(
 
     @Test
     fun sdkSandboxActivityHandler_ReceivesLifecycleEventsFromOriginalActivityHolder() {
-        assumeFeatureAvailable(ClientFeature.SDK_ACTIVITY_HANDLER)
-
         val catchingHandler = CatchingSdkActivityHandler()
 
         val testSdk = loadedSdk.loadTestSdk()
@@ -215,8 +212,6 @@ internal class LocalSdkProviderTest(
 
     @Test
     fun unregisterSdkSandboxActivityHandler_delegateToSdkController() {
-        assumeFeatureAvailable(ClientFeature.SDK_ACTIVITY_HANDLER)
-
         val handler = CatchingSdkActivityHandler()
 
         val testSdk = loadedSdk.loadTestSdk()
@@ -228,8 +223,6 @@ internal class LocalSdkProviderTest(
 
     @Test
     fun loadSdk_returnsResultFromSdkController() {
-        assumeFeatureAvailable(ClientFeature.LOAD_SDK)
-
         val sdkName = "SDK"
         val sdkParams = Bundle()
         val expectedSdkInfo = SandboxedSdkInfo(sdkName, 42)
@@ -248,8 +241,6 @@ internal class LocalSdkProviderTest(
 
     @Test
     fun loadSdk_rethrowsExceptionFromSdkController() {
-        assumeFeatureAvailable(ClientFeature.LOAD_SDK)
-
         val expectedError =
             LoadSdkCompatException(
                 LoadSdkCompatException.LOAD_SDK_INTERNAL_ERROR,
@@ -352,8 +343,7 @@ internal class LocalSdkProviderTest(
         @JvmStatic
         fun params(): List<Array<Any>> = buildList {
             ClientApiVersion.values().forEach { version ->
-                // FUTURE_VERSION tested separately
-                if (version != ClientApiVersion.FUTURE_VERSION) {
+                if (version.mustHaveTestSdk()) {
                     add(
                         arrayOf(
                             "v${version.apiLevel}",
@@ -382,6 +372,14 @@ internal class LocalSdkProviderTest(
                     ClientApiVersion.FUTURE_VERSION.apiLevel
                 )
             )
+        }
+
+        private fun ClientApiVersion.mustHaveTestSdk(): Boolean {
+            if (this == ClientApiVersion.FUTURE_VERSION) {
+                return false
+            }
+
+            return stable || apiLevel > ClientApiVersion.LATEST_STABLE_VERSION.apiLevel
         }
 
         private fun loadTestSdkFromAssets(

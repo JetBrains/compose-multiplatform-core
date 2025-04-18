@@ -25,9 +25,10 @@ import android.content.BroadcastReceiver;
 import android.content.ContentProvider;
 import android.content.Intent;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -42,9 +43,8 @@ public class AppComponentFactory extends android.app.AppComponentFactory {
     /**
      * @see #instantiateActivityCompat
      */
-    @NonNull
     @Override
-    public final Activity instantiateActivity(
+    public final @NonNull Activity instantiateActivity(
             @NonNull ClassLoader cl, @NonNull String className, @Nullable Intent intent)
             throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         return checkCompatWrapper(instantiateActivityCompat(cl, className, intent));
@@ -53,9 +53,8 @@ public class AppComponentFactory extends android.app.AppComponentFactory {
     /**
      * @see #instantiateApplicationCompat
      */
-    @NonNull
     @Override
-    public final Application instantiateApplication(
+    public final @NonNull Application instantiateApplication(
             @NonNull ClassLoader cl, @NonNull String className)
             throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         return checkCompatWrapper(instantiateApplicationCompat(cl, className));
@@ -64,9 +63,8 @@ public class AppComponentFactory extends android.app.AppComponentFactory {
     /**
      * @see #instantiateReceiverCompat
      */
-    @NonNull
     @Override
-    public final BroadcastReceiver instantiateReceiver(
+    public final @NonNull BroadcastReceiver instantiateReceiver(
             @NonNull ClassLoader cl, @NonNull String className, @Nullable Intent intent)
             throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         return checkCompatWrapper(instantiateReceiverCompat(cl, className, intent));
@@ -75,9 +73,8 @@ public class AppComponentFactory extends android.app.AppComponentFactory {
     /**
      * @see #instantiateProviderCompat
      */
-    @NonNull
     @Override
-    public final ContentProvider instantiateProvider(
+    public final @NonNull ContentProvider instantiateProvider(
             @NonNull ClassLoader cl, @NonNull String className)
             throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         return checkCompatWrapper(instantiateProviderCompat(cl, className));
@@ -86,9 +83,8 @@ public class AppComponentFactory extends android.app.AppComponentFactory {
     /**
      * @see #instantiateServiceCompat
      */
-    @NonNull
     @Override
-    public final Service instantiateService(
+    public final @NonNull Service instantiateService(
             @NonNull ClassLoader cl, @NonNull String className, @Nullable Intent intent)
             throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         return checkCompatWrapper(instantiateServiceCompat(cl, className, intent));

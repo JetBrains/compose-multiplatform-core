@@ -90,11 +90,12 @@ class ModifiersBenchmark(val name: String, val count: Int, val modifierFn: (Bool
             listOf(
                 *modifier("Modifier") { Modifier },
                 *modifier("emptyElement", true) { Modifier.emptyElement() },
-                // (discouraged) composed overload that defaults to LocalIndication. Since we don't
-                // provide MaterialTheme in this benchmark, it will just be the debug indication
+                // clickable with no explicit indication parameter - this will internally query
+                // LocalIndication.current (which should be the default debug indication in this
+                // benchmark - practically since the indication will be created lazily the
+                // indication itself won't show up in the cost)
                 *modifier("clickable", true) { Modifier.clickable { capture(it) } },
-                // overload with explicit InteractionSource parameter and a ripple - this more
-                // accurately models how clickable is used in common components like Button.
+                // overload with explicit indication parameter and a ripple
                 *modifier("clickableWithRipple", true) {
                     Modifier.clickable(
                         // null interactionSource for lazy indication creation

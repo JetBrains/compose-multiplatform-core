@@ -31,6 +31,7 @@ import kotlin.math.min
  * given origin.
  */
 @Immutable
+@Suppress("DataClassDefinition")
 data class Rect(
     /** The offset of the left edge of this rectangle from the x axis. */
     @Stable val left: Float,

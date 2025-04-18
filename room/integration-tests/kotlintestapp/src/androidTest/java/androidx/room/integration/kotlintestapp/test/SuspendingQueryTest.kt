@@ -223,7 +223,7 @@ class SuspendingQueryTest : TestDatabaseTest() {
 
     @Test
     @Suppress("DEPRECATION")
-    fun suspendingBlock_beginEndTransaction_blockingDaoMethods() {
+    fun suspendingBlock_beginEndTransaction_blockingDaoFunctions() {
         runBlocking {
             try {
                 database.beginTransaction()
@@ -266,7 +266,7 @@ class SuspendingQueryTest : TestDatabaseTest() {
     }
 
     @Test
-    fun suspendingBlock_blockingDaoMethods() {
+    fun suspendingBlock_blockingDaoFunctions() {
         runBlocking {
             booksDao.insertPublisherSuspend(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
 
@@ -624,7 +624,7 @@ class SuspendingQueryTest : TestDatabaseTest() {
     }
 
     @Test
-    fun withTransaction_blockingDaoMethods() {
+    fun withTransaction_blockingDaoFunctions() {
         runBlocking {
             database.withTransaction {
                 booksDao.insertPublisherSuspend(
@@ -641,7 +641,7 @@ class SuspendingQueryTest : TestDatabaseTest() {
     }
 
     @Test
-    fun withTransaction_blockingDaoMethods_contextSwitch() {
+    fun withTransaction_blockingDaoFunctions_contextSwitch() {
         runBlocking {
             database.withTransaction {
                 // normal query
@@ -907,7 +907,7 @@ class SuspendingQueryTest : TestDatabaseTest() {
                 .addCallback(
                     object : RoomDatabase.Callback() {
                         override fun onOpen(db: SupportSQLiteDatabase) {
-                            // this causes all transaction methods to throw, this can happen IRL
+                            // this causes all transaction functions to throw, this can happen IRL
                             throw RuntimeException("Error opening Database.")
                         }
                     }

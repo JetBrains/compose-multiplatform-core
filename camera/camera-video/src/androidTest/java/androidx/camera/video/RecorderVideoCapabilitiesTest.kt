@@ -29,6 +29,7 @@ import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraXUtil
+import androidx.camera.video.Quality.QUALITY_SOURCE_REGULAR
 import androidx.camera.video.Recorder.VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE
 import androidx.camera.video.internal.encoder.VideoEncoderInfoImpl
 import androidx.test.core.app.ApplicationProvider
@@ -99,6 +100,7 @@ class RecorderVideoCapabilitiesTest(
             RecorderVideoCapabilities(
                 VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE,
                 cameraInfo,
+                QUALITY_SOURCE_REGULAR,
                 VideoEncoderInfoImpl.FINDER
             )
     }

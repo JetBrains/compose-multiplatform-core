@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
  * @param paddingValues The [ArcPaddingValues] to use. See that class and factory methods to see how
  *   paddings can be specified.
  */
-public fun CurvedModifier.padding(paddingValues: ArcPaddingValues) =
+public fun CurvedModifier.padding(paddingValues: ArcPaddingValues): CurvedModifier =
     this.then { child -> PaddingWrapper(child, paddingValues) }
 
 /**
@@ -47,7 +47,7 @@ public fun CurvedModifier.padding(paddingValues: ArcPaddingValues) =
  * @param after The space added after the component, if it was draw clockwise. This is the edge of
  *   the component with the "biggest" angle.
  */
-public fun CurvedModifier.padding(outer: Dp, inner: Dp, before: Dp, after: Dp) =
+public fun CurvedModifier.padding(outer: Dp, inner: Dp, before: Dp, after: Dp): CurvedModifier =
     padding(ArcPaddingValuesImpl(outer, inner, before, after))
 
 /**
@@ -57,7 +57,7 @@ public fun CurvedModifier.padding(outer: Dp, inner: Dp, before: Dp, after: Dp) =
  * @param radial The space added to the outer and inner edges of the content, in dp.
  * @param angular The space added before and after the content, in dp.
  */
-public fun CurvedModifier.padding(radial: Dp = 0.dp, angular: Dp = 0.dp) =
+public fun CurvedModifier.padding(radial: Dp = 0.dp, angular: Dp = 0.dp): CurvedModifier =
     padding(radial, radial, angular, angular)
 
 /**
@@ -65,7 +65,7 @@ public fun CurvedModifier.padding(radial: Dp = 0.dp, angular: Dp = 0.dp) =
  *
  * @param all The space added to all edges.
  */
-public fun CurvedModifier.padding(all: Dp = 0.dp) = padding(all, all, all, all)
+public fun CurvedModifier.padding(all: Dp = 0.dp): CurvedModifier = padding(all, all, all, all)
 
 /**
  * Apply additional space along each edge of the content in [Dp]. See the [ArcPaddingValues]
@@ -74,16 +74,16 @@ public fun CurvedModifier.padding(all: Dp = 0.dp) = padding(all, all, all, all)
 @Stable
 public interface ArcPaddingValues {
     /** Padding in the outward direction from the center of the [CurvedLayout] */
-    fun calculateOuterPadding(radialDirection: CurvedDirection.Radial): Dp
+    public fun calculateOuterPadding(radialDirection: CurvedDirection.Radial): Dp
 
     /** Padding in the inwards direction towards the center of the [CurvedLayout] */
-    fun calculateInnerPadding(radialDirection: CurvedDirection.Radial): Dp
+    public fun calculateInnerPadding(radialDirection: CurvedDirection.Radial): Dp
 
     /**
      * Padding added before the component, if it was draw clockwise. This is the edge of the
      * component with the "smallest" angle.
      */
-    fun calculateAfterPadding(
+    public fun calculateAfterPadding(
         layoutDirection: LayoutDirection,
         angularDirection: CurvedDirection.Angular
     ): Dp
@@ -92,7 +92,7 @@ public interface ArcPaddingValues {
      * Padding added after the component, if it was draw clockwise. This is the edge of the
      * component with the "biggest" angle.
      */
-    fun calculateBeforePadding(
+    public fun calculateBeforePadding(
         layoutDirection: LayoutDirection,
         angularDirection: CurvedDirection.Angular
     ): Dp

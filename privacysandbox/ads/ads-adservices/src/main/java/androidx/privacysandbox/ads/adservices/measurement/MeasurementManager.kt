@@ -137,7 +137,7 @@ abstract class MeasurementManager {
          *   value returned is null.
          */
         @JvmStatic
-        @SuppressLint("NewApi", "ClassVerificationFailure")
+        @SuppressLint("NewApi")
         fun obtain(context: Context): MeasurementManager? {
             Log.d(
                 "MeasurementManager",

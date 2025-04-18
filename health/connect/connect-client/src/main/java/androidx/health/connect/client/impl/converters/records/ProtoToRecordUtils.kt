@@ -95,7 +95,7 @@ internal fun SeriesValueOrBuilder.getString(key: String): String? = valuesMap[ke
 internal fun SeriesValueOrBuilder.getEnum(key: String): String? = valuesMap[key]?.enumVal
 
 @get:SuppressWarnings("GoodTime") // Safe to use for deserialization
-internal val DataProto.DataPoint.metadata: Metadata
+val DataProto.DataPoint.metadata: Metadata
     get() =
         Metadata(
             id = if (hasUid()) uid else Metadata.EMPTY_ID,

@@ -17,13 +17,14 @@
 
 package androidx.appsearch.usagereporting;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
 import androidx.appsearch.annotation.Document;
 import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * {@link SearchAction} is a built-in AppSearch document type that contains different metrics.
@@ -43,9 +44,8 @@ import androidx.core.util.Preconditions;
 @Document(name = "builtin:SearchAction")
 @ExperimentalAppSearchApi
 public class SearchAction extends TakenAction {
-    @Nullable
     @Document.StringProperty(indexingType = StringPropertyConfig.INDEXING_TYPE_PREFIXES)
-    private final String mQuery;
+    private final @Nullable String mQuery;
 
     @Document.LongProperty
     private final int mFetchedResultCount;
@@ -60,8 +60,7 @@ public class SearchAction extends TakenAction {
     }
 
     /** Returns the user-entered search input (without any operators or rewriting). */
-    @Nullable
-    public String getQuery() {
+    public @Nullable String getQuery() {
         return mQuery;
     }
 
@@ -127,8 +126,7 @@ public class SearchAction extends TakenAction {
 
         /** Sets the user-entered search input (without any operators or rewriting). */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setQuery(@Nullable String query) {
+        public @NonNull Builder setQuery(@Nullable String query) {
             mQuery = query;
             return this;
         }
@@ -140,16 +138,14 @@ public class SearchAction extends TakenAction {
          * @see SearchAction#getFetchedResultCount
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setFetchedResultCount(int fetchedResultCount) {
+        public @NonNull Builder setFetchedResultCount(int fetchedResultCount) {
             mFetchedResultCount = fetchedResultCount;
             return this;
         }
 
         /** Builds a {@link SearchAction}. */
         @Override
-        @NonNull
-        public SearchAction build() {
+        public @NonNull SearchAction build() {
             return new SearchAction(mNamespace, mId, mDocumentTtlMillis, mActionTimestampMillis,
                     mActionType, mQuery, mFetchedResultCount);
         }

@@ -20,9 +20,10 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioRecordingConfiguration;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 
@@ -41,8 +42,7 @@ public final class Api29Impl {
      * @param audioRecord
      * @return a valid AudioRecordingConfiguration if this recorder is active or null otherwise.
      */
-    @Nullable
-    public static AudioRecordingConfiguration getActiveRecordingConfiguration(
+    public static @Nullable AudioRecordingConfiguration getActiveRecordingConfiguration(
             @NonNull AudioRecord audioRecord) {
         return audioRecord.getActiveRecordingConfiguration();
     }
@@ -53,7 +53,7 @@ public final class Api29Impl {
      */
     public static void registerAudioRecordingCallback(@NonNull AudioRecord audioRecord,
             @NonNull Executor executor,
-            @NonNull AudioManager.AudioRecordingCallback callback) {
+            AudioManager.@NonNull AudioRecordingCallback callback) {
         audioRecord.registerAudioRecordingCallback(executor, callback);
     }
 
@@ -62,7 +62,7 @@ public final class Api29Impl {
      * registered from a {@link AudioRecord}.
      */
     public static void unregisterAudioRecordingCallback(@NonNull AudioRecord audioRecord,
-            @NonNull AudioManager.AudioRecordingCallback callback) {
+            AudioManager.@NonNull AudioRecordingCallback callback) {
         audioRecord.unregisterAudioRecordingCallback(callback);
     }
 

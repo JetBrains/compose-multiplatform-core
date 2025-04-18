@@ -32,8 +32,6 @@ import android.media.ImageReader;
 import android.util.Size;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraEffect;
 import androidx.camera.core.ForwardingImageProxy;
@@ -50,6 +48,9 @@ import androidx.camera.core.processing.InternalImageProcessor;
 import androidx.core.util.Pair;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,18 +71,13 @@ public class ImagePipeline {
     static final ExifRotationAvailability EXIF_ROTATION_AVAILABILITY =
             new ExifRotationAvailability();
     // Use case configs.
-    @NonNull
-    private final ImageCaptureConfig mUseCaseConfig;
-    @NonNull
-    private final CaptureConfig mCaptureConfig;
+    private final @NonNull ImageCaptureConfig mUseCaseConfig;
+    private final @NonNull CaptureConfig mCaptureConfig;
 
     // Post-processing pipeline.
-    @NonNull
-    private final CaptureNode mCaptureNode;
-    @NonNull
-    private final ProcessingNode mProcessingNode;
-    @NonNull
-    private final CaptureNode.In mPipelineIn;
+    private final @NonNull CaptureNode mCaptureNode;
+    private final @NonNull ProcessingNode mProcessingNode;
+    private final CaptureNode.@NonNull In mPipelineIn;
 
     // ===== public methods =====
 
@@ -149,8 +145,7 @@ public class ImagePipeline {
     /**
      * Creates a {@link SessionConfig.Builder} for configuring camera.
      */
-    @NonNull
-    public SessionConfig.Builder createSessionConfigBuilder(@NonNull Size resolution) {
+    public SessionConfig.@NonNull Builder createSessionConfigBuilder(@NonNull Size resolution) {
         SessionConfig.Builder builder = SessionConfig.Builder.createFrom(mUseCaseConfig,
                 resolution);
         builder.addNonRepeatingSurface(mPipelineIn.getSurface());
@@ -195,7 +190,7 @@ public class ImagePipeline {
      */
     @MainThread
     public void setOnImageCloseListener(
-            @NonNull ForwardingImageProxy.OnImageCloseListener listener) {
+            ForwardingImageProxy.@NonNull OnImageCloseListener listener) {
         checkMainThread();
         mCaptureNode.setOnImageCloseListener(listener);
     }
@@ -214,8 +209,7 @@ public class ImagePipeline {
      *                      capture failure or abortion.
      */
     @MainThread
-    @NonNull
-    Pair<CameraRequest, ProcessingRequest> createRequests(
+    @NonNull Pair<CameraRequest, ProcessingRequest> createRequests(
             @NonNull TakePictureRequest takePictureRequest,
             @NonNull TakePictureCallback takePictureCallback,
             @NonNull ListenableFuture<Void> captureFuture) {
@@ -245,7 +239,7 @@ public class ImagePipeline {
     }
 
     @MainThread
-    void notifyCaptureError(@NonNull TakePictureManager.CaptureError error) {
+    void notifyCaptureError(TakePictureManager.@NonNull CaptureError error) {
         checkMainThread();
         mPipelineIn.getErrorEdge().accept(error);
     }
@@ -271,13 +265,11 @@ public class ImagePipeline {
         return ImageFormat.JPEG;
     }
 
-    @NonNull
-    private CaptureBundle createCaptureBundle() {
+    private @NonNull CaptureBundle createCaptureBundle() {
         return requireNonNull(mUseCaseConfig.getCaptureBundle(singleDefaultCaptureBundle()));
     }
 
-    @NonNull
-    private ProcessingRequest createProcessingRequest(
+    private @NonNull ProcessingRequest createProcessingRequest(
             int requestId,
             @NonNull CaptureBundle captureBundle,
             @NonNull TakePictureRequest takePictureRequest,
@@ -296,8 +288,7 @@ public class ImagePipeline {
     }
 
     @VisibleForTesting
-    @Nullable
-    public PostviewSettings getPostviewSettings() {
+    public @Nullable PostviewSettings getPostviewSettings() {
         return mPipelineIn.getPostviewSettings();
     }
 
@@ -379,15 +370,13 @@ public class ImagePipeline {
         return request.getJpegQuality();
     }
 
-    @NonNull
     @VisibleForTesting
-    CaptureNode getCaptureNode() {
+    @NonNull CaptureNode getCaptureNode() {
         return mCaptureNode;
     }
 
-    @NonNull
     @VisibleForTesting
-    ProcessingNode getProcessingNode() {
+    @NonNull ProcessingNode getProcessingNode() {
         return mProcessingNode;
     }
 

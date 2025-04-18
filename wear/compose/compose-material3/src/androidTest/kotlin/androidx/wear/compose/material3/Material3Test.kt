@@ -17,7 +17,9 @@
 package androidx.wear.compose.material3
 
 import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,7 +27,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
@@ -43,8 +44,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -74,7 +78,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.toSize
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import androidx.test.screenshot.matchers.BitmapMatcher
+import androidx.test.screenshot.matchers.MSSIMMatcher
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import kotlin.math.abs
 import org.junit.Assert
 import org.junit.rules.TestName
@@ -94,7 +104,6 @@ enum class ScreenSize(val size: Int) {
 
 enum class ScreenShape(val isRound: Boolean) {
     ROUND_DEVICE(true),
-    SQUARE_DEVICE(false)
 }
 
 /**
@@ -178,9 +187,7 @@ fun TestIcon(modifier: Modifier = Modifier, iconLabel: String = "TestIcon") {
 
 @Composable
 fun CenteredText(text: String) {
-    Column(modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.Center) {
-        Text(text)
-    }
+    Column(verticalArrangement = Arrangement.Center) { Text(text) }
 }
 
 fun ComposeContentTestRule.setContentWithThemeForSizeAssertions(
@@ -383,6 +390,7 @@ internal fun ComposeContentTestRule.verifyScreenshot(
     screenshotRule: AndroidXScreenshotTestRule,
     testTag: String = TEST_TAG,
     layoutDirection: LayoutDirection = LayoutDirection.Ltr,
+    matcher: BitmapMatcher = MSSIMMatcher(),
     content: @Composable () -> Unit
 ) {
     setContentWithTheme {
@@ -395,7 +403,9 @@ internal fun ComposeContentTestRule.verifyScreenshot(
         }
     }
 
-    onNodeWithTag(testTag).captureToImage().assertAgainstGolden(screenshotRule, methodName)
+    onNodeWithTag(testTag)
+        .captureToImage()
+        .assertAgainstGolden(screenshotRule, methodName, matcher = matcher)
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -469,3 +479,65 @@ internal enum class Status {
 }
 
 class StableRef<T>(var value: T)
+
+/**
+ * Creates a [HapticFeedback] that can execute a custom code when
+ * [HapticFeedback.performHapticFeedback] is triggered.
+ */
+internal fun hapticFeedback(
+    perform: (hapticFeedbackType: HapticFeedbackType) -> Unit
+): HapticFeedback =
+    object : HapticFeedback {
+        override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
+            perform(hapticFeedbackType)
+        }
+    }
+
+/**
+ * Implementation to be used with [hapticFeedback] to collect all the haptic feedback performed and
+ * store in [results].
+ */
+internal fun collectResultsFromHapticFeedback(
+    results: MutableMap<HapticFeedbackType, Int>
+): (hapticFeedbackType: HapticFeedbackType) -> Unit = { hapticFeedbackType: HapticFeedbackType ->
+    results.merge(hapticFeedbackType, 1, Int::plus)
+}
+
+/**
+ * Logic forked from Wear.MaterialTest writeToDevice - utility for writing an image bitmap to
+ * storage on the emulated device. The image can be extract using adb pull, for example: adb pull
+ * /storage/emulated/0/Android/data/androidx.wear.compose.test/cache/screenshots/mytest.png
+ * /usr/local/username/Desktop/mytest.png
+ */
+fun ImageBitmap.writeToDevice(testName: String) {
+    this.asAndroidBitmap().writeToDevice(testName)
+}
+
+private val deviceOutputDirectory
+    get() =
+        File(InstrumentationRegistry.getInstrumentation().context.externalCacheDir, "screenshots")
+
+private fun Bitmap.writeToDevice(testName: String): File {
+    return writeToDevice(testName) {
+        compress(Bitmap.CompressFormat.PNG, 0 /*ignored for png*/, it)
+    }
+}
+
+private fun writeToDevice(testName: String, writeAction: (FileOutputStream) -> Unit): File {
+    if (!deviceOutputDirectory.exists() && !deviceOutputDirectory.mkdir()) {
+        throw IOException("Could not create folder $deviceOutputDirectory")
+    }
+
+    val file = File(deviceOutputDirectory, "$testName.png")
+    Log.d("Screenshot", "File path is ${file.absolutePath}")
+    try {
+        FileOutputStream(file).use { writeAction(it) }
+    } catch (e: Exception) {
+        throw IOException(
+            "Could not write file to storage (path: ${file.absolutePath}). " +
+                " Stacktrace: " +
+                e.stackTrace
+        )
+    }
+    return file
+}

@@ -18,14 +18,27 @@ package androidx.compose.material3
 
 import android.os.Build
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
@@ -71,6 +84,19 @@ class SliderScreenshotTest {
             }
         }
         assertSliderAgainstGolden("slider_origin_rtl")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun sliderTest_withSteps_rtl() {
+        rule.setMaterialContent(lightColorScheme()) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Box(wrap.testTag(wrapperTestTag)) {
+                    Slider(remember { SliderState(value = 0.2f, steps = 4) })
+                }
+            }
+        }
+        assertSliderAgainstGolden("slider_withSteps_rtl")
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -186,6 +212,24 @@ class SliderScreenshotTest {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Test
+    fun sliderTest_first_steps() {
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(wrap.testTag(wrapperTestTag)) { Slider(remember { SliderState(0.1f, steps = 9) }) }
+        }
+        assertSliderAgainstGolden("sliderTest_first_steps")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun sliderTest_last_steps() {
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(wrap.testTag(wrapperTestTag)) { Slider(remember { SliderState(0.9f, steps = 9) }) }
+        }
+        assertSliderAgainstGolden("sliderTest_last_steps")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
     fun sliderTest_middle_steps_dark() {
         rule.setMaterialContent(darkColorScheme()) {
             Box(wrap.testTag(wrapperTestTag)) { Slider(remember { SliderState(0.5f, steps = 5) }) }
@@ -280,6 +324,134 @@ class SliderScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) { Slider(remember { SliderState(0.91f) }) }
         }
         assertSliderAgainstGolden("slider_min_corner")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @Test
+    fun sliderTest_middle_custom_corners_track_icons() {
+        rule.setMaterialContent(lightColorScheme()) {
+            val sliderState = remember { SliderState(0.5f) }
+            val startIcon = rememberVectorPainter(Icons.Filled.Check)
+            val endIcon = rememberVectorPainter(Icons.Filled.Clear)
+            Box(wrap.testTag(wrapperTestTag)) {
+                Slider(
+                    state = sliderState,
+                    track = {
+                        with(LocalDensity.current) {
+                            val iconSize = Size(20.dp.toPx(), 20.dp.toPx())
+                            val iconPadding = 10.dp.toPx()
+                            val thumbTrackGapSize = 6.dp.toPx()
+                            val activeIconColor = SliderDefaults.colors().activeTickColor
+                            val inactiveIconColor = SliderDefaults.colors().inactiveTickColor
+                            val trackIconStart: DrawScope.(Offset, Color) -> Unit =
+                                { offset, color ->
+                                    translate(offset.x + iconPadding, offset.y) {
+                                        with(startIcon) {
+                                            draw(iconSize, colorFilter = ColorFilter.tint(color))
+                                        }
+                                    }
+                                }
+                            val trackIconEnd: DrawScope.(Offset, Color) -> Unit = { offset, color ->
+                                translate(offset.x - iconPadding - iconSize.width, offset.y) {
+                                    with(endIcon) {
+                                        draw(iconSize, colorFilter = ColorFilter.tint(color))
+                                    }
+                                }
+                            }
+                            SliderDefaults.Track(
+                                sliderState = sliderState,
+                                modifier =
+                                    Modifier.height(36.dp).drawWithContent {
+                                        drawContent()
+
+                                        val yOffset = size.height / 2 - iconSize.height / 2
+                                        val activeTrackStart = 0f
+                                        val activeTrackEnd =
+                                            size.width * sliderState.coercedValueAsFraction -
+                                                thumbTrackGapSize
+                                        val inactiveTrackStart =
+                                            activeTrackEnd + thumbTrackGapSize * 2
+                                        val inactiveTrackEnd = size.width
+
+                                        val activeTrackWidth = activeTrackEnd - activeTrackStart
+                                        val inactiveTrackWidth =
+                                            inactiveTrackEnd - inactiveTrackStart
+                                        if (iconSize.width < activeTrackWidth - iconPadding * 2) {
+                                            trackIconStart(
+                                                Offset(activeTrackStart, yOffset),
+                                                activeIconColor
+                                            )
+                                            trackIconEnd(
+                                                Offset(activeTrackEnd, yOffset),
+                                                activeIconColor
+                                            )
+                                        }
+                                        if (iconSize.width < inactiveTrackWidth - iconPadding * 2) {
+                                            trackIconStart(
+                                                Offset(inactiveTrackStart, yOffset),
+                                                inactiveIconColor
+                                            )
+                                            trackIconEnd(
+                                                Offset(inactiveTrackEnd, yOffset),
+                                                inactiveIconColor
+                                            )
+                                        }
+                                    },
+                                trackCornerSize = 12.dp,
+                                drawStopIndicator = null,
+                                thumbTrackGapSize = thumbTrackGapSize.toDp()
+                            )
+                        }
+                    }
+                )
+            }
+        }
+        assertSliderAgainstGolden("sliderTest_middle_custom_corners_track_icons")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @Test
+    fun verticalSliderTest() {
+        rule.setMaterialContent(lightColorScheme()) {
+            val sliderState = remember { SliderState(0.3f) }
+            Box(wrap.testTag(wrapperTestTag)) {
+                VerticalSlider(
+                    state = sliderState,
+                    modifier = Modifier.height(300.dp),
+                    track = {
+                        SliderDefaults.Track(
+                            sliderState = sliderState,
+                            modifier = Modifier.width(36.dp),
+                            trackCornerSize = 12.dp
+                        )
+                    }
+                )
+            }
+        }
+        assertSliderAgainstGolden("verticalSliderTest")
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @Test
+    fun verticalSliderTest_reversed() {
+        rule.setMaterialContent(lightColorScheme()) {
+            val sliderState = remember { SliderState(0.3f) }
+            Box(wrap.testTag(wrapperTestTag)) {
+                VerticalSlider(
+                    state = sliderState,
+                    modifier = Modifier.height(300.dp),
+                    track = {
+                        SliderDefaults.Track(
+                            sliderState = sliderState,
+                            modifier = Modifier.width(36.dp),
+                            trackCornerSize = 12.dp
+                        )
+                    },
+                    reverseDirection = true
+                )
+            }
+        }
+        assertSliderAgainstGolden("verticalSliderTest_reversed")
     }
 
     @OptIn(ExperimentalMaterial3Api::class)

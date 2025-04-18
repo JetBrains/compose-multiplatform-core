@@ -119,7 +119,7 @@ class IdleBatteryChargingConstraintsDetector : Detector(), SourceCodeScanner {
             current =
                 (current as? UQualifiedReferenceExpression)?.receiver?.skipParenthesizedExprDown()
         }
-        if (current != null && current is USimpleNameReferenceExpression) {
+        if (current != null) {
             return current.identifier
         }
         return null

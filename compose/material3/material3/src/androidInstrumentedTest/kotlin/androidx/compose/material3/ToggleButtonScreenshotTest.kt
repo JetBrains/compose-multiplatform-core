@@ -42,7 +42,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O, maxSdkVersion = 32)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 class ToggleButtonScreenshotTest {
     @get:Rule val rule = createComposeRule()
@@ -103,7 +103,7 @@ class ToggleButtonScreenshotTest {
         assertAgainstGolden("toggleButton_checked_darkTheme")
     }
 
-    @Ignore
+    @Ignore("b/355413615")
     @Test
     fun toggleButton_lightTheme_defaultToPressed() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -126,7 +126,7 @@ class ToggleButtonScreenshotTest {
         assertAgainstGolden("toggleButton_lightTheme_defaultToPressed")
     }
 
-    @Ignore
+    @Ignore("b/355413615")
     @Test
     fun toggleButton_lightTheme_checkedToPressed() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -201,7 +201,7 @@ class ToggleButtonScreenshotTest {
         assertAgainstGolden("elevatedToggleButton_checked_darkTheme")
     }
 
-    @Ignore
+    @Ignore("b/355413615")
     @Test
     fun elevatedToggleButton_lightTheme_defaultToPressed() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -224,7 +224,7 @@ class ToggleButtonScreenshotTest {
         assertAgainstGolden("elevatedToggleButton_lightTheme_defaultToPressed")
     }
 
-    @Ignore
+    @Ignore("b/355413615")
     @Test
     fun elevatedToggleButton_lightTheme_checkedToPressed() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -299,7 +299,7 @@ class ToggleButtonScreenshotTest {
         assertAgainstGolden("tonalToggleButton_checked_darkTheme")
     }
 
-    @Ignore
+    @Ignore("b/355413615")
     @Test
     fun tonalToggleButton_lightTheme_defaultToPressed() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -322,7 +322,7 @@ class ToggleButtonScreenshotTest {
         assertAgainstGolden("tonalToggleButton_lightTheme_defaultToPressed")
     }
 
-    @Ignore
+    @Ignore("b/355413615")
     @Test
     fun tonalToggleButton_lightTheme_checkedToPressed() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -397,7 +397,7 @@ class ToggleButtonScreenshotTest {
         assertAgainstGolden("outlinedToggleButton_checked_darkTheme")
     }
 
-    @Ignore
+    @Ignore("b/355413615")
     @Test
     fun outlinedToggleButton_lightTheme_defaultToPressed() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -420,7 +420,7 @@ class ToggleButtonScreenshotTest {
         assertAgainstGolden("outlinedToggleButton_lightTheme_defaultToPressed")
     }
 
-    @Ignore
+    @Ignore("b/355413615")
     @Test
     fun outlinedToggleButton_lightTheme_checkedToPressed() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -533,7 +533,7 @@ class ToggleButtonScreenshotTest {
         assertAgainstGolden("toggleButton_withIcon_checked_darkTheme")
     }
 
-    @Ignore
+    @Ignore("b/355413615")
     @Test
     fun toggleButton_withIcon_lightTheme_defaultToPressed() {
         rule.setMaterialContent(lightColorScheme()) {
@@ -564,7 +564,7 @@ class ToggleButtonScreenshotTest {
         assertAgainstGolden("toggleButton_withIcon_lightTheme_defaultToPressed")
     }
 
-    @Ignore
+    @Ignore("b/355413615")
     @Test
     fun toggleButton_withIcon_lightTheme_checkedToPressed() {
         rule.setMaterialContent(lightColorScheme()) {

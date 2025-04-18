@@ -16,16 +16,20 @@
 
 package androidx.camera.viewfinder.compose
 
-import android.annotation.SuppressLint
 import android.graphics.RectF
 import android.util.Size
+import android.util.SizeF
 import android.view.Surface
-import androidx.camera.viewfinder.compose.internal.RefCounted
-import androidx.camera.viewfinder.compose.internal.SurfaceTransformationUtil
-import androidx.camera.viewfinder.compose.internal.TransformUtil.surfaceRotationToRotationDegrees
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.camera.viewfinder.core.TransformationInfo
+import androidx.camera.viewfinder.core.TransformationInfo.Companion.DEFAULT
 import androidx.camera.viewfinder.core.ViewfinderSurfaceRequest
+import androidx.camera.viewfinder.core.ViewfinderSurfaceSessionScope
+import androidx.camera.viewfinder.core.impl.OffsetF
+import androidx.camera.viewfinder.core.impl.RefCounted
+import androidx.camera.viewfinder.core.impl.ScaleFactorF
+import androidx.camera.viewfinder.core.impl.Transformations
+import androidx.camera.viewfinder.core.impl.ViewfinderSurfaceSessionImpl
 import androidx.compose.foundation.AndroidEmbeddedExternalSurface
 import androidx.compose.foundation.AndroidExternalSurface
 import androidx.compose.foundation.AndroidExternalSurfaceScope
@@ -34,91 +38,116 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.setFrom
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Constraints
-import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.cancel
+import androidx.compose.ui.util.fastRoundToInt
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 
 /**
  * Displays a media stream with the given transformations for crop and rotation while maintaining
  * proper scaling.
  *
- * Provides a [Surface] for the given [ViewfinderSurfaceRequest], surface can be accessed through
- * [ViewfinderSurfaceRequest.getSurface].
+ * A [Surface] for the given [ViewfinderSurfaceRequest] can be retrieved from the
+ * [ViewfinderSurfaceSessionScope] of the callback registered via
+ * [ViewfinderInitScope.onSurfaceSession] in [onInit].
  *
  * This has two underlying implementations either using an [AndroidEmbeddedExternalSurface] for
  * [ImplementationMode.EMBEDDED] or an [AndroidExternalSurface] for [ImplementationMode.EXTERNAL].
+ * These can be set by the [ImplementationMode] argument in the [surfaceRequest] constructor. If the
+ * implementation mode is `null`, then [ImplementationMode.EXTERNAL] will be used.
+ *
+ * The [onInit] lambda, and the callback registered with [ViewfinderInitScope.onSurfaceSession], are
+ * always called from the main thread. [onInit] will be called every time a new [surfaceRequest] is
+ * provided.
  *
  * @param surfaceRequest Details about the surface being requested
- * @param implementationMode Determines the underlying implementation of the [Surface].
  * @param transformationInfo Specifies the required transformations for the media being displayed.
  * @param modifier Modifier to be applied to the [Viewfinder]
  * @param coordinateTransformer Coordinate transformer that can be used to convert Compose space
  *   coordinates such as touch coordinates to surface space coordinates. When the Viewfinder is
  *   displaying content from the camera, this transformer can be used to translate touch events into
  *   camera sensor coordinates for focus and metering actions.
+ * @param alignment Optional alignment parameter used to place the [Surface] in the given bounds of
+ *   the [Viewfinder]. Defaults to [Alignment.Center].
+ * @param contentScale Optional scale parameter used to determine the aspect ratio scaling to be
+ *   used to fit the [Surface] in the bounds of the [Viewfinder]. Defaults to [ContentScale.Crop].
+ * @param onInit Lambda invoked on first composition and any time a new [surfaceRequest] is
+ *   provided. This lambda can be used to declare a [ViewfinderInitScope.onSurfaceSession] callback
+ *   that will be called each time a new [Surface] is provided by the viewfinder.
  *
  * TODO(b/322420487): Add a sample with `@sample`
  */
 @Composable
 fun Viewfinder(
     surfaceRequest: ViewfinderSurfaceRequest,
-    implementationMode: ImplementationMode,
-    transformationInfo: TransformationInfo,
     modifier: Modifier = Modifier,
+    transformationInfo: TransformationInfo = DEFAULT,
     coordinateTransformer: MutableCoordinateTransformer? = null,
+    alignment: Alignment = Alignment.Center,
+    contentScale: ContentScale = ContentScale.Crop,
+    onInit: ViewfinderInitScope.() -> Unit
 ) {
-    val resolution = surfaceRequest.resolution
-
     Box(modifier = modifier.clipToBounds().fillMaxSize()) {
         key(surfaceRequest) {
             TransformedSurface(
-                resolution = resolution,
+                surfaceWidth = surfaceRequest.width,
+                surfaceHeight = surfaceRequest.height,
                 transformationInfo = transformationInfo,
-                implementationMode = implementationMode,
-                onInit = {
-                    onSurface { newSurface, _, _ ->
-                        val refCountedSurface = RefCounted<Surface> { it.release() }
+                implementationMode =
+                    surfaceRequest.implementationMode ?: ImplementationMode.EXTERNAL,
+                coordinateTransformer = coordinateTransformer,
+                alignment = alignment,
+                contentScale = contentScale
+            ) {
+                val viewfinderInitScope =
+                    ViewfinderInitScopeImpl(viewfinderSurfaceRequest = surfaceRequest)
 
-                        refCountedSurface.initialize(newSurface)
-                        newSurface.onDestroyed { refCountedSurface.release() }
+                // Register callback from onInit()
+                onInit.invoke(viewfinderInitScope)
 
-                        refCountedSurface.acquire()?.let {
-                            surfaceRequest.provideSurface(it, Runnable::run) {
-                                refCountedSurface.release()
-                                this@onSurface.cancel()
-                            }
-                            awaitCancellation()
-                        } ?: run { this@onSurface.cancel() }
-                    }
+                onSurface { newSurface, _, _ ->
+                    val refCountedSurface = RefCounted<Surface> { it.release() }
+                    refCountedSurface.initialize(newSurface)
+
+                    // TODO(b/390508238): Stop underlying View from releasing the Surface
+                    // automatically. It should wait for the RefCount to get to 0.
+                    newSurface.onDestroyed { refCountedSurface.release() }
+
                     // TODO(b/322420176): Properly handle onSurfaceChanged()
-                },
-                coordinateTransformer,
-            )
+
+                    // Dispatch surface to registered onSurfaceSession callback
+                    viewfinderInitScope.dispatchOnSurfaceSession(refCountedSurface)
+                }
+            }
         }
     }
 }
 
-@SuppressLint("RestrictedApi")
 @Composable
 private fun TransformedSurface(
-    resolution: Size,
+    surfaceWidth: Int,
+    surfaceHeight: Int,
     transformationInfo: TransformationInfo,
     implementationMode: ImplementationMode,
-    onInit: AndroidExternalSurfaceScope.() -> Unit,
     coordinateTransformer: MutableCoordinateTransformer?,
+    alignment: Alignment,
+    contentScale: ContentScale,
+    onInit: AndroidExternalSurfaceScope.() -> Unit
 ) {
+    val layoutDirection = LocalConfiguration.current.layoutDirection
     val surfaceModifier =
         Modifier.layout { measurable, constraints ->
-            val placeable =
-                measurable.measure(Constraints.fixed(resolution.width, resolution.height))
+            val placeable = measurable.measure(Constraints.fixed(surfaceWidth, surfaceHeight))
 
             // When the child placeable is larger than the parent's constraints, rather
             // than the child overflowing through the right or bottom of the parent, it overflows
@@ -131,9 +160,13 @@ private fun TransformedSurface(
             layout(placeable.width, placeable.height) {
                 placeable.placeWithLayer(widthOffset, heightOffset) {
                     val surfaceToViewFinderMatrix =
-                        SurfaceTransformationUtil.getTransformedSurfaceMatrix(
-                            transformationInfo,
-                            Size(constraints.maxWidth, constraints.maxHeight)
+                        Transformations.getSurfaceToViewfinderMatrix(
+                            viewfinderSize = Size(constraints.maxWidth, constraints.maxHeight),
+                            surfaceResolution = Size(surfaceWidth, surfaceHeight),
+                            transformationInfo = transformationInfo,
+                            layoutDirection = layoutDirection,
+                            contentScale = contentScale.toInternalContentScale(),
+                            alignment = alignment.toInternalAlignment()
                         )
 
                     coordinateTransformer?.transformMatrix =
@@ -143,12 +176,12 @@ private fun TransformedSurface(
                         }
 
                     val surfaceRectInViewfinder =
-                        RectF(0f, 0f, resolution.width.toFloat(), resolution.height.toFloat())
-                    surfaceToViewFinderMatrix.mapRect(surfaceRectInViewfinder)
+                        RectF(0f, 0f, surfaceWidth.toFloat(), surfaceHeight.toFloat())
+                            .also(surfaceToViewFinderMatrix::mapRect)
 
                     transformOrigin = TransformOrigin(0f, 0f)
-                    scaleX = surfaceRectInViewfinder.width() / resolution.width
-                    scaleY = surfaceRectInViewfinder.height() / resolution.height
+                    scaleX = surfaceRectInViewfinder.width() / surfaceWidth
+                    scaleY = surfaceRectInViewfinder.height() / surfaceHeight
 
                     translationX = surfaceRectInViewfinder.left
                     translationY = surfaceRectInViewfinder.top
@@ -163,7 +196,9 @@ private fun TransformedSurface(
         ImplementationMode.EMBEDDED -> {
             val displayRotationDegrees =
                 key(LocalConfiguration.current) {
-                    surfaceRotationToRotationDegrees(LocalView.current.display.rotation)
+                    Transformations.surfaceRotationToRotationDegrees(
+                        LocalView.current.display.rotation
+                    )
                 }
 
             // For TextureView, correct the orientation to match the display rotation.
@@ -171,9 +206,10 @@ private fun TransformedSurface(
 
             transformationInfo.let {
                 correctionMatrix.setFrom(
-                    SurfaceTransformationUtil.getTextureViewCorrectionMatrix(
-                        displayRotationDegrees,
-                        resolution
+                    Transformations.getTextureViewCorrectionMatrix(
+                        displayRotationDegrees = displayRotationDegrees,
+                        width = surfaceWidth,
+                        height = surfaceHeight
                     )
                 )
             }
@@ -183,6 +219,92 @@ private fun TransformedSurface(
                 transform = correctionMatrix,
                 onInit = onInit
             )
+        }
+    }
+}
+
+private fun Alignment.toInternalAlignment(): androidx.camera.viewfinder.core.impl.Alignment =
+    object : androidx.camera.viewfinder.core.impl.Alignment {
+        override fun align(size: SizeF, space: SizeF, layoutDirection: Int): OffsetF {
+            val composeSize =
+                androidx.compose.ui.unit.IntSize(
+                    size.width.fastRoundToInt(),
+                    size.height.fastRoundToInt()
+                )
+            val composeSpace =
+                androidx.compose.ui.unit.IntSize(
+                    space.width.fastRoundToInt(),
+                    space.height.fastRoundToInt()
+                )
+            val composeLayoutDirection =
+                when (layoutDirection) {
+                    android.util.LayoutDirection.LTR -> androidx.compose.ui.unit.LayoutDirection.Ltr
+                    android.util.LayoutDirection.RTL -> androidx.compose.ui.unit.LayoutDirection.Rtl
+                    else ->
+                        throw IllegalArgumentException("Invalid layout direction: $layoutDirection")
+                }
+            val offset = align(composeSize, composeSpace, composeLayoutDirection)
+            return OffsetF(offset.x.toFloat(), offset.y.toFloat())
+        }
+    }
+
+private fun ContentScale.toInternalContentScale():
+    androidx.camera.viewfinder.core.impl.ContentScale =
+    object : androidx.camera.viewfinder.core.impl.ContentScale {
+        override fun computeScaleFactor(srcSize: SizeF, dstSize: SizeF): ScaleFactorF {
+            val composeSrcSize = androidx.compose.ui.geometry.Size(srcSize.width, srcSize.height)
+            val composeDstSize = androidx.compose.ui.geometry.Size(dstSize.width, dstSize.height)
+            val scale = computeScaleFactor(composeSrcSize, composeDstSize)
+            return ScaleFactorF(scale.scaleX, scale.scaleY)
+        }
+    }
+
+/**
+ * A scoped environment provided when a [Viewfinder] is first initialized.
+ *
+ * The environment can be used to register a lambda to invoke when a new
+ * [ViewfinderSurfaceSessionScope] is available.
+ */
+interface ViewfinderInitScope {
+    /**
+     * Registers a callback to be invoked when a new [ViewfinderSurfaceSessionScope] is created.
+     *
+     * The provided callback will be invoked each time a new `ViewfinderSurfaceSessionScope` is
+     * available. If a new [ViewfinderSurfaceSessionScope] is available, the previous one will be
+     * cancelled before [block] is invoked with the new one.
+     *
+     * The provided callback will always be invoked from the main thread.
+     */
+    fun onSurfaceSession(block: suspend ViewfinderSurfaceSessionScope.() -> Unit)
+}
+
+private class ViewfinderInitScopeImpl(val viewfinderSurfaceRequest: ViewfinderSurfaceRequest) :
+    ViewfinderInitScope {
+    private var onSurfaceSession: (suspend ViewfinderSurfaceSessionScope.() -> Unit)? = null
+
+    override fun onSurfaceSession(block: suspend ViewfinderSurfaceSessionScope.() -> Unit) {
+        this.onSurfaceSession = block
+    }
+
+    suspend fun dispatchOnSurfaceSession(refCountedSurface: RefCounted<Surface>) {
+        onSurfaceSession?.let { block ->
+            refCountedSurface.acquire()?.let { surface ->
+                ViewfinderSurfaceSessionImpl(surface, viewfinderSurfaceRequest) {
+                        refCountedSurface.release()
+                    }
+                    .use { surfaceSession ->
+                        coroutineScope {
+                            val receiver =
+                                object :
+                                    ViewfinderSurfaceSessionScope,
+                                    CoroutineScope by this@coroutineScope {
+                                    override val surface = surfaceSession.surface
+                                    override val request = surfaceSession.request
+                                }
+                            block.invoke(receiver)
+                        }
+                    }
+            }
         }
     }
 }

@@ -17,9 +17,21 @@
 pluginManagement {
     repositories {
         mavenCentral()
-        google()
+        google {
+            content {
+                includeGroupByRegex("androidx.*")
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+            }
+        }
         gradlePluginPortal().content {
             it.includeModule("org.jetbrains.kotlin.jvm", "org.jetbrains.kotlin.jvm.gradle.plugin")
+        }
+        maven {
+            url = "https://packages.jetbrains.team/maven/p/kt/dev"
+            content {
+                includeGroupByRegex("org\\.jetbrains\\.kotlin.*")
+            }
         }
     }
 }
@@ -27,7 +39,13 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
-        google()
+        google {
+            content {
+                includeGroupByRegex("androidx.*")
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+            }
+        }
         gradlePluginPortal().content {
             it.includeModule("com.gradle", "develocity-gradle-plugin")
             it.includeModule("com.gradle", "common-custom-user-data-gradle-plugin")
@@ -35,6 +53,12 @@ dependencyResolutionManagement {
             it.includeModule("com.gradleup.shadow",
                     "com.gradleup.shadow.gradle.plugin")
             it.includeModule("com.gradleup.shadow", "shadow-gradle-plugin")
+        }
+        maven {
+            url = "https://packages.jetbrains.team/maven/p/kt/dev"
+            content {
+                includeGroupByRegex("org\\.jetbrains\\.kotlin.*")
+            }
         }
     }
 }

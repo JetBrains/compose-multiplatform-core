@@ -82,12 +82,7 @@ class BaselineProfileProjectSetupRule(
 
     /** The managed device container name to use in the build.gradle file. */
     val managedDeviceContainerName: String
-        get() =
-            if (forcedTestAgpVersion.isAtLeast(TestAgpVersion.TEST_AGP_VERSION_8_1_0)) {
-                "allDevices"
-            } else {
-                "devices"
-            }
+        get() = "allDevices"
 
     // Temp folder for temp generated files that need to be referenced by a module.
     private val tempFolder by lazy { File(rootFolder.root, "temp").apply { mkdirs() } }

@@ -71,9 +71,7 @@ class TransformingLazyColumnLayoutInfoTest {
 
         rule.runOnIdle {
             assertThat(state.layoutInfo.viewportSize.height).isEqualTo(itemSizePx * 5)
-            // Start offset compensates for the layout where the first item is exactly above the
-            // center line.
-            state.layoutInfo.assertVisibleItems(count = 3, startOffset = itemSizePx * 2)
+            state.layoutInfo.assertVisibleItems(count = 5)
         }
     }
 
@@ -98,9 +96,8 @@ class TransformingLazyColumnLayoutInfoTest {
             // Start offset compensates for the layout where the first item is exactly above the
             // center line.
             state.layoutInfo.assertVisibleItems(
-                count = 2,
+                count = 3,
                 spacing = itemSizePx,
-                startOffset = itemSizePx * 2,
             )
         }
     }
@@ -164,7 +161,6 @@ class TransformingLazyColumnLayoutInfoTest {
             currentInfo!!.assertVisibleItems(
                 count = 1,
                 expectedSize = itemSizePx * 2,
-                startOffset = itemSizePx,
             )
             currentInfo = null
             size = itemSizeDp
@@ -175,7 +171,6 @@ class TransformingLazyColumnLayoutInfoTest {
             currentInfo!!.assertVisibleItems(
                 count = 1,
                 expectedSize = itemSizePx,
-                startOffset = itemSizePx * 3 / 2,
             )
         }
     }

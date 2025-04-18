@@ -179,7 +179,7 @@ public class FragmentContainerView : FrameLayout {
         )
     }
 
-    public override fun setOnApplyWindowInsetsListener(listener: OnApplyWindowInsetsListener) {
+    public override fun setOnApplyWindowInsetsListener(listener: OnApplyWindowInsetsListener?) {
         applyWindowInsetsListener = listener
     }
 

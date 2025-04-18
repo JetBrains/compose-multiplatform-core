@@ -30,10 +30,10 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
 import android.util.Range;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -97,10 +97,9 @@ public class TargetAspectRatioTest {
         return data;
     }
 
-    @NonNull
-    private final Config mConfig;
+    private final @NonNull Config mConfig;
 
-    public TargetAspectRatioTest(@NonNull final Config config) {
+    public TargetAspectRatioTest(final @NonNull Config config) {
         mConfig = config;
     }
 
@@ -118,8 +117,8 @@ public class TargetAspectRatioTest {
         assertThat(aspectRatio).isEqualTo(getExpectedAspectRatio());
     }
 
-    @NonNull
-    private CameraCharacteristicsCompat getCharacteristicsCompat(int supportedHardwareLevel) {
+    private @NonNull CameraCharacteristicsCompat getCharacteristicsCompat(
+            int supportedHardwareLevel) {
         CameraCharacteristics characteristics =
                 ShadowCameraCharacteristics.newCameraCharacteristics();
 
@@ -139,10 +138,8 @@ public class TargetAspectRatioTest {
     }
 
     static class Config {
-        @Nullable
-        final String mBrand;
-        @Nullable
-        final String mModel;
+        final @Nullable String mBrand;
+        final @Nullable String mModel;
         @TargetAspectRatio.Ratio
         final int mExpectedAspectRatio;
         final int mHardwareLevel;

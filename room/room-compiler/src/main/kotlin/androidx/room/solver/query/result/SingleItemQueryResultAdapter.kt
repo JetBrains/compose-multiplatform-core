@@ -26,13 +26,12 @@ class SingleItemQueryResultAdapter(private val rowAdapter: RowAdapter) :
     QueryResultAdapter(listOf(rowAdapter)) {
     val type = rowAdapter.out
 
-    override fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope) {
+    override fun convert(outVarName: String, stmtVarName: String, scope: CodeGenScope) {
         scope.builder.apply {
-            rowAdapter.onCursorReady(cursorVarName = cursorVarName, scope = scope)
+            rowAdapter.onStatementReady(stmtVarName = stmtVarName, scope = scope)
             addLocalVariable(outVarName, type.asTypeName())
-            val stepName = if (scope.useDriverApi) "step" else "moveToFirst"
-            beginControlFlow("if (%L.$stepName())", cursorVarName).apply {
-                rowAdapter.convert(outVarName, cursorVarName, scope)
+            beginControlFlow("if (%L.step())", stmtVarName).apply {
+                rowAdapter.convert(outVarName, stmtVarName, scope)
             }
             nextControlFlow("else").applyTo { language ->
                 val defaultValue = rowAdapter.out.defaultValue()
@@ -54,6 +53,4 @@ class SingleItemQueryResultAdapter(private val rowAdapter: RowAdapter) :
             endControlFlow()
         }
     }
-
-    override fun isMigratedToDriver(): Boolean = rowAdapter.isMigratedToDriver()
 }

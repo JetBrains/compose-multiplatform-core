@@ -31,8 +31,6 @@ import android.view.Surface;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraEffect;
 import androidx.camera.core.Logger;
@@ -44,6 +42,9 @@ import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.util.Consumer;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -58,50 +59,38 @@ final class SurfaceOutputImpl implements SurfaceOutput {
 
     private final Object mLock = new Object();
 
-    @NonNull
-    private final Surface mSurface;
+    private final @NonNull Surface mSurface;
     @CameraEffect.Targets
     private final int mTargets;
     @CameraEffect.Formats
     private final int mFormat;
-    @NonNull
-    private final Size mSize;
+    private final @NonNull Size mSize;
 
-    @NonNull
-    private final SurfaceOutput.CameraInputInfo mCameraInputInfo;
-    @Nullable
-    private final SurfaceOutput.CameraInputInfo mSecondaryCameraInputInfo;
+    private final SurfaceOutput.@NonNull CameraInputInfo mCameraInputInfo;
+    private final SurfaceOutput.@Nullable CameraInputInfo mSecondaryCameraInputInfo;
 
     // The additional transform to be applied on top of SurfaceTexture#getTransformMatrix()
-    @NonNull
-    private final float[] mAdditionalTransform = new float[16];
+    private final float @NonNull [] mAdditionalTransform = new float[16];
     // The additional transform for secondary camera
-    @NonNull
-    private final float[] mSecondaryAdditionalTransform = new float[16];
+    private final float @NonNull [] mSecondaryAdditionalTransform = new float[16];
 
     // The inverted value of SurfaceTexture#getTransformMatrix()
-    @NonNull
-    private final float[] mInvertedTextureTransform = new float[16];
+    private final float @NonNull [] mInvertedTextureTransform = new float[16];
     // The inverted texture transform for secondary camera
-    @NonNull
-    private final float[] mSecondaryInvertedTextureTransform = new float[16];
+    private final float @NonNull [] mSecondaryInvertedTextureTransform = new float[16];
 
     @GuardedBy("mLock")
-    @Nullable
-    private Consumer<Event> mEventListener;
+    private @Nullable Consumer<Event> mEventListener;
     @GuardedBy("mLock")
-    @Nullable
-    private Executor mExecutor;
+    private @Nullable Executor mExecutor;
     @GuardedBy("mLock")
     private boolean mHasPendingCloseRequest = false;
     @GuardedBy("mLock")
     private boolean mIsClosed = false;
 
-    @NonNull
-    private final ListenableFuture<Void> mCloseFuture;
+    private final @NonNull ListenableFuture<Void> mCloseFuture;
     private CallbackToFutureAdapter.Completer<Void> mCloseFutureCompleter;
-    @NonNull
-    private android.graphics.Matrix mSensorToBufferTransform;
+    private android.graphics.@NonNull Matrix mSensorToBufferTransform;
 
     SurfaceOutputImpl(
             @NonNull Surface surface,
@@ -110,7 +99,7 @@ final class SurfaceOutputImpl implements SurfaceOutput {
             @NonNull Size size,
             @NonNull CameraInputInfo primaryCameraInputInfo,
             @Nullable CameraInputInfo secondaryCameraInputInfo,
-            @NonNull android.graphics.Matrix sensorToBufferTransform) {
+            android.graphics.@NonNull Matrix sensorToBufferTransform) {
         mSurface = surface;
         mTargets = targets;
         mFormat = format;
@@ -135,8 +124,7 @@ final class SurfaceOutputImpl implements SurfaceOutput {
      * @inheritDoc
      */
     @Override
-    @NonNull
-    public Surface getSurface(@NonNull Executor executor,
+    public @NonNull Surface getSurface(@NonNull Executor executor,
             @NonNull Consumer<Event> listener) {
         boolean hasPendingCloseRequest;
         synchronized (mLock) {
@@ -198,8 +186,7 @@ final class SurfaceOutputImpl implements SurfaceOutput {
      * @inheritDoc
      */
     @Override
-    @NonNull
-    public Size getSize() {
+    public @NonNull Size getSize() {
         return mSize;
     }
 
@@ -224,8 +211,7 @@ final class SurfaceOutputImpl implements SurfaceOutput {
     }
 
     @VisibleForTesting
-    @Nullable
-    public CameraInternal getCamera() {
+    public @Nullable CameraInternal getCamera() {
         return mCameraInputInfo.getCameraInternal();
     }
 
@@ -258,8 +244,7 @@ final class SurfaceOutputImpl implements SurfaceOutput {
     /**
      * Gets a future that completes when the {@link SurfaceOutput} is closed.
      */
-    @NonNull
-    public ListenableFuture<Void> getCloseFuture() {
+    public @NonNull ListenableFuture<Void> getCloseFuture() {
         return mCloseFuture;
     }
 
@@ -268,7 +253,7 @@ final class SurfaceOutputImpl implements SurfaceOutput {
      */
     @AnyThread
     @Override
-    public void updateTransformMatrix(@NonNull float[] output, @NonNull float[] input) {
+    public void updateTransformMatrix(float @NonNull [] output, float @NonNull [] input) {
         updateTransformMatrix(output, input, true);
     }
 
@@ -278,7 +263,7 @@ final class SurfaceOutputImpl implements SurfaceOutput {
      */
     @AnyThread
     @Override
-    public void updateTransformMatrix(@NonNull float[] output, @NonNull float[] input,
+    public void updateTransformMatrix(float @NonNull [] output, float @NonNull [] input,
             boolean isPrimary) {
         Matrix.multiplyMM(output, 0, input, 0,
                 isPrimary ? mAdditionalTransform : mSecondaryAdditionalTransform, 0);
@@ -287,9 +272,8 @@ final class SurfaceOutputImpl implements SurfaceOutput {
     /**
      * @inheritDoc
      */
-    @NonNull
     @Override
-    public android.graphics.Matrix getSensorToBufferTransform() {
+    public android.graphics.@NonNull Matrix getSensorToBufferTransform() {
         return new android.graphics.Matrix(mSensorToBufferTransform);
     }
 
@@ -312,8 +296,8 @@ final class SurfaceOutputImpl implements SurfaceOutput {
      * </ol>
      */
     private static void calculateAdditionalTransform(
-            @NonNull float[] additionalTransform,
-            @NonNull float[] invertedTransform,
+            float @NonNull [] additionalTransform,
+            float @NonNull [] invertedTransform,
             @Nullable CameraInputInfo cameraInputInfo) {
         Matrix.setIdentityM(additionalTransform, 0);
 
@@ -377,7 +361,7 @@ final class SurfaceOutputImpl implements SurfaceOutput {
      * from overall transformation.
      */
     private static void calculateInvertedTextureTransform(
-            @NonNull float[] invertedTextureTransform,
+            float @NonNull [] invertedTextureTransform,
             @Nullable CameraInternal cameraInternal) {
         Matrix.setIdentityM(invertedTextureTransform, 0);
 

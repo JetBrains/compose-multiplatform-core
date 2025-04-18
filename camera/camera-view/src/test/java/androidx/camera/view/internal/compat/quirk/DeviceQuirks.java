@@ -17,10 +17,11 @@
 package androidx.camera.view.internal.compat.quirk;
 
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.Quirk;
 import androidx.camera.core.impl.QuirkSettingsHolder;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -48,8 +49,7 @@ public class DeviceQuirks {
      * found.
      */
     @SuppressWarnings("unchecked")
-    @Nullable
-    public static <T extends Quirk> T get(@NonNull final Class<T> quirkClass) {
+    public static <T extends Quirk> @Nullable T get(final @NonNull Class<T> quirkClass) {
         final List<Quirk> quirks = DeviceQuirksLoader.loadQuirks(QuirkSettingsHolder.DEFAULT);
         quirks.addAll(QuirkInjector.INJECTED_QUIRKS);
         for (final Quirk quirk : quirks) {

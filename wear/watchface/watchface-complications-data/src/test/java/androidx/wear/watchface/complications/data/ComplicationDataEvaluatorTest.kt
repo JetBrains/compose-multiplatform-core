@@ -299,6 +299,7 @@ class ComplicationDataEvaluatorTest {
         for (scenario in DataWithExpressionScenario.values()) {
             // Defensive copy due to in-place evaluation.
             val expressed = WireComplicationData.Builder(scenario.expressed).build()
+            @Suppress("MISSING_DEPENDENCY_CLASS_IN_EXPRESSION_TYPE")
             val stateStore = StateStore(mapOf())
             val evaluator = ComplicationDataEvaluator(stateStore)
             val allEvaluations =

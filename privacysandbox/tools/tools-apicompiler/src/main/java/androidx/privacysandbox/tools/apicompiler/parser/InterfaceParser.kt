@@ -20,7 +20,7 @@ import androidx.privacysandbox.tools.core.model.AnnotatedInterface
 import androidx.privacysandbox.tools.core.model.Method
 import androidx.privacysandbox.tools.core.model.Parameter
 import androidx.privacysandbox.tools.core.model.Types.any
-import androidx.privacysandbox.tools.core.model.Types.sandboxedUiAdapter
+import androidx.privacysandbox.tools.core.model.Types.uiAdapters
 import com.google.devtools.ksp.getDeclaredFunctions
 import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.isPublic
@@ -38,7 +38,7 @@ internal class InterfaceParser(
 ) {
     private val validInterfaceModifiers = setOf(Modifier.PUBLIC)
     private val validMethodModifiers = setOf(Modifier.PUBLIC, Modifier.SUSPEND)
-    private val validInterfaceSuperTypes = setOf(sandboxedUiAdapter)
+    private val validInterfaceSuperTypes = uiAdapters.toSet()
 
     fun parseInterface(interfaceDeclaration: KSClassDeclaration): AnnotatedInterface {
         check(interfaceDeclaration.classKind == ClassKind.INTERFACE) {
@@ -103,6 +103,13 @@ internal class InterfaceParser(
                 "Error in $name: annotated interface inherits prohibited types (${
                     superTypes.map { it.simpleName }.sorted().joinToString(limit = 3)
                 })."
+            )
+        }
+
+        val inheritedUiAdapters = superTypes.intersect(uiAdapters)
+        if (inheritedUiAdapters.size > 1) {
+            logger.error(
+                "Error in $name: annotated interface inherits more than one UI adapter interface (${inheritedUiAdapters.map { it.simpleName }.sorted().joinToString(limit = 3)})."
             )
         }
 

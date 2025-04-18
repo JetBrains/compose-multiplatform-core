@@ -16,8 +16,6 @@
 
 package androidx.compose.testutils
 
-import java.io.PrintWriter
-import java.io.StringWriter
 import kotlin.text.RegexOption.DOT_MATCHES_ALL
 
 /**
@@ -75,12 +73,9 @@ internal fun throwExpectError(
     expectedMessage: String? = null
 ) {
     val stackTrace =
-        thrown?.let {
-            StringWriter().use { sw ->
-                PrintWriter(sw).use { pw -> it.printStackTrace(pw) }
-                ":\n==============================\n$sw=============================="
-            }
-        } ?: ""
+        if (thrown != null) {
+            ":\n==============================\n${thrown.stackTraceToString()}=============================="
+        } else ""
 
     fun String.plusMessage(message: String?): String {
         return if (expectedMessage == null) this else "$this with message\n\"\"\"$message\"\"\"\n"

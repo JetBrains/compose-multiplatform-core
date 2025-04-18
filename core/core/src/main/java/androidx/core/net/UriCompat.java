@@ -18,7 +18,7 @@ package androidx.core.net;
 
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing function in {@link Uri} in a backwards compatible fashion.

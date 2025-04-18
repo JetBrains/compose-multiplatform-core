@@ -17,7 +17,6 @@
 package androidx.wear.compose.materialcore
 
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
@@ -57,6 +56,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.test.filters.SdkSuppress
 import org.junit.Rule
 import org.junit.Test
 
@@ -285,7 +285,7 @@ class SelectionControlsTest {
         rule.onNodeWithTag(TEST_TAG).assertIsOn().performClick().assertIsOff()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun checkbox_enabled_checked_colors_are_customisable() {
         setupCheckBoxWithCustomColors(enabled = true, checked = true)
@@ -295,7 +295,7 @@ class SelectionControlsTest {
         checkboxImage.assertContainsColor(checkmarkColorChecked)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun checkbox_enabled_unchecked_colors_are_customisable() {
         setupCheckBoxWithCustomColors(enabled = true, checked = false)
@@ -305,7 +305,7 @@ class SelectionControlsTest {
         checkboxImage.assertDoesNotContainColor(checkmarkColorChecked)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun checkbox_disabled_checked_colors_are_customisable() {
         setupCheckBoxWithCustomColors(enabled = false, checked = true)
@@ -317,7 +317,7 @@ class SelectionControlsTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun checkbox_disabled_unchecked_colors_are_customisable() {
         setupCheckBoxWithCustomColors(enabled = false, checked = false)
@@ -510,7 +510,7 @@ class SelectionControlsTest {
             .assertWidthIsEqualTo(width)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun switch_enabled_checked_colors_are_customisable() {
         setupSwitchWithCustomColors(enabled = true, checked = true)
@@ -523,7 +523,7 @@ class SelectionControlsTest {
         image.assertContainsColor(thumbIconColorChecked)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun switch_enabled_unchecked_colors_are_customisable() {
         setupSwitchWithCustomColors(enabled = true, checked = false)
@@ -536,7 +536,7 @@ class SelectionControlsTest {
         image.assertContainsColor(thumbIconColorUnchecked)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun switch_disabled_checked_colors_are_customisable() {
         setupSwitchWithCustomColors(enabled = false, checked = true)
@@ -549,7 +549,7 @@ class SelectionControlsTest {
         image.assertContainsColor(thumbIconColorDisabledChecked)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun switch_disabled_unchecked_colors_are_customisable() {
         setupSwitchWithCustomColors(enabled = false, checked = false)
@@ -748,7 +748,7 @@ class SelectionControlsTest {
         rule.onNodeWithTag(TEST_TAG).assertIsSelected().performClick().assertIsNotSelected()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun radiobutton_enabled_checked_colors_are_customisable() {
         setupRadioButtonWithCustomColors(enabled = true, selected = true)
@@ -758,7 +758,7 @@ class SelectionControlsTest {
         radioImage.assertContainsColor(radioDotChecked)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun radiobutton_enabled_unchecked_colors_are_customisable() {
         setupRadioButtonWithCustomColors(enabled = true, selected = false)
@@ -768,7 +768,7 @@ class SelectionControlsTest {
         radioImage.assertDoesNotContainColor(radioDotUnchecked)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun radiobutton_disabled_checked_colors_are_customisable() {
         setupRadioButtonWithCustomColors(enabled = false, selected = true)
@@ -778,7 +778,7 @@ class SelectionControlsTest {
         radioImage.assertContainsColor(radioDotDisabledChecked)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun radiobutton_disabled_unchecked_colors_are_customisable() {
         setupRadioButtonWithCustomColors(enabled = false, selected = false)

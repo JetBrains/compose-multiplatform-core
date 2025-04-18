@@ -182,7 +182,8 @@ class DatePickerScreenshotTest {
                     datePickerType = DatePickerType.DayMonthYear,
                     initialDate =
                         LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15),
-                    maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15),
+                    maxValidDate =
+                        LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15),
                 )
             }
         )
@@ -200,7 +201,8 @@ class DatePickerScreenshotTest {
                     datePickerType = DatePickerType.DayMonthYear,
                     initialDate =
                         LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15),
-                    minDate = LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15),
+                    minValidDate =
+                        LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15),
                 )
             }
         )
@@ -217,8 +219,10 @@ class DatePickerScreenshotTest {
                     datePickerType = DatePickerType.YearMonthDay,
                     initialDate =
                         LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 15),
-                    minDate = LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15),
-                    maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 15),
+                    minValidDate =
+                        LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15),
+                    maxValidDate =
+                        LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 15),
                 )
             }
         )
@@ -235,8 +239,10 @@ class DatePickerScreenshotTest {
                     datePickerType = DatePickerType.MonthDayYear,
                     initialDate =
                         LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 15),
-                    minDate = LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 1),
-                    maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 15),
+                    minValidDate =
+                        LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 1),
+                    maxValidDate =
+                        LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 15),
                 )
             }
         )
@@ -254,8 +260,10 @@ class DatePickerScreenshotTest {
                     datePickerType = DatePickerType.DayMonthYear,
                     initialDate =
                         LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 15),
-                    minDate = LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 15),
-                    maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 15),
+                    minValidDate =
+                        LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 15),
+                    maxValidDate =
+                        LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 15),
                 )
             }
         )

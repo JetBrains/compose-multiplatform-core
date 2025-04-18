@@ -82,7 +82,7 @@ import kotlinx.coroutines.launch
  */
 @Stable
 @ExperimentalWearMaterialApi
-open class SwipeableState<T>(
+public open class SwipeableState<T>(
     internal val initialValue: T,
     internal val animationSpec: AnimationSpec<Float> = SwipeableDefaults.AnimationSpec,
     internal val confirmStateChange: (newValue: T) -> Boolean = { true },
@@ -95,12 +95,12 @@ open class SwipeableState<T>(
      * the last anchor at which the [swipeable] was settled before the swipe or animation started.
      */
     @ExperimentalWearMaterialApi
-    var currentValue: T by mutableStateOf(initialValue)
+    public var currentValue: T by mutableStateOf(initialValue)
         private set
 
     /** Whether the state is currently animating. */
     @ExperimentalWearMaterialApi
-    var isAnimationRunning: Boolean by mutableStateOf(false)
+    public var isAnimationRunning: Boolean by mutableStateOf(false)
         private set
 
     /**
@@ -110,12 +110,12 @@ open class SwipeableState<T>(
      * `Modifier.offsetPx`. This includes the resistance by default, if resistance is enabled.
      */
     @ExperimentalWearMaterialApi
-    val offset: State<Float>
+    public val offset: State<Float>
         get() = offsetState
 
     /** The amount by which the [swipeable] has been swiped past its bounds. */
     @ExperimentalWearMaterialApi
-    val overflow: State<Float>
+    public val overflow: State<Float>
         get() = overflowState
 
     private val offsetState = mutableFloatStateOf(0f)
@@ -239,7 +239,7 @@ open class SwipeableState<T>(
      * Finally, if no swipe or animation is in progress, this is the same as the [currentValue].
      */
     @ExperimentalWearMaterialApi
-    val targetValue: T
+    public val targetValue: T
         get() {
             // TODO(calintat): Track current velocity (b/149549482) and use that here.
             val target =
@@ -261,7 +261,7 @@ open class SwipeableState<T>(
      * If no swipe or animation is in progress, this returns `SwipeProgress(value, value, 1f)`.
      */
     @ExperimentalWearMaterialApi
-    val progress: SwipeProgress<T>
+    public val progress: SwipeProgress<T>
         get() {
             val bounds = findBounds(offset.value, anchors.keys)
             val from: T
@@ -300,7 +300,7 @@ open class SwipeableState<T>(
      * moving from right to left or bottom to top, or 0f if no swipe or animation is in progress.
      */
     @ExperimentalWearMaterialApi
-    val direction: Float
+    public val direction: Float
         get() = anchors.getOffset(currentValue)?.let { sign(offset.value - it) } ?: 0f
 
     /**
@@ -309,7 +309,7 @@ open class SwipeableState<T>(
      * @param targetValue The new target value to set [currentValue] to.
      */
     @ExperimentalWearMaterialApi
-    suspend fun snapTo(targetValue: T) {
+    public suspend fun snapTo(targetValue: T) {
         latestNonEmptyAnchorsFlow.collect { anchors ->
             val targetOffset = anchors.getOffset(targetValue)
             requireNotNull(targetOffset) { "The target value must have an associated anchor." }
@@ -325,7 +325,7 @@ open class SwipeableState<T>(
      * @param anim The animation that will be used to animate to the new value.
      */
     @ExperimentalWearMaterialApi
-    suspend fun animateTo(targetValue: T, anim: AnimationSpec<Float> = animationSpec) {
+    public suspend fun animateTo(targetValue: T, anim: AnimationSpec<Float> = animationSpec) {
         latestNonEmptyAnchorsFlow.collect { anchors ->
             try {
                 val targetOffset = anchors.getOffset(targetValue)
@@ -358,7 +358,7 @@ open class SwipeableState<T>(
      * @return the reason fling ended
      */
     @ExperimentalWearMaterialApi
-    suspend fun performFling(velocity: Float) {
+    public suspend fun performFling(velocity: Float) {
         latestNonEmptyAnchorsFlow.collect { anchors ->
             val lastAnchor = anchors.getOffset(currentValue)!!
             val targetValue =
@@ -402,12 +402,12 @@ open class SwipeableState<T>(
         return deltaToConsume
     }
 
-    companion object {
+    public companion object {
         /** The default [Saver] implementation for [SwipeableState]. */
-        fun <T : Any> Saver(
+        public fun <T : Any> Saver(
             animationSpec: AnimationSpec<Float>,
             confirmStateChange: (T) -> Boolean,
-        ) =
+        ): Saver<SwipeableState<T>, T> =
             Saver<SwipeableState<T>, T>(
                 save = { it.currentValue },
                 restore = { SwipeableState(it, animationSpec, confirmStateChange) }
@@ -427,10 +427,10 @@ open class SwipeableState<T>(
  */
 @Immutable
 @ExperimentalWearMaterialApi
-class SwipeProgress<T>(
-    val from: T,
-    val to: T,
-    @FloatRange(from = 0.0, to = 1.0) val fraction: Float
+public class SwipeProgress<T>(
+    public val from: T,
+    public val to: T,
+    @FloatRange(from = 0.0, to = 1.0) public val fraction: Float
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -464,7 +464,7 @@ class SwipeProgress<T>(
  */
 @Composable
 @ExperimentalWearMaterialApi
-fun <T : Any> rememberSwipeableState(
+public fun <T : Any> rememberSwipeableState(
     initialValue: T,
     animationSpec: AnimationSpec<Float> = SwipeableDefaults.AnimationSpec,
     confirmStateChange: (newValue: T) -> Boolean = { true },
@@ -522,7 +522,7 @@ fun <T : Any> rememberSwipeableState(
  *   order to animate to the next state, even if the positional [thresholds] have not been reached.
  */
 @ExperimentalWearMaterialApi
-fun <T> Modifier.swipeable(
+public fun <T> Modifier.swipeable(
     state: SwipeableState<T>,
     anchors: Map<Float, T>,
     orientation: Orientation,
@@ -532,7 +532,7 @@ fun <T> Modifier.swipeable(
     thresholds: (from: T, to: T) -> ThresholdConfig = { _, _ -> FractionalThreshold(0.5f) },
     resistance: ResistanceConfig? = resistanceConfig(anchors.keys),
     velocityThreshold: Dp = VelocityThreshold
-) =
+): Modifier =
     composed(
         inspectorInfo =
             debugInspectorInfo {
@@ -630,9 +630,9 @@ fun <T> Modifier.swipeable(
  */
 @Stable
 @ExperimentalWearMaterialApi
-interface ThresholdConfig {
+public interface ThresholdConfig {
     /** Compute the value of the threshold (in pixels), once the values of the anchors are known. */
-    fun Density.computeThreshold(fromValue: Float, toValue: Float): Float
+    public fun Density.computeThreshold(fromValue: Float, toValue: Float): Float
 }
 
 /**
@@ -642,7 +642,8 @@ interface ThresholdConfig {
  */
 @Immutable
 @ExperimentalWearMaterialApi
-data class FixedThreshold(private val offset: Dp) : ThresholdConfig {
+@Suppress("DataClassDefinition")
+public data class FixedThreshold(private val offset: Dp) : ThresholdConfig {
     override fun Density.computeThreshold(fromValue: Float, toValue: Float): Float {
         return fromValue + offset.toPx() * sign(toValue - fromValue)
     }
@@ -655,8 +656,10 @@ data class FixedThreshold(private val offset: Dp) : ThresholdConfig {
  */
 @Immutable
 @ExperimentalWearMaterialApi
-data class FractionalThreshold(@FloatRange(from = 0.0, to = 1.0) private val fraction: Float) :
-    ThresholdConfig {
+@Suppress("DataClassDefinition")
+public data class FractionalThreshold(
+    @FloatRange(from = 0.0, to = 1.0) private val fraction: Float
+) : ThresholdConfig {
     override fun Density.computeThreshold(fromValue: Float, toValue: Float): Float {
         return lerp(fromValue, toValue, fraction)
     }
@@ -686,12 +689,12 @@ data class FractionalThreshold(@FloatRange(from = 0.0, to = 1.0) private val fra
  */
 @Immutable
 @ExperimentalWearMaterialApi
-class ResistanceConfig(
-    @FloatRange(from = 0.0, fromInclusive = false) val basis: Float,
-    @FloatRange(from = 0.0) val factorAtMin: Float = StandardResistanceFactor,
-    @FloatRange(from = 0.0) val factorAtMax: Float = StandardResistanceFactor
+public class ResistanceConfig(
+    @FloatRange(from = 0.0, fromInclusive = false) public val basis: Float,
+    @FloatRange(from = 0.0) public val factorAtMin: Float = StandardResistanceFactor,
+    @FloatRange(from = 0.0) public val factorAtMax: Float = StandardResistanceFactor
 ) {
-    fun computeResistance(overflow: Float): Float {
+    public fun computeResistance(overflow: Float): Float {
         val factor = if (overflow < 0) factorAtMin else factorAtMax
         if (factor == 0f) return 0f
         val progress = (overflow / basis).coerceIn(-1f, 1f)
@@ -792,18 +795,18 @@ private fun <T> Map<Float, T>.getOffset(state: T): Float? {
 
 /** Contains useful defaults for [swipeable] and [SwipeableState]. */
 @ExperimentalWearMaterialApi
-object SwipeableDefaults {
+public object SwipeableDefaults {
     /** The default animation used by [SwipeableState]. */
-    val AnimationSpec = SpringSpec<Float>()
+    public val AnimationSpec: SpringSpec<Float> = SpringSpec<Float>()
 
     /** The default velocity threshold (1.8 dp per millisecond) used by [swipeable]. */
-    val VelocityThreshold = 125.dp
+    public val VelocityThreshold: Dp = 125.dp
 
     /** A stiff resistance factor which indicates that swiping isn't available right now. */
-    const val StiffResistanceFactor = 20f
+    public const val StiffResistanceFactor: Float = 20f
 
     /** A standard resistance factor which indicates that the user has run out of things to see. */
-    const val StandardResistanceFactor = 10f
+    public const val StandardResistanceFactor: Float = 10f
 
     /**
      * The default resistance config used by [swipeable].
@@ -811,7 +814,7 @@ object SwipeableDefaults {
      * This returns `null` if there is one anchor. If there are at least two anchors, it returns a
      * [ResistanceConfig] with the resistance basis equal to the distance between the two bounds.
      */
-    fun resistanceConfig(
+    public fun resistanceConfig(
         anchors: Set<Float>,
         factorAtMin: Float = StandardResistanceFactor,
         factorAtMax: Float = StandardResistanceFactor

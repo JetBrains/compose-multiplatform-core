@@ -16,7 +16,6 @@
 
 package androidx.ink.rendering.android.canvas
 
-import android.os.Build
 import androidx.annotation.ColorInt
 import androidx.core.graphics.ColorUtils
 import androidx.ink.brush.Brush
@@ -44,7 +43,6 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.assertAgainstGolden
 import org.junit.Rule
@@ -175,10 +173,6 @@ class CanvasStrokeRendererTest {
     }
 
     @Test
-    // TODO: b/377927109 - Particles don't yet render correctly with path-based rendering; until
-    // they
-    // do don't bother running this test on versions that only support path-based rendering.
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun drawsParticleStrokes() {
         activityScenarioRule.scenario.onActivity { activity ->
             activity.addStrokeRows(
@@ -242,7 +236,7 @@ class CanvasStrokeRendererTest {
                         "STROKE_SPACE_ORIGIN",
                         finishedInProgressStroke(
                             texturedBrush(
-                                textureUri = CanvasStrokeRendererTestActivity.TEXTURE_URI_CIRCLE,
+                                textureId = CanvasStrokeRendererTestActivity.TEXTURE_ID_CIRCLE,
                                 textureSize = 1f,
                                 textureSizeUnit = TextureSizeUnit.BRUSH_SIZE,
                                 textureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
@@ -257,7 +251,7 @@ class CanvasStrokeRendererTest {
                         "FIRST_STROKE_INPUT",
                         finishedInProgressStroke(
                             texturedBrush(
-                                textureUri = CanvasStrokeRendererTestActivity.TEXTURE_URI_CIRCLE,
+                                textureId = CanvasStrokeRendererTestActivity.TEXTURE_ID_CIRCLE,
                                 textureSize = 1f,
                                 textureSizeUnit = TextureSizeUnit.BRUSH_SIZE,
                                 textureOrigin = TextureOrigin.FIRST_STROKE_INPUT,
@@ -272,7 +266,7 @@ class CanvasStrokeRendererTest {
                         "LAST_STROKE_INPUT",
                         finishedInProgressStroke(
                             texturedBrush(
-                                textureUri = CanvasStrokeRendererTestActivity.TEXTURE_URI_CIRCLE,
+                                textureId = CanvasStrokeRendererTestActivity.TEXTURE_ID_CIRCLE,
                                 textureSize = 1f,
                                 textureSizeUnit = TextureSizeUnit.BRUSH_SIZE,
                                 textureOrigin = TextureOrigin.LAST_STROKE_INPUT,
@@ -713,7 +707,7 @@ class CanvasStrokeRendererTest {
 
         fun texturedBrush(
             particleGapDistanceScale: Float = 0f,
-            textureUri: String = CanvasStrokeRendererTestActivity.TEXTURE_URI_CHECKERBOARD,
+            textureId: String = CanvasStrokeRendererTestActivity.TEXTURE_ID_CHECKERBOARD,
             textureSizeUnit: TextureSizeUnit,
             textureSize: Float,
             textureOrigin: TextureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
@@ -729,7 +723,7 @@ class CanvasStrokeRendererTest {
             val tip = BrushTip(particleGapDistanceScale = particleGapDistanceScale)
             val paint =
                 texturedBrushPaint(
-                    textureUri = textureUri,
+                    textureId = textureId,
                     textureWrapX = textureWrapX,
                     textureWrapY = textureWrapY,
                     textureSizeUnit = textureSizeUnit,
@@ -747,7 +741,7 @@ class CanvasStrokeRendererTest {
         }
 
         fun texturedBrushPaint(
-            textureUri: String = CanvasStrokeRendererTestActivity.TEXTURE_URI_CHECKERBOARD,
+            textureId: String = CanvasStrokeRendererTestActivity.TEXTURE_ID_CHECKERBOARD,
             textureSizeUnit: TextureSizeUnit,
             textureSize: Float,
             textureOrigin: TextureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
@@ -759,7 +753,7 @@ class CanvasStrokeRendererTest {
         ): BrushPaint {
             val textureLayer =
                 BrushPaint.TextureLayer(
-                    colorTextureUri = textureUri,
+                    clientTextureId = textureId,
                     sizeX = textureSize,
                     sizeY = textureSize,
                     offsetX = textureOffsetX,
@@ -796,7 +790,7 @@ class CanvasStrokeRendererTest {
         fun colorBlendedStroke(blendMode: BlendMode, @ColorInt color: Int): InProgressStroke {
             val textureLayer =
                 BrushPaint.TextureLayer(
-                    CanvasStrokeRendererTestActivity.TEXTURE_URI_POOP_EMOJI,
+                    CanvasStrokeRendererTestActivity.TEXTURE_ID_POOP_EMOJI,
                     sizeX = 1f,
                     sizeY = 1f,
                     sizeUnit = TextureSizeUnit.BRUSH_SIZE,
@@ -810,7 +804,7 @@ class CanvasStrokeRendererTest {
         fun textureBlendedStroke(blendMode: BlendMode): InProgressStroke {
             val textureLayer1 =
                 BrushPaint.TextureLayer(
-                    CanvasStrokeRendererTestActivity.TEXTURE_URI_AIRPLANE_EMOJI,
+                    CanvasStrokeRendererTestActivity.TEXTURE_ID_AIRPLANE_EMOJI,
                     sizeX = 1f,
                     sizeY = 1f,
                     sizeUnit = TextureSizeUnit.BRUSH_SIZE,
@@ -818,7 +812,7 @@ class CanvasStrokeRendererTest {
                 )
             val textureLayer2 =
                 BrushPaint.TextureLayer(
-                    CanvasStrokeRendererTestActivity.TEXTURE_URI_POOP_EMOJI,
+                    CanvasStrokeRendererTestActivity.TEXTURE_ID_POOP_EMOJI,
                     sizeX = 1f,
                     sizeY = 1f,
                     sizeUnit = TextureSizeUnit.BRUSH_SIZE,

@@ -19,6 +19,7 @@ package androidx.compose.animation.core
 import androidx.compose.animation.core.AnimationEndReason.BoundReached
 import androidx.compose.animation.core.AnimationEndReason.Finished
 import androidx.compose.runtime.State
+import androidx.compose.runtime.annotation.RememberInComposition
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -46,7 +47,9 @@ import kotlinx.coroutines.CancellationException
  * @see animateDecay
  */
 @Suppress("NotCloseable")
-public class Animatable<T, V : AnimationVector>(
+public class Animatable<T, V : AnimationVector>
+@RememberInComposition
+constructor(
     initialValue: T,
     public val typeConverter: TwoWayConverter<T, V>,
     private val visibilityThreshold: T? = null,
@@ -426,6 +429,7 @@ public class Animatable<T, V : AnimationVector>(
  * @param visibilityThreshold Threshold at which the animation may round off to its target value.
  *   [Spring.DefaultDisplacementThreshold] by default.
  */
+@RememberInComposition
 public fun Animatable(
     initialValue: Float,
     visibilityThreshold: Float = Spring.DefaultDisplacementThreshold

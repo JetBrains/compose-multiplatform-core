@@ -590,7 +590,7 @@ class CompositionRegistrationObserverTest {
      * inject our own recomposer, and the recomposer created by the test rule isn't set in the view
      * hierarchy.
      */
-    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407932056
     private val currentCompositionContext: CompositionContext
         @Composable
         get() {

@@ -19,6 +19,7 @@ package androidx.credentials.provider
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
+import androidx.annotation.RestrictTo
 import androidx.credentials.provider.CallingAppInfo.Companion.extractCallingAppInfo
 import androidx.credentials.provider.CallingAppInfo.Companion.setCallingAppInfo
 import androidx.credentials.provider.utils.BeginGetCredentialUtil
@@ -130,6 +131,15 @@ constructor(
     }
 
     companion object {
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        @JvmStatic
+        fun createFrom(
+            id: String,
+            type: String,
+            candidateQueryData: Bundle
+        ): BeginGetCredentialOption =
+            BeginGetCredentialOption.createFrom(id, type, candidateQueryData)
+
         /**
          * Helper method to convert the class to a parcelable [Bundle], in case the class instance
          * needs to be sent across a process. Consumers of this method should use [fromBundle] to

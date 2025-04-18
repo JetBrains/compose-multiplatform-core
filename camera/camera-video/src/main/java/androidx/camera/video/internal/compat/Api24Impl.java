@@ -20,8 +20,9 @@ import android.media.AudioRecord;
 import android.media.AudioRecordingConfiguration;
 import android.media.AudioTimestamp;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper class to avoid verification errors for methods introduced in Android 7.0 (API 24).

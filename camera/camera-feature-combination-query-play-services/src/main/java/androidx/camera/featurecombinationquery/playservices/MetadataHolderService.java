@@ -20,16 +20,15 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A Service that holds metadata for the Play Services CameraDeviceSetup implementation.
  */
 public class MetadataHolderService extends Service {
 
-    @Nullable
     @Override
-    public IBinder onBind(@Nullable Intent intent) {
+    public @Nullable IBinder onBind(@Nullable Intent intent) {
         throw new UnsupportedOperationException();
     }
 }

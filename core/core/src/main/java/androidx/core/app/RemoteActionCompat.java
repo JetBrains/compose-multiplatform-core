@@ -24,7 +24,6 @@ import android.app.RemoteAction;
 import android.graphics.drawable.Icon;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.graphics.drawable.IconCompat;
@@ -32,6 +31,8 @@ import androidx.core.util.Preconditions;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents a remote action that can be called from another process.  The action can have an
@@ -44,31 +45,27 @@ public final class RemoteActionCompat implements VersionedParcelable {
     /**
      */
     @SuppressWarnings("NotNullFieldNotInitialized") // VersionedParceleble inits this field.
-    @NonNull
     @RestrictTo(LIBRARY_GROUP)
     @ParcelField(1)
-    public IconCompat mIcon;
+    public @NonNull IconCompat mIcon;
     /**
      */
     @SuppressWarnings("NotNullFieldNotInitialized") // VersionedParceleble inits this field.
-    @NonNull
     @RestrictTo(LIBRARY_GROUP)
     @ParcelField(2)
-    public CharSequence mTitle;
+    public @NonNull CharSequence mTitle;
     /**
      */
     @SuppressWarnings("NotNullFieldNotInitialized") // VersionedParceleble inits this field.
-    @NonNull
     @RestrictTo(LIBRARY_GROUP)
     @ParcelField(3)
-    public CharSequence mContentDescription;
+    public @NonNull CharSequence mContentDescription;
     /**
      */
     @SuppressWarnings("NotNullFieldNotInitialized") // VersionedParceleble inits this field.
-    @NonNull
     @RestrictTo(LIBRARY_GROUP)
     @ParcelField(4)
-    public PendingIntent mActionIntent;
+    public @NonNull PendingIntent mActionIntent;
     /**
      */
     @RestrictTo(LIBRARY_GROUP)
@@ -113,8 +110,8 @@ public final class RemoteActionCompat implements VersionedParcelable {
      * Creates an RemoteActionCompat from a RemoteAction.
      */
     @RequiresApi(26)
-    @NonNull
-    public static RemoteActionCompat createFromRemoteAction(@NonNull RemoteAction remoteAction) {
+    public static @NonNull RemoteActionCompat createFromRemoteAction(
+            @NonNull RemoteAction remoteAction) {
         Preconditions.checkNotNull(remoteAction);
         RemoteActionCompat action = new RemoteActionCompat(IconCompat.createFromIcon(
                 Api26Impl.getIcon(remoteAction)),
@@ -192,8 +189,7 @@ public final class RemoteActionCompat implements VersionedParcelable {
      */
     @SuppressWarnings("deprecation")
     @RequiresApi(26)
-    @NonNull
-    public RemoteAction toRemoteAction() {
+    public @NonNull RemoteAction toRemoteAction() {
         RemoteAction action = Api26Impl.createRemoteAction(mIcon.toIcon(), mTitle,
                 mContentDescription, mActionIntent);
         Api26Impl.setEnabled(action, isEnabled());

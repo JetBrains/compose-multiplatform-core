@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -40,6 +40,11 @@ dependencies {
     implementation(project(":compose:ui:ui"))
     implementation(project(":tv:tv-foundation"))
     implementation(project(":tv:tv-material"))
+
+    var media3Version = "1.5.0"
+    implementation("androidx.media3:media3-common-ktx:$media3Version")
+    implementation("androidx.media3:media3-exoplayer:$media3Version")
+    implementation("androidx.media3:media3-ui:$media3Version")
 }
 
 android {

@@ -21,7 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -38,16 +39,16 @@ dependencies {
     implementation(project(":compose:ui:ui"))
     implementation(project(":compose:ui:ui-text"))
 
-    implementation(project(':wear:compose:compose-foundation'))
-    implementation(project(':wear:compose:compose-material3'))
-    implementation(project(':wear:compose:compose-material3-samples'))
-    implementation(project(':wear:compose:integration-tests:demos:common'))
+    implementation(project(":wear:compose:compose-foundation"))
+    implementation(project(":wear:compose:compose-material3"))
+    implementation(project(":wear:compose:compose-material3-samples"))
+    implementation(project(":wear:compose:integration-tests:demos:common"))
     implementation("androidx.compose.material:material-icons-core:1.6.7")
 }
 
 androidx {
     name = "AndroidX Wear Compose Material3 Components Demos"
-    publish = Publish.NONE
+    type = SoftwareType.TEST_APPLICATION
     inceptionYear = "2023"
     description = "Contains the demo code for the AndroidX Wear Compose Material 3 components."
 }

@@ -34,10 +34,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotDisplayed
@@ -46,9 +48,13 @@ import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.LayoutDirection
@@ -150,14 +156,17 @@ class TextFieldLongPressTest : FocusedWindowTest {
     @Test
     fun longPressOnEmptyRegion_showsTextToolbar() {
         val state = TextFieldState("abc")
-        var showMenuCalled = 0
+        var toolbarShown = false
         val textToolbar =
-            FakeTextToolbar(onShowMenu = { _, _, _, _, _, _ -> showMenuCalled++ }, onHideMenu = {})
-        val clipboardManager = FakeClipboardManager("hello")
+            FakeTextToolbar(
+                onShowMenu = { _, _, _, _, _, _ -> toolbarShown = true },
+                onHideMenu = { toolbarShown = false }
+            )
+        val clipboard = FakeClipboard("hello")
         rule.setTextFieldTestContent {
             CompositionLocalProvider(
                 LocalTextToolbar provides textToolbar,
-                LocalClipboardManager provides clipboardManager
+                LocalClipboard provides clipboard
             ) {
                 BasicTextField(
                     state = state,
@@ -171,7 +180,7 @@ class TextFieldLongPressTest : FocusedWindowTest {
             longClick(Offset(fontSize.toPx() * 5, fontSize.toPx() / 2))
         }
 
-        rule.runOnIdle { assertThat(showMenuCalled).isEqualTo(1) }
+        rule.runOnIdle { assertThat(toolbarShown).isTrue() }
     }
 
     @Test
@@ -385,6 +394,42 @@ class TextFieldLongPressTest : FocusedWindowTest {
         }
 
         rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(4, 23)) }
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun deleteWhileDraggingSelection() {
+        lateinit var textLayoutResult: TextLayoutResult
+        val state = TextFieldState("Hello")
+        rule.setContent {
+            BasicTextField(
+                state = state,
+                modifier = Modifier.testTag(TAG),
+                onTextLayout = { textLayoutResult = it()!! }
+            )
+        }
+
+        fun positionForOffset(offset: Int) =
+            Offset(
+                x = textLayoutResult.getHorizontalPosition(offset, usePrimaryDirection = true),
+                y = textLayoutResult.size.height / 2f
+            )
+
+        rule.onNodeWithTag(TAG).apply {
+            performMouseInput {
+                moveTo(positionForOffset(5))
+                press()
+                moveTo(positionForOffset(4))
+            }
+            assertThat(state.selection).isEqualTo(TextRange(4, 5))
+
+            performKeyInput { pressKey(Key.Backspace) }
+            assertThat(state.selection).isEqualTo(TextRange(4, 4))
+
+            performMouseInput { moveTo(positionForOffset(3)) }
+            assertThat(state.selection).isEqualTo(TextRange(3, 4))
+            performMouseInput { release() }
+        }
     }
 
     // region RTL

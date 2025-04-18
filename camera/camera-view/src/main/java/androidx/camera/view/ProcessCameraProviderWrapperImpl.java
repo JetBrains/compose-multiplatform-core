@@ -16,7 +16,6 @@
 
 package androidx.camera.view;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraInfo;
@@ -28,6 +27,8 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.lifecycle.LifecycleOwner;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Implementation of {@link ProcessCameraProviderWrapper} that wraps a round a real
@@ -48,7 +49,7 @@ class ProcessCameraProviderWrapperImpl implements ProcessCameraProviderWrapper {
     }
 
     @Override
-    public void unbind(@NonNull UseCase... useCases) {
+    public void unbind(UseCase @NonNull ... useCases) {
         mProcessCameraProvider.unbind(useCases);
     }
 
@@ -57,23 +58,20 @@ class ProcessCameraProviderWrapperImpl implements ProcessCameraProviderWrapper {
         mProcessCameraProvider.unbindAll();
     }
 
-    @NonNull
     @Override
-    public Camera bindToLifecycle(@NonNull LifecycleOwner lifecycleOwner,
+    public @NonNull Camera bindToLifecycle(@NonNull LifecycleOwner lifecycleOwner,
             @NonNull CameraSelector cameraSelector, @NonNull UseCaseGroup useCaseGroup) {
         return mProcessCameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, useCaseGroup);
     }
 
     @VisibleForTesting
-    @NonNull
     @Override
-    public ListenableFuture<Void> shutdownAsync() {
+    public @NonNull ListenableFuture<Void> shutdownAsync() {
         return mProcessCameraProvider.shutdownAsync();
     }
 
-    @NonNull
     @Override
-    public CameraInfo getCameraInfo(CameraSelector cameraSelector) {
+    public @NonNull CameraInfo getCameraInfo(CameraSelector cameraSelector) {
         return mProcessCameraProvider.getCameraInfo(cameraSelector);
     }
 }

@@ -42,6 +42,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.vectordrawable.graphics.drawable.SeekableAnimatedVectorDrawable;
 import androidx.wear.protolayout.expression.AppDataKey;
 import androidx.wear.protolayout.expression.DynamicBuilders;
+import androidx.wear.protolayout.expression.PlatformEventSources;
 import androidx.wear.protolayout.expression.pipeline.FixedQuotaManagerImpl;
 import androidx.wear.protolayout.expression.pipeline.QuotaManager;
 import androidx.wear.protolayout.expression.pipeline.StateStore;
@@ -133,6 +134,117 @@ public class ProtoLayoutDynamicDataPipelineTest {
         mRootContainer = new FrameLayout(getApplicationContext());
         // This needs to be an attached view to test animations in data pipeline.
         Robolectric.buildActivity(Activity.class).setup().get().setContentView(mRootContainer);
+    }
+
+    @Test
+    public void buildPipeline_dynamicBoolLayoutVisibility_assignsValues() {
+        List<Boolean> results = new ArrayList<>();
+        DynamicBool dynamicBool = PlatformEventSources.isLayoutVisible().toDynamicBoolProto();
+
+        ProtoLayoutDynamicDataPipeline pipeline =
+                initPipeline(results, results, true, dynamicBool, 0);
+
+        shadowOf(getMainLooper()).idle();
+
+        // Make sure that the initial value has been sent.
+        expect.that(results).hasSize(1);
+        expect.that(results).containsExactly(true);
+
+        // Make sure we don't send value if it hasn't changed from before.
+        pipeline.setFullyVisible(true);
+        expect.that(results).hasSize(1);
+        expect.that(results).containsExactly(true);
+
+        // Make sure we send a new value.
+        pipeline.setFullyVisible(false);
+        expect.that(results).hasSize(2);
+        expect.that(results).containsExactly(true, false);
+    }
+
+    @Test
+    public void buildPipeline_dynamicBoolLayoutVisibility_updatesDisabled_notSendingValues() {
+        List<Boolean> results = new ArrayList<>();
+        DynamicBool dynamicBool = PlatformEventSources.isLayoutVisible().toDynamicBoolProto();
+
+        ProtoLayoutDynamicDataPipeline pipeline =
+                initPipeline(results, results, true, dynamicBool, 0);
+
+        shadowOf(getMainLooper()).idle();
+
+        // Make sure that the initial value has been sent.
+        expect.that(results).hasSize(1);
+        expect.that(results).containsExactly(true);
+
+        pipeline.setUpdatesEnabled(false);
+        shadowOf(getMainLooper()).idle();
+
+        // Make sure we don't send next values as updates are disabled.
+        pipeline.setFullyVisible(false);
+        pipeline.setFullyVisible(true);
+        expect.that(results).hasSize(1);
+        expect.that(results).containsExactly(true);
+
+        pipeline.setUpdatesEnabled(true);
+        shadowOf(getMainLooper()).idle();
+
+        // Make sure we send a new value once updates are enabled.
+        pipeline.setFullyVisible(false);
+        expect.that(results).hasSize(2);
+        expect.that(results).containsExactly(true, false);
+    }
+
+    @Test
+    public void buildPipeline_dynamicBoolLayoutUpdatePending_assignsValues() {
+        List<Boolean> results = new ArrayList<>();
+        DynamicBool dynamicBool = PlatformEventSources.isLayoutUpdatePending().toDynamicBoolProto();
+        ProtoLayoutDynamicDataPipeline pipeline =
+                initPipeline(results, results, true, dynamicBool, 0);
+
+        shadowOf(getMainLooper()).idle();
+
+        // Make sure that the initial value has been sent.
+        expect.that(results).hasSize(1);
+        expect.that(results).containsExactly(false);
+
+        // Make sure we don't send value if it hasn't changed from before.
+        pipeline.setLayoutUpdatePending(false);
+        expect.that(results).hasSize(1);
+        expect.that(results).containsExactly(false);
+
+        // Make sure we send a new value.
+        pipeline.setLayoutUpdatePending(true);
+        expect.that(results).hasSize(2);
+        expect.that(results).containsExactly(false, true);
+    }
+
+    @Test
+    public void buildPipeline_dynamicBoolLayoutUpdatePending_updatesDisabled_notSendingValues() {
+        List<Boolean> results = new ArrayList<>();
+        DynamicBool dynamicBool = PlatformEventSources.isLayoutUpdatePending().toDynamicBoolProto();
+        ProtoLayoutDynamicDataPipeline pipeline =
+                initPipeline(results, results, true, dynamicBool, 0);
+
+        shadowOf(getMainLooper()).idle();
+
+        // Make sure that the initial value has been sent.
+        expect.that(results).hasSize(1);
+        expect.that(results).containsExactly(false);
+
+        pipeline.setUpdatesEnabled(false);
+        shadowOf(getMainLooper()).idle();
+
+        // Make sure we don't send next values as updates are disabled.
+        pipeline.setLayoutUpdatePending(true);
+        expect.that(results).hasSize(1);
+        expect.that(results).containsExactly(false);
+
+        pipeline.setUpdatesEnabled(true);
+        shadowOf(getMainLooper()).idle();
+
+        // Make sure we send a new value once updates are enabled.
+        pipeline.setLayoutUpdatePending(true);
+        expect.that(results).hasSize(2);
+        expect.that(results).containsExactly(false, true);
     }
 
     @Test
@@ -1696,8 +1808,8 @@ public class ProtoLayoutDynamicDataPipelineTest {
                 .build();
     }
 
-    private @NonNull DynamicFloat animatableFixedFloat(float from, float to, int duration,
-            int delay) {
+    private @NonNull DynamicFloat animatableFixedFloat(
+            float from, float to, int duration, int delay) {
         return DynamicFloat.newBuilder()
                 .setAnimatableFixed(
                         AnimatableFixedFloat.newBuilder()
@@ -1821,6 +1933,37 @@ public class ProtoLayoutDynamicDataPipelineTest {
             DynamicFloat proto,
             int animationsNum) {
         AddToListCallback<Float> receiver = new AddToListCallback<>(results, invalidResults);
+        ProtoLayoutDynamicDataPipeline pipeline =
+                enableAnimations
+                        ? new ProtoLayoutDynamicDataPipeline(
+                                /* platformDataProviders= */ ImmutableMap.of(),
+                                mStateStore,
+                                new FixedQuotaManagerImpl(MAX_VALUE),
+                                new FixedQuotaManagerImpl(MAX_VALUE))
+                        : new ProtoLayoutDynamicDataPipeline(
+                                /* platformDataProviders= */ ImmutableMap.of(), mStateStore);
+        shadowOf(getMainLooper()).idle();
+
+        pipeline.setFullyVisible(true);
+        pipeline.newPipelineMaker()
+                .addPipelineFor(proto, TEST_POS_ID, receiver)
+                .commit(mRootContainer, /* isReattaching= */ false);
+        if (enableAnimations) {
+            assertThat(pipeline.getRunningAnimationsCount()).isEqualTo(animationsNum);
+        }
+        shadowOf(getMainLooper()).idle();
+        assertThat(pipeline.getRunningAnimationsCount()).isEqualTo(0);
+
+        return pipeline;
+    }
+
+    private ProtoLayoutDynamicDataPipeline initPipeline(
+            List<Boolean> results,
+            @Nullable List<Boolean> invalidResults,
+            boolean enableAnimations,
+            DynamicBool proto,
+            int animationsNum) {
+        AddToListCallback<Boolean> receiver = new AddToListCallback<>(results, invalidResults);
         ProtoLayoutDynamicDataPipeline pipeline =
                 enableAnimations
                         ? new ProtoLayoutDynamicDataPipeline(

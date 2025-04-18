@@ -37,15 +37,15 @@ public sealed interface CurvedModifier {
      *
      * Returns a [CurvedModifier] representing this curved modifier followed by [other] in sequence.
      */
-    infix fun then(other: CurvedModifier): CurvedModifier =
+    public infix fun then(other: CurvedModifier): CurvedModifier =
         CurvedModifierImpl(elements() + other.elements())
 
     /**
      * The companion object `CurvedModifier` is the empty, default, or starter [CurvedModifier] that
      * contains no Elements.
      */
-    companion object : CurvedModifier {
-        override fun toString() = "CurvedModifier"
+    public companion object : CurvedModifier {
+        override fun toString(): String = "CurvedModifier"
     }
 }
 
@@ -76,8 +76,8 @@ internal fun CurvedModifier.wrap(child: CurvedChild) =
  */
 internal open class BaseCurvedChildWrapper(val wrapped: CurvedChild) : CurvedChild() {
     @Composable
-    override fun SubComposition() {
-        wrapped.SubComposition()
+    override fun SubComposition(semanticProperties: CurvedSemanticProperties) {
+        wrapped.SubComposition(semanticProperties)
     }
 
     override fun CurvedMeasureScope.initializeMeasure(measurables: Iterator<Measurable>) =

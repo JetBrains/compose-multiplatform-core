@@ -19,6 +19,7 @@ package androidx.wear.compose.foundation
 import android.os.Build
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -45,6 +46,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollDispatcher
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -103,7 +105,7 @@ import kotlinx.coroutines.isActive
 @OptIn(ExperimentalWearFoundationApi::class)
 @Composable
 @Suppress("PrimitiveInCollection")
-fun BasicSwipeToDismissBox(
+public fun BasicSwipeToDismissBox(
     state: SwipeToDismissBoxState,
     modifier: Modifier = Modifier,
     backgroundKey: Any = SwipeToDismissKeys.Background,
@@ -275,7 +277,7 @@ fun BasicSwipeToDismissBox(
  */
 @OptIn(ExperimentalWearFoundationApi::class)
 @Composable
-fun BasicSwipeToDismissBox(
+public fun BasicSwipeToDismissBox(
     onDismissed: () -> Unit,
     modifier: Modifier = Modifier,
     state: SwipeToDismissBoxState = rememberSwipeToDismissBoxState(),
@@ -308,7 +310,7 @@ fun BasicSwipeToDismissBox(
  */
 @Stable
 @OptIn(ExperimentalWearFoundationApi::class)
-class SwipeToDismissBoxState(
+public class SwipeToDismissBoxState(
     animationSpec: AnimationSpec<Float> = SwipeToDismissBoxDefaults.AnimationSpec,
     confirmStateChange: (SwipeToDismissValue) -> Boolean = { true },
 ) {
@@ -318,7 +320,7 @@ class SwipeToDismissBoxState(
      * Before and during a swipe, corresponds to [SwipeToDismissValue.Default], then switches to
      * [SwipeToDismissValue.Dismissed] if the swipe has been completed.
      */
-    val currentValue: SwipeToDismissValue
+    public val currentValue: SwipeToDismissValue
         get() = swipeableState.currentValue
 
     /**
@@ -328,12 +330,32 @@ class SwipeToDismissBoxState(
      * finished. If an animation is running, this is the target value of that animation. Finally, if
      * no swipe or animation is in progress, this is the same as the [currentValue].
      */
-    val targetValue: SwipeToDismissValue
+    public val targetValue: SwipeToDismissValue
         get() = swipeableState.targetValue
 
+    /**
+     * The current offset, or [Float.NaN] if it has not been initialized yet. Consider using
+     * `requireOffset()` method instead - this field should only be used when the access to the
+     * uninitialised value is required.
+     *
+     * The offset shows how far the foreground content was swiped from its original position.
+     */
+    public val offset: Float
+        get() = swipeableState.offset ?: Float.NaN
+
     /** Whether the state is currently animating. */
-    val isAnimationRunning: Boolean
+    public val isAnimationRunning: Boolean
         get() = swipeableState.isAnimationRunning
+
+    /**
+     * Require the current offset. This method should always be used instead of using the `offset`
+     * field, unless the access to the uninitialised value is required.
+     *
+     * The offset shows how far the foreground content was swiped from its original position.
+     *
+     * @throws IllegalStateException If the offset has not been initialized yet
+     */
+    public fun requireOffset(): Float = swipeableState.requireOffset()
 
     internal fun edgeNestedScrollConnection(
         edgeSwipeState: State<EdgeSwipeState>
@@ -344,7 +366,8 @@ class SwipeToDismissBoxState(
      *
      * @param targetValue The new target value to set [currentValue] to.
      */
-    suspend fun snapTo(targetValue: SwipeToDismissValue) = swipeableState.snapTo(targetValue)
+    public suspend fun snapTo(targetValue: SwipeToDismissValue): Unit =
+        swipeableState.snapTo(targetValue)
 
     private companion object {
         private fun <T> SwipeableV2State<T>.edgeNestedScrollConnection(
@@ -410,7 +433,7 @@ class SwipeToDismissBoxState(
  * @param confirmStateChange callback to confirm or veto a pending state change.
  */
 @Composable
-fun rememberSwipeToDismissBoxState(
+public fun rememberSwipeToDismissBoxState(
     animationSpec: AnimationSpec<Float> = SWIPE_TO_DISMISS_BOX_ANIMATION_SPEC,
     confirmStateChange: (SwipeToDismissValue) -> Boolean = { true },
 ): SwipeToDismissBoxState {
@@ -420,21 +443,21 @@ fun rememberSwipeToDismissBoxState(
 }
 
 /** Contains defaults for [BasicSwipeToDismissBox]. */
-object SwipeToDismissBoxDefaults {
+public object SwipeToDismissBoxDefaults {
     /**
      * The default animation that will be used to animate to a new state after the swipe gesture.
      */
     @OptIn(ExperimentalWearFoundationApi::class)
-    val AnimationSpec = SwipeableV2Defaults.AnimationSpec
+    public val AnimationSpec: SpringSpec<Float> = SwipeableV2Defaults.AnimationSpec
 
     /**
      * The default width of the area which might trigger a swipe with [edgeSwipeToDismiss] modifier
      */
-    val EdgeWidth = 30.dp
+    public val EdgeWidth: Dp = 30.dp
 }
 
 /** Keys used to persistent state in [BasicSwipeToDismissBox]. */
-enum class SwipeToDismissKeys {
+public enum class SwipeToDismissKeys {
     /**
      * The default background key to identify the content displayed by the content block when
      * isBackground == true. Specifying a background key instead of using the default allows
@@ -451,7 +474,7 @@ enum class SwipeToDismissKeys {
 }
 
 /** States used as targets for the anchor points for swipe-to-dismiss. */
-enum class SwipeToDismissValue {
+public enum class SwipeToDismissValue {
     /** The state of the SwipeToDismissBox before the swipe started. */
     Default,
 
@@ -460,17 +483,26 @@ enum class SwipeToDismissValue {
 }
 
 /**
- * Limits swipe to dismiss to be active from the edge of the viewport only. Used when the center of
- * the screen needs to be able to handle horizontal paging, such as 2-d scrolling a Map or swiping
- * horizontally between pages. Swipe to the right is intercepted on the left part of the viewport
- * with width specified by [edgeWidth], with other touch events ignored - vertical scroll, click,
- * long click, etc.
+ * Handles swipe to dismiss from the edge of the viewport.
+ *
+ * Used when the content of the [BasicSwipeToDismissBox] is handling all the gestures of the
+ * viewport, which prevents [BasicSwipeToDismissBox] from handling the swipe-to-dismiss gesture.
+ * Examples of this scenario are horizontal paging, such as 2-d scrolling a Map or swiping
+ * horizontally between pages.
+ *
+ * Use of [Modifier.edgeSwipeToDismiss] defines a zone on the left side of the viewport of width
+ * [edgeWidth] in which the swipe-right gesture is intercepted. Other touch events are ignored -
+ * vertical scroll, click, long click, etc.
  *
  * Currently Edge swipe, like swipe to dismiss, is only supported on the left part of the viewport
  * regardless of layout direction as content is swiped away from left to right.
  *
  * Requires that the element to which this modifier is applied exists within a
  * [BasicSwipeToDismissBox] which is using the same [SwipeToDismissBoxState] instance.
+ *
+ * Requires that the element to which this modifier is applied notifies the nested scroll system
+ * about the scrolling events that are happening on the element. For example, using a
+ * [NestedScrollDispatcher].
  *
  * Example of a modifier usage with SwipeToDismiss
  *
@@ -479,7 +511,7 @@ enum class SwipeToDismissValue {
  *   on SwipeToDismissBox.
  * @param edgeWidth Width of the edge zone in which the swipe will be recognised.
  */
-fun Modifier.edgeSwipeToDismiss(
+public fun Modifier.edgeSwipeToDismiss(
     swipeToDismissBoxState: SwipeToDismissBoxState,
     edgeWidth: Dp = SwipeToDismissBoxDefaults.EdgeWidth
 ): Modifier =

@@ -18,12 +18,13 @@ package androidx.camera.camera2.internal.compat.workaround;
 
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.ExtraCroppingQuirk;
 import androidx.camera.core.impl.SurfaceConfig;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper class that overrides the maximum preview size used in surface combination check.
@@ -32,8 +33,7 @@ import androidx.camera.core.impl.SurfaceConfig;
  */
 public class MaxPreviewSize {
 
-    @Nullable
-    private final ExtraCroppingQuirk mExtraCroppingQuirk;
+    private final @Nullable ExtraCroppingQuirk mExtraCroppingQuirk;
 
     /**
      * Constructs new {@link MaxPreviewSize}.
@@ -57,8 +57,7 @@ public class MaxPreviewSize {
      * resolution. The select resolution has been manually tested on the device. Otherwise,
      * return the default max resolution.
      */
-    @NonNull
-    public Size getMaxPreviewResolution(@NonNull Size defaultMaxPreviewResolution) {
+    public @NonNull Size getMaxPreviewResolution(@NonNull Size defaultMaxPreviewResolution) {
         if (mExtraCroppingQuirk == null) {
             return defaultMaxPreviewResolution;
         }

@@ -21,6 +21,7 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import androidx.benchmark.Arguments
 import androidx.benchmark.DeviceInfo.deviceSummaryString
 import androidx.benchmark.Shell
 import androidx.benchmark.inMemoryTrace
@@ -37,7 +38,7 @@ import org.jetbrains.annotations.TestOnly
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RequiresApi(MIN_SDK_VERSION)
-public class PerfettoHelper(
+class PerfettoHelper(
     private val unbundled: Boolean = Build.VERSION.SDK_INT < MIN_BUNDLED_SDK_VERSION
 ) {
     init {
@@ -81,8 +82,7 @@ public class PerfettoHelper(
 
         try {
             // Cleanup already existing perfetto process.
-            Log.i(LOG_TAG, "Cleanup perfetto before starting.")
-            stopAllPerfettoProcesses()
+            cleanupPerfettoState()
 
             // The actual location of the config path.
             val actualConfigPath =
@@ -373,6 +373,12 @@ public class PerfettoHelper(
         //  total kill wait must be much larger than PerfettoConfig data_source_stop_timeout_ms
         private const val PERFETTO_KILL_WAIT_COUNT = 50
 
+        // Similar to above, but shorter to reduce delays from long-running tracing when
+        // benchmarking.
+        // Note that in the 'clean' case we're not gracefully stopping a trace we care about, so we
+        // don't care about data source timeout.
+        private const val PERFETTO_KILL_WAIT_CLEAN_COUNT = 10
+
         // Check if perfetto is stopped every 100 millis.
         private const val PERFETTO_KILL_WAIT_TIME_MS: Long = 100
 
@@ -462,13 +468,34 @@ public class PerfettoHelper(
             }
         }
 
-        public fun stopAllPerfettoProcesses() {
-            listOf("perfetto", "tracebox").forEach { processName ->
-                Shell.killProcessesAndWait(
-                    processName,
-                    waitPollPeriodMs = PERFETTO_KILL_WAIT_TIME_MS,
-                    waitPollMaxCount = PERFETTO_KILL_WAIT_COUNT,
-                )
+        fun cleanupPerfettoState(
+            killExistingPerfettoRecordings: Boolean = Arguments.killExistingPerfettoRecordings
+        ) {
+            if (killExistingPerfettoRecordings) {
+                listOf("perfetto", "tracebox").forEach { processName ->
+                    Shell.killProcessesAndWait(
+                        processName,
+                        waitPollPeriodMs = PERFETTO_KILL_WAIT_TIME_MS,
+                        waitPollMaxCount = PERFETTO_KILL_WAIT_CLEAN_COUNT,
+                        onFailure = { errorMessage ->
+                            // Failing to kill perfetto processes we don't own is non-fatal, as
+                            // shell may not have permission to kill them
+                            Log.d(LOG_TAG, errorMessage)
+                        },
+                        processKiller = { processes ->
+                            // We log here to make this behavior/interference with the
+                            // test environment more discoverable.
+                            processes.forEach {
+                                Log.d(
+                                    LOG_TAG,
+                                    "killing existing perfetto recording:" +
+                                        " ${it.processName} (pid=${it.pid})"
+                                )
+                            }
+                            Shell.killTerm(processes)
+                        }
+                    )
+                }
             }
 
             // Have seen cases where bundled Perfetto crashes, and leaves ftrace enabled,

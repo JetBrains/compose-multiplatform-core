@@ -29,8 +29,9 @@
     <string name="desc_page_single" msgid="8459583146661044094">"<xliff:g id="PAGE">%1$d</xliff:g>. lapa no <xliff:g id="TOTAL">%2$d</xliff:g>"</string>
     <string name="desc_zoom" msgid="7318480946145947242">"tālummaiņa procentos ir <xliff:g id="FIRST">%1$d</xliff:g>"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"Doties uz <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>. lapu"</string>
-    <string name="desc_page" msgid="5684226167093594168">"<xliff:g id="PAGE">%1$d</xliff:g>. lapa"</string>
+    <string name="desc_page" msgid="6702471448987833953">"<xliff:g id="PAGE">%1$d</xliff:g>. lapa"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"Tukša lapa"</string>
+    <string name="desc_page_with_text" msgid="2564017005407577604">"<xliff:g id="PAGE_NUMBER">%1$d</xliff:g>. lpp.: <xliff:g id="PAGE_TEXT">%2$s</xliff:g>"</string>
     <string name="error_file_format_pdf" msgid="7567006188638831878">"Nevar parādīt PDF (faila “<xliff:g id="TITLE">%1$s</xliff:g>” formāts nav derīgs)."</string>
     <string name="error_on_page" msgid="1592475819957182385">"Nevar parādīt <xliff:g id="PAGE">%1$d</xliff:g>. lapu (faila kļūda)."</string>
     <string name="desc_web_link_shortened_to_domain" msgid="3323639528531061592">"Saite: tīmekļa lapa domēnā <xliff:g id="DESTINATION_DOMAIN">%1$s</xliff:g>"</string>
@@ -59,4 +60,7 @@
     <string name="page_broken" msgid="2968770793669433462">"PDF dokumenta lapa ir bojāta"</string>
     <string name="needs_more_data" msgid="3520133467908240802">"Nepietiekams datu apjoms, lai apstrādātu PDF dokumentu"</string>
     <string name="error_cannot_open_pdf" msgid="2361919778558145071">"Nevar atvērt PDF failu."</string>
+    <string name="cannot_edit_pdf" msgid="7677598370087228978">"Šo PDF failu nevar rediģēt."</string>
+    <string name="clipboard_label" msgid="8943155331324944981">"No PDF faila kopēts saturs"</string>
+    <string name="fast_scroller_thumb" msgid="6712048991132846541">"Ritjosla"</string>
 </resources>

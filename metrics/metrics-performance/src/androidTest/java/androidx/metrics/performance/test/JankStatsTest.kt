@@ -248,7 +248,11 @@ class JankStatsTest {
         }
 
         jankStats2.isTrackingEnabled = false
+        // isTrackingEnabled=false is async, so we sync with
+        // onActivity main thread before resetting 2nd listener count
+        delayedActivityRule.scenario.onActivity { /* just block */ }
         numSecondListenerCalls = 0
+
         latchedListener.reset()
         runDelayTest(frameDelay, NUM_FRAMES, latchedListener)
         assertEquals(0, numSecondListenerCalls)

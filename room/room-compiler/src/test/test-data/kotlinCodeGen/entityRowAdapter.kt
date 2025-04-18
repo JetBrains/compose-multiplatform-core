@@ -24,8 +24,7 @@ public class MyDao_Impl(
   init {
     this.__db = __db
     this.__insertAdapterOfMyEntity = object : EntityInsertAdapter<MyEntity>() {
-      protected override fun createQuery(): String =
-          "INSERT OR ABORT INTO `MyEntity` (`valuePrimitive`,`valueBoolean`,`valueString`,`valueNullableString`,`variablePrimitive`,`variableNullableBoolean`,`variableString`,`variableNullableString`) VALUES (?,?,?,?,?,?,?,?)"
+      protected override fun createQuery(): String = "INSERT OR ABORT INTO `MyEntity` (`valuePrimitive`,`valueBoolean`,`valueString`,`valueNullableString`,`variablePrimitive`,`variableNullableBoolean`,`variableString`,`variableNullableString`) VALUES (?,?,?,?,?,?,?,?)"
 
       protected override fun bind(statement: SQLiteStatement, entity: MyEntity) {
         statement.bindLong(1, entity.valuePrimitive)
@@ -57,8 +56,7 @@ public class MyDao_Impl(
     }
   }
 
-  public override fun addEntity(item: MyEntity): Unit = performBlocking(__db, false, true) {
-      _connection ->
+  public override fun addEntity(item: MyEntity): Unit = performBlocking(__db, false, true) { _connection ->
     __insertAdapterOfMyEntity.insert(_connection, item)
   }
 
@@ -82,67 +80,65 @@ public class MyDao_Impl(
 
   private fun __entityStatementConverter_MyEntity(statement: SQLiteStatement): MyEntity {
     val _entity: MyEntity
-    val _cursorIndexOfValuePrimitive: Int = getColumnIndex(statement, "valuePrimitive")
-    val _cursorIndexOfValueBoolean: Int = getColumnIndex(statement, "valueBoolean")
-    val _cursorIndexOfValueString: Int = getColumnIndex(statement, "valueString")
-    val _cursorIndexOfValueNullableString: Int = getColumnIndex(statement, "valueNullableString")
-    val _cursorIndexOfVariablePrimitive: Int = getColumnIndex(statement, "variablePrimitive")
-    val _cursorIndexOfVariableNullableBoolean: Int = getColumnIndex(statement,
-        "variableNullableBoolean")
-    val _cursorIndexOfVariableString: Int = getColumnIndex(statement, "variableString")
-    val _cursorIndexOfVariableNullableString: Int = getColumnIndex(statement,
-        "variableNullableString")
+    val _columnIndexOfValuePrimitive: Int = getColumnIndex(statement, "valuePrimitive")
+    val _columnIndexOfValueBoolean: Int = getColumnIndex(statement, "valueBoolean")
+    val _columnIndexOfValueString: Int = getColumnIndex(statement, "valueString")
+    val _columnIndexOfValueNullableString: Int = getColumnIndex(statement, "valueNullableString")
+    val _columnIndexOfVariablePrimitive: Int = getColumnIndex(statement, "variablePrimitive")
+    val _columnIndexOfVariableNullableBoolean: Int = getColumnIndex(statement, "variableNullableBoolean")
+    val _columnIndexOfVariableString: Int = getColumnIndex(statement, "variableString")
+    val _columnIndexOfVariableNullableString: Int = getColumnIndex(statement, "variableNullableString")
     val _tmpValuePrimitive: Long
-    if (_cursorIndexOfValuePrimitive == -1) {
+    if (_columnIndexOfValuePrimitive == -1) {
       _tmpValuePrimitive = 0
     } else {
-      _tmpValuePrimitive = statement.getLong(_cursorIndexOfValuePrimitive)
+      _tmpValuePrimitive = statement.getLong(_columnIndexOfValuePrimitive)
     }
     val _tmpValueBoolean: Boolean
-    if (_cursorIndexOfValueBoolean == -1) {
+    if (_columnIndexOfValueBoolean == -1) {
       _tmpValueBoolean = false
     } else {
       val _tmp: Int
-      _tmp = statement.getLong(_cursorIndexOfValueBoolean).toInt()
+      _tmp = statement.getLong(_columnIndexOfValueBoolean).toInt()
       _tmpValueBoolean = _tmp != 0
     }
     val _tmpValueString: String
-    if (_cursorIndexOfValueString == -1) {
+    if (_columnIndexOfValueString == -1) {
       error("Missing value for a NON-NULL column 'valueString', found NULL value instead.")
     } else {
-      _tmpValueString = statement.getText(_cursorIndexOfValueString)
+      _tmpValueString = statement.getText(_columnIndexOfValueString)
     }
     val _tmpValueNullableString: String?
-    if (_cursorIndexOfValueNullableString == -1) {
+    if (_columnIndexOfValueNullableString == -1) {
       _tmpValueNullableString = null
     } else {
-      if (statement.isNull(_cursorIndexOfValueNullableString)) {
+      if (statement.isNull(_columnIndexOfValueNullableString)) {
         _tmpValueNullableString = null
       } else {
-        _tmpValueNullableString = statement.getText(_cursorIndexOfValueNullableString)
+        _tmpValueNullableString = statement.getText(_columnIndexOfValueNullableString)
       }
     }
     _entity = MyEntity(_tmpValuePrimitive,_tmpValueBoolean,_tmpValueString,_tmpValueNullableString)
-    if (_cursorIndexOfVariablePrimitive != -1) {
-      _entity.variablePrimitive = statement.getLong(_cursorIndexOfVariablePrimitive)
+    if (_columnIndexOfVariablePrimitive != -1) {
+      _entity.variablePrimitive = statement.getLong(_columnIndexOfVariablePrimitive)
     }
-    if (_cursorIndexOfVariableNullableBoolean != -1) {
+    if (_columnIndexOfVariableNullableBoolean != -1) {
       val _tmp_1: Int?
-      if (statement.isNull(_cursorIndexOfVariableNullableBoolean)) {
+      if (statement.isNull(_columnIndexOfVariableNullableBoolean)) {
         _tmp_1 = null
       } else {
-        _tmp_1 = statement.getLong(_cursorIndexOfVariableNullableBoolean).toInt()
+        _tmp_1 = statement.getLong(_columnIndexOfVariableNullableBoolean).toInt()
       }
       _entity.variableNullableBoolean = _tmp_1?.let { it != 0 }
     }
-    if (_cursorIndexOfVariableString != -1) {
-      _entity.variableString = statement.getText(_cursorIndexOfVariableString)
+    if (_columnIndexOfVariableString != -1) {
+      _entity.variableString = statement.getText(_columnIndexOfVariableString)
     }
-    if (_cursorIndexOfVariableNullableString != -1) {
-      if (statement.isNull(_cursorIndexOfVariableNullableString)) {
+    if (_columnIndexOfVariableNullableString != -1) {
+      if (statement.isNull(_columnIndexOfVariableNullableString)) {
         _entity.variableNullableString = null
       } else {
-        _entity.variableNullableString = statement.getText(_cursorIndexOfVariableNullableString)
+        _entity.variableNullableString = statement.getText(_columnIndexOfVariableNullableString)
       }
     }
     return _entity

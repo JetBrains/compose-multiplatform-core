@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-import androidx.build.KotlinTarget
 import androidx.build.PlatformIdentifier
-import androidx.build.Publish
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile
 
 plugins {
@@ -25,7 +24,7 @@ plugins {
 }
 
 androidXMultiplatform {
-    android()
+    androidTarget()
     jvm()
     mac()
     linux()
@@ -61,8 +60,7 @@ android {
 
 androidx {
     name = "Performance - Annotation"
-    publish = Publish.NONE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "Provides source annotations for performance optimizations."
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

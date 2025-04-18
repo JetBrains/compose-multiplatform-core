@@ -18,8 +18,10 @@ package androidx.benchmark.darwin.samples
 
 import androidx.benchmark.darwin.TestCase
 import androidx.benchmark.darwin.TestCaseContext
+import kotlinx.cinterop.ExperimentalForeignApi
 import platform.XCTest.XCTMeasureOptions
 
+@OptIn(ExperimentalForeignApi::class)
 class ArrayListAllocationBenchmark : TestCase() {
     override fun setUp() {
         // does nothing

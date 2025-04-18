@@ -29,11 +29,11 @@ import androidx.compose.foundation.content.consume
 import androidx.compose.foundation.content.contentReceiver
 import androidx.compose.foundation.content.createClipData
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.input.internal.selection.FakeClipboardManager
+import androidx.compose.foundation.text.input.internal.selection.FakeClipboard
 import androidx.compose.foundation.text.selection.FakeTextToolbar
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.toClipEntry
@@ -52,6 +52,7 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -283,13 +284,13 @@ class TextFieldReceiveContentTest {
     }
 
     @Test
-    fun semanticsPasteContent_delegatesToReceiveContent() {
-        val clipboardManager = FakeClipboardManager(supportsClipEntry = true)
+    fun semanticsPasteContent_delegatesToReceiveContent() = runTest {
+        val clipboard = FakeClipboard(supportsClipEntry = true)
         val clipEntry = createClipData().toClipEntry()
-        clipboardManager.setClip(clipEntry)
+        clipboard.setClipEntry(clipEntry)
         lateinit var transferableContent: TransferableContent
         rule.setContent {
-            CompositionLocalProvider(LocalClipboardManager provides clipboardManager) {
+            CompositionLocalProvider(LocalClipboard provides clipboard) {
                 BasicTextField(
                     state = rememberTextFieldState(),
                     modifier =
@@ -310,8 +311,8 @@ class TextFieldReceiveContentTest {
     }
 
     @Test
-    fun semanticsPasteContent_pastesLeftOverText() {
-        val clipboardManager = FakeClipboardManager(supportsClipEntry = true)
+    fun semanticsPasteContent_pastesLeftOverText() = runTest {
+        val clipboard = FakeClipboard(supportsClipEntry = true)
         val clipEntry =
             createClipData {
                     addText("some text")
@@ -320,10 +321,10 @@ class TextFieldReceiveContentTest {
                     addText("more text")
                 }
                 .toClipEntry()
-        clipboardManager.setClip(clipEntry)
+        clipboard.setClipEntry(clipEntry)
         val state = TextFieldState()
         rule.setContent {
-            CompositionLocalProvider(LocalClipboardManager provides clipboardManager) {
+            CompositionLocalProvider(LocalClipboard provides clipboard) {
                 BasicTextField(
                     state = state,
                     modifier =
@@ -343,8 +344,8 @@ class TextFieldReceiveContentTest {
     }
 
     @Test
-    fun semanticsPasteContent_goesFromChildToParent() {
-        val clipboardManager = FakeClipboardManager(supportsClipEntry = true)
+    fun semanticsPasteContent_goesFromChildToParent() = runTest {
+        val clipboard = FakeClipboard(supportsClipEntry = true)
         val clipEntry =
             createClipData {
                     addText("a")
@@ -353,7 +354,7 @@ class TextFieldReceiveContentTest {
                     addText("d")
                 }
                 .toClipEntry()
-        clipboardManager.setClip(clipEntry)
+        clipboard.setClipEntry(clipEntry)
 
         lateinit var transferableContent1: TransferableContent
         lateinit var transferableContent2: TransferableContent
@@ -361,7 +362,7 @@ class TextFieldReceiveContentTest {
         val state = TextFieldState()
 
         rule.setContent {
-            CompositionLocalProvider(LocalClipboardManager provides clipboardManager) {
+            CompositionLocalProvider(LocalClipboard provides clipboard) {
                 BasicTextField(
                     state = state,
                     modifier =
@@ -393,10 +394,10 @@ class TextFieldReceiveContentTest {
     }
 
     @Test
-    fun toolbarPasteContent_delegatesToReceiveContent() {
-        val clipboardManager = FakeClipboardManager(supportsClipEntry = true)
+    fun toolbarPasteContent_delegatesToReceiveContent() = runTest {
+        val clipboard = FakeClipboard(supportsClipEntry = true)
         val clipEntry = createClipData().toClipEntry()
-        clipboardManager.setClip(clipEntry)
+        clipboard.setClipEntry(clipEntry)
         var pasteOption: (() -> Unit)? = null
         val textToolbar =
             FakeTextToolbar(
@@ -406,7 +407,7 @@ class TextFieldReceiveContentTest {
         lateinit var transferableContent: TransferableContent
         rule.setContent {
             CompositionLocalProvider(
-                LocalClipboardManager provides clipboardManager,
+                LocalClipboard provides clipboard,
                 LocalTextToolbar provides textToolbar
             ) {
                 BasicTextField(

@@ -45,7 +45,7 @@ fun parseSources(vararg sources: Source): ParsedApi {
                 )
             )
         )
-        .succeeds()
+        .succeedsExcludingOptInWarnings()
     assert(provider.processor.capture != null) { "KSP run didn't produce any output." }
     return provider.processor.capture!!
 }

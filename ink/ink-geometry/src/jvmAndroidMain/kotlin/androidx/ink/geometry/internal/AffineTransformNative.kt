@@ -23,6 +23,7 @@ import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
 
 /** Helper functions for AffineTransform. */
+@UsedByNative
 internal object AffineTransformNative {
 
     init {

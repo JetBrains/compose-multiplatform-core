@@ -30,12 +30,12 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -46,7 +46,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 @OptIn(ExperimentalCoroutinesApi::class)
 class RecomposerTests {
 
-    private fun runTestUnconfined(block: suspend TestScope.() -> Unit): Unit =
+    private fun runTestUnconfined(block: suspend TestScope.() -> Unit) =
         runTest(UnconfinedTestDispatcher()) { block() }
 
     @Test
@@ -249,7 +249,7 @@ class RecomposerTests {
         compose {
             if (state) {
                 TestSubcomposition {
-                    assert(state) { "Subcomposition should be disposed if state is false" }
+                    assertTrue(state, "Subcomposition should be disposed if state is false")
                 }
             }
         }
@@ -404,15 +404,15 @@ class RecomposerTests {
         compose {
             repeat(1000) { Text("This is some text: $state") }
             LaunchedEffect(Unit) {
-                newSingleThreadContext("other thread").use {
-                    while (true) {
-                        withContext(it) {
-                            state++
-                            Snapshot.registerGlobalWriteObserver {}.dispose()
-                        }
+                while (true) {
+                    withContext(Dispatchers.Default) {
+                        state++
+                        Snapshot.registerGlobalWriteObserver {}.dispose()
                     }
                 }
             }
+
+            // Keep the other loop as is
             LaunchedEffect(Unit) {
                 while (true) {
                     withFrameNanos {

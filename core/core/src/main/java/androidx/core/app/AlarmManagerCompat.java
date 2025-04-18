@@ -24,8 +24,9 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Compatibility library for {@link AlarmManager} with fallbacks for older platforms.

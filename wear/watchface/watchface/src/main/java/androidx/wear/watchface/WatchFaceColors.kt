@@ -23,8 +23,14 @@ import androidx.wear.watchface.data.WatchFaceColorsWireFormat
 /**
  * Provides information about the colors of a watch face, exposing the three most representative
  * colors. This may be used by the system to influence the colors used for the system ui.
+ *
+ * @deprecated use Watch Face Format instead
  */
 @WatchFaceExperimental
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class WatchFaceColors(
     val primaryColor: Color,
     val secondaryColor: Color,

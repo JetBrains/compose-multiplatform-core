@@ -22,7 +22,6 @@ import androidx.room.coroutines.ConnectionPool
 import androidx.room.coroutines.RawConnectionAccessor
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.use
 
 /**
  * An implementation of a connection pool used in compatibility mode. This impl doesn't do any
@@ -30,10 +29,10 @@ import androidx.sqlite.use
  */
 internal class SupportSQLiteConnectionPool(internal val supportDriver: SupportSQLiteDriver) :
     ConnectionPool {
-    private val supportConnection by
-        lazy(LazyThreadSafetyMode.PUBLICATION) {
+    private val supportConnection: SupportSQLitePooledConnection
+        get() {
             val fileName = supportDriver.openHelper.databaseName ?: ":memory:"
-            SupportSQLitePooledConnection(supportDriver.open(fileName))
+            return SupportSQLitePooledConnection(supportDriver.open(fileName))
         }
 
     override suspend fun <R> useConnection(

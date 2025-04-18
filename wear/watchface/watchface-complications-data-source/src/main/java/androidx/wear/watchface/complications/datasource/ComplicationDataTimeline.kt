@@ -16,9 +16,12 @@
 
 package androidx.wear.watchface.complications.datasource
 
+import android.os.Build
 import android.support.wearable.complications.ComplicationData as WireComplicationData
+import androidx.annotation.RequiresApi
 import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.NoDataComplicationData
+import com.google.wear.services.complications.ComplicationData as WearSdkComplicationData
 import java.time.Instant
 
 /**
@@ -157,6 +160,24 @@ public class ComplicationDataTimeline(
         return defaultComplicationData.asWireComplicationData().apply {
             setTimelineEntryCollection(wireTimelineEntries)
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    internal fun asWearSdkComplicationData(): WearSdkComplicationData {
+        val wireTimelineEntries =
+            timelineEntries.map { timelineEntry ->
+                WearSdkComplicationData.Builder(
+                        timelineEntry.complicationData.asWearSdkComplicationData()
+                    )
+                    .apply {
+                        setTimelineStartEpochSecond(timelineEntry.validity.start.epochSecond)
+                        setTimelineEndEpochSecond(timelineEntry.validity.end.epochSecond)
+                    }
+                    .build()
+            }
+        return WearSdkComplicationData.Builder(defaultComplicationData.asWearSdkComplicationData())
+            .setTimelineEntries(wireTimelineEntries)
+            .build()
     }
 
     override fun equals(other: Any?): Boolean {

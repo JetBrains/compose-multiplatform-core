@@ -67,8 +67,7 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.collectLatest
 
 /**
- * <a href="https://material.io/components/switches" class="external" target="_blank">Material
- * Design switch</a>.
+ * [Material Design switch](https://material.io/components/switches)
  *
  * Switches toggle the state of a single item on or off.
  *

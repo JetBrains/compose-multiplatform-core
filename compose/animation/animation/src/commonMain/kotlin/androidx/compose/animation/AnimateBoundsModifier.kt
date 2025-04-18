@@ -44,6 +44,7 @@ import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.constrain
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.toSize
@@ -196,6 +197,8 @@ internal class BoundsAnimationModifierNode(
         (animatedSize: IntSize, constraints: Constraints) -> Constraints,
     var animateMotionFrameOfReference: Boolean,
 ) : ApproachLayoutModifierNode, Modifier.Node() {
+
+    private var directManipulationParentsDirty = true
     private val boundsAnimation = BoundsTransformDeferredAnimation()
 
     override fun isMeasurementApproachInProgress(lookaheadSize: IntSize): Boolean {
@@ -203,6 +206,10 @@ internal class BoundsAnimationModifierNode(
         boundsAnimation.updateTargetSize(lookaheadSize.toSize())
 
         return !boundsAnimation.isIdle
+    }
+
+    override fun onAttach() {
+        directManipulationParentsDirty = true
     }
 
     override fun Placeable.PlacementScope.isPlacementApproachInProgress(
@@ -213,9 +220,11 @@ internal class BoundsAnimationModifierNode(
             lookaheadScope = lookaheadScope,
             placementScope = this,
             coroutineScope = coroutineScope,
+            directManipulationParentsDirty = directManipulationParentsDirty,
             includeMotionFrameOfReference = animateMotionFrameOfReference,
             boundsTransform = boundsTransform,
         )
+        directManipulationParentsDirty = animateMotionFrameOfReference
         return !boundsAnimation.isIdle
     }
 
@@ -237,7 +246,13 @@ internal class BoundsAnimationModifierNode(
         val chosenConstraints = onChooseMeasureConstraints(animatedSize, constraints)
 
         val placeable = measurable.measure(chosenConstraints)
-        return layout(animatedSize.width, animatedSize.height) {
+        // Constrain the animated size to the chosen constraints. This is important, particularly
+        // for the outer AnimateBoundsModifierElement, because we want to avoid parent layout
+        // placing this node in its center due to the non-conforming size. In that scenario, we'd
+        // have no guarantee that the parent's center-placement is animated, esp if the
+        // parent layout places this node using `withMotionFrameOfReferencePlacement`.
+        val (w, h) = chosenConstraints.constrain(animatedSize)
+        return layout(w, h) {
             val animatedBounds = boundsAnimation.value
             val positionInScope =
                 with(lookaheadScope) {
@@ -249,13 +264,12 @@ internal class BoundsAnimationModifierNode(
                         )
                     }
                 }
-
             val topLeft =
                 if (animatedBounds != null) {
                     boundsAnimation.updateCurrentBounds(animatedBounds.topLeft, animatedBounds.size)
                     animatedBounds.topLeft
                 } else {
-                    boundsAnimation.currentBounds?.topLeft ?: Offset.Zero
+                    (boundsAnimation.currentBounds?.topLeft ?: Offset.Zero)
                 }
             val (x, y) = positionInScope?.let { topLeft - it } ?: Offset.Zero
             placeable.place(x.fastRoundToInt(), y.fastRoundToInt())
@@ -339,6 +353,7 @@ internal class BoundsTransformDeferredAnimation {
         lookaheadScope: LookaheadScope,
         placementScope: Placeable.PlacementScope,
         coroutineScope: CoroutineScope,
+        directManipulationParentsDirty: Boolean,
         includeMotionFrameOfReference: Boolean,
         boundsTransform: BoundsTransform,
     ) {
@@ -347,7 +362,7 @@ internal class BoundsTransformDeferredAnimation {
                 val lookaheadScopeCoordinates = placementScope.lookaheadScopeCoordinates
 
                 var delta = Offset.Zero
-                if (!includeMotionFrameOfReference) {
+                if (!includeMotionFrameOfReference && directManipulationParentsDirty) {
                     // As the Layout changes, we need to keep track of the accumulated offset up
                     // the hierarchy tree, to get the proper Offset accounting for scrolling.
                     val parents = directManipulationParents ?: mutableListOf()

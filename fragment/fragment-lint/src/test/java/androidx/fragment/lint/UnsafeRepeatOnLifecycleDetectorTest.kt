@@ -246,7 +246,7 @@ class UnsafeRepeatOnLifecycleDetectorTest : LintDetectorTest() {
             .files(
                 *REPEAT_ON_LIFECYCLE_STUBS,
                 kotlin(
-                    """
+                        """
                     package foo
                     
                     import androidx.lifecycle.Lifecycle
@@ -266,8 +266,8 @@ class UnsafeRepeatOnLifecycleDetectorTest : LintDetectorTest() {
                         }
                     }
                 """
-                        .trimIndent()
-                )
+                    )
+                    .indented()
             )
             .allowCompilationErrors(false)
             .run()
@@ -280,7 +280,7 @@ class UnsafeRepeatOnLifecycleDetectorTest : LintDetectorTest() {
             .files(
                 *REPEAT_ON_LIFECYCLE_STUBS,
                 kotlin(
-                    """
+                        """
                     package foo
                     
                     import androidx.lifecycle.Lifecycle
@@ -298,8 +298,8 @@ class UnsafeRepeatOnLifecycleDetectorTest : LintDetectorTest() {
                         }
                     }
                 """
-                        .trimIndent()
-                )
+                    )
+                    .indented()
             )
             .allowCompilationErrors(false)
             .run()

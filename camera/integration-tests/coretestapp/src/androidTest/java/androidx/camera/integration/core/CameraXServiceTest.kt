@@ -39,14 +39,16 @@ import androidx.camera.integration.core.CameraXService.ACTION_TAKE_PICTURE
 import androidx.camera.integration.core.CameraXService.EXTRA_IMAGE_ANALYSIS_ENABLED
 import androidx.camera.integration.core.CameraXService.EXTRA_IMAGE_CAPTURE_ENABLED
 import androidx.camera.integration.core.CameraXService.EXTRA_VIDEO_CAPTURE_ENABLED
-import androidx.camera.testing.impl.AndroidUtil.isEmulator
+import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.hasCameraWithLensFacing
+import androidx.camera.testing.impl.IgnoreVideoRecordingProblematicDeviceRule.Companion.skipVideoRecordingTestIfNotSupportedByEmulator
 import androidx.camera.testing.impl.mocks.MockConsumer
 import androidx.camera.testing.impl.mocks.helpers.ArgumentCaptor
 import androidx.camera.testing.impl.mocks.helpers.CallTimes
 import androidx.camera.video.VideoCapture
+import androidx.concurrent.futures.await
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
@@ -110,6 +112,7 @@ class CameraXServiceTest(private val implName: String, private val cameraXConfig
         assumeTrue(hasCameraWithLensFacing(LENS_FACING_BACK))
         assumeFalse(isBackgroundRestricted())
 
+        ProcessCameraProvider.configureInstance(cameraXConfig)
         service = bindService()
 
         // Ensure service is started.
@@ -117,14 +120,16 @@ class CameraXServiceTest(private val implName: String, private val cameraXConfig
     }
 
     @After
-    fun tearDown() {
-        if (this::service.isInitialized) {
+    fun tearDown() = runBlocking {
+        if (::service.isInitialized) {
             service.deleteSavedMediaFiles()
             context.unbindService(serviceConnection)
             context.stopService(createServiceIntent())
 
             // Ensure service is destroyed
             LifecycleOwnerUtils.waitUntilState(service, Lifecycle.State.DESTROYED)
+
+            ProcessCameraProvider.getInstance(context).await().shutdownAsync().await()
         }
     }
 
@@ -204,11 +209,7 @@ class CameraXServiceTest(private val implName: String, private val cameraXConfig
 
     @Test
     fun canRecordVideo() = runBlocking {
-        // Skip test for b/332627961
-        assumeFalse(
-            "Emulator API 28 crashes running this test.",
-            Build.VERSION.SDK_INT == 28 && isEmulator()
-        )
+        skipVideoRecordingTestIfNotSupportedByEmulator()
         // Arrange.
         context.startService(
             createServiceIntent(ACTION_BIND_USE_CASES).apply {

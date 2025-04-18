@@ -22,7 +22,6 @@ import static androidx.work.multiprocess.RemoteWorkerWrapperKt.executeRemoteWork
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.Configuration;
 import androidx.work.ForegroundInfo;
@@ -40,6 +39,8 @@ import androidx.work.multiprocess.parcelable.ParcelableResult;
 import androidx.work.multiprocess.parcelable.ParcelableWorkerParameters;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -90,8 +91,8 @@ public class ListenableWorkerImpl extends IListenableWorkerImpl.Stub {
 
     @Override
     public void startWork(
-            @NonNull final byte[] request,
-            @NonNull final IWorkManagerImplCallback callback) {
+            final byte @NonNull [] request,
+            final @NonNull IWorkManagerImplCallback callback) {
         try {
             ParcelableRemoteWorkRequest parcelableRemoteWorkRequest =
                     ParcelConverters.unmarshall(request, ParcelableRemoteWorkRequest.CREATOR);
@@ -144,8 +145,8 @@ public class ListenableWorkerImpl extends IListenableWorkerImpl.Stub {
 
     @Override
     public void interrupt(
-            @NonNull final byte[] request,
-            @NonNull final IWorkManagerImplCallback callback) {
+            final byte @NonNull [] request,
+            final @NonNull IWorkManagerImplCallback callback) {
         try {
             ParcelableInterruptRequest interruptRequest =
                     ParcelConverters.unmarshall(request, ParcelableInterruptRequest.CREATOR);
@@ -172,8 +173,8 @@ public class ListenableWorkerImpl extends IListenableWorkerImpl.Stub {
 
     @Override
     public void getForegroundInfoAsync(
-            @NonNull final byte[] request,
-            @NonNull final IWorkManagerImplCallback callback) {
+            final byte @NonNull [] request,
+            final @NonNull IWorkManagerImplCallback callback) {
         try {
             ParcelableRemoteWorkRequest parcelableRemoteWorkRequest =
                     ParcelConverters.unmarshall(request, ParcelableRemoteWorkRequest.CREATOR);
@@ -231,8 +232,7 @@ public class ListenableWorkerImpl extends IListenableWorkerImpl.Stub {
         }
     }
 
-    @NonNull
-    private ListenableFuture<ListenableWorker.Result> executeWorkRequest(
+    private @NonNull ListenableFuture<ListenableWorker.Result> executeWorkRequest(
             @NonNull String workerClassName,
             @NonNull WorkerParameters workerParameters) {
 

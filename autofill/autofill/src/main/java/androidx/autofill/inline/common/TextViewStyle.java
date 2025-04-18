@@ -24,10 +24,11 @@ import android.util.TypedValue;
 import android.widget.TextView;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Specifies the style for a {@link TextView}.
@@ -85,9 +86,8 @@ public final class TextViewStyle extends ViewStyle {
     /**
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @NonNull
     @Override
-    protected String getStyleKey() {
+    protected @NonNull String getStyleKey() {
         return KEY_TEXT_VIEW_STYLE;
     }
 
@@ -103,9 +103,8 @@ public final class TextViewStyle extends ViewStyle {
         /**
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        @NonNull
         @Override
-        protected Builder getThis() {
+        protected @NonNull Builder getThis() {
             return this;
         }
 
@@ -115,8 +114,7 @@ public final class TextViewStyle extends ViewStyle {
          * @param textSize The scaled pixel size.
          * @see TextView#setTextSize(float)
          */
-        @NonNull
-        public Builder setTextSize(float textSize) {
+        public @NonNull Builder setTextSize(float textSize) {
             mBundle.putFloat(KEY_TEXT_SIZE, textSize);
             return this;
         }
@@ -128,8 +126,7 @@ public final class TextViewStyle extends ViewStyle {
          * @param size The device independent pixel size.
          * @see TextView#setTextSize(int, float)
          */
-        @NonNull
-        public Builder setTextSize(int unit, float size) {
+        public @NonNull Builder setTextSize(int unit, float size) {
             mBundle.putInt(KEY_TEXT_SIZE_UNIT, unit);
             mBundle.putFloat(KEY_TEXT_SIZE, size);
             return this;
@@ -141,8 +138,7 @@ public final class TextViewStyle extends ViewStyle {
          * @param textColor A color value in the form 0xAARRGGBB.
          * @see TextView#setTextColor(int)
          */
-        @NonNull
-        public Builder setTextColor(@ColorInt int textColor) {
+        public @NonNull Builder setTextColor(@ColorInt int textColor) {
             mBundle.putInt(KEY_TEXT_COLOR, textColor);
             return this;
         }
@@ -156,17 +152,15 @@ public final class TextViewStyle extends ViewStyle {
          * @see Typeface#create(String, int)
          * @see TextView#setTypeface(Typeface, int)
          */
-        @NonNull
-        public Builder setTypeface(@NonNull String fontFamily, int fontStyle) {
+        public @NonNull Builder setTypeface(@NonNull String fontFamily, int fontStyle) {
             Preconditions.checkNotNull(fontFamily, "fontFamily should not be null");
             mBundle.putString(KEY_TEXT_FONT_FAMILY, fontFamily);
             mBundle.putInt(KEY_TEXT_FONT_STYLE, fontStyle);
             return this;
         }
 
-        @NonNull
         @Override
-        public TextViewStyle build() {
+        public @NonNull TextViewStyle build() {
             return new TextViewStyle(mBundle);
         }
     }

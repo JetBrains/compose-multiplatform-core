@@ -1700,6 +1700,31 @@ class AndroidGraphicsLayerTest {
     }
 
     @Test
+    fun testChildLayerHasReferenceToParentLayer() {
+        lateinit var layer1: GraphicsLayer
+        lateinit var layer2: GraphicsLayer
+        graphicsLayerTest(
+            block = { context ->
+                // creating new layers will also schedule a persistence pass in Handler
+                layer1 = context.createGraphicsLayer()
+                layer2 = context.createGraphicsLayer()
+                layer2.record(Density(1f), Ltr, IntSize(10, 10)) {
+                    assertEquals(layer2, drawContext.graphicsLayer)
+                    drawRect(Color.Red)
+                }
+                layer1.record(Density(1f), Ltr, IntSize(10, 10)) {
+                    assertEquals(layer1, drawContext.graphicsLayer)
+                    drawLayer(layer2)
+                }
+                drawLayer(layer1)
+            },
+            verify = {
+                // just verifying there is no crash
+            }
+        )
+    }
+
+    @Test
     fun testCanvasTransformStateRestore() {
         val bg = Color.White
         val layerColor1 = Color.Red

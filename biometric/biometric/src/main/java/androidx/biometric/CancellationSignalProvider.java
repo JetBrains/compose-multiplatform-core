@@ -19,9 +19,10 @@ package androidx.biometric;
 import android.os.CancellationSignal;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Creates and caches cancellation signal objects that are compatible with
@@ -43,8 +44,7 @@ class CancellationSignalProvider {
          *
          * @return An instance of {@link android.os.CancellationSignal}.
          */
-        @NonNull
-        android.os.CancellationSignal getBiometricCancellationSignal();
+        android.os.@NonNull CancellationSignal getBiometricCancellationSignal();
 
         /**
          * Returns a cancellation signal object that is compatible with
@@ -52,8 +52,7 @@ class CancellationSignalProvider {
          *
          * @return An instance of {@link androidx.core.os.CancellationSignal}.
          */
-        @NonNull
-        androidx.core.os.CancellationSignal getFingerprintCancellationSignal();
+        androidx.core.os.@NonNull CancellationSignal getFingerprintCancellationSignal();
     }
 
     /**
@@ -65,13 +64,13 @@ class CancellationSignalProvider {
      * A cancellation signal object that is compatible with
      * {@link android.hardware.biometrics.BiometricPrompt}.
      */
-    @Nullable private android.os.CancellationSignal mBiometricCancellationSignal;
+    private android.os.@Nullable CancellationSignal mBiometricCancellationSignal;
 
     /**
      * A cancellation signal object that is compatible with
      * {@link androidx.core.hardware.fingerprint.FingerprintManagerCompat}.
      */
-    @Nullable private androidx.core.os.CancellationSignal mFingerprintCancellationSignal;
+    private androidx.core.os.@Nullable CancellationSignal mFingerprintCancellationSignal;
 
     /**
      * Creates a new cancellation signal provider instance.
@@ -79,14 +78,12 @@ class CancellationSignalProvider {
     CancellationSignalProvider() {
         mInjector = new Injector() {
             @Override
-            @NonNull
-            public CancellationSignal getBiometricCancellationSignal() {
+            public @NonNull CancellationSignal getBiometricCancellationSignal() {
                 return new CancellationSignal();
             }
 
             @Override
-            @NonNull
-            public androidx.core.os.CancellationSignal getFingerprintCancellationSignal() {
+            public androidx.core.os.@NonNull CancellationSignal getFingerprintCancellationSignal() {
                 return new androidx.core.os.CancellationSignal();
             }
         };
@@ -112,8 +109,7 @@ class CancellationSignalProvider {
      * @return A cancellation signal that can be passed to
      *  {@link android.hardware.biometrics.BiometricPrompt}.
      */
-    @NonNull
-    android.os.CancellationSignal getBiometricCancellationSignal() {
+    android.os.@NonNull CancellationSignal getBiometricCancellationSignal() {
         if (mBiometricCancellationSignal == null) {
             mBiometricCancellationSignal = mInjector.getBiometricCancellationSignal();
         }
@@ -130,8 +126,7 @@ class CancellationSignalProvider {
      * @return A cancellation signal that can be passed to
      *  {@link androidx.core.hardware.fingerprint.FingerprintManagerCompat}.
      */
-    @NonNull
-    androidx.core.os.CancellationSignal getFingerprintCancellationSignal() {
+    androidx.core.os.@NonNull CancellationSignal getFingerprintCancellationSignal() {
         if (mFingerprintCancellationSignal == null) {
             mFingerprintCancellationSignal = mInjector.getFingerprintCancellationSignal();
         }

@@ -23,7 +23,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.filters.SmallTest;
-import androidx.webkit.WebkitUtils;
+import androidx.webkit.test.common.WebkitUtils;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -282,7 +282,7 @@ public class AssetHelperTest {
     private byte[] readFully(InputStream stream) throws IOException {
         ByteArrayOutputStream data = new ByteArrayOutputStream();
         byte[] buf = new byte[4096];
-        for (;;) {
+        for (; ; ) {
             int len = stream.read(buf);
             if (len < 1) break;
             data.write(buf, 0, len);

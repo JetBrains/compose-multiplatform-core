@@ -23,8 +23,9 @@ import android.view.ScrollFeedbackProvider;
 import android.view.View;
 import android.view.ViewConfiguration;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /** Compat to access {@link ScrollFeedbackProvider} across different build versions. */
 public class ScrollFeedbackProviderCompat {
@@ -40,8 +41,7 @@ public class ScrollFeedbackProviderCompat {
     }
 
     /** Creates an instance of {@link ScrollFeedbackProviderCompat}. */
-    @NonNull
-    public static ScrollFeedbackProviderCompat createProvider(@NonNull View view) {
+    public static @NonNull ScrollFeedbackProviderCompat createProvider(@NonNull View view) {
         return new ScrollFeedbackProviderCompat(view);
     }
 

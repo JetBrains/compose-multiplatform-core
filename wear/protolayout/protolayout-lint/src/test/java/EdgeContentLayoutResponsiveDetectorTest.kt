@@ -72,7 +72,7 @@ class EdgeContentLayoutResponsiveDetectorTest : LintDetectorTest() {
                 deviceParametersStub,
                 edgeContentLayoutStub,
                 kotlin(
-                    """
+                        """
                         package foo
                         import androidx.wear.protolayout.material.layouts.EdgeContentLayout
 
@@ -107,8 +107,8 @@ class EdgeContentLayoutResponsiveDetectorTest : LintDetectorTest() {
 
                         }
                     """
-                        .trimIndent()
-                )
+                    )
+                    .indented()
             )
             .issues(EDGE_CONTENT_LAYOUT_ISSUE)
             .run()
@@ -285,7 +285,7 @@ class EdgeContentLayoutResponsiveDetectorTest : LintDetectorTest() {
                 deviceParametersStub,
                 edgeContentLayoutStub,
                 java(
-                    """
+                        """
                         package foo;
                         import androidx.wear.protolayout.material.layouts.EdgeContentLayout;
 
@@ -310,8 +310,8 @@ class EdgeContentLayoutResponsiveDetectorTest : LintDetectorTest() {
                             }
                         }
                     """
-                        .trimIndent()
-                )
+                    )
+                    .indented()
             )
             .issues(EDGE_CONTENT_LAYOUT_ISSUE)
             .run()
@@ -325,7 +325,7 @@ class EdgeContentLayoutResponsiveDetectorTest : LintDetectorTest() {
                 deviceParametersStub,
                 edgeContentLayoutStub,
                 java(
-                    """
+                        """
                         package foo;
                         import androidx.wear.protolayout.material.layouts.EdgeContentLayout;
 
@@ -363,8 +363,8 @@ class EdgeContentLayoutResponsiveDetectorTest : LintDetectorTest() {
                             }
                         }
                     """
-                        .trimIndent()
-                )
+                    )
+                    .indented()
             )
             .issues(EDGE_CONTENT_LAYOUT_ISSUE)
             .run()
@@ -442,7 +442,7 @@ class EdgeContentLayoutResponsiveDetectorTest : LintDetectorTest() {
                 deviceParametersStub,
                 edgeContentLayoutStub,
                 kotlin(
-                    """
+                        """
                         package foo
                         import androidx.wear.protolayout.material.layouts.EdgeContentLayout
 
@@ -453,8 +453,8 @@ class EdgeContentLayoutResponsiveDetectorTest : LintDetectorTest() {
                                 .setResponsiveContentInsetEnabled(true)
                         }
                     """
-                        .trimIndent()
-                )
+                    )
+                    .indented()
             )
             .issues(EDGE_CONTENT_LAYOUT_ISSUE)
             .run()

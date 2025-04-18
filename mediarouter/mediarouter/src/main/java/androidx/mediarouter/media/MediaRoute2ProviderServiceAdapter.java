@@ -857,7 +857,9 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
                 RouteController controller = findControllerByRouteId(routeId);
                 if (controller == null) {
                     controller = getOrCreateRouteController(routeId, groupId);
-                    controller.onSelect();
+                    if (controller != null) {
+                        controller.onSelect();
+                    }
                 }
             }
             for (String routeId : oldRouteIds) {
@@ -876,6 +878,7 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
             MediaRoute2ProviderServiceAdapter.this.notifySessionCreated(mRequestId, mSessionInfo);
         }
 
+        @Nullable
         private RouteController getOrCreateRouteController(String routeId, String routeGroupId) {
             RouteController controller = mRouteIdToControllerMap.get(routeId);
             if (controller != null) {

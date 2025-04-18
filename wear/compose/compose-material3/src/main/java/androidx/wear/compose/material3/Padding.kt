@@ -50,9 +50,9 @@ internal object PaddingDefaults {
      * components, as a dp.
      */
     @Composable
-    fun horizontalContentPadding(): Dp {
+    fun horizontalContentPadding(percentage: Float = horizontalContentPaddingPercentage): Dp {
         val screenWidth = LocalConfiguration.current.screenWidthDp
-        return screenWidth.dp * horizontalContentPaddingPercentage / 100
+        return screenWidth.dp * percentage / 100
     }
 
     /** Default minimum padding between the edge of the screen and the content. */

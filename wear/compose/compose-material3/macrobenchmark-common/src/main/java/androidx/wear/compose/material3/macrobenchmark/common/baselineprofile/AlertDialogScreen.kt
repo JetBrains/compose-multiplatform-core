@@ -134,7 +134,7 @@ private fun AlertDialogWithConfirmAndDismiss() {
         )
     }
     AlertDialog(
-        show = showDialog,
+        visible = showDialog,
         onDismissRequest = { showDialog = false },
         icon = {
             Icon(
@@ -185,7 +185,7 @@ private fun AlertDialogWithEdgeButton() {
     }
 
     AlertDialog(
-        show = showDialog,
+        visible = showDialog,
         onDismissRequest = { showDialog = false },
         icon = {
             Icon(
@@ -224,7 +224,7 @@ private fun AlertDialogWithContentGroups() {
         )
     }
     AlertDialog(
-        show = showDialog,
+        visible = showDialog,
         onDismissRequest = { showDialog = false },
         title = { Text("Share your location") },
         text = { Text(" The following apps have asked you to share your location") },

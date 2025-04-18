@@ -16,13 +16,14 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.UseCase;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 
@@ -37,8 +38,7 @@ import java.util.Collection;
  * instance's corresponding implementation.
  */
 public class AdapterCameraInternal implements CameraInternal {
-    @NonNull
-    private final CameraInternal mCameraInternal;
+    private final @NonNull CameraInternal mCameraInternal;
     private final AdapterCameraInfo mAdapterCameraInfo;
     private final AdapterCameraControl mAdapterCameraControl;
 
@@ -54,8 +54,7 @@ public class AdapterCameraInternal implements CameraInternal {
     /**
      * Returns the associated {@link CameraInternal} implementation instance.
      */
-    @NonNull
-    public CameraInternal getImplementation() {
+    public @NonNull CameraInternal getImplementation() {
         return mCameraInternal;
     }
 
@@ -79,15 +78,13 @@ public class AdapterCameraInternal implements CameraInternal {
         return mCameraInternal.isFrontFacing();
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> release() {
+    public @NonNull ListenableFuture<Void> release() {
         return mCameraInternal.release();
     }
 
-    @NonNull
     @Override
-    public Observable<State> getCameraState() {
+    public @NonNull Observable<State> getCameraState() {
         return mCameraInternal.getCameraState();
     }
 
@@ -101,27 +98,23 @@ public class AdapterCameraInternal implements CameraInternal {
         mCameraInternal.detachUseCases(useCases);
     }
 
-    @NonNull
     @Override
-    public CameraControlInternal getCameraControlInternal() {
+    public @NonNull CameraControlInternal getCameraControlInternal() {
         return mAdapterCameraControl;
     }
 
-    @NonNull
     @Override
-    public CameraInfoInternal getCameraInfoInternal() {
+    public @NonNull CameraInfoInternal getCameraInfoInternal() {
         return mAdapterCameraInfo;
     }
 
-    @NonNull
     @Override
-    public CameraControl getCameraControl() {
+    public @NonNull CameraControl getCameraControl() {
         return mAdapterCameraControl;
     }
 
-    @NonNull
     @Override
-    public CameraInfo getCameraInfo() {
+    public @NonNull CameraInfo getCameraInfo() {
         return mAdapterCameraInfo;
     }
 
@@ -135,25 +128,24 @@ public class AdapterCameraInternal implements CameraInternal {
         mCameraInternal.setPrimary(isPrimary);
     }
 
-    @NonNull
     @Override
-    public CameraConfig getExtendedConfig() {
+    public @NonNull CameraConfig getExtendedConfig() {
         return mCameraInternal.getExtendedConfig();
     }
 
     @Override
-    public boolean isUseCasesCombinationSupported(@NonNull UseCase... useCases) {
+    public boolean isUseCasesCombinationSupported(UseCase @NonNull ... useCases) {
         return mCameraInternal.isUseCasesCombinationSupported(useCases);
     }
 
     @Override
-    public boolean isUseCasesCombinationSupportedByFramework(@NonNull UseCase... useCases) {
+    public boolean isUseCasesCombinationSupportedByFramework(UseCase @NonNull ... useCases) {
         return mCameraInternal.isUseCasesCombinationSupportedByFramework(useCases);
     }
 
     @Override
     public boolean isUseCasesCombinationSupported(boolean withStreamSharing,
-            @NonNull UseCase... useCases) {
+            UseCase @NonNull ... useCases) {
         return mCameraInternal.isUseCasesCombinationSupported(withStreamSharing, useCases);
     }
 

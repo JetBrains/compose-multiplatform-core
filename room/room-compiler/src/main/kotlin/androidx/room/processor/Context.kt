@@ -131,6 +131,8 @@ private constructor(
     val schemaInFolderPath by lazy {
         val internalInputFolder =
             processingEnv.options[ProcessorOptions.INTERNAL_SCHEMA_INPUT_FOLDER.argName]
+                // Warning: Format must match with room-gradle-plugin
+                ?.replace("%20", " ")
         val legacySchemaFolder =
             processingEnv.options[ProcessorOptions.OPTION_SCHEMA_FOLDER.argName]
         if (!internalInputFolder.isNullOrBlank()) {
@@ -145,6 +147,8 @@ private constructor(
     val schemaOutFolderPath by lazy {
         val internalOutputFolder =
             processingEnv.options[ProcessorOptions.INTERNAL_SCHEMA_OUTPUT_FOLDER.argName]
+                // Warning: Format must match with room-gradle-plugin
+                ?.replace("%20", " ")
         val legacySchemaFolder =
             processingEnv.options[ProcessorOptions.OPTION_SCHEMA_FOLDER.argName]
         if (!internalOutputFolder.isNullOrBlank() && !legacySchemaFolder.isNullOrBlank()) {

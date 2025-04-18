@@ -16,227 +16,197 @@
 
 package androidx.compose.ui.autofill
 
-import androidx.compose.ui.autofill.AutofillType.AddressAuxiliaryDetails
-import androidx.compose.ui.autofill.AutofillType.AddressCountry
-import androidx.compose.ui.autofill.AutofillType.AddressLocality
-import androidx.compose.ui.autofill.AutofillType.AddressRegion
-import androidx.compose.ui.autofill.AutofillType.AddressStreet
-import androidx.compose.ui.autofill.AutofillType.BirthDateDay
-import androidx.compose.ui.autofill.AutofillType.BirthDateFull
-import androidx.compose.ui.autofill.AutofillType.BirthDateMonth
-import androidx.compose.ui.autofill.AutofillType.BirthDateYear
-import androidx.compose.ui.autofill.AutofillType.CreditCardExpirationDate
-import androidx.compose.ui.autofill.AutofillType.CreditCardExpirationDay
-import androidx.compose.ui.autofill.AutofillType.CreditCardExpirationMonth
-import androidx.compose.ui.autofill.AutofillType.CreditCardExpirationYear
-import androidx.compose.ui.autofill.AutofillType.CreditCardNumber
-import androidx.compose.ui.autofill.AutofillType.CreditCardSecurityCode
-import androidx.compose.ui.autofill.AutofillType.EmailAddress
-import androidx.compose.ui.autofill.AutofillType.Gender
-import androidx.compose.ui.autofill.AutofillType.NewPassword
-import androidx.compose.ui.autofill.AutofillType.NewUsername
-import androidx.compose.ui.autofill.AutofillType.Password
-import androidx.compose.ui.autofill.AutofillType.PersonFirstName
-import androidx.compose.ui.autofill.AutofillType.PersonFullName
-import androidx.compose.ui.autofill.AutofillType.PersonLastName
-import androidx.compose.ui.autofill.AutofillType.PersonMiddleInitial
-import androidx.compose.ui.autofill.AutofillType.PersonMiddleName
-import androidx.compose.ui.autofill.AutofillType.PersonNamePrefix
-import androidx.compose.ui.autofill.AutofillType.PersonNameSuffix
-import androidx.compose.ui.autofill.AutofillType.PhoneCountryCode
-import androidx.compose.ui.autofill.AutofillType.PhoneNumber
-import androidx.compose.ui.autofill.AutofillType.PhoneNumberDevice
-import androidx.compose.ui.autofill.AutofillType.PhoneNumberNational
-import androidx.compose.ui.autofill.AutofillType.PostalAddress
-import androidx.compose.ui.autofill.AutofillType.PostalCode
-import androidx.compose.ui.autofill.AutofillType.PostalCodeExtended
-import androidx.compose.ui.autofill.AutofillType.SmsOtpCode
-import androidx.compose.ui.autofill.AutofillType.Username
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
+@Suppress("Deprecation")
 @RunWith(JUnit4::class)
 class AndroidAutofillTypeTest {
 
     @Test
     fun emailAddress() {
-        assertThat(EmailAddress.androidType).isEqualTo("emailAddress")
+        assertThat(AutofillType.EmailAddress.androidType).isEqualTo("emailAddress")
     }
 
     @Test
     fun username() {
-        assertThat(Username.androidType).isEqualTo("username")
+        assertThat(AutofillType.Username.androidType).isEqualTo("username")
     }
 
     @Test
     fun password() {
-        assertThat(Password.androidType).isEqualTo("password")
+        assertThat(AutofillType.Password.androidType).isEqualTo("password")
     }
 
     @Test
     fun newUsername() {
-        assertThat(NewUsername.androidType).isEqualTo("newUsername")
+        assertThat(AutofillType.NewUsername.androidType).isEqualTo("newUsername")
     }
 
     @Test
     fun newPassword() {
-        assertThat(NewPassword.androidType).isEqualTo("newPassword")
+        assertThat(AutofillType.NewPassword.androidType).isEqualTo("newPassword")
     }
 
     @Test
     fun postalAddress() {
-        assertThat(PostalAddress.androidType).isEqualTo("postalAddress")
+        assertThat(AutofillType.PostalAddress.androidType).isEqualTo("postalAddress")
     }
 
     @Test
     fun postalCode() {
-        assertThat(PostalCode.androidType).isEqualTo("postalCode")
+        assertThat(AutofillType.PostalCode.androidType).isEqualTo("postalCode")
     }
 
     @Test
     fun creditCardNumber() {
-        assertThat(CreditCardNumber.androidType).isEqualTo("creditCardNumber")
+        assertThat(AutofillType.CreditCardNumber.androidType).isEqualTo("creditCardNumber")
     }
 
     @Test
     fun creditCardSecurityCode() {
-        assertThat(CreditCardSecurityCode.androidType).isEqualTo("creditCardSecurityCode")
+        assertThat(AutofillType.CreditCardSecurityCode.androidType)
+            .isEqualTo("creditCardSecurityCode")
     }
 
     @Test
     fun creditCardExpirationDate() {
-        assertThat(CreditCardExpirationDate.androidType).isEqualTo("creditCardExpirationDate")
+        assertThat(AutofillType.CreditCardExpirationDate.androidType)
+            .isEqualTo("creditCardExpirationDate")
     }
 
     @Test
     fun creditCardExpirationMonth() {
-        assertThat(CreditCardExpirationMonth.androidType).isEqualTo("creditCardExpirationMonth")
+        assertThat(AutofillType.CreditCardExpirationMonth.androidType)
+            .isEqualTo("creditCardExpirationMonth")
     }
 
     @Test
     fun creditCardExpirationYear() {
-        assertThat(CreditCardExpirationYear.androidType).isEqualTo("creditCardExpirationYear")
+        assertThat(AutofillType.CreditCardExpirationYear.androidType)
+            .isEqualTo("creditCardExpirationYear")
     }
 
     @Test
     fun creditCardExpirationDay() {
-        assertThat(CreditCardExpirationDay.androidType).isEqualTo("creditCardExpirationDay")
+        assertThat(AutofillType.CreditCardExpirationDay.androidType)
+            .isEqualTo("creditCardExpirationDay")
     }
 
     @Test
     fun addressCountry() {
-        assertThat(AddressCountry.androidType).isEqualTo("addressCountry")
+        assertThat(AutofillType.AddressCountry.androidType).isEqualTo("addressCountry")
     }
 
     @Test
     fun addressRegion() {
-        assertThat(AddressRegion.androidType).isEqualTo("addressRegion")
+        assertThat(AutofillType.AddressRegion.androidType).isEqualTo("addressRegion")
     }
 
     @Test
     fun addressLocality() {
-        assertThat(AddressLocality.androidType).isEqualTo("addressLocality")
+        assertThat(AutofillType.AddressLocality.androidType).isEqualTo("addressLocality")
     }
 
     @Test
     fun addressStreet() {
-        assertThat(AddressStreet.androidType).isEqualTo("streetAddress")
+        assertThat(AutofillType.AddressStreet.androidType).isEqualTo("streetAddress")
     }
 
     @Test
     fun addressAuxiliaryDetails() {
-        assertThat(AddressAuxiliaryDetails.androidType).isEqualTo("extendedAddress")
+        assertThat(AutofillType.AddressAuxiliaryDetails.androidType).isEqualTo("extendedAddress")
     }
 
     @Test
     fun postalCodeExtended() {
-        assertThat(PostalCodeExtended.androidType).isEqualTo("extendedPostalCode")
+        assertThat(AutofillType.PostalCodeExtended.androidType).isEqualTo("extendedPostalCode")
     }
 
     @Test
     fun personFullName() {
-        assertThat(PersonFullName.androidType).isEqualTo("personName")
+        assertThat(AutofillType.PersonFullName.androidType).isEqualTo("personName")
     }
 
     @Test
     fun personFirstName() {
-        assertThat(PersonFirstName.androidType).isEqualTo("personGivenName")
+        assertThat(AutofillType.PersonFirstName.androidType).isEqualTo("personGivenName")
     }
 
     @Test
     fun personLastName() {
-        assertThat(PersonLastName.androidType).isEqualTo("personFamilyName")
+        assertThat(AutofillType.PersonLastName.androidType).isEqualTo("personFamilyName")
     }
 
     @Test
     fun personMiddleName() {
-        assertThat(PersonMiddleName.androidType).isEqualTo("personMiddleName")
+        assertThat(AutofillType.PersonMiddleName.androidType).isEqualTo("personMiddleName")
     }
 
     @Test
     fun personMiddleInitial() {
-        assertThat(PersonMiddleInitial.androidType).isEqualTo("personMiddleInitial")
+        assertThat(AutofillType.PersonMiddleInitial.androidType).isEqualTo("personMiddleInitial")
     }
 
     @Test
     fun personNamePrefix() {
-        assertThat(PersonNamePrefix.androidType).isEqualTo("personNamePrefix")
+        assertThat(AutofillType.PersonNamePrefix.androidType).isEqualTo("personNamePrefix")
     }
 
     @Test
     fun personNameSuffix() {
-        assertThat(PersonNameSuffix.androidType).isEqualTo("personNameSuffix")
+        assertThat(AutofillType.PersonNameSuffix.androidType).isEqualTo("personNameSuffix")
     }
 
     @Test
     fun phoneNumber() {
-        assertThat(PhoneNumber.androidType).isEqualTo("phoneNumber")
+        assertThat(AutofillType.PhoneNumber.androidType).isEqualTo("phoneNumber")
     }
 
     @Test
     fun phoneNumberDevice() {
-        assertThat(PhoneNumberDevice.androidType).isEqualTo("phoneNumberDevice")
+        assertThat(AutofillType.PhoneNumberDevice.androidType).isEqualTo("phoneNumberDevice")
     }
 
     @Test
     fun phoneCountryCode() {
-        assertThat(PhoneCountryCode.androidType).isEqualTo("phoneCountryCode")
+        assertThat(AutofillType.PhoneCountryCode.androidType).isEqualTo("phoneCountryCode")
     }
 
     @Test
     fun phoneNumberNational() {
-        assertThat(PhoneNumberNational.androidType).isEqualTo("phoneNational")
+        assertThat(AutofillType.PhoneNumberNational.androidType).isEqualTo("phoneNational")
     }
 
     @Test
     fun gender() {
-        assertThat(Gender.androidType).isEqualTo("gender")
+        assertThat(AutofillType.Gender.androidType).isEqualTo("gender")
     }
 
     @Test
     fun birthDateFull() {
-        assertThat(BirthDateFull.androidType).isEqualTo("birthDateFull")
+        assertThat(AutofillType.BirthDateFull.androidType).isEqualTo("birthDateFull")
     }
 
     @Test
     fun birthDateDay() {
-        assertThat(BirthDateDay.androidType).isEqualTo("birthDateDay")
+        assertThat(AutofillType.BirthDateDay.androidType).isEqualTo("birthDateDay")
     }
 
     @Test
     fun birthDateMonth() {
-        assertThat(BirthDateMonth.androidType).isEqualTo("birthDateMonth")
+        assertThat(AutofillType.BirthDateMonth.androidType).isEqualTo("birthDateMonth")
     }
 
     @Test
     fun birthDateYear() {
-        assertThat(BirthDateYear.androidType).isEqualTo("birthDateYear")
+        assertThat(AutofillType.BirthDateYear.androidType).isEqualTo("birthDateYear")
     }
 
     @Test
     fun smsOTPCode() {
-        assertThat(SmsOtpCode.androidType).isEqualTo("smsOTPCode")
+        assertThat(AutofillType.SmsOtpCode.androidType).isEqualTo("smsOTPCode")
     }
 }

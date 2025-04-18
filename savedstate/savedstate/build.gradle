@@ -7,10 +7,8 @@
  */
 
 
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 
 plugins {
     id("AndroidXPlugin")
@@ -19,15 +17,11 @@ plugins {
 }
 
 androidXMultiplatform {
-    android()
+    androidTarget()
     desktop()
     ios()
     linux()
     mac()
-
-    kotlin {
-        explicitApi = ExplicitApiMode.Strict
-    }
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -36,7 +30,8 @@ androidXMultiplatform {
             dependencies {
                 api(libs.kotlinStdlib)
                 api("androidx.annotation:annotation:1.8.0")
-                api(projectOrArtifact(":lifecycle:lifecycle-common"))
+                api(androidx.projectOrArtifact(":lifecycle:lifecycle-common"))
+                api(libs.kotlinCoroutinesCore)
                 api(libs.kotlinSerializationCore)
             }
         }
@@ -65,7 +60,7 @@ androidXMultiplatform {
             dependencies {
                 api("androidx.annotation:annotation:1.8.1")
                 implementation("androidx.core:core-ktx:1.13.1")
-                implementation(projectOrArtifact(":core:core-viewtree"))
+                implementation("androidx.core:core-viewtree:1.0.0")
                 api(libs.kotlinStdlib)
             }
         }
@@ -170,11 +165,9 @@ android {
 
 androidx {
     name = "Saved State"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     samples(project(":savedstate:savedstate-samples"))
     inceptionYear = "2018"
     description = "Android Lifecycle Saved State"
-    legacyDisableKotlinStrictApiMode = true
     metalavaK2UastEnabled = false
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

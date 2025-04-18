@@ -100,6 +100,7 @@ internal class OkioStorageConnection<T>(
     // TODO:(b/233402915) support multiple readers
     private val transactionMutex = Mutex()
 
+    // TODO(b/394876261): Add exception handling for exceptions thrown due to direct boot.
     override suspend fun <R> readScope(block: suspend ReadScope<T>.(locked: Boolean) -> R): R {
         checkNotClosed()
 
@@ -115,6 +116,7 @@ internal class OkioStorageConnection<T>(
         }
     }
 
+    // TODO(b/394876261): Add exception handling for exceptions thrown due to direct boot.
     override suspend fun writeScope(block: suspend WriteScope<T>.() -> Unit) {
         checkNotClosed()
         val parentDir = path.parent ?: error("must have a parent path")
@@ -165,9 +167,14 @@ internal open class OkioReadScope<T>(
             fileSystem.read(file = path) { serializer.readFrom(this) }
         } catch (ex: FileNotFoundException) {
             if (fileSystem.exists(path)) {
-                throw ex
+                // Attempt a second read in case a race condition resulted in the file being created
+                // by a different process. If we can't read again, a FileNotFoundException is
+                // thrown.
+                fileSystem.read(file = path) { serializer.readFrom(this) }
+            } else {
+                // File does not exist, return default value.
+                serializer.defaultValue
             }
-            serializer.defaultValue
         }
     }
 

@@ -125,6 +125,7 @@ internal abstract class GitChangedFilesSource :
                 }
                 String(output.toByteArray(), Charset.defaultCharset()).trim()
             }
+        output.reset()
         // Get the list of changed files since the last git merge commit
         execOperations.exec {
             it.commandLine("git", "diff", "--name-only", "HEAD", baseCommit)

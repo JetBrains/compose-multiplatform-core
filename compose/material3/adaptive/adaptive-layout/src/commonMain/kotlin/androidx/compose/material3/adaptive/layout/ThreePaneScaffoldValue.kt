@@ -22,17 +22,6 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.util.fastForEachReversed
 
-@ExperimentalMaterial3AdaptiveApi
-private inline fun buildThreePaneScaffoldValue(
-    buildAction: (ThreePaneScaffoldRole) -> PaneAdaptedValue
-): ThreePaneScaffoldValue {
-    return ThreePaneScaffoldValue(
-        buildAction(ThreePaneScaffoldRole.Primary),
-        buildAction(ThreePaneScaffoldRole.Secondary),
-        buildAction(ThreePaneScaffoldRole.Tertiary)
-    )
-}
-
 /**
  * Calculates the current adapted value of [ThreePaneScaffold] according to the given
  * [maxHorizontalPartitions], [adaptStrategies] and [currentDestination]. The returned value can be
@@ -50,25 +39,24 @@ private inline fun buildThreePaneScaffoldValue(
  *   the default value will be [ThreePaneScaffoldDefaults.adaptStrategies].
  * @param currentDestination The current destination item, which will be treated as having the
  *   highest priority, can be `null`.
+ * @param maxVerticalPartitions The maximum allowed partitions along the vertical axis, by default
+ *   it will be 1 and in this case no reflowed panes will be allowed; if the value equals to or
+ *   larger than 2, reflowed panes are allowed, besides the expanded pane in the same horizontal
+ *   partition.
  */
 @ExperimentalMaterial3AdaptiveApi
 fun calculateThreePaneScaffoldValue(
     maxHorizontalPartitions: Int,
     adaptStrategies: ThreePaneScaffoldAdaptStrategies,
     currentDestination: ThreePaneScaffoldDestinationItem<*>?,
-): ThreePaneScaffoldValue {
-    var expandedCount = if (currentDestination != null) 1 else 0
-    return buildThreePaneScaffoldValue { role ->
-        when {
-            role == currentDestination?.pane -> PaneAdaptedValue.Expanded
-            expandedCount < maxHorizontalPartitions -> {
-                expandedCount++
-                PaneAdaptedValue.Expanded
-            }
-            else -> adaptStrategies[role].adapt()
-        }
-    }
-}
+    maxVerticalPartitions: Int = 1
+): ThreePaneScaffoldValue =
+    calculateThreePaneScaffoldValue(
+        maxHorizontalPartitions,
+        adaptStrategies,
+        listOfNotNull(currentDestination),
+        maxVerticalPartitions
+    )
 
 /**
  * Calculates the current adapted value of [ThreePaneScaffold] according to the given
@@ -89,68 +77,103 @@ fun calculateThreePaneScaffoldValue(
  *   the highest priority, and the second last destination will have the second highest priority,
  *   and so forth until all panes have a priority assigned. Note that the last destination is
  *   supposed to be the last item of the provided list.
+ * @param maxVerticalPartitions The maximum allowed partitions along the vertical axis, by default
+ *   it will be 1 and in this case no reflowed panes will be allowed; if the value equals to or
+ *   larger than 2, reflowed panes are allowed, besides the expanded pane in the same horizontal
+ *   partition.
  */
 @ExperimentalMaterial3AdaptiveApi
 fun calculateThreePaneScaffoldValue(
     maxHorizontalPartitions: Int,
     adaptStrategies: ThreePaneScaffoldAdaptStrategies,
     destinationHistory: List<ThreePaneScaffoldDestinationItem<*>>,
+    maxVerticalPartitions: Int = 1
 ): ThreePaneScaffoldValue {
     var expandedCount = 0
     var primaryPaneAdaptedValue: PaneAdaptedValue? = null
     var secondaryPaneAdaptedValue: PaneAdaptedValue? = null
     var tertiaryPaneAdaptedValue: PaneAdaptedValue? = null
-    destinationHistory.fastForEachReversed {
-        if (expandedCount >= maxHorizontalPartitions) {
-            return@fastForEachReversed
+
+    fun getAdaptedValue(role: ThreePaneScaffoldRole) =
+        when (role) {
+            ThreePaneScaffoldRole.Primary -> primaryPaneAdaptedValue
+            ThreePaneScaffoldRole.Secondary -> secondaryPaneAdaptedValue
+            ThreePaneScaffoldRole.Tertiary -> tertiaryPaneAdaptedValue
         }
-        when (it.pane) {
-            ThreePaneScaffoldRole.Primary -> {
-                if (primaryPaneAdaptedValue == null) {
-                    primaryPaneAdaptedValue = PaneAdaptedValue.Expanded
-                    expandedCount++
+
+    fun setAdaptedValue(role: ThreePaneScaffoldRole, value: PaneAdaptedValue) {
+        when (role) {
+            ThreePaneScaffoldRole.Primary -> primaryPaneAdaptedValue = value
+            ThreePaneScaffoldRole.Secondary -> secondaryPaneAdaptedValue = value
+            ThreePaneScaffoldRole.Tertiary -> tertiaryPaneAdaptedValue = value
+        }
+    }
+
+    var checkReflowedPane =
+        maxHorizontalPartitions == 1 &&
+            maxVerticalPartitions > 1 &&
+            (adaptStrategies[ThreePaneScaffoldRole.Primary] is AdaptStrategy.Reflow ||
+                adaptStrategies[ThreePaneScaffoldRole.Secondary] is AdaptStrategy.Reflow ||
+                adaptStrategies[ThreePaneScaffoldRole.Tertiary] is AdaptStrategy.Reflow)
+
+    run {
+        forEachPaneByPriority(destinationHistory) { pane ->
+            val hasAvailablePartition = expandedCount < maxHorizontalPartitions
+            if (!hasAvailablePartition && !checkReflowedPane) {
+                return@run // No need to check more panes, break;
+            }
+            if (getAdaptedValue(pane) != null) {
+                return@forEachPaneByPriority // Pane already adapted, continue;
+            }
+            var reflowedPane: ThreePaneScaffoldRole? = null
+            var anchorPane: ThreePaneScaffoldRole = pane
+            var anchorPaneValue: PaneAdaptedValue? = null
+            if (checkReflowedPane) {
+                (adaptStrategies[pane] as? AdaptStrategy.Reflow)?.apply {
+                    (this.targetPane as? ThreePaneScaffoldRole)?.apply {
+                        reflowedPane = pane
+                        anchorPane = this
+                        anchorPaneValue = getAdaptedValue(anchorPane)
+                    }
                 }
             }
-            ThreePaneScaffoldRole.Secondary -> {
-                if (secondaryPaneAdaptedValue == null) {
-                    secondaryPaneAdaptedValue = PaneAdaptedValue.Expanded
-                    expandedCount++
+            when (anchorPaneValue) {
+                null ->
+                    if (hasAvailablePartition) {
+                        // Expand the anchor pane to reflow the pane
+                        setAdaptedValue(anchorPane, PaneAdaptedValue.Expanded)
+                        expandedCount++
+                    } else {
+                        // Cannot expand the anchor pane, continue;
+                        return@forEachPaneByPriority
+                    }
+                PaneAdaptedValue.Expanded -> {
+                    // Anchor pane is expanded, do nothing
                 }
+                else -> return@forEachPaneByPriority // Anchor pane is not expanded, continue;
             }
-            ThreePaneScaffoldRole.Tertiary -> {
-                if (tertiaryPaneAdaptedValue == null) {
-                    tertiaryPaneAdaptedValue = PaneAdaptedValue.Expanded
-                    expandedCount++
-                }
+            reflowedPane?.apply {
+                setAdaptedValue(this, PaneAdaptedValue.Reflowed(anchorPane))
+                checkReflowedPane = false
             }
         }
     }
     return ThreePaneScaffoldValue(
-        primary =
-            primaryPaneAdaptedValue
-                ?: if (expandedCount < maxHorizontalPartitions) {
-                    expandedCount++
-                    PaneAdaptedValue.Expanded
-                } else {
-                    adaptStrategies[ThreePaneScaffoldRole.Primary].adapt()
-                },
-        secondary =
-            secondaryPaneAdaptedValue
-                ?: if (expandedCount < maxHorizontalPartitions) {
-                    expandedCount++
-                    PaneAdaptedValue.Expanded
-                } else {
-                    adaptStrategies[ThreePaneScaffoldRole.Secondary].adapt()
-                },
-        tertiary =
-            tertiaryPaneAdaptedValue
-                ?: if (expandedCount < maxHorizontalPartitions) {
-                    expandedCount++
-                    PaneAdaptedValue.Expanded
-                } else {
-                    adaptStrategies[ThreePaneScaffoldRole.Tertiary].adapt()
-                }
+        primary = primaryPaneAdaptedValue ?: PaneAdaptedValue.Hidden,
+        secondary = secondaryPaneAdaptedValue ?: PaneAdaptedValue.Hidden,
+        tertiary = tertiaryPaneAdaptedValue ?: PaneAdaptedValue.Hidden,
     )
+}
+
+@ExperimentalMaterial3AdaptiveApi
+private inline fun forEachPaneByPriority(
+    destinationHistory: List<ThreePaneScaffoldDestinationItem<*>>,
+    action: (ThreePaneScaffoldRole) -> Unit
+) {
+    destinationHistory.fastForEachReversed { action(it.pane) }
+    action(ThreePaneScaffoldRole.Primary)
+    action(ThreePaneScaffoldRole.Secondary)
+    action(ThreePaneScaffoldRole.Tertiary)
 }
 
 /**

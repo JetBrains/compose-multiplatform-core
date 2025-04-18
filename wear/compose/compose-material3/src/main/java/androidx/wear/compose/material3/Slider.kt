@@ -46,13 +46,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.SliderDefaults.MaxSegmentSteps
 import androidx.wear.compose.material3.internal.Icons
-import androidx.wear.compose.material3.internal.Strings.Companion.SliderDecreaseButtonContentDescription
-import androidx.wear.compose.material3.internal.Strings.Companion.SliderIncreaseButtonContentDescription
+import androidx.wear.compose.material3.internal.Strings.Companion.SliderDecreaseIconContentDescription
+import androidx.wear.compose.material3.internal.Strings.Companion.SliderIncreaseIconContentDescription
 import androidx.wear.compose.material3.internal.getString
 import androidx.wear.compose.material3.tokens.MotionTokens
 import androidx.wear.compose.material3.tokens.SliderTokens
@@ -106,7 +112,7 @@ import kotlin.math.roundToInt
  *   this slider in different states.
  */
 @Composable
-fun Slider(
+public fun Slider(
     value: Float,
     onValueChange: (Float) -> Unit,
     steps: Int,
@@ -131,16 +137,25 @@ fun Slider(
                 .clip(shape)
     ) {
         val visibleSegments = if (segmented) steps + 1 else 1
+        val hapticFeedback = LocalHapticFeedback.current
 
         val updateValue: (Int) -> Unit = { stepDiff ->
             val newValue = calculateCurrentStepValue(currentStep + stepDiff, steps, valueRange)
-            if (newValue != value) onValueChange(newValue)
+            if (newValue != value) {
+                onValueChange(newValue)
+                if (newValue > valueRange.start && newValue < valueRange.endInclusive) {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                } else {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                }
+            }
         }
         val selectedBarColor = colors.barColor(enabled, true)
         val unselectedBarColor = colors.barColor(enabled, false)
         val containerColor = colors.containerColor(enabled)
         val selectedBarSeparatorColor = colors.barSeparatorColor(enabled, true)
         val unselectedBarSeparatorColor = colors.barSeparatorColor(enabled, false)
+
         CompositionLocalProvider(
             LocalIndication provides ripple(bounded = false, radius = this.maxWidth / 2)
         ) {
@@ -151,22 +166,6 @@ fun Slider(
             ) {
                 val increaseButtonEnabled = enabled && currentStep < steps + 1
                 val decreaseButtonEnabled = enabled && currentStep > 0
-
-                InlineSliderButton(
-                    enabled = decreaseButtonEnabled,
-                    onClick = { updateValue(-1) },
-                    contentAlignment = Alignment.Center,
-                    buttonControlSize = CONTROL_SIZE,
-                    modifier = Modifier,
-                    content = {
-                        SliderButtonContent(
-                            decreaseButtonEnabled,
-                            { enabled -> colors.buttonIconColor(enabled) },
-                            decreaseIcon
-                        )
-                    }
-                )
-
                 val valueRatio by
                     animateFloatAsState(
                         targetValue = currentStep.toFloat() / (steps + 1).toFloat(),
@@ -178,6 +177,24 @@ fun Slider(
                             ),
                         label = "sliderProgressBarAnimation"
                     )
+
+                InlineSliderButton(
+                    enabled = decreaseButtonEnabled,
+                    onClick = { updateValue(-1) },
+                    contentAlignment = Alignment.Center,
+                    buttonControlSize = CONTROL_SIZE,
+                    modifier =
+                        Modifier.semantics(mergeDescendants = true) {
+                            progressBarRangeInfo = ProgressBarRangeInfo(valueRatio, 0f..1f)
+                        },
+                    content = {
+                        SliderButtonContent(
+                            decreaseButtonEnabled,
+                            { enabled -> colors.buttonIconColor(enabled) },
+                            decreaseIcon
+                        )
+                    }
+                )
 
                 Box(
                     modifier =
@@ -201,7 +218,10 @@ fun Slider(
                     onClick = { updateValue(1) },
                     contentAlignment = Alignment.Center,
                     buttonControlSize = CONTROL_SIZE,
-                    modifier = Modifier,
+                    modifier =
+                        Modifier.semantics(mergeDescendants = true) {
+                            progressBarRangeInfo = ProgressBarRangeInfo(valueRatio, 0f..1f)
+                        },
                     content = {
                         SliderButtonContent(
                             increaseButtonEnabled,
@@ -262,7 +282,7 @@ fun Slider(
  *   this slider in different states.
  */
 @Composable
-fun Slider(
+public fun Slider(
     value: Int,
     onValueChange: (Int) -> Unit,
     valueProgression: IntProgression,
@@ -290,36 +310,55 @@ fun Slider(
 }
 
 /** Defaults used by slider. */
-object SliderDefaults {
-    /** The recommended size for Slider [DecreaseIcon] and [IncreaseIcon] button icons. */
-    val IconSize = 24.dp
+public object SliderDefaults {
+    /** The recommended size for Slider button icons. */
+    public val IconSize: Dp = 24.dp
 
     /** The maximum recommended number of steps for a segmented [Slider]. */
-    val MaxSegmentSteps = 8
+    public val MaxSegmentSteps: Int = 8
 
     /** The recommended [Shape] for Slider. */
-    val shape: Shape
+    public val shape: Shape
         @Composable get() = SliderTokens.ContainerShape.value
 
-    /** Decrease Icon. */
+    /**
+     * The recommended decrease icon.
+     *
+     * @param modifier Modifier to be applied to the decrease icon.
+     * @param contentDescription The content description for the decrease icon.
+     */
     @Composable
-    fun DecreaseIcon(modifier: Modifier = Modifier) =
-        Icon(
-            Icons.Remove,
-            getString(SliderDecreaseButtonContentDescription),
-            modifier.size(IconSize)
-        )
+    public fun DecreaseIcon(
+        modifier: Modifier = Modifier,
+        contentDescription: String = decreaseIconContentDescription
+    ): Unit = Icon(Icons.Remove, contentDescription, modifier.size(IconSize))
 
-    /** Increase Icon. */
+    /**
+     * The recommended increase icon.
+     *
+     * @param modifier Modifier to be applied to the increase icon.
+     * @param contentDescription The content description for the increase icon.
+     */
     @Composable
-    fun IncreaseIcon(modifier: Modifier = Modifier) =
-        Icon(Icons.Add, getString(SliderIncreaseButtonContentDescription), modifier.size(IconSize))
+    public fun IncreaseIcon(
+        modifier: Modifier = Modifier,
+        contentDescription: String = increaseIconContentDescription
+    ): Unit = Icon(Icons.Add, contentDescription, modifier.size(IconSize))
+
+    /** The default content description for the increase icon */
+    public val increaseIconContentDescription: String
+        @Composable get() = getString(SliderIncreaseIconContentDescription)
+
+    /** The default content description for the decrease button */
+    public val decreaseIconContentDescription: String
+        @Composable get() = getString(SliderDecreaseIconContentDescription)
 
     /**
      * Creates a [SliderColors] that represents the default background and content colors used in an
      * [Slider].
      */
-    @Composable fun sliderColors() = MaterialTheme.colorScheme.defaultSliderColor
+    @Composable
+    public fun sliderColors(): SliderColors = MaterialTheme.colorScheme.defaultSliderColor
 
     /**
      * Creates a [SliderColors] that represents the default background and content colors used in an
@@ -343,7 +382,7 @@ object SliderDefaults {
      *   segments when disabled
      */
     @Composable
-    fun sliderColors(
+    public fun sliderColors(
         containerColor: Color = Color.Unspecified,
         buttonIconColor: Color = Color.Unspecified,
         selectedBarColor: Color = Color.Unspecified,
@@ -381,7 +420,9 @@ object SliderDefaults {
      *
      * @sample androidx.wear.compose.material3.samples.ChangedSliderSample
      */
-    @Composable fun variantSliderColors() = MaterialTheme.colorScheme.defaultVariantSliderColor
+    @Composable
+    public fun variantSliderColors(): SliderColors =
+        MaterialTheme.colorScheme.defaultVariantSliderColor
 
     /**
      * Creates a [SliderColors] as an alternative to the default colors, providing a visual
@@ -409,7 +450,7 @@ object SliderDefaults {
      *   segments when disabled
      */
     @Composable
-    fun variantSliderColors(
+    public fun variantSliderColors(
         containerColor: Color = Color.Unspecified,
         buttonIconColor: Color = Color.Unspecified,
         selectedBarColor: Color = Color.Unspecified,
@@ -538,20 +579,19 @@ object SliderDefaults {
  *   default implementation that follows Material specifications.
  */
 @Immutable
-class SliderColors
-constructor(
-    val containerColor: Color,
-    val buttonIconColor: Color,
-    val selectedBarColor: Color,
-    val unselectedBarColor: Color,
-    val selectedBarSeparatorColor: Color,
-    val unselectedBarSeparatorColor: Color,
-    val disabledContainerColor: Color,
-    val disabledButtonIconColor: Color,
-    val disabledSelectedBarColor: Color,
-    val disabledUnselectedBarColor: Color,
-    val disabledSelectedBarSeparatorColor: Color,
-    val disabledUnselectedBarSeparatorColor: Color,
+public class SliderColors(
+    public val containerColor: Color,
+    public val buttonIconColor: Color,
+    public val selectedBarColor: Color,
+    public val unselectedBarColor: Color,
+    public val selectedBarSeparatorColor: Color,
+    public val unselectedBarSeparatorColor: Color,
+    public val disabledContainerColor: Color,
+    public val disabledButtonIconColor: Color,
+    public val disabledSelectedBarColor: Color,
+    public val disabledUnselectedBarColor: Color,
+    public val disabledSelectedBarSeparatorColor: Color,
+    public val disabledUnselectedBarSeparatorColor: Color,
 ) {
     /**
      * Returns a copy of this SliderColors optionally overriding some of the values.
@@ -573,7 +613,7 @@ constructor(
      * @param disabledUnselectedBarSeparatorColor The color of unselected separator between visible
      *   segments when disabled.
      */
-    fun copy(
+    public fun copy(
         containerColor: Color = this.containerColor,
         buttonIconColor: Color = this.buttonIconColor,
         selectedBarColor: Color = this.selectedBarColor,
@@ -586,7 +626,7 @@ constructor(
         disabledUnselectedBarColor: Color = this.disabledUnselectedBarColor,
         disabledSelectedBarSeparatorColor: Color = this.disabledSelectedBarSeparatorColor,
         disabledUnselectedBarSeparatorColor: Color = this.disabledUnselectedBarSeparatorColor,
-    ) =
+    ): SliderColors =
         SliderColors(
             containerColor = containerColor.takeOrElse { this.containerColor },
             buttonIconColor = buttonIconColor.takeOrElse { this.buttonIconColor },

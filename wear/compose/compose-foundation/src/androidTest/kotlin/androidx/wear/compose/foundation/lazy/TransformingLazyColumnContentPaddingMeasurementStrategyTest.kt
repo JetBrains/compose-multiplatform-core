@@ -22,7 +22,6 @@ import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.layout.AlignmentLine
-import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.unit.Constraints
@@ -46,7 +45,7 @@ import org.junit.runner.RunWith
 class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
     private val screenHeight = 100
     private val screenWidth = 120
-    private val density = 1f
+    private val density = Density(1f)
 
     private val containerConstraints =
         Constraints(
@@ -116,13 +115,10 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
     @Test
     fun twoItemsWithFirstTopAlignedWithPadding_measuredWithCorrectOffsets() {
         val topPadding = 5.dp
-        val topPaddingPx = with(measureScope) { topPadding.roundToPx() }
+        val topPaddingPx = with(density) { topPadding.roundToPx() }
         val strategyWithTopPadding =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
+            measurementStrategy(
                 PaddingValues(top = topPadding),
-                measureScope,
-                mockGraphicContext,
-                mockItemAnimator
             )
 
         val result = strategyWithTopPadding.measure(listOf(screenHeight / 2, screenHeight / 2))
@@ -137,13 +133,10 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
     @Test
     fun twoItemsWithLastOneAlignedWithPadding_measuredWithCorrectOffsets() {
         val bottomPadding = 5.dp
-        val bottomPaddingPx = with(measureScope) { bottomPadding.roundToPx() }
+        val bottomPaddingPx = with(density) { bottomPadding.roundToPx() }
         val strategyWithBottomPadding =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
+            measurementStrategy(
                 PaddingValues(bottom = bottomPadding),
-                measureScope,
-                mockGraphicContext,
-                mockItemAnimator
             )
 
         val result = strategyWithBottomPadding.measure(listOf(screenHeight / 2, screenHeight / 2))
@@ -389,12 +382,9 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
     @Test
     fun fullSizeBottomContentPadding_doesNotCrash() {
         val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
+            measurementStrategy(
                 // Padding takes the full size.
-                PaddingValues(bottom = with(Density(density)) { screenHeight.toDp() }),
-                measureScope,
-                mockGraphicContext,
-                mockItemAnimator
+                PaddingValues(bottom = with(density) { screenHeight.toDp() }),
             )
 
         val itemSize = screenHeight / 4
@@ -409,12 +399,9 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
     @Test
     fun fullSizeTopContentPadding_doesNotCrash() {
         val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
+            measurementStrategy(
                 // Padding takes the full size.
-                PaddingValues(top = with(Density(density)) { screenHeight.toDp() }),
-                measureScope,
-                mockGraphicContext,
-                mockItemAnimator
+                PaddingValues(top = with(density) { screenHeight.toDp() }),
             )
 
         val itemSize = screenHeight / 4
@@ -429,16 +416,6 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
         assertThat(result.visibleItems.size).isEqualTo(2)
     }
 
-    private val measureScope: IntrinsicMeasureScope =
-        object : IntrinsicMeasureScope {
-            override val fontScale: Float
-                get() = this@TransformingLazyColumnContentPaddingMeasurementStrategyTest.density
-
-            override val layoutDirection: LayoutDirection = LayoutDirection.Ltr
-            override val density: Float
-                get() = this@TransformingLazyColumnContentPaddingMeasurementStrategyTest.density
-        }
-
     private val mockGraphicContext =
         object : GraphicsContext {
             override fun createGraphicsLayer(): GraphicsLayer {
@@ -452,13 +429,16 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     private val mockItemAnimator = LazyLayoutItemAnimator<TransformingLazyColumnMeasuredItem>()
 
-    private val strategy =
+    private fun measurementStrategy(contentPadding: PaddingValues) =
         TransformingLazyColumnContentPaddingMeasurementStrategy(
-            PaddingValues(0.dp),
-            measureScope,
+            contentPadding,
+            density = density,
+            layoutDirection = LayoutDirection.Ltr,
             mockGraphicContext,
             mockItemAnimator
         )
+
+    private val strategy = measurementStrategy(PaddingValues())
 
     private fun TransformingLazyColumnMeasurementStrategy.measure(
         itemHeights: List<Int>,
@@ -480,7 +460,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
             lastMeasuredAnchorItemHeight = lastMeasuredAnchorItemHeight,
             scrollToBeConsumed = scrollToBeConsumed,
             coroutineScope = CoroutineScope(EmptyCoroutineContext),
-            density = Density(density),
+            density = density,
             layout = { width, height, _ ->
                 object : MeasureResult {
                     override val width = width

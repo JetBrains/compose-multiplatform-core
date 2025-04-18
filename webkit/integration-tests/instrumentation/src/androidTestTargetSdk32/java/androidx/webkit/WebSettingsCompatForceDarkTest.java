@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import androidx.core.graphics.ColorUtils;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
+import androidx.webkit.test.common.WebkitUtils;
 
 import org.junit.Assert;
 import org.junit.Test;

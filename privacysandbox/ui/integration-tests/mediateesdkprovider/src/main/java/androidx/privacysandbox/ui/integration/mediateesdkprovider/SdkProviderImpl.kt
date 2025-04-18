@@ -17,18 +17,8 @@
 package androidx.privacysandbox.ui.integration.mediateesdkprovider
 
 import android.content.Context
-import android.os.Bundle
-import android.view.View
-import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
-import androidx.privacysandbox.sdkruntime.core.SandboxedSdkProviderCompat
-import androidx.privacysandbox.ui.integration.sdkproviderutils.MediateeSdkApiImpl
 
-class SdkProviderImpl : SandboxedSdkProviderCompat() {
-    override fun onLoadSdk(params: Bundle): SandboxedSdkCompat {
-        return SandboxedSdkCompat(MediateeSdkApiImpl(context!!))
-    }
-
-    override fun getView(windowContext: Context, params: Bundle, width: Int, height: Int): View {
-        throw IllegalStateException("This getView method will not be used.")
-    }
+class SdkProviderImpl : AbstractSandboxedSdkProviderCompat() {
+    override fun createIMediateeSdkApi(context: Context): IMediateeSdkApi =
+        MediateeSdkApiImpl(context)
 }

@@ -27,11 +27,11 @@ import android.content.res.XmlResourceParser;
 import android.os.Bundle;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 
+import org.jspecify.annotations.NonNull;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -62,8 +62,7 @@ public class ShortcutXmlParser {
      * Returns a singleton instance of list of ids of static shortcuts parsed from shortcuts.xml
      */
     @WorkerThread
-    @NonNull
-    public static List<String> getShortcutIds(@NonNull final Context context) {
+    public static @NonNull List<String> getShortcutIds(final @NonNull Context context) {
         if (sShortcutIds == null) {
             synchronized (GET_INSTANCE_LOCK) {
                 if (sShortcutIds == null) {
@@ -84,9 +83,8 @@ public class ShortcutXmlParser {
      * Calling package is determined by {@link Context#getPackageName}
      * Returns a set of string which contains the ids of static shortcuts.
      */
-    @NonNull
     @SuppressWarnings("deprecation")
-    private static Set<String> parseShortcutIds(@NonNull final Context context) {
+    private static @NonNull Set<String> parseShortcutIds(final @NonNull Context context) {
         final Set<String> result = new HashSet<>();
         final Intent mainIntent = new Intent(Intent.ACTION_MAIN);
         mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -115,8 +113,8 @@ public class ShortcutXmlParser {
         return result;
     }
 
-    @NonNull
-    private static XmlResourceParser getXmlResourceParser(Context context, ActivityInfo info) {
+    private static @NonNull XmlResourceParser getXmlResourceParser(Context context,
+            ActivityInfo info) {
         final XmlResourceParser parser = info.loadXmlMetaData(context.getPackageManager(),
                 META_DATA_APP_SHORTCUTS);
         if (parser == null) {
@@ -131,8 +129,7 @@ public class ShortcutXmlParser {
      * Parses the shortcut ids from given XmlPullParser.
      */
     @VisibleForTesting
-    @NonNull
-    public static List<String> parseShortcutIds(@NonNull final XmlPullParser parser)
+    public static @NonNull List<String> parseShortcutIds(final @NonNull XmlPullParser parser)
             throws IOException, XmlPullParserException {
 
         final List<String> result = new ArrayList<>(1);

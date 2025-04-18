@@ -19,10 +19,11 @@ package androidx.customview.widget;
 import android.graphics.Rect;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat.FocusRealDirection;
 import androidx.core.view.ViewCompat.FocusRelativeDirection;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -20,16 +20,16 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatViewInflater;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /** Inflater that converts leanback non-AppCpmpat views in layout to AppCompat versions. */
 public class LeanbackAppCompatViewInflater extends AppCompatViewInflater {
 
     @Override
-    @NonNull
-    protected View createView(@Nullable Context context, @Nullable String name,
+    protected @NonNull View createView(@Nullable Context context, @Nullable String name,
             @Nullable AttributeSet attrs) {
         switch (name) {
             case "androidx.leanback.widget.GuidedActionEditText":

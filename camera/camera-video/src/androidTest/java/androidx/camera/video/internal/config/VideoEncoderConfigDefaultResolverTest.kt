@@ -61,7 +61,7 @@ class VideoEncoderConfigDefaultResolverTest {
         val surfaceSize720p = EncoderProfilesUtil.RESOLUTION_720P
         val surfaceSize1080p = EncoderProfilesUtil.RESOLUTION_1080P
 
-        val expectedFrameRateRange = Range(FRAME_RATE_30, FRAME_RATE_30)
+        val expectedCaptureFrameRateRange = Range(FRAME_RATE_30, FRAME_RATE_30)
 
         val configSupplierCif =
             VideoEncoderConfigDefaultResolver(
@@ -70,7 +70,7 @@ class VideoEncoderConfigDefaultResolverTest {
                 DEFAULT_VIDEO_SPEC,
                 surfaceSizeCif,
                 DynamicRange.SDR,
-                expectedFrameRateRange
+                expectedCaptureFrameRateRange
             )
         val configSupplier720p =
             VideoEncoderConfigDefaultResolver(
@@ -79,7 +79,7 @@ class VideoEncoderConfigDefaultResolverTest {
                 DEFAULT_VIDEO_SPEC,
                 surfaceSize720p,
                 DynamicRange.SDR,
-                expectedFrameRateRange
+                expectedCaptureFrameRateRange
             )
         val configSupplier1080p =
             VideoEncoderConfigDefaultResolver(
@@ -88,26 +88,29 @@ class VideoEncoderConfigDefaultResolverTest {
                 DEFAULT_VIDEO_SPEC,
                 surfaceSize1080p,
                 DynamicRange.SDR,
-                expectedFrameRateRange
+                expectedCaptureFrameRateRange
             )
 
         val configCif = configSupplierCif.get()
         assertThat(configCif.mimeType).isEqualTo(DEFAULT_MIME_TYPE)
         assertThat(configCif.bitrate).isGreaterThan(0)
         assertThat(configCif.resolution).isEqualTo(surfaceSizeCif)
-        assertThat(configCif.frameRate).isEqualTo(FRAME_RATE_30)
+        assertThat(configCif.captureFrameRate).isEqualTo(FRAME_RATE_30)
+        assertThat(configCif.encodeFrameRate).isEqualTo(FRAME_RATE_30)
 
         val config720p = configSupplier720p.get()
         assertThat(config720p.mimeType).isEqualTo(DEFAULT_MIME_TYPE)
         assertThat(config720p.bitrate).isGreaterThan(0)
         assertThat(config720p.resolution).isEqualTo(surfaceSize720p)
-        assertThat(config720p.frameRate).isEqualTo(FRAME_RATE_30)
+        assertThat(config720p.captureFrameRate).isEqualTo(FRAME_RATE_30)
+        assertThat(config720p.encodeFrameRate).isEqualTo(FRAME_RATE_30)
 
         val config1080p = configSupplier1080p.get()
         assertThat(config1080p.mimeType).isEqualTo(DEFAULT_MIME_TYPE)
         assertThat(config1080p.bitrate).isGreaterThan(0)
         assertThat(config1080p.resolution).isEqualTo(surfaceSize1080p)
-        assertThat(config1080p.frameRate).isEqualTo(FRAME_RATE_30)
+        assertThat(config1080p.captureFrameRate).isEqualTo(FRAME_RATE_30)
+        assertThat(config1080p.encodeFrameRate).isEqualTo(FRAME_RATE_30)
     }
 
     @Test
@@ -189,9 +192,9 @@ class VideoEncoderConfigDefaultResolverTest {
                         SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
                     )
                     .get()
-                    .frameRate
+                    .encodeFrameRate
             )
-            .isEqualTo(VideoEncoderConfigDefaultResolver.VIDEO_FRAME_RATE_FIXED_DEFAULT)
+            .isEqualTo(VideoConfigUtil.VIDEO_FRAME_RATE_FIXED_DEFAULT)
     }
 
     @Test
@@ -203,7 +206,7 @@ class VideoEncoderConfigDefaultResolverTest {
         )
         val size = EncoderProfilesUtil.RESOLUTION_1080P
 
-        val expectedFrameRateRange = Range(FRAME_RATE_30, FRAME_RATE_45)
+        val expectedCaptureFrameRateRange = Range(FRAME_RATE_30, FRAME_RATE_45)
 
         // Expected frame rate range takes precedence over VideoSpec
         assertThat(
@@ -213,12 +216,12 @@ class VideoEncoderConfigDefaultResolverTest {
                         DEFAULT_VIDEO_SPEC,
                         size,
                         DynamicRange.SDR,
-                        expectedFrameRateRange
+                        expectedCaptureFrameRateRange
                     )
                     .get()
-                    .frameRate
+                    .encodeFrameRate
             )
-            .isEqualTo(FRAME_RATE_45)
+            .isEqualTo(expectedCaptureFrameRateRange.upper)
     }
 
     @Test

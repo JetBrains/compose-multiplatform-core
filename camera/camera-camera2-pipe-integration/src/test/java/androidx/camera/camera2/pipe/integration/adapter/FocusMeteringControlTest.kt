@@ -60,7 +60,6 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.fakes.FakeUseCase
-import androidx.test.filters.MediumTest
 import androidx.testutils.MainDispatcherRule
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -782,7 +781,6 @@ class FocusMeteringControlTest {
         assertFutureFocusCompleted(result, true)
     }
 
-    @MediumTest
     @Test
     fun startFocusMetering_cancelledBeforeCompletion_failsWithOperationCanceledOperation() =
         runTest {
@@ -832,7 +830,6 @@ class FocusMeteringControlTest {
         assertFutureFailedWithOperationCancellation(result2)
     }
 
-    @MediumTest
     @Test
     fun startMultipleActions_allExceptLatestAreCancelled() = runTest {
         // Arrange.
@@ -1054,7 +1051,6 @@ class FocusMeteringControlTest {
         assertThat(cancelResult[3, TimeUnit.SECONDS]?.status).isEqualTo(Result3A.Status.OK)
     }
 
-    @MediumTest
     @Test
     fun cancelFocusAndMetering_autoCancelIsDisabled(): Unit = runTest {
         // Arrange. Set a never complete CompletableDeferred
@@ -1078,7 +1074,6 @@ class FocusMeteringControlTest {
         assertThat(fakeRequestControl.cancelFocusMeteringCallCount).isEqualTo(1)
     }
 
-    @MediumTest
     @Test
     fun autoCancelDuration_completeWithIsFocusSuccessfulFalse() = runTest {
         // Arrange.
@@ -1103,7 +1098,6 @@ class FocusMeteringControlTest {
         assertFutureFocusCompleted(future, false)
     }
 
-    @MediumTest
     @Test
     fun shorterAutoCancelDuration_cancelIsCalled_completeActionFutureIsNotCalled(): Unit = runTest {
         // Arrange.
@@ -1131,7 +1125,6 @@ class FocusMeteringControlTest {
         assertFutureFailedWithOperationCancellation(future)
     }
 
-    @MediumTest
     @Test
     fun longerAutoCancelDuration_completeWithIsFocusSuccessfulFalse() = runTest {
         // Arrange.
@@ -1157,7 +1150,6 @@ class FocusMeteringControlTest {
         assertFutureFocusCompleted(future, false)
     }
 
-    @MediumTest
     @Test
     fun autoCancelDurationDisabled_completeAfterAutoFocusTimeoutDuration(): Unit = runTest {
         // Arrange.
@@ -1185,7 +1177,6 @@ class FocusMeteringControlTest {
         assertFutureFocusCompleted(future, false)
     }
 
-    @MediumTest
     @Test
     fun defaultAutoCancelDurationAndFocusTimeout_completesWithIsFocusSuccessfulFalse() = runTest {
         // Arrange.

@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
 
 package androidx.build.sources
 
-import androidx.build.DeprecatedKotlinMultiplatformAndroidTarget
 import androidx.build.LazyInputsCopyTask
 import androidx.build.capitalize
 import androidx.build.dackka.DokkaAnalysisPlatform
@@ -25,6 +23,7 @@ import androidx.build.dackka.docsPlatform
 import androidx.build.hasAndroidMultiplatformPlugin
 import androidx.build.multiplatformExtension
 import androidx.build.registerAsComponentForPublishing
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.api.variant.LibraryVariant
 import com.google.gson.GsonBuilder
@@ -92,7 +91,7 @@ fun Project.configureSourceJarForAndroid(
 
 fun Project.configureMultiplatformSourcesForAndroid(
     variantName: String,
-    target: DeprecatedKotlinMultiplatformAndroidTarget,
+    target: KotlinMultiplatformAndroidLibraryTarget,
     samplesProjects: MutableCollection<Project>
 ) {
     val sourceJar =
@@ -170,6 +169,8 @@ fun Project.configureSourceJarForMultiplatform() {
                 .filterNot { it.name in setOfStubTargets }
                 .flatMap { it.mainCompilation().allKotlinSourceSets }
                 .toSet()
+                // Sort sourceSets to ensure child sourceSets come after their parents, b/404784813
+                .sortedWith(compareBy({ it.dependsOn.size }, { it.name }))
                 .forEach { sourceSet ->
                     task.from(sourceSet.kotlin.srcDirs) { copySpec ->
                         copySpec.into(sourceSet.name)

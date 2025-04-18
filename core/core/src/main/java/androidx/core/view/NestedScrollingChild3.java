@@ -19,8 +19,8 @@ package androidx.core.view;
 
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This interface should be implemented by {@link View View} subclasses that wish
@@ -70,6 +70,6 @@ public interface NestedScrollingChild3 extends NestedScrollingChild2 {
      * @see NestedScrollingParent3#onNestedScroll(View, int, int, int, int, int, int[])
      */
     void dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed,
-            @Nullable int[] offsetInWindow, @ViewCompat.NestedScrollType int type,
-            @NonNull int[] consumed);
+            int @Nullable [] offsetInWindow, @ViewCompat.NestedScrollType int type,
+            int @NonNull [] consumed);
 }

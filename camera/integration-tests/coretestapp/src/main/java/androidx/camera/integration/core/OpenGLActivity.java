@@ -43,8 +43,6 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.AspectRatio;
@@ -54,6 +52,9 @@ import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -236,8 +237,7 @@ public class OpenGLActivity extends AppCompatActivity {
      *                       viewfinder.
      * @return The inflated viewfinder View.
      */
-    @NonNull
-    public static View chooseViewFinder(@Nullable Bundle intentExtras,
+    public static @NonNull View chooseViewFinder(@Nullable Bundle intentExtras,
             @NonNull ViewStub viewFinderStub,
             @NonNull OpenGLRenderer renderer) {
 
@@ -274,8 +274,7 @@ public class OpenGLActivity extends AppCompatActivity {
      *
      * <p>The list may be empty if the display does not support HDR, such as on pre-API 24 devices.
      */
-    @NonNull
-    public static Set<DynamicRange> getHighDynamicRangesSupportedByDisplay(
+    public static @NonNull Set<DynamicRange> getHighDynamicRangesSupportedByDisplay(
             @Nullable Display display) {
         if (display != null && Build.VERSION.SDK_INT >= 24) {
             return Api24Impl.getHighDynamicRangesSupportedByDisplay(display);

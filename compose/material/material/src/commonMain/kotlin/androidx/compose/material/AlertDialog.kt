@@ -46,8 +46,7 @@ import androidx.compose.ui.window.DialogProperties
 import kotlin.math.max
 
 /**
- * <a href="https://material.io/components/dialogs#alert-dialog" class="external"
- * target="_blank">Material Design alert dialog</a>.
+ * [Material Design alert dialog](https://material.io/components/dialogs#alert-dialog)
  *
  * Alert dialogs interrupt users with urgent information, details, or actions.
  *
@@ -95,8 +94,7 @@ expect fun AlertDialog(
 )
 
 /**
- * <a href="https://material.io/components/dialogs#alert-dialog" class="external"
- * target="_blank">Material Design alert dialog</a>.
+ * [Material Design alert dialog](https://material.io/components/dialogs#alert-dialog)
  *
  * Alert dialogs interrupt users with urgent information, details, or actions.
  *

@@ -23,7 +23,6 @@ import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.ImageReaderProxys;
@@ -31,6 +30,8 @@ import androidx.camera.core.SafeCloseImageReaderProxy;
 import androidx.camera.core.internal.utils.ImageUtil;
 import androidx.camera.core.processing.Operation;
 import androidx.camera.core.processing.Packet;
+
+import org.jspecify.annotations.NonNull;
 
 import java.nio.ByteBuffer;
 
@@ -44,9 +45,8 @@ import java.nio.ByteBuffer;
  */
 public class Image2Bitmap implements
         Operation<Packet<ImageProxy>, Bitmap> {
-    @NonNull
     @Override
-    public Bitmap apply(@NonNull Packet<ImageProxy> imageProxyPacket)
+    public @NonNull Bitmap apply(@NonNull Packet<ImageProxy> imageProxyPacket)
             throws ImageCaptureException {
         Bitmap result;
         SafeCloseImageReaderProxy rgbImageReader = null;

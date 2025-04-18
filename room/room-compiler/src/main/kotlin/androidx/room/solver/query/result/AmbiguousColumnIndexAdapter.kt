@@ -42,14 +42,14 @@ class AmbiguousColumnIndexAdapter(
      * indices. This function will store the name of the variable where the resolved indices are
      * located and can be retrieve via the [getIndexVarsForMapping] function.
      */
-    override fun onCursorReady(cursorVarName: String, scope: CodeGenScope) {
-        val cursorIndexMappingVarName = scope.getTmpVar("_cursorIndices")
+    override fun onStatementReady(stmtVarName: String, scope: CodeGenScope) {
+        val stmtIndexMappingVarName = scope.getTmpVar("_statementIndices")
         scope.builder.apply {
             val resultInfo = query.resultInfo
             if (resultInfo != null && query.hasTopStarProjection == false) {
                 // Query result columns are known, use ambiguous column resolver at compile-time
                 // and generate arrays containing result object indices to query column index.
-                val cursorIndices =
+                val stmtIndices =
                     AmbiguousColumnResolver.resolve(
                         resultColumns = resultInfo.columns.map { it.name }.toTypedArray(),
                         mappings = mappings.map { it.usedColumns.toTypedArray() }.toTypedArray()
@@ -57,20 +57,20 @@ class AmbiguousColumnIndexAdapter(
                 val rowMappings =
                     DoubleArrayLiteral(
                         type = XTypeName.PRIMITIVE_INT,
-                        rowSize = cursorIndices.size,
-                        columnSizeProducer = { i -> cursorIndices[i].size },
-                        valueProducer = { i, j -> cursorIndices[i][j] }
+                        rowSize = stmtIndices.size,
+                        columnSizeProducer = { i -> stmtIndices[i].size },
+                        valueProducer = { i, j -> stmtIndices[i][j] }
                     )
                 addLocalVariable(
-                    name = cursorIndexMappingVarName,
+                    name = stmtIndexMappingVarName,
                     typeName =
                         XTypeName.getArrayName(XTypeName.getArrayName(XTypeName.PRIMITIVE_INT)),
                     assignExpr = rowMappings
                 )
             } else {
                 // Generate code that uses ambiguous column resolver at runtime, providing the
-                // query result column names from the Cursor and the result object column names in
-                // an array literal.
+                // query result column names from the statement and the result object column names
+                // in an array literal.
                 val rowMappings =
                     DoubleArrayLiteral(
                         type = CommonTypeNames.STRING,
@@ -79,14 +79,14 @@ class AmbiguousColumnIndexAdapter(
                         valueProducer = { i, j -> mappings[i].usedColumns[j] }
                     )
                 addLocalVariable(
-                    name = cursorIndexMappingVarName,
+                    name = stmtIndexMappingVarName,
                     typeName =
                         XTypeName.getArrayName(XTypeName.getArrayName(XTypeName.PRIMITIVE_INT)),
                     assignExpr =
                         XCodeBlock.of(
                             "%T.resolve(%L.getColumnNames(), %L)",
                             RoomTypeNames.AMBIGUOUS_COLUMN_RESOLVER,
-                            cursorVarName,
+                            stmtVarName,
                             rowMappings
                         )
                 )
@@ -98,7 +98,7 @@ class AmbiguousColumnIndexAdapter(
                     mapping.usedColumns.mapIndexed { j, columnName ->
                         ColumnIndexVar(
                             column = columnName,
-                            indexVar = "$cursorIndexMappingVarName[$i][$j]"
+                            indexVar = "$stmtIndexMappingVarName[$i][$j]"
                         )
                     }
                 put(mapping, indexVars)

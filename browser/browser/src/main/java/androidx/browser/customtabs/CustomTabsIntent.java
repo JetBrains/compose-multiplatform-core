@@ -630,6 +630,13 @@ public final class CustomTabsIntent {
             "androidx.browser.customtabs.extra.ENABLE_EPHEMERAL_BROWSING";
 
     /**
+     * Extra that enables the close button and shows it in the toolbar. The close button is enabled
+     * by default, this extra provides a way to disable the close button in the toolbar.
+     */
+    public static final String EXTRA_CLOSE_BUTTON_ENABLED =
+            "androidx.browser.customtabs.extra.CLOSE_BUTTON_ENABLED";
+
+    /**
      * Key that specifies the unique ID for an action button. To make a button to show on the
      * toolbar, use {@link #TOOLBAR_ACTION_BUTTON_ID} as its ID.
      */
@@ -795,6 +802,9 @@ public final class CustomTabsIntent {
 
         /**
          * Sets the Close button icon for the custom tab.
+         *
+         * If the close button is disabled (see {@link #setCloseButtonEnabled(boolean)}), then
+         * calling this function has no effect.
          *
          * @param icon The icon {@link Bitmap}
          */
@@ -1334,6 +1344,9 @@ public final class CustomTabsIntent {
         /**
          * Sets the position of the close button.
          *
+         * If the close button is disabled (see {@link #setCloseButtonEnabled(boolean)}), then
+         * calling this function has no effect.
+         *
          * @param position The desired position.
          * @see CustomTabsIntent#CLOSE_BUTTON_POSITION_DEFAULT
          * @see CustomTabsIntent#CLOSE_BUTTON_POSITION_START
@@ -1454,6 +1467,21 @@ public final class CustomTabsIntent {
         }
 
         /**
+         * Sets whether to enable the close button for custom tab.
+         *
+         * The close button is enabled by default. If the close button is disabled, calls
+         * to {@link #setCloseButtonIcon(Bitmap)} or {@link #setCloseButtonPosition(int)}
+         * have no effect.
+         *
+         * @param enabled Whether the close button is enabled.
+         * @see CustomTabsIntent#EXTRA_CLOSE_BUTTON_ENABLED
+         */
+        public @NonNull Builder setCloseButtonEnabled(boolean enabled) {
+            mIntent.putExtra(EXTRA_CLOSE_BUTTON_ENABLED, enabled);
+            return this;
+        }
+
+        /**
          * Combines all the options that have been set and returns a new {@link CustomTabsIntent}
          * object.
          */
@@ -1491,6 +1519,9 @@ public final class CustomTabsIntent {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 setShareIdentityEnabled();
             }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                setAllowPassThroughOnTouchOutside();
+            }
             if (mActivityOptions != null) {
                 bundle = mActivityOptions.toBundle();
             }
@@ -1525,6 +1556,15 @@ public final class CustomTabsIntent {
                 mActivityOptions = Api23Impl.makeBasicActivityOptions();
             }
             Api34Impl.setShareIdentityEnabled(mActivityOptions, mShareIdentity);
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.BAKLAVA)
+        private void setAllowPassThroughOnTouchOutside() {
+            if (mActivityOptions == null) {
+                mActivityOptions = Api23Impl.makeBasicActivityOptions();
+            }
+            boolean enabled = isBackgroundInteractionEnabled(mIntent);
+            Api36Impl.setAllowPassThroughOnTouchOutside(mActivityOptions, enabled);
         }
     }
 
@@ -1816,6 +1856,14 @@ public final class CustomTabsIntent {
         return intent.getParcelableExtra(EXTRA_SECONDARY_TOOLBAR_SWIPE_UP_GESTURE);
     }
 
+    /**
+     * @return Whether the close button is enabled.
+     * @see CustomTabsIntent#EXTRA_CLOSE_BUTTON_ENABLED
+     */
+    public static boolean isCloseButtonEnabled(@NonNull Intent intent) {
+        return intent.getBooleanExtra(EXTRA_CLOSE_BUTTON_ENABLED, true);
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private static class Api21Impl {
         static void setLanguageTag(Intent intent, Locale locale) {
@@ -1847,6 +1895,14 @@ public final class CustomTabsIntent {
     private static class Api34Impl {
         static void setShareIdentityEnabled(ActivityOptions activityOptions, boolean enabled) {
             activityOptions.setShareIdentityEnabled(enabled);
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.BAKLAVA)
+    private static class Api36Impl {
+        static void setAllowPassThroughOnTouchOutside(
+                ActivityOptions activityOptions, boolean enabled) {
+            activityOptions.setAllowPassThroughOnTouchOutside(enabled);
         }
     }
 }

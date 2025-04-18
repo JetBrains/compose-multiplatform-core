@@ -94,16 +94,20 @@ internal class ContentInViewNode(
     private var focusedChild: LayoutCoordinates? = null
 
     /**
-     * The previous bounds of the [focusedChild] used by [onRemeasured] to calculate when the
-     * focused child is first clipped when scrolling is reversed.
-     */
-    private var focusedChildBoundsFromPreviousRemeasure: Rect? = null
-
-    /**
      * Set to true when this class is actively animating the scroll to keep the focused child in
      * view.
      */
     private var trackingFocusedChild = false
+
+    /**
+     * When the viewport shrinks, we need to wait for the focused bounds to be updated, which
+     * happens when globally positioned callbacks happen - this is _after_ this node has been
+     * remeasured. As a result we cannot bring into view until we know what the new bounds of the
+     * child are, as this can be affected by the measurement logic of this scrollable container /
+     * its parent(s). The old bounds of the child might still appear to be 'visible', even though it
+     * will now be placed in a different place, and become invisible.
+     */
+    private var childWasMaxVisibleBeforeViewportShrunk = false
 
     /** The size of the scrollable container. */
     internal var viewportSize = IntSize.Zero
@@ -141,41 +145,49 @@ internal class ContentInViewNode(
 
     fun onFocusBoundsChanged(newBounds: LayoutCoordinates?) {
         focusedChild = newBounds
+
+        if (childWasMaxVisibleBeforeViewportShrunk) {
+            getFocusedChildBounds()?.let { focusedChild ->
+                if (DEBUG) println("[$TAG] focused child bounds: $focusedChild")
+                if (!focusedChild.isMaxVisible(viewportSize)) {
+                    if (DEBUG)
+                        println(
+                            "[$TAG] focused child was clipped by viewport shrink: $focusedChild"
+                        )
+                    trackingFocusedChild = true
+                    launchAnimation()
+                }
+            }
+        }
+        childWasMaxVisibleBeforeViewportShrunk = false
     }
 
     override fun onRemeasured(size: IntSize) {
-        val oldSize = viewportSize
+        val previousViewportSize = viewportSize
         viewportSize = size
 
         // Don't care if the viewport grew.
-        if (size >= oldSize) return
+        if (size >= previousViewportSize) return
 
-        if (DEBUG) println("[$TAG] viewport shrunk: $oldSize -> $size")
+        if (DEBUG) println("[$TAG] viewport shrunk: $previousViewportSize -> $size")
 
-        getFocusedChildBounds()?.let { focusedChild ->
-            if (DEBUG) println("[$TAG] focused child bounds: $focusedChild")
-            val previousFocusedChildBounds = focusedChildBoundsFromPreviousRemeasure ?: focusedChild
-            if (
-                !isAnimationRunning &&
-                    !trackingFocusedChild &&
-                    // Resize caused it to go from being fully visible to at least partially
-                    // clipped. Need to use the lastFocusedChildBounds to compare with the old size
-                    // only to handle the case where scrolling direction is reversed: in that case,
-                    // when
-                    // the child first goes out-of-bounds, it will be out of bounds regardless of
-                    // which
-                    // size we pass in, so the only way to detect the change is to use the previous
-                    // bounds.
-                    previousFocusedChildBounds.isMaxVisible(oldSize) &&
-                    !focusedChild.isMaxVisible(size)
-            ) {
-                if (DEBUG)
-                    println("[$TAG] focused child was clipped by viewport shrink: $focusedChild")
-                trackingFocusedChild = true
-                launchAnimation()
-            }
+        // Ignore if we are already tracking an existing animation
+        if (isAnimationRunning || trackingFocusedChild) {
+            if (DEBUG) println("[$TAG] ignoring size change because animation is in progress")
+            return
+        }
 
-            this.focusedChildBoundsFromPreviousRemeasure = focusedChild
+        // onRemeasured is called before the onGloballyPositioned callbacks are dispatched, so
+        // the bounds we get here will essentially be the previous bounds of the focused child,
+        // before this remeasurement occurred.
+        val boundsBeforeRemeasurement = getFocusedChildBounds() ?: return
+
+        // If the focused child was previously fully visible (its 'previous' bounds fit inside the
+        // previous viewport), we need to see if it is still visible after this remeasurement
+        // finishes and the child is placed in its new location. To do that we need to wait for
+        // its onGloballyPositioned callback, which will then end up calling onFocusBoundsChanged
+        if (boundsBeforeRemeasurement.isMaxVisible(previousViewportSize)) {
+            childWasMaxVisibleBeforeViewportShrunk = true
         }
     }
 

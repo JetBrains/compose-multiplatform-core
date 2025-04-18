@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination
 import androidx.navigation.NavGraph
 import androidx.navigation.NavHostController
@@ -232,9 +233,7 @@ internal fun PredictiveBackNavHost(
                 // ViewModelStoreOwner and LifecycleOwner
                 if (currentEntry.lifecycle.currentState != Lifecycle.State.DESTROYED) {
                     currentEntry.LocalOwnersProvider(stateHolder) {
-                        (currentEntry.destination as WearNavigator.Destination).content(
-                            currentEntry
-                        )
+                        DestinationContent(backStackEntry = currentEntry)
                     }
                 }
                 if (currentEntry != current) {
@@ -261,6 +260,17 @@ internal fun PredictiveBackNavHost(
             }
         }
     }
+}
+
+// Using this @Composable function instead of an inline lambda in `NavGraphBuilder.composable` helps
+// prevent unnecessary continuous recomposition of the lambda block during predictive back swipe
+// animations. Once strong skipping is enabled in the Compose compiler, inline composable lambdas
+// are expected to be automatically memoized, providing similar behavior to this explicit function.
+// This change ensures the optimization is in place regardless of the current compiler
+// configuration. This approach may be reverted once strong skipping becomes a standard feature.
+@Composable
+private fun DestinationContent(backStackEntry: NavBackStackEntry) {
+    (backStackEntry.destination as WearNavigator.Destination).content(backStackEntry)
 }
 
 private val ENTER_TRANSITION =

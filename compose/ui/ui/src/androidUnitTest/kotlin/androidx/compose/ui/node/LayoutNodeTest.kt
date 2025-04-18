@@ -18,6 +18,7 @@
 package androidx.compose.ui.node
 
 import androidx.collection.IntObjectMap
+import androidx.collection.intObjectMapOf
 import androidx.compose.testutils.TestViewConfiguration
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -59,6 +60,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.AccessibilityManager
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.SoftwareKeyboardController
@@ -66,8 +68,10 @@ import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.invertTo
+import androidx.compose.ui.semantics.EmptySemanticsModifier
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsModifier
+import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.font.Font
@@ -2314,6 +2318,8 @@ private class EmptyLayoutModifier : LayoutModifier {
 internal class MockOwner(
     private val position: IntOffset = IntOffset.Zero,
     override val root: LayoutNode = LayoutNode(),
+    override val semanticsOwner: SemanticsOwner =
+        SemanticsOwner(root, EmptySemanticsModifier(), intObjectMapOf()),
     override val coroutineContext: CoroutineContext =
         Executors.newFixedThreadPool(3).asCoroutineDispatcher()
 ) : Owner {
@@ -2335,6 +2341,9 @@ internal class MockOwner(
         get() = TODO("Not yet implemented")
 
     override val clipboardManager: ClipboardManager
+        get() = TODO("Not yet implemented")
+
+    override val clipboard: Clipboard
         get() = TODO("Not yet implemented")
 
     override val accessibilityManager: AccessibilityManager
@@ -2421,9 +2430,11 @@ internal class MockOwner(
 
     override fun requestOnPositionedCallback(layoutNode: LayoutNode) {}
 
-    override fun onAttach(node: LayoutNode) {
+    override fun onPreAttach(node: LayoutNode) {
         onAttachParams += node
     }
+
+    override fun onPostAttach(node: LayoutNode) {}
 
     override fun onDetach(node: LayoutNode) {
         onDetachParams += node
@@ -2436,6 +2447,10 @@ internal class MockOwner(
         positionInWindow - position.toOffset()
 
     override fun requestFocus(): Boolean = false
+
+    override fun requestAutofill(node: LayoutNode) {
+        TODO("Not yet implemented")
+    }
 
     override fun measureAndLayout(sendPointerUpdate: Boolean) {}
 
@@ -2519,6 +2534,14 @@ internal class MockOwner(
             override val underlyingMatrix: Matrix
                 get() = transform
 
+            override var frameRate: Float
+                get() = 0f
+                set(_) {}
+
+            override var isFrameRateFromParent: Boolean
+                get() = false
+                set(_) {}
+
             override fun inverseTransform(matrix: Matrix) {
                 matrix.timesAssign(inverseTransform)
             }
@@ -2527,11 +2550,7 @@ internal class MockOwner(
         }
     }
 
-    var semanticsChanged: Boolean = false
-
-    override fun onSemanticsChange() {
-        semanticsChanged = true
-    }
+    override fun onSemanticsChange() {}
 
     override fun onLayoutChange(layoutNode: LayoutNode) {
         layoutChangeCount++

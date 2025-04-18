@@ -17,13 +17,13 @@
 package androidx.room.paging.rxjava3
 
 import android.database.Cursor
-import androidx.annotation.NonNull
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.paging.PagingState
 import androidx.paging.rxjava3.RxPagingSource
 import androidx.room.RoomDatabase
 import androidx.room.RoomSQLiteQuery
+import androidx.room.paging.CursorSQLiteStatement
 import androidx.room.paging.util.INITIAL_ITEM_COUNT
 import androidx.room.paging.util.INVALID
 import androidx.room.paging.util.ThreadSafeInvalidationObserver
@@ -31,6 +31,7 @@ import androidx.room.paging.util.getClippedRefreshKey
 import androidx.room.paging.util.queryDatabase
 import androidx.room.paging.util.queryItemCount
 import androidx.room.rxjava3.createSingle
+import androidx.sqlite.SQLiteStatement
 import androidx.sqlite.db.SupportSQLiteQuery
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -100,7 +101,16 @@ abstract class LimitOffsetRxPagingSource<Value : Any>(
         return if (invalid) INVALID as LoadResult.Invalid<Int, Value> else result
     }
 
-    @NonNull protected abstract fun convertRows(cursor: Cursor): List<Value>
+    protected open fun convertRows(cursor: Cursor): List<Value> {
+        return convertRows(CursorSQLiteStatement(cursor))
+    }
+
+    protected open fun convertRows(statement: SQLiteStatement): List<Value> {
+        throw NotImplementedError(
+            "Unexpected call to a function with no implementation that Room is suppose to " +
+                "generate. Please file a bug at: $BUG_LINK."
+        )
+    }
 
     override fun getRefreshKey(state: PagingState<Int, Value>): Int? {
         return state.getClippedRefreshKey()
@@ -108,4 +118,9 @@ abstract class LimitOffsetRxPagingSource<Value : Any>(
 
     override val jumpingSupported: Boolean
         get() = true
+
+    companion object {
+        const val BUG_LINK =
+            "https://issuetracker.google.com/issues/new?component=413107&template=1096568"
+    }
 }

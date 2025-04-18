@@ -28,6 +28,7 @@ import androidx.window.embedding.DividerAttributes.Companion.DRAG_RANGE_VALUE_UN
 import androidx.window.embedding.DividerAttributes.Companion.TYPE_VALUE_FIXED
 import androidx.window.embedding.DividerAttributes.Companion.WIDTH_SYSTEM_DEFAULT
 import androidx.window.embedding.DividerAttributes.Companion.validateXmlDividerAttributes
+import androidx.window.embedding.EmbeddingAnimationParams.AnimationSpec.Companion.DEFAULT
 import androidx.window.embedding.EmbeddingAspectRatio.Companion.buildAspectRatioFromValue
 import androidx.window.embedding.SplitAttributes.LayoutDirection.Companion.LOCALE
 import androidx.window.embedding.SplitRule.FinishBehavior.Companion.ALWAYS
@@ -204,7 +205,35 @@ internal object RuleParser {
             val clearTop = typedArray.getBoolean(R.styleable.SplitPairRule_clearTop, false)
             val animationBackgroundColor =
                 typedArray.getColor(R.styleable.SplitPairRule_animationBackgroundColor, 0)
+            val openAnimation =
+                typedArray.getInt(R.styleable.SplitPairRule_splitOpenAnimation, DEFAULT.value)
+            val closeAnimation =
+                typedArray.getInt(R.styleable.SplitPairRule_splitCloseAnimation, DEFAULT.value)
+            val changeAnimation =
+                typedArray.getInt(R.styleable.SplitPairRule_splitChangeAnimation, DEFAULT.value)
             typedArray.recycle()
+
+            val animationParams =
+                EmbeddingAnimationParams.Builder()
+                    .setAnimationBackground(
+                        EmbeddingAnimationBackground.buildFromValue(animationBackgroundColor)
+                    )
+                    .setOpenAnimation(
+                        EmbeddingAnimationParams.AnimationSpec.getAnimationSpecFromValue(
+                            openAnimation
+                        )
+                    )
+                    .setCloseAnimation(
+                        EmbeddingAnimationParams.AnimationSpec.getAnimationSpecFromValue(
+                            closeAnimation
+                        )
+                    )
+                    .setChangeAnimation(
+                        EmbeddingAnimationParams.AnimationSpec.getAnimationSpecFromValue(
+                            changeAnimation
+                        )
+                    )
+                    .build()
 
             val defaultAttrs =
                 SplitAttributes.Builder()
@@ -212,15 +241,7 @@ internal object RuleParser {
                     .setLayoutDirection(
                         SplitAttributes.LayoutDirection.getLayoutDirectionFromValue(layoutDir)
                     )
-                    .setAnimationParams(
-                        EmbeddingAnimationParams.Builder()
-                            .setAnimationBackground(
-                                EmbeddingAnimationBackground.buildFromValue(
-                                    animationBackgroundColor
-                                )
-                            )
-                            .build()
-                    )
+                    .setAnimationParams(animationParams)
                     .build()
 
             SplitPairRule.Builder(emptySet())
@@ -297,7 +318,44 @@ internal object RuleParser {
                 )
             val animationBackgroundColor =
                 typedArray.getColor(R.styleable.SplitPlaceholderRule_animationBackgroundColor, 0)
+            val openAnimation =
+                typedArray.getInt(
+                    R.styleable.SplitPlaceholderRule_splitOpenAnimation,
+                    DEFAULT.value
+                )
+            val closeAnimation =
+                typedArray.getInt(
+                    R.styleable.SplitPlaceholderRule_splitCloseAnimation,
+                    DEFAULT.value
+                )
+            val changeAnimation =
+                typedArray.getInt(
+                    R.styleable.SplitPlaceholderRule_splitChangeAnimation,
+                    DEFAULT.value
+                )
             typedArray.recycle()
+
+            val animationParams =
+                EmbeddingAnimationParams.Builder()
+                    .setAnimationBackground(
+                        EmbeddingAnimationBackground.buildFromValue(animationBackgroundColor)
+                    )
+                    .setOpenAnimation(
+                        EmbeddingAnimationParams.AnimationSpec.getAnimationSpecFromValue(
+                            openAnimation
+                        )
+                    )
+                    .setCloseAnimation(
+                        EmbeddingAnimationParams.AnimationSpec.getAnimationSpecFromValue(
+                            closeAnimation
+                        )
+                    )
+                    .setChangeAnimation(
+                        EmbeddingAnimationParams.AnimationSpec.getAnimationSpecFromValue(
+                            changeAnimation
+                        )
+                    )
+                    .build()
 
             val defaultAttrs =
                 SplitAttributes.Builder()
@@ -305,15 +363,7 @@ internal object RuleParser {
                     .setLayoutDirection(
                         SplitAttributes.LayoutDirection.getLayoutDirectionFromValue(layoutDir)
                     )
-                    .setAnimationParams(
-                        EmbeddingAnimationParams.Builder()
-                            .setAnimationBackground(
-                                EmbeddingAnimationBackground.buildFromValue(
-                                    animationBackgroundColor
-                                )
-                            )
-                            .build()
-                    )
+                    .setAnimationParams(animationParams)
                     .build()
             val packageName = context.applicationContext.packageName
             val placeholderActivityClassName =
@@ -392,6 +442,7 @@ internal object RuleParser {
                 type,
                 hasValue(R.styleable.DividerAttributes_dragRangeMinRatio),
                 hasValue(R.styleable.DividerAttributes_dragRangeMaxRatio),
+                hasValue(R.styleable.DividerAttributes_isDraggingToFullscreenAllowed),
             )
 
             val widthDp =
@@ -408,12 +459,15 @@ internal object RuleParser {
                     R.styleable.DividerAttributes_dragRangeMaxRatio,
                     DRAG_RANGE_VALUE_UNSPECIFIED
                 )
+            val isDraggingToFullscreenAllowed =
+                getBoolean(R.styleable.DividerAttributes_isDraggingToFullscreenAllowed, false)
             return@parseDividerAttributes DividerAttributes.createDividerAttributes(
                 type,
                 widthDp,
                 color,
                 dragRangeMinRatio,
                 dragRangeMaxRatio,
+                isDraggingToFullscreenAllowed
             )
         }
     }

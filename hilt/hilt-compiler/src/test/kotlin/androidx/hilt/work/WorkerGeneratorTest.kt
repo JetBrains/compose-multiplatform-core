@@ -91,6 +91,7 @@ class WorkerGeneratorTest {
                     Sources.WORKER,
                     Sources.WORKER_PARAMETERS
                 ),
+            kotlincArguments = listOf("-jvm-target=11"),
             createProcessingSteps = { listOf(WorkerStep()) }
         ) {
             it.generatedSource(expected)
@@ -162,6 +163,7 @@ class WorkerGeneratorTest {
                     Sources.WORKER,
                     Sources.WORKER_PARAMETERS
                 ),
+            kotlincArguments = listOf("-jvm-target=11"),
             createProcessingSteps = { listOf(WorkerStep()) }
         ) {
             it.generatedSource(expected)

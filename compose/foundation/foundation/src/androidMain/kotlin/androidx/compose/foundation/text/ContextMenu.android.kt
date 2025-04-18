@@ -16,11 +16,19 @@
 
 package androidx.compose.foundation.text
 
+import android.content.res.Resources
 import android.os.Build
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.R
 import androidx.compose.foundation.contextmenu.ContextMenuScope
 import androidx.compose.foundation.contextmenu.ContextMenuState
 import androidx.compose.foundation.contextmenu.close
+import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
+import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys
+import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession
+import androidx.compose.foundation.text.contextmenu.internal.ProvideDefaultTextContextMenuDropdown
+import androidx.compose.foundation.text.contextmenu.modifier.textContextMenuGestures
 import androidx.compose.foundation.text.input.internal.selection.TextFieldSelectionState
 import androidx.compose.foundation.text.input.internal.selection.contextMenuBuilder
 import androidx.compose.foundation.text.selection.SelectionManager
@@ -28,49 +36,117 @@ import androidx.compose.foundation.text.selection.TextFieldSelectionManager
 import androidx.compose.foundation.text.selection.contextMenuBuilder
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal actual fun ContextMenuArea(
     manager: TextFieldSelectionManager,
     content: @Composable () -> Unit
 ) {
-    val state = remember { ContextMenuState() }
-    androidx.compose.foundation.contextmenu.ContextMenuArea(
-        state = state,
-        onDismiss = { state.close() },
-        contextMenuBuilderBlock = manager.contextMenuBuilder(state),
-        enabled = manager.enabled,
-        content = content,
-    )
+    if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+        val modifier =
+            if (manager.enabled) {
+                Modifier.textContextMenuGestures(
+                    onPreShowContextMenu = { manager.updateClipboardEntry() }
+                )
+            } else {
+                Modifier
+            }
+        ProvideDefaultTextContextMenuDropdown(modifier, content)
+    } else {
+        val state = remember { ContextMenuState() }
+        val coroutineScope = rememberCoroutineScope()
+        val menuItemsAvailability = remember { mutableStateOf(MenuItemsAvailability.None) }
+
+        androidx.compose.foundation.contextmenu.ContextMenuArea(
+            state = state,
+            onDismiss = { state.close() },
+            contextMenuBuilderBlock = manager.contextMenuBuilder(state, menuItemsAvailability),
+            enabled = manager.enabled,
+            onOpenGesture = {
+                coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                    menuItemsAvailability.value = manager.getContextMenuItemsAvailability()
+                }
+            },
+            content = content,
+        )
+    }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal actual fun ContextMenuArea(
     selectionState: TextFieldSelectionState,
     enabled: Boolean,
     content: @Composable () -> Unit
 ) {
-    val state = remember { ContextMenuState() }
-    androidx.compose.foundation.contextmenu.ContextMenuArea(
-        state = state,
-        onDismiss = { state.close() },
-        contextMenuBuilderBlock = selectionState.contextMenuBuilder(state),
-        enabled = enabled,
-        content = content,
-    )
+    if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+        val modifier =
+            if (enabled) {
+                Modifier.textContextMenuGestures(
+                    onPreShowContextMenu = { selectionState.updateClipboardEntry() }
+                )
+            } else {
+                Modifier
+            }
+        ProvideDefaultTextContextMenuDropdown(modifier, content)
+    } else {
+        val state = remember { ContextMenuState() }
+        val coroutineScope = rememberCoroutineScope()
+        val menuItemsAvailability = remember { mutableStateOf(MenuItemsAvailability.None) }
+        val menuBuilder =
+            selectionState.contextMenuBuilder(
+                state = state,
+                itemsAvailability = menuItemsAvailability,
+                onMenuItemClicked = { item ->
+                    coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                        when (item) {
+                            TextContextMenuItems.Cut -> cut()
+                            TextContextMenuItems.Copy -> copy(false)
+                            TextContextMenuItems.Paste -> paste()
+                            TextContextMenuItems.SelectAll -> selectAll()
+                            TextContextMenuItems.Autofill -> autofill()
+                        }
+                    }
+                }
+            )
+
+        androidx.compose.foundation.contextmenu.ContextMenuArea(
+            state = state,
+            onDismiss = { state.close() },
+            contextMenuBuilderBlock = menuBuilder,
+            enabled = enabled,
+            onOpenGesture = {
+                coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                    menuItemsAvailability.value = selectionState.getContextMenuItemsAvailability()
+                }
+            },
+            content = content,
+        )
+    }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal actual fun ContextMenuArea(manager: SelectionManager, content: @Composable () -> Unit) {
-    val state = remember { ContextMenuState() }
-    androidx.compose.foundation.contextmenu.ContextMenuArea(
-        state = state,
-        onDismiss = { state.close() },
-        contextMenuBuilderBlock = manager.contextMenuBuilder(state),
-        content = content,
-    )
+    if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+        ProvideDefaultTextContextMenuDropdown(Modifier.textContextMenuGestures(), content)
+    } else {
+        val state = remember { ContextMenuState() }
+        androidx.compose.foundation.contextmenu.ContextMenuArea(
+            state = state,
+            onDismiss = { state.close() },
+            contextMenuBuilderBlock = manager.contextMenuBuilder(state),
+            content = content,
+        )
+    }
 }
 
 /**
@@ -78,20 +154,42 @@ internal actual fun ContextMenuArea(manager: SelectionManager, content: @Composa
  *
  * @param stringId The android [android.R.string] id for the label of this item
  */
-internal enum class TextContextMenuItems(private val stringId: Int) {
-    Cut(android.R.string.cut),
-    Copy(android.R.string.copy),
-    Paste(android.R.string.paste),
-    SelectAll(android.R.string.selectAll),
+internal enum class TextContextMenuItems(val key: Any, val stringId: Int, val drawableId: Int?) {
+    Cut(
+        key = TextContextMenuKeys.CutKey,
+        stringId = android.R.string.cut,
+        drawableId = android.R.attr.actionModeCutDrawable
+    ),
+    Copy(
+        key = TextContextMenuKeys.CopyKey,
+        stringId = android.R.string.copy,
+        drawableId = android.R.attr.actionModeCopyDrawable
+    ),
+    Paste(
+        key = TextContextMenuKeys.PasteKey,
+        stringId = android.R.string.paste,
+        drawableId = android.R.attr.actionModePasteDrawable
+    ),
+    SelectAll(
+        key = TextContextMenuKeys.SelectAllKey,
+        stringId = android.R.string.selectAll,
+        drawableId = android.R.attr.actionModeSelectAllDrawable
+    ),
     Autofill(
-        if (Build.VERSION.SDK_INT <= 26) {
-            R.string.autofill
-        } else {
-            android.R.string.autofill
-        }
+        key = TextContextMenuKeys.AutofillKey,
+        stringId =
+            if (Build.VERSION.SDK_INT <= 26) {
+                R.string.autofill
+            } else {
+                android.R.string.autofill
+            },
+        // Platform also doesn't have an icon for the autofill item.
+        drawableId = null
     );
 
     @ReadOnlyComposable @Composable fun resolvedString(): String = stringResource(stringId)
+
+    fun resolveString(resources: Resources): String = resources.getString(stringId)
 }
 
 internal inline fun ContextMenuScope.TextItem(
@@ -108,4 +206,84 @@ internal inline fun ContextMenuScope.TextItem(
             state.close()
         }
     }
+}
+
+internal fun TextContextMenuBuilderScope.textItem(
+    resources: Resources,
+    item: TextContextMenuItems,
+    onClick: TextContextMenuSession.() -> Unit
+) {
+    item(
+        key = item.key,
+        label = item.resolveString(resources),
+        leadingIcon = item.drawableId,
+        onClick = onClick
+    )
+}
+
+internal suspend fun TextFieldSelectionState.getContextMenuItemsAvailability():
+    MenuItemsAvailability {
+    updateClipboardEntry()
+    return MenuItemsAvailability(
+        canCopy = canCopy(),
+        canPaste = canPaste(),
+        canCut = canCut(),
+        canSelectAll = canSelectAll(),
+        canAutofill = canAutofill()
+    )
+}
+
+internal suspend fun TextFieldSelectionManager.getContextMenuItemsAvailability():
+    MenuItemsAvailability {
+    updateClipboardEntry()
+    return MenuItemsAvailability(
+        canCopy = canCopy(),
+        canPaste = canPaste(),
+        canCut = canCut(),
+        canSelectAll = canSelectAll(),
+        canAutofill = canAutofill()
+    )
+}
+
+@JvmInline
+internal value class MenuItemsAvailability private constructor(val value: Int) {
+    constructor(
+        canCopy: Boolean,
+        canPaste: Boolean,
+        canCut: Boolean,
+        canSelectAll: Boolean,
+        canAutofill: Boolean
+    ) : this(
+        (if (canCopy) COPY else 0) or
+            (if (canPaste) PASTE else 0) or
+            (if (canCut) CUT else 0) or
+            (if (canSelectAll) SELECT_ALL else 0) or
+            (if (canAutofill) AUTO_FILL else 0)
+    )
+
+    companion object {
+        private const val COPY = 0b0001
+        private const val PASTE = 0b0010
+        private const val CUT = 0b0100
+        private const val SELECT_ALL = 0b1000
+        private const val AUTO_FILL = 0b10000
+        private const val NONE = 0
+
+        val None = MenuItemsAvailability(NONE)
+    }
+
+    val canCopy
+        get() = value and COPY == COPY
+
+    val canPaste
+        get() = value and PASTE == PASTE
+
+    val canCut
+        get() = value and CUT == CUT
+
+    val canSelectAll
+        get() = value and SELECT_ALL == SELECT_ALL
+
+    val canAutofill
+        get() = value and AUTO_FILL == AUTO_FILL
 }

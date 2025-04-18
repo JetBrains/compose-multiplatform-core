@@ -21,15 +21,16 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.lifecycle:lifecycle-common:2.0.0")
     api("androidx.annotation:annotation:1.8.1")
     api(project(":camera:camera-core"))
@@ -75,8 +76,10 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
 }
 android {
-    lintOptions {
-        enable 'CameraXQuirksClassDetector'
+    compileSdk = 35
+
+    lint {
+        enable.add("CameraXQuirksClassDetector")
     }
 
     testOptions.unitTests.includeAndroidResources = true
@@ -84,7 +87,7 @@ android {
 }
 androidx {
     name = "Camera View"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2019"
     description = "UI tools for the Jetpack Camera Library, a library providing a consistent and " +
             "reliable camera foundation that enables great camera driven experiences across all " +

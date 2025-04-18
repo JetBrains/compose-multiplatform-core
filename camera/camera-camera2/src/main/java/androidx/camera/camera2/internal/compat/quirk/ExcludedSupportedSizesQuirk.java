@@ -20,11 +20,12 @@ import android.graphics.ImageFormat;
 import android.os.Build;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.ImageFormatConstants;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -98,8 +99,7 @@ public class ExcludedSupportedSizesQuirk implements Quirk {
      * Retrieves problematic supported surface sizes that have to be excluded on the current
      * device, for the given camera id and image format.
      */
-    @NonNull
-    public List<Size> getExcludedSizes(@NonNull String cameraId, int imageFormat) {
+    public @NonNull List<Size> getExcludedSizes(@NonNull String cameraId, int imageFormat) {
         if (isOnePlus6()) {
             return getOnePlus6ExcludedSizes(cameraId, imageFormat);
         }
@@ -129,8 +129,7 @@ public class ExcludedSupportedSizesQuirk implements Quirk {
      * Retrieves problematic supported surface sizes that have to be excluded on the current
      * device, for the given camera id and class type.
      */
-    @NonNull
-    public List<Size> getExcludedSizes(@NonNull String cameraId, @NonNull Class<?> klass) {
+    public @NonNull List<Size> getExcludedSizes(@NonNull String cameraId, @NonNull Class<?> klass) {
         if (isHuaweiP20Lite()) {
             return getHuaweiP20LiteExcludedSizes(cameraId, UNKNOWN_IMAGE_FORMAT, klass);
         }
@@ -144,8 +143,8 @@ public class ExcludedSupportedSizesQuirk implements Quirk {
         return Collections.emptyList();
     }
 
-    @NonNull
-    private List<Size> getOnePlus6ExcludedSizes(@NonNull String cameraId, int imageFormat) {
+    private @NonNull List<Size> getOnePlus6ExcludedSizes(@NonNull String cameraId,
+            int imageFormat) {
         final List<Size> sizes = new ArrayList<>();
         if (cameraId.equals("0") && imageFormat == ImageFormat.JPEG) {
             sizes.add(new Size(4160, 3120));
@@ -154,8 +153,8 @@ public class ExcludedSupportedSizesQuirk implements Quirk {
         return sizes;
     }
 
-    @NonNull
-    private List<Size> getOnePlus6TExcludedSizes(@NonNull String cameraId, int imageFormat) {
+    private @NonNull List<Size> getOnePlus6TExcludedSizes(@NonNull String cameraId,
+            int imageFormat) {
         final List<Size> sizes = new ArrayList<>();
         if (cameraId.equals("0") && imageFormat == ImageFormat.JPEG) {
             sizes.add(new Size(4160, 3120));
@@ -164,8 +163,8 @@ public class ExcludedSupportedSizesQuirk implements Quirk {
         return sizes;
     }
 
-    @NonNull
-    private List<Size> getHuaweiP20LiteExcludedSizes(@NonNull String cameraId, int imageFormat,
+    private @NonNull List<Size> getHuaweiP20LiteExcludedSizes(@NonNull String cameraId,
+            int imageFormat,
             @Nullable Class<?> klass) {
         final List<Size> sizes = new ArrayList<>();
         // When klass is not null, the list for PRIVATE format should be returned.
@@ -178,8 +177,7 @@ public class ExcludedSupportedSizesQuirk implements Quirk {
         return sizes;
     }
 
-    @NonNull
-    private List<Size> getSamsungJ7PrimeApi27AboveExcludedSizes(@NonNull String cameraId,
+    private @NonNull List<Size> getSamsungJ7PrimeApi27AboveExcludedSizes(@NonNull String cameraId,
             int imageFormat, @Nullable Class<?> klass) {
         final List<Size> sizes = new ArrayList<>();
 
@@ -220,8 +218,7 @@ public class ExcludedSupportedSizesQuirk implements Quirk {
         return sizes;
     }
 
-    @NonNull
-    private List<Size> getSamsungJ7Api27AboveExcludedSizes(@NonNull String cameraId,
+    private @NonNull List<Size> getSamsungJ7Api27AboveExcludedSizes(@NonNull String cameraId,
             int imageFormat, @Nullable Class<?> klass) {
         final List<Size> sizes = new ArrayList<>();
 
@@ -257,8 +254,8 @@ public class ExcludedSupportedSizesQuirk implements Quirk {
         return sizes;
     }
 
-    @NonNull
-    private List<Size> getRedmiNote9ProExcludedSizes(@NonNull String cameraId, int imageFormat) {
+    private @NonNull List<Size> getRedmiNote9ProExcludedSizes(@NonNull String cameraId,
+            int imageFormat) {
         final List<Size> sizes = new ArrayList<>();
         if (cameraId.equals("0") && imageFormat == ImageFormat.JPEG) {
             sizes.add(new Size(9280, 6944)); // High resolution
@@ -266,8 +263,7 @@ public class ExcludedSupportedSizesQuirk implements Quirk {
         return sizes;
     }
 
-    @NonNull
-    private List<Size> getSamsungA05sExcludedSizes(int imageFormat) {
+    private @NonNull List<Size> getSamsungA05sExcludedSizes(int imageFormat) {
         final List<Size> sizes = new ArrayList<>();
         if (imageFormat == ImageFormat.YUV_420_888) {
             sizes.add(new Size(3840, 2160));

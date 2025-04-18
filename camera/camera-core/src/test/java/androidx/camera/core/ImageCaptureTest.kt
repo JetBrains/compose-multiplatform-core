@@ -27,7 +27,6 @@ import android.util.Pair
 import android.util.Rational
 import android.util.Size
 import android.view.Surface
-import androidx.annotation.RequiresApi
 import androidx.camera.core.CameraEffect.IMAGE_CAPTURE
 import androidx.camera.core.CameraEffect.PREVIEW
 import androidx.camera.core.CameraEffect.VIDEO_CAPTURE
@@ -48,6 +47,7 @@ import androidx.camera.core.impl.ImageOutputConfig.OPTION_SUPPORTED_RESOLUTIONS
 import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.OptionsBundle
 import androidx.camera.core.impl.SessionConfig
+import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.TagBundle
@@ -76,6 +76,7 @@ import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory
 import androidx.camera.testing.impl.mocks.MockScreenFlash
 import androidx.camera.testing.impl.mocks.MockScreenFlashListener
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.util.Collections
@@ -652,6 +653,25 @@ class ImageCaptureTest {
     }
 
     @Test
+    fun sessionConfigMatchesStreamSpec() {
+        val imageCapture =
+            ImageCapture.Builder()
+                .setSessionOptionUnpacker { _, _, _,
+                    ->
+                }
+                .setCaptureOptionUnpacker { _, _ -> }
+                .build()
+        val streamSpec =
+            StreamSpec.builder(Size(640, 480)).setSessionType(SESSION_TYPE_HIGH_SPEED).build()
+
+        imageCapture.bindToCamera(FakeCamera(), null, null, null)
+        imageCapture.updateSuggestedStreamSpec(streamSpec, null)
+
+        val sessionConfig = imageCapture.sessionConfig
+        assertThat(sessionConfig.sessionType).isEqualTo(SESSION_TYPE_HIGH_SPEED)
+    }
+
+    @Test
     fun sessionConfigHasStreamSpecImplementationOptions_whenUpdateStreamSpecImplOptions() {
         val imageCapture =
             bindImageCapture(
@@ -962,7 +982,7 @@ class ImageCaptureTest {
             .isSameInstanceAs(resolutionSelector)
     }
 
-    @RequiresApi(23)
+    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun useMaximumSize_whenNotSettingPostviewResolutioSelector() {
         val imageCapture = ImageCapture.Builder().setPostviewEnabled(true).build()
@@ -984,7 +1004,7 @@ class ImageCaptureTest {
             .isEqualTo(Size(1920, 1080))
     }
 
-    @RequiresApi(23)
+    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun postviewResolutioSelectorCanWork() {
         val resolutionSelector =
@@ -1018,7 +1038,7 @@ class ImageCaptureTest {
             .isEqualTo(Size(1920, 1080))
     }
 
-    @RequiresApi(23)
+    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun throwException_whenPostviewResolutionSelectorCannotSelectSize() {
         val resolutionSelector =

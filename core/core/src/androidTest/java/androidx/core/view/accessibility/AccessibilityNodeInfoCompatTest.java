@@ -20,12 +20,14 @@ import static androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Colle
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import android.graphics.Rect;
 import android.graphics.Region;
 import android.os.Build;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 
@@ -292,6 +294,25 @@ public class AccessibilityNodeInfoCompatTest {
     }
 
     @Test
+    public void testGetSetFieldRequired() {
+        AccessibilityNodeInfoCompat nodeCompat = obtainedWrappedNodeCompat();
+        nodeCompat.setFieldRequired(true);
+        assertThat(nodeCompat.isFieldRequired()).isTrue();
+        nodeCompat.setFieldRequired(false);
+        assertThat(nodeCompat.isFieldRequired()).isFalse();
+    }
+
+    @Test
+    public void testGetSetExpandedState() {
+        AccessibilityNodeInfoCompat nodeCompat = obtainedWrappedNodeCompat();
+        assertThat(nodeCompat.getExpandedState())
+                .isEqualTo(AccessibilityNodeInfo.EXPANDED_STATE_UNDEFINED);
+        nodeCompat.setExpandedState(AccessibilityNodeInfo.EXPANDED_STATE_PARTIAL);
+        assertThat(nodeCompat.getExpandedState())
+                .isEqualTo(AccessibilityNodeInfo.EXPANDED_STATE_PARTIAL);
+    }
+
+    @Test
     public void testGetSetAccessibilityDataSensitive() {
         AccessibilityNodeInfoCompat accessibilityNodeInfoCompat = obtainedWrappedNodeCompat();
 
@@ -460,6 +481,16 @@ public class AccessibilityNodeInfoCompatTest {
 
     @SmallTest
     @Test
+    public void testGetSupplementalDescription() {
+        final CharSequence supplementalDescription = "supplemental description";
+        AccessibilityNodeInfoCompat nodeCompat = obtainedWrappedNodeCompat();
+        nodeCompat.setSupplementalDescription(supplementalDescription);
+        assertThat(TextUtils.equals(
+                supplementalDescription, nodeCompat.getSupplementalDescription())).isTrue();
+    }
+
+    @SmallTest
+    @Test
     public void testSetGetTextSelectable() {
         AccessibilityNodeInfoCompat accessibilityNodeInfoCompat = obtainedWrappedNodeCompat();
         accessibilityNodeInfoCompat.setTextSelectable(false);
@@ -477,5 +508,31 @@ public class AccessibilityNodeInfoCompatTest {
                 android.R.id.accessibilityActionScrollInDirection);
         assertThat(actionCompat.toString()).isEqualTo("AccessibilityActionCompat: "
                 + "ACTION_SCROLL_IN_DIRECTION");
+    }
+
+
+    @SmallTest
+    @Test
+    public void testGetSetChecked() {
+        AccessibilityNodeInfoCompat nodeCompat = obtainedWrappedNodeCompat();
+        assertThat(nodeCompat.getChecked()).isEqualTo(AccessibilityNodeInfo.CHECKED_STATE_FALSE);
+
+        nodeCompat.setChecked(AccessibilityNodeInfo.CHECKED_STATE_TRUE);
+        assertThat(nodeCompat.getChecked()).isEqualTo(AccessibilityNodeInfo.CHECKED_STATE_TRUE);
+
+        nodeCompat.setChecked(AccessibilityNodeInfo.CHECKED_STATE_PARTIAL);
+        assertThat(nodeCompat.getChecked()).isEqualTo(AccessibilityNodeInfo.CHECKED_STATE_PARTIAL);
+
+        nodeCompat.setChecked(AccessibilityNodeInfo.CHECKED_STATE_FALSE);
+        assertThat(nodeCompat.getChecked()).isEqualTo(AccessibilityNodeInfo.CHECKED_STATE_FALSE);
+    }
+
+    @SmallTest
+    @Test
+    public void testSetChecked_throwsWithInvalidArgument() {
+        AccessibilityNodeInfoCompat nodeCompat = obtainedWrappedNodeCompat();
+        assertThat(nodeCompat.getChecked()).isEqualTo(AccessibilityNodeInfo.CHECKED_STATE_FALSE);
+
+        assertThrows(IllegalArgumentException.class, () -> nodeCompat.setChecked(4));
     }
 }

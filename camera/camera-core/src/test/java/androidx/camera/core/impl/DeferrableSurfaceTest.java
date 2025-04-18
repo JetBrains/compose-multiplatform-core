@@ -26,12 +26,12 @@ import static org.mockito.Mockito.verify;
 import android.os.Build;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.utils.futures.FutureCallback;
 import androidx.camera.core.impl.utils.futures.Futures;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,8 +52,7 @@ public class DeferrableSurfaceTest {
     public void setup() {
         mDeferrableSurface = new DeferrableSurface() {
             @Override
-            @NonNull
-            public ListenableFuture<Surface> provideSurface() {
+            public @NonNull ListenableFuture<Surface> provideSurface() {
                 return Futures.immediateFuture(null);
             }
         };

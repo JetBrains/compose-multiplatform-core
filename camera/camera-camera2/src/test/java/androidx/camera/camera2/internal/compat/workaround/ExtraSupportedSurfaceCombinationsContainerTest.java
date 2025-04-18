@@ -21,11 +21,11 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.SurfaceCombination;
 import androidx.camera.core.impl.SurfaceConfig;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.ParameterizedRobolectricTestRunner;
@@ -101,10 +101,9 @@ public class ExtraSupportedSurfaceCombinationsContainerTest {
         return data;
     }
 
-    @NonNull
-    private final Config mConfig;
+    private final @NonNull Config mConfig;
 
-    public ExtraSupportedSurfaceCombinationsContainerTest(@NonNull final Config config) {
+    public ExtraSupportedSurfaceCombinationsContainerTest(final @NonNull Config config) {
         mConfig = config;
 
     }
@@ -179,20 +178,15 @@ public class ExtraSupportedSurfaceCombinationsContainerTest {
     }
 
     static class Config {
-        @Nullable
-        final String mBrand;
-        @Nullable
-        final String mDevice;
-        @Nullable
-        final String mModel;
-        @NonNull
-        final String mCameraId;
-        @NonNull
-        final SurfaceCombination[] mExpectedSupportedSurfaceCombinations;
+        final @Nullable String mBrand;
+        final @Nullable String mDevice;
+        final @Nullable String mModel;
+        final @NonNull String mCameraId;
+        final SurfaceCombination @NonNull [] mExpectedSupportedSurfaceCombinations;
 
         Config(@Nullable String brand, @Nullable String device, @Nullable String model,
                 @NonNull String cameraId,
-                @NonNull SurfaceCombination... expectedSupportedSurfaceCombinations) {
+                SurfaceCombination @NonNull ... expectedSupportedSurfaceCombinations) {
             mBrand = brand;
             mDevice = device;
             mModel = model;

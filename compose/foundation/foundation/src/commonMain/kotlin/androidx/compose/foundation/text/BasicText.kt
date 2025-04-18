@@ -28,6 +28,7 @@ import androidx.compose.foundation.text.selection.SelectionRegistrar
 import androidx.compose.foundation.text.selection.hasSelection
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -84,7 +85,8 @@ import kotlin.math.floor
  * @param autoSize Enable auto sizing for this text composable. Finds the biggest font size that
  *   fits in the available space and lays the text out with this size. This performs multiple layout
  *   passes and can be slower than using a fixed font size. This takes precedence over sizes defined
- *   through [style].
+ *   through [style]. See [TextAutoSize] and
+ *   [androidx.compose.foundation.samples.TextAutoSizeBasicTextSample].
  */
 @Composable
 fun BasicText(
@@ -97,7 +99,7 @@ fun BasicText(
     maxLines: Int = Int.MAX_VALUE,
     minLines: Int = 1,
     color: ColorProducer? = null,
-    autoSize: AutoSize? = null
+    autoSize: TextAutoSize? = null
 ) {
     validateMinMaxLines(minLines = minLines, maxLines = maxLines)
     val selectionRegistrar = LocalSelectionRegistrar.current
@@ -114,8 +116,13 @@ fun BasicText(
         } else {
             null
         }
+
+    val fontFamilyResolver = LocalFontFamilyResolver.current
+
+    BackgroundTextMeasurement(text = text, style = style, fontFamilyResolver = fontFamilyResolver)
+
     val finalModifier =
-        if (selectionController != null || onTextLayout != null) {
+        if (selectionController != null || onTextLayout != null || autoSize != null) {
             modifier.textModifier(
                 AnnotatedString(text = text),
                 style = style,
@@ -130,20 +137,19 @@ fun BasicText(
                 selectionController = selectionController,
                 color = color,
                 onShowTranslation = null,
-                autoSize = requireAutoSizeInternalImplementationOrNull(autoSize)
+                autoSize = autoSize
             )
         } else {
             modifier then
                 TextStringSimpleElement(
                     text = text,
                     style = style,
-                    fontFamilyResolver = LocalFontFamilyResolver.current,
+                    fontFamilyResolver = fontFamilyResolver,
                     overflow = overflow,
                     softWrap = softWrap,
                     maxLines = maxLines,
                     minLines = minLines,
-                    color = color,
-                    autoSize = requireAutoSizeInternalImplementationOrNull(autoSize)
+                    color = color
                 )
         }
     Layout(finalModifier, EmptyMeasurePolicy)
@@ -176,7 +182,8 @@ fun BasicText(
  * @param autoSize Enable auto sizing for this text composable. Finds the biggest font size that
  *   fits in the available space and lays the text out with this size. This performs multiple layout
  *   passes and can be slower than using a fixed font size. This takes precedence over sizes defined
- *   through [style].
+ *   through [style]. See [TextAutoSize] and
+ *   [androidx.compose.foundation.samples.TextAutoSizeBasicTextSample].
  */
 @Composable
 fun BasicText(
@@ -190,7 +197,7 @@ fun BasicText(
     minLines: Int = 1,
     inlineContent: Map<String, InlineTextContent> = mapOf(),
     color: ColorProducer? = null,
-    autoSize: AutoSize? = null
+    autoSize: TextAutoSize? = null
 ) {
     validateMinMaxLines(minLines = minLines, maxLines = maxLines)
     val selectionRegistrar = LocalSelectionRegistrar.current
@@ -209,7 +216,17 @@ fun BasicText(
         }
     val hasInlineContent = text.hasInlineContent()
     val hasLinks = text.hasLinks()
+
+    val fontFamilyResolver = LocalFontFamilyResolver.current
+
     if (!hasInlineContent && !hasLinks) {
+        BackgroundTextMeasurement(
+            text = text,
+            style = style,
+            fontFamilyResolver = fontFamilyResolver,
+            placeholders = null
+        )
+
         // this is the same as text: String, use all the early exits
         Layout(
             modifier =
@@ -221,13 +238,13 @@ fun BasicText(
                     softWrap = softWrap,
                     maxLines = maxLines,
                     minLines = minLines,
-                    fontFamilyResolver = LocalFontFamilyResolver.current,
+                    fontFamilyResolver = fontFamilyResolver,
                     placeholders = null,
                     onPlaceholderLayout = null,
                     selectionController = selectionController,
                     color = color,
                     onShowTranslation = null,
-                    autoSize = requireAutoSizeInternalImplementationOrNull(autoSize)
+                    autoSize = autoSize
                 ),
             EmptyMeasurePolicy
         )
@@ -247,7 +264,7 @@ fun BasicText(
             softWrap = softWrap,
             maxLines = maxLines,
             minLines = minLines,
-            fontFamilyResolver = LocalFontFamilyResolver.current,
+            fontFamilyResolver = fontFamilyResolver,
             selectionController = selectionController,
             color = color,
             onShowTranslation = { substitutionValue ->
@@ -258,7 +275,7 @@ fun BasicText(
                         substitutionValue.original
                     }
             },
-            autoSize = requireAutoSizeInternalImplementationOrNull(autoSize)
+            autoSize = autoSize
         )
     }
 }
@@ -659,6 +676,13 @@ private fun LayoutWithLinksAndInlineContent(
             { measuredPlaceholderPositions?.value = it }
         } else null
 
+    BackgroundTextMeasurement(
+        text = text,
+        style = style,
+        fontFamilyResolver = fontFamilyResolver,
+        placeholders = placeholders
+    )
+
     Layout(
         content = {
             textScope?.LinksComposables()
@@ -682,7 +706,7 @@ private fun LayoutWithLinksAndInlineContent(
                 selectionController = selectionController,
                 color = color,
                 onShowTranslation = onShowTranslation,
-                autoSize = autoSize
+                autoSize = autoSize,
             ),
         measurePolicy =
             if (!hasInlineContent) {
@@ -699,13 +723,32 @@ private fun LayoutWithLinksAndInlineContent(
 }
 
 /**
- * [AutoSize], our public type, is a sealed interface. Our internal representation is not sealed.
- * This is an extra validity check to ensure we are receiving the correct type; in practice it
- * should never happen.
+ * This function pre-measures the text on Android platform to warm the platform text layout cache in
+ * a background thread before the actual text layout begins.
+ *
+ * @return An optional callback to cancel the background task from proceeding. If the measurement
+ *   starts on the main thread, there is no point in starting this task in the background thread.
  */
-private fun requireAutoSizeInternalImplementationOrNull(autoSize: AutoSize?): TextAutoSize? {
-    if (autoSize != null && autoSize !is TextAutoSize) {
-        throw IllegalArgumentException("AutoSize must implement TextAutoSize")
-    }
-    return autoSize as? TextAutoSize
-}
+@Composable
+@NonRestartableComposable
+internal expect fun BackgroundTextMeasurement(
+    text: String,
+    style: TextStyle,
+    fontFamilyResolver: FontFamily.Resolver
+)
+
+/**
+ * This function pre-measures the text on Android platform to warm the platform text layout cache in
+ * a background thread before the actual text layout begins.
+ *
+ * @return An optional callback to cancel the background task from proceeding. If the measurement
+ *   starts on the main thread, there is no point in starting this task in the background thread.
+ */
+@Composable
+@NonRestartableComposable
+internal expect fun BackgroundTextMeasurement(
+    text: AnnotatedString,
+    style: TextStyle,
+    fontFamilyResolver: FontFamily.Resolver,
+    placeholders: List<AnnotatedString.Range<Placeholder>>?
+)

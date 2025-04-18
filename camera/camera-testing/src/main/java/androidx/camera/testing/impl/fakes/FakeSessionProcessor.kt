@@ -17,10 +17,12 @@
 package androidx.camera.testing.impl.fakes
 
 import android.graphics.ImageFormat
+import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
 import android.media.ImageWriter
 import android.os.SystemClock
+import android.util.Pair
 import android.util.Size
 import android.view.Surface
 import androidx.annotation.OptIn
@@ -56,6 +58,8 @@ public class FakeSessionProcessor(
     private val inputFormatPreview: Int? = null,
     private val inputFormatCapture: Int? = null,
     private val postviewSupportedSizes: Map<Int, List<Size>>? = null,
+    private val supportedCameraOperations: Set<Int> = emptySet(),
+    private val extensionSpecificChars: List<Pair<CameraCharacteristics.Key<*>, Any>>? = emptyList()
 ) : SessionProcessor {
     private lateinit var previewProcessorSurface: DeferrableSurface
     private lateinit var captureProcessorSurface: DeferrableSurface
@@ -107,10 +111,10 @@ public class FakeSessionProcessor(
     @OptIn(ExperimentalGetImage::class)
     override fun initSession(
         cameraInfo: CameraInfo,
-        outputSurfaceConfig: OutputSurfaceConfiguration
+        outputSurfaceConfig: OutputSurfaceConfiguration?
     ): SessionConfig {
         initSessionCalled.complete(SystemClock.elapsedRealtimeNanos())
-        initSessionOutputSurfaceConfiguration.complete(outputSurfaceConfig)
+        initSessionOutputSurfaceConfiguration.complete(outputSurfaceConfig!!)
         val sessionBuilder = SessionConfig.Builder()
 
         val previewSurfaceConfig = outputSurfaceConfig.previewOutputSurface
@@ -250,7 +254,7 @@ public class FakeSessionProcessor(
 
     @AdapterCameraInfo.CameraOperation
     override fun getSupportedCameraOperations(): Set<Int> {
-        return restrictedCameraOperations
+        return supportedCameraOperations
     }
 
     override fun getSupportedPostviewSize(captureSize: Size): Map<Int, List<Size>> {
@@ -412,6 +416,9 @@ public class FakeSessionProcessor(
     }
 
     override fun abortCapture(captureSequenceId: Int) {}
+
+    override fun getAvailableCharacteristicsKeyValues():
+        List<Pair<CameraCharacteristics.Key<*>, Any>> = extensionSpecificChars!!
 
     public suspend fun assertInitSessionInvoked(): Long {
         return initSessionCalled.awaitWithTimeout(3000)

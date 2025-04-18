@@ -192,9 +192,9 @@ internal constructor(
     internal var firstVisiblePageOffset = 0
         private set
 
-    private var maxScrollOffset: Long = Long.MAX_VALUE
+    internal var maxScrollOffset: Long = Long.MAX_VALUE
 
-    private var minScrollOffset: Long = 0L
+    internal var minScrollOffset: Long = 0L
 
     private var accumulator: Float = 0.0f
 
@@ -453,7 +453,7 @@ internal constructor(
 
     internal val prefetchState =
         LazyLayoutPrefetchState(prefetchScheduler) {
-            Snapshot.withoutReadObservation { schedulePrefetch(firstVisiblePage) }
+            Snapshot.withoutReadObservation { schedulePrecomposition(firstVisiblePage) }
         }
 
     internal val beyondBoundsInfo = LazyLayoutBeyondBoundsInfo()
@@ -620,8 +620,7 @@ internal constructor(
                     targetPage,
                     targetPageOffsetToSnappedPosition,
                     animationSpec,
-                    updateTargetPage = { updateTargetPage(it) },
-                    this
+                    updateTargetPage = { updateTargetPage(it) }
                 )
         }
     }
@@ -673,6 +672,10 @@ internal constructor(
         isLookingAhead: Boolean,
         visibleItemsStayedTheSame: Boolean = false
     ) {
+        // update the prefetch state with the number of nested prefetch items this layout
+        // should use.
+        prefetchState.idealNestedPrefetchCount = result.visiblePagesInfo.size
+
         if (!isLookingAhead && hasLookaheadOccurred) {
             debugLog { "Applying Approach Measure Result" }
             // If there was already a lookahead pass, record this result as Approach result
@@ -728,7 +731,7 @@ internal constructor(
             sign(scrollDelta) == sign(-upDownDifference.x)
         } || isNotGestureAction()
 
-    private fun isNotGestureAction(): Boolean =
+    internal fun isNotGestureAction(): Boolean =
         upDownDifference.x.toInt() == 0 && upDownDifference.y.toInt() == 0
 
     private fun notifyPrefetch(delta: Float, info: PagerLayoutInfo) {
@@ -760,7 +763,10 @@ internal constructor(
                     this.wasPrefetchingForward = isPrefetchingForward
                     this.indexToPrefetch = indexToPrefetch
                     currentPrefetchHandle =
-                        prefetchState.schedulePrefetch(indexToPrefetch, premeasureConstraints)
+                        prefetchState.schedulePrecompositionAndPremeasure(
+                            indexToPrefetch,
+                            premeasureConstraints
+                        )
                 }
                 if (isPrefetchingForward) {
                     val lastItem = info.visiblePagesInfo.last()
@@ -955,43 +961,40 @@ private suspend fun LazyLayoutScrollScope.animateScrollToPage(
     targetPage: Int,
     targetPageOffsetToSnappedPosition: Float,
     animationSpec: AnimationSpec<Float>,
-    updateTargetPage: ScrollScope.(Int) -> Unit,
-    scrollScope: ScrollScope
+    updateTargetPage: ScrollScope.(Int) -> Unit
 ) {
-    with(scrollScope) {
-        updateTargetPage(targetPage)
-        val forward = targetPage > firstVisibleItemIndex
-        val visiblePages = lastVisibleItemIndex - firstVisibleItemIndex + 1
-        if (
-            ((forward && targetPage > lastVisibleItemIndex) ||
-                (!forward && targetPage < firstVisibleItemIndex)) &&
-                abs(targetPage - firstVisibleItemIndex) >= MaxPagesForAnimateScroll
-        ) {
-            val preJumpPosition =
-                if (forward) {
-                    (targetPage - visiblePages).coerceAtLeast(firstVisibleItemIndex)
-                } else {
-                    (targetPage + visiblePages).coerceAtMost(firstVisibleItemIndex)
-                }
+    updateTargetPage(targetPage)
+    val forward = targetPage > firstVisibleItemIndex
+    val visiblePages = lastVisibleItemIndex - firstVisibleItemIndex + 1
+    if (
+        ((forward && targetPage > lastVisibleItemIndex) ||
+            (!forward && targetPage < firstVisibleItemIndex)) &&
+            abs(targetPage - firstVisibleItemIndex) >= MaxPagesForAnimateScroll
+    ) {
+        val preJumpPosition =
+            if (forward) {
+                (targetPage - visiblePages).coerceAtLeast(firstVisibleItemIndex)
+            } else {
+                (targetPage + visiblePages).coerceAtMost(firstVisibleItemIndex)
+            }
 
-            debugLog { "animateScrollToPage with pre-jump to position=$preJumpPosition" }
+        debugLog { "animateScrollToPage with pre-jump to position=$preJumpPosition" }
 
-            // Pre-jump to 1 viewport away from destination page, if possible
-            snapToItem(preJumpPosition, 0)
-        }
+        // Pre-jump to 1 viewport away from destination page, if possible
+        snapToItem(preJumpPosition, 0)
+    }
 
-        // The final delta displacement will be the difference between the pages offsets
-        // discounting whatever offset the original page had scrolled plus the offset
-        // fraction requested by the user.
-        val displacement = calculateDistanceTo(targetPage) + targetPageOffsetToSnappedPosition
+    // The final delta displacement will be the difference between the pages offsets
+    // discounting whatever offset the original page had scrolled plus the offset
+    // fraction requested by the user.
+    val displacement = calculateDistanceTo(targetPage) + targetPageOffsetToSnappedPosition
 
-        debugLog { "animateScrollToPage $displacement pixels" }
-        var previousValue = 0f
-        animate(0f, displacement, animationSpec = animationSpec) { currentValue, _ ->
-            val delta = currentValue - previousValue
-            val consumed = scrollBy(delta)
-            debugLog { "Dispatched Delta=$delta Consumed=$consumed" }
-            previousValue += consumed
-        }
+    debugLog { "animateScrollToPage $displacement pixels" }
+    var previousValue = 0f
+    animate(0f, displacement, animationSpec = animationSpec) { currentValue, _ ->
+        val delta = currentValue - previousValue
+        val consumed = scrollBy(delta)
+        debugLog { "Dispatched Delta=$delta Consumed=$consumed" }
+        previousValue += consumed
     }
 }

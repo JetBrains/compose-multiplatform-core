@@ -205,6 +205,13 @@ class SidecarWindowBackendTest : WindowTestBase() {
         backend.supportedPostures
     }
 
+    @Test(expected = UnsupportedOperationException::class)
+    fun testGetCurrentWindowLayoutInfo_throws() {
+        val interfaceCompat = SwitchOnUnregisterExtensionInterfaceCompat()
+        val backend = SidecarWindowBackend(interfaceCompat)
+        backend.getCurrentWindowLayoutInfo(context)
+    }
+
     internal companion object {
         private fun newTestWindowLayoutInfo(): WindowLayoutInfo {
             val feature1: DisplayFeature = HardwareFoldingFeature(Bounds(0, 2, 3, 4), HINGE, FLAT)

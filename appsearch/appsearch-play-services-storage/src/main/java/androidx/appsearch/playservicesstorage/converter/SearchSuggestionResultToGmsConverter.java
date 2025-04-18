@@ -16,10 +16,11 @@
 
 package androidx.appsearch.playservicesstorage.converter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.SearchSuggestionResult;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,8 +33,7 @@ public class SearchSuggestionResultToGmsConverter {
     private SearchSuggestionResultToGmsConverter() {}
 
     /** Translates from Platform to Jetpack versions of {@linkSearchSuggestionResult}   */
-    @NonNull
-    public static List<SearchSuggestionResult> toGmsSearchSuggestionResults(
+    public static @NonNull List<SearchSuggestionResult> toGmsSearchSuggestionResults(
             @NonNull List<com.google.android.gms.appsearch.SearchSuggestionResult>
                     gmsSearchSuggestionResults) {
         Preconditions.checkNotNull(gmsSearchSuggestionResults);

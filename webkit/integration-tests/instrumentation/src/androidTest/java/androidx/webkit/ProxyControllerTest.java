@@ -27,6 +27,8 @@ import androidx.concurrent.futures.ResolvableFuture;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.webkit.internal.ProxyControllerImpl;
+import androidx.webkit.test.common.WebViewOnUiThread;
+import androidx.webkit.test.common.WebkitUtils;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -51,7 +53,7 @@ public class ProxyControllerTest {
     public void setUp() throws IOException {
         WebkitUtils.checkFeature(WebViewFeature.PROXY_OVERRIDE);
 
-        mWebViewOnUiThread = new androidx.webkit.WebViewOnUiThread();
+        mWebViewOnUiThread = new WebViewOnUiThread();
         mContentServer = new MockWebServer();
         mProxyServer = new MockWebServer();
         mContentServer.start();

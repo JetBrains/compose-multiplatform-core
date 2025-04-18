@@ -309,7 +309,7 @@ class PositionalDataSourceTest {
         override fun loadInitial(params: LoadInitialParams, callback: LoadInitialCallback<B>) {
             source.loadInitial(
                 params,
-                object : LoadInitialCallback<A>() {
+                object : LoadInitialCallback<@UnsafeVariance A>() {
                     override fun onResult(data: List<A>, position: Int, totalCount: Int) {
                         callback.onResult(convert(data), position, totalCount)
                     }
@@ -324,7 +324,7 @@ class PositionalDataSourceTest {
         override fun loadRange(params: LoadRangeParams, callback: LoadRangeCallback<B>) {
             source.loadRange(
                 params,
-                object : LoadRangeCallback<A>() {
+                object : LoadRangeCallback<@UnsafeVariance A>() {
                     override fun onResult(data: List<A>) {
                         callback.onResult(convert(data))
                     }

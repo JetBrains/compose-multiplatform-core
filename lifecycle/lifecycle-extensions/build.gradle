@@ -21,13 +21,12 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
-import androidx.build.RunApiTasks
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -59,8 +58,7 @@ dependencies {
 
 androidx {
     name = "Lifecycle Extensions"
-    publish = Publish.NONE
-    runApiTasks = new RunApiTasks.Yes("Need to track API surface before moving to publish")
+    type = SoftwareType.INTERNAL_LIBRARY_WITH_API_TASKS
     inceptionYear = "2017"
     description = "Android Lifecycle Extensions"
     failOnDeprecationWarnings = false

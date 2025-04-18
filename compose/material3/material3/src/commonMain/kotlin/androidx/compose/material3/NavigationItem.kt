@@ -1024,10 +1024,19 @@ private fun MeasureScope.placeAnimatedLabelAndIcon(
     val heightStartIcon = constraints.constrainHeight(indicatorRipplePlaceable.height)
     val height = lerp(heightTopIcon, heightStartIcon, iconPositionProgress)
 
-    val indicatorAndRippleX = itemHorizontalPadding.roundToPx()
+    val rippleX = itemHorizontalPadding.roundToPx()
+    val indicatorXTopIcon = ((width - indicatorPlaceable.width) / 2).roundToInt()
+    val indicatorXStartIcon = ((rippleX + width - indicatorPlaceable.width) / 2).roundToInt()
+    val indicatorX =
+        if (iconPositionProgress == 0f || iconPositionProgress == 1f) {
+            // If not animating, indicator must expand from center.
+            lerp(indicatorXTopIcon, indicatorXStartIcon, iconPositionProgress)
+        } else {
+            itemHorizontalPadding.roundToPx()
+        }
 
-    val iconXTopIcon = indicatorAndRippleX + topIconIndicatorHorizontalPadding.roundToPx()
-    val iconXStartIcon = indicatorAndRippleX + startIconIndicatorHorizontalPadding.roundToPx()
+    val iconXTopIcon = rippleX + topIconIndicatorHorizontalPadding.roundToPx()
+    val iconXStartIcon = rippleX + startIconIndicatorHorizontalPadding.roundToPx()
 
     val iconYTopIcon = topIconIndicatorVerticalPadding.roundToPx()
     val iconYStartIcon = startIconIndicatorVerticalPadding.roundToPx()
@@ -1059,7 +1068,7 @@ private fun MeasureScope.placeAnimatedLabelAndIcon(
         if (iconPositionProgress < 0.5f) labelXTopIcon else labelXStartIcon * iconPositionProgress
     val labelY = if (iconPositionProgress < 0.5f) labelYTopIcon else labelYStartIcon
     return layout(width.roundToInt(), height) {
-        indicatorPlaceable.placeRelativeWithLayer(indicatorAndRippleX, 0)
+        indicatorPlaceable.placeRelativeWithLayer(indicatorX, 0)
         iconPlaceable.placeRelativeWithLayer(iconX, iconY)
         labelPlaceable.placeRelativeWithLayer(
             x = labelX.toInt(),
@@ -1068,7 +1077,7 @@ private fun MeasureScope.placeAnimatedLabelAndIcon(
                 alpha = 4 * (iconPositionProgress - 0.5f) * (iconPositionProgress - 0.5f)
             }
         )
-        indicatorRipplePlaceable.placeRelativeWithLayer(indicatorAndRippleX, 0)
+        indicatorRipplePlaceable.placeRelativeWithLayer(rippleX, 0)
     }
 }
 

@@ -1,8 +1,9 @@
 // Signature format: 4.0
-package @androidx.camera.featurecombinationquery.ExperimentalFeatureCombinationQuery androidx.camera.featurecombinationquery {
+package androidx.camera.featurecombinationquery {
 
   public interface CameraDeviceSetupCompat {
     method public androidx.camera.featurecombinationquery.CameraDeviceSetupCompat.SupportQueryResult isSessionConfigurationSupported(android.hardware.camera2.params.SessionConfiguration) throws android.hardware.camera2.CameraAccessException;
+    method public androidx.camera.featurecombinationquery.CameraDeviceSetupCompat.SupportQueryResult isSessionConfigurationSupported(androidx.camera.featurecombinationquery.SessionConfigurationCompat);
   }
 
   public static final class CameraDeviceSetupCompat.SupportQueryResult {
@@ -23,7 +24,28 @@ package @androidx.camera.featurecombinationquery.ExperimentalFeatureCombinationQ
     method public androidx.camera.featurecombinationquery.CameraDeviceSetupCompat getCameraDeviceSetupCompat(String) throws android.hardware.camera2.CameraAccessException;
   }
 
-  @SuppressCompatibility @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @kotlin.RequiresOptIn public @interface ExperimentalFeatureCombinationQuery {
+  public class SessionConfigurationCompat {
+    method public java.util.List<android.hardware.camera2.params.OutputConfiguration!> getOutputConfigurations();
+    method public androidx.camera.featurecombinationquery.SessionParametersCompat getSessionParameters();
+  }
+
+  public static final class SessionConfigurationCompat.Builder {
+    ctor public SessionConfigurationCompat.Builder();
+    method public androidx.camera.featurecombinationquery.SessionConfigurationCompat.Builder addOutputConfiguration(android.hardware.camera2.params.OutputConfiguration);
+    method public androidx.camera.featurecombinationquery.SessionConfigurationCompat.Builder addOutputConfigurations(java.util.Collection<android.hardware.camera2.params.OutputConfiguration>);
+    method public androidx.camera.featurecombinationquery.SessionConfigurationCompat build();
+    method public androidx.camera.featurecombinationquery.SessionConfigurationCompat.Builder setSessionParameters(androidx.camera.featurecombinationquery.SessionParametersCompat);
+  }
+
+  public class SessionParametersCompat {
+    method public <T> T? get(android.hardware.camera2.CaptureRequest.Key<T!>);
+    method public java.util.Set<android.hardware.camera2.CaptureRequest.Key<? extends java.lang.Object!>!> getKeys();
+  }
+
+  public static final class SessionParametersCompat.Builder {
+    ctor public SessionParametersCompat.Builder();
+    method public androidx.camera.featurecombinationquery.SessionParametersCompat build();
+    method public <T> androidx.camera.featurecombinationquery.SessionParametersCompat.Builder set(android.hardware.camera2.CaptureRequest.Key<T!>, T);
   }
 
 }

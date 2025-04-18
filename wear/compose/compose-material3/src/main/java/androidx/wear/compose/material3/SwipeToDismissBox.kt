@@ -64,7 +64,7 @@ import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
  *   swipe-to-dismiss threshold.
  */
 @Composable
-fun SwipeToDismissBox(
+public fun SwipeToDismissBox(
     state: SwipeToDismissBoxState,
     modifier: Modifier = Modifier,
     backgroundScrimColor: Color = MaterialTheme.colorScheme.background,
@@ -127,7 +127,7 @@ fun SwipeToDismissBox(
  *   swipe-to-dismiss threshold.
  */
 @Composable
-fun SwipeToDismissBox(
+public fun SwipeToDismissBox(
     onDismissed: () -> Unit,
     modifier: Modifier = Modifier,
     state: SwipeToDismissBoxState = rememberSwipeToDismissBoxState(),

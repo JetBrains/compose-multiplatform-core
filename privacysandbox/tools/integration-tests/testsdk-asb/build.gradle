@@ -43,5 +43,5 @@ android {
 }
 
 dependencies {
-    include project(":privacysandbox:tools:integration-tests:testsdk")
+    include(project(":privacysandbox:tools:integration-tests:testsdk"))
 }

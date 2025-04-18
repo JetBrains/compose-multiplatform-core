@@ -41,7 +41,9 @@ public sealed interface ScalingLazyListItemScope {
      * Regular [Modifier.fillMaxSize] can't work inside the scrolling layouts as the items are
      * measured with [Constraints.Infinity] as the constraints for the main axis.
      */
-    fun Modifier.fillParentMaxSize(@FloatRange(from = 0.0, to = 1.0) fraction: Float = 1f): Modifier
+    public fun Modifier.fillParentMaxSize(
+        @FloatRange(from = 0.0, to = 1.0) fraction: Float = 1f
+    ): Modifier
 
     /**
      * Have the content fill the [Constraints.maxWidth] of the parent measurement constraints by
@@ -53,7 +55,7 @@ public sealed interface ScalingLazyListItemScope {
      * Regular [Modifier.fillMaxWidth] can't work inside the scrolling horizontally layouts as the
      * items are measured with [Constraints.Infinity] as the constraints for the main axis.
      */
-    fun Modifier.fillParentMaxWidth(
+    public fun Modifier.fillParentMaxWidth(
         @FloatRange(from = 0.0, to = 1.0) fraction: Float = 1f
     ): Modifier
 
@@ -67,7 +69,7 @@ public sealed interface ScalingLazyListItemScope {
      * Regular [Modifier.fillMaxHeight] can't work inside the scrolling vertically layouts as the
      * items are measured with [Constraints.Infinity] as the constraints for the main axis.
      */
-    fun Modifier.fillParentMaxHeight(
+    public fun Modifier.fillParentMaxHeight(
         @FloatRange(from = 0.0, to = 1.0) fraction: Float = 1f
     ): Modifier
 }

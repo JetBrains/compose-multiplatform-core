@@ -23,8 +23,6 @@ import static androidx.appsearch.localstorage.util.PrefixUtil.removePrefix;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.EmbeddingVector;
@@ -57,6 +55,9 @@ import com.google.android.icing.proto.SearchSpecProto;
 import com.google.android.icing.proto.TermMatchType;
 import com.google.android.icing.proto.TypePropertyMask;
 import com.google.android.icing.proto.TypePropertyWeights;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -113,8 +114,7 @@ public final class SearchSpecToProtoConverter {
      * The nested converter, which contains SearchSpec, ResultSpec, and ScoringSpec information
      * about the nested query. This will remain null if there is no nested {@link JoinSpec}.
      */
-    @Nullable
-    private SearchSpecToProtoConverter mNestedConverter = null;
+    private @Nullable SearchSpecToProtoConverter mNestedConverter = null;
 
     /**
      * Creates a {@link SearchSpecToProtoConverter} for given {@link SearchSpec}.
@@ -284,9 +284,8 @@ public final class SearchSpecToProtoConverter {
 
 
     /** Extracts {@link SearchSpecProto} information from a {@link SearchSpec}. */
-    @NonNull
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    public SearchSpecProto toSearchSpecProto() {
+    public @NonNull SearchSpecProto toSearchSpecProto() {
         // set query to SearchSpecProto and override schema and namespace filter by
         // targetPrefixedFilters which contains all existing and also accessible to the caller
         // filters.
@@ -402,9 +401,9 @@ public final class SearchSpecToProtoConverter {
      *
      * @param aggregationScoringStrategy the scoring strategy to convert.
      */
-    @NonNull
-    public static JoinSpecProto.AggregationScoringStrategy.Code toAggregationScoringStrategy(
-            @JoinSpec.AggregationScoringStrategy int aggregationScoringStrategy) {
+    public static JoinSpecProto.AggregationScoringStrategy.@NonNull Code
+            toAggregationScoringStrategy(
+                    @JoinSpec.AggregationScoringStrategy int aggregationScoringStrategy) {
         switch (aggregationScoringStrategy) {
             case JoinSpec.AGGREGATION_SCORING_AVG_RANKING_SIGNAL:
                 return JoinSpecProto.AggregationScoringStrategy.Code.AVG;
@@ -427,8 +426,8 @@ public final class SearchSpecToProtoConverter {
      * @param namespaceCache  The NamespaceCache instance held in AppSearch.
      * @param schemaCache     The SchemaCache instance held in AppSearch.
      */
-    @NonNull
-    public ResultSpecProto toResultSpecProto(
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
+    public @NonNull ResultSpecProto toResultSpecProto(
             @NonNull NamespaceCache namespaceCache,
             @NonNull SchemaCache schemaCache) {
         ResultSpecProto.Builder resultSpecBuilder = ResultSpecProto.newBuilder()
@@ -437,7 +436,9 @@ public final class SearchSpecToProtoConverter {
                         ResultSpecProto.SnippetSpecProto.newBuilder()
                                 .setNumToSnippet(mSearchSpec.getSnippetCount())
                                 .setNumMatchesPerProperty(mSearchSpec.getSnippetCountPerProperty())
-                                .setMaxWindowUtf32Length(mSearchSpec.getMaxSnippetSize()))
+                                .setMaxWindowUtf32Length(mSearchSpec.getMaxSnippetSize())
+                                .setGetEmbeddingMatchInfo(
+                                        mSearchSpec.shouldRetrieveEmbeddingMatchInfos()))
                 .setNumTotalBytesPerPageThreshold(mIcingOptionsConfig.getMaxPageBytesLimit());
         JoinSpec joinSpec = mSearchSpec.getJoinSpec();
         if (joinSpec != null) {
@@ -519,9 +520,8 @@ public final class SearchSpecToProtoConverter {
     }
 
     /** Extracts {@link ScoringSpecProto} information from a {@link SearchSpec}. */
-    @NonNull
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    public ScoringSpecProto toScoringSpecProto() {
+    public @NonNull ScoringSpecProto toScoringSpecProto() {
         ScoringSpecProto.Builder protoBuilder = ScoringSpecProto.newBuilder();
 
         @SearchSpec.Order int orderCode = mSearchSpec.getOrder();
@@ -593,8 +593,8 @@ public final class SearchSpecToProtoConverter {
      *
      * @param appSearchFeatures The list of AppSearch search feature strings.
      */
-    @NonNull
-    private static List<String> toIcingSearchFeatures(@NonNull List<String> appSearchFeatures) {
+    private static @NonNull List<String> toIcingSearchFeatures(
+            @NonNull List<String> appSearchFeatures) {
         List<String> result = new ArrayList<>();
         for (int i = 0; i < appSearchFeatures.size(); i++) {
             String appSearchFeature = appSearchFeatures.get(i);
@@ -817,7 +817,7 @@ public final class SearchSpecToProtoConverter {
             @NonNull Set<String> prefixes,
             int maxNumResults,
             @NonNull NamespaceCache namespaceCache,
-            @NonNull ResultSpecProto.Builder resultSpecBuilder) {
+            ResultSpecProto.@NonNull Builder resultSpecBuilder) {
         Map<String, List<String>> packageAndNamespaceToNamespaces =
                 getPackageAndNamespaceToPrefixedNamespaces(prefixes, namespaceCache);
 
@@ -847,7 +847,7 @@ public final class SearchSpecToProtoConverter {
             @NonNull Set<String> prefixes,
             int maxNumResults,
             @NonNull SchemaCache schemaCache,
-            @NonNull ResultSpecProto.Builder resultSpecBuilder) {
+            ResultSpecProto.@NonNull Builder resultSpecBuilder) {
         Map<String, List<String>> packageAndSchemaToSchemas =
                 getPackageAndSchemaToPrefixedSchemas(prefixes, schemaCache);
 
@@ -879,7 +879,7 @@ public final class SearchSpecToProtoConverter {
             int maxNumResults,
             @NonNull NamespaceCache namespaceCache,
             @NonNull SchemaCache schemaCache,
-            @NonNull ResultSpecProto.Builder resultSpecBuilder) {
+            ResultSpecProto.@NonNull Builder resultSpecBuilder) {
         Map<String, List<String>> packageAndNamespaceToNamespaces =
                 getPackageAndNamespaceToPrefixedNamespaces(prefixes, namespaceCache);
         Map<String, List<String>> packageAndSchemaToSchemas =
@@ -925,7 +925,7 @@ public final class SearchSpecToProtoConverter {
             @NonNull Set<String> prefixes,
             int maxNumResults,
             @NonNull NamespaceCache namespaceCache,
-            @NonNull ResultSpecProto.Builder resultSpecBuilder) {
+            ResultSpecProto.@NonNull Builder resultSpecBuilder) {
         // Build up a map of package to namespaces.
         Map<String, List<String>> packageToNamespacesMap = new ArrayMap<>();
         for (String prefix : prefixes) {
@@ -968,7 +968,7 @@ public final class SearchSpecToProtoConverter {
             @NonNull Set<String> prefixes,
             int maxNumResults,
             @NonNull NamespaceCache namespaceCache,
-            @NonNull ResultSpecProto.Builder resultSpecBuilder) {
+            ResultSpecProto.@NonNull Builder resultSpecBuilder) {
         Map<String, List<String>> namespaceToPrefixedNamespaces =
                 getNamespaceToPrefixedNamespaces(prefixes, namespaceCache);
 
@@ -998,7 +998,7 @@ public final class SearchSpecToProtoConverter {
             @NonNull Set<String> prefixes,
             int maxNumResults,
             @NonNull SchemaCache schemaCache,
-            @NonNull ResultSpecProto.Builder resultSpecBuilder) {
+            ResultSpecProto.@NonNull Builder resultSpecBuilder) {
         Map<String, List<String>> schemaToPrefixedSchemas =
                 getSchemaToPrefixedSchemas(prefixes, schemaCache);
 
@@ -1030,7 +1030,7 @@ public final class SearchSpecToProtoConverter {
             int maxNumResults,
             @NonNull NamespaceCache namespaceCache,
             @NonNull SchemaCache schemaCache,
-            @NonNull ResultSpecProto.Builder resultSpecBuilder) {
+            ResultSpecProto.@NonNull Builder resultSpecBuilder) {
         Map<String, List<String>> namespaceToPrefixedNamespaces =
                 getNamespaceToPrefixedNamespaces(prefixes, namespaceCache);
         Map<String, List<String>> schemaToPrefixedSchemas =
@@ -1082,7 +1082,7 @@ public final class SearchSpecToProtoConverter {
      */
     private void addTypePropertyWeights(
             @NonNull Map<String, Map<String, Double>> typePropertyWeightsMap,
-            @NonNull ScoringSpecProto.Builder scoringSpecBuilder) {
+            ScoringSpecProto.@NonNull Builder scoringSpecBuilder) {
         Preconditions.checkNotNull(scoringSpecBuilder);
         Preconditions.checkNotNull(typePropertyWeightsMap);
 

@@ -18,7 +18,6 @@ package androidx.window.extensions.embedding;
 
 import static androidx.window.extensions.embedding.SplitAttributes.SplitType.createSplitTypeFromLegacySplitRatio;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
@@ -65,7 +64,6 @@ public class SplitPairRule extends SplitRule {
     /**
      * Checks if the rule is applicable to the provided activities.
      */
-    @SuppressLint("ClassVerificationFailure") // Only called by Extensions implementation on device.
     @RequiresApi(api = Build.VERSION_CODES.N)
     public boolean matchesActivityPair(@NonNull Activity primaryActivity,
             @NonNull Activity secondaryActivity) {
@@ -76,7 +74,6 @@ public class SplitPairRule extends SplitRule {
      * Checks if the rule is applicable to the provided primary activity and secondary activity
      * intent.
      */
-    @SuppressLint("ClassVerificationFailure") // Only called by Extensions implementation on device.
     @RequiresApi(api = Build.VERSION_CODES.N)
     public boolean matchesActivityIntentPair(@NonNull Activity primaryActivity,
             @NonNull Intent secondaryActivityIntent) {

@@ -17,7 +17,7 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
@@ -47,16 +47,6 @@ android {
     buildFeatures {
         viewBinding = true
     }
-
-    // Compose
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
-
     namespace = "androidx.camera.integration.uiwidgets"
 }
 
@@ -95,7 +85,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling:1.7.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.4.1")
     implementation("androidx.navigation:navigation-compose:2.4.2")
-    implementation("androidx.compose.material:material-icons-extended:1.4.0")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
     // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.
     androidTestImplementation("androidx.annotation:annotation-experimental:1.4.1")

@@ -29,8 +29,9 @@
     <string name="desc_page_single" msgid="8459583146661044094">"صفحه <xliff:g id="PAGE">%1$d</xliff:g> از <xliff:g id="TOTAL">%2$d</xliff:g>"</string>
     <string name="desc_zoom" msgid="7318480946145947242">"بزرگ‌نمایی <xliff:g id="FIRST">%1$d</xliff:g> درصد"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"رفتن به صفحه <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>"</string>
-    <string name="desc_page" msgid="5684226167093594168">"صفحه <xliff:g id="PAGE">%1$d</xliff:g>"</string>
+    <string name="desc_page" msgid="6702471448987833953">"صفحه <xliff:g id="PAGE">%1$d</xliff:g>"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"صفحه خالی"</string>
+    <string name="desc_page_with_text" msgid="2564017005407577604">"صفحه <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>: <xliff:g id="PAGE_TEXT">%2$s</xliff:g>"</string>
     <string name="error_file_format_pdf" msgid="7567006188638831878">"‏‫PDF نمایش داده نمی‌شود (قالب <xliff:g id="TITLE">%1$s</xliff:g> نامعتبر است)"</string>
     <string name="error_on_page" msgid="1592475819957182385">"صفحه <xliff:g id="PAGE">%1$d</xliff:g> نمایش داده نمی‌شود (خطای فایل)"</string>
     <string name="desc_web_link_shortened_to_domain" msgid="3323639528531061592">"پیوند: صفحه وب در <xliff:g id="DESTINATION_DOMAIN">%1$s</xliff:g>"</string>
@@ -59,4 +60,7 @@
     <string name="page_broken" msgid="2968770793669433462">"‏صفحه سند PDF خراب است"</string>
     <string name="needs_more_data" msgid="3520133467908240802">"‏داده‌ها برای پردازش سند PDF کافی نیست"</string>
     <string name="error_cannot_open_pdf" msgid="2361919778558145071">"‏فایل PDF باز نشد"</string>
+    <string name="cannot_edit_pdf" msgid="7677598370087228978">"‏این PDF قابل‌ویرایش نیست"</string>
+    <string name="clipboard_label" msgid="8943155331324944981">"‏محتوای کپی‌شده از PDF"</string>
+    <string name="fast_scroller_thumb" msgid="6712048991132846541">"نوار پیمایش"</string>
 </resources>

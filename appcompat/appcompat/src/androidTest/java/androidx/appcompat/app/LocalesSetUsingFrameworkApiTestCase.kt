@@ -19,7 +19,6 @@
 package androidx.appcompat.app
 
 import android.os.LocaleList
-import androidx.annotation.RequiresApi
 import androidx.appcompat.testutils.LocalesActivityTestRule
 import androidx.appcompat.testutils.LocalesUtils
 import androidx.appcompat.testutils.LocalesUtils.CUSTOM_LOCALE_LIST
@@ -44,7 +43,6 @@ class LocalesSetUsingFrameworkApiTestCase {
     private var systemLocales = LocaleListCompat.getEmptyLocaleList()
     private var expectedLocales = LocaleListCompat.getEmptyLocaleList()
 
-    @RequiresApi(33)
     @Before
     fun setUp() {
 
@@ -69,7 +67,6 @@ class LocalesSetUsingFrameworkApiTestCase {
      * redirected to the framework API and the locales are applied successfully.
      */
     @Test
-    @RequiresApi(33)
     fun testSetApplicationLocales_postT_frameworkApiCalled() {
         val firstActivity = rule.activity
         assertConfigurationLocalesEquals(systemLocales, firstActivity)
@@ -99,7 +96,6 @@ class LocalesSetUsingFrameworkApiTestCase {
         assertNull(AppCompatDelegate.getRequestedAppLocales())
     }
 
-    @RequiresApi(33)
     @After
     fun teardown() {
         // clearing locales from framework. setting the app to follow system.

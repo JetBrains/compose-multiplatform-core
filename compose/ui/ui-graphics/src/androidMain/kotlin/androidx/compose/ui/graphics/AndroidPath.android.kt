@@ -39,7 +39,7 @@ inline fun Path.asAndroidPath(): PlatformPath =
         throw UnsupportedOperationException("Unable to obtain android.graphics.Path")
     }
 
-@Suppress("OVERRIDE_DEPRECATION")
+@Suppress("OVERRIDE_DEPRECATION") // b/407491706
 /* actual */ class AndroidPath(val internalPath: PlatformPath = PlatformPath()) : Path {
 
     // Temporary value holders to reuse an object (not part of a state):

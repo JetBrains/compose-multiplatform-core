@@ -304,7 +304,13 @@ internal const val SURFACE_DRAW_TIMEOUT_MS = 100L
  * `com.google.wear.permission.GET_COMPLICATION_DYNAMIC_VALUE` in their manifest, which will tell
  * the system to avoid pruning them from the [ComplicationData], where they will show up in the
  * relevant fields next to the evaluated values.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public abstract class WatchFaceService : WallpaperService() {
 
     public companion object {
@@ -3164,7 +3170,13 @@ public abstract class WatchFaceService : WallpaperService() {
  * [WatchFaceService] is required to be stateless as multiple can be created in parallel.
  * StatefulWatchFaceService allows for metadata to be associated with watch faces on a per instance
  * basis. This state is created by [createExtra] and is passed into other methods.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 @Suppress("UNCHECKED_CAST")
 abstract class StatefulWatchFaceService<Extra> : WatchFaceService() {
     /**
@@ -3391,7 +3403,13 @@ abstract class StatefulWatchFaceService<Extra> : WatchFaceService() {
  * https://developer.android.com/training/wearables/wff for more details).
  *
  * Note only one watch face definition per resource only watch face package is supported.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 abstract class WatchFaceRuntimeService : WatchFaceService() {
     /**
      * If the WatchFaceService's manifest doesn't define a
@@ -3574,7 +3592,13 @@ abstract class WatchFaceRuntimeService : WatchFaceService() {
  * https://developer.android.com/training/wearables/wff for more details).
  *
  * Note only one watch face definition per resource only watch face package is supported.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 @Suppress("UNCHECKED_CAST")
 abstract class StatefulWatchFaceRuntimeService<Extra> : WatchFaceService() {
     /**

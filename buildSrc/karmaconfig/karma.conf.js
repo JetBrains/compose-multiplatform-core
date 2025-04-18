@@ -8,12 +8,23 @@ config.set({
   // https://karma-runner.github.io/6.4/config/configuration-file.html
     browserDisconnectTimeout: browserDisconnectTimeoutInMs,
     processKillTimeout: testTimeoutInMs,
-    concurrency: 10
-})
-config.set({
-  client: {
-    mocha: {
-      timeout: testTimeoutInMs
+    concurrency: 3,
+    client: {
+      mocha: {
+        timeout: testTimeoutInMs
+      }
     }
-  }
-})
+});
+
+// Add 10 second delay exit to ensure log flushing. This is needed for Kotlin to avoid flakiness when
+// marking a test as complete. See (b/382336155)
+// Remove when https://youtrack.jetbrains.com/issue/KT-73911/ is resolved.
+(function() {
+  const originalExit = process.exit;
+  process.exit = function(code) {
+    console.log('Delaying exit for logs...');
+    setTimeout(() => {
+      originalExit(code);
+    }, 10000);
+  };
+})();

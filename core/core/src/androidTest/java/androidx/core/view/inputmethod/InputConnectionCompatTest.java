@@ -46,7 +46,6 @@ import org.mockito.ArgumentMatcher;
 
 import java.util.Objects;
 
-
 @RunWith(AndroidJUnit4.class)
 @MediumTest
 public class InputConnectionCompatTest {

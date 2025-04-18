@@ -21,8 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.BundleInsideHelper
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -49,7 +49,6 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(libs.kotlinCoroutinesTest)
-    androidTestImplementation(libs.testRules)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.robolectric)
     testImplementation(libs.testExtJunit)
@@ -57,7 +56,9 @@ dependencies {
     testImplementation(libs.espressoCore)
     testImplementation(libs.espressoIntents)
     testImplementation(libs.kotlinReflect)
+    testImplementation(libs.guavaTestlib)
 
+    androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.kotlinReflect)
@@ -78,14 +79,23 @@ android {
     }
     testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.health.connect.client"
-    compileSdk = 35
+    compileSdk = 36
 }
 
 androidx {
     name = "Health Connect Client"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "read or write user's health and fitness records."
     legacyDisableKotlinStrictApiMode = true
     samples(project(":health:connect:connect-client-samples"))
+}
+
+//TODO(b/407717306): Remove this block when RecordConvertersTest passes on API Level 21 and 34 devices
+tasks.withType(KotlinCompile).configureEach {
+    kotlinOptions {
+        freeCompilerArgs += [
+                "-Xlambdas=class"
+        ]
+    }
 }

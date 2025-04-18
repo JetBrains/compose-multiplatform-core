@@ -25,22 +25,21 @@ import androidx.room.solver.CodeGenScope
 
 class StringColumnTypeAdapter private constructor(out: XType) :
     ColumnTypeAdapter(out = out, typeAffinity = TEXT) {
-    override fun readFromCursor(
+    override fun readFromStatement(
         outVarName: String,
-        cursorVarName: String,
+        stmtVarName: String,
         indexVarName: String,
         scope: CodeGenScope
     ) {
-        val getter = if (scope.useDriverApi) "getText" else "getString"
         scope.builder.apply {
             if (out.nullability == XNullability.NONNULL) {
-                addStatement("%L = %L.$getter(%L)", outVarName, cursorVarName, indexVarName)
+                addStatement("%L = %L.getText(%L)", outVarName, stmtVarName, indexVarName)
             } else {
-                beginControlFlow("if (%L.isNull(%L))", cursorVarName, indexVarName).apply {
+                beginControlFlow("if (%L.isNull(%L))", stmtVarName, indexVarName).apply {
                     addStatement("%L = null", outVarName)
                 }
                 nextControlFlow("else").apply {
-                    addStatement("%L = %L.$getter(%L)", outVarName, cursorVarName, indexVarName)
+                    addStatement("%L = %L.getText(%L)", outVarName, stmtVarName, indexVarName)
                 }
                 endControlFlow()
             }
@@ -53,15 +52,14 @@ class StringColumnTypeAdapter private constructor(out: XType) :
         valueVarName: String,
         scope: CodeGenScope
     ) {
-        val setter = if (scope.useDriverApi) "bindText" else "bindString"
         scope.builder.apply {
             if (out.nullability == XNullability.NONNULL) {
-                addStatement("%L.$setter(%L, %L)", stmtName, indexVarName, valueVarName)
+                addStatement("%L.bindText(%L, %L)", stmtName, indexVarName, valueVarName)
             } else {
                 beginControlFlow("if (%L == null)", valueVarName)
                     .addStatement("%L.bindNull(%L)", stmtName, indexVarName)
                 nextControlFlow("else")
-                    .addStatement("%L.$setter(%L, %L)", stmtName, indexVarName, valueVarName)
+                    .addStatement("%L.bindText(%L, %L)", stmtName, indexVarName, valueVarName)
                 endControlFlow()
             }
         }

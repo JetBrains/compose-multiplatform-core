@@ -16,6 +16,7 @@
 
 package androidx.core.telecom.test.services
 
+import android.graphics.Bitmap
 import android.net.Uri
 import android.telecom.Call
 import android.telecom.TelecomManager
@@ -119,6 +120,78 @@ class LocalCallSilenceExtensionDataEmitter {
 
     fun collect(e: LocalCallSilenceExtensionRemote): Flow<LocalCallSilenceData> {
         return mLcsDataFlow.map { LocalCallSilenceData(it, ::onInCallServiceUpdate, e) }
+    }
+}
+
+class CallIconExtensionDataEmitter {
+    private val mCallIconFlow: MutableStateFlow<CallIconData> =
+        MutableStateFlow(CallIconData(Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)))
+
+    fun onVoipAppUpdate(newBitmap: Bitmap) {
+        mCallIconFlow.value = CallIconData(newBitmap)
+    }
+
+    fun collect(): Flow<CallIconData> {
+        return mCallIconFlow
+    }
+}
+
+/**
+ * A class responsible for emitting meeting summary data.
+ *
+ * This class tracks changes to participant count and the current speaker, combining them into a
+ * [MeetingSummaryData] object and emitting it as a [Flow].
+ */
+class MeetingSummaryExtensionDataEmitter {
+    companion object {
+        /** The default value for the current speaker when no speaker is active. */
+        const val CURRENT_SPEAKER_DEFAULT = ""
+
+        /** The default value for the participant count when no participants are present. */
+        const val PARTICIPANT_COUNT_DEFAULT = 0
+    }
+
+    private val currentSpeaker: MutableStateFlow<String> = MutableStateFlow(CURRENT_SPEAKER_DEFAULT)
+    private val participantCount: MutableStateFlow<Int> =
+        MutableStateFlow(PARTICIPANT_COUNT_DEFAULT)
+
+    /**
+     * Updates the participant count.
+     *
+     * @param newCount The new number of participants in the meeting.
+     */
+    fun onParticipantCountChanged(newCount: Int) {
+        participantCount.value = newCount
+    }
+
+    /**
+     * Updates the current speaker.
+     *
+     * @param speaker The name or identifier of the current speaker.
+     */
+    fun onCurrentSpeakerChanged(speaker: CharSequence?) {
+        if (speaker == null) {
+            currentSpeaker.value = "no active speaker"
+        } else {
+            currentSpeaker.value = speaker.toString()
+        }
+    }
+
+    /**
+     * Collects the current speaker and participant count, combining them into a
+     * [MeetingSummaryData] flow.
+     *
+     * This function uses the `combine` operator to merge the latest values from the
+     * `participantCount` and `currentSpeaker` StateFlows. Whenever either value changes, a new
+     * [MeetingSummaryData] object is emitted.
+     *
+     * @return A [Flow] of [MeetingSummaryData] objects representing the current state of the
+     *   meeting summary.
+     */
+    fun collect(): Flow<MeetingSummaryData> {
+        return participantCount.combine(currentSpeaker) { count, speaker ->
+            MeetingSummaryData(speaker, count)
+        }
     }
 }
 

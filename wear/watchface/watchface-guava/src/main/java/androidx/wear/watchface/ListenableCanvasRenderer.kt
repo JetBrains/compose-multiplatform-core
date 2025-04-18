@@ -73,7 +73,13 @@ constructor(
 /**
  * [ListenableFuture]-based compatibility wrapper around [Renderer.CanvasRenderer2]'s suspending
  * methods.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public abstract class ListenableCanvasRenderer2<SharedAssetsT>
 @JvmOverloads
 constructor(

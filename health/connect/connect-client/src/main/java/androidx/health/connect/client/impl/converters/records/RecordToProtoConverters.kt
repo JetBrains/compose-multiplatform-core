@@ -18,6 +18,7 @@
 package androidx.health.connect.client.impl.converters.records
 
 import androidx.annotation.RestrictTo
+import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.BasalBodyTemperatureRecord
 import androidx.health.connect.client.records.BasalMetabolicRateRecord
@@ -46,6 +47,7 @@ import androidx.health.connect.client.records.LeanBodyMassRecord
 import androidx.health.connect.client.records.MealType
 import androidx.health.connect.client.records.MenstruationFlowRecord
 import androidx.health.connect.client.records.MenstruationPeriodRecord
+import androidx.health.connect.client.records.MindfulnessSessionRecord
 import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.OvulationTestRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
@@ -67,6 +69,7 @@ import androidx.health.connect.client.records.WheelchairPushesRecord
 import androidx.health.platform.client.proto.DataProto
 
 /** Converts public API object into internal proto for ipc. */
+@OptIn(ExperimentalMindfulnessSessionApi::class)
 fun Record.toProto(): DataProto.DataPoint =
     when (this) {
         is BasalBodyTemperatureRecord ->
@@ -207,6 +210,20 @@ fun Record.toProto(): DataProto.DataPoint =
                 .build()
         is MenstruationPeriodRecord ->
             intervalProto().setDataType(protoDataType("MenstruationPeriod")).build()
+        is MindfulnessSessionRecord ->
+            intervalProto()
+                .setDataType(protoDataType("MindfulnessSession"))
+                .apply {
+                    val sessionType =
+                        enumValFromInt(
+                            mindfulnessSessionType,
+                            MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_INT_TO_STRING_MAP
+                        ) ?: enumVal("unknown")
+                    putValues("sessionType", sessionType)
+                    title?.let { putValues("title", stringVal(it)) }
+                    notes?.let { putValues("notes", stringVal(it)) }
+                }
+                .build()
         is OvulationTestRecord ->
             instantaneousProto()
                 .setDataType(protoDataType("OvulationTest"))

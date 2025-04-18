@@ -21,8 +21,11 @@ import android.hardware.camera2.CaptureRequest
 import androidx.annotation.OptIn
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLegacy
 import androidx.camera.camera2.pipe.FrameInfo
+import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.InputRequest
 import androidx.camera.camera2.pipe.Request
+import androidx.camera.camera2.pipe.RequestFailure
+import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.integration.compat.workaround.TemplateParamsOverride
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraScope
@@ -35,9 +38,11 @@ import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
 import androidx.camera.camera2.pipe.integration.impl.toParameters
 import androidx.camera.camera2.pipe.media.AndroidImage
 import androidx.camera.core.ExperimentalGetImage
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.impl.CameraCaptureResults
 import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.Config
+import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 
 /**
@@ -112,6 +117,7 @@ constructor(
         }
 
         var inputRequest: InputRequest? = null
+        var captureCallback: Request.Listener? = null
         var requestTemplateToSubmit = RequestTemplate(captureConfig.templateType)
         if (
             captureConfig.templateType == CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG &&
@@ -127,6 +133,13 @@ constructor(
                     val imageWrapper = AndroidImage(checkNotNull(imageProxy.image))
                     val frameInfo = checkNotNull(cameraCaptureResult.unwrapAs(FrameInfo::class))
                     inputRequest = InputRequest(imageWrapper, frameInfo)
+
+                    // It's essential to call ImageProxy#close().
+                    // To ensure the ImageProxy is closed after the image is written to the output
+                    // surface. This is crucial to prevent resource leaks, where images might not
+                    // be closed properly if CameraX fails to propagate close events to its internal
+                    // components.
+                    captureCallback = buildImageClosingRequestListener(imageProxy)
                 }
             }
         }
@@ -140,15 +153,58 @@ constructor(
         val parameters =
             templateParamsOverride.getOverrideParams(requestTemplateToSubmit) +
                 optionBuilder.build().toParameters()
+        val requestListeners = buildList {
+            add(callbacks)
+            captureCallback?.let { add(it) }
+            addAll(additionalListeners)
+        }
 
         return Request(
             streams = streamIdList,
-            listeners = listOf(callbacks) + additionalListeners,
+            listeners = requestListeners,
             parameters = parameters,
             extras = mapOf(CAMERAX_TAG_BUNDLE to captureConfig.tagBundle),
             template = requestTemplateToSubmit,
             inputRequest = inputRequest,
         )
+    }
+
+    private fun buildImageClosingRequestListener(imageProxy: ImageProxy): Request.Listener {
+        val imageProxyToClose = AtomicReference(imageProxy)
+
+        fun closeImageProxy() {
+            imageProxyToClose.getAndSet(null)?.close()
+        }
+
+        return object : Request.Listener {
+            override fun onComplete(
+                requestMetadata: RequestMetadata,
+                frameNumber: FrameNumber,
+                result: FrameInfo
+            ) {
+                closeImageProxy()
+            }
+
+            override fun onFailed(
+                requestMetadata: RequestMetadata,
+                frameNumber: FrameNumber,
+                requestFailure: RequestFailure
+            ) {
+                closeImageProxy()
+            }
+
+            override fun onAborted(request: Request) {
+                closeImageProxy()
+            }
+
+            override fun onTotalCaptureResult(
+                requestMetadata: RequestMetadata,
+                frameNumber: FrameNumber,
+                totalCaptureResult: FrameInfo
+            ) {
+                closeImageProxy()
+            }
+        }
     }
 
     public companion object {

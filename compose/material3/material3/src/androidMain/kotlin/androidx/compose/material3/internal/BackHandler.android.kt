@@ -19,7 +19,6 @@ package androidx.compose.material3.internal
 import androidx.compose.runtime.Composable
 import kotlinx.coroutines.flow.Flow
 
-@Suppress("ACTUAL_WITHOUT_EXPECT") // https://youtrack.jetbrains.com/issue/KT-37316
 internal actual typealias BackEventCompat = androidx.activity.BackEventCompat
 
 @Composable

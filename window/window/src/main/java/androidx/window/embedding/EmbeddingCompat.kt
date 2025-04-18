@@ -33,7 +33,6 @@ import androidx.window.embedding.SplitAttributes.SplitType.Companion.SPLIT_TYPE_
 import androidx.window.embedding.SplitController.SplitSupportStatus.Companion.SPLIT_AVAILABLE
 import androidx.window.extensions.WindowExtensionsProvider
 import androidx.window.extensions.embedding.ActivityEmbeddingComponent
-import androidx.window.extensions.embedding.ActivityStack as OEMActivityStack
 import androidx.window.extensions.embedding.ActivityStackAttributes
 import androidx.window.extensions.embedding.SplitInfo as OEMSplitInfo
 import androidx.window.reflection.Consumer2
@@ -103,13 +102,9 @@ internal class EmbeddingCompat(
                 registerSplitInfoCallback(embeddingCallback)
 
                 // Register ActivityStack callback
-                val activityStackCallback =
-                    Consumer2<List<OEMActivityStack>> { activityStacks ->
-                        embeddingCallback.onActivityStackChanged(adapter.translate(activityStacks))
-                    }
                 embeddingExtension.registerActivityStackCallback(
                     Runnable::run,
-                    activityStackCallback
+                    ActivityStackConsumer(embeddingCallback, adapter)
                 )
             }
         }
@@ -178,6 +173,16 @@ internal class EmbeddingCompat(
         adapter.embeddingConfiguration = embeddingConfig
         setDefaultSplitAttributeCalculatorIfNeeded()
 
+        if (windowSdkExtensions.extensionVersion >= 8) {
+            // TODO(b/289875940): remove the try-catch block once handled by the reflection guard
+            try {
+                embeddingExtension.setAutoSaveEmbeddingState(
+                    embeddingConfig.isAutoSaveEmbeddingState
+                )
+            } catch (e: Throwable) {
+                Log.w(TAG, "#setAutoSaveEmbeddingState failed", e)
+            }
+        }
         embeddingExtension.invalidateTopVisibleSplitAttributes()
     }
 

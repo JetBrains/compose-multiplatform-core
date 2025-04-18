@@ -18,8 +18,9 @@ package androidx.work;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.startup.Initializer;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -31,18 +32,16 @@ public final class WorkManagerInitializer implements Initializer<WorkManager> {
 
     private static final String TAG = Logger.tagWithPrefix("WrkMgrInitializer");
 
-    @NonNull
     @Override
-    public WorkManager create(@NonNull Context context) {
+    public @NonNull WorkManager create(@NonNull Context context) {
         // Initialize WorkManager with the default configuration.
         Logger.get().debug(TAG, "Initializing WorkManager with default configuration.");
         WorkManager.initialize(context, new Configuration.Builder().build());
         return WorkManager.getInstance(context);
     }
 
-    @NonNull
     @Override
-    public List<Class<? extends androidx.startup.Initializer<?>>> dependencies() {
+    public @NonNull List<Class<? extends androidx.startup.Initializer<?>>> dependencies() {
         return Collections.emptyList();
     }
 }

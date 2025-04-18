@@ -16,7 +16,6 @@
 
 package androidx.wear.compose.integration.demos
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.view.accessibility.AccessibilityManager
@@ -96,7 +95,6 @@ import java.time.temporal.TemporalAdjusters
  * @param modifier the modifiers for the `Box` containing the UI elements.
  * @param time the initial value to seed the picker with.
  */
-@SuppressLint("ClassVerificationFailure")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 public fun TimePicker(
@@ -270,7 +268,6 @@ public fun TimePicker(
  * @param modifier the modifiers for the `Column` containing the UI elements.
  * @param time the initial value to seed the picker with.
  */
-@SuppressLint("ClassVerificationFailure")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 public fun TimePickerWith12HourClock(
@@ -471,7 +468,6 @@ public fun TimePickerWith12HourClock(
  * @param fromDate the minimum date to be selected in picker
  * @param toDate the maximum date to be selected in picker
  */
-@SuppressLint("ClassVerificationFailure")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 public fun DatePicker(
@@ -871,7 +867,6 @@ private fun verifyDates(date: LocalDate, fromDate: LocalDate, toDate: LocalDate)
     require(date in fromDate..toDate) { "date should lie between fromDate and toDate" }
 }
 
-@SuppressLint("ClassVerificationFailure")
 @RequiresApi(Build.VERSION_CODES.O)
 private fun getMonthNames(pattern: String): List<String> {
     val monthFormatter = DateTimeFormatter.ofPattern(pattern)

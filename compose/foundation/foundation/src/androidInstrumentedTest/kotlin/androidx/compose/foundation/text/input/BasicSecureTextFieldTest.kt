@@ -32,6 +32,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentDataType
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.testTag
@@ -97,6 +99,12 @@ internal class BasicSecureTextFieldTest {
         rule.onNodeWithTag(Tag).requestFocus()
         rule.waitForIdle()
         rule.onNodeWithTag(Tag).assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Password))
+        rule
+            .onNodeWithTag(Tag)
+            .assert(expectValue(SemanticsProperties.ContentType, ContentType.Password))
+        rule
+            .onNodeWithTag(Tag)
+            .assert(expectValue(SemanticsProperties.ContentDataType, ContentDataType.Text))
         rule.onNodeWithTag(Tag).assert(SemanticsMatcher.keyIsDefined(SemanticsActions.PasteText))
 
         rule.onNodeWithTag(Tag).assert(SemanticsMatcher.keyNotDefined(SemanticsActions.CopyText))

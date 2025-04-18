@@ -21,6 +21,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.unit.Dp.Companion.Hairline
+import androidx.compose.ui.util.fastIsFinite
 import androidx.compose.ui.util.lerp
 import androidx.compose.ui.util.packFloats
 import androidx.compose.ui.util.unpackFloat1
@@ -82,7 +83,10 @@ value class Dp(val value: Float) : Comparable<Dp> {
         /** Infinite dp dimension. */
         @Stable val Infinity = Dp(Float.POSITIVE_INFINITY)
 
-        /** Constant that means unspecified Dp */
+        /**
+         * Constant that means unspecified Dp. Instead of comparing a [Dp] value to this constant,
+         * consider using [isSpecified] and [isUnspecified] instead.
+         */
         @Stable val Unspecified = Dp(Float.NaN)
     }
 }
@@ -159,7 +163,7 @@ inline fun Dp.coerceAtMost(maximumValue: Dp): Dp = Dp(value.coerceAtMost(maximum
 /** Return `true` when it is finite or `false` when it is [Dp.Infinity] */
 @Stable
 inline val Dp.isFinite: Boolean
-    get() = value != Float.POSITIVE_INFINITY
+    get() = value.fastIsFinite()
 
 /**
  * Linearly interpolate between two [Dp]s.
@@ -398,6 +402,7 @@ fun lerp(start: DpSize, stop: DpSize, fraction: Float): DpSize =
 
 /** A four dimensional bounds using [Dp] for units */
 @Immutable
+@Suppress("DataClassDefinition")
 data class DpRect(
     @Stable val left: Dp,
     @Stable val top: Dp,

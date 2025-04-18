@@ -38,7 +38,7 @@ class AutoboxingStateValuePropertyDetectorTest : LintDetectorTest() {
         lint()
             .files(
                 kotlin(
-                    """
+                        """
                     package androidx.compose.runtime.lint.test
 
                     import androidx.compose.runtime.mutableIntStateOf
@@ -48,8 +48,8 @@ class AutoboxingStateValuePropertyDetectorTest : LintDetectorTest() {
                         val value = state.value
                     }
                 """
-                        .trimIndent()
-                ),
+                    )
+                    .indented(),
                 AutoboxingStateValuePropertyStub,
                 MinimalSnapshotStateStub
             )
@@ -77,7 +77,7 @@ Fix for src/androidx/compose/runtime/lint/test/test.kt line 7: Replace with `int
         lint()
             .files(
                 kotlin(
-                    """
+                        """
                     package androidx.compose.runtime.lint.test
 
                     import androidx.compose.runtime.mutableIntStateOf
@@ -87,8 +87,8 @@ Fix for src/androidx/compose/runtime/lint/test/test.kt line 7: Replace with `int
                         state.value = 42
                     }
                 """
-                        .trimIndent()
-                ),
+                    )
+                    .indented(),
                 AutoboxingStateValuePropertyStub,
                 MinimalSnapshotStateStub
             )

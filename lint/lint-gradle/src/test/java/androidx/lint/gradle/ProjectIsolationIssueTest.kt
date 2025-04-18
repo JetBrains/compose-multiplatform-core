@@ -59,4 +59,90 @@ class ProjectIsolationIssueTest :
 
         check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
     }
+
+    @Test
+    fun `Test direct rootProject access should fail`() {
+        val input =
+            kotlin(
+                """
+                import org.gradle.api.Project
+
+                fun configure(project: Project) {
+                    val root = project.getRootProject().tasks
+                }
+            """
+                    .trimIndent()
+            )
+
+        val expected =
+            """
+            src/test.kt:4: Error: Use isolated.rootProject instead of getRootProject [GradleProjectIsolation]
+                val root = project.getRootProject().tasks
+                                   ~~~~~~~~~~~~~~
+            1 errors, 0 warnings
+        """
+                .trimIndent()
+
+        val expectedFixDiffs =
+            """
+            Fix for src/test.kt line 4: Replace with isolated.rootProject:
+            @@ -4 +4
+            -     val root = project.getRootProject().tasks
+            +     val root = project.isolated.rootProject().tasks
+        """
+                .trimIndent()
+
+        check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
+    }
+
+    @Test
+    fun `Test rootProject access via project rootProject isolated should fail`() {
+        val input =
+            kotlin(
+                """
+                import org.gradle.api.Project
+
+                fun configure(project: Project) {
+                    val root = project.getRootProject().getIsolated().tasks
+                }
+            """
+                    .trimIndent()
+            )
+
+        val expected =
+            """
+            src/test.kt:4: Error: Use isolated.rootProject instead of getRootProject [GradleProjectIsolation]
+                val root = project.getRootProject().getIsolated().tasks
+                                   ~~~~~~~~~~~~~~
+            1 errors, 0 warnings
+        """
+                .trimIndent()
+
+        val expectedFixDiffs =
+            """
+            Fix for src/test.kt line 4: Replace with isolated.rootProject:
+            @@ -4 +4
+            -     val root = project.getRootProject().getIsolated().tasks
+            +     val root = project.isolated.rootProject().getIsolated().tasks
+        """
+                .trimIndent()
+
+        check(input).expect(expected).expectFixDiffs(expectedFixDiffs)
+    }
+
+    @Test
+    fun `Test safe rootProject isolated access via project isolated`() {
+        val input =
+            kotlin(
+                """
+                import org.gradle.api.Project
+
+                fun configure(project: Project) {
+                    val root = project.getIsolated().getRootProject()
+                }
+            """
+                    .trimIndent()
+            )
+        check(input).expectClean()
+    }
 }

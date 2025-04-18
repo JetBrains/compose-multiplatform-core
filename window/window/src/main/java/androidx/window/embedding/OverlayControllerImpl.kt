@@ -126,7 +126,7 @@ internal open class OverlayControllerImpl(
             }
         }
 
-        embeddingExtension.registerActivityStackCallback(Runnable::run) { activityStacks ->
+        val consumer = OverlayControllerActivityStackConsumer { activityStacks ->
             globalLock.withLock {
                 val lastOverlayTags = overlayTagToContainerMap.keys
 
@@ -140,6 +140,8 @@ internal open class OverlayControllerImpl(
                 cleanUpDismissedOverlayContainerRecords(lastOverlayTags)
             }
         }
+
+        embeddingExtension.registerActivityStackCallback(Runnable::run, consumer)
     }
 
     /**

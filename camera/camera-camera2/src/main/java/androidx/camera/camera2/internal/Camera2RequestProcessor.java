@@ -24,8 +24,6 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.view.Surface;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.CameraCaptureCallback;
 import androidx.camera.core.impl.CameraCaptureFailure;
@@ -36,6 +34,9 @@ import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.SessionProcessorSurface;
 import androidx.camera.core.impl.TagBundle;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,17 +63,14 @@ import java.util.concurrent.ExecutionException;
 public class Camera2RequestProcessor implements RequestProcessor {
     private static final String TAG = "Camera2RequestProcessor";
     private final Object mLock = new Object();
-    @Nullable
     @GuardedBy("mLock")
-    private CaptureSession mCaptureSession;
-    @Nullable
+    private @Nullable CaptureSession mCaptureSession;
     @GuardedBy("mLock")
-    private List<SessionProcessorSurface> mProcessorSurfaces;
+    private @Nullable List<SessionProcessorSurface> mProcessorSurfaces;
     @GuardedBy("mLock")
     private volatile boolean mIsClosed = false;
-    @Nullable
     @GuardedBy("mLock")
-    private volatile SessionConfig mSessionConfig;
+    private volatile @Nullable SessionConfig mSessionConfig;
 
     public Camera2RequestProcessor(@NonNull CaptureSession captureSession,
             @NonNull List<SessionProcessorSurface> processorSurfaces) {
@@ -113,7 +111,7 @@ public class Camera2RequestProcessor implements RequestProcessor {
         return true;
     }
 
-    private boolean isRequestValid(@NonNull RequestProcessor.Request request) {
+    private boolean isRequestValid(RequestProcessor.@NonNull Request request) {
         if (request.getTargetOutputConfigIds().isEmpty()) {
             Logger.e(TAG, "Unable to submit the RequestProcessor.Request: "
                     + "empty targetOutputConfigIds");
@@ -132,15 +130,15 @@ public class Camera2RequestProcessor implements RequestProcessor {
 
     @Override
     public int submit(
-            @NonNull RequestProcessor.Request request,
-            @NonNull RequestProcessor.Callback callback) {
+            RequestProcessor.@NonNull Request request,
+            RequestProcessor.@NonNull Callback callback) {
         return submit(Arrays.asList(request), callback);
     }
 
     @Override
     public int submit(
             @NonNull List<RequestProcessor.Request> requests,
-            @NonNull RequestProcessor.Callback callback) {
+            RequestProcessor.@NonNull Callback callback) {
         synchronized (mLock) {
             if (mIsClosed || !areRequestsValid(requests) || mCaptureSession == null) {
                 return -1;
@@ -171,8 +169,8 @@ public class Camera2RequestProcessor implements RequestProcessor {
 
     @Override
     public int setRepeating(
-            @NonNull RequestProcessor.Request request,
-            @NonNull RequestProcessor.Callback callback) {
+            RequestProcessor.@NonNull Request request,
+            RequestProcessor.@NonNull Callback callback) {
         synchronized (mLock) {
             if (mIsClosed || !isRequestValid(request) || mCaptureSession == null) {
                 return -1;
@@ -240,8 +238,8 @@ public class Camera2RequestProcessor implements RequestProcessor {
         private final RequestProcessor.Request mRequest;
         private final boolean mInvokeSequenceCallback;
 
-        Camera2CallbackWrapper(@NonNull RequestProcessor.Request captureRequest,
-                @NonNull RequestProcessor.Callback callback, boolean invokeSequenceCallback) {
+        Camera2CallbackWrapper(RequestProcessor.@NonNull Request captureRequest,
+                RequestProcessor.@NonNull Callback callback, boolean invokeSequenceCallback) {
             mCallback = callback;
             mRequest = captureRequest;
             mInvokeSequenceCallback = invokeSequenceCallback;
@@ -317,8 +315,7 @@ public class Camera2RequestProcessor implements RequestProcessor {
         }
     }
 
-    @Nullable
-    private DeferrableSurface findSurface(int outputConfigId) {
+    private @Nullable DeferrableSurface findSurface(int outputConfigId) {
         synchronized (mLock) {
             if (mProcessorSurfaces == null) {
                 return null;

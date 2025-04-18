@@ -338,7 +338,7 @@ class ConstraintLayoutDslDetectorTest : LintDetectorTest() {
         lint()
             .files(
                 kotlin(
-                    """
+                        """
                     package example
                     
                     import androidx.constraintlayout.compose.*
@@ -365,8 +365,8 @@ class ConstraintLayoutDslDetectorTest : LintDetectorTest() {
                         }                   
                     }
                 """
-                        .trimIndent()
-                ),
+                    )
+                    .indented(),
                 ConstraintSetScopeStub,
                 MotionSceneScopeStub
             )

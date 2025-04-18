@@ -22,16 +22,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
-import androidx.test.filters.SmallTest;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
 /** Tests for {@link ZoomUtils}. */
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
 public class ZoomUtilsTest {
+
+    private static final float MINZOOM = 0.1f;
+    private static final float MAXZOOM = 25f;
 
     @Test
     public void testCalculateZoomToFit() {
@@ -198,4 +198,98 @@ public class ZoomUtilsTest {
 
         assertTrue(adjustedCoordinate <= 0);
     }
+
+    @Test
+    public void test_DoubleTap__whenZoomedOut() {
+        int viewportWidth = 400;
+        int viewportHeight = 1000;
+        int contentWidth = 50;
+        float currentZoom = 1f;
+
+        float newZoom = ZoomUtils.calculateZoomForDoubleTap(
+                viewportWidth, viewportHeight, contentWidth, currentZoom, MINZOOM, MAXZOOM
+        );
+        assertEquals(8f, newZoom, 0.001);
+    }
+
+    @Test
+    public void test_DoubleTap__whenZoomedIn() {
+        int viewportWidth = 100;
+        int viewportHeight = 1000;
+        int contentWidth = 200;
+        float currentZoom = 1f;
+
+        float newZoom = ZoomUtils.calculateZoomForDoubleTap(
+                viewportWidth, viewportHeight, contentWidth, currentZoom, MINZOOM, MAXZOOM
+        );
+        assertEquals(0.5f, newZoom, 0.001);
+    }
+
+    @Test
+    public void test_DoubleTap__whenCurrentZoomIsSameAsFitZoom() {
+        int viewportWidth = 400;
+        int viewportHeight = 1000;
+        int contentWidth = 50;
+        float currentZoom = 8f;
+
+        float newZoom = ZoomUtils.calculateZoomForDoubleTap(
+                viewportWidth, viewportHeight, contentWidth, currentZoom, MINZOOM, MAXZOOM
+        );
+        assertEquals(16f, newZoom, 0.001);
+    }
+
+    @Test
+    public void test_DoubleTap__whenCurrentZoomSimilarToFitZoom() {
+        int viewportWidth = 400;
+        int viewportHeight = 1000;
+        int contentWidth = 50;
+        float currentZoom = 7.76f;
+
+        float newZoom = ZoomUtils.calculateZoomForDoubleTap(
+                viewportWidth, viewportHeight, contentWidth, currentZoom, MINZOOM, MAXZOOM
+        );
+        assertEquals(16f, newZoom, 0.001);
+    }
+
+    @Test
+    public void test_DoubleTap__validatingFirstAndThirdZoomAreSame() {
+        int viewportWidth = 400;
+        int viewportHeight = 1000;
+        int contentWidth = 50;
+
+        while (contentWidth < 40000) {
+            float currentZoom = 0.1f;
+            while (currentZoom < 30f) {
+                float newZoom1 = ZoomUtils.calculateZoomForDoubleTap(
+                        viewportWidth, viewportHeight, contentWidth, currentZoom, MINZOOM, MAXZOOM
+                );
+                ZoomUtils.calculateZoomForDoubleTap(
+                        viewportWidth, viewportHeight, contentWidth, currentZoom, MINZOOM, MAXZOOM
+                );
+                float newZoom3 = ZoomUtils.calculateZoomForDoubleTap(
+                        viewportWidth, viewportHeight, contentWidth, currentZoom, MINZOOM, MAXZOOM
+                );
+                // The first and third zoom levels should match because double-tap toggles between
+                // consistent zoom states (eg. fit-to-width and double ZoomIn/Original size 1f) in a
+                // predictable cycle.
+                assertEquals(newZoom3, newZoom1, 0.001);
+                currentZoom += 0.1f;
+            }
+            contentWidth *= 2;
+        }
+    }
+
+    @Test
+    public void test_DoubleTap__currentZoomIsSameAsMaxZoom() {
+        int viewportWidth = 2500;
+        int viewportHeight = 10000;
+        int contentWidth = 100;
+        float currentZoom = 25f;
+
+        float newZoom = ZoomUtils.calculateZoomForDoubleTap(
+                viewportWidth, viewportHeight, contentWidth, currentZoom, MINZOOM, MAXZOOM
+        );
+        assertEquals(1f, newZoom, 0.001);
+    }
+
 }

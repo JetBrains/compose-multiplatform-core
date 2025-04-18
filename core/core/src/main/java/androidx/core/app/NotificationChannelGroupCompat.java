@@ -21,10 +21,11 @@ import android.app.NotificationChannelGroup;
 import android.content.Intent;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,8 +73,7 @@ public class NotificationChannelGroupCompat {
          * <p>The recommended maximum length is 40 characters; the value may be truncated if it
          * is too long.
          */
-        @NonNull
-        public Builder setName(@Nullable CharSequence name) {
+        public @NonNull Builder setName(@Nullable CharSequence name) {
             mGroup.mName = name;
             return this;
         }
@@ -85,8 +85,7 @@ public class NotificationChannelGroupCompat {
          * is too
          * long.
          */
-        @NonNull
-        public Builder setDescription(@Nullable String description) {
+        public @NonNull Builder setDescription(@Nullable String description) {
             mGroup.mDescription = description;
             return this;
         }
@@ -94,8 +93,7 @@ public class NotificationChannelGroupCompat {
         /**
          * Creates a {@link NotificationChannelGroupCompat} instance.
          */
-        @NonNull
-        public NotificationChannelGroupCompat build() {
+        public @NonNull NotificationChannelGroupCompat build() {
             return mGroup;
         }
     }
@@ -159,8 +157,7 @@ public class NotificationChannelGroupCompat {
     /**
      * Creates a {@link Builder} instance with all the writeable property values of this instance.
      */
-    @NonNull
-    public Builder toBuilder() {
+    public @NonNull Builder toBuilder() {
         return new Builder(mId)
                 .setName(mName)
                 .setDescription(mDescription);
@@ -169,24 +166,21 @@ public class NotificationChannelGroupCompat {
     /**
      * Gets the id of the group.
      */
-    @NonNull
-    public String getId() {
+    public @NonNull String getId() {
         return mId;
     }
 
     /**
      * Gets the user visible name of the group.
      */
-    @Nullable
-    public CharSequence getName() {
+    public @Nullable CharSequence getName() {
         return mName;
     }
 
     /**
      * Gets the user visible description of the group.
      */
-    @Nullable
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return mDescription;
     }
 
@@ -211,8 +205,7 @@ public class NotificationChannelGroupCompat {
      * <p>This is a read-only property which is only valid on instances fetched from the
      * {@link NotificationManagerCompat}.
      */
-    @NonNull
-    public List<NotificationChannelCompat> getChannels() {
+    public @NonNull List<NotificationChannelCompat> getChannels() {
         return mChannels;
     }
 

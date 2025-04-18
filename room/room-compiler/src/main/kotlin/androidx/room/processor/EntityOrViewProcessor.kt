@@ -21,7 +21,7 @@ import androidx.room.Entity
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.processing.XTypeElement
 import androidx.room.vo.EntityOrView
-import androidx.room.vo.Fields
+import androidx.room.vo.Properties
 
 interface EntityOrViewProcessor {
     fun process(): EntityOrView
@@ -40,16 +40,16 @@ private class NonEntityOrViewProcessor(
     override fun process(): EntityOrView {
         context.logger.e(element, ProcessorErrors.NOT_ENTITY_OR_VIEW)
         // Parse this as a Pojo in case there are more errors.
-        PojoProcessor.createFor(
+        DataClassProcessor.createFor(
                 context = context,
                 element = element,
-                bindingScope = FieldProcessor.BindingScope.READ_FROM_CURSOR,
+                bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
                 parent = null,
                 referenceStack = referenceStack
             )
             .process()
         return object : EntityOrView {
-            override val fields: Fields = Fields()
+            override val properties: Properties = Properties()
             override val tableName: String
                 get() = typeName.toString()
 

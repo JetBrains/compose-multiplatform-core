@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.annotation.Document;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.DocumentClassFactoryRegistry;
@@ -41,6 +40,7 @@ import androidx.collection.ArrayMap;
 
 import com.google.common.collect.ImmutableSet;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
@@ -1229,6 +1229,34 @@ public class SetSchemaRequestCtsTest {
                 .clearMigrators()
                 .build();
         assertThat(request.getMigrators()).isEmpty();
+    }
+
+    @Test
+    public void testSetSchemaEquals() {
+        AppSearchSchema schema1 = new AppSearchSchema.Builder("type1").build();
+        Migrator migrator = new NoOpMigrator();
+        SetSchemaRequest request1 = new SetSchemaRequest.Builder()
+                .addSchemas(schema1)
+                .setMigrator("type1", migrator)
+                .setForceOverride(true)
+                .setVersion(1)
+                .build();
+        SetSchemaRequest request2 = new SetSchemaRequest.Builder()
+                .addSchemas(schema1)
+                .setMigrator("type1", migrator)
+                .setForceOverride(true)
+                .setVersion(1)
+                .build();
+        SetSchemaRequest request3 = new SetSchemaRequest.Builder()
+                .setForceOverride(true)
+                .setVersion(1)
+                .build();
+        // All parameters same.
+        assertThat(request1).isEqualTo(request2);
+        assertThat(request1.hashCode()).isEqualTo(request2.hashCode());
+        // Migrator not set.
+        assertThat(request1).isNotEqualTo(request3);
+        assertThat(request1.hashCode()).isNotEqualTo(request3.hashCode());
     }
 
     /** Migrator that does nothing. */

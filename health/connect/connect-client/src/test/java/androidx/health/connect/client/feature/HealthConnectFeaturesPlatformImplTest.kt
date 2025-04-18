@@ -22,7 +22,6 @@ import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.feature.HealthConnectFeaturesPlatformImpl.Companion.getFeatureStatus
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
@@ -34,8 +33,8 @@ private const val FEATURE_ADDED_IN_PREVIOUS_U_EXT = 3
 private const val FEATURE_ADDED_IN_CURRENT_U_EXT = 4
 private const val FEATURE_ADDED_IN_V = 5
 
-private const val PREVIOUS_U_EXT = 12
-private const val CURRENT_U_EXT = 13
+private const val PREVIOUS_U_EXT = 11
+private const val CURRENT_U_EXT = 12
 private val FEATURE_TO_VERSION_INFO_MAP: Map<Int, HealthConnectVersionInfo> =
     mapOf(
         FEATURE_ADDED_IN_U to
@@ -68,12 +67,13 @@ private val FEATURE_TO_VERSION_INFO_MAP: Map<Int, HealthConnectVersionInfo> =
     )
 
 // TODO(b/271840604): Added test case for Android V once this library compiles against SDK 35.
-@OptIn(ExperimentalFeatureAvailabilityApi::class)
 @RunWith(AndroidJUnit4::class)
-@Config(minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+@Config(
+    minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
+    maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+)
 class HealthConnectFeaturesPlatformImplTest {
 
-    @Ignore // b/376314864
     @Test
     fun getFeatureStatus_currentUExtension() {
         setUExtensionLevel(CURRENT_U_EXT)
@@ -86,7 +86,6 @@ class HealthConnectFeaturesPlatformImplTest {
         assertUnavailable(FEATURE_ADDED_IN_V, FEATURE_NON_EXISTENT)
     }
 
-    @Ignore // b/376314864
     @Test
     fun getFeatureStatus_previousUExtension() {
         setUExtensionLevel(PREVIOUS_U_EXT)

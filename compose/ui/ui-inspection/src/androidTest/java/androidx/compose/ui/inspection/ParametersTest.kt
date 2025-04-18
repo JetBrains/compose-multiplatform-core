@@ -25,14 +25,15 @@ import androidx.compose.ui.inspection.util.GetParametersByAnchorIdCommand
 import androidx.compose.ui.inspection.util.GetParametersByIdCommand
 import androidx.compose.ui.inspection.util.GetParametersCommand
 import androidx.compose.ui.inspection.util.GetUpdateSettingsCommand
-import androidx.compose.ui.inspection.util.flatten
+import androidx.compose.ui.inspection.util.filter
+import androidx.compose.ui.inspection.util.find
+import androidx.compose.ui.inspection.util.findMerged
+import androidx.compose.ui.inspection.util.findUnmerged
+import androidx.compose.ui.inspection.util.resolve
 import androidx.compose.ui.inspection.util.toMap
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
-import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableNode
-import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetComposablesResponse
-import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetParametersResponse
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Parameter
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StringEntry
 import org.junit.Rule
@@ -367,39 +368,6 @@ class ParametersTest {
             assertThat(updated.canDelayParameterExtractions).isTrue()
         }
     }
-}
-
-private fun Int.resolve(response: GetParametersResponse): String? {
-    return response.stringsList.toMap()[this]
-}
-
-private fun GetParametersResponse.find(name: String): Parameter {
-    val strings = stringsList.toMap()
-    val params = parameterGroup.parameterList.associateBy { strings[it.name] }
-    return params[name]
-        ?: error("$name not found in parameters. Found: ${params.keys.joinToString()}")
-}
-
-private fun GetParametersResponse.findUnmerged(name: String): Parameter {
-    val strings = stringsList.toMap()
-    val semantics = parameterGroup.unmergedSemanticsList.associateBy { strings[it.name] }
-    return semantics[name]
-        ?: error("$name not found in unmerged semantics. Found: ${semantics.keys.joinToString()}")
-}
-
-private fun GetParametersResponse.findMerged(name: String): Parameter {
-    val strings = stringsList.toMap()
-    val semantics = parameterGroup.mergedSemanticsList.associateBy { strings[it.name] }
-    return semantics[name]
-        ?: error("$name not found in merged semantics. Found: ${semantics.keys.joinToString()}")
-}
-
-private fun GetComposablesResponse.filter(name: String): List<ComposableNode> {
-    val strings = stringsList.toMap()
-    return rootsList
-        .flatMap { it.nodesList }
-        .flatMap { it.flatten() }
-        .filter { strings[it.name] == name }
 }
 
 @Suppress("SameParameterValue")

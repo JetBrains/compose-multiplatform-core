@@ -47,6 +47,7 @@ import androidx.compose.ui.util.fastForEach
 private const val PLAIN_TEXT_LABEL = "plain text"
 
 /** Android implementation for [ClipboardManager]. */
+@Suppress("DEPRECATION")
 internal class AndroidClipboardManager
 internal constructor(private val clipboardManager: android.content.ClipboardManager) :
     ClipboardManager {

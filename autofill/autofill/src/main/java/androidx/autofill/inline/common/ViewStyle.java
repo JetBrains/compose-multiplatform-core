@@ -24,10 +24,11 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Specifies the style for a {@link View} or a {@link android.view.ViewGroup}.
@@ -115,9 +116,8 @@ public class ViewStyle extends BundledStyle {
     /**
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @NonNull
     @Override
-    protected String getStyleKey() {
+    protected @NonNull String getStyleKey() {
         return KEY_VIEW_STYLE;
     }
 
@@ -139,8 +139,7 @@ public class ViewStyle extends BundledStyle {
          * Returns {@code this} with the actual type of the subclass, so the setter methods can
          * be chained.
          */
-        @NonNull
-        protected abstract B getThis();
+        protected abstract @NonNull B getThis();
 
         /**
          * Sets the background.
@@ -149,8 +148,7 @@ public class ViewStyle extends BundledStyle {
          * @see android.graphics.drawable.Icon#loadDrawable(android.content.Context)
          * @see android.view.View#setBackground(android.graphics.drawable.Drawable)
          */
-        @NonNull
-        public B setBackground(@NonNull Icon icon) {
+        public @NonNull B setBackground(@NonNull Icon icon) {
             Preconditions.checkNotNull(icon, "background icon should not be null");
             mBundle.putParcelable(KEY_BACKGROUND, icon);
             return getThis();
@@ -163,8 +161,7 @@ public class ViewStyle extends BundledStyle {
          * @param color the color of the background
          * @see android.view.View#setBackgroundColor(int)
          */
-        @NonNull
-        public B setBackgroundColor(@ColorInt int color) {
+        public @NonNull B setBackgroundColor(@ColorInt int color) {
             mBundle.putInt(KEY_BACKGROUND_COLOR, color);
             return getThis();
         }
@@ -181,8 +178,7 @@ public class ViewStyle extends BundledStyle {
          * @param bottom the bottom padding in pixels
          * @see android.view.View#setPadding(int, int, int, int)
          */
-        @NonNull
-        public B setPadding(int start, int top, int end, int bottom) {
+        public @NonNull B setPadding(int start, int top, int end, int bottom) {
             mBundle.putIntArray(KEY_PADDING, new int[]{start, top, end, bottom});
             return getThis();
         }
@@ -200,8 +196,7 @@ public class ViewStyle extends BundledStyle {
          * @see android.view.ViewGroup.MarginLayoutParams#setMargins(int, int, int, int)
          * @see android.view.View#setLayoutParams(android.view.ViewGroup.LayoutParams)
          */
-        @NonNull
-        public B setLayoutMargin(int start, int top, int end,
+        public @NonNull B setLayoutMargin(int start, int top, int end,
                 int bottom) {
             mBundle.putIntArray(KEY_LAYOUT_MARGIN, new int[]{start, top, end, bottom});
             return getThis();
@@ -221,15 +216,13 @@ public class ViewStyle extends BundledStyle {
         /**
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        @NonNull
         @Override
-        protected Builder getThis() {
+        protected @NonNull Builder getThis() {
             return this;
         }
 
         @Override
-        @NonNull
-        public ViewStyle build() {
+        public @NonNull ViewStyle build() {
             return new ViewStyle(mBundle);
         }
     }

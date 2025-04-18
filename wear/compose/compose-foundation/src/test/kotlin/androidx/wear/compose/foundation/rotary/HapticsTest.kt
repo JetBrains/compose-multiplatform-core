@@ -18,8 +18,11 @@ package androidx.wear.compose.foundation.rotary
 
 import android.R
 import android.app.Activity
+import android.os.Build
 import android.provider.Settings
 import android.view.View
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.ui.test.junit4.createComposeRule
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -29,6 +32,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -127,6 +131,9 @@ class ThrottleLatestTest {
 
 @RunWith(RobolectricTestRunner::class)
 class HapticsTest {
+
+    @get:Rule val rule = createComposeRule()
+
     @Test
     @Config(sdk = [33])
     fun testPixelWatch1Wear4() {
@@ -209,6 +216,17 @@ class HapticsTest {
         ShadowBuild.setModel("SM-R925")
 
         assertEquals(HapticConstants.GalaxyWatchConstants, getHapticConstants())
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM, Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
+    fun testCustomHapticsHandler() {
+        var rotaryHapticsHandler: RotaryHapticHandler? = null
+        rule.setContent {
+            val scrollableState = rememberScrollableState { 0f }
+            rotaryHapticsHandler = rememberRotaryHapticHandler(scrollableState, true)
+        }
+        assertEquals(rotaryHapticsHandler?.javaClass, CustomRotaryHapticHandler::class.java)
     }
 
     private fun getHapticConstants(): HapticConstants {

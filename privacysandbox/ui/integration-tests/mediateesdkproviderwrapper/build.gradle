@@ -28,6 +28,10 @@ android {
     minSdk = 21
     buildToolsVersion = AndroidXConfig.getDefaultAndroidConfig(project).buildToolsVersion
 
+    //TODO(b/389890488): This is added to suppress missing stub classes warning from ui-compose.
+    //Can be removed once linked bug is fixed.
+    optimization.keepRules.files += project.file('proguard-rules.pro')
+
     bundle {
         packageName = "androidx.privacysandbox.ui.integration.mediateesdkproviderwrapper"
 

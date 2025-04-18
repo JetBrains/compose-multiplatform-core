@@ -31,18 +31,19 @@ import androidx.camera.camera2.pipe.core.withLockLaunch
 import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
 import androidx.camera.camera2.pipe.integration.impl.CAMERAX_TAG_BUNDLE
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
+import androidx.camera.camera2.pipe.integration.impl.CameraCallbackMap
+import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
 import androidx.camera.camera2.pipe.integration.impl.toParameters
 import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.RequestProcessor
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.SessionProcessorSurface
 import kotlinx.atomicfu.atomic
-import kotlinx.coroutines.CoroutineScope
 
 public class RequestProcessorAdapter(
     private val useCaseGraphConfig: UseCaseGraphConfig,
     private val processorSurfaces: List<SessionProcessorSurface>,
-    private val scope: CoroutineScope,
+    private val threads: UseCaseThreads
 ) : RequestProcessor {
     private val coroutineMutex = CoroutineMutex()
     private val sequenceIds = atomic(0)
@@ -173,7 +174,7 @@ public class RequestProcessorAdapter(
                 )
             }
 
-        coroutineMutex.withLockLaunch(scope) {
+        coroutineMutex.withLockLaunch(threads.scope) {
             useCaseGraphConfig.graph.acquireSession().use { it.submit(requestsToSubmit) }
         }
         return sequenceId
@@ -207,10 +208,14 @@ public class RequestProcessorAdapter(
                             shouldInvokeSequenceCallback = true,
                             request,
                             this
+                        ),
+                        CameraCallbackMap.createFor(
+                            sessionConfig!!.repeatingCameraCaptureCallbacks,
+                            threads.backgroundExecutor
                         )
                     )
             )
-        coroutineMutex.withLockLaunch(scope) {
+        coroutineMutex.withLockLaunch(threads.scope) {
             useCaseGraphConfig.graph.acquireSession().use { it.startRepeating(requestsToSubmit) }
         }
         return sequenceId
@@ -218,14 +223,14 @@ public class RequestProcessorAdapter(
 
     override fun abortCaptures() {
         Log.debug { "$this#abortCaptures" }
-        coroutineMutex.withLockLaunch(scope) {
+        coroutineMutex.withLockLaunch(threads.scope) {
             useCaseGraphConfig.graph.acquireSession().use { it.abort() }
         }
     }
 
     override fun stopRepeating() {
         Log.debug { "$this#stopRepeating" }
-        coroutineMutex.withLockLaunch(scope) {
+        coroutineMutex.withLockLaunch(threads.scope) {
             useCaseGraphConfig.graph.acquireSession().use { it.stopRepeating() }
         }
     }

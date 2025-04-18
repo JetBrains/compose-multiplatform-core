@@ -52,8 +52,10 @@ public interface RxSharedPreferencesMigration<T> {
      * @param currentData the most recently persisted data
      * @return a Single of the updated data
      */
-    @Suppress("UPPER_BOUND_VIOLATED")
-    public fun migrate(sharedPreferencesView: SharedPreferencesView, currentData: T): Single<T>
+    public fun migrate(
+        sharedPreferencesView: SharedPreferencesView,
+        currentData: T
+    ): Single<T & Any>
 }
 
 /** RxSharedPreferencesMigrationBuilder for the RxSharedPreferencesMigration. */

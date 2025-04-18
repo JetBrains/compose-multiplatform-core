@@ -23,7 +23,9 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
@@ -46,7 +48,7 @@ import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.spatial.RectInfo
+import androidx.compose.ui.spatial.RelativeLayoutBounds
 import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.IntOffset
@@ -90,14 +92,18 @@ class OnGlobalRectChangedTest {
                             minWidth = size,
                             minHeight = size,
                             modifier =
-                                Modifier.onRectChanged(0, 0) { wrap1Position = it.windowRect }
+                                Modifier.onLayoutRectChanged(0, 0) {
+                                    wrap1Position = it.boundsInWindow
+                                }
                         )
                     } else {
                         Wrap(
                             minWidth = size,
                             minHeight = size,
                             modifier =
-                                Modifier.onRectChanged(0, 0) { wrap2Position = it.windowRect }
+                                Modifier.onLayoutRectChanged(0, 0) {
+                                    wrap2Position = it.boundsInWindow
+                                }
                         )
                     }
                 }
@@ -126,7 +132,9 @@ class OnGlobalRectChangedTest {
                     minWidth = size,
                     minHeight = size,
                     modifier =
-                        Modifier.onRectChanged(0, 0) { realChildSize = it.rootRect.size.width }
+                        Modifier.onLayoutRectChanged(0, 0) {
+                            realChildSize = it.boundsInRoot.size.width
+                        }
                 )
             }
         }
@@ -157,8 +165,8 @@ class OnGlobalRectChangedTest {
                             minWidth = 10,
                             minHeight = 10,
                             modifier =
-                                Modifier.onRectChanged(0, 0) { rect ->
-                                    childGlobalPosition = rect.rootRect.offset()
+                                Modifier.onLayoutRectChanged(0, 0) { rect ->
+                                    childGlobalPosition = rect.boundsInRoot.offset()
                                     latch.countDown()
                                 }
                         )
@@ -190,17 +198,19 @@ class OnGlobalRectChangedTest {
                     Wrap(
                         minWidth = 10,
                         minHeight = 10,
-                        modifier = Modifier.onRectChanged(0, 0) { wrap1OnPositionedCalled = true }
+                        modifier =
+                            Modifier.onLayoutRectChanged(0, 0) { wrap1OnPositionedCalled = true }
                     )
                     Wrap(
                         minWidth = 10,
                         minHeight = 10,
-                        modifier = Modifier.onRectChanged(0, 0) { wrap2OnPositionedCalled = true }
+                        modifier =
+                            Modifier.onLayoutRectChanged(0, 0) { wrap2OnPositionedCalled = true }
                     ) {
                         Wrap(
                             minWidth = 10,
                             minHeight = 10,
-                            modifier = Modifier.onRectChanged(0, 0) { latch.countDown() }
+                            modifier = Modifier.onLayoutRectChanged(0, 0) { latch.countDown() }
                         )
                     }
                 }
@@ -218,8 +228,8 @@ class OnGlobalRectChangedTest {
         var lambda2Called = false
         var layoutCalled = false
         var placementCalled = false
-        val lambda1: (RectInfo) -> Unit = { lambda1Called = true }
-        val lambda2: (RectInfo) -> Unit = { lambda2Called = true }
+        val lambda1: (RelativeLayoutBounds) -> Unit = { lambda1Called = true }
+        val lambda2: (RelativeLayoutBounds) -> Unit = { lambda2Called = true }
 
         val changeLambda = mutableStateOf(true)
 
@@ -238,7 +248,7 @@ class OnGlobalRectChangedTest {
                 modifier =
                     Modifier.then(layoutModifier)
                         .size(10.dp)
-                        .onRectChanged(0, 0, if (changeLambda.value) lambda1 else lambda2)
+                        .onLayoutRectChanged(0, 0, if (changeLambda.value) lambda1 else lambda2)
             )
         }
 
@@ -266,13 +276,13 @@ class OnGlobalRectChangedTest {
     @Test
     fun callbacksAreCalledOnlyOnceWhenLambdaChangesAndLayoutChanges() {
         var lambda1Called = false
-        val lambda1: (RectInfo) -> Unit = {
+        val lambda1: (RelativeLayoutBounds) -> Unit = {
             assert(!lambda1Called)
             lambda1Called = true
         }
 
         var lambda2Called = false
-        val lambda2: (RectInfo) -> Unit = {
+        val lambda2: (RelativeLayoutBounds) -> Unit = {
             assert(!lambda2Called)
             lambda2Called = true
         }
@@ -283,7 +293,7 @@ class OnGlobalRectChangedTest {
             Box(
                 modifier =
                     Modifier.size(size.value)
-                        .onRectChanged(0, 0, if (changeLambda.value) lambda1 else lambda2)
+                        .onLayoutRectChanged(0, 0, if (changeLambda.value) lambda1 else lambda2)
             )
         }
 
@@ -307,13 +317,13 @@ class OnGlobalRectChangedTest {
     @Test
     fun callbacksAreCalledOnlyOnceWhenLayoutBelowItAndLambdaChanged() {
         var lambda1Called = false
-        val lambda1: (RectInfo) -> Unit = {
+        val lambda1: (RelativeLayoutBounds) -> Unit = {
             assert(!lambda1Called)
             lambda1Called = true
         }
 
         var lambda2Called = false
-        val lambda2: (RectInfo) -> Unit = {
+        val lambda2: (RelativeLayoutBounds) -> Unit = {
             assert(!lambda2Called)
             lambda2Called = true
         }
@@ -324,7 +334,7 @@ class OnGlobalRectChangedTest {
             Box(
                 modifier =
                     Modifier.padding(10.dp)
-                        .onRectChanged(0, 0, if (changeLambda.value) lambda1 else lambda2)
+                        .onLayoutRectChanged(0, 0, if (changeLambda.value) lambda1 else lambda2)
                         .padding(size.value)
                         .size(10.dp)
             )
@@ -362,8 +372,8 @@ class OnGlobalRectChangedTest {
                 Layout(
                     {},
                     modifier =
-                        Modifier.onRectChanged(0, 0) {
-                            coordinates = it.windowRect
+                        Modifier.onLayoutRectChanged(0, 0) {
+                            coordinates = it.boundsInWindow
                             positionedLatch.countDown()
                         }
                 ) { _, _ ->
@@ -401,8 +411,8 @@ class OnGlobalRectChangedTest {
                 {},
                 modifier =
                     Modifier.graphicsLayer { translationX = offsetX }
-                        .onRectChanged(0, 0) {
-                            coordinates = it.windowRect
+                        .onLayoutRectChanged(0, 0) {
+                            coordinates = it.boundsInWindow
                             positionedLatch.countDown()
                         }
             ) { _, _ ->
@@ -457,8 +467,8 @@ class OnGlobalRectChangedTest {
                 Layout(
                     {},
                     modifier =
-                        Modifier.onRectChanged(0, 0) {
-                            coordinates = it.windowRect
+                        Modifier.onLayoutRectChanged(0, 0) {
+                            coordinates = it.boundsInWindow
                             positionedLatch.countDown()
                         }
                 ) { _, constraints ->
@@ -494,15 +504,15 @@ class OnGlobalRectChangedTest {
                 DelayedMeasure(50) {
                     Box(Modifier.requiredSize(25.toDp())) {
                         Box(
-                            Modifier.requiredSize(size.toDp()).onRectChanged(0, 0) {
-                                coordinates1 = it.rootRect
+                            Modifier.requiredSize(size.toDp()).onLayoutRectChanged(0, 0) {
+                                coordinates1 = it.boundsInRoot
                             }
                         )
                     }
                     Box(Modifier.requiredSize(25.toDp())) {
                         Box(
-                            Modifier.requiredSize(size.toDp()).onRectChanged(0, 0) {
-                                coordinates2 = it.rootRect
+                            Modifier.requiredSize(size.toDp()).onLayoutRectChanged(0, 0) {
+                                coordinates2 = it.boundsInRoot
                             }
                         )
                     }
@@ -539,12 +549,12 @@ class OnGlobalRectChangedTest {
 
             composeView.setContent {
                 Box(
-                    Modifier.fillMaxSize().onRectChanged(0, 0) {
+                    Modifier.fillMaxSize().onLayoutRectChanged(0, 0) {
                         val position = IntArray(2)
                         composeView.getLocationInWindow(position)
                         frameGlobalPosition = IntOffset(position[0], position[1])
 
-                        realGlobalPosition = it.windowRect.offset()
+                        realGlobalPosition = it.boundsInWindow.offset()
 
                         positionedLatch.countDown()
                     }
@@ -570,12 +580,9 @@ class OnGlobalRectChangedTest {
             with(LocalDensity.current) {
                 Box {
                     Box(
-                        Modifier.fillMaxSize().padding(start = left.value.toDp()).onRectChanged(
-                            0,
-                            0
-                        ) {
-                            realLeft = it.rootRect.left
-                        }
+                        Modifier.fillMaxSize()
+                            .padding(start = left.value.toDp())
+                            .onLayoutRectChanged(0, 0) { realLeft = it.boundsInRoot.left }
                     )
                 }
             }
@@ -601,8 +608,8 @@ class OnGlobalRectChangedTest {
                         Box(Modifier.requiredSize(10.toDp())) {
                             Box(Modifier.requiredSize(10.toDp())) {
                                 Box(
-                                    Modifier.onRectChanged(0, 0) {
-                                            realLeft = it.rootRect.left
+                                    Modifier.onLayoutRectChanged(0, 0) {
+                                            realLeft = it.boundsInRoot.left
                                             positionedLatch.countDown()
                                         }
                                         .requiredSize(10.toDp())
@@ -624,13 +631,16 @@ class OnGlobalRectChangedTest {
 
     @Test
     fun testLayerBoundsPositionInRotatedView() {
-        var rect: RectInfo? = null
+        var rect: RelativeLayoutBounds? = null
         var view: View? = null
         var toggle by mutableStateOf(false)
         rule.setContent {
             view = LocalView.current
             if (toggle) {
-                FixedSize(30, Modifier.padding(10).onRectChanged(0, 0) { rect = it }) { /* no-op */
+                FixedSize(
+                    30,
+                    Modifier.padding(10).onLayoutRectChanged(0, 0) { rect = it }
+                ) { /* no-op */
                 }
             }
         }
@@ -646,10 +656,10 @@ class OnGlobalRectChangedTest {
 
         rule.runOnIdle {
             val layoutCoordinates = rect!!
-            assertEquals(IntOffset(10, 10), layoutCoordinates.rootRect.offset())
-            assertEquals(IntRect(10, 10, 40, 40), layoutCoordinates.rootRect)
+            assertEquals(IntOffset(10, 10), layoutCoordinates.boundsInRoot.offset())
+            assertEquals(IntRect(10, 10, 40, 40), layoutCoordinates.boundsInRoot)
 
-            val boundsInWindow = layoutCoordinates.windowRect
+            val boundsInWindow = layoutCoordinates.boundsInWindow
             assertEquals(10f * sqrt(2f), boundsInWindow.top.toFloat(), 1f)
             assertEquals(30f * sqrt(2f) / 2f, boundsInWindow.right.toFloat(), 1f)
             assertEquals(-30f * sqrt(2f) / 2f, boundsInWindow.left.toFloat(), 1f)
@@ -666,8 +676,8 @@ class OnGlobalRectChangedTest {
                 Popup(alignment = alignment) {
                     FixedSize(
                         30,
-                        Modifier.padding(10).background(Color.Red).onRectChanged(0, 0) {
-                            coords = it.windowRect
+                        Modifier.padding(10).background(Color.Red).onLayoutRectChanged(0, 0) {
+                            coords = it.boundsInWindow
                         }
                     ) { /* no-op */
                     }
@@ -697,11 +707,11 @@ class OnGlobalRectChangedTest {
         rule.setContent {
             Box(
                 Modifier.fillMaxSize()
-                    .onRectChanged(0, 0) { coords1 = it.windowRect }
+                    .onLayoutRectChanged(0, 0) { coords1 = it.boundsInWindow }
                     .padding(2.dp)
-                    .onRectChanged(0, 0) { coords2 = it.windowRect }
+                    .onLayoutRectChanged(0, 0) { coords2 = it.boundsInWindow }
                     .padding(3.dp)
-                    .onRectChanged(0, 0) { coords3 = it.windowRect }
+                    .onLayoutRectChanged(0, 0) { coords3 = it.boundsInWindow }
             )
         }
 
@@ -717,18 +727,21 @@ class OnGlobalRectChangedTest {
     @Test
     @SmallTest
     fun modifierIsReturningEqualObjectForTheSameLambda() {
-        val lambda: (RectInfo) -> Unit = {}
-        assertEquals(Modifier.onRectChanged(0, 0, lambda), Modifier.onRectChanged(0, 0, lambda))
+        val lambda: (RelativeLayoutBounds) -> Unit = {}
+        assertEquals(
+            Modifier.onLayoutRectChanged(0, 0, lambda),
+            Modifier.onLayoutRectChanged(0, 0, lambda)
+        )
     }
 
     @Test
     @SmallTest
     fun modifierIsReturningNotEqualObjectForDifferentLambdas() {
-        val lambda1: (RectInfo) -> Unit = { print("foo") }
-        val lambda2: (RectInfo) -> Unit = { print("bar") }
+        val lambda1: (RelativeLayoutBounds) -> Unit = { print("foo") }
+        val lambda2: (RelativeLayoutBounds) -> Unit = { print("bar") }
         Assert.assertNotEquals(
-            Modifier.onRectChanged(0, 0, lambda1),
-            Modifier.onRectChanged(0, 0, lambda2)
+            Modifier.onLayoutRectChanged(0, 0, lambda1),
+            Modifier.onLayoutRectChanged(0, 0, lambda2)
         )
     }
 
@@ -746,16 +759,16 @@ class OnGlobalRectChangedTest {
                 Box(
                     Modifier.fillMaxSize()
                         .offset { offset }
-                        .onRectChanged(0, 0) {
+                        .onLayoutRectChanged(0, 0) {
                             if (offset != IntOffset.Zero) {
-                                position = it.rootRect.offset()
+                                position = it.boundsInRoot.offset()
                             }
                         }
                 )
                 Box(
                     Modifier.fillMaxSize()
                         .offset { offset }
-                        .onRectChanged(0, 0) {
+                        .onLayoutRectChanged(0, 0) {
                             if (offset != IntOffset.Zero && !hasSent) {
                                 hasSent = true
                                 val now = SystemClock.uptimeMillis()
@@ -782,7 +795,7 @@ class OnGlobalRectChangedTest {
                     Box(
                         Modifier.fillMaxSize()
                             .offset { offset }
-                            .onRectChanged(0, 0) { position = it.rootRect.offset() }
+                            .onLayoutRectChanged(0, 0) { position = it.boundsInRoot.offset() }
                     )
                 }
             }
@@ -803,14 +816,14 @@ class OnGlobalRectChangedTest {
             val modifier =
                 if (callbackPresent.value) {
                     // Remember lambdas to avoid triggering a node update when the lambda changes
-                    Modifier.onRectChanged(0, 0, remember { { positionCalled1Count++ } })
+                    Modifier.onLayoutRectChanged(0, 0, remember { { positionCalled1Count++ } })
                 } else {
                     Modifier
                 }
             Box(
                 Modifier
                     // Remember lambdas to avoid triggering a node update when the lambda changes
-                    .onRectChanged(0, 0, remember { { positionCalled2Count++ } })
+                    .onLayoutRectChanged(0, 0, remember { { positionCalled2Count++ } })
                     .then(modifier)
                     .fillMaxSize()
             )
@@ -830,5 +843,81 @@ class OnGlobalRectChangedTest {
             assertThat(positionCalled1Count).isEqualTo(1)
             assertThat(positionCalled2Count).isEqualTo(1)
         }
+    }
+
+    @Test
+    fun occlusionCalculationOnRectChangedCallbacks() {
+        var box2Fraction by mutableStateOf(1f)
+
+        var box0Bounds: RelativeLayoutBounds? = null
+
+        var box0Occlusions = emptyList<IntRect>()
+        var box1Occlusions = emptyList<IntRect>()
+        var box2Occlusions = emptyList<IntRect>()
+
+        var box0CallbackCount = 0
+        var box1CallbackCount = 0
+        var box2CallbackCount = 0
+        rule.setContent {
+            Box(Modifier.fillMaxSize()) {
+                Box(
+                    Modifier.fillMaxWidth()
+                        .fillMaxHeight(0.5f)
+                        .align(Alignment.TopStart)
+                        .onLayoutRectChanged(0, 0) { rectInfo ->
+                            box0Bounds = rectInfo
+                            box0CallbackCount++
+                            box0Occlusions = rectInfo.calculateOcclusions()
+                        }
+                )
+                Box(
+                    // Should initially occlude first box
+                    Modifier.fillMaxWidth()
+                        .fillMaxHeight(0.7f)
+                        .align(Alignment.BottomStart)
+                        .onLayoutRectChanged(0, 0) { rectInfo ->
+                            box1CallbackCount++
+                            box1Occlusions = rectInfo.calculateOcclusions()
+                        }
+                )
+                Box(
+                    // Should initially occlude both boxes
+                    Modifier.fillMaxSize(box2Fraction)
+                        .align(Alignment.BottomStart)
+                        .onLayoutRectChanged(0, 0) { rectInfo ->
+                            box2CallbackCount++
+                            box2Occlusions = rectInfo.calculateOcclusions()
+                        }
+                )
+            }
+        }
+        rule.waitForIdle()
+
+        // Occlusion calculation should return expected result from each layout
+        assertThat(box0Occlusions.size).isEqualTo(2)
+        assertThat(box1Occlusions.size).isEqualTo(1)
+        assertThat(box2Occlusions.size).isEqualTo(0)
+
+        assertThat(box0CallbackCount).isEqualTo(1)
+        assertThat(box1CallbackCount).isEqualTo(1)
+        assertThat(box2CallbackCount).isEqualTo(1)
+
+        // We change box2 so that it no longer occludes box0
+        box2Fraction = 0.3f
+        rule.waitForIdle()
+
+        // Only box2 should receive a new callback, so most of the pre-existing information should
+        // remain the same, except for box2CallbackCount
+        assertThat(box0Occlusions.size).isEqualTo(2)
+        assertThat(box1Occlusions.size).isEqualTo(1)
+        assertThat(box2Occlusions.size).isEqualTo(0)
+
+        assertThat(box0CallbackCount).isEqualTo(1)
+        assertThat(box1CallbackCount).isEqualTo(1)
+        assertThat(box2CallbackCount).isEqualTo(2)
+
+        // Currently, it's possible to capture rectInfo and re-calculate occlusions
+        // The new calculation should reflect one less occluding box
+        assertThat(box0Bounds!!.calculateOcclusions().size).isEqualTo(1)
     }
 }

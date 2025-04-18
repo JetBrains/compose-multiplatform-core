@@ -83,7 +83,9 @@ public class TransitionInflater {
     /**
      * Loads a {@link TransitionManager} object from a resource
      *
-     * @param resource The resource id of the transition manager to load
+     * @param resource  The resource id of the transition manager to load
+     * @param sceneRoot The root of the hierarchy in which scene changes and transitions will take
+     *                  place.
      * @return The loaded TransitionManager object
      * @throws android.content.res.Resources.NotFoundException when the
      *                                                         transition manager cannot be loaded

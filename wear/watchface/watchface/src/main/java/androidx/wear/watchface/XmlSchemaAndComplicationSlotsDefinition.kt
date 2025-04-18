@@ -36,6 +36,10 @@ import androidx.wear.watchface.style.UserStyleSchema
 import kotlin.jvm.Throws
 import org.xmlpull.v1.XmlPullParser
 
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 @OptIn(ComplicationExperimental::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class XmlSchemaAndComplicationSlotsDefinition(

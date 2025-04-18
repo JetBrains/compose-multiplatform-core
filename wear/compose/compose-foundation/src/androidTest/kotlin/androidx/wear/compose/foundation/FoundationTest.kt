@@ -78,7 +78,7 @@ private fun ImageBitmap.histogram(): MutableMap<Color, Long> {
  * [Modifier.testTag], but specifically for curved containers.
  *
  * This is a convenience method for a [semantics] that sets [SemanticsPropertyReceiver.testTag].
- * Currently, this supports basic assert operations operations only.
+ * Currently, this supports basic assert operations only.
  *
  * @param tag The tag to apply to the curved container.
  */
@@ -88,8 +88,8 @@ private class TestTagWrapper(val child: CurvedChild, val tag: String) :
     BaseCurvedChildWrapper(child) {
 
     @Composable
-    override fun SubComposition() {
-        Box(modifier = Modifier.testTag(tag)) { super.SubComposition() }
+    override fun SubComposition(semanticProperties: CurvedSemanticProperties) {
+        Box(modifier = Modifier.testTag(tag)) { super.SubComposition(semanticProperties) }
     }
 }
 

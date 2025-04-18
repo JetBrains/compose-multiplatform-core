@@ -19,8 +19,8 @@ package androidx.wear.input;
 import android.content.Context;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A provider interface to allow {@link WearableButtons} to query for information on the device's
@@ -42,8 +42,7 @@ public interface WearableButtonsProvider {
      * @param keycode The keycode associated with the hardware button of interest
      * @return A {@link Bundle} containing the metadata for the given keycode
      */
-    @NonNull
-    Bundle getButtonInfo(@NonNull Context context, int keycode);
+    @NonNull Bundle getButtonInfo(@NonNull Context context, int keycode);
 
     /**
      * Get the keycodes of available hardware buttons on device. This function based on key's
@@ -53,6 +52,5 @@ public interface WearableButtonsProvider {
      * @param context The context of the current activity
      * @return An int array of available button keycodes, or null if no keycodes could be read.
      */
-    @Nullable
-    int[] getAvailableButtonKeyCodes(@NonNull Context context);
+    int @Nullable [] getAvailableButtonKeyCodes(@NonNull Context context);
 }

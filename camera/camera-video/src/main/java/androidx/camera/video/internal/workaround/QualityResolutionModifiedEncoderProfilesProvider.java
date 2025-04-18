@@ -20,14 +20,15 @@ import static java.util.Objects.requireNonNull;
 
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.EncoderProfilesProvider;
 import androidx.camera.core.impl.EncoderProfilesProxy;
 import androidx.camera.core.impl.EncoderProfilesProxy.ImmutableEncoderProfilesProxy;
 import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy;
 import androidx.camera.core.impl.Quirks;
 import androidx.camera.video.internal.compat.quirk.StretchedVideoResolutionQuirk;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,12 +43,10 @@ import java.util.Map;
  */
 public class QualityResolutionModifiedEncoderProfilesProvider implements EncoderProfilesProvider {
 
-    @NonNull
-    private final EncoderProfilesProvider mProvider;
-    @NonNull
-    private final Quirks mQuirks;
-    @NonNull
-    private final Map<Integer, EncoderProfilesProxy> mEncoderProfilesCache = new HashMap<>();
+    private final @NonNull EncoderProfilesProvider mProvider;
+    private final @NonNull Quirks mQuirks;
+    private final @NonNull Map<Integer, EncoderProfilesProxy> mEncoderProfilesCache =
+            new HashMap<>();
 
     public QualityResolutionModifiedEncoderProfilesProvider(
             @NonNull EncoderProfilesProvider provider, @NonNull Quirks quirks) {
@@ -64,14 +63,12 @@ public class QualityResolutionModifiedEncoderProfilesProvider implements Encoder
         return getProfilesInternal(quality) != null;
     }
 
-    @Nullable
     @Override
-    public EncoderProfilesProxy getAll(int quality) {
+    public @Nullable EncoderProfilesProxy getAll(int quality) {
         return getProfilesInternal(quality);
     }
 
-    @Nullable
-    private EncoderProfilesProxy getProfilesInternal(int quality) {
+    private @Nullable EncoderProfilesProxy getProfilesInternal(int quality) {
         if (mEncoderProfilesCache.containsKey(quality)) {
             return mEncoderProfilesCache.get(quality);
         }
@@ -91,8 +88,7 @@ public class QualityResolutionModifiedEncoderProfilesProvider implements Encoder
         return profiles;
     }
 
-    @Nullable
-    private Size getAlternativeResolution(int quality) {
+    private @Nullable Size getAlternativeResolution(int quality) {
         for (StretchedVideoResolutionQuirk quirk : mQuirks.getAll(
                 StretchedVideoResolutionQuirk.class)) {
             if (quirk != null) {
@@ -103,8 +99,7 @@ public class QualityResolutionModifiedEncoderProfilesProvider implements Encoder
         return null;
     }
 
-    @Nullable
-    private EncoderProfilesProxy createNewEncoderProfiles(
+    private @Nullable EncoderProfilesProxy createNewEncoderProfiles(
             @NonNull EncoderProfilesProxy baseProfiles, @NonNull Size resolution) {
         // Apply input resolution to video profiles.
         List<VideoProfileProxy> newVideoProfiles = new ArrayList<>();
@@ -121,9 +116,8 @@ public class QualityResolutionModifiedEncoderProfilesProvider implements Encoder
         );
     }
 
-    @NonNull
-    private static VideoProfileProxy generateVideoProfile(@NonNull VideoProfileProxy baseProfile,
-            @NonNull Size resolution) {
+    private static @NonNull VideoProfileProxy generateVideoProfile(
+            @NonNull VideoProfileProxy baseProfile, @NonNull Size resolution) {
         return VideoProfileProxy.create(
                 baseProfile.getCodec(),
                 baseProfile.getMediaType(),

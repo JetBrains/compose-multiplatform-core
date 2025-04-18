@@ -92,6 +92,18 @@ public interface PdfDocument : Closeable {
     ): PageSelection?
 
     /**
+     * Asynchronously retrieves the selection bounds (in PDF coordinates) for the complete text on
+     * the page.
+     *
+     * @param pageNumber The page on which text to be selected.
+     * @return A [PageSelection] object representing the selection bounds on the page.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public suspend fun getSelectAllSelectionBounds(
+        pageNumber: Int,
+    ): PageSelection?
+
+    /**
      * Asynchronously retrieves the content (text and images) of the specified page.
      *
      * @param pageNumber The page number (0-based).

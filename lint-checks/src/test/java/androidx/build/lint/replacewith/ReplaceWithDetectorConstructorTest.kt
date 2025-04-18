@@ -33,10 +33,10 @@ class ReplaceWithDetectorConstructorTest {
 
         val expected =
             """
-src/replacewith/ConstructorStaticClass.java:25: Information: Replacement available [ReplaceWith]
+src/replacewith/ConstructorStaticClass.java:25: Hint: Replacement available [ReplaceWith]
         new ReplaceWithUsageJava("parameter");
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0 errors, 0 warnings
+0 errors, 0 warnings, 1 hint
         """
                 .trimIndent()
 
@@ -62,10 +62,10 @@ Fix for src/replacewith/ConstructorStaticClass.java line 25: Replace with `Strin
 
         val expected =
             """
-src/replacewith/ConstructorNonStaticClass.java:25: Information: Replacement available [ReplaceWith]
+src/replacewith/ConstructorNonStaticClass.java:25: Hint: Replacement available [ReplaceWith]
         new ReplaceWithUsageJava().new InnerClass("param");
                                        ~~~~~~~~~~~~~~~~~~~
-0 errors, 0 warnings
+0 errors, 0 warnings, 1 hint
         """
                 .trimIndent()
 
@@ -91,10 +91,10 @@ Fix for src/replacewith/ConstructorNonStaticClass.java line 25: Replace with `In
 
         val expected =
             """
-src/replacewith/ConstructorToStaticMethod.java:25: Information: Replacement available [ReplaceWith]
+src/replacewith/ConstructorToStaticMethod.java:25: Hint: Replacement available [ReplaceWith]
         new ReplaceWithUsageJava(10000);
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0 errors, 0 warnings
+0 errors, 0 warnings, 1 hint
         """
                 .trimIndent()
 
@@ -120,10 +120,10 @@ Fix for src/replacewith/ConstructorToStaticMethod.java line 25: Replace with `Re
 
         val expected =
             """
-src/replacewith/ConstructorStaticClassKotlin.kt:22: Information: Replacement available [ReplaceWith]
+src/replacewith/ConstructorStaticClassKotlin.kt:22: Hint: Replacement available [ReplaceWith]
         ReplaceWithUsageJava("parameter")
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0 errors, 0 warnings
+0 errors, 0 warnings, 1 hint
         """
                 .trimIndent()
 
@@ -149,10 +149,10 @@ Fix for src/replacewith/ConstructorStaticClassKotlin.kt line 22: Replace with `S
 
         val expected =
             """
-src/replacewith/ConstructorNonStaticClassKotlin.kt:22: Information: Replacement available [ReplaceWith]
+src/replacewith/ConstructorNonStaticClassKotlin.kt:22: Hint: Replacement available [ReplaceWith]
         ReplaceWithUsageJava().InnerClass("param")
                                ~~~~~~~~~~~~~~~~~~~
-0 errors, 0 warnings
+0 errors, 0 warnings, 1 hint
         """
                 .trimIndent()
 
@@ -178,10 +178,10 @@ Fix for src/replacewith/ConstructorNonStaticClassKotlin.kt line 22: Replace with
 
         val expected =
             """
-src/replacewith/ConstructorToStaticMethodKotlin.kt:22: Information: Replacement available [ReplaceWith]
+src/replacewith/ConstructorToStaticMethodKotlin.kt:22: Hint: Replacement available [ReplaceWith]
         ReplaceWithUsageJava(10000)
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0 errors, 0 warnings
+0 errors, 0 warnings, 1 hint
         """
                 .trimIndent()
 

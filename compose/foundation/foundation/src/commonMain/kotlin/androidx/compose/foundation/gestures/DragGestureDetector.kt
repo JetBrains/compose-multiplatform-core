@@ -784,7 +784,7 @@ private suspend inline fun AwaitPointerEventScope.awaitDragOrUp(
  *   `null` if all pointers are raised or the position change was consumed by another gesture
  *   detector.
  */
-private suspend inline fun AwaitPointerEventScope.awaitPointerSlopOrCancellation(
+internal suspend inline fun AwaitPointerEventScope.awaitPointerSlopOrCancellation(
     pointerId: PointerId,
     pointerType: PointerType,
     orientation: Orientation?,
@@ -832,13 +832,50 @@ private suspend inline fun AwaitPointerEventScope.awaitPointerSlopOrCancellation
 }
 
 /**
+ * Similar to [awaitAllPointersUp], but additionally tracks if during current gesture there was any
+ * dragging without consuming it.
+ */
+internal suspend fun AwaitPointerEventScope.awaitAllPointersUpWithSlopDetection(
+    initialPositionChange: PointerInputChange,
+    pass: PointerEventPass = PointerEventPass.Main
+): Boolean {
+    if (allPointersUp()) {
+        return false
+    }
+
+    var pointer: PointerId = initialPositionChange.id
+    var pointerSlopReached = false
+    val touchSlop = viewConfiguration.pointerSlop(initialPositionChange.type)
+    val touchSlopDetector = TouchSlopDetector()
+    do {
+        val event = awaitPointerEvent(pass)
+        val dragEvent = event.changes.fastFirstOrNull { it.id == pointer }
+        if (dragEvent == null || dragEvent.changedToUpIgnoreConsumed()) {
+            val otherDown = event.changes.fastFirstOrNull { it.pressed }
+            if (otherDown == null) {
+                // This is the last "up"
+                return pointerSlopReached
+            } else {
+                pointer = otherDown.id
+            }
+        } else {
+            val postSlopOffset = touchSlopDetector.addPointerInputChange(dragEvent, touchSlop)
+            if (postSlopOffset.isSpecified) {
+                pointerSlopReached = true
+            }
+        }
+    } while (event.changes.fastAny { it.pressed })
+    return pointerSlopReached
+}
+
+/**
  * Detects if touch slop has been crossed after adding a series of [PointerInputChange]. For every
  * new [PointerInputChange] one should add it to this detector using [addPointerInputChange]. If the
  * position change causes the touch slop to be crossed, [addPointerInputChange] will return true.
  */
-private class TouchSlopDetector(
+internal class TouchSlopDetector(
     val orientation: Orientation? = null,
-    val initialPositionChange: Offset
+    initialPositionChange: Offset = Offset.Zero
 ) {
 
     fun Offset.mainAxis() = if (orientation == Orientation.Horizontal) x else y

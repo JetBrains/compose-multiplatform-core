@@ -16,13 +16,14 @@
 
 package androidx.camera.extensions;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.CameraConfig;
 import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.Identifier;
 import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.SessionProcessor;
 import androidx.camera.core.impl.UseCaseConfigFactory;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Implementation of CameraConfig which provides the extensions capability.
@@ -40,9 +41,8 @@ class ExtensionsConfig implements CameraConfig {
         mConfig = config;
     }
 
-    @NonNull
     @Override
-    public Config getConfig() {
+    public @NonNull Config getConfig() {
         return mConfig;
     }
 
@@ -51,9 +51,8 @@ class ExtensionsConfig implements CameraConfig {
         return retrieveOption(OPTION_EXTENSION_MODE);
     }
 
-    @NonNull
     @Override
-    public Identifier getCompatibilityId() {
+    public @NonNull Identifier getCompatibilityId() {
         return retrieveOption(OPTION_COMPATIBILITY_ID);
     }
 
@@ -69,52 +68,46 @@ class ExtensionsConfig implements CameraConfig {
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setUseCaseConfigFactory(@NonNull UseCaseConfigFactory factory) {
+        public @NonNull Builder setUseCaseConfigFactory(@NonNull UseCaseConfigFactory factory) {
             mConfig.insertOption(OPTION_USECASE_CONFIG_FACTORY, factory);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setCompatibilityId(@NonNull Identifier identifier) {
+        public @NonNull Builder setCompatibilityId(@NonNull Identifier identifier) {
             mConfig.insertOption(OPTION_COMPATIBILITY_ID, identifier);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setUseCaseCombinationRequiredRule(int useCaseCombinationRequiredRule) {
+        public @NonNull Builder setUseCaseCombinationRequiredRule(
+                int useCaseCombinationRequiredRule) {
             mConfig.insertOption(OPTION_USE_CASE_COMBINATION_REQUIRED_RULE,
                     useCaseCombinationRequiredRule);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setSessionProcessor(@NonNull SessionProcessor sessionProcessor) {
+        public @NonNull Builder setSessionProcessor(@NonNull SessionProcessor sessionProcessor) {
             mConfig.insertOption(OPTION_SESSION_PROCESSOR, sessionProcessor);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setZslDisabled(boolean disabled) {
+        public @NonNull Builder setZslDisabled(boolean disabled) {
             mConfig.insertOption(OPTION_ZSL_DISABLED, disabled);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setPostviewSupported(boolean supported) {
+        public @NonNull Builder setPostviewSupported(boolean supported) {
             mConfig.insertOption(OPTION_POSTVIEW_SUPPORTED, supported);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setCaptureProcessProgressSupported(boolean supported) {
+        public @NonNull Builder setCaptureProcessProgressSupported(boolean supported) {
             mConfig.insertOption(OPTION_CAPTURE_PROCESS_PROGRESS_SUPPORTED, supported);
             return this;
         }

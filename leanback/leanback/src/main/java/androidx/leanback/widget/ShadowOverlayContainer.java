@@ -24,8 +24,9 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Provides an SDK version-independent wrapper to support shadows, color overlays, and rounded

@@ -24,11 +24,12 @@ import android.view.ViewStructure;
 import android.view.autofill.AutofillId;
 import android.view.contentcapture.ContentCaptureSession;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.ViewStructureCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -55,8 +56,7 @@ public class ContentCaptureSessionCompat {
      * @return wrapped class
      */
     @RequiresApi(29)
-    @NonNull
-    public static ContentCaptureSessionCompat toContentCaptureSessionCompat(
+    public static @NonNull ContentCaptureSessionCompat toContentCaptureSessionCompat(
             @NonNull ContentCaptureSession contentCaptureSession, @NonNull View host) {
         return new ContentCaptureSessionCompat(contentCaptureSession, host);
     }
@@ -71,8 +71,7 @@ public class ContentCaptureSessionCompat {
      * @see ContentCaptureSessionCompat#toContentCaptureSessionCompat(ContentCaptureSession, View)
      */
     @RequiresApi(29)
-    @NonNull
-    public ContentCaptureSession toContentCaptureSession() {
+    public @NonNull ContentCaptureSession toContentCaptureSession() {
         return (ContentCaptureSession) mWrappedObj;
     }
 
@@ -103,8 +102,7 @@ public class ContentCaptureSessionCompat {
      *
      * @return {@link AutofillId} for the virtual child
      */
-    @Nullable
-    public AutofillId newAutofillId(long virtualChildId) {
+    public @Nullable AutofillId newAutofillId(long virtualChildId) {
         if (SDK_INT >= 29) {
             return Api29Impl.newAutofillId(
                     (ContentCaptureSession) mWrappedObj,
@@ -130,8 +128,7 @@ public class ContentCaptureSessionCompat {
      *
      * @return a new {@link ViewStructure} that can be used for Content Capture purposes.
      */
-    @Nullable
-    public ViewStructureCompat newVirtualViewStructure(
+    public @Nullable ViewStructureCompat newVirtualViewStructure(
             @NonNull AutofillId parentId, long virtualId) {
         if (SDK_INT >= 29) {
             return ViewStructureCompat.toViewStructureCompat(
@@ -194,7 +191,7 @@ public class ContentCaptureSessionCompat {
      *
      * @param virtualIds ids of the virtual children.
      */
-    public void notifyViewsDisappeared(@NonNull long[] virtualIds) {
+    public void notifyViewsDisappeared(long @NonNull [] virtualIds) {
         if (SDK_INT >= 34) {
             Api29Impl.notifyViewsDisappeared(
                     (ContentCaptureSession) mWrappedObj,

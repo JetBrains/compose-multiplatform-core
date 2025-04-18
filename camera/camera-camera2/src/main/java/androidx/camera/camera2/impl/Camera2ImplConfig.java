@@ -20,8 +20,6 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
@@ -32,6 +30,9 @@ import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.MutableConfig;
 import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.OptionsBundle;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Internal shared implementation details for camera 2 interop.
@@ -88,8 +89,8 @@ public final class Camera2ImplConfig extends CaptureRequestOptions {
     // within the Camera2ImplConfig and Camera2ImplConfig.Builder classes.
 
     @RestrictTo(Scope.LIBRARY)
-    @NonNull
-    public static Option<Object> createCaptureRequestOption(@NonNull CaptureRequest.Key<?> key) {
+    public static @NonNull Option<Object> createCaptureRequestOption(
+            CaptureRequest.@NonNull Key<?> key) {
         return Option.create(CAPTURE_REQUEST_ID_STEM + key.getName(), Object.class, key);
     }
 
@@ -98,8 +99,7 @@ public final class Camera2ImplConfig extends CaptureRequestOptions {
      *
      */
     @RestrictTo(Scope.LIBRARY)
-    @NonNull
-    public CaptureRequestOptions getCaptureRequestOptions() {
+    public @NonNull CaptureRequestOptions getCaptureRequestOptions() {
         return CaptureRequestOptions.Builder.from(getConfig()).build();
     }
 
@@ -139,9 +139,8 @@ public final class Camera2ImplConfig extends CaptureRequestOptions {
      * @return The stored value or <code>valueIfMissing</code> if the value does not exist in this
      * configuration.
      */
-    @Nullable
-    public CameraDevice.StateCallback getDeviceStateCallback(
-            @Nullable CameraDevice.StateCallback valueIfMissing) {
+    public CameraDevice.@Nullable StateCallback getDeviceStateCallback(
+            CameraDevice.@Nullable StateCallback valueIfMissing) {
         return getConfig().retrieveOption(DEVICE_STATE_CALLBACK_OPTION, valueIfMissing);
     }
 
@@ -153,9 +152,8 @@ public final class Camera2ImplConfig extends CaptureRequestOptions {
      * @return The stored value or <code>valueIfMissing</code> if the value does not exist in this
      * configuration.
      */
-    @Nullable
-    public CameraCaptureSession.StateCallback getSessionStateCallback(
-            @Nullable CameraCaptureSession.StateCallback valueIfMissing) {
+    public CameraCaptureSession.@Nullable StateCallback getSessionStateCallback(
+            CameraCaptureSession.@Nullable StateCallback valueIfMissing) {
         return getConfig().retrieveOption(SESSION_STATE_CALLBACK_OPTION, valueIfMissing);
     }
 
@@ -166,9 +164,8 @@ public final class Camera2ImplConfig extends CaptureRequestOptions {
      * @return The stored value or <code>valueIfMissing</code> if the value does not exist in this
      * configuration.
      */
-    @Nullable
-    public CameraCaptureSession.CaptureCallback getSessionCaptureCallback(
-            @Nullable CameraCaptureSession.CaptureCallback valueIfMissing) {
+    public CameraCaptureSession.@Nullable CaptureCallback getSessionCaptureCallback(
+            CameraCaptureSession.@Nullable CaptureCallback valueIfMissing) {
         return getConfig().retrieveOption(SESSION_CAPTURE_CALLBACK_OPTION, valueIfMissing);
     }
 
@@ -179,8 +176,7 @@ public final class Camera2ImplConfig extends CaptureRequestOptions {
      * @return The stored value or <code>valueIfMissing</code> if the value does not exist in this
      * configuration.
      */
-    @Nullable
-    public Object getCaptureRequestTag(@Nullable Object valueIfMissing) {
+    public @Nullable Object getCaptureRequestTag(@Nullable Object valueIfMissing) {
         return getConfig().retrieveOption(CAPTURE_REQUEST_TAG_OPTION, valueIfMissing);
     }
 
@@ -191,8 +187,7 @@ public final class Camera2ImplConfig extends CaptureRequestOptions {
      * @return The stored value or <code>valueIfMissing</code> if the value does not exist in this
      * configuration.
      */
-    @Nullable
-    public String getPhysicalCameraId(@Nullable String valueIfMissing) {
+    public @Nullable String getPhysicalCameraId(@Nullable String valueIfMissing) {
         return getConfig().retrieveOption(SESSION_PHYSICAL_CAMERA_ID_OPTION, valueIfMissing);
     }
 
@@ -210,17 +205,15 @@ public final class Camera2ImplConfig extends CaptureRequestOptions {
         private final MutableOptionsBundle mMutableOptionsBundle = MutableOptionsBundle.create();
 
         @Override
-        @NonNull
-        public MutableConfig getMutableConfig() {
+        public @NonNull MutableConfig getMutableConfig() {
             return mMutableOptionsBundle;
         }
 
         /**
          * Inserts new capture request option with specific {@link CaptureRequest.Key} setting.
          */
-        @NonNull
-        public <ValueT> Camera2ImplConfig.Builder setCaptureRequestOption(
-                @NonNull CaptureRequest.Key<ValueT> key, @NonNull ValueT value) {
+        public <ValueT> Camera2ImplConfig.@NonNull Builder setCaptureRequestOption(
+                CaptureRequest.@NonNull Key<ValueT> key, @NonNull ValueT value) {
             Option<Object> opt = Camera2ImplConfig.createCaptureRequestOption(key);
             mMutableOptionsBundle.insertOption(opt, value);
             return this;
@@ -230,9 +223,8 @@ public final class Camera2ImplConfig extends CaptureRequestOptions {
          * Inserts new capture request option with specific {@link CaptureRequest.Key} setting and
          * {@link OptionPriority}.
          */
-        @NonNull
-        public <ValueT> Builder setCaptureRequestOptionWithPriority(
-                @NonNull CaptureRequest.Key<ValueT> key, @NonNull ValueT value,
+        public <ValueT> @NonNull Builder setCaptureRequestOptionWithPriority(
+                CaptureRequest.@NonNull Key<ValueT> key, @NonNull ValueT value,
                 @NonNull OptionPriority priority) {
             Option<Object> opt = Camera2ImplConfig.createCaptureRequestOption(key);
             mMutableOptionsBundle.insertOption(opt, priority, value);
@@ -240,15 +232,13 @@ public final class Camera2ImplConfig extends CaptureRequestOptions {
         }
 
         /** Inserts options from other {@link Config} object. */
-        @NonNull
-        public Camera2ImplConfig.Builder insertAllOptions(@NonNull Config config) {
+        public Camera2ImplConfig.@NonNull Builder insertAllOptions(@NonNull Config config) {
             insertAllOptions(config, OptionPriority.OPTIONAL);
             return this;
         }
 
         /** Inserts options from other {@link Config} object with the given option priority. */
-        @NonNull
-        public Camera2ImplConfig.Builder insertAllOptions(@NonNull Config config,
+        public Camera2ImplConfig.@NonNull Builder insertAllOptions(@NonNull Config config,
                 @NonNull OptionPriority optionPriority) {
             for (Option<?> option : config.listOptions()) {
                 @SuppressWarnings("unchecked") // Options/values are being copied directly
@@ -265,8 +255,7 @@ public final class Camera2ImplConfig extends CaptureRequestOptions {
          * @return A {@link Camera2ImplConfig} populated with the current state.
          */
         @Override
-        @NonNull
-        public Camera2ImplConfig build() {
+        public @NonNull Camera2ImplConfig build() {
             return new Camera2ImplConfig(OptionsBundle.from(mMutableOptionsBundle));
         }
     }

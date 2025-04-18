@@ -19,6 +19,7 @@ package androidx.room
 import androidx.annotation.RestrictTo
 import androidx.sqlite.SQLiteConnection
 import kotlin.jvm.JvmOverloads
+import kotlin.jvm.JvmSuppressWildcards
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -30,11 +31,11 @@ import kotlinx.coroutines.flow.Flow
  * created from, then such table is considered 'invalidated' and the [Flow] will emit a new value.
  */
 actual class InvalidationTracker
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 actual constructor(
     private val database: RoomDatabase,
     shadowTablesMap: Map<String, String>,
-    viewTables: Map<String, Set<String>>,
+    viewTables: Map<String, @JvmSuppressWildcards Set<String>>,
     vararg tableNames: String
 ) {
     private val implementation =
@@ -47,7 +48,7 @@ actual constructor(
             onInvalidatedTablesIds = {}
         )
 
-    /** Internal method to initialize table tracking. Invoked by generated code. */
+    /** Internal function to initialize table tracking. Invoked by generated code. */
     internal actual fun internalInit(connection: SQLiteConnection) {
         implementation.configureConnection(connection)
     }

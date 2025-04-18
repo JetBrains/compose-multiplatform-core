@@ -17,7 +17,6 @@
 package androidx.wear.compose.material
 
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -126,7 +125,7 @@ class MaterialThemeTest {
         assertTextTypographyEquals(override, rule.textStyleOf("Test"))
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun sets_primary_color_dynamically() =
         verifyBackgroundColorIsDynamic(
@@ -135,7 +134,7 @@ class MaterialThemeTest {
             updateThemeColors = { colors, primary -> colors.copy(primary = primary) }
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun sets_primaryvariant_color_dynamically() =
         verifyBackgroundColorIsDynamic(
@@ -150,7 +149,7 @@ class MaterialThemeTest {
             }
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun sets_secondary_color_dynamically() =
         verifyBackgroundColorIsDynamic(
@@ -161,7 +160,7 @@ class MaterialThemeTest {
             updateThemeColors = { colors, secondary -> colors.copy(secondary = secondary) }
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun sets_secondaryvariant_color_dynamically() =
         verifyBackgroundColorIsDynamic(
@@ -176,7 +175,7 @@ class MaterialThemeTest {
             }
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun sets_error_color_dynamically() =
         verifyBackgroundColorIsDynamic(

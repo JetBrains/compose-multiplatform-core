@@ -16,7 +16,6 @@
 
 package androidx.appsearch.localstorage.visibilitystore;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.appsearch.app.AppSearchResult;
@@ -27,6 +26,8 @@ import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.localstorage.AppSearchImpl;
 import androidx.appsearch.localstorage.util.PrefixUtil;
 import androidx.collection.ArraySet;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -90,8 +91,7 @@ public class VisibilityStoreMigrationHelperFromV1 {
      *
      * @param visibilityDocumentV1s          The deprecated Visibility Document we found.
      */
-    @NonNull
-    static List<InternalVisibilityConfig> toVisibilityDocumentsV2(
+    static @NonNull List<InternalVisibilityConfig> toVisibilityDocumentsV2(
             @NonNull List<VisibilityDocumentV1> visibilityDocumentV1s) {
         List<InternalVisibilityConfig> latestVisibilityDocuments =
                 new ArrayList<>(visibilityDocumentV1s.size());

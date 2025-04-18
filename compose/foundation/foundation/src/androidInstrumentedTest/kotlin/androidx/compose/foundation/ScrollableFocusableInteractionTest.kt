@@ -38,7 +38,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection.Companion.Next
 import androidx.compose.ui.focus.FocusDirection.Companion.Previous
 import androidx.compose.ui.focus.FocusManager
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
@@ -78,6 +77,7 @@ class ScrollableFocusableInteractionTest(
     private val reverseScrolling: Boolean
 ) {
     companion object {
+        @Suppress("TYPE_INTERSECTION_AS_REIFIED_WARNING")
         @JvmStatic
         @Parameterized.Parameters(name = "{0} reverseScrolling={1}")
         fun initParameters() =
@@ -112,15 +112,14 @@ class ScrollableFocusableInteractionTest(
 
         rule.setContent {
             ScrollableRowOrColumn(size = viewportSize) {
-                // Put a focusable in the bottom of the viewport.
-                Spacer(Modifier.size(90.toDp()))
-                TestFocusable(size = 10.toDp())
+                // Put a focusable at the end of the viewport.
+                WithSpacerBefore(size = 90.toDp()) { TestFocusable(size = 10.toDp()) }
             }
         }
         requestFocusAndScrollToTop()
         rule
             .onNodeWithTag(focusableTag)
-            .assertScrollAxisPositionInRootIsEqualTo(90.toDp())
+            .assertScrollAxisPositionInRootIsEqualTo(if (reverseScrolling) 0.toDp() else 90.toDp())
             .assertIsDisplayed()
             .assertIsFocused()
 
@@ -129,7 +128,7 @@ class ScrollableFocusableInteractionTest(
 
         rule
             .onNodeWithTag(focusableTag)
-            .assertScrollAxisPositionInRootIsEqualTo(40.toDp())
+            .assertScrollAxisPositionInRootIsEqualTo(if (reverseScrolling) 0.toDp() else 40.toDp())
             .assertIsDisplayed()
     }
 
@@ -139,15 +138,14 @@ class ScrollableFocusableInteractionTest(
 
         rule.setContent {
             ScrollableRowOrColumn(size = viewportSize) {
-                // Put a focusable in the bottom of the viewport.
-                Spacer(Modifier.size(90.toDp()))
-                TestFocusable(size = 10.toDp())
+                // Put a focusable at the end of the viewport.
+                WithSpacerBefore(size = 90.toDp()) { TestFocusable(size = 10.toDp()) }
             }
         }
         requestFocusAndScrollToTop()
         rule
             .onNodeWithTag(focusableTag)
-            .assertScrollAxisPositionInRootIsEqualTo(90.toDp())
+            .assertScrollAxisPositionInRootIsEqualTo(if (reverseScrolling) 0.toDp() else 90.toDp())
             .assertIsDisplayed()
             .assertIsFocused()
 
@@ -156,7 +154,7 @@ class ScrollableFocusableInteractionTest(
 
         rule
             .onNodeWithTag(focusableTag)
-            .assertScrollAxisPositionInRootIsEqualTo(85.toDp())
+            .assertScrollAxisPositionInRootIsEqualTo(if (reverseScrolling) 0.toDp() else 85.toDp())
             .assertIsDisplayed()
     }
 
@@ -166,7 +164,7 @@ class ScrollableFocusableInteractionTest(
 
         rule.setContent {
             ScrollableRowOrColumn(size = viewportSize) {
-                // Put a focusable in the bottom of the viewport.
+                // Put a focusable at the end of the viewport.
                 WithSpacerBefore(size = 90.toDp()) { TestFocusable(size = 10.toDp()) }
             }
         }
@@ -228,9 +226,8 @@ class ScrollableFocusableInteractionTest(
 
         rule.setContent {
             ScrollableRowOrColumn(size = viewportSize) {
-                // Put a focusable in the bottom of the viewport.
-                Spacer(Modifier.size(90.toDp()))
-                TestFocusable(size = 10.toDp())
+                // Put a focusable at the end of the viewport.
+                WithSpacerBefore(size = 90.toDp()) { TestFocusable(size = 10.toDp()) }
             }
 
             if (animate) {
@@ -247,7 +244,7 @@ class ScrollableFocusableInteractionTest(
         requestFocusAndScrollToTop()
         rule
             .onNodeWithTag(focusableTag)
-            .assertScrollAxisPositionInRootIsEqualTo(90.toDp())
+            .assertScrollAxisPositionInRootIsEqualTo(if (reverseScrolling) 0.toDp() else 90.toDp())
             .assertIsDisplayed()
             .assertIsFocused()
 
@@ -255,7 +252,7 @@ class ScrollableFocusableInteractionTest(
 
         rule
             .onNodeWithTag(focusableTag)
-            .assertScrollAxisPositionInRootIsEqualTo(30.toDp())
+            .assertScrollAxisPositionInRootIsEqualTo(if (reverseScrolling) 0.toDp() else 30.toDp())
             .assertIsDisplayed()
     }
 
@@ -265,15 +262,14 @@ class ScrollableFocusableInteractionTest(
 
         rule.setContent {
             ScrollableRowOrColumn(size = viewportSize) {
-                // Put a focusable in the bottom of the viewport.
-                Spacer(Modifier.size(90.toDp()))
-                TestFocusable(size = 10.toDp())
+                // Put a focusable at the end of the viewport.
+                WithSpacerBefore(size = 90.toDp()) { TestFocusable(size = 10.toDp()) }
             }
         }
         requestFocusAndScrollToTop()
         rule
             .onNodeWithTag(focusableTag)
-            .assertScrollAxisPositionInRootIsEqualTo(90.toDp())
+            .assertScrollAxisPositionInRootIsEqualTo(if (reverseScrolling) 0.toDp() else 90.toDp())
             .assertIsDisplayed()
             .assertIsFocused()
 
@@ -284,10 +280,9 @@ class ScrollableFocusableInteractionTest(
         rule.mainClock.advanceTimeByFrame()
         rule.waitForIdle()
 
-        // Interrupt the scroll by manually dragging.
+        // Interrupt the scroll.
         rule.onNodeWithTag(scrollableAreaTag).performTouchInput {
             down(center)
-            moveBy(Offset(viewConfiguration.touchSlop + 1, viewConfiguration.touchSlop + 1))
             up()
         }
 
@@ -311,15 +306,14 @@ class ScrollableFocusableInteractionTest(
 
         rule.setContent {
             ScrollableRowOrColumn(size = viewportSize) {
-                // Put a focusable in the bottom of the viewport.
-                Spacer(Modifier.size(90.toDp()))
-                TestFocusable(size = 10.toDp())
+                // Put a focusable at the end of the viewport.
+                WithSpacerBefore(size = 90.toDp()) { TestFocusable(size = 10.toDp()) }
             }
         }
         requestFocusAndScrollToTop()
         rule
             .onNodeWithTag(focusableTag)
-            .assertScrollAxisPositionInRootIsEqualTo(90.toDp())
+            .assertScrollAxisPositionInRootIsEqualTo(if (reverseScrolling) 0.toDp() else 90.toDp())
             .assertIsDisplayed()
             .assertIsFocused()
 
@@ -330,10 +324,9 @@ class ScrollableFocusableInteractionTest(
         rule.mainClock.advanceTimeByFrame()
         rule.waitForIdle()
 
-        // Interrupt the scroll by manually dragging.
+        // Interrupt the scroll.
         rule.onNodeWithTag(scrollableAreaTag).performTouchInput {
             down(center)
-            moveBy(Offset(viewConfiguration.touchSlop + 1, viewConfiguration.touchSlop + 1))
             up()
         }
 
@@ -396,7 +389,7 @@ class ScrollableFocusableInteractionTest(
 
         rule.setContent {
             ScrollableRowOrColumn(size = viewportSize) {
-                // Put a focusable in the bottom of the viewport.
+                // Put a focusable at the end of the viewport.
                 WithSpacerBefore(size = 90.toDp()) { TestFocusable(size = 10.toDp()) }
             }
         }

@@ -16,6 +16,7 @@
 
 package androidx.core.telecom.test.services
 
+import android.graphics.Bitmap
 import android.net.Uri
 import android.telecom.PhoneAccountHandle
 import androidx.core.telecom.extensions.KickParticipantAction
@@ -98,6 +99,12 @@ data class LocalCallSilenceData(
     val extension: LocalCallSilenceExtensionRemote?
 )
 
+/** data related to the call icon extension */
+data class CallIconData(val callIconUri: Bitmap)
+
+/** data related to the Meeting Summary extension */
+data class MeetingSummaryData(val activeSpeaker: String, val participantCount: Int)
+
 @OptIn(ExperimentalAppActions::class)
 data class RaiseHandData(val raisedHands: List<Participant>, val raiseHandAction: RaiseHandAction)
 
@@ -107,6 +114,8 @@ data class KickParticipantData(val kickParticipantAction: KickParticipantAction)
 /** Combined call data including extensions. */
 data class CallData(
     val callData: BaseCallData,
+    val meetingSummaryData: MeetingSummaryData,
     val participantExtensionData: ParticipantExtensionData?,
-    val localSilenceData: LocalCallSilenceData?
+    val localSilenceData: LocalCallSilenceData?,
+    val callIconData: CallIconData?
 )

@@ -25,8 +25,9 @@ import android.view.ViewConfiguration;
 import android.view.ViewParent;
 import android.view.accessibility.AccessibilityEvent;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing features in {@link ViewParent}.
@@ -182,7 +183,7 @@ public final class ViewParentCompat {
      * @param consumed Output. The horizontal and vertical scroll distance consumed by this parent
      */
     public static void onNestedPreScroll(@NonNull ViewParent parent, @NonNull View target, int dx,
-            int dy, @NonNull int[] consumed) {
+            int dy, int @NonNull [] consumed) {
         onNestedPreScroll(parent, target, dx, dy, consumed, ViewCompat.TYPE_TOUCH);
     }
 
@@ -337,7 +338,7 @@ public final class ViewParentCompat {
      */
     public static void onNestedScroll(@NonNull ViewParent parent, @NonNull View target,
             int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type,
-            @NonNull int[] consumed) {
+            int @NonNull [] consumed) {
 
         if (parent instanceof NestedScrollingParent3) {
             ((NestedScrollingParent3) parent).onNestedScroll(target, dxConsumed, dyConsumed,
@@ -394,7 +395,7 @@ public final class ViewParentCompat {
      */
     @SuppressWarnings("RedundantCast") // Intentionally invoking interface method.
     public static void onNestedPreScroll(@NonNull ViewParent parent, @NonNull View target, int dx,
-            int dy, @NonNull int[] consumed, int type) {
+            int dy, int @NonNull [] consumed, int type) {
         if (parent instanceof NestedScrollingParent2) {
             // First try the NestedScrollingParent2 API
             ((NestedScrollingParent2) parent).onNestedPreScroll(target, dx, dy, consumed, type);

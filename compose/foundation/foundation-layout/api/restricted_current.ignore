@@ -1,0 +1,5 @@
+// Baseline format: 1.0
+ChangedStatic: androidx.compose.foundation.layout.WindowInsets_androidKt#getConsumeWindowInsets():
+    Method androidx.compose.foundation.layout.WindowInsets_androidKt.getConsumeWindowInsets has changed 'static' qualifier
+ChangedStatic: androidx.compose.foundation.layout.WindowInsets_androidKt#setConsumeWindowInsets(boolean):
+    Method androidx.compose.foundation.layout.WindowInsets_androidKt.setConsumeWindowInsets has changed 'static' qualifier

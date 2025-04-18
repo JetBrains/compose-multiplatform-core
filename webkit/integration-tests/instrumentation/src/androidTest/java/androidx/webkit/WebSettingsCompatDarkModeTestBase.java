@@ -25,6 +25,9 @@ import android.view.ViewGroup;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
+import androidx.webkit.test.common.WebViewOnUiThread;
+import androidx.webkit.test.common.WebkitUtils;
+
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -73,7 +76,7 @@ public class WebSettingsCompatDarkModeTestBase<T extends WebViewTestActivity> {
     @Rule
     public final androidx.test.rule.ActivityTestRule<T> mActivityRule;
 
-    /** @noinspection deprecation*/
+    /** @noinspection deprecation */
     @SuppressWarnings("deprecation")
     public WebSettingsCompatDarkModeTestBase(@NonNull Class<T> activityClass) {
         mActivityRule = new androidx.test.rule.ActivityTestRule<>(activityClass);
@@ -129,8 +132,8 @@ public class WebSettingsCompatDarkModeTestBase<T extends WebViewTestActivity> {
         double major = 1.0 * maxEntry.getValue() / (sideLength * sideLength);
         assertTrue(
                 "The majority color should be at least 85% of the pixels,"
-                + " the actual value " + major,
-                 major > 0.85);
+                        + " the actual value " + major,
+                major > 0.85);
         return maxEntry.getKey();
     }
 

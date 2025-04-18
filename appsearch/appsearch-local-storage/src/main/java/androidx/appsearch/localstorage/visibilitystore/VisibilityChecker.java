@@ -15,8 +15,9 @@
  */
 package androidx.appsearch.localstorage.visibilitystore;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An interface for classes that validate document visibility data.

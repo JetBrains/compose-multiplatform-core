@@ -71,7 +71,7 @@ internal constructor(
     ): LocalSdkProvider {
         try {
             val sdkApiVersion = versionHandshake.perform(sdkClassLoader)
-            if (sdkApiVersion < ClientApiVersion.MIN_SUPPORTED.apiLevel) {
+            if (sdkApiVersion < ClientApiVersion.MIN_SUPPORTED_SDK_VERSION.apiLevel) {
                 throw LoadSdkCompatException(
                     LoadSdkCompatException.LOAD_SDK_NOT_FOUND,
                     "SDK built with unsupported version of sdkruntime-provider library"

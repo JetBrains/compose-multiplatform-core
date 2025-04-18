@@ -23,7 +23,6 @@ import androidx.compose.foundation.text.selection.Direction.ON
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.text.TextRange
-import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
@@ -33,7 +32,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@SmallTest
 @RunWith(JUnit4::class)
 class SelectionLayoutTest {
     @Test

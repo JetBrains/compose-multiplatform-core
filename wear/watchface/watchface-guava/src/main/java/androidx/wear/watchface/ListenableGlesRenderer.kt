@@ -160,7 +160,13 @@ constructor(
 /**
  * [ListenableFuture]-based compatibility wrapper around [Renderer.GlesRenderer]'s suspending
  * methods.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public abstract class ListenableGlesRenderer2<SharedAssetsT>
 @Throws(GlesException::class)
 @JvmOverloads

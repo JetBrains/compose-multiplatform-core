@@ -17,17 +17,16 @@
 package androidx.ink.rendering.android
 
 import android.graphics.Bitmap
-import androidx.annotation.RestrictTo
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 
 /**
- * Interface for a callback to allow the caller to provide a particular [Bitmap] for a texture URI.
+ * Interface for a callback to allow the caller to provide a particular [Bitmap] corresponding to a
+ * client-provided texture ID.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 @ExperimentalInkCustomBrushApi
 public fun interface TextureBitmapStore {
     /**
-     * Retrieve a [Bitmap] for the given texture URI. This may be called synchronously during
+     * Retrieve a [Bitmap] for the given texture id. This may be called synchronously during
      * `onDraw`, so loading of texture files from disk and decoding them into [Bitmap] objects
      * should be done on init. The result may be cached by consumers, so this should return a
      * deterministic result for a given input.
@@ -37,7 +36,7 @@ public fun interface TextureBitmapStore {
      * ignored, allowing for graceful fallback. It's recommended that implementations log when a
      * texture can not be loaded.
      *
-     * @return The texture bitmap, if any, associated with the given URI.
+     * @return The texture bitmap, if any, associated with the given id.
      */
-    public fun get(textureImageUri: String): Bitmap?
+    public operator fun get(clientTextureId: String): Bitmap?
 }

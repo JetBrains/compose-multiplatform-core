@@ -153,6 +153,7 @@ abstract class VerifyPlaygroundGradleConfigurationTask : DefaultTask() {
                 "org.gradle.daemon",
                 "android.builder.sdkDownload",
                 "android.suppressUnsupportedCompileSdk",
+                "androidx.constraints",
             )
 
         /**

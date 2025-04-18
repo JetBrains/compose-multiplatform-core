@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.res.Resources
 import android.os.Binder
 import android.util.LayoutDirection
 import android.util.Log
@@ -50,6 +51,7 @@ import androidx.window.extensions.embedding.ActivityRule as OEMActivityRule
 import androidx.window.extensions.embedding.ActivityRule.Builder as ActivityRuleBuilder
 import androidx.window.extensions.embedding.ActivityStack as OEMActivityStack
 import androidx.window.extensions.embedding.AnimationBackground as OEMEmbeddingAnimationBackground
+import androidx.window.extensions.embedding.AnimationParams as OEMEmbeddingAnimationParams
 import androidx.window.extensions.embedding.DividerAttributes as OEMDividerAttributes
 import androidx.window.extensions.embedding.DividerAttributes.RATIO_SYSTEM_DEFAULT
 import androidx.window.extensions.embedding.EmbeddingRule as OEMEmbeddingRule
@@ -119,6 +121,7 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
     internal fun translate(activityStacks: List<OEMActivityStack>): List<ActivityStack> =
         activityStacks.map(this::translate)
 
+    @Suppress("DEPRECATION") // To compat with device with extension versions 5 and 6.
     internal fun translate(splitAttributes: OEMSplitAttributes): SplitAttributes {
         val builder =
             SplitAttributes.Builder()
@@ -143,23 +146,44 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
                             )
                     }
                 )
-        if (extensionVersion >= 5) {
-            val animationBackground = splitAttributes.animationBackground
-            builder.setAnimationParams(
-                if (animationBackground is OEMEmbeddingAnimationBackground.ColorBackground) {
-                    EmbeddingAnimationParams(
-                        EmbeddingAnimationBackground.createColorBackground(
-                            animationBackground.color
+        if (extensionVersion in 5..6) {
+            val animationParams =
+                EmbeddingAnimationParams.Builder()
+                    .setAnimationBackground(
+                        translateToJetpackAnimationBackground(splitAttributes.animationBackground)
+                    )
+                    .build()
+            builder.setAnimationParams(animationParams)
+        }
+        if (extensionVersion >= 7) {
+            val animationParams =
+                EmbeddingAnimationParams.Builder()
+                    .setAnimationBackground(
+                        translateToJetpackAnimationBackground(
+                            splitAttributes.animationParams.animationBackground
                         )
                     )
-                } else {
-                    EmbeddingAnimationParams()
-                }
-            )
+                    .setOpenAnimation(
+                        translateToJetpackAnimationSpec(
+                            splitAttributes.animationParams.openAnimationResId
+                        )
+                    )
+                    .setCloseAnimation(
+                        translateToJetpackAnimationSpec(
+                            splitAttributes.animationParams.closeAnimationResId
+                        )
+                    )
+                    .setChangeAnimation(
+                        translateToJetpackAnimationSpec(
+                            splitAttributes.animationParams.changeAnimationResId
+                        )
+                    )
+                    .build()
+            builder.setAnimationParams(animationParams)
         }
         if (extensionVersion >= 6) {
             builder.setDividerAttributes(
-                translateDividerAttributes(splitAttributes.dividerAttributes)
+                translateToJetpackDividerAttributes(splitAttributes.dividerAttributes)
             )
         }
         return builder.build()
@@ -167,7 +191,7 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
 
     @RequiresWindowSdkExtension(OVERLAY_FEATURE_VERSION)
     @OptIn(ExperimentalWindowApi::class)
-    @SuppressLint("NewApi", "ClassVerificationFailure")
+    @SuppressLint("NewApi")
     internal fun translate(
         parentContainerInfo: OEMParentContainerInfo,
     ): ParentContainerInfo {
@@ -208,7 +232,9 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
         val windowLayoutInfo = params.parentWindowLayoutInfo
         val defaultSplitAttributes = params.defaultSplitAttributes
         val areDefaultConstraintsSatisfied = params.areDefaultConstraintsSatisfied()
-        val splitRuleTag = params.splitRuleTag
+        val splitRuleTag =
+            if (params.splitRuleTag == null || isTagGenerated(params.splitRuleTag!!)) null
+            else params.splitRuleTag
         val density =
             DensityCompatHelper.getInstance().density(taskConfiguration, taskWindowMetrics)
         val windowMetrics =
@@ -268,9 +294,7 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
                     )
                     .setShouldClearTop(rule.clearTop)
 
-            if (tag != null) {
-                builder.setTag(tag)
-            }
+            builder.setTag(tag ?: generateTag(rule))
             return builder.build()
         }
     }
@@ -289,13 +313,12 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
             )
         builder.setSticky(splitPinRule.isSticky)
         val tag = splitPinRule.tag
-        if (tag != null) {
-            builder.setTag(tag)
-        }
+        builder.setTag(tag ?: generateTag(splitPinRule))
         return builder.build()
     }
 
     @OptIn(ExperimentalWindowApi::class)
+    @Suppress("DEPRECATION") // To compat with device with extension versions 5 and 6.
     fun translateSplitAttributes(splitAttributes: SplitAttributes): OEMSplitAttributes {
         require(extensionVersion >= 2)
         // To workaround the "unused" error in ktlint. It is necessary to translate SplitAttributes
@@ -317,17 +340,40 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
                     }
                 )
         if (extensionVersion >= 5) {
-            builder
-                .setWindowAttributes(translateWindowAttributes())
-                .setAnimationBackground(
-                    translateAnimationBackground(
-                        splitAttributes.animationParams.animationBackground
-                    )
+            builder.setWindowAttributes(translateWindowAttributes())
+        }
+        if (extensionVersion in 5..6) {
+            builder.setAnimationBackground(
+                translateToOemAnimationBackground(
+                    splitAttributes.animationParams.animationBackground
                 )
+            )
+        }
+        if (extensionVersion >= 7) {
+            val animationParams =
+                OEMEmbeddingAnimationParams.Builder()
+                    .setAnimationBackground(
+                        translateToOemAnimationBackground(
+                            splitAttributes.animationParams.animationBackground
+                        )
+                    )
+                    .setOpenAnimationResId(
+                        translateToOemAnimationResId(splitAttributes.animationParams.openAnimation)
+                    )
+                    .setCloseAnimationResId(
+                        translateToOemAnimationResId(splitAttributes.animationParams.closeAnimation)
+                    )
+                    .setChangeAnimationResId(
+                        translateToOemAnimationResId(
+                            splitAttributes.animationParams.changeAnimation
+                        )
+                    )
+                    .build()
+            builder.setAnimationParams(animationParams)
         }
         if (extensionVersion >= 6) {
             builder.setDividerAttributes(
-                translateDividerAttributes(splitAttributes.dividerAttributes)
+                translateToOemDividerAttributes(splitAttributes.dividerAttributes)
             )
         }
         return builder.build()
@@ -399,9 +445,7 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
                     .setFinishPrimaryWithPlaceholder(
                         translateFinishBehavior(rule.finishPrimaryWithPlaceholder)
                     )
-            if (tag != null) {
-                builder.setTag(tag)
-            }
+            builder.setTag(tag ?: generateTag(rule))
             return builder.build()
         }
     }
@@ -433,9 +477,7 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
                 ActivityRuleBuilder(activityPredicate, intentPredicate)
                     .setShouldAlwaysExpand(rule.alwaysExpand)
             val tag = rule.tag
-            if (tag != null) {
-                builder.setTag(tag)
-            }
+            builder.setTag(tag ?: generateTag(rule))
             return builder.build()
         }
     }
@@ -455,7 +497,8 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
             .toSet()
     }
 
-    private fun translateAnimationBackground(
+    @RequiresWindowSdkExtension(5)
+    private fun translateToOemAnimationBackground(
         animationBackground: EmbeddingAnimationBackground
     ): OEMEmbeddingAnimationBackground {
         WindowSdkExtensions.getInstance().requireExtensionVersion(5)
@@ -466,8 +509,46 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
         }
     }
 
+    @RequiresWindowSdkExtension(5)
+    private fun translateToJetpackAnimationBackground(
+        animationBackground: OEMEmbeddingAnimationBackground
+    ): EmbeddingAnimationBackground {
+        WindowSdkExtensions.getInstance().requireExtensionVersion(5)
+        return if (animationBackground is OEMEmbeddingAnimationBackground.ColorBackground) {
+            EmbeddingAnimationBackground.createColorBackground(animationBackground.color)
+        } else {
+            EmbeddingAnimationBackground.DEFAULT
+        }
+    }
+
+    @RequiresWindowSdkExtension(7)
+    private fun translateToOemAnimationResId(
+        animationSpec: EmbeddingAnimationParams.AnimationSpec
+    ): Int {
+        WindowSdkExtensions.getInstance().requireExtensionVersion(7)
+        return if (animationSpec == EmbeddingAnimationParams.AnimationSpec.JUMP_CUT) {
+            Resources.ID_NULL
+        } else {
+            OEMEmbeddingAnimationParams.DEFAULT_ANIMATION_RESOURCES_ID
+        }
+    }
+
+    @RequiresWindowSdkExtension(7)
+    private fun translateToJetpackAnimationSpec(
+        animationResId: Int
+    ): EmbeddingAnimationParams.AnimationSpec {
+        WindowSdkExtensions.getInstance().requireExtensionVersion(7)
+        return if (animationResId == Resources.ID_NULL) {
+            EmbeddingAnimationParams.AnimationSpec.JUMP_CUT
+        } else {
+            EmbeddingAnimationParams.AnimationSpec.DEFAULT
+        }
+    }
+
     @RequiresWindowSdkExtension(6)
-    fun translateDividerAttributes(dividerAttributes: DividerAttributes): OEMDividerAttributes? {
+    fun translateToOemDividerAttributes(
+        dividerAttributes: DividerAttributes
+    ): OEMDividerAttributes? {
         WindowSdkExtensions.getInstance().requireExtensionVersion(6)
         if (dividerAttributes === DividerAttributes.NO_DIVIDER) {
             return null
@@ -485,14 +566,17 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
                 )
                 .setDividerColor(dividerAttributes.color)
                 .setWidthDp(dividerAttributes.widthDp)
-
-        if (
-            dividerAttributes is DraggableDividerAttributes &&
-                dividerAttributes.dragRange is SplitRatioDragRange
-        ) {
-            builder
-                .setPrimaryMinRatio(dividerAttributes.dragRange.minRatio)
-                .setPrimaryMaxRatio(dividerAttributes.dragRange.maxRatio)
+        if (dividerAttributes is DraggableDividerAttributes) {
+            if (dividerAttributes.dragRange is SplitRatioDragRange) {
+                builder
+                    .setPrimaryMinRatio(dividerAttributes.dragRange.minRatio)
+                    .setPrimaryMaxRatio(dividerAttributes.dragRange.maxRatio)
+            }
+            if (extensionVersion >= 7) {
+                builder.setDraggingToFullscreenAllowed(
+                    dividerAttributes.isDraggingToFullscreenAllowed
+                )
+            }
         }
         if (extensionVersion == 7 && dividerAttributes.widthDp == 0) {
             // A known compatibility issue causes incorrect rendering of 0-width divider in
@@ -503,7 +587,9 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
     }
 
     @RequiresWindowSdkExtension(6)
-    fun translateDividerAttributes(oemDividerAttributes: OEMDividerAttributes?): DividerAttributes {
+    fun translateToJetpackDividerAttributes(
+        oemDividerAttributes: OEMDividerAttributes?
+    ): DividerAttributes {
         WindowSdkExtensions.getInstance().requireExtensionVersion(6)
         if (oemDividerAttributes == null) {
             return DividerAttributes.NO_DIVIDER
@@ -529,6 +615,9 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
                                 oemDividerAttributes.primaryMinRatio,
                                 oemDividerAttributes.primaryMaxRatio,
                             )
+                    )
+                    .setDraggingToFullscreenAllowed(
+                        extensionVersion >= 7 && oemDividerAttributes.isDraggingToFullscreenAllowed
                     )
                     .build()
             // Default to DividerType.FIXED
@@ -651,7 +740,7 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
                 )
                 .build()
 
-        @SuppressLint("ClassVerificationFailure", "NewApi")
+        @SuppressLint("NewApi")
         private fun translateActivityPairPredicates(splitPairFilters: Set<SplitPairFilter>): Any {
             return predicateAdapter.buildPairPredicate(Activity::class, Activity::class) {
                 first: Activity,
@@ -660,7 +749,7 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
             }
         }
 
-        @SuppressLint("ClassVerificationFailure", "NewApi")
+        @SuppressLint("NewApi")
         private fun translateActivityIntentPredicates(splitPairFilters: Set<SplitPairFilter>): Any {
             return predicateAdapter.buildPairPredicate(Activity::class, Intent::class) {
                 first,
@@ -710,21 +799,21 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
                 attrs.splitType.value != 1.0f &&
                 attrs.layoutDirection in arrayOf(LEFT_TO_RIGHT, RIGHT_TO_LEFT, LOCALE)
 
-        @SuppressLint("ClassVerificationFailure", "NewApi")
+        @SuppressLint("NewApi")
         private fun translateActivityPredicates(activityFilters: Set<ActivityFilter>): Any {
             return predicateAdapter.buildPredicate(Activity::class) { activity ->
                 activityFilters.any { filter -> filter.matchesActivity(activity) }
             }
         }
 
-        @SuppressLint("ClassVerificationFailure", "NewApi")
+        @SuppressLint("NewApi")
         private fun translateIntentPredicates(activityFilters: Set<ActivityFilter>): Any {
             return predicateAdapter.buildPredicate(Intent::class) { intent ->
                 activityFilters.any { filter -> filter.matchesIntent(intent) }
             }
         }
 
-        @SuppressLint("ClassVerificationFailure", "NewApi")
+        @SuppressLint("NewApi")
         private fun translateParentMetricsPredicate(context: Context, splitRule: SplitRule): Any =
             predicateAdapter.buildPredicate(AndroidWindowMetrics::class) { windowMetrics ->
                 splitRule.checkParentMetrics(context, windowMetrics)
@@ -747,10 +836,20 @@ internal class EmbeddingAdapter(private val predicateAdapter: PredicateAdapter) 
     internal companion object {
         private val TAG = EmbeddingAdapter::class.simpleName
 
+        val RULE_TAG_PREFIX = "ae-gen:"
+
         /**
          * The default token of [SplitInfo], which provides compatibility for device prior to vendor
          * API level 3
          */
         val INVALID_SPLIT_INFO_TOKEN = Binder()
+
+        fun generateTag(rule: EmbeddingRule): String =
+            RULE_TAG_PREFIX + Integer.toHexString(rule.hashCode())
+
+        fun isTagGenerated(tag: String): Boolean {
+            val subTag = tag.removePrefix(RULE_TAG_PREFIX)
+            return subTag != tag && subTag.toIntOrNull(16) != null
+        }
     }
 }

@@ -18,13 +18,14 @@ package androidx.appsearch.localstorage.converter;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 
 import com.google.android.icing.proto.StatusProto;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Translates an {@link StatusProto.Code} into a {@link AppSearchResult.ResultCode}
@@ -39,7 +40,7 @@ public final class ResultCodeToProtoConverter {
     /** Converts an {@link StatusProto.Code} into a {@link AppSearchResult.ResultCode}. */
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     @AppSearchResult.ResultCode public static int toResultCode(
-            @NonNull StatusProto.Code statusCode) {
+            StatusProto.@NonNull Code statusCode) {
         switch (statusCode) {
             case OK:
                 return AppSearchResult.RESULT_OK;

@@ -21,12 +21,12 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("com.android.library")
     id("com.google.protobuf")
 }
@@ -63,22 +63,14 @@ android {
     defaultConfig {
         minSdk = 26
     }
-
-    sourceSets {
-        androidTest.assets.srcDirs += project.rootDir.absolutePath + "/../../golden/wear/wear-tiles-material"
-    }
-
-    defaultConfig {
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-    }
-
     namespace = "androidx.wear.tiles.material"
 }
 
 androidx {
     name = "Android Wear Tiles Material"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "Material components library for Android Wear Tiles."
     legacyDisableKotlinStrictApiMode = true
+    addGoldenImageAssets()
 }

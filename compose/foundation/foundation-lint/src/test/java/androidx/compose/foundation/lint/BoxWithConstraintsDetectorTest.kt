@@ -210,7 +210,7 @@ class BoxWithConstraintsDetectorTest : LintDetectorTest() {
         lint()
             .files(
                 kotlin(
-                    """
+                        """
                 package foo
 
                 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -225,8 +225,8 @@ class BoxWithConstraintsDetectorTest : LintDetectorTest() {
                     BoxWithConstraints(propagateMinConstraints = false, content = { /**/ })
                 }
                 """
-                        .trimIndent()
-                ),
+                    )
+                    .indented(),
                 BoxWithConstraintsStub,
                 Stubs.Composable,
             )
@@ -255,7 +255,7 @@ src/foo/test.kt:12: Error: BoxWithConstraints scope is not used [UnusedBoxWithCo
         lint()
             .files(
                 kotlin(
-                    """
+                        """
                 package foo
 
                 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -290,8 +290,8 @@ src/foo/test.kt:12: Error: BoxWithConstraints scope is not used [UnusedBoxWithCo
                     }
                 }
                 """
-                        .trimIndent()
-                ),
+                    )
+                    .indented(),
                 BoxWithConstraintsStub,
                 Stubs.Composable,
             )
@@ -304,7 +304,7 @@ src/foo/test.kt:12: Error: BoxWithConstraints scope is not used [UnusedBoxWithCo
         lint()
             .files(
                 kotlin(
-                    """
+                        """
                 package foo
 
                 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -321,8 +321,8 @@ src/foo/test.kt:12: Error: BoxWithConstraints scope is not used [UnusedBoxWithCo
                     }
                 }
                 """
-                        .trimIndent()
-                ),
+                    )
+                    .indented(),
                 BoxWithConstraintsStub,
                 Stubs.Composable,
             )
@@ -335,7 +335,7 @@ src/foo/test.kt:12: Error: BoxWithConstraints scope is not used [UnusedBoxWithCo
         lint()
             .files(
                 kotlin(
-                    """
+                        """
                 package foo
 
                 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -369,8 +369,8 @@ src/foo/test.kt:12: Error: BoxWithConstraints scope is not used [UnusedBoxWithCo
                     }
                 }
                 """
-                        .trimIndent()
-                ),
+                    )
+                    .indented(),
                 BoxWithConstraintsStub,
                 Stubs.Composable,
             )
@@ -383,7 +383,7 @@ src/foo/test.kt:12: Error: BoxWithConstraints scope is not used [UnusedBoxWithCo
         lint()
             .files(
                 kotlin(
-                    """
+                        """
                     package foo
 
                     import androidx.compose.foundation.layout.BoxWithConstraints
@@ -398,8 +398,8 @@ src/foo/test.kt:12: Error: BoxWithConstraints scope is not used [UnusedBoxWithCo
                         }
                     }
                 """
-                        .trimIndent()
-                ),
+                    )
+                    .indented(),
                 BoxWithConstraintsStub,
                 ExternalModuleFunctionStub.bytecode,
                 Stubs.Composable

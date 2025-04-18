@@ -21,8 +21,9 @@ import android.media.AudioRecord;
 import android.media.MediaCodecInfo;
 import android.util.Range;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper class to avoid verification errors for methods introduced in Android 12 (API 31).
@@ -37,7 +38,7 @@ public final class Api31Impl {
      * Returns the minimum number of input channels supported for
      * {@link MediaCodecInfo.AudioCapabilities}.
      */
-    public static int getMinInputChannelCount(@NonNull MediaCodecInfo.AudioCapabilities caps) {
+    public static int getMinInputChannelCount(MediaCodecInfo.@NonNull AudioCapabilities caps) {
         return caps.getMinInputChannelCount();
     }
 
@@ -45,16 +46,15 @@ public final class Api31Impl {
      * Returns an array of ranges representing the number of input channels supported for
      * {@link MediaCodecInfo.AudioCapabilities}.
      */
-    @NonNull
-    public static Range<Integer>[] getInputChannelCountRanges(
-            @NonNull MediaCodecInfo.AudioCapabilities caps) {
+    public static Range<Integer> @NonNull [] getInputChannelCountRanges(
+            MediaCodecInfo.@NonNull AudioCapabilities caps) {
         return caps.getInputChannelCountRanges();
     }
 
     /**
      * Sets the context used for attribution on an {@link AudioRecord}.
      */
-    public static void setContext(@NonNull AudioRecord.Builder builder, @NonNull Context context) {
+    public static void setContext(AudioRecord.@NonNull Builder builder, @NonNull Context context) {
         builder.setContext(context);
     }
 }

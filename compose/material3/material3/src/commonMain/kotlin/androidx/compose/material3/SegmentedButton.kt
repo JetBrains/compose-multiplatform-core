@@ -89,9 +89,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://m3.material.io/components/segmented-buttons/overview" class="external"
- * target="_blank">Material Segmented Button</a>. Segmented buttons help people select options,
- * switch views, or sort elements.
+ * [Material Design segmented Button](https://m3.material.io/components/segmented-buttons/overview)
+ *
+ * Segmented buttons help people select options, switch views, or sort elements.
  *
  * A default Toggleable Segmented Button. Also known as Outlined Segmented Button. See
  * [Modifier.toggleable].
@@ -170,9 +170,9 @@ fun MultiChoiceSegmentedButtonRowScope.SegmentedButton(
 }
 
 /**
- * <a href="https://m3.material.io/components/segmented-buttons/overview" class="external"
- * target="_blank">Material Segmented Button</a>. Segmented buttons help people select options,
- * switch views, or sort elements.
+ * [Material Design segmented button](https://m3.material.io/components/segmented-buttons/overview)
+ *
+ * Segmented buttons help people select options, switch views, or sort elements.
  *
  * A default Toggleable Segmented Button. Also known as Outlined Segmented Button. See
  * [Modifier.selectable].
@@ -311,8 +311,7 @@ fun SingleChoiceSegmentedButtonRowScope.SegmentedButton(
 }
 
 /**
- * <a href="https://m3.material.io/components/segmented-buttons/overview" class="external"
- * target="_blank">Material Segmented Button</a>.
+ * [Material Design segmented button](https://m3.material.io/components/segmented-buttons/overview)
  *
  * A Layout to correctly position and size [SegmentedButton]s in a Row. It handles overlapping items
  * so that strokes of the item are correctly on top of each other. [SingleChoiceSegmentedButtonRow]
@@ -346,8 +345,7 @@ fun SingleChoiceSegmentedButtonRow(
 }
 
 /**
- * <a href="https://m3.material.io/components/segmented-buttons/overview" class="external"
- * target="_blank">Material Segmented Button</a>.
+ * [Material Design segmented button](https://m3.material.io/components/segmented-buttons/overview)
  *
  * A Layout to correctly position, size, and add semantics to [SegmentedButton]s in a Row. It
  * handles overlapping items so that strokes of the item are correctly on top of each other.

@@ -16,7 +16,7 @@
 
 package androidx.camera.core;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * {@code InitializationException} is thrown when a failure occurs during an initialization

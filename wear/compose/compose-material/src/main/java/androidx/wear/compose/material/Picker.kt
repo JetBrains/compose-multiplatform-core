@@ -128,7 +128,7 @@ import kotlinx.coroutines.launch
     level = DeprecationLevel.HIDDEN
 )
 @Composable
-fun Picker(
+public fun Picker(
     state: PickerState,
     contentDescription: String?,
     modifier: Modifier = Modifier,
@@ -223,7 +223,7 @@ fun Picker(
  */
 @OptIn(ExperimentalWearFoundationApi::class)
 @Composable
-fun Picker(
+public fun Picker(
     state: PickerState,
     contentDescription: String?,
     modifier: Modifier = Modifier,
@@ -365,7 +365,7 @@ public fun Picker(
     flingBehavior: FlingBehavior = PickerDefaults.flingBehavior(state),
     userScrollEnabled: Boolean = true,
     option: @Composable PickerScope.(optionIndex: Int) -> Unit
-) =
+): Unit =
     Picker(
         state = state,
         contentDescription = contentDescription,
@@ -445,7 +445,7 @@ public fun Picker(
     gradientColor: Color = MaterialTheme.colors.background,
     flingBehavior: FlingBehavior = PickerDefaults.flingBehavior(state),
     option: @Composable PickerScope.(optionIndex: Int) -> Unit
-) =
+): Unit =
     Picker(
         state = state,
         contentDescription = contentDescription,
@@ -515,7 +515,7 @@ public fun Picker(
     gradientColor: Color = MaterialTheme.colors.background,
     flingBehavior: FlingBehavior = PickerDefaults.flingBehavior(state),
     option: @Composable PickerScope.(optionIndex: Int) -> Unit
-) =
+): Unit =
     Picker(
         state = state,
         contentDescription = null,
@@ -596,7 +596,7 @@ constructor(
     /*@IntRange(from = 1)*/
     initialNumberOfOptions: Int,
     initiallySelectedOption: Int = 0,
-    val repeatItems: Boolean = true
+    public val repeatItems: Boolean = true
 ) : ScrollableState {
     init {
         verifyNumberOfOptions(initialNumberOfOptions)
@@ -604,7 +604,7 @@ constructor(
 
     private var _numberOfOptions by mutableIntStateOf(initialNumberOfOptions)
 
-    var numberOfOptions
+    public var numberOfOptions: Int
         get() = _numberOfOptions
         set(newNumberOfOptions) {
             verifyNumberOfOptions(newNumberOfOptions)
@@ -671,7 +671,7 @@ constructor(
 
     public companion object {
         /** The default [Saver] implementation for [PickerState]. */
-        val Saver =
+        public val Saver: Saver<PickerState, Any> =
             listSaver<PickerState, Any?>(
                 save = { listOf(it.numberOfOptions, it.selectedOption, it.repeatItems) },
                 restore = { saved ->
@@ -814,7 +814,7 @@ public object PickerDefaults {
      * Default Picker gradient ratio - the proportion of the Picker height allocated to each of the
      * of the top and bottom gradients.
      */
-    public val DefaultGradientRatio = 0.33f
+    public val DefaultGradientRatio: Float = 0.33f
 }
 
 /** Receiver scope which is used by [Picker]. */

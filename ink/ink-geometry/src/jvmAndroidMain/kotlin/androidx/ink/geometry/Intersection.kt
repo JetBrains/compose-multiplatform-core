@@ -118,7 +118,7 @@ public object Intersection {
     @JvmStatic
     public fun Vec.intersects(mesh: PartitionedMesh, meshToPoint: AffineTransform): Boolean {
         return nativeMeshVecIntersects(
-            nativeMeshAddress = mesh.getNativeAddress(),
+            nativeMeshAddress = mesh.nativePointer,
             vecX = this.x,
             vecY = this.y,
             meshToVecA = meshToPoint.m00,
@@ -219,7 +219,7 @@ public object Intersection {
     @JvmStatic
     public fun Segment.intersects(mesh: PartitionedMesh, meshToSegment: AffineTransform): Boolean {
         return nativeMeshSegmentIntersects(
-            nativeMeshAddress = mesh.getNativeAddress(),
+            nativeMeshAddress = mesh.nativePointer,
             segmentStartX = this.start.x,
             segmentStartY = this.start.y,
             segmentEndX = this.end.x,
@@ -314,7 +314,7 @@ public object Intersection {
         meshToTriangle: AffineTransform
     ): Boolean {
         return nativeMeshTriangleIntersects(
-            nativeMeshAddress = mesh.getNativeAddress(),
+            nativeMeshAddress = mesh.nativePointer,
             triangleP0X = this.p0.x,
             triangleP0Y = this.p0.y,
             triangleP1X = this.p1.x,
@@ -381,7 +381,7 @@ public object Intersection {
     @JvmStatic
     public fun Box.intersects(mesh: PartitionedMesh, meshToBox: AffineTransform): Boolean {
         return nativeMeshBoxIntersects(
-            nativeMeshAddress = mesh.getNativeAddress(),
+            nativeMeshAddress = mesh.nativePointer,
             boxXMin = this.xMin,
             boxYMin = this.yMin,
             boxXMax = this.xMax,
@@ -437,7 +437,7 @@ public object Intersection {
         meshToParallelogram: AffineTransform,
     ): Boolean {
         return nativeMeshParallelogramIntersects(
-            nativeMeshAddress = mesh.getNativeAddress(),
+            nativeMeshAddress = mesh.nativePointer,
             parallelogramCenterX = this.center.x,
             parallelogramCenterY = this.center.y,
             parallelogramWidth = this.width,
@@ -468,8 +468,8 @@ public object Intersection {
         otherToCommonTransform: AffineTransform,
     ): Boolean {
         return nativeMeshPartitionedMeshIntersects(
-            thisPartitionedMeshAddress = this.getNativeAddress(),
-            otherPartitionedMeshAddress = other.getNativeAddress(),
+            thisPartitionedMeshAddress = this.nativePointer,
+            otherPartitionedMeshAddress = other.nativePointer,
             thisToCommonTransformA = thisToCommonTransForm.m00,
             thisToCommonTransformB = thisToCommonTransForm.m10,
             thisToCommonTransformC = thisToCommonTransForm.m20,

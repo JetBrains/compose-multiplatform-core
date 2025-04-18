@@ -19,11 +19,12 @@ package androidx.wear.ongoing;
 import android.app.Notification;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.app.NotificationCompat;
 import androidx.versionedparcelable.ParcelUtils;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Class used to manage Ongoing Activity information as part of a Bundle or Notification.
@@ -47,8 +48,7 @@ public class SerializationHelper {
      *                     Activity.
      * @return the data, or null of the notification doesn't contain Ongoing Activity data.
      */
-    @Nullable
-    public static OngoingActivity create(@NonNull Notification notification) {
+    public static @Nullable OngoingActivity create(@NonNull Notification notification) {
         return create(notification.extras);
     }
 
@@ -58,8 +58,7 @@ public class SerializationHelper {
      * @param bundle the bundle that may contain information about a Ongoing Activity.
      * @return the data, or null of the Bundle doesn't contain Ongoing Activity data.
      */
-    @Nullable
-    public static OngoingActivity create(@NonNull Bundle bundle) {
+    public static @Nullable OngoingActivity create(@NonNull Bundle bundle) {
         OngoingActivityData data = createInternal(bundle);
         return data == null ? null : new OngoingActivity(data);
     }
@@ -80,8 +79,7 @@ public class SerializationHelper {
      * Add the information from the given OngoingActivityData into the notification builder.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @NonNull
-    static NotificationCompat.Builder extend(@NonNull NotificationCompat.Builder builder,
+    static NotificationCompat.@NonNull Builder extend(NotificationCompat.@NonNull Builder builder,
             @NonNull OngoingActivityData data) {
         ParcelUtils.putVersionedParcelable(builder.getExtras(), EXTRA_ONGOING_ACTIVITY,
                 data);
@@ -93,8 +91,7 @@ public class SerializationHelper {
      * and build the notification.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @NonNull
-    static Notification extendAndBuild(@NonNull NotificationCompat.Builder builder,
+    static @NonNull Notification extendAndBuild(NotificationCompat.@NonNull Builder builder,
             @NonNull OngoingActivityData data) {
         Notification notification = extend(builder, data).build();
         // TODO(http://b/169394642): Undo this if/when the bug is fixed.
@@ -109,8 +106,7 @@ public class SerializationHelper {
      * Deserialize a OngoingActivityData from a notification.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @Nullable
-    static OngoingActivityData createInternal(@NonNull Notification notification) {
+    static @Nullable OngoingActivityData createInternal(@NonNull Notification notification) {
         return createInternal(notification.extras);
     }
 
@@ -118,8 +114,7 @@ public class SerializationHelper {
      * Deserialize a OngoingActivityData from a bundle.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @Nullable
-    static OngoingActivityData createInternal(@NonNull Bundle bundle) {
+    static @Nullable OngoingActivityData createInternal(@NonNull Bundle bundle) {
         return ParcelUtils.getVersionedParcelable(bundle, EXTRA_ONGOING_ACTIVITY);
     }
 

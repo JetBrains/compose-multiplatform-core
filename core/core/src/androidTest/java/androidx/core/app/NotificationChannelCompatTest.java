@@ -40,7 +40,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 
-
 @RunWith(AndroidJUnit4.class)
 @SmallTest
 public class NotificationChannelCompatTest {

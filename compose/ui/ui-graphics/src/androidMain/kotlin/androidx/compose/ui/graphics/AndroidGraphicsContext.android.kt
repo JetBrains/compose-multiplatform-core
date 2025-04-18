@@ -62,7 +62,7 @@ private class AndroidGraphicsContext(private val ownerView: ViewGroup) : Graphic
                         // NO-OP
                     }
 
-                    @Suppress("OVERRIDE_DEPRECATION")
+                    @Suppress("OVERRIDE_DEPRECATION") // b/407491706
                     override fun onLowMemory() {
                         // NO-OP
                     }

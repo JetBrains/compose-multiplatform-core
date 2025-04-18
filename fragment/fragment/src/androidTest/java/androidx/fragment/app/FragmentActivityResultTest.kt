@@ -257,6 +257,7 @@ class LaunchMultipleActivitiesFragment : Fragment() {
     val launcherInfoMap: MutableMap<Int, String> = mutableMapOf()
     val onActivityResultCountDownLatch = CountDownLatch(3)
 
+    @Suppress("OVERRIDE_DEPRECATION") // b/407500169
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 

@@ -42,7 +42,7 @@ class AudioEncoderConfigDefaultResolverTest {
     }
 
     private val defaultAudioSpec = AudioSpec.builder().build()
-    private val defaultAudioSettings = AudioSettingsDefaultResolver(defaultAudioSpec).get()
+    private val defaultAudioSettings = AudioSettingsDefaultResolver(defaultAudioSpec, null).get()
 
     @Test
     fun defaultAudioSpecProducesValidSettings() {
@@ -64,7 +64,10 @@ class AudioEncoderConfigDefaultResolverTest {
         assertThat(resolvedAudioConfig.mimeType).isEqualTo(MIME_TYPE)
         assertThat(resolvedAudioConfig.profile).isEqualTo(ENCODER_PROFILE)
         assertThat(resolvedAudioConfig.channelCount).isEqualTo(defaultAudioSettings.channelCount)
-        assertThat(resolvedAudioConfig.sampleRate).isEqualTo(defaultAudioSettings.sampleRate)
+        assertThat(resolvedAudioConfig.captureSampleRate)
+            .isEqualTo(defaultAudioSettings.captureSampleRate)
+        assertThat(resolvedAudioConfig.encodeSampleRate)
+            .isEqualTo(defaultAudioSettings.encodeSampleRate)
         assertThat(resolvedAudioConfig.bitrate).isGreaterThan(0)
     }
 
@@ -120,10 +123,15 @@ class AudioEncoderConfigDefaultResolverTest {
                     defaultAudioSettings
                 )
                 .get()
-        val defaultSampleRate = defaultConfig.sampleRate
+        val defaultSampleRate = defaultConfig.captureSampleRate
 
+        val higherSampleRate = defaultSampleRate * 2
         val higherSampleRateAudioSettings =
-            defaultAudioSettings.toBuilder().setSampleRate(defaultSampleRate * 2).build()
+            defaultAudioSettings
+                .toBuilder()
+                .setCaptureSampleRate(higherSampleRate)
+                .setEncodeSampleRate(higherSampleRate)
+                .build()
 
         val higherSampleRateConfig =
             AudioEncoderConfigDefaultResolver(

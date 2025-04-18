@@ -50,7 +50,7 @@ public fun CurvedScope.curvedBox(
     radialAlignment: CurvedAlignment.Radial? = null,
     angularAlignment: CurvedAlignment.Angular? = null,
     contentBuilder: CurvedScope.() -> Unit
-) =
+): Unit =
     add(
         CurvedBoxChild(curvedLayoutDirection, radialAlignment, angularAlignment, contentBuilder),
         modifier

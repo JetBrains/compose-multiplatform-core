@@ -135,6 +135,8 @@ data class WorkSpec(
     @ColumnInfo(name = "stop_reason", defaultValue = "${WorkInfo.STOP_REASON_NOT_STOPPED}")
     val stopReason: Int = WorkInfo.STOP_REASON_NOT_STOPPED,
     @ColumnInfo(name = "trace_tag") var traceTag: String? = null,
+    @ColumnInfo(name = "backoff_on_system_interruptions")
+    var backOffOnSystemInterruptions: Boolean? = false,
 ) {
     constructor(
         id: String,
@@ -168,6 +170,7 @@ data class WorkSpec(
         nextScheduleTimeOverrideGeneration = other.nextScheduleTimeOverrideGeneration,
         stopReason = other.stopReason,
         traceTag = other.traceTag,
+        backOffOnSystemInterruptions = other.backOffOnSystemInterruptions,
     )
 
     /** @param backoffDelayDuration The backoff delay duration in milliseconds */

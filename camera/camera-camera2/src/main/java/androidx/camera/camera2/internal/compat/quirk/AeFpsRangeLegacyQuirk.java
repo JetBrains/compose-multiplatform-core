@@ -19,11 +19,12 @@ package androidx.camera.camera2.internal.compat.quirk;
 import android.hardware.camera2.CameraCharacteristics;
 import android.util.Range;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.internal.compat.quirk.AeFpsRangeQuirk;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * <p>QuirkSummary
@@ -41,25 +42,23 @@ import androidx.camera.core.internal.compat.quirk.AeFpsRangeQuirk;
  */
 public class AeFpsRangeLegacyQuirk implements AeFpsRangeQuirk {
 
-    @Nullable
-    private final Range<Integer> mAeFpsRange;
+    private final @Nullable Range<Integer> mAeFpsRange;
 
     public AeFpsRangeLegacyQuirk(
-            @NonNull final CameraCharacteristicsCompat cameraCharacteristicsCompat) {
+            final @NonNull CameraCharacteristicsCompat cameraCharacteristicsCompat) {
         final Range<Integer>[] availableFpsRanges = cameraCharacteristicsCompat.get(
                 CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
         mAeFpsRange = pickSuitableFpsRange(availableFpsRanges);
     }
 
-    static boolean load(@NonNull final CameraCharacteristicsCompat cameraCharacteristicsCompat) {
+    static boolean load(final @NonNull CameraCharacteristicsCompat cameraCharacteristicsCompat) {
         final Integer level = cameraCharacteristicsCompat.get(
                 CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
         return level != null && level == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY;
     }
 
-    @Nullable
-    private Range<Integer> pickSuitableFpsRange(
-            @Nullable final Range<Integer>[] availableFpsRanges) {
+    private @Nullable Range<Integer> pickSuitableFpsRange(
+            final Range<Integer> @Nullable [] availableFpsRanges) {
         if (availableFpsRanges == null || availableFpsRanges.length == 0) {
             return null;
         }
@@ -88,8 +87,7 @@ public class AeFpsRangeLegacyQuirk implements AeFpsRangeQuirk {
      * returns wrong ranges whose values were multiplied by 1000. So we need to convert them to the
      * correct values.
      */
-    @NonNull
-    private Range<Integer> getCorrectedFpsRange(@NonNull final Range<Integer> fpsRange) {
+    private @NonNull Range<Integer> getCorrectedFpsRange(final @NonNull Range<Integer> fpsRange) {
         int newUpper = fpsRange.getUpper();
         int newLower = fpsRange.getLower();
         if (fpsRange.getUpper() >= 1000) {
@@ -110,9 +108,8 @@ public class AeFpsRangeLegacyQuirk implements AeFpsRangeQuirk {
      * 2. Range lower contains the smallest supported value so that it can adapt as much as
      * possible to low light conditions.
      */
-    @NonNull
     @Override
-    public Range<Integer> getTargetAeFpsRange() {
+    public @NonNull Range<Integer> getTargetAeFpsRange() {
         return mAeFpsRange != null ? mAeFpsRange : StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
     }
 }

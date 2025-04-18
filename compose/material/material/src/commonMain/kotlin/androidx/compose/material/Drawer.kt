@@ -422,8 +422,8 @@ fun rememberBottomDrawerState(
 }
 
 /**
- * <a href="https://material.io/components/navigation-drawer#modal-drawer" class="external"
- * target="_blank">Material Design modal navigation drawer</a>.
+ * [Material Design modal navigation
+ * drawer](https://material.io/components/navigation-drawer#modal-drawer)
  *
  * Modal navigation drawers block interaction with the rest of an app’s content with a scrim. They
  * are elevated above most of the app’s UI and don’t affect the screen’s layout grid.
@@ -549,8 +549,8 @@ fun ModalDrawer(
 }
 
 /**
- * <a href="https://material.io/components/navigation-drawer#bottom-drawer" class="external"
- * target="_blank">Material Design bottom navigation drawer</a>.
+ * [Material Design bottom navigation
+ * drawer](https://material.io/components/navigation-drawer#bottom-drawer)
  *
  * Bottom navigation drawers are modal drawers that are anchored to the bottom of the screen instead
  * of the left or right edge. They are only used with bottom app bars.

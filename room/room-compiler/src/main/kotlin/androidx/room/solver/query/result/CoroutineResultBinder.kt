@@ -19,18 +19,13 @@ package androidx.room.solver.query.result
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
-import androidx.room.compiler.codegen.XMemberName.Companion.companionMember
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.box
 import androidx.room.compiler.processing.XType
-import androidx.room.ext.AndroidTypeNames
-import androidx.room.ext.CallableTypeSpecBuilder
 import androidx.room.ext.InvokeWithLambdaParameter
 import androidx.room.ext.LambdaSpec
-import androidx.room.ext.RoomCoroutinesTypeNames
 import androidx.room.ext.RoomMemberNames.DB_UTIL_PERFORM_SUSPENDING
-import androidx.room.ext.RoomMemberNames.DB_UTIL_QUERY
 import androidx.room.ext.SQLiteDriverTypeNames
 import androidx.room.solver.CodeGenScope
 
@@ -40,115 +35,6 @@ class CoroutineResultBinder(
     private val continuationParamName: String,
     adapter: QueryResultAdapter?
 ) : QueryResultBinder(adapter) {
-
-    override fun convertAndReturn(
-        roomSQLiteQueryVar: String,
-        canReleaseQuery: Boolean,
-        dbProperty: XPropertySpec,
-        inTransaction: Boolean,
-        scope: CodeGenScope
-    ) {
-        val cancellationSignalVar = scope.getTmpVar("_cancellationSignal")
-        scope.builder.addLocalVariable(
-            name = cancellationSignalVar,
-            typeName = AndroidTypeNames.CANCELLATION_SIGNAL,
-            assignExpr = XCodeBlock.ofNewInstance(AndroidTypeNames.CANCELLATION_SIGNAL),
-        )
-
-        val callableImpl =
-            CallableTypeSpecBuilder(typeArg.asTypeName()) {
-                    addCode(
-                        XCodeBlock.builder()
-                            .apply {
-                                createRunQueryAndReturnStatements(
-                                    roomSQLiteQueryVar = roomSQLiteQueryVar,
-                                    canReleaseQuery = canReleaseQuery,
-                                    dbProperty = dbProperty,
-                                    inTransaction = inTransaction,
-                                    scope = scope,
-                                    cancellationSignalVar = "null"
-                                )
-                            }
-                            .build()
-                    )
-                }
-                .build()
-
-        // For Java there is an extra param to pass, the continuation.
-        val formatExpr =
-            when (scope.language) {
-                CodeLanguage.JAVA -> "return %M(%N, %L, %L, %L, %L)"
-                CodeLanguage.KOTLIN -> "return %M(%N, %L, %L, %L)"
-            }
-        val args =
-            buildList {
-                    add(
-                        RoomCoroutinesTypeNames.COROUTINES_ROOM.companionMember(
-                            "execute",
-                            isJvmStatic = true
-                        )
-                    )
-                    add(dbProperty)
-                    add(if (inTransaction) "true" else "false")
-                    add(cancellationSignalVar)
-                    add(callableImpl)
-                    if (scope.language == CodeLanguage.JAVA) {
-                        add(continuationParamName)
-                    }
-                }
-                .toTypedArray()
-        scope.builder.addStatement(formatExpr, *args)
-    }
-
-    private fun XCodeBlock.Builder.createRunQueryAndReturnStatements(
-        roomSQLiteQueryVar: String,
-        canReleaseQuery: Boolean,
-        dbProperty: XPropertySpec,
-        inTransaction: Boolean,
-        scope: CodeGenScope,
-        cancellationSignalVar: String
-    ) {
-        val transactionWrapper =
-            if (inTransaction) {
-                transactionWrapper(dbProperty.name)
-            } else {
-                null
-            }
-        val shouldCopyCursor = adapter?.shouldCopyCursor() == true
-        val outVar = scope.getTmpVar("_result")
-        val cursorVar = scope.getTmpVar("_cursor")
-        transactionWrapper?.beginTransactionWithControlFlow()
-        addLocalVariable(
-            name = cursorVar,
-            typeName = AndroidTypeNames.CURSOR,
-            assignExpr =
-                XCodeBlock.of(
-                    "%M(%N, %L, %L, %L)",
-                    DB_UTIL_QUERY,
-                    dbProperty,
-                    roomSQLiteQueryVar,
-                    if (shouldCopyCursor) "true" else "false",
-                    cancellationSignalVar
-                )
-        )
-        beginControlFlow("try").apply {
-            val adapterScope = scope.fork()
-            adapter?.convert(outVar, cursorVar, adapterScope)
-            add(adapterScope.generate())
-            transactionWrapper?.commitTransaction()
-            addStatement("return %L", outVar)
-        }
-        nextControlFlow("finally").apply {
-            addStatement("%L.close()", cursorVar)
-            if (canReleaseQuery) {
-                addStatement("%L.release()", roomSQLiteQueryVar)
-            }
-        }
-        endControlFlow()
-        transactionWrapper?.endTransactionWithControlFlow()
-    }
-
-    override fun isMigratedToDriver(): Boolean = adapter?.isMigratedToDriver() == true
 
     override fun convertAndReturn(
         sqlQueryVar: String,

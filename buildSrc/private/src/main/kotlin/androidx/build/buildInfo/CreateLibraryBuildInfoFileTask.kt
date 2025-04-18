@@ -29,7 +29,6 @@ import androidx.build.getProjectZipPath
 import androidx.build.getSupportRootFolder
 import androidx.build.gitclient.getHeadShaProvider
 import androidx.build.jetpad.LibraryBuildInfoFile
-import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.google.common.annotations.VisibleForTesting
 import com.google.gson.GsonBuilder
 import java.io.File
@@ -136,7 +135,9 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
         }
         if (!resolvedOutputFile.exists()) {
             if (!resolvedOutputFile.createNewFile()) {
-                throw RuntimeException("Failed to create output dependency dump file: $outputFile")
+                throw RuntimeException(
+                    "Failed to create output dependency dump file: $resolvedOutputFile"
+                )
             }
         }
 
@@ -356,7 +357,7 @@ private fun Project.createTaskForComponent(
             kmpChildren = kmpChildren,
             testModuleNames = testModuleNames,
         )
-    anchorTask.dependsOn(task)
+    anchorTask.configure { it.dependsOn(task) }
     if (!isolatedProjectEnabled) {
         addTaskToAggregateBuildInfoFileTask(task)
     }
@@ -398,9 +399,17 @@ private fun Project.createBuildInfoTask(
         shouldPublishDocs = shouldPublishDocs && kmpTaskSuffix == "",
         isKmp = isKmp,
         target = buildTarget,
-        kmpChildren = kmpChildren,
+        kmpChildren = kmpChildren.map { modifyKmpChildrenForBuildInfo(it) }.toSet(),
         testModuleNames = testModuleNames,
     )
+}
+
+private fun modifyKmpChildrenForBuildInfo(kmpChild: String): String {
+    // Jetbrains converts the "wasmJs" target to "wasm-js", which does not match the convention
+    // for other KMP targets. This is tracked in https://youtrack.jetbrains.com/issue/KT-70072
+    // For now, handle this case separately.
+    val specialMapping = mapOf("wasmJs" to "wasm-js")
+    return specialMapping[kmpChild] ?: kmpChild.lowercase()
 }
 
 private fun dependenciesOnKmpVariants(component: SoftwareComponentInternal) =

@@ -47,14 +47,14 @@ public class MyDao_Impl(
           }
           _argIndex++
         }
-        val _cursorIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
-        val _cursorIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
+        val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
+        val _columnIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
         val _result: MyEntity?
         if (_stmt.step()) {
           val _tmpPk: Int
-          _tmpPk = _stmt.getLong(_cursorIndexOfPk).toInt()
+          _tmpPk = _stmt.getLong(_columnIndexOfPk).toInt()
           val _tmpOther: String
-          _tmpOther = _stmt.getText(_cursorIndexOfOther)
+          _tmpOther = _stmt.getText(_columnIndexOfOther)
           _result = MyEntity(_tmpPk,_tmpOther)
         } else {
           _result = null
@@ -85,14 +85,14 @@ public class MyDao_Impl(
           }
           _argIndex++
         }
-        val _cursorIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
-        val _cursorIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
+        val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
+        val _columnIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
         val _result: MyEntity?
         if (_stmt.step()) {
           val _tmpPk: Int
-          _tmpPk = _stmt.getLong(_cursorIndexOfPk).toInt()
+          _tmpPk = _stmt.getLong(_columnIndexOfPk).toInt()
           val _tmpOther: String
-          _tmpOther = _stmt.getText(_cursorIndexOfOther)
+          _tmpOther = _stmt.getText(_columnIndexOfOther)
           _result = MyEntity(_tmpPk,_tmpOther)
         } else {
           _result = null
@@ -123,14 +123,14 @@ public class MyDao_Impl(
           }
           _argIndex++
         }
-        val _cursorIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
-        val _cursorIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
+        val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
+        val _columnIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
         val _result: MyEntity?
         if (_stmt.step()) {
           val _tmpPk: Int
-          _tmpPk = _stmt.getLong(_cursorIndexOfPk).toInt()
+          _tmpPk = _stmt.getLong(_columnIndexOfPk).toInt()
           val _tmpOther: String
-          _tmpOther = _stmt.getText(_cursorIndexOfOther)
+          _tmpOther = _stmt.getText(_columnIndexOfOther)
           _result = MyEntity(_tmpPk,_tmpOther)
         } else {
           _result = null
@@ -161,14 +161,14 @@ public class MyDao_Impl(
           }
           _argIndex++
         }
-        val _cursorIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
-        val _cursorIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
+        val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
+        val _columnIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
         val _result: MyEntity?
         if (_stmt.step()) {
           val _tmpPk: Int
-          _tmpPk = _stmt.getLong(_cursorIndexOfPk).toInt()
+          _tmpPk = _stmt.getLong(_columnIndexOfPk).toInt()
           val _tmpOther: String
-          _tmpOther = _stmt.getText(_cursorIndexOfOther)
+          _tmpOther = _stmt.getText(_columnIndexOfOther)
           _result = MyEntity(_tmpPk,_tmpOther)
         } else {
           _result = null

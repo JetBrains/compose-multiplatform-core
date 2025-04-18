@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:JvmName("LocalLifecycleOwnerKt")
+@file:JvmName("LocalSavedStateRegistryOwnerKt")
 
 package androidx.savedstate.compose
 

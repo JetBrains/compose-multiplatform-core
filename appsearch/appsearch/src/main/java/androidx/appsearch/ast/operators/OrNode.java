@@ -35,6 +35,8 @@ import java.util.Objects;
  */
 @ExperimentalAppSearchApi
 @FlaggedApi(Flags.FLAG_ENABLE_ABSTRACT_SYNTAX_TREES)
+// TODO(b/384721898): Switch to JSpecify annotations
+@SuppressWarnings("JSpecifyNullness")
 public final class OrNode implements Node{
     private List<Node> mChildren;
 
@@ -71,8 +73,7 @@ public final class OrNode implements Node{
      * Get the list of nodes being logically ORed over by this node.
      */
     @Override
-    @NonNull
-    public List<Node> getChildren() {
+    public @NonNull List<Node> getChildren() {
         return Collections.unmodifiableList(mChildren);
     }
 
@@ -142,9 +143,8 @@ public final class OrNode implements Node{
      * <p>The string representation of {@link OrNode} is the string representation of
      * {@link OrNode}'s child nodes joined with "OR", all surrounded by parentheses.
      */
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "(" + TextUtils.join(" OR ", mChildren) + ")";
     }
 

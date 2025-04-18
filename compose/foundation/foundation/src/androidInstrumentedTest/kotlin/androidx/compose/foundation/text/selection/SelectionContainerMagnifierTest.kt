@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // TODO(): Remove when migrating away from RequiresDevice
+
 package androidx.compose.foundation.text.selection
 
 import androidx.compose.foundation.layout.Column

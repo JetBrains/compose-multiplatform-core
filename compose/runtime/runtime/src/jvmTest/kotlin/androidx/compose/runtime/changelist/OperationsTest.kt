@@ -695,12 +695,15 @@ class OperationsTest {
         return true
     }
 
+    @Suppress("EXTENSION_SHADOWED_BY_MEMBER")
     private val Operations.opCodes: Array<Operation?>
         get() = readPropertyReflectively("opCodes")
 
+    @Suppress("EXTENSION_SHADOWED_BY_MEMBER")
     private val Operations.intArgs: IntArray
         get() = readPropertyReflectively("intArgs")
 
+    @Suppress("EXTENSION_SHADOWED_BY_MEMBER")
     private val Operations.objectArgs: Array<Any?>
         get() = readPropertyReflectively("objectArgs")
 

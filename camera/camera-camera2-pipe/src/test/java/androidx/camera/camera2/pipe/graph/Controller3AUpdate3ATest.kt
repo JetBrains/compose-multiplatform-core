@@ -48,7 +48,7 @@ import org.robolectric.annotation.Config
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 internal class Controller3AUpdate3ATest {
     private val graphState3A = GraphState3A()
-    private val graphProcessor = FakeGraphProcessor(graphState3A = graphState3A)
+    private val graphProcessor = FakeGraphProcessor()
     private val fakeCaptureSequenceProcessor = FakeCaptureSequenceProcessor()
     private val fakeGraphRequestProcessor = GraphRequestProcessor.from(fakeCaptureSequenceProcessor)
     private val listener3A = Listener3A()
@@ -58,16 +58,12 @@ internal class Controller3AUpdate3ATest {
     @Test
     fun testUpdate3AFailsImmediatelyWithoutRepeatingRequest() = runTest {
         val graphProcessor2 = FakeGraphProcessor()
+        val graphState3A2 = GraphState3A()
         val controller3A =
-            Controller3A(
-                graphProcessor2,
-                FakeCameraMetadata(),
-                graphProcessor2.graphState3A,
-                listener3A
-            )
+            Controller3A(graphProcessor2, FakeCameraMetadata(), graphState3A2, listener3A)
         val result = controller3A.update3A(afMode = AfMode.OFF)
         assertThat(result.await().status).isEqualTo(Result3A.Status.SUBMIT_FAILED)
-        assertThat(graphProcessor2.graphState3A.afMode).isEqualTo(AfMode.OFF)
+        assertThat(graphState3A2.afMode).isEqualTo(AfMode.OFF)
     }
 
     @Test
@@ -88,7 +84,8 @@ internal class Controller3AUpdate3ATest {
         // Invoking update3A before the previous one is complete will cancel the result of the
         // previous call.
         controller3A.update3A(afMode = AfMode.CONTINUOUS_PICTURE)
-        assertThat(result.getCompletionExceptionOrNull() is CancellationException)
+        assertThat(result.getCompletionExceptionOrNull())
+            .isInstanceOf(CancellationException::class.java)
     }
 
     @Test

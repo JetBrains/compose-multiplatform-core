@@ -18,10 +18,11 @@ package androidx.camera.testing.impl.mocks;
 
 import static junit.framework.TestCase.assertTrue;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.Observable;
 import androidx.camera.testing.impl.mocks.helpers.CallTimes;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;

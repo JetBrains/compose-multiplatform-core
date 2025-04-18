@@ -38,6 +38,7 @@ import androidx.camera.core.impl.ImageCaptureConfig
 import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.StreamSpec
+import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory
@@ -689,7 +690,8 @@ class StreamUseCaseTest() {
                 DynamicRange.SDR,
                 captureTypes,
                 /*implementationOptions=*/ null,
-                /*targetFrameRate=*/ null
+                /*targetFrameRate=*/ null,
+                FRAME_RATE_RANGE_UNSPECIFIED
             )
         TestCase.assertTrue(
             StreamUseCaseUtil.areCaptureTypesEligible(
@@ -726,7 +728,8 @@ class StreamUseCaseTest() {
                 DynamicRange.SDR,
                 captureTypes,
                 /*implementationOptions=*/ null,
-                /*targetFrameRate=*/ null
+                /*targetFrameRate=*/ null,
+                FRAME_RATE_RANGE_UNSPECIFIED
             )
         TestCase.assertFalse(
             StreamUseCaseUtil.areCaptureTypesEligible(
@@ -884,8 +887,9 @@ class StreamUseCaseTest() {
             DynamicRange.SDR,
             captureTypes,
             StreamUseCaseUtil.getStreamSpecImplementationOptions(useCaseConfig),
-            null
-        /* targetFrameRate= */ )
+            /* targetFrameRate= */ null,
+            FRAME_RATE_RANGE_UNSPECIFIED
+        )
     }
 
     private fun getFakeStreamSpecFromFakeUseCaseConfig(

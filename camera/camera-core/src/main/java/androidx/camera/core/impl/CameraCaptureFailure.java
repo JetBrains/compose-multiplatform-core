@@ -16,8 +16,8 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A report of failed capture for a single image capture.
@@ -37,8 +37,7 @@ public class CameraCaptureFailure {
      * @return int The reason code.
      * @see CameraCaptureFailure.Reason#ERROR
      */
-    @NonNull
-    public Reason getReason() {
+    public @NonNull Reason getReason() {
         return mReason;
     }
 
@@ -55,8 +54,7 @@ public class CameraCaptureFailure {
      * Returns the capture failure object of the current implementation. In camera2 implementation,
      * the object is of type {@link android.hardware.camera2.CaptureFailure}.
      */
-    @Nullable
-    public Object getCaptureFailure() {
+    public @Nullable Object getCaptureFailure() {
         return null;
     }
 }

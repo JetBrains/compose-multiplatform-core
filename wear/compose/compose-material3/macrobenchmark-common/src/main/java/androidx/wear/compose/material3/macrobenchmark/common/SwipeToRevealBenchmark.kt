@@ -26,16 +26,18 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
+import androidx.wear.compose.foundation.rememberRevealState
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.SwipeToReveal
 import androidx.wear.compose.material3.SwipeToRevealDefaults
 import androidx.wear.compose.material3.Text
-import androidx.wear.compose.material3.rememberRevealState
 
 object SwipeToRevealBenchmark : MacrobenchmarkScreen {
     override val content: @Composable (BoxScope.() -> Unit)
@@ -46,29 +48,49 @@ object SwipeToRevealBenchmark : MacrobenchmarkScreen {
                 // Use the double action anchor width when revealing two actions
                 revealState =
                     rememberRevealState(
-                        anchorWidth = SwipeToRevealDefaults.DoubleActionAnchorWidth,
+                        anchors =
+                            SwipeToRevealDefaults.anchors(
+                                anchorWidth = SwipeToRevealDefaults.DoubleActionAnchorWidth,
+                            )
                     ),
                 actions = {
                     primaryAction(
                         onClick = { /* This block is called when the primary action is executed. */
                         },
                         icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
-                        label = "Delete"
+                        text = { Text("Delete") }
                     )
                     secondaryAction(
                         onClick = { /* This block is called when the secondary action is executed. */
                         },
-                        icon = { Icon(Icons.Outlined.MoreVert, contentDescription = "Options") },
-                        label = "Options"
+                        icon = { Icon(Icons.Outlined.MoreVert, contentDescription = "Options") }
                     )
                     undoPrimaryAction(
                         onClick = { /* This block is called when the undo primary action is executed. */
                         },
-                        label = "Undo Delete"
+                        text = { Text("Undo Delete") },
                     )
                 }
             ) {
-                Button(modifier = Modifier.fillMaxWidth(), onClick = {}) {
+                Button(
+                    modifier =
+                        Modifier.fillMaxWidth().semantics {
+                            // Use custom actions to make the primary and secondary actions
+                            // accessible
+                            customActions =
+                                listOf(
+                                    CustomAccessibilityAction("Delete") {
+                                        /* Add the primary action click handler here */
+                                        true
+                                    },
+                                    CustomAccessibilityAction("Options") {
+                                        /* Add the secondary click handler here */
+                                        true
+                                    }
+                                )
+                        },
+                    onClick = {}
+                ) {
                     Text("This Button has two actions", modifier = Modifier.fillMaxSize())
                 }
             }

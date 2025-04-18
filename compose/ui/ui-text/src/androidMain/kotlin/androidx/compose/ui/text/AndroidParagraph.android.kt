@@ -67,6 +67,7 @@ import androidx.compose.ui.text.android.LayoutCompat.LINE_BREAK_WORD_STYLE_PHRAS
 import androidx.compose.ui.text.android.LayoutCompat.TEXT_GRANULARITY_CHARACTER
 import androidx.compose.ui.text.android.LayoutCompat.TEXT_GRANULARITY_WORD
 import androidx.compose.ui.text.android.TextLayout
+import androidx.compose.ui.text.android.hasSpan
 import androidx.compose.ui.text.android.selection.getWordEnd
 import androidx.compose.ui.text.android.selection.getWordStart
 import androidx.compose.ui.text.android.style.IndentationFixSpan
@@ -689,11 +690,13 @@ private fun shouldAttachIndentationFixSpan(textStyle: TextStyle, ellipsis: Boole
                 textAlign != TextAlign.Justify)
     }
 
-@OptIn(InternalPlatformTextApi::class)
+// this _will_ be called multiple times on the same ParagraphIntrinsics
 private fun CharSequence.attachIndentationFixSpan(): CharSequence {
     if (isEmpty()) return this
-    val spannable = if (this is Spannable) this else SpannableString(this)
-    spannable.setSpan(IndentationFixSpan(), spannable.length - 1, spannable.length - 1)
+    val spannable = this as? Spannable ?: SpannableString(this)
+    if (!spannable.hasSpan(IndentationFixSpan::class.java)) {
+        spannable.setSpan(IndentationFixSpan(), spannable.length - 1, spannable.length - 1)
+    }
     return spannable
 }
 

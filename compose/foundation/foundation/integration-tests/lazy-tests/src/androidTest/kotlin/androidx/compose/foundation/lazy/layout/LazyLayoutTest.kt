@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.layout.AlignmentLine
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.Remeasurement
@@ -238,7 +239,7 @@ class LazyLayoutTest {
         rule.runOnIdle {
             assertThat(measureCount).isEqualTo(0)
 
-            prefetchState.schedulePrefetch(0, constraints)
+            prefetchState.schedulePrecompositionAndPremeasure(0, constraints)
 
             scheduler.executeActiveRequests()
             assertThat(measureCount).isEqualTo(1)
@@ -254,6 +255,50 @@ class LazyLayoutTest {
         rule.onNodeWithTag("0").assertIsDisplayed()
 
         rule.runOnIdle { assertThat(measureCount).isEqualTo(1) }
+    }
+
+    @Test
+    fun prefetchItem_reportMeasuredSizeAfterPremeasure() {
+        val constraints = Constraints.fixed(50, 50)
+        var measureCount = 0
+        @Suppress("NAME_SHADOWING")
+        val modifier =
+            Modifier.layout { measurable, constraints ->
+                measureCount++
+                val placeable = measurable.measure(constraints)
+                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+            }
+        val itemProvider =
+            itemProvider({ 1 }) { index ->
+                Box(Modifier.fillMaxSize().testTag("$index").then(modifier))
+            }
+        var needToCompose by mutableStateOf(false)
+        val scheduler = TestPrefetchScheduler()
+        val prefetchState = LazyLayoutPrefetchState(scheduler)
+        rule.setContent {
+            LazyLayout(itemProvider, prefetchState = prefetchState) {
+                val item =
+                    if (needToCompose) {
+                        measure(0, constraints)[0]
+                    } else null
+                layout(100, 100) { item?.place(0, 0) }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(measureCount).isEqualTo(0)
+            var callbackCalled = 0
+            prefetchState.schedulePrecompositionAndPremeasure(0, constraints) {
+                callbackCalled++
+                repeat(placeablesCount) {
+                    assertThat(getSize(it).width).isEqualTo(50)
+                    assertThat(getSize(it).height).isEqualTo(50)
+                }
+            }
+            scheduler.executeActiveRequests()
+            assertThat(measureCount).isEqualTo(1)
+            assertThat(callbackCalled).isEqualTo(1)
+        }
     }
 
     @Test
@@ -287,7 +332,7 @@ class LazyLayoutTest {
         rule.runOnIdle {
             assertThat(measureCount).isEqualTo(0)
 
-            prefetchState.schedulePrefetch(0, constraints)
+            prefetchState.schedulePrecompositionAndPremeasure(0, constraints)
 
             scheduler.executeActiveRequests()
             assertThat(measureCount).isEqualTo(1)
@@ -323,7 +368,8 @@ class LazyLayoutTest {
         }
 
         rule.runOnIdle {
-            val handle = prefetchState.schedulePrefetch(0, Constraints.fixed(50, 50))
+            val handle =
+                prefetchState.schedulePrecompositionAndPremeasure(0, Constraints.fixed(50, 50))
             scheduler.executeActiveRequests()
             assertThat(composed).isTrue()
             handle.cancel()
@@ -343,12 +389,77 @@ class LazyLayoutTest {
             LazyLayout(itemProvider, prefetchState = prefetchState) { layout(100, 100) {} }
         }
 
-        rule.runOnIdle { prefetchState.schedulePrefetch(0, Constraints.fixed(50, 50)) }
+        rule.runOnIdle {
+            prefetchState.schedulePrecompositionAndPremeasure(0, Constraints.fixed(50, 50))
+        }
 
         assertThat(executor.requests).hasSize(1)
 
         // Default PrefetchScheduler behavior should be overridden
         rule.onNodeWithTag("0").assertDoesNotExist()
+    }
+
+    @Test
+    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+    fun changingKeyForPrefetchingItemInTheMiddleOfRequest() {
+        var composed = false
+        var measured = false
+        var keys by mutableStateOf(listOf("A", "B"))
+        val itemProvider =
+            object : LazyLayoutItemProvider {
+
+                @Composable
+                override fun Item(index: Int, key: Any) {
+                    DisposableEffect(Unit) {
+                        composed = true
+                        onDispose { composed = false }
+                    }
+                    Layout { _, constraints ->
+                        measured = true
+                        layout(constraints.maxWidth, constraints.maxHeight) {}
+                    }
+                }
+
+                override val itemCount: Int
+                    get() = keys.size
+
+                override fun getKey(index: Int) = keys[index]
+
+                override fun getIndex(key: Any) = keys.indexOf(key)
+            }
+
+        val executor = TestPrefetchScheduler()
+        val prefetchState = LazyLayoutPrefetchState(executor)
+        rule.setContent {
+            LazyLayout({ itemProvider }, prefetchState = prefetchState) { layout(100, 100) {} }
+        }
+
+        rule.runOnIdle {
+            prefetchState.prefetchHandleProvider.shouldPauseBetweenPrecompositionAndPremeasure =
+                true
+
+            prefetchState.schedulePrecompositionAndPremeasure(0, Constraints.fixed(50, 50))
+
+            // pausing after composition but before measure
+            executor.executeOneRequest()
+            assertThat(composed).isTrue()
+            assertThat(measured).isFalse()
+
+            // changing the key for the prefetched by index item
+            keys = listOf("B", "A")
+        }
+
+        rule.runOnIdle {
+            // the request shouldn't be valid anymore as the key changed
+            executor.executeActiveRequests()
+            // so the measurement should be skipped
+            assertThat(measured).isFalse()
+        }
+
+        rule.runOnIdle {
+            // and the existing precomposition should be disposed
+            assertThat(composed).isFalse()
+        }
     }
 
     @Test

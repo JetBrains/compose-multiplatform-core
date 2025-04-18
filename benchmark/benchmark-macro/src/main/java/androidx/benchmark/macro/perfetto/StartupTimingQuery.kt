@@ -18,10 +18,10 @@ package androidx.benchmark.macro.perfetto
 
 import android.util.Log
 import androidx.benchmark.macro.StartupMode
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
-import androidx.benchmark.perfetto.Slice
-import androidx.benchmark.perfetto.processNameLikePkg
-import androidx.benchmark.perfetto.toSlices
+import androidx.benchmark.traceprocessor.Slice
+import androidx.benchmark.traceprocessor.TraceProcessor
+import androidx.benchmark.traceprocessor.processNameLikePkg
+import androidx.benchmark.traceprocessor.toSlices
 
 internal object StartupTimingQuery {
     private fun getFullQuery(targetPackageName: String) =
@@ -113,7 +113,7 @@ internal object StartupTimingQuery {
     }
 
     fun getFrameSubMetrics(
-        session: PerfettoTraceProcessor.Session,
+        session: TraceProcessor.Session,
         captureApiLevel: Int,
         targetPackageName: String,
         startupMode: StartupMode

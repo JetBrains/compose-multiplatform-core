@@ -24,7 +24,7 @@ import androidx.annotation.RestrictTo
 import androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-@SuppressLint("NewApi", "ClassVerificationFailure")
+@SuppressLint("NewApi")
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 11)
 class TopicsManagerApi33Ext11Impl(context: Context) :
     TopicsManagerImplCommon(

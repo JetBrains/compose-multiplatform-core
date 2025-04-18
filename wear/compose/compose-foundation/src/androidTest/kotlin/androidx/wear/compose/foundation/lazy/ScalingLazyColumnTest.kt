@@ -16,11 +16,14 @@
 
 package androidx.wear.compose.foundation.lazy
 
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.requiredWidth
@@ -32,6 +35,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.WithTouchSlop
 import androidx.compose.ui.Modifier
@@ -59,6 +63,8 @@ import androidx.test.filters.MediumTest
 import androidx.wear.compose.foundation.TEST_TAG
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -1036,6 +1042,62 @@ public class ScalingLazyColumnTest {
         rule.waitForIdle()
 
         assertThat(state.centerItemIndex).isEqualTo(scrollTarget)
+    }
+
+    @Test
+    fun testCheckLastScrollDirection() {
+
+        lateinit var state: ScalingLazyListState
+        lateinit var scope: CoroutineScope
+
+        rule.setContent {
+            state = rememberScalingLazyListState()
+            scope = rememberCoroutineScope()
+            ScalingLazyColumn(
+                state = state,
+                modifier = Modifier.height(itemSizeDp * 3f).testTag(scalingLazyColumnTag),
+            ) {
+                items(100) { Spacer(Modifier.height(itemSizeDp)) }
+            }
+        }
+
+        // Assert both isLastScrollForward and isLastScrollBackward are false before any scroll
+        assertThat(state.lastScrolledBackward).isEqualTo(false)
+        assertThat(state.lastScrolledBackward).isEqualTo(false)
+
+        rule.runOnIdle { scope.launch { state.animateScrollBy(100f, tween(1000)) } }
+        // Assert isLastScrollForward is true during forward-scroll and isLastScrollBackward is
+        // false
+        rule.runOnIdle {
+            assertThat(state.lastScrolledForward).isTrue()
+            assertThat(state.lastScrolledBackward).isFalse()
+        }
+
+        rule.mainClock.advanceTimeBy(500)
+
+        // Assert isLastScrollForward is true after forward-scroll and isLastScrollBackward is false
+        rule.runOnIdle {
+            assertThat(state.lastScrolledForward).isTrue()
+            assertThat(state.lastScrolledBackward).isFalse()
+        }
+
+        rule.runOnIdle { scope.launch { state.animateScrollBy(-100f, tween(1000)) } }
+
+        rule.mainClock.advanceTimeBy(500)
+
+        // Assert isLastScrollForward is false during backward-scroll and isLastScrollBackward is
+        // true
+        rule.runOnIdle {
+            assertThat(state.lastScrolledForward).isFalse()
+            assertThat(state.lastScrolledBackward).isTrue()
+        }
+
+        // Assert isLastScrollForward is false after backward-scroll and isLastScrollBackward is
+        // true
+        rule.runOnIdle {
+            assertThat(state.lastScrolledForward).isFalse()
+            assertThat(state.lastScrolledBackward).isTrue()
+        }
     }
 }
 

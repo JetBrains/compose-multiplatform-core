@@ -219,15 +219,15 @@ fun test() {
             )
             .run()
             .expect(
-                """src/foo/test.kt:14: Information: Arc animation is intended for 2D values such as Offset, IntOffset or DpOffset.
+                """src/foo/test.kt:14: Hint: Arc animation is intended for 2D values such as Offset, IntOffset or DpOffset.
 Otherwise, the animation might not be what you expect. [ArcAnimationSpecTypeIssue]
     ArcAnimationSpec<Float>(ArcAbove)
     ~~~~~~~~~~~~~~~~
-src/foo/test.kt:15: Information: Arc animation is intended for 2D values such as Offset, IntOffset or DpOffset.
+src/foo/test.kt:15: Hint: Arc animation is intended for 2D values such as Offset, IntOffset or DpOffset.
 Otherwise, the animation might not be what you expect. [ArcAnimationSpecTypeIssue]
     ArcAnimationSpec<String>(ArcAbove)
     ~~~~~~~~~~~~~~~~
-0 errors, 0 warnings"""
+0 errors, 0 warnings, 2 hints"""
             )
     }
 }

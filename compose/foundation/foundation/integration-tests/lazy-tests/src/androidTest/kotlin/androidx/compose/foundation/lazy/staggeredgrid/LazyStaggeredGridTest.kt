@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407927787
 
 package androidx.compose.foundation.lazy.staggeredgrid
 
@@ -80,6 +80,7 @@ class LazyStaggeredGridTest(
     internal lateinit var state: LazyStaggeredGridState
 
     companion object {
+        @Suppress("TYPE_INTERSECTION_AS_REIFIED_WARNING")
         @JvmStatic
         @Parameterized.Parameters(name = "orientation: {0}, useLookahead: {1}")
         fun initParameters(): Array<Any> =

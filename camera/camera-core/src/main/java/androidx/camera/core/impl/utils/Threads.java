@@ -21,7 +21,7 @@ import static androidx.core.util.Preconditions.checkState;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -117,8 +117,7 @@ public final class Threads {
         }
     }
 
-    @NonNull
-    private static Handler getMainHandler() {
+    private static @NonNull Handler getMainHandler() {
         return new Handler(Looper.getMainLooper());
     }
 }

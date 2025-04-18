@@ -26,8 +26,6 @@ import android.util.Size;
 import android.view.Surface;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageInfo;
@@ -35,6 +33,9 @@ import androidx.camera.core.Preview;
 import androidx.camera.core.SurfaceRequest;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a frame that is about to be rendered.
@@ -46,21 +47,18 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class Frame {
 
-    @NonNull
-    private Surface mOverlaySurface;
-    @Nullable
-    private Canvas mOverlayCanvas;
+    private @NonNull Surface mOverlaySurface;
+    private @Nullable Canvas mOverlayCanvas;
 
     /**
      * Internal API to create a frame.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    public static Frame of(
+    public static @NonNull Frame of(
             @NonNull Surface overlaySurface,
             long timestampNanos,
             @NonNull Size size,
-            @NonNull SurfaceRequest.TransformationInfo transformationInfo) {
+            SurfaceRequest.@NonNull TransformationInfo transformationInfo) {
         Frame frame = new AutoValue_Frame(transformationInfo.getSensorToBufferTransform(), size,
                 transformationInfo.getCropRect(), transformationInfo.getRotationDegrees(),
                 transformationInfo.isMirroring(), timestampNanos);
@@ -80,8 +78,7 @@ public abstract class Frame {
      *
      * @see SurfaceRequest.TransformationInfo#getSensorToBufferTransform()
      */
-    @NonNull
-    public abstract Matrix getSensorToBufferTransform();
+    public abstract @NonNull Matrix getSensorToBufferTransform();
 
     /**
      * Returns the resolution of the frame.
@@ -90,8 +87,7 @@ public abstract class Frame {
      *
      * @see SurfaceRequest#getResolution()
      */
-    @NonNull
-    public abstract Size getSize();
+    public abstract @NonNull Size getSize();
 
     /**
      * Returns the crop rect.
@@ -106,8 +102,7 @@ public abstract class Frame {
      *
      * @see SurfaceRequest.TransformationInfo#getCropRect()
      */
-    @NonNull
-    public abstract Rect getCropRect();
+    public abstract @NonNull Rect getCropRect();
 
     /**
      * Returns the rotation degrees of the frame.
@@ -164,8 +159,7 @@ public abstract class Frame {
      * only invoke this method when it needs to draw overlay. For example, when an object is
      * detected in the frame.
      */
-    @NonNull
-    public Canvas getOverlayCanvas() {
+    public @NonNull Canvas getOverlayCanvas() {
         if (mOverlayCanvas == null) {
             mOverlayCanvas = lockCanvas(mOverlaySurface);
         }

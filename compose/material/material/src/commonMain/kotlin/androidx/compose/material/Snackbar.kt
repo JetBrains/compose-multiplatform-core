@@ -41,8 +41,7 @@ import androidx.compose.ui.util.fastForEach
 import kotlin.math.max
 
 /**
- * <a href="https://material.io/components/snackbars" class="external" target="_blank">Material
- * Design snackbar</a>.
+ * [Material Design snackbar](https://material.io/components/snackbars)
  *
  * Snackbars provide brief messages about app processes at the bottom of the screen.
  *
@@ -114,8 +113,7 @@ fun Snackbar(
 }
 
 /**
- * <a href="https://material.io/components/snackbars" class="external" target="_blank">Material
- * Design snackbar</a>.
+ * [Material Design snackbar](https://material.io/components/snackbars)
  *
  * Snackbars provide brief messages about app processes at the bottom of the screen.
  *

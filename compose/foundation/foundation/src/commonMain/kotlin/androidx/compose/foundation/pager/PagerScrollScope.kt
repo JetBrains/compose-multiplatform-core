@@ -53,9 +53,20 @@ fun LazyLayoutScrollScope(state: PagerState, scrollScope: ScrollScope): LazyLayo
         }
 
         override fun calculateDistanceTo(targetIndex: Int, targetOffset: Int): Int {
-            return ((targetIndex - state.currentPage) * state.pageSizeWithSpacing -
-                    state.currentPageOffsetFraction * state.pageSizeWithSpacing + targetOffset)
-                .roundToInt()
+            val displacement =
+                ((targetIndex - state.currentPage) * state.pageSizeWithSpacing -
+                        state.currentPageOffsetFraction * state.pageSizeWithSpacing + targetOffset)
+                    .roundToInt()
+            // coerce the movement within the maximum bounds of the layout
+            val currentScrollWithDisplacementApplied =
+                (state.currentAbsoluteScrollOffset() + displacement).coerceIn(
+                    state.minScrollOffset,
+                    state.maxScrollOffset
+                )
+
+            // this will return a displacement that doesn't exceed the max scroll offsets
+            return (currentScrollWithDisplacementApplied - state.currentAbsoluteScrollOffset())
+                .toInt()
         }
     }
 }

@@ -25,8 +25,8 @@ import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.media.Image;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 
@@ -45,8 +45,7 @@ public interface ImageProxy extends AutoCloseable {
      *
      * @see android.media.Image#getCropRect()
      */
-    @NonNull
-    Rect getCropRect();
+    @NonNull Rect getCropRect();
 
     /**
      * Sets the crop rectangle.
@@ -84,9 +83,8 @@ public interface ImageProxy extends AutoCloseable {
      *
      * @see android.media.Image#getPlanes()
      */
-    @NonNull
     @SuppressLint("ArrayReturn")
-    PlaneProxy[] getPlanes();
+    PlaneProxy @NonNull [] getPlanes();
 
     /** A plane proxy which has an analogous interface as {@link android.media.Image.Plane}. */
     interface PlaneProxy {
@@ -109,13 +107,11 @@ public interface ImageProxy extends AutoCloseable {
          *
          * @see android.media.Image.Plane#getBuffer()
          */
-        @NonNull
-        ByteBuffer getBuffer();
+        @NonNull ByteBuffer getBuffer();
     }
 
     /** Returns the {@link ImageInfo}. */
-    @NonNull
-    ImageInfo getImageInfo();
+    @NonNull ImageInfo getImageInfo();
 
     /**
      * Returns the android {@link Image}.
@@ -133,9 +129,8 @@ public interface ImageProxy extends AutoCloseable {
      * @return the android image.
      * @see android.media.Image#close()
      */
-    @Nullable
     @ExperimentalGetImage
-    Image getImage();
+    @Nullable Image getImage();
 
     /**
      * Converts {@link ImageProxy} to {@link Bitmap}.
@@ -147,8 +142,7 @@ public interface ImageProxy extends AutoCloseable {
      *
      * @return {@link Bitmap} instance.
      */
-    @NonNull
-    default Bitmap toBitmap() {
+    default @NonNull Bitmap toBitmap() {
         return createBitmapFromImageProxy(this);
     }
 }

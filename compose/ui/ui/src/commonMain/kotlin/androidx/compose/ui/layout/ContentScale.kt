@@ -134,6 +134,7 @@ interface ContentScale {
  * point value
  */
 @Immutable
+@Suppress("DataClassDefinition")
 data class FixedScale(val value: Float) : ContentScale {
     override fun computeScaleFactor(srcSize: Size, dstSize: Size): ScaleFactor =
         ScaleFactor(value, value)

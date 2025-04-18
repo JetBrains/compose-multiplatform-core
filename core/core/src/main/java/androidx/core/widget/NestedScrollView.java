@@ -48,8 +48,6 @@ import android.widget.FrameLayout;
 import android.widget.OverScroller;
 import android.widget.ScrollView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
@@ -67,6 +65,9 @@ import androidx.core.view.ScrollingView;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.core.view.accessibility.AccessibilityRecordCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -128,17 +129,14 @@ public class NestedScrollView extends FrameLayout implements NestedScrollingPare
 
     @RestrictTo(LIBRARY)
     @VisibleForTesting
-    @NonNull
-    public EdgeEffect mEdgeGlowTop;
+    public @NonNull EdgeEffect mEdgeGlowTop;
 
     @RestrictTo(LIBRARY)
     @VisibleForTesting
-    @NonNull
-    public EdgeEffect mEdgeGlowBottom;
+    public @NonNull EdgeEffect mEdgeGlowBottom;
 
     @VisibleForTesting
-    @Nullable
-    ScrollFeedbackProviderCompat mScrollFeedbackProvider;
+    @Nullable ScrollFeedbackProviderCompat mScrollFeedbackProvider;
 
     /**
      * Position of the last motion event; only used with touch related events (usually to assist
@@ -282,7 +280,7 @@ public class NestedScrollView extends FrameLayout implements NestedScrollingPare
 
     @Override
     public void dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-            int dyUnconsumed, @Nullable int[] offsetInWindow, int type, @NonNull int[] consumed) {
+            int dyUnconsumed, int @Nullable [] offsetInWindow, int type, int @NonNull [] consumed) {
         mChildHelper.dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed,
                 offsetInWindow, type, consumed);
     }
@@ -306,7 +304,7 @@ public class NestedScrollView extends FrameLayout implements NestedScrollingPare
 
     @Override
     public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-            int dyUnconsumed, @Nullable int[] offsetInWindow, int type) {
+            int dyUnconsumed, int @Nullable [] offsetInWindow, int type) {
         return mChildHelper.dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed,
                 offsetInWindow, type);
     }
@@ -315,8 +313,8 @@ public class NestedScrollView extends FrameLayout implements NestedScrollingPare
     public boolean dispatchNestedPreScroll(
             int dx,
             int dy,
-            @Nullable int[] consumed,
-            @Nullable int[] offsetInWindow,
+            int @Nullable [] consumed,
+            int @Nullable [] offsetInWindow,
             int type
     ) {
         return mChildHelper.dispatchNestedPreScroll(dx, dy, consumed, offsetInWindow, type);
@@ -351,14 +349,14 @@ public class NestedScrollView extends FrameLayout implements NestedScrollingPare
 
     @Override
     public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-            int dyUnconsumed, @Nullable int[] offsetInWindow) {
+            int dyUnconsumed, int @Nullable [] offsetInWindow) {
         return mChildHelper.dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed,
                 offsetInWindow);
     }
 
     @Override
-    public boolean dispatchNestedPreScroll(int dx, int dy, @Nullable int[] consumed,
-            @Nullable int[] offsetInWindow) {
+    public boolean dispatchNestedPreScroll(int dx, int dy, int @Nullable [] consumed,
+            int @Nullable [] offsetInWindow) {
         return dispatchNestedPreScroll(dx, dy, consumed, offsetInWindow, ViewCompat.TYPE_TOUCH);
     }
 
@@ -376,11 +374,11 @@ public class NestedScrollView extends FrameLayout implements NestedScrollingPare
 
     @Override
     public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed,
-            int dxUnconsumed, int dyUnconsumed, int type, @NonNull int[] consumed) {
+            int dxUnconsumed, int dyUnconsumed, int type, int @NonNull [] consumed) {
         onNestedScrollInternal(dyUnconsumed, type, consumed);
     }
 
-    private void onNestedScrollInternal(int dyUnconsumed, int type, @Nullable int[] consumed) {
+    private void onNestedScrollInternal(int dyUnconsumed, int type, int @Nullable [] consumed) {
         final int oldScrollY = getScrollY();
         scrollBy(0, dyUnconsumed);
         final int myConsumed = getScrollY() - oldScrollY;
@@ -421,7 +419,7 @@ public class NestedScrollView extends FrameLayout implements NestedScrollingPare
     }
 
     @Override
-    public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed,
+    public void onNestedPreScroll(@NonNull View target, int dx, int dy, int @NonNull [] consumed,
             int type) {
         dispatchNestedPreScroll(dx, dy, consumed, null, type);
     }
@@ -452,7 +450,7 @@ public class NestedScrollView extends FrameLayout implements NestedScrollingPare
     }
 
     @Override
-    public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed) {
+    public void onNestedPreScroll(@NonNull View target, int dx, int dy, int @NonNull [] consumed) {
         onNestedPreScroll(target, dx, dy, consumed, ViewCompat.TYPE_TOUCH);
     }
 
@@ -2502,9 +2500,8 @@ public class NestedScrollView extends FrameLayout implements NestedScrollingPare
         requestLayout();
     }
 
-    @NonNull
     @Override
-    protected Parcelable onSaveInstanceState() {
+    protected @NonNull Parcelable onSaveInstanceState() {
         Parcelable superState = super.onSaveInstanceState();
         SavedState ss = new SavedState(superState);
         ss.scrollPosition = getScrollY();
@@ -2529,9 +2526,8 @@ public class NestedScrollView extends FrameLayout implements NestedScrollingPare
             dest.writeInt(scrollPosition);
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return "HorizontalScrollView.SavedState{"
                     + Integer.toHexString(System.identityHashCode(this))
                     + " scrollPosition=" + scrollPosition + "}";

@@ -41,5 +41,6 @@
         &lt;p dir="ltr">left to right&lt;/p>
         I am &lt;div>div&lt;/div> element.&lt;br>
         &lt;a href="https://developer.android.com">Link&lt;/a>
+        &lt;ul>&lt;li>Coffee&lt;/li>&lt;li>Tea&lt;ul>&lt;li>Black tea&lt;/li>&lt;li>Green tea&lt;ul>&lt;li>China&lt;/li>&lt;li>Africa&lt;/li>&lt;/ul>&lt;/li>&lt;/ul>&lt;/li>&lt;li>Juice&lt;/li>&lt;/ul>
     </string>
 </resources>

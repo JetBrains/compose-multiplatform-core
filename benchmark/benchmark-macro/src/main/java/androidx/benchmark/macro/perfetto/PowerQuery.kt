@@ -19,8 +19,8 @@ package androidx.benchmark.macro.perfetto
 import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.PowerCategory
 import androidx.benchmark.macro.PowerMetric
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
-import androidx.benchmark.perfetto.Slice
+import androidx.benchmark.traceprocessor.Slice
+import androidx.benchmark.traceprocessor.TraceProcessor
 
 // We want to use android_powrails.sql, but cannot as they do not split into sections with slice
 
@@ -89,7 +89,7 @@ internal object PowerQuery {
     }
 
     fun getPowerMetrics(
-        session: PerfettoTraceProcessor.Session,
+        session: TraceProcessor.Session,
         slice: Slice
     ): Map<PowerCategory, CategoryMeasurement> {
         // gather all recorded rails
@@ -127,7 +127,7 @@ internal object PowerQuery {
     }
 
     private fun getRailMetrics(
-        session: PerfettoTraceProcessor.Session,
+        session: TraceProcessor.Session,
         slice: Slice
     ): List<ComponentMeasurement> {
         val query = getFullQuery(slice)

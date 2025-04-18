@@ -23,8 +23,9 @@ import android.view.View;
 import android.view.Window;
 
 import androidx.annotation.IdRes;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing features in {@link Window}.
@@ -84,8 +85,8 @@ public final class WindowCompat {
      * @see Window#findViewById(int)
      */
     @SuppressWarnings("TypeParameterUnusedInFormals")
-    @NonNull
-    public static <T extends View> T requireViewById(@NonNull Window window, @IdRes int id) {
+    public static <T extends View> @NonNull T requireViewById(@NonNull Window window,
+            @IdRes int id) {
         if (Build.VERSION.SDK_INT >= 28) {
             return Api28Impl.requireViewById(window, id);
         }
@@ -131,8 +132,7 @@ public final class WindowCompat {
      * @return The {@link WindowInsetsControllerCompat} for the window.
      * @see Window#getInsetsController()
      */
-    @NonNull
-    public static WindowInsetsControllerCompat getInsetsController(@NonNull Window window,
+    public static @NonNull WindowInsetsControllerCompat getInsetsController(@NonNull Window window,
             @NonNull View view) {
         return new WindowInsetsControllerCompat(window, view);
     }

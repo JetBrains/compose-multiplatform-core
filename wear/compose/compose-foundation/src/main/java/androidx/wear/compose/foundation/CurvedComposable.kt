@@ -19,11 +19,13 @@ package androidx.wear.compose.foundation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.util.lerp
 import kotlin.math.PI
@@ -52,7 +54,7 @@ public fun CurvedScope.curvedComposable(
     radialAlignment: CurvedAlignment.Radial = CurvedAlignment.Radial.Center,
     rotationLocked: Boolean = false,
     content: @Composable BoxScope.() -> Unit
-) =
+): Unit =
     add(
         CurvedComposableChild(
             curvedLayoutDirection.absoluteClockwise(),
@@ -80,7 +82,7 @@ public fun CurvedScope.curvedComposable(
     modifier: CurvedModifier = CurvedModifier,
     radialAlignment: CurvedAlignment.Radial = CurvedAlignment.Radial.Center,
     content: @Composable BoxScope.() -> Unit
-) =
+): Unit =
     add(
         CurvedComposableChild(
             curvedLayoutDirection.absoluteClockwise(),
@@ -100,9 +102,15 @@ internal class CurvedComposableChild(
     lateinit var placeable: Placeable
 
     @Composable
-    override fun SubComposition() {
+    override fun SubComposition(semanticProperties: CurvedSemanticProperties) {
         // Ensure we have a 1-1 match between CurvedComposable and composable child
-        Box(content = content)
+        Box(
+            content = content,
+            modifier =
+                if (semanticProperties.hasInfo()) {
+                    Modifier.semantics { with(semanticProperties) { applySemantics() } }
+                } else Modifier
+        )
     }
 
     override fun CurvedMeasureScope.initializeMeasure(measurables: Iterator<Measurable>) {

@@ -55,21 +55,6 @@ object SurfaceDefaults {
 
 /** Contains the default values used by clickable Surface. */
 object ClickableSurfaceDefaults {
-    internal fun shape(
-        enabled: Boolean,
-        focused: Boolean,
-        pressed: Boolean,
-        shape: ClickableSurfaceShape
-    ): Shape {
-        return when {
-            pressed && enabled -> shape.pressedShape
-            focused && enabled -> shape.focusedShape
-            focused && !enabled -> shape.focusedDisabledShape
-            enabled -> shape.shape
-            else -> shape.disabledShape
-        }
-    }
-
     /**
      * Creates a [ClickableSurfaceShape] that represents the default container shapes used in a
      * Surface.
@@ -96,34 +81,6 @@ object ClickableSurfaceDefaults {
             disabledShape = disabledShape,
             focusedDisabledShape = focusedDisabledShape
         )
-
-    internal fun containerColor(
-        enabled: Boolean,
-        focused: Boolean,
-        pressed: Boolean,
-        colors: ClickableSurfaceColors
-    ): Color {
-        return when {
-            pressed && enabled -> colors.pressedContainerColor
-            focused && enabled -> colors.focusedContainerColor
-            enabled -> colors.containerColor
-            else -> colors.disabledContainerColor
-        }
-    }
-
-    internal fun contentColor(
-        enabled: Boolean,
-        focused: Boolean,
-        pressed: Boolean,
-        colors: ClickableSurfaceColors
-    ): Color {
-        return when {
-            pressed && enabled -> colors.pressedContentColor
-            focused && enabled -> colors.focusedContentColor
-            enabled -> colors.contentColor
-            else -> colors.disabledContentColor
-        }
-    }
 
     /**
      * Creates a [ClickableSurfaceColors] that represents the default container & content colors
@@ -162,21 +119,6 @@ object ClickableSurfaceDefaults {
             disabledContentColor = disabledContentColor
         )
 
-    internal fun scale(
-        enabled: Boolean,
-        focused: Boolean,
-        pressed: Boolean,
-        scale: ClickableSurfaceScale
-    ): Float {
-        return when {
-            pressed && enabled -> scale.pressedScale
-            focused && enabled -> scale.focusedScale
-            focused && !enabled -> scale.focusedDisabledScale
-            enabled -> scale.scale
-            else -> scale.disabledScale
-        }
-    }
-
     /**
      * Creates a [ClickableSurfaceScale] that represents the default scales used in a Surface.
      * scales are used to modify the size of a composable in different [Interaction] states e.g. 1f
@@ -203,21 +145,6 @@ object ClickableSurfaceDefaults {
             disabledScale = disabledScale,
             focusedDisabledScale = focusedDisabledScale
         )
-
-    internal fun border(
-        enabled: Boolean,
-        focused: Boolean,
-        pressed: Boolean,
-        border: ClickableSurfaceBorder
-    ): Border {
-        return when {
-            pressed && enabled -> border.pressedBorder
-            focused && enabled -> border.focusedBorder
-            focused && !enabled -> border.focusedDisabledBorder
-            enabled -> border.border
-            else -> border.disabledBorder
-        }
-    }
 
     /**
      * Creates a [ClickableSurfaceBorder] that represents the default [Border]s applied on a Surface
@@ -251,23 +178,6 @@ object ClickableSurfaceDefaults {
             disabledBorder = disabledBorder,
             focusedDisabledBorder = focusedDisabledBorder
         )
-
-    internal fun glow(
-        enabled: Boolean,
-        focused: Boolean,
-        pressed: Boolean,
-        glow: ClickableSurfaceGlow
-    ): Glow {
-        return if (enabled) {
-            when {
-                pressed -> glow.pressedGlow
-                focused -> glow.focusedGlow
-                else -> glow.glow
-            }
-        } else {
-            Glow.None
-        }
-    }
 
     /**
      * Creates a [ClickableSurfaceGlow] that represents the default [Glow]s used in a Surface.
@@ -504,123 +414,6 @@ object SelectableSurfaceDefaults {
             focusedSelectedGlow = focusedSelectedGlow,
             pressedSelectedGlow = pressedSelectedGlow
         )
-
-    internal fun shape(
-        enabled: Boolean,
-        focused: Boolean,
-        pressed: Boolean,
-        selected: Boolean,
-        shape: SelectableSurfaceShape
-    ): Shape {
-        return when {
-            enabled && selected && pressed -> shape.pressedSelectedShape
-            enabled && selected && focused -> shape.focusedSelectedShape
-            enabled && selected -> shape.selectedShape
-            enabled && pressed -> shape.pressedShape
-            enabled && focused -> shape.focusedShape
-            enabled -> shape.shape
-            !enabled && selected && focused -> shape.focusedSelectedDisabledShape
-            !enabled && selected -> shape.selectedDisabledShape
-            !enabled && focused -> shape.focusedDisabledShape
-            else -> shape.disabledShape
-        }
-    }
-
-    internal fun containerColor(
-        enabled: Boolean,
-        focused: Boolean,
-        pressed: Boolean,
-        selected: Boolean,
-        colors: SelectableSurfaceColors
-    ): Color {
-        return when {
-            enabled && selected && pressed -> colors.pressedSelectedContainerColor
-            enabled && selected && focused -> colors.focusedSelectedContainerColor
-            enabled && selected -> colors.selectedContainerColor
-            enabled && pressed -> colors.pressedContainerColor
-            enabled && focused -> colors.focusedContainerColor
-            enabled -> colors.containerColor
-            else -> colors.disabledContainerColor
-        }
-    }
-
-    internal fun contentColor(
-        enabled: Boolean,
-        focused: Boolean,
-        pressed: Boolean,
-        selected: Boolean,
-        colors: SelectableSurfaceColors
-    ): Color {
-        return when {
-            enabled && selected && pressed -> colors.pressedSelectedContentColor
-            enabled && selected && focused -> colors.focusedSelectedContentColor
-            enabled && selected -> colors.selectedContentColor
-            enabled && pressed -> colors.pressedContentColor
-            enabled && focused -> colors.focusedContentColor
-            enabled -> colors.contentColor
-            else -> colors.disabledContentColor
-        }
-    }
-
-    internal fun scale(
-        enabled: Boolean,
-        focused: Boolean,
-        pressed: Boolean,
-        selected: Boolean,
-        scale: SelectableSurfaceScale
-    ): Float {
-        return when {
-            enabled && selected && pressed -> scale.pressedSelectedScale
-            enabled && selected && focused -> scale.focusedSelectedScale
-            enabled && selected -> scale.selectedScale
-            enabled && pressed -> scale.pressedScale
-            enabled && focused -> scale.focusedScale
-            enabled -> scale.scale
-            !enabled && selected && focused -> scale.focusedSelectedDisabledScale
-            !enabled && selected -> scale.selectedDisabledScale
-            !enabled && focused -> scale.focusedDisabledScale
-            else -> scale.disabledScale
-        }
-    }
-
-    internal fun border(
-        enabled: Boolean,
-        focused: Boolean,
-        pressed: Boolean,
-        selected: Boolean,
-        border: SelectableSurfaceBorder
-    ): Border {
-        return when {
-            enabled && selected && pressed -> border.pressedSelectedBorder
-            enabled && selected && focused -> border.focusedSelectedBorder
-            enabled && selected -> border.selectedBorder
-            enabled && pressed -> border.pressedBorder
-            enabled && focused -> border.focusedBorder
-            enabled -> border.border
-            !enabled && selected && focused -> border.focusedSelectedDisabledBorder
-            !enabled && selected -> border.selectedDisabledBorder
-            !enabled && focused -> border.focusedDisabledBorder
-            else -> border.disabledBorder
-        }
-    }
-
-    internal fun glow(
-        enabled: Boolean,
-        focused: Boolean,
-        pressed: Boolean,
-        selected: Boolean,
-        glow: SelectableSurfaceGlow
-    ): Glow {
-        return when {
-            enabled && selected && pressed -> glow.pressedSelectedGlow
-            enabled && selected && focused -> glow.focusedSelectedGlow
-            enabled && selected -> glow.selectedGlow
-            enabled && pressed -> glow.pressedGlow
-            enabled && focused -> glow.focusedGlow
-            enabled -> glow.glow
-            else -> Glow.None
-        }
-    }
 }
 
 private const val DisabledContainerAlpha = 0.4f

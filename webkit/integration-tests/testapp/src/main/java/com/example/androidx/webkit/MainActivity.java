@@ -106,6 +106,12 @@ public class MainActivity extends AppCompatActivity {
                 new MenuListView.MenuItem(
                         getResources().getString(R.string.default_trafficstats_tagging_activity),
                         new Intent(activityContext, DefaultTrafficStatsTaggingActivity.class)),
+                new MenuListView.MenuItem(
+                        getResources().getString(R.string.web_storage_activity_title),
+                        new Intent(activityContext, WebStorageCompatActivity.class)),
+                new MenuListView.MenuItem(
+                        getResources().getString(R.string.payment_request_activity_title),
+                        new Intent(activityContext, PaymentRequestActivity.class)),
         };
         listView.setItems(menuItems);
     }

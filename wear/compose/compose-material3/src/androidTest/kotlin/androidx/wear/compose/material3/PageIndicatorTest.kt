@@ -17,7 +17,6 @@
 package androidx.wear.compose.material3
 
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.testutils.assertContainsColor
 import androidx.compose.testutils.assertDoesNotContainColor
 import androidx.compose.ui.Modifier
@@ -31,11 +30,12 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.foundation.pager.PagerState
 import org.junit.Rule
 import org.junit.Test
 
-@RequiresApi(Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 class PageIndicatorTest {
     @get:Rule val rule = createComposeRule()
 
@@ -53,38 +53,12 @@ class PageIndicatorTest {
     }
 
     @Test
-    public fun horizontalPageIndicator_supports_testtag_linear() {
-        rule.setContentWithTheme {
-            ScreenConfiguration(screenSizeDp = 150, isRound = false) {
-                HorizontalPageIndicator(
-                    modifier = Modifier.testTag(TEST_TAG),
-                    pagerState = pagerState_start
-                )
-            }
-        }
-        rule.onNodeWithTag(TEST_TAG).assertExists()
-    }
-
-    @Test
     public fun verticalPageIndicator_supports_testtag_circular() {
         rule.setContentWithTheme {
             ScreenConfiguration(screenSizeDp = 150, isRound = true) {
                 VerticalPageIndicator(
                     modifier = Modifier.testTag(TEST_TAG),
                     pagerState = pagerState_start,
-                )
-            }
-        }
-        rule.onNodeWithTag(TEST_TAG).assertExists()
-    }
-
-    @Test
-    public fun verticalPageIndicator_supports_testtag_linear() {
-        rule.setContentWithTheme {
-            ScreenConfiguration(screenSizeDp = 150, isRound = false) {
-                VerticalPageIndicator(
-                    modifier = Modifier.testTag(TEST_TAG),
-                    pagerState = pagerState_start
                 )
             }
         }

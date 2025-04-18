@@ -21,12 +21,13 @@ import static androidx.appsearch.compiler.IntrospectionHelper.getDocumentAnnotat
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.groupingBy;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.compiler.annotationwrapper.DataPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.MetadataPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.PropertyAnnotation;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -72,17 +73,13 @@ class DocumentModel {
 
     private final LinkedHashSet<AnnotatedGetterOrField> mAnnotatedGettersAndFields;
 
-    @NonNull
-    private final AnnotatedGetterOrField mIdAnnotatedGetterOrField;
+    private final @NonNull AnnotatedGetterOrField mIdAnnotatedGetterOrField;
 
-    @NonNull
-    private final AnnotatedGetterOrField mNamespaceAnnotatedGetterOrField;
+    private final @NonNull AnnotatedGetterOrField mNamespaceAnnotatedGetterOrField;
 
-    @NonNull
-    private final Map<AnnotatedGetterOrField, PropertyAccessor> mAccessors;
+    private final @NonNull Map<AnnotatedGetterOrField, PropertyAccessor> mAccessors;
 
-    @NonNull
-    private final DocumentClassCreationInfo mDocumentClassCreationInfo;
+    private final @NonNull DocumentClassCreationInfo mDocumentClassCreationInfo;
 
     private DocumentModel(
             @NonNull ProcessingEnvironment env,
@@ -173,8 +170,7 @@ class DocumentModel {
      * @return The matched getter/field.
      * @throws ProcessingException with the error message if no match.
      */
-    @NonNull
-    private AnnotatedGetterOrField requireGetterOrFieldMatchingPredicate(
+    private @NonNull AnnotatedGetterOrField requireGetterOrFieldMatchingPredicate(
             @NonNull Predicate<AnnotatedGetterOrField> predicate,
             @NonNull String errorMessage) throws ProcessingException {
         return mAnnotatedGettersAndFields.stream()
@@ -207,8 +203,7 @@ class DocumentModel {
         return new DocumentModel(env, clazz, generatedAutoValueElement);
     }
 
-    @NonNull
-    public TypeElement getClassElement() {
+    public @NonNull TypeElement getClassElement() {
         return mClass;
     }
 
@@ -217,21 +212,18 @@ class DocumentModel {
      *
      * @return the class name
      */
-    @NonNull
-    public String getQualifiedDocumentClassName() {
+    public @NonNull String getQualifiedDocumentClassName() {
         return mQualifiedDocumentClassName;
     }
 
-    @NonNull
-    public String getSchemaName() {
+    public @NonNull String getSchemaName() {
         return mSchemaName;
     }
 
     /**
      * Returns the set of parent classes specified in @Document via the "parent" parameter.
      */
-    @NonNull
-    public Set<TypeElement> getParentTypes() {
+    public @NonNull Set<TypeElement> getParentTypes() {
         return mParentTypes;
     }
 
@@ -239,32 +231,28 @@ class DocumentModel {
      * Returns all getters/fields (declared or inherited) annotated with some
      * {@link PropertyAnnotation}.
      */
-    @NonNull
-    public Set<AnnotatedGetterOrField> getAnnotatedGettersAndFields() {
+    public @NonNull Set<AnnotatedGetterOrField> getAnnotatedGettersAndFields() {
         return mAnnotatedGettersAndFields;
     }
 
     /**
      * Returns the getter/field annotated with {@code @Document.Id}.
      */
-    @NonNull
-    public AnnotatedGetterOrField getIdAnnotatedGetterOrField() {
+    public @NonNull AnnotatedGetterOrField getIdAnnotatedGetterOrField() {
         return mIdAnnotatedGetterOrField;
     }
 
     /**
      * Returns the getter/field annotated with {@code @Document.Namespace}.
      */
-    @NonNull
-    public AnnotatedGetterOrField getNamespaceAnnotatedGetterOrField() {
+    public @NonNull AnnotatedGetterOrField getNamespaceAnnotatedGetterOrField() {
         return mNamespaceAnnotatedGetterOrField;
     }
 
     /**
      * Returns the public/package-private accessor for an annotated getter/field (may be private).
      */
-    @NonNull
-    public PropertyAccessor getAccessor(@NonNull AnnotatedGetterOrField getterOrField) {
+    public @NonNull PropertyAccessor getAccessor(@NonNull AnnotatedGetterOrField getterOrField) {
         PropertyAccessor accessor = mAccessors.get(getterOrField);
         if (accessor == null) {
             throw new IllegalArgumentException(
@@ -273,8 +261,7 @@ class DocumentModel {
         return accessor;
     }
 
-    @NonNull
-    public DocumentClassCreationInfo getDocumentClassCreationInfo() {
+    public @NonNull DocumentClassCreationInfo getDocumentClassCreationInfo() {
         return mDocumentClassCreationInfo;
     }
 
@@ -284,8 +271,7 @@ class DocumentModel {
      * <p>Each accessor may be the {@link AnnotatedGetterOrField} itself or some other non-private
      * getter.
      */
-    @NonNull
-    private static Map<AnnotatedGetterOrField, PropertyAccessor> inferPropertyAccessors(
+    private static @NonNull Map<AnnotatedGetterOrField, PropertyAccessor> inferPropertyAccessors(
             @NonNull Collection<AnnotatedGetterOrField> annotatedGettersAndFields,
             @NonNull Collection<ExecutableElement> allMethods,
             @NonNull IntrospectionHelper helper) throws ProcessingException {
@@ -301,8 +287,7 @@ class DocumentModel {
     /**
      * Returns the parent types mentioned within the {@code @Document} annotation.
      */
-    @NonNull
-    private LinkedHashSet<TypeElement> getParentSchemaTypes(
+    private @NonNull LinkedHashSet<TypeElement> getParentSchemaTypes(
             @NonNull TypeElement documentClass) throws ProcessingException {
         AnnotationMirror documentAnnotation = requireNonNull(getDocumentAnnotation(documentClass));
         Map<String, Object> params = mHelper.getAnnotationParams(documentAnnotation);
@@ -337,8 +322,7 @@ class DocumentModel {
      *                  beginning and the final class at the end
      * @return the final schema name for the class at the end of the hierarchy
      */
-    @NonNull
-    private String computeSchemaName(List<TypeElement> hierarchy) {
+    private @NonNull String computeSchemaName(List<TypeElement> hierarchy) {
         for (int i = hierarchy.size() - 1; i >= 0; i--) {
             AnnotationMirror documentAnnotation = getDocumentAnnotation(hierarchy.get(i));
             if (documentAnnotation == null) {
@@ -496,8 +480,7 @@ class DocumentModel {
             }
         }
 
-        @NonNull
-        LinkedHashSet<AnnotatedGetterOrField> getAccumulatedGettersAndFields() {
+        @NonNull LinkedHashSet<AnnotatedGetterOrField> getAccumulatedGettersAndFields() {
             return new LinkedHashSet<>(mJvmNameToGetterOrField.values());
         }
 
@@ -549,8 +532,8 @@ class DocumentModel {
          *
          * <p>Assumes the getter/field is annotated with a {@link DataPropertyAnnotation}.
          */
-        @NonNull
-        private static String getSerializedName(@NonNull AnnotatedGetterOrField getterOrField) {
+        private static @NonNull String getSerializedName(
+                @NonNull AnnotatedGetterOrField getterOrField) {
             DataPropertyAnnotation annotation =
                     (DataPropertyAnnotation) getterOrField.getAnnotation();
             return annotation.getName();
@@ -602,8 +585,8 @@ class DocumentModel {
             }
         }
 
-        @NonNull
-        private static String createSignatureString(@NonNull AnnotatedGetterOrField getterOrField) {
+        private static @NonNull String createSignatureString(
+                @NonNull AnnotatedGetterOrField getterOrField) {
             return getterOrField.getJvmType()
                     + " "
                     + getterOrField.getElement().getEnclosingElement().getSimpleName()

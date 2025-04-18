@@ -52,6 +52,7 @@ class GradleConfigurationDetector : Detector(), GradleScanner {
                 .addMoreInfo("https://d.android.com/training/basics/fragments/testing#configure")
     }
 
+    @Suppress("OVERRIDE_DEPRECATION") // b/407500169
     override fun checkDslPropertyAssignment(
         context: GradleContext,
         property: String,

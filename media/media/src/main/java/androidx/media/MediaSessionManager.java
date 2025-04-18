@@ -33,12 +33,15 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Provides support for interacting with {@link MediaSessionCompat media sessions} that
- * applications have published to express their ongoing media playback state.
+ * Provides support for interacting with {@link MediaSessionCompat media sessions} that applications
+ * have published to express their ongoing media playback state.
  *
  * @see MediaSessionCompat
  * @see MediaControllerCompat
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 public final class MediaSessionManager {
     static final String TAG = "MediaSessionManager";
     static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
@@ -110,15 +113,18 @@ public final class MediaSessionManager {
     }
 
     /**
-     * Information of a remote user of {@link MediaSessionCompat} or
-     * {@link MediaBrowserServiceCompat}. This can be used to decide whether the remote user is
-     * trusted app, and also differentiate caller of {@link MediaSessionCompat} and
-     * {@link MediaBrowserServiceCompat} callbacks.
-     * <p>
-     * See {@link #equals(Object)} to take a look at how it differentiate media controller.
+     * Information of a remote user of {@link MediaSessionCompat} or {@link
+     * MediaBrowserServiceCompat}. This can be used to decide whether the remote user is trusted
+     * app, and also differentiate caller of {@link MediaSessionCompat} and {@link
+     * MediaBrowserServiceCompat} callbacks.
+     *
+     * <p>See {@link #equals(Object)} to take a look at how it differentiate media controller.
      *
      * @see #isTrustedForMediaControl(RemoteUserInfo)
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static final class RemoteUserInfo {
         /**
          * Used by {@link #getPackageName()} when the session is connected to the legacy controller

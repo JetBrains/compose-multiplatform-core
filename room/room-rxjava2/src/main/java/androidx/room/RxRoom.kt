@@ -17,7 +17,7 @@ package androidx.room
 
 import androidx.annotation.RestrictTo
 import androidx.room.coroutines.createFlow
-import androidx.room.util.performBlocking
+import androidx.room.util.performSuspending
 import androidx.sqlite.SQLiteConnection
 import io.reactivex.BackpressureStrategy
 import io.reactivex.Completable
@@ -29,8 +29,12 @@ import io.reactivex.disposables.Disposables
 import io.reactivex.schedulers.Schedulers
 import java.util.concurrent.Callable
 import java.util.concurrent.Executor
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.rx2.asObservable
+import kotlinx.coroutines.rx2.rxCompletable
+import kotlinx.coroutines.rx2.rxMaybe
+import kotlinx.coroutines.rx2.rxSingle
 
 open class RxRoom
 @Deprecated("This type should not be instantiated as it contains only utility functions.")
@@ -74,7 +78,10 @@ constructor() {
             isReadOnly: Boolean,
             inTransaction: Boolean,
             block: (SQLiteConnection) -> T?
-        ): Maybe<T> = Maybe.fromCallable { performBlocking(db, isReadOnly, inTransaction, block) }
+        ): Maybe<T> =
+            rxMaybe(db.getQueryContext().minusKey(Job)) {
+                performSuspending(db, isReadOnly, inTransaction, block)
+            }
 
         /** Helper function used by generated code to create a [Completable] */
         @JvmStatic
@@ -85,7 +92,9 @@ constructor() {
             inTransaction: Boolean,
             block: (SQLiteConnection) -> Unit
         ): Completable =
-            Completable.fromAction { performBlocking(db, isReadOnly, inTransaction, block) }
+            rxCompletable(db.getQueryContext().minusKey(Job)) {
+                performSuspending(db, isReadOnly, inTransaction, block)
+            }
 
         /** Helper function used by generated code to create a [Single] */
         @JvmStatic
@@ -96,18 +105,9 @@ constructor() {
             inTransaction: Boolean,
             block: (SQLiteConnection) -> T?
         ): Single<T> =
-            Single.create { emitter ->
-                if (emitter.isDisposed) return@create
-                try {
-                    val result = performBlocking(db, isReadOnly, inTransaction, block)
-                    if (result != null) {
-                        emitter.onSuccess(result)
-                    } else {
-                        throw EmptyResultSetException("Query returned empty result set.")
-                    }
-                } catch (e: EmptyResultSetException) {
-                    emitter.tryOnError(e)
-                }
+            rxSingle(db.getQueryContext().minusKey(Job)) {
+                performSuspending(db, isReadOnly, inTransaction, block)
+                    ?: throw EmptyResultSetException("Query returned empty result set.")
             }
 
         /**

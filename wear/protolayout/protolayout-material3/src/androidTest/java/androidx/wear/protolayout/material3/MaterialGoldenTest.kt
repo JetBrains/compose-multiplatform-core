@@ -30,11 +30,30 @@ class MaterialGoldenTest(private val expected: String, private val testCase: Run
     @JvmField
     @Rule
     var mScreenshotRule: AndroidXScreenshotTestRule =
-        AndroidXScreenshotTestRule("wear/wear-protolayout-material3")
+        AndroidXScreenshotTestRule("wear/protolayout/protolayout-material3")
 
     @Test
-    fun test() {
-        RunnerUtils.runSingleScreenshotTest(mScreenshotRule, testCase, expected)
+    fun testLtr() {
+        // Skip test if it's not meant for LTR
+        if (!testCase.isForLtr) return
+        RunnerUtils.runSingleScreenshotTest(
+            rule = mScreenshotRule,
+            layout = testCase.layout,
+            expected = expected,
+            isRtlDirection = false
+        )
+    }
+
+    @Test
+    fun testRtl() {
+        // Skip test if it's not meant for RTL
+        if (!testCase.isForRtl) return
+        RunnerUtils.runSingleScreenshotTest(
+            rule = mScreenshotRule,
+            layout = testCase.layout,
+            expected = expected + "_rtl",
+            isRtlDirection = true
+        )
     }
 
     companion object {

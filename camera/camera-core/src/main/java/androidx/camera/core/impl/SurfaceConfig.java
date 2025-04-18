@@ -16,15 +16,18 @@
 
 package androidx.camera.core.impl;
 
+import static androidx.camera.core.impl.CameraMode.ULTRA_HIGH_RESOLUTION_CAMERA;
+
 import android.graphics.ImageFormat;
 import android.hardware.camera2.CameraCaptureSession.StateCallback;
 import android.os.Handler;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.internal.utils.SizeUtil;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -46,27 +49,24 @@ public abstract class SurfaceConfig {
     /**
      * Creates a new instance of SurfaceConfig with the given parameters.
      */
-    @NonNull
-    public static SurfaceConfig create(@NonNull ConfigType type, @NonNull ConfigSize size) {
+    public static @NonNull SurfaceConfig create(@NonNull ConfigType type,
+            @NonNull ConfigSize size) {
         return new AutoValue_SurfaceConfig(type, size, DEFAULT_STREAM_USE_CASE_VALUE);
     }
 
     /**
      * Creates a new instance of SurfaceConfig with the given parameters.
      */
-    @NonNull
-    public static SurfaceConfig create(@NonNull ConfigType type, @NonNull ConfigSize size,
+    public static @NonNull SurfaceConfig create(@NonNull ConfigType type, @NonNull ConfigSize size,
             long streamUseCase) {
         return new AutoValue_SurfaceConfig(type, size, streamUseCase);
     }
 
     /** Returns the configuration type. */
-    @NonNull
-    public abstract ConfigType getConfigType();
+    public abstract @NonNull ConfigType getConfigType();
 
     /** Returns the configuration size. */
-    @NonNull
-    public abstract ConfigSize getConfigSize();
+    public abstract @NonNull ConfigSize getConfigSize();
 
     /**
      * Returns the stream use case.
@@ -111,8 +111,7 @@ public abstract class SurfaceConfig {
      * the ImageFormat.JPEG or ImageFormat.JPEG_R format, and RAW refers to the
      * ImageFormat.RAW_SENSOR format.
      */
-    @NonNull
-    public static SurfaceConfig.ConfigType getConfigType(int imageFormat) {
+    public static SurfaceConfig.@NonNull ConfigType getConfigType(int imageFormat) {
         if (imageFormat == ImageFormat.YUV_420_888) {
             return SurfaceConfig.ConfigType.YUV;
         } else if (imageFormat == ImageFormat.JPEG) {
@@ -135,8 +134,7 @@ public abstract class SurfaceConfig {
      * @param surfaceSizeDefinition the surface definition for the surface configuration object
      * @return new {@link SurfaceConfig} object
      */
-    @NonNull
-    public static SurfaceConfig transformSurfaceConfig(
+    public static @NonNull SurfaceConfig transformSurfaceConfig(
             @CameraMode.Mode int cameraMode,
             int imageFormat,
             @NonNull Size size,
@@ -162,12 +160,18 @@ public abstract class SurfaceConfig {
                 configSize = ConfigSize.PREVIEW;
             } else if (sizeArea <= SizeUtil.getArea(surfaceSizeDefinition.getRecordSize())) {
                 configSize = ConfigSize.RECORD;
-            } else if (sizeArea <= SizeUtil.getArea(
-                    surfaceSizeDefinition.getMaximumSize(imageFormat))) {
-                configSize = ConfigSize.MAXIMUM;
             } else {
+                Size maximumSize = surfaceSizeDefinition.getMaximumSize(imageFormat);
                 Size ultraMaximumSize = surfaceSizeDefinition.getUltraMaximumSize(imageFormat);
-                if (ultraMaximumSize != null && sizeArea <= SizeUtil.getArea(ultraMaximumSize)) {
+                // On some devices, when extensions is on, some extra formats might be supported
+                // for extensions. But those formats are not supported in the normal mode. In
+                // that case, MaximumSize could be null. Directly make configSize as MAXIMUM for
+                // the case.
+                if ((maximumSize == null || sizeArea <= SizeUtil.getArea(maximumSize))
+                        && cameraMode != ULTRA_HIGH_RESOLUTION_CAMERA) {
+                    configSize = ConfigSize.MAXIMUM;
+                } else if (ultraMaximumSize != null && sizeArea <= SizeUtil.getArea(
+                        ultraMaximumSize)) {
                     configSize = ConfigSize.ULTRA_MAXIMUM;
                 }
             }

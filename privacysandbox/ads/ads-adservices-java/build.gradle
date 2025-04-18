@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -38,11 +38,11 @@ dependencies {
     // To use CallbackToFutureAdapter
     implementation "androidx.concurrent:concurrent-futures:1.1.0"
     api(libs.guavaListenableFuture)
-    implementation project(path: ':privacysandbox:ads:ads-adservices')
+    implementation(project(":privacysandbox:ads:ads-adservices"))
 
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
-    androidTestImplementation project(path: ':privacysandbox:ads:ads-adservices')
-    androidTestImplementation project(path: ':javascriptengine:javascriptengine')
+    androidTestImplementation(project(":privacysandbox:ads:ads-adservices"))
+    androidTestImplementation(project(":javascriptengine:javascriptengine"))
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.kotlinTestJunit)
     androidTestImplementation(libs.mockitoKotlin4)
@@ -59,14 +59,14 @@ dependencies {
 }
 
 android {
-    compileSdk = 34
-    compileSdkExtension = 12
+    compileSdk = 35
+    compileSdkExtension = 14
     namespace = "androidx.privacysandbox.ads.adservices.java"
 }
 
 androidx {
     name = "androidx.privacysandbox.ads:ads-adservices-java"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "write Java code to call PP APIs."
     legacyDisableKotlinStrictApiMode = true

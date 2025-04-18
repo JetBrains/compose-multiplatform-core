@@ -31,13 +31,14 @@ import android.view.WindowManager;
 import android.view.animation.Interpolator;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.collection.SimpleArrayMap;
 import androidx.core.graphics.Insets;
 import androidx.core.view.WindowInsetsCompat.Type.InsetsType;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -151,10 +152,9 @@ public final class WindowInsetsControllerCompat {
      * {@link WindowInsetsControllerCompat}
      * @deprecated Use {@link WindowCompat#getInsetsController(Window, View)} instead
      */
-    @NonNull
     @RequiresApi(30)
     @Deprecated
-    public static WindowInsetsControllerCompat toWindowInsetsControllerCompat(
+    public static @NonNull WindowInsetsControllerCompat toWindowInsetsControllerCompat(
             @NonNull WindowInsetsController insetsController) {
         return new WindowInsetsControllerCompat(insetsController);
     }
@@ -340,7 +340,7 @@ public final class WindowInsetsControllerCompat {
      *WindowInsetsControllerCompat.OnControllableInsetsChangedListener)
      */
     public void addOnControllableInsetsChangedListener(
-            @NonNull WindowInsetsControllerCompat.OnControllableInsetsChangedListener listener) {
+            WindowInsetsControllerCompat.@NonNull OnControllableInsetsChangedListener listener) {
         mImpl.addOnControllableInsetsChangedListener(listener);
     }
 
@@ -354,7 +354,7 @@ public final class WindowInsetsControllerCompat {
      *WindowInsetsControllerCompat.OnControllableInsetsChangedListener)
      */
     public void removeOnControllableInsetsChangedListener(
-            @NonNull WindowInsetsControllerCompat.OnControllableInsetsChangedListener
+            WindowInsetsControllerCompat.@NonNull OnControllableInsetsChangedListener
                     listener) {
         mImpl.removeOnControllableInsetsChangedListener(listener);
     }
@@ -436,7 +436,7 @@ public final class WindowInsetsControllerCompat {
         }
 
         void removeOnControllableInsetsChangedListener(
-                @NonNull WindowInsetsControllerCompat.OnControllableInsetsChangedListener
+                WindowInsetsControllerCompat.@NonNull OnControllableInsetsChangedListener
                         listener) {
         }
     }
@@ -444,11 +444,9 @@ public final class WindowInsetsControllerCompat {
     @RequiresApi(20)
     private static class Impl20 extends Impl {
 
-        @NonNull
-        protected final Window mWindow;
+        protected final @NonNull Window mWindow;
 
-        @NonNull
-        private final SoftwareKeyboardControllerCompat mSoftwareKeyboardControllerCompat;
+        private final @NonNull SoftwareKeyboardControllerCompat mSoftwareKeyboardControllerCompat;
 
         Impl20(@NonNull Window window,
                 @NonNull SoftwareKeyboardControllerCompat softwareKeyboardControllerCompat) {
@@ -565,7 +563,7 @@ public final class WindowInsetsControllerCompat {
 
         @Override
         void removeOnControllableInsetsChangedListener(
-                @NonNull WindowInsetsControllerCompat.OnControllableInsetsChangedListener
+                WindowInsetsControllerCompat.@NonNull OnControllableInsetsChangedListener
                         listener) {
         }
     }
@@ -738,7 +736,7 @@ public final class WindowInsetsControllerCompat {
         void controlWindowInsetsAnimation(@InsetsType int types, long durationMillis,
                 @Nullable Interpolator interpolator,
                 @Nullable CancellationSignal cancellationSignal,
-                @NonNull final WindowInsetsAnimationControlListenerCompat listener) {
+                final @NonNull WindowInsetsAnimationControlListenerCompat listener) {
 
             WindowInsetsAnimationControlListener fwListener =
                     new WindowInsetsAnimationControlListener() {
@@ -825,7 +823,7 @@ public final class WindowInsetsControllerCompat {
 
         @Override
         void addOnControllableInsetsChangedListener(
-                @NonNull final WindowInsetsControllerCompat.OnControllableInsetsChangedListener
+                final WindowInsetsControllerCompat.@NonNull OnControllableInsetsChangedListener
                         listener) {
 
             if (mListeners.containsKey(listener)) {
@@ -845,7 +843,7 @@ public final class WindowInsetsControllerCompat {
 
         @Override
         void removeOnControllableInsetsChangedListener(
-                @NonNull WindowInsetsControllerCompat.OnControllableInsetsChangedListener
+                WindowInsetsControllerCompat.@NonNull OnControllableInsetsChangedListener
                         listener) {
             WindowInsetsController.OnControllableInsetsChangedListener
                     fwListener = mListeners.remove(listener);

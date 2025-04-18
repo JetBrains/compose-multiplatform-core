@@ -86,8 +86,6 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
@@ -136,6 +134,9 @@ import androidx.core.util.Preconditions;
 import androidx.lifecycle.LifecycleOwner;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.OutputStream;
@@ -371,22 +372,18 @@ public final class ImageCapture extends UseCase {
     @FlashMode
     private int mFlashMode = FLASH_MODE_UNKNOWN;
     private Rational mCropAspectRatio = null;
-    @NonNull
-    private ScreenFlashWrapper mScreenFlashWrapper;
+    private @NonNull ScreenFlashWrapper mScreenFlashWrapper;
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     // [UseCase attached dynamic] - Can change but is only available when the UseCase is attached.
     ////////////////////////////////////////////////////////////////////////////////////////////
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-            SessionConfig.Builder mSessionConfigBuilder;
+    SessionConfig.Builder mSessionConfigBuilder;
 
-    @Nullable
-    private ImagePipeline mImagePipeline;
-    @Nullable
-    private TakePictureManager mTakePictureManager;
-    @Nullable
-    private SessionConfig.CloseableErrorListener mCloseableErrorListener;
+    private @Nullable ImagePipeline mImagePipeline;
+    private @Nullable TakePictureManager mTakePictureManager;
+    private SessionConfig.@Nullable CloseableErrorListener mCloseableErrorListener;
 
     /**
      * Creates a new image capture use case from the given configuration.
@@ -423,8 +420,7 @@ public final class ImageCapture extends UseCase {
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
     @Override
-    @Nullable
-    public UseCaseConfig<?> getDefaultConfig(boolean applyDefaultConfig,
+    public @Nullable UseCaseConfig<?> getDefaultConfig(boolean applyDefaultConfig,
             @NonNull UseCaseConfigFactory factory) {
         Config captureConfig = factory.getConfig(
                 DEFAULT_CONFIG.getConfig().getCaptureType(),
@@ -441,10 +437,9 @@ public final class ImageCapture extends UseCase {
     /**
      * {@inheritDoc}
      */
-    @NonNull
     @RestrictTo(Scope.LIBRARY_GROUP)
     @Override
-    public UseCaseConfig.Builder<?, ?, ?> getUseCaseConfigBuilder(@NonNull Config config) {
+    public UseCaseConfig.@NonNull Builder<?, ?, ?> getUseCaseConfigBuilder(@NonNull Config config) {
         return Builder.fromConfig(config);
     }
 
@@ -452,10 +447,9 @@ public final class ImageCapture extends UseCase {
      * {@inheritDoc}
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
     @Override
-    protected UseCaseConfig<?> onMergeConfig(@NonNull CameraInfoInternal cameraInfo,
-            @NonNull UseCaseConfig.Builder<?, ?, ?> builder) {
+    protected @NonNull UseCaseConfig<?> onMergeConfig(@NonNull CameraInfoInternal cameraInfo,
+            UseCaseConfig.@NonNull Builder<?, ?, ?> builder) {
         if (cameraInfo.getCameraQuirks().contains(SoftwareJpegEncodingPreferredQuirk.class)) {
             // Request software JPEG encoder if quirk exists on this device, and the software JPEG
             // option has not already been explicitly set.
@@ -657,8 +651,7 @@ public final class ImageCapture extends UseCase {
     /**
      * Returns the {@link ScreenFlash} instance currently set, null if none.
      */
-    @Nullable
-    public ScreenFlash getScreenFlash() {
+    public @Nullable ScreenFlash getScreenFlash() {
         return mScreenFlashWrapper.getBaseScreenFlash();
     }
 
@@ -666,7 +659,7 @@ public final class ImageCapture extends UseCase {
         setScreenFlashToCameraControl(mScreenFlashWrapper);
     }
 
-    private void setScreenFlashToCameraControl(@Nullable ImageCapture.ScreenFlash screenFlash) {
+    private void setScreenFlashToCameraControl(ImageCapture.@Nullable ScreenFlash screenFlash) {
         getCameraControl().setScreenFlash(screenFlash);
     }
 
@@ -830,8 +823,7 @@ public final class ImageCapture extends UseCase {
      * {@link androidx.camera.lifecycle.ProcessCameraProvider#bindToLifecycle(LifecycleOwner
      *, CameraSelector, UseCase...)} API, or null if the use case is not bound yet.
      */
-    @Nullable
-    public ResolutionInfo getResolutionInfo() {
+    public @Nullable ResolutionInfo getResolutionInfo() {
         return getResolutionInfoInternal();
     }
 
@@ -839,9 +831,8 @@ public final class ImageCapture extends UseCase {
      * {@inheritDoc}
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @Nullable
     @Override
-    protected ResolutionInfo getResolutionInfoInternal() {
+    protected @Nullable ResolutionInfo getResolutionInfoInternal() {
         CameraInternal camera = getCamera();
         Size resolution = getAttachedSurfaceResolution();
 
@@ -872,8 +863,7 @@ public final class ImageCapture extends UseCase {
      * <p>This setting is set when constructing an ImageCapture using
      * {@link Builder#setResolutionSelector(ResolutionSelector)}.
      */
-    @Nullable
-    public ResolutionSelector getResolutionSelector() {
+    public @Nullable ResolutionSelector getResolutionSelector() {
         return ((ImageOutputConfig) getCurrentConfig()).getResolutionSelector(null);
     }
 
@@ -1015,8 +1005,7 @@ public final class ImageCapture extends UseCase {
      *
      * @return {@link ImageCaptureCapabilities}
      */
-    @NonNull
-    public static ImageCaptureCapabilities getImageCaptureCapabilities(
+    public static @NonNull ImageCaptureCapabilities getImageCaptureCapabilities(
             @NonNull CameraInfo cameraInfo) {
         return new ImageCaptureCapabilitiesImpl(cameraInfo);
     }
@@ -1043,9 +1032,8 @@ public final class ImageCapture extends UseCase {
             return false;
         }
 
-        @NonNull
         @Override
-        public Set<@OutputFormat Integer> getSupportedOutputFormats() {
+        public @NonNull Set<@OutputFormat Integer> getSupportedOutputFormats() {
             Set<Integer> outputFormatsFromAdapterCameraInfo =
                     getSupportedOutputFormatsFromAdapterCameraInfo();
 
@@ -1085,8 +1073,7 @@ public final class ImageCapture extends UseCase {
             return false;
         }
 
-        @Nullable
-        private Set<Integer> getSupportedOutputFormatsFromAdapterCameraInfo() {
+        private @Nullable Set<Integer> getSupportedOutputFormatsFromAdapterCameraInfo() {
             if (!(mCameraInfo instanceof AdapterCameraInfo)) {
                 return null;
             }
@@ -1121,8 +1108,7 @@ public final class ImageCapture extends UseCase {
         }
     }
 
-    @NonNull
-    static Rect computeDispatchCropRect(@Nullable Rect viewPortCropRect,
+    static @NonNull Rect computeDispatchCropRect(@Nullable Rect viewPortCropRect,
             @Nullable Rational cropAspectRatio, int rotationDegrees,
             @NonNull Size dispatchResolution, int dispatchRotationDegrees) {
         if (viewPortCropRect != null) {
@@ -1228,9 +1214,8 @@ public final class ImageCapture extends UseCase {
         }
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return TAG + ":" + getName();
     }
 
@@ -1304,8 +1289,7 @@ public final class ImageCapture extends UseCase {
         }
     }
 
-    @Nullable
-    private SessionProcessor getSessionProcessor() {
+    private @Nullable SessionProcessor getSessionProcessor() {
         CameraConfig cameraConfig = getCamera().getExtendedConfig();
         return cameraConfig.getSessionProcessor(null);
     }
@@ -1313,10 +1297,9 @@ public final class ImageCapture extends UseCase {
     /**
      * {@inheritDoc}
      */
-    @NonNull
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    protected StreamSpec onSuggestedStreamSpecUpdated(
+    protected @NonNull StreamSpec onSuggestedStreamSpecUpdated(
             @NonNull StreamSpec primaryStreamSpec,
             @Nullable StreamSpec secondaryStreamSpec) {
         mSessionConfigBuilder = createPipeline(getCameraId(),
@@ -1333,10 +1316,10 @@ public final class ImageCapture extends UseCase {
     /**
      * {@inheritDoc}
      */
-    @NonNull
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    protected StreamSpec onSuggestedStreamSpecImplementationOptionsUpdated(@NonNull Config config) {
+    protected @NonNull StreamSpec onSuggestedStreamSpecImplementationOptionsUpdated(
+            @NonNull Config config) {
         mSessionConfigBuilder.addImplementationOptions(config);
         updateSessionConfig(List.of(mSessionConfigBuilder.build()));
         return getAttachedStreamSpec().toBuilder().setImplementationOptions(config).build();
@@ -1360,9 +1343,8 @@ public final class ImageCapture extends UseCase {
         }
 
         @MainThread
-        @NonNull
         @Override
-        public ListenableFuture<Void> submitStillCaptureRequests(
+        public @NonNull ListenableFuture<Void> submitStillCaptureRequests(
                 @NonNull List<CaptureConfig> captureConfigs) {
             return ImageCapture.this.submitStillCaptureRequest(captureConfigs);
         }
@@ -1421,6 +1403,7 @@ public final class ImageCapture extends UseCase {
 
         SessionConfig.Builder sessionConfigBuilder =
                 mImagePipeline.createSessionConfigBuilder(streamSpec.getResolution());
+        sessionConfigBuilder.setSessionType(streamSpec.getSessionType());
         if (Build.VERSION.SDK_INT >= 23
                 && getCaptureMode() == CAPTURE_MODE_ZERO_SHUTTER_LAG
                 && !streamSpec.getZslDisabled()) {
@@ -1461,8 +1444,7 @@ public final class ImageCapture extends UseCase {
      * @return the settings for the postview, or <code>null</code> if no supported format or
      * output size can be found.
      */
-    @Nullable
-    private PostviewSettings calculatePostviewSettings(@NonNull Size targetResolution) {
+    private @Nullable PostviewSettings calculatePostviewSettings(@NonNull Size targetResolution) {
         SessionProcessor sessionProcessor = getSessionProcessor();
 
         // No session processor can be found which is necessary for supporting postview
@@ -1570,7 +1552,7 @@ public final class ImageCapture extends UseCase {
 
     private void sendInvalidCameraError(@NonNull Executor executor,
             @Nullable OnImageCapturedCallback inMemoryCallback,
-            @Nullable ImageCapture.OnImageSavedCallback onDiskCallback) {
+            ImageCapture.@Nullable OnImageSavedCallback onDiskCallback) {
         ImageCaptureException exception = new ImageCaptureException(ERROR_INVALID_CAMERA,
                 "Not bound to a valid Camera [" + ImageCapture.this + "]", null);
         if (inMemoryCallback != null) {
@@ -1585,8 +1567,7 @@ public final class ImageCapture extends UseCase {
     /**
      * Calculates a snapshot of crop rect when app calls {@link #takePicture}.
      */
-    @NonNull
-    private Rect getTakePictureCropRect() {
+    private @NonNull Rect getTakePictureCropRect() {
         Rect rect = getViewPortCropRect();
         Size resolution = requireNonNull(getAttachedSurfaceResolution());
         if (rect != null) {
@@ -1635,6 +1616,8 @@ public final class ImageCapture extends UseCase {
             mTakePictureManager.abortRequests();
             mTakePictureManager = null;
         }
+        // Always clear ZSL resources to release the RingBuffer.
+        getCameraControl().clearZslConfig();
     }
 
     /**
@@ -1654,15 +1637,13 @@ public final class ImageCapture extends UseCase {
         return mImagePipeline != null && mTakePictureManager != null;
     }
 
-    @Nullable
     @VisibleForTesting
-    ImagePipeline getImagePipeline() {
+    @Nullable ImagePipeline getImagePipeline() {
         return mImagePipeline;
     }
 
     @VisibleForTesting
-    @NonNull
-    TakePictureManager getTakePictureManager() {
+    @NonNull TakePictureManager getTakePictureManager() {
         return requireNonNull(mTakePictureManager);
     }
 
@@ -1670,9 +1651,8 @@ public final class ImageCapture extends UseCase {
      * @inheritDoc
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
     @Override
-    public Set<Integer> getSupportedEffectTargets() {
+    public @NonNull Set<Integer> getSupportedEffectTargets() {
         Set<Integer> targets = new HashSet<>();
         targets.add(IMAGE_CAPTURE);
         return targets;
@@ -1684,17 +1664,24 @@ public final class ImageCapture extends UseCase {
      * configuration change.
      *
      * <p>The processing estimate can vary based on device processing load.
+     *
+     * <p>If this method returns
+     * {@link ImageCaptureLatencyEstimate#UNDEFINED_IMAGE_CAPTURE_LATENCY}, it means that the
+     * camera HAL doesn't provide latency information. In this case, this method will
+     * consistently return {@link ImageCaptureLatencyEstimate#UNDEFINED_IMAGE_CAPTURE_LATENCY}
+     * for the current camera configuration, as long as the UseCase and camera configuration
+     * remain unchanged (e.g., extensions mode and camera settings are kept the same).
      */
-    @NonNull
-    public ImageCaptureLatencyEstimate getRealtimeCaptureLatencyEstimate() {
+    public @NonNull ImageCaptureLatencyEstimate getRealtimeCaptureLatencyEstimate() {
         final CameraInternal camera = getCamera();
         if (camera == null) {
             return ImageCaptureLatencyEstimate.UNDEFINED_IMAGE_CAPTURE_LATENCY;
         }
 
         final CameraConfig config = camera.getExtendedConfig();
-        final SessionProcessor sessionProcessor = config.getSessionProcessor();
-        final Pair<Long, Long> latencyEstimate = sessionProcessor.getRealtimeCaptureLatency();
+        final SessionProcessor sessionProcessor = config.getSessionProcessor(null);
+        final Pair<Long, Long> latencyEstimate =
+                sessionProcessor != null ? sessionProcessor.getRealtimeCaptureLatency() : null;
         if (latencyEstimate == null) {
             return ImageCaptureLatencyEstimate.UNDEFINED_IMAGE_CAPTURE_LATENCY;
         }
@@ -1715,8 +1702,7 @@ public final class ImageCapture extends UseCase {
      *
      * @see Builder#setPostviewResolutionSelector(ResolutionSelector)
      */
-    @Nullable
-    public ResolutionSelector getPostviewResolutionSelector() {
+    public @Nullable ResolutionSelector getPostviewResolutionSelector() {
         return getCurrentConfig().retrieveOption(OPTION_POSTVIEW_RESOLUTION_SELECTOR,
                 null);
     }
@@ -1908,7 +1894,7 @@ public final class ImageCapture extends UseCase {
          * @param exception An {@link ImageCaptureException} that contains the type of error, the
          *                  error message and the throwable that caused it.
          */
-        public void onError(@NonNull final ImageCaptureException exception) {
+        public void onError(final @NonNull ImageCaptureException exception) {
         }
 
         /**
@@ -2070,9 +2056,8 @@ public final class ImageCapture extends UseCase {
             DEFAULT_CONFIG = builder.getUseCaseConfig();
         }
 
-        @NonNull
         @Override
-        public ImageCaptureConfig getConfig() {
+        public @NonNull ImageCaptureConfig getConfig() {
             return DEFAULT_CONFIG;
         }
     }
@@ -2086,18 +2071,12 @@ public final class ImageCapture extends UseCase {
      */
     public static final class OutputFileOptions {
 
-        @Nullable
-        private final File mFile;
-        @Nullable
-        private final ContentResolver mContentResolver;
-        @Nullable
-        private final Uri mSaveCollection;
-        @Nullable
-        private final ContentValues mContentValues;
-        @Nullable
-        private final OutputStream mOutputStream;
-        @NonNull
-        private final Metadata mMetadata;
+        private final @Nullable File mFile;
+        private final @Nullable ContentResolver mContentResolver;
+        private final @Nullable Uri mSaveCollection;
+        private final @Nullable ContentValues mContentValues;
+        private final @Nullable OutputStream mOutputStream;
+        private final @NonNull Metadata mMetadata;
 
         OutputFileOptions(@Nullable File file,
                 @Nullable ContentResolver contentResolver,
@@ -2116,45 +2095,40 @@ public final class ImageCapture extends UseCase {
         /**
          *
          */
-        @Nullable
         @RestrictTo(Scope.LIBRARY_GROUP)
-        public File getFile() {
+        public @Nullable File getFile() {
             return mFile;
         }
 
         /**
          *
          */
-        @Nullable
         @RestrictTo(Scope.LIBRARY_GROUP)
-        public ContentResolver getContentResolver() {
+        public @Nullable ContentResolver getContentResolver() {
             return mContentResolver;
         }
 
         /**
          *
          */
-        @Nullable
         @RestrictTo(Scope.LIBRARY_GROUP)
-        public Uri getSaveCollection() {
+        public @Nullable Uri getSaveCollection() {
             return mSaveCollection;
         }
 
         /**
          *
          */
-        @Nullable
         @RestrictTo(Scope.LIBRARY_GROUP)
-        public ContentValues getContentValues() {
+        public @Nullable ContentValues getContentValues() {
             return mContentValues;
         }
 
         /**
          *
          */
-        @Nullable
         @RestrictTo(Scope.LIBRARY_GROUP)
-        public OutputStream getOutputStream() {
+        public @Nullable OutputStream getOutputStream() {
             return mOutputStream;
         }
 
@@ -2164,14 +2138,12 @@ public final class ImageCapture extends UseCase {
          * created the {@link Metadata}.
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public Metadata getMetadata() {
+        public @NonNull Metadata getMetadata() {
             return mMetadata;
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return "OutputFileOptions{"
                     + "mFile=" + mFile + ", "
                     + "mContentResolver=" + mContentResolver + ", "
@@ -2186,18 +2158,12 @@ public final class ImageCapture extends UseCase {
          * Builder class for {@link OutputFileOptions}.
          */
         public static final class Builder {
-            @Nullable
-            private File mFile;
-            @Nullable
-            private ContentResolver mContentResolver;
-            @Nullable
-            private Uri mSaveCollection;
-            @Nullable
-            private ContentValues mContentValues;
-            @Nullable
-            private OutputStream mOutputStream;
-            @Nullable
-            private Metadata mMetadata;
+            private @Nullable File mFile;
+            private @Nullable ContentResolver mContentResolver;
+            private @Nullable Uri mSaveCollection;
+            private @Nullable ContentValues mContentValues;
+            private @Nullable OutputStream mOutputStream;
+            private @Nullable Metadata mMetadata;
 
             /**
              * Creates options to write captured image to a {@link File}.
@@ -2255,8 +2221,7 @@ public final class ImageCapture extends UseCase {
              * @param metadata Metadata to be stored with the saved image. For JPEG this will
              *                 be included in the EXIF.
              */
-            @NonNull
-            public Builder setMetadata(@NonNull Metadata metadata) {
+            public @NonNull Builder setMetadata(@NonNull Metadata metadata) {
                 mMetadata = metadata;
                 return this;
             }
@@ -2264,8 +2229,7 @@ public final class ImageCapture extends UseCase {
             /**
              * Builds {@link OutputFileOptions}.
              */
-            @NonNull
-            public OutputFileOptions build() {
+            public @NonNull OutputFileOptions build() {
                 return new OutputFileOptions(mFile, mContentResolver, mSaveCollection,
                         mContentValues, mOutputStream, mMetadata);
             }
@@ -2276,8 +2240,7 @@ public final class ImageCapture extends UseCase {
      * Info about the saved image file.
      */
     public static class OutputFileResults {
-        @Nullable
-        private final Uri mSavedUri;
+        private final @Nullable Uri mSavedUri;
 
         private final int mImageFormat;
 
@@ -2299,8 +2262,7 @@ public final class ImageCapture extends UseCase {
          * {@link androidx.camera.core.ImageCapture.OutputFileOptions.Builder
          * #Builder(OutputStream)}.
          */
-        @Nullable
-        public Uri getSavedUri() {
+        public @Nullable Uri getSavedUri() {
             return mSavedUri;
         }
 
@@ -2338,8 +2300,7 @@ public final class ImageCapture extends UseCase {
          */
         private boolean mIsReversedVertical;
         /** Data representing a geographic location. */
-        @Nullable
-        private Location mLocation;
+        private @Nullable Location mLocation;
 
         /**
          * Gets left-right mirroring of the capture.
@@ -2394,8 +2355,7 @@ public final class ImageCapture extends UseCase {
          *
          * @return the geographic location.
          */
-        @Nullable
-        public Location getLocation() {
+        public @Nullable Location getLocation() {
             return mLocation;
         }
 
@@ -2408,9 +2368,8 @@ public final class ImageCapture extends UseCase {
             mLocation = location;
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return "Metadata{"
                     + "mIsReversedHorizontal=" + mIsReversedHorizontal + ", "
                     + "mIsReversedVertical=" + mIsReversedVertical + ", "
@@ -2458,8 +2417,7 @@ public final class ImageCapture extends UseCase {
          * @return The new Builder.
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static Builder fromConfig(@NonNull Config configuration) {
+        public static @NonNull Builder fromConfig(@NonNull Config configuration) {
             return new Builder(MutableOptionsBundle.from(configuration));
         }
 
@@ -2470,8 +2428,7 @@ public final class ImageCapture extends UseCase {
          * @return The new Builder.
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        static Builder fromConfig(@NonNull ImageCaptureConfig configuration) {
+        static @NonNull Builder fromConfig(@NonNull ImageCaptureConfig configuration) {
             return new Builder(MutableOptionsBundle.from(configuration));
         }
 
@@ -2480,8 +2437,7 @@ public final class ImageCapture extends UseCase {
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Override
-        @NonNull
-        public MutableConfig getMutableConfig() {
+        public @NonNull MutableConfig getMutableConfig() {
             return mMutableConfig;
         }
 
@@ -2489,9 +2445,8 @@ public final class ImageCapture extends UseCase {
          * {@inheritDoc}
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
         @Override
-        public ImageCaptureConfig getUseCaseConfig() {
+        public @NonNull ImageCaptureConfig getUseCaseConfig() {
             return new ImageCaptureConfig(OptionsBundle.from(mMutableConfig));
         }
 
@@ -2505,8 +2460,7 @@ public final class ImageCapture extends UseCase {
          *                                  setting a non-null {@link ScreenFlash} instance.
          */
         @Override
-        @NonNull
-        public ImageCapture build() {
+        public @NonNull ImageCapture build() {
             // Update the input format base on the other options set (mainly whether processing
             // is done)
             Integer bufferFormat = getMutableConfig().retrieveOption(OPTION_BUFFER_FORMAT, null);
@@ -2582,8 +2536,7 @@ public final class ImageCapture extends UseCase {
          * @param captureMode The requested image capture mode.
          * @return The current Builder.
          */
-        @NonNull
-        public Builder setCaptureMode(@CaptureMode int captureMode) {
+        public @NonNull Builder setCaptureMode(@CaptureMode int captureMode) {
             getMutableConfig().insertOption(OPTION_IMAGE_CAPTURE_MODE, captureMode);
             return this;
         }
@@ -2604,8 +2557,7 @@ public final class ImageCapture extends UseCase {
          *                  {@link #FLASH_MODE_OFF}.
          * @return The current Builder.
          */
-        @NonNull
-        public Builder setFlashMode(@FlashMode int flashMode) {
+        public @NonNull Builder setFlashMode(@FlashMode int flashMode) {
             getMutableConfig().insertOption(OPTION_FLASH_MODE, flashMode);
             return this;
         }
@@ -2624,8 +2576,7 @@ public final class ImageCapture extends UseCase {
          *                             {@link #FLASH_MODE_SCREEN}.
          * @return The current Builder.
          */
-        @NonNull
-        public Builder setScreenFlash(@NonNull ScreenFlash screenFlash) {
+        public @NonNull Builder setScreenFlash(@NonNull ScreenFlash screenFlash) {
             getMutableConfig().insertOption(OPTION_SCREEN_FLASH, screenFlash);
             return this;
         }
@@ -2644,24 +2595,22 @@ public final class ImageCapture extends UseCase {
          * @return The current Builder.
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public Builder setBufferFormat(int bufferImageFormat) {
+        public @NonNull Builder setBufferFormat(int bufferImageFormat) {
             getMutableConfig().insertOption(OPTION_BUFFER_FORMAT, bufferImageFormat);
             return this;
         }
 
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Override
-        @NonNull
-        public Builder setSupportedResolutions(@NonNull List<Pair<Integer, Size[]>> resolutions) {
+        public @NonNull Builder setSupportedResolutions(
+                @NonNull List<Pair<Integer, Size[]>> resolutions) {
             getMutableConfig().insertOption(OPTION_SUPPORTED_RESOLUTIONS, resolutions);
             return this;
         }
 
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
         @Override
-        public Builder setCustomOrderedResolutions(@NonNull List<Size> resolutions) {
+        public @NonNull Builder setCustomOrderedResolutions(@NonNull List<Size> resolutions) {
             getMutableConfig().insertOption(OPTION_CUSTOM_ORDERED_RESOLUTIONS, resolutions);
             return this;
         }
@@ -2670,8 +2619,7 @@ public final class ImageCapture extends UseCase {
 
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Override
-        @NonNull
-        public Builder setTargetClass(@NonNull Class<ImageCapture> targetClass) {
+        public @NonNull Builder setTargetClass(@NonNull Class<ImageCapture> targetClass) {
             getMutableConfig().insertOption(OPTION_TARGET_CLASS, targetClass);
 
             // If no name is set yet, then generate a unique name
@@ -2697,8 +2645,7 @@ public final class ImageCapture extends UseCase {
          * @return the current Builder.
          */
         @Override
-        @NonNull
-        public Builder setTargetName(@NonNull String targetName) {
+        public @NonNull Builder setTargetName(@NonNull String targetName) {
             getMutableConfig().insertOption(OPTION_TARGET_NAME, targetName);
             return this;
         }
@@ -2726,10 +2673,9 @@ public final class ImageCapture extends UseCase {
          * @deprecated use {@link ResolutionSelector} with {@link AspectRatioStrategy} to specify
          * the preferred aspect ratio settings instead.
          */
-        @NonNull
         @Override
         @Deprecated
-        public Builder setTargetAspectRatio(@AspectRatio.Ratio int aspectRatio) {
+        public @NonNull Builder setTargetAspectRatio(@AspectRatio.Ratio int aspectRatio) {
             if (aspectRatio == AspectRatio.RATIO_DEFAULT) {
                 aspectRatio = Defaults.DEFAULT_ASPECT_RATIO;
             }
@@ -2763,9 +2709,8 @@ public final class ImageCapture extends UseCase {
          * @see androidx.camera.core.ImageCapture#setTargetRotation(int)
          * @see android.view.OrientationEventListener
          */
-        @NonNull
         @Override
-        public Builder setTargetRotation(@RotationValue int rotation) {
+        public @NonNull Builder setTargetRotation(@RotationValue int rotation) {
             getMutableConfig().insertOption(OPTION_TARGET_ROTATION, rotation);
             return this;
         }
@@ -2774,9 +2719,8 @@ public final class ImageCapture extends UseCase {
          * setMirrorMode is not supported on ImageCapture.
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
         @Override
-        public Builder setMirrorMode(@MirrorMode.Mirror int mirrorMode) {
+        public @NonNull Builder setMirrorMode(@MirrorMode.Mirror int mirrorMode) {
             throw new UnsupportedOperationException("setMirrorMode is not supported.");
         }
 
@@ -2823,10 +2767,9 @@ public final class ImageCapture extends UseCase {
          * @deprecated use {@link ResolutionSelector} with {@link ResolutionStrategy} to specify
          * the preferred resolution settings instead.
          */
-        @NonNull
         @Override
         @Deprecated
-        public Builder setTargetResolution(@NonNull Size resolution) {
+        public @NonNull Builder setTargetResolution(@NonNull Size resolution) {
             getMutableConfig().insertOption(OPTION_TARGET_RESOLUTION, resolution);
             return this;
         }
@@ -2837,19 +2780,17 @@ public final class ImageCapture extends UseCase {
          * @param resolution The default resolution to choose from supported output sizes list.
          * @return The current Builder.
          */
-        @NonNull
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Override
-        public Builder setDefaultResolution(@NonNull Size resolution) {
+        public @NonNull Builder setDefaultResolution(@NonNull Size resolution) {
             getMutableConfig().insertOption(ImageOutputConfig.OPTION_DEFAULT_RESOLUTION,
                     resolution);
             return this;
         }
 
-        @NonNull
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Override
-        public Builder setMaxResolution(@NonNull Size resolution) {
+        public @NonNull Builder setMaxResolution(@NonNull Size resolution) {
             getMutableConfig().insertOption(OPTION_MAX_RESOLUTION, resolution);
             return this;
         }
@@ -2872,8 +2813,8 @@ public final class ImageCapture extends UseCase {
          * @return The current Builder.
          */
         @Override
-        @NonNull
-        public Builder setResolutionSelector(@NonNull ResolutionSelector resolutionSelector) {
+        public @NonNull Builder setResolutionSelector(
+                @NonNull ResolutionSelector resolutionSelector) {
             getMutableConfig().insertOption(OPTION_RESOLUTION_SELECTOR, resolutionSelector);
             return this;
         }
@@ -2900,8 +2841,7 @@ public final class ImageCapture extends UseCase {
          * @param postviewEnabled whether postview is enabled or not
          * @return the current Builder.
          */
-        @NonNull
-        public Builder setPostviewEnabled(boolean postviewEnabled) {
+        public @NonNull Builder setPostviewEnabled(boolean postviewEnabled) {
             getMutableConfig().insertOption(OPTION_POSTVIEW_ENABLED,
                     postviewEnabled);
             return this;
@@ -2920,26 +2860,23 @@ public final class ImageCapture extends UseCase {
          *
          * @return the current Builder.
          */
-        @NonNull
-        public Builder setPostviewResolutionSelector(
+        public @NonNull Builder setPostviewResolutionSelector(
                 @NonNull ResolutionSelector resolutionSelector) {
             getMutableConfig().insertOption(OPTION_POSTVIEW_RESOLUTION_SELECTOR,
                     resolutionSelector);
             return this;
         }
 
-        @NonNull
         @RestrictTo(Scope.LIBRARY_GROUP)
-        public Builder setImageReaderProxyProvider(
+        public @NonNull Builder setImageReaderProxyProvider(
                 @NonNull ImageReaderProxyProvider imageReaderProxyProvider) {
             getMutableConfig().insertOption(OPTION_IMAGE_READER_PROXY_PROVIDER,
                     imageReaderProxyProvider);
             return this;
         }
 
-        @NonNull
         @RestrictTo(Scope.LIBRARY_GROUP)
-        public Builder setSoftwareJpegEncoderRequested(boolean requestSoftwareJpeg) {
+        public @NonNull Builder setSoftwareJpegEncoderRequested(boolean requestSoftwareJpeg) {
             getMutableConfig().insertOption(OPTION_USE_SOFTWARE_JPEG_ENCODER,
                     requestSoftwareJpeg);
             return this;
@@ -2954,9 +2891,8 @@ public final class ImageCapture extends UseCase {
          *                  or {@link #FLASH_TYPE_USE_TORCH_AS_FLASH}.
          * @return The current Builder.
          */
-        @NonNull
         @RestrictTo(Scope.LIBRARY_GROUP)
-        public Builder setFlashType(@FlashType int flashType) {
+        public @NonNull Builder setFlashType(@FlashType int flashType) {
             getMutableConfig().insertOption(OPTION_FLASH_TYPE, flashType);
             return this;
         }
@@ -2980,8 +2916,7 @@ public final class ImageCapture extends UseCase {
          * @return The current Builder.
          * @throws IllegalArgumentException if the input value is not in range [1..100].
          */
-        @NonNull
-        public Builder setJpegQuality(@IntRange(from = 1, to = 100) int jpegQuality) {
+        public @NonNull Builder setJpegQuality(@IntRange(from = 1, to = 100) int jpegQuality) {
             Preconditions.checkArgumentInRange(jpegQuality, 1, 100, "jpegQuality");
             getMutableConfig().insertOption(OPTION_JPEG_COMPRESSION_QUALITY,
                     jpegQuality);
@@ -3002,8 +2937,7 @@ public final class ImageCapture extends UseCase {
          * @return the current Builder.
          */
         @Override
-        @NonNull
-        public Builder setIoExecutor(@NonNull Executor executor) {
+        public @NonNull Builder setIoExecutor(@NonNull Executor executor) {
             getMutableConfig().insertOption(OPTION_IO_EXECUTOR, executor);
             return this;
         }
@@ -3012,8 +2946,7 @@ public final class ImageCapture extends UseCase {
 
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Override
-        @NonNull
-        public Builder setDefaultSessionConfig(@NonNull SessionConfig sessionConfig) {
+        public @NonNull Builder setDefaultSessionConfig(@NonNull SessionConfig sessionConfig) {
             getMutableConfig().insertOption(OPTION_DEFAULT_SESSION_CONFIG, sessionConfig);
             return this;
         }
@@ -3038,42 +2971,37 @@ public final class ImageCapture extends UseCase {
          * @see OutputFormat
          * @see ImageCaptureCapabilities#getSupportedOutputFormats()
          */
-        @NonNull
-        public Builder setOutputFormat(@OutputFormat int outputFormat) {
+        public @NonNull Builder setOutputFormat(@OutputFormat int outputFormat) {
             getMutableConfig().insertOption(OPTION_OUTPUT_FORMAT, outputFormat);
             return this;
         }
 
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Override
-        @NonNull
-        public Builder setDefaultCaptureConfig(@NonNull CaptureConfig captureConfig) {
+        public @NonNull Builder setDefaultCaptureConfig(@NonNull CaptureConfig captureConfig) {
             getMutableConfig().insertOption(OPTION_DEFAULT_CAPTURE_CONFIG, captureConfig);
             return this;
         }
 
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Override
-        @NonNull
-        public Builder setSessionOptionUnpacker(
-                @NonNull SessionConfig.OptionUnpacker optionUnpacker) {
+        public @NonNull Builder setSessionOptionUnpacker(
+                SessionConfig.@NonNull OptionUnpacker optionUnpacker) {
             getMutableConfig().insertOption(OPTION_SESSION_CONFIG_UNPACKER, optionUnpacker);
             return this;
         }
 
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Override
-        @NonNull
-        public Builder setCaptureOptionUnpacker(
-                @NonNull CaptureConfig.OptionUnpacker optionUnpacker) {
+        public @NonNull Builder setCaptureOptionUnpacker(
+                CaptureConfig.@NonNull OptionUnpacker optionUnpacker) {
             getMutableConfig().insertOption(OPTION_CAPTURE_CONFIG_UNPACKER, optionUnpacker);
             return this;
         }
 
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Override
-        @NonNull
-        public Builder setSurfaceOccupancyPriority(int priority) {
+        public @NonNull Builder setSurfaceOccupancyPriority(int priority) {
             getMutableConfig().insertOption(OPTION_SURFACE_OCCUPANCY_PRIORITY, priority);
             return this;
         }
@@ -3082,9 +3010,8 @@ public final class ImageCapture extends UseCase {
          * {@inheritDoc}
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
         @Override
-        public Builder setZslDisabled(boolean disabled) {
+        public @NonNull Builder setZslDisabled(boolean disabled) {
             getMutableConfig().insertOption(OPTION_ZSL_DISABLED, disabled);
             return this;
         }
@@ -3093,9 +3020,8 @@ public final class ImageCapture extends UseCase {
          * {@inheritDoc}
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
         @Override
-        public Builder setHighResolutionDisabled(boolean disabled) {
+        public @NonNull Builder setHighResolutionDisabled(boolean disabled) {
             getMutableConfig().insertOption(OPTION_HIGH_RESOLUTION_DISABLED, disabled);
             return this;
         }
@@ -3104,9 +3030,9 @@ public final class ImageCapture extends UseCase {
          * {@inheritDoc}
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
         @Override
-        public Builder setCaptureType(@NonNull UseCaseConfigFactory.CaptureType captureType) {
+        public @NonNull Builder setCaptureType(
+                UseCaseConfigFactory.@NonNull CaptureType captureType) {
             getMutableConfig().insertOption(OPTION_CAPTURE_TYPE, captureType);
             return this;
         }
@@ -3122,9 +3048,8 @@ public final class ImageCapture extends UseCase {
          * @see DynamicRange
          */
         @RestrictTo(Scope.LIBRARY)
-        @NonNull
         @Override
-        public Builder setDynamicRange(@NonNull DynamicRange dynamicRange) {
+        public @NonNull Builder setDynamicRange(@NonNull DynamicRange dynamicRange) {
             getMutableConfig().insertOption(OPTION_INPUT_DYNAMIC_RANGE, dynamicRange);
             return this;
         }

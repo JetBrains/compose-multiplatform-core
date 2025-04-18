@@ -34,8 +34,8 @@ val DatePickerScreen =
                     DatePicker(
                         initialDate = LocalDate.of(2024, 9, 2),
                         onDatePicked = {},
-                        minDate = minDate,
-                        maxDate = maxDate,
+                        minValidDate = minDate,
+                        maxValidDate = maxDate,
                         datePickerType = DatePickerType.YearMonthDay
                     )
                 }

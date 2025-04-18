@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -36,6 +36,7 @@ android {
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
     api(project(":hilt:hilt-common"))
     api("androidx.work:work-runtime:2.3.4")
@@ -45,7 +46,7 @@ dependencies {
 
 androidx {
     name = "WorkManager Hilt Extension"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.HILT
     inceptionYear = "2020"
     description = "Android Lifecycle WorkManager Hilt Extension"

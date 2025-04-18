@@ -16,6 +16,8 @@
 
 package androidx.webkit;
 
+import android.os.Build;
+import android.util.Log;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
@@ -23,12 +25,14 @@ import androidx.annotation.IntDef;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RequiresOptIn;
 import androidx.annotation.RestrictTo;
+import androidx.annotation.UiThread;
 import androidx.webkit.internal.ApiFeature;
 import androidx.webkit.internal.ApiHelperForM;
 import androidx.webkit.internal.ApiHelperForN;
 import androidx.webkit.internal.ApiHelperForO;
 import androidx.webkit.internal.ApiHelperForQ;
 import androidx.webkit.internal.WebSettingsAdapter;
+import androidx.webkit.internal.WebSettingsNoOpAdapter;
 import androidx.webkit.internal.WebViewFeatureInternal;
 import androidx.webkit.internal.WebViewGlueCommunicator;
 
@@ -45,6 +49,9 @@ import java.util.Set;
  * Compatibility version of {@link android.webkit.WebSettings}
  */
 public class WebSettingsCompat {
+
+    private static final String TAG = "WebSettingsCompat";
+
     private WebSettingsCompat() {}
 
     /**
@@ -958,6 +965,7 @@ public class WebSettingsCompat {
      */
     @RequiresFeature(name = WebViewFeature.WEB_AUTHENTICATION,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
     public static void setWebAuthenticationSupport(@NonNull WebSettings settings,
             @WebAuthenticationSupport int support) {
         final ApiFeature.NoFramework feature =
@@ -987,6 +995,7 @@ public class WebSettingsCompat {
     @RequiresFeature(name = WebViewFeature.WEB_AUTHENTICATION,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @WebAuthenticationSupport
+    @UiThread
     public static int getWebAuthenticationSupport(@NonNull WebSettings settings) {
         final ApiFeature.NoFramework feature =
                 WebViewFeatureInternal.WEB_AUTHENTICATION;
@@ -1146,8 +1155,158 @@ public class WebSettingsCompat {
         }
     }
 
+    /**
+     * Enables <a href="https://w3c.github.io/payment-request/">PaymentRequest</a> for the given
+     * {@link WebSettings}.
+     *
+     * <p>This feature requires adding the following snippet to the {@code AndroidManifest.xml}:
+     *
+     * <pre class="prettyprint">
+     *   &lt;queries&gt;
+     *       &lt;intent&gt;
+     *           &lt;action android:name="org.chromium.intent.action.PAY"/&gt;
+     *       &lt;/intent&gt;
+     *       &lt;intent&gt;
+     *           &lt;action android:name="org.chromium.intent.action.IS_READY_TO_PAY"/&gt;
+     *       &lt;/intent&gt;
+     *       &lt;intent&gt;
+     *           &lt;action android:name="org.chromium.intent.action.UPDATE_PAYMENT_DETAILS"/&gt;
+     *       &lt;/intent&gt;
+     *   &lt;/queries&gt;
+     * </pre>
+     *
+     * <p>This is needed to allow WebView to query the device for the user's payment applications
+     * that are implemented according to the <a
+     * href="https://web.dev/articles/android-payment-apps-developers-guide">Android payment app
+     * developers guide</a>.
+     *
+     * <ul>
+     * <li>The {@code org.chromium.intent.action.PAY} intent is necessary to let users <a
+     * href="https://web.dev/articles/android-payment-apps-developers-guide#step_3_let_a_customer_make_payment">make
+     * payments</a>.
+     *
+     * <li>The {@code org.chromium.intent.action.IS_READY_TO_PAY} intent is necessary to let the
+     * merchant website know if the user is <a
+     * href="https://web.dev/articles/android-payment-apps-developers-guide#step_2_let_a_merchant_know_if_a_customer_has_an_enrolled_instrument_that_is_ready_to_pay">ready
+     * to pay</a>.
+     *
+     * <li>The {@code org.chromium.intent.action.UPDATE_PAYMENT_DETAILS} intent is necessary for
+     * payment apps to support <a
+     * href="https://web.dev/articles/android-payment-apps-delegation#optional_support_dynamic_flow">updating
+     * the price dynamically</a> in response to the user selecting a different shipping address or
+     * option.
+     * </ul>
+     *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#PAYMENT_REQUEST}.
+     *
+     * @param settings Settings retrieved from {@link WebView#getSettings()}.
+     * @param enabled Whether PaymentRequest should be enabled for this {@link WebSettings}.
+     */
+    @RequiresFeature(name = WebViewFeature.PAYMENT_REQUEST,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static void setPaymentRequestEnabled(@NonNull WebSettings settings, boolean enabled) {
+        final ApiFeature.NoFramework feature = WebViewFeatureInternal.PAYMENT_REQUEST;
+        if (feature.isSupportedByWebView()) {
+            getAdapter(settings).setPaymentRequestEnabled(enabled);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Get the current status of PaymentRequest for this {@link WebSettings}.
+     *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#PAYMENT_REQUEST}.
+     *
+     * @param settings Settings retrieved from {@link WebView#getSettings()}.
+     * @return Whether PaymentRequest is enabled.
+     */
+    @RequiresFeature(name = WebViewFeature.PAYMENT_REQUEST,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static boolean getPaymentRequestEnabled(@NonNull WebSettings settings) {
+        final ApiFeature.NoFramework feature = WebViewFeatureInternal.PAYMENT_REQUEST;
+        if (feature.isSupportedByWebView()) {
+            return getAdapter(settings).getPaymentRequestEnabled();
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Enables support for <code>hasEnrolledInstrument()</code> method in <a
+     * href="https://w3c.github.io/payment-request/">PaymentRequest</a> for the given {@link
+     * WebSettings}. This only has any effect if {@code setPaymentRequestEnabled(settings, true)}
+     * has been called.
+     *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#PAYMENT_REQUEST}.
+     *
+     * @param settings Settings retrieved from {@link WebView#getSettings()}.
+     * @param enabled Whether PaymentRequest.hasEnrolledInstrument() should be enabled for this
+     *     {@link WebSettings}.
+     */
+    @RequiresFeature(name = WebViewFeature.PAYMENT_REQUEST,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static void setHasEnrolledInstrumentEnabled(@NonNull WebSettings settings,
+            boolean enabled) {
+        final ApiFeature.NoFramework feature = WebViewFeatureInternal.PAYMENT_REQUEST;
+        if (feature.isSupportedByWebView()) {
+            getAdapter(settings).setHasEnrolledInstrumentEnabled(enabled);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Get the current status of PaymentRequest.hasEnrolledInstrument() for this {@link
+     * WebSettings}.
+     *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#PAYMENT_REQUEST}.
+     *
+     * @param settings Settings retrieved from {@link WebView#getSettings()}.
+     * @return Whether PaymentRequest.hasEnrolledInstrument() is enabled.
+     */
+    @RequiresFeature(name = WebViewFeature.PAYMENT_REQUEST,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static boolean getHasEnrolledInstrumentEnabled(@NonNull WebSettings settings) {
+        final ApiFeature.NoFramework feature = WebViewFeatureInternal.PAYMENT_REQUEST;
+        if (feature.isSupportedByWebView()) {
+            return getAdapter(settings).getHasEnrolledInstrumentEnabled();
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
     private static WebSettingsAdapter getAdapter(WebSettings settings) {
-        return WebViewGlueCommunicator.getCompatConverter().convertSettings(settings);
+        try {
+            return WebViewGlueCommunicator.getCompatConverter().convertSettings(settings);
+        } catch (ClassCastException e) {
+            if (Build.VERSION.SDK_INT == 30
+                    && "android.webkit.WebSettingsWrapper"
+                    .equals(settings.getClass().getCanonicalName())) {
+                // This is a patch for a bug observed only on OnePlus devices running SDK version
+                // 30. See https://crbug.com/388824130.
+                Log.e(
+                        TAG,
+                        "Error converting WebSettings to Chrome implementation. All AndroidX method"
+                                + " calls on this WebSettings instance will be no-op calls. See"
+                                + " https://crbug.com/388824130 for more info.",
+                        e);
+                return new WebSettingsNoOpAdapter();
+            }
+            throw e;
+        }
     }
 }
 

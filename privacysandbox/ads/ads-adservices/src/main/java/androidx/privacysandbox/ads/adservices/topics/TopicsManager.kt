@@ -49,7 +49,7 @@ abstract class TopicsManager internal constructor() {
          *   value returned is null.
          */
         @JvmStatic
-        @SuppressLint("NewApi", "ClassVerificationFailure")
+        @SuppressLint("NewApi")
         fun obtain(context: Context): TopicsManager? {
             return if (AdServicesInfo.adServicesVersion() >= 11) {
                 TopicsManagerApi33Ext11Impl(context)

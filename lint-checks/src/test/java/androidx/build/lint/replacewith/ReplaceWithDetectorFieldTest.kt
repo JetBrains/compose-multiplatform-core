@@ -33,10 +33,10 @@ class ReplaceWithDetectorFieldTest {
 
         val expected =
             """
-src/replacewith/StaticFieldExplicitClass.java:25: Information: Replacement available [ReplaceWith]
+src/replacewith/StaticFieldExplicitClass.java:25: Hint: Replacement available [ReplaceWith]
         System.out.println(ReplaceWithUsageJava.AUTOFILL_HINT_NAME);
                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0 errors, 0 warnings
+0 errors, 0 warnings, 1 hint
         """
                 .trimIndent()
 
@@ -62,10 +62,10 @@ Fix for src/replacewith/StaticFieldExplicitClass.java line 25: Replace with `Vie
 
         val expected =
             """
-src/replacewith/StaticFieldImplicitClass.java:27: Information: Replacement available [ReplaceWith]
+src/replacewith/StaticFieldImplicitClass.java:27: Hint: Replacement available [ReplaceWith]
         System.out.println(AUTOFILL_HINT_NAME);
                            ~~~~~~~~~~~~~~~~~~
-0 errors, 0 warnings
+0 errors, 0 warnings, 1 hint
         """
                 .trimIndent()
 

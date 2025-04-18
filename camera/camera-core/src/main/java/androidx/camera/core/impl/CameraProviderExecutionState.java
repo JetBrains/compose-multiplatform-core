@@ -18,11 +18,12 @@ package androidx.camera.core.impl;
 
 import android.os.SystemClock;
 
-import androidx.annotation.Nullable;
 import androidx.camera.core.CameraUnavailableException;
 import androidx.camera.core.ExperimentalRetryPolicy;
 import androidx.camera.core.InitializationException;
 import androidx.camera.core.RetryPolicy;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * This class acts as a container for information about the execution state of the camera
@@ -34,8 +35,7 @@ public final class CameraProviderExecutionState implements RetryPolicy.Execution
     private final int mStatus;
     private final int mAttemptCount;
     private final long mTaskExecutedTimeInMillis;
-    @Nullable
-    private final Throwable mCause;
+    private final @Nullable Throwable mCause;
 
     /**
      * Constructs a {@link CameraProviderExecutionState} object.
@@ -82,9 +82,8 @@ public final class CameraProviderExecutionState implements RetryPolicy.Execution
     /**
      * @return The cause that occurred during the task execution, or null if there was no error.
      */
-    @Nullable
     @Override
-    public Throwable getCause() {
+    public @Nullable Throwable getCause() {
         return mCause;
     }
 

@@ -72,6 +72,7 @@ private constructor(
                     /* initialize = */ false,
                     classLoader
                 )
+            @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
             val lifecycleEventInstances =
                 lifecycleEventEnum.enumConstants
                     .filterIsInstance(Enum::class.java)

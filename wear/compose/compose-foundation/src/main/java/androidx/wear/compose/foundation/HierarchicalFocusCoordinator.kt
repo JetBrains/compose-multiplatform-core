@@ -85,7 +85,7 @@ public fun ActiveFocusListener(onFocusChanged: CoroutineScope.(Boolean) -> Unit)
 )
 @Composable
 @ExperimentalWearFoundationApi
-public fun OnFocusChange(onFocusChanged: CoroutineScope.(Boolean) -> Unit) =
+public fun OnFocusChange(onFocusChanged: CoroutineScope.(Boolean) -> Unit): Unit =
     ActiveFocusListener(onFocusChanged)
 
 /**
@@ -108,7 +108,7 @@ public fun ActiveFocusRequester(focusRequester: FocusRequester) {
 )
 @Composable
 @ExperimentalWearFoundationApi
-public fun RequestFocusWhenActive(focusRequester: FocusRequester) =
+public fun RequestFocusWhenActive(focusRequester: FocusRequester): Unit =
     ActiveFocusRequester(focusRequester)
 
 /**
@@ -119,7 +119,7 @@ public fun RequestFocusWhenActive(focusRequester: FocusRequester) =
  * .focusRequester modifier on a Composable that is part of the composition.
  */
 @Composable
-public fun rememberActiveFocusRequester() =
+public fun rememberActiveFocusRequester(): FocusRequester =
     remember { FocusRequester() }.also { ActiveFocusRequester(it) }
 
 /**

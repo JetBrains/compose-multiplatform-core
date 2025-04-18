@@ -283,7 +283,7 @@ abstract class AdSelectionManager internal constructor() {
          *   value returned is null.
          */
         @JvmStatic
-        @SuppressLint("NewApi", "ClassVerificationFailure")
+        @SuppressLint("NewApi")
         fun obtain(context: Context): AdSelectionManager? {
             return if (AdServicesInfo.adServicesVersion() >= 4) {
                 AdSelectionManagerApi33Ext4Impl(context)

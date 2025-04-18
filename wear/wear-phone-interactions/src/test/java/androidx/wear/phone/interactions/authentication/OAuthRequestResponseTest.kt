@@ -19,8 +19,8 @@ package androidx.wear.phone.interactions.authentication
 import android.content.Context
 import android.net.Uri
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.filters.SdkSuppress
 import androidx.wear.phone.interactions.WearPhoneInteractionsTestRunner
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.fail
@@ -36,7 +36,7 @@ import org.robolectric.shadows.ShadowPackageManager
 @RunWith(WearPhoneInteractionsTestRunner::class)
 @DoNotInstrument
 @Config(minSdk = 28)
-@RequiresApi(Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 public class OAuthRequestResponseTest {
     internal companion object {
         private val context: Context = ApplicationProvider.getApplicationContext()

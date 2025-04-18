@@ -20,6 +20,7 @@ import android.os.Build
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -157,7 +158,7 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
             DefaultWideNavigationRail(
                 interactionSource,
                 expanded = scheme.expanded,
-                arrangement = WideNavigationRailArrangement.Center
+                arrangement = Arrangement.Center
             )
         }
 
@@ -182,7 +183,7 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
             DefaultWideNavigationRail(
                 interactionSource,
                 expanded = scheme.expanded,
-                arrangement = WideNavigationRailArrangement.Bottom
+                arrangement = Arrangement.Bottom
             )
         }
 
@@ -273,7 +274,7 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
  * @param interactionSource the [MutableInteractionSource] for the first [WideNavigationRailItem],
  *   to control its visual state
  * @param expanded whether the rail is expanded
- * @param arrangement the [WideNavigationRailArrangement] of the rail
+ * @param arrangement the [Arrangement.Vertical] of the rail
  * @param withHeader when true, shows a [FloatingActionButton] as the header
  * @param setUnselectedItemsAsDisabled when true, marks unselected items as disabled
  */
@@ -282,7 +283,7 @@ class WideNavigationRailScreenshotTest(private val scheme: TestWrapper) {
 private fun DefaultWideNavigationRail(
     interactionSource: MutableInteractionSource,
     expanded: Boolean = false,
-    arrangement: WideNavigationRailArrangement = WideNavigationRailArrangement.Top,
+    arrangement: Arrangement.Vertical = Arrangement.Top,
     withHeader: Boolean = false,
     setUnselectedItemsAsDisabled: Boolean = false,
 ) {

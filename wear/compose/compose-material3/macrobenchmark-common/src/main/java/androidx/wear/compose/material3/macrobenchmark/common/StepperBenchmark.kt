@@ -32,8 +32,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
-import androidx.wear.compose.material3.LevelIndicator
 import androidx.wear.compose.material3.Stepper
+import androidx.wear.compose.material3.StepperLevelIndicator
 import androidx.wear.compose.material3.Text
 
 object StepperBenchmark : MacrobenchmarkScreen {
@@ -62,7 +62,7 @@ object StepperBenchmark : MacrobenchmarkScreen {
                 ) {
                     Text(String.format("Value: %.1f".format(value)))
                 }
-                LevelIndicator(
+                StepperLevelIndicator(
                     value = { value },
                     valueRange = valueRange,
                     modifier = Modifier.align(Alignment.CenterStart)

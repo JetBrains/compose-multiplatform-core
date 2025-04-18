@@ -61,7 +61,7 @@ fun FocusRestorationDemo() {
         LazyRow(
             Modifier.focusRequester(focusRequester).focusProperties {
                 onExit = { focusRequester.saveFocusedChild() }
-                onEnter = { if (focusRequester.restoreFocusedChild()) cancelFocus() }
+                onEnter = { if (focusRequester.restoreFocusedChild()) cancelFocusChange() }
             }
         ) {
             item { Button("1") }

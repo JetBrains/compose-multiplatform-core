@@ -458,6 +458,31 @@ class TextMeasurerTest {
     }
 
     @Test
+    fun decreasingMinWidth_decreasesTheCalculatedWidth() {
+        val textMeasurer = textMeasurer(cacheSize = 8)
+        val firstTextLayout =
+            layoutText(
+                textLayoutInput(
+                    constraints = Constraints(minWidth = 1000, maxWidth = Int.MAX_VALUE)
+                ),
+                textMeasurer
+            )
+
+        val secondTextLayout =
+            layoutText(
+                textLayoutInput(
+                    constraints = Constraints(minWidth = 500, maxWidth = Int.MAX_VALUE)
+                ),
+                textMeasurer
+            )
+
+        assertThat(firstTextLayout.multiParagraph)
+            .isNotSameInstanceAs(secondTextLayout.multiParagraph)
+        assertThat(firstTextLayout.size.width).isEqualTo(1000)
+        assertThat(secondTextLayout.size.width).isEqualTo(500)
+    }
+
+    @Test
     fun emptyConstraints_hugeString_dontCrash() {
         val subject = textMeasurer()
         subject.measure("A".repeat(100_000), TextStyle.Default)

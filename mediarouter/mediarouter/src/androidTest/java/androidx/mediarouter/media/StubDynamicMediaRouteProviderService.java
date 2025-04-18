@@ -16,7 +16,9 @@
 package androidx.mediarouter.media;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Bundle;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -37,18 +39,33 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
     public static final String CATEGORY_DYNAMIC_PROVIDER_TEST =
             "androidx.mediarouter.media.CATEGORY_DYNAMIC_PROVIDER_TEST";
 
+    public static final int VOLUME_INITIAL_VALUE = 8;
+    public static final int VOLUME_MAX = 20;
     public static final String ROUTE_ID_GROUP = "route_id_group";
     public static final String ROUTE_NAME_GROUP = "Group route name";
     public static final String ROUTE_ID_1 = "route_id1";
     public static final String ROUTE_NAME_1 = "Sample Route 1";
+    public static final boolean ROUTE_GROUPABLE_1 = true;
+    public static final boolean ROUTE_TRANSFERABLE_1 = false;
     public static final String ROUTE_ID_2 = "route_id2";
     public static final String ROUTE_NAME_2 = "Sample Route 2";
+    public static final boolean ROUTE_GROUPABLE_2 = true;
+    public static final boolean ROUTE_TRANSFERABLE_2 = false;
+    public static final String ROUTE_ID_3 = "route_id3";
+    public static final String ROUTE_NAME_3 = "Sample Route 3";
+    public static final boolean ROUTE_GROUPABLE_3 = false;
+    public static final boolean ROUTE_TRANSFERABLE_3 = true;
     public static final List<IntentFilter> CONTROL_FILTERS_TEST = new ArrayList<>();
+    public static final String SEND_CONTROL_REQUEST_KEY = "send_control_request_key";
+    public static final String SEND_CONTROL_REQUEST_VALUE = "send_control_request_value";
+    public static final Bundle SEND_CONTROL_REQUEST_RESULT = new Bundle();
 
     static {
         IntentFilter filter = new IntentFilter();
         filter.addCategory(CATEGORY_DYNAMIC_PROVIDER_TEST);
         CONTROL_FILTERS_TEST.add(filter);
+
+        SEND_CONTROL_REQUEST_RESULT.putString(SEND_CONTROL_REQUEST_KEY, SEND_CONTROL_REQUEST_VALUE);
     }
 
     @Override
@@ -59,7 +76,7 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
     private static final class Provider extends MediaRouteProvider {
         private final Map<String, MediaRouteDescriptor> mRoutes = new ArrayMap<>();
         private final Map<String, StubRouteController> mControllers = new ArrayMap<>();
-        private final MediaRouteDescriptor mGroupDescriptor;
+        private MediaRouteDescriptor mGroupDescriptor;
         private final Set<String> mCurrentSelectedRouteIds = new HashSet<>();
         private boolean mCurrentlyScanning = false;
         @Nullable private DynamicGroupRouteController mGroupController;
@@ -69,17 +86,30 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
             mGroupDescriptor =
                     new MediaRouteDescriptor.Builder(ROUTE_ID_GROUP, ROUTE_NAME_GROUP)
                             .addControlFilters(CONTROL_FILTERS_TEST)
+                            .setVolumeMax(VOLUME_MAX)
+                            .setVolume(VOLUME_INITIAL_VALUE)
                             .build();
             MediaRouteDescriptor route1 =
                     new MediaRouteDescriptor.Builder(ROUTE_ID_1, ROUTE_NAME_1)
                             .addControlFilters(CONTROL_FILTERS_TEST)
+                            .setVolumeMax(VOLUME_MAX)
+                            .setVolume(VOLUME_INITIAL_VALUE)
                             .build();
             MediaRouteDescriptor route2 =
                     new MediaRouteDescriptor.Builder(ROUTE_ID_2, ROUTE_NAME_2)
                             .addControlFilters(CONTROL_FILTERS_TEST)
+                            .setVolumeMax(VOLUME_MAX)
+                            .setVolume(VOLUME_INITIAL_VALUE)
+                            .build();
+            MediaRouteDescriptor route3 =
+                    new MediaRouteDescriptor.Builder(ROUTE_ID_3, ROUTE_NAME_3)
+                            .addControlFilters(CONTROL_FILTERS_TEST)
+                            .setVolumeMax(VOLUME_MAX)
+                            .setVolume(VOLUME_INITIAL_VALUE)
                             .build();
             mRoutes.put(route1.getId(), route1);
             mRoutes.put(route2.getId(), route2);
+            mRoutes.put(route3.getId(), route3);
         }
 
         // MediaRouteProvider implementation.
@@ -127,6 +157,7 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
                     "onCreateDynamicGroupRouteController with initialMemberRouteId = "
                             + initialMemberRouteId);
             mGroupController = new StubDynamicRouteController();
+            mCurrentSelectedRouteIds.add(initialMemberRouteId);
             return mGroupController;
         }
 
@@ -150,10 +181,39 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
                                         mCurrentSelectedRouteIds.contains(route.getId())
                                                 ? DynamicRouteDescriptor.SELECTED
                                                 : DynamicRouteDescriptor.UNSELECTED)
+                                .setIsGroupable(getIsGroupable(route.getId()))
+                                .setIsTransferable(getIsTransferable(route.getId()))
+                                .setIsUnselectable(mCurrentSelectedRouteIds.contains(route.getId()))
                                 .build();
                 result.add(dynamicDescriptor);
             }
             return result;
+        }
+
+        private boolean getIsGroupable(String routeId) {
+            switch (routeId) {
+                case ROUTE_ID_1:
+                    return ROUTE_GROUPABLE_1;
+                case ROUTE_ID_2:
+                    return ROUTE_GROUPABLE_2;
+                case ROUTE_ID_3:
+                    return ROUTE_GROUPABLE_3;
+                default:
+                    return false;
+            }
+        }
+
+        private boolean getIsTransferable(String routeId) {
+            switch (routeId) {
+                case ROUTE_ID_1:
+                    return ROUTE_TRANSFERABLE_1;
+                case ROUTE_ID_2:
+                    return ROUTE_TRANSFERABLE_2;
+                case ROUTE_ID_3:
+                    return ROUTE_TRANSFERABLE_3;
+                default:
+                    return false;
+            }
         }
 
         // Internal classes.
@@ -188,6 +248,33 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
                                 .build());
                 publishProviderState();
             }
+
+            @Override
+            public void onSetVolume(int volume) {
+                MediaRouteDescriptor route = mRoutes.get(mRouteId);
+                if (route == null) {
+                    return;
+                }
+                mRoutes.put(
+                        mRouteId,
+                        new MediaRouteDescriptor.Builder(route).setVolume(volume).build());
+                publishProviderState();
+            }
+
+            @Override
+            public void onUpdateVolume(int delta) {
+                MediaRouteDescriptor route = mRoutes.get(mRouteId);
+                if (route == null) {
+                    return;
+                }
+                int currentVolume = route.getVolume();
+                mRoutes.put(
+                        mRouteId,
+                        new MediaRouteDescriptor.Builder(route)
+                                .setVolume(currentVolume + delta)
+                                .build());
+                publishProviderState();
+            }
         }
 
         private class StubDynamicRouteController extends DynamicGroupRouteController {
@@ -200,6 +287,9 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
 
             @Override
             public void onUpdateMemberRoutes(@Nullable List<String> routeIds) {
+                if (routeIds == null) {
+                    return;
+                }
                 Log.i(TAG, "StubDynamicRouteController.onUpdateMemberRoutes()");
                 mCurrentSelectedRouteIds.clear();
                 mCurrentSelectedRouteIds.addAll(routeIds);
@@ -222,9 +312,41 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
                 publishState();
             }
 
+            @Override
+            public boolean onControlRequest(
+                    @NonNull Intent intent, @Nullable MediaRouter.ControlRequestCallback callback) {
+                if (callback != null) {
+                    callback.onResult(SEND_CONTROL_REQUEST_RESULT);
+                }
+                return true;
+            }
+
+            @Override
+            public void onSetVolume(int volume) {
+                mGroupDescriptor =
+                        new MediaRouteDescriptor.Builder(mGroupDescriptor)
+                                .setVolume(volume)
+                                .build();
+                publishState();
+            }
+
+            @Override
+            public void onUpdateVolume(int delta) {
+                int currentVolume = mGroupDescriptor.getVolume();
+                mGroupDescriptor =
+                        new MediaRouteDescriptor.Builder(mGroupDescriptor)
+                                .setVolume(currentVolume + delta)
+                                .build();
+                publishState();
+            }
+
             private void publishState() {
-                Log.i(TAG, "StubDynamicRouteController.publishState()");
-                notifyDynamicRoutesChanged(mGroupDescriptor, buildDynamicRouteDescriptors());
+                Collection<DynamicRouteDescriptor> dynamicRoutes = buildDynamicRouteDescriptors();
+                Log.i(
+                        TAG,
+                        "StubDynamicRouteController.publishState() with dynamicRoutes.size() = "
+                                + dynamicRoutes.size());
+                notifyDynamicRoutesChanged(mGroupDescriptor, dynamicRoutes);
             }
         }
     }

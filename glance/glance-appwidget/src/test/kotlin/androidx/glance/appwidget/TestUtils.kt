@@ -53,10 +53,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
@@ -282,3 +285,11 @@ fun configurationContext(modifier: Configuration.() -> Unit): Context {
     return ApplicationProvider.getApplicationContext<Context>()
         .createConfigurationContext(configuration)
 }
+
+/** JVM tests in a [TestScope] that can't finish under 10s. */
+internal fun TestScope.runMediumTest(testBody: suspend TestScope.() -> Unit) =
+    this.runTest(timeout = 30.seconds, testBody = testBody)
+
+/** JVM tests that can't finish under 10s. */
+internal fun runMediumTest(testBody: suspend TestScope.() -> Unit) =
+    runTest(timeout = 30.seconds, testBody = testBody)

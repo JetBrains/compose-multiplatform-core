@@ -124,7 +124,9 @@ internal class CalendarModelTest(private val model: CalendarModel) {
     fun parseDate_Arabic() {
         val expectedDate =
             CalendarDate(year = 2022, month = 1, dayOfMonth = 1, utcTimeMillis = January2022Millis)
-        val parsedDate = model.parse("٠١/٠١/٢٠٢٢", "d/MM/yyyy", Locale.forLanguageTag("ar"))
+        // Arabic locale with Arabic-Indic digits and symbols
+        val parsedDate =
+            model.parse("٠١/٠١/٢٠٢٢", "d/MM/yyyy", Locale.forLanguageTag("ar-u-nu-arab"))
         assertThat(parsedDate).isEqualTo(expectedDate)
     }
 

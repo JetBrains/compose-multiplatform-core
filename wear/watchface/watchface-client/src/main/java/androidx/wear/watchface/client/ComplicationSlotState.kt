@@ -30,7 +30,15 @@ import androidx.wear.watchface.data.ComplicationStateWireFormat
 import androidx.wear.watchface.style.UserStyleSetting.ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay
 import androidx.wear.watchface.style.UserStyleSetting.ComplicationSlotsUserStyleSetting.ComplicationSlotsOption
 
-/** A snapshot of the state of a watch face [ComplicationSlot]. */
+/**
+ * A snapshot of the state of a watch face [ComplicationSlot].
+ *
+ * @deprecated use Watch Face Format instead
+ */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class ComplicationSlotState {
     /** Screen space bounds of the [ComplicationSlot] in pixels. */
     public val bounds: Rect

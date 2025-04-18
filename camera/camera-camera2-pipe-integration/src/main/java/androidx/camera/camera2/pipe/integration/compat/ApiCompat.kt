@@ -17,13 +17,10 @@
 package androidx.camera.camera2.pipe.integration.compat
 
 import android.hardware.camera2.CameraCaptureSession
-import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.os.Build
 import android.view.Surface
 import androidx.annotation.RequiresApi
-import androidx.camera.camera2.pipe.integration.impl.CameraProperties
 
 @RequiresApi(Build.VERSION_CODES.N)
 internal object Api24Compat {
@@ -53,15 +50,16 @@ internal object Api34Compat {
     }
 
     @JvmStatic
-    fun isZoomOverrideAvailable(cameraProperties: CameraProperties): Boolean =
-        cameraProperties.metadata[CameraCharacteristics.CONTROL_AVAILABLE_SETTINGS_OVERRIDES]
-            ?.contains(CameraMetadata.CONTROL_SETTINGS_OVERRIDE_ZOOM) ?: false
-
-    @JvmStatic
     fun setSettingsOverrideZoom(parameters: MutableMap<CaptureRequest.Key<*>, Any>) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            parameters[CaptureRequest.CONTROL_SETTINGS_OVERRIDE] =
-                CameraMetadata.CONTROL_SETTINGS_OVERRIDE_ZOOM
-        }
+        parameters[CaptureRequest.CONTROL_SETTINGS_OVERRIDE] =
+            CaptureRequest.CONTROL_SETTINGS_OVERRIDE_ZOOM
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+internal object Api35Compat {
+    @JvmStatic
+    fun setFlashStrengthLevel(parameters: MutableMap<CaptureRequest.Key<*>, Any>, level: Int) {
+        parameters[CaptureRequest.FLASH_STRENGTH_LEVEL] = level
     }
 }

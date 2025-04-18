@@ -14,9 +14,11 @@ package androidx.camera.core {
 
   public interface CameraControl {
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> cancelFocusAndMetering();
+    method public default com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> enableLowLightBoostAsync(boolean);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> enableTorch(boolean);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Integer!> setExposureCompensationIndex(int);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> setLinearZoom(@FloatRange(from=0.0f, to=1.0f) float);
+    method public default com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> setTorchStrengthLevel(@IntRange(from=1) int);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> setZoomRatio(float);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.camera.core.FocusMeteringResult!> startFocusAndMetering(androidx.camera.core.FocusMeteringAction);
   }
@@ -46,18 +48,24 @@ package androidx.camera.core {
     method public androidx.camera.core.ExposureState getExposureState();
     method @FloatRange(from=0, fromInclusive=false) public default float getIntrinsicZoomRatio();
     method public default int getLensFacing();
+    method public default androidx.lifecycle.LiveData<java.lang.Integer!> getLowLightBoostState();
+    method @IntRange(from=0) public default int getMaxTorchStrengthLevel();
     method public default java.util.Set<androidx.camera.core.CameraInfo!> getPhysicalCameraInfos();
     method public int getSensorRotationDegrees();
     method public int getSensorRotationDegrees(int);
     method public default java.util.Set<android.util.Range<java.lang.Integer!>!> getSupportedFrameRateRanges();
     method public androidx.lifecycle.LiveData<java.lang.Integer!> getTorchState();
+    method public default androidx.lifecycle.LiveData<java.lang.Integer!> getTorchStrengthLevel();
     method public androidx.lifecycle.LiveData<androidx.camera.core.ZoomState!> getZoomState();
     method public boolean hasFlashUnit();
     method public default boolean isFocusMeteringSupported(androidx.camera.core.FocusMeteringAction);
     method public default boolean isLogicalMultiCameraSupported();
+    method public default boolean isLowLightBoostSupported();
+    method public default boolean isTorchStrengthSupported();
     method @SuppressCompatibility @androidx.camera.core.ExperimentalZeroShutterLag public default boolean isZslSupported();
     method public static boolean mustPlayShutterSound();
     method public default java.util.Set<androidx.camera.core.DynamicRange!> querySupportedDynamicRanges(java.util.Set<androidx.camera.core.DynamicRange!>);
+    field public static final int TORCH_STRENGTH_LEVEL_UNSUPPORTED = 0; // 0x0
   }
 
   public final class CameraInfoUnavailableException extends java.lang.Exception {
@@ -251,6 +259,18 @@ package androidx.camera.core {
     method public T build();
   }
 
+  public final class FlashState {
+    property public static int FIRED;
+    property public static int NOT_FIRED;
+    property public static int UNAVAILABLE;
+    property public static int UNKNOWN;
+    field public static final int FIRED = 1; // 0x1
+    field public static final androidx.camera.core.FlashState INSTANCE;
+    field public static final int NOT_FIRED = 3; // 0x3
+    field public static final int UNAVAILABLE = 2; // 0x2
+    field public static final int UNKNOWN = 0; // 0x0
+  }
+
   public final class FocusMeteringAction {
     method public long getAutoCancelDurationInMillis();
     method public java.util.List<androidx.camera.core.MeteringPoint!> getMeteringPointsAe();
@@ -291,6 +311,7 @@ package androidx.camera.core {
     field public static final int COORDINATE_SYSTEM_ORIGINAL = 0; // 0x0
     field public static final int COORDINATE_SYSTEM_SENSOR = 2; // 0x2
     field public static final int COORDINATE_SYSTEM_VIEW_REFERENCED = 1; // 0x1
+    field public static final int OUTPUT_IMAGE_FORMAT_NV21 = 3; // 0x3
     field public static final int OUTPUT_IMAGE_FORMAT_RGBA_8888 = 2; // 0x2
     field public static final int OUTPUT_IMAGE_FORMAT_YUV_420_888 = 1; // 0x1
     field public static final int STRATEGY_BLOCK_PRODUCER = 1; // 0x1
@@ -454,6 +475,7 @@ package androidx.camera.core {
   }
 
   public interface ImageInfo {
+    method public default int getFlashState();
     method public int getRotationDegrees();
     method public default android.graphics.Matrix getSensorToBufferTransformMatrix();
     method public long getTimestamp();
@@ -495,6 +517,12 @@ package androidx.camera.core {
     ctor public InitializationException(String?);
     ctor public InitializationException(String?, Throwable?);
     ctor public InitializationException(Throwable?);
+  }
+
+  public class LowLightBoostState {
+    field public static final int ACTIVE = 1; // 0x1
+    field public static final int INACTIVE = 0; // 0x0
+    field public static final int OFF = -1; // 0xffffffff
   }
 
   public class MeteringPoint {

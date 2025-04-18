@@ -87,10 +87,10 @@ class PerformanceMetricsState private constructor() {
                 // most recently added should be logged, as it replaces the earlier ones.
                 statesHolder.add(item)
                 if (activeStates == singleFrameStates && item.timeRemoved == -1L) {
-                    // This marks a single frame state for removal now that it has logged data
-                    // It will actually be removed at the end of the frame, to give it a chance to
-                    // log data for multiple listeners.
-                    item.timeRemoved = System.nanoTime()
+                    // This marks a single frame state for removal now that it has logged data.
+                    // It will actually be removed on the next frame, with the removal logic
+                    // above, to give it a chance to log data for multiple listeners on this frame.
+                    item.timeRemoved = frameStartTime
                 }
             }
         }

@@ -60,11 +60,11 @@ class ModelValidator private constructor(val api: ParsedApi) {
     private fun validateServiceSupertypes() {
         val superTypes = api.services.first().superTypes
         if (superTypes.isNotEmpty()) {
-            if (superTypes.contains(Types.sandboxedUiAdapter)) {
+            if (superTypes.intersect(Types.uiAdapters).isNotEmpty()) {
                 errors.add(
                     "Interfaces annotated with @PrivacySandboxService may not extend any other " +
-                        "interface. To define a SandboxedUiAdapter, use @PrivacySandboxInterface " +
-                        "and return it from this service."
+                        "interface. To define a SandboxedUiAdapter or a SharedUiAdapter, use " +
+                        "@PrivacySandboxInterface and return it from this service."
                 )
             } else {
                 errors.add(

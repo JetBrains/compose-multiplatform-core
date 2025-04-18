@@ -38,6 +38,15 @@ import java.lang.annotation.RetentionPolicy;
  */
 public class CustomTabsCallback {
     /**
+     * To be called when a navigation event happens.
+     *
+     * @param navigationEvent The code corresponding to the navigation event.
+     * @param extras Reserved for future use.
+     */
+    public void onNavigationEvent(@NavigationEvent int navigationEvent, @Nullable Bundle extras) {
+    }
+
+    /**
      * Sent when the tab has started loading a page.
      */
     public static final int NAVIGATION_STARTED = 1;
@@ -68,6 +77,14 @@ public class CustomTabsCallback {
      */
     public static final int TAB_HIDDEN = 6;
 
+    /** Possible navigation event values. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @IntDef({NAVIGATION_STARTED, NAVIGATION_FINISHED, NAVIGATION_FAILED, NAVIGATION_ABORTED,
+            TAB_SHOWN, TAB_HIDDEN})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface NavigationEvent {
+    }
+
     /**
      * Key for the extra included in {@link #onRelationshipValidationResult} {@code extras}
      * containing whether the verification was performed while the device was online. This may be
@@ -75,14 +92,6 @@ public class CustomTabsCallback {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public static final String ONLINE_EXTRAS_KEY = "online";
-
-    /**
-     * To be called when a navigation event happens.
-     *
-     * @param navigationEvent The code corresponding to the navigation event.
-     * @param extras Reserved for future use.
-     */
-    public void onNavigationEvent(int navigationEvent, @Nullable Bundle extras) {}
 
     /**
      * Unsupported callbacks that may be provided by the implementation.

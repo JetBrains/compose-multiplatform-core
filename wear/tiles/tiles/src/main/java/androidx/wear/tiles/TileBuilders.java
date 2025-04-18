@@ -21,6 +21,7 @@ import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.StateBuilders.State;
 import androidx.wear.protolayout.TimelineBuilders.Timeline;
 import androidx.wear.protolayout.expression.RequiresSchemaVersion;
+import androidx.wear.protolayout.expression.VersionBuilders;
 import androidx.wear.protolayout.expression.proto.VersionProto.VersionInfo;
 import androidx.wear.tiles.proto.TileProto;
 
@@ -216,7 +217,9 @@ public final class TileBuilders {
         private Version() {}
 
         /** The current version of the Tiles schema in use. */
-        public static final VersionInfo CURRENT =
-                VersionInfo.newBuilder().setMajor(1).setMinor(500).build();
+        public static final VersionInfo CURRENT = VersionInfo.newBuilder()
+                .setMajor(VersionBuilders.VersionInfo.CURRENT.getMajor())
+                .setMinor(VersionBuilders.VersionInfo.CURRENT.getMinor())
+                .build();
     }
 }

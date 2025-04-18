@@ -59,13 +59,7 @@ internal actual fun createPlatformRippleNode(
     radius: Dp,
     color: ColorProducer,
     rippleAlpha: () -> RippleAlpha
-): DelegatableNode {
-    return if (IsRunningInPreview) {
-        CommonRippleNode(interactionSource, bounded, radius, color, rippleAlpha)
-    } else {
-        AndroidRippleNode(interactionSource, bounded, radius, color, rippleAlpha)
-    }
-}
+): DelegatableNode = AndroidRippleNode(interactionSource, bounded, radius, color, rippleAlpha)
 
 /**
  * Android specific Ripple implementation that uses a [RippleDrawable] under the hood, which allows
@@ -365,12 +359,3 @@ private fun findNearestViewGroup(initialView: View): ViewGroup {
     }
     return view
 }
-
-/**
- * Whether we are running in a preview or not, to control using the native vs the common ripple
- * implementation. We check this way instead of using [View.isInEditMode] or LocalInspectionMode so
- * this can be called from outside composition.
- */
-// TODO(b/188112048): Remove in the future when more versions of Studio support previewing native
-//  ripples
-private val IsRunningInPreview = android.os.Build.DEVICE == "layoutlib"

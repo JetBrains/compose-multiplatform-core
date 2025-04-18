@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ads.adservices.adselection
 
-import android.annotation.SuppressLint
 import android.net.Uri
 import android.os.Build
 import android.os.ext.SdkExtensions
@@ -33,7 +32,6 @@ import androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures
  *   selection.
  * @param renderUri A render URL for the winning ad.
  */
-@SuppressLint("ClassVerificationFailure")
 class AdSelectionOutcome public constructor(val adSelectionId: Long, val renderUri: Uri) {
 
     /** Checks whether two [AdSelectionOutcome] objects contain the same information. */

@@ -18,10 +18,11 @@ package androidx.camera.core.impl;
 
 import android.graphics.ImageFormat;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.Camera;
 import androidx.camera.core.DynamicRange;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /** Configuration containing options for configuring the input image data of a pipeline. */
 public interface ImageInputConfig extends ReadableConfig {
@@ -73,8 +74,7 @@ public interface ImageInputConfig extends ReadableConfig {
      * <p>This method never throws. If the dynamic range is not set,
      * {@link DynamicRange#UNSPECIFIED} will be returned.
      */
-    @NonNull
-    default DynamicRange getDynamicRange() {
+    default @NonNull DynamicRange getDynamicRange() {
         return Preconditions.checkNotNull(retrieveOption(OPTION_INPUT_DYNAMIC_RANGE,
                 DynamicRange.UNSPECIFIED));
     }
@@ -106,7 +106,6 @@ public interface ImageInputConfig extends ReadableConfig {
          * @param dynamicRange The dynamic range required for this configuration.
          * @return The current Builder.
          */
-        @NonNull
-        B setDynamicRange(@NonNull DynamicRange dynamicRange);
+        @NonNull B setDynamicRange(@NonNull DynamicRange dynamicRange);
     }
 }

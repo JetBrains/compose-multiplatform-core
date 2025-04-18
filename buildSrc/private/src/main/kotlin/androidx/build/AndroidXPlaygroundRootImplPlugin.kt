@@ -139,7 +139,13 @@ class AndroidXPlaygroundRootImplPlugin : Plugin<Project> {
                 }
             }
         }
-        google()
+        google { repository ->
+            repository.content {
+                it.includeGroupByRegex("androidx.*")
+                it.includeGroupByRegex("com\\.android.*")
+                it.includeGroupByRegex("com\\.google.*")
+            }
+        }
         mavenCentral()
         gradlePluginPortal()
     }
@@ -167,7 +173,12 @@ class AndroidXPlaygroundRootImplPlugin : Plugin<Project> {
                 "https://maven.pkg.jetbrains.space/kotlin/p/dokka/dev",
                 includeGroupRegex = """org\.jetbrains\.dokka"""
             )
-        val all = listOf(snapshots, metalava, dokka, prebuilts)
+        val kotlinDev =
+            PlaygroundRepository(
+                "https://packages.jetbrains.team/maven/p/kt/dev/",
+                includeGroupRegex = """org\.jetbrains\.kotlin.*"""
+            )
+        val all = listOf(snapshots, metalava, dokka, prebuilts, kotlinDev)
     }
 
     private data class PlaygroundRepository(
@@ -198,45 +209,6 @@ class AndroidXPlaygroundRootImplPlugin : Plugin<Project> {
     }
 
     companion object {
-        /**
-         * Returns a `project` if exists or the latest artifact coordinates if it doesn't.
-         *
-         * This can be used for optional dependencies in the playground settings.gradle files.
-         *
-         * @param path The project path
-         * @return A Project instance if it exists or coordinates of the artifact if the project is
-         *   not included in this build.
-         */
-        fun projectOrArtifact(rootProject: Project, path: String): Any {
-            val requested = rootProject.findProject(path)
-            if (requested != null) {
-                return requested
-            } else {
-                val sections = path.split(":")
-
-                if (sections[0].isNotEmpty()) {
-                    throw GradleException(
-                        "Expected projectOrArtifact path to start with empty section but got $path"
-                    )
-                }
-
-                // Typically androidx projects have 3 sections, compose has 4.
-                if (sections.size >= 3) {
-                    val group =
-                        sections
-                            // Filter empty sections as many declarations start with ':'
-                            .filter { it.isNotBlank() }
-                            // Last element is the artifact.
-                            .dropLast(1)
-                            .joinToString(".")
-                    return "androidx.$group:${sections.last()}:$SNAPSHOT_MARKER"
-                }
-
-                throw GradleException("projectOrArtifact cannot find/replace project $path")
-            }
-        }
-
-        const val SNAPSHOT_MARKER = "REPLACE_WITH_SNAPSHOT"
         const val INTERNAL_PREBUILTS_REPO_URL =
             "https://androidx.dev/storage/prebuilts/androidx/internal/repository"
     }

@@ -209,29 +209,20 @@ internal class TextFieldDelegate {
             if (!hasFocus) {
                 return
             }
-            val focusOffsetInTransformed = offsetMapping.originalToTransformed(value.selection.max)
-            val bbox =
-                when {
-                    focusOffsetInTransformed < textLayoutResult.layoutInput.text.length -> {
-                        textLayoutResult.getBoundingBox(focusOffsetInTransformed)
-                    }
-                    focusOffsetInTransformed != 0 -> {
-                        textLayoutResult.getBoundingBox(focusOffsetInTransformed - 1)
-                    }
-                    else -> { // empty text.
-                        val defaultSize =
-                            computeSizeForDefaultText(
-                                textDelegate.style,
-                                textDelegate.density,
-                                textDelegate.fontFamilyResolver
-                            )
-                        Rect(0f, 0f, 1.0f, defaultSize.height.toFloat())
-                    }
-                }
-            val globalLT = layoutCoordinates.localToRoot(Offset(bbox.left, bbox.top))
 
             textInputSession.notifyFocusedRect(
-                Rect(Offset(globalLT.x, globalLT.y), Size(bbox.width, bbox.height))
+                focusedRectInRoot(
+                    layoutResult = textLayoutResult,
+                    layoutCoordinates = layoutCoordinates,
+                    focusOffset = offsetMapping.originalToTransformed(value.selection.max),
+                    sizeForDefaultText = {
+                        computeSizeForDefaultText(
+                            textDelegate.style,
+                            textDelegate.density,
+                            textDelegate.fontFamilyResolver
+                        )
+                    }
+                )
             )
         }
 
@@ -436,4 +427,28 @@ internal class TextFieldDelegate {
             )
         }
     }
+}
+
+/** Computes the bounds of the area where text editing is in progress, relative to the root. */
+internal fun focusedRectInRoot(
+    layoutResult: TextLayoutResult,
+    layoutCoordinates: LayoutCoordinates,
+    focusOffset: Int,
+    sizeForDefaultText: () -> IntSize
+): Rect {
+    val bbox =
+        when {
+            focusOffset < layoutResult.layoutInput.text.length -> {
+                layoutResult.getBoundingBox(focusOffset)
+            }
+            focusOffset != 0 -> {
+                layoutResult.getBoundingBox(focusOffset - 1)
+            }
+            else -> { // empty text.
+                val size = sizeForDefaultText()
+                Rect(0f, 0f, 1.0f, size.height.toFloat())
+            }
+        }
+    val globalLT = layoutCoordinates.localToRoot(Offset(bbox.left, bbox.top))
+    return Rect(Offset(globalLT.x, globalLT.y), Size(bbox.width, bbox.height))
 }

@@ -18,7 +18,6 @@ package androidx.lifecycle.viewmodel.savedstate
 
 import android.app.Application
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.AbstractSavedStateViewModelFactory
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SAVED_STATE_REGISTRY_OWNER_KEY
 import androidx.lifecycle.SavedStateHandle
@@ -138,8 +137,9 @@ class SavedStateFactoryTest {
     fun testLegacyCreateAndroidAbstractVM() {
         val activity = activityRule.activity
         val app = activity.application
+        @Suppress("DEPRECATION")
         val savedStateVMFactory =
-            object : AbstractSavedStateViewModelFactory(activity, null) {
+            object : androidx.lifecycle.AbstractSavedStateViewModelFactory(activity, null) {
                 override fun <T : ViewModel> create(
                     key: String,
                     modelClass: Class<T>,
@@ -166,8 +166,9 @@ class SavedStateFactoryTest {
             fail()
         } catch (e: UnsupportedOperationException) {}
 
+        @Suppress("DEPRECATION")
         val absFactory =
-            object : AbstractSavedStateViewModelFactory() {
+            object : androidx.lifecycle.AbstractSavedStateViewModelFactory() {
                 override fun <T : ViewModel> create(
                     key: String,
                     modelClass: Class<T>,

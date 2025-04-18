@@ -45,7 +45,6 @@ actual object PreferenceDataStoreFactory {
      *   preferences_pb. File will be created if it doesn't exist.
      * @return a new DataStore instance with the provided configuration
      */
-    @kotlin.jvm.JvmOverloads // annotation has to match common
     public actual fun createWithPath(
         corruptionHandler: ReplaceFileCorruptionHandler<Preferences>?,
         migrations: List<DataMigration<Preferences>>,
@@ -85,7 +84,6 @@ actual object PreferenceDataStoreFactory {
      * @param scope The scope in which IO operations and transform functions will execute.
      * @return a new DataStore instance with the provided configuration
      */
-    @kotlin.jvm.JvmOverloads // annotation has to match common
     public actual fun create(
         storage: Storage<Preferences>,
         corruptionHandler: ReplaceFileCorruptionHandler<Preferences>?,

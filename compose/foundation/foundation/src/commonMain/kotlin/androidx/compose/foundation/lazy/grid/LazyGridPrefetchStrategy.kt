@@ -23,6 +23,7 @@ import androidx.compose.foundation.gestures.snapping.sizeOnMainAxis
 import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState
 import androidx.compose.foundation.lazy.layout.NestedPrefetchScope
 import androidx.compose.foundation.lazy.layout.PrefetchScheduler
+import androidx.compose.foundation.lazy.layout.UnspecifiedNestedPrefetchCount
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collection.mutableVectorOf
 
@@ -100,6 +101,27 @@ interface LazyGridPrefetchScope {
      * @param lineIndex index of the row or column to prefetch
      */
     fun scheduleLinePrefetch(lineIndex: Int): List<LazyLayoutPrefetchState.PrefetchHandle>
+
+    /**
+     * Schedules a prefetch for the given line index. Requests are executed in the order they're
+     * requested. If a requested prefetch is no longer necessary (for example, due to changing
+     * scroll direction), the request should be canceled via
+     * [LazyLayoutPrefetchState.PrefetchHandle.cancel].
+     *
+     * See [PrefetchScheduler].
+     *
+     * @param lineIndex index of the row or column to prefetch
+     * @param onPrefetchFinished A callback that will be invoked when the prefetching of this line
+     *   is completed. This means precomposition and premeasuring. If the request is canceled before
+     *   either phases can complete, or before all items in this line have been prepared, this
+     *   callback won't be invoked. The lineIndex and the main axis size in pixels of the prefetched
+     *   items are available as a parameter of this callback. See [LazyGridPrefetchResultScope] for
+     *   information about the line prefetched.
+     */
+    fun scheduleLinePrefetch(
+        lineIndex: Int,
+        onPrefetchFinished: (LazyGridPrefetchResultScope.() -> Unit)?
+    ): List<LazyLayoutPrefetchState.PrefetchHandle> = scheduleLinePrefetch(lineIndex)
 }
 
 /**
@@ -109,7 +131,9 @@ interface LazyGridPrefetchScope {
  * @param nestedPrefetchItemCount specifies how many inner items should be prefetched when this
  *   LazyGrid is nested inside another LazyLayout. For example, if this is the state for a
  *   horizontal LazyGrid nested in a vertical LazyGrid, you might want to set this to the number of
- *   items that will be visible when this grid is scrolled into view.
+ *   items that will be visible when this grid is scrolled into view. If automatic nested prefetch
+ *   is enabled, this value will be used as the initial count and the strategy will adapt the count
+ *   automatically.
  */
 @ExperimentalFoundationApi
 fun LazyGridPrefetchStrategy(nestedPrefetchItemCount: Int = 2): LazyGridPrefetchStrategy =
@@ -121,7 +145,7 @@ fun LazyGridPrefetchStrategy(nestedPrefetchItemCount: Int = 2): LazyGridPrefetch
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Stable
-private class DefaultLazyGridPrefetchStrategy(private val nestedPrefetchItemCount: Int = 2) :
+private class DefaultLazyGridPrefetchStrategy(private val initialNestedPrefetchItemCount: Int = 2) :
     LazyGridPrefetchStrategy {
 
     /**
@@ -224,6 +248,46 @@ private class DefaultLazyGridPrefetchStrategy(private val nestedPrefetchItemCoun
     }
 
     override fun NestedPrefetchScope.onNestedPrefetch(firstVisibleItemIndex: Int) {
-        repeat(nestedPrefetchItemCount) { i -> schedulePrefetch(firstVisibleItemIndex + i) }
+        val resolvedNestedPrefetchItemCount =
+            if (nestedPrefetchItemCount == UnspecifiedNestedPrefetchCount) {
+                initialNestedPrefetchItemCount
+            } else {
+                nestedPrefetchItemCount
+            }
+        repeat(resolvedNestedPrefetchItemCount) { i ->
+            schedulePrecomposition(firstVisibleItemIndex + i)
+        }
     }
+}
+
+/**
+ * A scope for [LazyGridPrefetchScope.scheduleLinePrefetch] callbacks. The scope provides additional
+ * information about a prefetched item.
+ */
+@ExperimentalFoundationApi
+interface LazyGridPrefetchResultScope {
+
+    /** The number of items in this prefetched line. */
+    val lineItemCount: Int
+
+    /** The index of the prefetched line */
+    val lineIndex: Int
+
+    /**
+     * Returns the main axis size in pixels of a prefecthed item in this line. [itemIndexInLine] is
+     * the item index from 0 to [lineItemCount] -1.
+     */
+    fun getMainAxisSize(itemIndexInLine: Int): Int
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Suppress("PrimitiveInCollection")
+internal class LazyGridPrefetchResultScopeImpl(
+    override val lineIndex: Int,
+    private val mainAxisSizes: List<Int>
+) : LazyGridPrefetchResultScope {
+    override val lineItemCount: Int
+        get() = mainAxisSizes.size
+
+    override fun getMainAxisSize(itemIndexInLine: Int): Int = mainAxisSizes[itemIndexInLine]
 }

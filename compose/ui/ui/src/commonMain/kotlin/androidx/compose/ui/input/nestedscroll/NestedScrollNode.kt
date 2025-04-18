@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.input.nestedscroll
 
-import androidx.compose.ui.ComposeUiFlags.NewNestedScrollFlingDispatchingEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -103,12 +102,7 @@ internal class NestedScrollNode(
         val selfConsumed = connection.onPostFling(consumed, available)
         // if we receive an onPostFling after detaching this node, use the last known parent
         // if this parent is also detached it will send the signal through the detached parents
-        val parent =
-            if (NewNestedScrollFlingDispatchingEnabled) {
-                if (isAttached) parentConnection else lastKnownParentNode
-            } else {
-                parentConnection
-            }
+        val parent = if (isAttached) parentConnection else lastKnownParentNode
         val parentConsumed =
             parent?.onPostFling(consumed + selfConsumed, available - selfConsumed) ?: Velocity.Zero
         return selfConsumed + parentConsumed
@@ -142,10 +136,8 @@ internal class NestedScrollNode(
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onDetach() {
         // cache parent for detached clean up access in the dispatcher and in this node.
-        if (NewNestedScrollFlingDispatchingEnabled) {
-            lastKnownParentNode = findNearestAttachedAncestor()
-            resolvedDispatcher.lastKnownParentNode = lastKnownParentNode
-        }
+        lastKnownParentNode = findNearestAttachedAncestor()
+        resolvedDispatcher.lastKnownParentNode = lastKnownParentNode
         resetDispatcherFields()
     }
 
@@ -156,11 +148,9 @@ internal class NestedScrollNode(
     @OptIn(ExperimentalComposeUiApi::class)
     private fun updateDispatcherFields() {
         resolvedDispatcher.nestedScrollNode = this
-        if (NewNestedScrollFlingDispatchingEnabled) {
-            // reset lastKnownParentNodes
-            resolvedDispatcher.lastKnownParentNode = null
-            lastKnownParentNode = null
-        }
+        // reset lastKnownParentNodes
+        resolvedDispatcher.lastKnownParentNode = null
+        lastKnownParentNode = null
         resolvedDispatcher.calculateNestedScrollScope = { nestedCoroutineScope }
         resolvedDispatcher.scope = coroutineScope
     }

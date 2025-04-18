@@ -5,7 +5,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -27,21 +27,16 @@ dependencies {
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
-    androidTestImplementation project(':internal-testutils-runtime')
+    androidTestImplementation(project(":internal-testutils-runtime"))
 }
 
 android {
-    sourceSets {
-        main {
-            res.srcDirs += 'src/main/res-public'
-        }
-    }
     namespace = "androidx.emoji2.widget"
 }
 
 androidx {
     name = "Emoji2 Views"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Support for using emoji2 directly with Android Views, for use in apps without " +
             "appcompat"

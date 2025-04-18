@@ -53,6 +53,12 @@ import kotlin.math.roundToInt
  * Short navigation bars offer a persistent and convenient way to switch between primary
  * destinations in an app.
  *
+ * ![Short navigation bar with vertical items
+ * image](https://developer.android.com/images/reference/androidx/compose/material3/short-navigation-bar-vertical-items.png)
+ *
+ * ![Short navigation bar with horizontal items
+ * image](https://developer.android.com/images/reference/androidx/compose/material3/short-navigation-bar-horizontal-items.png)
+ *
  * The recommended configuration of the [ShortNavigationBar] depends on the width size of the screen
  * it's being displayed at:
  * - In small screens, the [ShortNavigationBar] should contain three to five

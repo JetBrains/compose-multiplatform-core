@@ -26,6 +26,7 @@ import androidx.compose.animation.core.animateValueAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.annotation.RememberInComposition
 import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -104,5 +105,6 @@ private val colorDefaultSpring = spring<Color>()
  * @sample androidx.compose.animation.samples.AnimatableColor
  * @param initialValue initial value of the [Animatable]
  */
+@RememberInComposition
 public fun Animatable(initialValue: Color): Animatable<Color, AnimationVector4D> =
     Animatable(initialValue, (Color.VectorConverter)(initialValue.colorSpace))

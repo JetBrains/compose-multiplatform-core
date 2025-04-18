@@ -17,13 +17,13 @@
 
 package androidx.appsearch.cts.app;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.app.AppSearchSession;
 import androidx.appsearch.playservicesstorage.PlayServicesStorage;
 import androidx.test.core.app.ApplicationProvider;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Assume;
 
 public class AppSearchSessionBlobGmsCtsTest extends AppSearchSessionBlobCtsTestBase {

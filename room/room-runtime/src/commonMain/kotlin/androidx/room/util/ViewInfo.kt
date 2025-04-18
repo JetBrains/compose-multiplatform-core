@@ -17,7 +17,6 @@ package androidx.room.util
 
 import androidx.annotation.RestrictTo
 import androidx.sqlite.SQLiteConnection
-import kotlin.jvm.JvmField
 import kotlin.jvm.JvmStatic
 
 /**
@@ -27,12 +26,12 @@ import kotlin.jvm.JvmStatic
  *
  * Even though SQLite column names are case insensitive, this class uses case sensitive matching.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 expect class ViewInfo(name: String, sql: String?) {
     /** The view name */
-    @JvmField val name: String
+    val name: String
     /** The SQL of CREATE VIEW. */
-    @JvmField val sql: String?
+    val sql: String?
 
     override fun equals(other: Any?): Boolean
 

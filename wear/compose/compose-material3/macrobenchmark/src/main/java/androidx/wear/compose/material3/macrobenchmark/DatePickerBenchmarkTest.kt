@@ -21,11 +21,13 @@ import androidx.annotation.RequiresApi
 import androidx.benchmark.macro.CompilationMode
 import androidx.test.filters.LargeTest
 import androidx.wear.compose.material3.macrobenchmark.common.DatePickerBenchmark
+import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RequiresApi(Build.VERSION_CODES.O)
 @LargeTest
+@Ignore("b/404626024")
 @RunWith(Parameterized::class)
 class DatePickerBenchmarkTest(compilationMode: CompilationMode) :
     BenchmarkTestBase(

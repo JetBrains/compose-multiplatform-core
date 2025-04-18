@@ -24,27 +24,27 @@ private actual constructor(
     private val impl: SavedStateRegistryImpl,
 ) {
 
-    actual val savedStateRegistry: SavedStateRegistry = SavedStateRegistry(impl)
+    public actual val savedStateRegistry: SavedStateRegistry = SavedStateRegistry(impl)
 
     @MainThread
-    actual fun performAttach() {
+    public actual fun performAttach() {
         impl.performAttach()
     }
 
     @MainThread
-    actual fun performRestore(savedState: SavedState?) {
+    public actual fun performRestore(savedState: SavedState?) {
         impl.performRestore(savedState)
     }
 
     @MainThread
-    actual fun performSave(outBundle: SavedState) {
+    public actual fun performSave(outBundle: SavedState) {
         impl.performSave(outBundle)
     }
 
-    actual companion object {
+    public actual companion object {
 
         @JvmStatic
-        actual fun create(owner: SavedStateRegistryOwner): SavedStateRegistryController {
+        public actual fun create(owner: SavedStateRegistryOwner): SavedStateRegistryController {
             return SavedStateRegistryController(SavedStateRegistryImpl(owner))
         }
     }

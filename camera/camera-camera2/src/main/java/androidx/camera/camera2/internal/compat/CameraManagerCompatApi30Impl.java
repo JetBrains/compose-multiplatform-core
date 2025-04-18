@@ -19,8 +19,9 @@ package androidx.camera.camera2.internal.compat;
 import android.content.Context;
 import android.hardware.camera2.CameraAccessException;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Set;
 
@@ -31,9 +32,8 @@ class CameraManagerCompatApi30Impl extends CameraManagerCompatApi29Impl {
         super(context);
     }
 
-    @NonNull
     @Override
-    public Set<Set<String>> getConcurrentCameraIds() throws CameraAccessExceptionCompat {
+    public @NonNull Set<Set<String>> getConcurrentCameraIds() throws CameraAccessExceptionCompat {
         try {
             return mCameraManager.getConcurrentCameraIds();
         } catch (CameraAccessException e) {

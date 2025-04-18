@@ -48,7 +48,7 @@ import kotlin.reflect.KProperty
  * @sample androidx.lifecycle.viewmodel.compose.samples.SnapshotStateViewModel
  */
 @SavedStateHandleSaveableApi
-fun <T : Any> SavedStateHandle.saveable(
+public fun <T : Any> SavedStateHandle.saveable(
     key: String,
     saver: Saver<T, out Any> = autoSaver(),
     init: () -> T,
@@ -82,7 +82,7 @@ fun <T : Any> SavedStateHandle.saveable(
  * @sample androidx.lifecycle.viewmodel.compose.samples.SnapshotStateViewModel
  */
 @SavedStateHandleSaveableApi
-fun <T> SavedStateHandle.saveable(
+public fun <T> SavedStateHandle.saveable(
     key: String,
     stateSaver: Saver<T, out Any>,
     init: () -> MutableState<T>
@@ -104,7 +104,7 @@ fun <T> SavedStateHandle.saveable(
  * @sample androidx.lifecycle.viewmodel.compose.samples.SnapshotStateViewModelWithDelegates
  */
 @SavedStateHandleSaveableApi
-fun <T : Any> SavedStateHandle.saveable(
+public fun <T : Any> SavedStateHandle.saveable(
     saver: Saver<T, out Any> = autoSaver(),
     init: () -> T,
 ): PropertyDelegateProvider<Any?, ReadOnlyProperty<Any?, T>> =
@@ -138,7 +138,7 @@ fun <T : Any> SavedStateHandle.saveable(
  */
 @SavedStateHandleSaveableApi
 @JvmName("saveableMutableState")
-fun <T, M : MutableState<T>> SavedStateHandle.saveable(
+public fun <T, M : MutableState<T>> SavedStateHandle.saveable(
     stateSaver: Saver<T, out Any> = autoSaver(),
     init: () -> M,
 ): PropertyDelegateProvider<Any?, ReadWriteProperty<Any?, T>> =

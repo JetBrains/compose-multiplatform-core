@@ -17,16 +17,19 @@
 package androidx.pdf
 
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
+import android.os.DeadObjectException
 import android.os.ParcelFileDescriptor
 import android.util.Size
 import android.util.SparseArray
 import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
+import androidx.annotation.WorkerThread
 import androidx.pdf.PdfDocument.BitmapSource
 import androidx.pdf.PdfDocument.PdfPageContent
 import androidx.pdf.content.PageMatchBounds
@@ -35,8 +38,15 @@ import androidx.pdf.content.SelectionBoundary
 import androidx.pdf.service.connect.PdfServiceConnection
 import androidx.pdf.utils.toAndroidClass
 import androidx.pdf.utils.toContentClass
+import java.util.concurrent.TimeoutException
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -63,17 +73,35 @@ import kotlinx.coroutines.withContext
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class SandboxedPdfDocument(
     override val uri: Uri,
+    public val connection: PdfServiceConnection,
+    private val password: String?,
     private val fileDescriptor: ParcelFileDescriptor,
-    private val connection: PdfServiceConnection,
     private val dispatcher: CoroutineDispatcher,
     override val pageCount: Int,
     override val isLinearized: Boolean,
     override val formType: Int
 ) : PdfDocument {
 
+    /** The [CoroutineScope] we use to close [BitmapSource]s asynchronously */
+    private val closeScope = CoroutineScope(dispatcher + SupervisorJob())
+
+    /**
+     * Indicates whether this [androidx.pdf.SandboxedPdfDocument] is closed explicitly by calling
+     * [close].
+     *
+     * Once closed, any further operations on the document are invalid.
+     */
+    private var isDocumentClosedExplicitly = false
+
     override suspend fun getPageInfo(pageNumber: Int): PdfDocument.PageInfo {
         return withDocument { document ->
-            document.getPageDimensions(pageNumber).let { dimensions ->
+            // TODO(b/407777410): Update the logic so that callers can refetch the information in
+            // case
+            //  default value is returned
+            val dimensions = document.getPageDimensions(pageNumber)
+            if (dimensions == null || dimensions.height <= 0 || dimensions.width <= 0) {
+                PdfDocument.PageInfo(pageNumber, DEFAULT_PAGE, DEFAULT_PAGE)
+            } else {
                 PdfDocument.PageInfo(pageNumber, dimensions.height, dimensions.width)
             }
         }
@@ -88,11 +116,13 @@ public class SandboxedPdfDocument(
         pageRange: IntRange
     ): SparseArray<List<PageMatchBounds>> {
         return withDocument { document ->
-            pageRange
-                .map { pageNum ->
-                    document.searchPageText(pageNum, query).map { it.toContentClass() }
+            SparseArray<List<PageMatchBounds>>(pageRange.last + 1).apply {
+                pageRange.forEach { pageNum ->
+                    (document.searchPageText(pageNum, query) ?: listOf())
+                        .takeIf { it.isNotEmpty() }
+                        ?.let { put(pageNum, it.map { result -> result.toContentClass() }) }
                 }
-                .toSparseArray(pageRange)
+            }
         }
     }
 
@@ -111,6 +141,19 @@ public class SandboxedPdfDocument(
         }
     }
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    override suspend fun getSelectAllSelectionBounds(pageNumber: Int): PageSelection? {
+        return withDocument { document ->
+            document
+                .selectPageText(
+                    pageNumber,
+                    android.graphics.pdf.models.selection.SelectionBoundary(0),
+                    android.graphics.pdf.models.selection.SelectionBoundary(Int.MAX_VALUE)
+                )
+                ?.toContentClass()
+        }
+    }
+
     override suspend fun getPageContent(pageNumber: Int): PdfPageContent {
         return withDocument { document ->
             val textContents =
@@ -123,16 +166,20 @@ public class SandboxedPdfDocument(
 
     override suspend fun getPageLinks(pageNumber: Int): PdfDocument.PdfPageLinks {
         return withDocument { document ->
-            val gotoLinks = document.getPageGotoLinks(pageNumber).map { it.toContentClass() }
+            val gotoLinks =
+                document.getPageGotoLinks(pageNumber)?.map { it.toContentClass() } ?: listOf()
             val externalLinks =
-                document.getPageExternalLinks(pageNumber).map { it.toContentClass() }
+                document.getPageExternalLinks(pageNumber)?.map { it.toContentClass() } ?: listOf()
             PdfDocument.PdfPageLinks(gotoLinks, externalLinks)
         }
     }
 
     override fun getPageBitmapSource(pageNumber: Int): BitmapSource = PageBitmapSource(pageNumber)
 
+    @WorkerThread
     override fun close() {
+        isDocumentClosedExplicitly = true
+
         connection.disconnect()
 
         // TODO(b/377920470): Remove this when PdfRenderer closes the file descriptor
@@ -160,7 +207,7 @@ public class SandboxedPdfDocument(
                         pageNumber,
                         scaledPageSizePx.width,
                         scaledPageSizePx.height
-                    )
+                    ) ?: getDefaultBitmap(scaledPageSizePx.width, scaledPageSizePx.height)
                 } else {
                     val offsetX = tileRegion.left
                     val offsetY = tileRegion.top
@@ -172,25 +219,101 @@ public class SandboxedPdfDocument(
                         scaledPageSizePx.height,
                         offsetX,
                         offsetY
-                    )
+                    ) ?: getDefaultBitmap(tileRegion.width(), tileRegion.height())
                 }
             }
         }
 
+        private fun getDefaultBitmap(width: Int, height: Int): Bitmap {
+            val output = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            output.eraseColor(Color.WHITE)
+            return output
+        }
+
+        @WorkerThread
         override fun close() {
-            runBlocking { withDocument { it.releasePage(pageNumber) } }
+            if (connection.isConnected) {
+                // We can't block the main thread with this IPC
+                closeScope.launch { withDocument { it.releasePage(pageNumber) } }
+            }
+
+            // TODO(b/397324529): Enqueue releasePage requests and execute when connection is
+            //  re-established
         }
     }
 
     private suspend fun <T> withDocument(block: (PdfDocumentRemote) -> T): T {
-        val binder =
-            connection.documentBinder
-                ?: throw IllegalStateException("Binder object to the service must not be null!")
+        var trial = 1
+        while (true) {
+            try {
+                return withDocumentWithoutRetry(block)
+            } catch (e: Exception) {
+                // We retry a max of 3 times if it is one of retry-able exceptions.
+                if (
+                    trial > MAX_RETRIES || ((e !is DeadObjectException) && (e !is TimeoutException))
+                ) {
+                    throw e
+                }
+                trial++
+                // We sleep for some duration to give the service some time to recover.
+                // The loop then retries it.
+                delay(MIN_RETRY_DURATION * trial)
+            }
+        }
+    }
 
-        return withContext(dispatcher) { block(binder) }
+    private suspend fun <T> withDocumentWithoutRetry(block: (PdfDocumentRemote) -> T): T {
+        // If document is already closed, cancel all the pending operations on this document
+        if (isDocumentClosedExplicitly) throw CancellationException("Document is already closed.")
+
+        // Create a new job in parent's context. Since with document can be called from any scope,
+        // we need a handle to check coroutines actively working with document. Linking to parent's
+        // job helps in cancellation.
+        val taskJob =
+            Job(parent = coroutineContext[Job]).also { job ->
+                connection.pendingJobs.add(job)
+
+                // clean up on completion
+                job.invokeOnCompletion { connection.pendingJobs.remove(job) }
+            }
+
+        return withContext(dispatcher + taskJob) {
+            // Binder object will be null if the service is disconnected. Let's try reconnecting
+            // explicitly
+            if (connection.documentBinder == null) {
+                connection.connect(uri)
+            }
+
+            // The documentBinder may be null if the service disconnects immediately after a
+            // reconnection attempt. This is a rare, but recoverable, condition that subsequent
+            // retries(triggered from `withDocument()`) should resolve.
+            val binder =
+                connection.documentBinder
+                    ?: throw DeadObjectException("connection.documentBinder is still null")
+
+            if (connection.needsToReopenDocument) {
+                binder.openPdfDocument(fileDescriptor, password)
+                connection.needsToReopenDocument = false
+            }
+
+            val result = block(binder)
+
+            // Manually completing taskJob because a Job created using Job() does not complete on
+            // its own. Unlike coroutines launched with launch or async, a standalone Job() remains
+            // active indefinitely unless explicitly completed or canceled.
+            taskJob.complete()
+
+            return@withContext result
+        }
     }
 
     private companion object {
+        private const val DEFAULT_PAGE = 400
+        // Max number of retries to make on exceptions like DeadObjectExceptions on service.
+        private const val MAX_RETRIES = 3
+        // Min retry duration in milliseconds to start with.
+        private const val MIN_RETRY_DURATION = 400L
+
         /**
          * Converts a list of items into a SparseArray, using the item's index as the key.
          *

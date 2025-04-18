@@ -166,6 +166,12 @@ class LayoutInspectorTreeTest {
         assertThat(DEBUG).isFalse()
     }
 
+    @Test // regression test for b/383639244
+    fun noViews() {
+        val builder = LayoutInspectorTree()
+        builder.convert(emptyList())
+    }
+
     @Test
     fun buildTree() {
         val slotTableRecord = CompositionDataRecord.create()

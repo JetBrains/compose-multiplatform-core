@@ -230,8 +230,7 @@ fun Surface(
                         enabled = enabled,
                         onClick = onClick
                     )
-                    .childSemantics()
-                    .interactionSourceData(interactionSource),
+                    .childSemantics(),
             propagateMinConstraints = true
         ) {
             content()
@@ -338,8 +337,7 @@ fun Surface(
                         enabled = enabled,
                         onClick = onClick
                     )
-                    .childSemantics()
-                    .interactionSourceData(interactionSource),
+                    .childSemantics(),
             propagateMinConstraints = true
         ) {
             content()
@@ -446,8 +444,7 @@ fun Surface(
                         enabled = enabled,
                         onValueChange = onCheckedChange
                     )
-                    .childSemantics()
-                    .interactionSourceData(interactionSource),
+                    .childSemantics(),
             propagateMinConstraints = true
         ) {
             content()

@@ -356,9 +356,9 @@ class SchemaDiffer(
             return true
         }
 
-        // If both are FTS tables, only check if options have changed
+        // If both are FTS tables, check for any changes.
         if (fromTable is FtsEntityBundle && toTable is FtsEntityBundle) {
-            return !fromTable.ftsOptions.isSchemaEqual(toTable.ftsOptions)
+            return !fromTable.isSchemaEqual(toTable)
         }
 
         // If both are normal tables, check foreign keys and indices

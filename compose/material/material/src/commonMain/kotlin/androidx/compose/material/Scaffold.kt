@@ -106,12 +106,11 @@ value class FabPosition internal constructor(@Suppress("unused") private val val
 }
 
 /**
- * <a href="https://material.io/design/layout/understanding-layout.html" class="external"
- * target="_blank">Material Design layout</a>.
+ * [Material Design layout](https://material.io/design/layout/understanding-layout.html)
  *
- * Scaffold implements the basic material design visual layout structure.
+ * Scaffold implements the basic Material Design visual layout structure.
  *
- * This component provides API to put together several material components to construct your screen,
+ * This component provides API to put together several Material components to construct your screen,
  * by ensuring proper layout strategy for them and collecting necessary data so these components
  * will work together correctly.
  *
@@ -127,12 +126,12 @@ value class FabPosition internal constructor(@Suppress("unused") private val val
  * @sample androidx.compose.material.samples.SimpleScaffoldWithTopBar
  *
  * More fancy usage with [BottomAppBar] with cutout and docked [FloatingActionButton], which
- * animates it's shape when clicked:
+ * animates its shape when clicked:
  *
  * @sample androidx.compose.material.samples.ScaffoldWithBottomBarAndCutout
  *
  * To show a [Snackbar], use [SnackbarHostState.showSnackbar]. Scaffold state already have
- * [ScaffoldState.snackbarHostState] when created
+ * [ScaffoldState.snackbarHostState] when created.
  *
  * @sample androidx.compose.material.samples.ScaffoldWithSimpleSnackbar
  * @param contentWindowInsets window insets to be passed to [content] slot via [PaddingValues]
@@ -170,9 +169,9 @@ value class FabPosition internal constructor(@Suppress("unused") private val val
  *   content color for [backgroundColor], or, if it is not a color from the theme, this will keep
  *   the same value set above this Surface.
  * @param content content of your screen. The lambda receives an [PaddingValues] that should be
- *   applied to the content root via Modifier.padding to properly offset top and bottom bars. If
- *   you're using VerticalScroller, apply this modifier to the child of the scroller, and not on the
- *   scroller itself.
+ *   applied to the content root via [Modifier.padding] and [Modifier.consumeWindowInsets] to
+ *   properly offset top and bottom bars. If using [Modifier.verticalScroll], apply this modifier to
+ *   the child of the scroll, and not on the scroll itself.
  */
 @Composable
 fun Scaffold(
@@ -241,12 +240,11 @@ fun Scaffold(
 }
 
 /**
- * <a href="https://material.io/design/layout/understanding-layout.html" class="external"
- * target="_blank">Material Design layout</a>.
+ * [Material Design layout](https://material.io/design/layout/understanding-layout.html)
  *
- * Scaffold implements the basic material design visual layout structure.
+ * Scaffold implements the basic Material Design visual layout structure.
  *
- * This component provides API to put together several material components to construct your screen,
+ * This component provides API to put together several Material components to construct your screen,
  * by ensuring proper layout strategy for them and collecting necessary data so these components
  * will work together correctly.
  *
@@ -259,7 +257,7 @@ fun Scaffold(
  * @sample androidx.compose.material.samples.SimpleScaffoldWithTopBar
  *
  * More fancy usage with [BottomAppBar] with cutout and docked [FloatingActionButton], which
- * animates it's shape when clicked:
+ * animates its shape when clicked:
  *
  * @sample androidx.compose.material.samples.ScaffoldWithBottomBarAndCutout
  *
@@ -297,9 +295,9 @@ fun Scaffold(
  *   content color for [backgroundColor], or, if it is not a color from the theme, this will keep
  *   the same value set above this Surface.
  * @param content content of your screen. The lambda receives an [PaddingValues] that should be
- *   applied to the content root via Modifier.padding to properly offset top and bottom bars. If
- *   you're using VerticalScroller, apply this modifier to the child of the scroller, and not on the
- *   scroller itself.
+ *   applied to the content root via [Modifier.padding] and [Modifier.consumeWindowInsets] to
+ *   properly offset top and bottom bars. If using [Modifier.verticalScroll], apply this modifier to
+ *   the child of the scroll, and not on the scroll itself.
  */
 @Composable
 fun Scaffold(

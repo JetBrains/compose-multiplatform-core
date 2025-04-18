@@ -20,14 +20,15 @@ import static com.google.common.truth.Truth.assertWithMessage;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.testing.impl.mocks.helpers.ArgumentCaptor;
 import androidx.camera.testing.impl.mocks.helpers.ArgumentMatcher;
 import androidx.camera.testing.impl.mocks.helpers.CallTimes;
 import androidx.camera.testing.impl.mocks.helpers.CallTimesAtLeast;
 import androidx.core.util.Consumer;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,8 +52,7 @@ public class MockConsumer<T> implements Consumer<T> {
     private CountDownLatch mLatch;
     private final Object mLock = new Object();
     private final List<T> mEventList = new ArrayList<>();
-    @NonNull
-    private List<T> mVerifyingEventList = new ArrayList<>();
+    private @NonNull List<T> mVerifyingEventList = new ArrayList<>();
     private final Map<Integer, Boolean> mIsEventVerifiedByIndex = new HashMap<>();
     private int mIndexLastVerifiedInOrder = -1;
 

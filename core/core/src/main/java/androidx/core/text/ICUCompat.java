@@ -21,9 +21,10 @@ import android.icu.util.ULocale;
 import android.os.Build;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -82,8 +83,7 @@ public final class ICUCompat {
      *
      * @return The script for a given Locale if ICU library is available, otherwise null.
      */
-    @Nullable
-    public static String maximizeAndGetScript(@NonNull Locale locale) {
+    public static @Nullable String maximizeAndGetScript(@NonNull Locale locale) {
         if (Build.VERSION.SDK_INT >= 24) {
             Object uLocale = Api24Impl.addLikelySubtags(Api24Impl.forLocale(locale));
             return Api24Impl.getScript(uLocale);

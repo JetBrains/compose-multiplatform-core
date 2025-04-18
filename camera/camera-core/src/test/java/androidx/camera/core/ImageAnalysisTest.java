@@ -18,6 +18,7 @@ package androidx.camera.core;
 
 import static androidx.camera.core.MirrorMode.MIRROR_MODE_ON_FRONT_ONLY;
 import static androidx.camera.core.MirrorMode.MIRROR_MODE_UNSPECIFIED;
+import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -30,16 +31,17 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.util.Pair;
+import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.CameraFactory;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.ImageAnalysisConfig;
 import androidx.camera.core.impl.MutableOptionsBundle;
+import androidx.camera.core.impl.SessionConfig;
+import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.TagBundle;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.internal.CameraUseCaseAdapter;
@@ -59,6 +61,8 @@ import androidx.test.core.app.ApplicationProvider;
 
 import com.google.common.collect.Iterables;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -226,9 +230,9 @@ public class ImageAnalysisTest {
     public void setAnalyzerWithResolution_doesNotOverridesAppResolutionFilter() {
         ImageAnalysis.Builder builder = new ImageAnalysis.Builder();
         ResolutionFilter appResolutionFilter = new ResolutionFilter() {
-            @NonNull
             @Override
-            public List<Size> filter(@NonNull List<Size> supportedSizes, int rotationDegrees) {
+            public @NonNull List<Size> filter(@NonNull List<Size> supportedSizes,
+                    int rotationDegrees) {
                 return Collections.singletonList(APP_RESOLUTION);
             }
         };
@@ -266,7 +270,7 @@ public class ImageAnalysisTest {
         getMergedImageAnalysisConfig().getTargetResolution();
     }
 
-    private void setResolutionSelectorToImageAnalysisBuilder(@NonNull ImageAnalysis.Builder builder,
+    private void setResolutionSelectorToImageAnalysisBuilder(ImageAnalysis.@NonNull Builder builder,
             @AspectRatio.Ratio int aspectRatio, @Nullable Size boundSize,
             @Nullable ResolutionFilter resolutionFilter) {
         ResolutionSelector.Builder selectorBuilder = new ResolutionSelector.Builder();
@@ -304,16 +308,14 @@ public class ImageAnalysisTest {
         mImageAnalysis.setAnalyzer(mBackgroundExecutor, analyzer);
     }
 
-    @NonNull
-    private ImageAnalysisConfig getMergedImageAnalysisConfig() {
+    private @NonNull ImageAnalysisConfig getMergedImageAnalysisConfig() {
         CameraInfoInternal cameraInfoInternal = new FakeCameraInfoInternal(90,
                 CameraSelector.LENS_FACING_BACK);
         return (ImageAnalysisConfig) mImageAnalysis.mergeConfigs(cameraInfoInternal, null,
                 new ImageAnalysis.Defaults().getConfig());
     }
 
-    @NonNull
-    private ImageAnalysisConfig createDefaultConfig() {
+    private @NonNull ImageAnalysisConfig createDefaultConfig() {
         ImageAnalysis.Builder builder = new ImageAnalysis.Builder();
         builder.setDefaultResolution(DEFAULT_RESOLUTION);
         return builder.getUseCaseConfig();
@@ -488,6 +490,24 @@ public class ImageAnalysisTest {
         // If image leakage happens, 4 unclosed image will never be closed. It means the analyzer
         // won't be able to receive images anymore.
         assertCanReceiveAnalysisImage(mImageAnalysis);
+    }
+
+    @Test
+    public void sessionConfigMatchesStreamSpec() {
+        mImageAnalysis = new ImageAnalysis.Builder()
+                .setSessionOptionUnpacker((resolution, config, builder) -> {
+                }).build();
+        StreamSpec streamSpec = StreamSpec.builder(new Size(640, 480))
+                .setSessionType(SESSION_TYPE_HIGH_SPEED)
+                .setExpectedFrameRateRange(Range.create(30, 60))
+                .build();
+
+        mImageAnalysis.bindToCamera(new FakeCamera(), null, null, null);
+        mImageAnalysis.updateSuggestedStreamSpec(streamSpec, null);
+
+        SessionConfig sessionConfig = mImageAnalysis.getSessionConfig();
+        assertThat(sessionConfig.getSessionType()).isEqualTo(SESSION_TYPE_HIGH_SPEED);
+        assertThat(sessionConfig.getExpectedFrameRateRange()).isEqualTo(Range.create(30, 60));
     }
 
     @Test

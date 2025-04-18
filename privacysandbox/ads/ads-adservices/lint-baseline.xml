@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.7.0-alpha02" type="baseline" client="gradle" dependencies="false" name="AGP (8.7.0-alpha02)" variant="all" version="8.7.0-alpha02">
+<issues format="6" by="lint 8.11.0-alpha02" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha02)" variant="all" version="8.11.0-alpha02">
 
     <issue
         id="WrongConstant"
@@ -33,6 +33,51 @@
         message="Must be one or more of: ReportEventRequest.FLAG_REPORTING_DESTINATION_SELLER, ReportEventRequest.FLAG_REPORTING_DESTINATION_BUYER"
         errorLine1="                        request.reportingDestinations"
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/privacysandbox/ads/adservices/adselection/ReportEventRequest.kt"/>
+    </issue>
+
+    <issue
+        id="ExperimentalPropertyAnnotation"
+        message="This property does not have all required annotations to correctly mark it as experimental."
+        errorLine1="    @property:ExperimentalFeatures.Ext14OptIn"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/privacysandbox/ads/adservices/customaudience/CustomAudience.kt"/>
+    </issue>
+
+    <issue
+        id="ExperimentalPropertyAnnotation"
+        message="This property does not have all required annotations to correctly mark it as experimental."
+        errorLine1="    @property:ExperimentalFeatures.Ext14OptIn val priority: Double = 0.0,"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/privacysandbox/ads/adservices/customaudience/CustomAudience.kt"/>
+    </issue>
+
+    <issue
+        id="ExperimentalPropertyAnnotation"
+        message="This property does not have all required annotations to correctly mark it as experimental."
+        errorLine1="    @property:ExperimentalFeatures.Ext12OptIn val coordinatorOriginUri: Uri? = null,"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/privacysandbox/ads/adservices/adselection/GetAdSelectionDataRequest.kt"/>
+    </issue>
+
+    <issue
+        id="ExperimentalPropertyAnnotation"
+        message="This property does not have all required annotations to correctly mark it as experimental."
+        errorLine1="    @property:ExperimentalFeatures.Ext14OptIn val sellerConfiguration: SellerConfiguration? = null"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/privacysandbox/ads/adservices/adselection/GetAdSelectionDataRequest.kt"/>
+    </issue>
+
+    <issue
+        id="ExperimentalPropertyAnnotation"
+        message="This property does not have all required annotations to correctly mark it as experimental."
+        errorLine1="    @property:ExperimentalFeatures.Ext10OptIn val inputEvent: InputEvent? = null"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/privacysandbox/ads/adservices/adselection/ReportEventRequest.kt"/>
     </issue>

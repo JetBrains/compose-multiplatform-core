@@ -16,11 +16,12 @@
 
 package androidx.camera.core.impl.utils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.impl.AdapterCameraInfo;
 import androidx.camera.core.impl.SessionProcessor;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +41,7 @@ public final class SessionProcessorUtil {
      * @return {@code true} if the operations can be supported, otherwise {@code false}.
      */
     public static boolean isOperationSupported(@Nullable SessionProcessor sessionProcessor,
-            @NonNull @AdapterCameraInfo.CameraOperation int... operations) {
+            @AdapterCameraInfo.CameraOperation int @NonNull ... operations) {
         if (sessionProcessor == null) {
             return true;
         }
@@ -58,8 +59,7 @@ public final class SessionProcessorUtil {
      * regions. Returns {@code null} if none of AF/AE/AWB regions can be supported after the
      * filtering.
      */
-    @Nullable
-    public static FocusMeteringAction getModifiedFocusMeteringAction(
+    public static @Nullable FocusMeteringAction getModifiedFocusMeteringAction(
             @Nullable SessionProcessor sessionProcessor, @NonNull FocusMeteringAction action) {
         if (sessionProcessor == null) {
             return action;

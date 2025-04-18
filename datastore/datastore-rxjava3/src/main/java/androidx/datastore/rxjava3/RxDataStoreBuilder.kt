@@ -24,6 +24,7 @@ import androidx.datastore.core.Serializer
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.dataStoreFile
 import io.reactivex.rxjava3.core.Scheduler
+import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.io.File
 import java.util.concurrent.Callable
@@ -176,7 +177,8 @@ internal class DataMigrationFromRxDataMigration<T>(private val migration: RxData
     }
 
     override suspend fun migrate(currentData: T): T {
-        return migration.migrate(currentData).await()
+        @Suppress("UNCHECKED_CAST")
+        return (migration.migrate(currentData) as Single<T & Any>).await()
     }
 
     override suspend fun cleanUp() {

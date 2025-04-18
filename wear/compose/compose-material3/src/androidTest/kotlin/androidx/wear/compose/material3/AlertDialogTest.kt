@@ -56,7 +56,7 @@ class AlertDialogTest {
     fun dialog_supports_testtag_with_bottomButton() {
         rule.setContentWithTheme {
             AlertDialog(
-                show = true,
+                visible = true,
                 onDismissRequest = {},
                 modifier = Modifier.testTag(TEST_TAG),
                 title = {},
@@ -76,7 +76,7 @@ class AlertDialogTest {
     fun dialog_supports_testtag_with_no_buttons() {
         rule.setContentWithTheme {
             AlertDialog(
-                show = true,
+                visible = true,
                 onDismissRequest = {},
                 modifier = Modifier.testTag(TEST_TAG),
                 title = {},
@@ -89,7 +89,7 @@ class AlertDialogTest {
     fun dialog_supports_testtag_with_confirmDismissButtons() {
         rule.setContentWithTheme {
             AlertDialog(
-                show = true,
+                visible = true,
                 onDismissRequest = {},
                 modifier = Modifier.testTag(TEST_TAG),
                 title = {},
@@ -169,9 +169,7 @@ class AlertDialogTest {
     @Test
     fun displays_icon_with_bottomButton() {
         rule.setContentWithTheme {
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 icon = { TestImage(TEST_TAG) },
                 title = {},
                 edgeButton = {},
@@ -183,9 +181,7 @@ class AlertDialogTest {
     @Test
     fun displays_icon_with_confirmDismissButtons() {
         rule.setContentWithTheme {
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 icon = { TestImage(TEST_TAG) },
                 title = {},
                 confirmButton = {},
@@ -198,9 +194,7 @@ class AlertDialogTest {
     @Test
     fun displays_title_with_bottomButton() {
         rule.setContentWithTheme {
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 title = { Text("Text", modifier = Modifier.testTag(TEST_TAG)) },
                 edgeButton = {},
             )
@@ -211,9 +205,7 @@ class AlertDialogTest {
     @Test
     fun displays_title_with_confirmDismissButtons() {
         rule.setContentWithTheme {
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 title = { Text("Text", modifier = Modifier.testTag(TEST_TAG)) },
                 confirmButton = {},
                 dismissButton = {},
@@ -225,9 +217,7 @@ class AlertDialogTest {
     @Test
     fun displays_messageText_with_bottomButton() {
         rule.setContentWithTheme {
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 title = {},
                 text = { Text("Text", modifier = Modifier.testTag(TEST_TAG)) },
                 edgeButton = {},
@@ -239,9 +229,7 @@ class AlertDialogTest {
     @Test
     fun displays_messageText_with_confirmDismissButtons() {
         rule.setContentWithTheme {
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 title = {},
                 text = { Text("Text", modifier = Modifier.testTag(TEST_TAG)) },
                 confirmButton = {},
@@ -254,7 +242,7 @@ class AlertDialogTest {
     @Test
     fun displays_content_with_bottomButton() {
         rule.setContentWithTheme {
-            AlertDialog(show = true, onDismissRequest = {}, title = {}, edgeButton = {}) {
+            AlertDialogContent(title = {}, edgeButton = {}) {
                 item { Text("Text", modifier = Modifier.testTag(TEST_TAG)) }
             }
         }
@@ -264,9 +252,7 @@ class AlertDialogTest {
     @Test
     fun displays_content_with_confirmDismissButtons() {
         rule.setContentWithTheme {
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 title = {},
                 confirmButton = {},
                 dismissButton = {},
@@ -280,9 +266,7 @@ class AlertDialogTest {
     @Test
     fun displays_confirmButton() {
         rule.setContentWithTheme {
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 title = {},
                 confirmButton = { Button(onClick = {}, modifier = Modifier.testTag(TEST_TAG)) {} },
                 dismissButton = {},
@@ -294,9 +278,7 @@ class AlertDialogTest {
     @Test
     fun displays_dismissButton() {
         rule.setContentWithTheme {
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 title = {},
                 confirmButton = {},
                 dismissButton = { Button(onClick = {}, modifier = Modifier.testTag(TEST_TAG)) {} },
@@ -308,9 +290,7 @@ class AlertDialogTest {
     @Test
     fun displays_bottomButton() {
         rule.setContentWithTheme {
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 title = {},
                 edgeButton = { Button(onClick = {}, modifier = Modifier.testTag(TEST_TAG)) {} },
             )
@@ -332,7 +312,7 @@ class AlertDialogTest {
                     showDialog = false
                     dismissCounter++
                 },
-                show = showDialog
+                visible = showDialog
             )
         }
 
@@ -354,7 +334,7 @@ class AlertDialogTest {
                     showDialog = false
                     dismissCounter++
                 },
-                show = showDialog
+                visible = showDialog
             )
         }
 
@@ -374,7 +354,7 @@ class AlertDialogTest {
                 title = {},
                 edgeButton = {},
                 onDismissRequest = { dismissCounter++ },
-                show = show.value
+                visible = show.value
             )
         }
         rule.waitForIdle()
@@ -391,7 +371,7 @@ class AlertDialogTest {
                 title = {},
                 edgeButton = {},
                 onDismissRequest = {},
-                show = false
+                visible = false
             )
         }
         rule.onNodeWithTag(TEST_TAG).assertDoesNotExist()
@@ -414,9 +394,7 @@ class AlertDialogTest {
             expectedTextStyle = MaterialTheme.typography.titleMedium
             expectedTextAlign = TextAlign.Center
             expectedTextMaxLines = AlertTitleMaxLines
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 modifier = Modifier.testTag(TEST_TAG),
                 title = {
                     Text("Title")
@@ -449,9 +427,7 @@ class AlertDialogTest {
             expectedContentColor = MaterialTheme.colorScheme.onBackground
             expectedTextStyle = MaterialTheme.typography.bodyMedium
             expectedTextAlign = TextAlign.Center
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 modifier = Modifier.testTag(TEST_TAG),
                 title = {},
                 text = {
@@ -476,9 +452,7 @@ class AlertDialogTest {
 
         rule.setContentWithTheme {
             expectedContentColor = Color.Yellow
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 modifier = Modifier.testTag(TEST_TAG),
                 title = { Text("Title", color = expectedContentColor) },
                 edgeButton = {},
@@ -494,9 +468,7 @@ class AlertDialogTest {
 
         rule.setContentWithTheme {
             expectedContentColor = Color.Yellow
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 modifier = Modifier.testTag(TEST_TAG),
                 title = {},
                 text = { Text("Text", color = expectedContentColor) },
@@ -513,9 +485,7 @@ class AlertDialogTest {
 
         rule.setContentWithTheme {
             expectedBackgroundColor = Color.Yellow
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 modifier = Modifier.testTag(TEST_TAG).background(expectedBackgroundColor),
                 title = {},
                 edgeButton = {},
@@ -533,9 +503,7 @@ class AlertDialogTest {
         rule.setContentWithTheme {
             expectedConfirmColor = Color.Yellow
             expectedDismissColor = Color.Red
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 modifier = Modifier.testTag(TEST_TAG),
                 title = {},
                 confirmButton = {
@@ -572,9 +540,7 @@ class AlertDialogTest {
 
         rule.setContentWithTheme {
             expectedEdgeButtonColor = Color.Yellow
-            AlertDialog(
-                show = true,
-                onDismissRequest = {},
+            AlertDialogContent(
                 modifier = Modifier.testTag(TEST_TAG),
                 title = {},
                 edgeButton = {
@@ -747,7 +713,7 @@ class AlertDialogTest {
 
         titleTop.assertIsEqualTo(iconBottom + AlertIconBottomSpacing)
         textTop.assertIsEqualTo(titleBottom + AlertTextMessageTopSpacing)
-        contentTop.assertIsEqualTo(textBottom + AlertTextMessageTopSpacing)
+        contentTop.assertIsEqualTo(textBottom + AlertContentTopSpacing)
         confirmButtonTop.assertIsEqualTo(contentBottom + ConfirmDismissButtonsTopSpacing)
     }
 
@@ -782,7 +748,7 @@ class AlertDialogTest {
             rule.onNodeWithTag(ConfirmButtonTestTag).getUnclippedBoundsInRoot().top
 
         titleTop.assertIsEqualTo(iconBottom + AlertIconBottomSpacing)
-        contentTop.assertIsEqualTo(titleBottom + AlertTextMessageTopSpacing)
+        contentTop.assertIsEqualTo(titleBottom + AlertContentTopSpacing)
         confirmButtonTop.assertIsEqualTo(contentBottom + ConfirmDismissButtonsTopSpacing)
     }
 

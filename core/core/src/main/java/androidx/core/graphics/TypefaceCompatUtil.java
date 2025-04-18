@@ -29,10 +29,11 @@ import android.os.Process;
 import android.os.StrictMode;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.provider.FontsContractCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Closeable;
 import java.io.File;
@@ -62,8 +63,7 @@ public class TypefaceCompatUtil {
      *
      * Returns null if failed to create temp file.
      */
-    @Nullable
-    public static File getTempFile(@NonNull Context context) {
+    public static @Nullable File getTempFile(@NonNull Context context) {
         File cacheDir = context.getCacheDir();
         if (cacheDir == null) {
             return null;
@@ -86,8 +86,7 @@ public class TypefaceCompatUtil {
     /**
      * Copy the file contents to the direct byte buffer.
      */
-    @Nullable
-    private static ByteBuffer mmap(File file) {
+    private static @Nullable ByteBuffer mmap(File file) {
         try (FileInputStream fis = new FileInputStream(file)) {
             FileChannel channel = fis.getChannel();
             final long size = channel.size();
@@ -100,8 +99,7 @@ public class TypefaceCompatUtil {
     /**
      * Copy the file contents to the direct byte buffer.
      */
-    @Nullable
-    public static ByteBuffer mmap(@NonNull Context context,
+    public static @Nullable ByteBuffer mmap(@NonNull Context context,
             @Nullable CancellationSignal cancellationSignal, @NonNull Uri uri) {
         final ContentResolver resolver = context.getContentResolver();
         try {
@@ -125,9 +123,8 @@ public class TypefaceCompatUtil {
      * Copy the resource contents to the direct byte buffer.
      */
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    @Nullable
-    public static ByteBuffer copyToDirectBuffer(@NonNull Context context, @NonNull Resources res,
-            int id) {
+    public static @Nullable ByteBuffer copyToDirectBuffer(@NonNull Context context,
+            @NonNull Resources res, int id) {
         File tmpFile = getTempFile(context);
         if (tmpFile == null) {
             return null;
@@ -205,10 +202,9 @@ public class TypefaceCompatUtil {
      * @return A map from {@link Uri} to {@link ByteBuffer}.
      */
     @RestrictTo(LIBRARY)
-    @NonNull
-    public static Map<Uri, ByteBuffer> readFontInfoIntoByteBuffer(
+    public static @NonNull Map<Uri, ByteBuffer> readFontInfoIntoByteBuffer(
             @NonNull Context context,
-            @NonNull FontsContractCompat.FontInfo[] fonts,
+            FontsContractCompat.FontInfo @NonNull [] fonts,
             @Nullable CancellationSignal cancellationSignal
     ) {
         final HashMap<Uri, ByteBuffer> out = new HashMap<>();

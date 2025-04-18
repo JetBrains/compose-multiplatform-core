@@ -26,6 +26,7 @@ import java.nio.file.Path
 import javax.annotation.processing.Filer
 import javax.tools.StandardLocation
 import kotlin.io.path.extension
+import kotlin.io.path.invariantSeparatorsPathString
 
 internal class JavacFiler(private val processingEnv: XProcessingEnv, val delegate: Filer) : XFiler {
 
@@ -94,7 +95,7 @@ internal class JavacFiler(private val processingEnv: XProcessingEnv, val delegat
             delegate.createResource(
                 StandardLocation.CLASS_OUTPUT,
                 "",
-                filePath.toString(),
+                filePath.invariantSeparatorsPathString,
                 *javaOriginatingElements
             )
         return fileObject.openOutputStream()

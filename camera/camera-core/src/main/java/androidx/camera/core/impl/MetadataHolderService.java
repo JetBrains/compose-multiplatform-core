@@ -20,17 +20,16 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A placeholder service to avoid adding application-level metadata. The service is only used to
  * expose metadata defined in the library's manifest. It is never invoked.
  */
 public class MetadataHolderService extends Service {
-    @Nullable
     @Override
-    public IBinder onBind(@NonNull Intent intent) {
+    public @Nullable IBinder onBind(@NonNull Intent intent) {
         throw new UnsupportedOperationException();
     }
 

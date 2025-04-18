@@ -27,11 +27,11 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Xfermode;
 
-import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -93,7 +93,7 @@ public class PaintTest {
      * equivalent PorterDuff.Mode for the BlendMode
      */
     private void verifyPorterDuffMatchesCompat(@Nullable BlendModeCompat compat,
-                                               @Nullable PorterDuff.Mode mode) {
+                                               PorterDuff.@Nullable Mode mode) {
         Paint p = new Paint();
         boolean result = PaintCompat.setBlendMode(p, compat);
         if (compat != null && mode == null) {

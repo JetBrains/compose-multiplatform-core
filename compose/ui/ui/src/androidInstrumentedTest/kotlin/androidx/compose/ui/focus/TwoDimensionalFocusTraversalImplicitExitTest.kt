@@ -212,7 +212,7 @@ class TwoDimensionalFocusTraversalImplicitExitTest(param: Param) {
     fun moveFocusExit_blockFocusChange() {
         // Arrange.
         val (up, down, left, right, parent) = List(5) { mutableStateOf(false) }
-        val customFocusExit = Modifier.focusProperties { onExit = { cancelFocus() } }
+        val customFocusExit = Modifier.focusProperties { onExit = { cancelFocusChange() } }
         rule.setContentForTest {
             FocusableBox(up, 30, 0, 10, 10)
             FocusableBox(left, 0, 30, 10, 10)
@@ -257,7 +257,8 @@ class TwoDimensionalFocusTraversalImplicitExitTest(param: Param) {
         val (up, down, left, right, parent) = List(5) { mutableStateOf(false) }
         val (upItem, downItem, leftItem, rightItem) = FocusRequester.createRefs()
 
-        val customFocusExit = Modifier.focusProperties { onExit = { cancelFocus() } }.focusGroup()
+        val customFocusExit =
+            Modifier.focusProperties { onExit = { cancelFocusChange() } }.focusGroup()
 
         rule.setContentForTest {
             FocusableBox(up, 30, 0, 10, 10, upItem)
@@ -309,7 +310,7 @@ class TwoDimensionalFocusTraversalImplicitExitTest(param: Param) {
             Modifier.focusProperties {
                     onExit = {
                         initialFocus.requestFocus()
-                        cancelFocus()
+                        cancelFocusChange()
                     }
                 }
                 .focusGroup()
@@ -363,7 +364,8 @@ class TwoDimensionalFocusTraversalImplicitExitTest(param: Param) {
         val (up, down, left, right) = List(4) { mutableStateOf(false) }
         val (upItem, downItem, leftItem, rightItem) = FocusRequester.createRefs()
 
-        val customFocusExit = Modifier.focusProperties { onExit = { cancelFocus() } }.focusGroup()
+        val customFocusExit =
+            Modifier.focusProperties { onExit = { cancelFocusChange() } }.focusGroup()
 
         rule.setContentForTest {
             FocusableBox(up, 40, 0, 10, 10, upItem)
@@ -418,7 +420,7 @@ class TwoDimensionalFocusTraversalImplicitExitTest(param: Param) {
                 .focusProperties {
                     onExit = {
                         initialFocus.requestFocus()
-                        cancelFocus()
+                        cancelFocusChange()
                     }
                 }
                 .focusGroup()

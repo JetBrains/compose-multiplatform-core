@@ -21,8 +21,9 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.params.SessionConfiguration;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -53,8 +54,35 @@ public interface CameraDeviceSetupCompat {
      * @see CameraDevice.CameraDeviceSetup#isSessionConfigurationSupported
      */
     @NonNull
-    SupportQueryResult isSessionConfigurationSupported(@NonNull SessionConfiguration sessionConfig)
-            throws CameraAccessException;
+    SupportQueryResult isSessionConfigurationSupported(
+            @NonNull SessionConfiguration sessionConfig) throws CameraAccessException;
+
+    /**
+     * Checks if the {@link SessionConfigurationCompat} is supported.
+     * <p>
+     * This method and the compat classes are provided to allow querying camera device
+     * capabilities without the
+     * need to call {@link android.hardware.camera2.CameraManager#openCamera}. It should only be
+     * used for devices that do not support {@link CameraDevice.CameraDeviceSetup} and will
+     * throw an {@link IllegalStateException} when used for a {@code cameraId} for which
+     * {@link android.hardware.camera2.CameraManager#isCameraDeviceSetupSupported}
+     * returns true.
+     * <p>
+     * Note that the condition above means that this method does not query camera2's
+     * {@link
+     * android.hardware.camera2.CameraDevice.CameraDeviceSetup#isSessionConfigurationSupported},
+     * so the returned {@link SupportQueryResult#getSource()} will never be
+     * {@link SupportQueryResult#SOURCE_ANDROID_FRAMEWORK}
+     *
+     * @param sessionConfig The {@link SessionConfigurationCompat} to check.
+     * @return a {@link SupportQueryResult} indicating if the {@link SessionConfigurationCompat} is
+     * supported.
+     * @throws IllegalStateException if the camera device supports
+     * {@link android.hardware.camera2.CameraDevice.CameraDeviceSetup}
+     */
+    @NonNull
+    SupportQueryResult isSessionConfigurationSupported(
+            @NonNull SessionConfigurationCompat sessionConfig);
 
     /**
      * Result of a {@link CameraDeviceSetupCompat#isSessionConfigurationSupported} query.
@@ -128,7 +156,8 @@ public interface CameraDeviceSetupCompat {
          * @param source          The source of the result.
          * @param timestampMillis The epoch timestamp of when the result was updated.
          */
-        public SupportQueryResult(int supported, int source, long timestampMillis) {
+        public SupportQueryResult(@Supported int supported, @Sources int source,
+                long timestampMillis) {
             mSupported = supported;
             mSource = source;
             mTimestampMillis = timestampMillis;

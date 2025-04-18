@@ -16,7 +16,6 @@
 
 package androidx.health.connect.client.records
 
-import androidx.health.connect.client.records.metadata.DataOrigin
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.units.Length
 import androidx.health.connect.client.units.Power
@@ -42,6 +41,7 @@ class PlannedExerciseSessionRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     blocks =
                         listOf(
                             PlannedExerciseBlock(
@@ -78,6 +78,7 @@ class PlannedExerciseSessionRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     blocks =
                         listOf(
                             PlannedExerciseBlock(
@@ -118,6 +119,7 @@ class PlannedExerciseSessionRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     blocks =
                         listOf(
                             PlannedExerciseBlock(
@@ -154,6 +156,7 @@ class PlannedExerciseSessionRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     blocks =
                         listOf(
                             PlannedExerciseBlock(
@@ -188,6 +191,7 @@ class PlannedExerciseSessionRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(50L),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 blocks =
                     listOf(
                         PlannedExerciseBlock(
@@ -227,6 +231,7 @@ class PlannedExerciseSessionRecordTest {
 
         assertThat(
                 PlannedExerciseSessionRecord(
+                    metadata = Metadata.manualEntry(),
                     startDate = startDate,
                     duration = duration,
                     blocks =
@@ -261,6 +266,7 @@ class PlannedExerciseSessionRecordTest {
             )
             .isEqualTo(
                 PlannedExerciseSessionRecord(
+                    metadata = Metadata.manualEntry(),
                     startDate = startDate,
                     duration = duration,
                     blocks =
@@ -302,6 +308,7 @@ class PlannedExerciseSessionRecordTest {
 
         assertThat(
                 PlannedExerciseSessionRecord(
+                    metadata = Metadata.manualEntry(),
                     startDate = startDate,
                     duration = duration,
                     blocks =
@@ -336,6 +343,7 @@ class PlannedExerciseSessionRecordTest {
             )
             .isNotEqualTo(
                 PlannedExerciseSessionRecord(
+                    metadata = Metadata.manualEntry(),
                     startDate = startDate,
                     duration = duration,
                     blocks =
@@ -379,7 +387,7 @@ class PlannedExerciseSessionRecordTest {
                 notes = "Notes",
                 exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_EXERCISE_CLASS,
                 completedExerciseSessionId = "some-uuid",
-                metadata = Metadata("record_id", DataOrigin("com.some.app"))
+                metadata = Metadata.manualEntryWithId(id = "record_id")
             )
         assertThat(record.completedExerciseSessionId).isEqualTo("some-uuid")
     }
@@ -392,6 +400,7 @@ class PlannedExerciseSessionRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(1236L),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 blocks = listOf(),
                 title = "My Planned Session",
                 notes = "Notes",
@@ -405,6 +414,7 @@ class PlannedExerciseSessionRecordTest {
         val startDate = LocalDate.of(2023, 10, 26)
         val record =
             PlannedExerciseSessionRecord(
+                metadata = Metadata.manualEntry(),
                 startDate = startDate,
                 duration = Duration.ofHours(1),
                 blocks = listOf(),
@@ -429,6 +439,7 @@ class PlannedExerciseSessionRecordTest {
     fun localDateConstructor_hasExplicitTimeIsFalse() {
         val record =
             PlannedExerciseSessionRecord(
+                metadata = Metadata.manualEntry(),
                 startDate = LocalDate.now(),
                 duration = Duration.ofMinutes(30),
                 blocks = listOf(),
@@ -447,6 +458,7 @@ class PlannedExerciseSessionRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.now().plusSeconds(1800),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 blocks = listOf(),
                 title = "My Planned Session",
                 notes = "Notes",

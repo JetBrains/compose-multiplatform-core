@@ -35,6 +35,7 @@ fun SimpleHorizontalPagerSample() {
     // Creates a horizontal pager with 10 elements
     val state = rememberPagerState { 10 }
     HorizontalPager(
+        modifier = Modifier.fillMaxSize(),
         state = state,
     ) { page ->
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -49,6 +50,7 @@ fun SimpleVerticalPagerSample() {
     // Creates a vertical pager with 10 elements
     val state = rememberPagerState { 10 }
     VerticalPager(
+        modifier = Modifier.fillMaxSize(),
         state = state,
     ) { page ->
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

@@ -52,18 +52,18 @@ public final class ComplexDao_Impl extends ComplexDao {
       try {
         int _argIndex = 1;
         _stmt.bindLong(_argIndex, id);
-        final int _cursorIndexOfFullName = 0;
-        final int _cursorIndexOfId = 1;
+        final int _columnIndexOfFullName = 0;
+        final int _columnIndexOfId = 1;
         final List<ComplexDao.FullName> _result = new ArrayList<ComplexDao.FullName>();
         while (_stmt.step()) {
           final ComplexDao.FullName _item;
           _item = new ComplexDao.FullName();
-          if (_stmt.isNull(_cursorIndexOfFullName)) {
+          if (_stmt.isNull(_columnIndexOfFullName)) {
             _item.fullName = null;
           } else {
-            _item.fullName = _stmt.getText(_cursorIndexOfFullName);
+            _item.fullName = _stmt.getText(_columnIndexOfFullName);
           }
-          _item.id = (int) (_stmt.getLong(_cursorIndexOfId));
+          _item.id = (int) (_stmt.getLong(_columnIndexOfId));
           _result.add(_item);
         }
         return _result;
@@ -81,27 +81,27 @@ public final class ComplexDao_Impl extends ComplexDao {
       try {
         int _argIndex = 1;
         _stmt.bindLong(_argIndex, id);
-        final int _cursorIndexOfUid = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "uid");
-        final int _cursorIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
-        final int _cursorIndexOfLastName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "lastName");
-        final int _cursorIndexOfAge = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "ageColumn");
+        final int _columnIndexOfUid = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "uid");
+        final int _columnIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
+        final int _columnIndexOfLastName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "lastName");
+        final int _columnIndexOfAge = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "ageColumn");
         final User _result;
         if (_stmt.step()) {
           _result = new User();
-          _result.uid = (int) (_stmt.getLong(_cursorIndexOfUid));
-          if (_stmt.isNull(_cursorIndexOfName)) {
+          _result.uid = (int) (_stmt.getLong(_columnIndexOfUid));
+          if (_stmt.isNull(_columnIndexOfName)) {
             _result.name = null;
           } else {
-            _result.name = _stmt.getText(_cursorIndexOfName);
+            _result.name = _stmt.getText(_columnIndexOfName);
           }
           final String _tmpLastName;
-          if (_stmt.isNull(_cursorIndexOfLastName)) {
+          if (_stmt.isNull(_columnIndexOfLastName)) {
             _tmpLastName = null;
           } else {
-            _tmpLastName = _stmt.getText(_cursorIndexOfLastName);
+            _tmpLastName = _stmt.getText(_columnIndexOfLastName);
           }
           _result.setLastName(_tmpLastName);
-          _result.age = (int) (_stmt.getLong(_cursorIndexOfAge));
+          _result.age = (int) (_stmt.getLong(_columnIndexOfAge));
         } else {
           _result = null;
         }
@@ -130,27 +130,27 @@ public final class ComplexDao_Impl extends ComplexDao {
         } else {
           _stmt.bindText(_argIndex, lastName);
         }
-        final int _cursorIndexOfUid = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "uid");
-        final int _cursorIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
-        final int _cursorIndexOfLastName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "lastName");
-        final int _cursorIndexOfAge = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "ageColumn");
+        final int _columnIndexOfUid = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "uid");
+        final int _columnIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
+        final int _columnIndexOfLastName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "lastName");
+        final int _columnIndexOfAge = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "ageColumn");
         final User _result;
         if (_stmt.step()) {
           _result = new User();
-          _result.uid = (int) (_stmt.getLong(_cursorIndexOfUid));
-          if (_stmt.isNull(_cursorIndexOfName)) {
+          _result.uid = (int) (_stmt.getLong(_columnIndexOfUid));
+          if (_stmt.isNull(_columnIndexOfName)) {
             _result.name = null;
           } else {
-            _result.name = _stmt.getText(_cursorIndexOfName);
+            _result.name = _stmt.getText(_columnIndexOfName);
           }
           final String _tmpLastName;
-          if (_stmt.isNull(_cursorIndexOfLastName)) {
+          if (_stmt.isNull(_columnIndexOfLastName)) {
             _tmpLastName = null;
           } else {
-            _tmpLastName = _stmt.getText(_cursorIndexOfLastName);
+            _tmpLastName = _stmt.getText(_columnIndexOfLastName);
           }
           _result.setLastName(_tmpLastName);
-          _result.age = (int) (_stmt.getLong(_cursorIndexOfAge));
+          _result.age = (int) (_stmt.getLong(_columnIndexOfAge));
         } else {
           _result = null;
         }
@@ -181,28 +181,28 @@ public final class ComplexDao_Impl extends ComplexDao {
             _argIndex++;
           }
         }
-        final int _cursorIndexOfUid = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "uid");
-        final int _cursorIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
-        final int _cursorIndexOfLastName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "lastName");
-        final int _cursorIndexOfAge = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "ageColumn");
+        final int _columnIndexOfUid = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "uid");
+        final int _columnIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
+        final int _columnIndexOfLastName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "lastName");
+        final int _columnIndexOfAge = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "ageColumn");
         final List<User> _result = new ArrayList<User>();
         while (_stmt.step()) {
           final User _item_1;
           _item_1 = new User();
-          _item_1.uid = (int) (_stmt.getLong(_cursorIndexOfUid));
-          if (_stmt.isNull(_cursorIndexOfName)) {
+          _item_1.uid = (int) (_stmt.getLong(_columnIndexOfUid));
+          if (_stmt.isNull(_columnIndexOfName)) {
             _item_1.name = null;
           } else {
-            _item_1.name = _stmt.getText(_cursorIndexOfName);
+            _item_1.name = _stmt.getText(_columnIndexOfName);
           }
           final String _tmpLastName;
-          if (_stmt.isNull(_cursorIndexOfLastName)) {
+          if (_stmt.isNull(_columnIndexOfLastName)) {
             _tmpLastName = null;
           } else {
-            _tmpLastName = _stmt.getText(_cursorIndexOfLastName);
+            _tmpLastName = _stmt.getText(_columnIndexOfLastName);
           }
           _item_1.setLastName(_tmpLastName);
-          _item_1.age = (int) (_stmt.getLong(_cursorIndexOfAge));
+          _item_1.age = (int) (_stmt.getLong(_columnIndexOfAge));
           _result.add(_item_1);
         }
         return _result;
@@ -388,27 +388,27 @@ public final class ComplexDao_Impl extends ComplexDao {
       try {
         int _argIndex = 1;
         _stmt.bindLong(_argIndex, id);
-        final int _cursorIndexOfUid = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "uid");
-        final int _cursorIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
-        final int _cursorIndexOfLastName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "lastName");
-        final int _cursorIndexOfAge = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "ageColumn");
+        final int _columnIndexOfUid = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "uid");
+        final int _columnIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
+        final int _columnIndexOfLastName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "lastName");
+        final int _columnIndexOfAge = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "ageColumn");
         final User _result;
         if (_stmt.step()) {
           _result = new User();
-          _result.uid = (int) (_stmt.getLong(_cursorIndexOfUid));
-          if (_stmt.isNull(_cursorIndexOfName)) {
+          _result.uid = (int) (_stmt.getLong(_columnIndexOfUid));
+          if (_stmt.isNull(_columnIndexOfName)) {
             _result.name = null;
           } else {
-            _result.name = _stmt.getText(_cursorIndexOfName);
+            _result.name = _stmt.getText(_columnIndexOfName);
           }
           final String _tmpLastName;
-          if (_stmt.isNull(_cursorIndexOfLastName)) {
+          if (_stmt.isNull(_columnIndexOfLastName)) {
             _tmpLastName = null;
           } else {
-            _tmpLastName = _stmt.getText(_cursorIndexOfLastName);
+            _tmpLastName = _stmt.getText(_columnIndexOfLastName);
           }
           _result.setLastName(_tmpLastName);
-          _result.age = (int) (_stmt.getLong(_cursorIndexOfAge));
+          _result.age = (int) (_stmt.getLong(_columnIndexOfAge));
         } else {
           _result = null;
         }
@@ -439,28 +439,28 @@ public final class ComplexDao_Impl extends ComplexDao {
             _argIndex++;
           }
         }
-        final int _cursorIndexOfUid = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "uid");
-        final int _cursorIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
-        final int _cursorIndexOfLastName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "lastName");
-        final int _cursorIndexOfAge = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "ageColumn");
+        final int _columnIndexOfUid = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "uid");
+        final int _columnIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
+        final int _columnIndexOfLastName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "lastName");
+        final int _columnIndexOfAge = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "ageColumn");
         final List<User> _result = new ArrayList<User>();
         while (_stmt.step()) {
           final User _item_1;
           _item_1 = new User();
-          _item_1.uid = (int) (_stmt.getLong(_cursorIndexOfUid));
-          if (_stmt.isNull(_cursorIndexOfName)) {
+          _item_1.uid = (int) (_stmt.getLong(_columnIndexOfUid));
+          if (_stmt.isNull(_columnIndexOfName)) {
             _item_1.name = null;
           } else {
-            _item_1.name = _stmt.getText(_cursorIndexOfName);
+            _item_1.name = _stmt.getText(_columnIndexOfName);
           }
           final String _tmpLastName;
-          if (_stmt.isNull(_cursorIndexOfLastName)) {
+          if (_stmt.isNull(_columnIndexOfLastName)) {
             _tmpLastName = null;
           } else {
-            _tmpLastName = _stmt.getText(_cursorIndexOfLastName);
+            _tmpLastName = _stmt.getText(_columnIndexOfLastName);
           }
           _item_1.setLastName(_tmpLastName);
-          _item_1.age = (int) (_stmt.getLong(_cursorIndexOfAge));
+          _item_1.age = (int) (_stmt.getLong(_columnIndexOfAge));
           _result.add(_item_1);
         }
         return _result;
@@ -476,29 +476,29 @@ public final class ComplexDao_Impl extends ComplexDao {
     return DBUtil.performBlocking(__db, true, false, (_connection) -> {
       final SQLiteStatement _stmt = _connection.prepare(_sql);
       try {
-        final int _cursorIndexOfId = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "id");
-        final int _cursorIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
-        final int _cursorIndexOfSerial = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "serial");
-        final int _cursorIndexOfCode = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "code");
+        final int _columnIndexOfId = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "id");
+        final int _columnIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
+        final int _columnIndexOfSerial = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "serial");
+        final int _columnIndexOfCode = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "code");
         final List<Child1> _result = new ArrayList<Child1>();
         while (_stmt.step()) {
           final Child1 _item;
           final int _tmpId;
-          _tmpId = (int) (_stmt.getLong(_cursorIndexOfId));
+          _tmpId = (int) (_stmt.getLong(_columnIndexOfId));
           final String _tmpName;
-          if (_stmt.isNull(_cursorIndexOfName)) {
+          if (_stmt.isNull(_columnIndexOfName)) {
             _tmpName = null;
           } else {
-            _tmpName = _stmt.getText(_cursorIndexOfName);
+            _tmpName = _stmt.getText(_columnIndexOfName);
           }
           final Info _tmpInfo;
-          if (!(_stmt.isNull(_cursorIndexOfSerial) && _stmt.isNull(_cursorIndexOfCode))) {
+          if (!(_stmt.isNull(_columnIndexOfSerial) && _stmt.isNull(_columnIndexOfCode))) {
             _tmpInfo = new Info();
-            _tmpInfo.serial = (int) (_stmt.getLong(_cursorIndexOfSerial));
-            if (_stmt.isNull(_cursorIndexOfCode)) {
+            _tmpInfo.serial = (int) (_stmt.getLong(_columnIndexOfSerial));
+            if (_stmt.isNull(_columnIndexOfCode)) {
               _tmpInfo.code = null;
             } else {
-              _tmpInfo.code = _stmt.getText(_cursorIndexOfCode);
+              _tmpInfo.code = _stmt.getText(_columnIndexOfCode);
             }
           } else {
             _tmpInfo = null;
@@ -519,29 +519,29 @@ public final class ComplexDao_Impl extends ComplexDao {
     return DBUtil.performBlocking(__db, true, false, (_connection) -> {
       final SQLiteStatement _stmt = _connection.prepare(_sql);
       try {
-        final int _cursorIndexOfId = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "id");
-        final int _cursorIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
-        final int _cursorIndexOfSerial = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "serial");
-        final int _cursorIndexOfCode = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "code");
+        final int _columnIndexOfId = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "id");
+        final int _columnIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
+        final int _columnIndexOfSerial = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "serial");
+        final int _columnIndexOfCode = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "code");
         final List<Child2> _result = new ArrayList<Child2>();
         while (_stmt.step()) {
           final Child2 _item;
           final int _tmpId;
-          _tmpId = (int) (_stmt.getLong(_cursorIndexOfId));
+          _tmpId = (int) (_stmt.getLong(_columnIndexOfId));
           final String _tmpName;
-          if (_stmt.isNull(_cursorIndexOfName)) {
+          if (_stmt.isNull(_columnIndexOfName)) {
             _tmpName = null;
           } else {
-            _tmpName = _stmt.getText(_cursorIndexOfName);
+            _tmpName = _stmt.getText(_columnIndexOfName);
           }
           final Info _tmpInfo;
-          if (!(_stmt.isNull(_cursorIndexOfSerial) && _stmt.isNull(_cursorIndexOfCode))) {
+          if (!(_stmt.isNull(_columnIndexOfSerial) && _stmt.isNull(_columnIndexOfCode))) {
             _tmpInfo = new Info();
-            _tmpInfo.serial = (int) (_stmt.getLong(_cursorIndexOfSerial));
-            if (_stmt.isNull(_cursorIndexOfCode)) {
+            _tmpInfo.serial = (int) (_stmt.getLong(_columnIndexOfSerial));
+            if (_stmt.isNull(_columnIndexOfCode)) {
               _tmpInfo.code = null;
             } else {
-              _tmpInfo.code = _stmt.getText(_cursorIndexOfCode);
+              _tmpInfo.code = _stmt.getText(_columnIndexOfCode);
             }
           } else {
             _tmpInfo = null;
@@ -562,29 +562,29 @@ public final class ComplexDao_Impl extends ComplexDao {
     return GuavaRoom.createListenableFuture(__db, true, false, (_connection) -> {
       final SQLiteStatement _stmt = _connection.prepare(_sql);
       try {
-        final int _cursorIndexOfId = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "id");
-        final int _cursorIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
-        final int _cursorIndexOfSerial = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "serial");
-        final int _cursorIndexOfCode = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "code");
+        final int _columnIndexOfId = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "id");
+        final int _columnIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
+        final int _columnIndexOfSerial = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "serial");
+        final int _columnIndexOfCode = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "code");
         final List<Child1> _result = new ArrayList<Child1>();
         while (_stmt.step()) {
           final Child1 _item;
           final int _tmpId;
-          _tmpId = (int) (_stmt.getLong(_cursorIndexOfId));
+          _tmpId = (int) (_stmt.getLong(_columnIndexOfId));
           final String _tmpName;
-          if (_stmt.isNull(_cursorIndexOfName)) {
+          if (_stmt.isNull(_columnIndexOfName)) {
             _tmpName = null;
           } else {
-            _tmpName = _stmt.getText(_cursorIndexOfName);
+            _tmpName = _stmt.getText(_columnIndexOfName);
           }
           final Info _tmpInfo;
-          if (!(_stmt.isNull(_cursorIndexOfSerial) && _stmt.isNull(_cursorIndexOfCode))) {
+          if (!(_stmt.isNull(_columnIndexOfSerial) && _stmt.isNull(_columnIndexOfCode))) {
             _tmpInfo = new Info();
-            _tmpInfo.serial = (int) (_stmt.getLong(_cursorIndexOfSerial));
-            if (_stmt.isNull(_cursorIndexOfCode)) {
+            _tmpInfo.serial = (int) (_stmt.getLong(_columnIndexOfSerial));
+            if (_stmt.isNull(_columnIndexOfCode)) {
               _tmpInfo.code = null;
             } else {
-              _tmpInfo.code = _stmt.getText(_cursorIndexOfCode);
+              _tmpInfo.code = _stmt.getText(_columnIndexOfCode);
             }
           } else {
             _tmpInfo = null;
@@ -605,17 +605,17 @@ public final class ComplexDao_Impl extends ComplexDao {
     return DBUtil.performBlocking(__db, true, false, (_connection) -> {
       final SQLiteStatement _stmt = _connection.prepare(_sql);
       try {
-        final int _cursorIndexOfUid = 0;
-        final int _cursorIndexOfName = 1;
+        final int _columnIndexOfUid = 0;
+        final int _columnIndexOfName = 1;
         final List<UserSummary> _result = new ArrayList<UserSummary>();
         while (_stmt.step()) {
           final UserSummary _item;
           _item = new UserSummary();
-          _item.uid = (int) (_stmt.getLong(_cursorIndexOfUid));
-          if (_stmt.isNull(_cursorIndexOfName)) {
+          _item.uid = (int) (_stmt.getLong(_columnIndexOfUid));
+          if (_stmt.isNull(_columnIndexOfName)) {
             _item.name = null;
           } else {
-            _item.name = _stmt.getText(_cursorIndexOfName);
+            _item.name = _stmt.getText(_columnIndexOfName);
           }
           _result.add(_item);
         }
@@ -638,29 +638,29 @@ public final class ComplexDao_Impl extends ComplexDao {
           final SQLiteStatement _stmt = _connection.prepare(limitOffsetQuery.getSql());
           limitOffsetQuery.getBindingFunction().invoke(_stmt);
           try {
-            final int _cursorIndexOfId = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "id");
-            final int _cursorIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
-            final int _cursorIndexOfSerial = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "serial");
-            final int _cursorIndexOfCode = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "code");
+            final int _columnIndexOfId = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "id");
+            final int _columnIndexOfName = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "name");
+            final int _columnIndexOfSerial = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "serial");
+            final int _columnIndexOfCode = SQLiteStatementUtil.getColumnIndexOrThrow(_stmt, "code");
             final List<Child1> _result = new ArrayList<Child1>();
             while (_stmt.step()) {
               final Child1 _item;
               final int _tmpId;
-              _tmpId = (int) (_stmt.getLong(_cursorIndexOfId));
+              _tmpId = (int) (_stmt.getLong(_columnIndexOfId));
               final String _tmpName;
-              if (_stmt.isNull(_cursorIndexOfName)) {
+              if (_stmt.isNull(_columnIndexOfName)) {
                 _tmpName = null;
               } else {
-                _tmpName = _stmt.getText(_cursorIndexOfName);
+                _tmpName = _stmt.getText(_columnIndexOfName);
               }
               final Info _tmpInfo;
-              if (!(_stmt.isNull(_cursorIndexOfSerial) && _stmt.isNull(_cursorIndexOfCode))) {
+              if (!(_stmt.isNull(_columnIndexOfSerial) && _stmt.isNull(_columnIndexOfCode))) {
                 _tmpInfo = new Info();
-                _tmpInfo.serial = (int) (_stmt.getLong(_cursorIndexOfSerial));
-                if (_stmt.isNull(_cursorIndexOfCode)) {
+                _tmpInfo.serial = (int) (_stmt.getLong(_columnIndexOfSerial));
+                if (_stmt.isNull(_columnIndexOfCode)) {
                   _tmpInfo.code = null;
                 } else {
-                  _tmpInfo.code = _stmt.getText(_cursorIndexOfCode);
+                  _tmpInfo.code = _stmt.getText(_columnIndexOfCode);
                 }
               } else {
                 _tmpInfo = null;
@@ -705,32 +705,32 @@ public final class ComplexDao_Impl extends ComplexDao {
 
   private User __entityStatementConverter_fooBarUser(@NonNull final SQLiteStatement statement) {
     final User _entity;
-    final int _cursorIndexOfUid = SQLiteStatementUtil.getColumnIndex(statement, "uid");
-    final int _cursorIndexOfName = SQLiteStatementUtil.getColumnIndex(statement, "name");
-    final int _cursorIndexOfLastName = SQLiteStatementUtil.getColumnIndex(statement, "lastName");
-    final int _cursorIndexOfAge = SQLiteStatementUtil.getColumnIndex(statement, "ageColumn");
+    final int _columnIndexOfUid = SQLiteStatementUtil.getColumnIndex(statement, "uid");
+    final int _columnIndexOfName = SQLiteStatementUtil.getColumnIndex(statement, "name");
+    final int _columnIndexOfLastName = SQLiteStatementUtil.getColumnIndex(statement, "lastName");
+    final int _columnIndexOfAge = SQLiteStatementUtil.getColumnIndex(statement, "ageColumn");
     _entity = new User();
-    if (_cursorIndexOfUid != -1) {
-      _entity.uid = (int) (statement.getLong(_cursorIndexOfUid));
+    if (_columnIndexOfUid != -1) {
+      _entity.uid = (int) (statement.getLong(_columnIndexOfUid));
     }
-    if (_cursorIndexOfName != -1) {
-      if (statement.isNull(_cursorIndexOfName)) {
+    if (_columnIndexOfName != -1) {
+      if (statement.isNull(_columnIndexOfName)) {
         _entity.name = null;
       } else {
-        _entity.name = statement.getText(_cursorIndexOfName);
+        _entity.name = statement.getText(_columnIndexOfName);
       }
     }
-    if (_cursorIndexOfLastName != -1) {
+    if (_columnIndexOfLastName != -1) {
       final String _tmpLastName;
-      if (statement.isNull(_cursorIndexOfLastName)) {
+      if (statement.isNull(_columnIndexOfLastName)) {
         _tmpLastName = null;
       } else {
-        _tmpLastName = statement.getText(_cursorIndexOfLastName);
+        _tmpLastName = statement.getText(_columnIndexOfLastName);
       }
       _entity.setLastName(_tmpLastName);
     }
-    if (_cursorIndexOfAge != -1) {
-      _entity.age = (int) (statement.getLong(_cursorIndexOfAge));
+    if (_columnIndexOfAge != -1) {
+      _entity.age = (int) (statement.getLong(_columnIndexOfAge));
     }
     return _entity;
   }

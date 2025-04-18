@@ -17,13 +17,21 @@
 package androidx.wear.compose.material3.samples
 
 import androidx.annotation.Sampled
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -34,6 +42,7 @@ import androidx.wear.compose.material3.ChildButton
 import androidx.wear.compose.material3.CompactButton
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ImageButton
 import androidx.wear.compose.material3.OutlinedButton
 import androidx.wear.compose.material3.Text
 
@@ -110,6 +119,28 @@ fun ButtonExtraLargeIconSample(
 
 @Sampled
 @Composable
+fun ButtonWithImageSample(modifier: Modifier = Modifier.fillMaxWidth(), enabled: Boolean = true) {
+    ImageButton(
+        onClick = { /* Do something */ },
+        containerPainter =
+            ButtonDefaults.containerPainter(
+                image = painterResource(id = R.drawable.backgroundimage)
+            ),
+        enabled = enabled,
+        label = { Text("Button") },
+        secondaryLabel = { Text("Secondary label") },
+        icon = {
+            Icon(
+                painter = painterResource(R.drawable.ic_favorite_rounded),
+                contentDescription = "Favorite icon",
+            )
+        },
+        modifier = modifier
+    )
+}
+
+@Sampled
+@Composable
 fun SimpleFilledTonalButtonSample(modifier: Modifier = Modifier.fillMaxWidth()) {
     FilledTonalButton(
         onClick = { /* Do something */ },
@@ -132,7 +163,7 @@ fun FilledTonalButtonSample(modifier: Modifier = Modifier.fillMaxWidth()) {
                 modifier = Modifier.size(ButtonDefaults.IconSize)
             )
         },
-        modifier = modifier,
+        modifier = modifier
     )
 }
 
@@ -172,7 +203,7 @@ fun SimpleOutlinedButtonSample(modifier: Modifier = Modifier.fillMaxWidth()) {
     OutlinedButton(
         onClick = { /* Do something */ },
         label = { Text("Outlined Button") },
-        modifier = modifier,
+        modifier = modifier
     )
 }
 
@@ -280,18 +311,39 @@ fun FilledTonalCompactButtonSample(modifier: Modifier = Modifier) {
 @Sampled
 @Composable
 fun OutlinedCompactButtonSample(modifier: Modifier = Modifier) {
-    CompactButton(
-        onClick = { /* Do something */ },
-        colors = ButtonDefaults.outlinedButtonColors(),
-        border = ButtonDefaults.outlinedButtonBorder(enabled = true),
-        modifier = modifier,
-    ) {
-        Text("Show More", maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-        Icon(
-            Icons.Filled.ArrowDropDown,
-            contentDescription = "Expand",
-            modifier = Modifier.size(ButtonDefaults.ExtraSmallIconSize)
-        )
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        var expanded by remember { mutableStateOf(false) }
+        if (expanded) {
+            Text("A multiline string showing two lines")
+        } else {
+            Text("One line text")
+        }
+        Spacer(Modifier.height(ButtonDefaults.IconSpacing))
+        CompactButton(
+            onClick = { expanded = !expanded },
+            colors = ButtonDefaults.outlinedButtonColors(),
+            border = ButtonDefaults.outlinedButtonBorder(enabled = true),
+            modifier = modifier,
+        ) {
+            if (expanded) {
+                Text("Show Less", maxLines = 1, overflow = TextOverflow.Ellipsis)
+            } else {
+                Text("Show More", maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+            if (expanded) {
+                Icon(
+                    Icons.Filled.KeyboardArrowUp,
+                    contentDescription = "Collapse",
+                    modifier = Modifier.size(ButtonDefaults.ExtraSmallIconSize)
+                )
+            } else {
+                Icon(
+                    Icons.Filled.KeyboardArrowDown,
+                    contentDescription = "Expand",
+                    modifier = Modifier.size(ButtonDefaults.ExtraSmallIconSize)
+                )
+            }
+        }
     }
 }

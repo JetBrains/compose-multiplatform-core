@@ -18,12 +18,13 @@
 package androidx.appsearch.usagereporting;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
 import androidx.appsearch.annotation.Document;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -55,13 +56,11 @@ public abstract class TakenAction {
     public @interface ActionType {
     }
 
-    @NonNull
     @Document.Namespace
-    private final String mNamespace;
+    private final @NonNull String mNamespace;
 
-    @NonNull
     @Document.Id
-    private final String mId;
+    private final @NonNull String mId;
 
     @Document.TtlMillis
     private final long mDocumentTtlMillis;
@@ -83,14 +82,12 @@ public abstract class TakenAction {
     }
 
     /** Returns the namespace of the {@link TakenAction}. */
-    @NonNull
-    public String getNamespace() {
+    public @NonNull String getNamespace() {
         return mNamespace;
     }
 
     /** Returns the unique identifier of the {@link TakenAction}. */
-    @NonNull
-    public String getId() {
+    public @NonNull String getId() {
         return mId;
     }
 
@@ -213,8 +210,7 @@ public abstract class TakenAction {
          * TTL.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public T setDocumentTtlMillis(long documentTtlMillis) {
+        public @NonNull T setDocumentTtlMillis(long documentTtlMillis) {
             mDocumentTtlMillis = documentTtlMillis;
             return (T) this;
         }
@@ -227,8 +223,7 @@ public abstract class TakenAction {
          *
          * @throws UnsupportedOperationException
          */
-        @NonNull
-        public TakenAction build() {
+        public @NonNull TakenAction build() {
             throw new UnsupportedOperationException();
         }
     }

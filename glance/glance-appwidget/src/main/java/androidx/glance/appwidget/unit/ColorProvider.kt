@@ -41,6 +41,7 @@ internal data class ResourceCheckableColorProvider(
  * Combination of two different [ColorProvider]s representing checked and unchecked states. These
  * must be [FixedColorProvider]s or [DayNightColorProvider]s.
  */
+@Suppress("DATA_CLASS_COPY_VISIBILITY_WILL_BE_CHANGED_WARNING")
 internal data class CheckedUncheckedColorProvider
 private constructor(
     private val source: String,

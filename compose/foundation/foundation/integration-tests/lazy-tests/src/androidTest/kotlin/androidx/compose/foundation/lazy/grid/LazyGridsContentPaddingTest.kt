@@ -24,7 +24,10 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
@@ -32,6 +35,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.list.setContentWithTestViewConfiguration
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -113,6 +119,47 @@ class LazyGridsContentPaddingTest {
             .onNodeWithTag(ItemTag)
             .assertTopPositionInRootIsEqualTo(0.dp)
             .assertHeightIsEqualTo(itemSize)
+    }
+
+    @Test
+    fun verticalGrid_contentPaddingChanges_shouldApplyPadding() {
+        var changeablePadding by mutableStateOf(0.dp)
+        val padding =
+            object : PaddingValues {
+                override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp = 0.dp
+
+                override fun calculateTopPadding(): Dp = 0.dp
+
+                override fun calculateRightPadding(layoutDirection: LayoutDirection): Dp =
+                    changeablePadding
+
+                override fun calculateBottomPadding(): Dp = 0.dp
+            }
+        lateinit var state: LazyGridState
+        rule.setContent {
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(180.dp),
+                modifier = Modifier.fillMaxSize().testTag(LazyListTag),
+                state = rememberLazyGridState().also { state = it },
+                contentPadding = padding
+            ) {
+                items(10) { index ->
+                    Box(Modifier.padding(8.dp).fillMaxSize().aspectRatio(1f).testTag("$index"))
+                }
+            }
+        }
+
+        rule.runOnIdle { changeablePadding = 2.dp }
+
+        rule.runOnIdle {
+            val itemOffset = state.layoutInfo.visibleItemsInfo.first { it.index == 1 }.offset.x
+            val itemSize = state.layoutInfo.visibleItemsInfo.first { it.index == 1 }.size.width
+            val containerSize = state.layoutInfo.viewportSize.width
+
+            with(rule.density) {
+                assertThat(containerSize - (itemOffset + itemSize)).isEqualTo(2.dp.roundToPx())
+            }
+        }
     }
 
     @Test

@@ -192,6 +192,7 @@ public abstract class PagingSource<Key : Any, Value : Any> {
          *
          * @sample androidx.paging.samples.pageKeyedPagingSourceSample
          */
+        @Suppress("DataClassDefinition")
         public data class Error<Key : Any, Value : Any>(val throwable: Throwable) :
             LoadResult<Key, Value>() {
             override fun toString(): String {
@@ -232,6 +233,7 @@ public abstract class PagingSource<Key : Any, Value : Any> {
          * @sample androidx.paging.samples.pageKeyedPage
          * @sample androidx.paging.samples.pageIndexedPage
          */
+        @Suppress("DataClassDefinition")
         public data class Page<Key : Any, Value : Any>
         constructor(
             /** Loaded data */

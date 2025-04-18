@@ -19,7 +19,6 @@ package androidx.appsearch.testutil;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.AppSearchSession;
@@ -32,6 +31,7 @@ import androidx.appsearch.localstorage.visibilitystore.VisibilityChecker;
 import androidx.appsearch.localstorage.visibilitystore.VisibilityStore;
 import androidx.appsearch.testutil.flags.DeviceFlagsValueProvider;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.rules.RuleChain;
 
 import java.security.MessageDigest;
@@ -50,8 +50,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AppSearchTestUtils {
     /** Checks batch result. */
-    @NonNull
-    public static <K, V> AppSearchBatchResult<K, V> checkIsBatchResultSuccess(
+    public static <K, V> @NonNull AppSearchBatchResult<K, V> checkIsBatchResultSuccess(
             @NonNull Future<AppSearchBatchResult<K, V>> future) throws Exception {
         AppSearchBatchResult<K, V> result = future.get();
         assertWithMessage("AppSearchBatchResult not successful: " + result)
@@ -60,9 +59,8 @@ public class AppSearchTestUtils {
     }
 
     /** Gets documents from ids. */
-    @NonNull
-    public static List<GenericDocument> doGet(
-            @NonNull AppSearchSession session, @NonNull String namespace, @NonNull String... ids)
+    public static @NonNull List<GenericDocument> doGet(
+            @NonNull AppSearchSession session, @NonNull String namespace, String @NonNull ... ids)
             throws Exception {
         AppSearchBatchResult<String, GenericDocument> result = checkIsBatchResultSuccess(
                 session.getByDocumentIdAsync(
@@ -77,8 +75,7 @@ public class AppSearchTestUtils {
     }
 
     /** Gets documents from {@link GetByDocumentIdRequest}. */
-    @NonNull
-    public static List<GenericDocument> doGet(
+    public static @NonNull List<GenericDocument> doGet(
             @NonNull AppSearchSession session, @NonNull GetByDocumentIdRequest request)
             throws Exception {
         AppSearchBatchResult<String, GenericDocument> result = checkIsBatchResultSuccess(
@@ -94,8 +91,7 @@ public class AppSearchTestUtils {
     }
 
     /** Extracts documents from {@link SearchResults}. */
-    @NonNull
-    public static List<GenericDocument> convertSearchResultsToDocuments(
+    public static @NonNull List<GenericDocument> convertSearchResultsToDocuments(
             @NonNull SearchResults searchResults)
             throws Exception {
         List<SearchResult> results = retrieveAllSearchResults(searchResults);
@@ -107,9 +103,8 @@ public class AppSearchTestUtils {
     }
 
     /** Extracts all {@link SearchResult} from {@link SearchResults}. */
-    @NonNull
-    public static List<SearchResult> retrieveAllSearchResults(@NonNull SearchResults searchResults)
-            throws Exception {
+    public static @NonNull List<SearchResult> retrieveAllSearchResults(
+            @NonNull SearchResults searchResults) throws Exception {
         List<SearchResult> page = searchResults.getNextPageAsync().get();
         List<SearchResult> results = new ArrayList<>();
         while (!page.isEmpty()) {
@@ -126,8 +121,7 @@ public class AppSearchTestUtils {
      * @param visiblePrefixedSchemas Schema types that are accessible to any caller.
      * @return Mocked {@link VisibilityChecker} instance.
      */
-    @NonNull
-    public static VisibilityChecker createMockVisibilityChecker(
+    public static @NonNull VisibilityChecker createMockVisibilityChecker(
             @NonNull Set<String> visiblePrefixedSchemas) {
         return new VisibilityChecker() {
             @Override
@@ -153,8 +147,7 @@ public class AppSearchTestUtils {
      * @param isSchemaSearchableByCaller Schema visibility for caller.
      * @return Mocked {@link VisibilityChecker} instance.
      */
-    @NonNull
-    public static VisibilityChecker createMockVisibilityChecker(
+    public static @NonNull VisibilityChecker createMockVisibilityChecker(
             boolean isSchemaSearchableByCaller) {
         return new VisibilityChecker() {
             @Override
@@ -174,16 +167,14 @@ public class AppSearchTestUtils {
     }
 
     /** Generate an array contains random bytes for the given length.     */
-    @NonNull
-    public static byte[] generateRandomBytes(int length) {
+    public static byte @NonNull [] generateRandomBytes(int length) {
         byte[] bytes = new byte[length];
         ThreadLocalRandom.current().nextBytes(bytes);
         return bytes;
     }
 
     /** Calculate the sha-256 digest for the given data.     */
-    @NonNull
-    public static byte[] calculateDigest(@NonNull byte[] data)
+    public static byte @NonNull [] calculateDigest(byte @NonNull [] data)
             throws NoSuchAlgorithmException {
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
         messageDigest.update(data);
@@ -191,8 +182,7 @@ public class AppSearchTestUtils {
     }
 
     /** Returns a rule chain of common test rules for tests. */
-    @NonNull
-    public static RuleChain createCommonTestRules() {
+    public static @NonNull RuleChain createCommonTestRules() {
         // We don't have another common test rule yet, but we can add one later with .around() here
         return RuleChain.outerRule(DeviceFlagsValueProvider.createCheckFlagsRule());
     }

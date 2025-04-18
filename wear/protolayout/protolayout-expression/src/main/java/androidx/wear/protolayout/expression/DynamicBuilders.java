@@ -1379,8 +1379,8 @@ public final class DynamicBuilders {
          * @throws IllegalArgumentException if the byte array does not contain a valid serialization
          *     in the provided offset and length
          */
-        static @NonNull DynamicInt32 fromByteArray(byte @NonNull [] byteArray, int offset,
-                int length) {
+        static @NonNull DynamicInt32 fromByteArray(
+                byte @NonNull [] byteArray, int offset, int length) {
             try {
                 return dynamicInt32FromProto(
                         DynamicProto.DynamicInt32.parseFrom(
@@ -1468,8 +1468,8 @@ public final class DynamicBuilders {
          * @param animationSpec The animation parameters.
          */
         @RequiresSchemaVersion(major = 1, minor = 200)
-        static @NonNull DynamicInt32 animate(int start, int end,
-                @NonNull AnimationSpec animationSpec) {
+        static @NonNull DynamicInt32 animate(
+                int start, int end, @NonNull AnimationSpec animationSpec) {
             return new AnimatableFixedInt32.Builder()
                     .setFromValue(start)
                     .setToValue(end)
@@ -3118,8 +3118,8 @@ public final class DynamicBuilders {
          * @throws IllegalArgumentException if the byte array does not contain a valid serialization
          *     in the provided offset and length
          */
-        static @NonNull DynamicString fromByteArray(byte @NonNull [] byteArray, int offset,
-                int length) {
+        static @NonNull DynamicString fromByteArray(
+                byte @NonNull [] byteArray, int offset, int length) {
             try {
                 return dynamicStringFromProto(
                         DynamicProto.DynamicString.parseFrom(
@@ -3909,8 +3909,8 @@ public final class DynamicBuilders {
          * @throws IllegalArgumentException if the byte array does not contain a valid serialization
          *     in the provided offset and length
          */
-        static @NonNull DynamicFloat fromByteArray(byte @NonNull [] byteArray, int offset,
-                int length) {
+        static @NonNull DynamicFloat fromByteArray(
+                byte @NonNull [] byteArray, int offset, int length) {
             try {
                 return dynamicFloatFromProto(
                         DynamicProto.DynamicFloat.parseFrom(
@@ -4005,8 +4005,8 @@ public final class DynamicBuilders {
          * @param animationSpec The animation parameters.
          */
         @RequiresSchemaVersion(major = 1, minor = 200)
-        static @NonNull DynamicFloat animate(float start, float end,
-                @NonNull AnimationSpec animationSpec) {
+        static @NonNull DynamicFloat animate(
+                float start, float end, @NonNull AnimationSpec animationSpec) {
             return new AnimatableFixedFloat.Builder()
                     .setFromValue(start)
                     .setToValue(end)
@@ -5481,8 +5481,8 @@ public final class DynamicBuilders {
          * @throws IllegalArgumentException if the byte array does not contain a valid serialization
          *     in the provided offset and length
          */
-        static @NonNull DynamicBool fromByteArray(byte @NonNull [] byteArray, int offset,
-                int length) {
+        static @NonNull DynamicBool fromByteArray(
+                byte @NonNull [] byteArray, int offset, int length) {
             try {
                 return dynamicBoolFromProto(
                         DynamicProto.DynamicBool.parseFrom(
@@ -6184,8 +6184,8 @@ public final class DynamicBuilders {
          * @throws IllegalArgumentException if the byte array does not contain a valid serialization
          *     in the provided offset and length
          */
-        static @NonNull DynamicColor fromByteArray(byte @NonNull [] byteArray, int offset,
-                int length) {
+        static @NonNull DynamicColor fromByteArray(
+                byte @NonNull [] byteArray, int offset, int length) {
             try {
                 return dynamicColorFromProto(
                         DynamicProto.DynamicColor.parseFrom(
@@ -6651,8 +6651,8 @@ public final class DynamicBuilders {
          * @throws IllegalArgumentException if the byte array does not contain a valid serialization
          *     in the provided offset and length
          */
-        static @NonNull DynamicInstant fromByteArray(byte @NonNull [] byteArray, int offset,
-                int length) {
+        static @NonNull DynamicInstant fromByteArray(
+                byte @NonNull [] byteArray, int offset, int length) {
             try {
                 return dynamicInstantFromProto(
                         DynamicProto.DynamicInstant.parseFrom(
@@ -7685,8 +7685,8 @@ public final class DynamicBuilders {
          * @throws IllegalArgumentException if the byte array does not contain a valid serialization
          *     in the provided offset and length
          */
-        static @NonNull DynamicDuration fromByteArray(byte @NonNull [] byteArray, int offset,
-                int length) {
+        static @NonNull DynamicDuration fromByteArray(
+                byte @NonNull [] byteArray, int offset, int length) {
             try {
                 return dynamicDurationFromProto(
                         DynamicProto.DynamicDuration.parseFrom(

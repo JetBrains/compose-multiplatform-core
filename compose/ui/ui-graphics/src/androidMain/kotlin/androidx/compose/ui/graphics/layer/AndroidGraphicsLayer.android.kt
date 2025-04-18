@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DefaultDensity
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.draw
 import androidx.compose.ui.graphics.layer.LayerManager.Companion.isRobolectric
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.Density
@@ -67,9 +68,9 @@ internal constructor(
     private val clipDrawBlock: DrawScope.() -> Unit = {
         val path = outlinePath
         if (usePathForClip && clip && path != null) {
-            clipPath(path, block = drawBlock)
+            clipPath(path) { drawWithChildTracking() }
         } else {
-            drawBlock()
+            drawWithChildTracking()
         }
     }
 
@@ -432,10 +433,14 @@ internal constructor(
     }
 
     private fun recordInternal() {
+        impl.record(density, layoutDirection, this, clipDrawBlock)
+    }
+
+    private fun DrawScope.drawWithChildTracking() {
         childDependenciesTracker.withTracking(
             onDependencyRemoved = { it.onRemovedFromParentLayer() }
         ) {
-            impl.record(density, layoutDirection, this, clipDrawBlock)
+            drawBlock()
         }
     }
 
@@ -550,7 +555,9 @@ internal constructor(
             impl.draw(canvas)
         } else {
             val drawScope = softwareDrawScope ?: CanvasDrawScope().also { softwareDrawScope = it }
-            drawScope.draw(density, layoutDirection, canvas, size.toSize(), drawBlock)
+            drawScope.draw(density, layoutDirection, canvas, size.toSize(), this) {
+                drawWithChildTracking()
+            }
         }
 
         if (willClipPath) {

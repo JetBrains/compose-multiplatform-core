@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-@file:OptIn(androidx.benchmark.perfetto.ExperimentalPerfettoTraceProcessorApi::class)
-
 package androidx.wear.compose.material3.macrobenchmark.metric
 
 import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.TraceMetric
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
+import androidx.benchmark.traceprocessor.TraceProcessor
 
 /** A copy from aosp/3328563 */
 @ExperimentalMetricApi
 class FrameCostMetric : TraceMetric() {
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: PerfettoTraceProcessor.Session
+        traceSession: TraceProcessor.Session
     ): List<Measurement> {
         val costs =
             FrameCostQuery.getFrameCost(

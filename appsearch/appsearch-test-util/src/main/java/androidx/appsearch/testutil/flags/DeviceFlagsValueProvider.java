@@ -16,7 +16,7 @@
 // @exportToFramework:skipFile()
 package androidx.appsearch.testutil.flags;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Shim for real DeviceFlagsValueProvider defined in Framework.
@@ -27,8 +27,7 @@ public final class DeviceFlagsValueProvider {
     private DeviceFlagsValueProvider() {}
 
     /** Provides a shim rule that can be used to check the status of flags on device */
-    @NonNull
-    public static CheckFlagsRule createCheckFlagsRule() {
+    public static @NonNull CheckFlagsRule createCheckFlagsRule() {
         return new CheckFlagsRule();
     }
 }

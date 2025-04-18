@@ -57,8 +57,6 @@ import android.widget.ToggleButton;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.UiThread;
 import androidx.appcompat.app.AppCompatActivity;
@@ -106,6 +104,9 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -135,21 +136,21 @@ public class ConcurrentCameraActivity extends AppCompatActivity {
     private static final Quality QUALITY_AUTO = null;
     private Quality mVideoQuality;
 
-    @NonNull private PreviewView mSinglePreviewView;
-    @NonNull private PreviewView mFrontPreviewView;
-    @NonNull private PreviewView mBackPreviewView;
-    @NonNull private FrameLayout mFrontPreviewViewForPip;
-    @NonNull private FrameLayout mBackPreviewViewForPip;
-    @NonNull private FrameLayout mFrontPreviewViewForSideBySide;
-    @NonNull private FrameLayout mBackPreviewViewForSideBySide;
-    @NonNull private ToggleButton mModeButton;
-    @NonNull private ToggleButton mLayoutButton;
-    @NonNull private ToggleButton mToggleButton;
-    @NonNull private ToggleButton mDualSelfieButton;
-    @NonNull private ToggleButton mDualRecordButton;
-    @NonNull private LinearLayout mSideBySideLayout;
-    @NonNull private FrameLayout mPiPLayout;
-    @Nullable private ProcessCameraProvider mCameraProvider;
+    private @NonNull PreviewView mSinglePreviewView;
+    private @NonNull PreviewView mFrontPreviewView;
+    private @NonNull PreviewView mBackPreviewView;
+    private @NonNull FrameLayout mFrontPreviewViewForPip;
+    private @NonNull FrameLayout mBackPreviewViewForPip;
+    private @NonNull FrameLayout mFrontPreviewViewForSideBySide;
+    private @NonNull FrameLayout mBackPreviewViewForSideBySide;
+    private @NonNull ToggleButton mModeButton;
+    private @NonNull ToggleButton mLayoutButton;
+    private @NonNull ToggleButton mToggleButton;
+    private @NonNull ToggleButton mDualSelfieButton;
+    private @NonNull ToggleButton mDualRecordButton;
+    private @NonNull LinearLayout mSideBySideLayout;
+    private @NonNull FrameLayout mPiPLayout;
+    private @Nullable ProcessCameraProvider mCameraProvider;
     private boolean mIsConcurrentModeOn = false;
     private boolean mIsLayoutPiP = true;
     private boolean mIsFrontPrimary = true;
@@ -623,8 +624,8 @@ public class ConcurrentCameraActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
-            @NonNull String[] permissions,
-            @NonNull int[] grantResults) {
+            String @NonNull [] permissions,
+            int @NonNull [] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
@@ -771,8 +772,7 @@ public class ConcurrentCameraActivity extends AppCompatActivity {
         }
     };
 
-    @NonNull
-    private static String getQualityIconName(@Nullable Quality quality) {
+    private static @NonNull String getQualityIconName(@Nullable Quality quality) {
         if (quality == QUALITY_AUTO) {
             return "Auto";
         } else if (quality == Quality.UHD) {
@@ -803,8 +803,7 @@ public class ConcurrentCameraActivity extends AppCompatActivity {
         }
     }
 
-    @Nullable
-    private static Quality itemIdToQuality(int itemId) {
+    private static @Nullable Quality itemIdToQuality(int itemId) {
         switch (itemId) {
             case 0:
                 return QUALITY_AUTO;
@@ -821,8 +820,7 @@ public class ConcurrentCameraActivity extends AppCompatActivity {
         }
     }
 
-    @NonNull
-    private static String getQualityMenuItemName(@Nullable Quality quality) {
+    private static @NonNull String getQualityMenuItemName(@Nullable Quality quality) {
         if (quality == QUALITY_AUTO) {
             return "Auto";
         } else if (quality == Quality.UHD) {
@@ -992,7 +990,7 @@ public class ConcurrentCameraActivity extends AppCompatActivity {
             mNewStateConsumer = onNewState;
         }
 
-        void setState(@NonNull RecordUi.State state) {
+        void setState(RecordUi.@NonNull State state) {
             if (state != mState) {
                 mState = state;
                 updateUi();
@@ -1000,8 +998,7 @@ public class ConcurrentCameraActivity extends AppCompatActivity {
             }
         }
 
-        @NonNull
-        RecordUi.State getState() {
+        RecordUi.@NonNull State getState() {
             return mState;
         }
 
@@ -1073,8 +1070,7 @@ public class ConcurrentCameraActivity extends AppCompatActivity {
             return mTextStats;
         }
 
-        @NonNull
-        Button getButtonQuality() {
+        @NonNull Button getButtonQuality() {
             return mButtonQuality;
         }
 

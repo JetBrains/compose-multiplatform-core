@@ -23,10 +23,10 @@ import android.graphics.Rect
 import android.os.Build
 import android.view.Surface
 import android.view.SurfaceHolder
-import androidx.annotation.RequiresApi
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.wear.watchface.CanvasType
 import androidx.wear.watchface.ComplicationSlotsManager
 import androidx.wear.watchface.Renderer
@@ -59,7 +59,7 @@ private const val TIMEOUT_MS = 500L
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
-@RequiresApi(Build.VERSION_CODES.O_MR1)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
 public class ListenableWatchFaceControlClientTest {
 
     @get:Rule val mocks = MockitoJUnit.rule()

@@ -48,6 +48,7 @@ import org.jetbrains.kotlin.psi.KtCallableDeclaration
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtDeclarationWithBody
 import org.jetbrains.kotlin.psi.KtFunction
+import org.jetbrains.kotlin.psi.KtNullableType
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
@@ -203,7 +204,14 @@ private fun UMethod.checkReceiver(context: JavaContext) {
                 .build()
         )
     } else {
-        val receiverType = (receiverTypeReference.typeElement as KtUserType)
+        val receiverType =
+            when (val receiverType = receiverTypeReference.typeElement) {
+                is KtUserType -> receiverType
+                // We could have a nullable receiver - try to unwrap it.
+                is KtNullableType -> receiverType.innerType as? KtUserType ?: return
+                // Safe return - shouldn't happen
+                else -> return
+            }
         val receiverShortName = receiverType.referencedName
         // Try to resolve the class definition of the receiver
         val receiverFqn =

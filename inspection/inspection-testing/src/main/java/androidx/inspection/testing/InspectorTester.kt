@@ -38,6 +38,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 
@@ -121,8 +122,8 @@ internal constructor(
     }
 
     fun dispose() {
+        runBlocking { scope.launch { inspector.onDispose() }.join() }
         scope.cancel()
-        inspector.onDispose()
     }
 }
 

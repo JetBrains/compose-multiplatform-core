@@ -41,7 +41,7 @@ class SplitInfoTest {
         val activity = mock<Activity>()
         val firstStack = createTestActivityStack(listOf(activity))
         val secondStack = createTestActivityStack(emptyList())
-        val attributes = SplitAttributes()
+        val attributes = SplitAttributes.Builder().build()
         val token = Binder()
         val info = SplitInfo(firstStack, secondStack, attributes, token)
 
@@ -53,7 +53,7 @@ class SplitInfoTest {
         val activity = mock<Activity>()
         val firstStack = createTestActivityStack(emptyList())
         val secondStack = createTestActivityStack(listOf(activity))
-        val attributes = SplitAttributes()
+        val attributes = SplitAttributes.Builder().build()
         val token = Binder()
         val info = SplitInfo(firstStack, secondStack, attributes, token)
 
@@ -65,7 +65,7 @@ class SplitInfoTest {
         val activity = mock<Activity>()
         val firstStack = createTestActivityStack(emptyList())
         val secondStack = createTestActivityStack(listOf(activity))
-        val attributes = SplitAttributes()
+        val attributes = SplitAttributes.Builder().build()
         val token = Binder()
         val firstInfo = SplitInfo(firstStack, secondStack, attributes, token)
         val secondInfo = SplitInfo(firstStack, secondStack, attributes, token)
@@ -79,7 +79,7 @@ class SplitInfoTest {
         val activity = mock<Activity>()
         val firstStack = createTestActivityStack(emptyList())
         val secondStack = createTestActivityStack(listOf(activity))
-        val attributes = SplitAttributes()
+        val attributes = SplitAttributes.Builder().build()
         val token = Binder()
         val splitInfo = SplitInfo(firstStack, secondStack, attributes, token)
 
@@ -93,7 +93,7 @@ class SplitInfoTest {
         val activity = mock<Activity>()
         val firstStack = createTestActivityStack(emptyList())
         val secondStack = createTestActivityStack(listOf(activity))
-        val attributes = SplitAttributes()
+        val attributes = SplitAttributes.Builder().build()
         val token = Binder()
         val splitInfoString = SplitInfo(firstStack, secondStack, attributes, token).toString()
 

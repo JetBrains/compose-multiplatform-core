@@ -185,7 +185,7 @@ class FocusTransactionsTest {
         val focusRequester = FocusRequester()
         rule.setFocusableContent {
             view = LocalView.current
-            Box(Modifier.focusProperties { onEnter = { cancelFocus() } }.focusTarget()) {
+            Box(Modifier.focusProperties { onEnter = { cancelFocusChange() } }.focusTarget()) {
                 Box(Modifier.focusRequester(focusRequester).focusTarget())
             }
         }

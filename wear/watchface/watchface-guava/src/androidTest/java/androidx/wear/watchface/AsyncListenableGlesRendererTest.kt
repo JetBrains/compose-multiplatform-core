@@ -19,9 +19,9 @@ package androidx.wear.watchface
 import android.content.Context
 import android.os.Build
 import android.view.SurfaceHolder
-import androidx.annotation.RequiresApi
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.wear.watchface.client.DeviceConfig
 import androidx.wear.watchface.client.WatchUiState
 import androidx.wear.watchface.style.CurrentUserStyleRepository
@@ -91,7 +91,7 @@ internal class TestAsyncGlesRenderInitWatchFaceService(
 }
 
 @MediumTest
-@RequiresApi(Build.VERSION_CODES.O_MR1)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
 @RunWith(AndroidJUnit4::class)
 public class AsyncListenableGlesRendererTest : WatchFaceControlClientServiceTest() {
 

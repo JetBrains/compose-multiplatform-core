@@ -202,12 +202,12 @@ class CacheTextLayoutInputTest {
     }
 
     @Test
-    fun minConstraints_should_not_differ() {
+    fun minConstraints_should_differ() {
         val input1 = cacheTextLayoutInput(constraints = Constraints(minWidth = 10, minHeight = 20))
         val input2 = cacheTextLayoutInput(constraints = Constraints(minWidth = 20, minHeight = 10))
 
-        assertThat(input1.hashCode()).isEqualTo(input2.hashCode())
-        assertThat(input1).isEqualTo(input2)
+        assertThat(input1.hashCode()).isNotEqualTo(input2.hashCode())
+        assertThat(input1).isNotEqualTo(input2)
     }
 
     private fun cacheTextLayoutInput(

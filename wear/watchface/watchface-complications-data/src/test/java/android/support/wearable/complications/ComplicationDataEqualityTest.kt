@@ -211,8 +211,8 @@ class ComplicationDataEqualityTest {
             { setColorRamp(intArrayOf(3, 4)).build() },
         ),
         COLOR_RAMP_IS_SMOOTH_SHADED(
-            { setColorRampIsSmoothShaded(true).build() },
-            { setColorRampIsSmoothShaded(false).build() },
+            { setColorRampInterpolated(true).build() },
+            { setColorRampInterpolated(false).build() },
         ),
         LIST_ENTRY_COLLECTION(
             { setListEntryCollection(listOf(staticData("1"))).build() },

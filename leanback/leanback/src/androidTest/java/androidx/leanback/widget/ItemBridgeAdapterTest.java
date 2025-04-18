@@ -27,14 +27,14 @@ import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,9 +51,8 @@ public class ItemBridgeAdapterTest {
 
     public static class BasePresenter extends Presenter {
 
-        @NonNull
         @Override
-        public ViewHolder onCreateViewHolder(ViewGroup parent) {
+        public @NonNull ViewHolder onCreateViewHolder(ViewGroup parent) {
             View view = new View(parent.getContext());
             view.setLayoutParams(new ViewGroup.LayoutParams(sViewWidth, sViewHeight));
             return new ViewHolder(view);
@@ -157,9 +156,8 @@ public class ItemBridgeAdapterTest {
             }
         }
 
-        @NonNull
         @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
+        public @NonNull ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
             View view = mViews.get(mViews.size() - 1);
             mViews.remove(mViews.size() - 1);
             view.setLayoutParams(new ViewGroup.LayoutParams(sViewWidth, sViewHeight));

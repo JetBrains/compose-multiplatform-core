@@ -29,31 +29,16 @@ import androidx.room.solver.prepared.result.PreparedQueryResultAdapter
  * (e.g. Rx, ListenableFuture).
  */
 abstract class PreparedQueryResultBinder(val adapter: PreparedQueryResultAdapter?) {
-    /**
-     * Receives a function that will prepare the query in a given scope to then generate the code
-     * that runs the query and returns the result.
-     */
-    abstract fun executeAndReturn(
-        prepareQueryStmtBlock: CodeGenScope.() -> String,
-        preparedStmtProperty: XPropertySpec?, // null when the query is not shared
-        dbProperty: XPropertySpec,
-        scope: CodeGenScope
-    )
-
-    // TODO(b/319660042): Remove once migration to driver API is done.
-    open fun isMigratedToDriver(): Boolean = false
 
     /**
      * Receives the SQL and a function to bind args into a statement, it must then generate the code
      * that steps on the query and if applicable returns the result of the write operation.
      */
-    open fun executeAndReturn(
+    abstract fun executeAndReturn(
         sqlQueryVar: String,
         dbProperty: XPropertySpec,
         bindStatement: CodeGenScope.(String) -> Unit,
         returnTypeName: XTypeName,
         scope: CodeGenScope
-    ) {
-        error("Result binder has not been migrated to use driver API.")
-    }
+    )
 }

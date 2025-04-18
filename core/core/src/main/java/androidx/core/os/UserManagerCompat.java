@@ -20,8 +20,9 @@ import android.content.Context;
 import android.os.Build;
 import android.os.UserManager;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing features in {@link android.os.UserManager} in a backwards compatible

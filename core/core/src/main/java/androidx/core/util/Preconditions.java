@@ -19,9 +19,10 @@ package androidx.core.util;
 import android.text.TextUtils;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 
@@ -64,7 +65,7 @@ public final class Preconditions {
     public static void checkArgument(
             final boolean expression,
             final @NonNull String messageTemplate,
-            final @NonNull Object... messageArgs) {
+            final Object @NonNull ... messageArgs) {
         if (!expression) {
             throw new IllegalArgumentException(String.format(messageTemplate, messageArgs));
         }
@@ -78,8 +79,8 @@ public final class Preconditions {
      * @return the string reference that was validated
      * @throws IllegalArgumentException if {@code string} is empty
      */
-    public static @NonNull <T extends CharSequence> T checkStringNotEmpty(
-            @Nullable final T string) {
+    public static <T extends CharSequence> @NonNull T checkStringNotEmpty(
+            final @Nullable T string) {
         if (TextUtils.isEmpty(string)) {
             throw new IllegalArgumentException();
         }
@@ -96,8 +97,8 @@ public final class Preconditions {
      * @return the string reference that was validated
      * @throws IllegalArgumentException if {@code string} is empty
      */
-    public static @NonNull <T extends CharSequence> T checkStringNotEmpty(
-            @Nullable final T string, @NonNull final Object errorMessage) {
+    public static <T extends CharSequence> @NonNull T checkStringNotEmpty(
+            final @Nullable T string, final @NonNull Object errorMessage) {
         if (TextUtils.isEmpty(string)) {
             throw new IllegalArgumentException(String.valueOf(errorMessage));
         }
@@ -114,9 +115,9 @@ public final class Preconditions {
      * @return the string reference that was validated
      * @throws IllegalArgumentException if {@code string} is empty
      */
-    public static @NonNull <T extends CharSequence> T checkStringNotEmpty(
-            @Nullable final T string, @NonNull final String messageTemplate,
-            @NonNull final Object... messageArgs) {
+    public static <T extends CharSequence> @NonNull T checkStringNotEmpty(
+            final @Nullable T string, final @NonNull String messageTemplate,
+            final Object @NonNull ... messageArgs) {
         if (TextUtils.isEmpty(string)) {
             throw new IllegalArgumentException(String.format(messageTemplate, messageArgs));
         }
@@ -131,7 +132,7 @@ public final class Preconditions {
      * @return the non-null reference that was validated
      * @throws NullPointerException if {@code reference} is null
      */
-    public static @NonNull <T> T checkNotNull(@Nullable T reference) {
+    public static <T> @NonNull T checkNotNull(@Nullable T reference) {
         if (reference == null) {
             throw new NullPointerException();
         }
@@ -148,7 +149,7 @@ public final class Preconditions {
      * @return the non-null reference that was validated
      * @throws NullPointerException if {@code reference} is null
      */
-    public static @NonNull <T> T checkNotNull(@Nullable T reference, @NonNull Object errorMessage) {
+    public static <T> @NonNull T checkNotNull(@Nullable T reference, @NonNull Object errorMessage) {
         if (reference == null) {
             throw new NullPointerException(String.valueOf(errorMessage));
         }

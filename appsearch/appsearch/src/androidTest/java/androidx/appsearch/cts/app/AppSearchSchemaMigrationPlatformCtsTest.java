@@ -19,13 +19,14 @@ package androidx.appsearch.cts.app;
 import android.content.Context;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.app.AppSearchSession;
 import androidx.appsearch.platformstorage.PlatformStorage;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.SdkSuppress;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
 public class AppSearchSchemaMigrationPlatformCtsTest extends AppSearchSchemaMigrationCtsTestBase{

@@ -103,11 +103,14 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
     override val availableCameraInfos: List<CameraInfo>
         get() = lifecycleCameraProvider.availableCameraInfos
 
-    final override val availableConcurrentCameraInfos: List<List<CameraInfo>>
+    override val availableConcurrentCameraInfos: List<List<CameraInfo>>
         get() = lifecycleCameraProvider.availableConcurrentCameraInfos
 
-    final override val isConcurrentCameraModeOn: Boolean
+    override val isConcurrentCameraModeOn: Boolean
         @MainThread get() = lifecycleCameraProvider.isConcurrentCameraModeOn
+
+    override val configImplType: Int
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) get() = lifecycleCameraProvider.configImplType
 
     @Throws(CameraInfoUnavailableException::class)
     override fun hasCamera(cameraSelector: CameraSelector): Boolean {
@@ -218,6 +221,22 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun clearConfiguration(timeout: Duration = 10.seconds) {
             sAppInstance.shutdownAsync().get(timeout.inWholeNanoseconds, TimeUnit.NANOSECONDS)
+        }
+
+        /**
+         * Shuts down the ProcessCameraProvider asynchronously.
+         *
+         * This will release all resources held by the provider. The returned [ListenableFuture]
+         * will complete once the shutdown is complete.
+         *
+         * @return A [ListenableFuture] which will complete when the provider has been shut down.
+         */
+        @JvmStatic
+        @VisibleForTesting
+        @ExperimentalCameraProviderConfiguration
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun shutdown(): ListenableFuture<Void> {
+            return sAppInstance.shutdownAsync()
         }
     }
 }

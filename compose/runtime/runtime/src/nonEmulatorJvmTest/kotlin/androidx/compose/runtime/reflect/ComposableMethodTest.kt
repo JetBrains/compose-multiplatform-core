@@ -362,7 +362,7 @@ class ComposableMethodTest {
         assertEquals(0, composableMethod.asComposableMethod()!!.parameterCount)
     }
 
-    @Suppress("ClassVerificationFailure", "NewApi")
+    @Suppress("NewApi")
     @Throws(NoSuchMethodException::class)
     @Test
     fun test_realParameters_returns_correct_parameters() {

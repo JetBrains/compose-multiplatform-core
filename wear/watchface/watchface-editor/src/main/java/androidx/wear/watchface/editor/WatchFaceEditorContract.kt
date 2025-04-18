@@ -54,7 +54,12 @@ internal const val USER_STYLE_VALUES: String = "USER_STYLE_VALUES"
  *
  * @param renderParameters The [RenderParameters] to use when rendering the screen shot
  * @param instant The [Instant] to render with.
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class PreviewScreenshotParams(
     public val renderParameters: RenderParameters,
     public val instant: Instant
@@ -96,7 +101,12 @@ public class PreviewScreenshotParams(
  * @param previewScreenshotParams If `non-null` then [EditorSession] upon closing will render a
  *   screenshot with [PreviewScreenshotParams] using the existing interactive or headless instance
  *   which will be sent in [EditorState] to any registered clients.
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class EditorRequest
 @RequiresApi(Build.VERSION_CODES.R)
 constructor(
@@ -214,7 +224,13 @@ constructor(
  * [Activity.onStop] isn't guaranteed to be called when SysUI UX needs it to. Instead [EditorState]
  * is broadcast by the editor using[EditorSession.close], to observe these broadcasts use
  * [WatchFaceControlClient.getEditorServiceClient] and [EditorServiceClient.addListener].
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public open class WatchFaceEditorContract : ActivityResultContract<EditorRequest, Unit>() {
 
     public companion object {

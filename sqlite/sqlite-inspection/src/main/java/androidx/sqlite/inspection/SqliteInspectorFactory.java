@@ -16,10 +16,11 @@
 
 package androidx.sqlite.inspection;
 
-import androidx.annotation.NonNull;
 import androidx.inspection.Connection;
 import androidx.inspection.InspectorEnvironment;
 import androidx.inspection.InspectorFactory;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Factory for SqliteInspector
@@ -32,9 +33,8 @@ public final class SqliteInspectorFactory extends InspectorFactory<SqliteInspect
         super(SQLITE_INSPECTOR_ID);
     }
 
-    @NonNull
     @Override
-    public SqliteInspector createInspector(@NonNull Connection connection,
+    public @NonNull SqliteInspector createInspector(@NonNull Connection connection,
             @NonNull InspectorEnvironment environment) {
         return new SqliteInspector(connection, environment);
     }

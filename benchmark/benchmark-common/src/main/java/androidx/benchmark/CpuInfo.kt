@@ -16,12 +16,10 @@
 
 package androidx.benchmark
 
-import android.annotation.SuppressLint
 import android.util.Log
 import java.io.File
 import java.io.IOException
 
-@SuppressLint("ClassVerificationFailure")
 internal object CpuInfo {
     private const val TAG = "Benchmark"
 

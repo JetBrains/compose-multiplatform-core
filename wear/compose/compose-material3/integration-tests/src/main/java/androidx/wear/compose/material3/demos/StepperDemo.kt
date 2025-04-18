@@ -34,10 +34,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.wear.compose.integration.demos.common.Centralize
 import androidx.wear.compose.integration.demos.common.ComposableDemo
 import androidx.wear.compose.material3.Icon
-import androidx.wear.compose.material3.LevelIndicator
 import androidx.wear.compose.material3.LevelIndicatorDefaults
 import androidx.wear.compose.material3.Stepper
 import androidx.wear.compose.material3.StepperDefaults
+import androidx.wear.compose.material3.StepperLevelIndicator
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.samples.StepperSample
 import androidx.wear.compose.material3.samples.StepperWithButtonSample
@@ -72,7 +72,7 @@ fun DisabledStepperDemo() {
         ) {
             Text(String.format("Value: %.1f".format(value)))
         }
-        LevelIndicator(
+        StepperLevelIndicator(
             value = { value },
             valueRange = valueRange,
             modifier = Modifier.align(Alignment.CenterStart),
@@ -106,7 +106,7 @@ fun CustomColorsStepperDemo() {
         ) {
             Text(String.format("Value: %.1f".format(value)))
         }
-        LevelIndicator(
+        StepperLevelIndicator(
             value = { value },
             valueRange = valueRange,
             modifier = Modifier.align(Alignment.CenterStart),

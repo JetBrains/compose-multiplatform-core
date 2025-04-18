@@ -27,10 +27,12 @@ import androidx.build.ApkCopyHelperKt
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
+    compileSdk = 35
+
     defaultConfig {
         applicationId = "androidx.camera.integration.extensions"
     }
@@ -47,9 +49,10 @@ android {
 }
 
 dependencies {
+    api(libs.jspecify)
     // Internal library
     implementation(project(":camera:camera-camera2"))
-    implementation(project(':camera:camera-camera2-pipe-integration'))
+    implementation(project(":camera:camera-camera2-pipe-integration"))
     implementation(project(":camera:camera-extensions"))
     implementation(project(":camera:camera-lifecycle"))
     implementation(project(":camera:camera-view"))

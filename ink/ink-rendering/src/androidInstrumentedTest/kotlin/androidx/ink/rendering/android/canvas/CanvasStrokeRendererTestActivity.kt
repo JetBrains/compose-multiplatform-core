@@ -43,12 +43,12 @@ import androidx.ink.strokes.InProgressStroke
 @OptIn(ExperimentalInkCustomBrushApi::class)
 class CanvasStrokeRendererTestActivity : Activity() {
     @OptIn(ExperimentalInkCustomBrushApi::class)
-    private val textureStore = TextureBitmapStore { uri ->
-        when (uri) {
-            TEXTURE_URI_AIRPLANE_EMOJI -> R.drawable.airplane_emoji
-            TEXTURE_URI_CHECKERBOARD -> R.drawable.checkerboard_black_and_transparent
-            TEXTURE_URI_CIRCLE -> R.drawable.circle
-            TEXTURE_URI_POOP_EMOJI -> R.drawable.poop_emoji
+    private val textureStore = TextureBitmapStore { id ->
+        when (id) {
+            TEXTURE_ID_AIRPLANE_EMOJI -> R.drawable.airplane_emoji
+            TEXTURE_ID_CHECKERBOARD -> R.drawable.checkerboard_black_and_transparent
+            TEXTURE_ID_CIRCLE -> R.drawable.circle
+            TEXTURE_ID_POOP_EMOJI -> R.drawable.poop_emoji
             else -> null
         }?.let { BitmapFactory.decodeResource(resources, it) }
     }
@@ -170,9 +170,9 @@ class CanvasStrokeRendererTestActivity : Activity() {
     }
 
     companion object {
-        const val TEXTURE_URI_AIRPLANE_EMOJI = "ink://ink/texture:airplane-emoji"
-        const val TEXTURE_URI_CHECKERBOARD = "ink://ink/texture:checkerboard-overlay-pen"
-        const val TEXTURE_URI_CIRCLE = "ink://ink/texture:circle"
-        const val TEXTURE_URI_POOP_EMOJI = "ink://ink/texture:poop-emoji"
+        const val TEXTURE_ID_AIRPLANE_EMOJI = "airplane-emoji"
+        const val TEXTURE_ID_CHECKERBOARD = "checkerboard-overlay-pen"
+        const val TEXTURE_ID_CIRCLE = "circle"
+        const val TEXTURE_ID_POOP_EMOJI = "poop-emoji"
     }
 }

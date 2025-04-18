@@ -116,7 +116,7 @@ public fun ToggleChip(
     interactionSource: MutableInteractionSource? = null,
     contentPadding: PaddingValues = ToggleChipDefaults.ContentPadding,
     shape: Shape = MaterialTheme.shapes.large,
-) =
+): Unit =
     androidx.wear.compose.materialcore.ToggleButton(
         checked = checked,
         onCheckedChange = onCheckedChange,
@@ -247,7 +247,7 @@ public fun SplitToggleChip(
     clickInteractionSource: MutableInteractionSource? = null,
     contentPadding: PaddingValues = ToggleChipDefaults.ContentPadding,
     shape: Shape = MaterialTheme.shapes.large,
-) =
+): Unit =
     androidx.wear.compose.materialcore.SplitToggleButton(
         checked = checked,
         onCheckedChange = onCheckedChange,
@@ -590,7 +590,7 @@ public object ToggleChipDefaults {
      * The default height applied for the [ToggleChip] or [SplitToggleChip]. Note that you can
      * override it by applying Modifier.heightIn directly on [ToggleChip] or [SplitToggleChip].
      */
-    public val Height = 52.dp
+    public val Height: Dp = 52.dp
 
     /**
      * The default size of app icons or toggle controls when used inside a [ToggleChip] or

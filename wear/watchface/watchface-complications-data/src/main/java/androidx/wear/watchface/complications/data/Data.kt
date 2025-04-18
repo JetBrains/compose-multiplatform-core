@@ -43,6 +43,8 @@ import androidx.wear.watchface.complications.data.RangedValueComplicationData.Co
 import androidx.wear.watchface.complications.data.WeightedElementsComplicationData.Companion.PLACEHOLDER
 import androidx.wear.watchface.complications.data.WeightedElementsComplicationData.Companion.getMaxElements
 import androidx.wear.watchface.complications.data.WeightedElementsComplicationData.Element
+import com.google.wear.expression.ProtoLayoutDynamicFloat as WearSdkDynamicFloat
+import com.google.wear.services.complications.ComplicationData as WearSdkComplicationData
 import java.time.Instant
 
 internal const val TAG = "Data.kt"
@@ -145,7 +147,8 @@ public sealed class ComplicationData
 constructor(
     public val type: ComplicationType,
     public val tapAction: PendingIntent?,
-    internal var cachedWireComplicationData: WireComplicationData?,
+    internal var cachedWireComplicationData: WireComplicationData? = null,
+    internal var cachedWearSdkComplicationData: WearSdkComplicationData? = null,
     public val validTimeRange: TimeRange = TimeRange.ALWAYS,
     public val dataSource: ComponentName?,
     @ComplicationPersistencePolicy public val persistencePolicy: Int,
@@ -200,6 +203,211 @@ constructor(
             dynamicValueInvalidationFallback.fillWireComplicationDataBuilder(placeholderBuilder)
             builder.setPlaceholder(placeholderBuilder.build())
         }
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    public fun asWearSdkComplicationData(): WearSdkComplicationData {
+        cachedWearSdkComplicationData?.let {
+            return it
+        }
+        var input = this
+        fun WearSdkComplicationData.Builder.setTimeRange() {
+            input.validTimeRange.let {
+                if (it.startDateTimeMillis > Instant.MIN) {
+                    setStartDateTimeMillis(it.startDateTimeMillis.toEpochMilli())
+                }
+                if (it.endDateTimeMillis != Instant.MAX) {
+                    setEndDateTimeMillis(it.endDateTimeMillis.toEpochMilli())
+                }
+            }
+        }
+
+        var builder =
+            when (input) {
+                is NoDataComplicationData ->
+                    WearSdkComplicationData.Builder(
+                            ComplicationType.NO_DATA.toWireComplicationType()
+                        )
+                        .apply {
+                            setPlaceholder(input.placeholder?.asWearSdkComplicationData())
+                            setInvalidatedData(input.invalidatedData?.asWearSdkComplicationData())
+                            setExtras(extras)
+                        }
+                is EmptyComplicationData ->
+                    WearSdkComplicationData.Builder(ComplicationType.EMPTY.toWireComplicationType())
+                is NotConfiguredComplicationData ->
+                    WearSdkComplicationData.Builder(
+                        ComplicationType.NOT_CONFIGURED.toWireComplicationType()
+                    )
+                is ShortTextComplicationData ->
+                    WearSdkComplicationData.Builder(
+                            ComplicationType.SHORT_TEXT.toWireComplicationType()
+                        )
+                        .apply {
+                            setShortText(input.text.asWearSdkComplicationText())
+                            setShortTitle(input.title?.asWearSdkComplicationText())
+                            setIcon(input.monochromaticImage?.image)
+                            setBurnInProtectionIcon(input.monochromaticImage?.ambientImage)
+                            setContentDescription(
+                                input.contentDescription?.asWearSdkComplicationText()
+                            )
+                            setTapAction(input.tapAction)
+                            setTimeRange()
+                        }
+                is LongTextComplicationData ->
+                    WearSdkComplicationData.Builder(
+                            ComplicationType.LONG_TEXT.toWireComplicationType()
+                        )
+                        .apply {
+                            setLongText(input.text.asWearSdkComplicationText())
+                            setLongTitle(input.title?.asWearSdkComplicationText())
+                            setIcon(input.monochromaticImage?.image)
+                            setBurnInProtectionIcon(input.monochromaticImage?.ambientImage)
+                            setContentDescription(
+                                input.contentDescription?.asWearSdkComplicationText()
+                            )
+                            setTapAction(input.tapAction)
+                            setTimeRange()
+                        }
+                is RangedValueComplicationData ->
+                    WearSdkComplicationData.Builder(
+                            ComplicationType.RANGED_VALUE.toWireComplicationType()
+                        )
+                        .apply {
+                            setRangedValue(input.value)
+                            input.dynamicValue?.toDynamicFloatByteArray()?.let {
+                                setRangedDynamicValue(WearSdkDynamicFloat.fromBytes(it))
+                            }
+                            setRangedMinValue(input.min)
+                            setRangedMaxValue(input.max)
+                            setIcon(input.monochromaticImage?.image)
+                            setBurnInProtectionIcon(input.monochromaticImage?.ambientImage)
+                            setSmallImage(input.smallImage?.image)
+                            setBurnInProtectionSmallImage(input.smallImage?.ambientImage)
+                            setShortText(input.text?.asWearSdkComplicationText())
+                            setShortTitle(input.title?.asWearSdkComplicationText())
+                            setTimeRange()
+                            setContentDescription(
+                                input.contentDescription?.asWearSdkComplicationText()
+                            )
+                            setTapAction(input.tapAction)
+                        }
+                is MonochromaticImageComplicationData ->
+                    WearSdkComplicationData.Builder(
+                            ComplicationType.MONOCHROMATIC_IMAGE.toWireComplicationType()
+                        )
+                        .apply {
+                            setIcon(input.monochromaticImage.image)
+                            setBurnInProtectionIcon(input.monochromaticImage.ambientImage)
+                            setTimeRange()
+                            setContentDescription(
+                                input.contentDescription?.asWearSdkComplicationText()
+                            )
+                            setTapAction(input.tapAction)
+                        }
+                is SmallImageComplicationData ->
+                    WearSdkComplicationData.Builder(
+                            ComplicationType.SMALL_IMAGE.toWireComplicationType()
+                        )
+                        .apply {
+                            setSmallImage(input.smallImage.image)
+                            setBurnInProtectionSmallImage(input.smallImage.ambientImage)
+                            setTimeRange()
+                            setContentDescription(
+                                input.contentDescription?.asWearSdkComplicationText()
+                            )
+                            setTapAction(input.tapAction)
+                        }
+                is PhotoImageComplicationData ->
+                    WearSdkComplicationData.Builder(
+                            ComplicationType.PHOTO_IMAGE.toWireComplicationType()
+                        )
+                        .apply {
+                            setLargeImage(input.photoImage)
+                            setTimeRange()
+                            setContentDescription(
+                                input.contentDescription?.asWearSdkComplicationText()
+                            )
+                            setTapAction(input.tapAction)
+                        }
+                is NoPermissionComplicationData ->
+                    WearSdkComplicationData.Builder(
+                            ComplicationType.NO_PERMISSION.toWireComplicationType()
+                        )
+                        .apply {
+                            setShortText(input.text?.asWearSdkComplicationText())
+                            setShortTitle(input.title?.asWearSdkComplicationText())
+                            setIcon(input.monochromaticImage?.image)
+                            setBurnInProtectionIcon(input.monochromaticImage?.ambientImage)
+                        }
+                is GoalProgressComplicationData ->
+                    WearSdkComplicationData.Builder(
+                            ComplicationType.GOAL_PROGRESS.toWireComplicationType()
+                        )
+                        .apply {
+                            setRangedValue(input.value)
+                            input.dynamicValue?.toDynamicFloatByteArray()?.let {
+                                setRangedDynamicValue(WearSdkDynamicFloat.fromBytes(it))
+                            }
+                            setTargetValue(input.targetValue)
+                            setIcon(input.monochromaticImage?.image)
+                            setBurnInProtectionIcon(input.monochromaticImage?.ambientImage)
+                            setSmallImage(input.smallImage?.image)
+                            setBurnInProtectionSmallImage(input.smallImage?.ambientImage)
+                            setShortText(input.text?.asWearSdkComplicationText())
+                            setShortTitle(input.title?.asWearSdkComplicationText())
+                            setTimeRange()
+                            setContentDescription(
+                                input.contentDescription?.asWearSdkComplicationText()
+                            )
+                            setTapAction(input.tapAction)
+                        }
+                is WeightedElementsComplicationData ->
+                    WearSdkComplicationData.Builder(
+                            ComplicationType.WEIGHTED_ELEMENTS.toWireComplicationType()
+                        )
+                        .apply {
+                            setElementBackgroundColor(input.elementBackgroundColor)
+                            if (input.elements.isEmpty()) {
+                                setElementColors(IntArray(0))
+                                setElementWeights(FloatArray(0))
+                            } else {
+                                var weights = ArrayList<Float>()
+                                var colors = ArrayList<Int>()
+                                input.elements.forEach {
+                                    weights.add(it.weight)
+                                    colors.add(it.color)
+                                }
+                                setElementColors(colors.toIntArray())
+                                setElementWeights(weights.toFloatArray())
+                            }
+
+                            setIcon(input.monochromaticImage?.image)
+                            setBurnInProtectionIcon(input.monochromaticImage?.ambientImage)
+                            setSmallImage(input.smallImage?.image)
+                            setBurnInProtectionSmallImage(input.smallImage?.ambientImage)
+                            setShortText(input.text?.asWearSdkComplicationText())
+                            setShortTitle(input.title?.asWearSdkComplicationText())
+                            setTimeRange()
+                            setContentDescription(
+                                input.contentDescription?.asWearSdkComplicationText()
+                            )
+                            setTapAction(input.tapAction)
+                        }
+            }
+        fillExtraComplicationDataFields(builder)
+        cachedWearSdkComplicationData = builder.build()
+        return cachedWearSdkComplicationData!!
+    }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    internal fun fillExtraComplicationDataFields(builder: WearSdkComplicationData.Builder) {
+        builder.setDataSource(dataSource)
+        builder.setPersistencePolicy(persistencePolicy)
+        builder.setDisplayPolicy(displayPolicy)
+        builder.setExtras(extras)
+        builder.setPlaceholder(dynamicValueInvalidationFallback?.asWearSdkComplicationData())
     }
 
     /**
@@ -1229,7 +1437,7 @@ internal constructor(
         builder.setTapActionLostDueToSerialization(tapActionLostDueToSerialization)
         colorRamp?.let {
             builder.setColorRamp(it.colors)
-            builder.setColorRampIsSmoothShaded(it.interpolated)
+            builder.setColorRampInterpolated(it.interpolated)
         }
         builder.setRangedValueType(valueType)
     }
@@ -1589,7 +1797,7 @@ internal constructor(
         builder.setTapActionLostDueToSerialization(tapActionLostDueToSerialization)
         colorRamp?.let {
             builder.setColorRamp(it.colors)
-            builder.setColorRampIsSmoothShaded(it.interpolated)
+            builder.setColorRampInterpolated(it.interpolated)
         }
     }
 

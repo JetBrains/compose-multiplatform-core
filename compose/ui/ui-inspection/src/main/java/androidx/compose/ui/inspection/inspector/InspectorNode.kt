@@ -143,6 +143,7 @@ internal class MutableInspectorNode {
     var offset = 0
     var box: IntRect = emptyBox
     var bounds: QuadBounds? = null
+    var unknownLocation = false
     var inlined = false
     val parameters = mutableListOf<RawParameter>()
     var viewId = UNDEFINED_ID
@@ -159,6 +160,7 @@ internal class MutableInspectorNode {
         unmergedSemantics.clear()
         box = emptyBox
         bounds = null
+        unknownLocation = false
         inlined = false
         children.clear()
     }

@@ -21,18 +21,12 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
-import androidx.build.KotlinTarget
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("kotlin")
-}
-
-ext {
-    kotlin = "2.1.0"
-    ksp = "2.1.0-1.0.29"
 }
 
 dependencies {
@@ -41,14 +35,13 @@ dependencies {
     // For Java source compilation
     implementation(libs.googleCompileTesting)
     // For KSP processing
-    implementation("com.google.devtools.ksp:symbol-processing:$ksp")
-    implementation("com.google.devtools.ksp:symbol-processing-api:$ksp")
-    implementation("com.google.devtools.ksp:symbol-processing-common-deps:$ksp")
-    implementation("com.google.devtools.ksp:symbol-processing-aa-embeddable:$ksp")
+    implementation(libs.ksp)
+    implementation(libs.kspApi)
+    implementation(libs.kspCommon)
+    implementation(libs.kspEmbeddable)
     // For Kotlin source compilation and KAPT
-    implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlin")
-    implementation("org.jetbrains.kotlin:kotlin-daemon-embeddable:$kotlin")
-    implementation("org.jetbrains.kotlin:kotlin-annotation-processing-embeddable:$kotlin")
+    implementation(libs.kotlinCompilerEmbeddable)
+    implementation(libs.kotlinAnnotationProcessingEmbeddable)
 }
 
 /**
@@ -99,8 +92,7 @@ afterEvaluate {
 
 androidx {
     name = "Room XProcessor Testing"
-    type = LibraryType.ANNOTATION_PROCESSOR_UTILS
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
+    type = SoftwareType.ANNOTATION_PROCESSOR_UTILS
     inceptionYear = "2020"
     description = "Testing helpers for Room XProcessing APIs"
 }

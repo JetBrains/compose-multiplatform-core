@@ -22,7 +22,6 @@ import com.android.build.gradle.internal.fixtures.FakeGradleWorkExecutor
 import com.android.build.gradle.internal.fixtures.FakeInjectableService
 import com.google.common.truth.Truth
 import kotlin.reflect.jvm.javaMethod
-import org.gradle.api.DefaultTask
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.workers.WorkerExecutor
 import org.junit.Before
@@ -39,7 +38,6 @@ class StableAidlCheckApiTest {
     private val execOperations = FakeGradleExecOperations()
 
     private lateinit var workers: WorkerExecutor
-    private lateinit var instantiatorTask: DefaultTask
 
     @Before
     fun setup() {
@@ -55,7 +53,6 @@ class StableAidlCheckApiTest {
                         )
                     )
                 )
-            instantiatorTask = tasks.create("task", DefaultTask::class.java)
         }
     }
 

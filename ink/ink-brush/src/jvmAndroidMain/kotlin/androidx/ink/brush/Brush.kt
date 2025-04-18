@@ -37,21 +37,36 @@ import kotlin.jvm.JvmStatic
  */
 @Suppress("NotCloseable") // Finalize is only used to free the native peer.
 public class Brush
-internal constructor(
+private constructor(
+    /** A handle to the underlying native [Brush] object. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val nativePointer: Long,
+
     /** The [BrushFamily] for this brush. See [StockBrushes] for available [BrushFamily] values. */
     public val family: BrushFamily,
-    composeColor: ComposeColor,
+) {
+
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public val composeColor: ComposeColor =
+        // Caching this because the native call is slow. Still doing the round-trip on construction
+        // to
+        // ensure this is excercised by tests and that deserialized brushes are consistent with
+        // newly
+        // constructed brushes.
+        ComposeColor(BrushNative.computeComposeColorLong(nativePointer).toULong())
+
     /**
      * The overall thickness of strokes created with a given brush, in the same units as the stroke
      * coordinate system. This must be at least as big as [epsilon].
      */
-    @FloatRange(
+    @get:FloatRange(
         from = 0.0,
         fromInclusive = false,
         to = Double.POSITIVE_INFINITY,
-        toInclusive = false
+        toInclusive = false,
     )
-    public val size: Float,
+    public val size: Float
+        get() = BrushNative.getSize(nativePointer)
+
     /**
      * The smallest distance for which two points should be considered visually distinct for stroke
      * generation geometry purposes. Effectively, it is the visual fidelity of strokes created with
@@ -62,17 +77,47 @@ internal constructor(
      * starting point that can tolerate a reasonable amount of zooming in with high quality visual
      * results.
      */
-    @FloatRange(
+    @get:FloatRange(
         from = 0.0,
         fromInclusive = false,
         to = Double.POSITIVE_INFINITY,
-        toInclusive = false
+        toInclusive = false,
     )
-    public val epsilon: Float,
-) {
+    public val epsilon: Float
+        get() = BrushNative.getEpsilon(nativePointer)
 
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public val composeColor: ComposeColor = composeColor.toColorInInkSupportedColorSpace()
+    internal constructor(
+        family: BrushFamily,
+        composeColor: ComposeColor,
+        @FloatRange(
+            from = 0.0,
+            fromInclusive = false,
+            to = Double.POSITIVE_INFINITY,
+            toInclusive = false,
+        )
+        size: Float,
+        @FloatRange(
+            from = 0.0,
+            fromInclusive = false,
+            to = Double.POSITIVE_INFINITY,
+            toInclusive = false,
+        )
+        epsilon: Float,
+    ) : this(
+        composeColor.toColorInInkSupportedColorSpace().let { convertedColor ->
+            BrushNative.create(
+                family.nativePointer,
+                convertedColor.red,
+                convertedColor.green,
+                convertedColor.blue,
+                convertedColor.alpha,
+                convertedColor.colorSpace.toInkColorSpaceId(),
+                size,
+                epsilon,
+            )
+        },
+        family,
+    )
 
     /**
      * The default color of a [Brush] is pure black. To set a custom color, use
@@ -80,7 +125,19 @@ internal constructor(
      */
     public constructor(
         family: BrushFamily,
+        @FloatRange(
+            from = 0.0,
+            fromInclusive = false,
+            to = Double.POSITIVE_INFINITY,
+            toInclusive = false,
+        )
         size: Float,
+        @FloatRange(
+            from = 0.0,
+            fromInclusive = false,
+            to = Double.POSITIVE_INFINITY,
+            toInclusive = false,
+        )
         epsilon: Float,
     ) : this(family, DEFAULT_COMPOSE_COLOR, size, epsilon)
 
@@ -98,20 +155,6 @@ internal constructor(
      */
     public val colorIntArgb: Int
         @ColorInt get(): Int = composeColor.toArgb()
-
-    /** A handle to the underlying native [Brush] object. */
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public val nativePointer: Long =
-        nativeCreateBrush(
-            family.nativePointer,
-            this.composeColor.red,
-            this.composeColor.green,
-            this.composeColor.blue,
-            this.composeColor.alpha,
-            this.composeColor.colorSpace.toInkColorSpaceId(),
-            size,
-            epsilon,
-        )
 
     // Base implementation of copy() that all public versions call.
     private fun copy(family: BrushFamily, color: ComposeColor, size: Float, epsilon: Float): Brush {
@@ -135,7 +178,19 @@ internal constructor(
     @JvmOverloads
     public fun copy(
         family: BrushFamily = this.family,
+        @FloatRange(
+            from = 0.0,
+            fromInclusive = false,
+            to = Double.POSITIVE_INFINITY,
+            toInclusive = false,
+        )
         size: Float = this.size,
+        @FloatRange(
+            from = 0.0,
+            fromInclusive = false,
+            to = Double.POSITIVE_INFINITY,
+            toInclusive = false,
+        )
         epsilon: Float = this.epsilon,
     ): Brush = copy(family, this.composeColor, size, epsilon)
 
@@ -152,7 +207,19 @@ internal constructor(
     public fun copyWithColorLong(
         @ColorLong colorLong: Long,
         family: BrushFamily = this.family,
+        @FloatRange(
+            from = 0.0,
+            fromInclusive = false,
+            to = Double.POSITIVE_INFINITY,
+            toInclusive = false,
+        )
         size: Float = this.size,
+        @FloatRange(
+            from = 0.0,
+            fromInclusive = false,
+            to = Double.POSITIVE_INFINITY,
+            toInclusive = false,
+        )
         epsilon: Float = this.epsilon,
     ): Brush = copy(family, ComposeColor(colorLong.toULong()), size, epsilon)
 
@@ -169,7 +236,19 @@ internal constructor(
     public fun copyWithColorIntArgb(
         @ColorInt colorIntArgb: Int,
         family: BrushFamily = this.family,
+        @FloatRange(
+            from = 0.0,
+            fromInclusive = false,
+            to = Double.POSITIVE_INFINITY,
+            toInclusive = false,
+        )
         size: Float = this.size,
+        @FloatRange(
+            from = 0.0,
+            fromInclusive = false,
+            to = Double.POSITIVE_INFINITY,
+            toInclusive = false,
+        )
         epsilon: Float = this.epsilon,
     ): Brush = copy(family, ComposeColor(colorIntArgb), size, epsilon)
 
@@ -314,31 +393,26 @@ internal constructor(
     /** Delete native Brush memory. */
     protected fun finalize() {
         // NOMUTANTS -- Not tested post garbage collection.
-        nativeFreeBrush(nativePointer)
+        BrushNative.free(nativePointer)
     }
 
-    /** Create underlying native object and return reference for all subsequent native calls. */
-    @UsedByNative
-    private external fun nativeCreateBrush(
-        familyNativePointer: Long,
-        colorRed: Float,
-        colorGreen: Float,
-        colorBlue: Float,
-        colorAlpha: Float,
-        colorSpace: Int,
-        size: Float,
-        epsilon: Float,
-    ): Long
-
-    /** Release the underlying memory allocated in [nativeCreateBrush]. */
-    @UsedByNative private external fun nativeFreeBrush(nativePointer: Long)
-
     public companion object {
-        init {
-            NativeLoader.load()
-        }
-
         private val DEFAULT_COMPOSE_COLOR = ComposeColor.Black
+
+        /**
+         * Construct a [BrushPaint] from an unowned heap-allocated native pointer to a C++
+         * `BrushPaint`. Kotlin wrapper objects nested under the [BrushPaint] are initialized
+         * similarly using their own [wrapNative] methods, passing those pointers to newly
+         * copy-constructed heap-allocated objects. That avoids the need to call Kotlin constructors
+         * for those objects from C++.
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun wrapNative(unownedNativePointer: Long): Brush {
+            return Brush(
+                unownedNativePointer,
+                BrushFamily.wrapNative(BrushNative.newCopyOfBrushFamily(unownedNativePointer)),
+            )
+        }
 
         /**
          * Returns a new [Brush] with the color specified by a [ColorLong], which can encode several
@@ -376,4 +450,59 @@ internal constructor(
         /** Returns a new [Brush.Builder]. */
         @JvmStatic public fun builder(): Builder = Builder()
     }
+}
+
+/** Singleton wrapper around native JNI calls. */
+@UsedByNative
+private object BrushNative {
+    init {
+        NativeLoader.load()
+    }
+
+    /** Create underlying native object and return reference for all subsequent native calls. */
+    @UsedByNative
+    public external fun create(
+        familyNativePointer: Long,
+        colorRed: Float,
+        colorGreen: Float,
+        colorBlue: Float,
+        colorAlpha: Float,
+        colorSpace: Int,
+        size: Float,
+        epsilon: Float,
+    ): Long
+
+    /** Release the underlying memory allocated in [create]. */
+    @UsedByNative public external fun free(nativePointer: Long)
+
+    @UsedByNative public external fun computeComposeColorLong(nativePointer: Long): Long
+
+    /** This is a callback used by computeComposeColorLong. */
+    @UsedByNative
+    public fun composeColorLongFromComponents(
+        colorSpaceId: Int,
+        redGammaCorrected: Float,
+        greenGammaCorrected: Float,
+        blueGammaCorrected: Float,
+        alpha: Float,
+    ): Long =
+        ComposeColor(
+                redGammaCorrected,
+                greenGammaCorrected,
+                blueGammaCorrected,
+                alpha,
+                colorSpace = composeColorSpaceFromInkColorSpaceId(colorSpaceId),
+            )
+            .value
+            .toLong()
+
+    @UsedByNative public external fun getSize(nativePointer: Long): Float
+
+    @UsedByNative public external fun getEpsilon(nativePointer: Long): Float
+
+    /**
+     * Returns a new, unowned native pointer to a copy of the `BrushFamily` for the pointed-at
+     * native `Brush`.
+     */
+    @UsedByNative public external fun newCopyOfBrushFamily(nativePointer: Long): Long
 }

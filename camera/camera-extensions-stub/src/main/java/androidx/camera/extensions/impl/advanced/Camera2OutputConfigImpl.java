@@ -18,7 +18,7 @@ package androidx.camera.extensions.impl.advanced;
 
 import android.hardware.camera2.params.DynamicRangeProfiles;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -44,8 +44,7 @@ public interface Camera2OutputConfigImpl {
     /**
      * Gets the physical camera id. Returns null if not specified.
      */
-    @Nullable
-    String getPhysicalCameraId();
+    @Nullable String getPhysicalCameraId();
 
     /**
      * Gets the dynamic range profile.
@@ -60,6 +59,5 @@ public interface Camera2OutputConfigImpl {
      * If non-null, enable surface sharing and add the surface constructed by the return
      * Camera2OutputConfig.
      */
-    @Nullable
-    List<Camera2OutputConfigImpl> getSurfaceSharingOutputConfigs();
+    @Nullable List<Camera2OutputConfigImpl> getSurfaceSharingOutputConfigs();
 }

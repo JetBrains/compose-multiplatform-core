@@ -20,7 +20,8 @@ import android.os.Build
 import androidx.benchmark.InstrumentationResults
 import androidx.benchmark.Profiler
 import androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi
-import androidx.benchmark.perfetto.PerfettoTrace
+import androidx.benchmark.traceprocessor.PerfettoTrace
+import androidx.benchmark.traceprocessor.record
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.rules.TestRule
 import org.junit.runner.Description

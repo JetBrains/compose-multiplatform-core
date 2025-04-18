@@ -22,19 +22,18 @@ import static org.junit.Assert.assertNotSame;
 import android.app.NotificationChannelGroup;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.core.app.NotificationChannelGroupCompat.Builder;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
 import javax.annotation.Nullable;
-
 
 @RunWith(AndroidJUnit4.class)
 @SmallTest

@@ -62,7 +62,7 @@ internal class Ksp2Compilation(
                 diagnostics = kspDiagnostics.messages,
                 sourceSets = arguments.sourceSets + generatedSources
             )
-        val outputResources = workingDir.resolve(RESOURCES_OUT_FOLDER_NAME)
+        val outputResources = workingDir.resolve(RESOURCE_OUT_FOLDER_NAME)
         val outputClasspath = listOf(workingDir.resolve(CLASS_OUT_FOLDER_NAME))
         val generatedResources =
             outputResources
@@ -109,10 +109,12 @@ internal class Ksp2Compilation(
 
                 moduleName = KotlinCliRunner.getJvmModuleName(arguments.kotlincArguments)
 
-                languageVersion = TestDefaultOptions.kotlinLanguageVersion.versionString
-                apiVersion = TestDefaultOptions.kotlinApiVersion.versionString
-                jvmTarget = TestDefaultOptions.jvmTarget.description
-                jvmDefaultMode = TestDefaultOptions.jvmDefaultMode.description
+                languageVersion =
+                    KotlinCliRunner.getLanguageVersion(arguments.kotlincArguments).versionString
+                apiVersion = KotlinCliRunner.getApiVersion(arguments.kotlincArguments).versionString
+                jvmTarget = KotlinCliRunner.getJvmTarget(arguments.kotlincArguments).description
+                jvmDefaultMode =
+                    KotlinCliRunner.getJvmDefaultMode(arguments.kotlincArguments).description
 
                 processorOptions = this@Ksp2Compilation.processorOptions
             }
@@ -166,6 +168,5 @@ internal class Ksp2Compilation(
         private const val RESOURCE_OUT_FOLDER_NAME = "ksp-resource-out"
         private const val CACHE_FOLDER_NAME = "ksp-cache"
         private const val CLASS_OUT_FOLDER_NAME = "class-out"
-        private const val RESOURCES_OUT_FOLDER_NAME = "ksp-compiler/resourceOutputDir"
     }
 }

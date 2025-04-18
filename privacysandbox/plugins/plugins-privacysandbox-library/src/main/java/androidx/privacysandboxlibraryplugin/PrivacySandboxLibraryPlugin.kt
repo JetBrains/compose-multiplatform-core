@@ -22,7 +22,6 @@ import com.google.devtools.ksp.gradle.KspExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.StopExecutionException
-import org.gradle.kotlin.dsl.dependencies
 
 /*
  * For modules that are used by a privacy sandbox sdk module using Androidx, we need to configure
@@ -83,7 +82,7 @@ abstract class PrivacySandboxLibraryPlugin : Plugin<Project> {
 
             val toolsVersion = "1.0.0-alpha08"
             val sdkRuntimeVersion = "1.0.0-alpha13"
-            project.dependencies {
+            project.dependencies.apply {
                 add("ksp", "androidx.privacysandbox.tools:tools-apicompiler:$toolsVersion")
                 add("implementation", "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
                 add("implementation", "androidx.privacysandbox.tools:tools:$toolsVersion")

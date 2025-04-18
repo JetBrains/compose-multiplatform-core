@@ -18,12 +18,13 @@ package androidx.work.multiprocess;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.ForegroundInfo;
 import androidx.work.ForegroundUpdater;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -34,9 +35,8 @@ import java.util.UUID;
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteForegroundUpdater implements ForegroundUpdater {
-    @NonNull
     @Override
-    public ListenableFuture<Void> setForegroundAsync(
+    public @NonNull ListenableFuture<Void> setForegroundAsync(
             @NonNull Context context,
             @NonNull UUID id,
             @NonNull ForegroundInfo foregroundInfo) {

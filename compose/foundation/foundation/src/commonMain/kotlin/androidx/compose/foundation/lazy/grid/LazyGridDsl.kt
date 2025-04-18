@@ -22,8 +22,6 @@ import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -81,7 +79,7 @@ fun LazyVerticalGrid(
     content: LazyGridScope.() -> Unit
 ) {
     LazyGrid(
-        slots = rememberColumnWidthSums(columns, horizontalArrangement, contentPadding),
+        slots = rememberColumnWidthSums(columns, horizontalArrangement),
         modifier = modifier,
         state = state,
         contentPadding = contentPadding,
@@ -170,7 +168,7 @@ fun LazyHorizontalGrid(
     content: LazyGridScope.() -> Unit
 ) {
     LazyGrid(
-        slots = rememberRowHeightSums(rows, verticalArrangement, contentPadding),
+        slots = rememberRowHeightSums(rows, verticalArrangement),
         modifier = modifier,
         state = state,
         contentPadding = contentPadding,
@@ -219,22 +217,18 @@ fun LazyHorizontalGrid(
 @Composable
 private fun rememberColumnWidthSums(
     columns: GridCells,
-    horizontalArrangement: Arrangement.Horizontal,
-    contentPadding: PaddingValues
+    horizontalArrangement: Arrangement.Horizontal
 ) =
     remember<LazyGridSlotsProvider>(
         columns,
         horizontalArrangement,
-        contentPadding,
     ) {
         GridSlotCache { constraints ->
             requirePrecondition(constraints.maxWidth != Constraints.Infinity) {
                 "LazyVerticalGrid's width should be bound by parent."
             }
-            val horizontalPadding =
-                contentPadding.calculateStartPadding(LayoutDirection.Ltr) +
-                    contentPadding.calculateEndPadding(LayoutDirection.Ltr)
-            val gridWidth = constraints.maxWidth - horizontalPadding.roundToPx()
+
+            val gridWidth = constraints.maxWidth
             with(columns) {
                 calculateCrossAxisCellSizes(gridWidth, horizontalArrangement.spacing.roundToPx())
                     .toIntArray()
@@ -251,23 +245,14 @@ private fun rememberColumnWidthSums(
 
 /** Returns prefix sums of row heights. */
 @Composable
-private fun rememberRowHeightSums(
-    rows: GridCells,
-    verticalArrangement: Arrangement.Vertical,
-    contentPadding: PaddingValues
-) =
-    remember<LazyGridSlotsProvider>(
-        rows,
-        verticalArrangement,
-        contentPadding,
-    ) {
+private fun rememberRowHeightSums(rows: GridCells, verticalArrangement: Arrangement.Vertical) =
+    remember<LazyGridSlotsProvider>(rows, verticalArrangement) {
         GridSlotCache { constraints ->
             requirePrecondition(constraints.maxHeight != Constraints.Infinity) {
                 "LazyHorizontalGrid's height should be bound by parent."
             }
-            val verticalPadding =
-                contentPadding.calculateTopPadding() + contentPadding.calculateBottomPadding()
-            val gridHeight = constraints.maxHeight - verticalPadding.roundToPx()
+
+            val gridHeight = constraints.maxHeight
             with(rows) {
                 calculateCrossAxisCellSizes(gridHeight, verticalArrangement.spacing.roundToPx())
                     .toIntArray()

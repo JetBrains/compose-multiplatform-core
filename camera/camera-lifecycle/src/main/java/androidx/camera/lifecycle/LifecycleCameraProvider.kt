@@ -42,6 +42,14 @@ import com.google.common.util.concurrent.ListenableFuture
 
 /**
  * Provides access to a camera which has its opening and closing controlled by a [LifecycleOwner].
+ *
+ * This allows configuring multiple instances with different [Context] and [CameraXConfig]. The use
+ * cases can be bound to different camera providers simultaneously, but only one [LifecycleOwner]
+ * can be [active][Lifecycle.State.RESUMED] at a time.
+ *
+ * The sample shows how to configure and create two camera providers differently.
+ *
+ * @sample androidx.camera.lifecycle.samples.configureAndCreateInstances
  */
 // TODO: Remove the annotation when LifecycleCameraProvider is ready to be public.
 @RestrictTo(Scope.LIBRARY_GROUP)

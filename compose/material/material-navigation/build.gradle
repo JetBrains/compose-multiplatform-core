@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -31,10 +30,9 @@ dependencies {
     implementation(libs.kotlinStdlib)
     implementation(libs.kotlinSerializationCore)
 
-    androidTestImplementation project(":compose:test-utils")
+    androidTestImplementation(project(":compose:test-utils"))
     androidTestImplementation("androidx.navigation:navigation-testing:2.7.7")
     androidTestImplementation(project(":compose:ui:ui-test-junit4"))
-    androidTestImplementation(project(":compose:ui:ui-test-manifest"))
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.truth)
@@ -43,13 +41,12 @@ dependencies {
 
 androidx {
     name = "Compose Material Navigation"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     mavenVersion = LibraryVersions.COMPOSE
     inceptionYear = "2024"
     description = "Compose Material integration with Navigation"
     legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:material:material-navigation-samples"))
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }
 
 android {

@@ -80,8 +80,7 @@ public fun rememberScalingLazyListState(
  * [centerItemIndex] and [centerItemScrollOffset] can be read from the state.
  */
 @Stable
-class ScalingLazyListState
-constructor(
+public class ScalingLazyListState(
     private var initialCenterItemIndex: Int = 1,
     private var initialCenterItemScrollOffset: Int = 0
 ) : ScrollableState {
@@ -406,9 +405,9 @@ constructor(
         return result
     }
 
-    companion object {
+    public companion object {
         /** The default [Saver] implementation for [ScalingLazyListState]. */
-        val Saver =
+        public val Saver: Saver<ScalingLazyListState, Any> =
             listSaver<ScalingLazyListState, Int>(
                 save = {
                     listOf(
@@ -444,6 +443,14 @@ constructor(
 
     override val canScrollBackward: Boolean
         get() = lazyListState.canScrollBackward
+
+    @get:Suppress("GetterSetterNames")
+    override val lastScrolledForward: Boolean
+        get() = lazyListState.lastScrolledForward
+
+    @get:Suppress("GetterSetterNames")
+    override val lastScrolledBackward: Boolean
+        get() = lazyListState.lastScrolledBackward
 
     /**
      * Instantly brings the item at [index] to the center of the viewport and positions it based on

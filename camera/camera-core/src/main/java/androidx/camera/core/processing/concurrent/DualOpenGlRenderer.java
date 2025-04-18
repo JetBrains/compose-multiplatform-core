@@ -32,7 +32,6 @@ import android.opengl.Matrix;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.WorkerThread;
 import androidx.camera.core.CompositionSettings;
 import androidx.camera.core.DynamicRange;
@@ -47,6 +46,8 @@ import androidx.camera.core.processing.util.GraphicDeviceInfo;
 import androidx.camera.core.processing.util.OutputSurface;
 import androidx.core.util.Preconditions;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.Map;
 
 /**
@@ -60,10 +61,8 @@ public final class DualOpenGlRenderer extends OpenGlRenderer {
     private int mPrimaryExternalTextureId = -1;
     private int mSecondaryExternalTextureId = -1;
 
-    @NonNull
-    private final CompositionSettings mPrimaryCompositionSettings;
-    @NonNull
-    private final CompositionSettings mSecondaryCompositionSettings;
+    private final @NonNull CompositionSettings mPrimaryCompositionSettings;
+    private final @NonNull CompositionSettings mSecondaryCompositionSettings;
 
     public DualOpenGlRenderer(
             @NonNull CompositionSettings primaryCompositionSettings,
@@ -72,9 +71,8 @@ public final class DualOpenGlRenderer extends OpenGlRenderer {
         mSecondaryCompositionSettings = secondaryCompositionSettings;
     }
 
-    @NonNull
     @Override
-    public GraphicDeviceInfo init(@NonNull DynamicRange dynamicRange,
+    public @NonNull GraphicDeviceInfo init(@NonNull DynamicRange dynamicRange,
             @NonNull Map<InputFormat, ShaderProvider> shaderProviderOverrides) {
         GraphicDeviceInfo graphicDeviceInfo = super.init(dynamicRange, shaderProviderOverrides);
         mPrimaryExternalTextureId = createTexture();
@@ -200,8 +198,7 @@ public final class DualOpenGlRenderer extends OpenGlRenderer {
         GLES20.glDisable(GLES20.GL_BLEND);
     }
 
-    @NonNull
-    private static float[] getTransformMatrix(
+    private static float @NonNull [] getTransformMatrix(
             @NonNull Size overlaySize,
             @NonNull Size backgroundSize,
             @NonNull CompositionSettings compositionSettings) {

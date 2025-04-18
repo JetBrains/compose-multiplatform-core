@@ -20,12 +20,13 @@ import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_TYPE;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.Preview;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.Quirk;
 import androidx.camera.core.impl.UseCaseConfigFactory;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.Collection;

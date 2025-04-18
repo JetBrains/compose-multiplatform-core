@@ -70,6 +70,9 @@ object Types {
     val bundle = Type("android.os", "Bundle")
     val sandboxedUiAdapter =
         Type(packageName = "androidx.privacysandbox.ui.core", simpleName = "SandboxedUiAdapter")
+    val sharedUiAdapter =
+        Type(packageName = "androidx.privacysandbox.ui.core", simpleName = "SharedUiAdapter")
+    val uiAdapters = setOf(sandboxedUiAdapter, sharedUiAdapter)
     val sdkActivityLauncher =
         Type(
             packageName = "androidx.privacysandbox.activity.core",

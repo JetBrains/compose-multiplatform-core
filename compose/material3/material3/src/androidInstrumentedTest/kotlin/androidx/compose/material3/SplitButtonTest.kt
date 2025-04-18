@@ -135,7 +135,7 @@ class SplitButtonTest {
 
         rule
             .onNode(isToggleable())
-            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
             .assertIsEnabled()
             .assertIsOff()
             .performClick()
@@ -171,7 +171,7 @@ class SplitButtonTest {
             assertIsEnabled()
         }
         rule.onNodeWithTag("trailing button").apply {
-            assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox))
+            assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
             assertIsEnabled()
         }
     }
@@ -207,7 +207,7 @@ class SplitButtonTest {
             assertIsNotEnabled()
         }
         rule.onNodeWithTag("trailing button").apply {
-            assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox))
+            assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
             assertIsNotEnabled()
         }
     }

@@ -25,6 +25,10 @@ package androidx.room
 @JvmRepeatable(DeleteColumn.Entries::class)
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)
+@Suppress(
+    // Due to @JvmRepeatable in this actual while expect has @Repeatable
+    "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT"
+)
 actual annotation class DeleteColumn
 actual constructor(actual val tableName: String, actual val columnName: String) {
     /** Container annotation for the repeatable annotation [DeleteColumn]. */

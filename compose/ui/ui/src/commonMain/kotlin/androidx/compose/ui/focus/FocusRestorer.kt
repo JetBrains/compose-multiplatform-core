@@ -114,10 +114,11 @@ internal class FocusRestorerNode(var fallback: FocusRequester) :
     private val onEnter: FocusEnterExitScope.() -> Unit = {
         pinnedHandle?.release()
         pinnedHandle = null
-        if (restoreFocusedChild() || fallback == Cancel) {
-            cancelFocus()
-        } else if (fallback != Default) {
-            fallback.requestFocus()
+        // Restoring the focused child involved calling requestFocus() and will automatically cancel
+        // the current focus change. If restoration fails, we don't need to do anything for the
+        // default case, where focus will enter this block. We have to handle the non-default case.
+        if (!restoreFocusedChild() && fallback != Default) {
+            if (fallback == Cancel) cancelFocusChange() else fallback.requestFocus()
         }
     }
 

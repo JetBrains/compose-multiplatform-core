@@ -298,7 +298,9 @@ private fun FadeInFadeOutWithScale(
                             alpha = opacity.value
                         )
                         .semantics {
-                            liveRegion = LiveRegionMode.Polite
+                            if (isVisible) {
+                                liveRegion = LiveRegionMode.Polite
+                            }
                             paneTitle = a11yPaneTitle
                             dismiss {
                                 key.dismiss()

@@ -22,9 +22,10 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 import android.graphics.Path;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 
@@ -73,8 +74,7 @@ public final class PathParser {
      * @param pathData The string representing a path, the same as "d" string in svg file.
      * @return the generated Path object.
      */
-    @NonNull
-    public static Path createPathFromPathData(@NonNull String pathData) {
+    public static @NonNull Path createPathFromPathData(@NonNull String pathData) {
         Path path = new Path();
         PathDataNode[] nodes = createNodesFromPathData(pathData);
         try {
@@ -90,8 +90,7 @@ public final class PathParser {
      * @return an array of the PathDataNode.
      */
     @SuppressWarnings("ArrayReturn")
-    @NonNull
-    public static PathDataNode[] createNodesFromPathData(@NonNull String pathData) {
+    public static PathDataNode @NonNull [] createNodesFromPathData(@NonNull String pathData) {
         int start = 0;
         int end = 1;
 
@@ -118,9 +117,8 @@ public final class PathParser {
      * @return a deep copy of the <code>source</code>.
      */
     @SuppressWarnings("ArrayReturn")
-    @NonNull
-    public static PathDataNode[] deepCopyNodes(
-            @SuppressWarnings("ArrayReturn") @NonNull PathDataNode[] source
+    public static PathDataNode @NonNull [] deepCopyNodes(
+            @SuppressWarnings("ArrayReturn") PathDataNode @NonNull [] source
     ) {
         PathDataNode[] copy = new PathParser.PathDataNode[source.length];
         for (int i = 0; i < source.length; i++) {
@@ -136,8 +134,8 @@ public final class PathParser {
      */
     @SuppressWarnings("ArrayReturn")
     public static boolean canMorph(
-            @SuppressWarnings("ArrayReturn") @Nullable PathDataNode[] nodesFrom,
-            @SuppressWarnings("ArrayReturn") @Nullable PathDataNode[] nodesTo
+            @SuppressWarnings("ArrayReturn") PathDataNode @Nullable [] nodesFrom,
+            @SuppressWarnings("ArrayReturn") PathDataNode @Nullable [] nodesTo
     ) {
         if (nodesFrom == null || nodesTo == null) {
             return false;
@@ -164,8 +162,8 @@ public final class PathParser {
      * @param source The source path represented in an array of PathDataNode
      */
     public static void updateNodes(
-            @SuppressWarnings("ArrayReturn") @NonNull PathDataNode[] target,
-            @SuppressWarnings("ArrayReturn") @NonNull PathDataNode[] source
+            @SuppressWarnings("ArrayReturn") PathDataNode @NonNull [] target,
+            @SuppressWarnings("ArrayReturn") PathDataNode @NonNull [] source
     ) {
         for (int i = 0; i < source.length; i++) {
             target[i].mType = source[i].mType;
@@ -318,10 +316,10 @@ public final class PathParser {
      * @see #canMorph(PathDataNode[], PathDataNode[])
      */
     public static void interpolatePathDataNodes(
-            @SuppressWarnings("ArrayReturn") @NonNull PathDataNode[] target,
+            @SuppressWarnings("ArrayReturn") PathDataNode @NonNull [] target,
             float fraction,
-            @SuppressWarnings("ArrayReturn") @NonNull PathDataNode[] from,
-            @SuppressWarnings("ArrayReturn") @NonNull PathDataNode[] to
+            @SuppressWarnings("ArrayReturn") PathDataNode @NonNull [] from,
+            @SuppressWarnings("ArrayReturn") PathDataNode @NonNull [] to
     ) {
         if (!interpolatePathDataNodes(target, from, to, fraction)) {
             throw new IllegalArgumentException(
@@ -347,9 +345,9 @@ public final class PathParser {
     @Deprecated
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     public static boolean interpolatePathDataNodes(
-            @SuppressWarnings("ArrayReturn") @NonNull PathDataNode[] target,
-            @SuppressWarnings("ArrayReturn") @NonNull PathDataNode[] from,
-            @SuppressWarnings("ArrayReturn") @NonNull PathDataNode[] to,
+            @SuppressWarnings("ArrayReturn") PathDataNode @NonNull [] target,
+            @SuppressWarnings("ArrayReturn") PathDataNode @NonNull [] from,
+            @SuppressWarnings("ArrayReturn") PathDataNode @NonNull [] to,
             float fraction
     ) {
         if (target.length != from.length || from.length != to.length) {
@@ -375,7 +373,7 @@ public final class PathParser {
      */
     @SuppressWarnings("ArrayReturn")
     public static void nodesToPath(
-            @SuppressWarnings("ArrayReturn") @NonNull PathDataNode[] node,
+            @SuppressWarnings("ArrayReturn") PathDataNode @NonNull [] node,
             @NonNull Path path
     ) {
         float[] current = new float[6];
@@ -406,8 +404,7 @@ public final class PathParser {
             return mType;
         }
 
-        @NonNull
-        public float[] getParams() {
+        public float @NonNull [] getParams() {
             return mParams;
         }
 
@@ -432,7 +429,7 @@ public final class PathParser {
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @SuppressWarnings("ArrayReturn")
         public static void nodesToPath(
-                @SuppressWarnings("ArrayReturn") @NonNull PathDataNode[] node,
+                @SuppressWarnings("ArrayReturn") PathDataNode @NonNull [] node,
                 @NonNull Path path
         ) {
             PathParser.nodesToPath(node, path);

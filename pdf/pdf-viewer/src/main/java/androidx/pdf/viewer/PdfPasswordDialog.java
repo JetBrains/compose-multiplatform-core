@@ -41,7 +41,7 @@ public class PdfPasswordDialog extends PasswordDialog {
     @Override
     public void sendPassword(@NonNull EditText textField) {
         if (mListener != null) {
-            mListener.onPasswordTextChange(textField.getText().toString());
+            mListener.onPasswordSubmit(textField.getText().toString());
         }
     }
 
@@ -52,11 +52,24 @@ public class PdfPasswordDialog extends PasswordDialog {
         }
     }
 
+    @Override
+    public void onResume() {
+        if (mListener != null) {
+            mListener.onDialogShown();
+        }
+        super.onResume();
+    }
+
     public interface PasswordDialogEventsListener {
         /**
          * Callback to pass the password to the fragment.
          */
-        void onPasswordTextChange(@NonNull String password);
+        void onPasswordSubmit(@NonNull String password);
+
+        /**
+         * Callback to pass the password to the fragment.
+         */
+        void onDialogShown();
 
         /**
          * Callback to handle the cancellation of this dialog.

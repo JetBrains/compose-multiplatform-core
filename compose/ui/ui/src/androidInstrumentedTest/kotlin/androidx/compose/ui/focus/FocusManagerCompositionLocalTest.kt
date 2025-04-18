@@ -17,7 +17,9 @@
 package androidx.compose.ui.focus
 
 import android.view.View
+import android.widget.FrameLayout
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusStateImpl.Active
@@ -26,11 +28,13 @@ import androidx.compose.ui.focus.FocusStateImpl.Inactive
 import androidx.compose.ui.input.InputMode.Companion.Keyboard
 import androidx.compose.ui.input.InputMode.Companion.Touch
 import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -120,6 +124,55 @@ class FocusManagerCompositionLocalTest {
         rule.runOnIdle {
             assertThat(grandparentFocusState.hasFocus).isFalse()
             assertThat(parentFocusState.hasFocus).isFalse()
+            assertThat(focusState.isFocused).isFalse()
+        }
+    }
+
+    @Test
+    fun clearFocus_nestedComposeView_entireHierarchyIsCleared() {
+        // Arrange.
+        lateinit var focusManager: FocusManager
+        lateinit var focusState: FocusState
+        lateinit var androidViewFocusState: FocusState
+        val focusRequester = FocusRequester()
+        rule.setTestContent {
+            focusManager = LocalFocusManager.current
+            AndroidView(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .onFocusChanged { androidViewFocusState = it }
+                        .focusTarget(),
+                factory = {
+                    FrameLayout(it).apply {
+                        addView(
+                            ComposeView(it).apply {
+                                setContent {
+                                    Box(
+                                        modifier =
+                                            Modifier.focusRequester(focusRequester)
+                                                .onFocusChanged { focusState = it }
+                                                .focusTarget()
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
+            )
+        }
+
+        rule.runOnIdle {
+            focusRequester.requestFocus()
+            assertThat(androidViewFocusState.hasFocus).isTrue()
+            assertThat(focusState.isFocused).isTrue()
+        }
+
+        // Act.
+        rule.runOnIdle { focusManager.clearFocus() }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(androidViewFocusState.hasFocus).isFalse()
             assertThat(focusState.isFocused).isFalse()
         }
     }

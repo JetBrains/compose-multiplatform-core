@@ -16,7 +16,6 @@
 
 package androidx.camera.integration.extensions.utils
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.ImageFormat
 import android.graphics.Point
@@ -100,7 +99,6 @@ object Camera2ExtensionsUtil {
         throw IllegalArgumentException("Can't find camera of lens facing $lensFacing")
     }
 
-    @SuppressLint("ClassVerificationFailure")
     @RequiresApi(31)
     @JvmStatic
     fun isCamera2ExtensionModeSupported(
@@ -117,7 +115,6 @@ object Camera2ExtensionsUtil {
      * Picks a preview resolution that is both close/same as the display size and supported by
      * camera and extensions.
      */
-    @SuppressLint("ClassVerificationFailure")
     @RequiresApi(Build.VERSION_CODES.S)
     @JvmStatic
     fun pickPreviewResolution(
@@ -208,7 +205,6 @@ object Camera2ExtensionsUtil {
     }
 
     /** Picks a resolution for still image capture. */
-    @SuppressLint("ClassVerificationFailure")
     @RequiresApi(Build.VERSION_CODES.S)
     @JvmStatic
     fun pickStillImageResolution(

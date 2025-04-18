@@ -105,14 +105,14 @@ public interface ScalingParams {
      * of the viewport. A value between [0f,1f], so a value of 0.2f means to scale an item to 20% of
      * its normal size.
      */
-    @get:FloatRange(from = 0.0, to = 1.0) val edgeScale: Float
+    @get:FloatRange(from = 0.0, to = 1.0) public val edgeScale: Float
 
     /**
      * What fraction of the full transparency of the item to draw it with when closest to the edge
      * of the screen. A value between [0f,1f], so a value of 0.2f means to set the alpha of an item
      * to 20% of its normal value.
      */
-    @get:FloatRange(from = 0.0, to = 1.0) val edgeAlpha: Float
+    @get:FloatRange(from = 0.0, to = 1.0) public val edgeAlpha: Float
 
     /**
      * The maximum element height as a ratio of the viewport size to use for determining the
@@ -120,7 +120,7 @@ public interface ScalingParams {
      * will start to be transitioned. Items larger than [maxElementHeight] will be treated as if
      * [maxElementHeight]. Must be greater than or equal to [minElementHeight].
      */
-    @get:FloatRange(from = 0.0, to = 1.0) val minElementHeight: Float
+    @get:FloatRange(from = 0.0, to = 1.0) public val minElementHeight: Float
 
     /**
      * The maximum element height as a ratio of the viewport size to use for determining the
@@ -128,7 +128,7 @@ public interface ScalingParams {
      * will start to be transitioned. Items larger than [maxElementHeight] will be treated as if
      * [maxElementHeight]. Must be greater than or equal to [minElementHeight].
      */
-    @get:FloatRange(from = 0.0, to = 1.0) val maxElementHeight: Float
+    @get:FloatRange(from = 0.0, to = 1.0) public val maxElementHeight: Float
 
     /**
      * The lower bound of the transition line area, closest to the edge of the viewport. Defined as
@@ -144,7 +144,7 @@ public interface ScalingParams {
      * list items exist. Depending on the size of the list item the specific point in the area is
      * calculated.
      */
-    @get:FloatRange(from = 0.0, to = 1.0) val minTransitionArea: Float
+    @get:FloatRange(from = 0.0, to = 1.0) public val minTransitionArea: Float
 
     /**
      * The upper bound of the transition line area, closest to the center of the viewport. The
@@ -160,13 +160,13 @@ public interface ScalingParams {
      * list items exist. Depending on the size of the list item the specific point in the area is
      * calculated.
      */
-    @get:FloatRange(from = 0.0, to = 1.0) val maxTransitionArea: Float
+    @get:FloatRange(from = 0.0, to = 1.0) public val maxTransitionArea: Float
 
     /**
      * An interpolator to use to determine how to apply scaling as a item transitions across the
      * scaling transition area.
      */
-    val scaleInterpolator: Easing
+    public val scaleInterpolator: Easing
 
     /**
      * The additional padding to consider above and below the viewport of a [ScalingLazyColumn] when

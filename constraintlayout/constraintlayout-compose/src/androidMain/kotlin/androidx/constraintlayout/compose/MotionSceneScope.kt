@@ -393,4 +393,5 @@ class MotionSceneScope internal constructor() {
     private fun Color.toJsonHexString(): String = String.format("#%08X", this.toArgb())
 }
 
+@Suppress("DataClassDefinition", "DATA_CLASS_COPY_VISIBILITY_WILL_BE_CHANGED_WARNING")
 data class ConstraintSetRef internal constructor(internal val name: String)

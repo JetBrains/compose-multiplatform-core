@@ -18,6 +18,7 @@ package androidx.compose.ui.inspection.inspector
 
 import android.view.View
 import androidx.collection.LongObjectMap
+import androidx.collection.emptyLongObjectMap
 import androidx.collection.mutableIntObjectMapOf
 import androidx.collection.mutableLongObjectMapOf
 import androidx.compose.runtime.tooling.CompositionData
@@ -54,6 +55,9 @@ class LayoutInspectorTree {
     /** Converts the [CompositionData] held by [views] into a list of root nodes per view id. */
     fun convert(views: List<View>): LongObjectMap<MutableList<InspectorNode>> {
         clear()
+        if (views.isEmpty()) {
+            return emptyLongObjectMap()
+        }
         val defaultView = views.first()
         builderData.setDensity(defaultView)
         val defaultViewId = defaultView.uniqueDrawingId
@@ -119,7 +123,7 @@ class LayoutInspectorTree {
         children.forEach { buildNodesFor(it) }
 
         val root = rootByComposition[composition] ?: return
-        val subCompositions = children.mapNotNull { resultByComposition[it] }
+        val subCompositions = sort(children.mapNotNull { resultByComposition[it] })
         var result = builder.convert(composition, root, subCompositions)
         val singleSubComposition = children.singleOrNull()
         if (result.nodes.isEmpty() && result.ownerView == null && singleSubComposition != null) {
@@ -127,7 +131,7 @@ class LayoutInspectorTree {
             // Everything from this unowned composition was pushed to its single sub-composition.
             // Remove the result of the sub-composition and use that result for this composition.
             resultByComposition.remove(singleSubComposition)?.let {
-                result = SubCompositionResult(composition, it.ownerView, it.nodes)
+                result = SubCompositionResult(composition, it.ownerView, it.nodes, result.listIndex)
             }
         }
         resultByComposition[composition] = result
@@ -218,6 +222,11 @@ class LayoutInspectorTree {
             maxRecursions,
             maxInitialIterableSize
         )
+    }
+
+    private fun sort(compositions: List<SubCompositionResult>): List<SubCompositionResult> {
+        val anyIndices = compositions.any { it.listIndex >= 0 }
+        return if (anyIndices) compositions.sortedBy { it.listIndex } else compositions
     }
 
     private fun castValue(parameter: ParameterInformation): Any? {

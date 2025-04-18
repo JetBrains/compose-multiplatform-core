@@ -21,8 +21,9 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 import android.content.res.ColorStateList;
 import android.graphics.PorterDuff;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Interface which allows an {@link android.widget.ImageView} to receive image tinting calls
@@ -55,8 +56,7 @@ public interface TintableImageSourceView {
      *
      * @return the tint applied to the image drawable
      */
-    @Nullable
-    ColorStateList getSupportImageTintList();
+    @Nullable ColorStateList getSupportImageTintList();
 
     /**
      * Specifies the blending mode used to apply the tint specified by
@@ -67,7 +67,7 @@ public interface TintableImageSourceView {
      *                 {@code null} to clear tint
      * @see #getSupportImageTintMode()
      */
-    void setSupportImageTintMode(@Nullable PorterDuff.Mode tintMode);
+    void setSupportImageTintMode(PorterDuff.@Nullable Mode tintMode);
 
     /**
      * Return the blending mode used to apply the tint to the image
@@ -75,6 +75,5 @@ public interface TintableImageSourceView {
      *
      * @return the blending mode used to apply the tint to the image drawable
      */
-    @Nullable
-    PorterDuff.Mode getSupportImageTintMode();
+    PorterDuff.@Nullable Mode getSupportImageTintMode();
 }

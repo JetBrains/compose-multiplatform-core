@@ -16,8 +16,9 @@
 
 package androidx.appsearch.localstorage.util;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
 

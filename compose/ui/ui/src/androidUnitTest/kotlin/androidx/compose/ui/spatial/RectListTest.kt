@@ -39,6 +39,34 @@ class RectListTest {
     }
 
     @Test
+    fun testInsertGesturable() {
+        val list = RectList()
+        list.insert(1, 1, 1, 2, 2, gesturable = true)
+        assertIntersectionsWithGesturable(
+            grid = list,
+            l = 1,
+            t = 1,
+            r = 2,
+            b = 2,
+            expected = setOf(1)
+        )
+    }
+
+    @Test
+    fun testInsertNonGesturable() {
+        val list = RectList()
+        list.insert(1, 1, 1, 2, 2, gesturable = false)
+        assertIntersectionsWithGesturable(
+            grid = list,
+            l = 1,
+            t = 1,
+            r = 2,
+            b = 2,
+            expected = setOf()
+        )
+    }
+
+    @Test
     fun testInsertsAndIntersections() {
         val list = RectList()
         // top left, 1x1 rect at 1,1
@@ -92,6 +120,143 @@ class RectListTest {
         list.insert(1, 1, 1, 2, 2)
         list.update(1, 2, 2, 3, 3)
         list.remove(1)
+        list.clearUpdated()
+        list.defragment()
+        assertEquals(0, list.size)
+    }
+
+    @Test
+    fun insertMultipleGesturableUpdatesRemoveClear() {
+        val list = RectList()
+
+        list.insert(1, 1, 1, 2, 2)
+        var meta = list.metaFor(1)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(1, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        list.clearUpdated()
+        meta = list.metaFor(1)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        list.updateFlagsFor(1, focusable = false, gesturable = true)
+        meta = list.metaFor(1)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(1, unpackMetaGesturable(meta))
+
+        list.updateFlagsFor(1, focusable = false, gesturable = false)
+        meta = list.metaFor(1)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        list.remove(1)
+        meta = list.metaFor(1)
+        assertEquals(meta, TombStone)
+
+        list.clearUpdated()
+        list.defragment()
+        assertEquals(0, list.size)
+    }
+
+    @Test
+    fun insertMultipleFocusableUpdatesRemoveClear() {
+        val list = RectList()
+
+        list.insert(1, 1, 1, 2, 2)
+        var meta = list.metaFor(1)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(1, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        list.clearUpdated()
+        meta = list.metaFor(1)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        list.updateFlagsFor(1, focusable = true, gesturable = false)
+        meta = list.metaFor(1)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(1, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        list.updateFlagsFor(1, focusable = false, gesturable = false)
+        meta = list.metaFor(1)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        list.remove(1)
+        meta = list.metaFor(1)
+        assertEquals(meta, TombStone)
+
+        list.clearUpdated()
+        list.defragment()
+        assertEquals(0, list.size)
+    }
+
+    @Test
+    fun insertMultipleFocusableAndGesturablesUpdatesRemoveClear() {
+        val list = RectList()
+
+        list.insert(1, 1, 1, 2, 2)
+        var meta = list.metaFor(1)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(1, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        list.clearUpdated()
+        meta = list.metaFor(1)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        list.updateFlagsFor(1, focusable = true, gesturable = true)
+        meta = list.metaFor(1)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(1, unpackMetaFocusable(meta))
+        assertEquals(1, unpackMetaGesturable(meta))
+
+        list.updateFlagsFor(1, focusable = true, gesturable = false)
+        meta = list.metaFor(1)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(1, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        list.updateFlagsFor(1, focusable = false, gesturable = true)
+        meta = list.metaFor(1)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(1, unpackMetaGesturable(meta))
+
+        list.updateFlagsFor(1, focusable = false, gesturable = false)
+        meta = list.metaFor(1)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        list.remove(1)
+        meta = list.metaFor(1)
+        assertEquals(meta, TombStone)
+
         list.clearUpdated()
         list.defragment()
         assertEquals(0, list.size)
@@ -382,6 +547,93 @@ class RectListTest {
         assertEquals(1, unpackMetaUpdated(meta))
         assertEquals(0, unpackMetaFocusable(meta))
         assertEquals(1, unpackMetaGesturable(meta))
+    }
+
+    @Test
+    fun testMetaPackingAndUpdating() {
+        var meta =
+            packMeta(
+                itemId = 1,
+                parentId = 2,
+                lastChildOffset = 3,
+                updated = false,
+                focusable = false,
+                gesturable = false
+            )
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(2, unpackMetaParentId(meta))
+        assertEquals(3, unpackMetaLastChildOffset(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        // Check updated
+        meta = metaMarkUpdated(meta)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(2, unpackMetaParentId(meta))
+        assertEquals(3, unpackMetaLastChildOffset(meta))
+        assertEquals(1, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        meta = metaUnMarkUpdated(meta)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(2, unpackMetaParentId(meta))
+        assertEquals(3, unpackMetaLastChildOffset(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        // Check focusable
+        meta = metaMarkFlags(meta = meta, focusable = true, gesturable = false)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(2, unpackMetaParentId(meta))
+        assertEquals(3, unpackMetaLastChildOffset(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(1, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        meta = metaMarkFlags(meta = meta, focusable = false, gesturable = false)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(2, unpackMetaParentId(meta))
+        assertEquals(3, unpackMetaLastChildOffset(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        // Check gesturable
+        meta = metaMarkFlags(meta = meta, focusable = false, gesturable = true)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(2, unpackMetaParentId(meta))
+        assertEquals(3, unpackMetaLastChildOffset(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(1, unpackMetaGesturable(meta))
+
+        meta = metaMarkFlags(meta = meta, focusable = false, gesturable = false)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(2, unpackMetaParentId(meta))
+        assertEquals(3, unpackMetaLastChildOffset(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
+
+        // Check both focusable and gesturable
+        meta = metaMarkFlags(meta = meta, focusable = true, gesturable = true)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(2, unpackMetaParentId(meta))
+        assertEquals(3, unpackMetaLastChildOffset(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(1, unpackMetaFocusable(meta))
+        assertEquals(1, unpackMetaGesturable(meta))
+
+        meta = metaMarkFlags(meta = meta, focusable = false, gesturable = false)
+        assertEquals(1, unpackMetaValue(meta))
+        assertEquals(2, unpackMetaParentId(meta))
+        assertEquals(3, unpackMetaLastChildOffset(meta))
+        assertEquals(0, unpackMetaUpdated(meta))
+        assertEquals(0, unpackMetaFocusable(meta))
+        assertEquals(0, unpackMetaGesturable(meta))
     }
 
     @Test
@@ -725,6 +977,21 @@ internal fun assertIntersections(
 ) {
     val actualSet = mutableSetOf<Int>()
     grid.forEachIntersection(l, t, r, b) {
+        assert(actualSet.add(it)) { "Encountered $it more than once" }
+    }
+    assertEquals(expected, actualSet)
+}
+
+internal fun assertIntersectionsWithGesturable(
+    grid: RectList,
+    l: Int,
+    t: Int,
+    r: Int,
+    b: Int,
+    expected: Set<Int>
+) {
+    val actualSet = mutableSetOf<Int>()
+    grid.forEachGesturableIntersection(l = l, t = t, r = r, b = b) {
         assert(actualSet.add(it)) { "Encountered $it more than once" }
     }
     assertEquals(expected, actualSet)

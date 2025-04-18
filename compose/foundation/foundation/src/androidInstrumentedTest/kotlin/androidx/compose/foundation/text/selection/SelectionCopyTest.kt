@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.compose.foundation.text.selection
 
+import androidx.compose.foundation.internal.readText
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.BasicText
@@ -25,7 +28,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -42,6 +47,7 @@ import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.unit.sp
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 
@@ -58,13 +64,16 @@ class SelectionCopyTest {
     private val selection = mutableStateOf<Selection?>(null)
     private val startClipboardText = "Clipboard content at start of test."
 
+    @Suppress("DEPRECATION")
     @Test
-    fun whenSelect_thenCopy_clipboardContainsSelectedText() {
+    fun whenSelect_thenCopy_clipboardContainsSelectedText() = runTest {
         lateinit var clipboardManager: ClipboardManager
+        lateinit var clipboard: Clipboard
         val textContent = "text"
         val selectionRange = 0 to 4
         rule.setContent {
             clipboardManager = LocalClipboardManager.current
+            clipboard = LocalClipboard.current
             TestContent(textContent)
         }
 
@@ -76,22 +85,27 @@ class SelectionCopyTest {
         rule.waitForIdle()
         assertSelection(textContent, selectionRange)
         clipboardManager.assertClipboardText(startClipboardText)
+        clipboard.assertClipboardText(startClipboardText)
         onNode.performCopy()
 
         rule.waitForIdle()
         assertSelection(textContent, selectionRange)
         clipboardManager.assertClipboardText(textContent)
+        clipboard.assertClipboardText(textContent)
     }
 
     // Regression test for b/322066508 where shortening the selected text
     // then trying to copy it would crash
+    @Suppress("DEPRECATION")
     @Test
-    fun whenSelect_thenEditUnderlyingText_thenCopy_clipboardContainsSelectedText() {
+    fun whenSelect_thenEditUnderlyingText_thenCopy_clipboardContainsSelectedText() = runTest {
         val textContent = mutableStateOf("text")
         val selectionRange = 0 to 4
         lateinit var clipboardManager: ClipboardManager
+        lateinit var clipboard: Clipboard
         rule.setContent {
             clipboardManager = LocalClipboardManager.current
+            clipboard = LocalClipboard.current
             TestContent(textContent.value)
         }
 
@@ -103,6 +117,7 @@ class SelectionCopyTest {
         rule.waitForIdle()
         assertSelection(textContent.value, selectionRange)
         clipboardManager.assertClipboardText(startClipboardText)
+        clipboard.assertClipboardText(startClipboardText)
 
         // shorten the text, the selection should shorten as well
         textContent.value = "tex"
@@ -113,6 +128,7 @@ class SelectionCopyTest {
         rule.waitForIdle()
         assertSelection(textContent.value, null)
         clipboardManager.assertClipboardText(startClipboardText)
+        clipboard.assertClipboardText(startClipboardText)
         textContent.value
     }
 
@@ -146,8 +162,13 @@ class SelectionCopyTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun ClipboardManager.assertClipboardText(textContent: String) {
         assertThat(getText()?.text).isEqualTo(textContent)
+    }
+
+    private suspend fun Clipboard.assertClipboardText(textContent: String) {
+        assertThat(getClipEntry()?.readText()).isEqualTo(textContent)
     }
 
     private fun assertSelection(text: String, selectionRange: Pair<Int, Int>?) {

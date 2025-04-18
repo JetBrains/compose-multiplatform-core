@@ -43,13 +43,13 @@ import kotlin.math.asin
  * Example of indeterminate arc progress indicator:
  *
  * @sample androidx.wear.compose.material3.samples.IndeterminateProgressArcSample
+ * @param modifier Modifier to be applied to the ArcProgressIndicator.
  * @param startAngle the start angle of this progress indicator arc (specified in degrees). It is
  *   recommended to use [ArcProgressIndicatorDefaults.IndeterminateStartAngle]. Measured clockwise
  *   from the three o'clock position.
  * @param endAngle the end angle of this progress indicator arc (specified in degrees). It is
  *   recommended to use [ArcProgressIndicatorDefaults.IndeterminateEndAngle]. Measured clockwise
  *   from the three o'clock position.
- * @param modifier Modifier to be applied to the ArcProgressIndicator.
  * @param angularDirection Determines whether the animation is in the clockwise or counter-clockwise
  *   direction.
  * @param colors [ProgressIndicatorColors] that will be used to resolve the indicator and track
@@ -60,10 +60,10 @@ import kotlin.math.asin
  *   track. The stroke end caps are not included in this distance.
  */
 @Composable
-fun ArcProgressIndicator(
+public fun ArcProgressIndicator(
+    modifier: Modifier = Modifier,
     startAngle: Float = ArcProgressIndicatorDefaults.IndeterminateStartAngle,
     endAngle: Float = ArcProgressIndicatorDefaults.IndeterminateEndAngle,
-    modifier: Modifier = Modifier,
     angularDirection: AngularDirection = AngularDirection.CounterClockwise,
     colors: ProgressIndicatorColors = ProgressIndicatorDefaults.colors(),
     strokeWidth: Dp = ArcProgressIndicatorDefaults.IndeterminateStrokeWidth,
@@ -143,26 +143,26 @@ fun ArcProgressIndicator(
 }
 
 /** Contains default values for [ArcProgressIndicator]. */
-object ArcProgressIndicatorDefaults {
+public object ArcProgressIndicatorDefaults {
     /** The default start angle in degrees for an indeterminate arc progress indicator */
-    const val IndeterminateStartAngle = 62f
+    public val IndeterminateStartAngle: Float = 65f
 
     /** The default end angle in degrees for an indeterminate arc progress indicator */
-    const val IndeterminateEndAngle = 118f
+    public val IndeterminateEndAngle: Float = 115f
 
     /** Stroke width of the indeterminate arc progress indicator. */
-    val IndeterminateStrokeWidth = 8.dp
+    public val IndeterminateStrokeWidth: Dp = 6.dp
 
     /**
      * The recommended diameter of the indeterminate arc progress indicator, which leaves room for
      * additional content such as a message above the indicator.
      */
-    val recommendedIndeterminateDiameter: Dp
+    public val recommendedIndeterminateDiameter: Dp
         @Composable
         get() {
-            // Calculate the recommended diameter as 76% of screen height.
+            // Calculate the recommended diameter as a percentage of screen height.
             val screenHeight = screenHeightDp()
-            return 0.76.dp * screenHeight.toFloat()
+            return IndeterminateArcDiameterPercentage.dp * screenHeight.toFloat()
         }
 
     /**
@@ -170,18 +170,18 @@ object ArcProgressIndicatorDefaults {
      *
      * The absolute value can be customized with `gapSize` parameter on [CircularProgressIndicator].
      */
-    fun calculateRecommendedGapSize(strokeWidth: Dp): Dp = strokeWidth / 3f
+    public fun calculateRecommendedGapSize(strokeWidth: Dp): Dp = strokeWidth / 3f
 }
 
 /** Class to define angular direction - Clockwise and Counter Clockwise. */
 @JvmInline
-value class AngularDirection internal constructor(internal val type: Int) {
-    companion object {
+public value class AngularDirection internal constructor(internal val type: Int) {
+    public companion object {
         /** Clockwise is the standard direction for an analog clock. */
-        val Clockwise = AngularDirection(0)
+        public val Clockwise: AngularDirection = AngularDirection(0)
 
         /** CounterClockwise is the opposite direction to Clockwise */
-        val CounterClockwise = AngularDirection(1)
+        public val CounterClockwise: AngularDirection = AngularDirection(1)
     }
 }
 
@@ -219,3 +219,8 @@ internal const val HeadDelay = 0
 internal const val TailDelay = 300 // medium2
 
 internal val ArcIndeterminateProgressEasing = CubicBezierEasing(0.3f, 0f, 0.7f, 1f)
+
+// Recommended diameter for the indeterminate arc indicator:
+// Desired padding to bottom of the screen below the indeterminate arc indicator = 9.38%
+// 100 - 2 x 9.38 = 81.24
+private const val IndeterminateArcDiameterPercentage = 0.8124f

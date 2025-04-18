@@ -23,12 +23,13 @@ import static androidx.camera.core.ImageReaderProxys.createIsolatedReader;
 
 import static java.util.Objects.requireNonNull;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.SafeCloseImageReaderProxy;
 import androidx.camera.core.processing.Operation;
 import androidx.camera.core.processing.Packet;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Converts JPEG bytes to {@link ImageProxy}.
@@ -37,9 +38,9 @@ public class JpegBytes2Image implements Operation<Packet<byte[]>, Packet<ImagePr
 
     private static final int MAX_IMAGES = 2;
 
-    @NonNull
     @Override
-    public Packet<ImageProxy> apply(@NonNull Packet<byte[]> packet) throws ImageCaptureException {
+    public @NonNull Packet<ImageProxy> apply(@NonNull Packet<byte[]> packet)
+            throws ImageCaptureException {
         // TODO: loosen the restriction in ImageCapture#enforceSoftwareJpegConstraints() to enable
         //  the YUV code path on API level <26.
         SafeCloseImageReaderProxy jpegImageReaderProxy = new SafeCloseImageReaderProxy(

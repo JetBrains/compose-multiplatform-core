@@ -20,12 +20,13 @@ import android.annotation.SuppressLint
 import android.os.Build
 import androidx.benchmark.macro.FileLinkingRule
 import androidx.benchmark.macro.Packages
+import androidx.benchmark.macro.runSingleSessionServer
 import androidx.benchmark.perfetto.PerfettoCapture
 import androidx.benchmark.perfetto.PerfettoConfig
 import androidx.benchmark.perfetto.PerfettoHelper
 import androidx.benchmark.perfetto.PerfettoHelper.Companion.MIN_BUNDLED_SDK_VERSION
 import androidx.benchmark.perfetto.PerfettoHelper.Companion.isAbiSupported
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
+import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.tracing.Trace
@@ -59,7 +60,7 @@ class PerfettoCaptureSweepTest(
     @Before
     @After
     fun cleanup() {
-        PerfettoHelper.stopAllPerfettoProcesses()
+        PerfettoHelper.cleanupPerfettoState()
     }
 
     @Ignore("b/258216025")
@@ -119,7 +120,7 @@ class PerfettoCaptureSweepTest(
         perfettoCapture.stop(traceFilePath)
 
         val matchingSlices =
-            PerfettoTraceProcessor.runSingleSessionServer(traceFilePath) {
+            TraceProcessor.runSingleSessionServer(traceFilePath) {
                 querySlices("PerfettoCaptureTest_%", packageName = null)
             }
 

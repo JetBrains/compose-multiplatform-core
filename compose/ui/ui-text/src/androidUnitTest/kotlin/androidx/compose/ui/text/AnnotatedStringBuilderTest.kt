@@ -21,6 +21,7 @@ import androidx.compose.ui.text.AnnotatedString.Range
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -1207,6 +1208,85 @@ class AnnotatedStringBuilderTest {
         assertThat(buildResult.getStringAnnotations(4, 6))
             .isEqualTo(listOf(Range(annotation3, 4, 6, tag)))
         assertThat(buildResult.getStringAnnotations("another tag", 4, 6)).isEmpty()
+    }
+
+    @Test
+    fun pushBullet() {
+        val buildResult = buildAnnotatedString {
+            pushBullet(DefaultBullet)
+            append("text")
+            pop()
+        }
+
+        assertThat(buildResult.text).isEqualTo("text")
+        assertThat(buildResult.annotations).containsExactly(Range(DefaultBullet, 0, 4))
+    }
+
+    @Test
+    fun addBullet() {
+        val buildResult = buildAnnotatedString {
+            append("text text")
+            addBullet(DefaultBullet, 0, 4)
+        }
+
+        assertThat(buildResult.text).isEqualTo("text text")
+        assertThat(buildResult.annotations).containsExactly(Range(DefaultBullet, 0, 4))
+    }
+
+    @Test
+    fun withBulletList_nestedIndentation() {
+        val string = buildAnnotatedString {
+            withBulletList(indentation = 10.sp) {
+                append("text")
+                withBulletList(indentation = 5.sp) { append("text") }
+            }
+        }
+
+        // this is not a normalized result
+        assertThat(string.paragraphStyles)
+            .containsExactly(
+                Range(ParagraphStyle(textIndent = TextIndent(10.sp, 10.sp)), 0, 8),
+                Range(ParagraphStyle(textIndent = TextIndent(15.sp, 15.sp)), 4, 8)
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun withBulletListItem_getsSettingsFromList() {
+        val string = buildAnnotatedString {
+            withBulletList(indentation = 10.sp) { withBulletListItem { append("text") } }
+        }
+
+        // this is not a normalized result
+        assertThat(string.annotations)
+            .containsExactly(
+                Range(ParagraphStyle(textIndent = TextIndent(10.sp, 10.sp)), 0, 4),
+                Range(ParagraphStyle(textIndent = TextIndent(10.sp, 10.sp)), 0, 4),
+                Range(DefaultBullet, 0, 4)
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun withBulletListItem_nested_getsSettingsFromList() {
+        val string = buildAnnotatedString {
+            withBulletList(indentation = 10.sp) {
+                withBulletListItem { append("text") }
+                withBulletList(indentation = 5.sp) { withBulletListItem { append("text") } }
+            }
+        }
+
+        // this is not a normalized result
+        assertThat(string.annotations)
+            .containsExactly(
+                Range(ParagraphStyle(textIndent = TextIndent(10.sp, 10.sp)), 0, 8),
+                Range(ParagraphStyle(textIndent = TextIndent(10.sp, 10.sp)), 0, 4),
+                Range(DefaultBullet, 0, 4),
+                Range(ParagraphStyle(textIndent = TextIndent(15.sp, 15.sp)), 4, 8),
+                Range(ParagraphStyle(textIndent = TextIndent(15.sp, 15.sp)), 4, 8),
+                Range(DefaultBullet, 4, 8),
+            )
+            .inOrder()
     }
 
     private fun createAnnotatedString(

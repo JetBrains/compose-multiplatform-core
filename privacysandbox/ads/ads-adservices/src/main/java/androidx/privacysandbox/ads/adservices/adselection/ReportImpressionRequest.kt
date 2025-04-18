@@ -36,7 +36,6 @@ import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo
  *   by [AdSelectionManager#getAdSelectionData} then the impression reporting request should only
  *   include the ad selection id.
  */
-@SuppressLint("ClassVerificationFailure")
 class ReportImpressionRequest
 public constructor(val adSelectionId: Long, val adSelectionConfig: AdSelectionConfig) {
     @ExperimentalFeatures.Ext8OptIn

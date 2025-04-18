@@ -20,7 +20,6 @@ import android.os.Build.VERSION_CODES
 import android.telecom.Call
 import android.telecom.DisconnectCause
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallControlResult
 import androidx.core.telecom.CallControlScope
@@ -60,7 +59,6 @@ import org.junit.runner.RunWith
  * currentCallEndpoint.counter.getFirst() // The flow may never be collected } }
  */
 @SdkSuppress(minSdkVersion = VERSION_CODES.O)
-@RequiresApi(VERSION_CODES.O)
 @RunWith(AndroidJUnit4::class)
 class BasicCallControlsTest : BaseTelecomTest() {
     private val NUM_OF_TIMES_TO_TOGGLE = 3

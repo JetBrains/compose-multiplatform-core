@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ads.adservices.common
 
-import android.annotation.SuppressLint
 import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.annotation.RequiresExtension
@@ -31,7 +30,6 @@ import androidx.annotation.RestrictTo
  *
  * @param signals Any valid JSON string to create the AdSelectionSignals with.
  */
-@SuppressLint("ClassVerificationFailure")
 class AdSelectionSignals public constructor(val signals: String) {
     /**
      * Compares this AdSelectionSignals to the specified object. The result is true if and only if

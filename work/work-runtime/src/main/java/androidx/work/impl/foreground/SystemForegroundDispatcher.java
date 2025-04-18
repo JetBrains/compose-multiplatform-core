@@ -28,8 +28,6 @@ import android.os.Build;
 import android.text.TextUtils;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.work.ForegroundInfo;
@@ -45,13 +43,16 @@ import androidx.work.impl.model.WorkGenerationalId;
 import androidx.work.impl.model.WorkSpec;
 import androidx.work.impl.utils.taskexecutor.TaskExecutor;
 
+import kotlinx.coroutines.Job;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import kotlinx.coroutines.Job;
 
 /**
  * Handles requests for executing {@link androidx.work.WorkRequest}s on behalf of
@@ -100,8 +101,7 @@ public class SystemForegroundDispatcher implements OnConstraintsStateChangedList
     @SuppressWarnings("WeakerAccess") // Synthetic access
     final WorkConstraintsTracker mConstraintsTracker;
 
-    @Nullable
-    private Callback mCallback;
+    private @Nullable Callback mCallback;
 
     SystemForegroundDispatcher(@NonNull Context context) {
         mContext = context;
@@ -370,8 +370,7 @@ public class SystemForegroundDispatcher implements OnConstraintsStateChangedList
      *                   foreground service
      * @return The {@link Intent}
      */
-    @NonNull
-    public static Intent createStartForegroundIntent(
+    public static @NonNull Intent createStartForegroundIntent(
             @NonNull Context context,
             @NonNull WorkGenerationalId id,
             @NonNull ForegroundInfo info) {
@@ -393,8 +392,7 @@ public class SystemForegroundDispatcher implements OnConstraintsStateChangedList
      *                   foreground service
      * @return The {@link Intent}
      */
-    @NonNull
-    public static Intent createCancelWorkIntent(
+    public static @NonNull Intent createCancelWorkIntent(
             @NonNull Context context,
             @NonNull String workSpecId) {
         Intent intent = new Intent(context, SystemForegroundService.class);
@@ -414,8 +412,7 @@ public class SystemForegroundDispatcher implements OnConstraintsStateChangedList
      * @param info       The {@link ForegroundInfo}
      * @return The {@link Intent}
      */
-    @NonNull
-    public static Intent createNotifyIntent(
+    public static @NonNull Intent createNotifyIntent(
             @NonNull Context context,
             @NonNull WorkGenerationalId id,
             @NonNull ForegroundInfo info) {
@@ -435,8 +432,7 @@ public class SystemForegroundDispatcher implements OnConstraintsStateChangedList
      * @param context The application {@link Context}
      * @return The {@link Intent}
      */
-    @NonNull
-    public static Intent createStopForegroundIntent(@NonNull Context context) {
+    public static @NonNull Intent createStopForegroundIntent(@NonNull Context context) {
         Intent intent = new Intent(context, SystemForegroundService.class);
         intent.setAction(ACTION_STOP_FOREGROUND);
         return intent;

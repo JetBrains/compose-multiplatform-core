@@ -27,8 +27,6 @@ public object Typography {
     /** Returns the [TextStyle] from the typography tokens for the given token name. */
     internal fun fromToken(@TypographyToken typographyToken: Int): TextStyle {
         return when (typographyToken) {
-            ARC_MEDIUM -> TypographyTokens.ARC_MEDIUM
-            ARC_SMALL -> TypographyTokens.ARC_SMALL
             BODY_EXTRA_SMALL -> TypographyTokens.BODY_EXTRA_SMALL
             BODY_LARGE -> TypographyTokens.BODY_LARGE
             BODY_MEDIUM -> TypographyTokens.BODY_MEDIUM
@@ -50,19 +48,6 @@ public object Typography {
             else -> throw IllegalArgumentException("Typography $typographyToken does not exit.")
         }
     }
-
-    /**
-     * ArcMedium is for arc headers and titles. Arc is for text along a curved path on the screen,
-     * reserved for short header text strings at the very top or bottom of the screen like page
-     * titles.
-     */
-    public const val ARC_MEDIUM: Int = 0
-
-    /**
-     * ArcSmall is for limited arc strings of text. Arc is for text along a curved path on the
-     * screen, reserved for short curved text strings at the bottom of the screen.
-     */
-    public const val ARC_SMALL: Int = 1
 
     /**
      * BodyExtraSmall is the smallest body. Body texts are typically used for long-form writing as
@@ -187,8 +172,6 @@ public object Typography {
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(
-        ARC_MEDIUM,
-        ARC_SMALL,
         BODY_EXTRA_SMALL,
         BODY_LARGE,
         BODY_MEDIUM,

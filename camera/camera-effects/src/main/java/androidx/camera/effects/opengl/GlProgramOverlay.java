@@ -30,8 +30,9 @@ import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.Logger;
+
+import org.jspecify.annotations.NonNull;
 
 import java.nio.ByteBuffer;
 
@@ -110,7 +111,7 @@ class GlProgramOverlay extends GlProgram {
      * @param timestampNs        the timestamp of the frame in nanoseconds.
      */
     void draw(int inputTextureTarget, int inputTextureId, int overlayTextureId,
-            @NonNull float[] matrix, @NonNull GlContext glContext, @NonNull Surface surface,
+            float @NonNull [] matrix, @NonNull GlContext glContext, @NonNull Surface surface,
             long timestampNs) {
         use();
         uploadParameters(inputTextureTarget, inputTextureId, overlayTextureId, matrix);
@@ -134,9 +135,8 @@ class GlProgramOverlay extends GlProgram {
      * @param height             the height of the output bitmap.
      * @param matrix             the texture transformation matrix.
      */
-    @NonNull
-    Bitmap snapshot(int inputTextureTarget, int inputTextureId, int overlayTextureId, int width,
-            int height, @NonNull float[] matrix) {
+    @NonNull Bitmap snapshot(int inputTextureTarget, int inputTextureId, int overlayTextureId,
+            int width, int height, float @NonNull [] matrix) {
         use();
         // Allocate buffer.
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(width * height * SNAPSHOT_PIXEL_STRIDE);
@@ -150,8 +150,7 @@ class GlProgramOverlay extends GlProgram {
         return bitmap;
     }
 
-    @NonNull
-    private static String createFragmentShader(@NonNull String inputSampler) {
+    private static @NonNull String createFragmentShader(@NonNull String inputSampler) {
         return "#extension GL_OES_EGL_image_external : require\n"
                 + "precision mediump float;\n"
                 + "varying vec2 " + TEXTURE_COORDINATES + ";\n"
@@ -171,7 +170,7 @@ class GlProgramOverlay extends GlProgram {
      */
     private void snapshot(int inputTextureTarget,
             int inputTextureId, int overlayTextureId, int width,
-            int height, @NonNull float[] textureTransform, @NonNull ByteBuffer byteBuffer) {
+            int height, float @NonNull [] textureTransform, @NonNull ByteBuffer byteBuffer) {
         checkArgument(byteBuffer.capacity() == width * height * 4,
                 "ByteBuffer capacity is not equal to width * height * 4.");
         checkArgument(byteBuffer.isDirect(), "ByteBuffer is not direct.");
@@ -213,7 +212,7 @@ class GlProgramOverlay extends GlProgram {
      * Uploads the parameters to the shader.
      */
     private void uploadParameters(int inputTextureTarget, int inputTextureId, int overlayTextureId,
-            @NonNull float[] matrix) {
+            float @NonNull [] matrix) {
         // Uploads the texture transformation matrix.
         GLES20.glUniformMatrix4fv(mTextureMatrixLoc, 1, false, matrix, 0);
         checkGlErrorOrThrow("glUniformMatrix4fv");

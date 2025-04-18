@@ -20,12 +20,13 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.R;
 import androidx.leanback.system.Settings;
 import androidx.leanback.transition.TransitionHelper;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 
@@ -87,8 +88,7 @@ public class ListRowPresenter extends RowPresenter {
          * Gets ListRowPresenter that creates this ViewHolder.
          * @return ListRowPresenter that creates this ViewHolder.
          */
-        @NonNull
-        public final ListRowPresenter getListRowPresenter() {
+        public final @NonNull ListRowPresenter getListRowPresenter() {
             return mListRowPresenter;
         }
 
@@ -96,8 +96,7 @@ public class ListRowPresenter extends RowPresenter {
          * Gets HorizontalGridView that shows a list of items.
          * @return HorizontalGridView that shows a list of items.
          */
-        @NonNull
-        public final HorizontalGridView getGridView() {
+        public final @NonNull HorizontalGridView getGridView() {
             return mGridView;
         }
 
@@ -105,8 +104,7 @@ public class ListRowPresenter extends RowPresenter {
          * Gets ItemBridgeAdapter that creates the list of items.
          * @return ItemBridgeAdapter that creates the list of items.
          */
-        @NonNull
-        public final ItemBridgeAdapter getBridgeAdapter() {
+        public final @NonNull ItemBridgeAdapter getBridgeAdapter() {
             return mItemBridgeAdapter;
         }
 
@@ -124,8 +122,7 @@ public class ListRowPresenter extends RowPresenter {
          * @param position Position of the item in adapter.
          * @return ViewHolder bounds to the item.
          */
-        @Nullable
-        public Presenter.ViewHolder getItemViewHolder(int position) {
+        public Presenter.@Nullable ViewHolder getItemViewHolder(int position) {
             ItemBridgeAdapter.ViewHolder ibvh = (ItemBridgeAdapter.ViewHolder) mGridView
                     .findViewHolderForAdapterPosition(position);
             if (ibvh == null) {
@@ -134,15 +131,13 @@ public class ListRowPresenter extends RowPresenter {
             return ibvh.getViewHolder();
         }
 
-        @Nullable
         @Override
-        public Presenter.ViewHolder getSelectedItemViewHolder() {
+        public Presenter.@Nullable ViewHolder getSelectedItemViewHolder() {
             return getItemViewHolder(getSelectedPosition());
         }
 
-        @Nullable
         @Override
-        public Object getSelectedItem() {
+        public @Nullable Object getSelectedItem() {
             ItemBridgeAdapter.ViewHolder ibvh = (ItemBridgeAdapter.ViewHolder) mGridView
                     .findViewHolderForAdapterPosition(getSelectedPosition());
             if (ibvh == null) {
@@ -203,8 +198,7 @@ public class ListRowPresenter extends RowPresenter {
          * Returns optional task to run when the item is selected, null for no task.
          * @return Optional task to run when the item is selected, null for no task.
          */
-        @Nullable
-        public Presenter.ViewHolderTask getItemTask() {
+        public Presenter.@Nullable ViewHolderTask getItemTask() {
             return mItemTask;
         }
 
@@ -217,7 +211,7 @@ public class ListRowPresenter extends RowPresenter {
         }
 
         @Override
-        public void run(@Nullable Presenter.ViewHolder holder) {
+        public void run(Presenter.@Nullable ViewHolder holder) {
             if (holder instanceof ListRowPresenter.ViewHolder) {
                 HorizontalGridView gridView = ((ListRowPresenter.ViewHolder) holder).getGridView();
                 androidx.leanback.widget.ViewHolderTask task = null;
@@ -225,7 +219,7 @@ public class ListRowPresenter extends RowPresenter {
                     task = new androidx.leanback.widget.ViewHolderTask() {
                         final Presenter.ViewHolderTask itemTask = mItemTask;
                         @Override
-                        public void run(@NonNull RecyclerView.ViewHolder rvh) {
+                        public void run(RecyclerView.@NonNull ViewHolder rvh) {
                             ItemBridgeAdapter.ViewHolder ibvh = (ItemBridgeAdapter.ViewHolder) rvh;
                             itemTask.run(ibvh.getViewHolder());
                         }
@@ -673,7 +667,7 @@ public class ListRowPresenter extends RowPresenter {
 
     @Override
     protected void onBindRowViewHolder(
-            @NonNull RowPresenter.ViewHolder holder,
+            RowPresenter.@NonNull ViewHolder holder,
             @NonNull Object item
     ) {
         super.onBindRowViewHolder(holder, item);
@@ -685,7 +679,7 @@ public class ListRowPresenter extends RowPresenter {
     }
 
     @Override
-    protected void onUnbindRowViewHolder(@NonNull RowPresenter.ViewHolder holder) {
+    protected void onUnbindRowViewHolder(RowPresenter.@NonNull ViewHolder holder) {
         ViewHolder vh = (ViewHolder) holder;
         vh.mGridView.setAdapter(null);
         vh.mItemBridgeAdapter.clear();
@@ -864,14 +858,14 @@ public class ListRowPresenter extends RowPresenter {
     }
 
     @Override
-    public void freeze(@NonNull RowPresenter.ViewHolder holder, boolean freeze) {
+    public void freeze(RowPresenter.@NonNull ViewHolder holder, boolean freeze) {
         ViewHolder vh = (ViewHolder) holder;
         vh.mGridView.setScrollEnabled(!freeze);
         vh.mGridView.setAnimateChildLayout(!freeze);
     }
 
     @Override
-    public void setEntranceTransitionState(@NonNull RowPresenter.ViewHolder holder,
+    public void setEntranceTransitionState(RowPresenter.@NonNull ViewHolder holder,
             boolean afterEntrance) {
         super.setEntranceTransitionState(holder, afterEntrance);
         ((ViewHolder) holder).mGridView.setChildrenVisibility(

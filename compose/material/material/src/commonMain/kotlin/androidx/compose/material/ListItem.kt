@@ -43,8 +43,7 @@ import androidx.compose.ui.util.fastMap
 import kotlin.math.max
 
 /**
- * <a href="https://material.io/components/lists" class="external" target="_blank">Material Design
- * list</a> item.
+ * [Material Design list](https://material.io/components/lists)
  *
  * Lists are continuous, vertical indexes of text or images.
  *

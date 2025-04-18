@@ -18,7 +18,6 @@ package androidx.compose.ui.viewinterop
 
 import android.os.Build
 import androidx.activity.ComponentActivity
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -35,6 +34,7 @@ import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -42,7 +42,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
-@RequiresApi(Build.VERSION_CODES.M)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
 @RunWith(AndroidJUnit4::class)
 class NestedScrollInteropThreeFoldTest {
 

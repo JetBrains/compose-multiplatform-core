@@ -17,11 +17,9 @@
 package androidx.pdf.search
 
 import android.util.SparseArray
-import androidx.core.util.isEmpty
-import androidx.core.util.isNotEmpty
 import androidx.pdf.content.PageMatchBounds
-import androidx.pdf.search.model.SearchResults
-import androidx.pdf.search.model.SelectedSearchResult
+import androidx.pdf.search.model.NoQuery
+import androidx.pdf.search.model.QueryResults
 import androidx.pdf.view.FakePdfDocument
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -59,38 +57,42 @@ class SearchRepositoryTest {
 
         with(SearchRepository(fakePdfDocument)) {
             // search document
-            searchDocument(query = "test", currentVisiblePage = 5)
+            produceSearchResults(query = "test", currentVisiblePage = 5)
 
-            val results = searchResults.value
+            var results = queryResults.value as QueryResults.Matched
             // Assert results exists on 3 pages
-            assertEquals(3, results.results.size())
-            assertEquals(5, selectedSearchResult.value?.pageNum)
-            assertEquals(0, selectedSearchResult.value?.currentIndex)
+            assertEquals(3, results.resultBounds.size())
+            assertEquals(5, results.queryResultsIndex.pageNum)
+            assertEquals(0, results.queryResultsIndex.resultBoundsIndex)
 
             // fetch next result
-            next()
+            produceNextResult()
+            results = queryResults.value as QueryResults.Matched
             // Assert selectedSearchResult point to next result on same page
-            assertEquals(5, selectedSearchResult.value?.pageNum)
-            assertEquals(1, selectedSearchResult.value?.currentIndex)
+            assertEquals(5, results.queryResultsIndex.pageNum)
+            assertEquals(1, results.queryResultsIndex.resultBoundsIndex)
 
             // fetch next result
-            next()
+            produceNextResult()
+            results = queryResults.value as QueryResults.Matched
             // Assert selectedSearchResult point to next result on next page
             // in forward direction
-            assertEquals(10, selectedSearchResult.value?.pageNum)
-            assertEquals(0, selectedSearchResult.value?.currentIndex)
+            assertEquals(10, results.queryResultsIndex.pageNum)
+            assertEquals(0, results.queryResultsIndex.resultBoundsIndex)
 
             // fetch next result
-            next()
+            produceNextResult()
+            results = queryResults.value as QueryResults.Matched
             // Assert selectedSearchResult point to next result cyclically
-            assertEquals(1, selectedSearchResult.value?.pageNum)
-            assertEquals(0, selectedSearchResult.value?.currentIndex)
+            assertEquals(1, results.queryResultsIndex.pageNum)
+            assertEquals(0, results.queryResultsIndex.resultBoundsIndex)
 
             // fetch previous result
-            prev()
+            producePreviousResult()
+            results = queryResults.value as QueryResults.Matched
             // Assert selectedSearchResult point to previous result cyclically
-            assertEquals(10, selectedSearchResult.value?.pageNum)
-            assertEquals(0, selectedSearchResult.value?.currentIndex)
+            assertEquals(10, results.queryResultsIndex.pageNum)
+            assertEquals(0, results.queryResultsIndex.resultBoundsIndex)
         }
     }
 
@@ -101,19 +103,20 @@ class SearchRepositoryTest {
 
         with(SearchRepository(fakePdfDocument)) {
             // search document
-            searchDocument(query = "test", currentVisiblePage = 7)
+            produceSearchResults(query = "test", currentVisiblePage = 7)
 
-            val results = searchResults.value
+            var results = queryResults.value as QueryResults.Matched
             // Assert results exists on 3 pages
-            assertEquals(3, results.results.size())
-            assertEquals(10, selectedSearchResult.value?.pageNum)
-            assertEquals(0, selectedSearchResult.value?.currentIndex)
+            assertEquals(3, results.resultBounds.size())
+            assertEquals(10, results.queryResultsIndex.pageNum)
+            assertEquals(0, results.queryResultsIndex.resultBoundsIndex)
 
             // fetch next result
-            next()
+            produceNextResult()
+            results = queryResults.value as QueryResults.Matched
             // Assert selectedSearchResult point to next result cyclically
-            assertEquals(1, selectedSearchResult.value?.pageNum)
-            assertEquals(0, selectedSearchResult.value?.currentIndex)
+            assertEquals(1, results.queryResultsIndex.pageNum)
+            assertEquals(0, results.queryResultsIndex.resultBoundsIndex)
         }
     }
 
@@ -124,20 +127,21 @@ class SearchRepositoryTest {
 
         with(SearchRepository(fakePdfDocument)) {
             // search document
-            searchDocument(query = "test", currentVisiblePage = 11)
+            produceSearchResults(query = "test", currentVisiblePage = 11)
 
-            val results = searchResults.value
+            var results = queryResults.value as QueryResults.Matched
             // Assert results exists on 3 pages
-            assertEquals(3, results.results.size())
+            assertEquals(3, results.resultBounds.size())
             // Assert selectedSearchResult point to next result cyclically
-            assertEquals(1, selectedSearchResult.value?.pageNum)
-            assertEquals(0, selectedSearchResult.value?.currentIndex)
+            assertEquals(1, results.queryResultsIndex.pageNum)
+            assertEquals(0, results.queryResultsIndex.resultBoundsIndex)
 
             // fetch next result
-            next()
+            produceNextResult()
+            results = queryResults.value as QueryResults.Matched
             // Assert selectedSearchResult point to next result on next page
-            assertEquals(5, selectedSearchResult.value?.pageNum)
-            assertEquals(0, selectedSearchResult.value?.currentIndex)
+            assertEquals(5, results.queryResultsIndex.pageNum)
+            assertEquals(0, results.queryResultsIndex.resultBoundsIndex)
         }
     }
 
@@ -148,46 +152,47 @@ class SearchRepositoryTest {
 
         with(SearchRepository(fakePdfDocument)) {
             // search document
-            searchDocument(query = "test", currentVisiblePage = 11)
+            produceSearchResults(query = "test", currentVisiblePage = 11)
 
-            val results = searchResults.value
+            val results = queryResults.value
 
             // Assert no results returned
-            assertEquals(0, results.results.size())
+            assertTrue(results is QueryResults.NoMatch)
+            assertEquals("test", (results as QueryResults.NoMatch).query)
         }
     }
 
     @Test(expected = NoSuchElementException::class)
-    fun testPrevOperation_noMatchingResults() = runTest {
+    fun testFindPrevOperation_noMatchingResults() = runTest {
         val fakeResults = createFakeSearchResults()
         val fakePdfDocument = FakePdfDocument(searchResults = fakeResults)
 
         with(SearchRepository(fakePdfDocument)) {
             // search document
-            searchDocument(query = "test", currentVisiblePage = 11)
+            produceSearchResults(query = "test", currentVisiblePage = 11)
 
-            val results = searchResults.value
-            assertEquals(0, results.results.size())
+            val results = queryResults.value
+            assertTrue(results is QueryResults.NoMatch)
 
             // fetch previous result, should throw [NoSuchElementException]
-            prev()
+            producePreviousResult()
         }
     }
 
     @Test(expected = NoSuchElementException::class)
-    fun testNextOperation_noMatchingResults() = runTest {
+    fun testFindNextOperation_noMatchingResults() = runTest {
         val fakeResults = createFakeSearchResults()
         val fakePdfDocument = FakePdfDocument(searchResults = fakeResults)
 
         with(SearchRepository(fakePdfDocument)) {
             // search document
-            searchDocument(query = "test", currentVisiblePage = 10)
+            produceSearchResults(query = "test", currentVisiblePage = 10)
 
-            val results = searchResults.value
-            assertEquals(0, results.results.size())
+            val results = queryResults.value
+            assertTrue(results is QueryResults.NoMatch)
 
             // fetch next result, should throw [NoSuchElementException]
-            next()
+            produceNextResult()
         }
     }
 
@@ -198,67 +203,31 @@ class SearchRepositoryTest {
 
         with(SearchRepository(fakePdfDocument)) {
             // search document
-            searchDocument(query = "test", currentVisiblePage = 11)
+            produceSearchResults(query = "test", currentVisiblePage = 11)
 
-            assertEquals(3, searchResults.value.results.size())
+            val results = queryResults.value as QueryResults.Matched
+            assertEquals(3, results.resultBounds.size())
 
             // clear results
             clearSearchResults()
 
             // assert results are cleared
-            assertTrue(searchResults.value.results.isEmpty())
+            assertTrue(queryResults.value is NoQuery)
         }
     }
 
     @Test
-    fun testSettingStateToRepository() = runTest {
-        val fakeResults = createFakeSearchResults()
+    fun test_searchDocument_withRestoreToSelectedIndex() = runTest {
+        val fakeResults = createFakeSearchResults(0, 1, 2, 2, 5, 5, 10, 10, 10, 10)
         val fakePdfDocument = FakePdfDocument(searchResults = fakeResults)
-        val currentVisiblePage = 11
 
         with(SearchRepository(fakePdfDocument)) {
-            // search document
-            searchDocument(query = "test", currentVisiblePage = currentVisiblePage)
+            produceSearchResults(query = "test", currentVisiblePage = 10, resultIndex = 2)
 
-            // assert there are no results
-            assertEquals(0, searchResults.value.results.size())
-
-            // set results
-            setState(
-                searchResults = SearchResults("test", createFakeSearchResults(1, 5, 5, 10)),
-                selectedSearchResult = SelectedSearchResult(5, 1),
-                currentVisiblePage = currentVisiblePage
-            )
-
-            // assert results are set
-            assertTrue(searchResults.value.results.isNotEmpty())
-            assertEquals(5, selectedSearchResult.value?.pageNum)
-            assertEquals(1, selectedSearchResult.value?.currentIndex)
-        }
-    }
-
-    @Test(expected = NoSuchElementException::class)
-    fun testSettingEmptyResultsToRepository() = runTest {
-        val fakeResults = createFakeSearchResults()
-        val fakePdfDocument = FakePdfDocument(searchResults = fakeResults)
-        val currentVisiblePage = 11
-
-        with(SearchRepository(fakePdfDocument)) {
-            // search document
-            searchDocument(query = "test", currentVisiblePage = currentVisiblePage)
-
-            // assert there are no results
-            assertEquals(0, searchResults.value.results.size())
-
-            // set results
-            setState(
-                searchResults = SearchResults("test", SparseArray()),
-                selectedSearchResult = null,
-                currentVisiblePage = currentVisiblePage
-            )
-
-            // fetch next result, should throw [NoSuchElementException]
-            next()
+            val results = queryResults.value as QueryResults.Matched
+            assertEquals(5, results.resultBounds.size())
+            assertEquals(10, results.queryResultsIndex.pageNum)
+            assertEquals(2, results.queryResultsIndex.resultBoundsIndex)
         }
     }
 }

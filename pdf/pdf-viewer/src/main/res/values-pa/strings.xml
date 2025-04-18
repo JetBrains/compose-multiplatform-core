@@ -29,8 +29,9 @@
     <string name="desc_page_single" msgid="8459583146661044094">"<xliff:g id="TOTAL">%2$d</xliff:g> ਵਿੱਚੋਂ <xliff:g id="PAGE">%1$d</xliff:g> ਪੰਨਾ"</string>
     <string name="desc_zoom" msgid="7318480946145947242">"ਜ਼ੂਮ <xliff:g id="FIRST">%1$d</xliff:g> ਫ਼ੀਸਦ"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"<xliff:g id="PAGE_NUMBER">%1$d</xliff:g> ਪੰਨੇ \'ਤੇ ਜਾਓ"</string>
-    <string name="desc_page" msgid="5684226167093594168">"ਪੰਨਾ <xliff:g id="PAGE">%1$d</xliff:g>"</string>
+    <string name="desc_page" msgid="6702471448987833953">"ਪੰਨਾ <xliff:g id="PAGE">%1$d</xliff:g>"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"ਖਾਲੀ ਪੰਨਾ"</string>
+    <string name="desc_page_with_text" msgid="2564017005407577604">"ਪੰਨਾ <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>: <xliff:g id="PAGE_TEXT">%2$s</xliff:g>"</string>
     <string name="error_file_format_pdf" msgid="7567006188638831878">"PDF ਨੂੰ ਦਿਖਾਇਆ ਨਹੀਂ ਜਾ ਸਕਦਾ (<xliff:g id="TITLE">%1$s</xliff:g> ਅਵੈਧ ਫਾਰਮੈਟ ਦਾ ਹੈ)"</string>
     <string name="error_on_page" msgid="1592475819957182385">"<xliff:g id="PAGE">%1$d</xliff:g> ਪੰਨੇ ਨੂੰ ਦਿਖਾਇਆ ਨਹੀਂ ਜਾ ਸਕਦਾ (ਫ਼ਾਈਲ ਗੜਬੜ)"</string>
     <string name="desc_web_link_shortened_to_domain" msgid="3323639528531061592">"ਲਿੰਕ: ਵੈੱਬ-ਪੰਨਾ <xliff:g id="DESTINATION_DOMAIN">%1$s</xliff:g> \'ਤੇ ਹੈ"</string>
@@ -59,4 +60,7 @@
     <string name="page_broken" msgid="2968770793669433462">"PDF ਦਸਤਾਵੇਜ਼ ਲਈ ਪੰਨਾ ਲੋਡ ਨਹੀਂ ਹੋ ਰਿਹਾ"</string>
     <string name="needs_more_data" msgid="3520133467908240802">"PDF ਦਸਤਾਵੇਜ਼ \'ਤੇ ਪ੍ਰਕਿਰਿਆ ਕਰਨ ਲਈ ਲੋੜੀਂਦਾ ਡਾਟਾ ਨਹੀਂ ਹੈ"</string>
     <string name="error_cannot_open_pdf" msgid="2361919778558145071">"PDF ਫ਼ਾਈਲ ਖੋਲ੍ਹੀ ਨਹੀਂ ਜਾ ਸਕਦੀ"</string>
+    <string name="cannot_edit_pdf" msgid="7677598370087228978">"ਇਸ PDF ਦਾ ਸੰਪਾਦਨ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ"</string>
+    <string name="clipboard_label" msgid="8943155331324944981">"PDF ਤੋਂ ਕਾਪੀ ਕੀਤੀ ਗਈ ਸਮੱਗਰੀ"</string>
+    <string name="fast_scroller_thumb" msgid="6712048991132846541">"ਸਕ੍ਰੋਲ ਬਾਰ"</string>
 </resources>

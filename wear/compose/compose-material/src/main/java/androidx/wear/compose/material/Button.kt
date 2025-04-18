@@ -89,7 +89,7 @@ public fun Button(
     colors: ButtonColors = ButtonDefaults.primaryButtonColors(),
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     content: @Composable BoxScope.() -> Unit,
-) =
+): Unit =
     Button(
         onClick = onClick,
         modifier = modifier,
@@ -225,7 +225,7 @@ public fun OutlinedButton(
     shape: Shape = CircleShape,
     border: ButtonBorder = ButtonDefaults.outlinedButtonBorder(),
     content: @Composable BoxScope.() -> Unit,
-) = Button(onClick, modifier, enabled, colors, interactionSource, shape, border, content)
+): Unit = Button(onClick, modifier, enabled, colors, interactionSource, shape, border, content)
 
 /**
  * Wear Material [CompactButton] that offers a single slot to take any content (text, icon or
@@ -277,7 +277,7 @@ public fun CompactButton(
     backgroundPadding: Dp = ButtonDefaults.CompactButtonBackgroundPadding,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     content: @Composable BoxScope.() -> Unit,
-) =
+): Unit =
     CompactButton(
         onClick,
         modifier,
@@ -413,7 +413,7 @@ public fun OutlinedCompactButton(
     shape: Shape = CircleShape,
     border: ButtonBorder = ButtonDefaults.outlinedButtonBorder(),
     content: @Composable BoxScope.() -> Unit,
-) =
+): Unit =
     CompactButton(
         onClick = onClick,
         modifier = modifier,
@@ -574,40 +574,40 @@ public object ButtonDefaults {
     }
 
     /** The default background size of a [CompactButton]. */
-    public val ExtraSmallButtonSize = 32.dp
+    public val ExtraSmallButtonSize: Dp = 32.dp
 
     /**
      * The recommended size for a small [Button]. You can apply this value for the size by
      * overriding Modifier.size directly on [Button].
      */
-    public val SmallButtonSize = 48.dp
+    public val SmallButtonSize: Dp = 48.dp
 
     /**
      * The default size applied for the [Button]. Note that you can override it by applying
      * Modifier.size directly on [Button].
      */
-    public val DefaultButtonSize = 52.dp
+    public val DefaultButtonSize: Dp = 52.dp
 
     /**
      * The recommended size for a large [Button]. You can apply this value for the size by
      * overriding Modifier.size directly on [Button].
      */
-    public val LargeButtonSize = 60.dp
+    public val LargeButtonSize: Dp = 60.dp
 
     /** The size of an icon when used inside a small-sized [Button] or a [CompactButton]. */
-    public val SmallIconSize = 24.dp
+    public val SmallIconSize: Dp = 24.dp
 
     /** The default size of an icon when used inside a default-sized [Button]. */
-    public val DefaultIconSize = 26.dp
+    public val DefaultIconSize: Dp = 26.dp
 
     /** The size of an icon when used inside a large-sized [Button]. */
-    public val LargeIconSize = 30.dp
+    public val LargeIconSize: Dp = 30.dp
 
     /**
      * The default padding for a [CompactButton]. This will result in a larger tap area than visible
      * area.
      */
-    public val CompactButtonBackgroundPadding = 8.dp
+    public val CompactButtonBackgroundPadding: Dp = 8.dp
 
     /**
      * Creates a [ButtonColors] that represents the default background and content colors used in a

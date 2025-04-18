@@ -35,7 +35,7 @@ import androidx.core.viewtree.getParentOrViewTreeDisjointParent
  *   view
  */
 @JvmName("set")
-fun View.setViewTreeSavedStateRegistryOwner(owner: SavedStateRegistryOwner?) {
+public fun View.setViewTreeSavedStateRegistryOwner(owner: SavedStateRegistryOwner?) {
     setTag(R.id.view_tree_saved_state_registry_owner, owner)
 }
 
@@ -50,7 +50,7 @@ fun View.setViewTreeSavedStateRegistryOwner(owner: SavedStateRegistryOwner?) {
  *   and/or some subset of its ancestors
  */
 @JvmName("get")
-fun View.findViewTreeSavedStateRegistryOwner(): SavedStateRegistryOwner? {
+public fun View.findViewTreeSavedStateRegistryOwner(): SavedStateRegistryOwner? {
     var currentView: View? = this
     while (currentView != null) {
         val registryOwner =

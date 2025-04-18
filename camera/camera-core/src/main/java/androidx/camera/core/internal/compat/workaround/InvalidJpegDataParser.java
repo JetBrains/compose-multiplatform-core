@@ -16,10 +16,11 @@
 
 package androidx.camera.core.internal.compat.workaround;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.core.internal.compat.quirk.LargeJpegImageQuirk;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Workaround to check whether the captured JPEG image contains redundant 0's padding data.
@@ -35,7 +36,7 @@ public class InvalidJpegDataParser {
      *
      * <p>Returns the original byte array length when quirk doesn't exist or EOI can't be found.
      */
-    public int getValidDataLength(@NonNull byte[] bytes) {
+    public int getValidDataLength(byte @NonNull [] bytes) {
         if (mQuirk == null || !mQuirk.shouldCheckInvalidJpegData(bytes)) {
             return bytes.length;
         }
@@ -50,7 +51,7 @@ public class InvalidJpegDataParser {
      * in the provided byte array.
      */
     @VisibleForTesting
-    public static int getJfifEoiMarkEndPosition(@NonNull byte[] bytes) {
+    public static int getJfifEoiMarkEndPosition(byte @NonNull [] bytes) {
         // Parses the JFIF segments from the start of the JPEG image data
         int markPosition = 0x2;
         while (true) {

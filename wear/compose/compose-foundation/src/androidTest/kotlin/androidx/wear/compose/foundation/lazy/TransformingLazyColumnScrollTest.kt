@@ -82,7 +82,7 @@ class TransformingLazyColumnScrollTest {
     @Test
     fun setupWorks() =
         testScroll(scrollBlock = {}) {
-            assertThat(state.anchorItemIndex).isEqualTo(0)
+            assertThat(state.anchorItemIndex).isEqualTo(1)
             assertThat(state.anchorItemScrollOffset).isEqualTo(0)
         }
 
@@ -111,14 +111,14 @@ class TransformingLazyColumnScrollTest {
     @Test
     fun scrollToItemWithOffsetLargerThanAvailableSize() =
         testScroll(scrollBlock = { state.scrollToItem(itemsCount - 1, -10) }) {
-            assertThat(state.anchorItemIndex).isEqualTo(itemsCount - 1)
+            assertThat(state.anchorItemIndex).isEqualTo(itemsCount - 2) // last item feels the space
             assertThat(state.anchorItemScrollOffset).isEqualTo(0) // not 10
         }
 
     @Test
     fun scrollToItemWithIndexLargerThanItemsCount() =
         testScroll(scrollBlock = { state.scrollToItem(itemsCount + 2) }) {
-            assertThat(state.anchorItemIndex).isEqualTo(itemsCount - 1)
+            assertThat(state.anchorItemIndex).isEqualTo(itemsCount - 2) // last item feels the space
         }
 
     @Composable

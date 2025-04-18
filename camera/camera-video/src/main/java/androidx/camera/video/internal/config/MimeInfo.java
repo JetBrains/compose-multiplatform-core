@@ -16,8 +16,9 @@
 
 package androidx.camera.video.internal.config;
 
-import androidx.annotation.NonNull;
 import androidx.camera.video.internal.VideoValidatedEncoderProfilesProxy;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Data class containing information about a media mime.
@@ -31,8 +32,7 @@ import androidx.camera.video.internal.VideoValidatedEncoderProfilesProxy;
 public abstract class MimeInfo {
 
     /** Returns the mime type. */
-    @NonNull
-    public abstract String getMimeType();
+    public abstract @NonNull String getMimeType();
 
     /**
      * Returns the profile for the given mime.
@@ -52,16 +52,13 @@ public abstract class MimeInfo {
     public abstract static class Builder<B> {
 
         // Protected since this should be passed to builder factory method.
-        @NonNull
-        protected abstract B setMimeType(@NonNull String mimeType);
+        protected abstract @NonNull B setMimeType(@NonNull String mimeType);
 
         /** Sets the mime profile */
-        @NonNull
-        public abstract B setProfile(int profile);
+        public abstract @NonNull B setProfile(int profile);
 
         /** Builds the {@link androidx.camera.video.internal.config.MimeInfo}. */
-        @NonNull
-        public abstract MimeInfo build();
+        public abstract @NonNull MimeInfo build();
     }
 
 }

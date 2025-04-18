@@ -97,4 +97,4 @@ fun <T : R, R : Any> PagingData<T>.insertSeparatorsAsync(
 }
 
 /** Represents a pair of adjacent items, null values are used to signal boundary conditions. */
-data class AdjacentItems<T>(val before: T?, val after: T?)
+@Suppress("DataClassDefinition") data class AdjacentItems<T>(val before: T?, val after: T?)

@@ -26,19 +26,19 @@ import androidx.compose.ui.graphics.takeOrElse
 @Immutable
 @Stable
 public class Colors(
-    val primary: Color = Color(0xFFAECBFA),
-    val primaryVariant: Color = Color(0xFF8AB4F8),
-    val secondary: Color = Color(0xFFFDE293),
-    val secondaryVariant: Color = Color(0xFF594F33),
-    val background: Color = Color.Black,
-    val surface: Color = Color(0xFF303133),
-    val error: Color = Color(0xFFEE675C),
-    val onPrimary: Color = Color(0xFF303133),
-    val onSecondary: Color = Color(0xFF303133),
-    val onBackground: Color = Color.White,
-    val onSurface: Color = Color.White,
-    val onSurfaceVariant: Color = Color(0xFFDADCE0),
-    val onError: Color = Color(0xFF000000)
+    public val primary: Color = Color(0xFFAECBFA),
+    public val primaryVariant: Color = Color(0xFF8AB4F8),
+    public val secondary: Color = Color(0xFFFDE293),
+    public val secondaryVariant: Color = Color(0xFF594F33),
+    public val background: Color = Color.Black,
+    public val surface: Color = Color(0xFF303133),
+    public val error: Color = Color(0xFFEE675C),
+    public val onPrimary: Color = Color(0xFF303133),
+    public val onSecondary: Color = Color(0xFF303133),
+    public val onBackground: Color = Color.White,
+    public val onSurface: Color = Color.White,
+    public val onSurfaceVariant: Color = Color(0xFFDADCE0),
+    public val onError: Color = Color(0xFF000000)
 ) {
 
     /** Returns a copy of this Colors, optionally overriding some of the values. */

@@ -58,8 +58,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://m3.material.io/components/switch" class="external" target="_blank">Material
- * Design Switch</a>.
+ * [Material Design switch](https://m3.material.io/components/switch)
  *
  * Switches toggle the state of a single item on or off.
  *

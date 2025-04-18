@@ -37,7 +37,7 @@ class DynamicMaterialThemeTest {
 
         val colorScheme = dynamicColorScheme(ApplicationProvider.getApplicationContext())
 
-        assertThat(colorScheme.secondary.argb)
+        assertThat(colorScheme.secondary.staticArgb)
             .isEqualTo(
                 ApplicationProvider.getApplicationContext<Context>()
                     .resources
@@ -56,6 +56,6 @@ class DynamicMaterialThemeTest {
         val colorScheme = dynamicColorScheme(ApplicationProvider.getApplicationContext())
 
         // Check that any token color is returned as null from Dynamic Theme.
-        assertThat(colorScheme.secondary.argb).isEqualTo(ColorTokens.SECONDARY)
+        assertThat(colorScheme.secondary.staticArgb).isEqualTo(ColorTokens.SECONDARY)
     }
 }

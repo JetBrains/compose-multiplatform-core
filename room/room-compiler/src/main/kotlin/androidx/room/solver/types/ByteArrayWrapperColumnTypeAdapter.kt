@@ -26,9 +26,9 @@ import androidx.room.solver.CodeGenScope
 
 class ByteArrayWrapperColumnTypeAdapter(out: XType) :
     ColumnTypeAdapter(out = out, typeAffinity = SQLTypeAffinity.BLOB) {
-    override fun readFromCursor(
+    override fun readFromStatement(
         outVarName: String,
-        cursorVarName: String,
+        stmtVarName: String,
         indexVarName: String,
         scope: CodeGenScope
     ) {
@@ -40,7 +40,7 @@ class ByteArrayWrapperColumnTypeAdapter(out: XType) :
                     XCodeBlock.ofNewInstance(
                         BYTE_ARRAY_WRAPPER,
                         argsFormat = "%L.getBlob(%L)",
-                        cursorVarName,
+                        stmtVarName,
                         indexVarName
                     )
                 )
@@ -48,7 +48,7 @@ class ByteArrayWrapperColumnTypeAdapter(out: XType) :
             if (out.nullability == XNullability.NONNULL) {
                 addGetBlobStatement()
             } else {
-                beginControlFlow("if (%L.isNull(%L))", cursorVarName, indexVarName)
+                beginControlFlow("if (%L.isNull(%L))", stmtVarName, indexVarName)
                     .addStatement("%L = null", outVarName)
                 nextControlFlow("else").addGetBlobStatement()
                 endControlFlow()

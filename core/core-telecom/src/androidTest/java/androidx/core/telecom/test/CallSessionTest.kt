@@ -19,7 +19,6 @@ package androidx.core.telecom.test
 import android.os.Build.VERSION_CODES
 import android.os.ParcelUuid
 import android.telecom.CallEndpoint
-import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.internal.CallChannels
 import androidx.core.telecom.internal.CallSession
@@ -50,7 +49,6 @@ import org.junit.runner.RunWith
  */
 @SdkSuppress(minSdkVersion = VERSION_CODES.UPSIDE_DOWN_CAKE /* api=34 */)
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class, ExperimentalAppActions::class)
-@RequiresApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
 @RunWith(AndroidJUnit4::class)
 class CallSessionTest : BaseTelecomTest() {
     private val mEarAndSpeakerEndpoints = listOf(mEarpieceEndpoint, mSpeakerEndpoint)

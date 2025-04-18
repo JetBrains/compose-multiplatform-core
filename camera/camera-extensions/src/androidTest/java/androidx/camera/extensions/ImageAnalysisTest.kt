@@ -181,7 +181,7 @@ class ImageAnalysisTest(
         val injectAnalysisSize =
             getOutputSizes(ImageFormat.YUV_420_888).minBy { it.width * it.height }
         // Inject a fake VendorExtender that reports empty supported size for imageAnalysis.
-        extensionsManager.setVendorExtenderFactory {
+        extensionsManager.setVendorExtenderFactory { _, _ ->
             object : VendorExtender {
                 override fun isExtensionAvailable(
                     cameraId: String,
@@ -237,7 +237,7 @@ class ImageAnalysisTest(
         runBlocking {
             // 1. Arrange
             // Inject a fake VendorExtender that reports empty supported size for imageAnalysis.
-            extensionsManager.setVendorExtenderFactory {
+            extensionsManager.setVendorExtenderFactory { _, _ ->
                 object : VendorExtender {
                     override fun isExtensionAvailable(
                         cameraId: String,

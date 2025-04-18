@@ -74,7 +74,7 @@ internal object ComposableInvoker {
                     methodName,
                     *args.mapNotNull { it?.javaClass }.toTypedArray(),
                     Composer::class.java, // composer param
-                    *kotlin.Int::class.java.dup(changedParams) // changed params
+                    *Int::class.java.dup(changedParams) // changed params
                 )
             } catch (e: ReflectiveOperationException) {
                 try {

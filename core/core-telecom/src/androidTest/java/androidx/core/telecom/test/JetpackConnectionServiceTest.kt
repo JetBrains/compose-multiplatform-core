@@ -21,7 +21,6 @@ import android.os.Build.VERSION_CODES
 import android.os.Bundle
 import android.telecom.Connection
 import android.telecom.ConnectionRequest
-import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallsManager
 import androidx.core.telecom.internal.CallChannels
@@ -44,7 +43,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @SdkSuppress(minSdkVersion = VERSION_CODES.O /* api=26 */)
-@RequiresApi(VERSION_CODES.O)
 @RunWith(AndroidJUnit4::class)
 class JetpackConnectionServiceTest : BaseTelecomTest() {
     private val callChannels = CallChannels()

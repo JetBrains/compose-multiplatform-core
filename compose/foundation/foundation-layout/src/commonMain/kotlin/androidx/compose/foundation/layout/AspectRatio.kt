@@ -50,6 +50,8 @@ import androidx.compose.ui.util.fastRoundToInt
  *
  * @sample androidx.compose.foundation.layout.samples.SimpleAspectRatio
  * @param ratio the desired width/height positive ratio
+ * @param matchHeightConstraintsFirst if true, height constraints will be matched before width
+ *   constraints and used to calculate the resulting size according to [ratio]
  */
 @Stable
 fun Modifier.aspectRatio(

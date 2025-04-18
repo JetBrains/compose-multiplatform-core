@@ -507,18 +507,7 @@ class AffectedModuleDetectorImpl(
         // Some tests are codependent even if their modules are not. Enable manual bundling of tests
         val COBUILT_TEST_PATHS =
             setOf(
-                // Install media tests together per b/128577735
-                setOf(
-                    // Making a change in :media:version-compat-tests makes
-                    // mediaGenerateTestConfiguration run (an unfortunate but low priority bug). To
-                    // prevent failures from missing apks, we make sure to build the
-                    // version-compat-tests projects in that case.
-                    ":media:version-compat-tests",
-                    ":media:version-compat-tests:client",
-                    ":media:version-compat-tests:service",
-                    ":media:version-compat-tests:client-previous",
-                    ":media:version-compat-tests:service-previous"
-                ), // Link material and material-ripple
+                // Link material and material-ripple
                 setOf(":compose:material:material-ripple", ":compose:material:material"),
                 setOf(
                     ":benchmark:benchmark-macro",

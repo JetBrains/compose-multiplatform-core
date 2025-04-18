@@ -18,12 +18,13 @@ package androidx.benchmark.macro.perfetto
 
 import androidx.benchmark.macro.FileLinkingRule
 import androidx.benchmark.macro.Packages
+import androidx.benchmark.macro.runSingleSessionServer
 import androidx.benchmark.perfetto.PerfettoCapture
 import androidx.benchmark.perfetto.PerfettoConfig
 import androidx.benchmark.perfetto.PerfettoHelper
 import androidx.benchmark.perfetto.PerfettoHelper.Companion.isAbiSupported
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
-import androidx.benchmark.perfetto.toSlices
+import androidx.benchmark.traceprocessor.TraceProcessor
+import androidx.benchmark.traceprocessor.toSlices
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -53,7 +54,7 @@ class AndroidxTracingTraceTest {
     @Before
     @After
     fun cleanup() {
-        PerfettoHelper.stopAllPerfettoProcesses()
+        PerfettoHelper.cleanupPerfettoState()
     }
 
     @LargeTest
@@ -101,7 +102,7 @@ class AndroidxTracingTraceTest {
         perfettoCapture.stop(traceFilePath)
 
         val queryResult =
-            PerfettoTraceProcessor.runSingleSessionServer(traceFilePath) { query(query = QUERY) }
+            TraceProcessor.runSingleSessionServer(traceFilePath) { query(query = QUERY) }
 
         val matchingSlices = queryResult.toSlices()
         assertEquals(

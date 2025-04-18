@@ -21,8 +21,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.work.Logger;
 import androidx.work.impl.WorkManagerImpl;
 import androidx.work.impl.background.systemalarm.ConstraintProxy.BatteryChargingProxy;
@@ -32,6 +30,8 @@ import androidx.work.impl.background.systemalarm.ConstraintProxy.StorageNotLowPr
 import androidx.work.impl.utils.PackageManagerHelper;
 import androidx.work.impl.utils.taskexecutor.TaskExecutor;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The {@link BroadcastReceiver} responsible for updating constraint proxies.
@@ -58,8 +58,7 @@ public class ConstraintProxyUpdateReceiver extends BroadcastReceiver {
      * @return an {@link Intent} with information about the constraint proxies which need to be
      * enabled.
      */
-    @NonNull
-    public static Intent newConstraintProxyUpdateIntent(
+    public static @NonNull Intent newConstraintProxyUpdateIntent(
             @NonNull Context context,
             boolean batteryNotLowProxyEnabled,
             boolean batteryChargingProxyEnabled,
@@ -80,7 +79,7 @@ public class ConstraintProxyUpdateReceiver extends BroadcastReceiver {
     }
 
     @Override
-    public void onReceive(@NonNull final Context context, @Nullable final Intent intent) {
+    public void onReceive(final @NonNull Context context, final @Nullable Intent intent) {
         String action = intent != null ? intent.getAction() : null;
         if (!ACTION.equals(action)) {
             Logger.get().debug(TAG, "Ignoring unknown action " + action);

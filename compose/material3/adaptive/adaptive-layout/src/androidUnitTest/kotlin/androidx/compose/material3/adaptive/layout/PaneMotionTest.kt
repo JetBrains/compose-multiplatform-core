@@ -83,12 +83,21 @@ class PaneMotionTest {
         expectedEnterTransition: EnterTransition,
         expectedExitTransition: ExitTransition
     ) {
+        mockPaneScaffoldMotionDataProvider.updateMotions(this, NoMotion, NoMotion)
         // Can't compare equality directly because of lambda. Check string representation instead
         assertWithMessage("Enter transition of $this: ")
-            .that(mockPaneScaffoldMotionDataProvider.enterTransition.toString())
+            .that(
+                mockPaneScaffoldMotionDataProvider
+                    .calculateDefaultEnterTransition(ThreePaneScaffoldRole.Primary)
+                    .toString()
+            )
             .isEqualTo(expectedEnterTransition.toString())
         assertWithMessage("Exit transition of $this: ")
-            .that(mockPaneScaffoldMotionDataProvider.exitTransition.toString())
+            .that(
+                mockPaneScaffoldMotionDataProvider
+                    .calculateDefaultExitTransition(ThreePaneScaffoldRole.Primary)
+                    .toString()
+            )
             .isEqualTo(expectedExitTransition.toString())
     }
 
@@ -273,6 +282,32 @@ class PaneMotionTest {
                 mockPaneScaffoldMotionDataProvider.scaffoldSize.width -
                     mockPaneScaffoldMotionDataProvider[1].currentLeft
             )
+    }
+
+    @Test
+    fun hiddenPaneCurrentLeft_useRightEdgeOfLeftShownPane() {
+        mockPaneScaffoldMotionDataProvider.updateMotions(
+            ExitToLeft,
+            EnterFromRight,
+            EnterWithExpand
+        )
+        assertThat(
+                mockPaneScaffoldMotionDataProvider.getHiddenPaneCurrentLeft(
+                    ThreePaneScaffoldRole.Tertiary
+                )
+            )
+            .isEqualTo(mockPaneScaffoldMotionDataProvider[0].currentRight)
+    }
+
+    @Test
+    fun hidingPaneTargetLeft_useRightEdgeOfLeftShowingPane() {
+        mockPaneScaffoldMotionDataProvider.updateMotions(EnterFromLeft, ExitToRight, ExitWithShrink)
+        assertThat(
+                mockPaneScaffoldMotionDataProvider.getHidingPaneTargetLeft(
+                    ThreePaneScaffoldRole.Tertiary
+                )
+            )
+            .isEqualTo(mockPaneScaffoldMotionDataProvider[0].targetRight)
     }
 }
 
@@ -471,8 +506,10 @@ private val mockExitToRightTransition =
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private val mockEnterWithExpandTransition =
-    expandHorizontally(PaneMotionDefaults.SizeAnimationSpec, Alignment.CenterHorizontally)
+    expandHorizontally(PaneMotionDefaults.SizeAnimationSpec, Alignment.CenterHorizontally) +
+        slideInHorizontally(PaneMotionDefaults.OffsetAnimationSpec)
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private val mockExitWithShrinkTransition =
-    shrinkHorizontally(PaneMotionDefaults.SizeAnimationSpec, Alignment.CenterHorizontally)
+    shrinkHorizontally(PaneMotionDefaults.SizeAnimationSpec, Alignment.CenterHorizontally) +
+        slideOutHorizontally(PaneMotionDefaults.OffsetAnimationSpec)

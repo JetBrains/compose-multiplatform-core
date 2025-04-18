@@ -25,7 +25,6 @@ import android.util.Size;
 import android.view.Surface;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.extensions.impl.PreviewImageProcessorImpl;
@@ -33,6 +32,8 @@ import androidx.camera.extensions.impl.ProcessResultImpl;
 import androidx.camera.extensions.internal.ClientVersion;
 import androidx.camera.extensions.internal.ExtensionVersion;
 import androidx.camera.extensions.internal.Version;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -49,10 +50,8 @@ import java.util.List;
  */
 class PreviewProcessor {
     private static final String TAG = "PreviewProcessor";
-    @NonNull
-    private final PreviewImageProcessorImpl mPreviewImageProcessor;
-    @NonNull
-    private final CaptureResultImageMatcher mCaptureResultImageMatcher =
+    private final @NonNull PreviewImageProcessorImpl mPreviewImageProcessor;
+    private final @NonNull CaptureResultImageMatcher mCaptureResultImageMatcher =
             new CaptureResultImageMatcher();
     private final Object mLock = new Object();
     @GuardedBy("mLock")

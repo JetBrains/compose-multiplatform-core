@@ -51,8 +51,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 /**
- * Material Design implementation of an
- * [action Chip](https://material.io/components/chips#action-chips).
+ * [Material Design action chip](https://material.io/components/chips#action-chips).
  *
  * Action chips offer actions related to primary content. They should appear dynamically and
  * contextually in a UI.
@@ -142,8 +141,7 @@ fun Chip(
 }
 
 /**
- * <a href="https://material.io/components/chips#filter-chips" class="external"
- * target="_blank">Material Design filter chip</a>.
+ * [Material Design filter chip](https://material.io/components/chips#filter-chips)
  *
  * Filter chips use tags or descriptive words to filter a collection. They are a good alternative to
  * toggle buttons or checkboxes.

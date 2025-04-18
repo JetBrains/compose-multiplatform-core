@@ -73,7 +73,6 @@ import android.os.Build;
 import android.provider.MediaStore;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.arch.core.executor.ArchTaskExecutor;
 import androidx.arch.core.executor.TaskExecutor;
 import androidx.lifecycle.LiveData;
@@ -126,6 +125,7 @@ import androidx.work.worker.TestWorker;
 
 import com.google.common.util.concurrent.Futures;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -2297,8 +2297,8 @@ public class WorkManagerImplTest {
                 new Dependency(work.getStringId(), prerequisiteWork.getStringId()));
     }
 
-    @NonNull
-    private static WorkInfo createWorkInfo(UUID id, WorkInfo.State state, List<String> tags) {
+    private static @NonNull WorkInfo createWorkInfo(UUID id, WorkInfo.State state,
+            List<String> tags) {
         return new WorkInfo(
                 id, state, new HashSet<>(tags), Data.EMPTY, Data.EMPTY, 0, 0,
                 Constraints.NONE, 0, null,

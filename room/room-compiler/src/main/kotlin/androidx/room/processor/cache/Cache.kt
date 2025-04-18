@@ -18,11 +18,11 @@ package androidx.room.processor.cache
 
 import androidx.room.compiler.processing.XElement
 import androidx.room.compiler.processing.XTypeElement
-import androidx.room.processor.FieldProcessor
+import androidx.room.processor.PropertyProcessor
 import androidx.room.vo.BuiltInConverterFlags
-import androidx.room.vo.EmbeddedField
+import androidx.room.vo.DataClass
+import androidx.room.vo.EmbeddedProperty
 import androidx.room.vo.Entity
-import androidx.room.vo.Pojo
 import androidx.room.vo.Warning
 
 /**
@@ -38,7 +38,7 @@ class Cache(
     val builtInConverterFlags: BuiltInConverterFlags
 ) {
     val entities: Bucket<EntityKey, Entity> = Bucket(parent?.entities)
-    val pojos: Bucket<PojoKey, Pojo> = Bucket(parent?.pojos)
+    val dataClasses: Bucket<DataClassKey, DataClass> = Bucket(parent?.dataClasses)
 
     inner class Bucket<K, T>(source: Bucket<K, T>?) {
         private val entries: MutableMap<FullKey<K>, T> = source?.entries ?: mutableMapOf()
@@ -52,11 +52,11 @@ class Cache(
     /** Key for Entity cache */
     data class EntityKey(val element: XElement)
 
-    /** Key for Pojo cache */
-    data class PojoKey(
+    /** Key for data class cache */
+    data class DataClassKey(
         val element: XElement,
-        val scope: FieldProcessor.BindingScope,
-        val parent: EmbeddedField?
+        val scope: PropertyProcessor.BindingScope,
+        val parent: EmbeddedProperty?
     )
 
     /**

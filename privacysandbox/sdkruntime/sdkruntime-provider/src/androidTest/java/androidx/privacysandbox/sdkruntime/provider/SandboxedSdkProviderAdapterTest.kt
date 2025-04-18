@@ -160,15 +160,6 @@ class SandboxedSdkProviderAdapterTest {
             mLastOnLoadSdkBundle = params
             return mResult
         }
-
-        override fun getView(
-            windowContext: Context,
-            params: Bundle,
-            width: Int,
-            height: Int
-        ): View {
-            throw RuntimeException("Not implemented")
-        }
     }
 
     class TestOnLoadThrowSdkProvider : SandboxedSdkProviderCompat() {
@@ -177,15 +168,6 @@ class SandboxedSdkProviderAdapterTest {
         @Throws(LoadSdkCompatException::class)
         override fun onLoadSdk(params: Bundle): SandboxedSdkCompat {
             throw mError
-        }
-
-        override fun getView(
-            windowContext: Context,
-            params: Bundle,
-            width: Int,
-            height: Int
-        ): View {
-            throw RuntimeException("Stub!")
         }
     }
 
@@ -198,15 +180,6 @@ class SandboxedSdkProviderAdapterTest {
 
         override fun beforeUnloadSdk() {
             mBeforeUnloadSdkCalled = true
-        }
-
-        override fun getView(
-            windowContext: Context,
-            params: Bundle,
-            width: Int,
-            height: Int
-        ): View {
-            throw RuntimeException("Not implemented")
         }
     }
 
@@ -222,6 +195,7 @@ class SandboxedSdkProviderAdapterTest {
             throw RuntimeException("Not implemented")
         }
 
+        @Deprecated("Will be removed later - temporary keeping for tests")
         override fun getView(
             windowContext: Context,
             params: Bundle,

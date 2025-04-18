@@ -30,21 +30,21 @@ import androidx.compose.ui.unit.dp
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun isLayoutDirectionRtl(): Boolean {
+public fun isLayoutDirectionRtl(): Boolean {
     val layoutDirection: LayoutDirection = LocalLayoutDirection.current
     return layoutDirection == LayoutDirection.Rtl
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun isRoundDevice(): Boolean {
+public fun isRoundDevice(): Boolean {
     val configuration = LocalConfiguration.current
     return configuration.isScreenRound
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun isLeftyModeEnabled(): Boolean {
+public fun isLeftyModeEnabled(): Boolean {
     val context = LocalContext.current
     return remember(context) {
         Settings.System.getInt(
@@ -57,27 +57,32 @@ fun isLeftyModeEnabled(): Boolean {
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun is24HourFormat(): Boolean = DateFormat.is24HourFormat(LocalContext.current)
+public fun is24HourFormat(): Boolean = DateFormat.is24HourFormat(LocalContext.current)
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun currentTimeMillis(): Long = System.currentTimeMillis()
-
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@Composable
-fun screenHeightDp() = LocalConfiguration.current.screenHeightDp
+public fun currentTimeMillis(): Long = System.currentTimeMillis()
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun screenHeightPx(): Int =
+public fun screenHeightDp(): Int = LocalConfiguration.current.screenHeightDp
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@Composable
+public fun screenHeightPx(): Int =
     with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.roundToPx() }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun screenWidthDp() = LocalConfiguration.current.screenWidthDp
+public fun screenWidthDp(): Int = LocalConfiguration.current.screenWidthDp
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun isSmallScreen() =
-    LocalContext.current.resources.configuration.screenWidthDp <= SMALL_SCREEN_WIDTH_DP
+public fun isSmallScreen(): Boolean =
+    LocalConfiguration.current.screenWidthDp < LARGE_SCREEN_WIDTH_DP
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) const val SMALL_SCREEN_WIDTH_DP = 225
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@Composable
+public fun isLargeScreen(): Boolean =
+    LocalConfiguration.current.screenWidthDp >= LARGE_SCREEN_WIDTH_DP
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val LARGE_SCREEN_WIDTH_DP: Int = 225

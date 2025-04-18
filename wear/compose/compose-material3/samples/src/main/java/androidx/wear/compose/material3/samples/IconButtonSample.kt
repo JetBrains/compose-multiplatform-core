@@ -113,13 +113,14 @@ fun IconButtonWithImageSample(
     IconButton(
         onClick = { /* Do something */ },
         shapes = shapes,
+        enabled = enabled,
     ) {
         Image(
             painter = painter,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier =
-                if (enabled) Modifier else Modifier.alpha(IconButtonDefaults.disabledImageOpacity)
+                if (enabled) Modifier else Modifier.alpha(IconButtonDefaults.DisabledImageOpacity)
         )
     }
 }

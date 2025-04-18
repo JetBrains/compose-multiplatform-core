@@ -31,10 +31,11 @@ import android.text.style.BulletSpan;
 import android.text.style.ParagraphStyle;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 
@@ -141,8 +142,7 @@ public final class HtmlCompat {
      * ignored and {@link Html#fromHtml(String)} is used.
      */
     @SuppressWarnings("deprecation")
-    @NonNull
-    public static Spanned fromHtml(@NonNull String source, @FromHtmlFlags int flags) {
+    public static @NonNull Spanned fromHtml(@NonNull String source, @FromHtmlFlags int flags) {
         if (Build.VERSION.SDK_INT >= 24) {
             return Api24Impl.fromHtml(source, flags);
         }
@@ -155,8 +155,7 @@ public final class HtmlCompat {
      * {@link Html#fromHtml(String, ImageGetter, TagHandler)} is used.
      */
     @SuppressWarnings("deprecation")
-    @NonNull
-    public static Spanned fromHtml(@NonNull String source, @FromHtmlFlags int flags,
+    public static @NonNull Spanned fromHtml(@NonNull String source, @FromHtmlFlags int flags,
             @Nullable ImageGetter imageGetter, @Nullable TagHandler tagHandler) {
         if (Build.VERSION.SDK_INT >= 24) {
             return Api24Impl.fromHtml(source, flags, imageGetter, tagHandler);
@@ -169,8 +168,7 @@ public final class HtmlCompat {
      * ignored and {@link Html#toHtml(Spanned)} is used.
      */
     @SuppressWarnings("deprecation")
-    @NonNull
-    public static String toHtml(@NonNull Spanned text, @ToHtmlOptions int options) {
+    public static @NonNull String toHtml(@NonNull Spanned text, @ToHtmlOptions int options) {
         if (Build.VERSION.SDK_INT >= 24) {
             return Api24Impl.toHtml(text, options);
         }

@@ -19,7 +19,6 @@ import androidx.annotation.RestrictTo
 import androidx.room.util.getTotalChangedRows
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.use
 
 /**
  * Implementations of this class know how to delete or update a particular entity.
@@ -30,7 +29,7 @@ import androidx.sqlite.use
  * @constructor Creates a DeletionOrUpdateAdapter that can delete or update the entity type T on the
  *   given database.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 abstract class EntityDeleteOrUpdateAdapter<T> {
     /**
      * Create the deletion or update query

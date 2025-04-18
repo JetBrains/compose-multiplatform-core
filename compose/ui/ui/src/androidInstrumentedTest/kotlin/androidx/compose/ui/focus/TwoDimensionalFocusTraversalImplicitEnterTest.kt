@@ -150,7 +150,7 @@ class TwoDimensionalFocusTraversalImplicitEnterTest(param: Param) {
             Modifier.focusProperties {
                 onEnter = {
                     directionSentToEnter = focusDirection
-                    cancelFocus()
+                    cancelFocusChange()
                 }
             }
         when (focusDirection) {
@@ -229,7 +229,7 @@ class TwoDimensionalFocusTraversalImplicitEnterTest(param: Param) {
             Modifier.focusProperties {
                 onEnter = {
                     directionSentToEnter = focusDirection
-                    cancelFocus()
+                    cancelFocusChange()
                 }
             }
         when (focusDirection) {
@@ -331,7 +331,7 @@ class TwoDimensionalFocusTraversalImplicitEnterTest(param: Param) {
         val (up, down, left, right) = List(4) { mutableStateOf(false) }
         val (item, other) = List(2) { mutableStateOf(false) }
         var (upItem, downItem, leftItem, rightItem) = FocusRequester.createRefs()
-        val customFocusEnter = Modifier.focusProperties { onEnter = { cancelFocus() } }
+        val customFocusEnter = Modifier.focusProperties { onEnter = { cancelFocusChange() } }
         when (focusDirection) {
             Left -> rightItem = initialFocus
             Right -> leftItem = initialFocus

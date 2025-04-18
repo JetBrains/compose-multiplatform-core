@@ -20,8 +20,9 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -86,8 +87,7 @@ public abstract class PlaybackGlue {
     /**
      * Returns the context.
      */
-    @NonNull
-    public Context getContext() {
+    public @NonNull Context getContext() {
         return mContext;
     }
 
@@ -125,8 +125,7 @@ public abstract class PlaybackGlue {
      * @return A snapshot of list of PlayerCallbacks set on the Glue.
      */
     @SuppressLint("NullableCollection")
-    @Nullable
-    protected List<PlayerCallback> getPlayerCallbacks() {
+    protected @Nullable List<PlayerCallback> getPlayerCallbacks() {
         if (mPlayerCallbacks == null) {
             return null;
         }
@@ -279,8 +278,7 @@ public abstract class PlaybackGlue {
     /**
      * @return Associated {@link PlaybackGlueHost} or null if not attached to host.
      */
-    @Nullable
-    public PlaybackGlueHost getHost() {
+    public @Nullable PlaybackGlueHost getHost() {
         return mPlaybackGlueHost;
     }
 }

@@ -17,10 +17,15 @@
 package androidx.pdf.view
 
 import android.graphics.PointF
+import android.view.InputDevice
+import android.view.MotionEvent
 import android.view.View
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
 import androidx.test.espresso.ViewInteraction
+import androidx.test.espresso.action.GeneralClickAction
+import androidx.test.espresso.action.Press
+import androidx.test.espresso.action.Tap
 import androidx.test.espresso.matcher.ViewMatchers
 import org.hamcrest.Matcher
 import org.hamcrest.Matchers
@@ -112,10 +117,37 @@ private class ScrollPdfViewToPage : ViewAction {
         // This should be guaranteed by our constraints, but this makes smartcasts work nicely
         check(view is PdfView)
         if (pointOnPage != null) {
-            view.scrollToPosition(PdfPoint(pageNum, pointOnPage), animateScroll = false)
+            view.scrollToPosition(PdfPoint(pageNum, pointOnPage))
         } else {
-            view.scrollToPage(pageNum, animateScroll = false)
+            view.scrollToPage(pageNum)
         }
         uiController.loopMainThreadUntilIdle()
     }
+}
+
+/**
+ * Performs a [ViewAction] that results in single tap on a specific location (x, y) relative to a
+ * given view. This action calculates the screen coordinates of the view and offsets them by the
+ * provided (x, y) values to simulate a tap at the desired position on the screen.
+ *
+ * @param x The horizontal offset (in pixels) from the top-left corner of the view.
+ * @param y The vertical offset (in pixels) from the top-left corner of the view.
+ * @return A ViewAction that can be used with Espresso to perform the tap.
+ */
+internal fun performSingleTapOnCoords(x: Float, y: Float): ViewAction {
+    return GeneralClickAction(
+        Tap.SINGLE,
+        { view ->
+            val screenPos = IntArray(2)
+            view.getLocationOnScreen(screenPos)
+
+            val screenX = (screenPos[0] + x).toFloat()
+            val screenY = (screenPos[1] + y).toFloat()
+
+            floatArrayOf(screenX, screenY)
+        },
+        Press.FINGER,
+        InputDevice.SOURCE_TOUCHSCREEN,
+        MotionEvent.BUTTON_PRIMARY
+    )
 }

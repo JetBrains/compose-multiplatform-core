@@ -26,7 +26,6 @@ import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.graph.GraphListener
 import androidx.camera.camera2.pipe.graph.GraphProcessor
 import androidx.camera.camera2.pipe.graph.GraphRequestProcessor
-import androidx.camera.camera2.pipe.graph.GraphState3A
 import androidx.camera.camera2.pipe.graph.Listener3A
 import androidx.camera.camera2.pipe.putAllMetadata
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,7 +35,6 @@ import kotlinx.coroutines.runBlocking
 
 /** Fake implementation of a [GraphProcessor] for tests. */
 internal class FakeGraphProcessor(
-    val graphState3A: GraphState3A = GraphState3A(),
     val graphListener3A: Listener3A = Listener3A(),
     val defaultParameters: Map<*, Any?> = emptyMap<Any, Any?>(),
     val defaultListeners: List<Request.Listener> = emptyList()
@@ -57,6 +55,9 @@ internal class FakeGraphProcessor(
             }
         }
 
+    private var graphParameters: Map<*, Any?> = emptyMap<Any, Any?>()
+    private var graph3AParameters: Map<*, Any?> = emptyMap<Any, Any?>()
+
     val requestQueue: List<List<Request>>
         get() = _requestQueue
 
@@ -64,7 +65,6 @@ internal class FakeGraphProcessor(
     private var processor: GraphRequestProcessor? = null
 
     private val _graphState = MutableStateFlow<GraphState>(GraphStateStopped)
-
     override val graphState: StateFlow<GraphState>
         get() = _graphState
 
@@ -76,7 +76,7 @@ internal class FakeGraphProcessor(
         return true
     }
 
-    override fun submit(parameters: Map<*, Any?>): Boolean {
+    override fun trigger(parameters: Map<*, Any?>): Boolean {
         check(repeatingRequest != null)
         if (closed) return false
 
@@ -84,14 +84,14 @@ internal class FakeGraphProcessor(
         val currRepeatingRequest = repeatingRequest
         val requiredParameters = mutableMapOf<Any, Any?>()
         requiredParameters.putAllMetadata(parameters)
-        graphState3A.writeTo(requiredParameters)
+        requiredParameters.putAllMetadata(graph3AParameters)
 
         if (currProcessor != null && currRepeatingRequest != null) {
             currProcessor.submit(
                 isRepeating = false,
                 requests = listOf(currRepeatingRequest),
                 defaultParameters = defaultParameters,
-                graphParameters = mapOf<Any, Any?>(),
+                graphParameters = graphParameters,
                 requiredParameters = requiredParameters,
                 listeners = defaultListeners
             )
@@ -171,45 +171,37 @@ internal class FakeGraphProcessor(
     }
 
     override fun invalidate() {
-        if (closed) {
-            return
-        }
-
-        val currProcessor = processor
-        val currRepeatingRequest = repeatingRequest
-        val requiredParameters = graphState3A.readState()
-
-        if (currProcessor == null || currRepeatingRequest == null) {
-            return
-        }
-
-        currProcessor.submit(
-            isRepeating = true,
-            requests = listOf(currRepeatingRequest),
-            defaultParameters = defaultParameters,
-            graphParameters = mapOf<Any, Any?>(),
-            requiredParameters = requiredParameters,
-            listeners = defaultListeners
-        )
+        updateRepeatingRequest()
     }
 
-    override fun updateParameters(parameters: Map<*, Any?>) {
+    override fun updateGraphParameters(parameters: Map<*, Any?>) {
+        graphParameters = parameters
+        updateRepeatingRequest()
+    }
+
+    override fun update3AParameters(parameters: Map<*, Any?>) {
+        graph3AParameters = parameters
+        updateRepeatingRequest()
+    }
+
+    private fun updateRepeatingRequest() {
         if (closed) {
             return
         }
+
         val currProcessor = processor
         val currRepeatingRequest = repeatingRequest
-        val requiredParameters = graphState3A.readState()
 
         if (currProcessor == null || currRepeatingRequest == null) {
             return
         }
+
         currProcessor.submit(
             isRepeating = true,
             requests = listOf(currRepeatingRequest),
             defaultParameters = defaultParameters,
-            graphParameters = parameters,
-            requiredParameters = requiredParameters,
+            graphParameters = graphParameters,
+            requiredParameters = graph3AParameters,
             listeners = defaultListeners
         )
     }

@@ -84,7 +84,7 @@ internal class CameraGraphSessionImpl(
     override fun close() {
         val unappliedParameters = parameters.fetchUpdatedParameters()
         if (unappliedParameters != null) {
-            graphProcessor.updateParameters(unappliedParameters)
+            graphProcessor.updateGraphParameters(unappliedParameters)
         }
         token.release()
     }

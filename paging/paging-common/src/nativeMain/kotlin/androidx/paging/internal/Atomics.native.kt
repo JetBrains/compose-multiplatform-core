@@ -43,7 +43,6 @@ import platform.posix.pthread_mutexattr_t
  */
 internal expect val PTHREAD_MUTEX_RECURSIVE: Int
 
-@Suppress("ACTUAL_WITHOUT_EXPECT") // https://youtrack.jetbrains.com/issue/KT-37316
 internal actual class ReentrantLock actual constructor() {
 
     private val resources = Resources()

@@ -16,9 +16,10 @@
 
 package androidx.camera.camera2.internal.compat.workaround;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.quirk.Preview3AThreadCrashQuirk;
 import androidx.camera.core.impl.Quirks;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Indicate the required actions when going to switch CameraCaptureSession.

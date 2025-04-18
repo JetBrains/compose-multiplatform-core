@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.focus
 
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.focus.FocusDirection.Companion.Down
 import androidx.compose.ui.focus.FocusDirection.Companion.Enter
 import androidx.compose.ui.focus.FocusDirection.Companion.Exit
@@ -34,6 +36,7 @@ import androidx.compose.ui.focus.FocusStateImpl.Inactive
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.node.Nodes
+import androidx.compose.ui.node.requireOwner
 import androidx.compose.ui.node.visitAncestors
 import androidx.compose.ui.node.visitChildren
 import androidx.compose.ui.unit.LayoutDirection
@@ -80,6 +83,8 @@ internal fun FocusTargetNode.customFocusSearch(
             with(focusProperties) {
                 val focusTransactionManager = focusTransactionManager
                 val generationBefore = focusTransactionManager?.generation ?: 0
+                val focusOwner = requireOwner().focusOwner
+                val activeNodeBefore = focusOwner.activeFocusTargetNode
                 if (focusDirection == Enter) {
                     scope.onEnter()
                 } else {
@@ -88,7 +93,12 @@ internal fun FocusTargetNode.customFocusSearch(
                 val generationAfter = focusTransactionManager?.generation ?: 0
                 if (scope.isCanceled) {
                     Cancel
-                } else if (generationBefore != generationAfter) {
+                } else if (
+                    generationBefore != generationAfter ||
+                        (@OptIn(ExperimentalComposeUiApi::class)
+                        ComposeUiFlags.isTrackFocusEnabled &&
+                            activeNodeBefore !== focusOwner.activeFocusTargetNode)
+                ) {
                     Redirect
                 } else {
                     Default
@@ -168,18 +178,23 @@ internal val FocusTargetNode.activeChild: FocusTargetNode?
     }
 
 internal fun FocusTargetNode.findActiveFocusNode(): FocusTargetNode? {
-    when (focusState) {
-        Active,
-        Captured -> return this
-        ActiveParent -> {
-            visitChildren(Nodes.FocusTarget) { node ->
-                node.findActiveFocusNode()?.let {
-                    return it
+    if (@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isTrackFocusEnabled) {
+        val activeNode = requireOwner().focusOwner.activeFocusTargetNode
+        return if (activeNode != null && activeNode.isAttached) activeNode else null
+    } else {
+        when (focusState) {
+            Active,
+            Captured -> return this
+            ActiveParent -> {
+                visitChildren(Nodes.FocusTarget) { node ->
+                    node.findActiveFocusNode()?.let {
+                        return it
+                    }
                 }
+                return null
             }
-            return null
+            Inactive -> return null
         }
-        Inactive -> return null
     }
 }
 

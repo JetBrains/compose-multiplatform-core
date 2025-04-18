@@ -18,13 +18,13 @@ package androidx.build.metalava
 
 import androidx.build.Version
 import androidx.build.checkapi.ApiLocation
+import androidx.build.checkapi.SourceSetInputs
 import androidx.build.checkapi.getApiFileVersion
 import androidx.build.checkapi.getRequiredCompatibilityApiLocation
 import androidx.build.checkapi.getVersionedApiLocation
 import androidx.build.checkapi.isValidArtifactVersion
 import androidx.build.getAndroidJar
 import androidx.build.getCheckoutRoot
-import androidx.build.java.JavaCompileInputs
 import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
@@ -159,19 +159,27 @@ constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
         outputApiLocation: ApiLocation,
     ) {
         val mavenId = "$groupId:$artifactId:$version"
-        val inputs: JavaCompileInputs?
-        try {
-            inputs = getFiles(runnerProject, mavenId)
-        } catch (e: TypedResolveException) {
-            runnerProject.logger.info("Ignoring missing artifact $mavenId: $e")
-            return
-        }
+        val (compiledSources, sourceSets) =
+            try {
+                getFiles(runnerProject, mavenId)
+            } catch (e: TypedResolveException) {
+                runnerProject.logger.info("Ignoring missing artifact $mavenId: $e")
+                return
+            }
 
         if (outputApiLocation.publicApiFile.exists()) {
             project.logger.lifecycle("Regenerating $mavenId")
+            val projectXml = File(temporaryDir, "$mavenId-project.xml")
+            ProjectXml.create(
+                sourceSets,
+                project.getAndroidJar().files,
+                compiledSources,
+                projectXml
+            )
             generateApi(
                 project.getMetalavaClasspath(),
-                inputs,
+                projectXml,
+                sourceSets.flatMap { it.sourcePaths.files },
                 outputApiLocation,
                 ApiLintMode.Skip,
                 generateRestrictToLibraryGroupAPIs,
@@ -185,18 +193,32 @@ constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
         }
     }
 
-    private fun getFiles(runnerProject: Project, mavenId: String): JavaCompileInputs {
+    /**
+     * For the given [mavenId], returns a pair with the source jar as the first element, and
+     * [SourceSetInputs] representing the unzipped sources as the second element.
+     */
+    private fun getFiles(
+        runnerProject: Project,
+        mavenId: String
+    ): Pair<File, List<SourceSetInputs>> {
         val jars = getJars(runnerProject, mavenId)
-        val sources = getSources(runnerProject, "$mavenId:sources")
+        val sourcesMavenId = "$mavenId:sources"
+        val compiledSources = getCompiledSources(runnerProject, sourcesMavenId)
+        val sources = getSources(runnerProject, sourcesMavenId, compiledSources)
 
-        return JavaCompileInputs(
-            sourcePaths = sources,
-            // TODO(b/330721660) parse META-INF/kotlin-project-structure-metadata.json for
-            // common sources
-            commonModuleSourcePaths = project.files(),
-            dependencyClasspath = jars,
-            bootClasspath = project.getAndroidJar()
-        )
+        // TODO(b/330721660) parse META-INF/kotlin-project-structure-metadata.json for KMP projects
+        // Represent the project as a single source set.
+        return compiledSources to
+            listOf(
+                SourceSetInputs(
+                    // Since there's just one source set, the name is arbitrary.
+                    sourceSetName = "main",
+                    // There are no other source sets to depend on.
+                    dependsOnSourceSets = emptyList(),
+                    sourcePaths = sources,
+                    dependencyClasspath = jars,
+                )
+            )
     }
 
     private fun getJars(runnerProject: Project, mavenId: String): FileCollection {
@@ -230,18 +252,27 @@ constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
         return runnerProject.files()
     }
 
-    private fun getSources(runnerProject: Project, mavenId: String): FileCollection {
+    /** Returns the source jar for the [mavenId]. */
+    private fun getCompiledSources(runnerProject: Project, mavenId: String): File {
         val configuration =
             runnerProject.configurations.detachedConfiguration(
                 runnerProject.dependencies.create(mavenId)
             )
         configuration.isTransitive = false
+        return configuration.singleFile
+    }
 
+    /** Returns a file collection containing the unzipped sources from [compiledSources]. */
+    private fun getSources(
+        runnerProject: Project,
+        mavenId: String,
+        compiledSources: File
+    ): FileCollection {
         val sanitizedMavenId = mavenId.replace(":", "-")
         @Suppress("DEPRECATION")
         val unzippedDir = File("${runnerProject.buildDir.path}/sources-unzipped/$sanitizedMavenId")
         runnerProject.copy { copySpec ->
-            copySpec.from(runnerProject.zipTree(configuration.singleFile))
+            copySpec.from(runnerProject.zipTree(compiledSources))
             copySpec.into(unzippedDir)
         }
         return project.files(unzippedDir)

@@ -17,11 +17,12 @@
 package androidx.camera.testing.impl.fakes;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.camera.core.processing.SurfaceProcessorInternal;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -61,8 +62,7 @@ public class FakeSurfaceProcessorInternal extends FakeSurfaceProcessor implement
     }
 
     @Override
-    @NonNull
-    public ListenableFuture<Void> snapshot(
+    public @NonNull ListenableFuture<Void> snapshot(
             @IntRange(from = 0, to = 100) int jpegQuality,
             @IntRange(from = 0, to = 359) int rotationDegrees) {
         mJpegQuality = jpegQuality;

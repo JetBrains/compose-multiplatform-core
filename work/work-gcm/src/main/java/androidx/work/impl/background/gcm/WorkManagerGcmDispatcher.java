@@ -21,7 +21,6 @@ import android.os.Bundle;
 import android.os.PowerManager;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
 import androidx.work.Logger;
 import androidx.work.WorkInfo;
 import androidx.work.impl.ExecutionListener;
@@ -40,6 +39,8 @@ import androidx.work.impl.utils.WorkTimer;
 
 import com.google.android.gms.gcm.GcmNetworkManager;
 import com.google.android.gms.gcm.TaskParams;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -160,7 +161,7 @@ public class WorkManagerGcmDispatcher {
         }
     }
 
-    private int reschedule(@NonNull final String workSpecId) {
+    private int reschedule(final @NonNull String workSpecId) {
         final WorkDatabase workDatabase = mWorkManagerImpl.getWorkDatabase();
         workDatabase.runInTransaction(new Runnable() {
             @Override

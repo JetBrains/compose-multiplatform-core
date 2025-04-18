@@ -93,5 +93,12 @@ abstract class SandboxedSdkProviderCompat {
      *
      * @see [android.app.sdksandbox.SandboxedSdkProvider.getView]
      */
-    abstract fun getView(windowContext: Context, params: Bundle, width: Int, height: Int): View
+    @Deprecated(
+        message =
+            "This method will no longer be supported." +
+                "Please consider using androidx.privacysandbox.ui library as an alternative"
+    )
+    open fun getView(windowContext: Context, params: Bundle, width: Int, height: Int): View {
+        throw UnsupportedOperationException("This SDK doesn't support SurfaceView requests.")
+    }
 }

@@ -89,7 +89,8 @@ internal class KspSyntheticReceiverParameterElement(
                 if (container?.ksType == null || it.isError) {
                     return@let it
                 }
-                val asMember = enclosingElement.declaration.asMemberOf(container?.ksType)
+                val asMember =
+                    enclosingElement.declaration.asMemberOf((container as KspType).ksType)
                 checkNotNull(asMember.extensionReceiverType)
             }
         return env.wrap(

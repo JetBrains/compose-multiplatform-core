@@ -18,9 +18,10 @@ package androidx.work.testing.workers;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,9 +36,8 @@ public class CountingTestWorker extends Worker {
         super(context, workerParams);
     }
 
-    @NonNull
     @Override
-    public Result doWork() {
+    public @NonNull Result doWork() {
         COUNT.incrementAndGet();
         return Result.success();
     }

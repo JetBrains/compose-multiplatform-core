@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalAutofill
 import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.core.view.accessibility.AccessibilityNodeProviderCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
@@ -43,16 +44,16 @@ import org.junit.runner.RunWith
 class AndroidAutoFillTest {
     @get:Rule val rule = createComposeRule()
 
-    private var autofill: Autofill? = null
-    private lateinit var autofillTree: AutofillTree
+    private var autofill: @Suppress("Deprecation") Autofill? = null
+    private lateinit var autofillTree: @Suppress("Deprecation") AutofillTree
     private lateinit var ownerView: View
 
     @Before
     fun setup() {
         rule.setContent {
             ownerView = LocalView.current
-            autofill = LocalAutofill.current
-            autofillTree = LocalAutofillTree.current
+            autofill = @Suppress("Deprecation") LocalAutofill.current
+            autofillTree = @Suppress("Deprecation") LocalAutofillTree.current
         }
     }
 
@@ -77,10 +78,10 @@ class AndroidAutoFillTest {
     @SdkSuppress(minSdkVersion = 26)
     @Test
     fun onProvideAutofillVirtualStructure_populatesViewStructure() {
-        if (isSemanticAutofillEnabled) return
         // Arrange.
         val viewStructure: ViewStructure = FakeViewStructure()
         val autofillNode =
+            @Suppress("Deprecation")
             AutofillNode(
                 onFill = {},
                 autofillTypes = listOf(AutofillType.PersonFullName),
@@ -96,13 +97,20 @@ class AndroidAutoFillTest {
         assertThat(viewStructure)
             .isEqualTo(
                 FakeViewStructure().apply {
+                    if (isSemanticAutofillEnabled) {
+                        autofillId = ownerView.autofillId
+                        bounds = android.graphics.Rect(0, 0, 0, 0)
+                        packageName = currentPackageName
+                        virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
+                    }
                     children.add(
                         FakeViewStructure().apply {
-                            virtualId = autofillNode.id
+                            autofillHints = mutableListOf(AUTOFILL_HINT_PERSON_NAME)
+                            autofillId = ownerView.autofillId
+                            autofillType = View.AUTOFILL_TYPE_TEXT
+                            bounds = android.graphics.Rect(0, 0, 0, 0)
                             packageName = currentPackageName
-                            setAutofillType(View.AUTOFILL_TYPE_TEXT)
-                            setAutofillHints(arrayOf(AUTOFILL_HINT_PERSON_NAME))
-                            setDimens(0, 0, 0, 0, 0, 0)
+                            virtualId = autofillNode.id
                         }
                     )
                 }
@@ -112,13 +120,13 @@ class AndroidAutoFillTest {
     @SdkSuppress(minSdkVersion = 26)
     @Test
     fun autofill_triggersOnFill() {
-        if (isSemanticAutofillEnabled) return
         // Arrange.
         val expectedValue = "PersonName"
-        var autofilledValue = ""
+        var autoFilledValue = ""
         val autofillNode =
+            @Suppress("Deprecation")
             AutofillNode(
-                onFill = { autofilledValue = it },
+                onFill = { autoFilledValue = it },
                 autofillTypes = listOf(AutofillType.PersonFullName),
                 boundingBox = Rect(0f, 0f, 0f, 0f)
             )
@@ -132,6 +140,6 @@ class AndroidAutoFillTest {
         ownerView.autofill(autofillValues)
 
         // Assert.
-        assertThat(autofilledValue).isEqualTo(expectedValue)
+        assertThat(autoFilledValue).isEqualTo(expectedValue)
     }
 }

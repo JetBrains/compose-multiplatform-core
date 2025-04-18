@@ -33,8 +33,6 @@ import android.os.CancellationSignal;
 import android.os.RemoteException;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.collection.LruCache;
@@ -43,6 +41,9 @@ import androidx.core.graphics.TypefaceCompat;
 import androidx.core.provider.FontsContractCompat.FontFamilyResult;
 import androidx.core.provider.FontsContractCompat.FontInfo;
 import androidx.tracing.Trace;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,8 +55,7 @@ import java.util.Objects;
 class FontProvider {
     private FontProvider() {}
 
-    @NonNull
-    static FontFamilyResult getFontFamilyResult(@NonNull Context context,
+    static @NonNull FontFamilyResult getFontFamilyResult(@NonNull Context context,
             @NonNull List<FontRequest> requests, @Nullable CancellationSignal cancellationSignal)
             throws PackageManager.NameNotFoundException {
         if (TypefaceCompat.DOWNLOADABLE_FONT_TRACING) {
@@ -132,8 +132,7 @@ class FontProvider {
      * Do not access directly, visible for testing only.
      */
     @VisibleForTesting
-    @Nullable
-    static ProviderInfo getProvider(
+    static @Nullable ProviderInfo getProvider(
             @NonNull PackageManager packageManager,
             @NonNull FontRequest request,
             @Nullable Resources resources
@@ -191,8 +190,7 @@ class FontProvider {
      * Do not access directly, visible for testing only.
      */
     @VisibleForTesting
-    @NonNull
-    static FontInfo[] query(
+    static FontInfo @NonNull [] query(
             Context context,
             FontRequest request,
             String authority,

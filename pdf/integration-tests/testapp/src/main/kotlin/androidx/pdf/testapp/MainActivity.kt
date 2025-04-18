@@ -30,8 +30,12 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.pdf.testapp.databinding.MainActivityBinding
 import androidx.pdf.testapp.databinding.ScenarioButtonsBinding
+import androidx.pdf.testapp.ui.BasicPdfFragment
+import androidx.pdf.testapp.ui.XmlStyledPdfFragment
+import androidx.pdf.testapp.ui.scenarios.PageObjectPdfFragment
 import androidx.pdf.testapp.ui.scenarios.SinglePdfFragment
 import androidx.pdf.testapp.ui.scenarios.TabsViewPdfFragment
+import androidx.pdf.testapp.ui.v2.TabbedPdfViewerFragment
 import com.google.android.material.button.MaterialButton
 
 @SuppressLint("RestrictedApiAndroidX")
@@ -40,7 +44,11 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var singlePdfButton: MaterialButton
     private lateinit var tabsViewButton: MaterialButton
-    private lateinit var pdfFragmentv2Button: MaterialButton
+    private lateinit var pdfFragmentV2Button: MaterialButton
+    private lateinit var tabsViewV2Button: MaterialButton
+    private lateinit var styledPdfFragmentButton: MaterialButton
+    private lateinit var xmlStyledPdfFragmentButton: MaterialButton
+    private lateinit var pageObjectPdfButton: MaterialButton
     private lateinit var fragmentContainer: FrameLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,14 +61,30 @@ class MainActivity : AppCompatActivity() {
 
         singlePdfButton = scenarioButtons.singlePdf
         tabsViewButton = scenarioButtons.tabView
-        pdfFragmentv2Button = scenarioButtons.pdfFragmentV2
+        pdfFragmentV2Button = scenarioButtons.pdfFragmentV2
+        tabsViewV2Button = scenarioButtons.tabViewV2
+        styledPdfFragmentButton = scenarioButtons.styledPdfFragment
+        xmlStyledPdfFragmentButton = scenarioButtons.xmlStyledPdfFragment
+
+        pageObjectPdfButton = scenarioButtons.pageObjectPdf
         fragmentContainer = mainActivity.pdfInteractionFragmentContainerView
 
         singlePdfButton.setOnClickListener { loadFragment(SinglePdfFragment()) }
         tabsViewButton.setOnClickListener { loadFragment(TabsViewPdfFragment()) }
-        pdfFragmentv2Button.setOnClickListener {
+        pageObjectPdfButton.setOnClickListener { loadFragment(PageObjectPdfFragment()) }
+        pdfFragmentV2Button.setOnClickListener {
             startActivity(Intent(this@MainActivity, MainActivityV2::class.java))
         }
+        tabsViewV2Button.setOnClickListener { loadFragment(TabbedPdfViewerFragment()) }
+        styledPdfFragmentButton.setOnClickListener {
+            loadFragment(
+                BasicPdfFragment.newInstance(
+                    BasicPdfFragment.Companion.FragmentType.STYLED_FRAGMENT
+                )
+            )
+        }
+
+        xmlStyledPdfFragmentButton.setOnClickListener { loadFragment(XmlStyledPdfFragment()) }
 
         handleWindowInsets()
         handleBackPress()
@@ -125,13 +149,21 @@ class MainActivity : AppCompatActivity() {
     private fun showButtons() {
         singlePdfButton.visibility = View.VISIBLE
         tabsViewButton.visibility = View.VISIBLE
-        pdfFragmentv2Button.visibility = View.VISIBLE
+        tabsViewV2Button.visibility = View.VISIBLE
+        pdfFragmentV2Button.visibility = View.VISIBLE
+        styledPdfFragmentButton.visibility = View.VISIBLE
+        xmlStyledPdfFragmentButton.visibility = View.VISIBLE
+        pageObjectPdfButton.visibility = View.VISIBLE
     }
 
     private fun hideButtons() {
         singlePdfButton.visibility = View.GONE
         tabsViewButton.visibility = View.GONE
-        pdfFragmentv2Button.visibility = View.GONE
+        tabsViewV2Button.visibility = View.GONE
+        pdfFragmentV2Button.visibility = View.GONE
+        styledPdfFragmentButton.visibility = View.GONE
+        xmlStyledPdfFragmentButton.visibility = View.GONE
+        pageObjectPdfButton.visibility = View.GONE
     }
 
     private fun handleWindowInsets() {

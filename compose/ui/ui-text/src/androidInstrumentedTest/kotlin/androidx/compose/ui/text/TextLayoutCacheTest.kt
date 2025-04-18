@@ -175,7 +175,7 @@ class TextLayoutCacheTest {
     }
 
     @Test
-    fun constraintsMinChanges_shouldReturnFromCache() {
+    fun constraintsMinChanges_shouldReturnNull() {
         val textLayoutCache = TextLayoutCache(16)
         val firstInput =
             textLayoutInput(
@@ -194,7 +194,7 @@ class TextLayoutCacheTest {
         val textLayoutResult = layoutText(firstInput)
         textLayoutCache.put(firstInput, textLayoutResult)
 
-        Truth.assertThat(textLayoutCache.get(secondInput)).isEqualTo(textLayoutResult)
+        Truth.assertThat(textLayoutCache.get(secondInput)).isNull()
     }
 
     @Test

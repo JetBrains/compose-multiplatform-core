@@ -22,6 +22,7 @@ import androidx.room.compiler.processing.XNullability.NULLABLE
 import androidx.room.compiler.processing.XNullability.UNKNOWN
 import androidx.room.compiler.processing.XProcessingEnv.Backend
 import androidx.room.compiler.processing.XType
+import androidx.room.ext.isAssignableFromWithNullability
 import androidx.room.processor.Context
 import androidx.room.solver.types.CompositeTypeConverter
 import androidx.room.solver.types.NoOpConverter
@@ -62,8 +63,8 @@ class NullAwareTypeConverterStore(
                     // that would already handle the same arguments.
                     val match =
                         processedConverters.any { other ->
-                            other.from.isAssignableFrom(candidate.from) &&
-                                candidate.to.isAssignableFrom(other.to)
+                            other.from.isAssignableFromWithNullability(candidate.from) &&
+                                candidate.to.isAssignableFromWithNullability(other.to)
                         }
                     if (!match) {
                         processedConverters.add(candidate)
@@ -177,7 +178,7 @@ class NullAwareTypeConverterStore(
             // check for assignable matches but only enqueue them as there might be another shorter
             // path
             columnTypes.forEach { columnType ->
-                if (columnType.isAssignableFrom(current.type)) {
+                if (columnType.isAssignableFromWithNullability(current.type)) {
                     queue.maybeEnqueue(
                         prevEntry = current,
                         converter =
@@ -197,20 +198,23 @@ class NullAwareTypeConverterStore(
         return null
     }
 
-    override fun findConverterFromCursor(columnTypes: List<XType>?, output: XType): TypeConverter? {
+    override fun findConverterFromStatement(
+        columnTypes: List<XType>?,
+        output: XType
+    ): TypeConverter? {
         @Suppress("NAME_SHADOWING") // intentional
         val columnTypes = columnTypes ?: knownColumnTypes
         // prefer nullable when reading from database, regardless of the output type
         getColumnTypesInPreferenceBuckets(nullability = NULLABLE, explicitColumnTypes = columnTypes)
             .forEach { types ->
-                findConverterFromCursorInternal(columnTypes = types, output = output)?.let {
+                findConverterFromStatementInternal(columnTypes = types, output = output)?.let {
                     return it.getOrCreateConverter()
                 }
             }
 
         // if type is non-null, try to find nullable and add null check
         return if (output.nullability == NONNULL) {
-            findConverterFromCursorInternal(
+            findConverterFromStatementInternal(
                     columnTypes = columnTypes,
                     output = output.makeNullable()
                 )
@@ -220,7 +224,7 @@ class NullAwareTypeConverterStore(
         }
     }
 
-    private fun findConverterFromCursorInternal(
+    private fun findConverterFromStatementInternal(
         columnTypes: List<XType>,
         output: XType
     ): TypeConverterEntry? {
@@ -243,7 +247,7 @@ class NullAwareTypeConverterStore(
             // check for assignable matches but only enqueue them as there might be another shorter
             // path
             columnTypes.forEach { columnType ->
-                if (current.type.isAssignableFrom(columnType)) {
+                if (current.type.isAssignableFromWithNullability(columnType)) {
                     queue.maybeEnqueue(
                         prevEntry = current,
                         converter =
@@ -286,13 +290,13 @@ class NullAwareTypeConverterStore(
 
     /** Returns all type converters that can receive input type and return into another type. */
     private fun getAllTypeConvertersFrom(input: XType): List<TypeConverter> {
-        // for input, check assignability because it defines whether we can use the method or not.
+        // for input, check assignability because it defines whether we can use the function or not.
         return typeConvertersByFromCache.getOrPut(input) {
             // this cache avoids us many assignability checks.
             typeConverters.mapNotNull { converter ->
                 when {
                     converter.from.isSameType(input) -> converter
-                    converter.from.isAssignableFrom(input) ->
+                    converter.from.isAssignableFromWithNullability(input) ->
                         CompositeTypeConverter(
                             conv1 =
                                 UpCastTypeConverter(upCastFrom = input, upCastTo = converter.from),
@@ -311,7 +315,7 @@ class NullAwareTypeConverterStore(
             typeConverters.mapNotNull { converter ->
                 when {
                     converter.to.isSameType(output) -> converter
-                    output.isAssignableFrom(converter.to) ->
+                    output.isAssignableFromWithNullability(converter.to) ->
                         CompositeTypeConverter(
                             conv1 = converter,
                             conv2 =

@@ -162,10 +162,10 @@ public object TimeTextDefaults {
     private val Padding = 2.dp
 
     /** Default format for 24h clock. */
-    const val TimeFormat24Hours = "HH:mm"
+    public const val TimeFormat24Hours: String = "HH:mm"
 
     /** Default format for 12h clock. */
-    const val TimeFormat12Hours = "h:mm"
+    public const val TimeFormat12Hours: String = "h:mm"
 
     /** The default content padding used by [TimeText] */
     public val ContentPadding: PaddingValues = PaddingValues(Padding)
@@ -195,7 +195,7 @@ public object TimeTextDefaults {
         background: Color = Color.Unspecified,
         color: Color = Color.Unspecified,
         fontSize: TextUnit = TextUnit.Unspecified,
-    ) =
+    ): TextStyle =
         MaterialTheme.typography.caption1 +
             TextStyle(color = color, background = background, fontSize = fontSize)
 
@@ -259,7 +259,7 @@ public interface TimeSource {
      *
      * @return Formatted time string.
      */
-    val currentTime: String
+    public val currentTime: String
         @Composable get
 }
 

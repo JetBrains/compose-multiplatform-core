@@ -162,6 +162,7 @@ class HapticsTest {
         val scrollableState = rememberScalingLazyListState()
         val viewConfiguration = ViewConfiguration.get(LocalContext.current)
         val flingBehavior = ScrollableDefaults.flingBehavior()
+
         ScalingLazyColumn(
             state = scrollableState,
             rotaryScrollableBehavior = null,
@@ -202,6 +203,7 @@ class HapticsTest {
         scrollFeedbackProvider: ScrollFeedbackProvider,
     ) {
         val scrollableState = rememberScalingLazyListState()
+
         val layoutInfoProvider =
             remember(scrollableState) {
                 ScalingLazyColumnRotarySnapLayoutInfoProvider(scrollableState)

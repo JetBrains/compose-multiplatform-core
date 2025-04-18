@@ -71,6 +71,7 @@ import androidx.compose.ui.util.fastSumBy
  * contextually related to the primary action.
  *
  * @sample androidx.compose.material3.samples.FilledSplitButtonSample
+ * @sample androidx.compose.material3.samples.SplitButtonWithDropdownMenuSample
  * @sample androidx.compose.material3.samples.TonalSplitButtonSample
  * @sample androidx.compose.material3.samples.ElevatedSplitButtonSample
  * @sample androidx.compose.material3.samples.OutlinedSplitButtonSample
@@ -324,20 +325,22 @@ object SplitButtonDefaults {
         // TODO Load the motionScheme tokens from the component tokens file
         val defaultAnimationSpec = MotionSchemeKeyTokens.DefaultEffects.value<Float>()
         val pressed by interactionSource.collectIsPressedAsState()
+        val contentColor = colors.contentColor(enabled)
+        val containerColor = colors.containerColor(enabled)
 
         Surface(
             onClick = onClick,
             modifier = modifier.semantics { role = Role.Button },
             enabled = enabled,
             shape = shapeByInteraction(shapes, pressed, checked = false, defaultAnimationSpec),
-            color = colors.containerColor,
-            contentColor = colors.contentColor,
+            color = containerColor,
+            contentColor = contentColor,
             shadowElevation = elevation?.shadowElevation(enabled, interactionSource)?.value ?: 0.dp,
             border = border,
             interactionSource = interactionSource
         ) {
             ProvideContentColorTextStyle(
-                contentColor = colors.contentColor,
+                contentColor = contentColor,
                 textStyle = MaterialTheme.typography.labelLarge
             ) {
                 Row(
@@ -403,20 +406,22 @@ object SplitButtonDefaults {
         val pressed by interactionSource.collectIsPressedAsState()
         val layoutDirection = LocalLayoutDirection.current
         val shape = shapeByInteraction(shapes, pressed, false, defaultAnimationSpec)
+        val contentColor = colors.contentColor(enabled)
+        val containerColor = colors.containerColor(enabled)
 
         Surface(
             onClick = onClick,
             modifier = modifier.semantics { role = Role.Button },
             enabled = enabled,
             shape = shape,
-            color = colors.containerColor,
-            contentColor = colors.contentColor,
+            color = containerColor,
+            contentColor = contentColor,
             shadowElevation = elevation?.shadowElevation(enabled, interactionSource)?.value ?: 0.dp,
             border = border,
             interactionSource = interactionSource
         ) {
             ProvideContentColorTextStyle(
-                contentColor = colors.contentColor,
+                contentColor = contentColor,
                 textStyle = MaterialTheme.typography.labelLarge
             ) {
                 Row(
@@ -516,6 +521,8 @@ object SplitButtonDefaults {
         val layoutDirection = LocalLayoutDirection.current
         val density = LocalDensity.current
         val shape = shapeByInteraction(shapes, pressed, checked, defaultAnimationSpec)
+        val contentColor = colors.contentColor(enabled)
+        val containerColor = colors.containerColor(enabled)
 
         Surface(
             checked = checked,
@@ -527,22 +534,22 @@ object SplitButtonDefaults {
                         if (checked) {
                             drawOutline(
                                 outline = shape.createOutline(size, layoutDirection, density),
-                                color = colors.contentColor,
+                                color = contentColor,
                                 alpha = TrailingButtonStateLayerAlpha
                             )
                         }
                     }
-                    .semantics { role = Role.Checkbox },
+                    .semantics { role = Role.Button },
             enabled = enabled,
             shape = shape,
-            color = colors.containerColor,
-            contentColor = colors.contentColor,
+            color = containerColor,
+            contentColor = contentColor,
             shadowElevation = elevation?.shadowElevation(enabled, interactionSource)?.value ?: 0.dp,
             border = border,
             interactionSource = interactionSource
         ) {
             ProvideContentColorTextStyle(
-                contentColor = colors.contentColor,
+                contentColor = contentColor,
                 textStyle = MaterialTheme.typography.labelLarge
             ) {
                 Row(

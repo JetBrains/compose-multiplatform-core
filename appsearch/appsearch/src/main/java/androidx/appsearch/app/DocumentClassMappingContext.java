@@ -16,10 +16,11 @@
 // @exportToFramework:skipFile()
 package androidx.appsearch.app;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.Document;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -68,18 +69,16 @@ public class DocumentClassMappingContext {
     /**
      * Returns the document class map.
      */
-    @NonNull
     @ExperimentalAppSearchApi
-    public Map<String, List<String>> getDocumentClassMap() {
+    public @NonNull Map<String, List<String>> getDocumentClassMap() {
         return mDocumentClassMap;
     }
 
     /**
      * Returns the parent type map.
      */
-    @NonNull
     @ExperimentalAppSearchApi
-    public Map<String, List<String>> getParentTypeMap() {
+    public @NonNull Map<String, List<String>> getParentTypeMap() {
         return mParentTypeMap;
     }
 }

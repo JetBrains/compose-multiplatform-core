@@ -17,10 +17,12 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
+    compileSdk = 35
+
     defaultConfig {
         applicationId = "androidx.camera.integration.antelope"
         versionCode 35

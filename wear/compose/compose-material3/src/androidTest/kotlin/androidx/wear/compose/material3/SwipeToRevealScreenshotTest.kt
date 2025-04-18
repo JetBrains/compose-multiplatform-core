@@ -39,7 +39,7 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.wear.compose.foundation.RevealActionType
 import androidx.wear.compose.foundation.RevealValue
-import androidx.wear.compose.foundation.SwipeDirection
+import androidx.wear.compose.foundation.rememberRevealState
 import androidx.wear.compose.materialcore.screenWidthDp
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
@@ -64,12 +64,16 @@ class SwipeToRevealScreenshotTest {
             Box(modifier = Modifier.fillMaxSize()) {
                 SwipeToReveal(
                     modifier = Modifier.testTag(TEST_TAG),
-                    revealState = rememberRevealState(initialValue = RevealValue.RightRevealing),
+                    revealState =
+                        rememberRevealState(
+                            initialValue = RevealValue.RightRevealing,
+                            anchors = SwipeToRevealDefaults.anchors()
+                        ),
                     actions = {
                         primaryAction(
                             {},
                             { Icon(Icons.Outlined.Close, contentDescription = "Clear") },
-                            "Clear"
+                            { Text("Clear") }
                         )
                     }
                 ) {
@@ -90,18 +94,20 @@ class SwipeToRevealScreenshotTest {
                     revealState =
                         rememberRevealState(
                             initialValue = RevealValue.RightRevealing,
-                            anchorWidth = SwipeToRevealDefaults.DoubleActionAnchorWidth
+                            anchors =
+                                SwipeToRevealDefaults.anchors(
+                                    anchorWidth = SwipeToRevealDefaults.DoubleActionAnchorWidth,
+                                )
                         ),
                     actions = {
                         primaryAction(
                             {},
                             { Icon(Icons.Outlined.Close, contentDescription = "Clear") },
-                            "Clear"
+                            { Text("Clear") }
                         )
                         secondaryAction(
                             {},
-                            { Icon(Icons.Outlined.MoreVert, contentDescription = "More") },
-                            "More"
+                            { Icon(Icons.Outlined.MoreVert, contentDescription = "More") }
                         )
                     }
                 ) {
@@ -119,10 +125,51 @@ class SwipeToRevealScreenshotTest {
             Box(modifier = Modifier.fillMaxSize()) {
                 SwipeToReveal(
                     modifier = Modifier.testTag(TEST_TAG),
-                    revealState = rememberRevealState(initialValue = RevealValue.RightRevealed),
+                    revealState =
+                        rememberRevealState(
+                            initialValue = RevealValue.RightRevealed,
+                            anchors = SwipeToRevealDefaults.anchors()
+                        ),
                     actions = {
-                        primaryAction({}, /* Empty for testing */ {}, /* Empty for testing */ "")
-                        undoPrimaryAction({}, "Undo Primary")
+                        primaryAction(
+                            {}, /* Empty for testing */
+                            {}, /* Empty for testing */
+                            {} /* Empty for testing */
+                        )
+                        undoPrimaryAction({}, { Text("Undo Primary") })
+                    }
+                ) {
+                    Button({}) { Text(/* Empty for testing */ "") }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun swipeToReveal_showsUndoPrimaryAction_singleLineTruncated() {
+        verifyScreenshotForSize(ScreenSize.SMALL) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                SwipeToReveal(
+                    modifier = Modifier.testTag(TEST_TAG),
+                    revealState =
+                        rememberRevealState(
+                            initialValue = RevealValue.RightRevealed,
+                            anchors = SwipeToRevealDefaults.anchors()
+                        ),
+                    actions = {
+                        primaryAction(
+                            {}, /* Empty for testing */
+                            {}, /* Empty for testing */
+                            {} /* Empty for testing */
+                        )
+                        undoPrimaryAction(
+                            {},
+                            {
+                                Text(
+                                    "Undo Delete action with an extremely long label that should truncate."
+                                )
+                            }
+                        )
                     }
                 ) {
                     Button({}) { Text(/* Empty for testing */ "") }
@@ -138,14 +185,62 @@ class SwipeToRevealScreenshotTest {
                 SwipeToReveal(
                     modifier = Modifier.testTag(TEST_TAG),
                     revealState =
-                        rememberRevealState(initialValue = RevealValue.RightRevealed).apply {
-                            lastActionType = RevealActionType.SecondaryAction
-                        },
+                        rememberRevealState(
+                                initialValue = RevealValue.RightRevealed,
+                                anchors = SwipeToRevealDefaults.anchors()
+                            )
+                            .apply { lastActionType = RevealActionType.SecondaryAction },
                     actions = {
-                        primaryAction({}, /* Empty for testing */ {}, /* Empty for testing */ "")
-                        undoPrimaryAction({}, /* Empty for testing */ "")
-                        secondaryAction({}, /* Empty for testing */ {}, /* Empty for testing */ "")
-                        undoSecondaryAction({}, "Undo Secondary")
+                        primaryAction(
+                            {}, /* Empty for testing */
+                            {}, /* Empty for testing */
+                            {} /* Empty for testing */
+                        )
+                        undoPrimaryAction(
+                            {}, /* Empty for testing */
+                            {}, /* Empty for testing */
+                        )
+                        secondaryAction({}, /* Empty for testing */ {} /* Empty for testing */)
+                        undoSecondaryAction({}, { Text("Undo Secondary") })
+                    }
+                ) {
+                    Button({}) { Text(/* Empty for testing */ "") }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun swipeToReveal_showsUndoSecondaryAction_singleLineTruncated() {
+        verifyScreenshotForSize(ScreenSize.SMALL) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                SwipeToReveal(
+                    modifier = Modifier.testTag(TEST_TAG),
+                    revealState =
+                        rememberRevealState(
+                                initialValue = RevealValue.RightRevealed,
+                                anchors = SwipeToRevealDefaults.anchors()
+                            )
+                            .apply { lastActionType = RevealActionType.SecondaryAction },
+                    actions = {
+                        primaryAction(
+                            {}, /* Empty for testing */
+                            {}, /* Empty for testing */
+                            {} /* Empty for testing */
+                        )
+                        undoPrimaryAction(
+                            {}, /* Empty for testing */
+                            {}, /* Empty for testing */
+                        )
+                        secondaryAction({}, /* Empty for testing */ {} /* Empty for testing */)
+                        undoSecondaryAction(
+                            {},
+                            {
+                                Text(
+                                    "Undo Delete action with an extremely long label that should truncate."
+                                )
+                            }
+                        )
                     }
                 ) {
                     Button({}) { Text(/* Empty for testing */ "") }
@@ -161,7 +256,11 @@ class SwipeToRevealScreenshotTest {
                 SwipeToReveal(
                     modifier = Modifier.testTag(TEST_TAG),
                     actions = {
-                        primaryAction({}, /* Empty for testing */ {}, /* Empty for testing */ "")
+                        primaryAction(
+                            {}, /* Empty for testing */
+                            {}, /* Empty for testing */
+                            {} /* Empty for testing */
+                        )
                     }
                 ) {
                     Button({}, Modifier.fillMaxWidth()) {
@@ -178,13 +277,17 @@ class SwipeToRevealScreenshotTest {
             Box(modifier = Modifier.fillMaxSize()) {
                 SwipeToReveal(
                     modifier = Modifier.testTag(TEST_TAG),
-                    revealState = rememberRevealState(initialValue = RevealValue.RightRevealing),
+                    revealState =
+                        rememberRevealState(
+                            initialValue = RevealValue.RightRevealing,
+                            anchors = SwipeToRevealDefaults.anchors()
+                        ),
                     actionButtonHeight = SwipeToRevealDefaults.LargeActionButtonHeight,
                     actions = {
                         primaryAction(
                             {},
                             { Icon(Icons.Outlined.Close, contentDescription = "Clear") },
-                            "Clear"
+                            { Text("Clear") }
                         )
                     }
                 ) {
@@ -207,19 +310,21 @@ class SwipeToRevealScreenshotTest {
                     revealState =
                         rememberRevealState(
                             initialValue = RevealValue.RightRevealing,
-                            anchorWidth = SwipeToRevealDefaults.DoubleActionAnchorWidth
+                            anchors =
+                                SwipeToRevealDefaults.anchors(
+                                    anchorWidth = SwipeToRevealDefaults.DoubleActionAnchorWidth,
+                                )
                         ),
                     actionButtonHeight = SwipeToRevealDefaults.LargeActionButtonHeight,
                     actions = {
                         primaryAction(
                             {},
                             { Icon(Icons.Outlined.Close, contentDescription = "Clear") },
-                            "Clear"
+                            { Text("Clear") }
                         )
                         secondaryAction(
                             {},
-                            { Icon(Icons.Outlined.MoreVert, contentDescription = "More") },
-                            "More"
+                            { Icon(Icons.Outlined.MoreVert, contentDescription = "More") }
                         )
                     }
                 ) {
@@ -240,19 +345,20 @@ class SwipeToRevealScreenshotTest {
                     revealState =
                         rememberRevealState(
                             initialValue = RevealValue.LeftRevealing,
-                            anchorWidth = SwipeToRevealDefaults.DoubleActionAnchorWidth,
-                            swipeDirection = SwipeDirection.Both
+                            anchors =
+                                SwipeToRevealDefaults.bidirectionalAnchors(
+                                    anchorWidth = SwipeToRevealDefaults.DoubleActionAnchorWidth,
+                                )
                         ),
                     actions = {
                         primaryAction(
                             {},
                             { Icon(Icons.Outlined.Close, contentDescription = "Clear") },
-                            "Clear"
+                            { Text("Clear") }
                         )
                         secondaryAction(
                             {},
-                            { Icon(Icons.Outlined.MoreVert, contentDescription = "More") },
-                            "More"
+                            { Icon(Icons.Outlined.MoreVert, contentDescription = "More") }
                         )
                     }
                 ) {
@@ -299,12 +405,11 @@ class SwipeToRevealScreenshotTest {
                             primaryAction(
                                 {},
                                 { Icon(Icons.Outlined.Close, contentDescription = "Clear") },
-                                "Clear"
+                                { Text("Clear") }
                             )
                             secondaryAction(
                                 {},
-                                { Icon(Icons.Outlined.MoreVert, contentDescription = "More") },
-                                "More"
+                                { Icon(Icons.Outlined.MoreVert, contentDescription = "More") }
                             )
                         }
                     ) {

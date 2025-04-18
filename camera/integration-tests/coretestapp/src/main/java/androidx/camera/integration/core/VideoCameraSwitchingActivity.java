@@ -28,8 +28,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.camera2.Camera2Config;
@@ -52,6 +50,9 @@ import androidx.core.content.ContextCompat;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -87,26 +88,16 @@ public class VideoCameraSwitchingActivity extends AppCompatActivity {
 
     private static String sCameraImplementationType;
 
-    @NonNull
-    private CameraSelector mCameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
-    @Nullable
-    private ProcessCameraProvider mCameraProvider;
-    @Nullable
-    private PreviewView mPreviewView;
-    @Nullable
-    private EditText mDurationText;
-    @Nullable
-    private EditText mSwitchTimeText;
-    @Nullable
-    private Button mStartButton;
-    @Nullable
-    private Preview mPreview;
-    @Nullable
-    private VideoCapture<Recorder> mVideoCapture;
-    @Nullable
-    private Camera mCamera;
-    @Nullable
-    private Recording mRecording;
+    private @NonNull CameraSelector mCameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
+    private @Nullable ProcessCameraProvider mCameraProvider;
+    private @Nullable PreviewView mPreviewView;
+    private @Nullable EditText mDurationText;
+    private @Nullable EditText mSwitchTimeText;
+    private @Nullable Button mStartButton;
+    private @Nullable Preview mPreview;
+    private @Nullable VideoCapture<Recorder> mVideoCapture;
+    private @Nullable Camera mCamera;
+    private @Nullable Recording mRecording;
     private boolean mNotYetSwitched = true;
     private Integer mDeviceOrientation = null;
     private OrientationEventListener mOrientationEventListener;
@@ -318,8 +309,7 @@ public class VideoCameraSwitchingActivity extends AppCompatActivity {
                 generateFileName(INFO_FILE_PREFIX, true), "txt");
     }
 
-    @NonNull
-    private String generateFileName(@Nullable String prefix, boolean isUnique) {
+    private @NonNull String generateFileName(@Nullable String prefix, boolean isUnique) {
         if (!isUnique && !FileUtil.isFileNameValid(prefix)) {
             throw new IllegalArgumentException("Invalid arguments for generating file name.");
         }
@@ -348,8 +338,8 @@ public class VideoCameraSwitchingActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
-            @NonNull String[] permissions,
-            @NonNull int[] grantResults) {
+            String @NonNull [] permissions,
+            int @NonNull [] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {

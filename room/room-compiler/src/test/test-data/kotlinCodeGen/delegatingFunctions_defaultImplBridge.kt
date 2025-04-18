@@ -25,11 +25,11 @@ public class MyDao_Impl(
     return performBlocking(__db, true, false) { _connection ->
       val _stmt: SQLiteStatement = _connection.prepare(_sql)
       try {
-        val _cursorIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
+        val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
         val _result: MyEntity
         if (_stmt.step()) {
           val _tmpPk: Long
-          _tmpPk = _stmt.getLong(_cursorIndexOfPk)
+          _tmpPk = _stmt.getLong(_columnIndexOfPk)
           _result = MyEntity(_tmpPk)
         } else {
           error("The query result was empty, but expected a single row to return a NON-NULL object of type <MyEntity>.")

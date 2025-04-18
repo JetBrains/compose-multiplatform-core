@@ -19,7 +19,6 @@ package androidx.appsearch.platformstorage.converter;
 import android.os.Build;
 
 import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchSchema;
@@ -30,6 +29,8 @@ import androidx.appsearch.app.SchemaVisibilityConfig;
 import androidx.appsearch.app.SetSchemaRequest;
 import androidx.appsearch.app.SetSchemaResponse;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Map;
@@ -49,8 +50,7 @@ public final class SetSchemaRequestToPlatformConverter {
      * Translates a jetpack {@link SetSchemaRequest} into a platform
      * {@link android.app.appsearch.SetSchemaRequest}.
      */
-    @NonNull
-    public static android.app.appsearch.SetSchemaRequest toPlatformSetSchemaRequest(
+    public static android.app.appsearch.@NonNull SetSchemaRequest toPlatformSetSchemaRequest(
             @NonNull SetSchemaRequest jetpackRequest) {
         Preconditions.checkNotNull(jetpackRequest);
         android.app.appsearch.SetSchemaRequest.Builder platformBuilder =
@@ -128,12 +128,11 @@ public final class SetSchemaRequestToPlatformConverter {
                     return jetpackMigrator.shouldMigrate(currentVersion, finalVersion);
                 }
 
-                @NonNull
                 @Override
-                public android.app.appsearch.GenericDocument onUpgrade(
+                public android.app.appsearch.@NonNull GenericDocument onUpgrade(
                         int currentVersion,
                         int finalVersion,
-                        @NonNull android.app.appsearch.GenericDocument inPlatformDocument) {
+                        android.app.appsearch.@NonNull GenericDocument inPlatformDocument) {
                     GenericDocument inJetpackDocument =
                             GenericDocumentToPlatformConverter.toJetpackGenericDocument(
                                     inPlatformDocument);
@@ -146,12 +145,11 @@ public final class SetSchemaRequestToPlatformConverter {
                             outJetpackDocument);
                 }
 
-                @NonNull
                 @Override
-                public android.app.appsearch.GenericDocument onDowngrade(
+                public android.app.appsearch.@NonNull GenericDocument onDowngrade(
                         int currentVersion,
                         int finalVersion,
-                        @NonNull android.app.appsearch.GenericDocument inPlatformDocument) {
+                        android.app.appsearch.@NonNull GenericDocument inPlatformDocument) {
                     GenericDocument inJetpackDocument =
                             GenericDocumentToPlatformConverter.toJetpackGenericDocument(
                                     inPlatformDocument);
@@ -176,9 +174,8 @@ public final class SetSchemaRequestToPlatformConverter {
      * Translates a platform {@link android.app.appsearch.SetSchemaResponse} into a jetpack
      * {@link SetSchemaResponse}.
      */
-    @NonNull
-    public static SetSchemaResponse toJetpackSetSchemaResponse(
-            @NonNull android.app.appsearch.SetSchemaResponse platformResponse) {
+    public static @NonNull SetSchemaResponse toJetpackSetSchemaResponse(
+            android.app.appsearch.@NonNull SetSchemaResponse platformResponse) {
         Preconditions.checkNotNull(platformResponse);
         SetSchemaResponse.Builder jetpackBuilder = new SetSchemaResponse.Builder()
                 .addDeletedTypes(platformResponse.getDeletedTypes())
@@ -239,8 +236,7 @@ public final class SetSchemaRequestToPlatformConverter {
          * Translates a jetpack {@link SchemaVisibilityConfig} into a platform
          * {@link android.app.appsearch.SchemaVisibilityConfig}.
          */
-        @NonNull
-        private static android.app.appsearch.SchemaVisibilityConfig
+        private static android.app.appsearch.@NonNull SchemaVisibilityConfig
                 toPlatformSchemaVisibilityConfig(@NonNull SchemaVisibilityConfig jetpackConfig) {
             Preconditions.checkNotNull(jetpackConfig);
             android.app.appsearch.SchemaVisibilityConfig.Builder platformBuilder =

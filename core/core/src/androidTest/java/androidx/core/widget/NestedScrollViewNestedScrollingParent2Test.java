@@ -34,8 +34,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.NestedScrollingChild2;
 import androidx.core.view.NestedScrollingParent2;
 import androidx.core.view.ViewCompat;
@@ -43,6 +41,8 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -565,8 +565,8 @@ public class NestedScrollViewNestedScrollingParent2Test {
         }
 
         @Override
-        public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed,
-                int type) {
+        public void onNestedPreScroll(@NonNull View target, int dx, int dy,
+                int @NonNull [] consumed, int type) {
 
         }
 
@@ -587,13 +587,13 @@ public class NestedScrollViewNestedScrollingParent2Test {
 
         @Override
         public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-                int dyUnconsumed, @Nullable int[] offsetInWindow, int type) {
+                int dyUnconsumed, int @Nullable [] offsetInWindow, int type) {
             return false;
         }
 
         @Override
-        public boolean dispatchNestedPreScroll(int dx, int dy, @Nullable int[] consumed,
-                @Nullable int[] offsetInWindow, int type) {
+        public boolean dispatchNestedPreScroll(int dx, int dy, int @Nullable [] consumed,
+                int @Nullable [] offsetInWindow, int type) {
             return false;
         }
 
@@ -645,40 +645,40 @@ public class NestedScrollViewNestedScrollingParent2Test {
         }
 
         @Override
-        public boolean onStartNestedScroll(@NonNull  View child, @NonNull View target, int axes) {
+        public boolean onStartNestedScroll(@NonNull View child, @NonNull View target, int axes) {
             return false;
         }
 
         @Override
-        public void onNestedScrollAccepted(@NonNull  View child, @NonNull View target, int axes) {
+        public void onNestedScrollAccepted(@NonNull View child, @NonNull View target, int axes) {
 
         }
 
         @Override
-        public void onStopNestedScroll(@NonNull  View target) {
+        public void onStopNestedScroll(@NonNull View target) {
 
         }
 
         @Override
-        public void onNestedScroll(@NonNull  View target, int dxConsumed, int dyConsumed,
+        public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed,
                 int dxUnconsumed, int dyUnconsumed) {
 
         }
 
         @Override
         public void onNestedPreScroll(
-                @NonNull  View target, int dx, int dy, @NonNull int[] consumed) {
+                 @NonNull View target, int dx, int dy, int @NonNull [] consumed) {
 
         }
 
         @Override
-        public boolean onNestedFling(@NonNull  View target, float velocityX, float velocityY,
+        public boolean onNestedFling(@NonNull View target, float velocityX, float velocityY,
                 boolean consumed) {
             return false;
         }
 
         @Override
-        public boolean onNestedPreFling(@NonNull  View target, float velocityX, float velocityY) {
+        public boolean onNestedPreFling(@NonNull View target, float velocityX, float velocityY) {
             return false;
         }
 

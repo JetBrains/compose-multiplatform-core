@@ -197,7 +197,7 @@ class CanvasInProgressStrokesRenderHelperV33Test {
         withActivity { activity ->
             whenever(callback.onDraw()).then {
                 activity.renderHelper.prepareToDrawInModifiedRegion(MutableBox())
-                activity.renderHelper.drawInModifiedRegion(InProgressStroke(), Matrix())
+                activity.renderHelper.drawInModifiedRegion(InProgressStroke(), Matrix(), 0F)
                 activity.renderHelper.afterDrawInModifiedRegion()
             }
 

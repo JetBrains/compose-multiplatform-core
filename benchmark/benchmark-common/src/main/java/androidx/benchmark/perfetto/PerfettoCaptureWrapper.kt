@@ -34,6 +34,9 @@ import androidx.tracing.perfetto.handshake.protocol.ResponseResultCodes.RESULT_C
 import androidx.tracing.perfetto.handshake.protocol.ResponseResultCodes.RESULT_CODE_SUCCESS
 import java.io.FileOutputStream
 import java.lang.RuntimeException
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 /** Wrapper for [PerfettoCapture] which does nothing below API 23. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -109,6 +112,7 @@ class PerfettoCaptureWrapper {
         }
     }
 
+    @OptIn(ExperimentalContracts::class)
     fun record(
         fileLabel: String,
         config: PerfettoConfig,
@@ -118,6 +122,7 @@ class PerfettoCaptureWrapper {
         inMemoryTracingLabel: String? = null,
         block: () -> Unit
     ): String? {
+        contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
         // skip if Perfetto not supported, or if caller opts out
         if (Build.VERSION.SDK_INT < 23 || !isAbiSupported() || !enableTracing) {
             block()

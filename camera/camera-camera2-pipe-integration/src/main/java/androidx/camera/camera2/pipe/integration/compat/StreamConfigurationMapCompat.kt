@@ -20,6 +20,7 @@ import android.graphics.ImageFormat
 import android.graphics.PixelFormat
 import android.hardware.camera2.params.StreamConfigurationMap
 import android.os.Build
+import android.util.Range
 import android.util.Size
 import androidx.camera.camera2.pipe.integration.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.pipe.integration.config.CameraScope
@@ -160,6 +161,28 @@ constructor(map: StreamConfigurationMap?, private val outputSizesCorrector: Outp
         return outputSizes?.clone()
     }
 
+    /** Get a list of supported high speed video recording FPS ranges. */
+    public fun getHighSpeedVideoFpsRanges(): Array<Range<Int>>? {
+        return impl.getHighSpeedVideoFpsRanges()
+    }
+
+    /** Get the frame per second ranges (fpsMin, fpsMax) for input high speed video size. */
+    @Throws(IllegalArgumentException::class)
+    public fun getHighSpeedVideoFpsRangesFor(size: Size): Array<Range<Int>>? {
+        return impl.getHighSpeedVideoFpsRangesFor(size)
+    }
+
+    /** Get a list of supported high speed video recording sizes. */
+    public fun getHighSpeedVideoSizes(): Array<Size>? {
+        return impl.getHighSpeedVideoSizes()
+    }
+
+    /** Get the supported video sizes for an input high speed FPS range. */
+    @Throws(IllegalArgumentException::class)
+    public fun getHighSpeedVideoSizesFor(fpsRange: Range<Int>): Array<Size>? {
+        return impl.getHighSpeedVideoSizesFor(fpsRange)
+    }
+
     public fun getOutputMinFrameDuration(format: Int, size: Size?): Long? {
         return impl.getOutputMinFrameDuration(format, size)
     }
@@ -177,6 +200,16 @@ constructor(map: StreamConfigurationMap?, private val outputSizesCorrector: Outp
         fun <T> getOutputSizes(klass: Class<T>): Array<Size>?
 
         fun getHighResolutionOutputSizes(format: Int): Array<Size>?
+
+        fun getHighSpeedVideoFpsRanges(): Array<Range<Int>>?
+
+        @Throws(IllegalArgumentException::class)
+        fun getHighSpeedVideoFpsRangesFor(size: Size): Array<Range<Int>>?
+
+        fun getHighSpeedVideoSizes(): Array<Size>?
+
+        @Throws(IllegalArgumentException::class)
+        fun getHighSpeedVideoSizesFor(fpsRange: Range<Int>): Array<Size>?
 
         fun getOutputMinFrameDuration(format: Int, size: Size?): Long?
 

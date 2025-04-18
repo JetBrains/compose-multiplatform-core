@@ -16,12 +16,13 @@
 
 package androidx.pdf.search
 
+import android.os.DeadObjectException
 import androidx.annotation.RestrictTo
-import androidx.core.util.isEmpty
 import androidx.core.util.isNotEmpty
 import androidx.pdf.PdfDocument
-import androidx.pdf.search.model.SearchResults
-import androidx.pdf.search.model.SelectedSearchResult
+import androidx.pdf.search.model.NoQuery
+import androidx.pdf.search.model.QueryResults
+import androidx.pdf.search.model.SearchResultState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,118 +47,152 @@ import kotlinx.coroutines.withContext
  *   to Dispatcher.IO.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-internal class SearchRepository(
+public class SearchRepository(
     private val pdfDocument: PdfDocument,
+    // TODO(b/384001800) Remove dispatcher
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
 
-    private val _searchResults: MutableStateFlow<SearchResults> = MutableStateFlow(SearchResults())
+    private val _queryResults: MutableStateFlow<SearchResultState> = MutableStateFlow(NoQuery)
 
     /** Stream of search results for a given query. */
-    val searchResults: StateFlow<SearchResults>
-        get() = _searchResults.asStateFlow()
-
-    private val _selectedSearchResult: MutableStateFlow<SelectedSearchResult?> =
-        MutableStateFlow(null)
-
-    /** Stream of selected search results. */
-    val selectedSearchResult: StateFlow<SelectedSearchResult?>
-        get() = _selectedSearchResult.asStateFlow()
+    public val queryResults: StateFlow<SearchResultState>
+        get() = _queryResults.asStateFlow()
 
     private lateinit var cyclicIterator: CyclicSparseArrayIterator
 
     /**
      * Initiates search over pdf document
      *
-     * @param query: The search query string.
-     * @param currentVisiblePage: Provides current visible document page, which is required to
-     *   search from specific page and to calculate initial [selectedSearchResult]
+     * @param query The search query string.
+     * @param currentVisiblePage Provides current visible document page, which is required to search
+     *   from specific page and to calculate initial QueryResultsIndex.
+     * @param resultIndex (optional) The index of the selected result when restoring from a previous
+     *   session. If not provided, the first matching result on the page will be selected by
+     *   default.
      *
-     * Results would be updated to [searchResults] in the coroutine collecting the flow.
+     * Results would be updated to [queryResults] in the coroutine collecting the flow.
      */
-    suspend fun searchDocument(query: String, currentVisiblePage: Int) {
-        if (query.isEmpty()) return
+    public suspend fun produceSearchResults(
+        query: String,
+        currentVisiblePage: Int,
+        resultIndex: Int = 0
+    ) {
+        if (query.isBlank()) {
+            clearSearchResults()
+            return
+        }
 
-        // Clear the existing results
-        clearSearchResults()
+        val searchPageRange = IntRange(start = 0, endInclusive = pdfDocument.pageCount - 1)
 
         // search should be a background work, move execution on to provided [dispatcher]
         // to make [searchDocument] main-safe
-        val currentResult =
+        val searchResults =
             withContext(dispatcher) {
-                SearchResults(
-                    searchQuery = query,
-                    results =
-                        pdfDocument.searchDocument(
-                            query = query,
-                            pageRange = IntRange(start = 0, endInclusive = pdfDocument.pageCount)
-                        )
-                )
+                try {
+                    pdfDocument.searchDocument(query = query, pageRange = searchPageRange)
+                } catch (e: DeadObjectException) {
+                    // Ignore exception due to service disconnection. User will try again.
+                    return@withContext null
+                }
             }
 
-        // update results
-        _searchResults.update { currentResult }
-
-        if (currentResult.results.isNotEmpty()) {
-            // Init cyclic iterator
-            cyclicIterator = CyclicSparseArrayIterator(currentResult.results, currentVisiblePage)
-
-            // update initial selection
-            _selectedSearchResult.update { cyclicIterator.current() }
+        if (searchResults == null) {
+            // An exception happened above because of service disconnection.
+            // Reset search so that user may try again.
+            _queryResults.update { NoQuery }
+            return
         }
+        val queryResults =
+            if (searchResults.isNotEmpty()) {
+                /*
+                 When search results are available for a query, we initialize a cyclic iterator.
+                 This iterator is used to traverse the results when `findPrev()` and `findNext()` are called.
+                */
+                cyclicIterator =
+                    CyclicSparseArrayIterator(
+                        searchData = searchResults,
+                        visiblePage = currentVisiblePage
+                    )
+
+                // Restores the current index if required, or selects the first index of the page.
+                cyclicIterator.moveToIndex(index = resultIndex)
+
+                QueryResults.Matched(
+                    query = query,
+                    pageRange = searchPageRange,
+                    resultBounds = searchResults,
+                    /* Set [queryResultsIndex] to cyclicIterator.current() which points to first result
+                    on or nearest page to currentVisiblePage in forward direction. */
+                    queryResultsIndex = cyclicIterator.current()
+                )
+            } else {
+                QueryResults.NoMatch(query = query, pageRange = searchPageRange)
+            }
+
+        _queryResults.update { queryResults }
     }
 
     /**
      * Iterate through searchResults in backward direction.
      *
-     * Results would be updated to [selectedSearchResult] in the coroutine collecting the flow.
+     * Results would be updated to [queryResults] in the coroutine collecting the flow.
      *
      * Throws [NoSuchElementException] is search results are empty.
      */
-    suspend fun prev() {
-        if (searchResults.value.results.isEmpty())
+    public suspend fun producePreviousResult() {
+        val currentResult = queryResults.value
+
+        if (currentResult !is QueryResults.Matched)
             throw NoSuchElementException("Iteration not possible over empty results")
 
-        _selectedSearchResult.update { cyclicIterator.prev() }
+        /*
+         Create a shallow copy of the query result, updating only the `queryResultIndex`
+         to point to the previous element in the `resultsBounds` of the current query result.
+        */
+        val prevResult =
+            QueryResults.Matched(
+                query = currentResult.query,
+                resultBounds = currentResult.resultBounds,
+                pageRange = currentResult.pageRange,
+                queryResultsIndex = cyclicIterator.prev()
+            )
+
+        _queryResults.update { prevResult }
     }
 
     /**
      * Iterate through searchResults in forward direction.
      *
-     * Results would be updated to [selectedSearchResult] in the coroutine collecting the flow.
+     * Results would be updated to [queryResults] in the coroutine collecting the flow.
      *
      * Throws [NoSuchElementException] is search results are empty.
      */
-    suspend fun next() {
-        if (searchResults.value.results.isEmpty())
+    public suspend fun produceNextResult() {
+        val currentResult = queryResults.value
+
+        if (currentResult !is QueryResults.Matched)
             throw NoSuchElementException("Iteration not possible over empty results")
 
-        _selectedSearchResult.update { cyclicIterator.next() }
+        /*
+         Create a shallow copy of the query result, updating only the `queryResultIndex`
+         to point to the next element in the `resultsBounds` of the current query result.
+        */
+        val nextResult =
+            QueryResults.Matched(
+                query = currentResult.query,
+                resultBounds = currentResult.resultBounds,
+                pageRange = currentResult.pageRange,
+                queryResultsIndex = cyclicIterator.next()
+            )
+
+        _queryResults.update { nextResult }
     }
 
     /**
-     * Resets [searchResults] and [selectedSearchResult] to initial state. This would be required to
-     * handle close/cancel action.
+     * Resets [queryResults] to initial state. This would be required to handle close/cancel action.
      */
-    fun clearSearchResults() {
-        _searchResults.update { SearchResults() }
-        _selectedSearchResult.update { null }
-    }
-
-    /**
-     * Set [searchResults] and [selectedSearchResult] flows to provided value.
-     *
-     * This should be utilized when result state is already available(muck like in restore scenario)
-     */
-    fun setState(
-        searchResults: SearchResults,
-        selectedSearchResult: SelectedSearchResult?,
-        currentVisiblePage: Int
-    ) {
-        _searchResults.update { searchResults }
-        _selectedSearchResult.update { selectedSearchResult }
-        // initiate iterator is results are not empty
-        if (searchResults.results.isNotEmpty())
-            cyclicIterator = CyclicSparseArrayIterator(searchResults.results, currentVisiblePage)
+    public fun clearSearchResults() {
+        _queryResults.update { NoQuery }
     }
 }
