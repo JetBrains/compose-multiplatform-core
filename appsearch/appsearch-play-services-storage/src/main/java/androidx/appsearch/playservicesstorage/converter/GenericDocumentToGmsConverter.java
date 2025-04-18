@@ -16,7 +16,6 @@
 
 package androidx.appsearch.playservicesstorage.converter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchBlobHandle;
@@ -25,6 +24,8 @@ import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GenericDocument;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Translates between Gms and Jetpack versions of {@link GenericDocument}.
@@ -39,9 +40,8 @@ public final class GenericDocumentToGmsConverter {
      * Translates a jetpack {@link androidx.appsearch.app.GenericDocument} into a Gms
      * {@link com.google.android.gms.appsearch.GenericDocument}.
      */
-    @NonNull
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    public static com.google.android.gms.appsearch.GenericDocument toGmsGenericDocument(
+    public static com.google.android.gms.appsearch.@NonNull GenericDocument toGmsGenericDocument(
             @NonNull GenericDocument jetpackDocument) {
         Preconditions.checkNotNull(jetpackDocument);
         com.google.android.gms.appsearch.GenericDocument.Builder<
@@ -99,9 +99,8 @@ public final class GenericDocumentToGmsConverter {
      * Translates a Gms {@link com.google.android.gms.appsearch.GenericDocument}
      * into a jetpack {@link androidx.appsearch.app.GenericDocument}.
      */
-    @NonNull
-    public static GenericDocument toJetpackGenericDocument(
-            @NonNull com.google.android.gms.appsearch.GenericDocument
+    public static @NonNull GenericDocument toJetpackGenericDocument(
+            com.google.android.gms.appsearch.@NonNull GenericDocument
                     gmsDocument) {
         Preconditions.checkNotNull(gmsDocument);
         GenericDocument.Builder<GenericDocument.Builder<?>> jetpackBuilder =

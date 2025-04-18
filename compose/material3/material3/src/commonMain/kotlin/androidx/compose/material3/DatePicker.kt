@@ -120,8 +120,7 @@ import kotlin.math.max
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://m3.material.io/components/date-pickers/overview" class="external"
- * target="_blank">Material Design date picker</a>.
+ * [Material Design date picker](https://m3.material.io/components/date-pickers/overview)
  *
  * Date pickers let people select a date and preferably should be embedded into Dialogs. See
  * [DatePickerDialog].
@@ -230,8 +229,7 @@ fun DatePicker(
 }
 
 /**
- * <a href="https://m3.material.io/components/date-pickers/overview" class="external"
- * target="_blank">Material Design date picker</a>.
+ * [Material Design date picker](https://m3.material.io/components/date-pickers/overview)
  *
  * Date pickers let people select a date and preferably should be embedded into Dialogs. See
  * [DatePickerDialog].

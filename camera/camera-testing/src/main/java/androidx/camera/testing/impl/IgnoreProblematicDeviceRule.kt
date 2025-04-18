@@ -71,6 +71,10 @@ public class IgnoreProblematicDeviceRule : TestRule {
             isEmulator &&
                 avdName.contains("Pixel2", ignoreCase = true) &&
                 Build.VERSION.SDK_INT == Build.VERSION_CODES.O
+        public val isPixel2Api28Emulator: Boolean =
+            isEmulator &&
+                avdName.contains("Pixel2", ignoreCase = true) &&
+                Build.VERSION.SDK_INT == Build.VERSION_CODES.P
         public val isPixel2Api30Emulator: Boolean =
             isEmulator &&
                 avdName.contains("Pixel2", ignoreCase = true) &&

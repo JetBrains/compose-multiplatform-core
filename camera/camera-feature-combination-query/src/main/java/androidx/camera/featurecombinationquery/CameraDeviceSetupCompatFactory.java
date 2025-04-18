@@ -27,8 +27,8 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.params.SessionConfiguration;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,11 +44,9 @@ public class CameraDeviceSetupCompatFactory {
     private final Context mContext;
 
     // Cached provider for Play Services implementation.
-    @Nullable
-    private CameraDeviceSetupCompatProvider mPlayServicesProvider;
+    private @Nullable CameraDeviceSetupCompatProvider mPlayServicesProvider;
     // Cached provider for Camera2 implementation.
-    @Nullable
-    private CameraDeviceSetupCompatProvider mCamera2Provider;
+    private @Nullable CameraDeviceSetupCompatProvider mCamera2Provider;
 
     /**
      * Creates a new instance of {@link CameraDeviceSetupCompatFactory}.
@@ -113,8 +111,7 @@ public class CameraDeviceSetupCompatFactory {
      * @see CameraDevice#isSessionConfigurationSupported
      * @see CameraDevice.CameraDeviceSetup#isSessionConfigurationSupported
      */
-    @NonNull
-    public CameraDeviceSetupCompat getCameraDeviceSetupCompat(@NonNull String cameraId)
+    public @NonNull CameraDeviceSetupCompat getCameraDeviceSetupCompat(@NonNull String cameraId)
             throws CameraAccessException {
         List<CameraDeviceSetupCompat> impls = new ArrayList<>();
         if (mPlayServicesProvider == null) {
@@ -148,9 +145,8 @@ public class CameraDeviceSetupCompatFactory {
      *                               implementations are found, or failed to instantiate the
      *                               implementation.
      */
-    @Nullable
-    private CameraDeviceSetupCompatProvider getPlayServicesCameraDeviceSetupCompatProvider()
-            throws IllegalStateException {
+    private @Nullable CameraDeviceSetupCompatProvider
+            getPlayServicesCameraDeviceSetupCompatProvider() throws IllegalStateException {
         PackageInfo packageInfo;
         try {
             packageInfo = mContext.getPackageManager().getPackageInfo(

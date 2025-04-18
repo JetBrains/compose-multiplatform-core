@@ -16,13 +16,14 @@
 
 package androidx.appsearch.localstorage.converter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.localstorage.NamespaceCache;
 import androidx.appsearch.localstorage.SchemaCache;
 import androidx.collection.ArraySet;
 
 import com.google.android.icing.proto.SchemaTypeConfigProto;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Map;

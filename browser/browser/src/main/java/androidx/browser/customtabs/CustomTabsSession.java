@@ -26,6 +26,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteException;
+import android.support.customtabs.IAuthTabCallback;
 import android.support.customtabs.ICustomTabsCallback;
 import android.support.customtabs.ICustomTabsService;
 import android.support.customtabs.IEngagementSignalsCallback;
@@ -520,6 +521,28 @@ public final class CustomTabsSession {
         };
     }
 
+    /**
+     * Returns whether ephemeral browsing is supported.
+     *
+     * Ephemeral browsing allows apps to open Custom Tab that does not share cookies or other
+     * data with the browser that handles the Custom Tab.
+     *
+     * @param extras Reserved for future use.
+     * @return Whether ephemeral browsing is supported.
+     * @throws UnsupportedOperationException If this method isn't supported by the Custom Tabs
+     *                                       implementation.
+     * @see CustomTabsIntent.Builder#setEphemeralBrowsingEnabled(boolean)
+     */
+    @ExperimentalEphemeralBrowsing
+    public boolean isEphemeralBrowsingSupported(@NonNull Bundle extras) throws RemoteException {
+        try {
+            return mService.isEphemeralBrowsingSupported(extras);
+        } catch (SecurityException e) {
+            throw new UnsupportedOperationException("This method isn't supported by the "
+                    + "Custom Tabs implementation.", e);
+        }
+    }
+
     private @Nullable Bundle createPostMessageExtraBundle(@Nullable Uri targetOrigin) {
         Bundle toReturn = new Bundle();
         if (targetOrigin != null) {
@@ -672,6 +695,18 @@ public final class CustomTabsSession {
         @Override
         public boolean setEngagementSignalsCallback(ICustomTabsCallback customTabsCallback,
                 IBinder callback, Bundle extras) throws RemoteException {
+            return false;
+        }
+
+        @Override
+        @ExperimentalEphemeralBrowsing
+        public boolean isEphemeralBrowsingSupported(Bundle extras) throws RemoteException {
+            return false;
+        }
+
+        @Override
+        public boolean newAuthTabSession(IAuthTabCallback callback, Bundle extras)
+                throws RemoteException {
             return false;
         }
     }

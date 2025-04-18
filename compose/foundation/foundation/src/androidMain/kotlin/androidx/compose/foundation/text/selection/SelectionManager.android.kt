@@ -24,7 +24,9 @@ import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.text.KeyCommand
 import androidx.compose.foundation.text.TextContextMenuItems
 import androidx.compose.foundation.text.TextItem
+import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithResources
 import androidx.compose.foundation.text.platformDefaultKeyMapping
+import androidx.compose.foundation.text.textItem
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -87,4 +89,23 @@ internal fun SelectionManager.contextMenuBuilder(
             selectAll()
         },
     )
+}
+
+internal actual fun Modifier.addSelectionContainerTextContextMenuComponents(
+    selectionManager: SelectionManager,
+): Modifier = addTextContextMenuComponentsWithResources { resources ->
+    separator()
+    if (selectionManager.isNonEmptySelection()) {
+        textItem(resources, TextContextMenuItems.Copy) {
+            selectionManager.copy()
+            close()
+        }
+    }
+    if (!selectionManager.isEntireContainerSelected()) {
+        textItem(resources, TextContextMenuItems.SelectAll) {
+            selectionManager.selectAll()
+            if (!selectionManager.showToolbar || !selectionManager.isInTouchMode) close()
+        }
+    }
+    separator()
 }

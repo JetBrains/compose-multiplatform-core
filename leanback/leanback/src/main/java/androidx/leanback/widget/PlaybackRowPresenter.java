@@ -2,7 +2,7 @@ package androidx.leanback.widget;
 
 import android.view.View;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Subclass of {@link RowPresenter} that can define the desired behavior when the view
@@ -24,6 +24,6 @@ public abstract class PlaybackRowPresenter extends RowPresenter {
     /**
      * Provides hook to update the UI when the view reappears.
      */
-    public void onReappear(@NonNull RowPresenter.ViewHolder rowViewHolder) {
+    public void onReappear(RowPresenter.@NonNull ViewHolder rowViewHolder) {
     }
 }

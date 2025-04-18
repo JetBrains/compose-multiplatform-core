@@ -17,10 +17,10 @@ package androidx.wear.protolayout.material3
 
 import android.graphics.Color
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.wear.protolayout.ColorBuilders.argb
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.material3.tokens.ColorTokens
 import androidx.wear.protolayout.material3.tokens.ShapeTokens
+import androidx.wear.protolayout.types.argb
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,7 +33,9 @@ class MaterialThemeTest {
     fun defaultMaterialTheme_returnsTokenDefaults() {
         val defaultTheme = MaterialTheme()
 
-        for (i in 0 until Typography.TOKEN_COUNT) {
+        // Starts from 2 as that is the first value of Typography tokens
+        // (Typography.BODY_EXTRA_SMALL).
+        for (i in 2 until Typography.TOKEN_COUNT) {
             val fontStyle: LayoutElementBuilders.FontStyle =
                 defaultTheme.getFontStyleBuilder(i).build()
             val textStyle = Typography.fromToken(i)
@@ -43,7 +45,8 @@ class MaterialThemeTest {
             assertThat(fontStyle.settings).isEqualTo(textStyle.fontSettings)
         }
 
-        assertThat(defaultTheme.colorScheme.primaryDim.argb).isEqualTo(ColorTokens.PRIMARY_DIM)
+        assertThat(defaultTheme.colorScheme.primaryDim.staticArgb)
+            .isEqualTo(ColorTokens.PRIMARY_DIM)
         assertThat(defaultTheme.shapes.medium.toProto())
             .isEqualTo(ShapeTokens.CORNER_MEDIUM.toProto())
     }
@@ -51,10 +54,10 @@ class MaterialThemeTest {
     @Test
     fun customMaterialTheme_overrideColor_returnsOverriddenValue() {
         assertThat(
-                MaterialTheme(colorScheme = ColorScheme(error = argb(Color.MAGENTA)))
+                MaterialTheme(colorScheme = ColorScheme(error = Color.MAGENTA.argb))
                     .colorScheme
                     .error
-                    .argb
+                    .staticArgb
             )
             .isEqualTo(Color.MAGENTA)
     }
@@ -63,10 +66,10 @@ class MaterialThemeTest {
     fun customMaterialTheme_colorNotOverridden_returnsDefaultValue() {
         // Provides a custom color scheme with an overridden color.
         assertThat(
-                MaterialTheme(colorScheme = ColorScheme(secondary = argb(Color.MAGENTA)))
+                MaterialTheme(colorScheme = ColorScheme(secondary = Color.MAGENTA.argb))
                     .colorScheme
                     .onError
-                    .argb
+                    .staticArgb
             )
             .isEqualTo(ColorTokens.ON_ERROR)
     }

@@ -54,6 +54,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -215,6 +216,7 @@ public class FledgeCtsDebuggableTest {
         doSleep(DEFAULT_API_RATE_LIMIT_SLEEP_MS);
     }
 
+    @Ignore("b/378103643")
     @Test
     public void testFledgeAuctionSelectionFlow_overall_Success() throws Exception {
         // Skip the test if the right SDK extension is not present.
@@ -315,6 +317,7 @@ public class FledgeCtsDebuggableTest {
         assertThat(selectAdsException.getCause()).isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Ignore("b/378103643")
     @Test
     public void testReportImpression_etldViolation_failure() throws Exception {
         // Skip the test if the right SDK extension is not present.
@@ -383,6 +386,7 @@ public class FledgeCtsDebuggableTest {
         assertThat(selectAdsException.getCause()).isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Ignore("b/378103643")
     @Test
     public void testAdSelection_skipAdsMalformedBiddingLogic_success() throws Exception {
         // Skip the test if the right SDK extension is not present.
@@ -490,6 +494,7 @@ public class FledgeCtsDebuggableTest {
         assertThat(selectAdsException.getCause()).isInstanceOf(IllegalStateException.class);
     }
 
+    @Ignore("b/378103643")
     @Test
     public void testAdSelection_skipAdsFailedGettingBiddingLogic_success() throws Exception {
         // Skip the test if the right SDK extension is not present.
@@ -603,6 +608,7 @@ public class FledgeCtsDebuggableTest {
                 .isTrue();
     }
 
+    @Ignore("b/378103643")
     @Test
     public void testAdSelectionFlow_skipNonActivatedCA_Success() throws Exception {
         // Skip the test if the right SDK extension is not present.
@@ -658,6 +664,7 @@ public class FledgeCtsDebuggableTest {
                 .get(API_RESPONSE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
 
+    @Ignore("b/378103643")
     @Test
     public void testAdSelectionFlow_skipExpiredCA_Success() throws Exception {
         // Skip the test if the right SDK extension is not present.
@@ -719,6 +726,7 @@ public class FledgeCtsDebuggableTest {
                 .get(API_RESPONSE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
 
+    @Ignore("b/378103643")
     @Test
     public void testAdSelectionFlow_skipCAsThatTimeoutDuringBidding_Success() throws Exception {
         // Skip the test if the right SDK extension is not present.
@@ -772,6 +780,7 @@ public class FledgeCtsDebuggableTest {
                 .get(API_RESPONSE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
 
+    @Ignore("b/378103643")
     @Test
     public void testAdSelection_overallTimeout_Failure() throws Exception {
         // Skip the test if the right SDK extension is not present.

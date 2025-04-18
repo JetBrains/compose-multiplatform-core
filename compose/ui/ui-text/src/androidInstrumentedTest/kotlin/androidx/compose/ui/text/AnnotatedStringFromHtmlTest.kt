@@ -48,7 +48,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.unit.em
+import androidx.compose.ui.util.fastFilter
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
@@ -79,6 +81,22 @@ class AnnotatedStringFromHtmlTest {
                     add { pushStyle(style) }
                 }
 
+                fun addBullet(level: Int) {
+                    pushStyle(
+                        ParagraphStyle(
+                            textIndent =
+                                TextIndent(
+                                    DefaultBulletIndentation * level,
+                                    DefaultBulletIndentation * level
+                                )
+                        )
+                    )
+                    pushBullet(DefaultBullet)
+                    append("a")
+                    pop()
+                    pop()
+                }
+
                 add { pushLink(LinkAnnotation.Url("https://example.com")) }
                 add { pushStringAnnotation("foo", "Bar") }
                 addStyle(SpanStyle(fontWeight = FontWeight.Bold))
@@ -95,6 +113,10 @@ class AnnotatedStringFromHtmlTest {
                 addStyle(SpanStyle(baselineShift = BaselineShift.Superscript))
                 addStyle(SpanStyle(fontFamily = FontFamily.Monospace))
                 addStyle(SpanStyle(textDecoration = TextDecoration.Underline))
+                addBullet(level = 1)
+                addBullet(level = 2)
+                addBullet(level = 1)
+                append(" ")
             }
 
             val actual =
@@ -112,6 +134,9 @@ class AnnotatedStringFromHtmlTest {
                 .inOrder()
             assertThat(actual.getLinkAnnotations(0, actual.length))
                 .containsExactlyElementsIn(expected.getLinkAnnotations(0, expected.length))
+                .inOrder()
+            assertThat(actual.annotations!!.fastFilter { it.item is Bullet })
+                .containsExactlyElementsIn(expected.annotations!!.fastFilter { it.item is Bullet })
                 .inOrder()
         }
     }
@@ -359,6 +384,30 @@ class AnnotatedStringFromHtmlTest {
         assertThat(spannable.toAnnotatedString().text).isEqualTo(expected.text)
         assertThat(spannable.toAnnotatedString().getLinkAnnotations(0, 1))
             .containsExactlyElementsIn(expected.getLinkAnnotations(0, 1))
+    }
+
+    @Test
+    fun verify_bulletSpanInternal() {
+        val spannable = SpannableStringBuilder()
+        spannable.append(
+            "a",
+            BulletSpanWithLevel(DefaultBullet, 1, 0),
+            Spanned.SPAN_INCLUSIVE_INCLUSIVE
+        )
+
+        val expected = buildAnnotatedString {
+            withStyle(
+                ParagraphStyle(
+                    textIndent = TextIndent(DefaultBulletIndentation, DefaultBulletIndentation)
+                )
+            ) {
+                append("a")
+                addBullet(DefaultBullet, 0, 1)
+            }
+        }
+        assertThat(spannable.toAnnotatedString().text).isEqualTo(expected.text)
+        assertThat(spannable.toAnnotatedString().annotations)
+            .containsExactlyElementsIn(expected.annotations)
     }
 
     @Test

@@ -18,12 +18,13 @@ package androidx.camera.testing.impl.fakes;
 
 import static androidx.camera.core.impl.utils.Threads.runOnMainSync;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LifecycleRegistry;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A fake lifecycle owner which obeys the lifecycle transition rules.
@@ -129,9 +130,8 @@ public final class FakeLifecycleOwner implements LifecycleOwner {
         return mLifecycleRegistry.getObserverCount();
     }
 
-    @NonNull
     @Override
-    public Lifecycle getLifecycle() {
+    public @NonNull Lifecycle getLifecycle() {
         return mLifecycleRegistry;
     }
 }

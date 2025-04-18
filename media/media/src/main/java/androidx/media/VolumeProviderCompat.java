@@ -32,11 +32,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Handles requests to adjust or set the volume on a session. This is also used
- * to push volume updates back to the session after a request has been handled.
- * You can set a volume provider on a session by calling
- * {@link MediaSessionCompat#setPlaybackToRemote}.
+ * Handles requests to adjust or set the volume on a session. This is also used to push volume
+ * updates back to the session after a request has been handled. You can set a volume provider on a
+ * session by calling {@link MediaSessionCompat#setPlaybackToRemote}.
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 public abstract class VolumeProviderCompat {
 
     /**

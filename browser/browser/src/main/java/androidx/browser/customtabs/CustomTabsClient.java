@@ -26,26 +26,35 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.net.Uri;
+import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.RemoteException;
+import android.support.customtabs.IAuthTabCallback;
 import android.support.customtabs.ICustomTabsCallback;
 import android.support.customtabs.ICustomTabsService;
 import android.text.TextUtils;
 import android.util.Log;
+
+import androidx.annotation.OptIn;
+import androidx.browser.auth.AuthTabCallback;
+import androidx.browser.auth.AuthTabSession;
+import androidx.browser.auth.ExperimentalAuthTab;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * Class to communicate with a {@link CustomTabsService} and create
  * {@link CustomTabsSession} from it.
  */
+@OptIn(markerClass = ExperimentalAuthTab.class)
 public class CustomTabsClient {
     private static final String TAG = "CustomTabsClient";
 
@@ -283,6 +292,182 @@ public class CustomTabsClient {
         PendingIntent sessionId = createSessionId(context, id);
 
         return new CustomTabsSession.PendingSession(callback, sessionId);
+    }
+
+    /**
+     * Creates a new pending session with a callback. This session can be converted to a standard
+     * session using {@link #attachSession} after connection.
+     *
+     * @param context The {@link Context} to use.
+     * @param id The session id.
+     * @param executor The {@link Executor} to be used to execute the callbacks.
+     * @param callback The callback through which the client will receive updates about the created
+     *                 session.
+     * @return The newly created {@link AuthTabSession.PendingSession}.
+     */
+    @ExperimentalAuthTab
+    @ExperimentalPendingSession
+    public static AuthTabSession.@NonNull PendingSession createPendingAuthTabSession(
+            @NonNull Context context, int id, @NonNull Executor executor,
+            @NonNull AuthTabCallback callback) {
+        PendingIntent sessionId = createSessionId(context, id);
+
+        return new AuthTabSession.PendingSession(sessionId, executor, callback);
+    }
+
+    /**
+     * Creates a new pending session without a callback. This session can be converted to a standard
+     * session using {@link #attachSession} after connection.
+     *
+     * @param context The {@link Context} to use.
+     * @param id      The session id.
+     * @return The newly created {@link AuthTabSession.PendingSession}.
+     */
+    @ExperimentalAuthTab
+    @ExperimentalPendingSession
+    public static AuthTabSession.@NonNull PendingSession createPendingAuthTabSession(
+            @NonNull Context context, int id) {
+        PendingIntent sessionId = createSessionId(context, id);
+
+        return new AuthTabSession.PendingSession(sessionId, null, null);
+    }
+
+    /**
+     * Creates a new session through an ICustomTabsService with the optional callback. This session
+     * can be used to associate any related communication through the service with an intent and
+     * then later with a Custom Tab. The client can then send later service calls or intents to
+     * through same session-intent-Custom Tab association.
+     *
+     * @param callback The callback through which the client will receive updates about the created
+     *                 session. Can be null.
+     * @param executor The {@link Executor} to be used to execute the callbacks. If null, the
+     *                 callbacks will be received on the UI thread.
+     * @return The session object that was created as a result of the transaction. The client can
+     * use this to relay session specific calls. Null if the service failed to respond
+     * (threw a RemoteException).
+     */
+    @ExperimentalAuthTab
+    @Nullable
+    public AuthTabSession newAuthTabSession(@Nullable AuthTabCallback callback,
+            @Nullable Executor executor) {
+        return newAuthTabSessionInternal(callback, executor, null);
+    }
+
+    /**
+     * Creates a new session through an ICustomTabsService with the optional callback. This session
+     * can be used to associate any related communication through the service with an intent and
+     * then later with a Custom Tab. The client can then send later service calls or intents to
+     * through same session-intent-Custom Tab association.
+     *
+     * @param callback The callback through which the client will receive updates about the created
+     *                 session. Can be null.
+     * @param executor The {@link Executor} to be used to execute the callbacks. If null, the
+     *                 callbacks will be received on the UI thread.
+     * @param id       The session id. If the session with the specified id already exists for
+     *                 the given client application, the new callback is supplied to that session
+     *                 and
+     *                 further attempts to launch URLs using that session will update the
+     *                 existing Auth
+     *                 Tab instead of launching a new one.
+     * @return The session object that was created as a result of the transaction. The client can
+     * use this to relay session specific calls. Null if the service failed to respond
+     * (threw a RemoteException).
+     */
+    @ExperimentalAuthTab
+    @Nullable
+    public AuthTabSession newAuthTabSession(@Nullable AuthTabCallback callback,
+            @Nullable Executor executor, int id) {
+        return newAuthTabSessionInternal(callback, executor,
+                createSessionId(mApplicationContext, id));
+    }
+
+    @Nullable
+    private AuthTabSession newAuthTabSessionInternal(@Nullable AuthTabCallback callback,
+            @Nullable Executor executor, @Nullable PendingIntent sessionId) {
+        IAuthTabCallback.Stub wrapper = createAuthTabCallbackWrapper(callback, executor);
+
+        try {
+            boolean success;
+
+            Bundle extras = new Bundle();
+            extras.putParcelable(CustomTabsIntent.EXTRA_SESSION_ID, sessionId);
+            success = mService.newAuthTabSession(wrapper, extras);
+
+            if (!success) return null;
+        } catch (RemoteException e) {
+            return null;
+        }
+        return new AuthTabSession(wrapper, mServiceComponentName, sessionId);
+    }
+
+    private IAuthTabCallback.Stub createAuthTabCallbackWrapper(@Nullable AuthTabCallback callback,
+            @Nullable Executor executor) {
+        return new IAuthTabCallback.Stub() {
+            private final Executor mExecutor = executor != null ? executor : new Handler(
+                    Looper.getMainLooper())::post;
+
+            @Override
+            public void onNavigationEvent(int navigationEvent, Bundle extras)
+                    throws RemoteException {
+                if (callback == null) return;
+                long identity = Binder.clearCallingIdentity();
+                try {
+                    mExecutor.execute(() -> callback.onNavigationEvent(navigationEvent, extras));
+                } finally {
+                    Binder.restoreCallingIdentity(identity);
+                }
+            }
+
+            @Override
+            public void onExtraCallback(String callbackName, Bundle args) throws RemoteException {
+                if (callback == null) return;
+                long identity = Binder.clearCallingIdentity();
+                try {
+                    mExecutor.execute(() -> callback.onExtraCallback(callbackName, args));
+                } finally {
+                    Binder.restoreCallingIdentity(identity);
+                }
+            }
+
+            @Override
+            public Bundle onExtraCallbackWithResult(String callbackName, Bundle args)
+                    throws RemoteException {
+                if (callback == null) return Bundle.EMPTY;
+                long identity = Binder.clearCallingIdentity();
+                try {
+                    return callback.onExtraCallbackWithResult(callbackName, args);
+                } finally {
+                    Binder.restoreCallingIdentity(identity);
+                }
+            }
+
+            @Override
+            public void onWarmupCompleted(Bundle extras) throws RemoteException {
+                if (callback == null) return;
+                long identity = Binder.clearCallingIdentity();
+                try {
+                    mExecutor.execute(() -> callback.onWarmupCompleted(extras));
+                } finally {
+                    Binder.restoreCallingIdentity(identity);
+                }
+            }
+        };
+    }
+
+    /**
+     * Associate {@link AuthTabSession.PendingSession} with the service and turn it into an
+     * {@link AuthTabSession}.
+     *
+     * @param session The {@link AuthTabSession.PendingSession} to attach.
+     * @return The {@link AuthTabSession} that was created, or null if the browser doesn't support
+     * this feature.
+     */
+    @ExperimentalAuthTab
+    @ExperimentalPendingSession
+    @Nullable
+    public AuthTabSession attachAuthTabSession(AuthTabSession.@NonNull PendingSession session) {
+        return newAuthTabSessionInternal(session.getCallback(), session.getExecutor(),
+                session.getId());
     }
 
     private @Nullable CustomTabsSession newSessionInternal(

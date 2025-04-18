@@ -19,6 +19,7 @@ package androidx.ink.strokes
 import androidx.annotation.IntRange
 import androidx.annotation.RestrictTo
 import androidx.ink.brush.Brush
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.InputToolType
 import androidx.ink.geometry.BoxAccumulator
 import androidx.ink.geometry.MeshFormat
@@ -43,7 +44,7 @@ import java.nio.ShortBuffer
  * 3. Call [finishInput] once there are no more inputs for this stroke (e.g. the user lifts the
  *    stylus from the screen).
  * 4. Continue to call [updateShape] and render after [finishInput] until [getNeedsUpdate] returns
- *    false (to allow any lingering brush animations to complete).
+ *    false (to allow any lingering brush shape animations to complete).
  * 5. Extract the completed stroke by calling [toImmutable].
  * 6. For best performance, reuse this object and go back to step 1 rather than allocating a new
  *    instance.
@@ -52,8 +53,7 @@ import java.nio.ShortBuffer
 public class InProgressStroke {
 
     /** A handle to the underlying native [InProgressStroke] object. */
-    internal var nativePointer: Long = nativeCreateInProgressStroke()
-        private set
+    internal val nativePointer: Long = InProgressStrokeNative.create()
 
     /**
      * The [Brush] currently being used to generate the stroke content. To set this, call [start].
@@ -76,7 +76,7 @@ public class InProgressStroke {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun clear() {
-        nativeClear(nativePointer)
+        InProgressStrokeNative.clear(nativePointer)
         this.brush = null
         version++
     }
@@ -88,8 +88,21 @@ public class InProgressStroke {
      * method must be called at least once after construction before starting to call
      * [enqueueInputs] or [updateShape].
      */
-    public fun start(brush: Brush) {
-        nativeStart(nativePointer, brush.nativePointer)
+    @OptIn(ExperimentalInkCustomBrushApi::class)
+    public fun start(brush: Brush): Unit = start(brush, noiseSeed = 0)
+
+    /**
+     * Clears and starts a new stroke with the given [brush], using the given per-stroke seed value
+     * to help seed the brush's noise behaviors, if any.
+     *
+     * This includes clearing or resetting any existing inputs, mesh data, and updated region. This
+     * method (or [start]) must be called at least once after construction before starting to call
+     * [enqueueInputs] or [updateShape].
+     */
+    @ExperimentalInkCustomBrushApi
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun start(brush: Brush, noiseSeed: Int) {
+        InProgressStrokeNative.start(nativePointer, brush.nativePointer, noiseSeed)
         this.brush = brush
         version++
     }
@@ -114,7 +127,11 @@ public class InProgressStroke {
         realInputs: StrokeInputBatch,
         predictedInputs: StrokeInputBatch,
     ): Result<Unit> =
-        nativeEnqueueInputs(nativePointer, realInputs.nativePointer, predictedInputs.nativePointer)
+        InProgressStrokeNative.enqueueInputs(
+                nativePointer,
+                realInputs.nativePointer,
+                predictedInputs.nativePointer,
+            )
             ?.let { Result.failure(IllegalArgumentException(it)) }
             ?: Result.success(Unit).also { version++ }
 
@@ -130,20 +147,21 @@ public class InProgressStroke {
      * method is idempotent; it has no effect if [start] was never called, or if this method has
      * already been called since the last call to [start].
      */
-    public fun finishInput(): Unit = nativeFinishInput(nativePointer).also { version++ }
+    public fun finishInput(): Unit =
+        InProgressStrokeNative.finishInput(nativePointer).also { version++ }
 
     /**
      * Updates the stroke geometry up to the given duration since the start of the stroke. This will
-     * will consume any inputs queued up by calls to [enqueueInputs], and cause brush animations (if
-     * any) to progress up to the specified time. Any stroke geometry resulting from
+     * will consume any inputs queued up by calls to [enqueueInputs], and cause brush shape
+     * animations (if any) to progress up to the specified time. Any stroke geometry resulting from
      * previously-predicted input from before the previous call to this method will be cleared.
      *
      * This method requires that:
      * * [start] has been previously called to set the current [brush].
      * * The value of [currentElapsedTimeMillis] passed into this method over the course of a single
      *   stroke must be non-decreasing and non-negative. Its default value causes all ongoing stroke
-     *   animations to be completed immediately. To have animations progress at their intended rate,
-     *   pass in values for this field that are in the same time base as the
+     *   shape animations to be completed immediately. To have shape animations progress at their
+     *   intended rate, pass in values for this field that are in the same time base as the
      *   [StrokeInput.elapsedTimeMillis] values being passed to [enqueueInputs], repeatedly until
      *   [isInputFinished] returns `true`.
      *
@@ -151,7 +169,7 @@ public class InProgressStroke {
      * is left in the state it had prior to the call.
      */
     public fun updateShape(currentElapsedTimeMillis: Long = Long.MAX_VALUE): Result<Unit> =
-        nativeUpdateShape(nativePointer, currentElapsedTimeMillis)?.let {
+        InProgressStrokeNative.updateShape(nativePointer, currentElapsedTimeMillis)?.let {
             Result.failure(IllegalArgumentException(it))
         } ?: Result.success(Unit).also { version++ }
 
@@ -163,15 +181,15 @@ public class InProgressStroke {
      * Returns `true` if [finishInput] has been called since the last call to [start], or if [start]
      * hasn't been called yet. If this returns `true`, it is an error to call [enqueueInputs].
      */
-    public fun isInputFinished(): Boolean = nativeIsInputFinished(nativePointer)
+    public fun isInputFinished(): Boolean = InProgressStrokeNative.isInputFinished(nativePointer)
 
     /**
      * Returns `true` if calling [updateShape] would have any effect on the stroke (and should thus
      * be called before the next render), or `false` if no calls to [updateShape] are currently
      * needed. Specifically:
-     * * If the brush has one or more timed animation behavior that are still active (which can be
-     *   true even after inputs are finished), returns `true`.
-     * * If there are no active animation behaviors, but there are pending inputs from an
+     * * If the brush has one or more timed shape animation behavior that are still active (which
+     *   can be true even after inputs are finished), returns `true`.
+     * * If there are no active shape animation behaviors, but there are pending inputs from an
      *   [enqueueInputs] call that have not yet been consumed by a call to [updateShape], returns
      *   `true`.
      * * Otherwise, returns `false`.
@@ -179,7 +197,7 @@ public class InProgressStroke {
      * Once [isInputFinished] returns `true` and this method returns `false`, the stroke is
      * considered "dry", and will not change any further until the next call to [start].
      */
-    public fun getNeedsUpdate(): Boolean = nativeNeedsUpdate(nativePointer)
+    public fun getNeedsUpdate(): Boolean = InProgressStrokeNative.getNeedsUpdate(nativePointer)
 
     /**
      * Copies the current input, brush, and geometry as of the last call to [start] or [updateShape]
@@ -190,21 +208,27 @@ public class InProgressStroke {
      * be connected in any way to the prior [Stroke].
      */
     public fun toImmutable(): Stroke {
-        return Stroke(nativeCopyToStroke(nativePointer), requireNotNull(brush))
+        return Stroke.wrapNative(
+            InProgressStrokeNative.newStrokeFromCopy(nativePointer),
+            requireNotNull(brush),
+        )
     }
 
     /**
      * Returns the number of [StrokeInput]s in the stroke so far. This counts all of the real inputs
      * and the most-recently-processed sequence of predicted inputs.
      */
-    @IntRange(from = 0) public fun getInputCount(): Int = nativeInputCount(nativePointer)
+    @IntRange(from = 0)
+    public fun getInputCount(): Int = InProgressStrokeNative.getInputCount(nativePointer)
 
     /* Returns the number of real inputs in the stroke so far, not counting any prediction. */
-    @IntRange(from = 0) public fun getRealInputCount(): Int = nativeRealInputCount(nativePointer)
+    @IntRange(from = 0)
+    public fun getRealInputCount(): Int = InProgressStrokeNative.getRealInputCount(nativePointer)
 
     /** Returns the number of inputs in the current stroke prediction. */
     @IntRange(from = 0)
-    public fun getPredictedInputCount(): Int = nativePredictedInputCount(nativePointer)
+    public fun getPredictedInputCount(): Int =
+        InProgressStrokeNative.getPredictedInputCount(nativePointer)
 
     /**
      * Add the specified range of inputs from this stroke to the output [MutableStrokeInputBatch].
@@ -220,7 +244,7 @@ public class InProgressStroke {
         val size = getInputCount()
         require(from >= 0) { "index ($from) must be >= 0" }
         require(to <= size && to >= from) { "to ($to) must be in [from=$from, inputCount=$size]" }
-        nativeFillInputs(nativePointer, out.nativePointer, from, to)
+        InProgressStrokeNative.fillInputs(nativePointer, out.nativePointer, from, to)
         return out
     }
 
@@ -233,7 +257,12 @@ public class InProgressStroke {
     public fun populateInput(out: StrokeInput, @IntRange(from = 0) index: Int): StrokeInput {
         val size = getInputCount()
         require(index < size && index >= 0) { "index ($index) must be in [0, inputCount=$size)" }
-        nativeGetAndOverwriteInput(nativePointer, out, index, InputToolType::class.java)
+        InProgressStrokeNative.getAndOverwriteInput(
+            nativePointer,
+            out,
+            index,
+            InputToolType::class.java,
+        )
         return out
     }
 
@@ -243,7 +272,7 @@ public class InProgressStroke {
      */
     @IntRange(from = 0)
     public fun getBrushCoatCount(): Int =
-        nativeBrushCoatCount(nativePointer).also { check(it >= 0) }
+        InProgressStrokeNative.getBrushCoatCount(nativePointer).also { check(it >= 0) }
 
     /** @see getBrushCoatCount */
     @IntRange(from = 0)
@@ -266,7 +295,7 @@ public class InProgressStroke {
         require(coatIndex >= 0 && coatIndex < getBrushCoatCount()) {
             "coatIndex=$coatIndex must be between 0 and brushCoatCount=${getBrushCoatCount()}"
         }
-        nativeGetMeshBounds(nativePointer, coatIndex, outBoxAccumulator)
+        InProgressStrokeNative.getMeshBounds(nativePointer, coatIndex, outBoxAccumulator)
         return outBoxAccumulator
     }
 
@@ -278,16 +307,20 @@ public class InProgressStroke {
      * @return [outBoxAccumulator]
      */
     public fun populateUpdatedRegion(outBoxAccumulator: BoxAccumulator): BoxAccumulator {
-        nativeFillUpdatedRegion(nativePointer, outBoxAccumulator)
+        InProgressStrokeNative.fillUpdatedRegion(nativePointer, outBoxAccumulator)
         return outBoxAccumulator
     }
 
     /** Call after making use of a value from [populateUpdatedRegion] to reset the accumulation. */
-    public fun resetUpdatedRegion(): Unit = nativeResetUpdatedRegion(nativePointer)
+    public fun resetUpdatedRegion(): Unit = InProgressStrokeNative.resetUpdatedRegion(nativePointer)
 
     /**
-     * Returns the number of outlines for the specified brush coat. Calls to functions that accept
-     * an outlineIndex must treat the result of this function as an upper bound.
+     * Returns the number of outlines for the specified brush coat.
+     *
+     * Calls to functions that accept an outlineIndex must treat the result of this function as an
+     * upper bound. Coats with discontinuous geometry will always have multiple outlines, but even
+     * continuous geometry may be drawn with multiple overlapping outlines when this improves
+     * rendering quality or performance.
      *
      * @param coatIndex Must be between 0 (inclusive) and the result of [getBrushCoatCount]
      *   (exclusive).
@@ -297,7 +330,9 @@ public class InProgressStroke {
         require(coatIndex >= 0 && coatIndex < getBrushCoatCount()) {
             "coatIndex=$coatIndex must be between 0 and brushCoatCount=${getBrushCoatCount()}"
         }
-        return nativeGetOutlineCount(nativePointer, coatIndex).also { check(it >= 0) }
+        return InProgressStrokeNative.getOutlineCount(nativePointer, coatIndex).also {
+            check(it >= 0)
+        }
     }
 
     /** @see getOutlineCount */
@@ -324,9 +359,8 @@ public class InProgressStroke {
         require(outlineIndex >= 0 && outlineIndex < getOutlineCount(coatIndex)) {
             "outlineIndex=$outlineIndex must be between 0 and outlineCount=${getOutlineCount(coatIndex)}"
         }
-        return nativeGetOutlineVertexCount(nativePointer, coatIndex, outlineIndex).also {
-            check(it >= 0)
-        }
+        return InProgressStrokeNative.getOutlineVertexCount(nativePointer, coatIndex, outlineIndex)
+            .also { check(it >= 0) }
     }
 
     /** @see getOutlineVertexCount */
@@ -360,7 +394,7 @@ public class InProgressStroke {
             "outlineVertexIndex=$outlineVertexIndex must be between 0 and " +
                 "outlineVertexCount($outlineVertexIndex)=$outlineVertexCount"
         }
-        nativeFillOutlinePosition(
+        InProgressStrokeNative.fillOutlinePosition(
             nativePointer,
             coatIndex,
             outlineIndex,
@@ -384,7 +418,7 @@ public class InProgressStroke {
         require(coatIndex >= 0 && coatIndex < getBrushCoatCount()) {
             "coatIndex=$coatIndex must be between 0 and brushCoatCount=${getBrushCoatCount()}"
         }
-        return nativeGetMeshPartitionCount(nativePointer, coatIndex)
+        return InProgressStrokeNative.getMeshPartitionCount(nativePointer, coatIndex)
     }
 
     /**
@@ -396,7 +430,7 @@ public class InProgressStroke {
         require(partitionIndex in 0 until getMeshPartitionCount(coatIndex)) {
             "Cannot get vertex count at partitionIndex $partitionIndex out of range [0, ${getMeshPartitionCount(coatIndex)})."
         }
-        return nativeGetVertexCount(nativePointer, coatIndex, partitionIndex)
+        return InProgressStrokeNative.getVertexCount(nativePointer, coatIndex, partitionIndex)
     }
 
     /**
@@ -411,7 +445,7 @@ public class InProgressStroke {
         require(partitionIndex in 0 until getMeshPartitionCount(coatIndex)) {
             "Cannot get raw vertex buffer at partitionIndex $partitionIndex out of range [0, ${getMeshPartitionCount(coatIndex)})."
         }
-        return (nativeGetRawVertexData(nativePointer, coatIndex, partitionIndex)
+        return (InProgressStrokeNative.getRawVertexData(nativePointer, coatIndex, partitionIndex)
                 ?: ByteBuffer.allocate(0))
             .asReadOnlyBuffer()
     }
@@ -429,7 +463,7 @@ public class InProgressStroke {
             "Cannot get raw triangle index buffer at partitionIndex $partitionIndex out of range [0, ${getMeshPartitionCount(coatIndex)})."
         }
         val triangleIndexStride =
-            nativeGetTriangleIndexStride(nativePointer, coatIndex, partitionIndex)
+            InProgressStrokeNative.getTriangleIndexStride(nativePointer, coatIndex, partitionIndex)
         check(triangleIndexStride == Short.SIZE_BYTES) {
             "Only 16-bit triangle indices are supported, but got stride of $triangleIndexStride"
         }
@@ -440,8 +474,11 @@ public class InProgressStroke {
         // TODO: b/302535371 - There is a bug in the combined use of .asReadOnlyBuffer() and
         // .order(),
         // such that the returned buffer is NOT readonly.
-        return (nativeGetRawTriangleIndexData(nativePointer, coatIndex, partitionIndex)
-                ?: ByteBuffer.allocate(0))
+        return (InProgressStrokeNative.getRawTriangleIndexData(
+                nativePointer,
+                coatIndex,
+                partitionIndex
+            ) ?: ByteBuffer.allocate(0))
             .asReadOnlyBuffer()
             .order(ByteOrder.nativeOrder())
             .asShortBuffer()
@@ -456,26 +493,37 @@ public class InProgressStroke {
         require(partitionIndex in 0 until getMeshPartitionCount(coatIndex)) {
             "Cannot get mesh format at partitionIndex $partitionIndex out of range [0, ${getMeshPartitionCount(coatIndex)})."
         }
-        return MeshFormat(nativeAllocMeshFormatCopy(nativePointer, coatIndex, partitionIndex))
+        return MeshFormat(
+            InProgressStrokeNative.newCopyOfMeshFormat(nativePointer, coatIndex, partitionIndex)
+        )
     }
 
     protected fun finalize() {
         // NOMUTANTS -- Not tested post garbage collection.
-        if (nativePointer == 0L) return
-        nativeFreeInProgressStroke(nativePointer)
-        nativePointer = 0
+        InProgressStrokeNative.free(nativePointer)
+    }
+
+    // Declared as a target for extension functions.
+    public companion object
+}
+
+@UsedByNative
+private object InProgressStrokeNative {
+    init {
+        NativeLoader.load()
     }
 
     /** Create underlying native object and return reference for all subsequent native calls. */
-    @UsedByNative private external fun nativeCreateInProgressStroke(): Long
+    @UsedByNative public external fun create(): Long
 
-    @UsedByNative private external fun nativeClear(nativePointer: Long)
+    @UsedByNative public external fun clear(nativePointer: Long)
 
-    @UsedByNative private external fun nativeStart(nativePointer: Long, brushNativePointer: Long)
+    @UsedByNative
+    public external fun start(nativePointer: Long, brushNativePointer: Long, noiseSeed: Int)
 
     /** Returns null on success or an error message string on failure. */
     @UsedByNative
-    private external fun nativeEnqueueInputs(
+    public external fun enqueueInputs(
         nativePointer: Long,
         realInputsPointer: Long,
         predictedInputsPointer: Long,
@@ -483,25 +531,25 @@ public class InProgressStroke {
 
     /** Returns null on success or an error message string on failure. */
     @UsedByNative
-    private external fun nativeUpdateShape(nativePointer: Long, currentElapsedTime: Long): String?
+    public external fun updateShape(nativePointer: Long, currentElapsedTime: Long): String?
 
-    @UsedByNative private external fun nativeFinishInput(nativePointer: Long)
+    @UsedByNative public external fun finishInput(nativePointer: Long)
 
-    @UsedByNative private external fun nativeIsInputFinished(nativePointer: Long): Boolean
+    @UsedByNative public external fun isInputFinished(nativePointer: Long): Boolean
 
-    @UsedByNative private external fun nativeNeedsUpdate(nativePointer: Long): Boolean
+    @UsedByNative public external fun getNeedsUpdate(nativePointer: Long): Boolean
 
     /** Returns the native pointer for an `ink::Stroke`, to be wrapped by a [Stroke]. */
-    @UsedByNative private external fun nativeCopyToStroke(nativePointer: Long): Long
+    @UsedByNative public external fun newStrokeFromCopy(nativePointer: Long): Long
 
-    @UsedByNative private external fun nativeInputCount(nativePointer: Long): Int
+    @UsedByNative public external fun getInputCount(nativePointer: Long): Int
 
-    @UsedByNative private external fun nativeRealInputCount(nativePointer: Long): Int
+    @UsedByNative public external fun getRealInputCount(nativePointer: Long): Int
 
-    @UsedByNative private external fun nativePredictedInputCount(nativePointer: Long): Int
+    @UsedByNative public external fun getPredictedInputCount(nativePointer: Long): Int
 
     @UsedByNative
-    private external fun nativeFillInputs(
+    public external fun fillInputs(
         nativePointer: Long,
         mutableStrokeInputBatchPointer: Long,
         from: Int,
@@ -513,18 +561,18 @@ public class InProgressStroke {
      * needing to do a reflection-based FindClass lookup.
      */
     @UsedByNative
-    private external fun nativeGetAndOverwriteInput(
+    public external fun getAndOverwriteInput(
         nativePointer: Long,
         input: StrokeInput,
         index: Int,
         toolTypeClass: Class<InputToolType>,
     )
 
-    @UsedByNative private external fun nativeBrushCoatCount(nativePointer: Long): Int
+    @UsedByNative public external fun getBrushCoatCount(nativePointer: Long): Int
 
     /** Writes the bounding region to [outEnvelope]. */
     @UsedByNative
-    private external fun nativeGetMeshBounds(
+    public external fun getMeshBounds(
         nativePointer: Long,
         coatIndex: Int,
         outEnvelope: BoxAccumulator,
@@ -532,14 +580,14 @@ public class InProgressStroke {
 
     /** Returns the number of mesh partitions. */
     @UsedByNative
-    private external fun nativeGetMeshPartitionCount(nativePointer: Long, coatIndex: Int): Int
+    public external fun getMeshPartitionCount(nativePointer: Long, coatIndex: Int): Int
 
     /** Returns the number of vertices in the mesh at [partitionIndex]. */
     @UsedByNative
-    private external fun nativeGetVertexCount(
+    public external fun getVertexCount(
         nativePointer: Long,
         coatIndex: Int,
-        partitionIndex: Int,
+        partitionIndex: Int
     ): Int
 
     /**
@@ -547,7 +595,7 @@ public class InProgressStroke {
      * [partitionIndex]. It will be writeable, so be sure to only expose a read-only wrapper of it.
      */
     @UsedByNative
-    private external fun nativeGetRawVertexData(
+    public external fun getRawVertexData(
         nativePointer: Long,
         coatIndex: Int,
         partitionIndex: Int,
@@ -559,14 +607,14 @@ public class InProgressStroke {
      * it.
      */
     @UsedByNative
-    private external fun nativeGetRawTriangleIndexData(
+    public external fun getRawTriangleIndexData(
         nativePointer: Long,
         coatIndex: Int,
         partitionIndex: Int,
     ): ByteBuffer?
 
     @UsedByNative
-    private external fun nativeGetTriangleIndexStride(
+    public external fun getTriangleIndexStride(
         nativePointer: Long,
         coatIndex: Int,
         partitionIndex: Int,
@@ -577,7 +625,7 @@ public class InProgressStroke {
      * at [partitionIndex].
      */
     @UsedByNative
-    private external fun nativeAllocMeshFormatCopy(
+    public external fun newCopyOfMeshFormat(
         nativePointer: Long,
         coatIndex: Int,
         partitionIndex: Int,
@@ -585,22 +633,21 @@ public class InProgressStroke {
 
     /** Writes the updated region to [outEnvelope]. */
     @UsedByNative
-    private external fun nativeFillUpdatedRegion(nativePointer: Long, outEnvelope: BoxAccumulator)
+    public external fun fillUpdatedRegion(nativePointer: Long, outEnvelope: BoxAccumulator)
 
-    @UsedByNative private external fun nativeResetUpdatedRegion(nativePointer: Long)
+    @UsedByNative public external fun resetUpdatedRegion(nativePointer: Long)
+
+    @UsedByNative public external fun getOutlineCount(nativePointer: Long, coatIndex: Int): Int
 
     @UsedByNative
-    private external fun nativeGetOutlineCount(nativePointer: Long, coatIndex: Int): Int
-
-    @UsedByNative
-    private external fun nativeGetOutlineVertexCount(
+    public external fun getOutlineVertexCount(
         nativePointer: Long,
         coatIndex: Int,
         outlineIndex: Int,
     ): Int
 
     @UsedByNative
-    private external fun nativeFillOutlinePosition(
+    public external fun fillOutlinePosition(
         nativePointer: Long,
         coatIndex: Int,
         outlineIndex: Int,
@@ -609,12 +656,5 @@ public class InProgressStroke {
     )
 
     /** Release the underlying memory allocated in [nativeCreateInProgressStroke]. */
-    @UsedByNative private external fun nativeFreeInProgressStroke(nativePointer: Long)
-
-    // Companion object gets initialized before anything else.
-    public companion object {
-        init {
-            NativeLoader.load()
-        }
-    }
+    @UsedByNative public external fun free(nativePointer: Long)
 }

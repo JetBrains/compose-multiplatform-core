@@ -34,10 +34,13 @@ import androidx.annotation.RestrictTo;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A simple set of metadata for a media item suitable for display. This can be
- * created using the Builder or retrieved from existing metadata using
- * {@link MediaMetadataCompat#getDescription()}.
+ * A simple set of metadata for a media item suitable for display. This can be created using the
+ * Builder or retrieved from existing metadata using {@link MediaMetadataCompat#getDescription()}.
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 @SuppressLint("BanParcelableUsage")
 public final class MediaDescriptionCompat implements Parcelable {
     private static final String TAG = "MediaDescriptionCompat";
@@ -441,7 +444,11 @@ public final class MediaDescriptionCompat implements Parcelable {
 
     /**
      * Builder for {@link MediaDescriptionCompat} objects.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static final class Builder {
         private String mMediaId;
         private CharSequence mTitle;

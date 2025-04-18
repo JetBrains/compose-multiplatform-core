@@ -22,7 +22,6 @@ import android.telecom.CallAudioState
 import android.telecom.CallAudioState.ROUTE_EARPIECE
 import android.telecom.CallAudioState.ROUTE_WIRED_HEADSET
 import android.telecom.CallEndpoint
-import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.internal.CallChannels
 import androidx.core.telecom.internal.CallEndpointUuidTracker
@@ -48,7 +47,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @SdkSuppress(minSdkVersion = VERSION_CODES.O /* api=26 */)
-@RequiresApi(VERSION_CODES.O)
 @RunWith(AndroidJUnit4::class)
 class CallSessionLegacyTest : BaseTelecomTest() {
     val mSessionId: Int = 444

@@ -98,7 +98,7 @@ class StateRestorationTester(private val composeTest: ComposeUiTest) {
         private var savedMap: Map<String, List<Any?>> = emptyMap()
 
         fun saveStateAndDisposeChildren() {
-            savedMap = currentRegistry.performSave()
+            savedMap = platformEncodeDecode(currentRegistry.performSave())
             shouldEmitChildren = false
         }
 
@@ -121,3 +121,7 @@ class StateRestorationTester(private val composeTest: ComposeUiTest) {
         override fun performSave() = currentRegistry.performSave()
     }
 }
+
+internal expect fun platformEncodeDecode(
+    savedState: Map<String, List<Any?>>,
+): Map<String, List<Any?>>

@@ -40,6 +40,7 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.process.ExecOperations
+import org.gradle.process.ExecSpec
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Expected to rerun every time")
@@ -100,9 +101,27 @@ abstract class FtlRunner : DefaultTask() {
         option = "api",
         description =
             "repeatable argument for which apis to run ftl tests on. " +
-                "Only relevant to $FTL_ON_APIS_NAME. Can be 21, 26, 28, 30, 33, 34."
+                "Only relevant to $FTL_ON_APIS_NAME. Can be 21, 26, 28, 30, 33, 34, 35."
     )
     abstract val apis: ListProperty<Int>
+
+    @get:Optional
+    @get:Input
+    @get:Option(
+        option = "shardCount",
+        description = "Number of shards to split tests into (requires gcloud beta)"
+    )
+    abstract val shardCount: Property<Int>
+
+    @get:Optional
+    @get:Input
+    @get:Option(
+        option = "excludeAnnotation",
+        description =
+            "Repeatable argument to exclude annotations. " +
+                "Example: `--excludeAnnotation androidx.test.filters.FlakyTest`"
+    )
+    abstract val excludeAnnotations: ListProperty<String>
 
     @get:Input abstract val device: ListProperty<String>
 
@@ -129,26 +148,31 @@ abstract class FtlRunner : DefaultTask() {
                     "d345c82828c355acc1432535153cf1dcf456e559c26f735346bf5f38859e0512.apk"
             }
         try {
-            execOperations.exec { it.commandLine("gcloud", "--version") }
-        } catch (exception: Exception) {
+            execOperations.printCommandAndExec { it.commandLine("gcloud", "--version") }
+        } catch (_: Exception) {
             throw Exception(
                 "Missing gcloud, please follow go/androidx-dev#remote-build-cache to set it up"
             )
         }
-        val hasFilters = className.isPresent || packageName.isPresent
-        val filters =
-            listOfNotNull(
-                    if (className.isPresent) "class ${className.get()}" else null,
-                    if (packageName.isPresent) "package ${packageName.get()}" else null,
-                )
-                .joinToString(separator = ",")
+
+        val filterList = buildList {
+            if (className.isPresent) add("class ${className.get()}")
+            if (packageName.isPresent) add("package ${packageName.get()}")
+            if (excludeAnnotations.isPresent) {
+                addAll(excludeAnnotations.get().map { "notAnnotation $it" })
+            }
+        }
+        val hasFilters = filterList.isNotEmpty()
+        val filters = filterList.joinToString(separator = ",")
 
         val shouldPull = pullScreenshots.isPresent && pullScreenshots.get() == "true"
 
-        execOperations.exec {
+        val needsBeta = shardCount.isPresent
+        execOperations.printCommandAndExec {
             it.commandLine(
                 listOfNotNull(
                     "gcloud",
+                    if (needsBeta) "beta" else null,
                     "--project",
                     "androidx-dev-prod",
                     "firebase",
@@ -171,6 +195,8 @@ abstract class FtlRunner : DefaultTask() {
                     } else null,
                     if (testTimeout.isPresent) "--timeout" else null,
                     if (testTimeout.isPresent) testTimeout.get() else null,
+                    if (shardCount.isPresent) "--num-uniform-shards" else null,
+                    if (shardCount.isPresent) shardCount.get() else null,
                     if (instrumentationArgs.isPresent) "--environment-variables" else null,
                     if (instrumentationArgs.isPresent) instrumentationArgs.get() else null,
                 ) + getDeviceArguments()
@@ -206,19 +232,25 @@ private const val Q2Q = "q2q,version=31"
 
 private const val PHYSICAL_PIXEL9 = "tokay,version=34"
 private const val MEDIUM_PHONE_34 = "MediumPhone.arm,version=34"
+private const val MEDIUM_PHONE_35 = "MediumPhone.arm,version=35"
+private const val MEDIUM_PHONE_33 = "MediumPhone.arm,version=33"
+private const val MEDIUM_PHONE_30 = "MediumPhone.arm,version=30"
+private const val MEDIUM_PHONE_28 = "MediumPhone.arm,version=28"
+private const val MEDIUM_PHONE_26 = "MediumPhone.arm,version=26"
+private const val NEXUS4_21 = "Nexus4.gce_x86,version=21"
 private const val PIXEL2_33 = "Pixel2.arm,version=33"
 private const val PIXEL2_30 = "Pixel2.arm,version=30"
 private const val PIXEL2_28 = "Pixel2.arm,version=28"
 private const val PIXEL2_26 = "Pixel2.arm,version=26"
-private const val NEXUS4_21 = "Nexus4.gce_x86,version=21"
 
 private val API_TO_MODEL_MAP =
     mapOf(
         34 to MEDIUM_PHONE_34,
-        33 to PIXEL2_33,
-        30 to PIXEL2_30,
-        28 to PIXEL2_28,
-        26 to PIXEL2_26,
+        35 to MEDIUM_PHONE_35,
+        33 to MEDIUM_PHONE_33,
+        30 to MEDIUM_PHONE_30,
+        28 to MEDIUM_PHONE_28,
+        26 to MEDIUM_PHONE_26,
         21 to NEXUS4_21,
     )
 
@@ -228,12 +260,17 @@ private val devicesToRunOn =
         FTL_ON_APIS_NAME to listOf(), // instead read devices via repeatable --api
         "ftlphysicalpixel9api34" to listOf(PHYSICAL_PIXEL9),
         "ftlmediumphoneapi34" to listOf(MEDIUM_PHONE_34),
+        "ftlmediumphoneapi35" to listOf(MEDIUM_PHONE_35),
+        "ftlmediumphoneapi33" to listOf(MEDIUM_PHONE_33),
+        "ftlmediumphoneapi30" to listOf(MEDIUM_PHONE_30),
+        "ftlmediumphoneapi28" to listOf(MEDIUM_PHONE_28),
+        "ftlmediumphoneapi26" to listOf(MEDIUM_PHONE_26),
+        "ftlnexus4api21" to listOf(NEXUS4_21),
+        "ftlCoreTelecomDeviceSet" to listOf(NEXUS_6P, A10, PETTYL, HWCOR, Q2Q),
         "ftlpixel2api33" to listOf(PIXEL2_33),
         "ftlpixel2api30" to listOf(PIXEL2_30),
         "ftlpixel2api28" to listOf(PIXEL2_28),
         "ftlpixel2api26" to listOf(PIXEL2_26),
-        "ftlnexus4api21" to listOf(NEXUS4_21),
-        "ftlCoreTelecomDeviceSet" to listOf(NEXUS_6P, A10, PETTYL, HWCOR, Q2Q),
     )
 
 internal fun Project.registerRunner(
@@ -254,7 +291,6 @@ internal fun Project.registerRunner(
 fun Project.configureFtlRunner(androidComponentsExtension: AndroidComponentsExtension<*, *, *>) {
     androidComponentsExtension.apply {
         onVariants { variant ->
-            @Suppress("UnstableApiUsage") // usage of HasDeviceTests
             when {
                 variant is HasDeviceTests -> {
                     variant.deviceTests.forEach { (_, deviceTest) ->
@@ -271,7 +307,6 @@ fun Project.configureFtlRunner(androidComponentsExtension: AndroidComponentsExte
 
 fun Project.configureFtlRunner(componentsExtension: KotlinMultiplatformAndroidComponentsExtension) {
     componentsExtension.onVariant { variant ->
-        @Suppress("UnstableApiUsage") // HasDeviceTests is @Incubating b/372495504
         variant.deviceTests.forEach { (_, deviceTest) ->
             registerRunner(deviceTest.name, deviceTest.artifacts, deviceTest.namespace)
         }
@@ -289,5 +324,15 @@ fun Project.addAppApkToFtlRunner() {
                 }
             }
         }
+    }
+}
+
+private fun ExecOperations.printCommandAndExec(action: (ExecSpec) -> Unit) {
+    exec { spec ->
+        action(spec)
+
+        // Just approximating the command for user verification.
+        val commandLine = spec.commandLine.map { if (" " in it) "\"$it\"" else it }
+        println("Executing command: `${commandLine.joinToString(" ")}`")
     }
 }

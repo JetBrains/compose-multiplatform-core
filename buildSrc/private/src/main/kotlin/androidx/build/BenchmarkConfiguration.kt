@@ -26,7 +26,6 @@ import org.gradle.api.Project
  * See [androidx.build.testConfiguration.INST_ARG_BLOCKLIST], which can be used to suppress some of
  * these args in CI.
  */
-@Suppress("UnstableApiUsage") // HasDeviceTests is @Incubating b/372495504
 internal fun HasDeviceTests.enableMicrobenchmarkInternalDefaults(project: Project) {
     if (project.hasBenchmarkPlugin()) {
         deviceTests.forEach { (_, deviceTest) ->
@@ -51,6 +50,12 @@ internal fun HasDeviceTests.enableMicrobenchmarkInternalDefaults(project: Projec
 
             // Check that speed compilation always used when benchmark invoked
             deviceTest.instrumentationRunnerArguments.put("androidx.benchmark.requireAot", "true")
+
+            // Throw if measureRepeated() called on main thread to avoid ANRs
+            deviceTest.instrumentationRunnerArguments.put(
+                "androidx.benchmark.throwOnMainThreadMeasureRepeated",
+                "true"
+            )
 
             // Enables long-running method tracing on the UI thread, even if that risks ANR for
             // profiling convenience.

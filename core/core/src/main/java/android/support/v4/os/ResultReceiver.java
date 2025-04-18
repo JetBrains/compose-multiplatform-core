@@ -25,8 +25,9 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.RemoteException;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Generic interface for receiving a callback result from someone.  Use this

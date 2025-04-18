@@ -20,10 +20,11 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.work.Logger;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The {@link android.app.Service} which hosts an implementation of {@link RemoteWorkManager}.
@@ -40,9 +41,8 @@ public class RemoteWorkManagerService extends Service {
         mBinder = new RemoteWorkManagerImpl(this);
     }
 
-    @Nullable
     @Override
-    public IBinder onBind(@NonNull Intent intent) {
+    public @Nullable IBinder onBind(@NonNull Intent intent) {
         Logger.get().info(TAG, "Binding to RemoteWorkManager");
         return mBinder;
     }

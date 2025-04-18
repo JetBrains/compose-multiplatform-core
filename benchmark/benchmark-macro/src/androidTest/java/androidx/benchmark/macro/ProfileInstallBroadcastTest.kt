@@ -73,7 +73,7 @@ class ProfileInstallBroadcastTest {
     fun saveProfile_missing() {
         val errorString = ProfileInstallBroadcast.saveProfile(Packages.MISSING)
         assertNotNull(errorString)
-        assertContains(errorString!!, "The save profile broadcast event was not received")
+        assertContains(errorString!!, "The save profile broadcast was not received")
     }
 
     @Test
@@ -133,6 +133,6 @@ class ProfileInstallBroadcastTest {
         val result = ProfileInstallBroadcast.saveProfilesForAllProcesses(Packages.TEST)
         assertEquals(1, result.processCount)
         assertNotNull(result.error)
-        assertContains(result.error!!, "The save profile broadcast event was not received.")
+        assertContains(result.error!!, "The save profile broadcast was not received.")
     }
 }

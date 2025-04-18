@@ -17,8 +17,8 @@
 import androidx.build.AndroidXConfig
 
 plugins {
-    id 'AndroidXPlugin'
-    id 'com.android.privacy-sandbox-sdk'
+    id("AndroidXPlugin")
+    id("com.android.privacy-sandbox-sdk")
 }
 
 android {
@@ -41,5 +41,5 @@ android {
 }
 
 dependencies {
-    include(project(':privacysandbox:sdkruntime:integration-tests:testsdk'))
+    include(project(":privacysandbox:sdkruntime:integration-tests:testsdk"))
 }

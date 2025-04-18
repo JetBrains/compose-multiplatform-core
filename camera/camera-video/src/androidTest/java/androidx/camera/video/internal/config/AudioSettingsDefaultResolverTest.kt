@@ -52,10 +52,10 @@ class AudioSettingsDefaultResolverTest {
             )
 
         audioSpecs.forEach {
-            val audioSettings = AudioSettingsDefaultResolver(it).get()
+            val audioSettings = AudioSettingsDefaultResolver(it, null).get()
             assertThat(
                 AudioSource.isSettingsSupported(
-                    audioSettings.sampleRate,
+                    audioSettings.captureSampleRate,
                     audioSettings.channelCount,
                     audioSettings.audioFormat
                 )
@@ -71,7 +71,8 @@ class AudioSettingsDefaultResolverTest {
             Build.VERSION.SDK_INT == 30 && isEmulator()
         )
         val audioSpec = AudioSpec.builder().build()
-        val resolvedAudioSourceEnum = AudioSettingsDefaultResolver(audioSpec).get().audioSource
+        val resolvedAudioSourceEnum =
+            AudioSettingsDefaultResolver(audioSpec, null).get().audioSource
 
         assertThat(resolvedAudioSourceEnum)
             .isAnyOf(MediaRecorder.AudioSource.CAMCORDER, MediaRecorder.AudioSource.MIC)
@@ -85,7 +86,8 @@ class AudioSettingsDefaultResolverTest {
             Build.VERSION.SDK_INT == 30 && isEmulator()
         )
         val audioSpec = AudioSpec.builder().build()
-        val resolvedAudioSourceFormat = AudioSettingsDefaultResolver(audioSpec).get().audioFormat
+        val resolvedAudioSourceFormat =
+            AudioSettingsDefaultResolver(audioSpec, null).get().audioFormat
 
         assertThat(resolvedAudioSourceFormat).isNotEqualTo(AudioFormat.ENCODING_INVALID)
     }

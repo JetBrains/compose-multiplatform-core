@@ -22,10 +22,11 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 import android.util.Base64;
 
 import androidx.annotation.ArrayRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -97,8 +98,7 @@ public final class FontRequest {
      * Returns the selected font provider's authority. This tells the system what font provider
      * it should request the font from.
      */
-    @NonNull
-    public String getProviderAuthority() {
+    public @NonNull String getProviderAuthority() {
         return mProviderAuthority;
     }
 
@@ -106,8 +106,7 @@ public final class FontRequest {
      * Returns the selected font provider's package. This helps the system verify that the provider
      * identified by the given authority is the one requested.
      */
-    @NonNull
-    public String getProviderPackage() {
+    public @NonNull String getProviderPackage() {
         return mProviderPackage;
     }
 
@@ -115,8 +114,7 @@ public final class FontRequest {
      * Returns the query string. Refer to your font provider's documentation on the format of this
      * string.
      */
-    @NonNull
-    public String getQuery() {
+    public @NonNull String getQuery() {
         return mQuery;
     }
 
@@ -127,8 +125,7 @@ public final class FontRequest {
      *
      * @see #getCertificatesArrayResId()
      */
-    @Nullable
-    public List<List<byte[]>> getCertificates() {
+    public @Nullable List<List<byte[]>> getCertificates() {
         return mCertificates;
     }
 
@@ -156,8 +153,7 @@ public final class FontRequest {
     }
 
     @RestrictTo(LIBRARY)
-    @NonNull
-    String getId() {
+    @NonNull String getId() {
         return mIdentifier;
     }
 

@@ -65,7 +65,7 @@ constructor(private val execOperations: ExecOperations) : DefaultTask() {
             )
         execOperations.executeQuietly(args)
         require(outputFile.exists()) {
-            "Project $projectName must match the `name` declaration in $yamlFile"
+            "Project ${projectName.get()} must match the `name` declaration in ${yamlFile.get()}"
         }
         copyProjectMetadata()
     }

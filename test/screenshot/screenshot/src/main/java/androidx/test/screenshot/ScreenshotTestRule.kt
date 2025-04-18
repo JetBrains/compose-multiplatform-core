@@ -116,10 +116,10 @@ open class ScreenshotTestRule(config: ScreenshotTestRuleConfig = ScreenshotTestR
     class ScreenshotTestStatement(private val base: Statement) : Statement() {
         override fun evaluate() {
             if (Build.MODEL.contains("gphone")) {
-                // We support emulators with API 33
-                Assume.assumeTrue("Requires SDK 33.", Build.VERSION.SDK_INT == 33)
+                // We support emulators with API 35
+                Assume.assumeTrue("Requires SDK 35.", Build.VERSION.SDK_INT == 35)
             } else {
-                Assume.assumeTrue("Requires API 33 emulator", false)
+                Assume.assumeTrue("Requires API 35 emulator", false)
             }
             base.evaluate()
         }

@@ -372,7 +372,7 @@ class AlertDialogScreenshotTest {
     ) {
         if (showTwoButtons) {
             AlertDialog(
-                show = true,
+                visible = true,
                 onDismissRequest = {},
                 modifier = modifier,
                 title = title,
@@ -384,7 +384,7 @@ class AlertDialogScreenshotTest {
             )
         } else {
             AlertDialog(
-                show = true,
+                visible = true,
                 onDismissRequest = {},
                 modifier = modifier,
                 title = title,

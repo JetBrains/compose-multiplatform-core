@@ -24,10 +24,11 @@ import android.util.Pair;
 import android.util.Range;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.impl.SessionProcessor;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -68,8 +69,7 @@ public interface VendorExtender {
      *
      * <p>It must be called after init() is called.
      */
-    @Nullable
-    default Range<Long> getEstimatedCaptureLatencyRange(@Nullable Size size) {
+    default @Nullable Range<Long> getEstimatedCaptureLatencyRange(@Nullable Size size) {
         return null;
     }
 
@@ -85,8 +85,7 @@ public interface VendorExtender {
      *
      * <p>It must be called after init() is called.
      */
-    @NonNull
-    default List<Pair<Integer, Size[]>> getSupportedPreviewOutputResolutions() {
+    default @NonNull List<Pair<Integer, Size[]>> getSupportedPreviewOutputResolutions() {
         return Collections.emptyList();
     }
 
@@ -102,8 +101,7 @@ public interface VendorExtender {
      *
      * <p>It must be called after init() is called.
      */
-    @NonNull
-    default List<Pair<Integer, Size[]>> getSupportedCaptureOutputResolutions() {
+    default @NonNull List<Pair<Integer, Size[]>> getSupportedCaptureOutputResolutions() {
         return Collections.emptyList();
     }
 
@@ -117,8 +115,7 @@ public interface VendorExtender {
      *
      * <p>It must be called after init() is called.
      */
-    @NonNull
-    default Size[] getSupportedYuvAnalysisResolutions() {
+    default Size @NonNull [] getSupportedYuvAnalysisResolutions() {
         return new Size[0];
     }
 
@@ -129,8 +126,8 @@ public interface VendorExtender {
      * same aspect ratio as the given capture size. If no supported resolution exists for the
      * provided capture size then an empty map is returned.
      */
-    @NonNull
-    default Map<Integer, List<Size>> getSupportedPostviewResolutions(@NonNull Size captureSize) {
+    default @NonNull Map<Integer, List<Size>> getSupportedPostviewResolutions(
+            @NonNull Size captureSize) {
         return Collections.emptyMap();
     }
 
@@ -167,8 +164,7 @@ public interface VendorExtender {
      * configuration based on given output surfaces (2) Requesting OEM implementation to start
      * repeating request and performing a still image capture.
      */
-    @Nullable
-    default SessionProcessor createSessionProcessor(@NonNull Context context) {
+    default @Nullable SessionProcessor createSessionProcessor(@NonNull Context context) {
         return null;
     }
 
@@ -176,8 +172,7 @@ public interface VendorExtender {
      * Return the list of supported {@link CaptureResult.Key}s that will be contained in the
      * onCaptureCompleted callback.
      */
-    @NonNull
-    default List<CaptureResult.Key> getSupportedCaptureResultKeys() {
+    default @NonNull List<CaptureResult.Key> getSupportedCaptureResultKeys() {
         return Collections.emptyList();
     }
 
@@ -194,4 +189,10 @@ public interface VendorExtender {
         // onCaptureCompleted is invoked when available captureResult keys are not empty.
         return !getSupportedCaptureResultKeys().isEmpty();
     }
+
+    default @NonNull List<Pair<CameraCharacteristics.Key, Object>>
+            getAvailableCharacteristicsKeyValues() {
+        return Collections.emptyList();
+    }
+
 }

@@ -134,7 +134,7 @@ class RequestFocusEnterTest {
         rule.setFocusableContent {
             Box(
                 Modifier.focusRequester(focusRequester)
-                    .focusProperties { onEnter = { cancelFocus() } }
+                    .focusProperties { onEnter = { cancelFocusChange() } }
                     .onFocusChanged { focusState = it }
                     .focusTarget()
             )
@@ -156,7 +156,7 @@ class RequestFocusEnterTest {
                     .onFocusChanged { focusState = it }
                     .focusTarget()
             ) {
-                Box(Modifier.focusProperties { onEnter = { cancelFocus() } })
+                Box(Modifier.focusProperties { onEnter = { cancelFocusChange() } })
             }
         }
 
@@ -171,7 +171,7 @@ class RequestFocusEnterTest {
     fun cancellingFocusGain_usingEnterPropertyOnParent() {
         // Arrange.
         rule.setFocusableContent {
-            Box(Modifier.focusProperties { onEnter = { cancelFocus() } }.focusTarget()) {
+            Box(Modifier.focusProperties { onEnter = { cancelFocusChange() } }.focusTarget()) {
                 Box(
                     Modifier.focusRequester(focusRequester)
                         .onFocusChanged { focusState = it }
@@ -191,7 +191,7 @@ class RequestFocusEnterTest {
     fun cancellingFocusGain_usingEnterPropertyOnGrandparent() {
         // Arrange.
         rule.setFocusableContent {
-            Box(Modifier.focusProperties { onEnter = { cancelFocus() } }.focusTarget()) {
+            Box(Modifier.focusProperties { onEnter = { cancelFocusChange() } }.focusTarget()) {
                 Box {
                     Box(
                         Modifier.focusRequester(focusRequester)

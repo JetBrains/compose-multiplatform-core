@@ -110,6 +110,7 @@ import kotlin.math.max
  *   default
  * @param exit ExitTransition(s) used for the disappearing animation, fading out while shrinking by
  *   default
+ * @param label A label to differentiate from other animations in Android Studio animation preview.
  * @param content Content to appear or disappear based on the value of [visible]
  * @see EnterTransition
  * @see ExitTransition
@@ -181,6 +182,7 @@ public fun AnimatedVisibility(
  *   horizontally by default
  * @param exit ExitTransition(s) used for the disappearing animation, fading out while shrinking
  *   horizontally by default
+ * @param label A label to differentiate from other animations in Android Studio animation preview.
  * @param content Content to appear or disappear based on the value of [visible]
  * @see EnterTransition
  * @see ExitTransition
@@ -254,6 +256,7 @@ public fun RowScope.AnimatedVisibility(
  *   vertically by default
  * @param exit ExitTransition(s) used for the disappearing animation, fading out while shrinking
  *   vertically by default
+ * @param label A label to differentiate from other animations in Android Studio animation preview.
  * @param content Content to appear or disappear based on the value of [visible]
  * @see EnterTransition
  * @see ExitTransition
@@ -351,6 +354,7 @@ public enum class EnterExitState {
  *   default
  * @param exit ExitTransition(s) used for the disappearing animation, fading out while shrinking by
  *   default
+ * @param label A label to differentiate from other animations in Android Studio animation preview.
  * @param content Content to appear or disappear based on the value of [visibleState]
  * @see EnterTransition
  * @see ExitTransition
@@ -422,6 +426,7 @@ public fun AnimatedVisibility(
  *   vertically by default
  * @param exit ExitTransition(s) used for the disappearing animation, fading out while shrinking
  *   vertically by default
+ * @param label A label to differentiate from other animations in Android Studio animation preview.
  * @param content Content to appear or disappear based on the value of [visibleState]
  * @see EnterTransition
  * @see ExitTransition
@@ -495,6 +500,7 @@ public fun RowScope.AnimatedVisibility(
  *   vertically by default
  * @param exit ExitTransition(s) used for the disappearing animation, fading out while shrinking
  *   vertically by default
+ * @param label A label to differentiate from other animations in Android Studio animation preview.
  * @param content Content to appear or disappear based on of [visibleState]
  * @see EnterTransition
  * @see ExitTransition

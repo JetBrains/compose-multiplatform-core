@@ -60,12 +60,12 @@ public class StorageInfoCtsTest {
     public void testBuildStorageInfo_withBlob() {
         StorageInfo storageInfo =
                 new StorageInfo.Builder()
-                        .setBlobSizeBytes(12L)
-                        .setBlobCount(20)
+                        .setBlobsSizeBytes(12L)
+                        .setBlobsCount(20)
                         .build();
 
-        assertThat(storageInfo.getBlobCount()).isEqualTo(20);
-        assertThat(storageInfo.getBlobSizeBytes()).isEqualTo(12L);
+        assertThat(storageInfo.getBlobsCount()).isEqualTo(20);
+        assertThat(storageInfo.getBlobsSizeBytes()).isEqualTo(12L);
     }
 
     @Test
@@ -73,7 +73,7 @@ public class StorageInfoCtsTest {
     public void testBuildStorageInfo_withBlobDefaults() {
         StorageInfo storageInfo = new StorageInfo.Builder().build();
 
-        assertThat(storageInfo.getBlobCount()).isEqualTo(0);
-        assertThat(storageInfo.getBlobSizeBytes()).isEqualTo(0L);
+        assertThat(storageInfo.getBlobsCount()).isEqualTo(0);
+        assertThat(storageInfo.getBlobsSizeBytes()).isEqualTo(0L);
     }
 }

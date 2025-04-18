@@ -36,7 +36,13 @@ import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 
-/** Compatibility version of an {@link AudioFocusRequest}. */
+/**
+ * Compatibility version of an {@link AudioFocusRequest}.
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
+ */
+@Deprecated
 public class AudioFocusRequestCompat {
 
     // default attributes for the request when not specified
@@ -194,7 +200,11 @@ public class AudioFocusRequestCompat {
      * AudioFocusRequestCompat} without an {@link AudioManager.OnAudioFocusChangeListener} will
      * throw an {@link IllegalArgumentException}, because the listener is required for all API
      * levels up to API 26.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static final class Builder {
         private int mFocusGain;
         private OnAudioFocusChangeListener mOnAudioFocusChangeListener;

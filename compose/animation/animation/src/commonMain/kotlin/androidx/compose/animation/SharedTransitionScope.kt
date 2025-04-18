@@ -65,30 +65,17 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.addOutline
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.LookaheadScope
-import androidx.compose.ui.layout.Measurable
-import androidx.compose.ui.layout.MeasureResult
-import androidx.compose.ui.layout.MeasureScope
-import androidx.compose.ui.layout.ScaleFactor
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.node.LayoutModifierNode
-import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.platform.InspectorInfo
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.constrain
-import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.fastForEach
-import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -1150,91 +1137,6 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
     }
 }
 
-private val DefaultEnabled: () -> Boolean = { true }
-
-@OptIn(ExperimentalSharedTransitionApi::class)
-private fun Modifier.createContentScaleModifier(
-    scaleToBounds: ScaleToBoundsImpl,
-    isEnabled: () -> Boolean
-): Modifier =
-    this.then(
-        if (scaleToBounds.contentScale == ContentScale.Crop) {
-            Modifier.graphicsLayer { clip = isEnabled() }
-        } else Modifier
-    ) then SkipToLookaheadElement(scaleToBounds, isEnabled)
-
-@OptIn(ExperimentalSharedTransitionApi::class)
-private data class SkipToLookaheadElement(
-    val scaleToBounds: ScaleToBoundsImpl? = null,
-    val isEnabled: () -> Boolean = DefaultEnabled,
-) : ModifierNodeElement<SkipToLookaheadNode>() {
-    override fun create(): SkipToLookaheadNode {
-        return SkipToLookaheadNode(scaleToBounds, isEnabled)
-    }
-
-    override fun update(node: SkipToLookaheadNode) {
-        node.scaleToBounds = scaleToBounds
-        node.isEnabled = isEnabled
-    }
-
-    override fun InspectorInfo.inspectableProperties() {
-        name = "skipToLookahead"
-        properties["scaleToBounds"] = scaleToBounds
-        properties["isEnabled"] = isEnabled
-    }
-}
-
-@OptIn(ExperimentalSharedTransitionApi::class)
-private class SkipToLookaheadNode(scaleToBounds: ScaleToBoundsImpl?, isEnabled: () -> Boolean) :
-    LayoutModifierNode, Modifier.Node() {
-    var lookaheadConstraints: Constraints? = null
-    var scaleToBounds: ScaleToBoundsImpl? by mutableStateOf(scaleToBounds)
-    var isEnabled: () -> Boolean by mutableStateOf(isEnabled)
-
-    override fun MeasureScope.measure(
-        measurable: Measurable,
-        constraints: Constraints
-    ): MeasureResult {
-        if (isLookingAhead) {
-            lookaheadConstraints = constraints
-        }
-        val p = measurable.measure(lookaheadConstraints!!)
-        val contentSize = IntSize(p.width, p.height)
-        val constrainedSize = constraints.constrain(contentSize)
-        return layout(constrainedSize.width, constrainedSize.height) {
-            val scaleToBounds = scaleToBounds
-            if (!isEnabled() || scaleToBounds == null) {
-                p.place(0, 0)
-            } else {
-                val contentScale = scaleToBounds.contentScale
-                val resolvedScale =
-                    if (contentSize.width == 0 || contentSize.height == 0) {
-                        ScaleFactor(1f, 1f)
-                    } else
-                        contentScale.computeScaleFactor(
-                            contentSize.toSize(),
-                            constrainedSize.toSize()
-                        )
-
-                val (x, y) =
-                    scaleToBounds.alignment.align(
-                        IntSize(
-                            (contentSize.width * resolvedScale.scaleX).roundToInt(),
-                            (contentSize.height * resolvedScale.scaleY).roundToInt()
-                        ),
-                        constrainedSize,
-                        layoutDirection
-                    )
-                p.placeWithLayer(x, y) {
-                    scaleX = resolvedScale.scaleX
-                    scaleY = resolvedScale.scaleY
-                    transformOrigin = TransformOrigin(0f, 0f)
-                }
-            }
-        }
-    }
-}
-
 internal interface LayerRenderer {
     val parentState: SharedElementInternalState?
 
@@ -1312,7 +1214,7 @@ private val cachedScaleToBoundsImplMap =
 
 @Immutable
 @ExperimentalSharedTransitionApi
-private class ScaleToBoundsImpl(val contentScale: ContentScale, val alignment: Alignment) :
+internal class ScaleToBoundsImpl(val contentScale: ContentScale, val alignment: Alignment) :
     ResizeMode
 
 @ExperimentalSharedTransitionApi private object RemeasureImpl : ResizeMode

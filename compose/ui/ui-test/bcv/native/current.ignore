@@ -1,0 +1,2 @@
+// Baseline format: 1.0
+[linuxX64]: Removed declaration androidx.compose.ui.test/IdlingResource from androidx.compose.ui:ui-test

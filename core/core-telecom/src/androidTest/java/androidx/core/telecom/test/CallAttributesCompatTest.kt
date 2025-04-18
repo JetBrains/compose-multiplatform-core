@@ -18,7 +18,6 @@ package androidx.core.telecom.test
 
 import android.net.Uri
 import android.os.Build.VERSION_CODES
-import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallAttributesCompat.Companion.SUPPORTS_SET_INACTIVE
 import androidx.core.telecom.CallAttributesCompat.Companion.SUPPORTS_STREAM
@@ -29,12 +28,13 @@ import androidx.core.telecom.test.utils.TestUtils.CUSTOM_TEST_APP_SCHEME
 import androidx.core.telecom.test.utils.TestUtils.OUTGOING_NAME
 import androidx.core.telecom.test.utils.TestUtils.TEST_ADDRESS
 import androidx.core.telecom.test.utils.TestUtils.TEST_CALL_ATTRIB_NAME
+import androidx.test.filters.SdkSuppress
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-@RequiresApi(VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = VERSION_CODES.O)
 class CallAttributesCompatTest {
 
     @Test

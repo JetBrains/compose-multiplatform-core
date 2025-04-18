@@ -20,6 +20,7 @@ import static androidx.core.view.WindowInsetsAnimationCompat.Callback.DISPATCH_M
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -34,19 +35,18 @@ import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
 import androidx.core.graphics.Insets;
 import androidx.core.test.R;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.List;
-
 
 @RunWith(AndroidJUnit4.class)
 @MediumTest
@@ -96,6 +96,28 @@ public class ViewGroupCompatTest extends BaseInstrumentationTestCase<ViewCompatA
     }
 
     @Test
+    public void dispatchApplyWindowInsets() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+            final Context context = mViewGroup.getContext();
+            final WindowInsetsCompat insets = WindowInsetsCompat.toWindowInsetsCompat(
+                    new InsetsObtainer(context).obtain(10, 10, 10, 10));
+            final View customView = new View(context) {
+                @Override
+                public WindowInsets dispatchApplyWindowInsets(WindowInsets insets) {
+                    // Doesn't call onApplyWindowInsets at all.
+                    return insets;
+                }
+            };
+
+            ViewGroupCompat.installCompatInsetsDispatch(mViewGroup);
+            mViewGroup.addView(customView);
+
+            assertNotNull(ViewCompat.dispatchApplyWindowInsets(mViewGroup, insets));
+            assertNotNull(ViewCompat.dispatchApplyWindowInsets(customView, insets));
+        });
+    }
+
+    @Test
     public void installCompatInsetsDispatch() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
             final Insets[] insetsRoot = new Insets[1];
@@ -136,9 +158,9 @@ public class ViewGroupCompatTest extends BaseInstrumentationTestCase<ViewCompatA
             // View.OnApplyWindowInsetsListener set by ViewGroupCompat#installCompatInsetsDispatch
             ViewCompat.setWindowInsetsAnimationCallback(mViewGroup,
                     new WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_STOP) {
-                        @NonNull
                         @Override
-                        public WindowInsetsCompat onProgress(@NonNull WindowInsetsCompat insets,
+                        public @NonNull WindowInsetsCompat onProgress(
+                                @NonNull WindowInsetsCompat insets,
                                 @NonNull List<WindowInsetsAnimationCompat> runningAnimations) {
                             return insets;
                         }

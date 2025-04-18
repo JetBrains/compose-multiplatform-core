@@ -22,6 +22,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
@@ -44,6 +45,7 @@ import androidx.activity.result.contract.ActivityResultContracts.GetContent
 import androidx.activity.result.contract.ActivityResultContracts.OpenMultipleDocuments
 import androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.MediaCapabilities
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.activity.result.contract.ActivityResultContracts.TakePicture
 import androidx.activity.result.contract.ActivityResultContracts.TakePicturePreview
@@ -164,6 +166,17 @@ class MainActivity : ComponentActivity() {
                     pickMultipleVisualMedia.launch(
                         PickVisualMediaRequest(isOrderedSelection = true)
                     )
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    button("Pick 5 videos max (w/ photo picker) & transcoding HDR to SDR") {
+                        pickMultipleVisualMedia.launch(
+                            PickVisualMediaRequest(
+                                mediaType = PickVisualMedia.VideoOnly,
+                                mediaCapabilitiesForTranscoding =
+                                    MediaCapabilities.Builder().build()
+                            )
+                        )
+                    }
                 }
                 button("Create document") { createDocument.launch("Temp") }
                 button("Open documents") { openDocuments.launch(arrayOf("*/*")) }

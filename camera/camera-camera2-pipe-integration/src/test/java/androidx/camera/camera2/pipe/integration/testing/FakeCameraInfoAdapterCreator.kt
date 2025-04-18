@@ -36,8 +36,10 @@ import androidx.camera.camera2.pipe.integration.compat.workaround.OutputSizesCor
 import androidx.camera.camera2.pipe.integration.config.CameraConfig
 import androidx.camera.camera2.pipe.integration.impl.CameraCallbackMap
 import androidx.camera.camera2.pipe.integration.impl.CameraProperties
+import androidx.camera.camera2.pipe.integration.impl.ComboRequestListener
 import androidx.camera.camera2.pipe.integration.impl.EvCompControl
 import androidx.camera.camera2.pipe.integration.impl.FocusMeteringControl
+import androidx.camera.camera2.pipe.integration.impl.LowLightBoostControl
 import androidx.camera.camera2.pipe.integration.impl.State3AControl
 import androidx.camera.camera2.pipe.integration.impl.TorchControl
 import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
@@ -138,6 +140,12 @@ object FakeCameraInfoAdapterCreator {
                 zoomControl,
                 EvCompControl(FakeEvCompCompat()),
                 TorchControl(cameraProperties, state3AControl, useCaseThreads),
+                LowLightBoostControl(
+                    cameraProperties.metadata,
+                    state3AControl,
+                    useCaseThreads,
+                    ComboRequestListener()
+                ),
             ),
             CameraCallbackMap(),
             FocusMeteringControl(

@@ -135,6 +135,7 @@ class ComposeViewAdapterTest {
                     |<root>
                     .|LazyColumnPreview.kt:31
                     ..|LazyColumnPreview.kt:31
+                    ..|LazyColumnPreview.kt:31
                 """
                     .trimIndent(),
                 viewInfos.toDebugString { it.fileName == "LazyColumnPreview.kt" }.trimIndent()
@@ -154,6 +155,7 @@ class ComposeViewAdapterTest {
                 """
                     |<root>
                     .|LazyColumnPreview.kt:31
+                    ..|LazyColumnPreview.kt:31
                     ..|LazyColumnPreview.kt:31
                     ...|LazyColumnPreview.kt:31
                     ...|LazyColumnPreview.kt:31
@@ -181,8 +183,12 @@ class ComposeViewAdapterTest {
                     |<root>
                     .|LazyColumnPreview.kt:37
                     ..|LazyColumnPreview.kt:38
+                    ..|LazyColumnPreview.kt:38
                     ...|LazyColumnPreview.kt:41
                     ...|LazyColumnPreview.kt:42
+                    ...|LazyColumnPreview.kt:42
+                    ....|LazyColumnPreview.kt:42
+                    ....|LazyColumnPreview.kt:42
                     ....|LazyColumnPreview.kt:42
                     ....|LazyColumnPreview.kt:42
                     ....|LazyColumnPreview.kt:42
@@ -624,7 +630,6 @@ class ComposeViewAdapterTest {
             composeViewAdapter.init(
                 "androidx.compose.ui.tooling.TestInvalidationPreviewKt",
                 "CounterPreview",
-                forceCompositionInvalidation = false,
                 onDraw = { onDrawCounter++ }
             )
         }
@@ -641,24 +646,6 @@ class ComposeViewAdapterTest {
             }
             Thread.sleep(250)
         }
-    }
-
-    /** Check re-composition happens when forced. */
-    @Test
-    fun testInvalidation() {
-        compositionCount.set(0)
-        val drawCountDownLatch = CountDownLatch(10)
-        activityTestRule.runOnUiThread {
-            composeViewAdapter.init(
-                "androidx.compose.ui.tooling.TestInvalidationPreviewKt",
-                "CounterPreview",
-                forceCompositionInvalidation = true,
-                onDraw = { drawCountDownLatch.countDown() }
-            )
-        }
-        activityTestRule.runOnUiThread { assertEquals(1, compositionCount.get()) }
-        // Draw will keep happening so, eventually this will hit 0
-        assertTrue(drawCountDownLatch.await(10, TimeUnit.SECONDS))
     }
 
     @Test

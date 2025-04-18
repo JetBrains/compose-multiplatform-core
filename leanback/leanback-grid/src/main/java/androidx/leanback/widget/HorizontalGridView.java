@@ -31,10 +31,11 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link android.view.ViewGroup} that shows items in a horizontal scrolling list. The items

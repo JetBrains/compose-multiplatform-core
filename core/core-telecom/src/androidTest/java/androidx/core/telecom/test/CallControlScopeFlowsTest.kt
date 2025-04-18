@@ -19,7 +19,6 @@ package androidx.core.telecom.test
 import android.os.Build.VERSION_CODES
 import android.telecom.DisconnectCause
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.test.utils.BaseTelecomTest
@@ -39,7 +38,6 @@ import org.junit.runner.RunWith
 
 @SdkSuppress(minSdkVersion = VERSION_CODES.O /* api=26 */)
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-@RequiresApi(VERSION_CODES.O)
 @RunWith(AndroidJUnit4::class)
 class CallControlScopeFlowsTest : BaseTelecomTest() {
 

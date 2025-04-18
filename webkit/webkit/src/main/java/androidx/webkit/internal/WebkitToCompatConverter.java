@@ -23,6 +23,7 @@ import android.webkit.WebMessagePort;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
+import android.webkit.WebStorage;
 
 import androidx.annotation.RequiresApi;
 import androidx.webkit.SafeBrowsingResponseCompat;
@@ -31,6 +32,7 @@ import androidx.webkit.WebResourceErrorCompat;
 import org.chromium.support_lib_boundary.ServiceWorkerWebSettingsBoundaryInterface;
 import org.chromium.support_lib_boundary.WebResourceRequestBoundaryInterface;
 import org.chromium.support_lib_boundary.WebSettingsBoundaryInterface;
+import org.chromium.support_lib_boundary.WebStorageBoundaryInterface;
 import org.chromium.support_lib_boundary.WebViewCookieManagerBoundaryInterface;
 import org.chromium.support_lib_boundary.WebkitToCompatConverterBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
@@ -165,5 +167,13 @@ public class WebkitToCompatConverter {
         return new CookieManagerAdapter(BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                 WebViewCookieManagerBoundaryInterface.class,
                 mImpl.convertCookieManager(cookieManager)));
+    }
+
+    /**
+     * Returns a {@link WebStorageAdapter} for the pased-in {@code webStorage}.
+     */
+    public @NonNull WebStorageAdapter convertWebStorage(@NonNull WebStorage webStorage) {
+        return new WebStorageAdapter(BoundaryInterfaceReflectionUtil.castToSuppLibClass(
+                WebStorageBoundaryInterface.class, mImpl.convertWebStorage(webStorage)));
     }
 }

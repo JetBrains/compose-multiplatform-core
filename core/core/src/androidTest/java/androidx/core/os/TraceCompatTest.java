@@ -26,14 +26,14 @@ import android.app.UiAutomation;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;

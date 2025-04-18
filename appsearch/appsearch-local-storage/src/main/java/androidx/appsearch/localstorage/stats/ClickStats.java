@@ -16,10 +16,11 @@
 
 package androidx.appsearch.localstorage.stats;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
-import androidx.core.util.Preconditions;
+import androidx.appsearch.stats.BaseStats;
+
+import org.jspecify.annotations.NonNull;
 
 // TODO(b/319285816): link converter here.
 /**
@@ -29,7 +30,7 @@ import androidx.core.util.Preconditions;
  * @exportToFramework:hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class ClickStats {
+public class ClickStats extends BaseStats {
     private final long mTimestampMillis;
 
     private final long mTimeStayOnResultMillis;
@@ -41,7 +42,7 @@ public class ClickStats {
     private final boolean mIsGoodClick;
 
     ClickStats(@NonNull Builder builder) {
-        Preconditions.checkNotNull(builder);
+        super(builder);
         mTimestampMillis = builder.mTimestampMillis;
         mTimeStayOnResultMillis = builder.mTimeStayOnResultMillis;
         mResultRankInBlock = builder.mResultRankInBlock;
@@ -79,7 +80,7 @@ public class ClickStats {
     }
 
     /** Builder for {@link ClickStats} */
-    public static final class Builder {
+    public static final class Builder extends BaseStats.Builder<ClickStats.Builder> {
         private long mTimestampMillis;
 
         private long mTimeStayOnResultMillis;
@@ -92,32 +93,28 @@ public class ClickStats {
 
         /** Sets the click action timestamp in milliseconds since Unix epoch. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setTimestampMillis(long timestampMillis) {
+        public @NonNull Builder setTimestampMillis(long timestampMillis) {
             mTimestampMillis = timestampMillis;
             return this;
         }
 
         /** Sets the time (duration) of the user staying on the clicked result. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setTimeStayOnResultMillis(long timeStayOnResultMillis) {
+        public @NonNull Builder setTimeStayOnResultMillis(long timeStayOnResultMillis) {
             mTimeStayOnResultMillis = timeStayOnResultMillis;
             return this;
         }
 
         /** Sets the in-block rank of the clicked result. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setResultRankInBlock(int resultRankInBlock) {
+        public @NonNull Builder setResultRankInBlock(int resultRankInBlock) {
             mResultRankInBlock = resultRankInBlock;
             return this;
         }
 
         /** Sets the global rank of the clicked result. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setResultRankGlobal(int resultRankGlobal) {
+        public @NonNull Builder setResultRankGlobal(int resultRankGlobal) {
             mResultRankGlobal = resultRankGlobal;
             return this;
         }
@@ -140,15 +137,14 @@ public class ClickStats {
          * </ul>
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setIsGoodClick(boolean isGoodClick) {
+        public @NonNull Builder setIsGoodClick(boolean isGoodClick) {
             mIsGoodClick = isGoodClick;
             return this;
         }
 
         /** Builds a new {@link ClickStats} from the {@link ClickStats.Builder}. */
-        @NonNull
-        public ClickStats build() {
+        @Override
+        public @NonNull ClickStats build() {
             return new ClickStats(/* builder= */ this);
         }
     }

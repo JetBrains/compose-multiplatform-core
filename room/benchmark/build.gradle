@@ -21,12 +21,13 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     id("androidx.benchmark")
 }
@@ -34,10 +35,10 @@ plugins {
 dependencies {
     androidTestImplementation(project(":room:room-common"))
     androidTestImplementation(project(":room:room-runtime"))
-    kspAndroidTest project(":room:room-compiler")
+    kspAndroidTest(project(":room:room-compiler"))
     androidTestImplementation(project(":room:room-rxjava2"))
     androidTestImplementation("androidx.arch.core:core-runtime:2.2.0")
-    androidTestImplementation(projectOrArtifact(":benchmark:benchmark-junit4"))
+    androidTestImplementation(androidx.projectOrArtifact(":benchmark:benchmark-junit4"))
     androidTestImplementation(libs.rxjava2)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testExtJunit)
@@ -53,5 +54,6 @@ android {
 }
 
 androidx {
-    type = LibraryType.INTERNAL_TEST_LIBRARY
+    type = SoftwareType.BENCHMARK
 }
+

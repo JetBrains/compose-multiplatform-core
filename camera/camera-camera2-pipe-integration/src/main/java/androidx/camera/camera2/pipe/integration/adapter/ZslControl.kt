@@ -52,6 +52,9 @@ public interface ZslControl {
      */
     public fun addZslConfig(sessionConfigBuilder: SessionConfig.Builder)
 
+    /** This method cleans up all resources used for ZSL capture. */
+    public fun clearZslConfig()
+
     /**
      * Determines whether the provided [DeferrableSurface] belongs to ZSL.
      *
@@ -222,6 +225,9 @@ public class ZslControlImpl @Inject constructor(private val cameraProperties: Ca
     }
 
     override fun setZslDisabledByUserCaseConfig(disabled: Boolean) {
+        if (isZslDisabledByUseCaseConfig != disabled && disabled) {
+            clearRingBuffer()
+        }
         isZslDisabledByUseCaseConfig = disabled
     }
 
@@ -246,6 +252,10 @@ public class ZslControlImpl @Inject constructor(private val cameraProperties: Ca
         }
     }
 
+    override fun clearZslConfig() {
+        reset()
+    }
+
     private fun reset() {
         val reprocImageDeferrableSurface = reprocessingImageDeferrableSurface
         if (reprocImageDeferrableSurface != null) {
@@ -263,6 +273,10 @@ public class ZslControlImpl @Inject constructor(private val cameraProperties: Ca
             reprocessingImageDeferrableSurface = null
         }
 
+        clearRingBuffer()
+    }
+
+    private fun clearRingBuffer() {
         val ringBuffer = zslRingBuffer
         while (!ringBuffer.isEmpty) {
             ringBuffer.dequeue().close()
@@ -283,6 +297,8 @@ public class ZslControlImpl @Inject constructor(private val cameraProperties: Ca
 /** No-Op implementation for [ZslControl]. */
 public class ZslControlNoOpImpl @Inject constructor() : ZslControl {
     override fun addZslConfig(sessionConfigBuilder: SessionConfig.Builder) {}
+
+    override fun clearZslConfig() {}
 
     override fun isZslSurface(surface: DeferrableSurface, sessionConfig: SessionConfig): Boolean =
         false

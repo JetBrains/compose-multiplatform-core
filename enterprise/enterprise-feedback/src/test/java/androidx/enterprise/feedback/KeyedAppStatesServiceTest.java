@@ -41,9 +41,9 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.os.SystemClock;
 
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;

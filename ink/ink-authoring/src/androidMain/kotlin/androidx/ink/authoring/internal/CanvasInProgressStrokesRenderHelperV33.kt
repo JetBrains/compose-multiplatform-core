@@ -222,8 +222,13 @@ internal class CanvasInProgressStrokesRenderHelperV33(
     override fun drawInModifiedRegion(
         inProgressStroke: InProgressStroke,
         strokeToMainViewTransform: Matrix,
+        textureAnimationProgress: Float,
     ) {
-        currentViewport?.drawInModifiedRegion(inProgressStroke, strokeToMainViewTransform)
+        currentViewport?.drawInModifiedRegion(
+            inProgressStroke,
+            strokeToMainViewTransform,
+            textureAnimationProgress,
+        )
     }
 
     @WorkerThread
@@ -689,10 +694,16 @@ internal class CanvasInProgressStrokesRenderHelperV33(
         fun drawInModifiedRegion(
             inProgressStroke: InProgressStroke,
             strokeToMainViewTransform: Matrix,
+            textureAnimationProgress: Float,
         ) {
             val canvas = checkNotNull(renderThreadState.offScreenCanvas)
             canvas.withMatrix(strokeToMainViewTransform) {
-                renderer.draw(canvas, inProgressStroke, strokeToMainViewTransform)
+                renderer.draw(
+                    canvas,
+                    inProgressStroke,
+                    strokeToMainViewTransform,
+                    textureAnimationProgress
+                )
             }
         }
 

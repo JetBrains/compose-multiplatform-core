@@ -17,8 +17,11 @@
 package androidx.camera.integration.core
 
 import android.content.Context
+import android.os.Build
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
+import androidx.camera.core.CameraInfo
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -28,6 +31,7 @@ import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.concurrent.futures.await
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -120,5 +124,54 @@ class CameraInfoDeviceTest(private val implName: String, private val cameraXConf
                 cameraInfo.querySupportedDynamicRanges(emptySet())
             }
         }
+    }
+
+    @Test
+    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM - 1)
+    fun isTorchStrengthLevelSupported_returnFalseWhenApiNotMet() {
+        assertThat(
+                cameraProvider
+                    .getCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
+                    .isTorchStrengthSupported
+            )
+            .isFalse()
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    fun getMaxTorchStrengthLevel_greaterThanOneWhenSupported() {
+        val cameraInfo = cameraProvider.getCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
+        assumeTrue(cameraInfo.isTorchStrengthSupported)
+
+        assertThat(cameraInfo.maxTorchStrengthLevel).isGreaterThan(1)
+    }
+
+    @Test
+    fun getMaxTorchStrengthLevel_returnUnsupported() {
+        val cameraInfo = cameraProvider.getCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
+        assumeTrue(!cameraInfo.isTorchStrengthSupported)
+
+        assertThat(cameraInfo.maxTorchStrengthLevel)
+            .isEqualTo(CameraInfo.TORCH_STRENGTH_LEVEL_UNSUPPORTED)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    fun getTorchStrengthLevel_returnValidValueWhenSupported() {
+        val cameraInfo = cameraProvider.getCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
+        assumeTrue(cameraInfo.isTorchStrengthSupported)
+
+        val torchStrengthLevel = cameraInfo.torchStrengthLevel.value
+        assertThat(torchStrengthLevel).isAtMost(cameraInfo.maxTorchStrengthLevel)
+        assertThat(torchStrengthLevel).isAtLeast(1)
+    }
+
+    @Test
+    fun getTorchStrengthLevel_returnUnsupported() {
+        val cameraInfo = cameraProvider.getCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
+        assumeTrue(!cameraInfo.isTorchStrengthSupported)
+
+        assertThat(cameraInfo.torchStrengthLevel.value)
+            .isEqualTo(CameraInfo.TORCH_STRENGTH_LEVEL_UNSUPPORTED)
     }
 }

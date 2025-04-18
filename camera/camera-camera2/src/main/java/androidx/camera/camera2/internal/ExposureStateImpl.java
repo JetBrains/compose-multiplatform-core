@@ -21,9 +21,10 @@ import android.util.Range;
 import android.util.Rational;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.core.ExposureState;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An implementation of {@link ExposureState} where the values can be set.
@@ -53,15 +54,13 @@ class ExposureStateImpl implements ExposureState {
         }
     }
 
-    @NonNull
     @Override
-    public Range<Integer> getExposureCompensationRange() {
+    public @NonNull Range<Integer> getExposureCompensationRange() {
         return mCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
     }
 
-    @NonNull
     @Override
-    public Rational getExposureCompensationStep() {
+    public @NonNull Rational getExposureCompensationStep() {
         if (!isExposureCompensationSupported()) {
             return Rational.ZERO;
         }

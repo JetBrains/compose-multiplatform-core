@@ -32,8 +32,6 @@ import android.util.Size;
 import android.view.Surface;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.ForwardingImageProxy;
 import androidx.camera.core.ImageCaptureException;
@@ -56,6 +54,9 @@ import androidx.camera.core.processing.Node;
 import androidx.core.util.Consumer;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -81,26 +82,19 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
 
     ProcessingRequest mCurrentRequest = null;
 
-    @Nullable
-    SafeCloseImageReaderProxy mSafeCloseImageReaderProxy;
+    @Nullable SafeCloseImageReaderProxy mSafeCloseImageReaderProxy;
 
     /* Additional image reader for simultaneous RAW + JPEG capture */
-    @Nullable
-    SafeCloseImageReaderProxy mSecondarySafeCloseImageReaderProxy;
+    @Nullable SafeCloseImageReaderProxy mSecondarySafeCloseImageReaderProxy;
 
-    @Nullable
-    SafeCloseImageReaderProxy mSafeCloseImageReaderForPostview;
+    @Nullable SafeCloseImageReaderProxy mSafeCloseImageReaderForPostview;
 
-    @Nullable
-    private ProcessingNode.In  mOutputEdge;
-    @Nullable
-    private In mInputEdge;
-    @Nullable
-    private NoMetadataImageReader mNoMetadataImageReader = null;
+    private ProcessingNode.@Nullable In  mOutputEdge;
+    private @Nullable In mInputEdge;
+    private @Nullable NoMetadataImageReader mNoMetadataImageReader = null;
 
-    @NonNull
     @Override
-    public ProcessingNode.In transform(@NonNull In inputEdge) {
+    public ProcessingNode.@NonNull In transform(@NonNull In inputEdge) {
         checkState(mInputEdge == null && mSafeCloseImageReaderProxy == null,
                 "CaptureNode does not support recreation yet.");
         mInputEdge = inputEdge;
@@ -227,8 +221,7 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
         return mOutputEdge;
     }
 
-    @NonNull
-    private static ImageReaderProxy createImageReaderProxy(
+    private static @NonNull ImageReaderProxy createImageReaderProxy(
             @Nullable ImageReaderProxyProvider imageReaderProxyProvider, int width, int height,
             int format) {
         if (imageReaderProxyProvider != null) {
@@ -360,7 +353,7 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
     }
 
     @MainThread
-    void sendCaptureError(@NonNull TakePictureManager.CaptureError error) {
+    void sendCaptureError(TakePictureManager.@NonNull CaptureError error) {
         checkMainThread();
         if (mCurrentRequest != null
                 && mCurrentRequest.getRequestId() == error.getRequestId()) {
@@ -379,7 +372,7 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
 
     }
 
-    private void releaseInputResources(@NonNull CaptureNode.In inputEdge,
+    private void releaseInputResources(CaptureNode.@NonNull In inputEdge,
             @NonNull SafeCloseImageReaderProxy imageReader,
             @Nullable SafeCloseImageReaderProxy secondaryImageReader,
             @Nullable SafeCloseImageReaderProxy imageReaderForPostview) {
@@ -410,14 +403,12 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
     }
 
     @VisibleForTesting
-    @NonNull
-    In getInputEdge() {
+    @NonNull In getInputEdge() {
         return requireNonNull(mInputEdge);
     }
 
     @VisibleForTesting
-    @NonNull
-    public SafeCloseImageReaderProxy getSafeCloseImageReaderProxy() {
+    public @NonNull SafeCloseImageReaderProxy getSafeCloseImageReaderProxy() {
         return requireNonNull(mSafeCloseImageReaderProxy);
     }
 
@@ -443,29 +434,23 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
     @AutoValue
     abstract static class In {
 
-        @NonNull
-        private CameraCaptureCallback mCameraCaptureCallback = new CameraCaptureCallback() {
-        };
+        private @NonNull CameraCaptureCallback mCameraCaptureCallback =
+                new CameraCaptureCallback() {};
 
         /* Additional camera capture callback for simultaneous RAW + JPEG capture */
-        @Nullable
-        private CameraCaptureCallback mSecondaryCameraCaptureCallback;
+        private @Nullable CameraCaptureCallback mSecondaryCameraCaptureCallback;
 
-        @Nullable
-        private DeferrableSurface mSurface;
+        private @Nullable DeferrableSurface mSurface;
 
         /* Additional surface for simultaneous RAW + JPEG capture */
-        @Nullable
-        private DeferrableSurface mSecondarySurface;
+        private @Nullable DeferrableSurface mSecondarySurface;
 
-        @Nullable
-        private DeferrableSurface mPostviewSurface = null;
+        private @Nullable DeferrableSurface mPostviewSurface = null;
 
         /**
          * Size of the {@link ImageReader} buffer.
          */
-        @NonNull
-        abstract Size getSize();
+        abstract @NonNull Size getSize();
 
         /**
          * The input format of the pipeline. The format of the {@link ImageReader}.
@@ -480,8 +465,7 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
          * capture in tests.
          */
         @SuppressWarnings("AutoValueImmutableFields")
-        @NonNull
-        abstract List<Integer> getOutputFormats();
+        abstract @NonNull List<Integer> getOutputFormats();
 
         /**
          * Whether the pipeline is connected to a virtual camera.
@@ -493,50 +477,43 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
          * the node will use it to create the {@link ImageReaderProxy} that connects to
          * the camera.
          */
-        @Nullable
-        abstract ImageReaderProxyProvider getImageReaderProxyProvider();
+        abstract @Nullable ImageReaderProxyProvider getImageReaderProxyProvider();
 
         /**
          * The settings of the postview. Postview is configured if not null.
          */
-        @Nullable
-        abstract PostviewSettings getPostviewSettings();
+        abstract @Nullable PostviewSettings getPostviewSettings();
 
         /**
          * Edge that accepts {@link ProcessingRequest}.
          */
-        @NonNull
-        abstract Edge<ProcessingRequest> getRequestEdge();
+        abstract @NonNull Edge<ProcessingRequest> getRequestEdge();
 
         /**
          * Edge that accepts {@link ImageCaptureException}.
          */
-        @NonNull
-        abstract Edge<TakePictureManager.CaptureError> getErrorEdge();
+        abstract @NonNull Edge<TakePictureManager.CaptureError> getErrorEdge();
 
         /**
          * Edge that accepts the image frames.
          *
          * <p>The value will be used in a capture request sent to the camera.
          */
-        @NonNull
-        DeferrableSurface getSurface() {
+        @NonNull DeferrableSurface getSurface() {
             return requireNonNull(mSurface);
         }
 
         /**
          * Edge that accepts the postview image frame.
          */
-        @Nullable
-        DeferrableSurface getPostviewSurface() {
+        @Nullable DeferrableSurface getPostviewSurface() {
             return mPostviewSurface;
         }
 
         /**
          * Edge that accepts the image frames for simultaneous RAW + JPEG capture.
          */
-        @Nullable
-        DeferrableSurface getSecondarySurface() {
+        @Nullable DeferrableSurface getSecondarySurface() {
             return mSecondarySurface;
         }
 
@@ -560,8 +537,7 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
          *
          * <p>The value will be used in a capture request sent to the camera.
          */
-        @NonNull
-        CameraCaptureCallback getCameraCaptureCallback() {
+        @NonNull CameraCaptureCallback getCameraCaptureCallback() {
             return mCameraCaptureCallback;
         }
 
@@ -569,8 +545,7 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
             mCameraCaptureCallback = cameraCaptureCallback;
         }
 
-        @Nullable
-        CameraCaptureCallback getSecondaryCameraCaptureCallback() {
+        @Nullable CameraCaptureCallback getSecondaryCameraCaptureCallback() {
             return mSecondaryCameraCaptureCallback;
         }
 
@@ -579,8 +554,7 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
             mSecondaryCameraCaptureCallback = cameraCaptureCallback;
         }
 
-        @NonNull
-        static In of(
+        static @NonNull In of(
                 @NonNull Size size,
                 int inputFormat,
                 @NonNull List<Integer> outputFormats,
@@ -590,8 +564,7 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
                     imageReaderProxyProvider, null, new Edge<>(), new Edge<>());
         }
 
-        @NonNull
-        static In of(
+        static @NonNull In of(
                 @NonNull Size size,
                 int inputFormat,
                 @NonNull List<Integer> outputFormats,

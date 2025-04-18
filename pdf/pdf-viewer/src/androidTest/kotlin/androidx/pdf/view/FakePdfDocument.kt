@@ -21,6 +21,7 @@ import android.graphics.Color
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
+import android.graphics.RectF
 import android.net.Uri
 import android.os.Build
 import android.util.Size
@@ -30,6 +31,9 @@ import androidx.annotation.RequiresExtension
 import androidx.pdf.PdfDocument
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
+import androidx.pdf.content.PdfPageGotoLinkContent
+import androidx.pdf.content.PdfPageLinkContent
+import androidx.pdf.content.PdfPageTextContent
 import androidx.pdf.content.SelectionBoundary
 import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
@@ -65,6 +69,8 @@ internal open class FakePdfDocument(
     override val isLinearized: Boolean = false,
     private val searchResults: SparseArray<List<PageMatchBounds>> = SparseArray(),
     override val uri: Uri = Uri.parse("content://test.app/document.pdf"),
+    private val pageLinks: Map<Int, PdfDocument.PdfPageLinks> = mapOf(),
+    private val textContents: List<PdfPageTextContent> = emptyList()
 ) : PdfDocument {
     override val pageCount: Int = pages.size
 
@@ -84,14 +90,21 @@ internal open class FakePdfDocument(
     }
 
     override suspend fun getPageLinks(pageNumber: Int): PdfDocument.PdfPageLinks {
-        // TODO(b/376136907) provide a useful implementation when it's needed for testing
-        return PdfDocument.PdfPageLinks(listOf(), listOf())
+        return pageLinks[pageNumber] ?: PdfDocument.PdfPageLinks(emptyList(), emptyList())
     }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     override suspend fun getPageContent(pageNumber: Int): PdfDocument.PdfPageContent {
-        // TODO(b/376136746) provide a useful implementation when it's needed for testing
-        return PdfDocument.PdfPageContent(listOf(), listOf())
+        // Return content for the requested page if pageNumber is valid
+        if (pageNumber in pages.indices && pageNumber < textContents.size) {
+            return PdfDocument.PdfPageContent(
+                textContents = listOf(textContents[pageNumber]),
+                imageContents = emptyList()
+            )
+        }
+
+        // Return default empty content if pageNumber is out of range
+        return PdfDocument.PdfPageContent(textContents = emptyList(), imageContents = emptyList())
     }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
@@ -102,6 +115,15 @@ internal open class FakePdfDocument(
     ): PageSelection {
         // TODO(b/376136631) provide a useful implementation when it's needed for testing
         return PageSelection(0, SelectionBoundary(0), SelectionBoundary(0), listOf())
+    }
+
+    override suspend fun getSelectAllSelectionBounds(pageNumber: Int): PageSelection? {
+        return PageSelection(
+            0,
+            SelectionBoundary(0),
+            SelectionBoundary(Int.MAX_VALUE),
+            listOf(textContents[pageNumber])
+        )
     }
 
     override suspend fun searchDocument(
@@ -162,12 +184,12 @@ internal open class FakePdfDocument(
                 if (tileRegion == null) {
                     _bitmapRequests[pageNumber] = FullBitmap(scaledPageSizePx)
                     // Tiling, and this is a new rect for a tile board we're already tracking
-                } else if (requestedSize != null && requestedSize is TileBoard) {
+                } else if (requestedSize != null && requestedSize is Tiles) {
                     requestedSize.withTile(tileRegion)
                     // Tiling, and this is the first rect requested
                 } else {
                     _bitmapRequests[pageNumber] =
-                        TileBoard(scaledPageSizePx).apply { withTile(tileRegion) }
+                        Tiles(scaledPageSizePx).apply { withTile(tileRegion) }
                 }
             }
         }
@@ -175,6 +197,49 @@ internal open class FakePdfDocument(
         override fun close() {
             /* No-op, fake */
         }
+    }
+
+    companion object {
+        const val URI_WITH_VALID_SCHEME = "https://www.example.com"
+        const val VALID_PAGE_NUMBER = 4
+
+        fun newInstance(): FakePdfDocument =
+            FakePdfDocument(
+                pages = List(10) { Point(100, 200) },
+                textContents =
+                    List(10) { index ->
+                        PdfPageTextContent(
+                            bounds = listOf(RectF(0f, 0f, 100f, 200f)),
+                            text = "Sample text for page ${index + 1}"
+                        )
+                    },
+                pageLinks =
+                    mapOf(
+                        0 to
+                            PdfDocument.PdfPageLinks(
+                                gotoLinks =
+                                    listOf(
+                                        PdfPageGotoLinkContent(
+                                            bounds = listOf(RectF(25f, 30f, 75f, 50f)),
+                                            destination =
+                                                PdfPageGotoLinkContent.Destination(
+                                                    pageNumber = VALID_PAGE_NUMBER,
+                                                    xCoordinate = 10f,
+                                                    yCoordinate = 40f,
+                                                    zoom = 1f
+                                                )
+                                        )
+                                    ),
+                                externalLinks =
+                                    listOf(
+                                        PdfPageLinkContent(
+                                            bounds = listOf(RectF(25f, 60f, 75f, 80f)),
+                                            uri = Uri.parse(URI_WITH_VALID_SCHEME)
+                                        )
+                                    ),
+                            )
+                    )
+            )
     }
 }
 
@@ -185,7 +250,7 @@ internal sealed class SizeParams(val scaledPageSizePx: Size)
 internal class FullBitmap(scaledPageSizePx: Size) : SizeParams(scaledPageSizePx)
 
 /** Represents a set of tile region [Bitmap] requested from [PdfDocument.BitmapSource] */
-internal class TileBoard(scaledPageSizePx: Size) : SizeParams(scaledPageSizePx) {
+internal class Tiles(scaledPageSizePx: Size) : SizeParams(scaledPageSizePx) {
     private val _tiles = mutableListOf<Rect>()
     val tiles: List<Rect>
         get() = _tiles

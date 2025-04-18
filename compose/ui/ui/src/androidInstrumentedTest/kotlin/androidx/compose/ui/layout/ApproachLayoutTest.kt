@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.CompositionLocalProvider
@@ -808,6 +809,70 @@ class ApproachLayoutTest {
 
         // No longer placed under DMP. No offset to ignore.
         assertEquals(200f, positionExcludingDmp.y)
+    }
+
+    @Test
+    fun testApproachIntrinsicQueryBeforeLookaheadMeasurement() {
+        val lookaheadSizes = mutableListOf(IntSize.Zero, IntSize.Zero, IntSize.Zero, IntSize.Zero)
+        val minIntrinsicSizes =
+            mutableListOf(IntSize.Zero, IntSize.Zero, IntSize.Zero, IntSize.Zero)
+        val maxIntrinsicSizes =
+            mutableListOf(IntSize.Zero, IntSize.Zero, IntSize.Zero, IntSize.Zero)
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                LookaheadScope {
+                    Layout(
+                        content = {
+                            repeat(4) {
+                                Box(
+                                    Modifier.wrapContentSize()
+                                        .approachLayout({ true }) { m, _ ->
+                                            lookaheadSizes[it] = lookaheadSize
+                                            m.measure(constraints = lookaheadConstraints).run {
+                                                layout(width, height) { place(0, 0) }
+                                            }
+                                        }
+                                        .requiredSize(((it + 1) * 100).dp)
+                                )
+                            }
+                        },
+                        Modifier.fillMaxSize()
+                    ) { measurables, constraints ->
+                        val placeablesFromMeasurePass =
+                            // Only measure half of the children during measure pass and immediately
+                            // query *all* children's intrinsics. This will cause lookahead measure
+                            // for the other half of the children to happen in the placement
+                            // pass, well after the intrinsics are queried during approach.
+                            measurables.drop(2).map { it.measure(constraints) }
+                        measurables.forEachIndexed { id, measurable ->
+                            minIntrinsicSizes[id] =
+                                IntSize(
+                                    measurable.minIntrinsicWidth(constraints.maxHeight),
+                                    measurable.minIntrinsicHeight(constraints.maxWidth)
+                                )
+
+                            maxIntrinsicSizes[id] =
+                                IntSize(
+                                    measurable.maxIntrinsicWidth(constraints.maxHeight),
+                                    measurable.maxIntrinsicHeight(constraints.maxWidth)
+                                )
+                        }
+                        layout(400, 400) {
+                            val placeablesFromLayoutPass =
+                                measurables.take(2).map { it.measure(constraints) }
+                            (placeablesFromMeasurePass + placeablesFromLayoutPass).forEach {
+                                it.place(0, 0)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        repeat(4) {
+            val expectedSize = IntSize(100 * (it + 1), 100 * (it + 1))
+            assertEquals(expectedSize, lookaheadSizes[it])
+        }
     }
 
     private class TestPlacementScope : Placeable.PlacementScope() {

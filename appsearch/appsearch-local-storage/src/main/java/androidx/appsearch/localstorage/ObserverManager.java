@@ -19,8 +19,6 @@ package androidx.appsearch.localstorage;
 import android.util.Log;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.localstorage.util.PrefixUtil;
 import androidx.appsearch.localstorage.visibilitystore.CallerAccess;
@@ -36,6 +34,9 @@ import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -332,8 +333,7 @@ public class ObserverManager {
      * {@code packageName}, {@code databaseName} and unprefixed {@code schemaType}, only if they
      * have access to that type according to the provided {@code visibilityChecker}.
      */
-    @NonNull
-    public Set<String> getObserversForSchemaType(
+    public @NonNull Set<String> getObserversForSchemaType(
             @NonNull String packageName,
             @NonNull String databaseName,
             @NonNull String schemaType,

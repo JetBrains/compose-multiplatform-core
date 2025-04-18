@@ -37,11 +37,11 @@ public class MyDao_Impl(
           _stmt.bindText(_argIndex, _item)
           _argIndex++
         }
-        val _cursorIndexOfString: Int = getColumnIndexOrThrow(_stmt, "string")
+        val _columnIndexOfString: Int = getColumnIndexOrThrow(_stmt, "string")
         val _result: MyEntity
         if (_stmt.step()) {
           val _tmpString: String
-          _tmpString = _stmt.getText(_cursorIndexOfString)
+          _tmpString = _stmt.getText(_columnIndexOfString)
           _result = MyEntity(_tmpString)
         } else {
           error("The query result was empty, but expected a single row to return a NON-NULL object of type <MyEntity>.")
@@ -72,11 +72,11 @@ public class MyDao_Impl(
             _argIndex++
           }
         }
-        val _cursorIndexOfString: Int = getColumnIndexOrThrow(_stmt, "string")
+        val _columnIndexOfString: Int = getColumnIndexOrThrow(_stmt, "string")
         val _result: MyEntity
         if (_stmt.step()) {
           val _tmpString: String
-          _tmpString = _stmt.getText(_cursorIndexOfString)
+          _tmpString = _stmt.getText(_columnIndexOfString)
           _result = MyEntity(_tmpString)
         } else {
           error("The query result was empty, but expected a single row to return a NON-NULL object of type <MyEntity>.")
@@ -107,11 +107,11 @@ public class MyDao_Impl(
           }
           _argIndex++
         }
-        val _cursorIndexOfString: Int = getColumnIndexOrThrow(_stmt, "string")
+        val _columnIndexOfString: Int = getColumnIndexOrThrow(_stmt, "string")
         val _result: MyEntity
         if (_stmt.step()) {
           val _tmpString: String
-          _tmpString = _stmt.getText(_cursorIndexOfString)
+          _tmpString = _stmt.getText(_columnIndexOfString)
           _result = MyEntity(_tmpString)
         } else {
           error("The query result was empty, but expected a single row to return a NON-NULL object of type <MyEntity>.")
@@ -138,11 +138,11 @@ public class MyDao_Impl(
           _stmt.bindText(_argIndex, _item)
           _argIndex++
         }
-        val _cursorIndexOfString: Int = getColumnIndexOrThrow(_stmt, "string")
+        val _columnIndexOfString: Int = getColumnIndexOrThrow(_stmt, "string")
         val _result: MyEntity
         if (_stmt.step()) {
           val _tmpString: String
-          _tmpString = _stmt.getText(_cursorIndexOfString)
+          _tmpString = _stmt.getText(_columnIndexOfString)
           _result = MyEntity(_tmpString)
         } else {
           error("The query result was empty, but expected a single row to return a NON-NULL object of type <MyEntity>.")

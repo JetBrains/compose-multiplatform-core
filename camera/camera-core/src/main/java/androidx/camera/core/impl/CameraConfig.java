@@ -17,10 +17,11 @@
 package androidx.camera.core.impl;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.Preview;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -77,8 +78,7 @@ public interface CameraConfig extends ReadableConfig {
     /**
      * Retrieves the use case config factory instance.
      */
-    @NonNull
-    default UseCaseConfigFactory getUseCaseConfigFactory() {
+    default @NonNull UseCaseConfigFactory getUseCaseConfigFactory() {
         return retrieveOption(OPTION_USECASE_CONFIG_FACTORY, UseCaseConfigFactory.EMPTY_INSTANCE);
     }
 
@@ -88,8 +88,7 @@ public interface CameraConfig extends ReadableConfig {
      * <p>If camera configs have the same compatibility identifier, they will allow to bind a new
      * use case without unbinding all use cases first.
      */
-    @NonNull
-    Identifier getCompatibilityId();
+    @NonNull Identifier getCompatibilityId();
 
     /**
      * Returns the use case combination required rule when the camera is opened by the camera
@@ -108,8 +107,8 @@ public interface CameraConfig extends ReadableConfig {
      * @return The stored value or <code>valueIfMissing</code> if the value does not exist in this
      * configuration.
      */
-    @Nullable
-    default SessionProcessor getSessionProcessor(@Nullable SessionProcessor valueIfMissing) {
+    default @Nullable SessionProcessor getSessionProcessor(
+            @Nullable SessionProcessor valueIfMissing) {
         return retrieveOption(OPTION_SESSION_PROCESSOR, valueIfMissing);
     }
 
@@ -134,8 +133,7 @@ public interface CameraConfig extends ReadableConfig {
      * @return The stored value, if it exists in this configuration.
      * @throws IllegalArgumentException if the option does not exist in this configuration.
      */
-    @NonNull
-    default SessionProcessor getSessionProcessor() {
+    default @NonNull SessionProcessor getSessionProcessor() {
         return retrieveOption(OPTION_SESSION_PROCESSOR);
     }
 
@@ -148,27 +146,24 @@ public interface CameraConfig extends ReadableConfig {
         /**
          * Sets a {@link UseCaseConfigFactory} for the camera config.
          */
-        @NonNull
-        B setUseCaseConfigFactory(@NonNull UseCaseConfigFactory factory);
+        @NonNull B setUseCaseConfigFactory(@NonNull UseCaseConfigFactory factory);
 
         /**
          * Sets compatibility {@link Identifier} for the camera config.
          */
-        @NonNull
-        B setCompatibilityId(@NonNull Identifier identifier);
+        @NonNull B setCompatibilityId(@NonNull Identifier identifier);
 
         /**
          * Sets use case combination required rule to this configuration.
          */
-        @NonNull
-        B setUseCaseCombinationRequiredRule(@RequiredRule int useCaseCombinationRequiredRule);
+        @NonNull B setUseCaseCombinationRequiredRule(
+                @RequiredRule int useCaseCombinationRequiredRule);
 
         /**
          * Sets the session processor which will transform the stream configurations and will
          * perform the repeating request and still capture request when being requested by CameraX.
          */
-        @NonNull
-        B setSessionProcessor(@NonNull SessionProcessor sessionProcessor);
+        @NonNull B setSessionProcessor(@NonNull SessionProcessor sessionProcessor);
 
         /**
          * Sets zsl disabled or not. If disabled is true, zero-shutter lag should be disabled.
@@ -176,8 +171,7 @@ public interface CameraConfig extends ReadableConfig {
          * needs other conditions e.g. flash mode OFF, so setting to false doesn't guarantee
          * zero-shutter lag to be always ON.
          */
-        @NonNull
-        B setZslDisabled(boolean disabled);
+        @NonNull B setZslDisabled(boolean disabled);
 
         /**
          * Sets if the postview is supported or not.

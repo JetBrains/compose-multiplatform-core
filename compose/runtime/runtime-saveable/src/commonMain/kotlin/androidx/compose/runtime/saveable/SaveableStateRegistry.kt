@@ -105,17 +105,18 @@ private class SaveableStateRegistryImpl(
     private val canBeSaved: (Any) -> Boolean
 ) : SaveableStateRegistry {
 
-    private val restored: MutableScatterMap<String, List<Any?>> =
-        restored?.toMutableScatterMap() ?: mutableScatterMapOf()
-    private val valueProviders = mutableScatterMapOf<String, MutableList<() -> Any?>>()
+    private val restored: MutableScatterMap<String, List<Any?>>? =
+        if (!restored.isNullOrEmpty()) restored.toMutableScatterMap() else null
+
+    private var valueProviders: MutableScatterMap<String, MutableList<() -> Any?>>? = null
 
     override fun canBeSaved(value: Any): Boolean = canBeSaved.invoke(value)
 
     override fun consumeRestored(key: String): Any? {
-        val list = restored.remove(key)
+        val list = restored?.remove(key)
         return if (!list.isNullOrEmpty()) {
             if (list.size > 1) {
-                restored[key] = list.subList(1, list.size)
+                restored?.put(key, list.subList(1, list.size))
             }
             list[0]
         } else {
@@ -125,6 +126,11 @@ private class SaveableStateRegistryImpl(
 
     override fun registerProvider(key: String, valueProvider: () -> Any?): Entry {
         require(!key.fastIsBlank()) { "Registered key is empty or blank" }
+        val valueProviders =
+            valueProviders
+                ?: mutableScatterMapOf<String, MutableList<() -> Any?>>().also {
+                    valueProviders = it
+                }
         valueProviders.getOrPut(key) { mutableListOf() }.add(valueProvider)
         return object : Entry {
             override fun unregister() {
@@ -139,13 +145,17 @@ private class SaveableStateRegistryImpl(
     }
 
     override fun performSave(): Map<String, List<Any?>> {
+        if (restored == null && valueProviders == null) {
+            return emptyMap()
+        }
         // TODO: Use a MutableScatterMap.asMap(), but we first need to make that map wrapper
         //  serializable
+        val expectedMapSize = (restored?.size ?: 0) + (valueProviders?.size ?: 0)
         val map =
-            HashMap<String, List<Any?>>(restored.size).apply {
-                restored.forEach { k, v -> this[k] = v }
+            HashMap<String, List<Any?>>(expectedMapSize).apply {
+                restored?.forEach { k, v -> this[k] = v }
             }
-        valueProviders.forEach { key, list ->
+        valueProviders?.forEach { key, list ->
             if (list.size == 1) {
                 val value = list[0].invoke()
                 if (value != null) {

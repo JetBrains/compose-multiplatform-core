@@ -107,6 +107,7 @@ public abstract class DocumentFile {
      * {@link android.os.Build.VERSION_CODES#KITKAT} or later, and will return
      * {@code null} when called on earlier platform versions.
      *
+     * @param context {@link Context} used to resolve resources
      * @param singleUri the {@link Intent#getData()} from a successful
      *            {@link Intent#ACTION_OPEN_DOCUMENT} or
      *            {@link Intent#ACTION_CREATE_DOCUMENT} request.
@@ -122,6 +123,7 @@ public abstract class DocumentFile {
      * {@link android.os.Build.VERSION_CODES#LOLLIPOP} or later, and will return
      * {@code null} when called on earlier platform versions.
      *
+     * @param context {@link Context} used to resolve resources
      * @param treeUri the {@link Intent#getData()} from a successful
      *            {@link Intent#ACTION_OPEN_DOCUMENT_TREE} request.
      */

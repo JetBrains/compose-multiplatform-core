@@ -342,7 +342,7 @@ class SliderTest {
             .onChildAt(0)
             .onChild()
             .assertContentDescriptionContains(
-                getString(Strings.SliderDecreaseButtonContentDescription)
+                getString(Strings.SliderDecreaseIconContentDescription)
             )
     }
 
@@ -364,7 +364,7 @@ class SliderTest {
             .onChildAt(1)
             .onChild()
             .assertContentDescriptionContains(
-                getString(Strings.SliderIncreaseButtonContentDescription)
+                getString(Strings.SliderIncreaseIconContentDescription)
             )
     }
 

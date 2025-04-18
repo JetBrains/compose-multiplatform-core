@@ -25,6 +25,7 @@ import kotlin.math.min
 
 /** An immutable rounded rectangle with custom radii for all four corners. */
 @Immutable
+@Suppress("DataClassDefinition")
 data class RoundRect(
     /** The offset of the left edge of this rectangle from the x axis */
     val left: Float,

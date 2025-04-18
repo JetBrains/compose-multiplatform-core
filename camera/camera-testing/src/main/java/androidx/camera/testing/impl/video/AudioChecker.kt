@@ -63,11 +63,12 @@ public class AudioChecker {
                             audioSpec,
                             videoCapabilities
                                 .getProfiles(priorityQuality, sdr)!!
-                                .defaultAudioProfile!!
+                                .defaultAudioProfile!!,
+                            null
                         )
                         .get()
                 } else {
-                    AudioSettingsDefaultResolver(audioSpec).get()
+                    AudioSettingsDefaultResolver(audioSpec, null).get()
                 }
             with(AudioStreamImpl(audioSettings, null)) {
                 try {

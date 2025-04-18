@@ -16,7 +16,7 @@
 
 package androidx.build
 
-import com.android.build.api.variant.AndroidComponentsExtension
+import com.android.build.api.variant.LintLifecycleExtension
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.LibraryPlugin
 import java.io.File
@@ -54,10 +54,10 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
 
     companion object {
         private fun Project.configureAndroidCommonOptions() {
-            extensions.findByType(AndroidComponentsExtension::class.java)!!.finalizeDsl { android ->
+            extensions.findByType(LintLifecycleExtension::class.java)!!.finalizeDsl { lint ->
                 val isPublished = androidXExtension.shouldPublish()
 
-                android.lint {
+                lint.run {
                     // These lint checks are normally a warning (or lower), but we ignore (in
                     // AndroidX)
                     // warnings in Lint, so we make it an error here so it will fail the build.
@@ -85,6 +85,12 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
                     // unpublished project
                     if (ignoreListIteratorFilter.any { path.contains(it) } || !isPublished) {
                         disable.add("ListIterator")
+                    }
+
+                    // b/333784604 Disable ConfigurationScreenWidthHeight for wear libraries, it
+                    // does not apply to wear
+                    if (path.startsWith(":wear:")) {
+                        disable.add("ConfigurationScreenWidthHeight")
                     }
                 }
             }

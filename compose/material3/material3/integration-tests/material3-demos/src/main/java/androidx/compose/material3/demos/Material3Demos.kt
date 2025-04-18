@@ -47,6 +47,9 @@ val Material3Demos =
                     ComposableDemo("Material Shape") { MaterialShapeDemo() },
                     ComposableDemo("Material Shape Morphing") { MaterialShapeMorphDemo() },
                 )
-            )
+            ),
+            ComposableDemo("Navigation Suite Scaffold") {
+                NavigationSuiteScaffoldCustomConfigDemo()
+            },
         ),
     )

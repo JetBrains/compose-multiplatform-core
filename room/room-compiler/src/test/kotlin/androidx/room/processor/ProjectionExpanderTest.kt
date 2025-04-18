@@ -20,9 +20,9 @@ import androidx.room.compiler.processing.XTypeElement
 import androidx.room.compiler.processing.isTypeElement
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
+import androidx.room.compiler.processing.util.runProcessorTest
 import androidx.room.parser.SqlParser
 import androidx.room.parser.expansion.ProjectionExpander
-import androidx.room.runProcessorTestWithK1
 import androidx.room.testing.context
 import createVerifierFromEntitiesAndViews
 import org.hamcrest.CoreMatchers.equalTo
@@ -521,7 +521,7 @@ class ProjectionExpanderTest {
 
     @Test
     fun joinAndAbandonEntity() {
-        runProcessorTestWithK1(sources = ENTITIES) { invocation ->
+        runProcessorTest(sources = ENTITIES) { invocation ->
             val entities =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(androidx.room.Entity::class.qualifiedName!!)
@@ -530,10 +530,10 @@ class ProjectionExpanderTest {
             val entityElement = invocation.processingEnv.requireTypeElement("foo.bar.User")
             check(entityElement.isTypeElement())
             val entity =
-                PojoProcessor.createFor(
+                DataClassProcessor.createFor(
                         invocation.context,
                         entityElement,
-                        bindingScope = FieldProcessor.BindingScope.READ_FROM_CURSOR,
+                        bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
                         parent = null
                     )
                     .process()
@@ -613,7 +613,7 @@ class ProjectionExpanderTest {
         val extraSource =
             input?.let { listOf(Source.java(name, DATABASE_PREFIX + input)) } ?: emptyList()
         val all = ENTITIES + extraSource
-        return runProcessorTestWithK1(sources = all) { invocation ->
+        return runProcessorTest(sources = all) { invocation ->
             val entities =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(androidx.room.Entity::class.qualifiedName!!)
@@ -622,10 +622,10 @@ class ProjectionExpanderTest {
             val pojoElement = invocation.processingEnv.requireTypeElement(name)
             check(pojoElement.isTypeElement())
             val pojo =
-                PojoProcessor.createFor(
+                DataClassProcessor.createFor(
                         invocation.context,
                         pojoElement,
-                        bindingScope = FieldProcessor.BindingScope.READ_FROM_CURSOR,
+                        bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
                         parent = null
                     )
                     .process()

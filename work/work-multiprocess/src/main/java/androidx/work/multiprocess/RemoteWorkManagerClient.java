@@ -27,8 +27,6 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.RemoteException;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.arch.core.util.Function;
@@ -57,6 +55,9 @@ import androidx.work.multiprocess.parcelable.ParcelableWorkRequest;
 import androidx.work.multiprocess.parcelable.ParcelableWorkRequests;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -113,15 +114,13 @@ public class RemoteWorkManagerClient extends RemoteWorkManager {
         mRunnableScheduler = mWorkManager.getConfiguration().getRunnableScheduler();
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> enqueue(@NonNull WorkRequest request) {
+    public @NonNull ListenableFuture<Void> enqueue(@NonNull WorkRequest request) {
         return enqueue(Collections.singletonList(request));
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> enqueue(@NonNull final List<WorkRequest> requests) {
+    public @NonNull ListenableFuture<Void> enqueue(final @NonNull List<WorkRequest> requests) {
         ListenableFuture<byte[]> result = execute(new RemoteDispatcher<IWorkManagerImpl>() {
             @Override
             public void execute(
@@ -134,18 +133,16 @@ public class RemoteWorkManagerClient extends RemoteWorkManager {
         return map(result, sVoidMapper, mExecutor);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> enqueueUniqueWork(
+    public @NonNull ListenableFuture<Void> enqueueUniqueWork(
             @NonNull String uniqueWorkName,
             @NonNull ExistingWorkPolicy existingWorkPolicy,
             @NonNull List<OneTimeWorkRequest> work) {
         return beginUniqueWork(uniqueWorkName, existingWorkPolicy, work).enqueue();
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> enqueueUniquePeriodicWork(
+    public @NonNull ListenableFuture<Void> enqueueUniquePeriodicWork(
             @NonNull String uniqueWorkName,
             @NonNull ExistingPeriodicWorkPolicy existingPeriodicWorkPolicy,
             @NonNull PeriodicWorkRequest periodicWork) {
@@ -164,15 +161,13 @@ public class RemoteWorkManagerClient extends RemoteWorkManager {
         return enqueue(continuation);
     }
 
-    @NonNull
     @Override
-    public RemoteWorkContinuation beginWith(@NonNull List<OneTimeWorkRequest> work) {
+    public @NonNull RemoteWorkContinuation beginWith(@NonNull List<OneTimeWorkRequest> work) {
         return new RemoteWorkContinuationImpl(this, mWorkManager.beginWith(work));
     }
 
-    @NonNull
     @Override
-    public RemoteWorkContinuation beginUniqueWork(
+    public @NonNull RemoteWorkContinuation beginUniqueWork(
             @NonNull String uniqueWorkName,
             @NonNull ExistingWorkPolicy existingWorkPolicy,
             @NonNull List<OneTimeWorkRequest> work) {
@@ -180,9 +175,8 @@ public class RemoteWorkManagerClient extends RemoteWorkManager {
                 mWorkManager.beginUniqueWork(uniqueWorkName, existingWorkPolicy, work));
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> enqueue(@NonNull final WorkContinuation continuation) {
+    public @NonNull ListenableFuture<Void> enqueue(final @NonNull WorkContinuation continuation) {
         ListenableFuture<byte[]> result = execute(new RemoteDispatcher<IWorkManagerImpl>() {
             @Override
             public void execute(@NonNull IWorkManagerImpl iWorkManagerImpl,
@@ -196,9 +190,8 @@ public class RemoteWorkManagerClient extends RemoteWorkManager {
         return map(result, sVoidMapper, mExecutor);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> cancelWorkById(@NonNull final UUID id) {
+    public @NonNull ListenableFuture<Void> cancelWorkById(final @NonNull UUID id) {
         ListenableFuture<byte[]> result = execute(new RemoteDispatcher<IWorkManagerImpl>() {
             @Override
             public void execute(@NonNull IWorkManagerImpl iWorkManagerImpl,
@@ -209,9 +202,8 @@ public class RemoteWorkManagerClient extends RemoteWorkManager {
         return map(result, sVoidMapper, mExecutor);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> cancelAllWorkByTag(@NonNull final String tag) {
+    public @NonNull ListenableFuture<Void> cancelAllWorkByTag(final @NonNull String tag) {
         ListenableFuture<byte[]> result = execute(new RemoteDispatcher<IWorkManagerImpl>() {
             @Override
             public void execute(@NonNull IWorkManagerImpl iWorkManagerImpl,
@@ -222,9 +214,8 @@ public class RemoteWorkManagerClient extends RemoteWorkManager {
         return map(result, sVoidMapper, mExecutor);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> cancelUniqueWork(@NonNull final String uniqueWorkName) {
+    public @NonNull ListenableFuture<Void> cancelUniqueWork(final @NonNull String uniqueWorkName) {
         ListenableFuture<byte[]> result = execute(new RemoteDispatcher<IWorkManagerImpl>() {
             @Override
             public void execute(@NonNull IWorkManagerImpl iWorkManagerImpl,
@@ -235,9 +226,8 @@ public class RemoteWorkManagerClient extends RemoteWorkManager {
         return map(result, sVoidMapper, mExecutor);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> cancelAllWork() {
+    public @NonNull ListenableFuture<Void> cancelAllWork() {
         ListenableFuture<byte[]> result = execute(new RemoteDispatcher<IWorkManagerImpl>() {
             @Override
             public void execute(@NonNull IWorkManagerImpl iWorkManagerImpl,
@@ -248,9 +238,9 @@ public class RemoteWorkManagerClient extends RemoteWorkManager {
         return map(result, sVoidMapper, mExecutor);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<List<WorkInfo>> getWorkInfos(@NonNull final WorkQuery workQuery) {
+    public @NonNull ListenableFuture<List<WorkInfo>> getWorkInfos(
+            final @NonNull WorkQuery workQuery) {
         ListenableFuture<byte[]> result = execute(new RemoteDispatcher<IWorkManagerImpl>() {
             @Override
             public void execute(
@@ -270,9 +260,9 @@ public class RemoteWorkManagerClient extends RemoteWorkManager {
         }, mExecutor);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> setProgress(@NonNull final UUID id, @NonNull final Data data) {
+    public @NonNull ListenableFuture<Void> setProgress(final @NonNull UUID id,
+            final @NonNull Data data) {
         ListenableFuture<byte[]> result = execute(new RemoteDispatcher<IWorkManagerImpl>() {
             @Override
             public void execute(
@@ -285,9 +275,8 @@ public class RemoteWorkManagerClient extends RemoteWorkManager {
         return map(result, sVoidMapper, mExecutor);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> setForegroundAsync(
+    public @NonNull ListenableFuture<Void> setForegroundAsync(
             @NonNull String id,
             @NonNull ForegroundInfo foregroundInfo) {
         ListenableFuture<byte[]> result = execute(new RemoteDispatcher<IWorkManagerImpl>() {
@@ -309,9 +298,8 @@ public class RemoteWorkManagerClient extends RemoteWorkManager {
      * @param dispatcher The {@link RemoteDispatcher} instance.
      * @return The {@link ListenableFuture} instance.
      */
-    @NonNull
-    public ListenableFuture<byte[]> execute(
-            @NonNull final RemoteDispatcher<IWorkManagerImpl> dispatcher) {
+    public @NonNull ListenableFuture<byte[]> execute(
+            final @NonNull RemoteDispatcher<IWorkManagerImpl> dispatcher) {
         return execute(getSession(), dispatcher);
     }
 
@@ -319,16 +307,14 @@ public class RemoteWorkManagerClient extends RemoteWorkManager {
      * Gets a handle to an instance of {@link IWorkManagerImpl} by binding to the
      * {@link RemoteWorkManagerService} if necessary.
      */
-    @NonNull
-    public ListenableFuture<IWorkManagerImpl> getSession() {
+    public @NonNull ListenableFuture<IWorkManagerImpl> getSession() {
         return getSession(newIntent(mContext));
     }
 
     /**
      * @return The application {@link Context}.
      */
-    @NonNull
-    public Context getContext() {
+    public @NonNull Context getContext() {
         return mContext;
     }
 
@@ -342,32 +328,28 @@ public class RemoteWorkManagerClient extends RemoteWorkManager {
     /**
      * @return The current {@link Session} in use by {@link RemoteWorkManagerClient}.
      */
-    @Nullable
-    public Session getCurrentSession() {
+    public @Nullable Session getCurrentSession() {
         return mSession;
     }
 
     /**
      * @return the {@link SessionTracker} instance.
      */
-    @NonNull
-    public SessionTracker getSessionTracker() {
+    public @NonNull SessionTracker getSessionTracker() {
         return mSessionTracker;
     }
 
     /**
      * @return The {@link Object} session lock.
      */
-    @NonNull
-    public Object getSessionLock() {
+    public @NonNull Object getSessionLock() {
         return mLock;
     }
 
     /**
      * @return The background {@link Executor} used by {@link RemoteWorkManagerClient}.
      */
-    @NonNull
-    public Executor getExecutor() {
+    public @NonNull Executor getExecutor() {
         return mExecutor;
     }
 
@@ -378,11 +360,10 @@ public class RemoteWorkManagerClient extends RemoteWorkManager {
         return mSessionIndex;
     }
 
-    @NonNull
     @VisibleForTesting
-    ListenableFuture<byte[]> execute(
-            @NonNull final ListenableFuture<IWorkManagerImpl> session,
-            @NonNull final RemoteDispatcher<IWorkManagerImpl> dispatcher) {
+    @NonNull ListenableFuture<byte[]> execute(
+            final @NonNull ListenableFuture<IWorkManagerImpl> session,
+            final @NonNull RemoteDispatcher<IWorkManagerImpl> dispatcher) {
         session.addListener(() -> {
             try {
                 session.get();
@@ -402,9 +383,8 @@ public class RemoteWorkManagerClient extends RemoteWorkManager {
         return future;
     }
 
-    @NonNull
     @VisibleForTesting
-    ListenableFuture<IWorkManagerImpl> getSession(@NonNull Intent intent) {
+    @NonNull ListenableFuture<IWorkManagerImpl> getSession(@NonNull Intent intent) {
         synchronized (mLock) {
             mSessionIndex += 1;
             if (mSession == null) {

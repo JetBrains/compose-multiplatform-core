@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.platform.extensions.setBulletSpans
 import androidx.compose.ui.text.platform.extensions.setLineHeight
 import androidx.compose.ui.text.platform.extensions.setPlaceholders
 import androidx.compose.ui.text.platform.extensions.setSpan
@@ -118,6 +119,15 @@ internal fun createCharSequence(
     spannableString.setTextIndent(contextTextStyle.textIndent, contextFontSize, density)
 
     spannableString.setSpanStyles(contextTextStyle, annotations, density, resolveTypeface)
+
+    // apply this after setTextIndent so we have space to draw the bullets. Bullets by itself don't
+    // add any paddings
+    spannableString.setBulletSpans(
+        annotations,
+        contextFontSize,
+        density,
+        contextTextStyle.textIndent
+    )
 
     spannableString.setPlaceholders(placeholders, density)
 

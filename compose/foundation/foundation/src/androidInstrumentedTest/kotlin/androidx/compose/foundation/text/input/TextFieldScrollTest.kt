@@ -193,6 +193,32 @@ class TextFieldScrollTest : FocusedWindowTest {
     }
 
     @Test
+    fun textFieldScroll_horizontal_setsViewportSize() {
+        val scrollState = ScrollState(0)
+
+        rule.setupHorizontallyScrollableContent(
+            state = TextFieldState("text"),
+            scrollState = scrollState,
+            modifier = Modifier.size(width = 300.dp, height = 50.dp)
+        )
+
+        rule.runOnIdle { assertThat(scrollState.viewportSize).isGreaterThan(0) }
+    }
+
+    @Test
+    fun textFieldScroll_vertical_setsViewportSize() {
+        val scrollState = ScrollState(0)
+
+        rule.setupVerticallyScrollableContent(
+            state = TextFieldState("text"),
+            scrollState = scrollState,
+            modifier = Modifier.size(width = 300.dp, height = 100.dp)
+        )
+
+        rule.runOnIdle { assertThat(scrollState.viewportSize).isGreaterThan(0) }
+    }
+
+    @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     fun textField_singleLine_scrolledAndClipped() {
         val parentSize = 200

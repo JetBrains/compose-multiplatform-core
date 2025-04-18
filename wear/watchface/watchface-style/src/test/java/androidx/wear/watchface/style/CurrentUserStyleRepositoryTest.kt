@@ -18,7 +18,7 @@ package androidx.wear.watchface.style
 
 import android.graphics.drawable.Icon
 import android.os.Build
-import androidx.annotation.RequiresApi
+import androidx.test.filters.SdkSuppress
 import androidx.wear.watchface.style.UserStyleSetting.BooleanUserStyleSetting
 import androidx.wear.watchface.style.UserStyleSetting.ComplicationSlotsUserStyleSetting
 import androidx.wear.watchface.style.UserStyleSetting.ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay
@@ -1090,7 +1090,7 @@ public class MutableUserStyleTest {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.P)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
 @RunWith(StyleTestRunner::class)
 class DigestHashTest {
     @Test

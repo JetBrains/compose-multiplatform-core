@@ -25,7 +25,6 @@ import static java.util.Objects.requireNonNull;
 import android.graphics.ImageFormat;
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
@@ -34,6 +33,8 @@ import androidx.camera.core.processing.Operation;
 import androidx.camera.core.processing.Packet;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -46,9 +47,9 @@ import java.io.IOException;
 public class JpegBytes2Disk implements
         Operation<JpegBytes2Disk.In, ImageCapture.OutputFileResults> {
 
-    @NonNull
     @Override
-    public ImageCapture.OutputFileResults apply(@NonNull In in) throws ImageCaptureException {
+    public ImageCapture.@NonNull OutputFileResults apply(@NonNull In in)
+            throws ImageCaptureException {
         Packet<byte[]> packet = in.getPacket();
         ImageCapture.OutputFileOptions options = in.getOutputFileOptions();
         File tempFile = createTempFile(options);
@@ -63,7 +64,7 @@ public class JpegBytes2Disk implements
      * Writes byte array to the given {@link File}.
      */
     static void writeBytesToFile(
-            @NonNull File tempFile, @NonNull byte[] bytes) throws ImageCaptureException {
+            @NonNull File tempFile, byte @NonNull [] bytes) throws ImageCaptureException {
         try (FileOutputStream output = new FileOutputStream(tempFile)) {
             InvalidJpegDataParser invalidJpegDataParser = new InvalidJpegDataParser();
             output.write(bytes, 0, invalidJpegDataParser.getValidDataLength(bytes));
@@ -79,15 +80,12 @@ public class JpegBytes2Disk implements
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public abstract static class In {
 
-        @NonNull
-        abstract Packet<byte[]> getPacket();
+        abstract @NonNull Packet<byte[]> getPacket();
 
-        @NonNull
-        abstract ImageCapture.OutputFileOptions getOutputFileOptions();
+        abstract ImageCapture.@NonNull OutputFileOptions getOutputFileOptions();
 
-        @NonNull
-        public static In of(@NonNull Packet<byte[]> jpegBytes,
-                @NonNull ImageCapture.OutputFileOptions outputFileOptions) {
+        public static @NonNull In of(@NonNull Packet<byte[]> jpegBytes,
+                ImageCapture.@NonNull OutputFileOptions outputFileOptions) {
             return new AutoValue_JpegBytes2Disk_In(jpegBytes, outputFileOptions);
         }
     }

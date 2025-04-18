@@ -16,40 +16,51 @@
 
 package androidx.compose.ui.autofill
 
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.makeSynchronizedObject
 import androidx.compose.ui.platform.synchronized
+import androidx.compose.ui.semantics.generateSemanticsId
 
 /**
  * Autofill API.
  *
  * This interface is available to all composables via a CompositionLocal. The composable can then
- * request or cancel autofill as required. For instance, the [TextField] can call
+ * request or cancel autofill as required. For instance, the TextField can call
  * [requestAutofillForNode] when it gains focus, and [cancelAutofillForNode] when it loses focus.
  */
+@Deprecated(
+    """
+        You no longer have to call these apis when focus changes. They will be called
+        automatically when you Use the new semantics based APIs for autofill. Use the
+        androidx.compose.ui.autofill.ContentType and androidx.compose.ui.autofill.ContentDataType
+        semantics properties instead.
+        """
+)
 interface Autofill {
 
     /**
      * Request autofill for the specified node.
      *
-     * @param autofillNode The node that needs to be autofilled.
+     * @param autofillNode The node that needs to be auto-filled.
      *
-     * This function is usually called when an autofillable component gains focus.
+     * This function is usually called when an autofill-able component gains focus.
      */
-    fun requestAutofillForNode(autofillNode: AutofillNode)
+    fun requestAutofillForNode(autofillNode: @Suppress("Deprecation") AutofillNode)
 
     /**
      * Cancel a previously supplied autofill request.
      *
-     * @param autofillNode The node that needs to be autofilled.
+     * @param autofillNode The node that needs to be auto-filled.
      *
-     * This function is usually called when an autofillable component loses focus.
+     * This function is usually called when an autofill-able component loses focus.
      */
-    fun cancelAutofillForNode(autofillNode: AutofillNode)
+    fun cancelAutofillForNode(autofillNode: @Suppress("Deprecation") AutofillNode)
 }
 
 /**
- * Every autofillable composable will have an [AutofillNode]. (An autofill node will be created for
+ * Every autofill-able composable will have an [AutofillNode]. (An autofill node will be created for
  * every semantics node that adds autofill properties). This node is used to request/cancel
  * autofill, and it holds the [onFill] lambda which is called by the autofill framework.
  *
@@ -59,13 +70,19 @@ interface Autofill {
  *   list because some fields can have multiple types. For instance, userid in a login form can
  *   either be a username or an email address. TODO(b/138731416): Check with the autofill service
  *   team if the order matters, and how duplicate types are handled.
- * @property boundingBox The screen coordinates of the composable being autofilled. This data is
+ * @property boundingBox The screen coordinates of the composable being auto-filled. This data is
  *   used by the autofill framework to decide where to show the autofill popup.
  * @property onFill The callback that is called by the autofill framework to perform autofill.
  * @property id A virtual id that is automatically generated for each node.
  */
+@Deprecated(
+    """
+        Use the new semantics-based Autofill APIs androidx.compose.ui.autofill.ContentType and
+        androidx.compose.ui.autofill.ContentDataType instead.
+        """
+)
 class AutofillNode(
-    val autofillTypes: List<AutofillType> = listOf(),
+    val autofillTypes: List<@Suppress("Deprecation") AutofillType> = listOf(),
     var boundingBox: Rect? = null,
     val onFill: ((String) -> Unit)?
 ) {
@@ -78,11 +95,13 @@ class AutofillNode(
         private fun generateId() = synchronized(lock) { ++previousId }
     }
 
-    val id: Int = generateId()
+    val id: Int =
+        @OptIn(ExperimentalComposeUiApi::class)
+        if (ComposeUiFlags.isSemanticAutofillEnabled) generateSemanticsId() else generateId()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is AutofillNode) return false
+        if (other !is @Suppress("Deprecation") AutofillNode) return false
 
         if (autofillTypes != other.autofillTypes) return false
         if (boundingBox != other.boundingBox) return false

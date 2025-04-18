@@ -16,8 +16,6 @@
 
 package androidx.camera.testing.impl.fakes;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.UseCase;
@@ -30,6 +28,9 @@ import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType;
 import androidx.core.util.Supplier;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -80,10 +81,9 @@ public class FakeUseCase extends UseCase {
      * {@inheritDoc}
      *
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @Override
-    public UseCaseConfig.Builder<?, ?, ?> getUseCaseConfigBuilder(@NonNull Config config) {
+    public UseCaseConfig.@NonNull Builder<?, ?, ?> getUseCaseConfigBuilder(@NonNull Config config) {
         return new FakeUseCaseConfig.Builder(config)
                 .setCaptureType(mCaptureType)
                 .setSessionOptionUnpacker((resolution, useCaseConfig, sessionConfigBuilder) -> {
@@ -94,10 +94,9 @@ public class FakeUseCase extends UseCase {
      * {@inheritDoc}
      *
      */
-    @Nullable
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @Override
-    public UseCaseConfig<?> getDefaultConfig(boolean applyDefaultConfig,
+    public @Nullable UseCaseConfig<?> getDefaultConfig(boolean applyDefaultConfig,
             @NonNull UseCaseConfigFactory factory) {
         Config config = factory.getConfig(
                 mCaptureType,
@@ -105,10 +104,9 @@ public class FakeUseCase extends UseCase {
         return config == null ? null : getUseCaseConfigBuilder(config).getUseCaseConfig();
     }
 
-    @NonNull
     @Override
-    protected UseCaseConfig<?> onMergeConfig(@NonNull CameraInfoInternal cameraInfo,
-            @NonNull UseCaseConfig.Builder<?, ?, ?> builder) {
+    protected @NonNull UseCaseConfig<?> onMergeConfig(@NonNull CameraInfoInternal cameraInfo,
+            UseCaseConfig.@NonNull Builder<?, ?, ?> builder) {
         mMergedConfigRetrieved = true;
         return builder.getUseCaseConfig();
     }
@@ -132,8 +130,7 @@ public class FakeUseCase extends UseCase {
     }
 
     @Override
-    @NonNull
-    protected StreamSpec onSuggestedStreamSpecUpdated(
+    protected @NonNull StreamSpec onSuggestedStreamSpecUpdated(
             @NonNull StreamSpec primaryStreamSpec,
             @Nullable StreamSpec secondaryStreamSpec) {
         SessionConfig sessionConfig = createPipeline();
@@ -143,8 +140,7 @@ public class FakeUseCase extends UseCase {
         return primaryStreamSpec;
     }
 
-    @Nullable
-    SessionConfig createPipeline() {
+    @Nullable SessionConfig createPipeline() {
         mPipelineCreationCount++;
         if (mSessionConfigSupplier != null) {
             return mSessionConfigSupplier.get();
@@ -163,9 +159,8 @@ public class FakeUseCase extends UseCase {
     /**
      * @inheritDoc
      */
-    @NonNull
     @Override
-    public Set<Integer> getSupportedEffectTargets() {
+    public @NonNull Set<Integer> getSupportedEffectTargets() {
         return mEffectTargets;
     }
 

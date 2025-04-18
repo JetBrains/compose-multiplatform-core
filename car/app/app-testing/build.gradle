@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -35,7 +35,7 @@ dependencies {
 
     implementation "androidx.lifecycle:lifecycle-runtime:2.2.0"
     implementation "androidx.lifecycle:lifecycle-common-java8:2.2.0"
-    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation("androidx.annotation:annotation:1.1.0")
     implementation(libs.robolectric)
     implementation("androidx.annotation:annotation-experimental:1.4.1")
     api(libs.kotlinStdlib)
@@ -54,15 +54,12 @@ dependencies {
 }
 
 android {
-    lintOptions {
-        disable("InvalidPackage")
-    }
     namespace = "androidx.car.app.testing"
 }
 
 androidx {
     name = "androidx.car.app:app-testing"
-    type = LibraryType.PUBLISHED_TEST_LIBRARY
+    type = SoftwareType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2021"
     description = "androidx.car.app:app-testing"
 }

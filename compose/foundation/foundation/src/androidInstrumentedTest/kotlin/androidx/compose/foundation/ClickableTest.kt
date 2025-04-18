@@ -107,6 +107,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Correspondence
 import com.google.common.truth.Truth.assertThat
 import kotlin.reflect.KClass
+import kotlin.test.Ignore
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -114,6 +115,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -3957,7 +3959,14 @@ class ClickableTest {
             assertThat(modifier.nameFallback).isEqualTo("clickable")
             assertThat(modifier.valueOverride).isNull()
             assertThat(modifier.inspectableElements.map { it.name }.asIterable())
-                .containsExactly("enabled", "onClickLabel", "role", "onClick")
+                .containsExactly(
+                    "enabled",
+                    "onClickLabel",
+                    "role",
+                    "interactionSource",
+                    "indicationNodeFactory",
+                    "onClick"
+                )
         }
     }
 
@@ -4106,6 +4115,930 @@ class ClickableTest {
 
         rule.onNodeWithTag("clickable").performKeyInput { pressKey(Key.Backspace) }
         rule.runOnIdle { assertThat(interactions).isEmpty() }
+    }
+
+    @Ignore("Needs aosp/3542299 to land to avoid teardown exceptions from crashing the test")
+    @Test
+    fun localIndication_indication_crashes() {
+        val indication = TestIndication {}
+        assertThrows(IllegalArgumentException::class.java) {
+            rule.setContent {
+                CompositionLocalProvider(LocalIndication provides indication) {
+                    Box(Modifier.padding(10.dp)) {
+                        BasicText(
+                            "ClickableText",
+                            modifier = Modifier.testTag("clickable").clickable {}
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun localIndication_indication_flagDisabled_stillSupported() {
+        try {
+            var created = false
+            val indication = TestIndication { created = true }
+            ComposeFoundationFlags.isNonComposedClickableEnabled = false
+            rule.setContent {
+                CompositionLocalProvider(LocalIndication provides indication) {
+                    Box(Modifier.padding(10.dp)) {
+                        BasicText(
+                            "ClickableText",
+                            modifier = Modifier.testTag("clickable").clickable {}
+                        )
+                    }
+                }
+            }
+            rule.runOnIdle { assertThat(created).isTrue() }
+        } finally {
+            ComposeFoundationFlags.isNonComposedClickableEnabled = true
+        }
+    }
+
+    @Test
+    fun localIndication_interactionSource_eagerlyCreated() {
+        val interactionSource = MutableInteractionSource()
+        var created = false
+        val indication = TestIndicationNodeFactory { _, _ -> created = true }
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "ClickableText",
+                        modifier =
+                            Modifier.testTag("clickable").clickable(
+                                interactionSource = interactionSource
+                            ) {}
+                    )
+                }
+            }
+        }
+        rule.runOnIdle { assertThat(created).isTrue() }
+    }
+
+    @Test
+    fun localIndication_noInteractionSource_lazilyCreated_pointerInput() {
+        var created = false
+        lateinit var interactionSource: InteractionSource
+        val interactions = mutableListOf<Interaction>()
+        val indication = TestIndicationNodeFactory { source, coroutineScope ->
+            interactionSource = source
+            created = true
+            coroutineScope.launch {
+                interactionSource.interactions.collect { interaction ->
+                    interactions.add(interaction)
+                }
+            }
+        }
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "ClickableText",
+                        modifier =
+                            Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle { assertThat(created).isFalse() }
+
+        // The touch event should cause the indication node to be created
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(created).isTrue()
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+    }
+
+    @Test
+    fun localIndication_noInteractionSource_lazilyCreated_focus() {
+        var created = false
+        val focusRequester = FocusRequester()
+        lateinit var inputModeManager: InputModeManager
+        lateinit var interactionSource: InteractionSource
+        val interactions = mutableListOf<Interaction>()
+        val indication = TestIndicationNodeFactory { source, coroutineScope ->
+            interactionSource = source
+            created = true
+            coroutineScope.launch {
+                interactionSource.interactions.collect { interaction ->
+                    interactions.add(interaction)
+                }
+            }
+        }
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                inputModeManager = LocalInputModeManager.current
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "ClickableText",
+                        modifier =
+                            Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
+                                interactionSource = null
+                            ) {}
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle { assertThat(created).isFalse() }
+
+        rule.runOnIdle {
+            // Clickable is only focusable in non-touch mode
+            inputModeManager.requestInputMode(Keyboard)
+            // The focus event should cause the indication node to be created
+            focusRequester.requestFocus()
+        }
+
+        rule.runOnIdle {
+            assertThat(created).isTrue()
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(FocusInteraction.Focus::class.java)
+        }
+    }
+
+    /**
+     * Test case for initializing indication when a KeyEvent is received. Focus is required for key
+     * events, so normally just focusing the clickable will cause indication to be initialized via
+     * focus logic, but if a focused child receives a key event and doesn't consume it, it will
+     * still be passed up to a non-focused parent, so we test this scenario here and make sure that
+     * this key event bubbling up causes indication to be created.
+     */
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun localIndication_noInteractionSource_lazilyCreated_keyInput() {
+        var created = false
+        val focusRequester = FocusRequester()
+        lateinit var inputModeManager: InputModeManager
+        lateinit var interactionSource: InteractionSource
+        val interactions = mutableListOf<Interaction>()
+        val indication = TestIndicationNodeFactory { source, coroutineScope ->
+            interactionSource = source
+            created = true
+            coroutineScope.launch {
+                interactionSource.interactions.collect { interaction ->
+                    interactions.add(interaction)
+                }
+            }
+        }
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                inputModeManager = LocalInputModeManager.current
+                // Add focusable to the top so that when initial focus is dispatched, the clickable
+                // doesn't become focused
+                Box(Modifier.padding(10.dp).focusable()) {
+                    Box(
+                        modifier =
+                            Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                    ) {
+                        Box(Modifier.focusRequester(focusRequester).focusable())
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            inputModeManager.requestInputMode(Keyboard)
+            focusRequester.requestFocus()
+        }
+
+        rule.runOnIdle {
+            // We are focusing the child, not the clickable, so we shouldn't create indication yet
+            assertThat(created).isFalse()
+        }
+
+        // The key input event should cause the indication node to be created
+        rule.onNodeWithTag("clickable").performKeyInput { keyDown(Key.Enter) }
+
+        rule.runOnIdle {
+            assertThat(created).isTrue()
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+    }
+
+    /**
+     * Test case for changing from an IndicationNodeFactory instance to an Indication instance - we
+     * should crash as Indication is not supported.
+     */
+    @Test
+    fun localIndication_changingIndicationNodeFactoryToIndication_interactionSource_crashes() {
+        var nodeCreated = false
+        val interactionSource = MutableInteractionSource()
+        val interactions = mutableListOf<Interaction>()
+        val testIndicationNodeFactory = TestIndicationNodeFactory { _, coroutineScope ->
+            nodeCreated = true
+            coroutineScope.launch {
+                interactionSource.interactions.collect { interaction ->
+                    interactions.add(interaction)
+                }
+            }
+        }
+        val testIndication = TestIndication {}
+
+        var indication: Indication by mutableStateOf(testIndicationNodeFactory)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "ClickableText",
+                        modifier =
+                            Modifier.testTag("clickable").clickable(
+                                interactionSource = interactionSource
+                            ) {}
+                    )
+                }
+            }
+        }
+
+        val exception =
+            assertFailsWith(IllegalArgumentException::class) {
+                rule.runOnIdle {
+                    assertThat(nodeCreated).isTrue()
+                    indication = testIndication
+                }
+
+                rule.waitForIdle()
+            }
+
+        assertThat(exception.message)
+            .startsWith("clickable only supports IndicationNodeFactory instances")
+    }
+
+    /**
+     * Test case for null InteractionSource with a provided indication: the indication should be
+     * lazily created. If we change indication before creation, the new indication should be created
+     * lazily too.
+     */
+    @Test
+    fun localIndication_changingIndication_beforeCreation() {
+        var created1 = false
+        var created2 = false
+        lateinit var interactionSource: InteractionSource
+        val interactions = mutableListOf<Interaction>()
+        val indication1 = TestIndicationNodeFactory { source, coroutineScope ->
+            interactionSource = source
+            created1 = true
+            coroutineScope.launch {
+                interactionSource.interactions.collect { interaction ->
+                    interactions.add(interaction)
+                }
+            }
+        }
+        val indication2 = TestIndicationNodeFactory { source, coroutineScope ->
+            interactionSource = source
+            created2 = true
+            coroutineScope.launch {
+                interactionSource.interactions.collect { interaction ->
+                    interactions.add(interaction)
+                }
+            }
+        }
+
+        var indication by mutableStateOf(indication1)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "ClickableText",
+                        modifier =
+                            Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle { assertThat(created1).isFalse() }
+
+        rule.runOnIdle { indication = indication2 }
+
+        rule.runOnIdle {
+            // We should still not be created
+            assertThat(created2).isFalse()
+        }
+
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(created2).isTrue()
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+    }
+
+    /**
+     * Test case for null InteractionSource with a provided indication: the indication should be
+     * lazily created, but then if we change indication after creation, the new indication should be
+     * created immediately
+     */
+    @Test
+    fun localIndication_changingIndication_afterCreation() {
+        var created1 = false
+        var detached1 = false
+        var created2 = false
+        lateinit var interactionSource: InteractionSource
+        val interactions = mutableListOf<Interaction>()
+        val indication1 =
+            TestIndicationNodeFactory(onDetach = { detached1 = true }) { source, coroutineScope ->
+                interactionSource = source
+                created1 = true
+                coroutineScope.launch {
+                    interactionSource.interactions.collect { interaction ->
+                        interactions.add(interaction)
+                    }
+                }
+            }
+        val indication2 = TestIndicationNodeFactory { source, coroutineScope ->
+            interactionSource = source
+            created2 = true
+            coroutineScope.launch {
+                interactionSource.interactions.collect { interaction ->
+                    interactions.add(interaction)
+                }
+            }
+        }
+
+        var indication by mutableStateOf(indication1)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "ClickableText",
+                        modifier =
+                            Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle { assertThat(created1).isFalse() }
+
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(created1).isTrue()
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        rule.onNodeWithTag("clickable").performTouchInput { up() }
+
+        rule.runOnIdle {
+            interactions.clear()
+            indication = indication2
+        }
+
+        rule.runOnIdle {
+            // We should be created because we created the previous node already
+            assertThat(created2).isTrue()
+            // The previous node should be detached
+            assertThat(detached1).isTrue()
+        }
+
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+    }
+
+    /**
+     * Test case for a provided InteractionSource with a provided indication, and changing the
+     * InteractionSource to a new one. This should cause the indication to be recreated immediately.
+     */
+    @Test
+    fun localIndication_changingInteractionSourceToAnotherInteractionSource() {
+        var created = false
+        var detached = false
+        var interactionSource: MutableInteractionSource by
+            mutableStateOf(MutableInteractionSource())
+        val interactions = mutableListOf<Interaction>()
+        val indication =
+            TestIndicationNodeFactory(onDetach = { detached = true }) { _, coroutineScope ->
+                created = true
+                coroutineScope.launch {
+                    interactionSource.interactions.collect { interaction ->
+                        interactions.add(interaction)
+                    }
+                }
+            }
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "ClickableText",
+                        modifier =
+                            Modifier.testTag("clickable").clickable(
+                                interactionSource = interactionSource
+                            ) {}
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            // We should be eagerly created
+            assertThat(created).isTrue()
+            interactionSource = MutableInteractionSource()
+        }
+
+        rule.runOnIdle {
+            // Changing InteractionSource should cause the node to be detached, and a new one
+            // created
+            assertThat(detached).isTrue()
+            assertThat(created).isTrue()
+        }
+
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+    }
+
+    /**
+     * Test case for null InteractionSource with a provided indication, and changing the
+     * InteractionSource to non-null. This should cause the indication to be created immediately.
+     */
+    @Test
+    fun localIndication_changingInteractionSourceFromNull() {
+        var created = false
+        var interactionSource: MutableInteractionSource? by mutableStateOf(null)
+        val interactions = mutableListOf<Interaction>()
+        val indication = TestIndicationNodeFactory { _, coroutineScope ->
+            created = true
+            coroutineScope.launch {
+                interactionSource!!.interactions.collect { interaction ->
+                    interactions.add(interaction)
+                }
+            }
+        }
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "ClickableText",
+                        modifier =
+                            Modifier.testTag("clickable").clickable(
+                                interactionSource = interactionSource,
+                            ) {}
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(created).isFalse()
+            interactionSource = MutableInteractionSource()
+        }
+
+        rule.runOnIdle {
+            // Changing InteractionSource should cause us to be created
+            assertThat(created).isTrue()
+        }
+
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+    }
+
+    /**
+     * Test case for a provided InteractionSource with a provided indication, and changing the
+     * InteractionSource to null. This should cause the indication to be recreated immediately.
+     */
+    @Test
+    fun localIndication_changingInteractionSourceToNull() {
+        var created = false
+        var detached = false
+        var interactionSource: MutableInteractionSource? by
+            mutableStateOf(MutableInteractionSource())
+        var internalInteractionSource: InteractionSource?
+        val interactions = mutableListOf<Interaction>()
+        val indication =
+            TestIndicationNodeFactory(onDetach = { detached = true }) { source, coroutineScope ->
+                internalInteractionSource = source
+                created = true
+                coroutineScope.launch {
+                    internalInteractionSource?.interactions?.collect { interaction ->
+                        interactions.add(interaction)
+                    }
+                }
+            }
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "ClickableText",
+                        modifier =
+                            Modifier.testTag("clickable").clickable(
+                                interactionSource = interactionSource
+                            ) {}
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            // We should be eagerly created
+            assertThat(created).isTrue()
+            interactionSource = null
+        }
+
+        rule.runOnIdle {
+            // Changing InteractionSource should cause the node to be detached, and a new one
+            // created
+            assertThat(detached).isTrue()
+            assertThat(created).isTrue()
+        }
+
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+    }
+
+    @Test
+    fun localIndication_nullInteractionSource_resetWhenReused_pressed() {
+        var attachedCount = 0
+        var detachedCount = 0
+        val interactionSources = mutableListOf<InteractionSource>()
+        val interactions = mutableListOf<Interaction>()
+        val indication =
+            TestIndicationNodeFactory(onDetach = { detachedCount++ }) {
+                interactionSource,
+                coroutineScope ->
+                attachedCount++
+                interactionSources += interactionSource
+                coroutineScope.launch {
+                    interactionSource.interactions.collect { interaction ->
+                        interactions.add(interaction)
+                    }
+                }
+            }
+
+        var key by mutableStateOf(true)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box {
+                    ReusableContent(key) {
+                        BasicText(
+                            "ClickableText",
+                            modifier =
+                                Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { assertThat(attachedCount).isEqualTo(0) }
+
+        // The touch event should cause the indication node to be created
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(attachedCount).isEqualTo(1)
+            assertThat(interactionSources.size).isEqualTo(1)
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        // Change the key to trigger reuse
+        rule.runOnIdle {
+            interactions.clear()
+            key = false
+        }
+
+        rule.runOnIdle {
+            // The indication instance should be disposed
+            assertThat(detachedCount).isEqualTo(1)
+            // Because we collect the interactionSource using the node scope, this will be cancelled
+            // before the new interaction is emitted, so the node won't see the Cancel interaction.
+            // Since the node has been removed though, this doesn't really matter.
+            // No new node should be created, since we have reset, and are lazily creating the node
+            assertThat(attachedCount).isEqualTo(1)
+            assertThat(interactionSources.size).isEqualTo(1)
+        }
+
+        // The touch event should cause a new indication node and interaction source to be created
+        rule.onNodeWithTag("clickable").performTouchInput {
+            // Need to reset the previous down
+            up()
+            down(center)
+        }
+
+        rule.runOnIdle {
+            // The new node should be created now
+            assertThat(attachedCount).isEqualTo(2)
+            assertThat(interactionSources.size).isEqualTo(2)
+            // It should be using a different interaction source
+            assertThat(interactionSources[0]).isNotEqualTo(interactionSources[1])
+            assertThat(detachedCount).isEqualTo(1)
+            // There should be a new press
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+    }
+
+    @Test
+    fun localIndication_nullInteractionSource_resetWhenReused_focused() {
+        var attachedCount = 0
+        var detachedCount = 0
+        val focusRequester = FocusRequester()
+        lateinit var inputModeManager: InputModeManager
+        val interactionSources = mutableListOf<InteractionSource>()
+        val interactions = mutableListOf<Interaction>()
+        val indication =
+            TestIndicationNodeFactory(onDetach = { detachedCount++ }) {
+                interactionSource,
+                coroutineScope ->
+                attachedCount++
+                interactionSources += interactionSource
+                coroutineScope.launch {
+                    interactionSource.interactions.collect { interaction ->
+                        interactions.add(interaction)
+                    }
+                }
+            }
+
+        var key by mutableStateOf(true)
+
+        // setFocusableContent so when we are reused, the focus system won't automatically try and
+        // set focus on us again
+        rule.setFocusableContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                inputModeManager = LocalInputModeManager.current
+                Box {
+                    ReusableContent(key) {
+                        BasicText(
+                            "ClickableText",
+                            modifier =
+                                Modifier.testTag("clickable")
+                                    .focusRequester(focusRequester)
+                                    .clickable(interactionSource = null) {}
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { assertThat(attachedCount).isEqualTo(0) }
+
+        rule.runOnIdle {
+            // Clickable is only focusable in non-touch mode
+            inputModeManager.requestInputMode(Keyboard)
+            // The focus event should cause the indication node to be created
+            focusRequester.requestFocus()
+        }
+
+        rule.runOnIdle {
+            assertThat(attachedCount).isEqualTo(1)
+            assertThat(interactionSources.size).isEqualTo(1)
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(FocusInteraction.Focus::class.java)
+        }
+
+        // Change the key to trigger reuse
+        rule.runOnIdle {
+            interactions.clear()
+            key = false
+        }
+
+        rule.runOnIdle {
+            // The indication instance should be disposed
+            assertThat(detachedCount).isEqualTo(1)
+            // Because we collect the interactionSource using the node scope, this will be cancelled
+            // before the new interaction is emitted, so the node won't see the Unfocus interaction.
+            // Since the node has been removed though, this doesn't really matter.
+            // No new node should be created, since we have reset, and are lazily creating the node
+            assertThat(attachedCount).isEqualTo(1)
+            assertThat(interactionSources.size).isEqualTo(1)
+        }
+
+        rule.runOnIdle {
+            // Request focus again
+            focusRequester.requestFocus()
+        }
+
+        rule.runOnIdle {
+            // The new node should be created now
+            assertThat(attachedCount).isEqualTo(2)
+            assertThat(interactionSources.size).isEqualTo(2)
+            // It should be using a different interaction source
+            assertThat(interactionSources[0]).isNotEqualTo(interactionSources[1])
+            assertThat(detachedCount).isEqualTo(1)
+            // There should be a new focus interaction
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(FocusInteraction.Focus::class.java)
+        }
+    }
+
+    @Test
+    fun localIndication_nullInteractionSource_resetWhenMoved_pressed() {
+        var attachedCount = 0
+        var detachedCount = 0
+        val interactionSources = mutableListOf<InteractionSource>()
+        val interactions = mutableListOf<Interaction>()
+        val indication =
+            TestIndicationNodeFactory(onDetach = { detachedCount++ }) {
+                interactionSource,
+                coroutineScope ->
+                attachedCount++
+                interactionSources += interactionSource
+                coroutineScope.launch {
+                    interactionSource.interactions.collect { interaction ->
+                        interactions.add(interaction)
+                    }
+                }
+            }
+
+        var moveContent by mutableStateOf(false)
+
+        val content = movableContentOf {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                BasicText(
+                    "ClickableText",
+                    modifier = Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                )
+            }
+        }
+
+        rule.setContent {
+            if (moveContent) {
+                Box { content() }
+            } else {
+                Box { content() }
+            }
+        }
+
+        rule.runOnIdle { assertThat(attachedCount).isEqualTo(0) }
+
+        // The touch event should cause the indication node to be created
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(attachedCount).isEqualTo(1)
+            assertThat(interactionSources.size).isEqualTo(1)
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        // Move the content
+        rule.runOnIdle {
+            interactions.clear()
+            moveContent = true
+        }
+
+        rule.runOnIdle {
+            // The indication instance should be disposed
+            assertThat(detachedCount).isEqualTo(1)
+            // Because we collect the interactionSource using the node scope, this will be cancelled
+            // before the new interaction is emitted, so the node won't see the Unfocus interaction.
+            // Since the node has been removed though, this doesn't really matter.
+            // No new node should be created, since we have reset, and are lazily creating the node
+            assertThat(attachedCount).isEqualTo(1)
+            assertThat(interactionSources.size).isEqualTo(1)
+        }
+
+        // The touch event should cause a new indication node and interaction source to be created
+        rule.onNodeWithTag("clickable").performTouchInput {
+            // Need to reset the previous down
+            up()
+            down(center)
+        }
+
+        rule.runOnIdle {
+            // The new node should be created now
+            assertThat(attachedCount).isEqualTo(2)
+            assertThat(interactionSources.size).isEqualTo(2)
+            // It should be using a different interaction source
+            assertThat(interactionSources[0]).isNotEqualTo(interactionSources[1])
+            assertThat(detachedCount).isEqualTo(1)
+            // There should be a new press
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+    }
+
+    @Test
+    fun localIndication_nullInteractionSource_resetWhenMoved_focused() {
+        var attachedCount = 0
+        var detachedCount = 0
+        val focusRequester = FocusRequester()
+        lateinit var inputModeManager: InputModeManager
+        val interactionSources = mutableListOf<InteractionSource>()
+        val interactions = mutableListOf<Interaction>()
+        val indication =
+            TestIndicationNodeFactory(onDetach = { detachedCount++ }) {
+                interactionSource,
+                coroutineScope ->
+                attachedCount++
+                interactionSources += interactionSource
+                coroutineScope.launch {
+                    interactionSource.interactions.collect { interaction ->
+                        interactions.add(interaction)
+                    }
+                }
+            }
+
+        var moveContent by mutableStateOf(false)
+
+        val content = movableContentOf {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
+                            interactionSource = null
+                        ) {}
+                )
+            }
+        }
+
+        // setFocusableContent so when we are reused, the focus system won't automatically try and
+        // set focus on us again
+        rule.setFocusableContent {
+            inputModeManager = LocalInputModeManager.current
+            if (moveContent) {
+                Box { content() }
+            } else {
+                Box { content() }
+            }
+        }
+
+        rule.runOnIdle { assertThat(attachedCount).isEqualTo(0) }
+
+        rule.runOnIdle {
+            // Clickable is only focusable in non-touch mode
+            inputModeManager.requestInputMode(Keyboard)
+            // The focus event should cause the indication node to be created
+            focusRequester.requestFocus()
+        }
+
+        rule.runOnIdle {
+            assertThat(attachedCount).isEqualTo(1)
+            assertThat(interactionSources.size).isEqualTo(1)
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(FocusInteraction.Focus::class.java)
+        }
+
+        // Move the content
+        rule.runOnIdle {
+            interactions.clear()
+            moveContent = true
+        }
+
+        rule.runOnIdle {
+            // The indication instance should be disposed
+            assertThat(detachedCount).isEqualTo(1)
+            // Because we collect the interactionSource using the node scope, this will be cancelled
+            // before the new interaction is emitted, so the node won't see the Unfocus interaction.
+            // Since the node has been removed though, this doesn't really matter.
+            // No new node should be created, since we have reset, and are lazily creating the node
+            assertThat(attachedCount).isEqualTo(1)
+            assertThat(interactionSources.size).isEqualTo(1)
+        }
+
+        rule.runOnIdle {
+            // Request focus again
+            focusRequester.requestFocus()
+        }
+
+        rule.runOnIdle {
+            // The new node should be created now
+            assertThat(attachedCount).isEqualTo(2)
+            assertThat(interactionSources.size).isEqualTo(2)
+            // It should be using a different interaction source
+            assertThat(interactionSources[0]).isNotEqualTo(interactionSources[1])
+            assertThat(detachedCount).isEqualTo(1)
+            // There should be a new focus interaction
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(FocusInteraction.Focus::class.java)
+        }
     }
 
     @Test
@@ -5056,14 +5989,330 @@ class ClickableTest {
         }
     }
 
+    /**
+     * Test case for changing between the overload that uses LocalIndication and the overload that
+     * takes an explicit Indication, to make sure we update the node correctly in this case.
+     */
     @Test
-    fun composedOverload_nonEquality() {
-        val onClick = {}
-        val modifier1 = Modifier.clickable(onClick = onClick)
-        val modifier2 = Modifier.clickable(onClick = onClick)
+    fun localIndicationOverload_changingToExplicitIndication_indicationNodeFactory() {
+        var created1 = false
+        var detached1 = false
+        var created2 = false
+        lateinit var interactionSource: InteractionSource
+        val interactions = mutableListOf<Interaction>()
+        val indication1 =
+            TestIndicationNodeFactory(onDetach = { detached1 = true }) { source, coroutineScope ->
+                interactionSource = source
+                created1 = true
+                coroutineScope.launch {
+                    interactionSource.interactions.collect { interaction ->
+                        interactions.add(interaction)
+                    }
+                }
+            }
+        val indication2 = TestIndicationNodeFactory { source, coroutineScope ->
+            interactionSource = source
+            created2 = true
+            coroutineScope.launch {
+                interactionSource.interactions.collect { interaction ->
+                    interactions.add(interaction)
+                }
+            }
+        }
 
-        // The composed overload can never compare equal
-        assertThat(modifier1).isNotEqualTo(modifier2)
+        var useExplicitIndication by mutableStateOf(false)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication1) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "ClickableText",
+                        modifier =
+                            Modifier.testTag("clickable")
+                                .then(
+                                    if (useExplicitIndication) {
+                                        Modifier.clickable(
+                                            interactionSource = null,
+                                            indication = indication2
+                                        ) {}
+                                    } else {
+                                        Modifier.clickable(interactionSource = null) {}
+                                    }
+                                )
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle { assertThat(created1).isFalse() }
+
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(created1).isTrue()
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        rule.onNodeWithTag("clickable").performTouchInput { up() }
+
+        rule.runOnIdle {
+            interactions.clear()
+            useExplicitIndication = true
+        }
+
+        rule.runOnIdle {
+            // We should be created because we created the previous node already
+            assertThat(created2).isTrue()
+            // The previous node should be detached
+            assertThat(detached1).isTrue()
+        }
+
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+    }
+
+    /**
+     * Test case for changing between the overload that uses LocalIndication and the overload that
+     * takes an explicit Indication, to make sure we update the node correctly in this case.
+     */
+    @Test
+    fun localIndicationOverload_changingToExplicitIndication_nullIndication() {
+        var created = false
+        var detached = false
+        lateinit var interactionSource: InteractionSource
+        val interactions = mutableListOf<Interaction>()
+        val indication1 =
+            TestIndicationNodeFactory(onDetach = { detached = true }) { source, coroutineScope ->
+                interactionSource = source
+                created = true
+                coroutineScope.launch {
+                    interactionSource.interactions.collect { interaction ->
+                        interactions.add(interaction)
+                    }
+                }
+            }
+
+        var useExplicitIndication by mutableStateOf(false)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication1) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "ClickableText",
+                        modifier =
+                            Modifier.testTag("clickable")
+                                .then(
+                                    if (useExplicitIndication) {
+                                        Modifier.clickable(
+                                            interactionSource = null,
+                                            indication = null
+                                        ) {}
+                                    } else {
+                                        Modifier.clickable(interactionSource = null) {}
+                                    }
+                                )
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle { assertThat(created).isFalse() }
+
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(created).isTrue()
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        rule.onNodeWithTag("clickable").performTouchInput { up() }
+
+        rule.runOnIdle {
+            interactions.clear()
+            useExplicitIndication = true
+        }
+
+        rule.runOnIdle {
+            // The previous node should be detached
+            assertThat(detached).isTrue()
+        }
+    }
+
+    /**
+     * Test case for changing between the overload that takes an explicit Indication and the
+     * overload that uses LocalIndication, to make sure we update the node correctly in this case.
+     */
+    @Test
+    fun explicitIndicationOverload_indicationNodeFactory_changingToLocalIndication() {
+        var created1 = false
+        var detached1 = false
+        var created2 = false
+        lateinit var interactionSource: InteractionSource
+        val interactions = mutableListOf<Interaction>()
+        val indication1 =
+            TestIndicationNodeFactory(onDetach = { detached1 = true }) { source, coroutineScope ->
+                interactionSource = source
+                created1 = true
+                coroutineScope.launch {
+                    interactionSource.interactions.collect { interaction ->
+                        interactions.add(interaction)
+                    }
+                }
+            }
+        val indication2 = TestIndicationNodeFactory { source, coroutineScope ->
+            interactionSource = source
+            created2 = true
+            coroutineScope.launch {
+                interactionSource.interactions.collect { interaction ->
+                    interactions.add(interaction)
+                }
+            }
+        }
+
+        var useExplicitIndication by mutableStateOf(true)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication2) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "ClickableText",
+                        modifier =
+                            Modifier.testTag("clickable")
+                                .then(
+                                    if (useExplicitIndication) {
+                                        Modifier.clickable(
+                                            interactionSource = null,
+                                            indication = indication1
+                                        ) {}
+                                    } else {
+                                        Modifier.clickable(interactionSource = null) {}
+                                    }
+                                )
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle { assertThat(created1).isFalse() }
+
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(created1).isTrue()
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        rule.onNodeWithTag("clickable").performTouchInput { up() }
+
+        rule.runOnIdle {
+            interactions.clear()
+            useExplicitIndication = false
+        }
+
+        rule.runOnIdle {
+            // We should be created because we created the previous node already
+            assertThat(created2).isTrue()
+            // The previous node should be detached
+            assertThat(detached1).isTrue()
+        }
+
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+    }
+
+    /**
+     * Test case for changing between the overload that takes an explicit Indication and the
+     * overload that uses LocalIndication, to make sure we update the node correctly in this case.
+     */
+    @Test
+    fun explicitIndicationOverload_nullIndication_changingToLocalIndication() {
+        var created = false
+        lateinit var interactionSource: InteractionSource
+        val interactions = mutableListOf<Interaction>()
+        val indication =
+            TestIndicationNodeFactory(onDetach = {}) { source, coroutineScope ->
+                interactionSource = source
+                created = true
+                coroutineScope.launch {
+                    interactionSource.interactions.collect { interaction ->
+                        interactions.add(interaction)
+                    }
+                }
+            }
+
+        var useExplicitIndication by mutableStateOf(true)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "ClickableText",
+                        modifier =
+                            Modifier.testTag("clickable")
+                                .then(
+                                    if (useExplicitIndication) {
+                                        Modifier.clickable(
+                                            interactionSource = null,
+                                            indication = null
+                                        ) {}
+                                    } else {
+                                        Modifier.clickable(interactionSource = null) {}
+                                    }
+                                )
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(created).isFalse()
+            useExplicitIndication = false
+        }
+
+        rule.runOnIdle {
+            // We should still not be created
+            assertThat(created).isFalse()
+        }
+
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(created).isTrue()
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+    }
+
+    @Test
+    fun nullInteractionSource_equality() {
+        val onClick = {}
+        assertModifierIsPure { toggleInput ->
+            Modifier.clickable(enabled = toggleInput, onClick = onClick)
+        }
+    }
+
+    @Test
+    fun nonNullInteractionSource_equality() {
+        val onClick = {}
+        val interactionSource = MutableInteractionSource()
+        assertModifierIsPure { toggleInput ->
+            Modifier.clickable(
+                interactionSource = interactionSource,
+                enabled = toggleInput,
+                onClick = onClick
+            )
+        }
     }
 
     @Test

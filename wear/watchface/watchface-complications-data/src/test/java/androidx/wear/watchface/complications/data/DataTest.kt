@@ -31,8 +31,8 @@ import android.os.PersistableBundle
 import android.support.wearable.complications.ComplicationData as WireComplicationData
 import android.support.wearable.complications.ComplicationText as WireComplicationText
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.filters.SdkSuppress
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicString
 import com.google.common.truth.Expect
@@ -176,7 +176,7 @@ public class AsWireComplicationDataTest {
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun shortTextComplicationData_withImages() {
         val data =
@@ -300,7 +300,7 @@ public class AsWireComplicationDataTest {
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun longTextComplicationData_withImages() {
         val data =
@@ -520,7 +520,7 @@ public class AsWireComplicationDataTest {
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun rangedValueComplicationData_withImages() {
         val data =
@@ -710,7 +710,7 @@ public class AsWireComplicationDataTest {
                     .setContentDescription(WireComplicationText.plainText("content description"))
                     .setDataSource(dataSource)
                     .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                    .setColorRampIsSmoothShaded(true)
+                    .setColorRampInterpolated(true)
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                     .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
                     .build()
@@ -740,7 +740,7 @@ public class AsWireComplicationDataTest {
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun goalProgressComplicationData_withColorRampAndImages() {
         val data =
@@ -767,7 +767,7 @@ public class AsWireComplicationDataTest {
                     .setContentDescription(WireComplicationText.plainText("content description"))
                     .setDataSource(dataSource)
                     .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                    .setColorRampIsSmoothShaded(true)
+                    .setColorRampInterpolated(true)
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                     .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
                     .build()
@@ -830,7 +830,7 @@ public class AsWireComplicationDataTest {
                     .setContentDescription(WireComplicationText.plainText("content description"))
                     .setDataSource(dataSource)
                     .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                    .setColorRampIsSmoothShaded(true)
+                    .setColorRampInterpolated(true)
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                     .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
                     .setExtras(extras)
@@ -940,7 +940,7 @@ public class AsWireComplicationDataTest {
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun weightedElementsComplicationData_withImages() {
         val data =
@@ -1010,7 +1010,7 @@ public class AsWireComplicationDataTest {
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun monochromaticImageComplicationData() {
         val extras = PersistableBundle().apply { putInt("Key", 123) }
@@ -1054,7 +1054,7 @@ public class AsWireComplicationDataTest {
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun smallImageComplicationData() {
         val extras = PersistableBundle().apply { putInt("Key", 123) }
@@ -1098,7 +1098,7 @@ public class AsWireComplicationDataTest {
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun smallImageComplicationData_with_BitmapIcon() {
         val bitmapIcon =
@@ -1132,7 +1132,7 @@ public class AsWireComplicationDataTest {
         assertThat(bitmap.height).isEqualTo(100)
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun backgroundImageComplicationData() {
         val extras = PersistableBundle().apply { putInt("Key", 123) }
@@ -1491,7 +1491,7 @@ public class AsWireComplicationDataTest {
                             )
                             .setDataSource(dataSource)
                             .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                            .setColorRampIsSmoothShaded(false)
+                            .setColorRampInterpolated(false)
                             .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                             .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
                             .setExtras(extras)
@@ -1630,7 +1630,7 @@ public class AsWireComplicationDataTest {
                             )
                             .setDataSource(dataSource)
                             .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                            .setColorRampIsSmoothShaded(true)
+                            .setColorRampInterpolated(true)
                             .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                             .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
                             .setExtras(extras)
@@ -1974,7 +1974,7 @@ public class FromWireComplicationDataTest {
                 .setShortTitle(WireComplicationText.plainText("steps"))
                 .setContentDescription(WireComplicationText.plainText("content description"))
                 .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                .setColorRampIsSmoothShaded(false)
+                .setColorRampInterpolated(false)
                 .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                 .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
                 .build(),
@@ -1991,7 +1991,7 @@ public class FromWireComplicationDataTest {
                 .setShortTitle(WireComplicationText.plainText("steps"))
                 .setContentDescription(WireComplicationText.plainText("content description"))
                 .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                .setColorRampIsSmoothShaded(false)
+                .setColorRampInterpolated(false)
                 .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                 .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
                 .build(),
@@ -2159,7 +2159,7 @@ public class FromWireComplicationDataTest {
                             WireComplicationText.plainText("content description")
                         )
                         .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                        .setColorRampIsSmoothShaded(true)
+                        .setColorRampInterpolated(true)
                         .setIcon(icon)
                         .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                         .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
@@ -2799,7 +2799,7 @@ public class ValidTimeRangeTest {
                     .setShortTitle(WireComplicationText.plainText("steps"))
                     .setContentDescription(WireComplicationText.plainText("content description"))
                     .setColorRamp(intArrayOf(Color.YELLOW, Color.MAGENTA))
-                    .setColorRampIsSmoothShaded(true)
+                    .setColorRampInterpolated(true)
                     .setStartDateTimeMillis(testStartInstant.toEpochMilli())
                     .setEndDateTimeMillis(testEndDateInstant.toEpochMilli())
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
@@ -3002,7 +3002,7 @@ public class ValidTimeRangeTest {
                                 WireComplicationText.plainText("content description")
                             )
                             .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                            .setColorRampIsSmoothShaded(false)
+                            .setColorRampInterpolated(false)
                             .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                             .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
                             .build()

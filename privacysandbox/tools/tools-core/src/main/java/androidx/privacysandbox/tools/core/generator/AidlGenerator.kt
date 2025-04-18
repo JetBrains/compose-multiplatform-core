@@ -16,6 +16,7 @@
 
 package androidx.privacysandbox.tools.core.generator
 
+import androidx.privacysandbox.tools.core.generator.SpecNames.uiCoreLibInfoPropertyName
 import androidx.privacysandbox.tools.core.generator.poet.AidlFileSpec
 import androidx.privacysandbox.tools.core.generator.poet.AidlInterfaceSpec
 import androidx.privacysandbox.tools.core.generator.poet.AidlInterfaceSpec.Companion.aidlInterface
@@ -108,7 +109,7 @@ private constructor(
             }
 
         return buildList {
-            if (annotatedInterface.inheritsSandboxedUiAdapter) {
+            if (annotatedInterface.inheritsUiAdapter) {
                 add(uiAidlWrapper(annotatedInterface))
             }
             add(interfaceFile)
@@ -117,7 +118,8 @@ private constructor(
 
     private fun uiAidlWrapper(annotatedInterface: AnnotatedInterface) =
         aidlParcelable(annotatedInterface.uiAdapterAidlWrapper()) {
-            addProperty("coreLibInfo", bundleAidlType)
+            if (annotatedInterface.inheritsUiAdapter)
+                addProperty(uiCoreLibInfoPropertyName, bundleAidlType)
             addProperty("binder", annotatedInterface.aidlType())
         }
 
@@ -267,7 +269,7 @@ private constructor(
             return it.aidlType()
         }
         api.interfaceMap[type]?.let {
-            if (it.inheritsSandboxedUiAdapter) {
+            if (it.inheritsUiAdapter) {
                 return AidlTypeSpec(it.uiAdapterAidlWrapper(), kind = AidlTypeKind.PARCELABLE)
             }
             return it.aidlType()
@@ -315,7 +317,7 @@ internal fun AnnotatedInterface.aidlType() =
     AidlTypeSpec(Type(type.packageName, aidlName()), kind = AidlTypeKind.INTERFACE)
 
 internal fun AnnotatedInterface.uiAdapterAidlWrapper(): Type {
-    if (!inheritsSandboxedUiAdapter) {
+    if (!inheritsUiAdapter) {
         throw IllegalArgumentException(
             "Cannot get UI adapter AIDL wrapper type of non-UI interface"
         )

@@ -18,8 +18,8 @@ package androidx.compose.ui.spatial
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.DelegatableNode
+import androidx.compose.ui.node.DelegatableNode.RegistrationHandle
 import androidx.compose.ui.node.LayoutNode
-import kotlinx.coroutines.DisposableHandle
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -60,21 +60,21 @@ class ThrottledCallbacksTest {
         assertEquals(1, b)
         assertEquals(1, c)
 
-        hb.dispose()
+        hb.unregister()
         fire(1)
 
         assertEquals(2, a)
         assertEquals(1, b)
         assertEquals(2, c)
 
-        ha.dispose()
+        ha.unregister()
         fire(1)
 
         assertEquals(2, a)
         assertEquals(1, b)
         assertEquals(3, c)
 
-        hc.dispose()
+        hc.unregister()
         fire(1)
 
         assertEquals(2, a)
@@ -216,16 +216,16 @@ class ThrottledCallbacksTest {
     }
 
     private fun ThrottledCallbacks.fire(id: Int) {
-        fire(id, 0, 0, currentTime)
+        fireOnUpdatedRect(id, 0, 0, currentTime)
     }
 
     private fun ThrottledCallbacks.register(
         id: Int,
         throttleMs: Long,
         debounceMs: Long,
-        callback: (RectInfo) -> Unit
-    ): DisposableHandle {
-        return register(id, throttleMs, debounceMs, fakeNode(), callback)
+        callback: (RelativeLayoutBounds) -> Unit
+    ): RegistrationHandle {
+        return registerOnRectChanged(id, throttleMs, debounceMs, fakeNode(), callback)
     }
 
     private inline fun test(block: ThrottledCallbacks.() -> Unit) {

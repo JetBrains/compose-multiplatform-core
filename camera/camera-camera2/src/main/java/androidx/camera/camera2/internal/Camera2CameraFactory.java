@@ -20,8 +20,6 @@ import static androidx.camera.camera2.internal.CameraIdUtil.isBackwardCompatible
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
 import androidx.camera.camera2.internal.concurrent.Camera2CameraCoordinator;
@@ -34,6 +32,9 @@ import androidx.camera.core.impl.CameraFactory;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.CameraStateRegistry;
 import androidx.camera.core.impl.CameraThreadConfig;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,8 +50,7 @@ public final class Camera2CameraFactory implements CameraFactory {
     private static final String TAG = "Camera2CameraFactory";
     private static final int DEFAULT_ALLOWED_CONCURRENT_OPEN_CAMERAS = 1;
 
-    @NonNull
-    private final Context mContext;
+    private final @NonNull Context mContext;
 
     private final CameraCoordinator mCameraCoordinator;
     private final CameraThreadConfig mThreadConfig;
@@ -82,8 +82,8 @@ public final class Camera2CameraFactory implements CameraFactory {
     }
 
     @Override
-    @NonNull
-    public CameraInternal getCamera(@NonNull String cameraId) throws CameraUnavailableException {
+    public @NonNull CameraInternal getCamera(@NonNull String cameraId)
+            throws CameraUnavailableException {
         if (!mAvailableCameraIds.contains(cameraId)) {
             throw new IllegalArgumentException(
                     "The given camera id is not on the available camera id list.");
@@ -114,21 +114,18 @@ public final class Camera2CameraFactory implements CameraFactory {
         }
     }
     @Override
-    @NonNull
-    public Set<String> getAvailableCameraIds() {
+    public @NonNull Set<String> getAvailableCameraIds() {
         // Use a LinkedHashSet to preserve order
         return new LinkedHashSet<>(mAvailableCameraIds);
     }
 
-    @NonNull
     @Override
-    public CameraCoordinator getCameraCoordinator() {
+    public @NonNull CameraCoordinator getCameraCoordinator() {
         return mCameraCoordinator;
     }
 
-    @NonNull
     @Override
-    public CameraManagerCompat getCameraManager() {
+    public @NonNull CameraManagerCompat getCameraManager() {
         return mCameraManager;
     }
 

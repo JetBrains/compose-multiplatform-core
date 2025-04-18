@@ -21,17 +21,17 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("androidx.benchmark")
 }
 
 ext {
-    fontDir = project(':noto-emoji-compat-font').projectDir
+    fontDir = project(":noto-emoji-compat-font").projectDir
 }
 
 android {
@@ -58,13 +58,13 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
-    androidTestImplementation project(':internal-testutils-runtime')
+    androidTestImplementation(project(":internal-testutils-runtime"))
     androidTestImplementation(libs.kotlinStdlib)
 }
 
 androidx {
     name = "Emoji2 Benchmarks"
-    publish = Publish.NONE
+    type = SoftwareType.BENCHMARK
     inceptionYear = "2021"
     description = "Emoji2 Benchmarks"
 }

@@ -18,12 +18,13 @@ package androidx.camera.core.impl;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraUnavailableException;
 import androidx.camera.core.InitializationException;
 import androidx.camera.core.concurrent.CameraCoordinator;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Set;
 
@@ -63,24 +64,21 @@ public interface CameraFactory {
      * @throws IllegalArgumentException   if the given camera id is not on the available
      *                                    camera id list.
      */
-    @NonNull
-    CameraInternal getCamera(@NonNull String cameraId) throws CameraUnavailableException;
+    @NonNull CameraInternal getCamera(@NonNull String cameraId) throws CameraUnavailableException;
 
     /**
      * Gets the ids of all available cameras.
      *
      * @return the list of available cameras
      */
-    @NonNull
-    Set<String> getAvailableCameraIds();
+    @NonNull Set<String> getAvailableCameraIds();
 
     /**
      * Gets the {@link CameraCoordinator}.
      *
      * @return the instance of {@link CameraCoordinator}.
      */
-    @NonNull
-    CameraCoordinator getCameraCoordinator();
+    @NonNull CameraCoordinator getCameraCoordinator();
 
     /**
      * Gets the camera manager instance that is used to access the camera API.
@@ -89,6 +87,5 @@ public interface CameraFactory {
      * is CameraManagerCompat in camera2 implementation, it could be some other type in
      * other implementation.
      */
-    @Nullable
-    Object getCameraManager();
+    @Nullable Object getCameraManager();
 }

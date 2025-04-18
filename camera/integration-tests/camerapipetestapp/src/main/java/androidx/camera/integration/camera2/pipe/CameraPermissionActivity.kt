@@ -23,6 +23,7 @@ import android.os.Trace
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
@@ -73,7 +74,7 @@ fun configureFullScreenCameraWindow(activity: Activity) {
  * Utility class for handling simplified permission request/responses for the CameraPipe Sample
  * Apps.
  */
-open class CameraPermissionActivity : Activity() {
+open class CameraPermissionActivity : AppCompatActivity() {
     private var isStarted = true
     private var lastPermissionRequestNumber = 0
     private var permissionsGrantedCallback: (() -> Unit)? = null

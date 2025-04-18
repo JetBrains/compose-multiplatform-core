@@ -19,7 +19,10 @@ package androidx.camera.camera2.pipe.testing
 import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
+import android.hardware.camera2.params.SessionConfiguration.SESSION_HIGH_SPEED
+import android.hardware.camera2.params.SessionConfiguration.SESSION_REGULAR
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.CameraGraph.OperatingMode
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.CameraStream
@@ -71,6 +74,7 @@ class TestUseCaseCamera(
             threads,
             cameraPipe,
             NoOpInactiveSurfaceCloser,
+            SessionConfigAdapter(useCases = useCases),
         ),
 ) : UseCaseCamera {
     val cameraMetadata =
@@ -94,6 +98,13 @@ class TestUseCaseCamera(
         val requestListener = ComboRequestListener()
         val cameraGraphConfig =
             createCameraGraphConfig(
+                sessionConfigAdapter.getValidSessionConfigOrNull()?.let { sessionConfig ->
+                    when (sessionConfig.sessionType) {
+                        SESSION_REGULAR -> OperatingMode.NORMAL
+                        SESSION_HIGH_SPEED -> OperatingMode.HIGH_SPEED
+                        else -> OperatingMode.custom(sessionConfig.sessionType)
+                    }
+                } ?: OperatingMode.NORMAL,
                 sessionConfigAdapter,
                 streamConfigMap,
                 callbackMap,
@@ -102,6 +113,7 @@ class TestUseCaseCamera(
                 cameraQuirks,
                 ZslControlNoOpImpl(),
                 NoOpTemplateParamsOverride,
+                cameraMetadata,
             )
         val cameraGraph = cameraPipe.create(cameraGraphConfig)
 
@@ -151,6 +163,7 @@ class TestUseCaseCamera(
                         templateParamsOverride = NoOpTemplateParamsOverride,
                     ),
                 useCaseGraphConfig = useCaseCameraGraphConfig,
+                useCaseSurfaceManager = useCaseSurfaceManager,
                 threads = threads,
             )
             .apply {

@@ -17,7 +17,6 @@
 package androidx.wear.compose.material
 
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.AbsoluteCutCornerShape
@@ -30,10 +29,11 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
+import androidx.test.filters.SdkSuppress
 import org.junit.Rule
 import org.junit.Test
 
-@RequiresApi(Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 class HorizontalPageIndicatorTest {
     @get:Rule val rule = createComposeRule()
 

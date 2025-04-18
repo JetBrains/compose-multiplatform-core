@@ -24,11 +24,11 @@ import android.content.pm.PackageInfo
 import android.health.connect.HealthConnectManager
 import android.os.Build
 import android.os.UserManager
-import androidx.annotation.RequiresApi
 import androidx.health.connect.client.impl.HealthConnectClientImpl
 import androidx.health.platform.client.HealthDataService
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -154,7 +154,7 @@ class HealthConnectClientTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun healthConnectManagerNonNull_available() {
         val shadowContext: ShadowContextImpl = Shadow.extract((context as Application).baseContext)
         shadowContext.setSystemService(
@@ -223,7 +223,7 @@ class HealthConnectClientTest {
 
     @Test
     @Config(minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun getHealthConnectManageDataAction_platformSupported() {
         val shadowContext: ShadowContextImpl = Shadow.extract((context as Application).baseContext)
         shadowContext.setSystemService(

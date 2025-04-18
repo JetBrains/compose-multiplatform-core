@@ -24,6 +24,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Logger
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.testing.impl.CameraAvailabilityUtil.assumeDeviceHasFrontCamera
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
@@ -106,6 +107,8 @@ class EffectsFragmentDeviceTest(
 
     @Test
     fun toggleCameraLatencyTest() {
+        assumeDeviceHasFrontCamera()
+
         // Arrange: use COMPATIBLE mode to get an accurate measurement.
         instrumentation.runOnMainSync {
             fragment.previewView.implementationMode = PreviewView.ImplementationMode.COMPATIBLE

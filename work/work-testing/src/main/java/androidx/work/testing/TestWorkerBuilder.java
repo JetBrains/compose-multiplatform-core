@@ -18,11 +18,12 @@ package androidx.work.testing;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.work.WorkRequest;
 import androidx.work.Worker;
 import androidx.work.impl.model.WorkSpec;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,9 +55,8 @@ public class TestWorkerBuilder<W extends Worker> extends TestListenableWorkerBui
      * @param executor    The {@link Executor}
      * @return The new instance of a {@link TestWorkerBuilder}
      */
-    @NonNull
     @SuppressWarnings("unchecked")
-    public static TestWorkerBuilder<? extends Worker> from(
+    public static @NonNull TestWorkerBuilder<? extends Worker> from(
             @NonNull Context context,
             @NonNull WorkRequest workRequest,
             @NonNull Executor executor) {
@@ -91,8 +91,7 @@ public class TestWorkerBuilder<W extends Worker> extends TestListenableWorkerBui
      * @param executor    The {@link Executor}
      * @return The new instance of a {@link TestWorkerBuilder}
      */
-    @NonNull
-    public static <W extends Worker> TestWorkerBuilder<W> from(
+    public static <W extends Worker> @NonNull TestWorkerBuilder<W> from(
             @NonNull Context context,
             @NonNull Class<W> workerClass,
             @NonNull Executor executor) {

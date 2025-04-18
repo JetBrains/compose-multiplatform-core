@@ -23,8 +23,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.core.content.IntentCompat;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class provides APIs for determining how an app has been launched.

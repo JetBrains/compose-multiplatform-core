@@ -115,16 +115,26 @@ class BenchmarkDataTest {
 
     @Test
     fun osCodenameAbbreviated() {
+        // tests the abbreviated codename displayed in json for (together with SDK_INT) identifying
+        // the build, e.g. in CI OS version tagging
         BenchmarkData.Context().osCodenameAbbreviated.run {
-            assertEquals(1, length, "expected 1 char codename, observed $this")
-            assertContains('A'..'Z', this[0])
-            if (Build.VERSION.SDK_INT != 30) {
-                // check we're not incorrectly parsing R from "REL"
-                assertNotEquals("R", this)
-            }
-            if (Build.VERSION.SDK_INT !in listOf(23, 35)) {
-                // check we're not incorrectly parsing M from "MAIN"
-                assertNotEquals("M", this)
+            if (Build.VERSION.SDK_INT >= 35 && Build.VERSION.CODENAME == "REL") {
+                // Newer REL-eased versions of the platform don't have a discoverable codename
+                // letter. Rather than trying to find one, we just display "REL"
+                assertEquals("REL", this)
+            } else {
+                // single letter case
+                assertEquals(1, length, "expected 1 char codename, observed $this")
+                assertContains('A'..'Z', this[0])
+
+                if (Build.VERSION.SDK_INT != 30) {
+                    // check we're not incorrectly parsing R from "REL"
+                    assertNotEquals("R", this)
+                }
+                if (Build.VERSION.SDK_INT !in listOf(23)) {
+                    // check we're not incorrectly parsing M from "MAIN"
+                    assertNotEquals("M", this)
+                }
             }
         }
     }

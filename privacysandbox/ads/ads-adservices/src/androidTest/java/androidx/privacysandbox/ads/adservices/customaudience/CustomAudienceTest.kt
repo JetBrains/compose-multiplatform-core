@@ -24,6 +24,7 @@ import androidx.privacysandbox.ads.adservices.common.AdTechIdentifier
 import androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures
 import androidx.privacysandbox.ads.adservices.common.FrequencyCapFilters
 import androidx.privacysandbox.ads.adservices.common.KeyedFrequencyCap
+import androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.Companion.FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
@@ -33,7 +34,7 @@ import java.time.Instant
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalFeatures.Ext8OptIn::class)
+@OptIn(ExperimentalFeatures.Ext8OptIn::class, ExperimentalFeatures.Ext14OptIn::class)
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 31)
@@ -48,6 +49,7 @@ class CustomAudienceTest {
     private val trustedBiddingSignals: TrustedBiddingData = TrustedBiddingData(uri, keys)
     private val adCounterKeys: Set<Int> = setOf<Int>(1, 2, 3)
     private val interval = Duration.ofSeconds(1)
+    private val priority: Double = 2.0
     private val adFilters: AdFilters =
         AdFilters(
             FrequencyCapFilters(
@@ -57,9 +59,9 @@ class CustomAudienceTest {
     private val ads: List<AdData> = listOf(AdData(uri, "metadata", adCounterKeys, adFilters))
 
     @Test
-    fun testToStringAndEquals() {
+    fun testToStringAndEqualsWithoutAuctionServerRequestFlagAndPriority() {
         val result =
-            "CustomAudience: buyer=abc.com, name=abc, activationTime=$activationTime, " +
+            "CustomAudience: buyer=1234, name=abc, activationTime=$activationTime, " +
                 "expirationTime=$expirationTime, dailyUpdateUri=abc.com, " +
                 "userBiddingSignals=AdSelectionSignals: signals, " +
                 "trustedBiddingSignals=TrustedBiddingData: trustedBiddingUri=abc.com " +
@@ -70,7 +72,8 @@ class CustomAudienceTest {
                 "keyedFrequencyCapsForImpressionEvents=[], " +
                 "keyedFrequencyCapsForViewEvents=" +
                 "[KeyedFrequencyCap: adCounterKey=1, maxCount=3, interval=$interval], " +
-                "keyedFrequencyCapsForClickEvents=[], adRenderId=null]"
+                "keyedFrequencyCapsForClickEvents=[], adRenderId=null], " +
+                "auctionServerRequestFlags=0, priority=0.0"
 
         val customAudience =
             CustomAudience(
@@ -101,5 +104,71 @@ class CustomAudienceTest {
         // Reset values of Builder.
         customAudienceBuilder2.setName("newName")
         Truth.assertThat(customAudience == customAudienceBuilder2.build()).isFalse()
+    }
+
+    @Test
+    fun testBuilderPriorityAndAuctionServerFlagSetters() {
+        val customAudience =
+            CustomAudience.Builder(buyer, name, uri, uri, ads)
+                .setActivationTime(activationTime)
+                .setExpirationTime(expirationTime)
+                .setUserBiddingSignals(userBiddingSignals)
+                .setTrustedBiddingData(trustedBiddingSignals)
+                .setPriority(priority)
+                .setAuctionServerRequestFlags(FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS)
+                .build()
+
+        Truth.assertWithMessage("Priority").that(customAudience.priority).isEqualTo(priority)
+        Truth.assertWithMessage("Auction server request flag")
+            .that(customAudience.auctionServerRequestFlags)
+            .isEqualTo(FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS)
+    }
+
+    @Test
+    fun testToStringWithPriorityAndAuctionServerFlag() {
+        val result =
+            "CustomAudience: buyer=1234, name=abc, activationTime=$activationTime, " +
+                "expirationTime=$expirationTime, dailyUpdateUri=abc.com, " +
+                "userBiddingSignals=AdSelectionSignals: signals, " +
+                "trustedBiddingSignals=TrustedBiddingData: trustedBiddingUri=abc.com " +
+                "trustedBiddingKeys=[key1, key2], biddingLogicUri=abc.com, " +
+                "ads=[AdData: renderUri=abc.com, metadata='metadata', adCounterKeys=[1, 2, 3], " +
+                "adFilters=AdFilters: frequencyCapFilters=FrequencyCapFilters: " +
+                "keyedFrequencyCapsForWinEvents=[], " +
+                "keyedFrequencyCapsForImpressionEvents=[], " +
+                "keyedFrequencyCapsForViewEvents=" +
+                "[KeyedFrequencyCap: adCounterKey=1, maxCount=3, interval=$interval], " +
+                "keyedFrequencyCapsForClickEvents=[], adRenderId=null], " +
+                "auctionServerRequestFlags=$FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS, priority=$priority"
+
+        val customAudience =
+            CustomAudience(
+                buyer,
+                name,
+                uri,
+                uri,
+                ads,
+                activationTime,
+                expirationTime,
+                userBiddingSignals,
+                trustedBiddingSignals,
+                FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS,
+                priority
+            )
+        Truth.assertThat(customAudience.toString()).isEqualTo(result)
+
+        // Verify Builder.
+        val customAudienceBuilder2 =
+            CustomAudience.Builder(buyer, name, uri, uri, ads)
+                .setActivationTime(activationTime)
+                .setExpirationTime(expirationTime)
+                .setUserBiddingSignals(userBiddingSignals)
+                .setTrustedBiddingData(trustedBiddingSignals)
+                .setPriority(priority)
+                .setAuctionServerRequestFlags(FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS)
+        Truth.assertThat(customAudienceBuilder2.build().toString()).isEqualTo(result)
+
+        // Test equality.
+        Truth.assertThat(customAudience == customAudienceBuilder2.build()).isTrue()
     }
 }

@@ -21,11 +21,12 @@ import static androidx.work.impl.model.WorkSpecKt.generationalId;
 import android.content.Context;
 import android.content.Intent;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.Logger;
 import androidx.work.impl.Scheduler;
 import androidx.work.impl.model.WorkSpec;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A {@link Scheduler} that schedules work using {@link android.app.AlarmManager}.
@@ -43,7 +44,7 @@ public class SystemAlarmScheduler implements Scheduler {
     }
 
     @Override
-    public void schedule(@NonNull WorkSpec... workSpecs) {
+    public void schedule(WorkSpec @NonNull ... workSpecs) {
         for (WorkSpec workSpec : workSpecs) {
             scheduleWorkSpec(workSpec);
         }

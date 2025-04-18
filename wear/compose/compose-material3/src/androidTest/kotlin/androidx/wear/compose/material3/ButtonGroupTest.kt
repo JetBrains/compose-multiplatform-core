@@ -16,12 +16,10 @@
 
 package androidx.wear.compose.material3
 
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertWidthIsEqualTo
@@ -38,13 +36,10 @@ class ButtonGroupTest {
     @Test
     fun supports_testtag() {
         rule.setContentWithTheme {
-            val interactionSource = remember { MutableInteractionSource() }
             ButtonGroup(modifier = Modifier.testTag(TEST_TAG)) {
-                buttonGroupItem(interactionSource) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                )
             }
         }
 
@@ -53,76 +48,94 @@ class ButtonGroupTest {
 
     @Test
     fun two_items_equally_sized_by_default() =
-        doTest(
+        verifyWidths(
             2,
             expectedWidths = { availableSpace -> arrayOf(availableSpace / 2, availableSpace / 2) }
         )
 
     @Test
     fun two_items_one_double_size() =
-        doTest(
+        verifyWidths(
             2,
             expectedWidths = { availableSpace ->
                 arrayOf(availableSpace / 3, availableSpace / 3 * 2)
             },
-            minWidthsAndWeights = arrayOf(50.dp to 1f, 50.dp to 2f)
+            minWidthAndWeights = arrayOf(50.dp to 1f, 50.dp to 2f)
         )
 
     @Test
     fun respects_min_width() =
-        doTest(
+        verifyWidths(
             2,
             expectedWidths = { availableSpace -> arrayOf(30.dp, availableSpace - 30.dp) },
             size = 100.dp,
-            minWidthsAndWeights = arrayOf(30.dp to 1f, 30.dp to 10f)
+            minWidthAndWeights = arrayOf(30.dp to 1f, 30.dp to 10f)
         )
 
     @Test
     fun three_equal_buttons() =
-        doTest(3, expectedWidths = { availableSpace -> Array(3) { availableSpace / 3 } })
+        verifyWidths(3, expectedWidths = { availableSpace -> Array(3) { availableSpace / 3 } })
 
     @Test
     fun three_buttons_one_two_one() =
-        doTest(
+        verifyWidths(
             3,
             expectedWidths = { availableSpace ->
                 arrayOf(availableSpace / 4, availableSpace / 2, availableSpace / 4)
             },
-            minWidthsAndWeights = arrayOf(50.dp to 1f, 50.dp to 2f, 50.dp to 1f)
+            minWidthAndWeights = arrayOf(50.dp to 1f, 50.dp to 2f, 50.dp to 1f)
         )
 
-    private fun doTest(
+    @Test
+    fun modifier_order_ignored() {
+        val size = 300.dp
+        rule.setContentWithTheme {
+            ButtonGroup(
+                modifier = Modifier.size(size),
+                contentPadding = PaddingValues(0.dp),
+                spacing = 0.dp
+            ) {
+                Box(Modifier.weight(1f).minWidth(60.dp).testTag("${TEST_TAG}0"))
+                Box(Modifier.minWidth(60.dp).weight(1f).testTag("${TEST_TAG}1"))
+                Box(Modifier.weight(2f).minWidth(60.dp).testTag("${TEST_TAG}2"))
+                Box(Modifier.minWidth(60.dp).weight(2f).testTag("${TEST_TAG}3"))
+            }
+        }
+
+        // Items 0 & 1 should be 60.dp, 2 & 3 should be 90.dp
+        listOf(60.dp, 60.dp, 90.dp, 90.dp).forEachIndexed { index, dp ->
+            rule.onNodeWithTag(TEST_TAG + index.toString()).assertWidthIsEqualTo(dp)
+        }
+    }
+
+    private fun verifyWidths(
         numItems: Int,
         expectedWidths: (Dp) -> Array<Dp>,
         size: Dp = 300.dp,
         spacing: Dp = 10.dp,
-        minWidthsAndWeights: Array<Pair<Dp, Float>> = Array(numItems) { 48.dp to 1f },
+        minWidthAndWeights: Array<Pair<Dp, Float>> = Array(numItems) { 48.dp to 1f },
     ) {
         val horizontalPadding = 10.dp
         val actualExpectedWidths =
             expectedWidths(size - horizontalPadding * 2 - spacing * (numItems - 1))
 
         require(numItems == actualExpectedWidths.size)
-        require(numItems == minWidthsAndWeights.size)
+        require(numItems == minWidthAndWeights.size)
 
         rule.setContentWithTheme {
-            val interactionSources = remember { Array(numItems) { MutableInteractionSource() } }
             ButtonGroup(
                 modifier = Modifier.size(size),
                 contentPadding = PaddingValues(horizontal = horizontalPadding),
                 spacing = spacing
             ) {
                 repeat(numItems) { ix ->
-                    buttonGroupItem(
-                        interactionSources[ix],
-                        minWidth = minWidthsAndWeights[ix].first,
-                        weight = minWidthsAndWeights[ix].second
-                    ) {
-                        Box(
-                            modifier =
-                                Modifier.testTag(TEST_TAG + (ix + 1).toString()).fillMaxSize(),
-                        )
-                    }
+                    Box(
+                        modifier =
+                            Modifier.testTag(TEST_TAG + (ix + 1).toString())
+                                .fillMaxSize()
+                                .weight(minWidthAndWeights[ix].second)
+                                .minWidth(minWidthAndWeights[ix].first)
+                    )
                 }
             }
         }

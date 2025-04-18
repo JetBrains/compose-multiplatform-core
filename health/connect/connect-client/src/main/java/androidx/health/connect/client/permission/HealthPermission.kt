@@ -18,6 +18,8 @@ package androidx.health.connect.client.permission
 import androidx.annotation.RestrictTo
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures
+import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
+import androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.BasalBodyTemperatureRecord
 import androidx.health.connect.client.records.BasalMetabolicRateRecord
@@ -41,6 +43,7 @@ import androidx.health.connect.client.records.IntermenstrualBleedingRecord
 import androidx.health.connect.client.records.LeanBodyMassRecord
 import androidx.health.connect.client.records.MenstruationFlowRecord
 import androidx.health.connect.client.records.MenstruationPeriodRecord
+import androidx.health.connect.client.records.MindfulnessSessionRecord
 import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.OvulationTestRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
@@ -184,6 +187,198 @@ public class HealthPermission internal constructor() {
         const val PERMISSION_READ_HEALTH_DATA_HISTORY =
             PERMISSION_PREFIX + "READ_HEALTH_DATA_HISTORY"
 
+        /**
+         * Permission to write medical data records. This permission allows for the write of medical
+         * data of any type. Note that read permissions are specified per-type.
+         *
+         * This feature is dependent on the version of HealthConnect installed on the device. To
+         * check if it's available call [HealthConnectFeatures.getFeatureStatus] and pass
+         * [HealthConnectFeatures.FEATURE_PERSONAL_HEALTH_RECORD] as an argument. If not available,
+         * this permission will not be granted if requested.
+         *
+         * @sample androidx.health.connect.client.samples.RequestMedicalPermissions
+         */
+        @ExperimentalPersonalHealthRecordApi
+        const val PERMISSION_WRITE_MEDICAL_DATA = PERMISSION_PREFIX + "WRITE_MEDICAL_DATA"
+
+        /**
+         * Allows an application to read the user's data about allergies and intolerances.
+         *
+         * This feature is dependent on the version of HealthConnect installed on the device. To
+         * check if it's available call [HealthConnectFeatures.getFeatureStatus] and pass
+         * [HealthConnectFeatures.FEATURE_PERSONAL_HEALTH_RECORD] as an argument. If not available,
+         * this permission will not be granted if requested.
+         *
+         * @sample androidx.health.connect.client.samples.RequestMedicalPermissions
+         */
+        @ExperimentalPersonalHealthRecordApi
+        const val PERMISSION_READ_MEDICAL_DATA_ALLERGIES_INTOLERANCES =
+            PERMISSION_PREFIX + "READ_MEDICAL_DATA_ALLERGIES_INTOLERANCES"
+
+        /**
+         * Allows an application to read the user's data about medical conditions.
+         *
+         * This feature is dependent on the version of HealthConnect installed on the device. To
+         * check if it's available call [HealthConnectFeatures.getFeatureStatus] and pass
+         * [HealthConnectFeatures.FEATURE_PERSONAL_HEALTH_RECORD] as an argument. If not available,
+         * this permission will not be granted if requested.
+         *
+         * @sample androidx.health.connect.client.samples.RequestMedicalPermissions
+         */
+        @ExperimentalPersonalHealthRecordApi
+        const val PERMISSION_READ_MEDICAL_DATA_CONDITIONS =
+            PERMISSION_PREFIX + "READ_MEDICAL_DATA_CONDITIONS"
+
+        /**
+         * Allows an application to read the user's laboratory result data.
+         *
+         * This feature is dependent on the version of HealthConnect installed on the device. To
+         * check if it's available call [HealthConnectFeatures.getFeatureStatus] and pass
+         * [HealthConnectFeatures.FEATURE_PERSONAL_HEALTH_RECORD] as an argument. If not available,
+         * this permission will not be granted if requested.
+         *
+         * @sample androidx.health.connect.client.samples.RequestMedicalPermissions
+         */
+        @ExperimentalPersonalHealthRecordApi
+        const val PERMISSION_READ_MEDICAL_DATA_LABORATORY_RESULTS =
+            PERMISSION_PREFIX + "READ_MEDICAL_DATA_LABORATORY_RESULTS"
+
+        /**
+         * Allows an application to read the user's medication data.
+         *
+         * This feature is dependent on the version of HealthConnect installed on the device. To
+         * check if it's available call [HealthConnectFeatures.getFeatureStatus] and pass
+         * [HealthConnectFeatures.FEATURE_PERSONAL_HEALTH_RECORD] as an argument. If not available,
+         * this permission will not be granted if requested.
+         *
+         * @sample androidx.health.connect.client.samples.RequestMedicalPermissions
+         */
+        @ExperimentalPersonalHealthRecordApi
+        const val PERMISSION_READ_MEDICAL_DATA_MEDICATIONS =
+            PERMISSION_PREFIX + "READ_MEDICAL_DATA_MEDICATIONS"
+
+        /**
+         * Allows an application to read the user's personal details.
+         *
+         * This is demographic information such as name, date of birth, contact details like address
+         * or telephone number and so on. For more examples see the FHIR Patient resource at
+         * https://www.hl7.org/fhir/patient.html.
+         *
+         * This feature is dependent on the version of HealthConnect installed on the device. To
+         * check if it's available call [HealthConnectFeatures.getFeatureStatus] and pass
+         * [HealthConnectFeatures.FEATURE_PERSONAL_HEALTH_RECORD] as an argument. If not available,
+         * this permission will not be granted if requested.
+         *
+         * @sample androidx.health.connect.client.samples.RequestMedicalPermissions
+         */
+        @ExperimentalPersonalHealthRecordApi
+        const val PERMISSION_READ_MEDICAL_DATA_PERSONAL_DETAILS =
+            PERMISSION_PREFIX + "READ_MEDICAL_DATA_PERSONAL_DETAILS"
+
+        /**
+         * Allows an application to read the user's data about the practitioners who have interacted
+         * with them in their medical record. This is the information about the clinicians (doctors,
+         * nurses, etc) but also other practitioners (masseurs, physiotherapists, etc) who have been
+         * involved with the patient.
+         *
+         * This feature is dependent on the version of HealthConnect installed on the device. To
+         * check if it's available call [HealthConnectFeatures.getFeatureStatus] and pass
+         * [HealthConnectFeatures.FEATURE_PERSONAL_HEALTH_RECORD] as an argument. If not available,
+         * this permission will not be granted if requested.
+         *
+         * @sample androidx.health.connect.client.samples.RequestMedicalPermissions
+         */
+        @ExperimentalPersonalHealthRecordApi
+        const val PERMISSION_READ_MEDICAL_DATA_PRACTITIONER_DETAILS =
+            PERMISSION_PREFIX + "READ_MEDICAL_DATA_PRACTITIONER_DETAILS"
+
+        /**
+         * Allows an application to read the user's pregnancy data.
+         *
+         * This feature is dependent on the version of HealthConnect installed on the device. To
+         * check if it's available call [HealthConnectFeatures.getFeatureStatus] and pass
+         * [HealthConnectFeatures.FEATURE_PERSONAL_HEALTH_RECORD] as an argument. If not available,
+         * this permission will not be granted if requested.
+         *
+         * @sample androidx.health.connect.client.samples.RequestMedicalPermissions
+         */
+        @ExperimentalPersonalHealthRecordApi
+        const val PERMISSION_READ_MEDICAL_DATA_PREGNANCY =
+            PERMISSION_PREFIX + "READ_MEDICAL_DATA_PREGNANCY"
+
+        /**
+         * Allows an application to read the user's data about medical procedures.
+         *
+         * This feature is dependent on the version of HealthConnect installed on the device. To
+         * check if it's available call [HealthConnectFeatures.getFeatureStatus] and pass
+         * [HealthConnectFeatures.FEATURE_PERSONAL_HEALTH_RECORD] as an argument. If not available,
+         * this permission will not be granted if requested.
+         *
+         * @sample androidx.health.connect.client.samples.RequestMedicalPermissions
+         */
+        @ExperimentalPersonalHealthRecordApi
+        const val PERMISSION_READ_MEDICAL_DATA_PROCEDURES =
+            PERMISSION_PREFIX + "READ_MEDICAL_DATA_PROCEDURES"
+
+        /**
+         * Allows an application to read the user's social history data.
+         *
+         * This feature is dependent on the version of HealthConnect installed on the device. To
+         * check if it's available call [HealthConnectFeatures.getFeatureStatus] and pass
+         * [HealthConnectFeatures.FEATURE_PERSONAL_HEALTH_RECORD] as an argument. If not available,
+         * this permission will not be granted if requested.
+         *
+         * @sample androidx.health.connect.client.samples.RequestMedicalPermissions
+         */
+        @ExperimentalPersonalHealthRecordApi
+        const val PERMISSION_READ_MEDICAL_DATA_SOCIAL_HISTORY =
+            PERMISSION_PREFIX + "READ_MEDICAL_DATA_SOCIAL_HISTORY"
+
+        /**
+         * Allows an application to read the user's data about immunizations and vaccinations.
+         *
+         * This feature is dependent on the version of HealthConnect installed on the device. To
+         * check if it's available call [HealthConnectFeatures.getFeatureStatus] and pass
+         * [HealthConnectFeatures.FEATURE_PERSONAL_HEALTH_RECORD] as an argument. If not available,
+         * this permission will not be granted if requested.
+         *
+         * @sample androidx.health.connect.client.samples.RequestMedicalPermissions
+         */
+        @ExperimentalPersonalHealthRecordApi
+        const val PERMISSION_READ_MEDICAL_DATA_VACCINES =
+            PERMISSION_PREFIX + "READ_MEDICAL_DATA_VACCINES"
+
+        /**
+         * Allows an application to read the user's information about their encounters with health
+         * care practitioners, including things like location, time of appointment, and name of
+         * organization the visit was with. Despite the name visit it covers remote encounters such
+         * as telephone or videoconference appointments.
+         *
+         * This feature is dependent on the version of HealthConnect installed on the device. To
+         * check if it's available call [HealthConnectFeatures.getFeatureStatus] and pass
+         * [HealthConnectFeatures.FEATURE_PERSONAL_HEALTH_RECORD] as an argument. If not available,
+         * this permission will not be granted if requested.
+         *
+         * @sample androidx.health.connect.client.samples.RequestMedicalPermissions
+         */
+        @ExperimentalPersonalHealthRecordApi
+        const val PERMISSION_READ_MEDICAL_DATA_VISITS =
+            PERMISSION_PREFIX + "READ_MEDICAL_DATA_VISITS"
+
+        /**
+         * Allows an application to read the user's vital signs data.
+         *
+         * This feature is dependent on the version of HealthConnect installed on the device. To
+         * check if it's available call [HealthConnectFeatures.getFeatureStatus] and pass
+         * [HealthConnectFeatures.FEATURE_PERSONAL_HEALTH_RECORD] as an argument. If not available,
+         * this permission will not be granted if requested.
+         *
+         * @sample androidx.health.connect.client.samples.RequestMedicalPermissions
+         */
+        @ExperimentalPersonalHealthRecordApi
+        const val PERMISSION_READ_MEDICAL_DATA_VITAL_SIGNS =
+            PERMISSION_PREFIX + "READ_MEDICAL_DATA_VITAL_SIGNS"
+
         // Read permissions for ACTIVITY.
         internal const val READ_ACTIVE_CALORIES_BURNED =
             PERMISSION_PREFIX + "READ_ACTIVE_CALORIES_BURNED"
@@ -219,6 +414,10 @@ public class HealthPermission internal constructor() {
         internal const val READ_MENSTRUATION = PERMISSION_PREFIX + "READ_MENSTRUATION"
         internal const val READ_OVULATION_TEST = PERMISSION_PREFIX + "READ_OVULATION_TEST"
         internal const val READ_SEXUAL_ACTIVITY = PERMISSION_PREFIX + "READ_SEXUAL_ACTIVITY"
+
+        // Read permissions for WELLNESS
+        @ExperimentalMindfulnessSessionApi
+        internal const val READ_MINDFULNESS_SESSION = PERMISSION_PREFIX + "READ_MINDFULNESS_SESSION"
 
         // Read permissions for NUTRITION.
         internal const val READ_HYDRATION = PERMISSION_PREFIX + "READ_HYDRATION"
@@ -281,6 +480,11 @@ public class HealthPermission internal constructor() {
         internal const val WRITE_HYDRATION = PERMISSION_PREFIX + "WRITE_HYDRATION"
         internal const val WRITE_NUTRITION = PERMISSION_PREFIX + "WRITE_NUTRITION"
 
+        // Write permissions for WELLNESS
+        @ExperimentalMindfulnessSessionApi
+        internal const val WRITE_MINDFULNESS_SESSION =
+            PERMISSION_PREFIX + "WRITE_MINDFULNESS_SESSION"
+
         // Write permissions for SLEEP.
         internal const val WRITE_SLEEP = PERMISSION_PREFIX + "WRITE_SLEEP"
 
@@ -301,6 +505,7 @@ public class HealthPermission internal constructor() {
         internal const val READ_PERMISSION_PREFIX = PERMISSION_PREFIX + "READ_"
         internal const val WRITE_PERMISSION_PREFIX = PERMISSION_PREFIX + "WRITE_"
 
+        @OptIn(ExperimentalMindfulnessSessionApi::class)
         internal val RECORD_TYPE_TO_PERMISSION =
             mapOf<KClass<out Record>, String>(
                 ActiveCaloriesBurnedRecord::class to
@@ -343,6 +548,8 @@ public class HealthPermission internal constructor() {
                     READ_MENSTRUATION.substringAfter(READ_PERMISSION_PREFIX),
                 MenstruationPeriodRecord::class to
                     READ_MENSTRUATION.substringAfter(READ_PERMISSION_PREFIX),
+                MindfulnessSessionRecord::class to
+                    READ_MINDFULNESS_SESSION.substringAfter(READ_PERMISSION_PREFIX),
                 NutritionRecord::class to READ_NUTRITION.substringAfter(READ_PERMISSION_PREFIX),
                 OvulationTestRecord::class to
                     READ_OVULATION_TEST.substringAfter(READ_PERMISSION_PREFIX),
@@ -372,6 +579,30 @@ public class HealthPermission internal constructor() {
             )
 
         /**
+         * Exposes all PHR write and read permissions.
+         *
+         * @return A list of permissions as Strings
+         */
+        @OptIn(ExperimentalPersonalHealthRecordApi::class)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @JvmField
+        public val ALL_PERSONAL_HEALTH_RECORD_PERMISSIONS: List<String> = buildList {
+            add(PERMISSION_WRITE_MEDICAL_DATA)
+            add(PERMISSION_READ_MEDICAL_DATA_ALLERGIES_INTOLERANCES)
+            add(PERMISSION_READ_MEDICAL_DATA_CONDITIONS)
+            add(PERMISSION_READ_MEDICAL_DATA_LABORATORY_RESULTS)
+            add(PERMISSION_READ_MEDICAL_DATA_MEDICATIONS)
+            add(PERMISSION_READ_MEDICAL_DATA_PERSONAL_DETAILS)
+            add(PERMISSION_READ_MEDICAL_DATA_PRACTITIONER_DETAILS)
+            add(PERMISSION_READ_MEDICAL_DATA_PREGNANCY)
+            add(PERMISSION_READ_MEDICAL_DATA_PROCEDURES)
+            add(PERMISSION_READ_MEDICAL_DATA_SOCIAL_HISTORY)
+            add(PERMISSION_READ_MEDICAL_DATA_VACCINES)
+            add(PERMISSION_READ_MEDICAL_DATA_VISITS)
+            add(PERMISSION_READ_MEDICAL_DATA_VITAL_SIGNS)
+        }
+
+        /**
          * Exposes all write and read permissions.
          *
          * @return A list of permissions as Strings
@@ -384,8 +615,10 @@ public class HealthPermission internal constructor() {
                     listOf(WRITE_PERMISSION_PREFIX + it.value, READ_PERMISSION_PREFIX + it.value)
                 }
             )
+            addAll(ALL_PERSONAL_HEALTH_RECORD_PERMISSIONS)
             add(PERMISSION_WRITE_EXERCISE_ROUTE)
             add(PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND)
+            add(PERMISSION_READ_HEALTH_DATA_HISTORY)
         }
     }
 }

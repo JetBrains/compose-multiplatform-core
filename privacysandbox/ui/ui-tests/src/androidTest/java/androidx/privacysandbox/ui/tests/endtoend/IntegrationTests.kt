@@ -19,15 +19,20 @@ package androidx.privacysandbox.ui.tests.endtoend
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.os.Binder
+import android.os.Build
 import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.OnLayoutChangeListener
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import androidx.annotation.RequiresApi
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.core.SandboxedSdkViewUiInfo
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
+import androidx.privacysandbox.ui.core.SandboxedUiAdapterSignalOptions
+import androidx.privacysandbox.ui.core.SessionData
 import androidx.privacysandbox.ui.integration.testingutils.TestEventListener
 import androidx.privacysandbox.ui.tests.endtoend.IntegrationTestSetupRule.Companion.INITIAL_HEIGHT
 import androidx.privacysandbox.ui.tests.endtoend.IntegrationTestSetupRule.Companion.INITIAL_WIDTH
@@ -58,6 +63,8 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
     @get:Rule val rule = IntegrationTestSetupRule(invokeBackwardsCompatFlow)
 
     companion object {
+
+        val GEOMETRIES_SET = setOf(SandboxedUiAdapterSignalOptions.GEOMETRY)
 
         @JvmStatic
         @Parameterized.Parameters(name = "invokeBackwardsCompatFlow={0}")
@@ -138,7 +145,11 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
 
     @Test
     fun testOpenSession_fromAdapter() {
-        val adapter = sessionManager.createAdapterAndEstablishSession(viewForSession = null)
+        val adapter =
+            sessionManager.createAdapterAndEstablishSession(
+                viewForSession = null,
+                sessionData = derivesessionData()
+            )
         assertThat(adapter.session).isNotNull()
     }
 
@@ -317,7 +328,7 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
 
     @Test
     fun testSessionObserverSignalOnSettingPadding() {
-        val factory = TestSessionManager.SessionObserverFactoryImpl()
+        val factory = TestSessionManager.SessionObserverFactoryImpl(signalOptions = GEOMETRIES_SET)
         sessionManager.createAdapterAndWaitToBeActive(
             viewForSession = view,
             sessionObserverFactories = listOf(factory)
@@ -327,14 +338,17 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
         val paddingTop = 10
         val paddingRight = 20
         val paddingBottom = 20
-        activityScenario.onActivity {
-            view.setPadding(paddingLeft, paddingTop, paddingRight, paddingBottom)
-        }
+        // Catch the first event to reduce flakiness
+        sessionObserver.assertOnUiContainerChangedSent()
+        val latestUiChange =
+            sessionObserver.runAndRetrieveNextUiChange {
+                activityScenario.onActivity {
+                    view.setPadding(paddingLeft, paddingTop, paddingRight, paddingBottom)
+                }
+            }
+        val latestUiContainerInfo = SandboxedSdkViewUiInfo.fromBundle(latestUiChange)
         val expectedWidth = INITIAL_WIDTH - paddingLeft - paddingRight
         val expectedHeight = INITIAL_HEIGHT - paddingTop - paddingBottom
-        sessionObserver.assertOnUiContainerChangedSent()
-        val latestUiContainerInfo =
-            SandboxedSdkViewUiInfo.fromBundle(sessionObserver.latestUiChange)
         assertThat(latestUiContainerInfo.uiContainerHeight).isEqualTo(expectedHeight)
         assertThat(latestUiContainerInfo.uiContainerWidth).isEqualTo(expectedWidth)
         assertThat(latestUiContainerInfo.onScreenGeometry.height()).isEqualTo(expectedHeight)
@@ -412,7 +426,7 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
         val adapter = sessionManager.createAdapterAndWaitToBeActive(viewForSession = view)
         val factory = TestSessionManager.SessionObserverFactoryImpl()
         adapter.addObserverFactory(factory)
-        factory.assertNoSessionsAreCreated()
+        factory.assertNoSessionObserversAreCreated()
     }
 
     @Test
@@ -428,6 +442,20 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
     }
 
     @Test
+    fun testMultipleFactoriesCanReceiveDifferentEvents() {
+        val factory1 = TestSessionManager.SessionObserverFactoryImpl()
+        val factory2 = TestSessionManager.SessionObserverFactoryImpl(signalOptions = GEOMETRIES_SET)
+        sessionManager.createAdapterAndWaitToBeActive(
+            viewForSession = view,
+            sessionObserverFactories = listOf(factory1, factory2)
+        )
+        val sessionObserver1 = factory1.sessionObservers[0]
+        val sessionObserver2 = factory2.sessionObservers[0]
+        sessionObserver1.assertOnUiContainerChangedNotSent()
+        sessionObserver2.assertOnUiContainerChangedSent()
+    }
+
+    @Test
     fun testAddSessionObserverFactory_SessionObserverContextIsCorrect() {
         val factory = TestSessionManager.SessionObserverFactoryImpl()
         val adapter =
@@ -440,11 +468,13 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
         sessionObserver.assertSessionOpened()
         assertThat(sessionObserver.sessionObserverContext).isNotNull()
         assertThat(sessionObserver.sessionObserverContext?.view).isEqualTo(adapter.session?.view)
+        assertThat(sessionObserver.sessionObserverContext?.supportedSignalOptions)
+            .containsExactly(SandboxedUiAdapterSignalOptions.GEOMETRY)
     }
 
     @Test
     fun testRegisterSessionObserverFactory_OnUiContainerChangedSentWhenSessionOpened() {
-        val factory = TestSessionManager.SessionObserverFactoryImpl()
+        val factory = TestSessionManager.SessionObserverFactoryImpl(signalOptions = GEOMETRIES_SET)
         sessionManager.createAdapterAndWaitToBeActive(
             viewForSession = view,
             sessionObserverFactories = listOf(factory)
@@ -452,6 +482,18 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
         assertThat(factory.sessionObservers.size).isEqualTo(1)
         val sessionObserver = factory.sessionObservers[0]
         sessionObserver.assertOnUiContainerChangedSent()
+    }
+
+    @Test
+    fun testRegisterSessionObserverFactory_onUiContainerChangedNotSentWhenOptionNotSet() {
+        val factory = TestSessionManager.SessionObserverFactoryImpl()
+        sessionManager.createAdapterAndWaitToBeActive(
+            viewForSession = view,
+            sessionObserverFactories = listOf(factory)
+        )
+        assertThat(factory.sessionObservers.size).isEqualTo(1)
+        val sessionObserver = factory.sessionObservers[0]
+        sessionObserver.assertOnUiContainerChangedNotSent()
     }
 
     @Test
@@ -483,14 +525,12 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
         adapter.removeObserverFactory(factory)
         val sandboxedSdkView2 = SandboxedSdkView(context)
         activityScenario.onActivity { linearLayout.addView(sandboxedSdkView2) }
-        val eventListener2 = TestEventListener()
-        sandboxedSdkView2.setEventListener(eventListener2)
-        // create a new session and wait to be active
-        sandboxedSdkView2.setAdapter(adapter)
-        assertThat(eventListener2.uiDisplayedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
-        // The session observers size should remain 1, showing that no new observers have been
-        // created for the new session.
-        assertThat(factory.sessionObservers.size).isEqualTo(1)
+        factory.resetSessionObserverCreatedLatch()
+        sessionManager.createAdapterAndEstablishSession(
+            passedAdapter = adapter,
+            viewForSession = sandboxedSdkView2
+        )
+        factory.assertNoSessionObserversAreCreated()
     }
 
     @Test
@@ -524,6 +564,24 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
                     ),
                     false
                 )
+        }
+    }
+
+    private fun derivesessionData(): SessionData {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            return Api35PlusImpl.derivesessionData(view)
+        } else {
+            return SessionData(windowInputToken = Binder(), inputTransferToken = null)
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private object Api35PlusImpl {
+        fun derivesessionData(view: SandboxedSdkView): SessionData {
+            return SessionData(
+                windowInputToken = Binder(),
+                inputTransferToken = view.rootSurfaceControl?.inputTransferToken
+            )
         }
     }
 }

@@ -31,9 +31,10 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -117,8 +118,7 @@ public final class IntentCompat {
      * @return Returns a newly created Intent that can be used to launch the
      * activity as a main application entry.
      */
-    @NonNull
-    public static Intent makeMainSelectorActivity(@NonNull String selectorAction,
+    public static @NonNull Intent makeMainSelectorActivity(@NonNull String selectorAction,
             @NonNull String selectorCategory) {
         return Intent.makeMainSelectorActivity(selectorAction, selectorCategory);
     }
@@ -161,8 +161,7 @@ public final class IntentCompat {
      * @return Returns a newly created Intent that can be used to launch an activity where users
      * can manage unused app restrictions for a specific app.
      */
-    @NonNull
-    public static Intent createManageUnusedAppRestrictionsIntent(@NonNull Context context,
+    public static @NonNull Intent createManageUnusedAppRestrictionsIntent(@NonNull Context context,
             @NonNull String packageName) {
         if (!areUnusedAppRestrictionsAvailable(context.getPackageManager())) {
             throw new UnsupportedOperationException(
@@ -215,9 +214,8 @@ public final class IntentCompat {
      *
      * @see Intent#putExtra(String, Parcelable)
      */
-    @Nullable
     @SuppressWarnings({"deprecation", "unchecked"})
-    public static <T> T getParcelableExtra(@NonNull Intent in, @Nullable String name,
+    public static <T> @Nullable T getParcelableExtra(@NonNull Intent in, @Nullable String name,
             @NonNull Class<T> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
             // Don't call this API on SDK 33 due to b/232589966.
@@ -246,11 +244,10 @@ public final class IntentCompat {
      *
      * @see Intent#putExtra(String, Parcelable[])
      */
-    @Nullable
     @SuppressWarnings({"deprecation"})
     @SuppressLint({"ArrayReturn", "NullableCollection"})
-    public static Parcelable[] getParcelableArrayExtra(@NonNull Intent in, @Nullable String name,
-            @NonNull Class<? extends Parcelable> clazz) {
+    public static Parcelable @Nullable [] getParcelableArrayExtra(@NonNull Intent in,
+            @Nullable String name, @NonNull Class<? extends Parcelable> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
             // Don't call this API on SDK 33 due to b/232589966.
             return Api33Impl.getParcelableArrayExtra(in, name, clazz);
@@ -279,10 +276,9 @@ public final class IntentCompat {
      *
      * @see Intent#putParcelableArrayListExtra(String, ArrayList)
      */
-    @Nullable
     @SuppressWarnings({"deprecation", "unchecked"})
     @SuppressLint({"ConcreteCollection", "NullableCollection"})
-    public static <T> ArrayList<T> getParcelableArrayListExtra(
+    public static <T> @Nullable ArrayList<T> getParcelableArrayListExtra(
             @NonNull Intent in, @Nullable String name, @NonNull Class<? extends T> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
             // Don't call this API on SDK 33 due to b/232589966.
@@ -312,8 +308,7 @@ public final class IntentCompat {
      * @return a Serializable value, or {@code null}
      */
     @SuppressWarnings({"deprecation", "unchecked"})
-    @Nullable
-    public static <T extends Serializable> T getSerializableExtra(@NonNull Intent in,
+    public static <T extends Serializable> @Nullable T getSerializableExtra(@NonNull Intent in,
             @Nullable String key, @NonNull Class<T> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
             // Don't call this API on SDK 33 due to b/232589966.

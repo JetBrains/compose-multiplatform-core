@@ -15,6 +15,16 @@
   -->
 
 <resources>
+    <declare-styleable name="PdfView">
+        <attr name="fastScrollVerticalThumbDrawable" format="reference" />
+        <attr name="fastScrollVerticalTrackDrawable" format="reference" />
+        <attr name="fastScrollPageIndicatorBackgroundDrawable" format="reference" />
+        <!-- Relative end margin for page indicator pill from container bounds. -->
+        <attr name="fastScrollPageIndicatorMarginEnd" format="dimension" />
+        <!-- Relative end margin for FastScroll's vertical thumb from container bounds. -->
+        <attr name="fastScrollVerticalThumbMarginEnd" format="dimension" />
+    </declare-styleable>
+
     <declare-styleable name="FastScrollView">
         <attr name="scrollbarMarginTop" format="dimension" />
         <attr name="scrollbarMarginBottom" format="dimension" />

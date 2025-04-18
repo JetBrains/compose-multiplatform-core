@@ -17,7 +17,6 @@
 package androidx.wear.compose.material
 
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,9 +27,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.wear.compose.foundation.RevealActionType
-import androidx.wear.compose.foundation.RevealScope
 import androidx.wear.compose.foundation.RevealState
 import androidx.wear.compose.foundation.RevealValue
 import androidx.wear.compose.foundation.rememberRevealState
@@ -42,7 +41,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@RequiresApi(Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 @OptIn(ExperimentalWearMaterialApi::class)
 class SwipeToRevealScreenshotTest {
     @get:Rule val rule = createComposeRule()
@@ -132,21 +131,21 @@ class SwipeToRevealScreenshotTest {
     @Composable
     private fun swipeToRevealCard(
         revealState: RevealState = rememberRevealState(),
-        secondaryAction: (@Composable RevealScope.() -> Unit)? = {
+        secondaryAction: (@Composable () -> Unit)? = {
             SwipeToRevealSecondaryAction(
                 revealState = revealState,
                 onClick = {},
                 content = { Icon(SwipeToRevealDefaults.MoreOptions, "More Options") }
             )
         },
-        undoPrimaryAction: (@Composable RevealScope.() -> Unit)? = {
+        undoPrimaryAction: (@Composable () -> Unit)? = {
             SwipeToRevealUndoAction(
                 revealState = revealState,
                 onClick = {},
                 label = { Text("Undo") }
             )
         },
-        undoSecondaryAction: (@Composable RevealScope.() -> Unit)? = {
+        undoSecondaryAction: (@Composable () -> Unit)? = {
             SwipeToRevealUndoAction(
                 revealState = revealState,
                 onClick = {},
@@ -185,21 +184,21 @@ class SwipeToRevealScreenshotTest {
     @Composable
     private fun swipeToRevealChip(
         revealState: RevealState = rememberRevealState(),
-        secondaryAction: (@Composable RevealScope.() -> Unit)? = {
+        secondaryAction: (@Composable () -> Unit)? = {
             SwipeToRevealSecondaryAction(
                 revealState = revealState,
                 onClick = {},
                 content = { Icon(SwipeToRevealDefaults.MoreOptions, "More Options") }
             )
         },
-        undoPrimaryAction: (@Composable RevealScope.() -> Unit)? = {
+        undoPrimaryAction: (@Composable () -> Unit)? = {
             SwipeToRevealUndoAction(
                 revealState = revealState,
                 onClick = {},
                 label = { Text("Undo") }
             )
         },
-        undoSecondaryAction: (@Composable RevealScope.() -> Unit)? = {
+        undoSecondaryAction: (@Composable () -> Unit)? = {
             SwipeToRevealUndoAction(
                 revealState = revealState,
                 onClick = {},

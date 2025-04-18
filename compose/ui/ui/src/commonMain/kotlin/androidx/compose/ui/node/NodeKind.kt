@@ -17,6 +17,8 @@
 package androidx.compose.ui.node
 
 import androidx.collection.mutableObjectIntMapOf
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.classKeyForObject
 import androidx.compose.ui.draw.DrawModifier
@@ -27,6 +29,7 @@ import androidx.compose.ui.focus.FocusTargetNode
 import androidx.compose.ui.focus.invalidateFocusEvent
 import androidx.compose.ui.focus.invalidateFocusProperties
 import androidx.compose.ui.focus.invalidateFocusTarget
+import androidx.compose.ui.input.indirect.IndirectTouchInputModifierNode
 import androidx.compose.ui.input.key.KeyInputModifierNode
 import androidx.compose.ui.input.key.SoftKeyboardInterceptionModifierNode
 import androidx.compose.ui.input.pointer.PointerInputModifier
@@ -147,6 +150,15 @@ internal object Nodes {
     @JvmStatic
     inline val BringIntoView
         get() = NodeKind<BringIntoViewModifierNode>(0b1 shl 19)
+
+    @JvmStatic
+    inline val Unplaced
+        get() = NodeKind<OnUnplacedModifierNode>(0b1 shl 20)
+
+    @JvmStatic
+    @OptIn(ExperimentalComposeUiApi::class)
+    inline val IndirectTouchInput
+        get() = NodeKind<IndirectTouchInputModifierNode>(0b1 shl 21)
     // ...
 }
 
@@ -253,6 +265,13 @@ internal fun calculateNodeKindSetFrom(node: Modifier.Node): Int {
         if (node is BringIntoViewModifierNode) {
             mask = mask or Nodes.BringIntoView
         }
+        if (node is OnUnplacedModifierNode) {
+            mask = mask or Nodes.Unplaced
+        }
+        @OptIn(ExperimentalComposeUiApi::class)
+        if (node is IndirectTouchInputModifierNode) {
+            mask = mask or Nodes.IndirectTouchInput
+        }
         mask
     }
 }
@@ -322,7 +341,7 @@ private fun autoInvalidateNodeSelf(node: Modifier.Node, selfKindSet: Int, phase:
         node.invalidateDraw()
     }
     if (Nodes.Semantics in selfKindSet && node is SemanticsModifierNode) {
-        node.invalidateSemantics()
+        node.requireLayoutNode().isSemanticsInvalidated = true
     }
     if (Nodes.ParentData in selfKindSet && node is ParentDataModifierNode) {
         node.invalidateParentData()
@@ -332,9 +351,13 @@ private fun autoInvalidateNodeSelf(node: Modifier.Node, selfKindSet: Int, phase:
             node is FocusPropertiesModifierNode &&
             node.specifiesCanFocusProperty()
     ) {
-        when (phase) {
-            Removed -> node.scheduleInvalidationOfAssociatedFocusTargets()
-            else -> node.invalidateFocusProperties()
+        if (@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isTrackFocusEnabled)
+            node.scheduleInvalidationOfAssociatedFocusTargets()
+        else {
+            when (phase) {
+                Removed -> node.scheduleInvalidationOfAssociatedFocusTargets()
+                else -> node.invalidateFocusProperties()
+            }
         }
     }
     if (Nodes.FocusEvent in selfKindSet && node is FocusEventModifierNode) {

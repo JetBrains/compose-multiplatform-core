@@ -18,12 +18,13 @@ package androidx.appsearch.app.aidl;
 
 import android.os.ParcelFileDescriptor;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A dummy version of AppSearchBatchResultParcelV2 in jetpack.
@@ -44,8 +45,7 @@ public final class AppSearchBatchResultParcelV2<KeyType, ValueType> {
      * Creates an instance of {@link AppSearchBatchResultParcelV2} with key type
      * {@link AppSearchBlobHandle} and value type {@link ParcelFileDescriptor}.
      */
-    @NonNull
-    public static AppSearchBatchResultParcelV2<AppSearchBlobHandle, ParcelFileDescriptor>
+    public static @NonNull AppSearchBatchResultParcelV2<AppSearchBlobHandle, ParcelFileDescriptor>
             fromBlobHandleToPfd(
             @NonNull AppSearchBatchResult<AppSearchBlobHandle, ParcelFileDescriptor> result) {
         return new AppSearchBatchResultParcelV2<>(result);
@@ -55,16 +55,14 @@ public final class AppSearchBatchResultParcelV2<KeyType, ValueType> {
      * Creates an instance of {@link AppSearchBatchResultParcelV2} with key type
      * {@link AppSearchBlobHandle} and value type {@link Void}.
      */
-    @NonNull
-    public static AppSearchBatchResultParcelV2<AppSearchBlobHandle, Void>
+    public static @NonNull AppSearchBatchResultParcelV2<AppSearchBlobHandle, Void>
             fromBlobHandleToVoid(
             @NonNull AppSearchBatchResult<AppSearchBlobHandle, Void> result) {
         return new AppSearchBatchResultParcelV2<>(result);
     }
 
     /** Returns the wrapped batch result.  */
-    @NonNull
-    public AppSearchBatchResult<KeyType, ValueType> getResult() {
+    public @NonNull AppSearchBatchResult<KeyType, ValueType> getResult() {
         return mResult;
     }
 }

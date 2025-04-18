@@ -170,6 +170,7 @@ internal class PageFetcher<Key : Any, Value : Any>(
                         when (sourceEvent) {
                             is Insert -> {
                                 sourceStates.set(sourceEvent.sourceLoadStates)
+                                @Suppress("DATA_CLASS_INVISIBLE_COPY_USAGE_WARNING")
                                 sourceEvent.copy(
                                     sourceLoadStates = sourceEvent.sourceLoadStates,
                                     mediatorLoadStates = remoteState,

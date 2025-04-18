@@ -274,8 +274,8 @@ fun rememberBottomSheetScaffoldState(
 }
 
 /**
- * <a href="https://material.io/components/sheets-bottom#standard-bottom-sheet" class="external"
- * target="_blank">Material Design standard bottom sheet</a>.
+ * [Material Design standard bottom
+ * sheet](https://material.io/components/sheets-bottom#standard-bottom-sheet)
  *
  * Standard bottom sheets co-exist with the screen’s main UI region and allow for simultaneously
  * viewing and interacting with both regions. They are commonly used to keep a feature or secondary

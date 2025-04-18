@@ -38,6 +38,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
+import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumnDefaults
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
@@ -51,7 +52,7 @@ class ExpandableTest {
 
     private val restorationTester = StateRestorationTester(rule)
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun initially_collapsed() =
         verifyExpandable(
@@ -59,7 +60,7 @@ class ExpandableTest {
             bitmapAssert = { assertDoesContainColor(COLLAPSED_COLOR) }
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun initially_expanded() =
         verifyExpandable(
@@ -67,7 +68,7 @@ class ExpandableTest {
             bitmapAssert = { assertDoesContainColor(EXPANDED_COLOR) }
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun expand() =
         verifyExpandable(
@@ -78,7 +79,7 @@ class ExpandableTest {
             waitForIdle()
         }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun collapse() =
         verifyExpandable(
@@ -89,9 +90,13 @@ class ExpandableTest {
             waitForIdle()
         }
 
-    @RequiresApi(Build.VERSION_CODES.O) @Test fun collapsed_click() = verifyClick(false)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun collapsed_click() = verifyClick(false)
 
-    @RequiresApi(Build.VERSION_CODES.O) @Test fun expanded_click() = verifyClick(true)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun expanded_click() = verifyClick(true)
 
     @Test
     fun restoreState_after_recomposition() {

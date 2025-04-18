@@ -22,6 +22,7 @@ import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EX
 import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_INT_TO_STRING_MAP
 import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_STRENGTH_TRAINING
 import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_STRING_TO_INT_MAP
+import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.units.meters
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
@@ -42,6 +43,7 @@ class ExerciseSessionRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_BIKING,
                     title = "title",
                     notes = "notes",
@@ -83,6 +85,7 @@ class ExerciseSessionRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     exerciseType = EXERCISE_TYPE_BIKING,
                     title = "title",
                     notes = "notes",
@@ -128,6 +131,7 @@ class ExerciseSessionRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_BIKING,
                     title = "title",
                     notes = "notes",
@@ -156,6 +160,7 @@ class ExerciseSessionRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     exerciseType = EXERCISE_TYPE_BIKING,
                     title = "title",
                     notes = "notes",
@@ -188,6 +193,7 @@ class ExerciseSessionRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(1236L),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_BIKING,
                 title = "title",
                 notes = "notes",
@@ -221,6 +227,7 @@ class ExerciseSessionRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(1234L),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_EXERCISE_CLASS,
                 title = "title",
                 notes = "notes",
@@ -265,6 +272,7 @@ class ExerciseSessionRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(1235L),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 exerciseType = EXERCISE_TYPE_BIKING,
                 segments =
                     listOf(
@@ -284,6 +292,7 @@ class ExerciseSessionRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(1235L),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 exerciseType = EXERCISE_TYPE_BIKING,
                 segments =
                     listOf(
@@ -306,6 +315,7 @@ class ExerciseSessionRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(1235L),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 exerciseType = EXERCISE_TYPE_BIKING,
                 laps =
                     listOf(
@@ -324,6 +334,7 @@ class ExerciseSessionRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(1235L),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 exerciseType = EXERCISE_TYPE_BIKING,
                 laps =
                     listOf(
@@ -345,6 +356,7 @@ class ExerciseSessionRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(1235L),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 exerciseType = EXERCISE_TYPE_BIKING,
                 exerciseRoute =
                     ExerciseRoute(
@@ -366,6 +378,7 @@ class ExerciseSessionRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(1235L),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 exerciseType = EXERCISE_TYPE_BIKING,
                 exerciseRoute =
                     ExerciseRoute(
@@ -390,6 +403,7 @@ class ExerciseSessionRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(1236L),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 exerciseType = EXERCISE_TYPE_BIKING,
                 segments =
                     listOf(
@@ -417,6 +431,7 @@ class ExerciseSessionRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(1236L),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 exerciseType = EXERCISE_TYPE_BIKING,
                 laps =
                     listOf(
@@ -442,6 +457,7 @@ class ExerciseSessionRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(1236L),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 exerciseType = EXERCISE_TYPE_BIKING,
                 segments =
                     listOf(
@@ -464,6 +480,7 @@ class ExerciseSessionRecordTest {
                         startZoneOffset = null,
                         endTime = Instant.ofEpochMilli(1236L),
                         endZoneOffset = null,
+                        metadata = Metadata.manualEntry(),
                         exerciseType = EXERCISE_TYPE_BIKING,
                         exerciseRoute =
                             ExerciseRoute(
@@ -499,6 +516,7 @@ class ExerciseSessionRecordTest {
                         startZoneOffset = null,
                         endTime = Instant.ofEpochMilli(1236L),
                         endZoneOffset = null,
+                        metadata = Metadata.manualEntry(),
                         exerciseType = EXERCISE_TYPE_BIKING,
                         exerciseRoute = null
                     )
@@ -515,6 +533,7 @@ class ExerciseSessionRecordTest {
                         startZoneOffset = null,
                         endTime = Instant.ofEpochMilli(1236L),
                         endZoneOffset = null,
+                        metadata = Metadata.unknownRecordingMethod(),
                         exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_BIKING,
                         title = "title",
                         notes = "notes",
@@ -564,6 +583,7 @@ class ExerciseSessionRecordTest {
                         startZoneOffset = null,
                         endTime = Instant.ofEpochMilli(1236L),
                         endZoneOffset = null,
+                        metadata = Metadata.manualEntry(),
                         exerciseType = EXERCISE_TYPE_BIKING,
                         exerciseRoute = null,
                         plannedExerciseSessionId = "some_id"

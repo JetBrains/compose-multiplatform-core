@@ -68,6 +68,7 @@ class GradleDebugConfigurationDetector : Detector(), GradleScanner {
                 .addMoreInfo("https://developer.android.com/jetpack/compose/testing#setup")
     }
 
+    @Suppress("OVERRIDE_DEPRECATION") // b/407491706
     override fun checkDslPropertyAssignment(
         context: GradleContext,
         property: String,

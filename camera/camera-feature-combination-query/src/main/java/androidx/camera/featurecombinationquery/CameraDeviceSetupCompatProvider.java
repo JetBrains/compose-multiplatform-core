@@ -18,8 +18,9 @@ package androidx.camera.featurecombinationquery;
 
 import android.hardware.camera2.CameraAccessException;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface for providing a {@link CameraDeviceSetupCompat} for a camera device.
@@ -36,7 +37,6 @@ public interface CameraDeviceSetupCompatProvider {
      * @param cameraId the cameraId of the camera device.
      * @return a {@link CameraDeviceSetupCompat} for the camera device with the given cameraId.
      */
-    @NonNull
-    CameraDeviceSetupCompat getCameraDeviceSetupCompat(@NonNull String cameraId)
+    @NonNull CameraDeviceSetupCompat getCameraDeviceSetupCompat(@NonNull String cameraId)
             throws CameraAccessException;
 }

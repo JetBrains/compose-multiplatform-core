@@ -16,10 +16,10 @@
 
 package androidx.benchmark.macro.perfetto
 
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
-import androidx.benchmark.perfetto.Slice
-import androidx.benchmark.perfetto.processNameLikePkg
-import androidx.benchmark.perfetto.toSlices
+import androidx.benchmark.traceprocessor.Slice
+import androidx.benchmark.traceprocessor.TraceProcessor
+import androidx.benchmark.traceprocessor.processNameLikePkg
+import androidx.benchmark.traceprocessor.toSlices
 
 internal object FrameTimingQuery {
     private fun getFullQuery(packageName: String) =
@@ -34,24 +34,26 @@ internal object FrameTimingQuery {
             INNER JOIN thread USING(utid)
             INNER JOIN process USING(upid)
         WHERE (
-            ---- parent_stack_id = 0 to filter to top of trace stack
-            ( slice.name LIKE "Choreographer#doFrame%" AND process.pid LIKE thread.tid AND slice.parent_stack_id = 0) OR
-            ( slice.name LIKE "DrawFrame%" AND thread.name like "RenderThread" )
+            ( slice.name LIKE 'Choreographer#doFrame%'
+                AND slice.name NOT LIKE 'Choreographer#doFrame - resynced to%'
+                AND process.pid LIKE thread.tid
+            ) OR
+            ( slice.name LIKE 'DrawFrame%' AND thread.name = 'RenderThread' )
         ) AND ${processNameLikePkg(packageName)}
-        ------ Add in actual frame slices (prepended with "actual " to differentiate)
+        ------ Add in actual frame slices (prepended with 'actual ' to differentiate)
         UNION
         SELECT
-            "actual " || actual_frame_timeline_slice.name as name,
+            'actual ' || actual_frame_timeline_slice.name as name,
             actual_frame_timeline_slice.ts as ts,
             actual_frame_timeline_slice.dur as dur
         FROM actual_frame_timeline_slice
             INNER JOIN process USING(upid)
         WHERE
             ${processNameLikePkg(packageName)}
-        ------ Add in expected time slices (prepended with "expected " to differentiate)
+        ------ Add in expected time slices (prepended with 'expected ' to differentiate)
         UNION
         SELECT
-            "expected " || expected_frame_timeline_slice.name as name,
+            'expected ' || expected_frame_timeline_slice.name as name,
             expected_frame_timeline_slice.ts as ts,
             expected_frame_timeline_slice.dur as dur
         FROM expected_frame_timeline_slice
@@ -146,7 +148,7 @@ internal object FrameTimingQuery {
     }
 
     internal fun getFrameData(
-        session: PerfettoTraceProcessor.Session,
+        session: TraceProcessor.Session,
         captureApiLevel: Int,
         packageName: String,
     ): List<FrameData> {

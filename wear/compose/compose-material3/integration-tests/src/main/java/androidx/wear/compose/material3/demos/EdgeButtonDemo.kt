@@ -16,8 +16,10 @@
 
 package androidx.wear.compose.material3.demos
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -39,38 +42,44 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListScope
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.integration.demos.common.AdaptiveScreen
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.EdgeButtonDefaults
 import androidx.wear.compose.material3.EdgeButtonSize
+import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.RadioButton
 import androidx.wear.compose.material3.ScreenScaffold
-import androidx.wear.compose.material3.ScreenScaffoldDefaults
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TextButton
 import androidx.wear.compose.material3.TextButtonDefaults
 import androidx.wear.compose.material3.samples.icons.CheckIcon
 
+fun listOfLabels(): List<String> {
+    return listOf(
+        "Hi",
+        "Hello World",
+        "Hello world again?",
+        "More content as we add stuff",
+        "I don't know if this will fit now, testing",
+        "Really long text that it's going to take multiple lines",
+        "And now we are really pushing it because the screen is really small",
+    )
+}
+
 @Composable
 fun EdgeButtonBelowLazyColumnDemo() {
-    val labels =
-        listOf(
-            "Hi",
-            "Hello World",
-            "Hello world again?",
-            "More content as we add stuff",
-            "I don't know if this will fit now, testing",
-            "Really long text that it's going to take multiple lines",
-            "And now we are really pushing it because the screen is really small",
-        )
+    val labels = listOfLabels()
     val selectedLabel = remember { mutableIntStateOf(0) }
     AdaptiveScreen {
         val state = rememberLazyListState()
         ScreenScaffold(
             scrollState = state,
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 20.dp),
             edgeButton = {
                 EdgeButton(
                     onClick = {},
@@ -80,19 +89,12 @@ fun EdgeButtonBelowLazyColumnDemo() {
                     Text(labels[selectedLabel.intValue], color = Color.White)
                 }
             }
-        ) {
+        ) { contentPadding ->
             LazyColumn(
                 state = state,
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
-                contentPadding =
-                    ScreenScaffoldDefaults.contentPaddingWithEdgeButton(
-                        edgeButtonSize = EdgeButtonSize.Large,
-                        10.dp,
-                        20.dp,
-                        10.dp,
-                        10.dp
-                    ),
+                contentPadding = contentPadding,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 items(labels.size) {
@@ -110,22 +112,14 @@ fun EdgeButtonBelowLazyColumnDemo() {
 
 @Composable
 fun EdgeButtonBelowScalingLazyColumnDemo() {
-    val labels =
-        listOf(
-            "Hi",
-            "Hello World",
-            "Hello world again?",
-            "More content as we add stuff",
-            "I don't know if this will fit now, testing",
-            "Really long text that it's going to take multiple lines",
-            "And now we are really pushing it because the screen is really small",
-        )
+    val labels = listOfLabels()
     val selectedLabel = remember { mutableIntStateOf(0) }
 
     AdaptiveScreen {
         val state = rememberScalingLazyListState()
         ScreenScaffold(
             scrollState = state,
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 20.dp),
             edgeButton = {
                 EdgeButton(
                     onClick = {},
@@ -135,19 +129,51 @@ fun EdgeButtonBelowScalingLazyColumnDemo() {
                     Text(labels[selectedLabel.intValue], color = Color.White)
                 }
             }
-        ) {
+        ) { contentPadding ->
             ScalingLazyColumn(
                 state = state,
                 modifier = Modifier.fillMaxSize(),
                 autoCentering = null,
-                contentPadding =
-                    ScreenScaffoldDefaults.contentPaddingWithEdgeButton(
-                        edgeButtonSize = EdgeButtonSize.Medium,
-                        10.dp,
-                        20.dp,
-                        10.dp,
-                        10.dp
-                    ),
+                contentPadding = contentPadding,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                items(labels.size) {
+                    Card(
+                        onClick = { selectedLabel.intValue = it },
+                        modifier = Modifier.fillMaxWidth(0.9f)
+                    ) {
+                        Text(labels[it])
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EdgeButtonBelowTransformingLazyColumnDemo() {
+    val labels = listOfLabels()
+    val selectedLabel = remember { mutableIntStateOf(0) }
+    AdaptiveScreen {
+        val state = rememberTransformingLazyColumnState()
+        ScreenScaffold(
+            scrollState = state,
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 20.dp),
+            edgeButton = {
+                EdgeButton(
+                    onClick = {},
+                    buttonSize = EdgeButtonSize.Large,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                ) {
+                    Text(labels[selectedLabel.intValue], color = Color.White)
+                }
+            }
+        ) { contentPadding ->
+            TransformingLazyColumn(
+                state = state,
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                contentPadding = contentPadding,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 items(labels.size) {
@@ -196,7 +222,13 @@ fun EdgeButtonMultiDemo() {
             Column(modifier = Modifier.weight(1f)) {
                 Row { Spacer(modifier = Modifier.height(10.dp)) }
                 Row {
-                    Text("Sizes", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                    ListHeader {
+                        Text(
+                            "Sizes",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -212,7 +244,13 @@ fun EdgeButtonMultiDemo() {
                     }
                 }
                 Row {
-                    Text("Colors", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                    ListHeader {
+                        Text(
+                            "Colors",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -270,6 +308,7 @@ fun EdgeButtonConfigurableDemo() {
         val state = rememberScalingLazyListState()
         ScreenScaffold(
             scrollState = state,
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 20.dp),
             edgeButton = {
                 EdgeButton(
                     onClick = {},
@@ -282,29 +321,24 @@ fun EdgeButtonConfigurableDemo() {
                     enabled = colors[selectedColor].first != "Disabled"
                 ) {
                     if (selectedType == 0) {
+                        val iconSize = EdgeButtonDefaults.iconSizeFor(sizes[selectedSize].second)
                         CheckIcon(
                             modifier =
-                                Modifier.size(
-                                    EdgeButtonDefaults.iconSizeFor(sizes[selectedSize].second)
-                                )
+                                Modifier.size(iconSize * 2 / 3)
+                                    .wrapContentSize(unbounded = true)
+                                    .size(iconSize)
                         )
                     } else {
                         Text("Ok")
                     }
                 }
             }
-        ) {
+        ) { contentPadding ->
             ScalingLazyColumn(
                 state = state,
                 modifier = Modifier.fillMaxSize(),
                 autoCentering = null,
-                contentPadding =
-                    ScreenScaffoldDefaults.contentPaddingWithEdgeButton(
-                        sizes[selectedSize].second,
-                        10.dp,
-                        20.dp,
-                        10.dp
-                    ),
+                contentPadding = contentPadding,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 selection(

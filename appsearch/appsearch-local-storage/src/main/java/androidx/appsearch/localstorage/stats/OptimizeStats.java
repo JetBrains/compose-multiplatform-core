@@ -16,11 +16,12 @@
 
 package androidx.appsearch.localstorage.stats;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
 import androidx.appsearch.app.AppSearchResult;
-import androidx.core.util.Preconditions;
+import androidx.appsearch.stats.BaseStats;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Class holds detailed stats for Optimize.
@@ -28,7 +29,7 @@ import androidx.core.util.Preconditions;
  * @exportToFramework:hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public final class OptimizeStats {
+public final class OptimizeStats extends BaseStats {
     /**
      * The status code returned by {@link AppSearchResult#getResultCode()} for the call or
      * internal state.
@@ -63,7 +64,7 @@ public final class OptimizeStats {
     private final long mNativeTimeSinceLastOptimizeMillis;
 
     OptimizeStats(@NonNull Builder builder) {
-        Preconditions.checkNotNull(builder);
+        super(builder);
         mStatusCode = builder.mStatusCode;
         mTotalLatencyMillis = builder.mTotalLatencyMillis;
         mNativeLatencyMillis = builder.mNativeLatencyMillis;
@@ -138,7 +139,7 @@ public final class OptimizeStats {
     }
 
     /** Builder for {@link RemoveStats}. */
-    public static class Builder {
+    public static class Builder extends BaseStats.Builder<OptimizeStats.Builder> {
         /**
          * The status code returned by {@link AppSearchResult#getResultCode()} for the call or
          * internal state.
@@ -158,32 +159,28 @@ public final class OptimizeStats {
 
         /** Sets the status code. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setStatusCode(@AppSearchResult.ResultCode int statusCode) {
+        public @NonNull Builder setStatusCode(@AppSearchResult.ResultCode int statusCode) {
             mStatusCode = statusCode;
             return this;
         }
 
         /** Sets total latency in millis. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setTotalLatencyMillis(int totalLatencyMillis) {
+        public @NonNull Builder setTotalLatencyMillis(int totalLatencyMillis) {
             mTotalLatencyMillis = totalLatencyMillis;
             return this;
         }
 
         /** Sets native latency in millis. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setNativeLatencyMillis(int nativeLatencyMillis) {
+        public @NonNull Builder setNativeLatencyMillis(int nativeLatencyMillis) {
             mNativeLatencyMillis = nativeLatencyMillis;
             return this;
         }
 
         /** Sets time used to optimize the document store. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setDocumentStoreOptimizeLatencyMillis(
+        public @NonNull Builder setDocumentStoreOptimizeLatencyMillis(
                 int documentStoreOptimizeLatencyMillis) {
             mNativeDocumentStoreOptimizeLatencyMillis = documentStoreOptimizeLatencyMillis;
             return this;
@@ -191,48 +188,43 @@ public final class OptimizeStats {
 
         /** Sets time used to restore the index. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setIndexRestorationLatencyMillis(int indexRestorationLatencyMillis) {
+        public @NonNull Builder setIndexRestorationLatencyMillis(
+                int indexRestorationLatencyMillis) {
             mNativeIndexRestorationLatencyMillis = indexRestorationLatencyMillis;
             return this;
         }
 
         /** Sets number of documents before the optimization. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setOriginalDocumentCount(int originalDocumentCount) {
+        public @NonNull Builder setOriginalDocumentCount(int originalDocumentCount) {
             mNativeOriginalDocumentCount = originalDocumentCount;
             return this;
         }
 
         /** Sets number of documents deleted during the optimization. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setDeletedDocumentCount(int deletedDocumentCount) {
+        public @NonNull Builder setDeletedDocumentCount(int deletedDocumentCount) {
             mNativeDeletedDocumentCount = deletedDocumentCount;
             return this;
         }
 
         /** Sets number of documents expired during the optimization. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setExpiredDocumentCount(int expiredDocumentCount) {
+        public @NonNull Builder setExpiredDocumentCount(int expiredDocumentCount) {
             mNativeExpiredDocumentCount = expiredDocumentCount;
             return this;
         }
 
         /** Sets Storage size in bytes before optimization. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setStorageSizeBeforeBytes(long storageSizeBeforeBytes) {
+        public @NonNull Builder setStorageSizeBeforeBytes(long storageSizeBeforeBytes) {
             mNativeStorageSizeBeforeBytes = storageSizeBeforeBytes;
             return this;
         }
 
         /** Sets storage size in bytes after optimization. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setStorageSizeAfterBytes(long storageSizeAfterBytes) {
+        public @NonNull Builder setStorageSizeAfterBytes(long storageSizeAfterBytes) {
             mNativeStorageSizeAfterBytes = storageSizeAfterBytes;
             return this;
         }
@@ -241,15 +233,14 @@ public final class OptimizeStats {
          * Sets the amount the time since the last optimize ran calculated using wall clock time.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setTimeSinceLastOptimizeMillis(long timeSinceLastOptimizeMillis) {
+        public @NonNull Builder setTimeSinceLastOptimizeMillis(long timeSinceLastOptimizeMillis) {
             mNativeTimeSinceLastOptimizeMillis = timeSinceLastOptimizeMillis;
             return this;
         }
 
         /** Creates a {@link OptimizeStats}. */
-        @NonNull
-        public OptimizeStats build() {
+        @Override
+        public @NonNull OptimizeStats build() {
             return new OptimizeStats(/* builder= */ this);
         }
     }

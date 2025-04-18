@@ -30,7 +30,13 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  *
  * ListenableWatchFaceServices are required to be stateless as multiple can be created in parallel.
  * If per instance state is required please use [ListenableStatefulWatchFaceService].
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public abstract class ListenableWatchFaceService : WatchFaceService() {
     /**
      * Override this factory method to create your WatchFaceImpl. This method will be called by the
@@ -84,7 +90,13 @@ public abstract class ListenableWatchFaceService : WatchFaceService() {
  * [ListenableWatchFaceService] is required to be stateless as multiple can be created in parallel.
  * ListenableStatefulWatchFaceService allows for metadata to be associated with watch faces on a per
  * instance basis. This state is created by [createExtra] and is passed into other methods.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public abstract class ListenableStatefulWatchFaceService<Extra> :
     StatefulWatchFaceService<Extra>() {
     /**
@@ -144,7 +156,13 @@ public abstract class ListenableStatefulWatchFaceService<Extra> :
  * ListenableWatchFaceRuntimeService are required to be stateless as multiple can be created in
  * parallel. If per instance state is required please use
  * [ListenableStatefulWatchFaceRuntimeService].
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public abstract class ListenableWatchFaceRuntimeService : WatchFaceRuntimeService() {
     /**
      * Override this factory method to create your WatchFaceImpl. This method will be called by the
@@ -205,7 +223,13 @@ public abstract class ListenableWatchFaceRuntimeService : WatchFaceRuntimeServic
  * parallel. ListenableStatefulWatchFaceRuntimeService allows for metadata to be associated with
  * watch faces on a per instance basis. This state is created by [createExtra] and is passed into
  * other methods.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public abstract class ListenableStatefulWatchFaceRuntimeService<Extra> :
     StatefulWatchFaceRuntimeService<Extra>() {
     /**

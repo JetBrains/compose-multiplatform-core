@@ -46,7 +46,7 @@ dependencies {
     implementation("androidx.fragment:fragment:1.6.1")
     implementation(project(":compose:material3:material3"))
     implementation("androidx.compose.material:material-icons-core:1.7.0")
-    implementation("androidx.compose.material:material-icons-extended:1.6.8")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
 }
 
 android {

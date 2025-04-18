@@ -22,8 +22,8 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.Rect
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.filters.SdkSuppress
 import androidx.window.embedding.EmbeddingAspectRatio.Companion.ALWAYS_DISALLOW
 import androidx.window.embedding.SplitAttributes.LayoutDirection.Companion.BOTTOM_TO_TOP
 import androidx.window.embedding.SplitAttributes.LayoutDirection.Companion.LOCALE
@@ -143,6 +143,9 @@ class RuleParserTests {
                         .setAnimationBackground(
                             EmbeddingAnimationBackground.createColorBackground(Color.BLUE)
                         )
+                        .setOpenAnimation(EmbeddingAnimationParams.AnimationSpec.JUMP_CUT)
+                        .setCloseAnimation(EmbeddingAnimationParams.AnimationSpec.JUMP_CUT)
+                        .setChangeAnimation(EmbeddingAnimationParams.AnimationSpec.JUMP_CUT)
                         .build()
                 )
                 .build()
@@ -186,6 +189,7 @@ class RuleParserTests {
             DividerAttributes.DraggableDividerAttributes.Builder()
                 .setWidthDp(1)
                 .setColor(expectedDividerColor.toInt())
+                .setDraggingToFullscreenAllowed(true)
                 .setDragRange(DividerAttributes.DragRange.SplitRatioDragRange(0.2f, 0.8f))
                 .build()
 
@@ -298,7 +302,7 @@ class RuleParserTests {
      * Verifies that horizontal layout are set correctly when reading [SplitPlaceholderRule] from
      * XML.
      */
-    @RequiresApi(Build.VERSION_CODES.M)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
     @Test
     fun testHorizontalLayout_SplitPlaceholderRule_Xml() {
         assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
@@ -320,6 +324,9 @@ class RuleParserTests {
                                 application.resources.getColor(R.color.testColor, null)
                             )
                         )
+                        .setOpenAnimation(EmbeddingAnimationParams.AnimationSpec.JUMP_CUT)
+                        .setCloseAnimation(EmbeddingAnimationParams.AnimationSpec.JUMP_CUT)
+                        .setChangeAnimation(EmbeddingAnimationParams.AnimationSpec.JUMP_CUT)
                         .build()
                 )
                 .build()

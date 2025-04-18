@@ -62,6 +62,8 @@ internal class SelectableTextAnnotatedStringNode(
     autoSize: TextAutoSize? = null,
     private var onShowTranslation: ((TextAnnotatedStringNode.TextSubstitutionValue) -> Unit)? = null
 ) : DelegatingNode(), LayoutModifierNode, DrawModifierNode, GlobalPositionAwareModifierNode {
+    override val shouldAutoInvalidate: Boolean
+        get() = false
 
     private val textAnnotatedStringNode =
         delegate(

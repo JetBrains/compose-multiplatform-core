@@ -19,11 +19,11 @@ package androidx.wear.compose.foundation.lazy
 import androidx.collection.mutableObjectIntMapOf
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.graphics.GraphicsContext
-import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
@@ -40,19 +40,16 @@ import kotlinx.coroutines.CoroutineScope
 
 internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
     contentPadding: PaddingValues,
-    intrinsicMeasureScope: IntrinsicMeasureScope,
+    density: Density,
+    layoutDirection: LayoutDirection,
     private val graphicsContext: GraphicsContext,
     private val itemAnimator: LazyLayoutItemAnimator<TransformingLazyColumnMeasuredItem>
 ) : TransformingLazyColumnMeasurementStrategy {
     override val rightContentPadding: Int =
-        with(intrinsicMeasureScope) {
-            contentPadding.calculateRightPadding(layoutDirection).roundToPx()
-        }
+        with(density) { contentPadding.calculateRightPadding(layoutDirection).roundToPx() }
 
     override val leftContentPadding: Int =
-        with(intrinsicMeasureScope) {
-            contentPadding.calculateLeftPadding(layoutDirection).roundToPx()
-        }
+        with(density) { contentPadding.calculateLeftPadding(layoutDirection).roundToPx() }
 
     override fun measure(
         itemsCount: Int,
@@ -259,6 +256,11 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
         )
 
         actuallyVisibleItems.fastForEach { it.isInMeasure = false }
+        val childConstraints =
+            Constraints(
+                maxHeight = Constraints.Infinity,
+                maxWidth = containerConstraints.maxWidth - leftContentPadding - rightContentPadding
+            )
 
         return TransformingLazyColumnMeasureResult(
             anchorItemIndex = anchorItem.index,
@@ -276,6 +278,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
             itemSpacing = itemSpacing,
             beforeContentPadding = beforeContentPadding,
             afterContentPadding = afterContentPadding,
+            childConstraints = childConstraints,
             measureResult =
                 layout(containerConstraints.maxWidth, containerConstraints.maxHeight) {
                     actuallyVisibleItems.fastForEach { it.place(this) }
@@ -352,10 +355,10 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
     }
 
     private val beforeContentPadding: Int =
-        with(intrinsicMeasureScope) { contentPadding.calculateTopPadding().roundToPx() }
+        with(density) { contentPadding.calculateTopPadding().roundToPx() }
 
     private val afterContentPadding: Int =
-        with(intrinsicMeasureScope) { contentPadding.calculateBottomPadding().roundToPx() }
+        with(density) { contentPadding.calculateBottomPadding().roundToPx() }
 
     private fun restoreLayoutTopToBottom(
         visibleItems: ArrayDeque<TransformingLazyColumnMeasuredItem>,

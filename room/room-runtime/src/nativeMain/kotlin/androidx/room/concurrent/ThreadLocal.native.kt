@@ -16,6 +16,7 @@
 
 package androidx.room.concurrent
 
+import androidx.annotation.RestrictTo
 import kotlin.coroutines.CoroutineContext
 import kotlinx.atomicfu.atomic
 
@@ -29,6 +30,7 @@ private object ThreadLocalData {
 }
 
 /** Container of thread-local data. */
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 actual class ThreadLocal<T> {
     private val threadId = currentThreadId()
 

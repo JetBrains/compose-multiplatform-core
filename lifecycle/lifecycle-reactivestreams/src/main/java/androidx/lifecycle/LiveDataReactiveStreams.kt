@@ -47,7 +47,7 @@ import org.reactivestreams.Subscription
             imports = arrayOf("androidx.lifecycle.toPublisher"),
         )
 )
-fun <T> toPublisher(lifecycle: LifecycleOwner, liveData: LiveData<T>): Publisher<T> {
+public fun <T> toPublisher(lifecycle: LifecycleOwner, liveData: LiveData<T>): Publisher<T> {
     return LiveDataPublisher(lifecycle, liveData)
 }
 
@@ -67,7 +67,7 @@ fun <T> toPublisher(lifecycle: LifecycleOwner, liveData: LiveData<T>): Publisher
  */
 @SuppressLint("LambdaLast")
 @JvmName("toPublisher")
-fun <T> LiveData<T>.toPublisher(lifecycle: LifecycleOwner): Publisher<T> {
+public fun <T> LiveData<T>.toPublisher(lifecycle: LifecycleOwner): Publisher<T> {
     return LiveDataPublisher(lifecycle, this)
 }
 
@@ -77,8 +77,7 @@ private class LiveDataPublisher<T>(val lifecycle: LifecycleOwner, val liveData: 
         subscriber.onSubscribe(LiveDataSubscription(subscriber, lifecycle, liveData))
     }
 
-    class LiveDataSubscription<T>
-    constructor(
+    class LiveDataSubscription<T>(
         val subscriber: Subscriber<in T>,
         val lifecycle: LifecycleOwner,
         val liveData: LiveData<T>
@@ -174,7 +173,8 @@ private class LiveDataPublisher<T>(val lifecycle: LifecycleOwner, val liveData: 
  * data that's held. In case of an error being emitted by the publisher, an error will be propagated
  * to the main thread and the app will crash.
  */
-@JvmName("fromPublisher") fun <T> Publisher<T>.toLiveData(): LiveData<T> = PublisherLiveData(this)
+@JvmName("fromPublisher")
+public fun <T> Publisher<T>.toLiveData(): LiveData<T> = PublisherLiveData(this)
 
 /**
  * Defines a [LiveData] object that wraps a [Publisher].

@@ -24,13 +24,18 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentWithReceiverOf
 import androidx.compose.runtime.mutableStateOf
@@ -45,12 +50,15 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.util.lerp
@@ -452,6 +460,109 @@ class AnimateBoundsTest {
             assertEquals(itemBOffset, boxPosition)
             assertEquals(IntSize(itemBSizePx, itemBSizePx), boxSize)
         }
+
+    /**
+     * Test that animateBounds constrains its returned measure size to the incoming constraints, so
+     * that parent layout does not center it.
+     */
+    @Test
+    fun animateBounds_inLazyLayout() {
+        var width by mutableStateOf(200.dp)
+        val positions = mutableListOf<Offset>()
+        var size: IntSize = IntSize.Zero
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides androidx.compose.ui.unit.Density(1f)) {
+                LookaheadScope {
+                    LazyVerticalGrid(GridCells.Fixed(2), Modifier.fillMaxHeight().width(width)) {
+                        items(5, key = { it }) { id ->
+                            Box(
+                                Modifier.animateBounds(this@LookaheadScope)
+                                    .then(
+                                        if (id == 0) {
+                                            Modifier.onGloballyPositioned {
+                                                positions.add(it.positionInRoot())
+                                                size = it.size
+                                            }
+                                        } else Modifier
+                                    )
+                                    .fillMaxWidth()
+                                    .aspectRatio(1f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        width = 400.dp
+        assertEquals(IntSize(100, 100), size)
+
+        while (size != IntSize(200, 200)) {
+            rule.mainClock.advanceTimeByFrame()
+            rule.waitForIdle()
+            assertEquals(Offset(0f, 0f), positions.last())
+        }
+    }
+
+    /**
+     * Test that items in LazyGrid keeps a consistent MFR throughout item node replacement triggered
+     * by animation.
+     */
+    @Test
+    fun motionFrameOfReferenceOfItemsInLazyGrid() {
+        var width by mutableStateOf(200.dp)
+        val MFRs = mutableListOf<Offset>()
+        var size: IntSize = IntSize.Zero
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides androidx.compose.ui.unit.Density(1f)) {
+                LookaheadScope {
+                    LazyVerticalGrid(GridCells.Fixed(2), Modifier.fillMaxHeight().width(width)) {
+                        items(5, key = { it }) { id ->
+                            Box(
+                                Modifier.animateBounds(this@LookaheadScope)
+                                    .then(
+                                        if (id == 1) {
+                                            Modifier.onGloballyPositioned {
+                                                val MFR =
+                                                    it.findRootCoordinates()
+                                                        .localPositionOf(
+                                                            it,
+                                                            includeMotionFrameOfReference = true
+                                                        ) -
+                                                        it.findRootCoordinates()
+                                                            .localPositionOf(
+                                                                it,
+                                                                includeMotionFrameOfReference =
+                                                                    false
+                                                            )
+                                                MFRs.add(MFR)
+                                                size = it.size
+                                            }
+                                        } else Modifier
+                                    )
+                                    .fillMaxWidth()
+                                    .aspectRatio(1f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        width = 400.dp
+        assertEquals(IntSize(100, 100), size)
+        MFRs.clear()
+
+        while (size != IntSize(200, 200)) {
+            rule.mainClock.advanceTimeByFrame()
+            rule.waitForIdle()
+
+            // This MFR should never change until the next width change
+            assertEquals(Offset(200f, 0f), MFRs.last())
+        }
+    }
 
     @Test
     fun animateBounds_scrollBehavior() =

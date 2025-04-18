@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.layout
 
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +26,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.Layout
@@ -34,10 +38,12 @@ import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.node.Ref
 import androidx.compose.ui.platform.InspectableValue
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ValueElement
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.test.DeviceConfigurationOverride
@@ -2020,5 +2026,117 @@ class SizeTest : LayoutTest() {
         }
         val root = findComposeView()
         waitForDraw(root)
+    }
+
+    @Test
+    fun requiredWidthChangesMinIntrinsicHeight() {
+        lateinit var coordinates: LayoutCoordinates
+        show {
+            with(LocalDensity.current) {
+                Box(Modifier.height(IntrinsicSize.Min).onPlaced { coordinates = it }) {
+                    Box(Modifier.requiredWidth(10.toDp())) {
+                        Image(
+                            painter =
+                                object : Painter() {
+                                    override val intrinsicSize: Size
+                                        get() = Size(400f, 400f)
+
+                                    override fun DrawScope.onDraw() {}
+                                },
+                            contentDescription = null
+                        )
+                    }
+                }
+            }
+        }
+
+        activityTestRule.runOnUiThread {
+            assertThat(coordinates.size.height).isEqualTo(10)
+            assertThat(coordinates.size.width).isEqualTo(10)
+        }
+    }
+
+    @Test
+    fun requiredWidthChangesMaxIntrinsicHeight() {
+        lateinit var coordinates: LayoutCoordinates
+        show {
+            with(LocalDensity.current) {
+                Box(Modifier.height(IntrinsicSize.Max).onPlaced { coordinates = it }) {
+                    Box(Modifier.requiredWidth(10.toDp())) {
+                        Image(
+                            painter =
+                                object : Painter() {
+                                    override val intrinsicSize: Size
+                                        get() = Size(400f, 400f)
+
+                                    override fun DrawScope.onDraw() {}
+                                },
+                            contentDescription = null
+                        )
+                    }
+                }
+            }
+        }
+
+        activityTestRule.runOnUiThread {
+            assertThat(coordinates.size.height).isEqualTo(10)
+            assertThat(coordinates.size.width).isEqualTo(10)
+        }
+    }
+
+    @Test
+    fun requiredHeightChangesMinIntrinsicWidth() {
+        lateinit var coordinates: LayoutCoordinates
+        show {
+            with(LocalDensity.current) {
+                Box(Modifier.width(IntrinsicSize.Min).onPlaced { coordinates = it }) {
+                    Box(Modifier.requiredHeight(10.toDp())) {
+                        Image(
+                            painter =
+                                object : Painter() {
+                                    override val intrinsicSize: Size
+                                        get() = Size(400f, 400f)
+
+                                    override fun DrawScope.onDraw() {}
+                                },
+                            contentDescription = null
+                        )
+                    }
+                }
+            }
+        }
+
+        activityTestRule.runOnUiThread {
+            assertThat(coordinates.size.height).isEqualTo(10)
+            assertThat(coordinates.size.width).isEqualTo(10)
+        }
+    }
+
+    @Test
+    fun requiredHeightChangesMaxIntrinsicWidth() {
+        lateinit var coordinates: LayoutCoordinates
+        show {
+            with(LocalDensity.current) {
+                Box(Modifier.width(IntrinsicSize.Max).onPlaced { coordinates = it }) {
+                    Box(Modifier.requiredHeight(10.toDp())) {
+                        Image(
+                            painter =
+                                object : Painter() {
+                                    override val intrinsicSize: Size
+                                        get() = Size(400f, 400f)
+
+                                    override fun DrawScope.onDraw() {}
+                                },
+                            contentDescription = null
+                        )
+                    }
+                }
+            }
+        }
+
+        activityTestRule.runOnUiThread {
+            assertThat(coordinates.size.height).isEqualTo(10)
+            assertThat(coordinates.size.width).isEqualTo(10)
+        }
     }
 }

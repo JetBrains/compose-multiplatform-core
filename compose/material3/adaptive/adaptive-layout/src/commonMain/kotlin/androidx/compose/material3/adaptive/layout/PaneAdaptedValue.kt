@@ -17,18 +17,44 @@
 package androidx.compose.material3.adaptive.layout
 
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.runtime.Stable
 
 /**
  * The adapted state of a pane. It gives clues to pane scaffolds about if a certain pane should be
  * composed and how.
  */
 @ExperimentalMaterial3AdaptiveApi
-@JvmInline
-value class PaneAdaptedValue private constructor(private val description: String) {
+@Stable
+sealed interface PaneAdaptedValue {
+    private class Simple(private val description: String) : PaneAdaptedValue {
+        override fun toString() = "PaneAdaptedValue[$description]"
+    }
+
+    /**
+     * Indicates that the associated pane should be reflowed to its [targetPane], i.e., it will be
+     * displayed under the target pane.
+     *
+     * @param targetPane the target pane of the reflowing, i.e., the pane that the reflowed pane
+     *   will be put under.
+     */
+    class Reflowed(val targetPane: Any) : PaneAdaptedValue {
+        override fun toString() = "PaneAdaptedValue[Reflowed to $targetPane]"
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Reflowed) return false
+            return targetPane == other.targetPane
+        }
+
+        override fun hashCode(): Int {
+            return targetPane.hashCode()
+        }
+    }
+
     companion object {
-        /** Denotes that the associated pane should be displayed in its full width and height. */
-        val Expanded = PaneAdaptedValue("Expanded")
-        /** Denotes that the associated pane should be hidden. */
-        val Hidden = PaneAdaptedValue("Hidden")
+        /** Indicates that the associated pane should be displayed in its full width and height. */
+        val Expanded: PaneAdaptedValue = Simple("Expanded")
+        /** Indicates that the associated pane should be hidden. */
+        val Hidden: PaneAdaptedValue = Simple("Hidden")
     }
 }

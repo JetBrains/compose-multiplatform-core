@@ -30,8 +30,6 @@ import android.graphics.Rect;
 
 import androidx.annotation.IntRange;
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
@@ -44,6 +42,9 @@ import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.internal.compat.workaround.CaptureFailedRetryEnabler;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -82,46 +83,39 @@ public abstract class TakePictureRequest {
     /**
      * Gets the callback {@link Executor} provided by the app.
      */
-    @NonNull
-    abstract Executor getAppExecutor();
+    abstract @NonNull Executor getAppExecutor();
 
     /**
      * Gets the app provided callback for in-memory capture.
      */
-    @Nullable
-    public abstract ImageCapture.OnImageCapturedCallback getInMemoryCallback();
+    public abstract ImageCapture.@Nullable OnImageCapturedCallback getInMemoryCallback();
 
     /**
      * Gets the app provided callback for on-disk capture.
      */
-    @Nullable
-    public abstract ImageCapture.OnImageSavedCallback getOnDiskCallback();
+    public abstract ImageCapture.@Nullable OnImageSavedCallback getOnDiskCallback();
 
     /**
      * Gets the app provided options for on-disk capture.
      */
-    @Nullable
-    public abstract ImageCapture.OutputFileOptions getOutputFileOptions();
+    public abstract ImageCapture.@Nullable OutputFileOptions getOutputFileOptions();
 
     /**
      * Gets the app provided options for secondary on-disk capture.
      */
-    @Nullable
-    public abstract ImageCapture.OutputFileOptions getSecondaryOutputFileOptions();
+    public abstract ImageCapture.@Nullable OutputFileOptions getSecondaryOutputFileOptions();
 
     /**
      * A snapshot of {@link ImageCapture#getViewPortCropRect()} when
      * {@link ImageCapture#takePicture} is called.
      */
-    @NonNull
-    public abstract Rect getCropRect();
+    public abstract @NonNull Rect getCropRect();
 
     /**
      * A snapshot of {@link ImageCapture#getSensorToBufferTransformMatrix()} when
      * {@link ImageCapture#takePicture} is called.
      */
-    @NonNull
-    abstract Matrix getSensorToBufferTransform();
+    abstract @NonNull Matrix getSensorToBufferTransform();
 
     /**
      * A snapshot of rotation degrees when {@link ImageCapture#takePicture} is called.
@@ -156,8 +150,7 @@ public abstract class TakePictureRequest {
      *
      * <p>This is for calling back to Camera2InterOp. See: aosp/947197.
      */
-    @NonNull
-    abstract List<CameraCaptureCallback> getSessionConfigCameraCaptureCallbacks();
+    abstract @NonNull List<CameraCaptureCallback> getSessionConfigCameraCaptureCallbacks();
 
     /**
      * Decrements retry counter.
@@ -246,7 +239,7 @@ public abstract class TakePictureRequest {
     /**
      * Delivers on-disk capture result to the app.
      */
-    void onResult(@Nullable ImageCapture.OutputFileResults outputFileResults) {
+    void onResult(ImageCapture.@Nullable OutputFileResults outputFileResults) {
         getAppExecutor().execute(() -> requireNonNull(getOnDiskCallback()).onImageSaved(
                 requireNonNull(outputFileResults)));
     }
@@ -285,12 +278,11 @@ public abstract class TakePictureRequest {
     /**
      * Creates a {@link TakePictureRequest} instance.
      */
-    @NonNull
-    public static TakePictureRequest of(@NonNull Executor appExecutor,
-            @Nullable ImageCapture.OnImageCapturedCallback inMemoryCallback,
-            @Nullable ImageCapture.OnImageSavedCallback onDiskCallback,
-            @Nullable ImageCapture.OutputFileOptions outputFileOptions,
-            @Nullable ImageCapture.OutputFileOptions secondaryOutputFileOptions,
+    public static @NonNull TakePictureRequest of(@NonNull Executor appExecutor,
+            ImageCapture.@Nullable OnImageCapturedCallback inMemoryCallback,
+            ImageCapture.@Nullable OnImageSavedCallback onDiskCallback,
+            ImageCapture.@Nullable OutputFileOptions outputFileOptions,
+            ImageCapture.@Nullable OutputFileOptions secondaryOutputFileOptions,
             @NonNull Rect cropRect,
             @NonNull Matrix sensorToBufferTransform,
             int rotationDegrees,

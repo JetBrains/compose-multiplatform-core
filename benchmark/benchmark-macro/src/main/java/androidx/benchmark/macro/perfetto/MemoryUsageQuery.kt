@@ -18,8 +18,8 @@ package androidx.benchmark.macro.perfetto
 
 import androidx.benchmark.macro.MemoryUsageMetric
 import androidx.benchmark.macro.MemoryUsageMetric.Mode
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
-import androidx.benchmark.perfetto.processNameLikePkg
+import androidx.benchmark.traceprocessor.TraceProcessor
+import androidx.benchmark.traceprocessor.processNameLikePkg
 
 internal object MemoryUsageQuery {
     // https://perfetto.dev/docs/data-sources/memory-counters
@@ -44,7 +44,7 @@ internal object MemoryUsageQuery {
                 .trimIndent()
 
     fun getMemoryUsageKb(
-        session: PerfettoTraceProcessor.Session,
+        session: TraceProcessor.Session,
         targetPackageName: String,
         mode: Mode
     ): Map<MemoryUsageMetric.SubMetric, Int>? {

@@ -26,13 +26,14 @@ import android.os.SystemClock;
 import android.service.notification.StatusBarNotification;
 
 import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.LocusIdCompat;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.Predicate;
 
@@ -70,16 +71,14 @@ import java.util.function.Predicate;
  * SysUIs, so we can only provide a general expectation.
  */
 public final class OngoingActivity {
-    @Nullable
-    private final String mTag;
+    private final @Nullable String mTag;
     private final int mNotificationId;
-    @Nullable
-    private final NotificationCompat.Builder mNotificationBuilder;
+    private final NotificationCompat.@Nullable Builder mNotificationBuilder;
     private final OngoingActivityData mData;
 
     private OngoingActivity(@Nullable String tag,
             int notificationId,
-            @NonNull NotificationCompat.Builder notificationBuilder,
+            NotificationCompat.@NonNull Builder notificationBuilder,
             @NonNull OngoingActivityData data) {
         this.mTag = tag;
         this.mNotificationId = notificationId;
@@ -136,7 +135,7 @@ public final class OngoingActivity {
          *                            Activity
          */
         public Builder(@NonNull Context context, int notificationId,
-                @NonNull NotificationCompat.Builder notificationBuilder) {
+                NotificationCompat.@NonNull Builder notificationBuilder) {
             this(context, null, notificationId, notificationBuilder);
         }
 
@@ -153,7 +152,7 @@ public final class OngoingActivity {
          *                            Activity
          */
         public Builder(@NonNull Context context, @NonNull String tag, int notificationId,
-                @NonNull NotificationCompat.Builder notificationBuilder) {
+                NotificationCompat.@NonNull Builder notificationBuilder) {
             this.mContext = context;
             this.mTag = tag;
             this.mNotificationId = notificationId;
@@ -167,8 +166,7 @@ public final class OngoingActivity {
          * <p>
          * If not provided, or set to null, the static icon will be used.
          */
-        @NonNull
-        public Builder setAnimatedIcon(@Nullable Icon animatedIcon) {
+        public @NonNull Builder setAnimatedIcon(@Nullable Icon animatedIcon) {
             mAnimatedIcon = animatedIcon;
             return this;
         }
@@ -180,8 +178,7 @@ public final class OngoingActivity {
          * <p>
          * If not provided, the static icon will be used.
          */
-        @NonNull
-        public Builder setAnimatedIcon(@DrawableRes int animatedIcon) {
+        public @NonNull Builder setAnimatedIcon(@DrawableRes int animatedIcon) {
             mAnimatedIcon = Icon.createWithResource(mContext, animatedIcon);
             return this;
         }
@@ -194,8 +191,7 @@ public final class OngoingActivity {
          * If not set, the smallIcon of the notification will be used. If neither is set,
          * {@link Builder#build()} will throw an exception.
          */
-        @NonNull
-        public Builder setStaticIcon(@NonNull Icon staticIcon) {
+        public @NonNull Builder setStaticIcon(@NonNull Icon staticIcon) {
             mStaticIcon = staticIcon;
             return this;
         }
@@ -208,8 +204,7 @@ public final class OngoingActivity {
          * If not set, the smallIcon of the notification will be used. If neither is set,
          * {@link Builder#build()} will throw an exception.
          */
-        @NonNull
-        public Builder setStaticIcon(@DrawableRes int staticIcon) {
+        public @NonNull Builder setStaticIcon(@DrawableRes int staticIcon) {
             mStaticIcon = Icon.createWithResource(mContext, staticIcon);
             return this;
         }
@@ -220,8 +215,7 @@ public final class OngoingActivity {
          * <p>
          * If not provided, the contentText of the notification will be used.
          */
-        @NonNull
-        public Builder setStatus(@NonNull Status status) {
+        public @NonNull Builder setStatus(@NonNull Status status) {
             mStatus = status;
             return this;
         }
@@ -233,8 +227,7 @@ public final class OngoingActivity {
          * If not set, the contentIntent of the notification will be used. If neither is set,
          * {@link Builder#build()} will throw an exception.
          */
-        @NonNull
-        public Builder setTouchIntent(@NonNull PendingIntent touchIntent) {
+        public @NonNull Builder setTouchIntent(@NonNull PendingIntent touchIntent) {
             mTouchIntent = touchIntent;
             return this;
         }
@@ -245,8 +238,7 @@ public final class OngoingActivity {
          * <p>
          * If set to null or not set, the launcher will use heuristics to do the matching.
          */
-        @NonNull
-        public Builder setLocusId(@Nullable LocusIdCompat locusId) {
+        public @NonNull Builder setLocusId(@Nullable LocusIdCompat locusId) {
             mLocusId = locusId;
             return this;
         }
@@ -255,8 +247,7 @@ public final class OngoingActivity {
          * Give an id to this {@link OngoingActivity}, as a way to reference it in
          * {@link OngoingActivity#recoverOngoingActivity(Context, int)}
          */
-        @NonNull
-        public Builder setOngoingActivityId(int ongoingActivityId) {
+        public @NonNull Builder setOngoingActivityId(int ongoingActivityId) {
             mOngoingActivityId = ongoingActivityId;
             return this;
         }
@@ -271,8 +262,7 @@ public final class OngoingActivity {
          * <p>
          * If this is not set (or null), the notification's category is used if present.
          */
-        @NonNull
-        public Builder setCategory(@Nullable String category) {
+        public @NonNull Builder setCategory(@Nullable String category) {
             mCategory = category;
             return this;
         }
@@ -283,8 +273,7 @@ public final class OngoingActivity {
          * <p>
          * No defaults from the notification are used for this field.
          */
-        @NonNull
-        public Builder setTitle(@Nullable String title) {
+        public @NonNull Builder setTitle(@Nullable String title) {
             mTitle = title;
             return this;
         }
@@ -296,8 +285,7 @@ public final class OngoingActivity {
          * <p>
          * No defaults from the notification are used for this field.
          */
-        @NonNull
-        public Builder setContentDescription(@Nullable String contentDescription) {
+        public @NonNull Builder setContentDescription(@Nullable String contentDescription) {
             mContentDescription = contentDescription;
             return this;
         }
@@ -309,8 +297,7 @@ public final class OngoingActivity {
          *
          * @throws IllegalArgumentException if the static icon or the touch intent are not provided.
          */
-        @NonNull
-        public OngoingActivity build() {
+        public @NonNull OngoingActivity build() {
             Notification notification = mNotificationBuilder.build();
             Icon staticIcon = mStaticIcon == null ? notification.getSmallIcon() : mStaticIcon;
             if (staticIcon == null) {
@@ -367,8 +354,7 @@ public final class OngoingActivity {
      * Get the tag of the notification associated with this {@link OngoingActivity}, or null if
      * there is none.
      */
-    @Nullable
-    public String getTag() {
+    public @Nullable String getTag() {
         return mTag;
     }
 
@@ -376,8 +362,7 @@ public final class OngoingActivity {
      * Get the animated icon that can be used on some surfaces to represent this
      * {@link OngoingActivity}. For example, in the WatchFace.
      */
-    @Nullable
-    public Icon getAnimatedIcon() {
+    public @Nullable Icon getAnimatedIcon() {
         return mData.getAnimatedIcon();
     }
 
@@ -386,8 +371,7 @@ public final class OngoingActivity {
      * {@link OngoingActivity}. For example in the WatchFace in ambient mode. If not set, returns
      *  the small icon of the corresponding Notification.
      */
-    @NonNull
-    public Icon getStaticIcon() {
+    public @NonNull Icon getStaticIcon() {
         return mData.getStaticIcon();
     }
 
@@ -396,8 +380,7 @@ public final class OngoingActivity {
      * show progress of the Ongoing Activity. If not set, returns the content text of the
      * corresponding Notification.
      */
-    @Nullable
-    public Status getStatus() {
+    public @Nullable Status getStatus() {
         return mData.getStatus() == null ? null :
                 Status.fromVersionedParcelable(mData.getStatus());
     }
@@ -407,8 +390,7 @@ public final class OngoingActivity {
      * Ongoing Activity in other surfaces (for example, taps the Icon on the WatchFace). If not
      * set, returns the touch intent of the corresponding Notification.
      */
-    @NonNull
-    public PendingIntent getTouchIntent() {
+    public @NonNull PendingIntent getTouchIntent() {
         return mData.getTouchIntent();
     }
 
@@ -417,8 +399,7 @@ public final class OngoingActivity {
      * identify the corresponding launcher item and display it accordingly. If not set, returns
      * the one in the corresponding Notification.
      */
-    @Nullable
-    public LocusIdCompat getLocusId() {
+    public @Nullable LocusIdCompat getLocusId() {
         return mData.getLocusId();
     }
 
@@ -434,8 +415,7 @@ public final class OngoingActivity {
      * Get the Category of this {@link OngoingActivity} if set, otherwise the category of the
      * corresponding notification.
      */
-    @Nullable
-    public String getCategory() {
+    public @Nullable String getCategory() {
         return mData.getCategory();
     }
 
@@ -449,16 +429,14 @@ public final class OngoingActivity {
     /**
      * Get the title of this {@link OngoingActivity} if set.
      */
-    @Nullable
-    public String getTitle() {
+    public @Nullable String getTitle() {
         return mData.getTitle();
     }
 
     /**
      * Get the content description of this {@link OngoingActivity} if set.
      */
-    @Nullable
-    public String getContentDescription() {
+    public @Nullable String getContentDescription() {
         return mData.getContentDescription();
     }
 
@@ -471,7 +449,7 @@ public final class OngoingActivity {
      * @param context May be used to access system services. A reference will not be kept after
      *                this call returns.
      */
-    public void apply(@NonNull @SuppressWarnings("unused") Context context) {
+    public void apply(@SuppressWarnings("unused") @NonNull Context context) {
         Preconditions.checkNotNull(mNotificationBuilder);
         SerializationHelper.extend(mNotificationBuilder, mData);
     }
@@ -508,8 +486,7 @@ public final class OngoingActivity {
      * @param filter  used to find the required {@link OngoingActivity}.
      * @return the Ongoing Activity or null if not found
      */
-    @Nullable
-    public static OngoingActivity recoverOngoingActivity(
+    public static @Nullable OngoingActivity recoverOngoingActivity(
             @NonNull Context context,
             @NonNull Predicate<OngoingActivity> filter
     ) {
@@ -544,8 +521,7 @@ public final class OngoingActivity {
      *                this call returns.
      * @return the Ongoing Activity or null if not found
      */
-    @Nullable
-    public static OngoingActivity recoverOngoingActivity(@NonNull Context context) {
+    public static @Nullable OngoingActivity recoverOngoingActivity(@NonNull Context context) {
         return recoverOngoingActivity(context, (data) -> true);
     }
 
@@ -559,8 +535,7 @@ public final class OngoingActivity {
      *                          {@link OngoingActivity.Builder#setOngoingActivityId(int)}
      * @return the Ongoing Activity or null if not found
      */
-    @Nullable
-    public static OngoingActivity recoverOngoingActivity(@NonNull Context context,
+    public static @Nullable OngoingActivity recoverOngoingActivity(@NonNull Context context,
             int ongoingActivityId) {
         return recoverOngoingActivity(context,
                 (data) -> data.getOngoingActivityId() == ongoingActivityId);
@@ -574,8 +549,7 @@ public final class OngoingActivity {
         private Api29Impl() {
         }
 
-        @Nullable
-        private static LocusIdCompat getLocusId(@NonNull Notification notification) {
+        private static @Nullable LocusIdCompat getLocusId(@NonNull Notification notification) {
             return notification.getLocusId() != null
                     ? LocusIdCompat.toLocusIdCompat(notification.getLocusId()) : null;
         }

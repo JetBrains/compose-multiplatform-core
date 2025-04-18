@@ -19,7 +19,6 @@ package androidx.build.metalava
 import androidx.build.Version
 import androidx.build.checkapi.ApiLocation
 import androidx.build.getLibraryByName
-import androidx.build.java.JavaCompileInputs
 import androidx.build.logging.TERMINAL_RED
 import androidx.build.logging.TERMINAL_RESET
 import java.io.ByteArrayOutputStream
@@ -169,7 +168,6 @@ fun getApiLintArgs(targetsJavaConsumers: Boolean): List<String> {
                     "MissingBuildMethod",
                     "SetterReturnsThis",
                     "OverlappingConstants",
-                    "IllegalStateException",
                     "ListenerLast",
                     "ExecutorRegistration",
                     "StreamFiles",
@@ -183,10 +181,17 @@ fun getApiLintArgs(targetsJavaConsumers: Boolean): List<String> {
                     "StaticFinalBuilder",
                     "MissingGetterMatchingBuilder",
                     "HiddenSuperclass",
-                    "KotlinOperator"
+                    "KotlinOperator",
+                    "DataClassDefinition",
                 )
                 .joinToString()
         )
+    // Acronyms that can be used in their all-caps form. "SQ" is included to allow "SQLite".
+    val allowedAcronyms = listOf("SQL", "SQ", "URL", "EGL", "GL", "KHR")
+    for (acronym in allowedAcronyms) {
+        args.add("--api-lint-allowed-acronym")
+        args.add(acronym)
+    }
     val javaOnlyIssues = listOf("MissingJvmstatic", "ArrayReturn", "ValueClassDefinition")
     val javaOnlyErrorLevel =
         if (targetsJavaConsumers) {
@@ -201,24 +206,24 @@ fun getApiLintArgs(targetsJavaConsumers: Boolean): List<String> {
 
 /** Returns the args needed to generate a version history JSON from the previous API files. */
 internal fun getGenerateApiLevelsArgs(
+    apiDir: File,
     apiFiles: List<File>,
     currentVersion: Version,
     outputLocation: File
 ): List<String> {
-    val versions = getVersionsForApiLevels(apiFiles) + currentVersion
-
-    val args =
-        listOf(
-            "--generate-api-version-history",
-            outputLocation.absolutePath,
-            "--api-version-names",
-            versions.joinToString(" ")
-        )
-
-    return if (apiFiles.isEmpty()) {
-        args
-    } else {
-        args + listOf("--api-version-signature-files", apiFiles.joinToString(":"))
+    return buildList {
+        add("--generate-api-version-history")
+        add(outputLocation.absolutePath)
+        add("--current-version")
+        add(currentVersion.toString())
+        if (apiFiles.isNotEmpty()) {
+            add("--api-version-signature-files")
+            add(apiFiles.joinToString(":"))
+            add("--api-version-signature-pattern")
+            // Select the version from the files. The `*` wildcard matches and ignores any
+            // pre-release suffix.
+            add("$apiDir/{version:major.minor.patch}*.txt")
+        }
     }
 }
 
@@ -240,9 +245,10 @@ sealed class ApiLintMode {
 /**
  * Generates all of the specified api files, as well as a version history JSON for the public API.
  */
-fun generateApi(
+internal fun generateApi(
     metalavaClasspath: FileCollection,
-    files: JavaCompileInputs,
+    projectXml: File,
+    sourcePaths: Collection<File>,
     apiLocation: ApiLocation,
     apiLintMode: ApiLintMode,
     includeRestrictToLibraryGroupApis: Boolean,
@@ -265,7 +271,8 @@ fun generateApi(
     generateApiConfigs.forEach { (generateApiMode, apiLintMode) ->
         generateApi(
             metalavaClasspath,
-            files,
+            projectXml,
+            sourcePaths,
             apiLocation,
             generateApiMode,
             apiLintMode,
@@ -284,7 +291,8 @@ fun generateApi(
  */
 private fun generateApi(
     metalavaClasspath: FileCollection,
-    files: JavaCompileInputs,
+    projectXml: File,
+    sourcePaths: Collection<File>,
     outputLocation: ApiLocation,
     generateApiMode: GenerateApiMode,
     apiLintMode: ApiLintMode,
@@ -296,10 +304,8 @@ private fun generateApi(
 ) {
     val args =
         getGenerateApiArgs(
-            files.bootClasspath,
-            files.dependencyClasspath,
-            files.sourcePaths.files,
-            files.commonModuleSourcePaths.files,
+            projectXml,
+            sourcePaths,
             outputLocation,
             generateApiMode,
             apiLintMode,
@@ -314,10 +320,8 @@ private fun generateApi(
  * [GenerateApiMode.PublicApi].
  */
 fun getGenerateApiArgs(
-    bootClasspath: FileCollection,
-    dependencyClasspath: FileCollection,
+    projectXml: File,
     sourcePaths: Collection<File>,
-    commonModuleSourcePaths: Collection<File>,
     outputLocation: ApiLocation?,
     generateApiMode: GenerateApiMode,
     apiLintMode: ApiLintMode,
@@ -327,16 +331,12 @@ fun getGenerateApiArgs(
     // generate public API txt
     val args =
         mutableListOf(
-            "--classpath",
-            (bootClasspath.files + dependencyClasspath.files).joinToString(File.pathSeparator),
             "--source-path",
             sourcePaths.filter { it.exists() }.joinToString(File.pathSeparator),
+            "--project",
+            projectXml.path
         )
 
-    val existentCommonModuleSourcePaths = commonModuleSourcePaths.filter { it.exists() }
-    if (existentCommonModuleSourcePaths.isNotEmpty()) {
-        args += listOf("--common-source-path", existentCommonModuleSourcePaths.joinToString(":"))
-    }
     args += listOf("--format=v4", "--warnings-as-errors")
 
     pathToManifest?.let { args += listOf("--manifest", pathToManifest) }

@@ -24,9 +24,8 @@ package androidx.sqlite
  *
  * See also [Database Connection](https://www.sqlite.org/c3ref/sqlite3.html)
  */
-// TODO(b/315461431): No common Closeable interface in KMP
-@Suppress("NotCloseable", "AcronymName") // SQL is a known term and should remain capitalized
-public interface SQLiteConnection {
+@Suppress("NotCloseable")
+public interface SQLiteConnection : AutoCloseable {
     /**
      * Prepares a new SQL statement.
      *
@@ -43,5 +42,5 @@ public interface SQLiteConnection {
      * Once a connection is closed it should no longer be used. Calling this function on an already
      * closed database connection is a no-op.
      */
-    public fun close()
+    public override fun close()
 }

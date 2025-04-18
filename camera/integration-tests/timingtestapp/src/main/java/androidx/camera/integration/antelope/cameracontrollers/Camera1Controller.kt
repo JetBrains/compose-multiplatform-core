@@ -261,6 +261,7 @@ internal constructor(
     internal val testConfig: TestConfig
 ) : Camera.AutoFocusCallback {
 
+    @Suppress("OVERRIDE_DEPRECATION") // b/407496822
     override fun onAutoFocus(p0: Boolean, p1: Camera?) {
         MainActivity.logd("camera1AutofocusCallback: autofocus complete.")
         params.timer.autofocusEnd = System.currentTimeMillis()
@@ -279,6 +280,7 @@ internal constructor(
     internal val testConfig: TestConfig
 ) : Camera.PictureCallback {
 
+    @Suppress("OVERRIDE_DEPRECATION") // b/407496822
     override fun onPictureTaken(bytes: ByteArray?, p1: Camera?) {
 
         params.timer.captureEnd = System.currentTimeMillis()

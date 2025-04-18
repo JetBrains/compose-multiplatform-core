@@ -363,7 +363,7 @@ private class DrawSelectionOverlayModifierNode(val state: AccessibilityNodeInspe
  * A modifier that accepts pointer input to select accessibility nodes in an
  * [AccessibilityNodeInspectorState].
  */
-private data class NodeSelectionGestureModifier(
+private class NodeSelectionGestureModifier(
     val state: AccessibilityNodeInspectorState,
     val onDragStarted: (() -> Unit)? = null,
 ) : ModifierNodeElement<NodeSelectionGestureModifierNode>() {
@@ -376,6 +376,22 @@ private data class NodeSelectionGestureModifier(
     }
 
     override fun InspectorInfo.inspectableProperties() {}
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is NodeSelectionGestureModifier) return false
+
+        if (state != other.state) return false
+        if (onDragStarted !== other.onDragStarted) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = state.hashCode()
+        result = 31 * result + (onDragStarted?.hashCode() ?: 0)
+        return result
+    }
 }
 
 private class NodeSelectionGestureModifierNode(
@@ -1132,7 +1148,8 @@ private fun NodeInfo.getProperties(): Map<String, Any?> = buildMap {
     setIfSpecified("isAccessibilityDataSensitive", node.isAccessibilityDataSensitive)
     setIfSpecified("isAccessibilityFocused", node.isAccessibilityFocused)
     setIfSpecified("isCheckable", node.isCheckable)
-    setIfSpecified("isChecked", node.isChecked)
+    // TODO(b/406574577): Remove suppression once 1.17.0 stable is released.
+    @Suppress("DEPRECATION") setIfSpecified("isChecked", node.isChecked)
     setIfSpecified("isClickable", node.isClickable)
     setIfSpecified("isLongClickable", node.isLongClickable)
     setIfSpecified("isContextClickable", node.isContextClickable)

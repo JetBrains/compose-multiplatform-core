@@ -19,6 +19,7 @@ package androidx.privacysandbox.sdkruntime.core
 import android.app.sdksandbox.AppOwnedSdkSandboxInterface
 import android.os.IBinder
 import android.os.ext.SdkExtensions.AD_SERVICES
+import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
@@ -47,6 +48,7 @@ class AppOwnedSdkSandboxInterfaceCompat(
      *
      * @param appOwnedSdkInterface source platform object.
      */
+    @RequiresApi(34)
     @RequiresExtension(extension = AD_SERVICES, version = 8)
     @RestrictTo(LIBRARY_GROUP)
     constructor(
@@ -88,6 +90,7 @@ class AppOwnedSdkSandboxInterfaceCompat(
      *
      * @return Platform AppOwnedSdkSandboxInterface
      */
+    @RequiresApi(34)
     @RequiresExtension(extension = AD_SERVICES, version = 8)
     @RestrictTo(LIBRARY_GROUP)
     fun toAppOwnedSdkSandboxInterface() = AppOwnedSdkSandboxInterface(name, version, binder)

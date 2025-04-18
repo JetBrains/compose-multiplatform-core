@@ -21,9 +21,10 @@ import android.media.MediaCodecInfo;
 import android.util.LruCache;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
 import androidx.camera.video.internal.encoder.EncoderConfig;
 import androidx.camera.video.internal.encoder.InvalidConfigException;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 
@@ -47,8 +48,7 @@ public final class CodecUtil {
      *
      * @throws InvalidConfigException if it fails create the codec.
      */
-    @NonNull
-    public static MediaCodec createCodec(@NonNull EncoderConfig encoderConfig)
+    public static @NonNull MediaCodec createCodec(@NonNull EncoderConfig encoderConfig)
             throws InvalidConfigException {
         return createCodec(encoderConfig.getMimeType());
     }
@@ -58,10 +58,8 @@ public final class CodecUtil {
      *
      * @throws InvalidConfigException if it fails to find or create the codec info.
      */
-    @NonNull
-    public static MediaCodecInfo findCodecAndGetCodecInfo(@NonNull EncoderConfig encoderConfig)
-            throws InvalidConfigException {
-        String mimeType = encoderConfig.getMimeType();
+    public static @NonNull MediaCodecInfo findCodecAndGetCodecInfo(
+            @NonNull String mimeType) throws InvalidConfigException {
         MediaCodecInfo codecInfo;
         synchronized (sCodecInfoCache) {
             codecInfo = sCodecInfoCache.get(mimeType);
@@ -84,8 +82,8 @@ public final class CodecUtil {
         }
     }
 
-    @NonNull
-    private static MediaCodec createCodec(@NonNull String mimeType) throws InvalidConfigException {
+    private static @NonNull MediaCodec createCodec(@NonNull String mimeType)
+            throws InvalidConfigException {
         try {
             return MediaCodec.createEncoderByType(mimeType);
         } catch (IOException | IllegalArgumentException e) {

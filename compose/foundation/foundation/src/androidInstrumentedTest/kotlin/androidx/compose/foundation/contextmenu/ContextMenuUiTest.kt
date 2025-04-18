@@ -108,6 +108,7 @@ class ContextMenuUiTest {
     }
 
     // region ContextMenuItem Tests
+    @Suppress("ComposableLambdaParameterPosition")
     @Composable
     private fun TestItem(
         label: String = "Item",

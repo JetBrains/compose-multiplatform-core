@@ -20,12 +20,13 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.params.DynamicRangeProfiles;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.core.DynamicRange;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Set;
 
@@ -60,8 +61,7 @@ public final class DynamicRangesCompat {
      * @throws IllegalArgumentException If the dynamic range argument is not within the set
      * returned by {@link #getSupportedDynamicRanges()}.
      */
-    @NonNull
-    public Set<DynamicRange> getDynamicRangeCaptureRequestConstraints(
+    public @NonNull Set<DynamicRange> getDynamicRangeCaptureRequestConstraints(
             @NonNull DynamicRange dynamicRange) {
         return mImpl.getDynamicRangeCaptureRequestConstraints(dynamicRange);
     }
@@ -71,8 +71,7 @@ public final class DynamicRangesCompat {
      *
      * @return a non-modifiable set of dynamic ranges.
      */
-    @NonNull
-    public Set<DynamicRange> getSupportedDynamicRanges() {
+    public @NonNull Set<DynamicRange> getSupportedDynamicRanges() {
         return mImpl.getSupportedDynamicRanges();
     }
 
@@ -102,8 +101,7 @@ public final class DynamicRangesCompat {
      * @param characteristics the characteristics used to derive dynamic range information.
      * @return a {@link DynamicRangesCompat} object.
      */
-    @NonNull
-    public static DynamicRangesCompat fromCameraCharacteristics(
+    public static @NonNull DynamicRangesCompat fromCameraCharacteristics(
             @NonNull CameraCharacteristicsCompat characteristics) {
         DynamicRangesCompat rangesCompat = null;
         if (Build.VERSION.SDK_INT >= 33) {
@@ -121,9 +119,8 @@ public final class DynamicRangesCompat {
      * @param dynamicRangeProfiles a {@link android.hardware.camera2.params.DynamicRangeProfiles}.
      * @return an equivalent {@link DynamicRangesCompat} object.
      */
-    @Nullable
     @RequiresApi(33)
-    public static DynamicRangesCompat toDynamicRangesCompat(
+    public static @Nullable DynamicRangesCompat toDynamicRangesCompat(
             @Nullable DynamicRangeProfiles dynamicRangeProfiles) {
         if (dynamicRangeProfiles == null) {
             return null;
@@ -142,25 +139,21 @@ public final class DynamicRangesCompat {
      * @return the underlying {@link android.hardware.camera2.params.DynamicRangeProfiles} or
      * {@code null} if the device doesn't support 10 bit dynamic range.
      */
-    @Nullable
     @RequiresApi(33)
-    public DynamicRangeProfiles toDynamicRangeProfiles() {
+    public @Nullable DynamicRangeProfiles toDynamicRangeProfiles() {
         Preconditions.checkState(Build.VERSION.SDK_INT >= 33, "DynamicRangesCompat can only be "
                 + "converted to DynamicRangeProfiles on API 33 or higher.");
         return mImpl.unwrap();
     }
 
     interface DynamicRangeProfilesCompatImpl {
-        @NonNull
-        Set<DynamicRange> getDynamicRangeCaptureRequestConstraints(
+        @NonNull Set<DynamicRange> getDynamicRangeCaptureRequestConstraints(
                 @NonNull DynamicRange dynamicRange);
 
-        @NonNull
-        Set<DynamicRange> getSupportedDynamicRanges();
+        @NonNull Set<DynamicRange> getSupportedDynamicRanges();
 
         boolean isExtraLatencyPresent(@NonNull DynamicRange dynamicRange);
 
-        @Nullable
-        DynamicRangeProfiles unwrap();
+        @Nullable DynamicRangeProfiles unwrap();
     }
 }

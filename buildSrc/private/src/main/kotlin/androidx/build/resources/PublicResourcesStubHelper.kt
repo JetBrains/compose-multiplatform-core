@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
 
 package androidx.build.resources
 
-import androidx.build.DeprecatedKotlinMultiplatformAndroidTarget
 import androidx.build.getSupportRootFolder
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.variant.LibraryVariant
 import java.io.File
 import org.gradle.api.Project
@@ -48,7 +47,7 @@ fun Project.configurePublicResourcesStub(kmpExtension: KotlinMultiplatformExtens
         }
     val sourceSet =
         kmpExtension.targets
-            .withType(DeprecatedKotlinMultiplatformAndroidTarget::class.java)
+            .withType(KotlinMultiplatformAndroidLibraryTarget::class.java)
             .single()
             .compilations
             .getByName(KotlinCompilation.MAIN_COMPILATION_NAME)

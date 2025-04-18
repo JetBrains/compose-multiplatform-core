@@ -17,12 +17,13 @@ package androidx.work.integration.testapp.sherlockholmes;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.work.Data;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 import androidx.work.integration.testapp.db.TestDatabase;
 import androidx.work.integration.testapp.db.WordCount;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.DataInputStream;
 import java.io.FileInputStream;

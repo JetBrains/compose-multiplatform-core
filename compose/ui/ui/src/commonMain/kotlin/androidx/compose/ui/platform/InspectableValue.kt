@@ -49,7 +49,7 @@ interface InspectableValue {
  * A [ValueElement] describes an element of a compose value instance. The [name] typically refers to
  * a (possibly private) property name with its corresponding [value].
  */
-data class ValueElement(val name: String, val value: Any?)
+@Suppress("DataClassDefinition") data class ValueElement(val name: String, val value: Any?)
 
 /** A builder for an [InspectableValue]. */
 class InspectorInfo {

@@ -29,8 +29,6 @@ import android.util.Size;
 import android.view.Surface;
 import android.view.TextureView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.Logger;
 import androidx.camera.core.Preview;
 import androidx.camera.core.SurfaceRequest;
@@ -40,6 +38,9 @@ import androidx.core.os.HandlerCompat;
 import androidx.core.util.Consumer;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.concurrent.Executor;
@@ -86,8 +87,7 @@ public final class SurfaceTextureProvider {
      * @return a {@link Preview.SurfaceProvider} to be used with
      * {@link Preview#setSurfaceProvider(Preview.SurfaceProvider)}.
      */
-    @NonNull
-    public static Preview.SurfaceProvider createSurfaceTextureProvider(
+    public static Preview.@NonNull SurfaceProvider createSurfaceTextureProvider(
             @NonNull SurfaceTextureCallback surfaceTextureCallback) {
         return createSurfaceTextureProvider(surfaceTextureCallback, null);
     }
@@ -124,8 +124,7 @@ public final class SurfaceTextureProvider {
      * @return a {@link Preview.SurfaceProvider} to be used with
      * {@link Preview#setSurfaceProvider(Preview.SurfaceProvider)}.
      */
-    @NonNull
-    public static Preview.SurfaceProvider createSurfaceTextureProvider(
+    public static Preview.@NonNull SurfaceProvider createSurfaceTextureProvider(
             @NonNull SurfaceTextureCallback surfaceTextureCallback,
             @Nullable Consumer<SurfaceRequest.Result> resultListener) {
         return (surfaceRequest) -> {
@@ -155,8 +154,7 @@ public final class SurfaceTextureProvider {
      *
      * <p> The {@link SurfaceTexture} will be released when it is no longer needed.
      */
-    @NonNull
-    public static Preview.SurfaceProvider createSurfaceTextureProvider() {
+    public static Preview.@NonNull SurfaceProvider createSurfaceTextureProvider() {
         return createSurfaceTextureProvider(new SurfaceTextureCallback() {
             @Override
             public void onSurfaceTextureReady(@NonNull SurfaceTexture surfaceTexture,
@@ -177,8 +175,7 @@ public final class SurfaceTextureProvider {
      * <p>This method also creates a backing OpenGL thread that will automatically drain frames
      * from the SurfaceTexture as they become available.
      */
-    @NonNull
-    public static Preview.SurfaceProvider createAutoDrainingSurfaceTextureProvider() {
+    public static Preview.@NonNull SurfaceProvider createAutoDrainingSurfaceTextureProvider() {
         return createAutoDrainingSurfaceTextureProvider(null);
     }
 
@@ -189,9 +186,8 @@ public final class SurfaceTextureProvider {
      * <p>This method also creates a backing OpenGL thread that will automatically drain frames
      * from the SurfaceTexture as they become available.
      */
-    @NonNull
-    public static Preview.SurfaceProvider createAutoDrainingSurfaceTextureProvider(
-            @Nullable SurfaceTexture.OnFrameAvailableListener frameAvailableListener) {
+    public static Preview.@NonNull SurfaceProvider createAutoDrainingSurfaceTextureProvider(
+            SurfaceTexture.@Nullable OnFrameAvailableListener frameAvailableListener) {
         return createAutoDrainingSurfaceTextureProvider(frameAvailableListener, null, null);
     }
     /**
@@ -205,9 +201,8 @@ public final class SurfaceTextureProvider {
      *                                          surface request is triggered
      * @param resultListener listener to be invoked for the surface provided.
      */
-    @NonNull
-    public static Preview.SurfaceProvider createAutoDrainingSurfaceTextureProvider(
-            @Nullable SurfaceTexture.OnFrameAvailableListener frameAvailableListener,
+    public static Preview.@NonNull SurfaceProvider createAutoDrainingSurfaceTextureProvider(
+            SurfaceTexture.@Nullable OnFrameAvailableListener frameAvailableListener,
             @Nullable Consumer<SurfaceRequest> onSurfaceRequestAvailableListener,
             @Nullable Consumer<SurfaceRequest.Result> resultListener
     ) {
@@ -255,11 +250,11 @@ public final class SurfaceTextureProvider {
      * @param height                 the height of the SurfaceTexture size.
      * @param frameAvailableListener listener to be invoked when there are new frames.
      */
-    @NonNull
-    public static ListenableFuture<SurfaceTextureHolder> createAutoDrainingSurfaceTextureAsync(
-            int width,
-            int height,
-            @Nullable SurfaceTexture.OnFrameAvailableListener frameAvailableListener) {
+    public static @NonNull ListenableFuture<SurfaceTextureHolder>
+            createAutoDrainingSurfaceTextureAsync(
+                    int width,
+                    int height,
+                    SurfaceTexture.@Nullable OnFrameAvailableListener frameAvailableListener) {
         return CallbackToFutureAdapter.getFuture((completer) -> {
             HandlerThread handlerThread = new HandlerThread("CameraX-AutoDrainThread");
             handlerThread.start();
@@ -322,8 +317,7 @@ public final class SurfaceTextureProvider {
             mCloseRunnable = closeRunnable;
         }
 
-        @NonNull
-        public SurfaceTexture getSurfaceTexture() {
+        public @NonNull SurfaceTexture getSurfaceTexture() {
             return mSurfaceTexture;
         }
 
@@ -333,8 +327,7 @@ public final class SurfaceTextureProvider {
         }
     }
 
-    @NonNull
-    private static EGLContextParams createDummyEGLContext() {
+    private static @NonNull EGLContextParams createDummyEGLContext() {
         EGLDisplay eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
         if (Objects.equals(eglDisplay, EGL14.EGL_NO_DISPLAY)) {
             throw new UnsupportedOperationException("Unable to get default EGL display");

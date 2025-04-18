@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-@SuppressLint("NewApi", "ClassVerificationFailure")
+@SuppressLint("NewApi")
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 5)
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)
 open class MeasurementManagerImplCommon(

@@ -29,7 +29,6 @@ import androidx.compose.animation.core.calculateTargetValue
 import androidx.compose.animation.core.copy
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.rememberSplineBasedDecay
-import androidx.compose.foundation.ComposeFoundationFlags.NewNestedFlingPropagationEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.DefaultScrollMotionDurationScale
 import androidx.compose.foundation.gestures.FlingBehavior
@@ -296,14 +295,10 @@ private suspend fun ScrollScope.animateDecay(
 
     fun AnimationScope<Float, AnimationVector1D>.consumeDelta(delta: Float) {
         var consumed = 0.0f
-        if (NewNestedFlingPropagationEnabled) {
-            try {
-                consumed = scrollBy(delta)
-            } catch (ex: CancellationException) {
-                cancelAnimation()
-            }
-        } else {
+        try {
             consumed = scrollBy(delta)
+        } catch (_: CancellationException) {
+            cancelAnimation()
         }
 
         onAnimationStep(consumed)
@@ -359,14 +354,10 @@ private suspend fun ScrollScope.animateWithTarget(
         val realValue = value.coerceToTarget(cancelOffset)
         val delta = realValue - consumedUpToNow
         var consumed = 0.0f
-        if (NewNestedFlingPropagationEnabled) {
-            try {
-                consumed = scrollBy(delta)
-            } catch (ex: CancellationException) {
-                cancelAnimation()
-            }
-        } else {
+        try {
             consumed = scrollBy(delta)
+        } catch (_: CancellationException) {
+            cancelAnimation()
         }
         onAnimationStep(consumed)
         // stop when unconsumed or when we reach the desired value

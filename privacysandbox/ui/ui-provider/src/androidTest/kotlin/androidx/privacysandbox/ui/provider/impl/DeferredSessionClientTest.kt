@@ -165,6 +165,8 @@ class DeferredSessionClientTest {
 
         override fun notifyConfigurationChanged(configuration: Configuration) {}
 
+        override fun notifySessionRendered(supportedSignalOptions: Set<String>) {}
+
         override fun notifyUiChanged(uiContainerInfo: Bundle) {}
 
         override fun close() {

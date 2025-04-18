@@ -27,7 +27,18 @@ public actual class SavedState
 @PublishedApi
 internal constructor(@PublishedApi internal val map: MutableMap<String, Any?> = mutableMapOf())
 
-actual inline fun savedState(
+public actual inline fun savedState(
     initialState: Map<String, Any?>,
     builderAction: SavedStateWriter.() -> Unit,
-): SavedState = SavedState(initialState.toMutableMap()).apply { write(builderAction) }
+): SavedState {
+    val copiedState = initialState.toMutableMap()
+    return SavedState(copiedState).apply { write(builderAction) }
+}
+
+public actual inline fun savedState(
+    initialState: SavedState,
+    builderAction: SavedStateWriter.() -> Unit,
+): SavedState {
+    val copiedState = initialState.map.toMutableMap()
+    return SavedState(copiedState).apply { write(builderAction) }
+}

@@ -23,8 +23,11 @@ import static androidx.appsearch.localstorage.util.PrefixUtil.createPrefix;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.junit.Assume.assumeTrue;
+
 import androidx.appsearch.app.JoinSpec;
 import androidx.appsearch.app.SearchSpec;
+import androidx.appsearch.flags.Flags;
 import androidx.appsearch.localstorage.AppSearchConfig;
 import androidx.appsearch.localstorage.AppSearchConfigImpl;
 import androidx.appsearch.localstorage.AppSearchImpl;
@@ -100,6 +103,7 @@ public class SearchSpecToProtoConverterTest {
                 /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
+                /*icingSearchEngine=*/ null,
                 ALWAYS_OPTIMIZE);
     }
 
@@ -417,6 +421,35 @@ public class SearchSpecToProtoConverterTest {
         assertThat(resultSpecProto.getSnippetSpec().getNumToSnippet()).isEqualTo(234);
         assertThat(resultSpecProto.getSnippetSpec().getNumMatchesPerProperty()).isEqualTo(345);
         assertThat(resultSpecProto.getSnippetSpec().getMaxWindowUtf32Length()).isEqualTo(456);
+    }
+
+    @Test
+    public void testToResultSpecProto_withEmbeddingMatchInfo() {
+        assumeTrue(Flags.enableEmbeddingMatchInfo());
+        SearchSpec searchSpec = new SearchSpec.Builder()
+                .setResultCountPerPage(123)
+                .setSnippetCount(234)
+                .setSnippetCountPerProperty(345)
+                .setMaxSnippetSize(456)
+                .setRetrieveEmbeddingMatchInfos(true)
+                .build();
+
+        SearchSpecToProtoConverter convert = new SearchSpecToProtoConverter(
+                /*queryExpression=*/"query",
+                searchSpec,
+                /*prefixes=*/ImmutableSet.of(),
+                new NamespaceCache(ImmutableMap.of()),
+                new SchemaCache(),
+                mLocalStorageIcingOptionsConfig);
+        ResultSpecProto resultSpecProto = convert.toResultSpecProto(
+                new NamespaceCache(ImmutableMap.of()),
+                new SchemaCache());
+
+        assertThat(resultSpecProto.getNumPerPage()).isEqualTo(123);
+        assertThat(resultSpecProto.getSnippetSpec().getNumToSnippet()).isEqualTo(234);
+        assertThat(resultSpecProto.getSnippetSpec().getNumMatchesPerProperty()).isEqualTo(345);
+        assertThat(resultSpecProto.getSnippetSpec().getMaxWindowUtf32Length()).isEqualTo(456);
+        assertThat(resultSpecProto.getSnippetSpec().getGetEmbeddingMatchInfo()).isTrue();
     }
 
     @Test

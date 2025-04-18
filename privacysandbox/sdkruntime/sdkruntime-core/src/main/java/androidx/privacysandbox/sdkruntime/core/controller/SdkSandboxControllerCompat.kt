@@ -24,7 +24,6 @@ import android.os.IBinder
 import androidx.annotation.Keep
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
-import androidx.privacysandbox.sdkruntime.core.AdServicesInfo
 import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
@@ -202,7 +201,7 @@ internal constructor(private val controllerImpl: SandboxControllerImpl) {
                         ?: throw UnsupportedOperationException(
                             "Shouldn't happen: No controller implementation available"
                         )
-                return SdkSandboxControllerCompat(LocalImpl(implFromClient, context, clientVersion))
+                return SdkSandboxControllerCompat(LocalImpl(implFromClient, clientVersion))
             }
             val platformImpl = PlatformImplFactory.create(context)
             return SdkSandboxControllerCompat(platformImpl)
@@ -229,7 +228,7 @@ internal constructor(private val controllerImpl: SandboxControllerImpl) {
 
     private object PlatformImplFactory {
         fun create(context: Context): SandboxControllerImpl {
-            if (Build.VERSION.SDK_INT >= 34 || AdServicesInfo.isDeveloperPreview()) {
+            if (Build.VERSION.SDK_INT >= 34) {
                 return PlatformUDCImpl.from(context)
             }
             throw UnsupportedOperationException("SDK should be loaded locally on API below 34")

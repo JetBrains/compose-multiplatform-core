@@ -21,18 +21,18 @@ import android.util.Log
 import androidx.benchmark.Arguments
 import androidx.benchmark.ExperimentalBenchmarkConfigApi
 import androidx.benchmark.ExperimentalConfig
-import androidx.benchmark.Insight
 import androidx.benchmark.Outputs
 import androidx.benchmark.Profiler
 import androidx.benchmark.inMemoryTrace
-import androidx.benchmark.macro.perfetto.queryStartupInsights
 import androidx.benchmark.perfetto.PerfettoCapture
 import androidx.benchmark.perfetto.PerfettoCaptureWrapper
 import androidx.benchmark.perfetto.PerfettoConfig
-import androidx.benchmark.perfetto.PerfettoTrace
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
 import androidx.benchmark.perfetto.UiState
 import androidx.benchmark.perfetto.appendUiState
+import androidx.benchmark.traceprocessor.Insight
+import androidx.benchmark.traceprocessor.PerfettoTrace
+import androidx.benchmark.traceprocessor.StartupInsights
+import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.tracing.trace
 import java.io.File
 
@@ -65,7 +65,7 @@ internal data class IterationResult(
 
 /** Run a Macrobenchmark Phase and collect a list of [IterationResult]. */
 @ExperimentalBenchmarkConfigApi
-internal fun PerfettoTraceProcessor.runPhase(
+internal fun TraceProcessor.runPhase(
     uniqueName: String,
     packageName: String,
     macrobenchmarkPackageName: String,
@@ -173,12 +173,13 @@ internal fun PerfettoTraceProcessor.runPhase(
                         },
                     insights =
                         if (experimentalConfig?.startupInsightsConfig?.isEnabled == true) {
-                            queryStartupInsights(
-                                helpUrlBase = Arguments.startupInsightsHelpUrlBase,
-                                traceOutputRelativePath = Outputs.relativePathFor(tracePath),
-                                iteration = iteration,
-                                packageName = packageName
-                            )
+                            StartupInsights(helpUrlBase = Arguments.startupInsightsHelpUrlBase)
+                                .queryInsights(
+                                    session = this,
+                                    packageName = packageName,
+                                    traceLinkTitle = "$iteration",
+                                    traceLinkPath = Outputs.relativePathFor(tracePath)
+                                )
                         } else {
                             emptyList()
                         }

@@ -25,7 +25,6 @@ import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.HealthConnectFeatures.Companion.Feature
 import androidx.health.connect.client.HealthConnectFeatures.Companion.FeatureStatus
 
-@ExperimentalFeatureAvailabilityApi
 internal class HealthConnectFeaturesApkImpl(
     private val context: Context,
     private val providerPackageName: String

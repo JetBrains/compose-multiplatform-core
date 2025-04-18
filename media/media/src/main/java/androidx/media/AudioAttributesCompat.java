@@ -44,27 +44,31 @@ import java.lang.annotation.RetentionPolicy;
  * in a stream type by allowing the application to define:
  *
  * <ul>
- * <li>usage: "why" you are playing a sound, what is this sound used for. This is achieved with
- * the "usage" information. Examples of usage are {@link #USAGE_MEDIA} and {@link
- * #USAGE_ALARM}. These two examples are the closest to stream types, but more detailed use
- * cases are available. Usage information is more expressive than a stream type, and allows
- * certain platforms or routing policies to use this information for more refined volume or
- * routing decisions. Usage is the most important information to supply in <code>
- * AudioAttributesCompat</code> and it is recommended to build any instance with this
- * information supplied, see {@link AudioAttributesCompat.Builder} for exceptions.
- * <li>content type: "what" you are playing. The content type expresses the general category of
- * the content. This information is optional. But in case it is known (for instance {@link
- * #CONTENT_TYPE_MOVIE} for a movie streaming service or {@link #CONTENT_TYPE_MUSIC} for a
- * music playback application) this information might be used by the audio framework to
- * selectively configure some audio post-processing blocks.
- * <li>flags: "how" is playback to be affected, see the flag definitions for the specific playback
- * behaviors they control.
+ *   <li>usage: "why" you are playing a sound, what is this sound used for. This is achieved with
+ *       the "usage" information. Examples of usage are {@link #USAGE_MEDIA} and {@link
+ *       #USAGE_ALARM}. These two examples are the closest to stream types, but more detailed use
+ *       cases are available. Usage information is more expressive than a stream type, and allows
+ *       certain platforms or routing policies to use this information for more refined volume or
+ *       routing decisions. Usage is the most important information to supply in <code>
+ * AudioAttributesCompat</code> and it is recommended to build any instance with this information
+ *       supplied, see {@link AudioAttributesCompat.Builder} for exceptions.
+ *   <li>content type: "what" you are playing. The content type expresses the general category of
+ *       the content. This information is optional. But in case it is known (for instance {@link
+ *       #CONTENT_TYPE_MOVIE} for a movie streaming service or {@link #CONTENT_TYPE_MUSIC} for a
+ *       music playback application) this information might be used by the audio framework to
+ *       selectively configure some audio post-processing blocks.
+ *   <li>flags: "how" is playback to be affected, see the flag definitions for the specific playback
+ *       behaviors they control.
  * </ul>
  *
  * <p><code>AudioAttributesCompat</code> instance is built through its builder, {@link
  * AudioAttributesCompat.Builder}. Also see {@link android.media.AudioAttributes} for the framework
  * implementation of this class.
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 @VersionedParcelize(jetifyAs = "android.support.v4.media.AudioAttributesCompat")
 public class AudioAttributesCompat implements VersionedParcelable {
     static final String TAG = "AudioAttributesCompat";
@@ -352,9 +356,13 @@ public class AudioAttributesCompat implements VersionedParcelable {
      * <p>By default all types of information (usage, content type, flags) conveyed by an <code>
      * AudioAttributesCompat</code> instance are set to "unknown". Unknown information will be
      * interpreted as a default value that is dependent on the context of use, for instance a {@link
-     * android.media.MediaPlayer} will use a default usage of
-     * {@link AudioAttributesCompat#USAGE_MEDIA}. See also {@link AudioAttributes.Builder}.
+     * android.media.MediaPlayer} will use a default usage of {@link
+     * AudioAttributesCompat#USAGE_MEDIA}. See also {@link AudioAttributes.Builder}.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static class Builder {
         final AudioAttributesImpl.Builder mBuilderImpl;
         /**

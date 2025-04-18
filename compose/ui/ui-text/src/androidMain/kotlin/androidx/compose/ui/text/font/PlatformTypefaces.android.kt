@@ -255,6 +255,7 @@ private object TypefaceCompatApi26 {
             localPaint = Paint()
             this.threadLocalPaint.set(localPaint)
         }
+        localPaint.fontVariationSettings = null /* don't let paint cache b/353609778 */
         localPaint.typeface = typeface
         localPaint.fontVariationSettings = variationSettings.toAndroidString(context)
         return localPaint.typeface

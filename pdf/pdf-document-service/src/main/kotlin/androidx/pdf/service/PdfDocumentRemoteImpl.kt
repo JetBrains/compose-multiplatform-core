@@ -59,7 +59,7 @@ internal class PdfDocumentRemoteImpl(
         return rendererAdapter.pageCount
     }
 
-    override fun getPageDimensions(pageNum: Int): Dimensions {
+    override fun getPageDimensions(pageNum: Int): Dimensions? {
         return withPage(pageNum) { page -> Dimensions(page.width, page.height) }
     }
 
@@ -94,11 +94,11 @@ internal class PdfDocumentRemoteImpl(
         return output
     }
 
-    override fun getPageText(pageNum: Int): List<PdfPageTextContent> {
+    override fun getPageText(pageNum: Int): List<PdfPageTextContent>? {
         return withPage(pageNum) { page -> page.getPageTextContents() }
     }
 
-    override fun searchPageText(pageNum: Int, query: String): List<PageMatchBounds> {
+    override fun searchPageText(pageNum: Int, query: String): List<PageMatchBounds>? {
         return withPage(pageNum) { page -> page.searchPageText(query) }
     }
 
@@ -110,15 +110,15 @@ internal class PdfDocumentRemoteImpl(
         return withPage(pageNum) { page -> page.selectPageText(start, stop) }
     }
 
-    override fun getPageExternalLinks(pageNum: Int): List<PdfPageLinkContent> {
+    override fun getPageExternalLinks(pageNum: Int): List<PdfPageLinkContent>? {
         return withPage(pageNum) { page -> page.getPageLinks() }
     }
 
-    override fun getPageGotoLinks(pageNum: Int): List<PdfPageGotoLinkContent> {
+    override fun getPageGotoLinks(pageNum: Int): List<PdfPageGotoLinkContent>? {
         return withPage(pageNum) { page -> page.getPageGotoLinks() }
     }
 
-    override fun getPageImageContent(pageNum: Int): List<PdfPageImageContent> {
+    override fun getPageImageContent(pageNum: Int): List<PdfPageImageContent>? {
         return withPage(pageNum) { page -> page.getPageImageContents() }
     }
 
@@ -138,10 +138,17 @@ internal class PdfDocumentRemoteImpl(
         rendererAdapter.close()
     }
 
-    private fun <T> withPage(pageNum: Int, block: (PdfPage) -> T): T {
-        val page = rendererAdapter.openPage(pageNum, useCache = false)
-        val results = block(page)
-        page.close()
+    private fun <T> withPage(pageNum: Int, block: (PdfPage) -> T): T? {
+        var page: PdfPage? = null
+        var results: T?
+
+        try {
+            page = rendererAdapter.openPage(pageNum, useCache = false)
+            results = block(page)
+        } finally {
+            rendererAdapter.releasePage(page, pageNum)
+        }
+
         return results
     }
 }

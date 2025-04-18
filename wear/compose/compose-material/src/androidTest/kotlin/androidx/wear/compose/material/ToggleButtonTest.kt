@@ -16,7 +16,6 @@
 package androidx.wear.compose.material
 
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -245,7 +244,7 @@ class ToggleButtonBehaviourTest {
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox))
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun is_circular_under_ltr() =
         rule.isCircular(LayoutDirection.Ltr) {
@@ -258,7 +257,7 @@ class ToggleButtonBehaviourTest {
             )
         }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun is_circular_under_rtl() =
         rule.isCircular(LayoutDirection.Rtl) {
@@ -346,7 +345,7 @@ class ToggleButtonSizeTest {
 class ToggleButtonColorTest {
     @get:Rule val rule = createComposeRule()
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_checked_primary_colors() =
         verifyColors(
@@ -356,7 +355,7 @@ class ToggleButtonColorTest {
             { MaterialTheme.colors.onPrimary }
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_unchecked_secondary_colors() =
         verifyColors(
@@ -366,7 +365,7 @@ class ToggleButtonColorTest {
             { MaterialTheme.colors.onSurface }
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_primary_checked_contrasting_content_color() =
         verifyColors(
@@ -377,7 +376,7 @@ class ToggleButtonColorTest {
             applyAlphaForDisabledContent = false,
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_unchecked_disabled_alpha() =
         verifyColors(

@@ -16,7 +16,6 @@
 
 package androidx.appsearch.playservicesstorage.converter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.GenericDocument;
@@ -26,6 +25,8 @@ import androidx.appsearch.app.SchemaVisibilityConfig;
 import androidx.appsearch.app.SetSchemaRequest;
 import androidx.appsearch.app.SetSchemaResponse;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Map;
@@ -43,8 +44,7 @@ public final class SetSchemaRequestToGmsConverter {
      * Translates a jetpack {@link SetSchemaRequest} into a googleGms
      * {@link com.google.android.gms.appsearch.SetSchemaRequest}.
      */
-    @NonNull
-    public static com.google.android.gms.appsearch.SetSchemaRequest toGmsSetSchemaRequest(
+    public static com.google.android.gms.appsearch.@NonNull SetSchemaRequest toGmsSetSchemaRequest(
             @NonNull SetSchemaRequest jetpackRequest) {
         Preconditions.checkNotNull(jetpackRequest);
         com.google.android.gms.appsearch.SetSchemaRequest.Builder gmsBuilder =
@@ -108,12 +108,11 @@ public final class SetSchemaRequestToGmsConverter {
                             return jetpackMigrator.shouldMigrate(currentVersion, finalVersion);
                         }
 
-                        @NonNull
                         @Override
-                        public com.google.android.gms.appsearch.GenericDocument onUpgrade(
+                        public com.google.android.gms.appsearch.@NonNull GenericDocument onUpgrade(
                                 int currentVersion,
                                 int finalVersion,
-                                @NonNull com.google.android.gms.appsearch.GenericDocument
+                                com.google.android.gms.appsearch.@NonNull GenericDocument
                                         inGmsDocument) {
                             GenericDocument inJetpackDocument =
                                     GenericDocumentToGmsConverter
@@ -129,13 +128,13 @@ public final class SetSchemaRequestToGmsConverter {
                                             outJetpackDocument);
                         }
 
-                        @NonNull
                         @Override
-                        public com.google.android.gms.appsearch.GenericDocument onDowngrade(
-                                int currentVersion,
-                                int finalVersion,
-                                @NonNull com.google.android.gms.appsearch.GenericDocument
-                                        inGmsDocument) {
+                        public com.google.android.gms.appsearch.@NonNull GenericDocument
+                                onDowngrade(
+                                        int currentVersion,
+                                        int finalVersion,
+                                        com.google.android.gms.appsearch.@NonNull GenericDocument
+                                                inGmsDocument) {
                             GenericDocument inJetpackDocument =
                                     GenericDocumentToGmsConverter
                                             .toJetpackGenericDocument(
@@ -163,9 +162,8 @@ public final class SetSchemaRequestToGmsConverter {
      * {@link com.google.android.gms.appsearch.SetSchemaResponse} into a jetpack
      * {@link SetSchemaResponse}.
      */
-    @NonNull
-    public static SetSchemaResponse toJetpackSetSchemaResponse(
-            @NonNull com.google.android.gms.appsearch.SetSchemaResponse
+    public static @NonNull SetSchemaResponse toJetpackSetSchemaResponse(
+            com.google.android.gms.appsearch.@NonNull SetSchemaResponse
                     gmsResponse) {
         Preconditions.checkNotNull(gmsResponse);
         SetSchemaResponse.Builder jetpackBuilder = new SetSchemaResponse.Builder()
@@ -189,8 +187,7 @@ public final class SetSchemaRequestToGmsConverter {
      * Translates a jetpack {@link SchemaVisibilityConfig} into a gms
      * {@link com.google.android.gms.appsearch.SchemaVisibilityConfig}.
      */
-    @NonNull
-    private static com.google.android.gms.appsearch.SchemaVisibilityConfig
+    private static com.google.android.gms.appsearch.@NonNull SchemaVisibilityConfig
             toGmsSchemaVisibilityConfig(@NonNull SchemaVisibilityConfig jetpackConfig) {
         Preconditions.checkNotNull(jetpackConfig);
         com.google.android.gms.appsearch.SchemaVisibilityConfig.Builder gmsBuilder =

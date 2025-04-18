@@ -20,9 +20,10 @@ import android.content.Context;
 import android.util.Pair;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.InitializationException;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -47,8 +48,7 @@ public interface CameraDeviceSurfaceManager {
          * @return the factory instance
          * @throws InitializationException if it fails to create the factory
          */
-        @NonNull
-        CameraDeviceSurfaceManager newInstance(@NonNull Context context,
+        @NonNull CameraDeviceSurfaceManager newInstance(@NonNull Context context,
                 @Nullable Object cameraManager, @NonNull Set<String> availableCameraIds)
                 throws InitializationException;
     }
@@ -62,8 +62,7 @@ public interface CameraDeviceSurfaceManager {
      * @param size        the size info for the surface configuration object
      * @return new {@link SurfaceConfig} object
      */
-    @Nullable
-    SurfaceConfig transformSurfaceConfig(
+    @Nullable SurfaceConfig transformSurfaceConfig(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             int imageFormat,
@@ -90,8 +89,7 @@ public interface CameraDeviceSurfaceManager {
      *                                  available, or if the {@code cameraId}
      *                                  is not a valid id.
      */
-    @NonNull
-    Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
+    @NonNull Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
             getSuggestedStreamSpecs(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,

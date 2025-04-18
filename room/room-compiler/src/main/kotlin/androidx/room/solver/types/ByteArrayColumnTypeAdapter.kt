@@ -25,21 +25,21 @@ import androidx.room.solver.CodeGenScope
 
 class ByteArrayColumnTypeAdapter private constructor(out: XType) :
     ColumnTypeAdapter(out = out, typeAffinity = SQLTypeAffinity.BLOB) {
-    override fun readFromCursor(
+    override fun readFromStatement(
         outVarName: String,
-        cursorVarName: String,
+        stmtVarName: String,
         indexVarName: String,
         scope: CodeGenScope
     ) {
         scope.builder.apply {
             if (out.nullability == XNullability.NONNULL) {
-                addStatement("%L = %L.getBlob(%L)", outVarName, cursorVarName, indexVarName)
+                addStatement("%L = %L.getBlob(%L)", outVarName, stmtVarName, indexVarName)
             } else {
-                beginControlFlow("if (%L.isNull(%L))", cursorVarName, indexVarName).apply {
+                beginControlFlow("if (%L.isNull(%L))", stmtVarName, indexVarName).apply {
                     addStatement("%L = null", outVarName)
                 }
                 nextControlFlow("else").apply {
-                    addStatement("%L = %L.getBlob(%L)", outVarName, cursorVarName, indexVarName)
+                    addStatement("%L = %L.getBlob(%L)", outVarName, stmtVarName, indexVarName)
                 }
                 endControlFlow()
             }

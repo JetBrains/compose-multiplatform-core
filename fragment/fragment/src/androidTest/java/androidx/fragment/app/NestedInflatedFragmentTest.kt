@@ -181,6 +181,7 @@ class NestedInflatedFragmentTest {
             childFragmentManager.addFragmentOnAttachListener(this)
         }
 
+        @Suppress("OVERRIDE_DEPRECATION") // b/407500169
         override fun setUserVisibleHint(isVisibleToUser: Boolean) {
             super.setUserVisibleHint(isVisibleToUser)
             if (host != null) {
@@ -203,6 +204,7 @@ class NestedInflatedFragmentTest {
             childFragmentManager.addFragmentOnAttachListener(this)
         }
 
+        @Suppress("OVERRIDE_DEPRECATION") // b/407500169
         override fun setUserVisibleHint(isVisibleToUser: Boolean) {
             super.setUserVisibleHint(isVisibleToUser)
             if (host != null) {

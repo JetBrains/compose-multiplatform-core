@@ -171,7 +171,8 @@ internal class PausedCompositionImpl(
 ) : PausedComposition {
     private var state = PausedCompositionState.InitialPending
     private var invalidScopes = emptyScatterSet<RecomposeScopeImpl>()
-    internal val rememberManager = RememberEventDispatcher(abandonSet)
+    internal val rememberManager =
+        RememberEventDispatcher().apply { prepare(abandonSet, composer.errorContext) }
     internal val pausableApplier = RecordingApplier(applier.current)
 
     override val isComplete: Boolean
@@ -205,6 +206,7 @@ internal class PausedCompositionImpl(
             }
         } catch (e: Exception) {
             state = PausedCompositionState.Invalid
+            throw e
         }
         return isComplete
     }
@@ -258,7 +260,6 @@ internal class PausedCompositionImpl(
 }
 
 internal class RecordingApplier<N>(root: N) : Applier<N> {
-    private val stack = mutableObjectListOf<N>()
     private val operations = mutableIntListOf()
     private val instances = mutableObjectListOf<Any?>()
 
@@ -267,13 +268,10 @@ internal class RecordingApplier<N>(root: N) : Applier<N> {
     override fun down(node: N) {
         operations.add(DOWN)
         instances.add(node)
-        stack.add(current)
-        current = node
     }
 
     override fun up() {
         operations.add(UP)
-        current = stack.removeAt(stack.size - 1)
     }
 
     override fun remove(index: Int, count: Int) {

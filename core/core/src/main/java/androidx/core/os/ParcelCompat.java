@@ -23,9 +23,10 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.SparseArray;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -98,9 +99,8 @@ public final class ParcelCompat {
      */
     @SuppressLint({"ConcreteCollection", "NullableCollection"})
     @SuppressWarnings({"deprecation", "unchecked"})
-    @Nullable
-    public static <T> ArrayList<T> readArrayList(@NonNull Parcel in, @Nullable ClassLoader loader,
-            @NonNull Class<? extends T> clazz) {
+    public static <T> @Nullable ArrayList<T> readArrayList(@NonNull Parcel in,
+            @Nullable ClassLoader loader, @NonNull Class<? extends T> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
             return Api33Impl.readArrayList(in, loader, clazz);
         } else {
@@ -124,9 +124,8 @@ public final class ParcelCompat {
      */
     @SuppressWarnings({"deprecation", "unchecked"})
     @SuppressLint({"ArrayReturn", "NullableCollection"})
-    @Nullable
-    public static <T> Object[] readArray(@NonNull Parcel in, @Nullable ClassLoader loader,
-            @NonNull Class<T> clazz) {
+    public static <T> Object @Nullable [] readArray(@NonNull Parcel in,
+            @Nullable ClassLoader loader, @NonNull Class<T> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
             return Api33Impl.readArray(in, loader, clazz);
         } else {
@@ -149,8 +148,7 @@ public final class ParcelCompat {
      * an error trying to instantiate an element.
      */
     @SuppressWarnings("deprecation")
-    @Nullable
-    public static <T> SparseArray<T> readSparseArray(@NonNull Parcel in,
+    public static <T> @Nullable SparseArray<T> readSparseArray(@NonNull Parcel in,
             @Nullable ClassLoader loader, @NonNull Class<? extends T> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
             return Api33Impl.readSparseArray(in, loader, clazz);
@@ -198,9 +196,9 @@ public final class ParcelCompat {
      */
     @SuppressLint({"ConcreteCollection", "NullableCollection"})
     @SuppressWarnings({"deprecation", "unchecked"})
-    @Nullable
-    public static <K, V> HashMap<K, V> readHashMap(@NonNull Parcel in, @Nullable ClassLoader loader,
-            @NonNull Class<? extends K> clazzKey, @NonNull Class<? extends V> clazzValue) {
+    public static <K, V> @Nullable HashMap<K, V> readHashMap(@NonNull Parcel in,
+            @Nullable ClassLoader loader, @NonNull Class<? extends K> clazzKey,
+            @NonNull Class<? extends V> clazzValue) {
         if (Build.VERSION.SDK_INT >= 34) {
             return Api33Impl.readHashMap(in, loader, clazzKey, clazzValue);
         } else {
@@ -223,8 +221,7 @@ public final class ParcelCompat {
      * an error trying to instantiate an element.
      */
     @SuppressWarnings("deprecation")
-    @Nullable
-    public static <T extends Parcelable> T readParcelable(@NonNull Parcel in,
+    public static <T extends Parcelable> @Nullable T readParcelable(@NonNull Parcel in,
             @Nullable ClassLoader loader, @NonNull Class<T> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
             return Api33Impl.readParcelable(in, loader, clazz);
@@ -254,9 +251,8 @@ public final class ParcelCompat {
      * there was an error trying to read the {@link Parcelable.Creator}.
      */
     @SuppressWarnings({"deprecation", "unchecked"})
-    @Nullable
     @RequiresApi(30)
-    public static <T> Parcelable.Creator<T> readParcelableCreator(@NonNull Parcel in,
+    public static <T> Parcelable.@Nullable Creator<T> readParcelableCreator(@NonNull Parcel in,
             @Nullable ClassLoader loader, @NonNull Class<T> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
             return Api33Impl.readParcelableCreator(in, loader, clazz);
@@ -284,10 +280,9 @@ public final class ParcelCompat {
      */
     @SuppressWarnings({"deprecation", "unchecked"})
     @SuppressLint({"ArrayReturn", "NullableCollection"})
-    @Nullable
     @Deprecated
-    public static <T> T[] readParcelableArray(@NonNull Parcel in, @Nullable ClassLoader loader,
-            @NonNull Class<T> clazz) {
+    public static <T> T @Nullable [] readParcelableArray(@NonNull Parcel in,
+            @Nullable ClassLoader loader, @NonNull Class<T> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
             return Api33Impl.readParcelableArray(in, loader, clazz);
         } else {
@@ -328,8 +323,7 @@ public final class ParcelCompat {
      */
     @SuppressWarnings({"deprecation"})
     @SuppressLint({"ArrayReturn", "NullableCollection"})
-    @Nullable
-    public static <T> Parcelable[] readParcelableArrayTyped(@NonNull Parcel in,
+    public static <T> Parcelable @Nullable [] readParcelableArrayTyped(@NonNull Parcel in,
             @Nullable ClassLoader loader, @NonNull Class<T> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
             return (Parcelable[]) Api33Impl.readParcelableArray(in, loader, clazz);
@@ -352,10 +346,9 @@ public final class ParcelCompat {
      * deserialized is not an instance of that class or any of its children classes or there was
      * an error trying to instantiate an element.
      */
-    @NonNull
     @SuppressWarnings({"deprecation", "unchecked"})
     @RequiresApi(api = Build.VERSION_CODES.Q)
-    public static <T> List<T> readParcelableList(@NonNull Parcel in, @NonNull List<T> list,
+    public static <T> @NonNull List<T> readParcelableList(@NonNull Parcel in, @NonNull List<T> list,
             @Nullable ClassLoader cl, @NonNull Class<T> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
             return Api33Impl.readParcelableList(in, list, cl, clazz);
@@ -380,8 +373,7 @@ public final class ParcelCompat {
      * was an error deserializing the object.
      */
     @SuppressWarnings({"deprecation", "unchecked"})
-    @Nullable
-    public static <T extends Serializable> T readSerializable(@NonNull Parcel in,
+    public static <T extends Serializable> @Nullable T readSerializable(@NonNull Parcel in,
             @Nullable ClassLoader loader, @NonNull Class<T> clazz) {
         if (Build.VERSION.SDK_INT >= 33) {
             return Api33Impl.readSerializable(in, loader, clazz);

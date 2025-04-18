@@ -34,31 +34,12 @@ import org.junit.runners.model.Statement
 /**
  * JUnit rule for benchmarking large app operations like startup, scrolling, or animations.
  *
- * ```
- *     @get:Rule
- *     val benchmarkRule = MacrobenchmarkRule()
- *
- *     @Test
- *     fun startup() = benchmarkRule.measureRepeated(
- *         packageName = "com.example.my.application.id"
- *         metrics = listOf(StartupTimingMetric()),
- *         iterations = 5,
- *         startupMode = StartupMode.COLD,
- *         setupBlock = {
- *           pressHome()
- *         }
- *     ) { // this = MacrobenchmarkScope
- *         val intent = Intent()
- *         intent.setPackage("mypackage.myapp")
- *         intent.setAction("mypackage.myapp.myaction")
- *         startActivityAndWait(intent)
- *     }
- * ```
- *
  * See the [Macrobenchmark Guide](https://developer.android.com/studio/profile/macrobenchmark) for
  * more information on macrobenchmarks.
+ *
+ * @sample androidx.benchmark.samples.macrobenchmarkRuleSample
  */
-public class MacrobenchmarkRule : TestRule {
+class MacrobenchmarkRule : TestRule {
     private lateinit var currentDescription: Description
 
     /**

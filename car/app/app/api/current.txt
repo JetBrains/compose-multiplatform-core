@@ -249,6 +249,7 @@ package androidx.car.app.features {
   public final class CarFeatures {
     method public static boolean isFeatureEnabled(android.content.Context, String);
     field public static final String FEATURE_BACKGROUND_AUDIO_WHILE_DRIVING = "com.android.car.background_audio_while_driving";
+    field public static final String FEATURE_CAR_APP_LIBRARY_MEDIA = "android.software.car.templates_host.media";
   }
 
 }
@@ -769,7 +770,8 @@ package androidx.car.app.hardware.info {
 
   @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.RequiresCarApi(3) public final class Mileage {
     method public androidx.car.app.hardware.common.CarValue<java.lang.Integer!> getDistanceDisplayUnit();
-    method public androidx.car.app.hardware.common.CarValue<java.lang.Float!> getOdometerMeters();
+    method public androidx.car.app.hardware.common.CarValue<java.lang.Float!> getOdometerInKilometers();
+    method @Deprecated public androidx.car.app.hardware.common.CarValue<java.lang.Float!> getOdometerMeters();
   }
 
   public static final class Mileage.Builder {
@@ -1179,17 +1181,21 @@ package androidx.car.app.model {
   }
 
   @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi public class Badge {
-    method public androidx.car.app.model.CarColor? getBackgroundColor();
+    method @Deprecated public androidx.car.app.model.CarColor? getBackgroundColor();
+    method public androidx.car.app.model.CarColor? getDotColor();
     method public androidx.car.app.model.CarIcon? getIcon();
+    method public androidx.car.app.model.CarColor? getIconBackgroundColor();
     method public boolean hasDot();
   }
 
   public static final class Badge.Builder {
     ctor public Badge.Builder();
     method public androidx.car.app.model.Badge build();
-    method public androidx.car.app.model.Badge.Builder setBackgroundColor(androidx.car.app.model.CarColor);
+    method @Deprecated public androidx.car.app.model.Badge.Builder setBackgroundColor(androidx.car.app.model.CarColor);
+    method public androidx.car.app.model.Badge.Builder setDotColor(androidx.car.app.model.CarColor);
     method public androidx.car.app.model.Badge.Builder setHasDot(boolean);
     method public androidx.car.app.model.Badge.Builder setIcon(androidx.car.app.model.CarIcon);
+    method public androidx.car.app.model.Badge.Builder setIconBackgroundColor(androidx.car.app.model.CarColor);
   }
 
   @SuppressCompatibility @androidx.car.app.annotations.CarProtocol public final class CarColor {
@@ -1750,6 +1756,7 @@ package androidx.car.app.model {
     ctor protected Section(androidx.car.app.model.Section.BaseBuilder<T!,? extends java.lang.Object!>);
     method public androidx.car.app.serialization.ListDelegate<T!> getItemsDelegate();
     method public androidx.car.app.model.CarText? getNoItemsMessage();
+    method public androidx.car.app.model.OnItemVisibilityChangedDelegate? getOnItemVisibilityChangedDelegate();
     method public androidx.car.app.model.CarText? getTitle();
   }
 
@@ -1760,6 +1767,7 @@ package androidx.car.app.model {
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public B setItems(java.util.List<T!>);
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public B setNoItemsMessage(androidx.car.app.model.CarText?);
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public B setNoItemsMessage(CharSequence?);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public B setOnItemVisibilityChangedListener(androidx.car.app.model.ItemList.OnItemVisibilityChangedListener?);
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public B setTitle(androidx.car.app.model.CarText?);
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public B setTitle(CharSequence?);
   }

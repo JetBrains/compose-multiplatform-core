@@ -24,6 +24,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -41,9 +43,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.text.AutoSize
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
@@ -986,12 +988,16 @@ fun AutoSizeTextDemo() {
     val text = "This is a sample string!"
     Column(Modifier.fillMaxWidth()) {
         // This text will be sized according to default values of AutoSize.StepBased
-        BasicText(text, autoSize = AutoSize.StepBased())
+        BasicText(
+            text,
+            modifier = Modifier.border(1.dp, Color.Red).height(40.dp),
+            autoSize = TextAutoSize.StepBased()
+        )
         // This text can either have a font size of 10, 20, 30, 40, 50 or 60 sp
         BasicText(
             text,
             autoSize =
-                AutoSize.StepBased(minFontSize = 10.sp, maxFontSize = 60.sp, stepSize = 10.sp)
+                TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = 60.sp, stepSize = 10.sp)
         )
     }
 }

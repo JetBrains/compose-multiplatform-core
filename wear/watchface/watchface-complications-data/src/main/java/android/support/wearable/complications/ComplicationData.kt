@@ -1877,8 +1877,8 @@ private constructor(
          *
          * Returns this Builder to allow chaining.
          */
-        fun setColorRampIsSmoothShaded(isSmoothShaded: Boolean?) = apply {
-            putOrRemoveField(FIELD_COLOR_RAMP_INTERPOLATED, isSmoothShaded)
+        fun setColorRampInterpolated(isColorRampInterpolated: Boolean?) = apply {
+            putOrRemoveField(FIELD_COLOR_RAMP_INTERPOLATED, isColorRampInterpolated)
         }
 
         /**
@@ -2679,7 +2679,8 @@ private constructor(
         }
 
         /** Returns whether or not we should redact complication data in toString(). */
-        @JvmStatic fun shouldRedact() = !Log.isLoggable(TAG, Log.DEBUG)
+        @JvmStatic
+        fun shouldRedact() = !Log.isLoggable(TAG, Log.DEBUG) && !Build.TYPE.equals("userdebug")
 
         @JvmStatic
         fun maybeRedact(unredacted: CharSequence?): String =

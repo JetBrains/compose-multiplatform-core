@@ -18,6 +18,8 @@
 
 package androidx.compose.runtime.lint
 
+import androidx.compose.lint.Names
+import androidx.compose.lint.inheritsFrom
 import androidx.compose.lint.isNotRemembered
 import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.Category
@@ -31,6 +33,8 @@ import com.android.tools.lint.detector.api.SourceCodeScanner
 import java.util.EnumSet
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
+import org.jetbrains.uast.UObjectLiteralExpression
+import org.jetbrains.uast.UastCallKind.Companion.CONSTRUCTOR_CALL
 
 /**
  * [Detector] that checks `derivedStateOf`, `mutableStateOf`, `mutableStateListOf`, and
@@ -39,13 +43,24 @@ import org.jetbrains.uast.UElement
  */
 class UnrememberedStateDetector : Detector(), SourceCodeScanner {
     override fun getApplicableUastTypes(): List<Class<out UElement>> {
-        return listOf(UCallExpression::class.java)
+        return listOf(UCallExpression::class.java, UObjectLiteralExpression::class.java)
     }
 
     override fun createUastHandler(context: JavaContext): UElementHandler {
         return object : UElementHandler() {
             override fun visitCallExpression(node: UCallExpression) {
-                if (node.isStateFactoryInvocation() && node.isNotRemembered()) {
+                if (node.isUnrememberedStateCreation()) {
+                    context.report(
+                        UnrememberedState,
+                        node,
+                        context.getNameLocation(node),
+                        "Creating a state object during composition without using `remember`"
+                    )
+                }
+            }
+
+            override fun visitObjectLiteralExpression(node: UObjectLiteralExpression) {
+                if (node.isStateObjectLiteral() && node.isNotRemembered()) {
                     context.report(
                         UnrememberedState,
                         node,
@@ -57,8 +72,17 @@ class UnrememberedStateDetector : Detector(), SourceCodeScanner {
         }
     }
 
+    private fun UCallExpression.isUnrememberedStateCreation(): Boolean =
+        (isStateFactoryInvocation() || isStateConstructorInvocation()) && isNotRemembered()
+
     private fun UCallExpression.isStateFactoryInvocation(): Boolean =
         resolve()?.annotations?.any { it.hasQualifiedName(FqStateFactoryAnnotationName) } ?: false
+
+    private fun UCallExpression.isStateConstructorInvocation(): Boolean =
+        (kind == CONSTRUCTOR_CALL) && (returnType?.inheritsFrom(Names.Runtime.State) == true)
+
+    private fun UObjectLiteralExpression.isStateObjectLiteral(): Boolean =
+        (getExpressionType()?.inheritsFrom(Names.Runtime.State) == true)
 
     companion object {
         private const val FqStateFactoryAnnotationName =

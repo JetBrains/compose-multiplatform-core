@@ -19,8 +19,8 @@ package androidx.benchmark.macro
 import androidx.benchmark.junit4.PerfettoTraceRule
 import androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi
 import androidx.benchmark.perfetto.PerfettoHelper
-import androidx.benchmark.perfetto.PerfettoTrace
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
+import androidx.benchmark.traceprocessor.PerfettoTrace
+import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.tracing.trace
@@ -58,7 +58,7 @@ class PerfettoTraceRuleTest {
                         if (PerfettoHelper.isAbiSupported()) {
                             assertNotNull(trace)
                             val sliceNameInstances =
-                                PerfettoTraceProcessor.runSingleSessionServer(trace!!.path) {
+                                TraceProcessor.runSingleSessionServer(trace!!.path) {
                                     querySlices(UNIQUE_SLICE_NAME, packageName = null).map { slice
                                         ->
                                         slice.name

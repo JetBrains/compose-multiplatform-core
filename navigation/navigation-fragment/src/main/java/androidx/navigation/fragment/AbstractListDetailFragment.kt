@@ -43,7 +43,7 @@ import androidx.slidingpanelayout.widget.SlidingPaneLayout
  * be overridden by [AbstractListDetailFragment.onCreateDetailPaneNavHostFragment] and provide
  * custom NavHostFragment.
  */
-abstract class AbstractListDetailFragment : Fragment() {
+public abstract class AbstractListDetailFragment : Fragment() {
     private var onBackPressedCallback: OnBackPressedCallback? = null
     private var _detailPaneNavHostFragment: NavHostFragment? = null
     private var graphId = 0
@@ -53,7 +53,7 @@ abstract class AbstractListDetailFragment : Fragment() {
      *
      * @throws IllegalStateException if the SlidingPaneLayout has not been created by [onCreateView]
      */
-    val slidingPaneLayout: SlidingPaneLayout
+    public val slidingPaneLayout: SlidingPaneLayout
         get() = requireView() as SlidingPaneLayout
 
     /**
@@ -62,7 +62,7 @@ abstract class AbstractListDetailFragment : Fragment() {
      * @throws IllegalStateException if the NavHostFragment has not been created by
      *   {@link #onCreateView}.
      */
-    val detailPaneNavHostFragment: NavHostFragment
+    public val detailPaneNavHostFragment: NavHostFragment
         get() {
             checkNotNull(_detailPaneNavHostFragment) {
                 "Fragment $this was called before onCreateView()."
@@ -180,7 +180,7 @@ abstract class AbstractListDetailFragment : Fragment() {
      * @param savedInstanceState The previous saved state of the fragment.
      * @return Return the list pane view for the fragment.
      */
-    abstract fun onCreateListPaneView(
+    public abstract fun onCreateListPaneView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -190,7 +190,7 @@ abstract class AbstractListDetailFragment : Fragment() {
      * Return an alternative [NavHostFragment] to swap the default NavHostFragment in the fragment.
      * This method get called when creating the view of the fragment.
      */
-    open fun onCreateDetailPaneNavHostFragment(): NavHostFragment {
+    public open fun onCreateDetailPaneNavHostFragment(): NavHostFragment {
         if (graphId != 0) {
             return NavHostFragment.create(graphId)
         }
@@ -219,7 +219,7 @@ abstract class AbstractListDetailFragment : Fragment() {
      * @param view The list pane view created by [onCreateListPaneView] and added to view hierarchy
      * @param savedInstanceState The previous saved state of the fragment.
      */
-    open fun onListPaneViewCreated(view: View, savedInstanceState: Bundle?) {}
+    public open fun onListPaneViewCreated(view: View, savedInstanceState: Bundle?) {}
 
     @CallSuper
     override fun onViewStateRestored(savedInstanceState: Bundle?) {

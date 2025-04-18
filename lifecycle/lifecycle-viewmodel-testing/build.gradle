@@ -23,29 +23,18 @@
  */
 
 
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.lifecycle.viewmodel.testing"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
-        withAndroidTestOnJvmBuilder {
-            it.defaultSourceSetName = "androidUnitTest"
-            it.compilationName = "unitTest"
-        }
-    }
+    androidTarget()
     desktop()
     mac()
     linux()
@@ -178,11 +167,11 @@ androidXMultiplatform {
 
 androidx {
     name = "Lifecycle ViewModel Testing"
-    type = LibraryType.PUBLISHED_TEST_LIBRARY
+    type = SoftwareType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2024"
     description = "Testing utilities for 'lifecycle-viewmodel' artifact"
-    // TODO(b/337268135): Temporarily disabled until issue fixed.
-    metalavaK2UastEnabled = false
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }
 
+android {
+    namespace "androidx.lifecycle.viewmodel.testing"
+}

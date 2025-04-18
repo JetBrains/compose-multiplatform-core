@@ -1333,10 +1333,10 @@ class MovableContentTests {
 
     @Test
     fun movableContentOfTheSameFunctionShouldHaveStableKeys() = compositionTest {
-        val hashList1 = mutableListOf<Int>()
-        val hashList2 = mutableListOf<Int>()
-        val composable1: @Composable () -> Unit = { hashList1.add(currentCompositeKeyHash) }
-        val composable2: @Composable () -> Unit = { hashList2.add(currentCompositeKeyHash) }
+        val hashList1 = mutableListOf<CompositeKeyHashCode>()
+        val hashList2 = mutableListOf<CompositeKeyHashCode>()
+        val composable1: @Composable () -> Unit = { hashList1.add(currentCompositeKeyHashCode) }
+        val composable2: @Composable () -> Unit = { hashList2.add(currentCompositeKeyHashCode) }
         val movableContent1A = movableContentOf(composable1)
         val movableContent1B = movableContentOf(composable1)
         val movableContent2A = movableContentOf(composable2)
@@ -1352,7 +1352,7 @@ class MovableContentTests {
             movableContent2B()
         }
 
-        fun List<Int>.assertAllTheSame() = forEach { assertEquals(it, first()) }
+        fun List<CompositeKeyHashCode>.assertAllTheSame() = forEach { assertEquals(it, first()) }
         hashList1.assertAllTheSame()
         hashList2.assertAllTheSame()
         assertNotEquals(hashList1.first(), hashList2.first())
@@ -1360,10 +1360,10 @@ class MovableContentTests {
 
     @Test
     fun keyInsideMovableContentShouldntChangeWhenRecomposed() = compositionTest {
-        val hashList = mutableListOf<Int>()
+        val hashList = mutableListOf<CompositeKeyHashCode>()
         val counter = mutableStateOf(0)
         val movableContent = movableContentOf {
-            hashList.add(currentCompositeKeyHash)
+            hashList.add(currentCompositeKeyHashCode)
             Text("counter=${counter.value}")
         }
         compose { movableContent() }

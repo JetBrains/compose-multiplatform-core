@@ -17,8 +17,9 @@
 package androidx.benchmark.macro.perfetto
 
 import androidx.benchmark.macro.createTempFileFromAsset
+import androidx.benchmark.macro.runSingleSessionServer
 import androidx.benchmark.perfetto.PerfettoHelper
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
+import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import kotlin.test.assertEquals
@@ -34,7 +35,7 @@ class MemoryCountersQueryTest {
         assumeTrue(PerfettoHelper.isAbiSupported())
         val traceFile = createTempFileFromAsset("api31_startup_cold", ".perfetto-trace")
         val metrics =
-            PerfettoTraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
+            TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
                 MemoryCountersQuery.getMemoryCounters(
                     this,
                     "androidx.benchmark.integration.macrobenchmark.target"

@@ -102,7 +102,7 @@ class SnapshotObserverTests {
         val disposed = mutableScatterSetOf<Snapshot>()
         observeSnapshots(
             object : SnapshotObserver {
-                override fun onDisposing(snapshot: Snapshot) {
+                override fun onPreDispose(snapshot: Snapshot) {
                     disposed.add(snapshot)
                 }
             }
@@ -118,7 +118,7 @@ class SnapshotObserverTests {
         val disposed = mutableScatterSetOf<Snapshot>()
         observeSnapshots(
             object : SnapshotObserver {
-                override fun onDisposing(snapshot: Snapshot) {
+                override fun onPreDispose(snapshot: Snapshot) {
                     disposed.add(snapshot)
                 }
             }
@@ -134,7 +134,7 @@ class SnapshotObserverTests {
         val disposed = mutableScatterSetOf<Snapshot>()
         observeSnapshots(
             object : SnapshotObserver {
-                override fun onDisposing(snapshot: Snapshot) {
+                override fun onPreDispose(snapshot: Snapshot) {
                     disposed.add(snapshot)
                 }
             }
@@ -181,7 +181,7 @@ class SnapshotObserverTests {
 
         observeSnapshots(
             object : SnapshotObserver {
-                override fun onCreating(
+                override fun onPreCreate(
                     parent: Snapshot?,
                     readonly: Boolean
                 ): SnapshotInstanceObservers {
@@ -207,7 +207,7 @@ class SnapshotObserverTests {
 
         observeSnapshots(
             object : SnapshotObserver {
-                override fun onCreating(
+                override fun onPreCreate(
                     parent: Snapshot?,
                     readonly: Boolean
                 ): SnapshotInstanceObservers {
@@ -232,7 +232,7 @@ class SnapshotObserverTests {
         val writes = mutableListOf<Pair<Any, Boolean>>()
         observeSnapshots(
             object : SnapshotObserver {
-                override fun onCreating(
+                override fun onPreCreate(
                     parent: Snapshot?,
                     readonly: Boolean
                 ): SnapshotInstanceObservers {
@@ -263,7 +263,7 @@ class SnapshotObserverTests {
         val events = mutableListOf<Pair<Any?, String>>()
         fun observer(prefix: String) =
             object : SnapshotObserver {
-                override fun onCreating(
+                override fun onPreCreate(
                     parent: Snapshot?,
                     readonly: Boolean
                 ): SnapshotInstanceObservers {
@@ -282,7 +282,7 @@ class SnapshotObserverTests {
                     record(snapshot to parent, "created")
                 }
 
-                override fun onDisposing(snapshot: Snapshot) {
+                override fun onPreDispose(snapshot: Snapshot) {
                     record(snapshot, "disposing")
                 }
 
@@ -350,7 +350,7 @@ class SnapshotObserverTests {
         val events = mutableListOf<Pair<Any?, String>>()
         fun observer() =
             object : SnapshotObserver {
-                override fun onCreating(
+                override fun onPreCreate(
                     parent: Snapshot?,
                     readonly: Boolean
                 ): SnapshotInstanceObservers {
@@ -369,7 +369,7 @@ class SnapshotObserverTests {
                     record(snapshot to parent, "created")
                 }
 
-                override fun onDisposing(snapshot: Snapshot) {
+                override fun onPreDispose(snapshot: Snapshot) {
                     record(snapshot, "disposing")
                 }
 
@@ -418,7 +418,7 @@ class SnapshotObserverTests {
         var key: SnapshotInstanceObservers? = null
         observeSnapshots(
             object : SnapshotObserver {
-                override fun onCreating(
+                override fun onPreCreate(
                     parent: Snapshot?,
                     readonly: Boolean
                 ): SnapshotInstanceObservers {

@@ -32,7 +32,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
  * customized.
  */
 @Immutable
-interface MotionScheme {
+public interface MotionScheme {
     /**
      * A default spatial motion [FiniteAnimationSpec].
      *
@@ -43,7 +43,7 @@ interface MotionScheme {
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
      */
-    fun <T> defaultSpatialSpec(): FiniteAnimationSpec<T>
+    public fun <T> defaultSpatialSpec(): FiniteAnimationSpec<T>
 
     /**
      * A fast spatial motion [FiniteAnimationSpec].
@@ -55,7 +55,7 @@ interface MotionScheme {
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
      */
-    fun <T> fastSpatialSpec(): FiniteAnimationSpec<T>
+    public fun <T> fastSpatialSpec(): FiniteAnimationSpec<T>
 
     /**
      * A slow spatial motion [FiniteAnimationSpec].
@@ -67,7 +67,7 @@ interface MotionScheme {
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
      */
-    fun <T> slowSpatialSpec(): FiniteAnimationSpec<T>
+    public fun <T> slowSpatialSpec(): FiniteAnimationSpec<T>
 
     /**
      * A default effects motion [FiniteAnimationSpec].
@@ -79,7 +79,7 @@ interface MotionScheme {
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
      */
-    fun <T> defaultEffectsSpec(): FiniteAnimationSpec<T>
+    public fun <T> defaultEffectsSpec(): FiniteAnimationSpec<T>
 
     /**
      * A fast effects motion [FiniteAnimationSpec].
@@ -91,7 +91,7 @@ interface MotionScheme {
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
      */
-    fun <T> fastEffectsSpec(): FiniteAnimationSpec<T>
+    public fun <T> fastEffectsSpec(): FiniteAnimationSpec<T>
 
     /**
      * A slow effects motion [FiniteAnimationSpec].
@@ -103,9 +103,9 @@ interface MotionScheme {
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
      */
-    fun <T> slowEffectsSpec(): FiniteAnimationSpec<T>
+    public fun <T> slowEffectsSpec(): FiniteAnimationSpec<T>
 
-    companion object {
+    public companion object {
         /**
          * Returns a standard Material motion scheme.
          *
@@ -113,7 +113,7 @@ interface MotionScheme {
          * recurring interactions. It provides a linear motion feel.
          */
         @Suppress("UNCHECKED_CAST")
-        fun standard(): MotionScheme =
+        public fun standard(): MotionScheme =
             object : MotionScheme {
                 private val defaultSpatialSpec =
                     spring<Any>(
@@ -183,7 +183,7 @@ interface MotionScheme {
          * and hero interactions. It provides a visually engaging motion feel.
          */
         @Suppress("UNCHECKED_CAST")
-        fun expressive(): MotionScheme =
+        public fun expressive(): MotionScheme =
             object : MotionScheme {
                 private val defaultSpatialSpec =
                     spring<Any>(
@@ -254,7 +254,6 @@ interface MotionScheme {
  * Setting the value here is typically done as part of [MaterialTheme]. To retrieve the current
  * value of this CompositionLocal, use [MaterialTheme.motionScheme].
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
 internal val LocalMotionScheme = staticCompositionLocalOf { MotionScheme.standard() }
 
 // TODO - These values should come from Tokens.

@@ -27,8 +27,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appsearch.app.AppSearchEnvironmentFactory;
@@ -45,6 +43,9 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStreamReader;

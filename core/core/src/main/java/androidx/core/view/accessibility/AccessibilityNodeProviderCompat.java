@@ -21,9 +21,10 @@ import android.os.Bundle;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -109,8 +110,7 @@ public class AccessibilityNodeProviderCompat {
      */
     public static final int HOST_VIEW_ID = -1;
 
-    @Nullable
-    private final Object mProvider;
+    private final @Nullable Object mProvider;
 
     /**
      * Creates a new instance.
@@ -136,8 +136,7 @@ public class AccessibilityNodeProviderCompat {
     /**
      * @return The wrapped {@link android.view.accessibility.AccessibilityNodeProvider}.
      */
-    @Nullable
-    public Object getProvider() {
+    public @Nullable Object getProvider() {
         return mProvider;
     }
 
@@ -163,8 +162,7 @@ public class AccessibilityNodeProviderCompat {
      *
      * @see AccessibilityNodeInfoCompat
      */
-    @Nullable
-    public AccessibilityNodeInfoCompat createAccessibilityNodeInfo(int virtualViewId) {
+    public @Nullable AccessibilityNodeInfoCompat createAccessibilityNodeInfo(int virtualViewId) {
         return null;
     }
 
@@ -201,9 +199,8 @@ public class AccessibilityNodeProviderCompat {
      * @see AccessibilityNodeInfoCompat
      */
     @SuppressWarnings("unused")
-    @Nullable
-    public List<AccessibilityNodeInfoCompat> findAccessibilityNodeInfosByText(@NonNull String text,
-            int virtualViewId) {
+    public @Nullable List<AccessibilityNodeInfoCompat> findAccessibilityNodeInfosByText(
+            @NonNull String text, int virtualViewId) {
         return null;
     }
 
@@ -219,8 +216,7 @@ public class AccessibilityNodeProviderCompat {
      * @see AccessibilityNodeInfoCompat#FOCUS_ACCESSIBILITY
      */
     @SuppressWarnings("unused")
-    @Nullable
-    public AccessibilityNodeInfoCompat findFocus(int focus) {
+    public @Nullable AccessibilityNodeInfoCompat findFocus(int focus) {
         return null;
     }
 

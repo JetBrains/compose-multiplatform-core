@@ -26,7 +26,13 @@ import androidx.wear.watchface.style.UserStyleSetting
 import androidx.wear.watchface.style.WatchFaceLayer
 import java.time.Instant
 
-/* Used to parameterize watch face drawing based on the current system state. */
+/* Used to parameterize watch face drawing based on the current system state.
+ * @deprecated use Watch Face Format instead
+ */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public enum class DrawMode {
     /**
      * This mode is used when the user is interacting with the watch face.
@@ -88,7 +94,12 @@ public enum class DrawMode {
  *   will be `null`.
  * @param lastComplicationTapDownEvents Map of [ComplicationSlot] id to the latest [TapType.DOWN]
  *   [TapEvent] that ComplicationSlot received, if any.
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class RenderParameters
 @JvmOverloads
 constructor(

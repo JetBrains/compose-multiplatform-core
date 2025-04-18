@@ -24,9 +24,10 @@ import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This class is a mediator for accomplishing a given task, for example sharing a file. It is
@@ -139,8 +140,7 @@ public abstract class ActionProvider {
     /**
      * Gets the context associated with this action provider.
      */
-    @NonNull
-    public Context getContext() {
+    public @NonNull Context getContext() {
         return mContext;
     }
 
@@ -149,8 +149,7 @@ public abstract class ActionProvider {
      *
      * @return A new action view.
      */
-    @NonNull
-    public abstract View onCreateActionView();
+    public abstract @NonNull View onCreateActionView();
 
     /**
      * Factory method called by the Android framework to create new action views.
@@ -165,8 +164,7 @@ public abstract class ActionProvider {
      * @return the new action view
      */
     @SuppressWarnings("unused")
-    @NonNull
-    public View onCreateActionView(@NonNull MenuItem forItem) {
+    public @NonNull View onCreateActionView(@NonNull MenuItem forItem) {
         return onCreateActionView();
     }
 

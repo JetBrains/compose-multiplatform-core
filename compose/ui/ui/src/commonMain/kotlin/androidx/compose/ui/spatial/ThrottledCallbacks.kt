@@ -20,23 +20,28 @@ import androidx.collection.MutableIntObjectMap
 import androidx.collection.mutableIntObjectMapOf
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.node.DelegatableNode
+import androidx.compose.ui.node.DelegatableNode.RegistrationHandle
 import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.node.requireCoordinator
 import androidx.compose.ui.node.requireLayoutNode
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.round
 import kotlin.math.min
-import kotlinx.coroutines.DisposableHandle
 
 internal class ThrottledCallbacks {
 
+    /**
+     * Entry for a throttled callback for [RelativeLayoutBounds] associated to the given [node].
+     *
+     * Supports a linked-list structure for multiple callbacks on the same [node] through [next].
+     */
     inner class Entry(
         val id: Int,
         val throttleMillis: Long,
         val debounceMillis: Long,
         val node: DelegatableNode,
-        val callback: (RectInfo) -> Unit,
-    ) : DisposableHandle {
+        val callback: (RelativeLayoutBounds) -> Unit,
+    ) : RegistrationHandle {
 
         var next: Entry? = null
 
@@ -45,8 +50,9 @@ internal class ThrottledCallbacks {
         var lastInvokeMillis: Long = -throttleMillis
         var lastUninvokedFireMillis: Long = -1
 
-        override fun dispose() {
-            map.multiRemove(id, this)
+        override fun unregister() {
+            val result = rectChangedMap.multiRemove(id, this)
+            if (!result) removeFromGlobalEntries(this)
         }
 
         fun fire(
@@ -58,20 +64,30 @@ internal class ThrottledCallbacks {
         ) {
             val rect =
                 rectInfoFor(
-                    node,
-                    topLeft,
-                    bottomRight,
-                    windowOffset,
-                    screenOffset,
-                    viewToWindowMatrix
+                    node = node,
+                    topLeft = topLeft,
+                    bottomRight = bottomRight,
+                    windowOffset = windowOffset,
+                    screenOffset = screenOffset,
+                    viewToWindowMatrix = viewToWindowMatrix,
                 )
-            if (rect != null) {
-                callback(rect)
+            if (rect == null) {
+                return
             }
+
+            callback(rect)
         }
     }
 
-    val map = mutableIntObjectMapOf<Entry>()
+    /** Set of callbacks for onRectChanged. */
+    val rectChangedMap = mutableIntObjectMapOf<Entry>()
+
+    /**
+     * Set of callbacks for onGlobalLayoutListener given as a Linked List using [Entry].
+     *
+     * These are expected to be fired after any Rect or Window/Screen change.
+     */
+    var globalChangeEntries: Entry? = null
 
     // We can use this to schedule a "triggerDebounced" call. If it is -1, then nothing
     // needs to be scheduled.
@@ -101,91 +117,100 @@ internal class ThrottledCallbacks {
         return (x shr 3) shl 3
     }
 
-    fun register(
+    fun registerOnRectChanged(
         id: Int,
-        throttleMs: Long,
-        debounceMs: Long,
+        throttleMillis: Long,
+        debounceMillis: Long,
         node: DelegatableNode,
-        callback: (RectInfo) -> Unit,
-    ): DisposableHandle {
+        callback: (RelativeLayoutBounds) -> Unit,
+    ): RegistrationHandle {
         // If zero is set for debounce, we use throttle in its place. This guarantees that
         // consumers will get the value where the node "settled".
-        val debounceToUse = if (debounceMs == 0L) throttleMs else debounceMs
+        val debounceToUse = if (debounceMillis == 0L) throttleMillis else debounceMillis
 
-        return map.multiPut(id, Entry(id, throttleMs, debounceToUse, node, callback))
+        return rectChangedMap.multiPut(
+            key = id,
+            value =
+                Entry(
+                    id = id,
+                    throttleMillis = throttleMillis,
+                    debounceMillis = debounceToUse,
+                    node = node,
+                    callback = callback,
+                )
+        )
+    }
+
+    fun registerOnGlobalChange(
+        id: Int,
+        throttleMillis: Long,
+        debounceMillis: Long,
+        node: DelegatableNode,
+        callback: (RelativeLayoutBounds) -> Unit,
+    ): RegistrationHandle {
+        // If zero is set for debounce, we use throttle in its place. This guarantees that
+        // consumers will get the value where the node "settled".
+        val debounceToUse = if (debounceMillis == 0L) throttleMillis else debounceMillis
+
+        val entry =
+            Entry(
+                id = id,
+                throttleMillis = throttleMillis,
+                debounceMillis = debounceToUse,
+                node = node,
+                callback = callback,
+            )
+        addToGlobalEntries(entry)
+        return entry
     }
 
     // We call this when a layout node with `semanticsId = id` changes it's global bounds. For
     // throttled callbacks this may cause the callback to get invoked, for debounced nodes it
     // updates the deadlines
-    fun fire(id: Int, topLeft: Long, bottomRight: Long, currentMillis: Long) {
-        map.runFor(id) { entry ->
-            val lastInvokeMillis = entry.lastInvokeMillis
-            val throttleMillis = entry.throttleMillis
-            val debounceMillis = entry.debounceMillis
-            val pastThrottleDeadline = currentMillis - lastInvokeMillis >= throttleMillis
-            val zeroDebounce = debounceMillis == 0L
-            val zeroThrottle = throttleMillis == 0L
-
-            entry.topLeft = topLeft
-            entry.bottomRight = bottomRight
-
-            // There are essentially 3 different cases that we need to handle here:
-
-            // 1. throttle = 0, debounce = 0
-            //      -> always invoke immediately
-            // 2. throttle = 0, debounce > 0
-            //      -> set deadline to <debounce> milliseconds from now
-            // 3. throttle > 0, debounce > 0
-            //      -> invoke if we haven't invoked for <throttle> milliseconds, otherwise, set the
-            //         deadline to <debounce>
-
-            // Note that the `throttle > 0, debounce = 0` case is not possible, since we use the
-            // throttle value as a debounce value in that case.
-
-            val canInvoke = (!zeroDebounce && !zeroThrottle) || zeroDebounce
-
-            if (pastThrottleDeadline && canInvoke) {
-                entry.lastUninvokedFireMillis = -1
-                entry.lastInvokeMillis = currentMillis
-                entry.fire(topLeft, bottomRight, windowOffset, screenOffset, viewToWindowMatrix)
-            } else if (!zeroDebounce) {
-                entry.lastUninvokedFireMillis = currentMillis
-                val currentMinDeadline = minDebounceDeadline
-                val thisDeadline = currentMillis + debounceMillis
-                if (currentMinDeadline > 0 && thisDeadline < currentMinDeadline) {
-                    minDebounceDeadline = currentMinDeadline
-                }
-            }
+    fun fireOnUpdatedRect(id: Int, topLeft: Long, bottomRight: Long, currentMillis: Long) {
+        rectChangedMap.runFor(id) { entry ->
+            fireWithUpdatedRect(entry, topLeft, bottomRight, currentMillis)
         }
     }
 
-    fun fireAll(currentMillis: Long) {
+    /** Fires all [rectChangedMap] entries with latest window/screen info. */
+    fun fireOnRectChangedEntries(currentMillis: Long) {
         val windowOffset = windowOffset
         val screenOffset = screenOffset
         val viewToWindowMatrix = viewToWindowMatrix
-        map.multiForEach { entry ->
-            val lastInvokeMillis = entry.lastInvokeMillis
-            val throttleOkay = currentMillis - lastInvokeMillis > entry.throttleMillis
-            val debounceOkay = entry.debounceMillis == 0L
-            entry.lastUninvokedFireMillis = currentMillis
-            if (throttleOkay && debounceOkay) {
-                entry.lastInvokeMillis = currentMillis
-                entry.fire(
-                    entry.topLeft,
-                    entry.bottomRight,
-                    windowOffset,
-                    screenOffset,
-                    viewToWindowMatrix
-                )
-            }
-            if (!debounceOkay) {
-                val currentMinDeadline = minDebounceDeadline
-                val thisDeadline = currentMillis + entry.debounceMillis
-                if (currentMinDeadline > 0 && thisDeadline < currentMinDeadline) {
-                    minDebounceDeadline = currentMinDeadline
-                }
-            }
+        rectChangedMap.multiForEach { entry ->
+            fire(
+                entry = entry,
+                windowOffset = windowOffset,
+                screenOffset = screenOffset,
+                viewToWindowMatrix = viewToWindowMatrix,
+                currentMillis = currentMillis
+            )
+        }
+    }
+
+    /** Fires all [globalChangeEntries] entries with latest window/screen info. */
+    fun fireGlobalChangeEntries(currentMillis: Long) {
+        val windowOffset = windowOffset
+        val screenOffset = screenOffset
+        val viewToWindowMatrix = viewToWindowMatrix
+        globalChangeEntries?.linkedForEach { entry ->
+            val node = entry.node.requireLayoutNode()
+            val offsetFromRoot = node.offsetFromRoot
+            val lastSize = node.lastSize
+
+            // For global change callbacks, we'll still need to update the Entry bounds
+            entry.topLeft = offsetFromRoot.packedValue
+            entry.bottomRight =
+                packXY(offsetFromRoot.x + lastSize.width, offsetFromRoot.y + lastSize.height)
+
+            fire(
+                entry = entry,
+                windowOffset = windowOffset,
+                screenOffset = screenOffset,
+                viewToWindowMatrix = viewToWindowMatrix,
+                currentMillis = currentMillis
+            )
         }
     }
 
@@ -198,20 +223,171 @@ internal class ThrottledCallbacks {
         val screenOffset = screenOffset
         val viewToWindowMatrix = viewToWindowMatrix
         var minDeadline = Long.MAX_VALUE
-        map.multiForEach {
-            if (it.debounceMillis > 0 && it.lastUninvokedFireMillis > 0) {
-                if (currentMillis - it.lastUninvokedFireMillis > it.debounceMillis) {
-                    it.lastInvokeMillis = currentMillis
-                    it.lastUninvokedFireMillis = -1
-                    val topLeft = it.topLeft
-                    val bottomRight = it.bottomRight
-                    it.fire(topLeft, bottomRight, windowOffset, screenOffset, viewToWindowMatrix)
-                } else {
-                    minDeadline = min(minDeadline, it.lastUninvokedFireMillis + it.debounceMillis)
-                }
-            }
+        rectChangedMap.multiForEach { entry ->
+            minDeadline =
+                debounceEntry(
+                    entry = entry,
+                    windowOffset = windowOffset,
+                    screenOffset = screenOffset,
+                    viewToWindowMatrix = viewToWindowMatrix,
+                    currentMillis = currentMillis,
+                    minDeadline = minDeadline
+                )
+        }
+        globalChangeEntries?.linkedForEach { entry ->
+            minDeadline =
+                debounceEntry(
+                    entry = entry,
+                    windowOffset = windowOffset,
+                    screenOffset = screenOffset,
+                    viewToWindowMatrix = viewToWindowMatrix,
+                    currentMillis = currentMillis,
+                    minDeadline = minDeadline
+                )
         }
         minDebounceDeadline = if (minDeadline == Long.MAX_VALUE) -1 else minDeadline
+    }
+
+    private fun fireWithUpdatedRect(
+        entry: Entry,
+        topLeft: Long,
+        bottomRight: Long,
+        currentMillis: Long
+    ) {
+        val lastInvokeMillis = entry.lastInvokeMillis
+        val throttleMillis = entry.throttleMillis
+        val debounceMillis = entry.debounceMillis
+        val pastThrottleDeadline = currentMillis - lastInvokeMillis >= throttleMillis
+        val zeroDebounce = debounceMillis == 0L
+        val zeroThrottle = throttleMillis == 0L
+
+        entry.topLeft = topLeft
+        entry.bottomRight = bottomRight
+
+        // There are essentially 3 different cases that we need to handle here:
+
+        // 1. throttle = 0, debounce = 0
+        //      -> always invoke immediately
+        // 2. throttle = 0, debounce > 0
+        //      -> set deadline to <debounce> milliseconds from now
+        // 3. throttle > 0, debounce > 0
+        //      -> invoke if we haven't invoked for <throttle> milliseconds, otherwise, set the
+        //         deadline to <debounce>
+
+        // Note that the `throttle > 0, debounce = 0` case is not possible, since we use the
+        // throttle value as a debounce value in that case.
+
+        val canInvoke = (!zeroDebounce && !zeroThrottle) || zeroDebounce
+
+        if (pastThrottleDeadline && canInvoke) {
+            entry.lastUninvokedFireMillis = -1
+            entry.lastInvokeMillis = currentMillis
+            entry.fire(topLeft, bottomRight, windowOffset, screenOffset, viewToWindowMatrix)
+        } else if (!zeroDebounce) {
+            entry.lastUninvokedFireMillis = currentMillis
+            val currentMinDeadline = minDebounceDeadline
+            val thisDeadline = currentMillis + debounceMillis
+            if (currentMinDeadline > 0 && thisDeadline < currentMinDeadline) {
+                minDebounceDeadline = currentMinDeadline
+            }
+        }
+    }
+
+    private fun fire(
+        entry: Entry,
+        windowOffset: IntOffset,
+        screenOffset: IntOffset,
+        viewToWindowMatrix: Matrix?,
+        currentMillis: Long,
+    ) {
+        val lastInvokeMillis = entry.lastInvokeMillis
+        val throttleOkay = currentMillis - lastInvokeMillis > entry.throttleMillis
+        val debounceOkay = entry.debounceMillis == 0L
+        entry.lastUninvokedFireMillis = currentMillis
+        if (throttleOkay && debounceOkay) {
+            entry.lastInvokeMillis = currentMillis
+            entry.fire(
+                entry.topLeft,
+                entry.bottomRight,
+                windowOffset,
+                screenOffset,
+                viewToWindowMatrix
+            )
+        }
+        if (!debounceOkay) {
+            val currentMinDeadline = minDebounceDeadline
+            val thisDeadline = currentMillis + entry.debounceMillis
+            if (currentMinDeadline > 0 && thisDeadline < currentMinDeadline) {
+                minDebounceDeadline = currentMinDeadline
+            }
+        }
+    }
+
+    /** @return updated minDeadline */
+    private fun debounceEntry(
+        entry: Entry,
+        windowOffset: IntOffset,
+        screenOffset: IntOffset,
+        viewToWindowMatrix: Matrix?,
+        currentMillis: Long,
+        minDeadline: Long
+    ): Long {
+        var newMinDeadline = minDeadline
+        if (entry.debounceMillis > 0 && entry.lastUninvokedFireMillis > 0) {
+            if (currentMillis - entry.lastUninvokedFireMillis > entry.debounceMillis) {
+                entry.lastInvokeMillis = currentMillis
+                entry.lastUninvokedFireMillis = -1
+                val topLeft = entry.topLeft
+                val bottomRight = entry.bottomRight
+                entry.fire(topLeft, bottomRight, windowOffset, screenOffset, viewToWindowMatrix)
+            } else {
+                newMinDeadline =
+                    min(newMinDeadline, entry.lastUninvokedFireMillis + entry.debounceMillis)
+            }
+        }
+        return newMinDeadline
+    }
+
+    private fun addToGlobalEntries(entry: Entry) {
+        // For global entries, we can append the new entry to the start
+        val oldInitialEntry = globalChangeEntries
+        entry.next = oldInitialEntry
+        globalChangeEntries = entry
+    }
+
+    /**
+     * Removes [entry] from the LinkedList in [globalChangeEntries].
+     *
+     * @return Whether the given [entry] was found & removed from [globalChangeEntries].
+     */
+    private fun removeFromGlobalEntries(entry: Entry): Boolean {
+        val initialGlobalEntry = globalChangeEntries
+        if (initialGlobalEntry === entry) {
+            globalChangeEntries = initialGlobalEntry.next
+            entry.next = null
+            return true
+        }
+        var last = initialGlobalEntry
+        var node = last?.next
+        while (node != null) {
+            if (node === entry) {
+                last?.next = node.next
+                entry.next = null
+                return true
+            }
+            last = node
+            node = node.next
+        }
+        return false
+    }
+
+    /** Calls [block] for every [Entry] reachable from the given node through [Entry.next]. */
+    private inline fun Entry.linkedForEach(block: (Entry) -> Unit) {
+        var node: Entry? = this
+        while (node != null) {
+            block(node)
+            node = node.next
+        }
     }
 
     private inline fun MutableIntObjectMap<Entry>.multiForEach(block: (Entry) -> Unit) {
@@ -279,7 +455,7 @@ internal fun rectInfoFor(
     windowOffset: IntOffset,
     screenOffset: IntOffset,
     viewToWindowMatrix: Matrix?,
-): RectInfo? {
+): RelativeLayoutBounds? {
     val coordinator = node.requireCoordinator(Nodes.Layout)
     val layoutNode = node.requireLayoutNode()
     if (!layoutNode.isPlaced) return null
@@ -291,19 +467,21 @@ internal fun rectInfoFor(
     val needsTransform = layoutNode.outerCoordinator !== coordinator
     return if (needsTransform) {
         val transformed = layoutNode.outerCoordinator.coordinates.localBoundingBoxOf(coordinator)
-        RectInfo(
+        RelativeLayoutBounds(
             transformed.topLeft.round().packedValue,
             transformed.bottomRight.round().packedValue,
             windowOffset,
             screenOffset,
             viewToWindowMatrix,
+            node,
         )
     } else
-        RectInfo(
+        RelativeLayoutBounds(
             topLeft,
             bottomRight,
             windowOffset,
             screenOffset,
             viewToWindowMatrix,
+            node,
         )
 }

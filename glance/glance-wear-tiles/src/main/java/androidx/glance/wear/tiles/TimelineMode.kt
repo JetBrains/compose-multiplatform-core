@@ -24,6 +24,7 @@ import java.time.Instant
  * @param start The start time of the time interval
  * @param end The end time of the time interval
  */
+@Suppress("DataClassDefinition")
 public data class TimeInterval(
     val start: Instant = Instant.ofEpochMilli(0),
     val end: Instant = Instant.ofEpochMilli(Long.MAX_VALUE)

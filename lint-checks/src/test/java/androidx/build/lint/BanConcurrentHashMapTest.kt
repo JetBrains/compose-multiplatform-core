@@ -60,7 +60,9 @@ import java.util.concurrent.ConcurrentHashMap;
         """
                 .trimIndent()
 
-        check(input).expect(expected)
+        // Skip FULLY_QUALIFIED mode -- this test specifically deals with importing the class, and
+        // FULLY_QUALIFIED removes the import. Usages of the fully qualified type are tested below.
+        lint().files(input).skipTestModes(TestMode.FULLY_QUALIFIED).run().expect(expected)
     }
 
     @Test

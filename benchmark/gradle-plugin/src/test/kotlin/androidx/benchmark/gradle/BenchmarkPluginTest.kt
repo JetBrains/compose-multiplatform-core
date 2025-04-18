@@ -82,7 +82,7 @@ class BenchmarkPluginTest {
                     ${projectSetup.allRepositoryPaths.joinToString("\n") { """ maven { url "$it" } """ }}
                 }
                 dependencies {
-                    classpath "com.android.tools.build:gradle:7.3.0"
+                    classpath "com.android.tools.build:gradle:8.1.1"
                     classpath "androidx.benchmark:androidx.benchmark.gradle.plugin:+"
                 }
             }
@@ -104,6 +104,9 @@ class BenchmarkPluginTest {
                     .trimIndent(),
             suffix =
                 """
+            android {
+                namespace = "androidx.benchmark.gradle.test"
+            }
             dependencies {
                 androidTestImplementation "androidx.benchmark:benchmark:1.0.0-alpha01"
             }
@@ -141,7 +144,16 @@ class BenchmarkPluginTest {
 
     @Test
     fun applyPluginNonBenchmarkProject() {
-        projectSetup.writeDefaultBuildGradle(prefix = PLUGINS_HEADER, suffix = "")
+        projectSetup.writeDefaultBuildGradle(
+            prefix = PLUGINS_HEADER,
+            suffix =
+                """
+                android {
+                    namespace = "androidx.benchmark.gradle.test"
+                }
+            """
+                    .trimIndent()
+        )
 
         val output = gradleRunner.withArguments("tasks", "--stacktrace").build()
         assertTrue { output.output.contains("lockClocks - ") }
@@ -154,6 +166,9 @@ class BenchmarkPluginTest {
             prefix = PLUGINS_HEADER,
             suffix =
                 """
+            android {
+                namespace = "androidx.benchmark.gradle.test"
+            }
             dependencies {
                 androidTestImplementation "androidx.benchmark:benchmark:1.0.0-alpha01"
             }
@@ -173,6 +188,7 @@ class BenchmarkPluginTest {
             suffix =
                 """
             android {
+                namespace = "androidx.benchmark.gradle.test"
                 defaultConfig {
                     testInstrumentationRunnerArguments additionalTestOutputDir: "/fake_path/files"
                 }
@@ -211,6 +227,7 @@ class BenchmarkPluginTest {
             suffix =
                 """
             android {
+                namespace = "androidx.benchmark.gradle.test"
                 defaultConfig {
                     testInstrumentationRunnerArguments.remove("additionalTestOutputDir")
                 }
@@ -253,6 +270,9 @@ class BenchmarkPluginTest {
             prefix = "import com.android.build.gradle.TestedExtension\n$PLUGINS_HEADER",
             suffix =
                 """
+            android {
+                namespace = "androidx.benchmark.gradle.test"
+            }
             dependencies {
                 androidTestImplementation "androidx.benchmark:benchmark:1.0.0-alpha01"
             }
@@ -285,6 +305,7 @@ class BenchmarkPluginTest {
             suffix =
                 """
             android {
+                namespace = "androidx.benchmark.gradle.test"
                 defaultConfig {
                     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 }
@@ -377,6 +398,7 @@ class BenchmarkPluginTest {
             suffix =
                 """
             android {
+                namespace = "androidx.benchmark.gradle.test"
                 defaultConfig {
                     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 }

@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -41,6 +41,16 @@ dependencies {
     implementation("androidx.test.espresso:espresso-idling-resource:3.1.0")
     implementation(libs.kotlinCoroutinesCore)
     implementation(libs.kotlinCoroutinesAndroid)
+    implementation(libs.atomicFu)
+    implementation("androidx.tracing:tracing-ktx:1.2.0")
+
+    testImplementation(libs.testRunner)
+    testImplementation(libs.mockitoCore4)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.kotlinStdlib)
+    testImplementation(libs.truth)
+    testImplementation(libs.testRules)
+    testImplementation(libs.testCore)
 
     annotationProcessor(libs.autoValue)
 }
@@ -51,10 +61,9 @@ android {
 
 androidx {
     name = "Camera Viewfinder Core"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     samples(project(":camera:viewfinder:viewfinder-core:viewfinder-core-samples"))
     inceptionYear = "2023"
     description = "Core dependencies for Viewfinder"
     legacyDisableKotlinStrictApiMode = true
-    samples(project(":camera:viewfinder:viewfinder-core:viewfinder-core-samples"))
 }

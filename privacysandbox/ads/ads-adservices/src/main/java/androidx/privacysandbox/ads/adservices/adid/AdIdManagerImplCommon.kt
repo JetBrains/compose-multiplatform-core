@@ -28,7 +28,7 @@ import androidx.core.os.asOutcomeReceiver
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-@SuppressLint("ClassVerificationFailure", "NewApi")
+@SuppressLint("NewApi")
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 4)
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)
 open class AdIdManagerImplCommon(private val mAdIdManager: android.adservices.adid.AdIdManager) :

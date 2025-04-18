@@ -20,10 +20,11 @@ import android.annotation.SuppressLint;
 import android.hardware.camera2.params.InputConfiguration;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -73,8 +74,7 @@ public final class InputConfigurationCompat {
      * @return an equivalent {@link InputConfigurationCompat} object, or {@code null} if not
      * supported.
      */
-    @Nullable
-    public static InputConfigurationCompat wrap(@Nullable Object inputConfiguration) {
+    public static @Nullable InputConfigurationCompat wrap(@Nullable Object inputConfiguration) {
         if (inputConfiguration == null) {
             return null;
         }
@@ -162,9 +162,8 @@ public final class InputConfigurationCompat {
      *
      * @return string representation of {@link InputConfigurationCompat}
      */
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return mImpl.toString();
     }
 
@@ -177,8 +176,7 @@ public final class InputConfigurationCompat {
      * null} if
      * not supported.
      */
-    @Nullable
-    public Object unwrap() {
+    public @Nullable Object unwrap() {
         return mImpl.getInputConfiguration();
     }
 
@@ -191,8 +189,7 @@ public final class InputConfigurationCompat {
 
         boolean isMultiResolution();
 
-        @Nullable
-        Object getInputConfiguration();
+        @Nullable Object getInputConfiguration();
     }
 
     @VisibleForTesting
@@ -259,10 +256,9 @@ public final class InputConfigurationCompat {
             return h;
         }
 
-        @NonNull
         @SuppressLint("DefaultLocale") // Implementation matches framework
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return String.format("InputConfiguration(w:%d, h:%d, format:%d)", mWidth, mHeight,
                     mFormat);
         }
@@ -302,9 +298,8 @@ public final class InputConfigurationCompat {
             return false;
         }
 
-        @Nullable
         @Override
-        public Object getInputConfiguration() {
+        public @Nullable Object getInputConfiguration() {
             return mObject;
         }
 
@@ -322,9 +317,8 @@ public final class InputConfigurationCompat {
             return mObject.hashCode();
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return mObject.toString();
         }
     }

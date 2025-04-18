@@ -17,19 +17,15 @@
 package androidx.compose.foundation.lazy.layout
 
 import androidx.collection.mutableScatterSetOf
-import androidx.compose.foundation.internal.requirePreconditionNotNull
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.runtime.saveable.SaveableStateHolder
 import androidx.compose.runtime.saveable.SaveableStateRegistry
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
-import androidx.compose.runtime.setValue
 
 /**
  * Provides [SaveableStateHolder] to be used with the lazy layout items. This allows to save the
@@ -43,40 +39,41 @@ import androidx.compose.runtime.setValue
 @Composable
 internal fun LazySaveableStateHolderProvider(content: @Composable (SaveableStateHolder) -> Unit) {
     val currentRegistry = LocalSaveableStateRegistry.current
+    val wrappedHolder = rememberSaveableStateHolder()
     val holder =
-        rememberSaveable(currentRegistry, saver = LazySaveableStateHolder.saver(currentRegistry)) {
-            LazySaveableStateHolder(currentRegistry, emptyMap())
+        rememberSaveable(
+            currentRegistry,
+            saver = LazySaveableStateHolder.saver(currentRegistry, wrappedHolder)
+        ) {
+            LazySaveableStateHolder(currentRegistry, emptyMap(), wrappedHolder)
         }
-    CompositionLocalProvider(LocalSaveableStateRegistry provides holder) {
-        holder.wrappedHolder = rememberSaveableStateHolder()
-        content(holder)
-    }
+    CompositionLocalProvider(LocalSaveableStateRegistry provides holder) { content(holder) }
 }
 
-private class LazySaveableStateHolder(private val wrappedRegistry: SaveableStateRegistry) :
-    SaveableStateRegistry by wrappedRegistry, SaveableStateHolder {
+private class LazySaveableStateHolder(
+    private val wrappedRegistry: SaveableStateRegistry,
+    private val wrappedHolder: SaveableStateHolder
+) : SaveableStateRegistry by wrappedRegistry, SaveableStateHolder {
 
     constructor(
         parentRegistry: SaveableStateRegistry?,
-        restoredValues: Map<String, List<Any?>>?
-    ) : this(SaveableStateRegistry(restoredValues) { parentRegistry?.canBeSaved(it) ?: true })
-
-    var wrappedHolder by mutableStateOf<SaveableStateHolder?>(null)
+        restoredValues: Map<String, List<Any?>>?,
+        wrappedHolder: SaveableStateHolder
+    ) : this(
+        SaveableStateRegistry(restoredValues) { parentRegistry?.canBeSaved(it) ?: true },
+        wrappedHolder
+    )
 
     private val previouslyComposedKeys = mutableScatterSetOf<Any>()
 
     override fun performSave(): Map<String, List<Any?>> {
-        val holder = wrappedHolder
-        if (holder != null) {
-            previouslyComposedKeys.forEach { holder.removeState(it) }
-        }
+        previouslyComposedKeys.forEach { wrappedHolder.removeState(it) }
         return wrappedRegistry.performSave()
     }
 
     @Composable
     override fun SaveableStateProvider(key: Any, content: @Composable () -> Unit) {
-        requirePreconditionNotNull(wrappedHolder) { "null wrappedHolder" }
-            .SaveableStateProvider(key, content)
+        wrappedHolder.SaveableStateProvider(key, content)
         DisposableEffect(key) {
             previouslyComposedKeys -= key
             onDispose { previouslyComposedKeys += key }
@@ -84,14 +81,16 @@ private class LazySaveableStateHolder(private val wrappedRegistry: SaveableState
     }
 
     override fun removeState(key: Any) {
-        requirePreconditionNotNull(wrappedHolder) { "null wrappedHolder" }.removeState(key)
+        wrappedHolder.removeState(key)
     }
 
     companion object {
-        fun saver(parentRegistry: SaveableStateRegistry?) =
+        fun saver(parentRegistry: SaveableStateRegistry?, wrappedHolder: SaveableStateHolder) =
             Saver<LazySaveableStateHolder, Map<String, List<Any?>>>(
                 save = { it.performSave().ifEmpty { null } },
-                restore = { restored -> LazySaveableStateHolder(parentRegistry, restored) }
+                restore = { restored ->
+                    LazySaveableStateHolder(parentRegistry, restored, wrappedHolder)
+                }
             )
     }
 }

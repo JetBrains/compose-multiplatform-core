@@ -19,6 +19,10 @@ package androidx.compose.ui.platform
 import androidx.compose.ui.text.AnnotatedString
 
 /** Interface for managing the Clipboard. */
+@Deprecated(
+    "Use Clipboard instead, which supports suspend functions.",
+    ReplaceWith("Clipboard", "androidx.compose.ui.platform.Clipboard")
+)
 interface ClipboardManager {
     /**
      * This method put the text into the Clipboard.

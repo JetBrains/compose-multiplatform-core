@@ -33,8 +33,9 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.BottomAppBarDefaults.bottomAppBarFabColor
 import androidx.compose.material3.TopAppBarDefaults.enterAlwaysScrollBehavior
-import androidx.compose.material3.tokens.TopAppBarSmallTokens
+import androidx.compose.material3.tokens.AppBarSmallTokens
 import androidx.compose.testutils.assertAgainstGolden
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
@@ -170,7 +171,7 @@ class AppBarScreenshotTest {
         composeTestRule.onNodeWithTag(TopAppBarTestTag).performTouchInput {
             // start from the bottom so we can drag enough
             down(bottomCenter - Offset(1f, 1f))
-            moveBy(Offset(0f, -((TopAppBarSmallTokens.ContainerHeight - 10.dp).toPx())))
+            moveBy(Offset(0f, -((AppBarSmallTokens.ContainerHeight - 10.dp).toPx())))
         }
 
         assertAppBarAgainstGolden(
@@ -245,7 +246,7 @@ class AppBarScreenshotTest {
                     },
                     title = { Text("Title") },
                     subtitle = { Text("Subtitle") },
-                    titleHorizontalAlignment = TopAppBarTitleAlignment.Center,
+                    titleHorizontalAlignment = Alignment.CenterHorizontally,
                     actions = {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
@@ -273,7 +274,7 @@ class AppBarScreenshotTest {
                     },
                     title = { Text("Title") },
                     subtitle = {},
-                    titleHorizontalAlignment = TopAppBarTitleAlignment.Center,
+                    titleHorizontalAlignment = Alignment.CenterHorizontally,
                     actions = {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
@@ -341,10 +342,10 @@ class AppBarScreenshotTest {
     }
 
     @Test
-    fun mediumAppBar_centerAligned_withSubtitle_lightTheme() {
+    fun mediumFlexibleAppBar_centerAligned_withSubtitle_lightTheme() {
         composeTestRule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(TopAppBarTestTag)) {
-                MediumTopAppBar(
+                MediumFlexibleTopAppBar(
                     navigationIcon = {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
@@ -355,7 +356,7 @@ class AppBarScreenshotTest {
                     },
                     title = { Text("Title") },
                     subtitle = { Text("Subtitle") },
-                    titleHorizontalAlignment = TopAppBarTitleAlignment.Center,
+                    titleHorizontalAlignment = Alignment.CenterHorizontally,
                     actions = {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
@@ -366,15 +367,15 @@ class AppBarScreenshotTest {
         }
 
         assertAppBarAgainstGolden(
-            goldenIdentifier = "mediumAppBar_centerAligned_withSubtitle_lightTheme"
+            goldenIdentifier = "mediumFlexibleAppBar_centerAligned_withSubtitle_lightTheme"
         )
     }
 
     @Test
-    fun mediumAppBar_centerAligned_withoutSubtitle_lightTheme() {
+    fun mediumFlexibleAppBar_centerAligned_withoutSubtitle_lightTheme() {
         composeTestRule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(TopAppBarTestTag)) {
-                MediumTopAppBar(
+                MediumFlexibleTopAppBar(
                     navigationIcon = {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
@@ -384,8 +385,7 @@ class AppBarScreenshotTest {
                         }
                     },
                     title = { Text("Title") },
-                    subtitle = null,
-                    titleHorizontalAlignment = TopAppBarTitleAlignment.Center,
+                    titleHorizontalAlignment = Alignment.CenterHorizontally,
                     actions = {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
@@ -396,15 +396,15 @@ class AppBarScreenshotTest {
         }
 
         assertAppBarAgainstGolden(
-            goldenIdentifier = "mediumAppBar_centerAligned_withoutSubtitle_lightTheme"
+            goldenIdentifier = "mediumFlexibleAppBar_centerAligned_withoutSubtitle_lightTheme"
         )
     }
 
     @Test
-    fun mediumAppBar_startAligned_withSubtitle_darkTheme() {
+    fun mediumFlexibleAppBar_startAligned_withSubtitle_darkTheme() {
         composeTestRule.setMaterialContent(darkColorScheme()) {
             Box(Modifier.testTag(TopAppBarTestTag)) {
-                MediumTopAppBar(
+                MediumFlexibleTopAppBar(
                     navigationIcon = {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
@@ -425,7 +425,7 @@ class AppBarScreenshotTest {
         }
 
         assertAppBarAgainstGolden(
-            goldenIdentifier = "mediumAppBar_startAligned_withSubtitle_darkTheme"
+            goldenIdentifier = "mediumFlexibleAppBar_startAligned_withSubtitle_darkTheme"
         )
     }
 
@@ -482,10 +482,10 @@ class AppBarScreenshotTest {
     }
 
     @Test
-    fun largeAppBar_centerAligned_withSubtitle_lightTheme() {
+    fun largeFlexibleAppBar_centerAligned_withSubtitle_lightTheme() {
         composeTestRule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(TopAppBarTestTag)) {
-                LargeTopAppBar(
+                LargeFlexibleTopAppBar(
                     navigationIcon = {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
@@ -496,7 +496,7 @@ class AppBarScreenshotTest {
                     },
                     title = { Text("Title") },
                     subtitle = { Text("Subtitle") },
-                    titleHorizontalAlignment = TopAppBarTitleAlignment.Center,
+                    titleHorizontalAlignment = Alignment.CenterHorizontally,
                     actions = {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
@@ -507,15 +507,15 @@ class AppBarScreenshotTest {
         }
 
         assertAppBarAgainstGolden(
-            goldenIdentifier = "largeAppBar_centerAligned_withSubtitle_lightTheme"
+            goldenIdentifier = "largeFlexibleAppBar_centerAligned_withSubtitle_lightTheme"
         )
     }
 
     @Test
-    fun largeAppBar_centerAligned_withoutSubtitle_lightTheme() {
+    fun largeFlexibleAppBar_centerAligned_withoutSubtitle_lightTheme() {
         composeTestRule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(TopAppBarTestTag)) {
-                LargeTopAppBar(
+                LargeFlexibleTopAppBar(
                     navigationIcon = {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
@@ -525,8 +525,7 @@ class AppBarScreenshotTest {
                         }
                     },
                     title = { Text("Title") },
-                    subtitle = null,
-                    titleHorizontalAlignment = TopAppBarTitleAlignment.Center,
+                    titleHorizontalAlignment = Alignment.CenterHorizontally,
                     actions = {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
@@ -537,15 +536,15 @@ class AppBarScreenshotTest {
         }
 
         assertAppBarAgainstGolden(
-            goldenIdentifier = "largeAppBar_centerAligned_withoutSubtitle_lightTheme"
+            goldenIdentifier = "largeFlexibleAppBar_centerAligned_withoutSubtitle_lightTheme"
         )
     }
 
     @Test
-    fun largeAppBar_startAligned_withSubtitle_darkTheme() {
+    fun largeFlexibleAppBar_startAligned_withSubtitle_darkTheme() {
         composeTestRule.setMaterialContent(darkColorScheme()) {
             Box(Modifier.testTag(TopAppBarTestTag)) {
-                LargeTopAppBar(
+                LargeFlexibleTopAppBar(
                     navigationIcon = {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
@@ -566,7 +565,7 @@ class AppBarScreenshotTest {
         }
 
         assertAppBarAgainstGolden(
-            goldenIdentifier = "largeAppBar_startAligned_withSubtitle_darkTheme"
+            goldenIdentifier = "largeFlexibleAppBar_startAligned_withSubtitle_darkTheme"
         )
     }
 
@@ -658,7 +657,7 @@ class AppBarScreenshotTest {
     fun bottomAppBarSpacedAround_lightTheme() {
         composeTestRule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(BottomAppBarTestTag)) {
-                BottomAppBar(
+                FlexibleBottomAppBar(
                     horizontalArrangement = Arrangement.SpaceAround,
                     contentPadding = PaddingValues(horizontal = 0.dp),
                     content = {
@@ -701,8 +700,9 @@ class AppBarScreenshotTest {
     fun bottomAppBarSpacedBetween_lightTheme() {
         composeTestRule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(BottomAppBarTestTag)) {
-                BottomAppBar(
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                FlexibleBottomAppBar(
+                    // The default BottomAppBarDefaults.FlexibleHorizontalArrangement is an
+                    // Arrangement.SpacedBetween.
                     content = {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
@@ -743,7 +743,7 @@ class AppBarScreenshotTest {
     fun bottomAppBarSpacedEvenly_lightTheme() {
         composeTestRule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(BottomAppBarTestTag)) {
-                BottomAppBar(
+                FlexibleBottomAppBar(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     contentPadding = PaddingValues(horizontal = 0.dp),
                     content = {
@@ -786,8 +786,8 @@ class AppBarScreenshotTest {
     fun bottomAppBarFixed_lightTheme() {
         composeTestRule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(BottomAppBarTestTag)) {
-                BottomAppBar(
-                    horizontalArrangement = BottomAppBarDefaults.HorizontalArrangement,
+                FlexibleBottomAppBar(
+                    horizontalArrangement = BottomAppBarDefaults.FlexibleFixedHorizontalArrangement,
                     content = {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
@@ -828,8 +828,8 @@ class AppBarScreenshotTest {
     fun bottomAppBarFixed_darkTheme() {
         composeTestRule.setMaterialContent(darkColorScheme()) {
             Box(Modifier.testTag(BottomAppBarTestTag)) {
-                BottomAppBar(
-                    horizontalArrangement = BottomAppBarDefaults.HorizontalArrangement,
+                FlexibleBottomAppBar(
+                    horizontalArrangement = BottomAppBarDefaults.FlexibleFixedHorizontalArrangement,
                     content = {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(

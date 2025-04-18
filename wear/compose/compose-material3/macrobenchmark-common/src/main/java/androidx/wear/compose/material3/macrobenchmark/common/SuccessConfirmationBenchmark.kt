@@ -32,8 +32,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
 import androidx.wear.compose.material3.Button
-import androidx.wear.compose.material3.SuccessConfirmation
+import androidx.wear.compose.material3.ConfirmationDialogDefaults
+import androidx.wear.compose.material3.SuccessConfirmationDialog
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.confirmationDialogCurvedText
 
 object SuccessConfirmationBenchmark : MacrobenchmarkScreen {
     override val content: @Composable (BoxScope.() -> Unit)
@@ -51,8 +53,11 @@ object SuccessConfirmationBenchmark : MacrobenchmarkScreen {
                     Text("Open")
                 }
             }
-            SuccessConfirmation(
-                show = showDialog.value,
+            val text = "Success"
+            val style = ConfirmationDialogDefaults.curvedTextStyle
+            SuccessConfirmationDialog(
+                curvedText = { confirmationDialogCurvedText(text, style) },
+                visible = showDialog.value,
                 onDismissRequest = { showDialog.value = false },
                 durationMillis = 2000
             )

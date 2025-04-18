@@ -21,9 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
@@ -31,16 +30,10 @@ plugins {
 }
 
 androidXMultiplatform {
-    jvm {
-        withJava()
-    }
+    jvm()
     mac()
     linux()
     ios()
-
-    kotlin {
-        explicitApi = ExplicitApiMode.Strict
-    }
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -87,8 +80,7 @@ androidXMultiplatform {
 
 androidx {
     name = "Lifecycle-Common"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Lifecycle-Common"
-    metalavaK2UastEnabled = false
 }

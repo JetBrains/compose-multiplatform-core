@@ -60,66 +60,60 @@ fun rememberSaveableStateHolder(): SaveableStateHolder =
 private class SaveableStateHolderImpl(
     private val savedStates: MutableMap<Any, Map<String, List<Any?>>> = mutableMapOf()
 ) : SaveableStateHolder {
-    private val registryHolders = mutableScatterMapOf<Any, RegistryHolder>()
+    private val registries = mutableScatterMapOf<Any, SaveableStateRegistry>()
     var parentSaveableStateRegistry: SaveableStateRegistry? = null
+    private val canBeSaved: (Any) -> Boolean = {
+        parentSaveableStateRegistry?.canBeSaved(it) ?: true
+    }
 
     @Composable
     override fun SaveableStateProvider(key: Any, content: @Composable () -> Unit) {
         ReusableContent(key) {
-            val registryHolder = remember {
-                require(parentSaveableStateRegistry?.canBeSaved(key) ?: true) {
+            val registry = remember {
+                require(canBeSaved(key)) {
                     "Type of the key $key is not supported. On Android you can only use types " +
                         "which can be stored inside the Bundle."
                 }
-                RegistryHolder(key)
+                SaveableStateRegistry(savedStates[key], canBeSaved)
             }
             CompositionLocalProvider(
-                LocalSaveableStateRegistry provides registryHolder.registry,
+                LocalSaveableStateRegistry provides registry,
                 content = content
             )
             DisposableEffect(Unit) {
-                require(key !in registryHolders) { "Key $key was used multiple times " }
+                require(key !in registries) { "Key $key was used multiple times " }
                 savedStates -= key
-                registryHolders[key] = registryHolder
+                registries[key] = registry
                 onDispose {
-                    registryHolder.saveTo(savedStates)
-                    registryHolders -= key
+                    if (registries.remove(key) === registry) {
+                        registry.saveTo(savedStates, key)
+                    }
                 }
             }
         }
     }
 
     private fun saveAll(): MutableMap<Any, Map<String, List<Any?>>>? {
-        val map = savedStates.toMutableMap()
-        registryHolders.forEachValue { it.saveTo(map) }
+        val map = savedStates
+        registries.forEach { key, registry -> registry.saveTo(map, key) }
         return map.ifEmpty { null }
     }
 
     override fun removeState(key: Any) {
-        val registryHolder = registryHolders[key]
-        if (registryHolder != null) {
-            registryHolder.shouldSave = false
-        } else {
+        if (registries.remove(key) == null) {
             savedStates -= key
         }
     }
 
-    inner class RegistryHolder constructor(val key: Any) {
-        var shouldSave = true
-        val registry: SaveableStateRegistry =
-            SaveableStateRegistry(savedStates[key]) {
-                parentSaveableStateRegistry?.canBeSaved(it) ?: true
-            }
-
-        fun saveTo(map: MutableMap<Any, Map<String, List<Any?>>>) {
-            if (shouldSave) {
-                val savedData = registry.performSave()
-                if (savedData.isEmpty()) {
-                    map -= key
-                } else {
-                    map[key] = savedData
-                }
-            }
+    private fun SaveableStateRegistry.saveTo(
+        map: MutableMap<Any, Map<String, List<Any?>>>,
+        key: Any
+    ) {
+        val savedData = performSave()
+        if (savedData.isEmpty()) {
+            map -= key
+        } else {
+            map[key] = savedData
         }
     }
 

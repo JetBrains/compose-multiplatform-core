@@ -39,6 +39,7 @@ import androidx.annotation.StringDef;
 import androidx.annotation.VisibleForTesting;
 import androidx.wear.protolayout.ColorBuilders.Brush;
 import androidx.wear.protolayout.ColorBuilders.ColorProp;
+import androidx.wear.protolayout.ColorBuilders.SweepGradient;
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters;
 import androidx.wear.protolayout.DimensionBuilders.AngularDimension;
 import androidx.wear.protolayout.DimensionBuilders.AngularLayoutConstraint;
@@ -98,6 +99,7 @@ public final class LayoutElementBuilders {
 
     @VisibleForTesting static final String WEIGHT_AXIS_TAG = "wght";
     @VisibleForTesting static final String WIDTH_AXIS_TAG = "wdth";
+    @VisibleForTesting static final String ROUNDNESS_AXIS_TAG = "ROND";
     @VisibleForTesting static final String TABULAR_OPTION_TAG = "tnum";
 
     /** The weight to be applied to the font. */
@@ -690,10 +692,9 @@ public final class LayoutElementBuilders {
             return Collections.unmodifiableList(list);
         }
 
-
         /**
-         * Gets whether the text should be rendered in a italic typeface. If not specified, defaults to
-         * "false".
+         * Gets whether the text should be rendered in a italic typeface. If not specified, defaults
+         * to "false".
          */
         public @Nullable BoolProp getItalic() {
             return isItalic();
@@ -999,8 +1000,7 @@ public final class LayoutElementBuilders {
                     SpProp spPropSize = sp(size);
                     mImpl.addSize(spPropSize.toProto());
                     mFingerprint.recordPropertyUpdate(
-                            1,
-                            checkNotNull(spPropSize.getFingerprint()).aggregateValueAsInt());
+                            1, checkNotNull(spPropSize.getFingerprint()).aggregateValueAsInt());
                 }
                 return this;
             }
@@ -1036,7 +1036,7 @@ public final class LayoutElementBuilders {
              *
              * @param fontFamily preferred font family name to be used if available
              * @param fallbacks the ordered list of fallback font family to attempt to use if the
-             *                  preferred font family is not available.
+             *     preferred font family is not available.
              */
             @RequiresSchemaVersion(major = 1, minor = 400)
             public @NonNull Builder setPreferredFontFamilies(
@@ -1060,14 +1060,19 @@ public final class LayoutElementBuilders {
              * with the variable fonts on renderers supporting 1.4, {@link FontSetting#weight} and
              * {@link FontSetting#width} setting will always be available.
              *
+             * <p>Consider providing a fallback values with {@link #setWeight} for devices that
+             * don't support variable fonts. For example, using {@link #FONT_WEIGHT_MEDIUM} for
+             * weight axis with value greater or equal to {@code 500}.
+             *
              * @throws IllegalArgumentException if the number of the given Setting is larger than
-             *  10.
+             *     10.
              */
             @RequiresSchemaVersion(major = 1, minor = 400)
             public @NonNull Builder setSettings(FontSetting @NonNull ... settings) {
                 if (settings.length > SETTINGS_LIMIT) {
                     throw new IllegalArgumentException(
-                            "Number of given FontSetting can't be larger than " + SETTINGS_LIMIT
+                            "Number of given FontSetting can't be larger than "
+                                    + SETTINGS_LIMIT
                                     + ".");
                 }
 
@@ -1126,7 +1131,7 @@ public final class LayoutElementBuilders {
          * FontStyle.Builder#setWeight}.
          *
          * @param value weight, usually in 1..1000, but actual range can be smaller, depending on
-         *              the font used
+         *     the font used
          */
         @RequiresSchemaVersion(major = 1, minor = 400)
         static @NonNull FontSetting weight(@IntRange(from = 1, to = 1000) int value) {
@@ -1142,6 +1147,18 @@ public final class LayoutElementBuilders {
         @RequiresSchemaVersion(major = 1, minor = 400)
         static @NonNull FontSetting width(@FloatRange(from = 25, to = 200) float value) {
             return new FontVariationSetting.Builder(WIDTH_AXIS_TAG, value).build();
+        }
+
+        /**
+         * {@link FontSetting} option for custom roundness for font. For more information, see <a
+         * href="https://fonts.google.com/knowledge/glossary/rond_axis">here</a>.
+         *
+         * @param value roundness, usually in 0..100, but actual range and availability can depend
+         *     on the font used
+         */
+        @RequiresSchemaVersion(major = 1, minor = 400)
+        static @NonNull FontSetting roundness(int value) {
+            return new FontVariationSetting.Builder(ROUNDNESS_AXIS_TAG, value).build();
         }
 
         /**
@@ -1593,9 +1610,9 @@ public final class LayoutElementBuilders {
          * 1.2 and renderers supporting version 1.2 will use the dynamic value (if set).
          *
          * <p>When using a dynamic value, make sure to specify the bounding constraints for the
-         * affected layout element through
-         * {@code setLayoutConstraintsForDynamicText(StringLayoutConstraint)} otherwise
-         * {@code build()} fails.
+         * affected layout element through {@code
+         * setLayoutConstraintsForDynamicText(StringLayoutConstraint)} otherwise {@code build()}
+         * fails.
          */
         public @Nullable StringProp getText() {
             if (mImpl.hasText()) {
@@ -2940,7 +2957,8 @@ public final class LayoutElementBuilders {
             @RequiresSchemaVersion(major = 1, minor = 0)
             public @NonNull Builder setText(@NonNull StringProp text) {
                 if (text.getDynamicValue() != null) {
-                    throw new IllegalArgumentException("SpanText.Builder.setText doesn't support dynamic values.");
+                    throw new IllegalArgumentException(
+                            "SpanText.Builder.setText doesn't support dynamic values.");
                 }
                 mImpl.setText(text.toProto());
                 mFingerprint.recordPropertyUpdate(
@@ -4260,7 +4278,7 @@ public final class LayoutElementBuilders {
             }
         }
 
-        /** Gets defines the direction in which text is drawn.*/
+        /** Gets defines the direction in which text is drawn. */
         public @Nullable ArcDirectionProp getArcDirection() {
             if (mImpl.hasArcDirection()) {
                 return ArcDirectionProp.fromProto(mImpl.getArcDirection());
@@ -4415,9 +4433,9 @@ public final class LayoutElementBuilders {
          * 1.2 and renderers supporting version 1.2 will use the dynamic value (if set).
          *
          * <p>When using a dynamic value, make sure to specify the bounding constraints for the
-         * affected layout element through
-         * {@code setLayoutConstraintsForDynamicLength(AngularLayoutConstraint)} otherwise {@code
-         * build()} fails.
+         * affected layout element through {@code
+         * setLayoutConstraintsForDynamicLength(AngularLayoutConstraint)} otherwise {@code build()}
+         * fails.
          */
         public @Nullable DegreesProp getLength() {
             if (mImpl.hasLength()) {
@@ -4632,9 +4650,15 @@ public final class LayoutElementBuilders {
             /**
              * Sets a brush used to draw this line. If set, the brush will be used instead of the
              * color provided in {@code setColor()}.
+             *
+             * @throws IllegalArgumentException if the brush is not a {@link SweepGradient}.
              */
             @RequiresSchemaVersion(major = 1, minor = 300)
             public @NonNull Builder setBrush(@NonNull Brush brush) {
+                if (!(brush instanceof SweepGradient)) {
+                    throw new IllegalArgumentException(
+                            "Only SweepGradient is supported for ArcLine.");
+                }
                 mImpl.setBrush(brush.toBrushProto());
                 mFingerprint.recordPropertyUpdate(
                         7, checkNotNull(brush.getFingerprint()).aggregateValueAsInt());
@@ -4701,7 +4725,7 @@ public final class LayoutElementBuilders {
                 String onlyOpaqueMsg = "Only opaque colors are supported";
                 String alphaChangeMsg =
                         "Any transparent colors will have their alpha component set to 0xFF"
-                            + " (opaque).";
+                                + " (opaque).";
                 for (ColorProto.ColorStop colorStop :
                         mImpl.getBrush().getSweepGradient().getColorStopsList()) {
                     if (Color.alpha(colorStop.getColor().getArgb()) < 0xFF) {
@@ -4822,8 +4846,8 @@ public final class LayoutElementBuilders {
     }
 
     /**
-     * A dashed arc line that can be placed in an {@link Arc} container. It is an arc line made up
-     * of arc line segments separated by gaps.
+     * A dashed arc line. It is an arc line made up of arc line segments separated by gaps, and can
+     * be placed in an {@link Arc} container.
      */
     @RequiresSchemaVersion(major = 1, minor = 500)
     public static final class DashedArcLine implements ArcLayoutElement {
@@ -4835,13 +4859,7 @@ public final class LayoutElementBuilders {
             this.mFingerprint = fingerprint;
         }
 
-        /**
-         * Gets the length of this line in degrees, including gaps.
-         *
-         * <p>When using a dynamic value, make sure to specify the bounding constraints for the
-         * affected layout element through {@code setLayoutConstraintsForDynamicLength
-         * (AngularLayoutConstraint)}, otherwise {@code build()} fails.
-         */
+        /** Gets the length of this line in degrees, including gaps. */
         public @Nullable DegreesProp getLength() {
             if (mImpl.hasLength()) {
                 return DegreesProp.fromProto(mImpl.getLength());
@@ -4967,7 +4985,8 @@ public final class LayoutElementBuilders {
             public Builder() {}
 
             /**
-             * Sets the length of this line, in degrees. If not defined, defaults to 0.
+             * Sets the length of this line in degrees, including gaps. If not defined, defaults to
+             * 0.
              *
              * <p>When using a dynamic value, make sure to specify the bounding constraints for the
              * affected layout element through {@code setLayoutConstraintsForDynamicLength
@@ -4981,9 +5000,7 @@ public final class LayoutElementBuilders {
                 return this;
             }
 
-            /**
-             * Sets the thickness of this line. If not defined, defaults to 0.
-             */
+            /** Sets the thickness of this line. If not defined, defaults to 0. */
             @RequiresSchemaVersion(major = 1, minor = 500)
             public @NonNull Builder setThickness(@Dimension(unit = DP) float thickness) {
                 DpProp thicknessProp = dp(thickness);
@@ -4993,9 +5010,7 @@ public final class LayoutElementBuilders {
                 return this;
             }
 
-            /**
-             * Sets the color of this line.
-             */
+            /** Sets the color of this line. */
             @RequiresSchemaVersion(major = 1, minor = 500)
             public @NonNull Builder setColor(@NonNull ColorProp color) {
                 mImpl.setColor(color.toProto());
@@ -5016,8 +5031,8 @@ public final class LayoutElementBuilders {
             }
 
             /**
-             * Sets the direction in which this line is drawn. If not set, defaults to
-             * ARC_DIRECTION_CLOCKWISE.
+             * Sets the direction in which this line is drawn. If not set, defaults to the {@link
+             * Arc} container's direction where it is placed in.
              */
             @RequiresSchemaVersion(major = 1, minor = 500)
             public @NonNull Builder setArcDirection(@NonNull ArcDirectionProp arcDirection) {
@@ -5028,8 +5043,8 @@ public final class LayoutElementBuilders {
             }
 
             /**
-             * Sets the direction in which this line is drawn. If not set, defaults to
-             * ARC_DIRECTION_CLOCKWISE.
+             * Sets the direction in which this line is drawn. If not set, defaults to the {@link
+             * Arc} container's direction where it is placed in.
              */
             @RequiresSchemaVersion(major = 1, minor = 500)
             public @NonNull Builder setArcDirection(@ArcDirection int arcDirection) {
@@ -5047,6 +5062,7 @@ public final class LayoutElementBuilders {
                         6, checkNotNull(linePattern.getFingerprint()).aggregateValueAsInt());
                 return this;
             }
+
             /**
              * Sets the bounding constraints for the layout affected by the dynamic value from
              * {@link #setLength(DegreesProp)}.
@@ -5078,7 +5094,10 @@ public final class LayoutElementBuilders {
         }
     }
 
-    /** A dashed line pattern which describes how the dashed arc line is segmented by gaps. */
+    /**
+     * A dashed line pattern which describes how the dashed arc line is segmented by gaps. It
+     * determines the gap size and the gap locations.
+     */
     @RequiresSchemaVersion(major = 1, minor = 500)
     public static final class DashedLinePattern {
         private final LayoutElementProto.DashedLinePattern mImpl;
@@ -5186,8 +5205,8 @@ public final class LayoutElementBuilders {
             /**
              * Sets the list of each gap's center location in degrees.
              *
-             * <p>The interval between any two locations could not be shorter than thickness plus
-             * gap size.
+             * <p>The interval between any two locations must not be shorter than thickness plus gap
+             * size, otherwise the gap is ignored.
              *
              * <p>Note that calling this method will invalidate the previous call of {@link
              * #setGapInterval}
@@ -5196,7 +5215,7 @@ public final class LayoutElementBuilders {
             public @NonNull Builder setGapLocations(float @NonNull ... gapLocationsInDegrees) {
                 mImpl.clearGapLocations();
 
-                for (float gapLocation: gapLocationsInDegrees) {
+                for (float gapLocation : gapLocationsInDegrees) {
                     addGapLocation(degrees(gapLocation));
                 }
 
@@ -5207,7 +5226,8 @@ public final class LayoutElementBuilders {
              * Sets the interval length in degrees between two consecutive gap center locations. The
              * arc line will have arc line segments with equal length.
              *
-             * <p>The interval could not be shorter than thickness plus gap size.
+             * <p>The interval between any two locations must not be shorter than thickness plus gap
+             * size, otherwise the gap is ignored.
              *
              * <p>Note that calling this method will remove all the gap locations set previously
              * with {@link #setGapLocations}
@@ -5217,7 +5237,7 @@ public final class LayoutElementBuilders {
             public @NonNull Builder setGapInterval(float gapIntervalInDegrees) {
                 mImpl.clearGapLocations();
 
-                float gapLocation = gapIntervalInDegrees;
+                float gapLocation = 0;
                 while (gapLocation <= 360F) {
                     addGapLocation(degrees(gapLocation));
                     gapLocation += gapIntervalInDegrees;
@@ -5238,7 +5258,6 @@ public final class LayoutElementBuilders {
             }
         }
     }
-
 
     /** A simple spacer used to provide padding between adjacent elements in an {@link Arc}. */
     @RequiresSchemaVersion(major = 1, minor = 0)
@@ -5278,7 +5297,7 @@ public final class LayoutElementBuilders {
             }
         }
 
-        /** Gets the length of this spacer.*/
+        /** Gets the length of this spacer. */
         public @Nullable AngularDimension getAngularLength() {
             if (mImpl.hasAngularLength()) {
                 return DimensionBuilders.angularDimensionFromProto(mImpl.getAngularLength());
@@ -5392,16 +5411,16 @@ public final class LayoutElementBuilders {
              * Sets the length of this spacer. If not defined, defaults to 0 degrees. If set, this
              * angular length will be used instead of the value provided in {@code setLength()}.
              *
-             *  <p>Note that this field only supports static values.
+             * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 500)
             public @NonNull Builder setAngularLength(@NonNull AngularDimension angularLength) {
-                DimensionProto. AngularDimension angularDimensionProto =
+                DimensionProto.AngularDimension angularDimensionProto =
                         angularLength.toAngularDimensionProto();
                 if ((angularDimensionProto.hasDegrees()
-                        && angularDimensionProto.getDegrees().getDynamicValue() != null)
+                                && angularDimensionProto.getDegrees().hasDynamicValue())
                         || (angularDimensionProto.hasDp()
-                        && angularDimensionProto.getDp().getDynamicValue() != null)) {
+                                && angularDimensionProto.getDp().hasDynamicValue())) {
                     throw new IllegalArgumentException(
                             "ArcSpacer.Builder.setAngularLength doesn't support dynamic values.");
                 }
@@ -5456,14 +5475,13 @@ public final class LayoutElementBuilders {
             }
         }
 
-
         /**
-         * Gets whether this adapter's contents should be rotated, according to its position in the arc
-         * or not. As an example, assume that an {@link Image} has been added to the arc, and ends up at
-         * the 3 o clock position. If rotate_contents = true, the image will be placed at the 3 o clock
-         * position, and will be rotated clockwise through 90 degrees. If rotate_contents = false, the
-         * image will be placed at the 3 o clock position, but itself will not be rotated. If not
-         * defined, defaults to false.
+         * Gets whether this adapter's contents should be rotated, according to its position in the
+         * arc or not. As an example, assume that an {@link Image} has been added to the arc, and
+         * ends up at the 3 o clock position. If rotate_contents = true, the image will be placed at
+         * the 3 o clock position, and will be rotated clockwise through 90 degrees. If
+         * rotate_contents = false, the image will be placed at the 3 o clock position, but itself
+         * will not be rotated. If not defined, defaults to false.
          */
         public @Nullable BoolProp getRotateContents() {
             return isRotateContents();
@@ -5581,8 +5599,8 @@ public final class LayoutElementBuilders {
     }
 
     /**
-     * An extensible {@code ArcDirection} property that can be set to any curved element to
-     * control the drawing direction.
+     * An extensible {@code ArcDirection} property that can be set to any curved element to control
+     * the drawing direction.
      */
     @RequiresSchemaVersion(major = 1, minor = 300)
     public static final class ArcDirectionProp {
@@ -5590,8 +5608,7 @@ public final class LayoutElementBuilders {
         private final @Nullable Fingerprint mFingerprint;
 
         ArcDirectionProp(
-                LayoutElementProto.ArcDirectionProp impl,
-                @Nullable Fingerprint fingerprint) {
+                LayoutElementProto.ArcDirectionProp impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
             this.mFingerprint = fingerprint;
         }
@@ -6632,8 +6649,7 @@ public final class LayoutElementBuilders {
          */
         @Deprecated
         public static FontStyle.@NonNull Builder body1(@NonNull DeviceParameters deviceParameters) {
-            return new FontStyle.Builder()
-                    .setSize(sp(isLargeScreen(deviceParameters) ? 18 : 16));
+            return new FontStyle.Builder().setSize(sp(isLargeScreen(deviceParameters) ? 18 : 16));
         }
 
         /**
@@ -6644,8 +6660,7 @@ public final class LayoutElementBuilders {
          */
         @Deprecated
         public static FontStyle.@NonNull Builder body2(@NonNull DeviceParameters deviceParameters) {
-            return new FontStyle.Builder()
-                    .setSize(sp(isLargeScreen(deviceParameters) ? 16 : 14));
+            return new FontStyle.Builder().setSize(sp(isLargeScreen(deviceParameters) ? 16 : 14));
         }
 
         /**
@@ -6671,8 +6686,7 @@ public final class LayoutElementBuilders {
         @Deprecated
         public static FontStyle.@NonNull Builder caption1(
                 @NonNull DeviceParameters deviceParameters) {
-            return new FontStyle.Builder()
-                    .setSize(sp(isLargeScreen(deviceParameters) ? 16 : 14));
+            return new FontStyle.Builder().setSize(sp(isLargeScreen(deviceParameters) ? 16 : 14));
         }
 
         /**
@@ -6684,45 +6698,44 @@ public final class LayoutElementBuilders {
         @Deprecated
         public static FontStyle.@NonNull Builder caption2(
                 @NonNull DeviceParameters deviceParameters) {
-            return new FontStyle.Builder()
-                    .setSize(sp(isLargeScreen(deviceParameters) ? 14 : 12));
+            return new FontStyle.Builder().setSize(sp(isLargeScreen(deviceParameters) ? 14 : 12));
         }
 
         private FontStyles() {}
     }
 
-  /** Checks whether a layout element has a transformation modifier. */
-  private static boolean hasTransformation(LayoutElementProto.@NonNull LayoutElement content) {
-    switch (content.getInnerCase()) {
-      case IMAGE:
-        return content.getImage().hasModifiers()
-            && content.getImage().getModifiers().hasTransformation();
-      case TEXT:
-        return content.getText().hasModifiers()
-            && content.getText().getModifiers().hasTransformation();
-      case SPACER:
-        return content.getSpacer().hasModifiers()
-            && content.getSpacer().getModifiers().hasTransformation();
-      case BOX:
-        return content.getBox().hasModifiers()
-            && content.getBox().getModifiers().hasTransformation();
-      case ROW:
-        return content.getRow().hasModifiers()
-            && content.getRow().getModifiers().hasTransformation();
-      case COLUMN:
-        return content.getColumn().hasModifiers()
-            && content.getColumn().getModifiers().hasTransformation();
-      case SPANNABLE:
-        return content.getSpannable().hasModifiers()
-            && content.getSpannable().getModifiers().hasTransformation();
-      case ARC:
-        return content.getArc().hasModifiers()
-            && content.getArc().getModifiers().hasTransformation();
-      case EXTENSION:
-        // fall through
-      case INNER_NOT_SET:
+    /** Checks whether a layout element has a transformation modifier. */
+    private static boolean hasTransformation(LayoutElementProto.@NonNull LayoutElement content) {
+        switch (content.getInnerCase()) {
+            case IMAGE:
+                return content.getImage().hasModifiers()
+                        && content.getImage().getModifiers().hasTransformation();
+            case TEXT:
+                return content.getText().hasModifiers()
+                        && content.getText().getModifiers().hasTransformation();
+            case SPACER:
+                return content.getSpacer().hasModifiers()
+                        && content.getSpacer().getModifiers().hasTransformation();
+            case BOX:
+                return content.getBox().hasModifiers()
+                        && content.getBox().getModifiers().hasTransformation();
+            case ROW:
+                return content.getRow().hasModifiers()
+                        && content.getRow().getModifiers().hasTransformation();
+            case COLUMN:
+                return content.getColumn().hasModifiers()
+                        && content.getColumn().getModifiers().hasTransformation();
+            case SPANNABLE:
+                return content.getSpannable().hasModifiers()
+                        && content.getSpannable().getModifiers().hasTransformation();
+            case ARC:
+                return content.getArc().hasModifiers()
+                        && content.getArc().getModifiers().hasTransformation();
+            case EXTENSION:
+                // fall through
+            case INNER_NOT_SET:
+                return false;
+        }
         return false;
     }
-    return false;
-  }
 }

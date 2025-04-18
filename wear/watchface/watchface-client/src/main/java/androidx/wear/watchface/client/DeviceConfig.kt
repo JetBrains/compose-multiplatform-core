@@ -28,7 +28,12 @@ import androidx.wear.watchface.data.DeviceConfig as WireDeviceConfig
  *   in milliseconds since the epoch.
  * @param digitalPreviewReferenceTimeMillis UTC reference time for screenshots of digital watch
  *   faces in milliseconds since the epoch.
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class DeviceConfig(
     @get:JvmName("hasLowBitAmbient") public val hasLowBitAmbient: Boolean,
     @get:JvmName("hasBurnInProtection") public val hasBurnInProtection: Boolean,

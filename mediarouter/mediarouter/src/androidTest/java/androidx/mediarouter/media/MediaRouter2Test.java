@@ -30,7 +30,6 @@ import android.media.RoutingSessionInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Messenger;
-import android.support.mediacompat.testlib.util.PollingCheck;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;

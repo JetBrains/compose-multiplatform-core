@@ -21,9 +21,10 @@ import android.util.Rational;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link MeteringPointFactory} that can create {@link MeteringPoint} by surface oriented x, y
@@ -93,8 +94,7 @@ public class SurfaceOrientedMeteringPointFactory extends MeteringPointFactory {
         mHeight = height;
     }
 
-    @Nullable
-    private static Rational getUseCaseAspectRatio(@Nullable UseCase useCase) {
+    private static @Nullable Rational getUseCaseAspectRatio(@Nullable UseCase useCase) {
         if (useCase == null) {
             return null;
         }
@@ -114,8 +114,7 @@ public class SurfaceOrientedMeteringPointFactory extends MeteringPointFactory {
      */
     @Override
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    protected PointF convertPoint(float x, float y) {
+    protected @NonNull PointF convertPoint(float x, float y) {
         PointF pt = new PointF(x / mWidth, y / mHeight);
         return pt;
     }

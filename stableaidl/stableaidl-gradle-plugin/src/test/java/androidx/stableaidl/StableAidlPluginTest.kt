@@ -17,10 +17,9 @@
 package androidx.stableaidl
 
 import androidx.testutils.gradle.ProjectSetupRule
-import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.gradle.testkit.runner.GradleRunner
-import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -67,7 +66,14 @@ class StableAidlPluginTest {
         )
 
         // Tasks should contain those defined in StableAidlTasks.
-        val output = gradleRunner.withArguments("tasks", "--stacktrace").build()
+        val output =
+            gradleRunner
+                .withArguments(
+                    "tasks",
+                    "--stacktrace",
+                    "-Pstableaidl.compilesdk=36",
+                )
+                .build()
         assertTrue { output.output.contains("compileDebugAidlApi - ") }
         assertTrue { output.output.contains("checkDebugAidlApiRelease - ") }
     }
@@ -101,7 +107,14 @@ class StableAidlPluginTest {
         )
 
         // Tasks should contain those defined in StableAidlTasks.
-        val output = gradleRunner.withArguments("tasks", "--stacktrace").build()
+        val output =
+            gradleRunner
+                .withArguments(
+                    "tasks",
+                    "--stacktrace",
+                    "-Pstableaidl.compilesdk=36",
+                )
+                .build()
         assertTrue { output.output.contains("compileDebugAidlApi - ") }
         assertTrue { output.output.contains("checkDebugAidlApiRelease - ") }
     }
@@ -122,6 +135,16 @@ class StableAidlPluginTest {
                 .trimIndent()
         )
 
-        assertFailsWith(UnexpectedBuildFailure::class) { gradleRunner.withArguments("jar").build() }
+        // Tasks should not contain those defined in StableAidlTasks.
+        val output =
+            gradleRunner
+                .withArguments(
+                    "tasks",
+                    "--stacktrace",
+                    "-Pstableaidl.compilesdk=36",
+                )
+                .build()
+        assertFalse { output.output.contains("compileDebugAidlApi - ") }
+        assertFalse { output.output.contains("checkDebugAidlApiRelease - ") }
     }
 }

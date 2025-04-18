@@ -70,7 +70,7 @@ internal inline fun <T : Saver<Original, Saveable>, Original, Saveable, reified 
  * Use for non-null value classes where the Unspecified value needs to be separately handled, for
  * example as in the [OffsetSaver]
  */
-private interface NonNullValueClassSaver<Original, Saveable : Any> : Saver<Original, Saveable>
+internal interface NonNullValueClassSaver<Original, Saveable : Any> : Saver<Original, Saveable>
 
 private fun <Original, Saveable : Any> NonNullValueClassSaver(
     save: SaverScope.(value: Original) -> Saveable?,

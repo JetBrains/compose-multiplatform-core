@@ -16,6 +16,7 @@
 
 package androidx.camera.camera2.pipe.integration.impl
 
+import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.pipe.CameraTimestamp
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameMetadata
@@ -38,7 +39,10 @@ import javax.inject.Inject
 public class ComboRequestListener @Inject constructor() : Request.Listener {
     private val requestListeners = mutableMapOf<Request.Listener, Executor>()
 
-    @Volatile private var listeners: Map<Request.Listener, Executor> = mapOf()
+    @Volatile
+    public var listeners: Map<Request.Listener, Executor> = mapOf()
+        @VisibleForTesting get
+        private set
 
     public fun addListener(listener: Request.Listener, executor: Executor) {
         check(!listeners.contains(listener)) { "$listener was already registered!" }

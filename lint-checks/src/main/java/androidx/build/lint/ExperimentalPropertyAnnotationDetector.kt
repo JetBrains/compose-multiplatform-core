@@ -27,26 +27,53 @@ import com.android.tools.lint.detector.api.LintFix
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.intellij.psi.PsiElement
+import org.jetbrains.kotlin.asJava.toLightSetter
 import org.jetbrains.kotlin.descriptors.annotations.AnnotationUseSiteTarget
 import org.jetbrains.kotlin.lexer.KtTokens
+import org.jetbrains.kotlin.psi.KtAnnotated
 import org.jetbrains.kotlin.psi.KtAnnotationEntry
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtClassBody
+import org.jetbrains.kotlin.psi.KtConstructor
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtModifierListOwner
+import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.kotlin.psi.psiUtil.isPrivate
+import org.jetbrains.kotlin.psi.psiUtil.isPropertyParameter
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UElement
+import org.jetbrains.uast.UParameter
+import org.jetbrains.uast.toUElement
 
-@Suppress("UnstableApiUsage")
 class ExperimentalPropertyAnnotationDetector : Detector(), Detector.UastScanner {
 
     override fun getApplicableUastTypes(): List<Class<out UElement>> =
-        listOf(UAnnotation::class.java)
+        listOf(UAnnotation::class.java, UParameter::class.java)
 
     override fun createUastHandler(context: JavaContext): UElementHandler =
         object : UElementHandler() {
+            /**
+             * Work around for b/406850340: annotations with the `property` use site target on
+             * parameters aren't visited directly with [visitAnnotation]. This finds those
+             * annotations and calls [visitAnnotation] on them.
+             */
+            override fun visitParameter(node: UParameter) {
+                val ktParameter = node.sourcePsi as? KtParameter ?: return
+                val propertyAnnotations =
+                    ktParameter.annotationEntries
+                        .filter {
+                            it.useSiteTarget?.getAnnotationUseSiteTarget() ==
+                                AnnotationUseSiteTarget.PROPERTY
+                        }
+                        .map { it.toUElement() }
+                        .filterIsInstance<UAnnotation>()
+                for (propertyAnnotation in propertyAnnotations) {
+                    visitAnnotation(propertyAnnotation)
+                }
+            }
+
             override fun visitAnnotation(node: UAnnotation) {
                 val neededTargets =
                     mutableSetOf(
@@ -68,45 +95,47 @@ class ExperimentalPropertyAnnotationDetector : Detector(), Detector.UastScanner 
                 val type = node.qualifiedName ?: return
                 val source = node.sourcePsi as? KtAnnotationEntry ?: return
 
-                // Check that the annotation is applied to a property
+                // Check that the annotation is applied to a property. Properties can also be
+                // defined as constructor parameters.
                 val parent = source.parent?.parent
-                if (parent !is KtProperty) return
-
-                // Only applies to properties defined at the top level or in classes
+                when (parent) {
+                    // Check if this check shouldn't apply to the property/parameter.
+                    is KtProperty -> if (!appliesToProperty(parent)) return
+                    is KtParameter -> if (!appliesToParameter(parent)) return
+                    else -> return
+                }
                 val propertyParent = parent.parent
-                if ((propertyParent !is KtClassBody && propertyParent !is KtFile)) return
 
                 // Don't apply the lint to private properties
-                if (parent.isPrivate()) return
+                // parent is either a KtProperty or KtParameter, both are KtModifierListOwner
+                if ((parent as KtModifierListOwner).isPrivate()) return
+
                 // Don't apply the lint to properties in private classes
                 if (propertyParent.getParentOfType<KtClass>(true)?.isPrivate() == true) return
-
-                // Don't apply lint to const properties, because they are static fields in java
-                if (parent.modifierList?.node?.findChildByType(KtTokens.CONST_KEYWORD) != null)
-                    return
-                // Don't apply lint to @JvmField properties, because they are fields in java
-                if (parent.annotationEntries.any { it.shortName.toString() == "JvmField" }) return
-
-                // Don't apply lint to delegated properties
-                if (parent.delegate != null) return
 
                 // Annotation on setter is only needed for mutable property with non-private setter
                 // Getter annotation is needed because the getter can't be private if the property
                 // isn't
-                val setter = parent.setter
-                if (!parent.isVar || (setter != null && setter.isPrivate())) {
+                if (
+                    !((parent as? KtProperty)?.hasVisibleSetter()
+                        ?: (parent as KtParameter).hasSetter())
+                ) {
                     neededTargets.remove(AnnotationUseSiteTarget.PROPERTY_SETTER)
                 }
 
                 // Find all usages of this annotation on the property
+                // parent is either a KtProperty or KtParameter, both are KtAnnotated
                 val existingTargets =
-                    parent.annotationEntries
+                    (parent as KtAnnotated)
+                        .annotationEntries
                         .filter { type.endsWith(it.shortName?.identifier ?: "") }
                         .map { it.useSiteTarget?.getAnnotationUseSiteTarget() }
 
                 val existingTargetSet =
                     existingTargets
                         // A null target means the default, which is the property target
+                        // Note this is true for parameters because experimental annotations don't
+                        // apply to params.
                         .map { it ?: AnnotationUseSiteTarget.PROPERTY }
                         .toSet()
                 val missingTargets = neededTargets - existingTargetSet
@@ -126,6 +155,47 @@ class ExperimentalPropertyAnnotationDetector : Detector(), Detector.UastScanner 
                 val incident = Incident(ISSUE, node, location, message, fix)
                 context.report(incident)
             }
+
+            /**
+             * Whether the lint check should apply to [property]. The check only applies to top
+             * level or class properties, and does not apply to const, @JvmField, or delegated
+             * properties.
+             */
+            fun appliesToProperty(property: KtProperty): Boolean {
+                // Only applies to properties defined at the top level or in classes
+                val propertyParent = property.parent
+                if ((propertyParent !is KtClassBody && propertyParent !is KtFile)) return false
+
+                // Don't apply lint to const properties, because they are static fields in java
+                if (property.modifierList?.node?.findChildByType(KtTokens.CONST_KEYWORD) != null)
+                    return false
+                // Don't apply lint to @JvmField properties, because they are fields in java
+                if (property.annotationEntries.any { it.shortName.toString() == "JvmField" })
+                    return false
+
+                // Don't apply lint to delegated properties
+                if (property.delegate != null) return false
+
+                return true
+            }
+
+            /**
+             * Whether the lint check should apply to [parameter]. The check only applies to
+             * constructor property parameters, and should not apply if the constructor is private.
+             */
+            fun appliesToParameter(parameter: KtParameter): Boolean {
+                if (!parameter.isPropertyParameter()) return false
+
+                // Don't apply to parameters of private constructors
+                if (parameter.getParentOfType<KtConstructor<*>>(true)?.isPrivate() == true)
+                    return false
+
+                return true
+            }
+
+            fun KtProperty.hasVisibleSetter() = isVar && setter?.isPrivate() != true
+
+            fun KtParameter.hasSetter() = toLightSetter() != null
 
             private fun createFix(
                 annotation: String,

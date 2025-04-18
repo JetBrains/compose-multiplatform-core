@@ -54,6 +54,7 @@ class KeyboardHelper(
     }
 
     /** Call this at the top of your test composition before using the helper. */
+    @Suppress("ComposableNaming")
     @Composable
     fun initialize() {
         view = LocalView.current

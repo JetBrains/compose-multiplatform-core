@@ -21,14 +21,15 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("androidx.inspection")
 }
 
@@ -76,7 +77,7 @@ dependencies {
 
 androidx {
     name = "Compose Layout Inspector"
-    type = LibraryType.IDE_PLUGIN
+    type = SoftwareType.IDE_PLUGIN
     inceptionYear = "2021"
     description = "Compose layout inspector. Exposes information to our tools for better IDE support."
 }
@@ -104,3 +105,13 @@ android {
 inspection {
     name = "compose-ui-inspection.jar"
 }
+
+// TODO(b/407640608): Fix :compose:ui:ui-inspection:connectedCheck to work without this block
+tasks.withType(KotlinCompile).configureEach {
+    kotlinOptions {
+        freeCompilerArgs += [
+                "-Xlambdas=class"
+        ]
+    }
+}
+

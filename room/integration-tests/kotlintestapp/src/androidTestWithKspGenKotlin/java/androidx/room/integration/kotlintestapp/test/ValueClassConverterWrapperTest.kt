@@ -37,6 +37,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import java.util.Date
 import java.util.UUID
+import kotlin.time.Duration
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -86,7 +87,9 @@ class ValueClassConverterWrapperTest {
         val userStringInternalPwd: UserWithStringInternal,
         val userGenericPwd: UserWithGeneric<String>,
         val userByteArrayPwd: UserWithByteArray,
-        val schrodingerUser: Schrodinger
+        val schrodingerUser: Schrodinger,
+        val duration: Duration,
+        val nullableDuration: Duration?
     ) {
         override fun equals(other: Any?): Boolean {
             val otherEntity = other as UserInfo
@@ -101,7 +104,9 @@ class ValueClassConverterWrapperTest {
                 userGenericPwd == otherEntity.userGenericPwd &&
                 userByteArrayPwd.password.contentEquals(otherEntity.userByteArrayPwd.password) &&
                 schrodingerUser.experiment.isCatAlive ==
-                    otherEntity.schrodingerUser.experiment.isCatAlive
+                    otherEntity.schrodingerUser.experiment.isCatAlive &&
+                duration == otherEntity.duration &&
+                nullableDuration == otherEntity.nullableDuration
         }
 
         override fun hashCode(): Int {
@@ -138,33 +143,24 @@ class ValueClassConverterWrapperTest {
     }
 
     private lateinit var db: ValueClassConverterWrapperDatabase
-    private val pk = 0
-    private val intPwd = UserWithInt(123)
-    private val stringPwd = UserWithString("open_sesame")
-    private val uuidPwd = UserWithUUID(UUID.randomUUID())
-    private val bytePwd = UserWithByte(Byte.MIN_VALUE)
-    private val enumPwd = UserWithEnum(Season.SUMMER)
-    private val datePwd = UserWithDate(Date(2023L))
-    private val internalPwd = UserWithStringInternal("open_sesame")
-    private val genericPwd = UserWithGeneric("open_sesame")
-    private val byteArrayPwd = UserWithByteArray(byteArrayOf(Byte.MIN_VALUE))
-    private val shrodingerPwd = Schrodinger(Experiment("the cat is alive!"))
 
     @Test
     fun readAndWriteValueClassToDatabase() {
         val customerInfo =
             UserInfo(
-                pk = pk,
-                userIntPwd = intPwd,
-                userStringPwd = stringPwd,
-                userUUIDPwd = uuidPwd,
-                userBytePwd = bytePwd,
-                userEnumPwd = enumPwd,
-                userDatePwd = datePwd,
-                userStringInternalPwd = internalPwd,
-                userGenericPwd = genericPwd,
-                userByteArrayPwd = byteArrayPwd,
-                schrodingerUser = shrodingerPwd
+                pk = 0,
+                userIntPwd = UserWithInt(123),
+                userStringPwd = UserWithString("open_sesame"),
+                userUUIDPwd = UserWithUUID(UUID.randomUUID()),
+                userBytePwd = UserWithByte(Byte.MIN_VALUE),
+                userEnumPwd = UserWithEnum(Season.SUMMER),
+                userDatePwd = UserWithDate(Date(2023L)),
+                userStringInternalPwd = UserWithStringInternal("open_sesame"),
+                userGenericPwd = UserWithGeneric("open_sesame"),
+                userByteArrayPwd = UserWithByteArray(byteArrayOf(Byte.MIN_VALUE)),
+                schrodingerUser = Schrodinger(Experiment("the cat is alive!")),
+                duration = Duration.ZERO,
+                nullableDuration = null,
             )
 
         db.dao().insert(customerInfo)

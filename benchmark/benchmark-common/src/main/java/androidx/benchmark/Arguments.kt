@@ -28,8 +28,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 @get:RestrictTo(RestrictTo.Scope.LIBRARY)
 @set:RestrictTo(RestrictTo.Scope.LIBRARY)
 @VisibleForTesting
-public var argumentSource: Bundle? = null
+var argumentSource: Bundle? = null
 
+@Suppress("NullableBooleanElvis") // suggestion makes boolean argument defaults less clear
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 object Arguments {
     // public properties are shared by micro + macro benchmarks
@@ -69,12 +70,12 @@ object Arguments {
 
     val enableCompilation: Boolean
     val killProcessDelayMillis: Long
-    val enableStartupProfiles: Boolean
     val dryRunMode: Boolean
     val dropShadersEnable: Boolean
     val dropShadersThrowOnFailure: Boolean
     val skipBenchmarksOnEmulator: Boolean
     val saveProfileWaitMillis: Long
+    val killExistingPerfettoRecordings: Boolean
 
     // internal properties are microbenchmark only
     internal val outputEnable: Boolean
@@ -92,7 +93,7 @@ object Arguments {
     internal val requireAot: Boolean
     internal val requireJitDisabledIfRooted: Boolean
     val throwOnMainThreadMeasureRepeated: Boolean // non-internal, used in BenchmarkRule
-    val runOnMainDeadlineSeconds: Long // non-internal, used in BenchmarkRule
+    val measureRepeatedOnMainThrowOnDeadline: Boolean // non-internal, used in BenchmarkRule
 
     internal var error: String? = null
     internal val additionalTestOutputDir: String?
@@ -324,19 +325,15 @@ object Arguments {
         saveProfileWaitMillis =
             arguments.getBenchmarkArgument("saveProfileWaitMillis")?.toLong() ?: 1_000L
 
-        enableStartupProfiles =
-            arguments.getBenchmarkArgument("startupProfiles.enable")?.toBoolean() ?: true
-
         dropShadersEnable =
             arguments.getBenchmarkArgument("dropShaders.enable")?.toBoolean() ?: true
         dropShadersThrowOnFailure =
             arguments.getBenchmarkArgument("dropShaders.throwOnFailure")?.toBoolean() ?: true
 
-        // very relaxed default to start, ideally this would be less than 5 (ANR timeout),
-        // but configurability should help experimenting / narrowing over time
-        runOnMainDeadlineSeconds =
-            arguments.getBenchmarkArgument("runOnMainDeadlineSeconds")?.toLong() ?: 30
-        Log.d(BenchmarkState.TAG, "runOnMainDeadlineSeconds $runOnMainDeadlineSeconds")
+        measureRepeatedOnMainThrowOnDeadline =
+            arguments
+                .getBenchmarkArgument("measureRepeatedOnMainThread.throwOnDeadline")
+                ?.toBoolean() ?: true
 
         requireAot = arguments.getBenchmarkArgument("requireAot")?.toBoolean() ?: false
         requireJitDisabledIfRooted =
@@ -344,6 +341,12 @@ object Arguments {
 
         throwOnMainThreadMeasureRepeated =
             arguments.getBenchmarkArgument("throwOnMainThreadMeasureRepeated")?.toBoolean() ?: false
+
+        killExistingPerfettoRecordings =
+            arguments.getBenchmarkArgument("killExistingPerfettoRecordings")?.toBoolean()
+                // below is a temporary workaround for compat, see b/399818365
+                ?: arguments.getString("killExistingPerfettoRecordings")?.toBoolean()
+                ?: true
 
         if (arguments.getString("orchestratorService") != null) {
             InstrumentationResults.scheduleIdeWarningOnNextReport(

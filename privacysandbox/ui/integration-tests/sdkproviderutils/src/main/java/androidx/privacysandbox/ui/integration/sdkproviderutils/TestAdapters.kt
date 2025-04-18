@@ -22,47 +22,48 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Color.BLACK
+import android.graphics.Color.WHITE
 import android.graphics.Paint
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
-import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
+import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.ToggleButton
 import androidx.privacysandbox.ui.client.SandboxedUiAdapterFactory
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
+import androidx.privacysandbox.ui.core.SessionData
 import androidx.privacysandbox.ui.provider.AbstractSandboxedUiAdapter
 import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewClientCompat
 import java.util.concurrent.Executor
 
 class TestAdapters(private val sdkContext: Context) {
-    inner class TestBannerAd(private val text: String, private val withSlowDraw: Boolean) :
-        BannerAd() {
-        override fun buildAdView(sessionContext: Context, width: Int, height: Int): View? {
-            return TestView(sessionContext, withSlowDraw, text)
-        }
-    }
-
     abstract class BannerAd() : AbstractSandboxedUiAdapter() {
         lateinit var sessionClientExecutor: Executor
         lateinit var sessionClient: SandboxedUiAdapter.SessionClient
+        lateinit var adViewWithConsumeScrollOverlay: AdViewWithConsumeScrollOverlay
+        val mainLooperHandler = Handler(Looper.getMainLooper())
 
         abstract fun buildAdView(sessionContext: Context, width: Int, height: Int): View?
 
         override fun openSession(
             context: Context,
-            windowInputToken: IBinder,
+            sessionData: SessionData,
             initialWidth: Int,
             initialHeight: Int,
             isZOrderOnTop: Boolean,
@@ -71,16 +72,21 @@ class TestAdapters(private val sdkContext: Context) {
         ) {
             sessionClientExecutor = clientExecutor
             sessionClient = client
-            Handler(Looper.getMainLooper())
-                .post(
-                    Runnable lambda@{
-                        Log.d(TAG, "Session requested")
-                        val adView: View =
-                            buildAdView(context, initialWidth, initialHeight) ?: return@lambda
-                        adView.layoutParams = ViewGroup.LayoutParams(initialWidth, initialHeight)
-                        clientExecutor.execute { client.onSessionOpened(BannerAdSession(adView)) }
+            mainLooperHandler.post(
+                Runnable lambda@{
+                    Log.d(TAG, "Session requested")
+                    var adView: View =
+                        buildAdView(context, initialWidth, initialHeight) ?: return@lambda
+                    adViewWithConsumeScrollOverlay =
+                        AdViewWithConsumeScrollOverlay(context, initialWidth, initialHeight, adView)
+                    if (isZOrderOnTop) {
+                        adViewWithConsumeScrollOverlay.hideOverlay()
                     }
-                )
+                    clientExecutor.execute {
+                        client.onSessionOpened(BannerAdSession(adViewWithConsumeScrollOverlay))
+                    }
+                }
+            )
         }
 
         private inner class BannerAdSession(private val adView: View) : AbstractSession() {
@@ -94,7 +100,12 @@ class TestAdapters(private val sdkContext: Context) {
             }
 
             override fun notifyZOrderChanged(isZOrderOnTop: Boolean) {
-                Log.i(TAG, "Z order changed")
+                Log.i(TAG, "Z order changed to (${if (isZOrderOnTop) "z-above" else "z-below"})")
+                if (isZOrderOnTop) {
+                    adViewWithConsumeScrollOverlay.hideOverlay()
+                } else {
+                    adViewWithConsumeScrollOverlay.showOverlay()
+                }
             }
 
             override fun notifyConfigurationChanged(configuration: Configuration) {
@@ -104,6 +115,83 @@ class TestAdapters(private val sdkContext: Context) {
             override fun close() {
                 Log.i(TAG, "Closing session")
             }
+        }
+
+        inner class AdViewWithConsumeScrollOverlay(
+            context: Context,
+            initialWidth: Int,
+            initialHeight: Int,
+            adView: View
+        ) : FrameLayout(context) {
+            private val consumeScrollOverlay: ViewGroup
+            private var allowAppToScroll = true
+
+            init {
+                layoutParams = ViewGroup.LayoutParams(initialWidth, initialHeight)
+                adView.layoutParams =
+                    LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+                addView(adView)
+
+                consumeScrollOverlay = createConsumeScrollOverlay()
+                addView(consumeScrollOverlay)
+                consumeScrollOverlay.bringToFront()
+            }
+
+            override fun onInterceptTouchEvent(motionEvent: MotionEvent): Boolean {
+                if (motionEvent.action == MotionEvent.ACTION_DOWN) {
+                    requestDisallowInterceptTouchEvent(!allowAppToScroll)
+                }
+                return super.onInterceptTouchEvent(motionEvent)
+            }
+
+            fun createConsumeScrollOverlay(): ViewGroup {
+                val linearLayout = LinearLayout(context)
+                linearLayout.layoutParams =
+                    LayoutParams(
+                        LayoutParams.WRAP_CONTENT,
+                        LayoutParams.WRAP_CONTENT,
+                        Gravity.BOTTOM or Gravity.RIGHT
+                    )
+                linearLayout.orientation = LinearLayout.HORIZONTAL
+                linearLayout.setPadding(10, 10, 10, 10)
+                linearLayout.setBackgroundColor(BLACK)
+
+                val textView = TextView(context)
+                textView.text = "Allow App to scroll?"
+                textView.layoutParams =
+                    LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+                textView.setTextColor(WHITE)
+                linearLayout.addView(textView)
+
+                val toggleButton = ToggleButton(context)
+                toggleButton.layoutParams =
+                    LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+                toggleButton.isChecked = true
+                toggleButton.setOnCheckedChangeListener { _, isChecked ->
+                    allowAppToScroll = isChecked
+                }
+                linearLayout.addView(toggleButton)
+
+                return linearLayout
+            }
+
+            fun hideOverlay() {
+                mainLooperHandler.post { consumeScrollOverlay.visibility = INVISIBLE }
+            }
+
+            fun showOverlay() {
+                mainLooperHandler.post { consumeScrollOverlay.visibility = VISIBLE }
+            }
+        }
+    }
+
+    inner class TestBannerAd(
+        private val text: String,
+        private val withSlowDraw: Boolean,
+        private val automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
+    ) : BannerAd() {
+        override fun buildAdView(sessionContext: Context, width: Int, height: Int): View? {
+            return TestView(sessionContext, withSlowDraw, text, automatedTestCallbackProxy)
         }
     }
 
@@ -187,7 +275,8 @@ class TestAdapters(private val sdkContext: Context) {
     private inner class TestView(
         context: Context,
         private val withSlowDraw: Boolean,
-        private val text: String
+        private val text: String,
+        private val automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
     ) : View(context) {
 
         init {
@@ -202,6 +291,7 @@ class TestAdapters(private val sdkContext: Context) {
 
         private val viewColor = Color.rgb((0..255).random(), (0..255).random(), (0..255).random())
         private val paint = Paint()
+        private var isFirstLayout = true
 
         @SuppressLint("BanThreadSleep")
         override fun onDraw(canvas: Canvas) {
@@ -214,6 +304,15 @@ class TestAdapters(private val sdkContext: Context) {
             paint.textSize = 50F
             canvas.drawColor(viewColor)
             canvas.drawText(text, 75F, 75F, paint)
+        }
+
+        override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+            super.onLayout(changed, left, top, right, bottom)
+            if (isFirstLayout) {
+                isFirstLayout = false
+            } else {
+                automatedTestCallbackProxy?.onResizeOccurred(right - left, bottom - top)
+            }
         }
     }
 

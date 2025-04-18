@@ -40,7 +40,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.PersistableBundle;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.arch.core.executor.ArchTaskExecutor;
 import androidx.arch.core.executor.TaskExecutor;
@@ -66,6 +65,7 @@ import androidx.work.impl.utils.taskexecutor.InstantWorkTaskExecutor;
 import androidx.work.worker.InfiniteTestWorker;
 import androidx.work.worker.NeverResolvedWorker;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

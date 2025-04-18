@@ -19,6 +19,7 @@
 package androidx.compose.ui.node
 
 import androidx.collection.IntObjectMap
+import androidx.collection.intObjectMapOf
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.Autofill
@@ -40,6 +41,7 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerIconService
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.AccessibilityManager
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
@@ -48,6 +50,8 @@ import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.invertTo
+import androidx.compose.ui.semantics.EmptySemanticsModifier
+import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -388,6 +392,11 @@ private class MockOwner(
     override val layoutDirection: LayoutDirection
         get() = LayoutDirection.Ltr
 
+    override val rectManager: RectManager = RectManager()
+
+    override val semanticsOwner: SemanticsOwner =
+        SemanticsOwner(root, EmptySemanticsModifier(), intObjectMapOf())
+
     override val viewConfiguration: ViewConfiguration
         get() = TODO("Not yet implemented")
 
@@ -404,6 +413,9 @@ private class MockOwner(
         get() = TODO("Not yet implemented")
 
     override val clipboardManager: ClipboardManager
+        get() = TODO("Not yet implemented")
+
+    override val clipboard: Clipboard
         get() = TODO("Not yet implemented")
 
     override val accessibilityManager: AccessibilityManager
@@ -426,8 +438,6 @@ private class MockOwner(
 
     override val windowInfo: WindowInfo
         get() = TODO("Not yet implemented")
-
-    override val rectManager: RectManager = RectManager()
 
     override val fontFamilyResolver: FontFamily.Resolver
         get() = TODO("Not yet implemented")
@@ -493,9 +503,11 @@ private class MockOwner(
 
     override fun requestOnPositionedCallback(layoutNode: LayoutNode) {}
 
-    override fun onAttach(node: LayoutNode) {
+    override fun onPreAttach(node: LayoutNode) {
         onAttachParams += node
     }
+
+    override fun onPostAttach(node: LayoutNode) {}
 
     override fun onDetach(node: LayoutNode) {
         onDetachParams += node
@@ -508,6 +520,10 @@ private class MockOwner(
         positionInWindow - position.toOffset()
 
     override fun requestFocus(): Boolean = false
+
+    override fun requestAutofill(node: LayoutNode) {
+        TODO("Not yet implemented")
+    }
 
     override fun measureAndLayout(sendPointerUpdate: Boolean) {}
 
@@ -576,6 +592,10 @@ private class MockOwner(
 
             override val underlyingMatrix: Matrix
                 get() = transform
+
+            override var frameRate: Float = 0f
+
+            override var isFrameRateFromParent = false
 
             override fun inverseTransform(matrix: Matrix) {
                 matrix.timesAssign(inverseTransform)

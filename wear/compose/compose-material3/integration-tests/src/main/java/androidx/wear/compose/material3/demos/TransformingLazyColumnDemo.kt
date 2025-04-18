@@ -47,11 +47,11 @@ import androidx.wear.compose.material3.AppCard
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.ButtonGroup
+import androidx.wear.compose.material3.ImageButton
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.scrollTransform
-import androidx.wear.compose.material3.lazy.targetMorphingHeight
 import androidx.wear.compose.material3.samples.AppCardSample
 import androidx.wear.compose.material3.samples.AppCardWithIconSample
 import androidx.wear.compose.material3.samples.AppCardWithImageSample
@@ -64,6 +64,7 @@ import androidx.wear.compose.material3.samples.CompactButtonSample
 import androidx.wear.compose.material3.samples.FilledTonalButtonSample
 import androidx.wear.compose.material3.samples.FilledTonalCompactButtonSample
 import androidx.wear.compose.material3.samples.FilledVariantButtonSample
+import androidx.wear.compose.material3.samples.ImageCardSample
 import androidx.wear.compose.material3.samples.OutlinedAppCardSample
 import androidx.wear.compose.material3.samples.OutlinedButtonSample
 import androidx.wear.compose.material3.samples.OutlinedCardSample
@@ -76,7 +77,6 @@ import androidx.wear.compose.material3.samples.SimpleFilledTonalButtonSample
 import androidx.wear.compose.material3.samples.SimpleFilledVariantButtonSample
 import androidx.wear.compose.material3.samples.SimpleOutlinedButtonSample
 import androidx.wear.compose.material3.samples.TitleCardSample
-import androidx.wear.compose.material3.samples.TitleCardWithImageBackgroundSample
 import androidx.wear.compose.material3.samples.TitleCardWithMultipleImagesSample
 import androidx.wear.compose.material3.samples.TitleCardWithSubtitleAndTimeSample
 
@@ -102,7 +102,6 @@ fun TransformingLazyColumnNotificationsDemo() {
                             notification.title,
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier.targetMorphingHeight(this@items)
                         )
                         Text(notification.body)
                     }
@@ -154,21 +153,25 @@ fun TransformingLazyColumnButtons() {
         }
         item {
             TransformExclusion {
-                val interactionSourceLeft = remember { MutableInteractionSource() }
-                val interactionSourceRight = remember { MutableInteractionSource() }
+                val interactionSource1 = remember { MutableInteractionSource() }
+                val interactionSource2 = remember { MutableInteractionSource() }
                 ButtonGroup(Modifier.scrollTransform(this@item)) {
-                    buttonGroupItem(interactionSource = interactionSourceLeft) {
-                        Button(onClick = {}, interactionSource = interactionSourceLeft) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text("L")
-                            }
+                    Button(
+                        onClick = {},
+                        Modifier.animateWidth(interactionSource1),
+                        interactionSource = interactionSource1
+                    ) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("L")
                         }
                     }
-                    buttonGroupItem(interactionSource = interactionSourceRight) {
-                        Button(onClick = {}, interactionSource = interactionSourceRight) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text("R")
-                            }
+                    Button(
+                        onClick = {},
+                        Modifier.animateWidth(interactionSource2),
+                        interactionSource = interactionSource2
+                    ) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("R")
                         }
                     }
                 }
@@ -187,7 +190,7 @@ fun TransformingLazyColumnCards() {
     ) {
         item { ListHeader { Text("Card") } }
         item { CardSample() }
-        item { CardWithImageDemo() }
+        item { CardWithNestedImageDemo() }
         item { CardWithMultipleImagesDemo() }
         item { OutlinedCardSample() }
         item { VerticallyCenteredBaseCard() }
@@ -212,7 +215,7 @@ fun TransformingLazyColumnCards() {
         item { OutlinedTitleCardWithSubtitleAndTimeDemo() }
 
         item { ListHeader { Text("Image card") } }
-        item { TitleCardWithImageBackgroundSample() }
+        item { ImageCardSample() }
     }
 }
 
@@ -232,12 +235,12 @@ private fun CardWithButtons() {
 
 @Composable
 private fun ButtonBackgroundImage(painter: Painter, enabled: Boolean) =
-    Button(
+    ImageButton(
         modifier = Modifier.sizeIn(maxHeight = ButtonDefaults.Height).fillMaxWidth(),
+        containerPainter = ButtonDefaults.containerPainter(painter),
         onClick = { /* Do something */ },
         label = { Text("Image Background", maxLines = 1) },
         enabled = enabled,
-        colors = ButtonDefaults.imageBackgroundButtonColors(painter)
     )
 
 private data class NotificationItem(val title: String, val body: String)

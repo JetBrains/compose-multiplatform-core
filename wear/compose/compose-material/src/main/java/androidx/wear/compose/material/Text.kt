@@ -186,7 +186,7 @@ public fun Text(
     level = DeprecationLevel.HIDDEN
 )
 @Composable
-fun Text(
+public fun Text(
     text: String,
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
@@ -385,7 +385,7 @@ public fun Text(
     level = DeprecationLevel.HIDDEN
 )
 @Composable
-fun Text(
+public fun Text(
     text: AnnotatedString,
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,

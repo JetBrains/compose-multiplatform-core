@@ -28,9 +28,9 @@ import static androidx.camera.extensions.impl.ExtensionsTestlibControl.Implement
 import android.content.Context;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.Camera2Config;
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig;
 import androidx.camera.core.CameraSelector;
@@ -58,12 +58,15 @@ import androidx.camera.extensions.impl.advanced.HdrAdvancedExtenderImpl;
 import androidx.camera.extensions.impl.advanced.NightAdvancedExtenderImpl;
 import androidx.camera.extensions.internal.AdvancedVendorExtender;
 import androidx.camera.extensions.internal.BasicVendorExtender;
+import androidx.camera.extensions.internal.Camera2ExtensionsVendorExtender;
 import androidx.camera.extensions.internal.ExtensionVersion;
 import androidx.camera.extensions.internal.VendorExtender;
 import androidx.camera.extensions.internal.Version;
 import androidx.camera.extensions.internal.compat.workaround.ExtensionDisabledValidator;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.testing.impl.CameraUtil;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -191,8 +194,7 @@ public class ExtensionsTestUtil {
      * Returns the parameters which contains the combination of CameraXConfig
      * name, CameraXConfig, implementationType, extensions mode and lens facing.
      */
-    @NonNull
-    public static Collection<Object[]> getAllImplExtensionsLensFacingCombinations(
+    public static @NonNull Collection<Object[]> getAllImplExtensionsLensFacingCombinations(
             @NonNull Context context,
             boolean excludeUnavailableModes
     ) {
@@ -317,7 +319,28 @@ public class ExtensionsTestUtil {
         return ExtensionVersion.isAdvancedExtenderSupported();
     }
 
-    public static VendorExtender createVendorExtender(@ExtensionMode.Mode int mode) {
+    /**
+     * Creates the {@link VendorExtender} instance for testing.
+     *
+     * @param applicationContext the application context which will be used to retrieve the
+     *                           camera characteristics info.
+     * @param mode               the target extension mode.
+     * @param configImplType     the config impl type to run the test
+     * @return the corresponding {@link VendorExtender} instance.
+     */
+    public static @NonNull VendorExtender createVendorExtender(@NonNull Context applicationContext,
+            @ExtensionMode.Mode int mode,
+            @CameraXConfig.ImplType int configImplType) {
+        if (configImplType == CameraXConfig.CAMERAX_CONFIG_IMPL_TYPE_PIPE) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                CameraManager cameraManager = applicationContext.getSystemService(
+                        CameraManager.class);
+                return new Camera2ExtensionsVendorExtender(mode, cameraManager);
+            } else {
+                return new VendorExtender() {
+                };
+            }
+        }
         if (isAdvancedExtenderSupported()) {
             return new AdvancedVendorExtender(mode);
         }
@@ -393,7 +416,7 @@ public class ExtensionsTestUtil {
      */
     public static <T> void setCamera2SessionCaptureCallback(
             ExtendableBuilder<T> usecaseBuilder,
-            @NonNull CameraCaptureSession.CaptureCallback captureCallback) {
+            CameraCaptureSession.@NonNull CaptureCallback captureCallback) {
         usecaseBuilder.getMutableConfig().insertOption(
                 SESSION_CAPTURE_CALLBACK_OPTION,
                 captureCallback

@@ -91,7 +91,7 @@ public class ContentCaptureSessionCompat {
     /**
      * Creates a new {@link AutofillId} for a virtual child, so it can be used to uniquely identify
      * the children in the session.
-     *
+     * <p>
      * Compatibility behavior:
      * <ul>
      * <li>SDK 29 and above, this method matches platform behavior.
@@ -115,7 +115,7 @@ public class ContentCaptureSessionCompat {
     /**
      * Creates a {@link ViewStructure} for a "virtual" view, so it can be passed to
      * {@link #notifyViewsAppeared} by the view managing the virtual view hierarchy.
-     *
+     * <p>
      * Compatibility behavior:
      * <ul>
      * <li>SDK 29 and above, this method matches platform behavior.
@@ -139,16 +139,104 @@ public class ContentCaptureSessionCompat {
     }
 
     /**
+     * Notifies the Content Capture Service that a node has been added to the view structure.
+     *
+     * <p>Typically called "manually" by views that handle their own virtual view hierarchy, or
+     * automatically by the Android System for views that return {@code true} on
+     * {@link View#onProvideContentCaptureStructure(ViewStructure, int)}.
+     *
+     * <p>Consider use {@link #notifyViewsAppeared} which has a better performance when notifying
+     * a list of nodes has appeared.
+     * <p>
+     * Compatibility behavior:
+     * <ul>
+     * <li>SDK 29 and above, this method matches platform behavior.
+     * <li>SDK 28 and below, this method does nothing.
+     * </ul>
+     *
+     * @param node node that has been added.
+     */
+    public void notifyViewAppeared(@NonNull ViewStructure node) {
+        if (SDK_INT >= 29) {
+            Api29Impl.notifyViewAppeared((ContentCaptureSession) mWrappedObj, node);
+        }
+    }
+
+    /**
+     * Notifies the Content Capture Service that a node has been removed from the view structure.
+     *
+     * <p>Typically called "manually" by views that handle their own virtual view hierarchy, or
+     * automatically by the Android System for standard views.
+     *
+     * <p>Consider use {@link #notifyViewsDisappeared} which has a better performance when notifying
+     * a list of nodes has disappeared.
+     * <p>
+     * Compatibility behavior:
+     * <ul>
+     * <li>SDK 29 and above, this method matches platform behavior.
+     * <li>SDK 28 and below, this method does nothing.
+     * </ul>
+     *
+     * @param id id of the node that has been removed.
+     */
+    public void notifyViewDisappeared(@NonNull AutofillId id) {
+        if (SDK_INT >= 29) {
+            Api29Impl.notifyViewDisappeared((ContentCaptureSession) mWrappedObj, id);
+        }
+    }
+
+    /**
+     * Flushes an internal buffer of UI events and signals System Intelligence (SI) that a
+     * semantically meaningful state has been reached. SI uses this signal to potentially
+     * rebuild the view hierarchy and understand the current state of the UI.
+     *
+     * <p>UI events are often batched together for performance reasons. A semantic batch
+     * represents a series of events that, when applied sequentially, result in a
+     * meaningful and complete UI state.
+     *
+     * <p>It is crucial to call {@code flush()} after completing a semantic batch to ensure
+     * SI can accurately reconstruct the view hierarchy.
+     *
+     * <p><b>Premature Flushing:</b> Calling {@code flush()} within a semantic batch may
+     * lead to SI failing to rebuild the view hierarchy correctly. This could manifest as
+     * incorrect ordering of sibling nodes.
+     *
+     * <p><b>Delayed Flushing:</b> While not immediately flushing after a semantic batch is
+     * generally safe, it's recommended to do so as soon as possible. In the worst-case
+     * scenario where a {@code flush()} is never called, SI will attempt to process the
+     * events after a short delay based on view appearance and disappearance events.
+     * <p>
+     * Compatibility behavior:
+     * <ul>
+     * <li>SDK 36 and above, this method matches platform behavior.
+     * <li>SDK 29 through 35, this method is a best-effort to match platform behavior, by
+     * sending a special {@link #notifyViewsDisappeared} event.
+     * <li>SDK 28 and below, this method does nothing.
+     * </ul>
+     */
+    public void flush() {
+        // TODO(b/380381249): implement after the new API is finalized.
+        // TODO(b/388128425): upstream changes back to the `core` lib.
+        if (SDK_INT >= 29) {
+            Api29Impl.notifyViewsDisappeared(
+                    (ContentCaptureSession) mWrappedObj,
+                    Objects.requireNonNull(ViewCompatShims.getAutofillId(mView)).toAutofillId(),
+                    new long[] { Long.MIN_VALUE });
+        }
+    }
+
+    /**
      * Notifies the Content Capture Service that a list of nodes has appeared in the view structure.
      *
      * <p>Typically called manually by views that handle their own virtual view hierarchy.
-     *
+     * <p>
      * Compatibility behavior:
      * <ul>
      * <li>SDK 34 and above, this method matches platform behavior.
      * <li>SDK 29 through 33, this method is a best-effort to match platform behavior, by
      * wrapping the virtual children with a pair of special view appeared events.
      * <li>SDK 28 and below, this method does nothing.
+     * </ul>
      *
      * @param appearedNodes nodes that have appeared. Each element represents a view node that has
      * been added to the view structure. The order of the elements is important, which should be
@@ -180,7 +268,7 @@ public class ContentCaptureSessionCompat {
      * structure.
      *
      * <p>Should only be called by views that handle their own virtual view hierarchy.
-     *
+     * <p>
      * Compatibility behavior:
      * <ul>
      * <li>SDK 34 and above, this method matches platform behavior.
@@ -217,7 +305,7 @@ public class ContentCaptureSessionCompat {
 
     /**
      * Notifies the Intelligence Service that the value of a text node has been changed.
-     *
+     * <p>
      * Compatibility behavior:
      * <ul>
      * <li>SDK 29 and above, this method matches platform behavior.
@@ -254,6 +342,11 @@ public class ContentCaptureSessionCompat {
         static void notifyViewsDisappeared(
                 ContentCaptureSession contentCaptureSession, AutofillId hostId, long[] virtualIds) {
             contentCaptureSession.notifyViewsDisappeared(hostId, virtualIds);
+        }
+
+        static void notifyViewDisappeared(
+                ContentCaptureSession contentCaptureSession, AutofillId id) {
+            contentCaptureSession.notifyViewDisappeared(id);
         }
 
         static void notifyViewAppeared(

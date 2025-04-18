@@ -17,6 +17,7 @@
 package androidx.core.telecom.extensions
 
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.RemoteException
@@ -66,11 +67,12 @@ internal class ExtensionInitializationScopeImpl(
     }
 
     override fun addParticipantExtension(
-        initialParticipants: Set<Participant>,
+        initialParticipants: List<Participant>,
         initialActiveParticipant: Participant?
     ): ParticipantExtension {
         val participant = ParticipantExtensionImpl(initialParticipants, initialActiveParticipant)
-        registerExtension(onExchangeStarted = participant::onExchangeStarted)
+        registerExtension(onExchangeStarted = participant::onParticipantExchangeStarted)
+        registerExtension(onExchangeStarted = participant::onMeetingSummaryExchangeStarted)
         return participant
     }
 
@@ -88,6 +90,12 @@ internal class ExtensionInitializationScopeImpl(
             )
         registerExtension(onExchangeStarted = localSilenceExtension::onExchangeStarted)
         return localSilenceExtension
+    }
+
+    override fun addCallIconExtension(initialCallIconUri: Uri): CallIconExtension {
+        val callIconExtension = CallIconExtensionImpl(context, coroutineContext, initialCallIconUri)
+        registerExtension(onExchangeStarted = callIconExtension::onExchangeStarted)
+        return callIconExtension
     }
 
     /**
@@ -175,6 +183,7 @@ internal class ExtensionInitializationScopeImpl(
             )
             return
         }
+
         Log.i(LOG_TAG, "handleCapabilityExchangeEvent: received CE request, v=#$version")
         // Create a child scope for setting up and running the extensions so that we can cancel
         // the child scope when the remote ICS disconnects without affecting the parent scope.

@@ -35,11 +35,11 @@ import android.os.Looper
 import android.support.wearable.watchface.SharedMemoryImage
 import android.view.Surface
 import android.view.SurfaceHolder
-import androidx.annotation.RequiresApi
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.FlakyTest
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.assertAgainstGolden
 import androidx.wear.watchface.DrawMode
@@ -130,7 +130,7 @@ public class ComplicationTapActivity : Activity() {
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
-@RequiresApi(Build.VERSION_CODES.O_MR1)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
 public class WatchFaceServiceImageTest {
 
     @get:Rule val mocks = MockitoJUnit.rule()
@@ -182,7 +182,7 @@ public class WatchFaceServiceImageTest {
 
     @get:Rule
     public val screenshotRule: AndroidXScreenshotTestRule =
-        AndroidXScreenshotTestRule("wear/wear-watchface")
+        AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
     private val bitmap = Bitmap.createBitmap(BITMAP_WIDTH, BITMAP_HEIGHT, Bitmap.Config.ARGB_8888)
     private val canvas = Canvas(bitmap)

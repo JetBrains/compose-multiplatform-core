@@ -25,7 +25,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import android.os.Build;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.work.Clock;
 import androidx.work.Constraints;
@@ -36,6 +35,7 @@ import com.google.android.gms.gcm.GcmNetworkManager;
 import com.google.android.gms.gcm.OneoffTask;
 import com.google.android.gms.gcm.Task;
 
+import org.jspecify.annotations.NonNull;
 
 /**
  * Converts a {@link androidx.work.impl.model.WorkSpec} to a {@link Task}.
@@ -90,7 +90,7 @@ public class GcmTaskConverter {
     }
 
     private static Task.Builder applyConstraints(
-            @NonNull Task.Builder builder,
+            Task.@NonNull Builder builder,
             @NonNull WorkSpec workSpec) {
 
         // Apply defaults

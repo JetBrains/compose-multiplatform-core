@@ -43,7 +43,12 @@ import java.time.ZonedDateTime
  *   mode and burn in protection needed to render correctly.
  * @param invalidateCallback The [CanvasComplication.InvalidateCallback] associated with which can
  *   be used to request screen redrawing and to report updates
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public open class CanvasComplicationDrawable
 @SuppressWarnings("ExecutorRegistration") // invalidateCallback is owned by the library and
 // the callback is thread safe.

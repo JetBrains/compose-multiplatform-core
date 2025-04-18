@@ -17,8 +17,10 @@
 package androidx.health.connect.client.impl.platform.records
 
 import android.annotation.SuppressLint
+import android.health.connect.datatypes.Metadata.RECORDING_METHOD_UNKNOWN
 import android.os.Build
 import androidx.health.connect.client.RECORD_CLASSES
+import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.BasalBodyTemperatureRecord
 import androidx.health.connect.client.records.BasalMetabolicRateRecord
@@ -52,6 +54,9 @@ import androidx.health.connect.client.records.LeanBodyMassRecord
 import androidx.health.connect.client.records.MealType
 import androidx.health.connect.client.records.MenstruationFlowRecord
 import androidx.health.connect.client.records.MenstruationPeriodRecord
+import androidx.health.connect.client.records.MindfulnessSessionRecord
+import androidx.health.connect.client.records.MindfulnessSessionRecord.Companion.MINDFULNESS_SESSION_TYPE_MEDITATION
+import androidx.health.connect.client.records.MindfulnessSessionRecord.Companion.MINDFULNESS_SESSION_TYPE_UNKNOWN
 import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.OvulationTestRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
@@ -72,6 +77,7 @@ import androidx.health.connect.client.records.Vo2MaxRecord
 import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.WheelchairPushesRecord
 import androidx.health.connect.client.records.isAtLeastSdkExtension13
+import androidx.health.connect.client.records.isAtLeastSdkExtension15
 import androidx.health.connect.client.records.metadata.DataOrigin
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
@@ -643,6 +649,50 @@ class RecordConvertersTest {
         assertPlatformRecord(platformMenstruationPeriod)
     }
 
+    @OptIn(ExperimentalMindfulnessSessionApi::class)
+    @SuppressLint("NewApi") // Using assumeTrue to only run on the new API version
+    @Test
+    fun mindfulnessSessionRecord_convertToPlatform() {
+        assumeTrue(isAtLeastSdkExtension15())
+        val platformMindfulnessSessionRecord =
+            MindfulnessSessionRecord(
+                    startTime = START_TIME,
+                    startZoneOffset = START_ZONE_OFFSET,
+                    endTime = END_TIME,
+                    endZoneOffset = END_ZONE_OFFSET,
+                    metadata = METADATA,
+                    mindfulnessSessionType = MINDFULNESS_SESSION_TYPE_MEDITATION
+                )
+                .toPlatformRecord() as PlatformMindfulnessSessionRecord
+
+        assertPlatformRecord(platformMindfulnessSessionRecord) {
+            assertThat(mindfulnessSessionType)
+                .isEqualTo(PlatformMindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MEDITATION)
+        }
+    }
+
+    @OptIn(ExperimentalMindfulnessSessionApi::class)
+    @SuppressLint("NewApi") // Using assumeTrue to only run on the new API version
+    @Test
+    fun mindfulnessSessionRecord_unknownType_convertToPlatform() {
+        assumeTrue(isAtLeastSdkExtension15())
+        val platformMindfulnessSessionRecord =
+            MindfulnessSessionRecord(
+                    startTime = START_TIME,
+                    startZoneOffset = START_ZONE_OFFSET,
+                    endTime = END_TIME,
+                    endZoneOffset = END_ZONE_OFFSET,
+                    metadata = METADATA,
+                    mindfulnessSessionType = MINDFULNESS_SESSION_TYPE_UNKNOWN
+                )
+                .toPlatformRecord() as PlatformMindfulnessSessionRecord
+
+        assertPlatformRecord(platformMindfulnessSessionRecord) {
+            assertThat(mindfulnessSessionType)
+                .isEqualTo(PlatformMindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_UNKNOWN)
+        }
+    }
+
     @Test
     fun nutritionRecord_convertToPlatform() {
         val nutrition =
@@ -739,10 +789,12 @@ class RecordConvertersTest {
         val blocks =
             listOf(
                 PlannedExerciseBlock(
+                    description = "Warmup runs",
                     repetitions = 3,
                     steps =
                         listOf(
                             PlannedExerciseStep(
+                                description = "Easy jog",
                                 exerciseType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_RUNNING,
                                 exercisePhase = PlannedExerciseStep.EXERCISE_PHASE_WARMUP,
                                 completionGoal =
@@ -783,10 +835,12 @@ class RecordConvertersTest {
             assertThat(blocks).hasSize(1)
 
             val platformBlock = Iterables.getOnlyElement(this.blocks)
+            assertThat(platformBlock.description).isEqualTo("Warmup runs")
             assertThat(platformBlock.repetitions).isEqualTo(3)
             assertThat(platformBlock.steps).hasSize(1)
 
             val platformStep = platformBlock.steps[0]
+            assertThat(platformStep.description).isEqualTo("Easy jog")
             assertThat(platformStep.exerciseType)
                 .isEqualTo(PlatformExerciseSegmentType.EXERCISE_SEGMENT_TYPE_RUNNING)
             assertThat(platformStep.exerciseCategory)
@@ -814,10 +868,12 @@ class RecordConvertersTest {
             assertThat(blocks).hasSize(1)
 
             val sdkBlock = Iterables.getOnlyElement(this.blocks)
+            assertThat(sdkBlock.description).isEqualTo("Warmup runs")
             assertThat(sdkBlock.repetitions).isEqualTo(3)
             assertThat(sdkBlock.steps).hasSize(1)
 
             val sdkStep = sdkBlock.steps[0]
+            assertThat(sdkStep.description).isEqualTo("Easy jog")
             assertThat(sdkStep.exerciseType)
                 .isEqualTo(ExerciseSegment.EXERCISE_SEGMENT_TYPE_RUNNING)
             assertThat(sdkStep.exercisePhase).isEqualTo(PlannedExerciseStep.EXERCISE_PHASE_WARMUP)
@@ -869,6 +925,7 @@ class RecordConvertersTest {
                         )
                 ),
                 PlannedExerciseBlock(
+                    description = "Brick workout",
                     repetitions = 3,
                     steps =
                         listOf(
@@ -886,6 +943,7 @@ class RecordConvertersTest {
                                     )
                             ),
                             PlannedExerciseStep(
+                                description = "Fast run",
                                 exerciseType = ExerciseSegment.EXERCISE_SEGMENT_TYPE_RUNNING,
                                 exercisePhase = PlannedExerciseStep.EXERCISE_PHASE_COOLDOWN,
                                 completionGoal =
@@ -1938,6 +1996,62 @@ class RecordConvertersTest {
         assertSdkRecord(sdkMenstruationPeriod)
     }
 
+    @OptIn(ExperimentalMindfulnessSessionApi::class)
+    @SuppressLint("NewApi") // Using assumeTrue to only run on the new API version
+    @Test
+    fun mindfulnessSessionRecord_convertToSdk() {
+        assumeTrue(isAtLeastSdkExtension15())
+        val platformMindfulnessSessionBuilder =
+            PlatformMindfulnessSessionRecordBuilder(
+                    PLATFORM_METADATA,
+                    START_TIME,
+                    END_TIME,
+                    PlatformMindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING
+                )
+                .setTitle("Breathing Mindfulness Session")
+                .setNotes("Improve breathing")
+                .setStartZoneOffset(START_ZONE_OFFSET)
+                .setEndZoneOffset(END_ZONE_OFFSET)
+
+        var sdkMindfulnessSession =
+            platformMindfulnessSessionBuilder.build().toSdkRecord() as MindfulnessSessionRecord
+
+        assertSdkRecord(sdkMindfulnessSession) {
+            assertThat(title).isEqualTo("Breathing Mindfulness Session")
+            assertThat(notes).isEqualTo("Improve breathing")
+            assertThat(mindfulnessSessionType)
+                .isEqualTo(MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING)
+        }
+    }
+
+    @OptIn(ExperimentalMindfulnessSessionApi::class)
+    @SuppressLint("NewApi") // Using assumeTrue to only run on the new API version
+    @Test
+    fun mindfulnessSessionRecord_otherType_convertToSdk() {
+        assumeTrue(isAtLeastSdkExtension15())
+        val platformMindfulnessSessionBuilder =
+            PlatformMindfulnessSessionRecordBuilder(
+                    PLATFORM_METADATA,
+                    START_TIME,
+                    END_TIME,
+                    PlatformMindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_OTHER
+                )
+                .setTitle("Breathing Mindfulness Session")
+                .setNotes("Improve breathing")
+                .setStartZoneOffset(START_ZONE_OFFSET)
+                .setEndZoneOffset(END_ZONE_OFFSET)
+
+        var sdkMindfulnessSession =
+            platformMindfulnessSessionBuilder.build().toSdkRecord() as MindfulnessSessionRecord
+
+        assertSdkRecord(sdkMindfulnessSession) {
+            assertThat(title).isEqualTo("Breathing Mindfulness Session")
+            assertThat(notes).isEqualTo("Improve breathing")
+            assertThat(mindfulnessSessionType)
+                .isEqualTo(MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_UNKNOWN)
+        }
+    }
+
     @Test
     fun nutritionRecord_convertToSdk() {
         val sdkNutrition =
@@ -2312,6 +2426,7 @@ class RecordConvertersTest {
 
         val METADATA =
             Metadata(
+                recordingMethod = RECORDING_METHOD_UNKNOWN,
                 id = "someId",
                 dataOrigin = DataOrigin("somePackage"),
                 device =

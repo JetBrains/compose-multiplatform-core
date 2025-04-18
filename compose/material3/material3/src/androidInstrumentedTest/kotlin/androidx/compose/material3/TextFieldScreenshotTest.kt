@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.selection.TextSelectionColors
@@ -362,6 +363,21 @@ class TextFieldScreenshotTest {
         }
 
         assertAgainstGolden("filled_textField_singleLine_labelCenteredVetically")
+    }
+
+    @Test
+    fun textField_indicatorLine_clippedToShape() {
+        rule.setMaterialContent(lightColorScheme()) {
+            TextField(
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
+                state = rememberTextFieldState(),
+                lineLimits = TextFieldLineLimits.SingleLine,
+                label = { Text("Label") },
+                shape = RoundedCornerShape(16.dp),
+            )
+        }
+
+        assertAgainstGolden("textField_indicatorLine_clippedToShape")
     }
 
     @Test

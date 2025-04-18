@@ -163,8 +163,6 @@ src/sample/kotlin/UseJavaExperimentalMultipleMarkersFromJava.java:34: Error: Thi
                 javaSample("sample.kotlin.UseKtExperimentalFromJava")
             )
 
-        // TODO(b/210881073): Access to annotated property `field` is still not detected.
-
         val expected =
             """
 src/sample/kotlin/UseKtExperimentalFromJava.java:28: Error: This declaration is opt-in and its usage should be marked with @sample.kotlin.ExperimentalKotlinAnnotation or @OptIn(markerClass = sample.kotlin.ExperimentalKotlinAnnotation.class) [UnsafeOptInUsageError]

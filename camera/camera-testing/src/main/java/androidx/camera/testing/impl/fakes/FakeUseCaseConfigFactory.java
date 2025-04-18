@@ -24,8 +24,6 @@ import static androidx.camera.core.impl.UseCaseConfig.OPTION_TAKE_PICTURE_MANAGE
 import android.annotation.SuppressLint;
 import android.hardware.camera2.CameraDevice;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.ExperimentalZeroShutterLag;
@@ -41,6 +39,9 @@ import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.testing.fakes.FakeCamera;
 import androidx.camera.testing.impl.wrappers.TakePictureManagerWrapper;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,11 +50,9 @@ import java.util.List;
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class FakeUseCaseConfigFactory implements UseCaseConfigFactory {
-    @Nullable
-    private CaptureType mLastRequestedCaptureType;
+    private @Nullable CaptureType mLastRequestedCaptureType;
 
-    @NonNull
-    private final List<FakeCamera> mFakeCameras = new ArrayList<>();
+    private final @NonNull List<FakeCamera> mFakeCameras = new ArrayList<>();
 
     /**
      * Creates a {@link FakeUseCaseConfigFactory} instance.
@@ -73,9 +72,8 @@ public final class FakeUseCaseConfigFactory implements UseCaseConfigFactory {
      * Returns the configuration for the given capture type, or <code>null</code> if the
      * configuration cannot be produced.
      */
-    @NonNull
     @Override
-    public Config getConfig(
+    public @NonNull Config getConfig(
             @NonNull CaptureType captureType,
             @CaptureMode int captureMode) {
         mLastRequestedCaptureType = captureType;
@@ -93,9 +91,8 @@ public final class FakeUseCaseConfigFactory implements UseCaseConfigFactory {
         if (captureType == CaptureType.IMAGE_CAPTURE) {
             mutableConfig.insertOption(OPTION_TAKE_PICTURE_MANAGER_PROVIDER,
                     new TakePictureManager.Provider() {
-                        @NonNull
                         @Override
-                        public TakePictureManager newInstance(
+                        public @NonNull TakePictureManager newInstance(
                                 @NonNull ImageCaptureControl imageCaptureControl) {
                             return new TakePictureManagerWrapper(imageCaptureControl, mFakeCameras);
                         }
@@ -105,8 +102,7 @@ public final class FakeUseCaseConfigFactory implements UseCaseConfigFactory {
         return OptionsBundle.from(mutableConfig);
     }
 
-    @Nullable
-    public CaptureType getLastRequestedCaptureType() {
+    public @Nullable CaptureType getLastRequestedCaptureType() {
         return mLastRequestedCaptureType;
     }
 
@@ -116,7 +112,7 @@ public final class FakeUseCaseConfigFactory implements UseCaseConfigFactory {
     @SuppressLint("NullAnnotationGroup")
     @OptIn(markerClass = ExperimentalZeroShutterLag.class)
     public static int getSessionConfigTemplateType(
-            @NonNull UseCaseConfigFactory.CaptureType captureType,
+            UseCaseConfigFactory.@NonNull CaptureType captureType,
             @ImageCapture.CaptureMode int captureMode
     ) {
         switch (captureType) {

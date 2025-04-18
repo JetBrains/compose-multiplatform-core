@@ -19,12 +19,13 @@ package androidx.appsearch.app;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.safeparcel.AbstractSafeParcelable;
 import androidx.appsearch.safeparcel.SafeParcelable;
 import androidx.appsearch.safeparcel.stub.StubCreators.SearchResultPageCreator;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -36,14 +37,13 @@ import java.util.List;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @SafeParcelable.Class(creator = "SearchResultPageCreator")
 public class SearchResultPage extends AbstractSafeParcelable {
-    @NonNull public static final Parcelable.Creator<SearchResultPage> CREATOR =
+    public static final Parcelable.@NonNull Creator<SearchResultPage> CREATOR =
             new SearchResultPageCreator();
 
     @Field(id = 1, getter = "getNextPageToken")
     private final long mNextPageToken;
-    @Nullable
     @Field(id = 2, getter = "getResults")
-    private final List<SearchResult> mResults;
+    private final @Nullable List<SearchResult> mResults;
 
     @Constructor
     public SearchResultPage(
@@ -65,8 +65,7 @@ public class SearchResultPage extends AbstractSafeParcelable {
     }
 
     /** Returns all {@link androidx.appsearch.app.SearchResult}s of this page */
-    @NonNull
-    public List<SearchResult> getResults() {
+    public @NonNull List<SearchResult> getResults() {
         if (mResults == null) {
             return Collections.emptyList();
         }

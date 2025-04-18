@@ -21,8 +21,8 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.util.Pair;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -49,21 +49,18 @@ public final class NightPreviewExtenderImpl implements PreviewExtenderImpl {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @NonNull
     @Override
-    public CaptureStageImpl getCaptureStage() {
+    public @NonNull CaptureStageImpl getCaptureStage() {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @NonNull
     @Override
-    public ProcessorType getProcessorType() {
+    public @NonNull ProcessorType getProcessorType() {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @Nullable
     @Override
-    public ProcessorImpl getProcessor() {
+    public @Nullable ProcessorImpl getProcessor() {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
@@ -79,27 +76,23 @@ public final class NightPreviewExtenderImpl implements PreviewExtenderImpl {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onPresetSession() {
+    public @Nullable CaptureStageImpl onPresetSession() {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onEnableSession() {
+    public @Nullable CaptureStageImpl onEnableSession() {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onDisableSession() {
+    public @Nullable CaptureStageImpl onDisableSession() {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedResolutions() {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedResolutions() {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 

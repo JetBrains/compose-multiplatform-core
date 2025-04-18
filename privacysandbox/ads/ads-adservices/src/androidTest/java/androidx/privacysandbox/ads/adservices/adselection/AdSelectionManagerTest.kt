@@ -52,7 +52,11 @@ import org.mockito.Mockito.`when`
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.quality.Strictness
 
-@OptIn(ExperimentalFeatures.Ext8OptIn::class, ExperimentalFeatures.Ext10OptIn::class)
+@OptIn(
+    ExperimentalFeatures.Ext8OptIn::class,
+    ExperimentalFeatures.Ext10OptIn::class,
+    ExperimentalFeatures.Ext14OptIn::class
+)
 @SmallTest
 @SuppressWarnings("NewApi")
 @RunWith(AndroidJUnit4::class)
@@ -174,6 +178,28 @@ class AdSelectionManagerTest {
             }
             .hasMessageThat()
             .contains("API is not available. Min version is API 31 ext 10")
+    }
+
+    @Test
+    fun testGetAdSelectionDataWithSellerDoesNotThrowExceptionForOlderVersions() {
+        /* AdServices or ExtServices are present */
+        Assume.assumeTrue(
+            "minSdkVersion = API 31 ext 10",
+            AdServicesInfo.adServicesVersion() >= 10 && AdServicesInfo.extServicesVersionS() >= 10
+        )
+
+        /* Seller configuration API is not available */
+        Assume.assumeTrue(
+            "maxSdkVersion = API 31-34 ext 13",
+            AdServicesInfo.adServicesVersion() < 14 && AdServicesInfo.extServicesVersionS() < 14
+        )
+
+        mockAdSelectionManager(mContext, mValidAdExtServicesSdkExtVersion)
+        val managerCompat = obtain(mContext)
+        val getAdSelectionDataRequest =
+            GetAdSelectionDataRequest(seller, coordinatorOriginUri, sellerConfiguration)
+        // Verify that it does not throws an exception
+        runBlocking { managerCompat!!.getAdSelectionData(getAdSelectionDataRequest) }
     }
 
     @Test
@@ -475,6 +501,18 @@ class AdSelectionManagerTest {
 
         // Response.
         private val renderUri = Uri.parse("render-uri.com")
+        private val coordinatorOriginUri: Uri = Uri.parse("www.coordinator.com")
+        val buyerTarget: Int = 1000
+        val buyerTarget2: Int = 500
+        val validBuyer: AdTechIdentifier = AdTechIdentifier("test.com")
+        val validBuyer2: AdTechIdentifier = AdTechIdentifier("test2.com")
+        val perBuyerConfiguration: PerBuyerConfiguration =
+            PerBuyerConfiguration(buyerTarget, validBuyer)
+        val perBuyerConfiguration2: PerBuyerConfiguration =
+            PerBuyerConfiguration(buyerTarget2, validBuyer2)
+        val sellerTargetSize: Int = 2000
+        val perBuyerConfigurations = setOf(perBuyerConfiguration, perBuyerConfiguration2)
+        val sellerConfiguration = SellerConfiguration(sellerTargetSize, perBuyerConfigurations)
 
         private fun mockAdSelectionManager(
             spyContext: Context,

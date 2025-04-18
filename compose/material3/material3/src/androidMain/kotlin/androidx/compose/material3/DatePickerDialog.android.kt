@@ -37,8 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 
 /**
- * <a href="https://m3.material.io/components/date-pickers/overview" class="external"
- * target="_blank">Material Design date picker dialog</a>.
+ * [Material Design date picker dialog](https://m3.material.io/components/date-pickers/overview)
  *
  * A dialog for displaying a [DatePicker]. Date pickers let people select a date.
  *

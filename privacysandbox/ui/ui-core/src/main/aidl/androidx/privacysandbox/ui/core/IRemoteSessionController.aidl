@@ -16,6 +16,8 @@
 
 package androidx.privacysandbox.ui.core;
 
+import androidx.privacysandbox.ui.core.IMotionEventTransferCallback;
+
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
 oneway interface IRemoteSessionController {
     void close();
@@ -24,4 +26,6 @@ oneway interface IRemoteSessionController {
     void notifyZOrderChanged(boolean isZOrderOnTop);
     void notifyFetchUiForSession();
     void notifyUiChanged(in Bundle uiContainerInfo);
+    void notifySessionRendered(in List<String> supportedSignalOptions);
+    void notifyMotionEvent(in MotionEvent motionEvent, in long eventTargetFrameTime, in @nullable IMotionEventTransferCallback eventTransferCallback);
 }

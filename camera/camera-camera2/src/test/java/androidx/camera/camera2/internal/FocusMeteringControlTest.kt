@@ -44,7 +44,6 @@ import androidx.camera.core.impl.Quirks
 import androidx.camera.core.impl.TagBundle
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.ExecutionException
@@ -631,7 +630,6 @@ class FocusMeteringControlTest(private val template: Int) {
         verify(camera2CameraControlImpl, Mockito.times(1)).updateSessionConfigSynchronous()
     }
 
-    @MediumTest
     @Test
     fun autoCancelDuration_completeWithIsFocusSuccessfulFalse() {
         focusMeteringControl = spy(focusMeteringControl)
@@ -649,7 +647,6 @@ class FocusMeteringControlTest(private val template: Int) {
             .cancelFocusAndMeteringWithoutAsyncResult()
     }
 
-    @MediumTest
     @Test
     fun shorterAutoCancelDuration_cancelIsCalled_completeActionFutureIsNotCalled(): Unit = runTest {
         focusMeteringControl = spy(focusMeteringControl)
@@ -670,7 +667,6 @@ class FocusMeteringControlTest(private val template: Int) {
         verify(focusMeteringControl, never()).completeActionFuture(anyBoolean())
     }
 
-    @MediumTest
     @Test
     fun longerAutoCancelDuration_cancelIsCalled_afterCompleteWithIsFocusSuccessfulFalse() {
         focusMeteringControl = spy(focusMeteringControl)
@@ -691,7 +687,6 @@ class FocusMeteringControlTest(private val template: Int) {
             .cancelFocusAndMeteringWithoutAsyncResult()
     }
 
-    @MediumTest
     @Test
     fun autoCancelDurationDisabled_completeAfterAutoFocusTimeoutDuration(): Unit = runTest {
         focusMeteringControl = spy(focusMeteringControl)
@@ -1177,7 +1172,6 @@ class FocusMeteringControlTest(private val template: Int) {
         assertFutureComplete(cancelResult)
     }
 
-    @MediumTest
     @Test
     fun cancelFocusAndMetering_autoCancelIsDisabled(): Unit = runTest {
         focusMeteringControl = spy(focusMeteringControl)

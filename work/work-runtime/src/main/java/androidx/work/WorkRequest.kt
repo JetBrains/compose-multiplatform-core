@@ -162,13 +162,13 @@ internal constructor(
          * You should override the [traceTag], when you are using [ListenableWorker] delegation via
          * a [WorkerFactory].
          *
-         * @param traceTag The name of the trace tag
+         * @param traceTag The name of the trace tag, truncate to a `127` character string if
+         *   necessary.
          * @return The current [Builder]
          */
         @Suppress("MissingGetterMatchingBuilder")
         @SuppressWarnings("SetterReturnsThis")
         fun setTraceTag(traceTag: String): B {
-            // No need to truncate the name here, given its handled by androidx.tracing.Trace
             workSpec.traceTag = traceTag
             return thisObject
         }
@@ -190,6 +190,23 @@ internal constructor(
          */
         fun keepResultsForAtLeast(duration: Long, timeUnit: TimeUnit): B {
             workSpec.minimumRetentionDuration = timeUnit.toMillis(duration)
+            return thisObject
+        }
+
+        /**
+         * Specifies that the backoff policy (as specified via [setBackoffCriteria]) will be applied
+         * when work is interrupted by the system without the app requesting it. This might happen
+         * when the [ListenableWorker] runs longer than it should, or when constraints defined for a
+         * given [ListenableWorker] are unmet.
+         *
+         * @return The current [Builder]
+         * @see setBackoffCriteria
+         */
+        @ExperimentalWorkRequestBuilderApi
+        @Suppress("MissingGetterMatchingBuilder")
+        @SuppressWarnings("SetterReturnsThis")
+        fun setBackoffForSystemInterruptions(): B {
+            workSpec.backOffOnSystemInterruptions = true
             return thisObject
         }
 
@@ -280,10 +297,16 @@ internal constructor(
                 }
                 require(workSpec.initialDelay <= 0) { "Expedited jobs cannot be delayed" }
             }
-            if (workSpec.traceTag == null) {
+            val traceTag = workSpec.traceTag
+            if (traceTag == null) {
                 // Derive a trace tag based on the fully qualified class name if
                 // one has not already been defined.
                 workSpec.traceTag = deriveTraceTagFromClassName(workSpec.workerClassName)
+            } else if (traceTag.length > MAX_TRACE_SPAN_LENGTH) {
+                // If there is a trace tag but it exceeds the limit, then truncate it.
+                // Since we also pipe this tag to JobInfo we need to not exceed the limit even
+                // though androidx.tracing.Trace already truncate tags.
+                workSpec.traceTag = traceTag.take(MAX_TRACE_SPAN_LENGTH)
             }
             // Create a new id and WorkSpec so this WorkRequest.Builder can be used multiple times.
             setId(UUID.randomUUID())

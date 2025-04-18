@@ -18,7 +18,6 @@ package androidx.build.sbom
 
 import androidx.build.AndroidXPlaygroundRootImplPlugin
 import androidx.build.BundleInsideHelper
-import androidx.build.GMavenZipTask
 import androidx.build.ProjectLayoutType
 import androidx.build.addToBuildOnServer
 import androidx.build.getDistributionDirectory
@@ -108,10 +107,6 @@ private fun Project.listSbomConfigurationNamesForArchive(task: AbstractArchiveTa
     }
     if (task is Zip && task.name.endsWith("Klib")) {
         // klib zip tasks don't generally embed other dependencies in them
-        return listOf()
-    }
-    if (task is GMavenZipTask) {
-        // A GMavenZipTask just zips one or more artifacts we've already built
         return listOf()
     }
 

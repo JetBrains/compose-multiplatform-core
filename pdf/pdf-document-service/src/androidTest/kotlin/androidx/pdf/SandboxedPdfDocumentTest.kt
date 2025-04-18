@@ -31,8 +31,10 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import junit.framework.TestCase.assertFalse
+import junit.framework.TestCase.assertNotNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -50,6 +52,21 @@ class SandboxedPdfDocumentTest {
 
             val expectedHeight = 792
             val expectedWidth = 612
+            assertThat(pageInfo.pageNum == pageNumber).isTrue()
+            assertThat(pageInfo.height == expectedHeight).isTrue()
+            assertThat(pageInfo.width == expectedWidth).isTrue()
+        }
+    }
+
+    @Test
+    fun getPageInfo_validDimension_onCorruptedPage() = runTest {
+        withDocument(PDF_DOCUMENT_PARTIALLY_CORRUPTED_FILE) { document ->
+            val pageNumber = 5
+
+            val pageInfo = document.getPageInfo(pageNumber)
+
+            val expectedHeight = 400
+            val expectedWidth = 400
             assertThat(pageInfo.pageNum == pageNumber).isTrue()
             assertThat(pageInfo.height == expectedHeight).isTrue()
             assertThat(pageInfo.width == expectedWidth).isTrue()
@@ -151,6 +168,21 @@ class SandboxedPdfDocumentTest {
         }
     }
 
+    @Test
+    fun searchDocument_fullDocumentSearch_withSinglePageResults() = runTest {
+        withDocument(PDF_DOCUMENT) { document ->
+            val query = "pages are all the same size"
+            val pageRange = 0..2
+
+            val results = document.searchDocument(query, pageRange)
+
+            // Assert sparse array doesn't contain empty result lists
+            assertEquals(1, results.size())
+            // Assert single result on first page
+            assertEquals(1, results[0].size)
+        }
+    }
+
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     @Test
     fun getSelectionBounds_returnsPageSelection() = runTest {
@@ -191,6 +223,24 @@ class SandboxedPdfDocumentTest {
             val selection = document.getSelectionBounds(pageNumber, start, stop)
 
             assertThat(selection == null).isTrue()
+        }
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    @Test
+    fun getSelectAllSelectionBounds() = runTest {
+        withDocument(PDF_DOCUMENT) { document ->
+            val pageNumber = 0
+
+            val selection = document.getSelectAllSelectionBounds(pageNumber)?.selectedTextContents
+            val expectedSelection = document.getPageContent(pageNumber)?.textContents
+
+            assertNotNull(selection)
+            assertNotNull(expectedSelection)
+            assertThat(selection?.size == expectedSelection?.size)
+            for (index: Int in 0..selection!!.size - 1) {
+                assertThat(selection[index].text == expectedSelection!![index].text).isTrue()
+            }
         }
     }
 
@@ -271,6 +321,7 @@ class SandboxedPdfDocumentTest {
     companion object {
         private const val PDF_DOCUMENT = "sample.pdf"
         private const val PDF_DOCUMENT_WITH_LINKS = "sample_links.pdf"
+        private const val PDF_DOCUMENT_PARTIALLY_CORRUPTED_FILE = "partially_corrupted.pdf"
         private const val PDF_DOCUMENT_WITH_TEXT_AND_IMAGE = "alt_text.pdf"
 
         private suspend fun withDocument(filename: String, block: suspend (PdfDocument) -> Unit) {

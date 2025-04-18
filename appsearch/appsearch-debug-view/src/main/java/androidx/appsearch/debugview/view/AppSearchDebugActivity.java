@@ -21,8 +21,6 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchEnvironmentFactory;
 import androidx.appsearch.debugview.DebugAppSearchManager;
@@ -34,6 +32,9 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -145,16 +146,14 @@ public class AppSearchDebugActivity extends FragmentActivity {
     /**
      * Gets the {@link DebugAppSearchManager} instance created by the activity.
      */
-    @NonNull
-    public ListenableFuture<DebugAppSearchManager> getDebugAppSearchManager() {
+    public @NonNull ListenableFuture<DebugAppSearchManager> getDebugAppSearchManager() {
         return mDebugAppSearchManager;
     }
 
     /**
      * Gets the {@link ListeningExecutorService} instance created by the activity.
      */
-    @NonNull
-    public ListeningExecutorService getBackgroundExecutor() {
+    public @NonNull ListeningExecutorService getBackgroundExecutor() {
         return mBackgroundExecutor;
     }
 }

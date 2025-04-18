@@ -16,8 +16,6 @@
 
 package androidx.camera.testing.fakes;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraXConfig;
@@ -28,6 +26,9 @@ import androidx.camera.testing.impl.fakes.FakeCameraCoordinator;
 import androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager;
 import androidx.camera.testing.impl.fakes.FakeCameraFactory;
 import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,15 +45,12 @@ public final class FakeAppConfig {
     private static final String DEFAULT_BACK_CAMERA_ID = "0";
     private static final String DEFAULT_FRONT_CAMERA_ID = "1";
 
-    @Nullable
-    private static FakeCamera sBackCamera = null;
+    private static @Nullable FakeCamera sBackCamera = null;
 
-    @Nullable
-    private static FakeCamera sFrontCamera = null;
+    private static @Nullable FakeCamera sFrontCamera = null;
 
     /** Generates a fake {@link CameraXConfig}. */
-    @NonNull
-    public static CameraXConfig create() {
+    public static @NonNull CameraXConfig create() {
         return create(null);
     }
 
@@ -60,8 +58,7 @@ public final class FakeAppConfig {
      * Generates a fake {@link CameraXConfig} with the provided {@linkplain CameraSelector
      * available cameras limiter}.
      */
-    @NonNull
-    public static CameraXConfig create(@Nullable CameraSelector availableCamerasSelector) {
+    public static @NonNull CameraXConfig create(@Nullable CameraSelector availableCamerasSelector) {
         FakeCameraFactory cameraFactory = createCameraFactory(availableCamerasSelector);
 
         final CameraFactory.Provider cameraFactoryProvider =
@@ -108,8 +105,7 @@ public final class FakeAppConfig {
      * Returns the default fake back camera that is used internally by CameraX.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    public static FakeCamera getBackCamera() {
+    public static @NonNull FakeCamera getBackCamera() {
         if (sBackCamera == null || sBackCamera.isReleased()) {
             sBackCamera = new FakeCamera(DEFAULT_BACK_CAMERA_ID, null,
                     new FakeCameraInfoInternal(DEFAULT_BACK_CAMERA_ID, 0,
@@ -122,8 +118,7 @@ public final class FakeAppConfig {
      * Returns the default fake front camera that is used internally by CameraX.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    public static FakeCamera getFrontCamera() {
+    public static @NonNull FakeCamera getFrontCamera() {
         if (sFrontCamera == null || sFrontCamera.isReleased()) {
             sFrontCamera = new FakeCamera(DEFAULT_FRONT_CAMERA_ID, null,
                     new FakeCameraInfoInternal(DEFAULT_FRONT_CAMERA_ID, 0,
@@ -135,9 +130,8 @@ public final class FakeAppConfig {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final class DefaultProvider implements CameraXConfig.Provider {
 
-        @NonNull
         @Override
-        public CameraXConfig getCameraXConfig() {
+        public @NonNull CameraXConfig getCameraXConfig() {
             return create();
         }
     }

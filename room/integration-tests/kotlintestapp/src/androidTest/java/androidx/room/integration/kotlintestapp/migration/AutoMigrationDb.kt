@@ -355,7 +355,8 @@ abstract class AutoMigrationDb : RoomDatabase() {
     data class Entity22(
         @PrimaryKey var rowid: Int,
         var name: String,
-        @ColumnInfo(defaultValue = "1") var addedInV1: Int
+        @ColumnInfo(defaultValue = "1") var addedInV1: Int,
+        @ColumnInfo(defaultValue = "2") var addedInV4: Int
     ) {
         companion object {
             const val TABLE_NAME = "Entity22"

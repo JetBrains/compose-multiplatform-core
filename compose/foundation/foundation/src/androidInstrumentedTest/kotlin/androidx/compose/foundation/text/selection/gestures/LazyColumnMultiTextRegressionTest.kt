@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.compose.foundation.text.selection.gestures
 
+import androidx.compose.foundation.internal.readText
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,6 +37,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.testutils.TestViewConfiguration
 import androidx.compose.ui.Alignment
@@ -41,7 +45,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.LocalViewConfiguration
@@ -66,6 +72,9 @@ import androidx.compose.ui.unit.sp
 import com.google.common.truth.Subject
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -190,11 +199,14 @@ class LazyColumnMultiTextRegressionTest {
         assertSelection().isNull()
     }
 
+    @Suppress("DEPRECATION")
     private inner class TestScope(
         private val pointerAreaTag: String,
         private val selectionState: MutableState<Selection?>,
         private val clipboardManager: ClipboardManager,
+        private val clipboard: Clipboard,
         private val textToolbar: TextToolbarWrapper,
+        private val coroutineScope: CoroutineScope,
     ) {
         val initialText = "Initial text"
         val selection: Selection?
@@ -285,6 +297,25 @@ class LazyColumnMultiTextRegressionTest {
             assertWithMessage("""Clipboard set to incorrect content: "$actualClipboardText".""")
                 .that(actualClipboardText)
                 .isEqualTo(text)
+
+            var actualSuspendClipboardText: String? = null
+            rule.waitUntil {
+                coroutineScope
+                    .launch(start = CoroutineStart.UNDISPATCHED) {
+                        actualSuspendClipboardText = clipboard.getClipEntry()?.readText()
+                    }
+                    .isCompleted
+            }
+
+            assertWithMessage("Clipboard contents was not changed.")
+                .that(actualSuspendClipboardText)
+                .isNotEqualTo(initialText)
+            assertWithMessage(
+                    """Clipboard set to incorrect content: "$actualSuspendClipboardText"."""
+                )
+                .that(actualSuspendClipboardText)
+                .isEqualTo(text)
+
             resetClipboard()
         }
 
@@ -348,16 +379,21 @@ class LazyColumnMultiTextRegressionTest {
             get() = rule.onNodeWithTag(pointerAreaTag).fetchSemanticsNode().boundsInRoot
     }
 
+    @Suppress("DEPRECATION")
     private fun runTest(block: TestScope.() -> Unit) {
         val tag = "tag"
         val selection = mutableStateOf<Selection?>(null)
         val testViewConfiguration = TestViewConfiguration(minimumTouchTargetSize = DpSize.Zero)
         lateinit var clipboardManager: ClipboardManager
+        lateinit var clipboard: Clipboard
         lateinit var textToolbar: TextToolbarWrapper
+        lateinit var coroutineScope: CoroutineScope
         stateRestorationTester.setContent {
             clipboardManager = LocalClipboardManager.current
+            clipboard = LocalClipboard.current
             val originalTextToolbar = LocalTextToolbar.current
             textToolbar = remember(originalTextToolbar) { TextToolbarWrapper(originalTextToolbar) }
+            coroutineScope = rememberCoroutineScope()
             CompositionLocalProvider(
                 LocalTextToolbar provides textToolbar,
                 LocalViewConfiguration provides testViewConfiguration,
@@ -386,7 +422,8 @@ class LazyColumnMultiTextRegressionTest {
             }
         }
 
-        val scope = TestScope(tag, selection, clipboardManager, textToolbar)
+        val scope =
+            TestScope(tag, selection, clipboardManager, clipboard, textToolbar, coroutineScope)
         scope.resetClipboard()
         scope.block()
     }

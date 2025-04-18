@@ -49,7 +49,7 @@ class CompositeHashTests : BaseComposeTest() {
                         Modifier
                     },
             ) {
-                val hash = currentCompositeKeyHash
+                val hash = currentCompositeKeyHashCode
                 val original = remember { hash }
                 assertEquals(original, hash)
             }

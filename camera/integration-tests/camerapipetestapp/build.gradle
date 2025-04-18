@@ -18,10 +18,12 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
+    compileSdk = 35
+
     defaultConfig {
         applicationId = "androidx.camera.integration.camera2.pipe"
     }
@@ -46,11 +48,14 @@ android {
 }
 
 dependencies {
+    def lifecycle_version = "2.8.7"
+
     // Internal library
     implementation(libs.kotlinStdlib)
 
     // Android Support Library
     implementation("androidx.appcompat:appcompat:1.1.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version")
     implementation(libs.constraintLayout)
 
     // Camera Pipe

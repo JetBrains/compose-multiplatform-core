@@ -87,7 +87,7 @@ class FastScrollViewIntegrationTest {
         configureViews()
         activityScenario.scenario.onActivity {
             // Indicator is hidden
-            assertThat(pageIndicator.visibility).isEqualTo(View.GONE)
+            assertThat(pageIndicator.visibility).isEqualTo(View.INVISIBLE)
 
             // Overscroll the bottom
             zoomView.scrollTo(0, 2000, true)

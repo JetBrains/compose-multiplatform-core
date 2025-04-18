@@ -21,6 +21,7 @@ import static androidx.wear.protolayout.material.RunnerUtils.SCREEN_WIDTH;
 import static androidx.wear.protolayout.material.RunnerUtils.convertToTestParameters;
 import static androidx.wear.protolayout.material.RunnerUtils.runSingleScreenshotTest;
 import static androidx.wear.protolayout.material.RunnerUtils.waitForNotificationToDisappears;
+import static androidx.wear.protolayout.material.ScreenshotKt.SCREENSHOT_GOLDEN_PATH;
 import static androidx.wear.protolayout.material.TestCasesGenerator.generateTestCases;
 import static androidx.wear.protolayout.material.TestCasesGenerator.generateTextTestCasesLtrOnly;
 import static androidx.wear.protolayout.material.TestCasesGenerator.generateTextTestCasesRtlOnly;
@@ -53,7 +54,7 @@ public class MaterialGoldenTest {
 
     @Rule
     public AndroidXScreenshotTestRule mScreenshotRule =
-            new AndroidXScreenshotTestRule("wear/wear-protolayout-material");
+            new AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH);
 
     public MaterialGoldenTest(String expected, TestCase testCase) {
         mTestCase = testCase;

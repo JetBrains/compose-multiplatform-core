@@ -365,6 +365,16 @@ public class TestDsl {
         return textInternal(propsConsumer, dynamicStr(fixedText, valueForLayout));
     }
 
+    /**
+     * Creates a text element with a dynamic string.
+     *
+     * @param str the dynamic string to use for the text element
+     */
+    public static LayoutNode dynamicText(DynamicString str) {
+        return textInternal(
+                /* propsConsumer= */ null, StringProp.newBuilder().setDynamicValue(str).build());
+    }
+
     public static LayoutNode text(String text) {
         return text(/* propsConsumer= */ null, text);
     }

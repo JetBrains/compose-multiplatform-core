@@ -345,4 +345,16 @@ class MutableBoxTest {
         assertThat(outerRect.contains(innerRect)).isTrue()
         assertThat(innerRect.contains(outerRect)).isFalse()
     }
+
+    @Test
+    fun asImmutable_returnsImmutableCopy() {
+        val box = MutableBox().populateFromTwoPoints(ImmutableVec(10F, 20F), ImmutableVec(30F, 40F))
+        val output = box.asImmutable()
+        box.setXBounds(50F, 60F) // This should not affect the copy.
+
+        assertThat(output.xMin).isEqualTo(10F)
+        assertThat(output.yMin).isEqualTo(20F)
+        assertThat(output.xMax).isEqualTo(30F)
+        assertThat(output.yMax).isEqualTo(40F)
+    }
 }

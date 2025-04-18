@@ -122,16 +122,6 @@ class RequestConvertersTest {
     }
 
     @Test
-    fun timeRangeFilter_fromSdkToPlatform_none() {
-
-        val sdkFilter = TimeRangeFilter.none()
-
-        with(sdkFilter.toPlatformTimeRangeFilter() as TimeInstantRangeFilter) {
-            assertThat(startTime).isEqualTo(Instant.EPOCH)
-        }
-    }
-
-    @Test
     fun changesTokenRequest_fromSdkToPlatform() {
         val sdkRequest =
             ChangesTokenRequest(
@@ -235,11 +225,11 @@ class RequestConvertersTest {
     }
 
     @Test
-    fun aggregateGroupByPeriodRequest_fromSdkToPlatform_noTimeSet() {
+    fun aggregateGroupByPeriodRequest_fromSdkToPlatform_afterEpoch() {
         val sdkRequest =
             AggregateGroupByPeriodRequest(
                 setOf(HeartRateRecord.BPM_MAX, HeartRateRecord.BPM_MIN, HeartRateRecord.BPM_AVG),
-                TimeRangeFilter.none(),
+                TimeRangeFilter.after(LocalDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC)),
                 Period.ofDays(1),
                 setOf(DataOrigin("package1"), DataOrigin("package2"), DataOrigin("package3"))
             )

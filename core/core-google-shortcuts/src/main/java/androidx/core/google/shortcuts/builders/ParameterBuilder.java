@@ -20,11 +20,12 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY;
 import static androidx.core.google.shortcuts.builders.Constants.PARAMETER_TYPE;
 import static androidx.core.google.shortcuts.builders.Constants.PARAMETER_VALUE_KEY;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 
 import com.google.android.gms.appindex.builders.IndexableBuilder;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Builder for the Parameter section in the Shortcut Corpus.
@@ -40,14 +41,12 @@ public class ParameterBuilder
     }
 
     /** Sets one or more values for given parameter. */
-    @NonNull
-    public ParameterBuilder setValue(@NonNull String... value) {
+    public @NonNull ParameterBuilder setValue(String @NonNull ... value) {
         mValues = value;
         return put(PARAMETER_VALUE_KEY, value);
     }
 
-    @Nullable
-    public String[] getValues() {
+    public String @Nullable [] getValues() {
         return mValues;
     }
 }

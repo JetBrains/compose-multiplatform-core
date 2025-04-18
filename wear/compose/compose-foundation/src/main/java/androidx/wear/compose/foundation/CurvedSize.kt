@@ -35,7 +35,7 @@ public fun CurvedModifier.sizeIn(
     @FloatRange(from = 0.0, to = 360.0) maxSweepDegrees: Float = 360f,
     minThickness: Dp = 0.dp,
     maxThickness: Dp = Dp.Infinity,
-) =
+): CurvedModifier =
     this.then { child ->
         SweepSizeWrapper(
             child,
@@ -56,7 +56,7 @@ public fun CurvedModifier.sizeIn(
 public fun CurvedModifier.size(
     @FloatRange(from = 0.0, to = 360.0) sweepDegrees: Float,
     thickness: Dp
-) =
+): CurvedModifier =
     sizeIn(
         minSweepDegrees = sweepDegrees,
         maxSweepDegrees = sweepDegrees,
@@ -71,7 +71,7 @@ public fun CurvedModifier.size(
  * @sample androidx.wear.compose.foundation.samples.CurvedFixedSize
  * @param angularWidth Indicates the arc length of the content in Dp.
  */
-public fun CurvedModifier.angularSizeDp(angularWidth: Dp) =
+public fun CurvedModifier.angularSizeDp(angularWidth: Dp): CurvedModifier =
     this.then { child ->
         AngularWidthSizeWrapper(
             child,
@@ -87,7 +87,7 @@ public fun CurvedModifier.angularSizeDp(angularWidth: Dp) =
  *
  * @param sweepDegrees Indicates the sweep (angular size) of the content.
  */
-public fun CurvedModifier.angularSize(sweepDegrees: Float) =
+public fun CurvedModifier.angularSize(sweepDegrees: Float): CurvedModifier =
     sizeIn(minSweepDegrees = sweepDegrees, maxSweepDegrees = sweepDegrees)
 
 /**
@@ -95,7 +95,7 @@ public fun CurvedModifier.angularSize(sweepDegrees: Float) =
  *
  * @param thickness Indicates the thickness of the content.
  */
-public fun CurvedModifier.radialSize(thickness: Dp) =
+public fun CurvedModifier.radialSize(thickness: Dp): CurvedModifier =
     sizeIn(minThickness = thickness, maxThickness = thickness)
 
 internal class SweepSizeWrapper(

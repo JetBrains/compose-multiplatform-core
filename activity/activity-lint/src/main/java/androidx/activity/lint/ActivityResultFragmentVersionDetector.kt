@@ -82,6 +82,7 @@ class ActivityResultFragmentVersionDetector : Detector(), UastScanner, GradleSca
         }
     }
 
+    @Suppress("OVERRIDE_DEPRECATION") // b/407493719
     override fun checkDslPropertyAssignment(
         context: GradleContext,
         property: String,

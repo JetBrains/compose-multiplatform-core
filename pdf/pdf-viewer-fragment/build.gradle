@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -44,6 +44,11 @@ dependencies {
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.kotlinCoroutinesTest)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.testRunner)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.truth)
 }
 
 android {
@@ -52,13 +57,12 @@ android {
     defaultConfig {
         minSdk = 31
         compileSdk = 35
-        targetSdk = 31
     }
 }
 
 androidx {
     name = "androidx.pdf:pdf-viewer-fragment"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "This library can be used in your Android application to embed a fragment that renders a PDF document and provides functionalities to interact with it."
 }

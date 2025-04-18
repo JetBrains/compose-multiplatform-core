@@ -24,10 +24,11 @@ import android.view.Surface;
 
 import androidx.annotation.CheckResult;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.ImageOutputConfig;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,14 +65,12 @@ public final class RotationProvider {
 
     @GuardedBy("mLock")
     @VisibleForTesting
-    @NonNull
-    final OrientationEventListener mOrientationListener;
+    final @NonNull OrientationEventListener mOrientationListener;
 
     // Synthetic access
     @SuppressWarnings("WeakerAccess")
     @GuardedBy("mLock")
-    @NonNull
-    final Map<Listener, ListenerWrapper> mListeners = new HashMap<>();
+    final @NonNull Map<Listener, ListenerWrapper> mListeners = new HashMap<>();
 
     // Set this value to true to test adding listener in unit tests.
     @VisibleForTesting

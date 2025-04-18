@@ -39,7 +39,13 @@ import kotlinx.coroutines.launch
 /**
  * [ListenableFuture]-based compatibility wrapper around [WatchFaceControlClient]'s suspending
  * methods. This class is open to allow mocking.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public open class ListenableWatchFaceControlClient(
     private val watchFaceControlClient: WatchFaceControlClient
 ) : WatchFaceControlClient {

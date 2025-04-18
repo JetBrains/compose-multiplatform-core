@@ -16,7 +16,6 @@
 
 package androidx.appsearch.localstorage.usagereporting;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.app.AppSearchSchema;
@@ -24,6 +23,8 @@ import androidx.appsearch.app.AppSearchSession;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.usagereporting.ActionConstants;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Abstract wrapper class for {@link GenericDocument} of all types of taken actions, which contains
@@ -44,8 +45,7 @@ public abstract class TakenActionGenericDocument extends GenericDocument {
      * @throws IllegalArgumentException if the integer value of property {@code actionType} is
      *                                  invalid.
      */
-    @NonNull
-    public static TakenActionGenericDocument create(@NonNull GenericDocument document)
+    public static @NonNull TakenActionGenericDocument create(@NonNull GenericDocument document)
             throws IllegalArgumentException {
         Preconditions.checkNotNull(document);
         int actionType = (int) document.getPropertyLong(PROPERTY_PATH_ACTION_TYPE);

@@ -31,9 +31,10 @@ import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -82,9 +83,8 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
         return compensationRange != null && compensationRange.contains(EV_INDEX);
     }
 
-    @NonNull
     @Override
-    public List<CaptureStageImpl> getCaptureStages() {
+    public @NonNull List<CaptureStageImpl> getCaptureStages() {
         // Placeholder set of CaptureRequest.Key values
         List<CaptureStageImpl> captureStages = new ArrayList<>();
         for (int i = 0; i < CAPTURE_STAGET_COUNT; i++) {
@@ -99,9 +99,8 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
 
     private NightCaptureProcessorImpl mCaptureProcessor = null;
 
-    @Nullable
     @Override
-    public CaptureProcessorImpl getCaptureProcessor() {
+    public @Nullable CaptureProcessorImpl getCaptureProcessor() {
         if (mCaptureProcessor == null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) { // Needs ImageWriter
                 mCaptureProcessor = new NightCaptureProcessorImpl();
@@ -124,27 +123,24 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
         }
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onPresetSession() {
+    public @Nullable CaptureStageImpl onPresetSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
         return captureStage;
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onEnableSession() {
+    public @Nullable CaptureStageImpl onEnableSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
         return captureStage;
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onDisableSession() {
+    public @Nullable CaptureStageImpl onDisableSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
@@ -156,28 +152,25 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
         return CAPTURE_STAGET_COUNT + 1;
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedResolutions() {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedResolutions() {
         return null;
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedPostviewResolutions(@Nullable Size captureSize) {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedPostviewResolutions(
+            @Nullable Size captureSize) {
         Pair<Integer, Size[]> pair = new Pair<>(ImageFormat.YUV_420_888, new Size[]{captureSize});
         return Arrays.asList(pair);
     }
 
-    @Nullable
     @Override
-    public Range<Long> getEstimatedCaptureLatencyRange(@Nullable Size captureOutputSize) {
+    public @Nullable Range<Long> getEstimatedCaptureLatencyRange(@Nullable Size captureOutputSize) {
         return new Range<>(2600L, 3000L);
     }
 
-    @NonNull
     @Override
-    public List<CaptureRequest.Key> getAvailableCaptureRequestKeys() {
+    public @NonNull List<CaptureRequest.Key> getAvailableCaptureRequestKeys() {
         List<CaptureRequest.Key> keys = new ArrayList<>(Arrays.asList(
                 CaptureRequest.CONTROL_AF_MODE,
                 CaptureRequest.CONTROL_AF_TRIGGER,
@@ -191,9 +184,8 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
         return Collections.unmodifiableList(keys);
     }
 
-    @NonNull
     @Override
-    public List<CaptureResult.Key> getAvailableCaptureResultKeys() {
+    public @NonNull List<CaptureResult.Key> getAvailableCaptureResultKeys() {
         List<CaptureResult.Key> keys = new ArrayList<>(Arrays.asList(
                 CaptureResult.CONTROL_AF_MODE,
                 CaptureResult.CONTROL_AE_REGIONS,
@@ -218,9 +210,8 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
         return true;
     }
 
-    @Nullable
     @Override
-    public Pair<Long, Long> getRealtimeCaptureLatency() {
+    public @Nullable Pair<Long, Long> getRealtimeCaptureLatency() {
         return new Pair<>(500L, 2500L);
     }
 

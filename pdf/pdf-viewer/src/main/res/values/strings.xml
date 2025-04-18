@@ -55,10 +55,13 @@
     <string name="desc_goto_link">Go to page <xliff:g example="12" id="page_number">%1$d</xliff:g></string>
 
     <!-- Content description for a page of a paginated document, eg "page 3". [CHAR LIMIT=50] -->
-    <string name="desc_page">page <xliff:g example="3" id="page">%1$d</xliff:g></string>
+    <string name="desc_page">Page <xliff:g example="3" id="page">%1$d</xliff:g></string>
 
     <!-- Content description for an empty page of a paginated document -->
     <string name="desc_empty_page">Empty page</string>
+
+    <!-- Content description for a page with its page number and corresponding text content -->
+    <string name="desc_page_with_text">Page <xliff:g example="3" id="page_number">%1$d</xliff:g>: <xliff:g example="This is the text" id="page_text">%2$s</xliff:g></string>
 
     <!-- Error message when file format isn't valid PDF. [CHAR LIMIT=60] -->
     <string name="error_file_format_pdf">Cannot display PDF ("<xliff:g example="Treasure Island" id="title">%1$s</xliff:g>" is of invalid format)</string>
@@ -154,4 +157,14 @@
 
     <!-- Error Message on PDF File Load Error -->
     <string name="error_cannot_open_pdf">Can\'t open PDF file</string>
+
+    <!-- Error Message on Failure to start Edit Mode -->
+    <string name="cannot_edit_pdf">This PDF can\'t be edited</string>
+
+    <!-- User visible label attached to text copied from a PDF when submitting it to the system
+         clipboard -->
+    <string name="clipboard_label">Content copied from PDF</string>
+
+    <!-- Content description of the fast scroller thumb -->
+    <string name="fast_scroller_thumb">Scroll Bar</string>
 </resources>

@@ -133,7 +133,9 @@ class ThreePaneScaffoldScreenshotTest {
                     tertiary = PaneAdaptedValue.Hidden,
                 )
             val scaffoldState = remember { MutableThreePaneScaffoldState(detailExtraExpanded) }
-            LaunchedEffect(Unit) { scaffoldState.seekTo(0f, listDetailExpanded) }
+            LaunchedEffect(Unit) {
+                scaffoldState.seekTo(0f, listDetailExpanded, isPredictiveBackInProgress = true)
+            }
             SampleThreePaneScaffoldWithScaffoldState(scaffoldState)
         }
 
@@ -162,7 +164,9 @@ class ThreePaneScaffoldScreenshotTest {
                     tertiary = PaneAdaptedValue.Hidden,
                 )
             val scaffoldState = remember { MutableThreePaneScaffoldState(detailExtraExpanded) }
-            LaunchedEffect(Unit) { scaffoldState.seekTo(0.1f, listDetailExpanded) }
+            LaunchedEffect(Unit) {
+                scaffoldState.seekTo(0.1f, listDetailExpanded, isPredictiveBackInProgress = true)
+            }
             SampleThreePaneScaffoldWithScaffoldState(scaffoldState)
         }
 
@@ -312,6 +316,25 @@ class ThreePaneScaffoldScreenshotTest {
             .assertAgainstGolden(
                 screenshotRule,
                 "threePaneScaffold_paneExpansion_fullFirstPanePercentage"
+            )
+    }
+
+    @Test
+    fun threePaneScaffold_paneExpansionWithDragHandle_disabledOnSinglePane() {
+        rule.setContent {
+            val mockPaneExpansionState = PaneExpansionState()
+            mockPaneExpansionState.setFirstPaneWidth(
+                with(LocalDensity.current) { 412.dp.roundToPx() }
+            )
+            SampleThreePaneScaffoldWithPaneExpansion(mockPaneExpansionState) { MockDragHandle(it) }
+        }
+
+        rule
+            .onNodeWithTag(ThreePaneScaffoldTestTag)
+            .captureToImage()
+            .assertAgainstGolden(
+                screenshotRule,
+                "threePaneScaffold_paneExpansionWithDragHandle_disabledOnSinglePane"
             )
     }
 
@@ -528,7 +551,8 @@ internal fun ThreePaneScaffoldScope.MockDragHandle(state: PaneExpansionState) {
             Modifier.paneExpansionDraggable(
                 state,
                 LocalMinimumInteractiveComponentSize.current,
-                interactionSource
+                interactionSource,
+                state.defaultDragHandleSemantics()
             ),
         interactionSource = interactionSource
     )

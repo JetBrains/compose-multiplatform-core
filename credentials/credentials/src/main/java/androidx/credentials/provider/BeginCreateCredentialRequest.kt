@@ -19,6 +19,7 @@ package androidx.credentials.provider
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
+import androidx.annotation.RestrictTo
 import androidx.credentials.PasswordCredential
 import androidx.credentials.PublicKeyCredential
 import androidx.credentials.internal.FrameworkClassParsingException
@@ -88,7 +89,9 @@ constructor(val type: String, val candidateQueryData: Bundle, val callingAppInfo
     }
 
     companion object {
-        internal fun createFrom(
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        @JvmStatic
+        fun createFrom(
             type: String,
             candidateQueryData: Bundle,
             callingAppInfo: CallingAppInfo?

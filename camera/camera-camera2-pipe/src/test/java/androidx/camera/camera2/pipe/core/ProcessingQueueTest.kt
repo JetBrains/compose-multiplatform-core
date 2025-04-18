@@ -49,8 +49,10 @@ class ProcessingQueueTest {
 
     private var lastUncaughtException: Throwable? = null
     private val unprocessedElements = mutableListOf<List<Int>>()
+    private var unprocessedElementsInvoked = false
     private val processingCalls = mutableListOf<List<Int>>()
     private val unprocessElementHandler: (List<Int>) -> Unit = {
+        unprocessedElementsInvoked = true
         unprocessedElements.add(it.toMutableList())
     }
 

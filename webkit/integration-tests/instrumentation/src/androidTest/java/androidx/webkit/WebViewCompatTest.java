@@ -40,6 +40,8 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.filters.SdkSuppress;
+import androidx.webkit.test.common.WebViewOnUiThread;
+import androidx.webkit.test.common.WebkitUtils;
 
 import org.jspecify.annotations.NonNull;
 import org.junit.After;
@@ -70,7 +72,7 @@ public class WebViewCompatTest {
 
     @Before
     public void setUp() {
-        mWebViewOnUiThread = new androidx.webkit.WebViewOnUiThread();
+        mWebViewOnUiThread = new WebViewOnUiThread();
     }
 
     @After

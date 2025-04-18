@@ -28,6 +28,8 @@ import android.webkit.WebView;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
+import androidx.webkit.test.common.WebViewOnUiThread;
+import androidx.webkit.test.common.WebkitUtils;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -51,8 +53,8 @@ public class WebSettingsCompatUserAgentMetadataTest {
             "sec-ch-ua-platform-version", "sec-ch-ua-bitness", "sec-ch-ua-full-version-list",
             "sec-ch-ua-wow64"};
 
-    private static final String FIRST_URL =  "/first.html";
-    private static final String SECOND_URL =  "/second.html";
+    private static final String FIRST_URL = "/first.html";
+    private static final String SECOND_URL = "/second.html";
 
     private static final String FIRST_RAW_HTML =
             "<!DOCTYPE html>\n"
@@ -75,7 +77,7 @@ public class WebSettingsCompatUserAgentMetadataTest {
 
     @Before
     public void setUp() throws Exception {
-        mWebViewOnUiThread = new androidx.webkit.WebViewOnUiThread();
+        mWebViewOnUiThread = new WebViewOnUiThread();
         mTestHttpsWebViewClient = new TestHttpsWebViewClient(mWebViewOnUiThread);
     }
 
@@ -93,6 +95,7 @@ public class WebSettingsCompatUserAgentMetadataTest {
     private static final class TestHttpsWebViewClient extends
             WebViewOnUiThread.WaitForLoadedClient {
         private final List<WebResourceRequest> mInterceptedRequests = new ArrayList<>();
+
         TestHttpsWebViewClient(WebViewOnUiThread webViewOnUiThread) throws Exception {
             super(webViewOnUiThread);
         }
@@ -193,7 +196,7 @@ public class WebSettingsCompatUserAgentMetadataTest {
         // client hints cache impacts other tests.
         String baseUrl = "https://example1.com";
         mWebViewOnUiThread.loadUrlAndWaitForCompletion(baseUrl + FIRST_URL);
-        List<WebResourceRequest> requests  = mTestHttpsWebViewClient.getInterceptedRequests();
+        List<WebResourceRequest> requests = mTestHttpsWebViewClient.getInterceptedRequests();
         Assert.assertEquals(2, requests.size());
 
         // Make sure the first request has low-entropy client hints.
@@ -275,7 +278,7 @@ public class WebSettingsCompatUserAgentMetadataTest {
         // client hints cache impacts other tests.
         String baseUrl = "https://example2.com";
         mWebViewOnUiThread.loadUrlAndWaitForCompletion(baseUrl + FIRST_URL);
-        List<WebResourceRequest> requests  = mTestHttpsWebViewClient.getInterceptedRequests();
+        List<WebResourceRequest> requests = mTestHttpsWebViewClient.getInterceptedRequests();
         Assert.assertEquals(2, requests.size());
 
         // Make sure the first request has low-entropy client hints.
@@ -363,7 +366,7 @@ public class WebSettingsCompatUserAgentMetadataTest {
         String baseUrl = "https://example3.com";
         mWebViewOnUiThread.loadUrlAndWaitForCompletion(baseUrl + FIRST_URL);
         mWebViewOnUiThread.loadUrlAndWaitForCompletion(FIRST_URL);
-        List<WebResourceRequest> requests  = mTestHttpsWebViewClient.getInterceptedRequests();
+        List<WebResourceRequest> requests = mTestHttpsWebViewClient.getInterceptedRequests();
         Assert.assertEquals(2, requests.size());
 
         // Make sure the first request has low-entropy client hints.

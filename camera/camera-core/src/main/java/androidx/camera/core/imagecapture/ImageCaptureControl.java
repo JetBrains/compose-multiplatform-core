@@ -17,11 +17,12 @@
 package androidx.camera.core.imagecapture;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.impl.CaptureConfig;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -46,6 +47,6 @@ public interface ImageCaptureControl {
      * Invokes {@link ImageCapture#submitStillCaptureRequest(List)}}
      */
     @MainThread
-    @NonNull
-    ListenableFuture<Void> submitStillCaptureRequests(@NonNull List<CaptureConfig> captureConfigs);
+    @NonNull ListenableFuture<Void> submitStillCaptureRequests(
+            @NonNull List<CaptureConfig> captureConfigs);
 }

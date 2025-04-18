@@ -18,6 +18,7 @@ package androidx.pdf.viewer.fragment
 
 import android.net.Uri
 import androidx.annotation.RestrictTo
+import androidx.core.os.OperationCanceledException
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -29,9 +30,19 @@ import androidx.pdf.PdfDocument
 import androidx.pdf.PdfLoader
 import androidx.pdf.SandboxedPdfLoader
 import androidx.pdf.exceptions.PdfPasswordException
+import androidx.pdf.search.SearchRepository
+import androidx.pdf.search.model.NoQuery
+import androidx.pdf.search.model.QueryResults
+import androidx.pdf.search.model.SearchResultState
+import androidx.pdf.viewer.fragment.model.HighlightData
 import androidx.pdf.viewer.fragment.model.PdfFragmentUiState
+import androidx.pdf.viewer.fragment.model.SearchViewUiState
+import androidx.pdf.viewer.fragment.util.fetchCounterData
+import androidx.pdf.viewer.fragment.util.getCenter
+import androidx.pdf.viewer.fragment.util.toHighlightsData
 import java.util.concurrent.Executors
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -61,6 +72,18 @@ internal class PdfDocumentViewModel(
     /** A Coroutine [Job] that manages the PDF loading task. */
     private var documentLoadJob: Job? = null
 
+    /**
+     * Parent [Job] for search query and result collectors. All children jobs will be cancelled upon
+     * disabling [PdfViewerFragment.isTextSearchActive].
+     */
+    private val searchCollector = SupervisorJob(viewModelScope.coroutineContext[Job])
+
+    /**
+     * Parent [Job] for search operations triggered on [SearchRepository]. All children jobs will
+     * cancelled upon updating search query.
+     */
+    private var searchJob: Job = SupervisorJob(viewModelScope.coroutineContext[Job])
+
     private val _fragmentUiScreenState =
         MutableStateFlow<PdfFragmentUiState>(PdfFragmentUiState.Loading)
 
@@ -72,6 +95,21 @@ internal class PdfDocumentViewModel(
      */
     internal val fragmentUiScreenState: StateFlow<PdfFragmentUiState>
         get() = _fragmentUiScreenState.asStateFlow()
+
+    private val _searchViewUiState = MutableStateFlow<SearchViewUiState>(SearchViewUiState.Closed)
+
+    /** Stream of UI states of the PdfSearchView. */
+    internal val searchViewUiState: StateFlow<SearchViewUiState>
+        get() = _searchViewUiState.asStateFlow()
+
+    internal val immersiveModeFlow: StateFlow<Boolean>
+        get() = state.getStateFlow(IMMERSIVE_MODE_STATE_KEY, false)
+
+    private val _highlightsFlow = MutableStateFlow<HighlightData>(EMPTY_HIGHLIGHTS)
+
+    /** Stream of highlights to be added on PdfView. Also includes scroll to page data. */
+    internal val highlightsFlow: StateFlow<HighlightData>
+        get() = _highlightsFlow.asStateFlow()
 
     /**
      * Indicates whether the user is entering their password for the first time or making a repeated
@@ -90,9 +128,12 @@ internal class PdfDocumentViewModel(
     val isTextSearchActiveFromState: Boolean
         get() = state[TEXT_SEARCH_STATE_KEY] ?: false
 
-    /** isToolboxVisibleFromState as set in [state] */
-    val isToolboxVisibleFromState: Boolean
-        get() = state[TOOLBOX_STATE_KEY] ?: false
+    /** isImmersiveModeFromState as set in [state] */
+    val isImmersiveModeDesired: Boolean
+        get() = state[IMMERSIVE_MODE_STATE_KEY] ?: false
+
+    /** Holds business logic for search feature. */
+    private lateinit var searchRepository: SearchRepository
 
     init {
         /**
@@ -101,6 +142,37 @@ internal class PdfDocumentViewModel(
          */
         state.get<Uri>(DOCUMENT_URI_KEY)?.let { uri ->
             documentLoadJob = viewModelScope.launch { openDocument(uri) }
+            /*
+            Trigger restoring search view once document is loaded.
+            This is required as [SearchRepository] depends on [PdfDocument] which is created in
+            [PdfFragmentUiState.DocumentLoaded] state.
+            */
+            documentLoadJob?.invokeOnCompletion { maybeRestoreSearchState() }
+            documentLoadJob?.invokeOnCompletion { maybeRestoreImmersiveModeState() }
+        }
+    }
+
+    private fun maybeRestoreImmersiveModeState() {
+        setImmersiveModeDesired(enterImmersive = isImmersiveModeDesired)
+    }
+
+    private fun maybeRestoreSearchState() {
+        // Return early if search is disabled, as there's no result to restore.
+        if (!isTextSearchActiveFromState) return
+
+        // Restore search session from last state saved
+        updateSearchState(isTextSearchActive = isTextSearchActiveFromState)
+        val query = state.get<String>(SEARCH_QUERY_KEY)
+        val pageNum = state.get<Int>(QUERY_RESULT_PAGE_NUM_KEY) ?: 0
+        val resultIndex = state.get<Int>(QUERY_RESULT_INDEX_KEY) ?: 0
+        query?.let {
+            viewModelScope.launch(searchJob) {
+                searchRepository.produceSearchResults(
+                    query = query,
+                    currentVisiblePage = pageNum,
+                    resultIndex = resultIndex
+                )
+            }
         }
     }
 
@@ -132,9 +204,13 @@ internal class PdfDocumentViewModel(
                     fragmentUiScreenState.value !is PdfFragmentUiState.DocumentLoaded)
             ) {
                 state[DOCUMENT_URI_KEY] = uri
-
                 // Ensure we don't schedule duplicate loading by canceling previous one.
                 if (documentLoadJob?.isActive == true) documentLoadJob?.cancel()
+
+                // Loading a new document should not persist a search session from previous
+                // document.
+                updateSearchState(isTextSearchActive = false)
+                setImmersiveModeDesired(enterImmersive = true)
 
                 documentLoadJob = viewModelScope.launch { openDocument(uri, password) }
             }
@@ -142,28 +218,130 @@ internal class PdfDocumentViewModel(
     }
 
     /**
-     * Handles user interaction related to enabling the search view.
+     * Called when the user toggles the search view's active state
+     * [PdfViewerFragment.isTextSearchActive].
      *
-     * This function ensures that the search view is properly displayed and ready for user input
-     * when triggered.
+     * This function updates the search state in the [SavedStateHandle] and performs actions related
+     * to enabling/disabling the search view.
      */
-    fun onSearchViewToggle(isTextSearchActive: Boolean) {
+    internal fun updateSearchState(isTextSearchActive: Boolean) {
+        /**
+         * [SearchRepository] is initialized only after a document is successfully loaded. If user
+         * triggers search before document is loaded, it will be a No-Op.
+         */
+        if (fragmentUiScreenState.value !is PdfFragmentUiState.DocumentLoaded) return
+
         state[TEXT_SEARCH_STATE_KEY] = isTextSearchActive
-        // TODO: add implementation after integrating PdfSearchView b/379054326
+
+        if (isTextSearchActive) {
+            _searchViewUiState.update { SearchViewUiState.Init }
+            collectSearchResults()
+        } else {
+            searchJob.children.forEach { it.cancel() }
+            searchCollector.children.forEach { it.cancel() }
+            searchRepository.clearSearchResults()
+
+            _searchViewUiState.update { SearchViewUiState.Closed }
+            _highlightsFlow.update { EMPTY_HIGHLIGHTS }
+            // Remove search params set in state on disabling search.
+            state.apply {
+                remove<String>(SEARCH_QUERY_KEY)
+                remove<Int>(QUERY_RESULT_PAGE_NUM_KEY)
+                remove<Int>(QUERY_RESULT_INDEX_KEY)
+            }
+        }
+    }
+
+    private fun collectSearchResults() {
+        viewModelScope.launch(searchCollector) {
+            searchRepository.queryResults.collect { queryResults ->
+                handleQueryResults(queryResults)
+            }
+        }
+    }
+
+    private fun handleQueryResults(queryResults: SearchResultState) {
+        when (queryResults) {
+            is NoQuery -> {
+                _searchViewUiState.update { SearchViewUiState.Init }
+                _highlightsFlow.update { EMPTY_HIGHLIGHTS }
+            }
+            is QueryResults.NoMatch -> {
+                state[SEARCH_QUERY_KEY] = queryResults.query
+
+                _searchViewUiState.update {
+                    SearchViewUiState.Active(
+                        query = queryResults.query,
+                        currentMatch = 0,
+                        totalMatches = 0
+                    )
+                }
+                _highlightsFlow.update { EMPTY_HIGHLIGHTS }
+            }
+            is QueryResults.Matched -> {
+                with(queryResults) {
+                    state[SEARCH_QUERY_KEY] = query
+                    state[QUERY_RESULT_PAGE_NUM_KEY] = queryResultsIndex.pageNum
+                    state[QUERY_RESULT_INDEX_KEY] = queryResultsIndex.resultBoundsIndex
+                }
+
+                val (currentIndex, totalMatches) = queryResults.fetchCounterData()
+                _searchViewUiState.update {
+                    SearchViewUiState.Active(
+                        query = queryResults.query,
+                        // The UI displays the search result counter starting from 1,
+                        // so we add 1 to the current index.
+                        currentMatch = if (totalMatches > 0) currentIndex + 1 else 0,
+                        totalMatches = totalMatches
+                    )
+                }
+                _highlightsFlow.update {
+                    HighlightData(
+                        currentIndex = currentIndex,
+                        highlightBounds = queryResults.toHighlightsData()
+                    )
+                }
+            }
+        }
     }
 
     /**
-     * Handles user interaction related to enabling the toolbox view.
+     * Handles user interaction related to enabling the immersive mode.
      *
-     * This function ensures that the toolbox view is properly displayed and ready for user input
+     * This function ensures that the immersive mode is properly applied and ready for user input
      * when triggered.
      */
-    fun onToolboxViewToggle(isToolboxActive: Boolean) {
-        state[TOOLBOX_STATE_KEY] = isToolboxActive
-        // TODO: add implementation after integrating Toolbox view b/379052981
+    fun setImmersiveModeDesired(enterImmersive: Boolean) {
+        /**
+         * Immersive mode state should be updated only after document is loaded. else it will be a
+         * No-Op.
+         */
+        if (fragmentUiScreenState.value !is PdfFragmentUiState.DocumentLoaded) return
+        state[IMMERSIVE_MODE_STATE_KEY] = enterImmersive
+    }
+
+    /**
+     * Toggles the immersive mode state.
+     *
+     * This function ensures that the immersive mode is properly applied and ready for user input
+     * when triggered.
+     */
+    fun toggleImmersiveModeState() {
+        /**
+         * Immersive mode state should be updated only after document is loaded. else it will be a
+         * No-Op.
+         */
+        if (fragmentUiScreenState.value !is PdfFragmentUiState.DocumentLoaded) return
+        state[IMMERSIVE_MODE_STATE_KEY] = !isImmersiveModeDesired
     }
 
     private suspend fun openDocument(uri: Uri, password: String? = null) {
+        /**
+         * PdfDocument, if ever created, will be stored in DocumentLoaded state. This state could be
+         * transitioned to other only if a new uri is submitted.
+         */
+        releaseDocument()
+
         /** Move to [PdfFragmentUiState.Loading] state before we begin load operation. */
         _fragmentUiScreenState.update { PdfFragmentUiState.Loading }
 
@@ -172,8 +350,11 @@ internal class PdfDocumentViewModel(
             // Try opening pdf with provided params
             val document = loader.openDocument(uri, password)
 
+            searchRepository = SearchRepository(document)
+
             /** Successful load, move to [PdfFragmentUiState.DocumentLoaded] state. */
             _fragmentUiScreenState.update { PdfFragmentUiState.DocumentLoaded(document) }
+            setImmersiveModeDesired(enterImmersive = false)
 
             /** Resets the [passwordFailed] state after a document is successfully loaded. */
             passwordFailed = false
@@ -182,7 +363,7 @@ internal class PdfDocumentViewModel(
             _fragmentUiScreenState.update { PdfFragmentUiState.PasswordRequested(passwordFailed) }
 
             /** Enable [passwordFailed] for subsequent password attempts. */
-            if (!passwordFailed) passwordFailed = true
+            passwordFailed = true
         } catch (exception: Exception) {
             /** Generic exception handling, move to [PdfFragmentUiState.DocumentError] state. */
             _fragmentUiScreenState.update { PdfFragmentUiState.DocumentError(exception) }
@@ -192,12 +373,78 @@ internal class PdfDocumentViewModel(
         }
     }
 
+    /** Intent triggered when user submits a search query. */
+    fun searchDocument(query: String, visiblePageRange: IntRange) {
+        /**
+         * Cannot start searching document before it's loaded, i.e. fragment is moved to
+         * [PdfFragmentUiState.DocumentLoaded] state.
+         */
+        if (fragmentUiScreenState.value !is PdfFragmentUiState.DocumentLoaded) return
+
+        val queryResults = searchRepository.queryResults.value
+        // Return early if the query is unchanged from the previous search to avoid redundant
+        // operations.
+        if (queryResults is QueryResults && queryResults.query == query) return
+
+        // Cancel any on-going search operation(s) as the results will not be valid anymore.
+        searchJob.children.forEach { it.cancel() }
+
+        viewModelScope.launch(searchJob) {
+            searchRepository.produceSearchResults(
+                query = query,
+                currentVisiblePage = visiblePageRange.getCenter()
+            )
+        }
+    }
+
+    /** Intent triggered when user clicks prev button. */
+    fun findPreviousMatch() {
+        viewModelScope.launch(searchJob) { searchRepository.producePreviousResult() }
+    }
+
+    /** Intent triggered when user clicks next button. */
+    fun findNextMatch() {
+        viewModelScope.launch(searchJob) { searchRepository.produceNextResult() }
+    }
+
+    private fun IntRange.getCenterPage(): Int {
+        val size = endInclusive - first + 1
+        return first + size / 2
+    }
+
+    fun passwordDialogCancelled() {
+        /** Resets the [passwordFailed] state after a password dialog is cancelled. */
+        passwordFailed = false
+        _fragmentUiScreenState.update {
+            PdfFragmentUiState.DocumentError(
+                OperationCanceledException("Password cancelled. Cannot open PDF.")
+            )
+        }
+    }
+
+    /**
+     * Closes the currently loaded PDF document, if one exists. This is important to release
+     * resources and prevent leaks.
+     */
+    private fun releaseDocument() {
+        (_fragmentUiScreenState.value as? PdfFragmentUiState.DocumentLoaded)?.pdfDocument?.close()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        releaseDocument()
+    }
+
     @Suppress("UNCHECKED_CAST")
     companion object {
 
         private const val DOCUMENT_URI_KEY = "documentUri"
         private const val TEXT_SEARCH_STATE_KEY = "textSearchState"
-        private const val TOOLBOX_STATE_KEY = "toolboxState"
+        private const val IMMERSIVE_MODE_STATE_KEY = "immersiveModeState"
+        private const val SEARCH_QUERY_KEY = "searchQuery"
+        private const val QUERY_RESULT_INDEX_KEY = "queryResultIndex"
+        private const val QUERY_RESULT_PAGE_NUM_KEY = "queryResultPageNum"
+        private val EMPTY_HIGHLIGHTS = HighlightData(currentIndex = -1, highlightBounds = listOf())
 
         val Factory: ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {

@@ -349,23 +349,32 @@ class WorkerWrapper internal constructor(builder: Builder) {
     }
 
     private fun resetWorkerStatus(stopReason: Int): Boolean {
-        val state = workSpecDao.getState(workSpecId)
-        return if (state != null && !state.isFinished) {
-            logd(TAG) {
-                "Status for $workSpecId is $state; not doing any work and " +
-                    "rescheduling for later execution"
-            }
-            // Set state to ENQUEUED again.
-            // Reset scheduled state so it's picked up by background schedulers again.
-            // We want to preserve time when work was enqueued so just explicitly set enqueued
-            // instead using markEnqueuedState. Similarly, don't change any override time.
-            workSpecDao.setState(WorkInfo.State.ENQUEUED, workSpecId)
-            workSpecDao.setStopReason(workSpecId, stopReason)
-            workSpecDao.markWorkSpecScheduled(workSpecId, WorkSpec.SCHEDULE_NOT_REQUESTED_YET)
+        return if (workSpec.backOffOnSystemInterruptions == true) {
+            logd(TAG) { "Worker ${workSpec.workerClassName} was interrupted. Backing off." }
+            // Treat it as a reschedule. This ensures that we update the last enqueued time
+            // which in turn ensures that we correctly calculate the next runtime for the
+            // given Worker.
+            reschedule(stopReason)
             true
         } else {
-            logd(TAG) { "Status for $workSpecId is $state ; not doing any work" }
-            false
+            val state = workSpecDao.getState(workSpecId)
+            return if (state != null && !state.isFinished) {
+                logd(TAG) {
+                    "Status for $workSpecId is $state; not doing any work and " +
+                        "rescheduling for later execution"
+                }
+                // Set state to ENQUEUED again.
+                // Reset scheduled state so it's picked up by background schedulers again.
+                // We want to preserve time when work was enqueued so just explicitly set enqueued
+                // instead using markEnqueuedState. Similarly, don't change any override time.
+                workSpecDao.setState(WorkInfo.State.ENQUEUED, workSpecId)
+                workSpecDao.setStopReason(workSpecId, stopReason)
+                workSpecDao.markWorkSpecScheduled(workSpecId, WorkSpec.SCHEDULE_NOT_REQUESTED_YET)
+                true
+            } else {
+                logd(TAG) { "Status for $workSpecId is $state ; not doing any work" }
+                false
+            }
         }
     }
 

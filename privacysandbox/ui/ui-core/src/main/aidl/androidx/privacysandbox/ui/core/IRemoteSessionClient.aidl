@@ -23,7 +23,7 @@ import android.view.SurfaceControlViewHost.SurfacePackage;
 oneway interface IRemoteSessionClient {
     void onRemoteSessionOpened(in SurfacePackage surfacePackage,
         IRemoteSessionController remoteSessionController,
-        boolean isZOrderOnTop, boolean hasObservers);
+        boolean isZOrderOnTop, in List<String> signalOptions);
     void onRemoteSessionError(String exception);
     void onResizeRequested(int width, int height);
     void onSessionUiFetched(in SurfacePackage surfacePackage);

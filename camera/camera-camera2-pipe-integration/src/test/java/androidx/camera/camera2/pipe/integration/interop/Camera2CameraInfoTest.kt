@@ -191,6 +191,30 @@ class Camera2CameraInfoTest {
                     throw NotImplementedError("Not used in testing")
                 }
 
+                override fun isHighSpeedSupported(): Boolean {
+                    throw NotImplementedError("Not used in testing")
+                }
+
+                override fun getSupportedHighSpeedFrameRateRanges(): MutableSet<Range<Int>> {
+                    throw NotImplementedError("Not used in testing")
+                }
+
+                override fun getSupportedHighSpeedFrameRateRangesFor(
+                    size: Size
+                ): MutableSet<Range<Int>> {
+                    throw NotImplementedError("Not used in testing")
+                }
+
+                override fun getSupportedHighSpeedResolutions(): MutableList<Size> {
+                    throw NotImplementedError("Not used in testing")
+                }
+
+                override fun getSupportedHighSpeedResolutionsFor(
+                    fpsRange: Range<Int>
+                ): MutableList<Size> {
+                    throw NotImplementedError("Not used in testing")
+                }
+
                 override fun getSupportedOutputFormats(): MutableSet<Int> {
                     throw NotImplementedError("Not used in testing")
                 }

@@ -35,8 +35,6 @@ import android.content.Context;
 import android.os.Build;
 import android.os.PersistableBundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
@@ -51,6 +49,9 @@ import androidx.work.impl.model.WorkGenerationalId;
 import androidx.work.impl.model.WorkSpec;
 import androidx.work.impl.model.WorkSpecDao;
 import androidx.work.impl.utils.IdGenerator;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -100,7 +101,7 @@ public class SystemJobScheduler implements Scheduler {
     }
 
     @Override
-    public void schedule(@NonNull WorkSpec... workSpecs) {
+    public void schedule(WorkSpec @NonNull ... workSpecs) {
         IdGenerator idGenerator = new IdGenerator(mWorkDatabase);
 
         for (WorkSpec workSpec : workSpecs) {
@@ -357,8 +358,7 @@ public class SystemJobScheduler implements Scheduler {
         return needsReconciling;
     }
 
-    @Nullable
-    static List<JobInfo> getPendingJobs(
+    static @Nullable List<JobInfo> getPendingJobs(
             @NonNull Context context,
             @NonNull JobScheduler jobScheduler) {
         List<JobInfo> pendingJobs = getSafePendingJobs(jobScheduler);
@@ -383,8 +383,7 @@ public class SystemJobScheduler implements Scheduler {
      *
      * For reference: b/133556574, b/133556809, b/133556535
      */
-    @Nullable
-    private static List<Integer> getPendingJobIds(
+    private static @Nullable List<Integer> getPendingJobIds(
             @NonNull Context context,
             @NonNull JobScheduler jobScheduler,
             @NonNull String workSpecId) {
@@ -407,8 +406,8 @@ public class SystemJobScheduler implements Scheduler {
         return jobIds;
     }
 
-    @Nullable
-    private static WorkGenerationalId getWorkGenerationalIdFromJobInfo(@NonNull JobInfo jobInfo) {
+    private static @Nullable WorkGenerationalId getWorkGenerationalIdFromJobInfo(
+            @NonNull JobInfo jobInfo) {
         PersistableBundle extras = jobInfo.getExtras();
         try {
             if (extras != null && extras.containsKey(EXTRA_WORK_SPEC_ID)) {

@@ -35,7 +35,7 @@ class TypeConverterStoreImpl(
     override fun findConverterIntoStatement(input: XType, columnTypes: List<XType>?) =
         findTypeConverter(inputs = listOf(input), outputs = columnTypes ?: knownColumnTypes)
 
-    override fun findConverterFromCursor(columnTypes: List<XType>?, output: XType) =
+    override fun findConverterFromStatement(columnTypes: List<XType>?, output: XType) =
         findTypeConverter(inputs = columnTypes ?: knownColumnTypes, outputs = listOf(output))
 
     override fun findTypeConverter(input: XType, output: XType) =
@@ -112,7 +112,7 @@ class TypeConverterStoreImpl(
      * returned list is ordered by priority such that if we have an exact match, it is prioritized.
      */
     private fun getAllTypeConverters(input: XType, excludes: List<XType>): List<TypeConverter> {
-        // for input, check assignability because it defines whether we can use the method or not.
+        // for input, check assignability because it defines whether we can use the function or not.
         // for excludes, use exact match
         return typeConverters
             .filter { converter ->

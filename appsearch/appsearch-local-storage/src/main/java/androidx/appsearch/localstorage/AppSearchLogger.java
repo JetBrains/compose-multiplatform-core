@@ -16,7 +16,6 @@
 
 package androidx.appsearch.localstorage;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.localstorage.stats.CallStats;
 import androidx.appsearch.localstorage.stats.InitializeStats;
@@ -27,6 +26,8 @@ import androidx.appsearch.localstorage.stats.SearchSessionStats;
 import androidx.appsearch.localstorage.stats.SearchStats;
 import androidx.appsearch.localstorage.stats.SetSchemaStats;
 import androidx.appsearch.stats.SchemaMigrationStats;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 

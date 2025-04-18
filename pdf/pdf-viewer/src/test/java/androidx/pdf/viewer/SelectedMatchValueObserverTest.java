@@ -28,7 +28,6 @@ import androidx.pdf.models.Dimensions;
 import androidx.pdf.models.MatchRects;
 import androidx.pdf.widget.ZoomView;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.filters.SmallTest;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -37,7 +36,6 @@ import org.robolectric.RobolectricTestRunner;
 
 import java.util.ArrayList;
 
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
 public class SelectedMatchValueObserverTest {
     private final PaginatedView mMockPaginatedView = mock(PaginatedView.class);

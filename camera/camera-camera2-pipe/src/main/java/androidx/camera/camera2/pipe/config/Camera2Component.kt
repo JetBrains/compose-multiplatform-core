@@ -21,6 +21,7 @@ import androidx.camera.camera2.pipe.CameraBackend
 import androidx.camera.camera2.pipe.CameraController
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraphId
+import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.SurfaceTracker
 import androidx.camera.camera2.pipe.compat.AudioRestrictionController
@@ -41,6 +42,9 @@ import androidx.camera.camera2.pipe.compat.Camera2MetadataCache
 import androidx.camera.camera2.pipe.compat.Camera2MetadataProvider
 import androidx.camera.camera2.pipe.compat.CameraAvailabilityMonitor
 import androidx.camera.camera2.pipe.compat.CameraOpener
+import androidx.camera.camera2.pipe.compat.PruningCamera2DeviceManager
+import androidx.camera.camera2.pipe.compat.RetryingCameraStateOpener
+import androidx.camera.camera2.pipe.compat.RetryingCameraStateOpenerImpl
 import androidx.camera.camera2.pipe.compat.StandardCamera2CaptureSequenceProcessorFactory
 import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.graph.GraphListener
@@ -62,12 +66,12 @@ internal abstract class Camera2Module {
     @DefaultCameraBackend
     abstract fun bindCameraPipeCameraBackend(camera2Backend: Camera2Backend): CameraBackend
 
-    @Binds
-    abstract fun bindCamera2DeviceManager(
-        camera2DeviceManager: Camera2DeviceManagerImpl
-    ): Camera2DeviceManager
-
     @Binds abstract fun bindCameraOpener(camera2CameraOpener: Camera2CameraOpener): CameraOpener
+
+    @Binds
+    abstract fun bindRetryingCameraStateOpener(
+        retryingCameraStateOpenerImpl: RetryingCameraStateOpenerImpl
+    ): RetryingCameraStateOpener
 
     @Binds
     abstract fun bindCameraMetadataProvider(
@@ -93,6 +97,23 @@ internal abstract class Camera2Module {
     abstract fun bindAudioRestrictionController(
         audioRestrictionController: AudioRestrictionControllerImpl
     ): AudioRestrictionController
+
+    companion object {
+
+        @Provides
+        fun provideCamera2DeviceManager(
+            camera2DeviceManager: Provider<Camera2DeviceManagerImpl>,
+            pruningCamera2DeviceManager: Provider<PruningCamera2DeviceManager>,
+            cameraPipeConfig: CameraPipe.Config,
+        ): Camera2DeviceManager {
+            // TODO: b/369684573 - Enable PruningCamera2DeviceManager for all users.
+            return if (cameraPipeConfig.usePruningDeviceManager) {
+                pruningCamera2DeviceManager.get()
+            } else {
+                camera2DeviceManager.get()
+            }
+        }
+    }
 }
 
 @Scope internal annotation class Camera2ControllerScope

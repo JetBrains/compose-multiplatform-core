@@ -18,8 +18,9 @@ package androidx.camera.core;
 
 import android.content.pm.PackageManager;
 
-import androidx.annotation.NonNull;
 import androidx.lifecycle.LifecycleOwner;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -42,8 +43,7 @@ import java.util.List;
  */
 public class ConcurrentCamera {
 
-    @NonNull
-    private List<Camera> mCameras;
+    private @NonNull List<Camera> mCameras;
 
     /**
      * Constructor of concurrent cameras.
@@ -56,8 +56,7 @@ public class ConcurrentCamera {
     /**
      * Gets the list of cameras.
      */
-    @NonNull
-    public List<Camera> getCameras() {
+    public @NonNull List<Camera> getCameras() {
         return mCameras;
     }
 
@@ -71,14 +70,10 @@ public class ConcurrentCamera {
      */
     public static final class SingleCameraConfig {
 
-        @NonNull
-        private CameraSelector mCameraSelector;
-        @NonNull
-        private LifecycleOwner mLifecycleOwner;
-        @NonNull
-        private UseCaseGroup mUseCaseGroup;
-        @NonNull
-        private CompositionSettings mCompositionSettings;
+        private @NonNull CameraSelector mCameraSelector;
+        private @NonNull LifecycleOwner mLifecycleOwner;
+        private @NonNull UseCaseGroup mUseCaseGroup;
+        private @NonNull CompositionSettings mCompositionSettings;
 
         /**
          * Constructor of a {@link SingleCameraConfig} for concurrent cameras.
@@ -117,8 +112,7 @@ public class ConcurrentCamera {
          * Returns {@link CameraSelector}.
          * @return {@link CameraSelector} instance.
          */
-        @NonNull
-        public CameraSelector getCameraSelector() {
+        public @NonNull CameraSelector getCameraSelector() {
             return mCameraSelector;
         }
 
@@ -126,8 +120,7 @@ public class ConcurrentCamera {
          * Returns {@link LifecycleOwner}.
          * @return {@link LifecycleOwner} instance.
          */
-        @NonNull
-        public LifecycleOwner getLifecycleOwner() {
+        public @NonNull LifecycleOwner getLifecycleOwner() {
             return mLifecycleOwner;
         }
 
@@ -135,8 +128,7 @@ public class ConcurrentCamera {
          * Returns {@link UseCaseGroup}.
          * @return {@link UseCaseGroup} instance.
          */
-        @NonNull
-        public UseCaseGroup getUseCaseGroup() {
+        public @NonNull UseCaseGroup getUseCaseGroup() {
             return mUseCaseGroup;
         }
 
@@ -144,8 +136,7 @@ public class ConcurrentCamera {
          * Returns {@link CompositionSettings}.
          * @return {@link CompositionSettings} instance.
          */
-        @NonNull
-        public CompositionSettings getCompositionSettings() {
+        public @NonNull CompositionSettings getCompositionSettings() {
             return mCompositionSettings;
         }
     }

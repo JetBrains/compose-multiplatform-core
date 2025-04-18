@@ -19,8 +19,9 @@ package androidx.camera.core;
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.core.util.Consumer;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface to implement a GPU-based post-processing effect.

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
-    id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
     id("AndroidXComposePlugin")
     id("AndroidXPlugin")
 }
@@ -51,18 +51,18 @@ dependencies {
     implementation(project(":wear:protolayout:protolayout-expression"))
     implementation(project(":wear:tiles:tiles"))
     implementation(libs.kotlinStdlib)
-    implementation('androidx.compose.ui:ui')
-    implementation('androidx.compose.ui:ui-graphics')
-    implementation('androidx.wear.compose:compose-material:1.2.1')
-    implementation('androidx.wear.compose:compose-foundation:1.2.1')
-    implementation('androidx.activity:activity-compose:1.9.3')
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-graphics")
+    implementation("androidx.wear.compose:compose-material:1.2.1")
+    implementation("androidx.wear.compose:compose-foundation:1.2.1")
+    implementation("androidx.activity:activity-compose:1.9.3")
     implementation(libs.guavaListenableFuture)
     implementation(libs.guava)
 }
 
 androidx {
     name = "androidx.wear.tiles:tiles-samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2024"
     description = "Contains the sample code and demo for Tiles using ProtoLayout."
 }

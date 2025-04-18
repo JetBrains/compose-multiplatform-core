@@ -17,11 +17,10 @@
 package androidx.pdf.viewer.fragment.insets
 
 import android.view.View
-import android.view.ViewGroup
 import android.view.WindowManager
+import androidx.core.graphics.Insets
 import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updateLayoutParams
 
 /**
  * A callback that will update bottom margin for provided view as per keyboard visibility.
@@ -40,11 +39,32 @@ internal class TranslateInsetsAnimationCallback(
     dispatchMode: Int = DISPATCH_MODE_CONTINUE_ON_SUBTREE
 ) : WindowInsetsAnimationCompat.Callback(dispatchMode) {
 
+    init {
+        view.setOnApplyWindowInsetsListener { _, insets ->
+            val keyboardInsets =
+                insets.getInsets(WindowInsetsCompat.Type.ime()).run {
+                    Insets.of(left, top, right, bottom)
+                }
+            // Avoid consuming null ime events which are set as zero on configuration changes.
+            if (keyboardInsets.bottom > 0) {
+                translateViewWithKeyboard(keyboardInsets)
+            }
+
+            insets
+        }
+    }
+
     override fun onProgress(
         insets: WindowInsetsCompat,
         runningAnimations: List<WindowInsetsAnimationCompat>
     ): WindowInsetsCompat {
         // onProgress() is called when any of the running animations progress...
+
+        translateViewWithKeyboard(insets.getInsets(WindowInsetsCompat.Type.ime()))
+        return insets
+    }
+
+    private fun translateViewWithKeyboard(keyboardInsets: Insets) {
 
         var absoluteContainerBottom = 0
         /*
@@ -58,7 +78,6 @@ internal class TranslateInsetsAnimationCallback(
         }
 
         // Extract keyboard insets
-        val keyboardInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
 
         /*
         By default the keyboard top should be aligned with container bottom;
@@ -72,13 +91,13 @@ internal class TranslateInsetsAnimationCallback(
             keyboardTop = screenHeight - keyboardInsets.bottom
         }
 
-        // Net margin wrt pdf container bottom
-        val margin =
-            if (absoluteContainerBottom >= keyboardTop) absoluteContainerBottom - keyboardTop else 0
+        // Calculate the required translationY value for the view
+        val translationY =
+            if (absoluteContainerBottom >= keyboardTop)
+                (keyboardTop - absoluteContainerBottom).toFloat()
+            else 0f
 
-        // Update bottom margin for view
-        view.updateLayoutParams<ViewGroup.MarginLayoutParams> { bottomMargin = margin }
-
-        return insets
+        // Apply the translationY to the view
+        view.translationY = translationY
     }
 }

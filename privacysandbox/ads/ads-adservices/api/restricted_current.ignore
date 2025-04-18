@@ -1,3 +1,9 @@
 // Baseline format: 1.0
-AddedMethod: androidx.privacysandbox.ads.adservices.topics.GetTopicsRequest#GetTopicsRequest():
-    Added constructor androidx.privacysandbox.ads.adservices.topics.GetTopicsRequest()
+AddedField: androidx.privacysandbox.ads.adservices.customaudience.CustomAudience#Companion:
+    Added field androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.Companion
+
+
+AddedMethod: androidx.privacysandbox.ads.adservices.customaudience.CustomAudience#getAuctionServerRequestFlags():
+    Added method androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.getAuctionServerRequestFlags()
+AddedMethod: androidx.privacysandbox.ads.adservices.customaudience.CustomAudience#getPriority():
+    Added method androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.getPriority()

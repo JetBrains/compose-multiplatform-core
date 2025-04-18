@@ -28,8 +28,6 @@ import android.view.View.OnLayoutChangeListener;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.R;
 import androidx.leanback.widget.ClassPresenterSelector;
 import androidx.leanback.widget.DividerPresenter;
@@ -43,6 +41,9 @@ import androidx.leanback.widget.RowHeaderPresenter;
 import androidx.leanback.widget.SectionRow;
 import androidx.leanback.widget.VerticalGridView;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An fragment containing a list of row headers. Implementation must support three types of rows:

@@ -40,11 +40,9 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.filters.MediumTest
-import androidx.test.filters.RequiresDevice
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.sign
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -95,8 +93,6 @@ internal class TextFieldVisualTransformationMagnifierTest(
         assertMagnifierExists(rule)
     }
 
-    @Ignore("b/266233836")
-    @RequiresDevice // b/264701475
     @Test
     fun checkMagnifierFollowsHandleHorizontally() {
         val handle = config.handle
@@ -120,11 +116,20 @@ internal class TextFieldVisualTransformationMagnifierTest(
         showHandle(handle)
 
         // Touch the handle to show the magnifier.
-        rule.onNode(isSelectionHandle(handle)).performTouchInput { down(center) }
+        rule.onNode(isSelectionHandle(handle)).performTouchInput {
+            down(center)
+            // When the handle is a cursor, the magnifier won't appear until we have dragged past
+            // touch slop
+            if (handle == Handle.Cursor) movePastSlopBy(dragDistance)
+        }
         val magnifierInitialPosition = getMagnifierCenterOffset(rule, requireSpecified = true)
 
         // Drag the handle horizontally - the magnifier should follow.
-        rule.onNode(isSelectionHandle(handle)).performTouchInput { movePastSlopBy(dragDistance) }
+        rule.onNode(isSelectionHandle(handle)).performTouchInput {
+            // For the cursor, we have already crossed touch slop, so we can just drag by the
+            // distance
+            if (handle == Handle.Cursor) moveBy(dragDistance) else movePastSlopBy(dragDistance)
+        }
 
         assertThat(getMagnifierCenterOffset(rule))
             .isEqualTo(magnifierInitialPosition + dragDistance)

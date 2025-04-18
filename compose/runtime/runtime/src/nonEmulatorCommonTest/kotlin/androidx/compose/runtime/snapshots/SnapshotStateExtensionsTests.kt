@@ -26,12 +26,12 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
@@ -39,7 +39,6 @@ import kotlinx.coroutines.flow.runningFold
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
-import org.junit.Test
 
 class SnapshotStateExtensionsTests {
 
@@ -226,8 +225,8 @@ class SnapshotStateExtensionsTests {
                 val readSet = mutableSetOf<Any>()
                 val readObserver: (Any) -> Unit = { readSet.add(it) }
 
-                fun emitLatestValue() =
-                    channel.trySendBlocking(
+                fun emitLatestValue() {
+                    val value =
                         with(Snapshot.takeSnapshot(readObserver)) {
                             try {
                                 enter { block() }
@@ -235,15 +234,14 @@ class SnapshotStateExtensionsTests {
                                 dispose()
                             }
                         }
-                    )
+                    trySend(value)
+                }
 
                 emitLatestValue()
                 val handle =
                     Snapshot.registerApplyObserver { changed, _ ->
-                        for (changedObjects in changed) {
-                            if (readSet.any { it in changed }) {
-                                emitLatestValue()
-                            }
+                        if (changed.any { it in readSet }) {
+                            emitLatestValue()
                         }
                     }
 

@@ -40,8 +40,8 @@ import androidx.room.vo.ColumnIndexVar
  * of nested maps. Each level of nesting of a map is represented by a [NestedMapValueResultAdapter],
  * except the innermost level which is represented by an [EndMapValueResultAdapter].
  *
- * For example, if a DAO method returns a `Map<A, Map<B, Map<C, D>>>`, `Map<C, D>` is represented by
- * an [EndMapValueResultAdapter], and the outer 2 levels are represented by a
+ * For example, if a DAO function returns a `Map<A, Map<B, Map<C, D>>>`, `Map<C, D>` is represented
+ * by an [EndMapValueResultAdapter], and the outer 2 levels are represented by a
  * [NestedMapValueResultAdapter] each.
  *
  * A [NestedMapValueResultAdapter] can wrap either another [NestedMapValueResultAdapter] or an
@@ -59,19 +59,17 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
     /** Right-Hand-Side of a Map value type arg initialization. */
     abstract fun getInstantiationCodeBlock(): XCodeBlock
 
-    abstract fun isMigratedToDriver(): Boolean
-
     abstract fun convert(
         scope: CodeGenScope,
         valuesVarName: String,
-        cursorVarName: String,
+        stmtVarName: String,
         dupeColumnsIndexAdapter: AmbiguousColumnIndexAdapter?,
         addPutValueCode: XCodeBlock.Builder.(String, Boolean) -> Unit = { _, _ -> }
     )
 
     abstract fun generateContinueColumnCheck(
         scope: CodeGenScope,
-        cursorVarName: String,
+        stmtVarName: String,
         dupeColumnsIndexAdapter: AmbiguousColumnIndexAdapter?
     )
 
@@ -147,12 +145,10 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                     )
             }
 
-        override fun isMigratedToDriver(): Boolean = mapValueResultAdapter.isMigratedToDriver()
-
         override fun convert(
             scope: CodeGenScope,
             valuesVarName: String,
-            cursorVarName: String,
+            stmtVarName: String,
             dupeColumnsIndexAdapter: AmbiguousColumnIndexAdapter?,
             addPutValueCode: XCodeBlock.Builder.(String, Boolean) -> Unit
         ) {
@@ -160,7 +156,7 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                 // Read map key
                 val tmpKeyVarName = scope.getTmpVar("_key")
                 addLocalVariable(tmpKeyVarName, keyTypeArg.asTypeName())
-                keyRowAdapter.convert(tmpKeyVarName, cursorVarName, scope)
+                keyRowAdapter.convert(tmpKeyVarName, stmtVarName, scope)
 
                 // Generate map key check if the next value adapter is by reference
                 // (nested map case or collection end value)
@@ -220,7 +216,7 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                             // the key with an empty map as the value entry.
                             mapValueResultAdapter.generateContinueColumnCheck(
                                 scope,
-                                cursorVarName,
+                                stmtVarName,
                                 dupeColumnsIndexAdapter
                             )
                         }
@@ -268,7 +264,7 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                 mapValueResultAdapter.convert(
                     scope = scope,
                     valuesVarName = valuesVarName,
-                    cursorVarName = cursorVarName,
+                    stmtVarName = stmtVarName,
                     dupeColumnsIndexAdapter = dupeColumnsIndexAdapter,
                     addPutValueCode = addPutValueCode
                 )
@@ -277,12 +273,12 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
 
         override fun generateContinueColumnCheck(
             scope: CodeGenScope,
-            cursorVarName: String,
+            stmtVarName: String,
             dupeColumnsIndexAdapter: AmbiguousColumnIndexAdapter?
         ) {
             scope.builder.add(
                 getContinueColumnNullCheck(
-                    cursorVarName = cursorVarName,
+                    stmtVarName = stmtVarName,
                     rowAdapter = keyRowAdapter,
                     dupeColumnsIndexAdapter = dupeColumnsIndexAdapter
                 )
@@ -342,12 +338,10 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
             }
         }
 
-        override fun isMigratedToDriver(): Boolean = valueRowAdapter.isMigratedToDriver()
-
         override fun convert(
             scope: CodeGenScope,
             valuesVarName: String,
-            cursorVarName: String,
+            stmtVarName: String,
             dupeColumnsIndexAdapter: AmbiguousColumnIndexAdapter?,
             addPutValueCode: XCodeBlock.Builder.(String, Boolean) -> Unit
         ) {
@@ -358,7 +352,7 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                 // as opposed to a 1-to-many mapping.
                 if (valueCollectionType != null) {
                     addLocalVariable(tmpValueVarName, valueTypeArg.asTypeName())
-                    valueRowAdapter.convert(tmpValueVarName, cursorVarName, scope)
+                    valueRowAdapter.convert(tmpValueVarName, stmtVarName, scope)
                     addStatement("%L.add(%L)", valuesVarName, tmpValueVarName)
                 } else {
                     check(valueRowAdapter is QueryMappedRowAdapter)
@@ -367,7 +361,7 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                             ?: valueRowAdapter.getDefaultIndexAdapter().getIndexVars()
                     val columnNullCheckCodeBlock =
                         getColumnNullCheckCode(
-                            cursorVarName = cursorVarName,
+                            stmtVarName = stmtVarName,
                             indexVars = valueIndexVars
                         )
 
@@ -393,7 +387,7 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                         .endControlFlow()
 
                     addLocalVariable(tmpValueVarName, valueTypeArg.asTypeName())
-                    valueRowAdapter.convert(tmpValueVarName, cursorVarName, scope)
+                    valueRowAdapter.convert(tmpValueVarName, stmtVarName, scope)
                     addPutValueCode(tmpValueVarName, true)
                 }
             }
@@ -401,12 +395,12 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
 
         override fun generateContinueColumnCheck(
             scope: CodeGenScope,
-            cursorVarName: String,
+            stmtVarName: String,
             dupeColumnsIndexAdapter: AmbiguousColumnIndexAdapter?
         ) {
             scope.builder.add(
                 getContinueColumnNullCheck(
-                    cursorVarName = cursorVarName,
+                    stmtVarName = stmtVarName,
                     rowAdapter = valueRowAdapter,
                     dupeColumnsIndexAdapter = dupeColumnsIndexAdapter
                 )
@@ -415,12 +409,12 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
     }
 
     /**
-     * Utility method that returns a code block containing the code expression that verifies if all
-     * matched fields are null.
+     * Utility function that returns a code block containing the code expression that verifies if
+     * all matched properties are null.
      */
     protected fun getContinueColumnNullCheck(
         rowAdapter: RowAdapter,
-        cursorVarName: String,
+        stmtVarName: String,
         dupeColumnsIndexAdapter: AmbiguousColumnIndexAdapter?
     ) =
         XCodeBlock.builder()
@@ -430,18 +424,15 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                     dupeColumnsIndexAdapter?.getIndexVarsForMapping(rowAdapter.mapping)
                         ?: rowAdapter.getDefaultIndexAdapter().getIndexVars()
                 val columnNullCheckCodeBlock =
-                    getColumnNullCheckCode(
-                        cursorVarName = cursorVarName,
-                        indexVars = valueIndexVars
-                    )
+                    getColumnNullCheckCode(stmtVarName = stmtVarName, indexVars = valueIndexVars)
                 beginControlFlow("if (%L)", columnNullCheckCodeBlock)
                     .apply { addStatement("continue") }
                     .endControlFlow()
             }
             .build()
 
-    /** Generates a code expression that verifies if all matched fields are null. */
-    protected fun getColumnNullCheckCode(cursorVarName: String, indexVars: List<ColumnIndexVar>) =
+    /** Generates a code expression that verifies if all matched properties are null. */
+    protected fun getColumnNullCheckCode(stmtVarName: String, indexVars: List<ColumnIndexVar>) =
         buildCodeBlock { language ->
             val space =
                 when (language) {
@@ -449,7 +440,7 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                     CodeLanguage.KOTLIN -> " "
                 }
             val conditions =
-                indexVars.map { XCodeBlock.of("%L.isNull(%L)", cursorVarName, it.indexVar) }
+                indexVars.map { XCodeBlock.of("%L.isNull(%L)", stmtVarName, it.indexVar) }
             val placeholders = conditions.joinToString(separator = "$space&&$space") { "%L" }
             add(placeholders, *conditions.toTypedArray())
         }

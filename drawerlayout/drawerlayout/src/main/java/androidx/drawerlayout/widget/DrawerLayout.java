@@ -48,8 +48,6 @@ import android.window.OnBackInvokedDispatcher;
 import androidx.annotation.ColorInt;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
@@ -67,6 +65,9 @@ import androidx.customview.view.AbsSavedState;
 import androidx.customview.widget.Openable;
 import androidx.customview.widget.ViewDragHelper;
 import androidx.drawerlayout.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -769,8 +770,7 @@ public class DrawerLayout extends ViewGroup implements Openable {
      * @return The title of the drawer, or null if none set.
      * @see #setDrawerTitle(int, CharSequence)
      */
-    @Nullable
-    public CharSequence getDrawerTitle(@EdgeGravity int edgeGravity) {
+    public @Nullable CharSequence getDrawerTitle(@EdgeGravity int edgeGravity) {
         final int absGravity = GravityCompat.getAbsoluteGravity(
                 edgeGravity, getLayoutDirection());
         if (absGravity == Gravity.LEFT) {
@@ -1395,8 +1395,7 @@ public class DrawerLayout extends ViewGroup implements Openable {
      *
      * @return The status bar background drawable, or null if none set
      */
-    @Nullable
-    public Drawable getStatusBarBackgroundDrawable() {
+    public @Nullable Drawable getStatusBarBackgroundDrawable() {
         return mStatusBarBackground;
     }
 
@@ -2127,9 +2126,8 @@ public class DrawerLayout extends ViewGroup implements Openable {
         }
     }
 
-    @NonNull
     @Override
-    protected Parcelable onSaveInstanceState() {
+    protected @NonNull Parcelable onSaveInstanceState() {
         final Parcelable superState = super.onSaveInstanceState();
         final SavedState ss = new SavedState(superState);
 
@@ -2434,11 +2432,11 @@ public class DrawerLayout extends ViewGroup implements Openable {
             this.gravity = source.gravity;
         }
 
-        public LayoutParams(@NonNull ViewGroup.LayoutParams source) {
+        public LayoutParams(ViewGroup.@NonNull LayoutParams source) {
             super(source);
         }
 
-        public LayoutParams(@NonNull ViewGroup.MarginLayoutParams source) {
+        public LayoutParams(ViewGroup.@NonNull MarginLayoutParams source) {
             super(source);
         }
     }
@@ -2562,13 +2560,12 @@ public class DrawerLayout extends ViewGroup implements Openable {
             dispatcher.unregisterOnBackInvokedCallback((OnBackInvokedCallback) callbackObj);
         }
 
-        @Nullable
-        static OnBackInvokedDispatcher findOnBackInvokedDispatcher(@NonNull DrawerLayout view) {
+        static @Nullable OnBackInvokedDispatcher findOnBackInvokedDispatcher(
+                @NonNull DrawerLayout view) {
             return view.findOnBackInvokedDispatcher();
         }
 
-        @NonNull
-        static OnBackInvokedCallback newOnBackInvokedCallback(@NonNull Runnable action) {
+        static @NonNull OnBackInvokedCallback newOnBackInvokedCallback(@NonNull Runnable action) {
             return action::run;
         }
     }

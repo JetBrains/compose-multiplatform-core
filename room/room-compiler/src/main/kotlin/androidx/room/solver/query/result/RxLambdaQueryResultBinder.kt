@@ -17,21 +17,13 @@
 package androidx.room.solver.query.result
 
 import androidx.room.compiler.codegen.CodeLanguage
-import androidx.room.compiler.codegen.VisibilityModifier
 import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
-import androidx.room.compiler.codegen.XFunSpec
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
-import androidx.room.compiler.codegen.XTypeSpec
-import androidx.room.compiler.codegen.XTypeSpec.Builder.Companion.applyTo
-import androidx.room.compiler.processing.XNullability
 import androidx.room.compiler.processing.XType
-import androidx.room.ext.AndroidTypeNames.CURSOR
-import androidx.room.ext.CallableTypeSpecBuilder
 import androidx.room.ext.InvokeWithLambdaParameter
 import androidx.room.ext.LambdaSpec
-import androidx.room.ext.RoomMemberNames.DB_UTIL_QUERY
 import androidx.room.ext.SQLiteDriverTypeNames
 import androidx.room.solver.CodeGenScope
 import androidx.room.solver.RxType
@@ -42,129 +34,6 @@ internal class RxLambdaQueryResultBinder(
     val typeArg: XType,
     adapter: QueryResultAdapter?
 ) : QueryResultBinder(adapter) {
-    override fun convertAndReturn(
-        roomSQLiteQueryVar: String,
-        canReleaseQuery: Boolean,
-        dbProperty: XPropertySpec,
-        inTransaction: Boolean,
-        scope: CodeGenScope
-    ) {
-        val callable =
-            CallableTypeSpecBuilder(typeArg.asTypeName()) {
-                    addCode(
-                        XCodeBlock.builder()
-                            .apply {
-                                fillInCallMethod(
-                                    roomSQLiteQueryVar = roomSQLiteQueryVar,
-                                    dbProperty = dbProperty,
-                                    inTransaction = inTransaction,
-                                    scope = scope,
-                                    returnType = typeArg
-                                )
-                            }
-                            .build()
-                    )
-                }
-                .apply {
-                    if (canReleaseQuery) {
-                        createFinalizeMethod(roomSQLiteQueryVar)
-                    }
-                }
-                .build()
-        scope.builder.apply {
-            if (rxType.isSingle()) {
-                addStatement("return %M(%L)", rxType.factoryMethodName, callable)
-            } else {
-                addStatement("return %T.fromCallable(%L)", rxType.className, callable)
-            }
-        }
-    }
-
-    private fun XCodeBlock.Builder.fillInCallMethod(
-        roomSQLiteQueryVar: String,
-        dbProperty: XPropertySpec,
-        inTransaction: Boolean,
-        returnType: XType,
-        scope: CodeGenScope
-    ) {
-        val adapterScope = scope.fork()
-        val transactionWrapper =
-            if (inTransaction) {
-                transactionWrapper(dbProperty.name)
-            } else {
-                null
-            }
-        transactionWrapper?.beginTransactionWithControlFlow()
-        val shouldCopyCursor = adapter?.shouldCopyCursor() == true
-        val outVar = scope.getTmpVar("_result")
-        val cursorVar = scope.getTmpVar("_cursor")
-        addLocalVariable(
-            name = cursorVar,
-            typeName = CURSOR,
-            assignExpr =
-                XCodeBlock.of(
-                    format = "%M(%N, %L, %L, %L)",
-                    DB_UTIL_QUERY,
-                    dbProperty,
-                    roomSQLiteQueryVar,
-                    if (shouldCopyCursor) "true" else "false",
-                    "null"
-                )
-        )
-        beginControlFlow("try").applyTo { language ->
-            adapter?.convert(outVar, cursorVar, adapterScope)
-            add(adapterScope.generate())
-            if (
-                !rxType.canBeNull &&
-                    (language == CodeLanguage.JAVA ||
-                        (language == CodeLanguage.KOTLIN &&
-                            returnType.nullability == XNullability.NULLABLE))
-            ) {
-                beginControlFlow("if (%L == null)", outVar).apply {
-                    addStatement(
-                        "throw %L",
-                        XCodeBlock.ofNewInstance(
-                            rxType.version.emptyResultExceptionClassName,
-                            "%L",
-                            XCodeBlock.of(
-                                when (language) {
-                                    CodeLanguage.KOTLIN -> "%S + %L.sql"
-                                    CodeLanguage.JAVA -> "%S + %L.getSql()"
-                                },
-                                "Query returned empty result set: ",
-                                roomSQLiteQueryVar
-                            )
-                        )
-                    )
-                }
-                endControlFlow()
-            }
-            transactionWrapper?.commitTransaction()
-            addStatement("return %L", outVar)
-        }
-        nextControlFlow("finally").apply { addStatement("%L.close()", cursorVar) }
-        endControlFlow()
-        transactionWrapper?.endTransactionWithControlFlow()
-    }
-
-    private fun XTypeSpec.Builder.createFinalizeMethod(roomSQLiteQueryVar: String) {
-        applyTo { language ->
-            addFunction(
-                XFunSpec.builder(
-                        name = "finalize",
-                        visibility = VisibilityModifier.PROTECTED,
-                        // To 'override' finalize in Kotlin one does not use the 'override' keyword,
-                        // but
-                        // in Java the @Override is needed
-                        isOverride = language == CodeLanguage.JAVA
-                    )
-                    .apply { addStatement("%L.release()", roomSQLiteQueryVar) }
-                    .build()
-            )
-        }
-    }
-
-    override fun isMigratedToDriver() = adapter?.isMigratedToDriver() == true
 
     override fun convertAndReturn(
         sqlQueryVar: String,

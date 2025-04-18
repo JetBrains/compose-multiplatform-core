@@ -27,23 +27,23 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-actual class SavedStateHandle {
+public actual class SavedStateHandle {
 
     private val liveDatas = mutableMapOf<String, SavingStateLiveData<*>>()
     private var impl: SavedStateHandleImpl
 
-    actual constructor(initialState: Map<String, Any?>) {
+    public actual constructor(initialState: Map<String, Any?>) {
         impl = SavedStateHandleImpl(initialState)
     }
 
-    actual constructor() {
+    public actual constructor() {
         impl = SavedStateHandleImpl()
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    actual fun savedStateProvider(): SavedStateProvider = impl.savedStateProvider
+    public actual fun savedStateProvider(): SavedStateProvider = impl.savedStateProvider
 
-    @MainThread actual operator fun contains(key: String): Boolean = key in impl
+    @MainThread public actual operator fun contains(key: String): Boolean = key in impl
 
     /**
      * Returns a [androidx.lifecycle.LiveData] that access data associated with the given key.
@@ -52,7 +52,7 @@ actual class SavedStateHandle {
      * @see getLiveData
      */
     @MainThread
-    fun <T> getLiveData(key: String): MutableLiveData<T> {
+    public fun <T> getLiveData(key: String): MutableLiveData<T> {
         @Suppress("UNCHECKED_CAST")
         return getLiveDataInternal(key, hasInitialValue = false, initialValue = null)
             as MutableLiveData<T>
@@ -100,7 +100,7 @@ actual class SavedStateHandle {
      *   given `initialValue`. Note that passing `null` will create a [LiveData] with `null` value.
      */
     @MainThread
-    fun <T> getLiveData(key: String, initialValue: T): MutableLiveData<T> {
+    public fun <T> getLiveData(key: String, initialValue: T): MutableLiveData<T> {
         return getLiveDataInternal(key, hasInitialValue = true, initialValue)
     }
 
@@ -127,7 +127,7 @@ actual class SavedStateHandle {
     }
 
     @MainThread
-    actual fun <T> getStateFlow(key: String, initialValue: T): StateFlow<T> {
+    public actual fun <T> getStateFlow(key: String, initialValue: T): StateFlow<T> {
         return if (key in impl.mutableFlows) {
             // Return existing 'MutableStateFlow' as 'StateFlow' to keep values synchronized.
             impl.getMutableStateFlow(key, initialValue).asStateFlow()
@@ -137,17 +137,17 @@ actual class SavedStateHandle {
     }
 
     @MainThread
-    actual fun <T> getMutableStateFlow(key: String, initialValue: T): MutableStateFlow<T> {
+    public actual fun <T> getMutableStateFlow(key: String, initialValue: T): MutableStateFlow<T> {
         require(key !in liveDatas) { createMutuallyExclusiveErrorMessage(key) }
         return impl.getMutableStateFlow(key, initialValue)
     }
 
-    @MainThread actual fun keys(): Set<String> = impl.keys() + liveDatas.keys
+    @MainThread public actual fun keys(): Set<String> = impl.keys() + liveDatas.keys
 
-    @MainThread actual operator fun <T> get(key: String): T? = impl[key]
+    @MainThread public actual operator fun <T> get(key: String): T? = impl[key]
 
     @MainThread
-    actual operator fun <T> set(key: String, value: T?) {
+    public actual operator fun <T> set(key: String, value: T?) {
         require(validateValue(value)) {
             "Can't put value with type ${value!!::class.java} into saved state"
         }
@@ -157,16 +157,16 @@ actual class SavedStateHandle {
     }
 
     @MainThread
-    actual fun <T> remove(key: String): T? =
+    public actual fun <T> remove(key: String): T? =
         impl.remove<T?>(key).also { liveDatas.remove(key)?.detach() }
 
     @MainThread
-    actual fun setSavedStateProvider(key: String, provider: SavedStateProvider) {
+    public actual fun setSavedStateProvider(key: String, provider: SavedStateProvider) {
         impl.setSavedStateProvider(key, provider)
     }
 
     @MainThread
-    actual fun clearSavedStateProvider(key: String) {
+    public actual fun clearSavedStateProvider(key: String) {
         impl.clearSavedStateProvider(key)
     }
 
@@ -194,12 +194,12 @@ actual class SavedStateHandle {
         }
     }
 
-    actual companion object {
+    public actual companion object {
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
         @Suppress("DEPRECATION")
-        actual fun createHandle(
+        public actual fun createHandle(
             restoredState: SavedState?,
             defaultState: SavedState?,
         ): SavedStateHandle {
@@ -218,7 +218,7 @@ actual class SavedStateHandle {
         }
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        actual fun validateValue(value: Any?): Boolean = isAcceptableType(value)
+        public actual fun validateValue(value: Any?): Boolean = isAcceptableType(value)
     }
 }
 

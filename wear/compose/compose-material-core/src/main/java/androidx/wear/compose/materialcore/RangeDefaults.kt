@@ -28,7 +28,7 @@ import kotlin.math.roundToInt
 public object RangeIcons {
 
     /** An [ImageVector] with a minus sign. */
-    val Minus: ImageVector
+    public val Minus: ImageVector
         get() =
             if (_minus != null) _minus!!
             else {
@@ -53,7 +53,7 @@ public object RangeIcons {
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object RangeDefaults {
     /** Calculates value of [currentStep] in [valueRange] depending on number of [steps] */
-    fun calculateCurrentStepValue(
+    public fun calculateCurrentStepValue(
         currentStep: Int,
         steps: Int,
         valueRange: ClosedFloatingPointRange<Float>
@@ -66,7 +66,7 @@ public object RangeDefaults {
             .coerceIn(valueRange)
 
     /** Snaps [value] to the closest [step] in the [valueRange] */
-    fun snapValueToStep(
+    public fun snapValueToStep(
         value: Float,
         valueRange: ClosedFloatingPointRange<Float>,
         steps: Int

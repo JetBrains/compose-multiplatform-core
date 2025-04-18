@@ -25,6 +25,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.isSpecified
@@ -39,9 +40,11 @@ import kotlin.math.round
 import kotlin.math.sin
 
 /** Contains defaults for Progress Indicators. */
-object ProgressIndicatorDefaults {
+public object ProgressIndicatorDefaults {
     /** Creates a [ProgressIndicatorColors] with the default colors. */
-    @Composable fun colors() = MaterialTheme.colorScheme.defaultProgressIndicatorColors
+    @Composable
+    public fun colors(): ProgressIndicatorColors =
+        MaterialTheme.colorScheme.defaultProgressIndicatorColors
 
     /**
      * Creates a [ProgressIndicatorColors] with modified colors.
@@ -54,14 +57,14 @@ object ProgressIndicatorDefaults {
      * @param disabledOverflowTrackColor The disabled overflow track color.
      */
     @Composable
-    fun colors(
+    public fun colors(
         indicatorColor: Color = Color.Unspecified,
         trackColor: Color = Color.Unspecified,
         overflowTrackColor: Color = Color.Unspecified,
         disabledIndicatorColor: Color = Color.Unspecified,
         disabledTrackColor: Color = Color.Unspecified,
         disabledOverflowTrackColor: Color = Color.Unspecified,
-    ) =
+    ): ProgressIndicatorColors =
         MaterialTheme.colorScheme.defaultProgressIndicatorColors.copy(
             indicatorColor = indicatorColor,
             trackColor = trackColor,
@@ -83,14 +86,14 @@ object ProgressIndicatorDefaults {
      *   disabled.
      */
     @Composable
-    fun colors(
+    public fun colors(
         indicatorBrush: Brush? = null,
         trackBrush: Brush? = null,
         overflowTrackBrush: Brush? = null,
         disabledIndicatorBrush: Brush? = null,
         disabledTrackBrush: Brush? = null,
         disabledOverflowTrackBrush: Brush? = null,
-    ) =
+    ): ProgressIndicatorColors =
         MaterialTheme.colorScheme.defaultProgressIndicatorColors.copy(
             indicatorBrush = indicatorBrush,
             trackBrush = trackBrush,
@@ -146,13 +149,13 @@ object ProgressIndicatorDefaults {
  * @param disabledOverflowTrackBrush [Brush] used to draw the overflow track if the component is
  *   disabled.
  */
-class ProgressIndicatorColors(
-    val indicatorBrush: Brush,
-    val trackBrush: Brush,
-    val overflowTrackBrush: Brush,
-    val disabledIndicatorBrush: Brush,
-    val disabledTrackBrush: Brush,
-    val disabledOverflowTrackBrush: Brush,
+public class ProgressIndicatorColors(
+    public val indicatorBrush: Brush,
+    public val trackBrush: Brush,
+    public val overflowTrackBrush: Brush,
+    public val disabledIndicatorBrush: Brush,
+    public val disabledTrackBrush: Brush,
+    public val disabledOverflowTrackBrush: Brush,
 ) {
     /**
      * Returns a copy of this ProgressIndicatorColors optionally overriding some of the values.
@@ -164,14 +167,14 @@ class ProgressIndicatorColors(
      * @param disabledTrackColor The disabled track color.
      * @param disabledOverflowTrackColor The disabled overflow track color.
      */
-    fun copy(
+    public fun copy(
         indicatorColor: Color = Color.Unspecified,
         trackColor: Color = Color.Unspecified,
         overflowTrackColor: Color = Color.Unspecified,
         disabledIndicatorColor: Color = Color.Unspecified,
         disabledTrackColor: Color = Color.Unspecified,
         disabledOverflowTrackColor: Color = Color.Unspecified,
-    ) =
+    ): ProgressIndicatorColors =
         ProgressIndicatorColors(
             indicatorBrush =
                 if (indicatorColor.isSpecified) SolidColor(indicatorColor) else indicatorBrush,
@@ -202,14 +205,14 @@ class ProgressIndicatorColors(
      * @param disabledOverflowTrackBrush [Brush] used to draw the overflow track if the component is
      *   disabled.
      */
-    fun copy(
+    public fun copy(
         indicatorBrush: Brush? = null,
         trackBrush: Brush? = null,
         overflowTrackBrush: Brush? = null,
         disabledIndicatorBrush: Brush? = null,
         disabledTrackBrush: Brush? = null,
         disabledOverflowTrackBrush: Brush? = null,
-    ) =
+    ): ProgressIndicatorColors =
         ProgressIndicatorColors(
             indicatorBrush = indicatorBrush ?: this.indicatorBrush,
             trackBrush = trackBrush ?: this.trackBrush,
@@ -282,6 +285,14 @@ class ProgressIndicatorColors(
     }
 }
 
+internal fun brushWithAlpha(brush: Brush, alpha: Float): Brush {
+    return if (brush is SolidColor && alpha < 1f) {
+        SolidColor(brush.value.copy(alpha = brush.value.alpha * alpha))
+    } else {
+        brush
+    }
+}
+
 /**
  * Draws an arc for indicator segment leaving half of the `gapSweep` before each visual end.
  *
@@ -292,22 +303,17 @@ internal fun DrawScope.drawIndicatorSegment(
     sweep: Float,
     gapSweep: Float,
     brush: Brush,
-    stroke: Stroke
+    strokeWidth: Float,
+    strokePadding: Float = 0f,
 ) {
     if (sweep <= gapSweep) {
         // Draw a small indicator.
         val angle = (startAngle + sweep / 2f).toRadians()
-        val radius = size.minDimension / 2 - stroke.width / 2
-        val circleRadius = (stroke.width / 2) * sweep / gapSweep
-        val alpha = (circleRadius / stroke.width * 2f).coerceAtMost(1f)
-        val brushWithAlpha =
-            if (brush is SolidColor && alpha < 1f) {
-                SolidColor(brush.value.copy(alpha = brush.value.alpha * alpha))
-            } else {
-                brush
-            }
+        val radius = size.minDimension / 2 - strokeWidth / 2
+        val circleRadius = ((strokeWidth + strokePadding) / 2) * sweep / gapSweep
+        val alpha = (circleRadius / strokeWidth * 2f).coerceAtMost(1f)
         drawCircle(
-            brushWithAlpha,
+            brushWithAlpha(brush, alpha),
             circleRadius,
             center =
                 Offset(
@@ -321,8 +327,10 @@ internal fun DrawScope.drawIndicatorSegment(
         // To do this we need to remove half the stroke width from the total diameter for both
         // sides.
         val diameter = min(size.width, size.height)
-        val diameterOffset = stroke.width / 2
+        val diameterOffset = strokeWidth / 2
         val arcDimen = diameter - 2 * diameterOffset
+        val stroke = Stroke(width = strokeWidth + strokePadding, cap = StrokeCap.Round)
+
         drawArc(
             brush = brush,
             startAngle = startAngle + gapSweep / 2,
@@ -394,8 +402,9 @@ internal fun DrawScope.drawIndicatorArc(
         val angle = (startAngle + sweep / 2f).toRadians()
         val radius = size.width / 2 - stroke.width / 2
         val circleRadius = (stroke.width / 2) * sweep.absoluteValue / gapSweep
+        val alpha = (circleRadius / stroke.width * 2f).coerceAtMost(1f)
         drawCircle(
-            brush = brush,
+            brush = brushWithAlpha(brush, alpha),
             radius = circleRadius,
             center =
                 Offset(radius * cos(angle) + size.width / 2, radius * sin(angle) + size.width / 2)

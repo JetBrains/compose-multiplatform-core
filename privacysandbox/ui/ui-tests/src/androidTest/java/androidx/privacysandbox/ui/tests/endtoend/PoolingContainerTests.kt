@@ -25,7 +25,6 @@ import android.os.Build.VERSION.SDK_INT
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
-import androidx.annotation.RequiresApi
 import androidx.privacysandbox.ui.client.SandboxedUiAdapterFactory
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.core.BackwardCompatUtil
@@ -39,6 +38,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.withActivity
 import com.google.common.truth.Truth.assertThat
@@ -147,7 +147,7 @@ class PoolingContainerTests(private val invokeBackwardsCompatFlow: Boolean) {
         adapter.ensureAllChildrenBecomeIdleFromActive()
     }
 
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @Test
     fun testPoolingContainerListener_NotifyFetchUiForSession() {
         // verifyColorOfScreenshot is only available for U+ devices.

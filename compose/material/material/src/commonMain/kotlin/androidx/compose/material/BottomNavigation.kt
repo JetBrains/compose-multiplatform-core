@@ -63,8 +63,7 @@ import kotlin.math.roundToInt
 // TODO: b/149825331 add documentation references to Scaffold here and samples for using
 // BottomNavigation inside a Scaffold
 /**
- * <a href="https://material.io/components/bottom-navigation" class="external"
- * target="_blank">Material Design bottom navigation</a>.
+ * [Material Design bottom navigation](https://material.io/components/bottom-navigation)
  *
  * Bottom navigation bars allow movement between primary destinations in an app.
  *
@@ -124,8 +123,7 @@ fun BottomNavigation(
 }
 
 /**
- * <a href="https://material.io/components/bottom-navigation" class="external"
- * target="_blank">Material Design bottom navigation</a>.
+ * [Material Design bottom navigation](https://material.io/components/bottom-navigation)
  *
  * Bottom navigation bars allow movement between primary destinations in an app.
  *
@@ -166,8 +164,7 @@ fun BottomNavigation(
 }
 
 /**
- * <a href="https://material.io/components/bottom-navigation" class="external"
- * target="_blank">Material Design bottom navigation</a> item.
+ * [Material Design bottom navigation](https://material.io/components/bottom-navigation)
  *
  * The recommended configuration for a BottomNavigationItem depends on how many items there are
  * inside a [BottomNavigation]:

@@ -208,13 +208,11 @@ class QualityExploredEncoderProfilesProviderTest {
     @Test
     fun canExploreQuality_byMultipleTargetDynamicRanges() {
         // Arrange: create FHD SDR VideoProfile.
-        val videoProfileFhdSdr =
-            createFakeVideoProfileProxy(RESOLUTION_1080P.width, RESOLUTION_1080P.height)
+        val videoProfileFhdSdr = createFakeVideoProfileProxy(RESOLUTION_1080P)
         // Arrange: create HD HDR10 VideoProfile.
         val videoProfileHdHdr10 =
             createFakeVideoProfileProxy(
-                RESOLUTION_720P.width,
-                RESOLUTION_720P.height,
+                RESOLUTION_720P,
                 videoCodec = H263,
                 videoBitDepth = BIT_DEPTH_10,
                 videoHdrFormat = HDR_HDR10
@@ -222,8 +220,7 @@ class QualityExploredEncoderProfilesProviderTest {
         // Arrange: create SD HLG10 VideoProfile.
         val videoProfileSdHlg10 =
             createFakeVideoProfileProxy(
-                RESOLUTION_480P.width,
-                RESOLUTION_480P.height,
+                RESOLUTION_480P,
                 videoCodec = MPEG_4_SP,
                 videoBitDepth = BIT_DEPTH_10,
                 videoHdrFormat = HDR_HLG
@@ -301,13 +298,11 @@ class QualityExploredEncoderProfilesProviderTest {
     @Test
     fun exploreByMultipleTargetDynamicRanges_noDuplicateProfileAdded() {
         // Arrange: create FHD SDR VideoProfile.
-        val videoProfileFhdSdr =
-            createFakeVideoProfileProxy(RESOLUTION_1080P.width, RESOLUTION_1080P.height)
+        val videoProfileFhdSdr = createFakeVideoProfileProxy(RESOLUTION_1080P)
         // Arrange: create HD HDR10 VideoProfile.
         val videoProfileHdHdr10 =
             createFakeVideoProfileProxy(
-                RESOLUTION_720P.width,
-                RESOLUTION_720P.height,
+                RESOLUTION_720P,
                 videoBitDepth = BIT_DEPTH_10,
                 videoHdrFormat = HDR_HDR10
             )
@@ -373,13 +368,7 @@ class QualityExploredEncoderProfilesProviderTest {
                 DEFAULT_DURATION,
                 DEFAULT_OUTPUT_FORMAT,
                 listOf(createFakeAudioProfileProxy()),
-                listOf(
-                    createFakeVideoProfileProxy(
-                        RESOLUTION_1080P.width,
-                        RESOLUTION_1080P.height,
-                        bitrate = baseBitrate
-                    )
-                )
+                listOf(createFakeVideoProfileProxy(RESOLUTION_1080P, bitrate = baseBitrate))
             )
         val baseProvider =
             FakeEncoderProfilesProvider.Builder()

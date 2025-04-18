@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ads.adservices.topics
 
-import android.annotation.SuppressLint
 import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.annotation.RequiresExtension
@@ -25,7 +24,6 @@ import androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures
 
 /** Helper class to consolidate conversion logic for GetTopicsResponse. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-@SuppressLint("ClassVerificationFailure")
 object GetTopicsResponseHelper {
     @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 4)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)

@@ -19,13 +19,14 @@ package androidx.camera.camera2.internal.compat.workaround;
 import android.annotation.SuppressLint;
 import android.hardware.camera2.CaptureRequest;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.ImageCapturePixelHDRPlusQuirk;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.ImageCapture;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Workaround that handles turning on/off HDR+ on Pixel devices.
@@ -43,7 +44,7 @@ public class ImageCapturePixelHDRPlus {
      */
     @SuppressLint("NewApi")
     public void toggleHDRPlus(@ImageCapture.CaptureMode int captureMode,
-            @NonNull Camera2ImplConfig.Builder builder) {
+            Camera2ImplConfig.@NonNull Builder builder) {
         final ImageCapturePixelHDRPlusQuirk quirk = DeviceQuirks.get(
                 ImageCapturePixelHDRPlusQuirk.class);
         if (quirk == null) {

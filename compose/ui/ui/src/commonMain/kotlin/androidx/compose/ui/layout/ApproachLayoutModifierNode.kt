@@ -135,54 +135,86 @@ interface ApproachLayoutModifierNode : LayoutModifierNode {
         measurable: IntrinsicMeasurable,
         height: Int
     ): Int =
-        NodeMeasuringIntrinsics.minWidth(
-            NodeMeasuringIntrinsics.ApproachMeasureBlock { intrinsicMeasurable, constraints ->
-                approachMeasure(intrinsicMeasurable, constraints)
-            },
-            this,
-            measurable,
-            height
-        )
+        if (node.coordinator!!.lookaheadDelegate!!.hasMeasureResult) {
+            // Only invoke approachMeasure when the node has been measured in lookahead, otherwise
+            // skip the approach measure as it might access lookahead size/constraints, neither of
+            // which would be set until lookahead measure. In that case, fall back to returning
+            // child layout's intrinsic size.
+            NodeMeasuringIntrinsics.minWidth(
+                NodeMeasuringIntrinsics.ApproachMeasureBlock { intrinsicMeasurable, constraints ->
+                    approachMeasure(intrinsicMeasurable, constraints)
+                },
+                this,
+                measurable,
+                height
+            )
+        } else {
+            measurable.minIntrinsicWidth(height)
+        }
 
     /** The function used to calculate minIntrinsicHeight for the approach pass changes. */
     fun ApproachIntrinsicMeasureScope.minApproachIntrinsicHeight(
         measurable: IntrinsicMeasurable,
         width: Int
     ): Int =
-        NodeMeasuringIntrinsics.minHeight(
-            NodeMeasuringIntrinsics.ApproachMeasureBlock { intrinsicMeasurable, constraints ->
-                approachMeasure(intrinsicMeasurable, constraints)
-            },
-            this,
-            measurable,
-            width
-        )
+        if (node.coordinator!!.lookaheadDelegate!!.hasMeasureResult) {
+            // Only invoke approachMeasure when the node has been measured in lookahead, otherwise
+            // skip the approach measure as it might access lookahead size/constraints, neither of
+            // which would be set until lookahead measure. In that case, fall back to returning
+            // child layout's intrinsic size.
+            NodeMeasuringIntrinsics.minHeight(
+                NodeMeasuringIntrinsics.ApproachMeasureBlock { intrinsicMeasurable, constraints ->
+                    approachMeasure(intrinsicMeasurable, constraints)
+                },
+                this,
+                measurable,
+                width
+            )
+        } else {
+            measurable.minIntrinsicHeight(width)
+        }
 
     /** The function used to calculate maxIntrinsicWidth for the approach pass changes. */
     fun ApproachIntrinsicMeasureScope.maxApproachIntrinsicWidth(
         measurable: IntrinsicMeasurable,
         height: Int
     ): Int =
-        NodeMeasuringIntrinsics.maxWidth(
-            NodeMeasuringIntrinsics.ApproachMeasureBlock { intrinsicMeasurable, constraints ->
-                approachMeasure(intrinsicMeasurable, constraints)
-            },
-            this,
-            measurable,
-            height
-        )
+        if (node.coordinator!!.lookaheadDelegate!!.hasMeasureResult) {
+            // Only invoke approachMeasure when the node has been measured in lookahead, otherwise
+            // skip the approach measure as it might access lookahead size/constraints, neither of
+            // which would be set until lookahead measure. In that case, fall back to returning
+            // child layout's intrinsic size.
+            NodeMeasuringIntrinsics.maxWidth(
+                NodeMeasuringIntrinsics.ApproachMeasureBlock { intrinsicMeasurable, constraints ->
+                    approachMeasure(intrinsicMeasurable, constraints)
+                },
+                this,
+                measurable,
+                height
+            )
+        } else {
+            measurable.maxIntrinsicWidth(height)
+        }
 
     /** The function used to calculate maxIntrinsicHeight for the approach pass changes. */
     fun ApproachIntrinsicMeasureScope.maxApproachIntrinsicHeight(
         measurable: IntrinsicMeasurable,
         width: Int
     ): Int =
-        NodeMeasuringIntrinsics.maxHeight(
-            NodeMeasuringIntrinsics.ApproachMeasureBlock { intrinsicMeasurable, constraints ->
-                approachMeasure(intrinsicMeasurable, constraints)
-            },
-            this,
-            measurable,
-            width
-        )
+        if (node.coordinator!!.lookaheadDelegate!!.hasMeasureResult) {
+            // Only invoke approachMeasure when the node has been measured in lookahead, otherwise
+            // skip the approach measure as it might access lookahead size/constraints, neither of
+            // which would be set until lookahead measure. In that case, fall back to returning
+            // child layout's intrinsic size.
+            NodeMeasuringIntrinsics.maxHeight(
+                NodeMeasuringIntrinsics.ApproachMeasureBlock { intrinsicMeasurable, constraints ->
+                    approachMeasure(intrinsicMeasurable, constraints)
+                },
+                this,
+                measurable,
+                width
+            )
+        } else {
+            measurable.maxIntrinsicHeight(width)
+        }
 }

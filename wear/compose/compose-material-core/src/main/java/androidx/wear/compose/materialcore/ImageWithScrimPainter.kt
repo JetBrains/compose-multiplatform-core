@@ -34,9 +34,9 @@ import androidx.compose.ui.graphics.painter.Painter
  * allows explicit contentScale handling.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class ImageWithScrimPainter(
-    val imagePainter: Painter,
-    val brush: Brush,
+public class ImageWithScrimPainter(
+    public val imagePainter: Painter,
+    public val brush: Brush,
     private var scrimAlpha: Float = 1.0f,
     private var alpha: Float = 1.0f,
     private val forcedSize: Size? = null,

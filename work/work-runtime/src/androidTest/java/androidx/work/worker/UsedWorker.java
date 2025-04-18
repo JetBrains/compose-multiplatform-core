@@ -18,9 +18,10 @@ package androidx.work.worker;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A {@link Worker} that starts off in the {@code used} state.
@@ -32,9 +33,8 @@ public class UsedWorker extends Worker {
         setUsed();
     }
 
-    @NonNull
     @Override
-    public Result doWork() {
+    public @NonNull Result doWork() {
         return Result.success();
     }
 }

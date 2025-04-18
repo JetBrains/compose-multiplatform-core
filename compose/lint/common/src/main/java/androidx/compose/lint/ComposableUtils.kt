@@ -45,27 +45,27 @@ import org.jetbrains.uast.toUElement
 import org.jetbrains.uast.withContainingElements
 
 /**
- * Returns whether this [UCallExpression] is directly invoked within the body of a Composable
- * function or lambda without being `remember`ed.
+ * Returns whether this [UExpression] is directly invoked within the body of a Composable function
+ * or lambda without being `remember`ed.
  */
-fun UCallExpression.isNotRemembered(): Boolean = isNotRememberedWithKeys()
+fun UExpression.isNotRemembered(): Boolean = isNotRememberedWithKeys()
 
 /**
- * Returns whether this [UCallExpression] is directly invoked within the body of a Composable
- * function or lambda without being `remember`ed, or whether it is invoked inside a `remember call
- * without the provided [keys][keyClassNames].
- * - Returns true if this [UCallExpression] is directly invoked inside a Composable function or
- *   lambda without being `remember`ed
- * - Returns true if this [UCallExpression] is invoked inside a call to `remember`, but without all
- *   of the provided [keys][keyClassNames] being used as key parameters to `remember`
- * - Returns false if this [UCallExpression] is correctly `remember`ed with the provided
+ * Returns whether this [UExpression] is directly invoked within the body of a Composable function
+ * or lambda without being `remember`ed, or whether it is invoked inside a `remember call without
+ * the provided [keys][keyClassNames].
+ * - Returns true if this [UExpression] is directly invoked inside a Composable function or lambda
+ *   without being `remember`ed
+ * - Returns true if this [UExpression] is invoked inside a call to `remember`, but without all of
+ *   the provided [keys][keyClassNames] being used as key parameters to `remember`
+ * - Returns false if this [UExpression] is correctly `remember`ed with the provided
  *   [keys][keyClassNames], or is not called inside a `remember` block, and is not called inside a
  *   Composable function or lambda
  *
  * @param keyClassNames [Name]s representing the expected classes that should be used as a key
  *   parameter to the `remember` call
  */
-fun UCallExpression.isNotRememberedWithKeys(vararg keyClassNames: Name): Boolean {
+fun UExpression.isNotRememberedWithKeys(vararg keyClassNames: Name): Boolean {
     val visitor = ComposableBodyVisitor(this)
     // The nearest method or lambda expression that contains this call expression
     val boundaryElement = visitor.parentUElements().last()

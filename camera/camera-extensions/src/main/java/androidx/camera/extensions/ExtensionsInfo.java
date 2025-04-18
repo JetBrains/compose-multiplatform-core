@@ -16,33 +16,39 @@
 
 package androidx.camera.extensions;
 
+import static androidx.camera.core.impl.CameraConfig.REQUIRED_RULE_COEXISTING_PREVIEW_AND_IMAGE_CAPTURE;
+import static androidx.camera.extensions.internal.Camera2ExtensionsUtil.shouldUseCamera2Extensions;
 
+import android.content.Context;
+import android.hardware.camera2.CameraManager;
 import android.os.Build;
 import android.util.Range;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraFilter;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraProvider;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
-import androidx.camera.core.impl.CameraConfig;
 import androidx.camera.core.impl.CameraConfigProvider;
 import androidx.camera.core.impl.ExtendedCameraConfigProviderStore;
 import androidx.camera.core.impl.Identifier;
 import androidx.camera.core.impl.SessionProcessor;
 import androidx.camera.extensions.internal.AdvancedVendorExtender;
 import androidx.camera.extensions.internal.BasicVendorExtender;
+import androidx.camera.extensions.internal.Camera2ExtensionsVendorExtender;
 import androidx.camera.extensions.internal.ClientVersion;
 import androidx.camera.extensions.internal.ExtensionVersion;
 import androidx.camera.extensions.internal.ExtensionsUseCaseConfigFactory;
 import androidx.camera.extensions.internal.VendorExtender;
 import androidx.camera.extensions.internal.Version;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A class for querying extensions related information.
@@ -57,13 +63,23 @@ import java.util.List;
 final class ExtensionsInfo {
     private static final String EXTENDED_CAMERA_CONFIG_PROVIDER_ID_PREFIX = ":camera:camera"
             + "-extensions-";
+    private static final VendorExtender EMPTY_VENDOR_EXTENDER = new VendorExtender() {
+    };
     private final CameraProvider mCameraProvider;
-    @NonNull
-    private VendorExtenderFactory mVendorExtenderFactory;
+    private final @Nullable CameraManager mCameraManager;
+    private final boolean mShouldUseCamera2Extensions;
+    private @NonNull VendorExtenderFactory mVendorExtenderFactory;
 
-    ExtensionsInfo(@NonNull CameraProvider cameraProvider) {
+    ExtensionsInfo(@NonNull CameraProvider cameraProvider, @NonNull Context applicationContext) {
         mCameraProvider = cameraProvider;
-        mVendorExtenderFactory = (extensionMode) -> getVendorExtender(extensionMode);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            mCameraManager = applicationContext.getSystemService(CameraManager.class);
+        } else {
+            mCameraManager = null;
+        }
+        mShouldUseCamera2Extensions = shouldUseCamera2Extensions(
+                mCameraProvider.getConfigImplType());
+        mVendorExtenderFactory = this::getVendorExtender;
     }
 
     /**
@@ -81,8 +97,7 @@ final class ExtensionsInfo {
      *                                  contained
      *                                  extension related configuration in it.
      */
-    @NonNull
-    CameraSelector getExtensionCameraSelectorAndInjectCameraConfig(
+    @NonNull CameraSelector getExtensionCameraSelectorAndInjectCameraConfig(
             @NonNull CameraSelector baseCameraSelector,
             @ExtensionMode.Mode int mode) {
         if (!isExtensionAvailable(baseCameraSelector, mode)) {
@@ -123,8 +138,7 @@ final class ExtensionsInfo {
     boolean isExtensionAvailable(
             @NonNull CameraSelector baseCameraSelector,
             @ExtensionMode.Mode int mode) {
-        CameraSelector.Builder builder = CameraSelector.Builder.fromSelector(
-                baseCameraSelector);
+        CameraSelector.Builder builder = CameraSelector.Builder.fromSelector(baseCameraSelector);
         builder.addCameraFilter(getFilter(mode));
 
         List<CameraInfo> cameraInfos = builder.build().filter(
@@ -148,8 +162,7 @@ final class ExtensionsInfo {
      * @throws IllegalArgumentException If no camera can be found to support the specified
      *                                  extension mode.
      */
-    @Nullable
-    Range<Long> getEstimatedCaptureLatencyRange(
+    @Nullable Range<Long> getEstimatedCaptureLatencyRange(
             @NonNull CameraSelector cameraSelector,
             @ExtensionMode.Mode int mode, @Nullable Size resolution) {
         // Adds the filter to find a CameraInfo of the Camera which supports the specified
@@ -175,7 +188,8 @@ final class ExtensionsInfo {
         }
 
         try {
-            VendorExtender vendorExtender = mVendorExtenderFactory.createVendorExtender(mode);
+            VendorExtender vendorExtender = mVendorExtenderFactory.createVendorExtender(mode,
+                    mShouldUseCamera2Extensions);
             vendorExtender.init(extensionsCameraInfo);
 
             return vendorExtender.getEstimatedCaptureLatencyRange(resolution);
@@ -198,7 +212,8 @@ final class ExtensionsInfo {
         }
 
         extensionsCameraInfo = cameraInfos.get(0);
-        VendorExtender vendorExtender = mVendorExtenderFactory.createVendorExtender(mode);
+        VendorExtender vendorExtender = mVendorExtenderFactory.createVendorExtender(mode,
+                mShouldUseCamera2Extensions);
         vendorExtender.init(extensionsCameraInfo);
         Size[] supportedYuvSizes = vendorExtender.getSupportedYuvAnalysisResolutions();
         return supportedYuvSizes != null && supportedYuvSizes.length > 0;
@@ -213,7 +228,8 @@ final class ExtensionsInfo {
         CameraFilter filter;
         String id = getExtendedCameraConfigProviderId(mode);
 
-        VendorExtender vendorExtender = mVendorExtenderFactory.createVendorExtender(mode);
+        VendorExtender vendorExtender = mVendorExtenderFactory.createVendorExtender(mode,
+                mShouldUseCamera2Extensions);
         filter = new ExtensionCameraFilter(id, vendorExtender);
         return filter;
     }
@@ -227,7 +243,8 @@ final class ExtensionsInfo {
 
         if (ExtendedCameraConfigProviderStore.getConfigProvider(id) == CameraConfigProvider.EMPTY) {
             ExtendedCameraConfigProviderStore.addConfig(id, (cameraInfo, context) -> {
-                VendorExtender vendorExtender = mVendorExtenderFactory.createVendorExtender(mode);
+                VendorExtender vendorExtender = mVendorExtenderFactory.createVendorExtender(
+                        mode, mShouldUseCamera2Extensions);
                 vendorExtender.init(cameraInfo);
 
                 ExtensionsUseCaseConfigFactory factory = new ExtensionsUseCaseConfigFactory(
@@ -242,7 +259,7 @@ final class ExtensionsInfo {
                         .setCaptureProcessProgressSupported(
                                 vendorExtender.isCaptureProcessProgressAvailable())
                         .setUseCaseCombinationRequiredRule(
-                                CameraConfig.REQUIRED_RULE_COEXISTING_PREVIEW_AND_IMAGE_CAPTURE);
+                                REQUIRED_RULE_COEXISTING_PREVIEW_AND_IMAGE_CAPTURE);
 
                 SessionProcessor sessionProcessor = vendorExtender.createSessionProcessor(context);
                 if (sessionProcessor != null) {
@@ -255,17 +272,25 @@ final class ExtensionsInfo {
     }
 
     @NonNull
-    static VendorExtender getVendorExtender(@ExtensionMode.Mode int mode) {
-        boolean isAdvancedExtenderSupported = isAdvancedExtenderSupported();
-
+    VendorExtender getVendorExtender(@ExtensionMode.Mode int mode, boolean useCamera2Extensions) {
         VendorExtender vendorExtender;
-        if (isAdvancedExtenderSupported) {
-            vendorExtender = new AdvancedVendorExtender(mode);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            vendorExtender = new BasicVendorExtender(mode);
+        if (useCamera2Extensions) {
+            // Always returns Camera2ExtensionsVendorExtender when API level is 31 or above and
+            // configImplType is PIPE.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                vendorExtender = new Camera2ExtensionsVendorExtender(mode,
+                        Objects.requireNonNull(mCameraManager));
+            } else {
+                vendorExtender = EMPTY_VENDOR_EXTENDER;
+            }
         } else {
-            vendorExtender = new VendorExtender() {
-            };
+            if (isAdvancedExtenderSupported()) {
+                vendorExtender = new AdvancedVendorExtender(mode);
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                vendorExtender = new BasicVendorExtender(mode);
+            } else {
+                vendorExtender = EMPTY_VENDOR_EXTENDER;
+            }
         }
         return vendorExtender;
     }

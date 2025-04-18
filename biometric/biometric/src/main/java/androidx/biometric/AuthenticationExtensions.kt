@@ -33,6 +33,12 @@ import java.util.concurrent.Executor
  * This *must* be called unconditionally, as part of initialization path, typically as a field
  * initializer of an Activity.
  *
+ * Note that if multiple calls to this method are made within a single Fragment or Activity, only
+ * the callback registered by the last invocation will be saved and receive authentication results.
+ * This can result in unexpected behavior if you intend to manage multiple independent
+ * authentication flows. It is strongly recommended to avoid multiple calls to this method in such
+ * scenarios.
+ *
  * @param onAuthFailedCallback the optional callback to be called on the main thread when
  *   authentication fails intermediately. This is not a terminal auth result, so it could happen
  *   multiple times.
@@ -56,6 +62,12 @@ public fun FragmentActivity.registerForAuthenticationResult(
  *
  * This *must* be called unconditionally, as part of initialization path, typically as a field
  * initializer of an Fragment.
+ *
+ * Note that if multiple calls to this method are made within a single Fragment or Activity, only
+ * the callback registered by the last invocation will be saved and receive authentication results.
+ * This can result in unexpected behavior if you intend to manage multiple independent
+ * authentication flows. It is strongly recommended to avoid multiple calls to this method in such
+ * scenarios.
  *
  * @param onAuthFailedCallback the optional callback to be called on the main thread when
  *   authentication fails intermediately. This is not a terminal auth result, and could happen

@@ -25,6 +25,7 @@ internal actual typealias NativePointerKeyboardModifiers = Int
 internal actual fun EmptyPointerKeyboardModifiers(): PointerKeyboardModifiers =
     implementedInJetBrainsFork()
 
+@Suppress("DATA_CLASS_COPY_VISIBILITY_WILL_BE_CHANGED_WARNING")
 actual data class PointerEvent
 internal actual constructor(
     actual val changes: List<PointerInputChange>,

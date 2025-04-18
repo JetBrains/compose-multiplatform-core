@@ -55,8 +55,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * <a href="https://material.io/components/buttons#contained-button" class="external"
- * target="_blank">Material Design contained button</a>.
+ * [Material Design contained button](https://material.io/components/buttons#contained-button)
  *
  * Contained buttons are high-emphasis, distinguished by their use of elevation and fill. They
  * contain actions that are primary to your app.
@@ -137,8 +136,7 @@ fun Button(
 }
 
 /**
- * <a href="https://material.io/components/buttons#outlined-button" class="external"
- * target="_blank">Material Design outlined button</a>.
+ * [Material Design outlined button](https://material.io/components/buttons#outlined-button)
  *
  * Outlined buttons are medium-emphasis buttons. They contain actions that are important, but aren't
  * the primary action in an app.
@@ -195,8 +193,7 @@ fun OutlinedButton(
     )
 
 /**
- * <a href="https://material.io/components/buttons#text-button" class="external"
- * target="_blank">Material Design text button</a>.
+ * [Material Design text button](https://material.io/components/buttons#text-button)
  *
  * Text buttons are typically used for less-pronounced actions, including those located in dialogs
  * and cards. In cards, text buttons help maintain an emphasis on card content.

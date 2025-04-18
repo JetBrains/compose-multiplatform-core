@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.material3.samples.RadioButtonSample
 import androidx.wear.compose.material3.samples.SplitRadioButtonSample
 import org.junit.Assert
@@ -585,7 +586,7 @@ class RadioButtonTest {
         Assert.assertEquals(2, secondaryLabelMaxLines)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun radio_button_allows_checked_background_color_override() =
         verifyRadioButtonBackgroundColor(
@@ -594,7 +595,7 @@ class RadioButtonTest {
             expectedColor = SELECTED_COLOR
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun radio_button_allows_unchecked_background_color_override() =
         verifyRadioButtonBackgroundColor(
@@ -603,7 +604,7 @@ class RadioButtonTest {
             expectedColor = UNSELECTED_COLOR
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun split_radio_button_allows_checked_background_color_override() =
         verifySplitRadioButtonBackgroundColor(
@@ -612,7 +613,7 @@ class RadioButtonTest {
             expectedColor = SELECTED_COLOR
         )
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun split_radio_button_allows_unchecked_background_color_override() =
         verifySplitRadioButtonBackgroundColor(

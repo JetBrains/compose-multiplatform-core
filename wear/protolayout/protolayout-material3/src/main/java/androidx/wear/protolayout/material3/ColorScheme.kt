@@ -15,9 +15,9 @@
  */
 package androidx.wear.protolayout.material3
 
-import androidx.wear.protolayout.ColorBuilders.ColorProp
-import androidx.wear.protolayout.ColorBuilders.argb
 import androidx.wear.protolayout.material3.tokens.ColorTokens
+import androidx.wear.protolayout.types.LayoutColor
+import androidx.wear.protolayout.types.argb
 
 /**
  * A [ColorScheme] holds all the named color parameters for a [MaterialTheme].
@@ -64,40 +64,43 @@ import androidx.wear.protolayout.material3.tokens.ColorTokens
  * @property outlineVariant is the secondary color for secondary outline components
  * @property background color that appears behind other content
  * @property onBackground color is used for text and icons displayed on top of the background color
- * @property error color that indicates remove, delete, close or dismiss actions. Added as an
- *   errorContainer alternative that is slightly less alarming and urgent color.
- * @property onError color is used for text and icons displayed on top of the error color
+ * @property error color that indicates remove, delete, close or dismiss actions. Added as a
+ *   slightly less alarming and urgent alternative to errorContainer than the errorDim color
+ * @property errorDim color that indicates high priority errors or emergency actions, such as safety
+ *   alerts
  * @property errorContainer is color that indicates errors or emergency actions, such as safety
  *   alerts. This color is for use-cases that are more alarming and urgent than the error color.
+ * @property onError color is used for text and icons displayed on top of the error color
  * @property onErrorContainer is color used for text and icons on the errorContainer color
  */
 public class ColorScheme(
-    public val primary: ColorProp = argb(ColorTokens.PRIMARY),
-    public val primaryDim: ColorProp = argb(ColorTokens.PRIMARY_DIM),
-    public val primaryContainer: ColorProp = argb(ColorTokens.PRIMARY_CONTAINER),
-    public val onPrimary: ColorProp = argb(ColorTokens.ON_PRIMARY),
-    public val onPrimaryContainer: ColorProp = argb(ColorTokens.ON_PRIMARY_CONTAINER),
-    public val secondary: ColorProp = argb(ColorTokens.SECONDARY),
-    public val secondaryDim: ColorProp = argb(ColorTokens.SECONDARY_DIM),
-    public val secondaryContainer: ColorProp = argb(ColorTokens.SECONDARY_CONTAINER),
-    public val onSecondary: ColorProp = argb(ColorTokens.ON_SECONDARY),
-    public val onSecondaryContainer: ColorProp = argb(ColorTokens.ON_SECONDARY_CONTAINER),
-    public val tertiary: ColorProp = argb(ColorTokens.TERTIARY),
-    public val tertiaryDim: ColorProp = argb(ColorTokens.TERTIARY_DIM),
-    public val tertiaryContainer: ColorProp = argb(ColorTokens.TERTIARY_CONTAINER),
-    public val onTertiary: ColorProp = argb(ColorTokens.ON_TERTIARY),
-    public val onTertiaryContainer: ColorProp = argb(ColorTokens.ON_TERTIARY_CONTAINER),
-    public val surfaceContainerLow: ColorProp = argb(ColorTokens.SURFACE_CONTAINER_LOW),
-    public val surfaceContainer: ColorProp = argb(ColorTokens.SURFACE_CONTAINER),
-    public val surfaceContainerHigh: ColorProp = argb(ColorTokens.SURFACE_CONTAINER_HIGH),
-    public val onSurface: ColorProp = argb(ColorTokens.ON_SURFACE),
-    public val onSurfaceVariant: ColorProp = argb(ColorTokens.ON_SURFACE_VARIANT),
-    public val outline: ColorProp = argb(ColorTokens.OUTLINE),
-    public val outlineVariant: ColorProp = argb(ColorTokens.OUTLINE_VARIANT),
-    public val background: ColorProp = argb(ColorTokens.BACKGROUND),
-    public val onBackground: ColorProp = argb(ColorTokens.ON_BACKGROUND),
-    public val error: ColorProp = argb(ColorTokens.ERROR),
-    public val onError: ColorProp = argb(ColorTokens.ON_ERROR),
-    public val errorContainer: ColorProp = argb(ColorTokens.ERROR_CONTAINER),
-    public val onErrorContainer: ColorProp = argb(ColorTokens.ON_ERROR_CONTAINER),
+    public val primary: LayoutColor = ColorTokens.PRIMARY.argb,
+    public val primaryDim: LayoutColor = ColorTokens.PRIMARY_DIM.argb,
+    public val primaryContainer: LayoutColor = ColorTokens.PRIMARY_CONTAINER.argb,
+    public val onPrimary: LayoutColor = ColorTokens.ON_PRIMARY.argb,
+    public val onPrimaryContainer: LayoutColor = ColorTokens.ON_PRIMARY_CONTAINER.argb,
+    public val secondary: LayoutColor = ColorTokens.SECONDARY.argb,
+    public val secondaryDim: LayoutColor = ColorTokens.SECONDARY_DIM.argb,
+    public val secondaryContainer: LayoutColor = ColorTokens.SECONDARY_CONTAINER.argb,
+    public val onSecondary: LayoutColor = ColorTokens.ON_SECONDARY.argb,
+    public val onSecondaryContainer: LayoutColor = ColorTokens.ON_SECONDARY_CONTAINER.argb,
+    public val tertiary: LayoutColor = ColorTokens.TERTIARY.argb,
+    public val tertiaryDim: LayoutColor = ColorTokens.TERTIARY_DIM.argb,
+    public val tertiaryContainer: LayoutColor = ColorTokens.TERTIARY_CONTAINER.argb,
+    public val onTertiary: LayoutColor = ColorTokens.ON_TERTIARY.argb,
+    public val onTertiaryContainer: LayoutColor = ColorTokens.ON_TERTIARY_CONTAINER.argb,
+    public val surfaceContainerLow: LayoutColor = ColorTokens.SURFACE_CONTAINER_LOW.argb,
+    public val surfaceContainer: LayoutColor = ColorTokens.SURFACE_CONTAINER.argb,
+    public val surfaceContainerHigh: LayoutColor = ColorTokens.SURFACE_CONTAINER_HIGH.argb,
+    public val onSurface: LayoutColor = ColorTokens.ON_SURFACE.argb,
+    public val onSurfaceVariant: LayoutColor = ColorTokens.ON_SURFACE_VARIANT.argb,
+    public val outline: LayoutColor = ColorTokens.OUTLINE.argb,
+    public val outlineVariant: LayoutColor = ColorTokens.OUTLINE_VARIANT.argb,
+    public val background: LayoutColor = ColorTokens.BACKGROUND.argb,
+    public val onBackground: LayoutColor = ColorTokens.ON_BACKGROUND.argb,
+    public val error: LayoutColor = ColorTokens.ERROR.argb,
+    public val errorDim: LayoutColor = ColorTokens.ERROR_DIM.argb,
+    public val errorContainer: LayoutColor = ColorTokens.ERROR_CONTAINER.argb,
+    public val onError: LayoutColor = ColorTokens.ON_ERROR.argb,
+    public val onErrorContainer: LayoutColor = ColorTokens.ON_ERROR_CONTAINER.argb,
 )

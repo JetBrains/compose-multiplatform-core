@@ -22,8 +22,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import androidx.annotation.NonNull;
-
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -51,28 +50,24 @@ public class CancellationSignalProviderTest {
     public void setUp() {
         mFieldMockInjector = new CancellationSignalProvider.Injector() {
             @Override
-            @NonNull
-            public android.os.CancellationSignal getBiometricCancellationSignal() {
+            public android.os.@NonNull CancellationSignal getBiometricCancellationSignal() {
                 return mBiometricCancellationSignal;
             }
 
             @Override
-            @NonNull
-            public androidx.core.os.CancellationSignal getFingerprintCancellationSignal() {
+            public androidx.core.os.@NonNull CancellationSignal getFingerprintCancellationSignal() {
                 return mFingerprintCancellationSignal;
             }
         };
 
         mNewMockInjector = new CancellationSignalProvider.Injector() {
             @Override
-            @NonNull
-            public android.os.CancellationSignal getBiometricCancellationSignal() {
+            public android.os.@NonNull CancellationSignal getBiometricCancellationSignal() {
                 return mock(android.os.CancellationSignal.class);
             }
 
             @Override
-            @NonNull
-            public androidx.core.os.CancellationSignal getFingerprintCancellationSignal() {
+            public androidx.core.os.@NonNull CancellationSignal getFingerprintCancellationSignal() {
                 return mock(androidx.core.os.CancellationSignal.class);
             }
         };

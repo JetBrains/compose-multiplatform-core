@@ -58,9 +58,12 @@ internal object UnicodeRenderableManager {
      * Note: For older API version, codepoints {@code U+0xFE0F} are removed.
      */
     internal fun isEmojiRenderable(emoji: String) =
+        canRenderWithEmojiCompat(emoji) || getClosestRenderable(emoji) != null
+
+    internal fun canRenderWithEmojiCompat(emoji: String) =
         if (EmojiPickerView.emojiCompatLoaded)
             EmojiCompat.get().getEmojiMatch(emoji, Int.MAX_VALUE) == EmojiCompat.EMOJI_SUPPORTED
-        else getClosestRenderable(emoji) != null
+        else false
 
     // Yawning face is added in emoji 12 which is the first version starts to support gender
     // inclusive emojis.

@@ -16,8 +16,8 @@
 
 package androidx.camera.extensions.internal.sessionprocessor;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -41,13 +41,11 @@ interface Camera2OutputConfig {
     /**
      * Gets the physical camera id. Returns null if not specified.
      */
-    @Nullable
-    String getPhysicalCameraId();
+    @Nullable String getPhysicalCameraId();
 
     /**
      * If non-empty, enable surface sharing and add the surfaces constructed by the returned
      * Camera2OutputConfigs.
      */
-    @NonNull
-    List<Camera2OutputConfig> getSurfaceSharingOutputConfigs();
+    @NonNull List<Camera2OutputConfig> getSurfaceSharingOutputConfigs();
 }

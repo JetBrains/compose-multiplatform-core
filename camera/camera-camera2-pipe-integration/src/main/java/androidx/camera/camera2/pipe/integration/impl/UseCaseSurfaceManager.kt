@@ -32,35 +32,37 @@ import androidx.camera.core.impl.DeferrableSurfaces
 import androidx.camera.core.impl.utils.futures.Futures
 import androidx.concurrent.futures.await
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 private const val TIMEOUT_GET_SURFACE_IN_MS = 5_000L
 
 /** Configure the [DeferrableSurface]s to the [CameraGraph] and monitor the usage. */
 @UseCaseCameraScope
-public class UseCaseSurfaceManager
+public open class UseCaseSurfaceManager
 @Inject
 constructor(
     private val threads: UseCaseThreads,
     private val cameraPipe: CameraPipe,
     private val inactiveSurfaceCloser: InactiveSurfaceCloser,
+    private val sessionConfigAdapter: SessionConfigAdapter
 ) : CameraSurfaceManager.SurfaceListener {
 
     private val lock = Any()
+
+    @GuardedBy("lock") private var setupDeferred: Deferred<Boolean>? = null
 
     @GuardedBy("lock") private val activeSurfaceMap = mutableMapOf<Surface, DeferrableSurface>()
 
     @GuardedBy("lock") private var configuredSurfaceMap: Map<Surface, DeferrableSurface>? = null
 
-    private var setupSurfaceDeferred: Deferred<Unit>? = null
-
     @GuardedBy("lock") private var stopDeferred: CompletableDeferred<Unit>? = null
-
-    @GuardedBy("lock") private var _sessionConfigAdapter: SessionConfigAdapter? = null
 
     /** Async set up the Surfaces to the [CameraGraph] */
     public fun setupAsync(
@@ -68,69 +70,137 @@ constructor(
         sessionConfigAdapter: SessionConfigAdapter,
         surfaceToStreamMap: Map<DeferrableSurface, StreamId>,
         timeoutMillis: Long = TIMEOUT_GET_SURFACE_IN_MS,
-    ): Deferred<Unit> {
-        check(setupSurfaceDeferred == null)
-        check(synchronized(lock) { stopDeferred == null && configuredSurfaceMap == null })
+    ): Deferred<Boolean> =
+        synchronized(lock) {
+            check(setupDeferred == null) { "Surfaces should only be set up once!" }
+            check(stopDeferred == null) { "Surfaces being setup after stopped!" }
+            check(configuredSurfaceMap == null)
 
-        return threads.scope
-            .async {
-                check(sessionConfigAdapter.isSessionConfigValid())
-
-                sessionConfigAdapter.useDeferrableSurfaces { deferrableSurfaces ->
-                    val surfaces = getSurfaces(deferrableSurfaces, timeoutMillis)
-                    if (!isActive) return@async
-                    if (surfaces.isEmpty()) {
-                        Log.error { "Surface list is empty" }
-                        return@async
-                    }
-                    if (surfaces.areValid()) {
-                        synchronized(lock) {
-                            configuredSurfaceMap =
-                                deferrableSurfaces.associateBy { deferrableSurface ->
-                                    surfaces[deferrableSurfaces.indexOf(deferrableSurface)]!!
-                                }
-                            _sessionConfigAdapter = sessionConfigAdapter
-                            setSurfaceListener()
-                        }
-
-                        surfaceToStreamMap.forEach {
-                            val stream = it.value
-                            val surface = surfaces[deferrableSurfaces.indexOf(it.key)]
-                            Log.debug { "Configured $surface for $stream" }
-                            graph.setSurface(stream = stream, surface = surface)
-                            inactiveSurfaceCloser.configure(stream, it.key, graph)
-                        }
-                    } else {
-                        // Only handle the first failed Surface since subsequent calls to
-                        // CameraInternal#onUseCaseReset() will handle the other failed Surfaces if
-                        // there are any.
-                        sessionConfigAdapter.reportSurfaceInvalid(
-                            deferrableSurfaces[surfaces.indexOf(null)]
-                        )
-                    }
+            val deferrableSurfaces = sessionConfigAdapter.deferrableSurfaces
+            try {
+                DeferrableSurfaces.incrementAll(deferrableSurfaces)
+            } catch (e: SurfaceClosedException) {
+                Log.error { "Failed to increment DeferrableSurfaces: Surfaces closed" }
+                // Report Surface invalid by launching a coroutine to avoid cyclic Dagger injection.
+                threads.scope.launch {
+                    sessionConfigAdapter.reportSurfaceInvalid(e.deferrableSurface)
                 }
+                return@synchronized CompletableDeferred(false)
             }
-            .also { completeDeferred ->
-                setupSurfaceDeferred = completeDeferred
-                completeDeferred.invokeOnCompletion { setupSurfaceDeferred = null }
-            }
-    }
+
+            val deferred =
+                threads.scope
+                    .async {
+                        check(sessionConfigAdapter.isSessionConfigValid())
+
+                        val surfaces =
+                            try {
+                                getSurfaces(deferrableSurfaces, timeoutMillis)
+                            } catch (e: SurfaceClosedException) {
+                                Log.error(e) { "Failed to get Surfaces: Surfaces closed" }
+                                sessionConfigAdapter.reportSurfaceInvalid(e.deferrableSurface)
+                                return@async false
+                            } catch (e: TimeoutCancellationException) {
+                                Log.error(e) { "Failed to get Surfaces within $timeoutMillis ms" }
+                                return@async false
+                            }
+                        if (!isActive || surfaces.isEmpty()) {
+                            Log.error {
+                                "Failed to get Surfaces: isActive=$isActive, surfaces=$surfaces"
+                            }
+                            return@async false
+                        }
+                        if (surfaces.areValid()) {
+                            synchronized(lock) {
+                                configuredSurfaceMap =
+                                    deferrableSurfaces.associateBy { deferrableSurface ->
+                                        checkNotNull(
+                                            surfaces[deferrableSurfaces.indexOf(deferrableSurface)]
+                                        )
+                                    }
+                                setSurfaceListener()
+                            }
+
+                            surfaceToStreamMap.forEach {
+                                val stream = it.value
+                                val surface = surfaces[deferrableSurfaces.indexOf(it.key)]
+                                Log.debug { "Configured $surface for $stream" }
+                                graph.setSurface(stream = stream, surface = surface)
+                                inactiveSurfaceCloser.configure(stream, it.key, graph)
+                            }
+                            Log.info { "Surface setup complete" }
+                            return@async true
+                        } else {
+                            Log.error { "Surface setup failed: Some Surfaces are invalid" }
+                            // Only handle the first failed Surface since subsequent calls to
+                            // CameraInternal#onUseCaseReset() will handle the other failed Surfaces
+                            // if there are any.
+                            sessionConfigAdapter.reportSurfaceInvalid(
+                                deferrableSurfaces[surfaces.indexOf(null)]
+                            )
+                            return@async false
+                        }
+                    }
+                    .apply {
+                        // When setup is done or cancelled, decrement the DeferrableSurfaces.
+                        invokeOnCompletion { DeferrableSurfaces.decrementAll(deferrableSurfaces) }
+                    }
+            setupDeferred = deferred
+            return@synchronized deferred
+        }
 
     /** Cancel the Surface set up and stop the monitoring of Surface usage. */
-    public fun stopAsync(): Deferred<Unit> {
-        setupSurfaceDeferred?.cancel()
-
-        return synchronized(lock) {
-                inactiveSurfaceCloser.closeAll()
-                configuredSurfaceMap = null
-                stopDeferred =
-                    stopDeferred
-                        ?: CompletableDeferred<Unit>().apply {
-                            invokeOnCompletion { synchronized(lock) { stopDeferred = null } }
-                        }
-                stopDeferred!!
+    public fun stopAsync(): Deferred<Unit> =
+        synchronized(lock) {
+            val currentStopDeferred = stopDeferred
+            if (currentStopDeferred != null) {
+                Log.warn { "UseCaseSurfaceManager is already stopping!" }
+                return@synchronized currentStopDeferred
             }
-            .also { tryClearSurfaceListener() }
+            setupDeferred?.cancel()
+            inactiveSurfaceCloser.closeAll()
+            configuredSurfaceMap = null
+
+            val deferred = CompletableDeferred<Unit>()
+            this.stopDeferred = deferred
+            // This may complete stopDeferred immediately
+            tryClearSurfaceListener()
+
+            return@synchronized deferred
+        }
+
+    /**
+     * Waits for any ongoing [setupAsync] to be completed and returns a boolean value to indicate if
+     * a successful setup exists.
+     *
+     * If [stopAsync] is called after a successful setup, this function returns false since the
+     * setup was terminated.
+     */
+    public open suspend fun awaitSetupCompletion(): Boolean {
+        if (sessionConfigAdapter.isSessionProcessorEnabled) {
+            // The SessionProcessor flow does not use the setupAsync flow of this class and the
+            // whole UseCaseCamera layer is created only after SessionProcessor setup is completed
+            // successfully.
+            return true
+        }
+
+        val setupDeferred =
+            synchronized(lock) {
+                val setupDeferredSnapshot = setupDeferred
+
+                if (setupDeferredSnapshot == null || stopDeferred != null) {
+                    return false
+                }
+
+                setupDeferredSnapshot
+            }
+
+        try {
+            return setupDeferred.await()
+        } catch (e: CancellationException) {
+            Log.warn(e) { "Surface setup was cancelled" }
+            return false
+        }
     }
 
     override fun onSurfaceActive(surface: Surface) {
@@ -143,7 +213,7 @@ constructor(
                         it.incrementUseCount()
                     } catch (e: SurfaceClosedException) {
                         Log.error(e) { "Error when $surface going to increase the use count." }
-                        _sessionConfigAdapter?.reportSurfaceInvalid(e.deferrableSurface)
+                        sessionConfigAdapter.reportSurfaceInvalid(e.deferrableSurface)
                     }
                 }
             }
@@ -165,16 +235,17 @@ constructor(
         }
     }
 
+    @GuardedBy("lock")
     private fun setSurfaceListener() {
         cameraPipe.cameraSurfaceManager().addListener(this)
     }
 
+    @GuardedBy("lock")
     private fun tryClearSurfaceListener() {
         synchronized(lock) {
             if (activeSurfaceMap.isEmpty() && configuredSurfaceMap == null) {
                 Log.debug { "${this@UseCaseSurfaceManager} remove surface listener" }
                 cameraPipe.cameraSurfaceManager().removeListener(this)
-                _sessionConfigAdapter = null
                 stopDeferred?.complete(Unit)
             }
         }
@@ -192,26 +263,6 @@ constructor(
             }
             .orEmpty()
     }
-
-    /**
-     * Set use count at the [DeferrableSurface]s when the specified function [block] is using the
-     * [DeferrableSurface].
-     *
-     * If it cannot set the use count to the [DeferrableSurface], the [block] will not be called.
-     */
-    private inline fun SessionConfigAdapter.useDeferrableSurfaces(
-        block: (List<DeferrableSurface>) -> Unit
-    ) =
-        try {
-            DeferrableSurfaces.incrementAll(deferrableSurfaces)
-            try {
-                block(deferrableSurfaces)
-            } finally {
-                DeferrableSurfaces.decrementAll(deferrableSurfaces)
-            }
-        } catch (e: SurfaceClosedException) {
-            reportSurfaceInvalid(e.deferrableSurface)
-        }
 
     private fun List<Surface?>.areValid(): Boolean {
         // If a Surface in configuredSurfaces is null it means the

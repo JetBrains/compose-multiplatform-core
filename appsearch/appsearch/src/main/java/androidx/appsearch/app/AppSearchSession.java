@@ -18,12 +18,13 @@ package androidx.appsearch.app;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresFeature;
 import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.Closeable;
 import java.util.List;
@@ -57,8 +58,7 @@ public interface AppSearchSession extends Closeable {
      * @param  request the schema to set or update the AppSearch database to.
      * @return a {@link ListenableFuture} which resolves to a {@link SetSchemaResponse} object.
      */
-    @NonNull
-    ListenableFuture<SetSchemaResponse> setSchemaAsync(@NonNull SetSchemaRequest request);
+    @NonNull ListenableFuture<SetSchemaResponse> setSchemaAsync(@NonNull SetSchemaRequest request);
 
     /**
      * Retrieves the schema most recently successfully provided to {@link #setSchemaAsync}.
@@ -67,15 +67,13 @@ public interface AppSearchSession extends Closeable {
      */
     // This call hits disk; async API prevents us from treating these calls as properties.
     @SuppressLint("KotlinPropertyAccess")
-    @NonNull
-    ListenableFuture<GetSchemaResponse> getSchemaAsync();
+    @NonNull ListenableFuture<GetSchemaResponse> getSchemaAsync();
 
     /**
      * Retrieves the set of all namespaces in the current database with at least one document.
      *
      * @return The pending result of performing this operation. */
-    @NonNull
-    ListenableFuture<Set<String>> getNamespacesAsync();
+    @NonNull ListenableFuture<Set<String>> getNamespacesAsync();
 
     /**
      * Indexes documents into the {@link AppSearchSession} database.
@@ -90,8 +88,7 @@ public interface AppSearchSession extends Closeable {
      * The values are either {@code null} if the corresponding document was successfully indexed,
      * or a failed {@link AppSearchResult} otherwise.
      */
-    @NonNull
-    ListenableFuture<AppSearchBatchResult<String, Void>> putAsync(
+    @NonNull ListenableFuture<AppSearchBatchResult<String, Void>> putAsync(
             @NonNull PutDocumentsRequest request);
 
     /**
@@ -107,8 +104,7 @@ public interface AppSearchSession extends Closeable {
      * to an {@link AppSearchResult} object with result code:
      * {@link AppSearchResult#RESULT_NOT_FOUND}.
      */
-    @NonNull
-    ListenableFuture<AppSearchBatchResult<String, GenericDocument>> getByDocumentIdAsync(
+    @NonNull ListenableFuture<AppSearchBatchResult<String, GenericDocument>> getByDocumentIdAsync(
             @NonNull GetByDocumentIdRequest request);
 
     /**
@@ -163,8 +159,7 @@ public interface AppSearchSession extends Closeable {
             name = Features.BLOB_STORAGE)
     @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
     @ExperimentalAppSearchApi
-    @NonNull
-    default ListenableFuture<OpenBlobForWriteResponse> openBlobForWriteAsync(
+    default @NonNull ListenableFuture<OpenBlobForWriteResponse> openBlobForWriteAsync(
             @NonNull Set<AppSearchBlobHandle> handles) {
         throw new UnsupportedOperationException(Features.BLOB_STORAGE
                 + " is not available on this AppSearch implementation.");
@@ -196,8 +191,7 @@ public interface AppSearchSession extends Closeable {
             name = Features.BLOB_STORAGE)
     @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
     @ExperimentalAppSearchApi
-    @NonNull
-    default ListenableFuture<RemoveBlobResponse> removeBlobAsync(
+    default @NonNull ListenableFuture<RemoveBlobResponse> removeBlobAsync(
             @NonNull Set<AppSearchBlobHandle> handles) {
         throw new UnsupportedOperationException(Features.BLOB_STORAGE
                 + " is not available on this AppSearch implementation.");
@@ -238,8 +232,7 @@ public interface AppSearchSession extends Closeable {
             name = Features.BLOB_STORAGE)
     @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
     @ExperimentalAppSearchApi
-    @NonNull
-    default ListenableFuture<CommitBlobResponse> commitBlobAsync(
+    default @NonNull ListenableFuture<CommitBlobResponse> commitBlobAsync(
             @NonNull Set<AppSearchBlobHandle> handles) {
         throw new UnsupportedOperationException(Features.BLOB_STORAGE
                 + " is not available on this AppSearch implementation.");
@@ -265,8 +258,7 @@ public interface AppSearchSession extends Closeable {
             name = Features.BLOB_STORAGE)
     @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
     @ExperimentalAppSearchApi
-    @NonNull
-    default ListenableFuture<OpenBlobForReadResponse> openBlobForReadAsync(
+    default @NonNull ListenableFuture<OpenBlobForReadResponse> openBlobForReadAsync(
             @NonNull Set<AppSearchBlobHandle> handles) {
         throw new UnsupportedOperationException(Features.BLOB_STORAGE
                 + " is not available on this AppSearch implementation.");
@@ -290,8 +282,7 @@ public interface AppSearchSession extends Closeable {
             name = Features.BLOB_STORAGE)
     @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
     @ExperimentalAppSearchApi
-    @NonNull
-    default ListenableFuture<Void> setBlobVisibilityAsync(
+    default @NonNull ListenableFuture<Void> setBlobVisibilityAsync(
             @NonNull SetBlobVisibilityRequest request) {
         throw new UnsupportedOperationException(Features.BLOB_STORAGE
                 + " is not available on this AppSearch implementation.");
@@ -494,8 +485,7 @@ public interface AppSearchSession extends Closeable {
      */
     // TODO(b/326656531): Refine the javadoc to provide guidance on the best practice of
     //  embedding searches and how to select an appropriate metric.
-    @NonNull
-    SearchResults search(@NonNull String queryExpression, @NonNull SearchSpec searchSpec);
+    @NonNull SearchResults search(@NonNull String queryExpression, @NonNull SearchSpec searchSpec);
 
     /**
      * Retrieves suggested Strings that could be used as {@code queryExpression} in
@@ -556,8 +546,7 @@ public interface AppSearchSession extends Closeable {
      *
      * @see #search(String, SearchSpec)
      */
-    @NonNull
-    ListenableFuture<List<SearchSuggestionResult>> searchSuggestionAsync(
+    @NonNull ListenableFuture<List<SearchSuggestionResult>> searchSuggestionAsync(
             @NonNull String suggestionQueryExpression,
             @NonNull SearchSuggestionSpec searchSuggestionSpec);
 
@@ -577,8 +566,7 @@ public interface AppSearchSession extends Closeable {
      * @return The pending result of performing this operation which resolves to {@code null} on
      *     success.
      */
-    @NonNull
-    ListenableFuture<Void> reportUsageAsync(@NonNull ReportUsageRequest request);
+    @NonNull ListenableFuture<Void> reportUsageAsync(@NonNull ReportUsageRequest request);
 
     /**
      * Removes {@link GenericDocument} objects by document IDs in a namespace from the
@@ -599,8 +587,7 @@ public interface AppSearchSession extends Closeable {
      * or a failed {@link AppSearchResult} otherwise. IDs that are not found will return a failed
      * {@link AppSearchResult} with a result code of {@link AppSearchResult#RESULT_NOT_FOUND}.
      */
-    @NonNull
-    ListenableFuture<AppSearchBatchResult<String, Void>> removeAsync(
+    @NonNull ListenableFuture<AppSearchBatchResult<String, Void>> removeAsync(
             @NonNull RemoveByDocumentIdRequest request);
 
     /**
@@ -623,8 +610,7 @@ public interface AppSearchSession extends Closeable {
      * {@link JoinSpec} lets you join docs that are not owned by the caller, so the semantics of
      * failures from this method would be complex.
      */
-    @NonNull
-    ListenableFuture<Void> removeAsync(@NonNull String queryExpression,
+    @NonNull ListenableFuture<Void> removeAsync(@NonNull String queryExpression,
             @NonNull SearchSpec searchSpec);
 
     /**
@@ -635,8 +621,7 @@ public interface AppSearchSession extends Closeable {
      *
      * @return a {@link ListenableFuture} which resolves to a {@link StorageInfo} object.
      */
-    @NonNull
-    ListenableFuture<StorageInfo> getStorageInfoAsync();
+    @NonNull ListenableFuture<StorageInfo> getStorageInfoAsync();
 
     /**
      * Flush all schema and document updates, additions, and deletes to disk if possible.
@@ -649,15 +634,13 @@ public interface AppSearchSession extends Closeable {
      * {@link AppSearchResult#RESULT_INTERNAL_ERROR} will be set to the future if we hit error when
      * save to disk.
      */
-    @NonNull
-    ListenableFuture<Void> requestFlushAsync();
+    @NonNull ListenableFuture<Void> requestFlushAsync();
 
     /**
      * Returns the {@link Features} to check for the availability of certain features
      * for this session.
      */
-    @NonNull
-    Features getFeatures();
+    @NonNull Features getFeatures();
 
     /**
      * Closes the {@link AppSearchSession} to persist all schema and document updates, additions,

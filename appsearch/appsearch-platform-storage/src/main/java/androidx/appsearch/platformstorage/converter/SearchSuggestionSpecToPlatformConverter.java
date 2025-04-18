@@ -20,12 +20,13 @@ import android.annotation.SuppressLint;
 import android.os.Build;
 
 import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.SearchSuggestionSpec;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collection;
 import java.util.List;
@@ -47,9 +48,9 @@ public final class SearchSuggestionSpecToPlatformConverter {
     // methods are not defined as returning the same constants as the corresponding setter
     // expects, but they do
     @SuppressLint("WrongConstant")
-    @NonNull
-    public static android.app.appsearch.SearchSuggestionSpec toPlatformSearchSuggestionSpec(
-            @NonNull SearchSuggestionSpec jetpackSearchSuggestionSpec) {
+    public static android.app.appsearch.@NonNull SearchSuggestionSpec
+            toPlatformSearchSuggestionSpec(
+                    @NonNull SearchSuggestionSpec jetpackSearchSuggestionSpec) {
         Preconditions.checkNotNull(jetpackSearchSuggestionSpec);
 
         android.app.appsearch.SearchSuggestionSpec.Builder platformBuilder =

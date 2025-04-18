@@ -18,11 +18,12 @@ package androidx.credentials.provider
 import android.content.Intent
 import android.content.pm.SigningInfo
 import android.credentials.CredentialOption
+import android.os.Binder
 import android.os.Bundle
 import android.service.credentials.CallingAppInfo
 import android.service.credentials.CreateCredentialRequest
 import android.service.credentials.GetCredentialRequest
-import androidx.annotation.RequiresApi
+import androidx.credentials.CreateCustomCredentialResponse
 import androidx.credentials.CreatePasswordResponse
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.PasswordCredential
@@ -30,6 +31,9 @@ import androidx.credentials.assertEquals
 import androidx.credentials.equals
 import androidx.credentials.exceptions.CreateCredentialInterruptedException
 import androidx.credentials.exceptions.GetCredentialInterruptedException
+import androidx.credentials.exceptions.domerrors.ConstraintError
+import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialDomException
+import androidx.credentials.provider.PendingIntentHandler.Companion.setCreateCredentialResponse
 import androidx.credentials.setUpCreatePasswordRequest
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
@@ -42,7 +46,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @SmallTest
-@RequiresApi(34)
 @SdkSuppress(minSdkVersion = 34, codeName = "UpsideDownCake")
 class PendingIntentHandlerApi34Test {
     companion object {
@@ -280,23 +283,38 @@ class PendingIntentHandlerApi34Test {
     }
 
     @Test
-    fun test_createCredentialException() {
+    fun createCredentialException_success() {
         val intent = Intent()
-        val initialException = CreateCredentialInterruptedException("message")
+        val expected = CreateCredentialInterruptedException("message")
 
-        PendingIntentHandler.setCreateCredentialException(intent, initialException)
+        PendingIntentHandler.setCreateCredentialException(intent, expected)
 
-        val finalException = intent.getCreateCredentialException()
-        assertThat(finalException).isNotNull()
-        assertThat(finalException!!.type).isEqualTo(initialException.type)
-        assertThat(finalException.message).isEqualTo(initialException.message)
+        val actual = PendingIntentHandler.retrieveCreateCredentialException(intent)!!
+        assertThat(actual).isInstanceOf(expected::class.java)
+        assertThat(actual.type).isEqualTo(expected.type)
+        assertThat(actual.errorMessage).isEqualTo(expected.errorMessage)
     }
 
     @Test
-    fun test_createCredentialException_nullExceptionWhenEmptyIntent() {
+    fun createCredentialException_domException_success() {
+        val intent = Intent()
+        val expected = CreatePublicKeyCredentialDomException(ConstraintError(), "Error msg")
+
+        PendingIntentHandler.setCreateCredentialException(intent, expected)
+
+        val actual = PendingIntentHandler.retrieveCreateCredentialException(intent)!!
+        assertThat(actual).isInstanceOf(expected::class.java)
+        assertThat(actual.type).isEqualTo(expected.type)
+        assertThat(actual.errorMessage).isEqualTo(expected.errorMessage)
+        val actualConverted = actual as CreatePublicKeyCredentialDomException
+        assertThat(actualConverted.domError).isInstanceOf((expected.domError)::class.java)
+    }
+
+    @Test
+    fun createCredentialException_emptyIntent_returnsNull() {
         val intent = Intent()
 
-        assertThat(intent.getCreateCredentialException()).isNull()
+        assertThat(PendingIntentHandler.retrieveCreateCredentialException(intent)).isNull()
     }
 
     @Test
@@ -472,21 +490,34 @@ class PendingIntentHandlerApi34Test {
     }
 
     @Test
-    fun test_createCredentialCredentialResponse() {
+    fun createCredentialCredentialResponse_passwordResponse_success() {
         val intent = Intent()
-        val initialResponse = CreatePasswordResponse()
+        val expected = CreatePasswordResponse()
 
-        PendingIntentHandler.setCreateCredentialResponse(intent, initialResponse)
+        PendingIntentHandler.setCreateCredentialResponse(intent, expected)
 
-        val finalResponse = intent.getCreateCredentialCredentialResponse()
-        assertThat(finalResponse).isNotNull()
-        assertThat(equals(finalResponse!!.data, initialResponse.data))
+        val actual = PendingIntentHandler.retrieveCreateCredentialResponse(expected.type, intent)!!
+        assertEquals(actual, expected)
     }
 
     @Test
-    fun test_createCredentialCredentialResponse_nullWhenEmptyIntent() {
+    fun setCreateCredentialResponse_customResponse_success() {
         val intent = Intent()
+        val customData = Bundle()
+        customData.putString("k1", "text")
+        customData.putBinder("k2", Binder())
+        val expected = CreateCustomCredentialResponse("type", customData)
 
-        assertThat(intent.getCreateCredentialCredentialResponse()).isNull()
+        setCreateCredentialResponse(intent, expected)
+
+        val actual = PendingIntentHandler.retrieveCreateCredentialResponse(expected.type, intent)!!
+        assertEquals(actual, expected)
+    }
+
+    @Test
+    fun retrieveCreateCredentialResponse_emptyResponse_returnsNull() {
+        val actual = PendingIntentHandler.retrieveCreateCredentialResponse("type", Intent())
+
+        assertThat(actual).isNull()
     }
 }

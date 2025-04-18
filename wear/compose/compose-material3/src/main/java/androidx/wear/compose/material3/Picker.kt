@@ -18,9 +18,11 @@ package androidx.wear.compose.material3
 
 import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.gestures.FlingBehavior
@@ -68,6 +70,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
+import androidx.wear.compose.foundation.LocalReduceMotion
 import androidx.wear.compose.foundation.lazy.AutoCenteringParams
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumnDefaults
@@ -109,8 +112,8 @@ import kotlinx.coroutines.launch
  *   so it is recommended that the label is given [Alignment.TopCenter].
  * @param onSelected Action triggered when the Picker is selected by clicking. Used by accessibility
  *   semantics, which facilitates implementation of multi-picker screens.
- * @param spacing The amount of spacing in [Dp] between items. Can be negative, which can be useful
- *   for Text if it has plenty of whitespace.
+ * @param verticalSpacing The amount of vertical spacing in [Dp] between items. Can be negative,
+ *   which can be useful for Text if it has plenty of whitespace.
  * @param gradientRatio The size relative to the Picker height that the top and bottom gradients
  *   take. These gradients blur the picker content on the top and bottom. The default is 0.33, so
  *   the top 1/3 and the bottom 1/3 of the picker are taken by gradients. Should be between 0.0 and
@@ -128,14 +131,14 @@ import kotlinx.coroutines.launch
  *   align with the centrally selected Picker value.
  */
 @Composable
-fun Picker(
+public fun Picker(
     state: PickerState,
     contentDescription: String?,
     modifier: Modifier = Modifier,
     readOnly: Boolean = false,
     readOnlyLabel: @Composable (BoxScope.() -> Unit)? = null,
     onSelected: () -> Unit = {},
-    spacing: Dp = 0.dp,
+    verticalSpacing: Dp = 0.dp,
     @FloatRange(from = 0.0, to = 0.5) gradientRatio: Float = PickerDefaults.GradientRatio,
     gradientColor: Color = MaterialTheme.colorScheme.background,
     userScrollEnabled: Boolean = true,
@@ -146,6 +149,19 @@ fun Picker(
     val pickerScope = remember(state) { PickerScopeImpl(state) }
     var forceScrollWhenReadOnly by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+    val isReduceMotionEnabled = LocalReduceMotion.current
+    val pickerAlphaAnimationSpec: FiniteAnimationSpec<Float> =
+        MaterialTheme.motionScheme.slowEffectsSpec()
+    val animatedShimColorAlpha = remember { Animatable(if (readOnly) 1f else 0f) }
+    LaunchedEffect(readOnly) {
+        val targetAlpha = if (readOnly) 1f else 0f
+        if (isReduceMotionEnabled) {
+            animatedShimColorAlpha.snapTo(targetAlpha)
+        } else {
+            animatedShimColorAlpha.animateTo(targetAlpha, pickerAlphaAnimationSpec)
+        }
+    }
+
     Box(modifier = modifier) {
         ScalingLazyColumn(
             modifier =
@@ -167,40 +183,35 @@ fun Picker(
                         focused = !readOnly
                     }
                     .then(
-                        if (!readOnly && gradientRatio > 0.0f) {
-                            Modifier.drawWithContent {
-                                    drawContent()
+                        Modifier.drawWithContent {
+                                drawContent()
+                                val visibleItems =
+                                    state.scalingLazyListState.layoutInfo.visibleItemsInfo
+                                if (
+                                    visibleItems.isNotEmpty() && animatedShimColorAlpha.value > 0f
+                                ) {
+                                    val centerItem =
+                                        visibleItems.fastFirstOrNull { info ->
+                                            info.index == state.scalingLazyListState.centerItemIndex
+                                        } ?: visibleItems[visibleItems.size / 2]
+                                    val shimHeight =
+                                        (size.height -
+                                            centerItem.unadjustedSize.toFloat() -
+                                            verticalSpacing.toPx()) / 2.0f
+                                    drawShim(
+                                        gradientColor,
+                                        shimHeight,
+                                        animatedShimColorAlpha.value
+                                    )
+                                }
+                                if (gradientRatio > 0.0f) {
                                     drawGradient(gradientColor, gradientRatio)
                                 }
-                                // b/223386180 - add padding when drawing rectangles to
-                                // prevent jitter on screen.
-                                .padding(vertical = 1.dp)
-                                .align(Alignment.Center)
-                        } else if (readOnly) {
-                            Modifier.drawWithContent {
-                                    drawContent()
-                                    val visibleItems =
-                                        state.scalingLazyListState.layoutInfo.visibleItemsInfo
-                                    if (visibleItems.isNotEmpty()) {
-                                        val centerItem =
-                                            visibleItems.fastFirstOrNull { info ->
-                                                info.index ==
-                                                    state.scalingLazyListState.centerItemIndex
-                                            } ?: visibleItems[visibleItems.size / 2]
-                                        val shimHeight =
-                                            (size.height -
-                                                centerItem.unadjustedSize.toFloat() -
-                                                spacing.toPx()) / 2.0f
-                                        drawShim(gradientColor, shimHeight)
-                                    }
-                                }
-                                // b/223386180 - add padding when drawing rectangles to
-                                // prevent jitter on screen.
-                                .padding(vertical = 1.dp)
-                                .align(Alignment.Center)
-                        } else {
-                            Modifier.align(Alignment.Center)
-                        }
+                            }
+                            // b/223386180 - add padding when drawing rectangles to
+                            // prevent jitter on screen.
+                            .padding(vertical = 1.dp)
+                            .align(Alignment.Center)
                     ),
             state = state.scalingLazyListState,
             content = {
@@ -220,7 +231,7 @@ fun Picker(
             contentPadding = PaddingValues(0.dp),
             scalingParams = pickerScalingParams(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(space = spacing),
+            verticalArrangement = Arrangement.spacedBy(space = verticalSpacing),
             flingBehavior = pickerFlingBehavior(state),
             autoCentering = AutoCenteringParams(itemIndex = 0),
             userScrollEnabled = userScrollEnabled
@@ -254,7 +265,7 @@ fun Picker(
  * @param shouldRepeatOptions if true (the default), the options will be repeated.
  */
 @Composable
-fun rememberPickerState(
+public fun rememberPickerState(
     @IntRange(from = 1) initialNumberOfOptions: Int,
     @IntRange(from = 0) initiallySelectedIndex: Int = 0,
     shouldRepeatOptions: Boolean = true
@@ -279,10 +290,10 @@ fun rememberPickerState(
  * @param shouldRepeatOptions if true (the default), the options will be repeated.
  */
 @Stable
-class PickerState(
+public class PickerState(
     @IntRange(from = 1) initialNumberOfOptions: Int,
     @IntRange(from = 0) initiallySelectedIndex: Int = 0,
-    val shouldRepeatOptions: Boolean = true
+    @get:Suppress("GetterSetterNames") public val shouldRepeatOptions: Boolean = true
 ) : ScrollableState {
     init {
         verifyNumberOfOptions(initialNumberOfOptions)
@@ -291,7 +302,7 @@ class PickerState(
     private var _numberOfOptions by mutableIntStateOf(initialNumberOfOptions)
 
     /** Represents how many different choices are presented by this [Picker] */
-    var numberOfOptions
+    public var numberOfOptions: Int
         get() = _numberOfOptions
         set(newNumberOfOptions) {
             verifyNumberOfOptions(newNumberOfOptions)
@@ -307,7 +318,7 @@ class PickerState(
         }
 
     /** Index of the selected option (i.e. at the center). */
-    val selectedOptionIndex: Int
+    public val selectedOptionIndex: Int
         get() = (scalingLazyListState.centerItemIndex + optionsOffset) % numberOfOptions
 
     /**
@@ -316,7 +327,7 @@ class PickerState(
      * @sample androidx.wear.compose.material3.samples.PickerScrollToOption
      * @param index The index of the option to scroll to.
      */
-    suspend fun scrollToOption(index: Int) {
+    public suspend fun scrollToOption(index: Int) {
         scalingLazyListState.scrollToItem(getClosestTargetItemIndex(index), 0)
     }
 
@@ -334,13 +345,13 @@ class PickerState(
      * @sample androidx.wear.compose.material3.samples.PickerAnimateScrollToOption
      * @param index The index of the option to scroll to.
      */
-    suspend fun animateScrollToOption(index: Int) {
+    public suspend fun animateScrollToOption(index: Int) {
         scalingLazyListState.animateScrollToItem(getClosestTargetItemIndex(index), 0)
     }
 
-    companion object {
+    public companion object {
         /** The default [Saver] implementation for [PickerState]. */
-        val Saver =
+        public val Saver: Saver<PickerState, Any> =
             listSaver<PickerState, Any?>(
                 save = {
                     listOf(it.numberOfOptions, it.selectedOptionIndex, it.shouldRepeatOptions)
@@ -417,26 +428,26 @@ class PickerState(
 }
 
 /** Contains the default values used by [Picker]. */
-object PickerDefaults {
+public object PickerDefaults {
     /**
      * Default rotary behavior for [Picker] - it is recommended to use scroll behavior with snap in
      * order to indicate the selected item in the center of the [Picker].
      */
     @Composable
-    fun rotarySnapBehavior(state: PickerState) =
+    public fun rotarySnapBehavior(state: PickerState): RotaryScrollableBehavior =
         RotaryScrollableDefaults.snapBehavior(state, state.toRotarySnapLayoutInfoProvider())
 
     /**
      * Default Picker gradient ratio - the proportion of the Picker height allocated to each of the
      * of the top and bottom gradients.
      */
-    val GradientRatio = 0.33f
+    public val GradientRatio: Float = 0.33f
 }
 
 /** Receiver scope which is used by [Picker]. */
-interface PickerScope {
+public interface PickerScope {
     /** Index of the option selected (i.e., at the center). */
-    val selectedOptionIndex: Int
+    public val selectedOptionIndex: Int
 }
 
 private fun positiveModulo(n: Int, mod: Int) = ((n % mod) + mod) % mod
@@ -517,10 +528,11 @@ private class PickerRotarySnapLayoutInfoProvider(private val scrollableState: Pi
 }
 
 // Apply a shim on the top and bottom of the Picker to hide all but the selected option.
-private fun ContentDrawScope.drawShim(gradientColor: Color, height: Float) {
-    drawRect(color = gradientColor, size = Size(size.width, height))
+private fun ContentDrawScope.drawShim(gradientColor: Color, height: Float, alpha: Float = 1f) {
+    val colorWithAlpha = gradientColor.copy(alpha = alpha)
+    drawRect(color = colorWithAlpha, size = Size(size.width, height))
     drawRect(
-        color = gradientColor,
+        color = colorWithAlpha,
         topLeft = Offset(0f, size.height - height),
         size = Size(size.width, height)
     )

@@ -113,7 +113,7 @@ constructor(
                             RequestProcessorAdapter(
                                 useCaseGraphConfig,
                                 sessionProcessorSurfaces,
-                                threads.scope,
+                                threads
                             )
                         sessionProcessorManager.onCaptureSessionStart(requestProcessorAdapter)
                     }

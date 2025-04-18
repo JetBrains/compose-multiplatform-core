@@ -29,6 +29,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -111,7 +113,9 @@ fun AnimatedTextSampleButtonResponse() {
                     textAnimatable.animateTo(0f)
                 }
             },
-            label = { Text("-") }
+            label = {
+                Text(modifier = Modifier.semantics { contentDescription = "Decrease" }, text = "-")
+            }
         )
         AnimatedText(
             text = "${number.value}",
@@ -127,7 +131,9 @@ fun AnimatedTextSampleButtonResponse() {
                     textAnimatable.animateTo(0f)
                 }
             },
-            label = { Text("+") }
+            label = {
+                Text(modifier = Modifier.semantics { contentDescription = "Increase" }, text = "+")
+            }
         )
     }
 }

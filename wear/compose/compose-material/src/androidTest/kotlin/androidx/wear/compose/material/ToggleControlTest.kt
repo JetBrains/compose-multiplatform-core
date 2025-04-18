@@ -17,7 +17,6 @@
 package androidx.wear.compose.material
 
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +45,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
+import androidx.test.filters.SdkSuppress
 import org.junit.Rule
 import org.junit.Test
 
@@ -191,7 +191,7 @@ class ToggleControlTest {
         rule.onNodeWithTag(TEST_TAG).assertIsOn().performClick().assertIsOff()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun checkbox_checked_colors_are_customisable() {
         val boxColor = Color.Green
@@ -213,7 +213,7 @@ class ToggleControlTest {
         checkboxImage.assertContainsColor(checkmarkColor, minPercent = 1f)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun checkbox_unchecked_colors_are_customisable() {
         // NB checkmark is erased during animation, so we don't test uncheckedCheckmarkColor
@@ -372,7 +372,7 @@ class ToggleControlTest {
         rule.onNodeWithTag(TEST_TAG).assertIsOn().performClick().assertIsOff()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun switch_checked_colors_are_customisable() {
         val thumbColor = Color.Green
@@ -394,7 +394,7 @@ class ToggleControlTest {
         image.assertContainsColor(trackColor, minPercent = 1f)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun switch_unchecked_colors_are_customisable() {
         val thumbColor = Color.Green
@@ -557,7 +557,7 @@ class ToggleControlTest {
         rule.onNodeWithTag(TEST_TAG).assertIsSelected().performClick().assertIsNotSelected()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun radiobutton_selected_colors_are_customisable() {
         val ringColor = Color.Green
@@ -579,7 +579,7 @@ class ToggleControlTest {
         image.assertContainsColor(dotColor, minPercent = 1f)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun radiobutton_unselected_colors_are_customisable() {
         // NB Dot is erased during animation, so we don't test uncheckedDotColor

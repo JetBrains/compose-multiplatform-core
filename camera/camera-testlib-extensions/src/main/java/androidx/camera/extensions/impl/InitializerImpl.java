@@ -18,8 +18,8 @@ package androidx.camera.extensions.impl;
 import android.content.Context;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;

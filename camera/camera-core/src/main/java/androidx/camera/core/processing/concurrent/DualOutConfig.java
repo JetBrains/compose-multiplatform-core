@@ -16,10 +16,11 @@
 
 package androidx.camera.core.processing.concurrent;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.processing.util.OutConfig;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An internal augmented {@link OutConfig} for dual concurrent cameras.
@@ -30,20 +31,17 @@ public abstract class DualOutConfig {
     /**
      * Primary camera {@link OutConfig}.
      */
-    @NonNull
-    public abstract OutConfig getPrimaryOutConfig();
+    public abstract @NonNull OutConfig getPrimaryOutConfig();
 
     /**
      * Secondary camera {@link OutConfig}.
      */
-    @NonNull
-    public abstract OutConfig getSecondaryOutConfig();
+    public abstract @NonNull OutConfig getSecondaryOutConfig();
 
     /**
      * Creates {@link DualOutConfig}.
      */
-    @NonNull
-    public static DualOutConfig of(
+    public static @NonNull DualOutConfig of(
             @NonNull OutConfig primaryOutConfig,
             @NonNull OutConfig secondaryOutConfig) {
         return new AutoValue_DualOutConfig(

@@ -510,8 +510,9 @@ abstract class Placeable : Measured {
          */
         private fun Placeable.handleMotionFrameOfReferencePlacement() {
             if (this is MotionReferencePlacementDelegate) {
-                this.isPlacedUnderMotionFrameOfReference =
+                updatePlacedUnderMotionFrameOfReference(
                     this@PlacementScope.motionFrameOfReferencePlacement
+                )
             }
         }
     }

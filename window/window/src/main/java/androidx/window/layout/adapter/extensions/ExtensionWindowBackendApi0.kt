@@ -23,7 +23,7 @@ import androidx.window.layout.WindowLayoutInfo
 import androidx.window.layout.adapter.WindowBackend
 import java.util.concurrent.Executor
 
-internal class ExtensionWindowBackendApi0 : WindowBackend {
+internal open class ExtensionWindowBackendApi0 : WindowBackend {
 
     override fun registerLayoutChangeCallback(
         context: Context,
@@ -38,8 +38,8 @@ internal class ExtensionWindowBackendApi0 : WindowBackend {
     }
 
     override val supportedPostures: List<SupportedPosture>
-        get() =
-            throw UnsupportedOperationException(
-                "supportedPostures is only supported on Window SDK 6."
-            )
+        get() = throw UnsupportedOperationException("Extensions version must be at least 6")
+
+    override fun getCurrentWindowLayoutInfo(context: Context): WindowLayoutInfo =
+        throw UnsupportedOperationException("Extensions version must be at least 9")
 }

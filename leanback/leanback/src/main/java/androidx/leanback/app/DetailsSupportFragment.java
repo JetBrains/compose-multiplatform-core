@@ -28,8 +28,6 @@ import android.view.ViewGroup;
 import android.view.Window;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentTransaction;
@@ -50,6 +48,9 @@ import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.PresenterSelector;
 import androidx.leanback.widget.RowPresenter;
 import androidx.leanback.widget.VerticalGridView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 
@@ -474,9 +475,8 @@ public class DetailsSupportFragment extends BaseSupportFragment {
     }
 
     @Override
-    @Nullable
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
+    public @Nullable View onCreateView(@NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         mRootView = (BrowseFrameLayout) inflater.inflate(
                 R.layout.lb_details_fragment, container, false);
         mBackgroundView = mRootView.findViewById(R.id.details_background_view);

@@ -22,6 +22,7 @@ import android.hardware.camera2.CaptureRequest
 import android.os.Build
 import android.util.Range
 import androidx.annotation.RequiresApi
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsZoomOverride
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.compat.workaround.getControlZoomRatioRangeSafely
 import androidx.camera.camera2.pipe.integration.impl.CameraProperties
@@ -127,10 +128,6 @@ public class AndroidRZoomCompat(
     private val cameraProperties: CameraProperties,
     private val range: Range<Float>,
 ) : ZoomCompat {
-    private val shouldOverrideZoom =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-            Api34Compat.isZoomOverrideAvailable(cameraProperties)
-
     override val minZoomRatio: Float
         get() = range.lower
 
@@ -144,7 +141,10 @@ public class AndroidRZoomCompat(
         require(zoomRatio in minZoomRatio..maxZoomRatio)
         val parameters: MutableMap<CaptureRequest.Key<*>, Any> =
             mutableMapOf(CaptureRequest.CONTROL_ZOOM_RATIO to zoomRatio)
-        if (shouldOverrideZoom && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                cameraProperties.metadata.supportsZoomOverride
+        ) {
             Api34Compat.setSettingsOverrideZoom(parameters)
         }
         return requestControl.setParametersAsync(values = parameters)

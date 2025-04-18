@@ -623,8 +623,8 @@ public final class ActionBuilders {
             /** Adds an entry into the extras to be included in the intent. */
             @RequiresSchemaVersion(major = 1, minor = 0)
             @SuppressLint("MissingGetterMatchingBuilder")
-            public @NonNull Builder addKeyToExtraMapping(@NonNull String key,
-                    @NonNull AndroidExtra extra) {
+            public @NonNull Builder addKeyToExtraMapping(
+                    @NonNull String key, @NonNull AndroidExtra extra) {
                 mImpl.putKeyToExtra(key, extra.toAndroidExtraProto());
                 mFingerprint.recordPropertyUpdate(
                         key.hashCode(), checkNotNull(extra.getFingerprint()).aggregateValueAsInt());

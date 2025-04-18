@@ -26,11 +26,11 @@ import androidx.navigation.safe.args.generator.models.ResReference
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.compiler.TestCompilationArguments
 import androidx.room.compiler.processing.util.compiler.compile
-import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth.assertThat
 import com.squareup.javapoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.TypeSpec
+import java.nio.charset.Charset
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -60,8 +60,13 @@ class KotlinNavWriterTest {
     private fun wrappedInnerClass(spec: TypeSpec): KotlinCodeFile =
         FileSpec.builder("a.b", "BoringWrapper").addType(spec).build().toCodeFile()
 
-    private fun StringSubject.parsesAs(fullClassName: String) =
-        this.isEqualTo(loadSourceString(fullClassName, "expected/kotlin_nav_writer_test", "kt"))
+    private fun assertGeneratedCode(code: String, fullClassName: String) {
+        val goldenFile = loadSourceFile(fullClassName, "expected/kotlin_nav_writer_test", "kt")
+        if (System.getProperty("update_golden_files")?.toBoolean() == true) {
+            goldenFile.writer().use { it.write(code) }
+        }
+        assertThat(code).isEqualTo(goldenFile.readText(Charset.defaultCharset()))
+    }
 
     private fun assertCompilesWithoutError(codeFile: KotlinCodeFile, packageName: String = "a.b") {
         val compilation =
@@ -111,7 +116,7 @@ class KotlinNavWriterTest {
                 )
             )
         val actual = generateDirectionsTypeSpec(action, false)
-        assertThat(wrappedInnerClass(actual).toString()).parsesAs("a.b.Next")
+        assertGeneratedCode(wrappedInnerClass(actual).toString(), "a.b.Next")
         assertCompilesWithoutError(wrappedInnerClass(actual))
     }
 
@@ -139,7 +144,7 @@ class KotlinNavWriterTest {
             )
 
         val actual = generateDirectionsCodeFile(dest, emptyList(), false)
-        assertThat(actual.toString()).parsesAs("a.b.MainFragmentDirections")
+        assertGeneratedCode(actual.toString(), "a.b.MainFragmentDirections")
         assertCompilesWithoutError(actual)
     }
 
@@ -169,7 +174,7 @@ class KotlinNavWriterTest {
             )
 
         val actual = generateDirectionsCodeFile(dest, emptyList(), false)
-        assertThat(actual.toString()).parsesAs("a.b.MainFragmentDefaultParamDirections")
+        assertGeneratedCode(actual.toString(), "a.b.MainFragmentDefaultParamDirections")
     }
 
     @Test
@@ -186,7 +191,7 @@ class KotlinNavWriterTest {
             )
 
         val actual = generateDirectionsCodeFile(dest, emptyList(), false)
-        assertThat(actual.toString()).parsesAs("a.b.FunFragmentDirections")
+        assertGeneratedCode(actual.toString(), "a.b.FunFragmentDirections")
         assertCompilesWithoutError(actual, "fun.is.in")
     }
 
@@ -220,12 +225,12 @@ class KotlinNavWriterTest {
             )
 
         val actual = generateDirectionsCodeFile(dest, emptyList(), false)
-        assertThat(actual.toString())
-            .parsesAs(
-                "a.b.reallyreallyreallyreallyreally" +
-                    "reallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreally" +
-                    "longpackage.LongPackageFragmentDirections"
-            )
+        assertGeneratedCode(
+            actual.toString(),
+            "a.b.reallyreallyreallyreallyreally" +
+                "reallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreally" +
+                "longpackage.LongPackageFragmentDirections"
+        )
         assertCompilesWithoutError(
             actual,
             "a.b.secondreallyreallyreallyreallyreallyreally" +
@@ -273,7 +278,7 @@ class KotlinNavWriterTest {
             )
 
         val actual = generateArgsCodeFile(dest, false)
-        assertThat(actual.toString()).parsesAs("a.b.MainFragmentArgs")
+        assertGeneratedCode(actual.toString(), "a.b.MainFragmentArgs")
         assertCompilesWithoutError(actual)
     }
 
@@ -293,11 +298,11 @@ class KotlinNavWriterTest {
             )
 
         val actual = generateArgsCodeFile(dest, false)
-        assertThat(actual.toString())
-            .parsesAs(
-                "a.b.ReallyReallyReallyReallyReally" +
-                    "ReallyReallyReallyReallyReallyReallyReallyReallyReallyLongNameMainFragmentArgs"
-            )
+        assertGeneratedCode(
+            actual.toString(),
+            "a.b.ReallyReallyReallyReallyReally" +
+                "ReallyReallyReallyReallyReallyReallyReallyReallyReallyLongNameMainFragmentArgs"
+        )
         assertCompilesWithoutError(
             actual,
             "a.b.secondreallyreallyreallyreallyreallyreally" +

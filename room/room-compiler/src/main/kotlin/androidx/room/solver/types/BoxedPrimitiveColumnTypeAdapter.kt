@@ -52,18 +52,18 @@ class BoxedPrimitiveColumnTypeAdapter(
         }
     }
 
-    override fun readFromCursor(
+    override fun readFromStatement(
         outVarName: String,
-        cursorVarName: String,
+        stmtVarName: String,
         indexVarName: String,
         scope: CodeGenScope
     ) {
         scope.builder.apply {
-            beginControlFlow("if (%L.isNull(%L))", cursorVarName, indexVarName).apply {
+            beginControlFlow("if (%L.isNull(%L))", stmtVarName, indexVarName).apply {
                 addStatement("%L = null", outVarName)
             }
             nextControlFlow("else").apply {
-                primitiveAdapter.readFromCursor(outVarName, cursorVarName, indexVarName, scope)
+                primitiveAdapter.readFromStatement(outVarName, stmtVarName, indexVarName, scope)
             }
             endControlFlow()
         }

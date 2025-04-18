@@ -19,6 +19,8 @@ package androidx.appcompat.widget;
 import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 
 import android.content.Context;
+import android.content.res.Configuration;
+import android.content.res.TypedArray;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -53,6 +55,7 @@ public class ActionBarContextView extends AbsActionBarView {
     private int mSubtitleStyleRes;
     private boolean mTitleOptional;
     private int mCloseItemLayout;
+    private final int mInternalVerticalPadding;
 
     public ActionBarContextView(@NonNull Context context) {
         this(context, null);
@@ -82,6 +85,8 @@ public class ActionBarContextView extends AbsActionBarView {
                 R.layout.abc_action_mode_close_item_material);
 
         a.recycle();
+
+        mInternalVerticalPadding = getPaddingTop() + getPaddingBottom();
     }
 
     @Override
@@ -91,6 +96,18 @@ public class ActionBarContextView extends AbsActionBarView {
             mActionMenuPresenter.hideOverflowMenu();
             mActionMenuPresenter.hideSubMenus();
         }
+    }
+
+    @Override
+    protected void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        // Action bar can change size on configuration changes.
+        // Reread the desired height from the theme-specified style.
+        final TypedArray a = getContext().obtainStyledAttributes(null, R.styleable.ActionMode,
+                R.attr.actionModeStyle, 0);
+        setContentHeight(a.getLayoutDimension(R.styleable.ActionMode_height, 0));
+        a.recycle();
     }
 
     @Override
@@ -259,12 +276,13 @@ public class ActionBarContextView extends AbsActionBarView {
         }
 
         final int contentWidth = MeasureSpec.getSize(widthMeasureSpec);
-
-        int maxHeight = mContentHeight > 0 ?
-                mContentHeight : MeasureSpec.getSize(heightMeasureSpec);
+        int availableWidth = contentWidth - getPaddingLeft() - getPaddingRight();
 
         final int verticalPadding = getPaddingTop() + getPaddingBottom();
-        int availableWidth = contentWidth - getPaddingLeft() - getPaddingRight();
+        final int externalVerticalPadding = Math.max(0, verticalPadding - mInternalVerticalPadding);
+        final int maxHeight = mContentHeight > 0
+                ? mContentHeight + externalVerticalPadding
+                : MeasureSpec.getSize(heightMeasureSpec);
         final int height = maxHeight - verticalPadding;
         final int childSpecHeight = MeasureSpec.makeMeasureSpec(height, MeasureSpec.AT_MOST);
 

@@ -301,7 +301,11 @@ class RememberSaveableTest {
         rule.setContent {
             WrapRegistry(wrap = wrapRegistryLambda) {
                 if (doEmit) {
-                    rememberSaveable { 1 }
+                    // TODO(): Cast needed since Kotlin 2.0 as o/w an error is thrown:
+                    // java.lang.IllegalArgumentException: kotlin.Unit cannot be saved using the
+                    // current SaveableStateRegistry.
+                    @Suppress("USELESS_CAST")
+                    rememberSaveable { 1 } as Int
                 }
             }
         }

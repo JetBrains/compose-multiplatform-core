@@ -29,7 +29,7 @@ import androidx.compose.runtime.ComposeCompilerApi
  * @param endOffset The startOffset of the function in the source file at the time of compilation.
  */
 @ComposeCompilerApi
-@Target(AnnotationTarget.CLASS)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @Repeatable
 annotation class FunctionKeyMeta(val key: Int, val startOffset: Int, val endOffset: Int)

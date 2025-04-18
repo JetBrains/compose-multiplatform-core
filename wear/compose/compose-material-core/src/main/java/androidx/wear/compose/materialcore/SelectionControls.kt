@@ -80,7 +80,7 @@ import kotlin.math.sin
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun Checkbox(
+public fun Checkbox(
     checked: Boolean,
     modifier: Modifier = Modifier,
     boxColor: @Composable (enabled: Boolean, checked: Boolean) -> State<Color>,
@@ -168,7 +168,7 @@ fun Checkbox(
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun Switch(
+public fun Switch(
     modifier: Modifier,
     checked: Boolean,
     enabled: Boolean,
@@ -260,7 +260,7 @@ fun Switch(
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun RadioButton(
+public fun RadioButton(
     modifier: Modifier,
     selected: Boolean,
     enabled: Boolean,
@@ -275,7 +275,7 @@ fun RadioButton(
     width: Dp,
     height: Dp,
     ripple: Indication
-) =
+): Unit =
     RadioButton(
         modifier = modifier,
         selected = selected,
@@ -315,7 +315,7 @@ fun RadioButton(
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun RadioButton(
+public fun RadioButton(
     modifier: Modifier,
     selected: Boolean,
     enabled: Boolean,
@@ -412,7 +412,7 @@ fun RadioButton(
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun animateSelectionColor(
+public fun animateSelectionColor(
     enabled: Boolean,
     checked: Boolean,
     checkedColor: Color,
@@ -432,19 +432,19 @@ fun animateSelectionColor(
     )
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-enum class SelectionStage {
+public enum class SelectionStage {
     Unchecked,
     Checked
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun interface FunctionDrawBox {
-    operator fun invoke(drawScope: DrawScope, color: Color, progress: Float, isRtl: Boolean)
+public fun interface FunctionDrawBox {
+    public operator fun invoke(drawScope: DrawScope, color: Color, progress: Float, isRtl: Boolean)
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun interface FunctionDrawThumb {
-    operator fun invoke(
+public fun interface FunctionDrawThumb {
+    public operator fun invoke(
         drawScope: DrawScope,
         thumbColor: Color,
         progress: Float,
@@ -454,12 +454,12 @@ fun interface FunctionDrawThumb {
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun interface FunctionDotRadiusProgressDuration {
-    operator fun invoke(selected: Boolean): Int
+public fun interface FunctionDotRadiusProgressDuration {
+    public operator fun invoke(selected: Boolean): Int
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun DrawScope.animateTick(
+public fun DrawScope.animateTick(
     enabled: Boolean,
     checked: Boolean,
     tickColor: Color,
@@ -677,13 +677,15 @@ private fun Offset.rotate(angleRadians: Float, center: Offset): Offset =
     (this - center).rotate(angleRadians) + center
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun directionVector(angleRadians: Float) = Offset(cos(angleRadians), sin(angleRadians))
+public fun directionVector(angleRadians: Float): Offset =
+    Offset(cos(angleRadians), sin(angleRadians))
 
 private fun Offset.rotate90() = Offset(-y, x)
 
 // This is duplicated from wear.compose.foundation/geometry.kt
 // Any changes should be replicated there.
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) fun Float.toRadians() = this * PI.toFloat() / 180f
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun Float.toRadians(): Float = this * PI.toFloat() / 180f
 
 private val TICK_BASE_LENGTH = 4.dp
 private val TICK_STICK_LENGTH = 8.dp

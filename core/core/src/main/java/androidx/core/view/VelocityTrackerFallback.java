@@ -20,7 +20,7 @@ import static androidx.core.view.MotionEventCompat.AXIS_SCROLL;
 
 import android.view.MotionEvent;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A fallback implementation of {@link android.view.VelocityTracker}. The methods its provide

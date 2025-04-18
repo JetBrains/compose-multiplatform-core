@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.11.0-alpha02" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha02)" variant="all" version="8.11.0-alpha02">
+
+    <issue
+        id="ExperimentalPropertyAnnotation"
+        message="This property does not have all required annotations to correctly mark it as experimental."
+        errorLine1="    @InternalSubspaceApi public val jxrSession: Session,"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/androidx/xr/compose/platform/SpatialComposeScene.kt"/>
+    </issue>
+
+</issues>

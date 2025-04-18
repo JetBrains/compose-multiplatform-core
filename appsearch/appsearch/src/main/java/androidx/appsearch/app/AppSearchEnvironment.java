@@ -20,9 +20,10 @@ import android.content.Context;
 import android.os.UserHandle;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.lang.annotation.Retention;
@@ -40,16 +41,13 @@ import java.util.concurrent.TimeUnit;
 public interface AppSearchEnvironment {
 
     /** Returns the directory to initialize appsearch based on the environment. */
-    @NonNull
-    File getAppSearchDir(@NonNull Context context, @Nullable UserHandle userHandle);
+    @NonNull File getAppSearchDir(@NonNull Context context, @Nullable UserHandle userHandle);
 
     /** Returns the correct context for the user based on the environment. */
-    @NonNull
-    Context createContextAsUser(@NonNull Context context, @NonNull UserHandle userHandle);
+    @NonNull Context createContextAsUser(@NonNull Context context, @NonNull UserHandle userHandle);
 
     /** Returns an ExecutorService based on given parameters. */
-    @NonNull
-    ExecutorService createExecutorService(
+    @NonNull ExecutorService createExecutorService(
             int corePoolSize,
             int maxConcurrency,
             long keepAliveTime,
@@ -58,18 +56,15 @@ public interface AppSearchEnvironment {
             int priority);
 
     /** Returns an ExecutorService with a single thread. */
-    @NonNull
-    ExecutorService createSingleThreadExecutor();
+    @NonNull ExecutorService createSingleThreadExecutor();
 
     /** Creates and returns an Executor with cached thread pools. */
-    @NonNull
-    ExecutorService createCachedThreadPoolExecutor();
+    @NonNull ExecutorService createCachedThreadPoolExecutor();
 
     /**
      * Returns a cache directory for creating temporary files like in case of migrating documents.
      */
-    @Nullable
-    File getCacheDir(@NonNull Context context);
+    @Nullable File getCacheDir(@NonNull Context context);
 
     /** Returns if we can log INFO level logs. */
     boolean isInfoLoggingEnabled();

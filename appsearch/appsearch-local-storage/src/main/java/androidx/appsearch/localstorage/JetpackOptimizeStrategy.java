@@ -16,11 +16,12 @@
 // @exportToFramework:skipFile()
 package androidx.appsearch.localstorage;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 
 import com.google.android.icing.proto.GetOptimizeInfoResultProto;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An implementation of {@link androidx.appsearch.localstorage.OptimizeStrategy} will

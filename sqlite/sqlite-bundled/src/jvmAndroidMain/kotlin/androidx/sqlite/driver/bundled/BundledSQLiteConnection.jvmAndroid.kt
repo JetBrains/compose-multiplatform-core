@@ -29,7 +29,7 @@ public actual class BundledSQLiteConnection(private val connectionPointer: Long)
 
     @OptIn(ExperimentalStdlibApi::class) @Volatile private var isClosed = false
 
-    override fun prepare(sql: String): SQLiteStatement {
+    actual override fun prepare(sql: String): SQLiteStatement {
         if (isClosed) {
             throwSQLiteException(SQLITE_MISUSE, "connection is closed")
         }
@@ -37,7 +37,7 @@ public actual class BundledSQLiteConnection(private val connectionPointer: Long)
         return BundledSQLiteStatement(connectionPointer, statementPointer)
     }
 
-    override fun close() {
+    actual override fun close() {
         if (!isClosed) {
             nativeClose(connectionPointer)
         }

@@ -51,7 +51,7 @@ fun SpecificationTopAppBar(
         )
 
     val foregroundColors =
-        TopAppBarDefaults.centerAlignedTopAppBarColors(
+        TopAppBarDefaults.topAppBarColors(
             containerColor = Color.Transparent,
             scrolledContainerColor = Color.Transparent
         )

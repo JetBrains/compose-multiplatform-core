@@ -18,6 +18,7 @@ package androidx.compose.ui.unit
 
 import org.junit.Assert
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
@@ -101,6 +102,14 @@ class DpTest {
     @Test
     fun infinite() {
         assertEquals(Float.POSITIVE_INFINITY, Dp.Infinity.value, 0f)
+    }
+
+    @Test
+    fun isFinite() {
+        assertTrue(1.dp.isFinite)
+        assertFalse(Dp.Unspecified.isFinite)
+        assertFalse(Dp.Infinity.isFinite)
+        assertFalse(Float.NEGATIVE_INFINITY.dp.isFinite)
     }
 
     @Suppress("DIVISION_BY_ZERO")

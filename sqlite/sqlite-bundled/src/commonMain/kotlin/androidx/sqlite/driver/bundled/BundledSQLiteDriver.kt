@@ -31,7 +31,9 @@ public expect class BundledSQLiteDriver() : SQLiteDriver {
      *
      * See also [SQLite In Multi-Threaded Applications](https://www.sqlite.org/threadsafe.html)
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val threadingMode: Int
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val threadingMode: Int
+
+    override fun open(fileName: String): SQLiteConnection
 
     /**
      * Opens a new database connection.

@@ -19,9 +19,10 @@ package androidx.benchmark
 import androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi
 import androidx.benchmark.perfetto.PerfettoConfig
 import androidx.benchmark.perfetto.PerfettoHelper
-import androidx.benchmark.perfetto.PerfettoTrace
 import androidx.benchmark.perfetto.perfettoConfig
 import androidx.benchmark.perfetto.validateAndEncode
+import androidx.benchmark.traceprocessor.PerfettoTrace
+import androidx.benchmark.traceprocessor.record
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress

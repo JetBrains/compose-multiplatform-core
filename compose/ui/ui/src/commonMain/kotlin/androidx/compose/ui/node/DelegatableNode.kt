@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.semantics.SemanticsInfo
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 
@@ -63,6 +64,10 @@ interface DelegatableNode {
      * can be retrieved inside a node by using [androidx.compose.ui.node.requireLayoutDirection].
      */
     fun onLayoutDirectionChange() {}
+
+    fun interface RegistrationHandle {
+        fun unregister()
+    }
 }
 
 internal val DelegatableNode.isDelegationRoot: Boolean
@@ -325,8 +330,17 @@ internal fun DelegatableNode.requireLayoutNode(): LayoutNode =
         }
         .layoutNode
 
+internal fun DelegatableNode.requireSemanticsInfo(): SemanticsInfo = requireLayoutNode()
+
 internal fun DelegatableNode.requireOwner(): Owner =
     checkPreconditionNotNull(requireLayoutNode().owner) { "This node does not have an owner." }
+
+/**
+ * Requests autofill for the LayoutNode that this [DelegatableNode] is attached to. If the node does
+ * not have any autofill semantic properties set, then the request still may be sent to the Autofill
+ * service, but no response is expected.
+ */
+fun DelegatableNode.requestAutofill() = requireLayoutNode().requestAutofill()
 
 /**
  * Returns the current [Density] of the LayoutNode that this [DelegatableNode] is attached to. If

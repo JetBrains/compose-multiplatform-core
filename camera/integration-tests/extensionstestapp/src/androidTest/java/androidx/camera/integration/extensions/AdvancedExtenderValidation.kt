@@ -55,6 +55,7 @@ import androidx.camera.integration.extensions.utils.CameraSelectorUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CompletableDeferred
@@ -217,6 +218,25 @@ class AdvancedExtenderValidation(
         // Makes sure isCaptureProcessProgressAvailable API can be called without any exception
         // occurring when the vendor library implementation is version 1.4 or above
         advancedImpl.isCaptureProcessProgressAvailable
+    }
+
+    // Test
+    @SdkSuppress(minSdkVersion = 30)
+    fun validateAvailableCharacteristicsKeyValuesSupport_sinceVersion_1_5() {
+        // Runs the test only when the vendor library implementation is 1.5 or above
+        assumeTrue(ExtensionVersion.getRuntimeVersion()!! >= Version.VERSION_1_5)
+        var zoomRatioRangeFound = false
+        var afAvailableModesFound = false
+        advancedImpl.availableCharacteristicsKeyValues.forEach {
+            when (it.first) {
+                CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE -> zoomRatioRangeFound = true
+                CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES -> afAvailableModesFound = true
+            }
+        }
+        // Also checks that CONTROL_ZOOM_RATIO_RANGE and CONTROL_AF_AVAILABLE_MODES should be
+        // contained at least.
+        assertThat(zoomRatioRangeFound).isTrue()
+        assertThat(afAvailableModesFound).isTrue()
     }
 
     enum class SizeCategory {

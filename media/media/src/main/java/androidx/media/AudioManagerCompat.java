@@ -26,7 +26,13 @@ import androidx.core.app.NotificationCompat.StreamType;
 
 import org.jspecify.annotations.NonNull;
 
-/** Compatibility library for {@link AudioManager} with fallbacks for older platforms. */
+/**
+ * Compatibility library for {@link AudioManager} with fallbacks for older platforms.
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
+ */
+@Deprecated
 public final class AudioManagerCompat {
 
     private static final String TAG = "AudioManCompat";

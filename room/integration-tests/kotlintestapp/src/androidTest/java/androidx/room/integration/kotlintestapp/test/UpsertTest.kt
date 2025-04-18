@@ -183,6 +183,7 @@ class UpsertTest : TestDatabaseTest() {
     fun upsertSingle() {
         val testObserver = TestObserver<Long>()
         booksDao.upsertPublisherSingle(TestUtil.PUBLISHER).subscribeWith(testObserver)
+        drain()
         testObserver.assertComplete()
         val result = testObserver.values().single()
         assertThat(booksDao.getPublisher(TestUtil.PUBLISHER.publisherId))
@@ -194,6 +195,7 @@ class UpsertTest : TestDatabaseTest() {
     fun upsertSingleError() {
         val testObserver = TestObserver<Long>()
         booksDao.upsertBookSingle(TestUtil.BOOK_1).subscribeWith(testObserver)
+        drain()
         testObserver.assertError(SQLiteConstraintException::class.java)
         assertThat(testObserver.errors().get(0).message).ignoringCase().contains("foreign key")
     }
@@ -206,8 +208,8 @@ class UpsertTest : TestDatabaseTest() {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.upsertBookSingle(TestUtil.BOOK_1).subscribeWith(testObserver)
         booksDao.getBookFlowable(TestUtil.BOOK_1.bookId).subscribeWith(subscriber)
-        testObserver.assertComplete()
         drain()
+        testObserver.assertComplete()
         assertThat(subscriber.values().size).isEqualTo(1)
         assertThat(subscriber.values()[0]).isEqualTo(TestUtil.BOOK_1)
         booksDao
@@ -224,6 +226,7 @@ class UpsertTest : TestDatabaseTest() {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(BOOK_1_EDIT)
         booksDao.upsertBookMaybe(TestUtil.BOOK_1).subscribeWith(testObserver)
+        drain()
         testObserver.assertComplete()
         assertThat(booksDao.getBook(TestUtil.BOOK_1.bookId)).isEqualTo(TestUtil.BOOK_1)
     }
@@ -232,6 +235,7 @@ class UpsertTest : TestDatabaseTest() {
     fun upsertMaybeError() {
         val testObserver = TestObserver<Long>()
         booksDao.upsertBookMaybe(TestUtil.BOOK_1).subscribeWith(testObserver)
+        drain()
         testObserver.assertError(SQLiteConstraintException::class.java)
         assertThat(testObserver.errors().get(0).message).ignoringCase().contains("foreign key")
     }
@@ -244,14 +248,17 @@ class UpsertTest : TestDatabaseTest() {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.upsertBookMaybe(TestUtil.BOOK_1).subscribeWith(testObserver)
         booksDao.getBookFlowable(TestUtil.BOOK_1.bookId).subscribeWith(subscriber)
-        testObserver.assertComplete()
         drain()
+        testObserver.await()
+        testObserver.assertComplete()
         assertThat(subscriber.values().size).isEqualTo(1)
         assertThat(subscriber.values()[0]).isEqualTo(TestUtil.BOOK_1)
         booksDao
             .upsertBookMaybe(TestUtil.BOOK_1.copy(title = "changed title"))
             .subscribeWith(testObserver2)
         drain()
+        testObserver2.await()
+        testObserver2.assertComplete()
         assertThat(subscriber.values().size).isEqualTo(2)
         assertThat(subscriber.values()[1].title).isEqualTo("changed title")
     }
@@ -262,6 +269,7 @@ class UpsertTest : TestDatabaseTest() {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(BOOK_1_EDIT)
         booksDao.upsertBookCompletable(TestUtil.BOOK_1).subscribeWith(testObserver)
+        drain()
         testObserver.assertComplete()
         assertThat(booksDao.getBook(TestUtil.BOOK_1.bookId)).isEqualTo(TestUtil.BOOK_1)
     }
@@ -270,6 +278,7 @@ class UpsertTest : TestDatabaseTest() {
     fun upsertCompletableError() {
         val testObserver = TestObserver<Long>()
         booksDao.upsertBookCompletable(TestUtil.BOOK_1).subscribeWith(testObserver)
+        drain()
         testObserver.assertError(SQLiteConstraintException::class.java)
         assertThat(testObserver.errors().get(0).message).ignoringCase().contains("foreign key")
     }

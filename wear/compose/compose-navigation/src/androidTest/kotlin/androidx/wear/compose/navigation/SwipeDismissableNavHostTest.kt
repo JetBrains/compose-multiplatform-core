@@ -171,8 +171,8 @@ class SwipeDismissableNavHostTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
-    fun does_not_navigate_back_to_previous_level_after_swipe_api_35() {
+    @SdkSuppress(minSdkVersion = 36)
+    fun does_not_navigate_back_to_previous_level_after_swipe_api_36() {
 
         rule.setContentWithBackPressedDispatcher { SwipeDismissWithNavigation() }
 
@@ -180,14 +180,14 @@ class SwipeDismissableNavHostTest {
         rule.onNodeWithText(START).performClick()
         rule.onNodeWithTag(TEST_TAG).performTouchInput { swipeRight() }
 
-        // Should now display "start".
+        // Should not display "start".
         rule.onNodeWithText(START).assertDoesNotExist()
     }
 
     @ExperimentalTestApi
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
-    fun displays_previous_screen_during_predictive_back_api_35() {
+    @SdkSuppress(minSdkVersion = 36)
+    fun displays_previous_screen_during_predictive_back_api_36() {
 
         rule.setContentWithBackPressedDispatcher { SwipeDismissWithNavigation() }
 
@@ -482,7 +482,7 @@ class SwipeDismissableNavHostTest {
      * Depending on API level, either swipes right on the view with TEST_TAG, or presses back button
      */
     private fun goBack() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM) {
             rule.runOnIdle { backPressedDispatcher.onBackPressed() }
         } else {
             rule.onNodeWithTag(TEST_TAG).performTouchInput { swipeRight() }

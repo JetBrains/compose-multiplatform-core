@@ -17,11 +17,13 @@
 package androidx.appsearch.localstorage.stats;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.stats.BaseStats;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -43,7 +45,7 @@ import java.util.List;
  * @exportToFramework:hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public final class SearchIntentStats {
+public final class SearchIntentStats extends BaseStats {
     /** AppSearch query correction type compared with the previous query. */
     @IntDef(value = {
             QUERY_CORRECTION_TYPE_UNKNOWN,
@@ -66,17 +68,13 @@ public final class SearchIntentStats {
 
     public static final int QUERY_CORRECTION_TYPE_END_SESSION = 4;
 
-    @NonNull
-    private final String mPackageName;
+    private final @NonNull String mPackageName;
 
-    @Nullable
-    private final String mDatabase;
+    private final @Nullable String mDatabase;
 
-    @Nullable
-    private final String mPrevQuery;
+    private final @Nullable String mPrevQuery;
 
-    @Nullable
-    private final String mCurrQuery;
+    private final @Nullable String mCurrQuery;
 
     private final long mTimestampMillis;
 
@@ -85,11 +83,10 @@ public final class SearchIntentStats {
     @QueryCorrectionType
     private final int mQueryCorrectionType;
 
-    @NonNull
-    private final List<ClickStats> mClicksStats;
+    private final @NonNull List<ClickStats> mClicksStats;
 
     SearchIntentStats(@NonNull Builder builder) {
-        Preconditions.checkNotNull(builder);
+        super(builder);
         mPackageName = builder.mPackageName;
         mDatabase = builder.mDatabase;
         mPrevQuery = builder.mPrevQuery;
@@ -101,8 +98,7 @@ public final class SearchIntentStats {
     }
 
     /** Returns calling package name. */
-    @NonNull
-    public String getPackageName() {
+    public @NonNull String getPackageName() {
         return mPackageName;
     }
 
@@ -111,20 +107,17 @@ public final class SearchIntentStats {
      *
      * <p>For global search, database name will be null.
      */
-    @Nullable
-    public String getDatabase() {
+    public @Nullable String getDatabase() {
         return mDatabase;
     }
 
     /** Returns the raw query string of the previous search intent. */
-    @Nullable
-    public String getPrevQuery() {
+    public @Nullable String getPrevQuery() {
         return mPrevQuery;
     }
 
     /** Returns the raw query string of this (current) search intent. */
-    @Nullable
-    public String getCurrQuery() {
+    public @Nullable String getCurrQuery() {
         return mCurrQuery;
     }
 
@@ -150,24 +143,19 @@ public final class SearchIntentStats {
     }
 
     /** Returns the list of {@link ClickStats} in this search intent. */
-    @NonNull
-    public List<ClickStats> getClicksStats() {
+    public @NonNull List<ClickStats> getClicksStats() {
         return mClicksStats;
     }
 
     /** Builder for {@link SearchIntentStats} */
-    public static final class Builder {
-        @NonNull
-        private final String mPackageName;
+    public static final class Builder extends BaseStats.Builder<SearchIntentStats.Builder> {
+        private final @NonNull String mPackageName;
 
-        @Nullable
-        private String mDatabase;
+        private @Nullable String mDatabase;
 
-        @Nullable
-        private String mPrevQuery;
+        private @Nullable String mPrevQuery;
 
-        @Nullable
-        private String mCurrQuery;
+        private @Nullable String mCurrQuery;
 
         private long mTimestampMillis;
 
@@ -176,8 +164,7 @@ public final class SearchIntentStats {
         @QueryCorrectionType
         private int mQueryCorrectionType = QUERY_CORRECTION_TYPE_UNKNOWN;
 
-        @NonNull
-        private List<ClickStats> mClicksStats = new ArrayList<>();
+        private @NonNull List<ClickStats> mClicksStats = new ArrayList<>();
 
         private boolean mBuilt = false;
 
@@ -206,8 +193,7 @@ public final class SearchIntentStats {
          * <p>For global search, database name will be null.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setDatabase(@Nullable String database) {
+        public @NonNull Builder setDatabase(@Nullable String database) {
             resetIfBuilt();
             mDatabase = database;
             return this;
@@ -215,8 +201,7 @@ public final class SearchIntentStats {
 
         /** Sets the raw query string of the previous search intent. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setPrevQuery(@Nullable String prevQuery) {
+        public @NonNull Builder setPrevQuery(@Nullable String prevQuery) {
             resetIfBuilt();
             mPrevQuery = prevQuery;
             return this;
@@ -224,8 +209,7 @@ public final class SearchIntentStats {
 
         /** Sets the raw query string of this (current) search intent. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setCurrQuery(@Nullable String currQuery) {
+        public @NonNull Builder setCurrQuery(@Nullable String currQuery) {
             resetIfBuilt();
             mCurrQuery = currQuery;
             return this;
@@ -233,8 +217,7 @@ public final class SearchIntentStats {
 
         /** Sets the search intent timestamp in milliseconds since Unix epoch. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setTimestampMillis(long timestampMillis) {
+        public @NonNull Builder setTimestampMillis(long timestampMillis) {
             resetIfBuilt();
             mTimestampMillis = timestampMillis;
             return this;
@@ -244,8 +227,7 @@ public final class SearchIntentStats {
          * Sets total number of results fetched from AppSearch by the client in this search intent.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setNumResultsFetched(int numResultsFetched) {
+        public @NonNull Builder setNumResultsFetched(int numResultsFetched) {
             resetIfBuilt();
             mNumResultsFetched = numResultsFetched;
             return this;
@@ -256,8 +238,8 @@ public final class SearchIntentStats {
          * search intent.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setQueryCorrectionType(@QueryCorrectionType int queryCorrectionType) {
+        public @NonNull Builder setQueryCorrectionType(
+                @QueryCorrectionType int queryCorrectionType) {
             resetIfBuilt();
             mQueryCorrectionType = queryCorrectionType;
             return this;
@@ -265,8 +247,7 @@ public final class SearchIntentStats {
 
         /** Adds one or more {@link ClickStats} objects to this search intent. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder addClicksStats(@NonNull ClickStats... clicksStats) {
+        public @NonNull Builder addClicksStats(ClickStats @NonNull ... clicksStats) {
             Preconditions.checkNotNull(clicksStats);
             resetIfBuilt();
             return addClicksStats(Arrays.asList(clicksStats));
@@ -274,8 +255,8 @@ public final class SearchIntentStats {
 
         /** Adds a collection of {@link ClickStats} objects to this search intent. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder addClicksStats(@NonNull Collection<? extends ClickStats> clicksStats) {
+        public @NonNull Builder addClicksStats(
+                @NonNull Collection<? extends ClickStats> clicksStats) {
             Preconditions.checkNotNull(clicksStats);
             resetIfBuilt();
             mClicksStats.addAll(clicksStats);
@@ -293,8 +274,8 @@ public final class SearchIntentStats {
         }
 
         /** Builds a new {@link SearchIntentStats} from the {@link Builder}. */
-        @NonNull
-        public SearchIntentStats build() {
+        @Override
+        public @NonNull SearchIntentStats build() {
             mBuilt = true;
             return new SearchIntentStats(/* builder= */ this);
         }

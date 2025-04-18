@@ -306,7 +306,7 @@ inline fun OldLayoutSkippableUpdate(
     modifier: Modifier = Modifier,
     measurePolicy: MeasurePolicy
 ) {
-    val compositeKeyHash = currentCompositeKeyHash
+    val compositeKeyHash = @Suppress("DEPRECATION") currentCompositeKeyHash
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
     val viewConfiguration = LocalViewConfiguration.current
@@ -334,7 +334,7 @@ inline fun OldLayoutSkippableUpdate(
 @Composable
 @UiComposable
 internal inline fun OldLayout(modifier: Modifier = Modifier, measurePolicy: MeasurePolicy) {
-    val compositeKeyHash = currentCompositeKeyHash
+    val compositeKeyHash = @Suppress("DEPRECATION") currentCompositeKeyHash
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
     val viewConfiguration = LocalViewConfiguration.current

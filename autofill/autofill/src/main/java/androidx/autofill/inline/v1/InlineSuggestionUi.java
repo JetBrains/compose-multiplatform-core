@@ -39,8 +39,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.autofill.R;
@@ -50,6 +48,9 @@ import androidx.autofill.inline.common.ImageViewStyle;
 import androidx.autofill.inline.common.SlicedContent;
 import androidx.autofill.inline.common.TextViewStyle;
 import androidx.autofill.inline.common.ViewStyle;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -204,16 +205,15 @@ public final class InlineSuggestionUi {
      * @param attributionIntent invoked when the UI is long-pressed.
      * @see androidx.autofill.inline.Renderer#getAttributionIntent(Slice)
      */
-    @NonNull
-    public static Content.Builder newContentBuilder(@NonNull PendingIntent attributionIntent) {
+    public static Content.@NonNull Builder newContentBuilder(
+            @NonNull PendingIntent attributionIntent) {
         return new Content.Builder(attributionIntent);
     }
 
     /**
      * Returns a builder to build the style for V1 inline suggestion UI.
      */
-    @NonNull
-    public static Style.Builder newStyleBuilder() {
+    public static Style.@NonNull Builder newStyleBuilder() {
         return new Style.Builder();
     }
 
@@ -222,8 +222,7 @@ public final class InlineSuggestionUi {
      * @return the V1 content created from the slice, or null if the slice is invalid
      */
     @RestrictTo(LIBRARY)
-    @Nullable
-    public static Content fromSlice(@NonNull Slice contentSlice) {
+    public static @Nullable Content fromSlice(@NonNull Slice contentSlice) {
         Content content = new Content(contentSlice);
         if (!content.isValid()) {
             Log.w(TAG, "Invalid content for " + UiVersions.INLINE_UI_VERSION_1);
@@ -237,8 +236,7 @@ public final class InlineSuggestionUi {
      * @return the V1 style created from the bundle, or null if the bundle is invalid
      */
     @RestrictTo(LIBRARY)
-    @Nullable
-    public static Style fromBundle(@NonNull Bundle styleBundle) {
+    public static @Nullable Style fromBundle(@NonNull Bundle styleBundle) {
         Style style = new Style(styleBundle);
         if (!style.isValid()) {
             Log.w(TAG, "Invalid style for " + UiVersions.INLINE_UI_VERSION_1);
@@ -252,8 +250,7 @@ public final class InlineSuggestionUi {
      *
      */
     @RestrictTo(LIBRARY)
-    @NonNull
-    public static View render(@NonNull Context context, @NonNull Content content,
+    public static @NonNull View render(@NonNull Context context, @NonNull Content content,
             @NonNull Style style) {
         context = getDefaultContextThemeWrapper(context);
         final LayoutInflater inflater = LayoutInflater.from(context);
@@ -310,8 +307,7 @@ public final class InlineSuggestionUi {
      * @see Content#getAttributionIntent()
      */
     @RestrictTo(LIBRARY)
-    @Nullable
-    public static PendingIntent getAttributionIntent(@NonNull Content content) {
+    public static @Nullable PendingIntent getAttributionIntent(@NonNull Content content) {
         return content.getAttributionIntent();
     }
 
@@ -350,9 +346,8 @@ public final class InlineSuggestionUi {
         /**
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        @NonNull
         @Override
-        protected String getStyleKey() {
+        protected @NonNull String getStyleKey() {
             return KEY_STYLE_V1;
         }
 
@@ -439,9 +434,8 @@ public final class InlineSuggestionUi {
         /**
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        @NonNull
         @Override
-        public String getVersion() {
+        public @NonNull String getVersion() {
             return UiVersions.INLINE_UI_VERSION_1;
         }
 
@@ -460,8 +454,7 @@ public final class InlineSuggestionUi {
         /**
          * @see Builder#setChipStyle(ViewStyle)
          */
-        @Nullable
-        public ViewStyle getChipStyle() {
+        public @Nullable ViewStyle getChipStyle() {
             Bundle styleBundle = mBundle.getBundle(KEY_CHIP_STYLE);
             return styleBundle == null ? null : new ViewStyle(styleBundle);
         }
@@ -469,8 +462,7 @@ public final class InlineSuggestionUi {
         /**
          * @see Builder#setTitleStyle(TextViewStyle)
          */
-        @Nullable
-        public TextViewStyle getTitleStyle() {
+        public @Nullable TextViewStyle getTitleStyle() {
             Bundle styleBundle = mBundle.getBundle(KEY_TITLE_STYLE);
             return styleBundle == null ? null : new TextViewStyle(styleBundle);
         }
@@ -478,8 +470,7 @@ public final class InlineSuggestionUi {
         /**
          * @see Builder#setSubtitleStyle(TextViewStyle)
          */
-        @Nullable
-        public TextViewStyle getSubtitleStyle() {
+        public @Nullable TextViewStyle getSubtitleStyle() {
             Bundle styleBundle = mBundle.getBundle(KEY_SUBTITLE_STYLE);
             return styleBundle == null ? null : new TextViewStyle(styleBundle);
         }
@@ -487,8 +478,7 @@ public final class InlineSuggestionUi {
         /**
          * @see Builder#setStartIconStyle(ImageViewStyle)
          */
-        @Nullable
-        public ImageViewStyle getStartIconStyle() {
+        public @Nullable ImageViewStyle getStartIconStyle() {
             Bundle styleBundle = mBundle.getBundle(KEY_START_ICON_STYLE);
             return styleBundle == null ? null : new ImageViewStyle(styleBundle);
         }
@@ -496,8 +486,7 @@ public final class InlineSuggestionUi {
         /**
          * @see Builder#setEndIconStyle(ImageViewStyle)
          */
-        @Nullable
-        public ImageViewStyle getEndIconStyle() {
+        public @Nullable ImageViewStyle getEndIconStyle() {
             Bundle styleBundle = mBundle.getBundle(KEY_END_ICON_STYLE);
             return styleBundle == null ? null : new ImageViewStyle(styleBundle);
         }
@@ -505,8 +494,7 @@ public final class InlineSuggestionUi {
         /**
          * @see Builder#setSingleIconChipStyle(ViewStyle)
          */
-        @Nullable
-        public ViewStyle getSingleIconChipStyle() {
+        public @Nullable ViewStyle getSingleIconChipStyle() {
             Bundle styleBundle = mBundle.getBundle(KEY_SINGLE_ICON_CHIP_STYLE);
             return styleBundle == null ? null : new ViewStyle(styleBundle);
         }
@@ -514,8 +502,7 @@ public final class InlineSuggestionUi {
         /**
          * @see Builder#setSingleIconChipIconStyle(ImageViewStyle)
          */
-        @Nullable
-        public ImageViewStyle getSingleIconChipIconStyle() {
+        public @Nullable ImageViewStyle getSingleIconChipIconStyle() {
             Bundle styleBundle = mBundle.getBundle(KEY_SINGLE_ICON_CHIP_ICON_STYLE);
             return styleBundle == null ? null : new ImageViewStyle(styleBundle);
         }
@@ -545,8 +532,7 @@ public final class InlineSuggestionUi {
              *
              * @see View#setLayoutDirection(int)
              */
-            @NonNull
-            public Builder setLayoutDirection(int layoutDirection) {
+            public @NonNull Builder setLayoutDirection(int layoutDirection) {
                 mBundle.putInt(KEY_LAYOUT_DIRECTION, layoutDirection);
                 return this;
             }
@@ -557,8 +543,7 @@ public final class InlineSuggestionUi {
              * <p>See {@link #setSingleIconChipStyle(ViewStyle)} for more information about setting
              * a special chip style for the case where the entire chip is a single icon.
              */
-            @NonNull
-            public Builder setChipStyle(@NonNull ViewStyle chipStyle) {
+            public @NonNull Builder setChipStyle(@NonNull ViewStyle chipStyle) {
                 chipStyle.assertIsValid();
                 mBundle.putBundle(KEY_CHIP_STYLE, chipStyle.getBundle());
                 return this;
@@ -567,8 +552,7 @@ public final class InlineSuggestionUi {
             /**
              * Sets the title style.
              */
-            @NonNull
-            public Builder setTitleStyle(@NonNull TextViewStyle titleStyle) {
+            public @NonNull Builder setTitleStyle(@NonNull TextViewStyle titleStyle) {
                 titleStyle.assertIsValid();
                 mBundle.putBundle(KEY_TITLE_STYLE, titleStyle.getBundle());
                 return this;
@@ -577,8 +561,7 @@ public final class InlineSuggestionUi {
             /**
              * Sets the subtitle style.
              */
-            @NonNull
-            public Builder setSubtitleStyle(@NonNull TextViewStyle subtitleStyle) {
+            public @NonNull Builder setSubtitleStyle(@NonNull TextViewStyle subtitleStyle) {
                 subtitleStyle.assertIsValid();
                 mBundle.putBundle(KEY_SUBTITLE_STYLE, subtitleStyle.getBundle());
                 return this;
@@ -591,8 +574,7 @@ public final class InlineSuggestionUi {
              * about setting a special icon style for the case where the entire chip is a single
              * icon.
              */
-            @NonNull
-            public Builder setStartIconStyle(@NonNull ImageViewStyle startIconStyle) {
+            public @NonNull Builder setStartIconStyle(@NonNull ImageViewStyle startIconStyle) {
                 startIconStyle.assertIsValid();
                 mBundle.putBundle(KEY_START_ICON_STYLE, startIconStyle.getBundle());
                 return this;
@@ -601,8 +583,7 @@ public final class InlineSuggestionUi {
             /**
              * Sets the end icon style.
              */
-            @NonNull
-            public Builder setEndIconStyle(@NonNull ImageViewStyle endIconStyle) {
+            public @NonNull Builder setEndIconStyle(@NonNull ImageViewStyle endIconStyle) {
                 endIconStyle.assertIsValid();
                 mBundle.putBundle(KEY_END_ICON_STYLE, endIconStyle.getBundle());
                 return this;
@@ -613,8 +594,7 @@ public final class InlineSuggestionUi {
              * provided, will fallback to use the chip style provided by {@link #setChipStyle
              * (ViewStyle)}.
              */
-            @NonNull
-            public Builder setSingleIconChipStyle(@NonNull ViewStyle chipStyle) {
+            public @NonNull Builder setSingleIconChipStyle(@NonNull ViewStyle chipStyle) {
                 chipStyle.assertIsValid();
                 mBundle.putBundle(KEY_SINGLE_ICON_CHIP_STYLE, chipStyle.getBundle());
                 return this;
@@ -625,16 +605,14 @@ public final class InlineSuggestionUi {
              * chip. If not provided, will fallback to use the icon style provided by
              * {@link #setStartIconStyle(ImageViewStyle)}
              */
-            @NonNull
-            public Builder setSingleIconChipIconStyle(@NonNull ImageViewStyle iconStyle) {
+            public @NonNull Builder setSingleIconChipIconStyle(@NonNull ImageViewStyle iconStyle) {
                 iconStyle.assertIsValid();
                 mBundle.putBundle(KEY_SINGLE_ICON_CHIP_ICON_STYLE, iconStyle.getBundle());
                 return this;
             }
 
-            @NonNull
             @Override
-            public Style build() {
+            public @NonNull Style build() {
                 return new Style(mBundle);
             }
         }
@@ -652,18 +630,12 @@ public final class InlineSuggestionUi {
         static final String HINT_INLINE_ATTRIBUTION_INTENT = "inline_attribution";
         static final String HINT_INLINE_CONTENT_DESCRIPTION = "inline_content_description";
 
-        @Nullable
-        private Icon mStartIcon;
-        @Nullable
-        private Icon mEndIcon;
-        @Nullable
-        private CharSequence mTitle;
-        @Nullable
-        private CharSequence mSubtitle;
-        @Nullable
-        private PendingIntent mAttributionIntent;
-        @Nullable
-        private CharSequence mContentDescription;
+        private @Nullable Icon mStartIcon;
+        private @Nullable Icon mEndIcon;
+        private @Nullable CharSequence mTitle;
+        private @Nullable CharSequence mSubtitle;
+        private @Nullable PendingIntent mAttributionIntent;
+        private @Nullable CharSequence mContentDescription;
 
         /**
          * Use {@link InlineSuggestionUi#fromSlice(Slice)} or {@link Builder#build()} to
@@ -708,49 +680,43 @@ public final class InlineSuggestionUi {
         /**
          * @see Builder#setTitle(CharSequence)
          */
-        @Nullable
-        public CharSequence getTitle() {
+        public @Nullable CharSequence getTitle() {
             return mTitle;
         }
 
         /**
          * @see Builder#setSubtitle(CharSequence)
          */
-        @Nullable
-        public CharSequence getSubtitle() {
+        public @Nullable CharSequence getSubtitle() {
             return mSubtitle;
         }
 
         /**
          * @see Builder#setStartIcon(Icon)
          */
-        @Nullable
-        public Icon getStartIcon() {
+        public @Nullable Icon getStartIcon() {
             return mStartIcon;
         }
 
         /**
          * @see Builder#setEndIcon(Icon)
          */
-        @Nullable
-        public Icon getEndIcon() {
+        public @Nullable Icon getEndIcon() {
             return mEndIcon;
         }
 
         /**
          * @see Builder#setContentDescription(CharSequence)
          */
-        @Nullable
-        public CharSequence getContentDescription() {
+        public @Nullable CharSequence getContentDescription() {
             return mContentDescription;
         }
 
         /**
          * @see InlineSuggestionUi#newContentBuilder(PendingIntent)
          */
-        @Nullable
         @Override
-        public PendingIntent getAttributionIntent() {
+        public @Nullable PendingIntent getAttributionIntent() {
             return mAttributionIntent;
         }
 
@@ -762,8 +728,7 @@ public final class InlineSuggestionUi {
             return UiVersions.INLINE_UI_VERSION_1.equals(SlicedContent.getVersion(mSlice));
         }
 
-        @Nullable
-        private static String itemType(SliceItem sliceItem) {
+        private static @Nullable String itemType(SliceItem sliceItem) {
             switch (sliceItem.getFormat()) {
                 case FORMAT_IMAGE:
                     if (sliceItem.getIcon() == null) {
@@ -804,20 +769,13 @@ public final class InlineSuggestionUi {
          */
         @SuppressWarnings("HiddenSuperclass")
         public static final class Builder extends SlicedContent.Builder<Content> {
-            @NonNull
-            private final PendingIntent mAttributionIntent;
-            @Nullable
-            private Icon mStartIcon;
-            @Nullable
-            private Icon mEndIcon;
-            @Nullable
-            private CharSequence mTitle;
-            @Nullable
-            private CharSequence mSubtitle;
-            @Nullable
-            private CharSequence mContentDescription;
-            @Nullable
-            private List<String> mHints;
+            private final @NonNull PendingIntent mAttributionIntent;
+            private @Nullable Icon mStartIcon;
+            private @Nullable Icon mEndIcon;
+            private @Nullable CharSequence mTitle;
+            private @Nullable CharSequence mSubtitle;
+            private @Nullable CharSequence mContentDescription;
+            private @Nullable List<String> mHints;
 
             /**
              * Use {@link InlineSuggestionUi#newContentBuilder(PendingIntent)} to instantiate
@@ -836,8 +794,7 @@ public final class InlineSuggestionUi {
              *
              * @param title displayed as title of slice.
              */
-            @NonNull
-            public Builder setTitle(@NonNull CharSequence title) {
+            public @NonNull Builder setTitle(@NonNull CharSequence title) {
                 mTitle = title;
                 return this;
             }
@@ -847,8 +804,7 @@ public final class InlineSuggestionUi {
              *
              * @param subtitle displayed as subtitle of slice.
              */
-            @NonNull
-            public Builder setSubtitle(@NonNull CharSequence subtitle) {
+            public @NonNull Builder setSubtitle(@NonNull CharSequence subtitle) {
                 mSubtitle = subtitle;
                 return this;
             }
@@ -862,8 +818,7 @@ public final class InlineSuggestionUi {
              *
              * @param startIcon {@link Icon} resource displayed at start of slice.
              */
-            @NonNull
-            public Builder setStartIcon(@NonNull Icon startIcon) {
+            public @NonNull Builder setStartIcon(@NonNull Icon startIcon) {
                 mStartIcon = startIcon;
                 return this;
             }
@@ -877,8 +832,7 @@ public final class InlineSuggestionUi {
              *
              * @param endIcon {@link Icon} resource displayed at end of slice.
              */
-            @NonNull
-            public Builder setEndIcon(@NonNull Icon endIcon) {
+            public @NonNull Builder setEndIcon(@NonNull Icon endIcon) {
                 mEndIcon = endIcon;
                 return this;
             }
@@ -889,8 +843,8 @@ public final class InlineSuggestionUi {
              * @param contentDescription the content description.
              * @see View#setContentDescription(CharSequence)
              */
-            @NonNull
-            public Builder setContentDescription(@NonNull CharSequence contentDescription) {
+            public @NonNull Builder setContentDescription(
+                    @NonNull CharSequence contentDescription) {
                 mContentDescription = contentDescription;
                 return this;
             }
@@ -900,15 +854,13 @@ public final class InlineSuggestionUi {
              *
              * @param hints defined in {@link androidx.autofill.inline.SuggestionHintConstants}
              */
-            @NonNull
-            public Builder setHints(@NonNull List<String> hints) {
+            public @NonNull Builder setHints(@NonNull List<String> hints) {
                 mHints = hints;
                 return this;
             }
 
-            @NonNull
             @Override
-            public Content build() {
+            public @NonNull Content build() {
                 if (mTitle == null && mStartIcon == null && mEndIcon == null && mSubtitle == null) {
                     throw new IllegalStateException(
                             "Title, subtitle, start icon, end icon are all null. "

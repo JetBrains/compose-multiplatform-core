@@ -16,6 +16,7 @@
 
 package androidx.health.connect.client.records
 
+import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.units.milesPerHour
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
@@ -35,6 +36,7 @@ class SpeedRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     samples = listOf()
                 )
             )
@@ -44,6 +46,7 @@ class SpeedRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     samples = listOf()
                 )
             )
@@ -57,6 +60,7 @@ class SpeedRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1234L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     samples = listOf()
                 )
             )
@@ -66,6 +70,7 @@ class SpeedRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1234L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     samples = listOf()
                 )
             )
@@ -79,6 +84,7 @@ class SpeedRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(1234L),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 samples = listOf()
             )
         }
@@ -92,6 +98,7 @@ class SpeedRecordTest {
                         startZoneOffset = null,
                         endTime = Instant.ofEpochMilli(1236L),
                         endZoneOffset = null,
+                        metadata = Metadata.unknownRecordingMethod(),
                         samples =
                             listOf(SpeedRecord.Sample(Instant.ofEpochMilli(1234L), 24.milesPerHour))
                     )

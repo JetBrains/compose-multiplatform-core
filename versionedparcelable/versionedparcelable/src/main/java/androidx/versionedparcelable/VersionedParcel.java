@@ -1599,7 +1599,7 @@ public abstract class VersionedParcel {
             NoSuchMethodException, ClassNotFoundException {
         Method m = mReadCache.get(parcelCls);
         if (m == null) {
-            Class<?> cls = Class.forName(parcelCls, true, VersionedParcel.class.getClassLoader());
+            Class<?> cls = Class.forName(parcelCls, false, VersionedParcel.class.getClassLoader());
             m = cls.getDeclaredMethod("read", VersionedParcel.class);
             mReadCache.put(parcelCls, m);
         }

@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <lint>
-    <!-- We cannot cause ClassVerificationFailure in embedding apps -->
-    <issue id="ClassVerificationFailure" severity="fatal" />
     <!-- Developers need to call our code from Kotlin code, so nullness is important.-->
     <issue id="UnknownNullness" severity="fatal" />
 </lint>

@@ -18,7 +18,6 @@ package androidx.work.impl.background.gcm;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.work.Clock;
 import androidx.work.Logger;
 import androidx.work.impl.Scheduler;
@@ -28,6 +27,8 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.gcm.GcmNetworkManager;
 import com.google.android.gms.gcm.Task;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * The {@link androidx.work.WorkManager} scheduler which uses
@@ -50,7 +51,7 @@ public class GcmScheduler implements Scheduler {
     }
 
     @Override
-    public void schedule(@NonNull WorkSpec... workSpecs) {
+    public void schedule(WorkSpec @NonNull ... workSpecs) {
         for (WorkSpec workSpec : workSpecs) {
             Task task = mTaskConverter.convert(workSpec);
             Logger.get().debug(TAG, "Scheduling " + workSpec + "with " + task);

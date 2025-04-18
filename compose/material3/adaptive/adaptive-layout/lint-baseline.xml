@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.10.0-alpha07" type="baseline" client="gradle" dependencies="false" name="AGP (8.10.0-alpha07)" variant="all" version="8.10.0-alpha07">
+
+    <issue
+        id="AutoboxingStateValueProperty"
+        message="Assigning `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
+        errorLine1="                    initialAnchoredIndex = initialAnchoredIndexState.value"
+        errorLine2="                                                                     ~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/adaptive/layout/PaneExpansionStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateValueProperty"
+        message="Assigning `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
+        errorLine1="            initialAnchoredIndexState.value = 0"
+        errorLine2="                                      ~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/adaptive/layout/PaneExpansionStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateValueProperty"
+        message="Assigning `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
+        errorLine1="                    initialAnchoredIndex = initialAnchoredIndexState.value"
+        errorLine2="                                                                     ~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/adaptive/layout/PaneExpansionStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateValueProperty"
+        message="Assigning `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
+        errorLine1="                    initialAnchoredIndex = initialAnchoredIndexState.value"
+        errorLine2="                                                                     ~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/adaptive/layout/PaneExpansionStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateValueProperty"
+        message="Assigning `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
+        errorLine1="            initialAnchoredIndexState.value = 0"
+        errorLine2="                                      ~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/adaptive/layout/PaneExpansionStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateValueProperty"
+        message="Assigning `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
+        errorLine1="                    initialAnchoredIndex = initialAnchoredIndexState.value"
+        errorLine2="                                                                     ~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/adaptive/layout/PaneExpansionStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateValueProperty"
+        message="Assigning `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
+        errorLine1="            anchorsState.removeAt(initialAnchoredIndexState.value)"
+        errorLine2="                                                            ~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/adaptive/layout/PaneExpansionStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateValueProperty"
+        message="Assigning `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
+        errorLine1="                    initialAnchoredIndex = initialAnchoredIndexState.value"
+        errorLine2="                                                                     ~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/adaptive/layout/PaneExpansionStateTest.kt"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateValueProperty"
+        message="Assigning `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
+        errorLine1="            initialAnchoredIndexState.value = 1"
+        errorLine2="                                      ~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/adaptive/layout/PaneExpansionStateTest.kt"/>
+    </issue>
+
+</issues>

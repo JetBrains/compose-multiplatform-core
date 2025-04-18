@@ -25,9 +25,11 @@ import androidx.privacysandbox.ads.adservices.adselection.AdSelectionConfig
 import androidx.privacysandbox.ads.adservices.adselection.AdSelectionFromOutcomesConfig
 import androidx.privacysandbox.ads.adservices.adselection.AdSelectionOutcome
 import androidx.privacysandbox.ads.adservices.adselection.GetAdSelectionDataRequest
+import androidx.privacysandbox.ads.adservices.adselection.PerBuyerConfiguration
 import androidx.privacysandbox.ads.adservices.adselection.PersistAdSelectionResultRequest
 import androidx.privacysandbox.ads.adservices.adselection.ReportEventRequest
 import androidx.privacysandbox.ads.adservices.adselection.ReportImpressionRequest
+import androidx.privacysandbox.ads.adservices.adselection.SellerConfiguration
 import androidx.privacysandbox.ads.adservices.adselection.UpdateAdCounterHistogramRequest
 import androidx.privacysandbox.ads.adservices.common.AdSelectionSignals
 import androidx.privacysandbox.ads.adservices.common.AdTechIdentifier
@@ -61,7 +63,11 @@ import org.mockito.Mockito.`when`
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.quality.Strictness
 
-@OptIn(ExperimentalFeatures.Ext8OptIn::class, ExperimentalFeatures.Ext10OptIn::class)
+@OptIn(
+    ExperimentalFeatures.Ext8OptIn::class,
+    ExperimentalFeatures.Ext10OptIn::class,
+    ExperimentalFeatures.Ext14OptIn::class
+)
 @SmallTest
 @SuppressWarnings("NewApi")
 @RunWith(AndroidJUnit4::class)
@@ -213,6 +219,35 @@ class AdSelectionManagerFuturesTest {
                 .hasCauseThat()
         exception.isInstanceOf(UnsupportedOperationException::class.java)
         exception.hasMessageThat().contains("API is not available. Min version is API 31 ext 10")
+    }
+
+    @Test
+    fun testGetAdSelectionDataWithSellerConfigurationDoesNoThrowExceptionOlderVersions() {
+        /* Make sure Get Ad Selection data API is available. */
+        Assume.assumeTrue(
+            "min = API 31-34 ext 10",
+            VersionCompatUtil.isTestableVersion(
+                /* minAdServicesVersion= */ 10,
+                /* minExtServicesVersion=*/ 10
+            )
+        )
+
+        /* Seller configuration is not available */
+        Assume.assumeFalse(
+            "maxSdkVersion = API 31-34 ext 13",
+            VersionCompatUtil.isTestableVersion(
+                /* minAdServicesVersion=*/ 14,
+                /* minExtServicesVersion=*/ 14
+            )
+        )
+
+        mockAdSelectionManager(mContext, mValidAdExtServicesSdkExtVersion)
+        val managerCompat = from(mContext)
+        val getAdSelectionDataRequest =
+            GetAdSelectionDataRequest(seller, coordinatorOriginUri, sellerConfiguration)
+
+        // Verify that it does not throw an exception
+        managerCompat!!.getAdSelectionDataAsync(getAdSelectionDataRequest)
     }
 
     @Test
@@ -559,6 +594,18 @@ class AdSelectionManagerFuturesTest {
 
         // Response.
         private val renderUri = Uri.parse("render-uri.com")
+        private val coordinatorOriginUri: Uri = Uri.parse("www.coordinator.com")
+        val buyerTarget: Int = 1000
+        val buyerTarget2: Int = 500
+        val validBuyer: AdTechIdentifier = AdTechIdentifier("test.com")
+        val validBuyer2: AdTechIdentifier = AdTechIdentifier("test2.com")
+        val perBuyerConfiguration: PerBuyerConfiguration =
+            PerBuyerConfiguration(buyerTarget, validBuyer)
+        val perBuyerConfiguration2: PerBuyerConfiguration =
+            PerBuyerConfiguration(buyerTarget2, validBuyer2)
+        val sellerTargetSize: Int = 2000
+        val perBuyerConfigurations = setOf(perBuyerConfiguration, perBuyerConfiguration2)
+        val sellerConfiguration = SellerConfiguration(sellerTargetSize, perBuyerConfigurations)
 
         private fun mockAdSelectionManager(
             spyContext: Context,

@@ -17,8 +17,7 @@
 package androidx.build.docs
 
 import androidx.build.AndroidXExtension
-import androidx.build.INCLUDE_OPTIONAL_PROJECTS
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.addToBuildOnServer
 import androidx.build.checkapi.shouldConfigureApiTasks
 import androidx.build.getSupportRootFolder
@@ -47,8 +46,6 @@ abstract class CheckTipOfTreeDocsTask : DefaultTask() {
 
     @get:Input abstract val projectPathProvider: Property<String>
 
-    @get:Input abstract val includeOptionalProjects: Property<Boolean>
-
     @get:Input abstract val type: Property<DocsType>
 
     @TaskAction
@@ -65,12 +62,7 @@ abstract class CheckTipOfTreeDocsTask : DefaultTask() {
         val fileContents = tipOfTreeBuildFile.asFile.get().readText()
         val foundExpectedText = fileContents.contains(fullExpectedText)
 
-        // Optional projects use a different path for docs configuration
-        val foundOptionalText =
-            includeOptionalProjects.get() &&
-                fileContents.contains("${prefix}ForOptionalProject(\"$projectPath\")")
-
-        if (!foundExpectedText && !foundOptionalText) {
+        if (!foundExpectedText) {
             // If this is a KMP project, check if it is present but configured as non-KMP
             val message =
                 if (fileContents.contains(projectDependency)) {
@@ -100,7 +92,7 @@ abstract class CheckTipOfTreeDocsTask : DefaultTask() {
                 if (!extension.requiresDocs()) return@afterEvaluate
 
                 val docsType =
-                    if (extension.type == LibraryType.Companion.SAMPLES) {
+                    if (extension.type == SoftwareType.Companion.SAMPLES) {
                         DocsType.SAMPLES
                     } else if (multiplatformExtension != null) {
                         DocsType.KMP
@@ -117,12 +109,6 @@ abstract class CheckTipOfTreeDocsTask : DefaultTask() {
                             project.getSupportRootFolder().resolve("docs-tip-of-tree/build.gradle")
                         )
                         task.projectPathProvider.set(path)
-                        task.includeOptionalProjects.set(
-                            providers
-                                .gradleProperty(INCLUDE_OPTIONAL_PROJECTS)
-                                .getOrElse("false")
-                                .toBoolean()
-                        )
                         task.type.set(docsType)
                         task.cacheEvenIfNoOutputs()
                     }

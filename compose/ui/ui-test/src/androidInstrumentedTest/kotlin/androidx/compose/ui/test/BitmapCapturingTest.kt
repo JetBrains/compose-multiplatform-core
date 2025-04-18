@@ -63,7 +63,7 @@ class BitmapCapturingTest(val config: TestConfig) {
         fun createTestSet(): List<TestConfig> =
             listOf(
                 TestConfig(ComponentActivity::class.java),
-                TestConfig(ActivityWithActionBar::class.java)
+                TestConfig(CustomComposeHostActivity::class.java)
             )
     }
 
@@ -239,7 +239,7 @@ class BitmapCapturingTest(val config: TestConfig) {
 
     private fun setContent(content: @Composable () -> Unit) {
         when (val activity = rule.activity) {
-            is ActivityWithActionBar -> activity.setContent(content)
+            is CustomComposeHostActivity -> activity.setContent(content)
             else -> rule.setContent(content)
         }
     }

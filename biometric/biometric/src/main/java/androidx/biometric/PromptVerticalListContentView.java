@@ -16,8 +16,8 @@
 
 package androidx.biometric;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,8 +57,7 @@ public final class PromptVerticalListContentView implements PromptContentView {
      *
      * @return The description for the content view, or null if the content view has no description.
      */
-    @Nullable
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return mDescription;
     }
 
@@ -68,8 +67,7 @@ public final class PromptVerticalListContentView implements PromptContentView {
      *
      * @return The item list on the content view.
      */
-    @NonNull
-    public List<PromptContentItem> getListItems() {
+    public @NonNull List<PromptContentItem> getListItems() {
         return new ArrayList<>(mContentList);
     }
 
@@ -87,8 +85,7 @@ public final class PromptVerticalListContentView implements PromptContentView {
          * @return This builder.
          * @throws IllegalArgumentException If description exceeds certain character limit.
          */
-        @NonNull
-        public Builder setDescription(@NonNull String description) {
+        public @NonNull Builder setDescription(@NonNull String description) {
             mDescription = description;
             return this;
         }
@@ -101,8 +98,7 @@ public final class PromptVerticalListContentView implements PromptContentView {
          * @throws IllegalArgumentException If this list item exceeds certain character limits or
          *                                  the number of list items exceeds certain limit.
          */
-        @NonNull
-        public Builder addListItem(@NonNull PromptContentItem listItem) {
+        public @NonNull Builder addListItem(@NonNull PromptContentItem listItem) {
             mContentList.add(listItem);
             return this;
         }
@@ -116,8 +112,7 @@ public final class PromptVerticalListContentView implements PromptContentView {
          * @throws IllegalArgumentException If this list item exceeds certain character limits or
          *                                  the number of list items exceeds certain limit.
          */
-        @NonNull
-        public Builder addListItem(@NonNull PromptContentItem listItem, int index) {
+        public @NonNull Builder addListItem(@NonNull PromptContentItem listItem, int index) {
             mContentList.add(index, listItem);
             return this;
         }
@@ -128,8 +123,7 @@ public final class PromptVerticalListContentView implements PromptContentView {
          *
          * @return An instance of {@link PromptVerticalListContentView}.
          */
-        @NonNull
-        public PromptVerticalListContentView build() {
+        public @NonNull PromptVerticalListContentView build() {
             return new PromptVerticalListContentView(mContentList, mDescription);
         }
     }

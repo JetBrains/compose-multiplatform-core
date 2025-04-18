@@ -38,7 +38,7 @@ fun <Original, Saveable> listSaver(
             for (index in list.indices) {
                 val item = list[index]
                 if (item != null) {
-                    require(canBeSaved(item)) { "item can't be saved" }
+                    require(canBeSaved(item)) { "item at index $index can't be saved: $item" }
                 }
             }
             if (list.isNotEmpty()) ArrayList(list) else null

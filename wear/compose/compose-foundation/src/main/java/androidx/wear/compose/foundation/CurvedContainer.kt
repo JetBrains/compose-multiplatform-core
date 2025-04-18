@@ -54,11 +54,14 @@ internal abstract class ContainerChild(
             }
 
     @Composable
-    override fun SubComposition() {
-        children.fastForEach { it.SubComposition() }
+    override fun SubComposition(semanticProperties: CurvedSemanticProperties) {
+        require(!semanticProperties.hasInfo()) {
+            "Cannot add semantic properties to a curved container"
+        }
+        children.fastForEach { it.SubComposition(CurvedSemanticProperties()) }
     }
 
-    override fun CurvedMeasureScope.initializeMeasure(measurables: Iterator<Measurable>) =
+    override fun CurvedMeasureScope.initializeMeasure(measurables: Iterator<Measurable>) {
         children.fastForEach { node ->
             with(
                 CurvedMeasureScope(
@@ -70,6 +73,7 @@ internal abstract class ContainerChild(
                 with(node) { initializeMeasure(measurables) }
             }
         }
+    }
 
     override fun DrawScope.draw() = children.fastForEach { with(it) { draw() } }
 

@@ -22,7 +22,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.requireView
-import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp

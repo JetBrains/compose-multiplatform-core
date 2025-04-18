@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.compose.ui.demos
 
 import android.content.ClipData
@@ -186,7 +188,7 @@ fun ClipboardManager.hasImage(): Boolean {
     return clipMetadata.clipDescription.hasMimeType("image/*")
 }
 
-@Suppress("ClassVerificationFailure", "DEPRECATION")
+@Suppress("DEPRECATION")
 fun Uri.readImageBitmap(context: Context): ImageBitmap {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, this))

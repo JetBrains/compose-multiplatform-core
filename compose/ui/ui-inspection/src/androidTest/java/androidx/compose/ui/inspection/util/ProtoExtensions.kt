@@ -16,31 +16,46 @@
 
 package androidx.compose.ui.inspection.util
 
+import androidx.compose.ui.inspection.inspector.InspectorNode
+import androidx.compose.ui.inspection.inspector.MutableInspectorNode
+import androidx.compose.ui.unit.IntRect
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Command
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableNode
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetAllParametersCommand
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetComposablesCommand
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetComposablesResponse
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetParameterDetailsCommand
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetParametersCommand
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetParametersResponse
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Parameter
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ParameterReference
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.UpdateSettingsCommand
 
-fun List<LayoutInspectorComposeProtocol.StringEntry>.toMap() = associate { it.id to it.str }
+internal fun List<LayoutInspectorComposeProtocol.StringEntry>.toMap() = associate {
+    it.id to it.str
+}
 
-fun GetParametersCommand(
+internal fun GetParametersCommand(
     rootViewId: Long,
     node: ComposableNode,
     useDelayedParameterExtraction: Boolean,
+    generation: Int = 1,
     skipSystemComposables: Boolean = true
 ): Command =
     if (useDelayedParameterExtraction) {
-        GetParametersByAnchorIdCommand(rootViewId, node.anchorHash, node.id, skipSystemComposables)
+        GetParametersByAnchorIdCommand(
+            rootViewId,
+            node.anchorHash,
+            node.id,
+            generation,
+            skipSystemComposables
+        )
     } else {
         GetParametersByIdCommand(rootViewId, node.id, skipSystemComposables)
     }
 
-fun GetParametersByIdCommand(
+internal fun GetParametersByIdCommand(
     rootViewId: Long,
     composableId: Long,
     skipSystemComposables: Boolean = true
@@ -58,10 +73,11 @@ fun GetParametersByIdCommand(
         }
         .build()
 
-fun GetParametersByAnchorIdCommand(
+internal fun GetParametersByAnchorIdCommand(
     rootViewId: Long,
     anchorId: Int,
     composableId: Long,
+    generation: Int = 1,
     skipSystemComposables: Boolean = true
 ): Command =
     Command.newBuilder()
@@ -72,13 +88,17 @@ fun GetParametersByAnchorIdCommand(
                         this.rootViewId = rootViewId
                         this.anchorHash = anchorId
                         this.composableId = composableId
+                        this.generation = generation
                         this.skipSystemComposables = skipSystemComposables
                     }
                     .build()
         }
         .build()
 
-fun GetAllParametersCommand(rootViewId: Long, skipSystemComposables: Boolean = true): Command =
+internal fun GetAllParametersCommand(
+    rootViewId: Long,
+    skipSystemComposables: Boolean = true
+): Command =
     Command.newBuilder()
         .apply {
             getAllParametersCommand =
@@ -91,7 +111,32 @@ fun GetAllParametersCommand(rootViewId: Long, skipSystemComposables: Boolean = t
         }
         .build()
 
-fun GetParameterDetailsCommand(
+internal fun GetParametersResponse.find(name: String): Parameter {
+    val strings = stringsList.toMap()
+    val params = parameterGroup.parameterList.associateBy { strings[it.name] }
+    return params[name]
+        ?: error("$name not found in parameters. Found: ${params.keys.joinToString()}")
+}
+
+internal fun GetParametersResponse.findMerged(name: String): Parameter {
+    val strings = stringsList.toMap()
+    val semantics = parameterGroup.mergedSemanticsList.associateBy { strings[it.name] }
+    return semantics[name]
+        ?: error("$name not found in merged semantics. Found: ${semantics.keys.joinToString()}")
+}
+
+internal fun GetParametersResponse.findUnmerged(name: String): Parameter {
+    val strings = stringsList.toMap()
+    val semantics = parameterGroup.unmergedSemanticsList.associateBy { strings[it.name] }
+    return semantics[name]
+        ?: error("$name not found in unmerged semantics. Found: ${semantics.keys.joinToString()}")
+}
+
+internal fun Int.resolve(response: GetParametersResponse): String? {
+    return response.stringsList.toMap()[this]
+}
+
+internal fun GetParameterDetailsCommand(
     rootViewId: Long,
     reference: ParameterReference,
     startIndex: Int,
@@ -117,7 +162,7 @@ fun GetParameterDetailsCommand(
         }
         .build()
 
-fun GetComposablesCommand(
+internal fun GetComposablesCommand(
     rootViewId: Long,
     skipSystemComposables: Boolean = true,
     generation: Int = 1,
@@ -140,7 +185,35 @@ fun GetComposablesCommand(
         }
         .build()
 
-fun GetUpdateSettingsCommand(
+internal fun GetComposablesResponse.filter(name: String): List<ComposableNode> {
+    val strings = stringsList.toMap()
+    return rootsList
+        .flatMap { it.nodesList }
+        .flatMap { it.flatten() }
+        .filter { strings[it.name] == name }
+}
+
+internal fun GetComposablesResponse.roots(): List<InspectorNode> {
+    val strings = stringsList.toMap()
+    return rootsList.flatMap { it.nodesList.convert(strings) }
+}
+
+private fun List<ComposableNode>.convert(strings: Map<Int, String>): List<InspectorNode> = map {
+    val node = MutableInspectorNode()
+    node.name = strings[it.name] ?: ""
+    node.box =
+        IntRect(
+            it.bounds.layout.x,
+            it.bounds.layout.y,
+            it.bounds.layout.x + it.bounds.layout.w,
+            it.bounds.layout.y + it.bounds.layout.h
+        )
+    node.children.addAll(it.childrenList.convert(strings))
+    node.inlined = (it.flags and ComposableNode.Flags.INLINED_VALUE) != 0
+    node.build()
+}
+
+internal fun GetUpdateSettingsCommand(
     includeRecomposeCounts: Boolean = false,
     keepRecomposeCounts: Boolean = false,
     delayParameterExtractions: Boolean = false,
@@ -160,5 +233,5 @@ fun GetUpdateSettingsCommand(
         }
         .build()
 
-fun ComposableNode.flatten(): List<ComposableNode> =
+internal fun ComposableNode.flatten(): List<ComposableNode> =
     listOf(this).plus(this.childrenList.flatMap { it.flatten() })

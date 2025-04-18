@@ -22,10 +22,11 @@ import android.util.AndroidRuntimeException;
 import android.util.Log;
 import android.view.animation.Animation;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.collection.SimpleArrayMap;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -194,7 +195,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Anim
      *
      * @param items The animations that will be started simultaneously.
      */
-    public void playTogether(@NonNull Animator... items) {
+    public void playTogether(Animator @NonNull ... items) {
         if (items != null) {
             Builder builder = play(items[0]);
             for (int i = 1; i < items.length; ++i) {
@@ -227,7 +228,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Anim
      *
      * @param items The animations that will be started one after another.
      */
-    public void playSequentially(@NonNull Animator... items) {
+    public void playSequentially(Animator @NonNull ... items) {
         if (items != null) {
             if (items.length == 1) {
                 play(items[0]);
@@ -266,8 +267,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Anim
      * @return ArrayList<Animator> The list of child animations of this AnimatorSet.
      */
     @SuppressLint("ConcreteCollection") /* Platform API */
-    @NonNull
-    public ArrayList<Animator> getChildAnimations() {
+    public @NonNull ArrayList<Animator> getChildAnimations() {
         ArrayList<Animator> childList = new ArrayList<Animator>();
 
         int size = mNodes.size();
@@ -316,8 +316,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Anim
     }
 
     @Override
-    @Nullable
-    public Interpolator getInterpolator() {
+    public @Nullable Interpolator getInterpolator() {
         return mInterpolator;
     }
 
@@ -349,8 +348,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Anim
      * outlined in the calls to <code>play</code> and the other methods in the
      * <code>Builder</code object.
      */
-    @NonNull
-    public Builder play(@NonNull Animator anim) {
+    public @NonNull Builder play(@NonNull Animator anim) {
         return new Builder(anim);
     }
 
@@ -538,8 +536,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Anim
      * animations of this AnimatorSet.
      */
     @Override
-    @NonNull
-    public AnimatorSet setDuration(long duration) {
+    public @NonNull AnimatorSet setDuration(long duration) {
         if (duration < 0) {
             throw new IllegalArgumentException("duration must be a value of zero or greater");
         }
@@ -1257,9 +1254,8 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Anim
     }
 
     @SuppressLint("NoClone") /* Platform API */
-    @NonNull
     @Override
-    public AnimatorSet clone() {
+    public @NonNull AnimatorSet clone() {
         final AnimatorSet anim = (AnimatorSet) super.clone();
         /*
          * The basic clone() operation copies all items. This doesn't work very well for
@@ -1716,9 +1712,8 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Anim
             this.mAnimation = animation;
         }
 
-        @NonNull
         @Override
-        public Node clone() {
+        public @NonNull Node clone() {
             try {
                 Node node = (Node) super.clone();
                 node.mAnimation = mAnimation.clone();
@@ -1811,9 +1806,8 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Anim
             }
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             String eventStr = mEvent == ANIMATION_START ? "start" : (
                     mEvent == ANIMATION_DELAY_ENDED ? "delay ended" : "end");
             return eventStr + " " + mNode.mAnimation.toString();
@@ -1951,8 +1945,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Anim
          * @param anim The animation that will play when the animation supplied to the
          * {@link AnimatorSet#play(Animator)} method starts.
          */
-        @NonNull
-        public Builder with(@NonNull Animator anim) {
+        public @NonNull Builder with(@NonNull Animator anim) {
             Node node = getNodeForAnimation(anim);
             mCurrentNode.addSibling(node);
             return this;
@@ -1966,8 +1959,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Anim
          * @param anim The animation that will play when the animation supplied to the
          * {@link AnimatorSet#play(Animator)} method ends.
          */
-        @NonNull
-        public Builder before(@NonNull Animator anim) {
+        public @NonNull Builder before(@NonNull Animator anim) {
             Node node = getNodeForAnimation(anim);
             mCurrentNode.addChild(node);
             return this;
@@ -1981,8 +1973,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Anim
          * @param anim The animation whose end will cause the animation supplied to the
          * {@link AnimatorSet#play(Animator)} method to play.
          */
-        @NonNull
-        public Builder after(@NonNull Animator anim) {
+        public @NonNull Builder after(@NonNull Animator anim) {
             Node node = getNodeForAnimation(anim);
             mCurrentNode.addParent(node);
             return this;
@@ -1996,8 +1987,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Anim
          * @param delay The number of milliseconds that should elapse before the
          * animation starts.
          */
-        @NonNull
-        public Builder after(long delay) {
+        public @NonNull Builder after(long delay) {
             // setup no-op ValueAnimator just to run the clock
             ValueAnimator anim = ValueAnimator.ofFloat(0f, 1f);
             anim.setDuration(delay);

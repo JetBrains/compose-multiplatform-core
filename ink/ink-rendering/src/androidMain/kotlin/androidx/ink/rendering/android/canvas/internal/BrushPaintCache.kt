@@ -258,7 +258,7 @@ internal class BrushPaintCache(
             // Early exit for efficiency.
             return PaintCacheData(paint)
         }
-        val bitmaps = textureLayers.map { textureStore.get(it.colorTextureUri) }
+        val bitmaps = textureLayers.map { textureStore[it.clientTextureId] }
         val bitmapShaders =
             textureLayers.zip(bitmaps) { layer, bitmap ->
                 if (bitmap == null) return@zip null
@@ -329,7 +329,7 @@ internal class BrushPaintCache(
 
     /**
      * Obtains a [Paint] for the [BrushPaint] from the cache, creating it if necessary and updating
-     * its local transform. If [BrushPaint.TextureLayer.colorTextureUri] can't be resolved to a
+     * its local transform. If [BrushPaint.TextureLayer.colorTextureId] can't be resolved to a
      * bitmap for any layer, that layer is ignored.
      *
      * @param brushPaint Used to configure [Paint.shader].

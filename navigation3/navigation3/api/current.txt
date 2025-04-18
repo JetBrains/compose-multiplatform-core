@@ -1,102 +1,101 @@
 // Signature format: 4.0
 package androidx.navigation3 {
 
-  public final class AnimatedNavDisplay {
-    method public java.util.Map<java.lang.String,java.lang.Object> isDialog(boolean boolean);
-    method public java.util.Map<java.lang.String,java.lang.Object> transition(androidx.compose.animation.EnterTransition? enter, androidx.compose.animation.ExitTransition? exit);
-    field public static final androidx.navigation3.AnimatedNavDisplay INSTANCE;
-  }
-
-  public final class AnimatedNavDisplay_androidKt {
-    method @androidx.compose.runtime.Composable public static <T> void AnimatedNavDisplay(java.util.List<? extends T> backstack, androidx.navigation3.NavWrapperManager wrapperManager, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.ui.Alignment contentAlignment, optional androidx.compose.animation.SizeTransform? sizeTransform, optional kotlin.jvm.functions.Function0<kotlin.Unit> onBack, kotlin.jvm.functions.Function1<? super T,? extends androidx.navigation3.NavRecord<? extends T>> recordProvider);
-  }
-
-  public interface NavContentWrapper {
-    method public default void WrapBackStack(java.util.List<?> backStack);
-    method public <T> void WrapContent(androidx.navigation3.NavRecord<T> record);
-  }
-
-  public final class NavDisplay {
-    method public java.util.Map<java.lang.String,java.lang.Object> isDialog(boolean boolean);
-    field public static final androidx.navigation3.NavDisplay INSTANCE;
-  }
-
-  public final class NavDisplay_androidKt {
-    method @androidx.compose.runtime.Composable public static <T> void NavDisplay(java.util.List<? extends T> backstack, androidx.navigation3.NavWrapperManager wrapperManager, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit> onBack, kotlin.jvm.functions.Function1<? super T,? extends androidx.navigation3.NavRecord<? extends T>> recordProvider);
-  }
-
-  public final class NavRecord<T> {
-    ctor public NavRecord(T key, optional java.util.Map<java.lang.String,?> featureMap, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
-    method public kotlin.jvm.functions.Function1<T,kotlin.Unit> getContent();
-    method public java.util.Map<java.lang.String,java.lang.Object> getFeatureMap();
-    method public T getKey();
-    property public final kotlin.jvm.functions.Function1<T,kotlin.Unit> content;
-    property public final java.util.Map<java.lang.String,java.lang.Object> featureMap;
-    property public final T key;
-  }
-
-  public final class NavWrapperManager {
-    ctor public NavWrapperManager(java.util.List<? extends androidx.navigation3.NavContentWrapper> navContentWrappers);
-    method public <T> void ContentForRecord(androidx.navigation3.NavRecord<T> record);
-    method public void PrepareBackStack(java.util.List<?> backStack);
-  }
-
-  public final class NavWrapperManagerKt {
-    method public static androidx.navigation3.NavWrapperManager rememberNavWrapperManager(java.util.List<? extends androidx.navigation3.NavContentWrapper> navContentWrappers);
-  }
-
-  public final class RecordClassProvider<T> {
-    ctor public RecordClassProvider(kotlin.reflect.KClass<T> clazz, java.util.Map<java.lang.String,?> featureMap, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+  public final class EntryClassProvider<T> {
+    ctor public EntryClassProvider(kotlin.reflect.KClass<T> clazz, java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
     method public kotlin.reflect.KClass<T> component1();
     method public java.util.Map<java.lang.String,java.lang.Object> component2();
     method public kotlin.jvm.functions.Function1<T,kotlin.Unit> component3();
-    method public androidx.navigation3.RecordClassProvider<T> copy(kotlin.reflect.KClass<T> clazz, java.util.Map<java.lang.String,?> featureMap, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public androidx.navigation3.EntryClassProvider<T> copy(kotlin.reflect.KClass<T> clazz, java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
     method public kotlin.reflect.KClass<T> getClazz();
     method public kotlin.jvm.functions.Function1<T,kotlin.Unit> getContent();
-    method public java.util.Map<java.lang.String,java.lang.Object> getFeatureMap();
-    property public final kotlin.reflect.KClass<T> clazz;
-    property public final kotlin.jvm.functions.Function1<T,kotlin.Unit> content;
-    property public final java.util.Map<java.lang.String,java.lang.Object> featureMap;
+    method public java.util.Map<java.lang.String,java.lang.Object> getMetadata();
+    property public kotlin.reflect.KClass<T> clazz;
+    property public kotlin.jvm.functions.Function1<T,kotlin.Unit> content;
+    property public java.util.Map<java.lang.String,java.lang.Object> metadata;
   }
 
-  @kotlin.DslMarker public @interface RecordDsl {
+  @kotlin.DslMarker public @interface EntryDsl {
   }
 
-  public final class RecordProvider<T> {
-    ctor public RecordProvider(T key, java.util.Map<java.lang.String,?> featureMap, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+  public final class EntryProvider<T> {
+    ctor public EntryProvider(T key, java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
     method public T component1();
     method public java.util.Map<java.lang.String,java.lang.Object> component2();
     method public kotlin.jvm.functions.Function1<T,kotlin.Unit> component3();
-    method public androidx.navigation3.RecordProvider<T> copy(T key, java.util.Map<java.lang.String,?> featureMap, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public androidx.navigation3.EntryProvider<T> copy(T key, java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
     method public kotlin.jvm.functions.Function1<T,kotlin.Unit> getContent();
-    method public java.util.Map<java.lang.String,java.lang.Object> getFeatureMap();
     method public T getKey();
-    property public final kotlin.jvm.functions.Function1<T,kotlin.Unit> content;
-    property public final java.util.Map<java.lang.String,java.lang.Object> featureMap;
-    property public final T key;
+    method public java.util.Map<java.lang.String,java.lang.Object> getMetadata();
+    property public kotlin.jvm.functions.Function1<T,kotlin.Unit> content;
+    property public T key;
+    property public java.util.Map<java.lang.String,java.lang.Object> metadata;
   }
 
-  @androidx.navigation3.RecordDsl public final class RecordProviderBuilder {
-    ctor public RecordProviderBuilder(kotlin.jvm.functions.Function1<java.lang.Object,? extends androidx.navigation3.NavRecord<? extends java.lang.Object?>> fallback);
-    method public <T> void addRecordProvider(kotlin.reflect.KClass<T> clazz, optional java.util.Map<java.lang.String,?> featureMap, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
-    method public <T> void addRecordProvider(T key, optional java.util.Map<java.lang.String,?> featureMap, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
-    method public kotlin.jvm.functions.Function1<java.lang.Object,androidx.navigation3.NavRecord<? extends java.lang.Object?>> build();
+  @androidx.navigation3.EntryDsl public final class EntryProviderBuilder<T> {
+    ctor public EntryProviderBuilder(kotlin.jvm.functions.Function1<? super T,? extends androidx.navigation3.NavEntry<T>> fallback);
+    method public <T> void addEntryProvider(kotlin.reflect.KClass<T> clazz, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public <T> void addEntryProvider(T key, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public kotlin.jvm.functions.Function1<T,androidx.navigation3.NavEntry<T>> build();
   }
 
-  public final class RecordProviderKt {
-    method public static inline <reified T> void record(androidx.navigation3.RecordProviderBuilder, optional java.util.Map<java.lang.String,?> featureMap, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
-    method public static <T> void record(androidx.navigation3.RecordProviderBuilder, T key, optional java.util.Map<java.lang.String,?> featureMap, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
-    method public static inline kotlin.jvm.functions.Function1<java.lang.Object,androidx.navigation3.NavRecord<? extends java.lang.Object?>> recordProvider(optional kotlin.jvm.functions.Function1<java.lang.Object,? extends androidx.navigation3.NavRecord<? extends java.lang.Object?>> fallback, kotlin.jvm.functions.Function1<? super androidx.navigation3.RecordProviderBuilder,kotlin.Unit> builder);
+  public final class EntryProviderKt {
+    method public static inline <reified T> void entry(androidx.navigation3.EntryProviderBuilder<? extends java.lang.Object?>, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public static <T> void entry(androidx.navigation3.EntryProviderBuilder<T>, T key, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public static inline <T> kotlin.jvm.functions.Function1<T,androidx.navigation3.NavEntry<T>> entryProvider(optional kotlin.jvm.functions.Function1<? super T,? extends androidx.navigation3.NavEntry<T>> fallback, kotlin.jvm.functions.Function1<? super androidx.navigation3.EntryProviderBuilder<T>,kotlin.Unit> builder);
   }
 
-  public final class SaveableStateNavContentWrapper implements androidx.navigation3.NavContentWrapper {
-    ctor public SaveableStateNavContentWrapper();
-    method public <T> void WrapContent(androidx.navigation3.NavRecord<T> record);
+  public final class LocalNavAnimatedContentScope_androidKt {
+    method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.animation.AnimatedContentScope> getLocalNavAnimatedContentScope();
+    property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.animation.AnimatedContentScope> LocalNavAnimatedContentScope;
   }
 
-  public final class SavedStateNavContentWrapper implements androidx.navigation3.NavContentWrapper {
-    method @androidx.compose.runtime.Composable public <T> void WrapContent(androidx.navigation3.NavRecord<T> record);
-    field public static final androidx.navigation3.SavedStateNavContentWrapper INSTANCE;
+  public final class NavBackStackProviderKt {
+    method @androidx.compose.runtime.Composable public static <T> void NavBackStackProvider(java.util.List<? extends T> backStack, kotlin.jvm.functions.Function1<? super T,? extends androidx.navigation3.NavEntry<? extends T>> entryProvider, optional java.util.List<? extends androidx.navigation3.NavLocalProvider> localProviders, kotlin.jvm.functions.Function1<? super java.util.List<? extends androidx.navigation3.NavEntry<T>>,kotlin.Unit> content);
+  }
+
+  public class NavEntry<T> {
+    ctor public NavEntry(T key, optional java.util.Map<java.lang.String,?> metadata, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public kotlin.jvm.functions.Function1<T,kotlin.Unit> getContent();
+    method public T getKey();
+    method public java.util.Map<java.lang.String,java.lang.Object> getMetadata();
+    property public kotlin.jvm.functions.Function1<T,kotlin.Unit> content;
+    property public T key;
+    property public java.util.Map<java.lang.String,java.lang.Object> metadata;
+  }
+
+  public class NavEntryWrapper<T> extends androidx.navigation3.NavEntry<T> {
+    ctor public NavEntryWrapper(androidx.navigation3.NavEntry<T> navEntry);
+    method public final androidx.navigation3.NavEntry<T> getNavEntry();
+    property public kotlin.jvm.functions.Function1<T,kotlin.Unit> content;
+    property public T key;
+    property public java.util.Map<java.lang.String,java.lang.Object> metadata;
+    property public final androidx.navigation3.NavEntry<T> navEntry;
+  }
+
+  public interface NavLocalProvider {
+    method @androidx.compose.runtime.Composable public default void ProvideToBackStack(java.util.List<?> backStack, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+    method @androidx.compose.runtime.Composable public <T> void ProvideToEntry(androidx.navigation3.NavEntry<T> entry);
+  }
+
+  public final class SaveableStateNavLocalProvider implements androidx.navigation3.NavLocalProvider {
+    method @androidx.compose.runtime.Composable public <T> void ProvideToEntry(androidx.navigation3.NavEntry<T> entry);
+    field public static final androidx.navigation3.SaveableStateNavLocalProvider INSTANCE;
+  }
+
+  public final class SavedStateNavLocalProvider implements androidx.navigation3.NavLocalProvider {
+    method @androidx.compose.runtime.Composable public <T> void ProvideToEntry(androidx.navigation3.NavEntry<T> entry);
+    field public static final androidx.navigation3.SavedStateNavLocalProvider INSTANCE;
+  }
+
+  public final class SinglePaneNavDisplay {
+    method public java.util.Map<java.lang.String,java.lang.Object> popTransition(androidx.compose.animation.EnterTransition? enter, androidx.compose.animation.ExitTransition? exit);
+    method public java.util.Map<java.lang.String,java.lang.Object> transition(androidx.compose.animation.EnterTransition? enter, androidx.compose.animation.ExitTransition? exit);
+    field public static final androidx.navigation3.SinglePaneNavDisplay INSTANCE;
+  }
+
+  public final class SinglePaneNavDisplay_androidKt {
+    method @androidx.compose.runtime.Composable public static <T> void SinglePaneNavDisplay(java.util.List<? extends T> backStack, optional androidx.compose.ui.Modifier modifier, optional java.util.List<? extends androidx.navigation3.NavLocalProvider> localProviders, optional androidx.compose.ui.Alignment contentAlignment, optional androidx.compose.animation.SizeTransform? sizeTransform, optional androidx.compose.animation.EnterTransition enterTransition, optional androidx.compose.animation.ExitTransition exitTransition, optional androidx.compose.animation.EnterTransition popEnterTransition, optional androidx.compose.animation.ExitTransition popExitTransition, optional kotlin.jvm.functions.Function0<kotlin.Unit> onBack, kotlin.jvm.functions.Function1<? super T,? extends androidx.navigation3.NavEntry<T>> entryProvider);
   }
 
 }

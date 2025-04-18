@@ -33,10 +33,10 @@ class ReplaceWithDetectorKotlinMethodTest {
 
         val expected =
             """
-src/replacewith/StaticKotlinMethodExplicitClassJava.java:25: Information: Replacement available [ReplaceWith]
+src/replacewith/StaticKotlinMethodExplicitClassJava.java:25: Hint: Replacement available [ReplaceWith]
         ReplaceWithUsageKotlin.toString(this);
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0 errors, 0 warnings
+0 errors, 0 warnings, 1 hint
         """
                 .trimIndent()
 

@@ -63,7 +63,13 @@ import kotlinx.coroutines.flow.StateFlow
  * @param watchFaceInstanceId The ID associated with the watch face instance. Note there may be more
  *   than one instance associated with a [WatchFaceService]. See
  *   [androidx.wear.watchface.client.WatchFaceId] for more details.
+ *
+ *     @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class WatchState(
     public val interruptionFilter: StateFlow<Int?>,
     public val isAmbient: StateFlow<Boolean?>,

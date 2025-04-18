@@ -31,8 +31,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import kotlin.math.absoluteValue
@@ -51,7 +49,9 @@ import kotlinx.coroutines.launch
  *
  * Example of [SegmentedCircularProgressIndicator] with progress value:
  *
- * @sample androidx.wear.compose.material3.samples.SegmentedProgressIndicatorSample
+ * @sample androidx.wear.compose.material3.samples.SegmentedProgressIndicatorSample Example of
+ *   smaller size [SegmentedCircularProgressIndicator]:
+ * @sample androidx.wear.compose.material3.samples.SmallSegmentedProgressIndicatorSample
  * @param segmentCount Number of equal segments that the progress indicator should be divided into.
  *   Has to be a number equal or greater to 1.
  * @param progress The progress of this progress indicator where 0.0 represents no progress and 1.0
@@ -81,7 +81,7 @@ import kotlinx.coroutines.launch
  *   visually disabled.
  */
 @Composable
-fun SegmentedCircularProgressIndicator(
+public fun SegmentedCircularProgressIndicator(
     @IntRange(from = 1) segmentCount: Int,
     progress: () -> Float,
     modifier: Modifier = Modifier,
@@ -151,12 +151,11 @@ fun SegmentedCircularProgressIndicator(
             .drawWithCache {
                 onDrawWithContent {
                     val fullSweep = 360f - ((startAngle - endAngle) % 360 + 360) % 360
-                    val stroke = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
                     val minSize = min(size.height, size.width)
+                    val strokePx = strokeWidth.toPx()
                     // Sweep angle between two progress indicator segments.
                     val gapSweep =
-                        asin((stroke.width + gapSize.toPx()) / (minSize - stroke.width))
-                            .toDegrees() * 2f
+                        asin((strokePx + gapSize.toPx()) / (minSize - strokePx)).toDegrees() * 2f
                     val segmentSweepAngle = fullSweep / segmentCount
                     val wrappedProgress =
                         wrapProgress(animatedProgress.value, allowProgressOverflow)
@@ -179,7 +178,7 @@ fun SegmentedCircularProgressIndicator(
                                             enabled,
                                             animatedOverflowColor.value
                                         ),
-                                    stroke = stroke,
+                                    strokeWidth = strokePx,
                                 )
                             } else {
                                 drawIndicatorSegment(
@@ -187,7 +186,7 @@ fun SegmentedCircularProgressIndicator(
                                     sweep = segmentSweepAngle,
                                     gapSweep = gapSweep,
                                     brush = colors.trackBrush(enabled),
-                                    stroke = stroke,
+                                    strokeWidth = strokePx,
                                 )
                             }
                         }
@@ -216,7 +215,8 @@ fun SegmentedCircularProgressIndicator(
                                 sweep = progressSweep,
                                 gapSweep = gapSweep,
                                 brush = colors.indicatorBrush(enabled),
-                                stroke = stroke,
+                                strokeWidth = strokePx,
+                                strokePadding = AntiAliasingStrokePadding
                             )
                         }
                     }
@@ -238,7 +238,7 @@ fun SegmentedCircularProgressIndicator(
  *
  * Example of smaller size [SegmentedCircularProgressIndicator]:
  *
- * @sample androidx.wear.compose.material3.samples.SmallSegmentedProgressIndicatorSample
+ * @sample androidx.wear.compose.material3.samples.SmallSegmentedProgressIndicatorBinarySample
  * @param segmentCount Number of equal segments that the progress indicator should be divided into.
  *   Has to be a number equal or greater to 1.
  * @param segmentValue A function that for each segment between 1..[segmentCount] returns true if
@@ -261,7 +261,7 @@ fun SegmentedCircularProgressIndicator(
  *   visually disabled.
  */
 @Composable
-fun SegmentedCircularProgressIndicator(
+public fun SegmentedCircularProgressIndicator(
     @IntRange(from = 1) segmentCount: Int,
     segmentValue: (segmentIndex: Int) -> Boolean,
     modifier: Modifier = Modifier,
@@ -296,12 +296,11 @@ fun SegmentedCircularProgressIndicator(
             .drawWithCache {
                 onDrawWithContent {
                     val fullSweep = 360f - ((startAngle - endAngle) % 360 + 360) % 360
-                    val stroke = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
+                    val strokePx = strokeWidth.toPx()
                     val minSize = min(size.height, size.width)
                     // Sweep angle between two progress indicator segments.
                     val gapSweep =
-                        asin((stroke.width + gapSize.toPx()) / (minSize - stroke.width))
-                            .toDegrees() * 2f
+                        asin((strokePx + gapSize.toPx()) / (minSize - strokePx)).toDegrees() * 2f
                     val segmentSweepAngle = fullSweep / segmentCount
                     val currentProgress = animatedProgress.value
                     val progressInSegments = segmentCount * currentProgress
@@ -314,7 +313,7 @@ fun SegmentedCircularProgressIndicator(
                             sweep = segmentSweepAngle,
                             gapSweep = gapSweep,
                             brush = colors.trackBrush(enabled),
-                            stroke = stroke,
+                            strokeWidth = strokePx,
                         )
                         if (segment < progressInSegments && segmentValue(segment)) {
                             var progressSweep =
@@ -330,7 +329,8 @@ fun SegmentedCircularProgressIndicator(
                                 sweep = progressSweep,
                                 gapSweep = gapSweep,
                                 brush = colors.indicatorBrush(enabled),
-                                stroke = stroke,
+                                strokeWidth = strokePx,
+                                strokePadding = AntiAliasingStrokePadding
                             )
                         }
                     }
@@ -342,3 +342,9 @@ fun SegmentedCircularProgressIndicator(
 /** Progress animation spec for binary [SegmentedCircularProgressIndicator] */
 internal val binarySegmentedProgressAnimationSpec: AnimationSpec<Float>
     @Composable get() = MaterialTheme.motionScheme.fastEffectsSpec()
+
+/**
+ * Padding used for progress stroke width to prevent aliasing issues where the progress arc overlaps
+ * the track arc (b/381865505).
+ */
+private const val AntiAliasingStrokePadding = 1f // 1 px

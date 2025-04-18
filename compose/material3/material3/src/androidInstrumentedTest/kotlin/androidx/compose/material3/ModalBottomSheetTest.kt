@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -160,6 +161,55 @@ class ModalBottomSheetTest {
                     .getUnclippedBoundsInRoot()
                     .height
                     .roundToPx() / 4
+            }
+        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).click(0, outsideY)
+        rule.waitForIdle()
+
+        // Bottom sheet should not exist
+        rule.onNodeWithTag(sheetTag).assertDoesNotExist()
+    }
+
+    @Test
+    fun modalBottomSheet_isDismissedOnTapOutsideWithPadding() {
+        var showBottomSheet by mutableStateOf(true)
+        lateinit var sheetState: SheetState
+
+        rule.setContent {
+            val density = LocalDensity.current
+            val screenHeight = LocalContext.current.resources.configuration.screenHeightDp.dp
+            sheetState =
+                SheetState(
+                    skipPartiallyExpanded = false,
+                    positionalThreshold = {
+                        with(density) { BottomSheetDefaults.PositionalThreshold.toPx() }
+                    },
+                    velocityThreshold = {
+                        with(density) { BottomSheetDefaults.VelocityThreshold.toPx() }
+                    },
+                )
+            if (showBottomSheet) {
+                ModalBottomSheet(
+                    sheetState = sheetState,
+                    onDismissRequest = { showBottomSheet = false },
+                    modifier = Modifier.padding(top = screenHeight / 2),
+                    // Have top padding account for the top half of the screen
+                ) {
+                    Box(Modifier.fillMaxSize().testTag(sheetTag))
+                }
+            }
+        }
+
+        assertThat(sheetState.isVisible).isTrue()
+
+        // Tap Scrim
+        val outsideY =
+            with(rule.density) {
+                rule
+                    .onAllNodes(isDialog())
+                    .onFirst()
+                    .getUnclippedBoundsInRoot()
+                    .height
+                    .roundToPx() / 2
             }
         UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).click(0, outsideY)
         rule.waitForIdle()
@@ -683,21 +733,18 @@ class ModalBottomSheetTest {
             ModalBottomSheet(
                 onDismissRequest = {},
                 modifier = Modifier.testTag(topTag),
+                dragHandle = null,
                 sheetState = sheetState,
             ) {
                 if (showShortContent) {
-                    Box(Modifier.fillMaxWidth().height(100.dp))
+                    Box(Modifier.fillMaxWidth().height(1.dp))
                 } else {
                     Box(Modifier.fillMaxSize().testTag(sheetTag))
                 }
             }
         }
 
-        rule.onNodeWithTag(topTag).performTouchInput {
-            swipeDown()
-            swipeDown()
-        }
-
+        scope.launch { sheetState.hide() }
         rule.runOnIdle { assertThat(sheetState.currentValue).isEqualTo(SheetValue.Hidden) }
 
         showShortContent = true
@@ -732,7 +779,10 @@ class ModalBottomSheetTest {
     @Test
     fun modalBottomSheet_respectsConfirmValueChange() {
         lateinit var sheetState: SheetState
+        lateinit var scope: CoroutineScope
+
         rule.setContent {
+            scope = rememberCoroutineScope()
             sheetState =
                 rememberModalBottomSheetState(
                     confirmValueChange = { newState -> newState != SheetValue.Hidden }
@@ -747,16 +797,25 @@ class ModalBottomSheetTest {
             }
         }
 
+        val currentOffset = sheetState.requireOffset()
+        // Respects on swipe gesture
         rule.runOnIdle {
             assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
         }
-
         rule.onNodeWithTag(sheetTag).performTouchInput { swipeDown() }
-
         rule.runOnIdle {
             assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
         }
+        assertThat(sheetState.requireOffset()).isEqualTo(currentOffset)
 
+        // Respects on animation call
+        rule.runOnIdle { scope.launch { sheetState.hide() } }
+        rule.runOnIdle {
+            assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
+        }
+        assertThat(sheetState.requireOffset()).isEqualTo(currentOffset)
+
+        // Respects on semantic action
         rule
             .onNodeWithTag(dragHandleTag, useUnmergedTree = true)
             .onParent()
@@ -765,6 +824,7 @@ class ModalBottomSheetTest {
         rule.runOnIdle {
             assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
         }
+        assertThat(sheetState.requireOffset()).isEqualTo(currentOffset)
 
         // Tap Scrim
         val outsideY =
@@ -781,6 +841,7 @@ class ModalBottomSheetTest {
         rule.runOnIdle {
             assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
         }
+        assertThat(sheetState.requireOffset()).isEqualTo(currentOffset)
     }
 
     @Test

@@ -15,7 +15,8 @@
  */
 package androidx.lifecycle.viewmodel.internal
 
-import kotlin.native.internal.createCleaner
+import kotlin.experimental.ExperimentalNativeApi
+import kotlin.native.ref.createCleaner
 import kotlinx.cinterop.Arena
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.alloc
@@ -41,7 +42,7 @@ internal actual class SynchronizedObject actual constructor() {
     private val resource = Resource()
 
     @Suppress("unused") // The returned Cleaner must be assigned to a property
-    @OptIn(ExperimentalStdlibApi::class)
+    @OptIn(ExperimentalNativeApi::class)
     private val cleaner = createCleaner(resource, Resource::dispose)
 
     fun lock() {

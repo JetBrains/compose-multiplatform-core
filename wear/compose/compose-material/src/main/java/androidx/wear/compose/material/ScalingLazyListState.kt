@@ -87,7 +87,7 @@ public fun rememberScalingLazyListState(
     "Was moved to androidx.wear.compose.foundation.lazy package. " + "Please use it instead"
 )
 @Stable
-class ScalingLazyListState
+public class ScalingLazyListState
 constructor(
     private var initialCenterItemIndex: Int = 1,
     private var initialCenterItemScrollOffset: Int = 0
@@ -392,9 +392,9 @@ constructor(
         return result
     }
 
-    companion object {
+    public companion object {
         /** The default [Saver] implementation for [ScalingLazyListState]. */
-        val Saver =
+        public val Saver: Saver<ScalingLazyListState, Any> =
             listSaver<ScalingLazyListState, Int>(
                 save = {
                     listOf(

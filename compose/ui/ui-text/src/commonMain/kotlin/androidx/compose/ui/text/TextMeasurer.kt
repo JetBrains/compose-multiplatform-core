@@ -421,8 +421,7 @@ internal class CacheTextLayoutInput(val textLayoutInput: TextLayoutInput) {
             result = 31 * result + density.hashCode()
             result = 31 * result + layoutDirection.hashCode()
             result = 31 * result + fontFamilyResolver.hashCode()
-            result = 31 * result + constraints.maxWidth.hashCode()
-            result = 31 * result + constraints.maxHeight.hashCode()
+            result = 31 * result + constraints.hashCode()
             return result
         }
 
@@ -440,8 +439,7 @@ internal class CacheTextLayoutInput(val textLayoutInput: TextLayoutInput) {
             if (density != other.textLayoutInput.density) return false
             if (layoutDirection != other.textLayoutInput.layoutDirection) return false
             if (fontFamilyResolver !== other.textLayoutInput.fontFamilyResolver) return false
-            if (constraints.maxWidth != other.textLayoutInput.constraints.maxWidth) return false
-            if (constraints.maxHeight != other.textLayoutInput.constraints.maxHeight) return false
+            if (constraints != other.textLayoutInput.constraints) return false
         }
 
         return true

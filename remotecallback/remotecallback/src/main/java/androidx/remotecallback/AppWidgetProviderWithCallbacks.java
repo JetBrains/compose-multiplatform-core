@@ -25,9 +25,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Version of {@link AppWidgetProvider} that implements a {@link CallbackReceiver}.
@@ -53,18 +54,16 @@ public class AppWidgetProviderWithCallbacks<T extends CallbackReceiver> extends
         }
     }
 
-    @NonNull
     @Override
-    public T createRemoteCallback(@NonNull Context context) {
+    public @NonNull T createRemoteCallback(@NonNull Context context) {
         return CallbackHandlerRegistry.sInstance.getAndResetStub(getClass(), context, null);
     }
 
     /**
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     @Override
-    public RemoteCallback toRemoteCallback(@NonNull Class<T> cls, @NonNull Context context,
+    public @NonNull RemoteCallback toRemoteCallback(@NonNull Class<T> cls, @NonNull Context context,
             @Nullable String authority,
             @NonNull Bundle args, @NonNull String method) {
         Intent intent = new Intent(ACTION_BROADCAST_CALLBACK);

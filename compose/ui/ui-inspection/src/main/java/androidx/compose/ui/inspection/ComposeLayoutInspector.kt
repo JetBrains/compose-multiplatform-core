@@ -82,8 +82,11 @@ class ComposeLayoutInspectorFactory :
     }
 }
 
-class ComposeLayoutInspector(connection: Connection, environment: InspectorEnvironment) :
-    Inspector(connection) {
+class ComposeLayoutInspector(
+    connection: Connection,
+    // Keep this instance for easy access through reflection:
+    private val environment: InspectorEnvironment
+) : Inspector(connection) {
 
     /** Cache data which allows us to reuse previously queried inspector nodes */
     private class CacheData(val rootView: View, val trees: List<CacheTree>) {
@@ -128,6 +131,8 @@ class ComposeLayoutInspector(connection: Connection, environment: InspectorEnvir
     private var cachedGeneration = 0
     private var cachedSystemComposablesSkipped = false
     private var cachedHasAllParameters = false
+    // Keep this instance for easy access through reflection
+    private var disposed = false
     private val cachedNodes: MutableLongObjectMap<CacheData>
         get() {
             check(Thread.currentThread() == inspectorThread) {
@@ -138,6 +143,11 @@ class ComposeLayoutInspector(connection: Connection, environment: InspectorEnvir
 
     init {
         enableInspection(environment.artTooling())
+    }
+
+    override fun onDispose() {
+        disposed = true
+        cachedNodes.clear()
     }
 
     override fun onReceiveCommand(data: ByteArray, callback: CommandCallback) {

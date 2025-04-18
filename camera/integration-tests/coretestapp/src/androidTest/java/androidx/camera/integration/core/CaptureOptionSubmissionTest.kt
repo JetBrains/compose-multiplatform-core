@@ -43,7 +43,7 @@ import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.internal.compat.quirk.AeFpsRangeQuirk
-import androidx.camera.integration.core.util.CameraPipeUtil
+import androidx.camera.integration.core.util.Camera2InteropUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
@@ -578,7 +578,7 @@ class CaptureOptionSubmissionTest(
                     builder
                         .also {
                             if (index == 0) { // adding to just one use case is enough
-                                CameraPipeUtil.setCameraCaptureSessionCallback(
+                                Camera2InteropUtil.setCameraCaptureSessionCallback(
                                     implName,
                                     it,
                                     sessionCaptureCallback

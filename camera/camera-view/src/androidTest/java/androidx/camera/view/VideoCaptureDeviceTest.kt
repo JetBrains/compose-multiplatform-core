@@ -29,10 +29,10 @@ import android.util.Log
 import androidx.annotation.MainThread
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
-import androidx.camera.testing.impl.AndroidUtil.skipVideoRecordingTestIfNotSupportedByEmulator
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.camera.testing.impl.CoreAppTestUtil.ForegroundOccupiedError
+import androidx.camera.testing.impl.IgnoreVideoRecordingProblematicDeviceRule
 import androidx.camera.testing.impl.fakes.FakeActivity
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.testrule.PreTestRule
@@ -72,6 +72,7 @@ import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -147,10 +148,9 @@ class VideoCaptureDeviceTest(
     }
 
     @get:Rule(order = 0)
-    val skipRule: TestRule = PreTestRule {
-        skipVideoRecordingTestIfNotSupportedByEmulator()
-        skipTestWithSurfaceProcessingOnCuttlefishApi30()
-    }
+    val skipRule: TestRule =
+        RuleChain.outerRule(IgnoreVideoRecordingProblematicDeviceRule())
+            .around(PreTestRule { skipTestWithSurfaceProcessingOnCuttlefishApi30() })
 
     @get:Rule(order = 1)
     val cameraRule: TestRule =

@@ -96,6 +96,19 @@ class WindowInsetsCompatTest {
 
     @Test
     @SdkSuppress(minSdkVersion = 21)
+    public fun inset_halfAmount() {
+        val start = Insets.of(0, 10, 0, 0)
+        val insets = WindowInsetsCompat.Builder().setInsets(Type.statusBars(), start).build()
+
+        val result = insets.inset(0, 5, 0, 0).systemWindowInsets
+        assertEquals(start.left, result.left)
+        assertEquals(start.top - 5, result.top)
+        assertEquals(start.right, result.right)
+        assertEquals(start.bottom, result.bottom)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 21)
     public fun inset_set_ime_insets() {
         val start = Insets.of(10, 11, 12, 13)
         val insets =

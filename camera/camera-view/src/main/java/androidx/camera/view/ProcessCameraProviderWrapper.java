@@ -17,7 +17,6 @@
 package androidx.camera.view;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraInfo;
@@ -29,6 +28,8 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.lifecycle.LifecycleOwner;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A wrapper interface for {@link ProcessCameraProvider}.
@@ -47,7 +48,7 @@ interface ProcessCameraProviderWrapper {
     /**
      * Wrapper method for {@link ProcessCameraProvider#unbind}.
      */
-    void unbind(@NonNull UseCase... useCases);
+    void unbind(UseCase @NonNull ... useCases);
 
     /**
      * Wrapper method for {@link ProcessCameraProvider#unbindAll()}.
@@ -59,21 +60,18 @@ interface ProcessCameraProviderWrapper {
      */
     @SuppressWarnings({"lambdaLast"})
     @MainThread
-    @NonNull
-    Camera bindToLifecycle(@NonNull LifecycleOwner lifecycleOwner,
+    @NonNull Camera bindToLifecycle(@NonNull LifecycleOwner lifecycleOwner,
             @NonNull CameraSelector cameraSelector,
             @NonNull UseCaseGroup useCaseGroup);
 
     /**
      * Wrapper method for {@link ProcessCameraProvider#shutdownAsync()}.
      */
-    @NonNull
     @VisibleForTesting
-    ListenableFuture<Void> shutdownAsync();
+    @NonNull ListenableFuture<Void> shutdownAsync();
 
     /**
      * Wrapper method for {@link ProcessCameraProvider#getCameraInfo(CameraSelector)}.
      */
-    @NonNull
-    CameraInfo getCameraInfo(CameraSelector cameraSelector);
+    @NonNull CameraInfo getCameraInfo(CameraSelector cameraSelector);
 }

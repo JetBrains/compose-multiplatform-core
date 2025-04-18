@@ -235,6 +235,9 @@ fun WindowInsets.asPaddingValues(density: Density): PaddingValues =
 /** Convert a [PaddingValues] to a [WindowInsets]. */
 internal fun PaddingValues.asInsets(): WindowInsets = PaddingValuesInsets(this)
 
+/** Create a [WindowInsets] with fixed dimensions of 0 on all sides. */
+fun WindowInsets(): WindowInsets = EmptyWindowInsets
+
 /**
  * Create a [WindowInsets] with fixed dimensions.
  *
@@ -340,6 +343,8 @@ private class FixedDpInsets(
         return result
     }
 }
+
+private val EmptyWindowInsets = FixedIntInsets(0, 0, 0, 0)
 
 /**
  * An [WindowInsets] that comes straight from [androidx.core.graphics.Insets], whose value can be

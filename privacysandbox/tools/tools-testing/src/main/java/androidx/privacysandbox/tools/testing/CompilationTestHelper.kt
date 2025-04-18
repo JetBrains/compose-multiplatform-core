@@ -33,7 +33,7 @@ import javax.tools.Diagnostic
 object CompilationTestHelper {
     fun assertCompiles(sources: List<Source>): TestCompilationResult {
         val result = compileAll(sources)
-        assertThat(result).succeeds()
+        assertThat(result).succeedsExcludingOptInWarnings()
         return result
     }
 
@@ -87,6 +87,24 @@ class CompilationResultSubject(private val result: TestCompilationResult) {
     fun succeeds() {
         assertWithMessage("Unexpected errors:\n${getFullErrorMessages().joinToString("\n")}")
             .that(result.success && getRawErrorMessages().isEmpty())
+            .isTrue()
+    }
+
+    // TODO(b/388455777): remove and switch back to using 'succeeds()' once annotation generation is
+    // added to the library.
+    fun succeedsExcludingOptInWarnings() {
+        assertWithMessage("Unexpected errors:\n${getFullErrorMessages().joinToString("\n")}")
+            .that(
+                result.success &&
+                    getRawErrorMessages()
+                        .filterNot { message ->
+                            message.kind == Diagnostic.Kind.WARNING &&
+                                message.msg.contains(
+                                    "This API is experimental. It may be changed in the future without notice."
+                                )
+                        }
+                        .isEmpty()
+            )
             .isTrue()
     }
 

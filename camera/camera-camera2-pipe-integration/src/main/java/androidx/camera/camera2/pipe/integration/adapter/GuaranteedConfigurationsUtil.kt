@@ -19,11 +19,15 @@ package androidx.camera.camera2.pipe.integration.adapter
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
 import android.os.Build
+import android.util.Size
 import androidx.annotation.RequiresApi
+import androidx.camera.core.impl.CameraMode
+import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.core.impl.SurfaceCombination
 import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.SurfaceConfig.ConfigSize
 import androidx.camera.core.impl.SurfaceConfig.ConfigType
+import androidx.camera.core.impl.SurfaceSizeDefinition
 
 public object GuaranteedConfigurationsUtil {
     @JvmStatic
@@ -526,6 +530,7 @@ public object GuaranteedConfigurationsUtil {
         surfaceCombinations.addAll(getLegacySupportedCombinationList())
         if (
             hardwareLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED ||
+                hardwareLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL ||
                 hardwareLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL ||
                 hardwareLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_3
         ) {
@@ -901,5 +906,45 @@ public object GuaranteedConfigurationsUtil {
             }
             .also { combinationList.add(it) }
         return combinationList
+    }
+
+    /** Returns the supported stream combinations for high-speed sessions. */
+    @JvmStatic
+    public fun generateHighSpeedSupportedCombinationList(
+        maxSupportedSize: Size,
+        surfaceSizeDefinition: SurfaceSizeDefinition
+    ): List<SurfaceCombination> {
+        val surfaceCombinations = mutableListOf<SurfaceCombination>()
+
+        // Find the closest SurfaceConfig that can contain the max supported size. Ultimately,
+        // the target resolution still needs to be verified by the StreamConfigurationMap API for
+        // high-speed.
+        val surfaceConfig =
+            SurfaceConfig.transformSurfaceConfig(
+                CameraMode.DEFAULT,
+                ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
+                maxSupportedSize,
+                surfaceSizeDefinition
+            )
+
+        // Create high-speed supported combinations based on the constraints:
+        // - Only support preview and/or video surface.
+        // - Maximum 2 surfaces.
+        // - All surfaces must have the same size.
+
+        // PRIV
+        SurfaceCombination()
+            .apply { addSurfaceConfig(surfaceConfig) }
+            .also { surfaceCombinations.add(it) }
+
+        // PRIV + PRIV
+        SurfaceCombination()
+            .apply {
+                addSurfaceConfig(surfaceConfig)
+                addSurfaceConfig(surfaceConfig)
+            }
+            .also { surfaceCombinations.add(it) }
+
+        return surfaceCombinations
     }
 }

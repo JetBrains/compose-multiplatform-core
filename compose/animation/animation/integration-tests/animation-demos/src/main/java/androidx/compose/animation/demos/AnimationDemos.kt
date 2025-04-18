@@ -54,6 +54,7 @@ import androidx.compose.animation.demos.lookahead.LookaheadWithScaffold
 import androidx.compose.animation.demos.lookahead.LookaheadWithSubcompose
 import androidx.compose.animation.demos.lookahead.LookaheadWithTabRowDemo
 import androidx.compose.animation.demos.lookahead.ScreenSizeChangeDemo
+import androidx.compose.animation.demos.sharedelement.SharedElementDemos
 import androidx.compose.animation.demos.singlevalue.SingleValueAnimationDemo
 import androidx.compose.animation.demos.statetransition.CrossfadeDemo
 import androidx.compose.animation.demos.statetransition.DoubleTapToLikeDemo
@@ -84,6 +85,7 @@ val AnimationDemos =
     DemoCategory(
         "Animation",
         listOf(
+            ComposableDemo("Shared Element Demos") { SharedElementDemos() },
             DemoCategory(
                 "State Transition Demos",
                 listOf(

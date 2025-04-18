@@ -17,6 +17,7 @@
 package androidx.compose.foundation.selection
 
 import android.os.Build.VERSION.SDK_INT
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.TapIndicationDelay
 import androidx.compose.foundation.TestIndication
 import androidx.compose.foundation.TestIndicationNodeFactory
@@ -32,6 +33,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.setFocusableContent
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -557,7 +559,14 @@ class SelectableTest {
             assertThat(modifier.nameFallback).isEqualTo("selectable")
             assertThat(modifier.valueOverride).isNull()
             assertThat(modifier.inspectableElements.map { it.name }.asIterable())
-                .containsExactly("selected", "enabled", "role", "onClick")
+                .containsExactly(
+                    "selected",
+                    "interactionSource",
+                    "indicationNodeFactory",
+                    "enabled",
+                    "role",
+                    "onClick"
+                )
         }
     }
 
@@ -1060,6 +1069,28 @@ class SelectableTest {
     }
 
     @Test
+    fun selectableTest_localIndication_interactionSource_eagerlyCreated() {
+        val interactionSource = MutableInteractionSource()
+        var created = false
+        val indication = TestIndicationNodeFactory { _, _ -> created = true }
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "SelectableText",
+                        modifier =
+                            Modifier.testTag("selectable").selectable(
+                                selected = false,
+                                interactionSource = interactionSource
+                            ) {}
+                    )
+                }
+            }
+        }
+        rule.runOnIdle { assertThat(created).isTrue() }
+    }
+
+    @Test
     fun selectableTest_noInteractionSource_lazilyCreated_pointerInput() {
         var created = false
         lateinit var interactionSource: InteractionSource
@@ -1101,13 +1132,24 @@ class SelectableTest {
     }
 
     @Test
-    fun composedOverload_nonEquality() {
+    fun nullInteractionSource_equality() {
         val onClick = {}
-        val modifier1 = Modifier.selectable(selected = true, onClick = onClick)
-        val modifier2 = Modifier.selectable(selected = true, onClick = onClick)
+        assertModifierIsPure { toggleInput ->
+            Modifier.selectable(selected = toggleInput, interactionSource = null, onClick = onClick)
+        }
+    }
 
-        // The composed overload can never compare equal
-        assertThat(modifier1).isNotEqualTo(modifier2)
+    @Test
+    fun nonNullInteractionSource_equality() {
+        val onClick = {}
+        val interactionSource = MutableInteractionSource()
+        assertModifierIsPure { toggleInput ->
+            Modifier.selectable(
+                selected = toggleInput,
+                interactionSource = interactionSource,
+                onClick = onClick
+            )
+        }
     }
 
     @Test

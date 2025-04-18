@@ -24,7 +24,6 @@ import androidx.pdf.data.Openable
 import androidx.pdf.viewer.loader.PdfLoader
 import androidx.pdf.viewer.loader.WeakPdfLoaderCallbacks
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
-import androidx.test.filters.SmallTest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.filterNotNull
@@ -45,7 +44,6 @@ import org.mockito.Mockito.verify
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-@SmallTest
 @RunWith(RobolectricTestRunner::class)
 @OptIn(ExperimentalCoroutinesApi::class)
 

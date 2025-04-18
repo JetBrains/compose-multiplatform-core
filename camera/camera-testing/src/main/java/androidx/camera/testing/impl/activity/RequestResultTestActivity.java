@@ -20,9 +20,10 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.espresso.idling.CountingIdlingResource;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A intermediate activity to launch another activity and wait for result.
@@ -39,14 +40,12 @@ public class RequestResultTestActivity extends Activity {
             "RequestResultReady");
 
     private int mResultErrorCode = 0;
-    @Nullable
-    private String mResultErrorMessage = null;
+    private @Nullable String mResultErrorMessage = null;
 
     /**
      * Retrieves the CountingIdlingResource to know whether the result has been returned or not.
      */
-    @NonNull
-    public CountingIdlingResource getRequestResultReadyIdlingResource() {
+    public @NonNull CountingIdlingResource getRequestResultReadyIdlingResource() {
         return mRequestResultReady;
     }
 
@@ -60,8 +59,7 @@ public class RequestResultTestActivity extends Activity {
     /**
      * Retrieves the result error message.
      */
-    @Nullable
-    public String getResultErrorMessage() {
+    public @Nullable String getResultErrorMessage() {
         return mResultErrorMessage;
     }
 

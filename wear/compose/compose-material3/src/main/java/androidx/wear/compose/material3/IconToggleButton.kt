@@ -45,9 +45,9 @@ import androidx.wear.compose.materialcore.animateSelectionColor
  *
  * Set the size of the [IconToggleButton] with Modifier.[touchTargetAwareSize] to ensure that the
  * background padding will correctly reach the edge of the minimum touch target. The recommended
- * icon toggle button sizes are [IconToggleButtonDefaults.DefaultButtonSize],
- * [IconToggleButtonDefaults.SmallButtonSize], [IconToggleButtonDefaults.LargeButtonSize] and
- * [IconToggleButtonDefaults.ExtraLargeButtonSize].
+ * icon toggle button sizes are [IconToggleButtonDefaults.Size],
+ * [IconToggleButtonDefaults.SmallSize], [IconToggleButtonDefaults.LargeSize] and
+ * [IconToggleButtonDefaults.ExtraLargeSize].
  *
  * Use [IconToggleButtonDefaults.iconSizeFor] to determine the icon size for a given
  * [IconToggleButton] size, or refer to icon sizes, [IconToggleButtonDefaults.DefaultIconSize],
@@ -82,12 +82,12 @@ import androidx.wear.compose.materialcore.animateSelectionColor
  * @param content The content to be drawn inside the toggle button.
  */
 @Composable
-fun IconToggleButton(
+public fun IconToggleButton(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    colors: IconToggleButtonColors = IconToggleButtonDefaults.iconToggleButtonColors(),
+    colors: IconToggleButtonColors = IconToggleButtonDefaults.colors(),
     interactionSource: MutableInteractionSource? = null,
     shapes: IconToggleButtonShapes = IconToggleButtonDefaults.shapes(),
     border: BorderStroke? = null,
@@ -95,10 +95,10 @@ fun IconToggleButton(
 ) {
     val (finalShape, finalInteractionSource) =
         animateToggleButtonShape(
-            uncheckedShape = shapes.unchecked,
-            checkedShape = shapes.checked,
-            uncheckedPressedShape = shapes.uncheckedPressed,
-            checkedPressedShape = shapes.checkedPressed,
+            uncheckedShape = shapes.uncheckedShape,
+            checkedShape = shapes.checkedShape,
+            uncheckedPressedShape = shapes.uncheckedPressedShape,
+            checkedPressedShape = shapes.checkedPressedShape,
             onPressAnimationSpec = MaterialTheme.motionScheme.fastEffectsSpec(),
             onReleaseAnimationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
             checked = checked,
@@ -114,7 +114,7 @@ fun IconToggleButton(
             colors.containerColor(enabled = isEnabled, checked = isChecked)
         },
         border = { _, _ -> border },
-        toggleButtonSize = IconToggleButtonDefaults.DefaultButtonSize,
+        toggleButtonSize = IconToggleButtonDefaults.Size,
         interactionSource = finalInteractionSource,
         shape = finalShape,
         ripple = ripple(),
@@ -124,159 +124,183 @@ fun IconToggleButton(
 }
 
 /** Contains the default values used by [IconToggleButton]. */
-object IconToggleButtonDefaults {
+public object IconToggleButtonDefaults {
 
     /** Recommended [Shape] for [IconToggleButton]. */
-    val shape: RoundedCornerShape
+    public val shape: RoundedCornerShape
         @Composable get() = ShapeTokens.CornerFull
 
     /** Recommended pressed [Shape] for [IconToggleButton]. */
-    val pressedShape: CornerBasedShape
+    public val pressedShape: CornerBasedShape
         @Composable get() = MaterialTheme.shapes.small
 
     /** Recommended checked [Shape] for [IconToggleButton]. */
-    val checkedShape: CornerBasedShape
+    public val checkedShape: CornerBasedShape
         @Composable get() = MaterialTheme.shapes.medium
 
     /**
-     * Recommended pressed shape corner fraction for [variantAnimatedShapes]. This fraction will be
-     * applied to checked and unchecked shapes to generate the checkedPressed and uncheckedPressed
-     * shapes.
+     * The recommended size of an icon when used inside an icon toggle button with size [SmallSize].
+     * Use [iconSizeFor] to easily determine the icon size.
      */
-    val PressedShapeCornerSizeFraction: Float = 0.66f
-
-    /**
-     * The recommended size of an icon when used inside an icon toggle button with size
-     * [SmallButtonSize]. Use [iconSizeFor] to easily determine the icon size.
-     */
-    val SmallIconSize = IconToggleButtonTokens.IconSmallSize
+    public val SmallIconSize: Dp = IconToggleButtonTokens.IconSmallSize
 
     /**
      * The default size of an icon when used inside an icon toggle button of size DefaultButtonSize.
      * Use [iconSizeFor] to easily determine the icon size.
      */
-    val DefaultIconSize = IconToggleButtonTokens.IconDefaultSize
+    public val DefaultIconSize: Dp = IconToggleButtonTokens.IconDefaultSize
 
     /**
-     * The size of an icon when used inside an icon toggle button with size [LargeButtonSize]. Use
+     * The size of an icon when used inside an icon toggle button with size [LargeSize]. Use
      * [iconSizeFor] to easily determine the icon size.
      */
-    val LargeIconSize = IconToggleButtonTokens.IconLargeSize
+    public val LargeIconSize: Dp = IconToggleButtonTokens.IconLargeSize
 
     /**
-     * The size of an icon when used inside an icon toggle button with size [ExtraLargeButtonSize].
-     * Use [iconSizeFor] to easily determine the icon size.
+     * The size of an icon when used inside an icon toggle button with size [ExtraLargeSize]. Use
+     * [iconSizeFor] to easily determine the icon size.
      */
-    val ExtraLargeIconSize = IconToggleButtonTokens.IconExtraLargeSize
+    public val ExtraLargeIconSize: Dp = IconToggleButtonTokens.IconExtraLargeSize
 
     /**
      * The recommended size for a small button. It is recommended to apply this size using
      * Modifier.touchTargetAwareSize.
      */
-    val SmallButtonSize = IconToggleButtonTokens.ContainerSmallSize
+    public val SmallSize: Dp = IconToggleButtonTokens.ContainerSmallSize
 
     /**
      * The default size applied for icon toggle buttons. It is recommended to apply this size using
      * Modifier.touchTargetAwareSize.
      */
-    val DefaultButtonSize = IconToggleButtonTokens.ContainerDefaultSize
+    public val Size: Dp = IconToggleButtonTokens.ContainerDefaultSize
 
     /**
      * The recommended size for a large icon toggle button. It is recommended to apply this size
      * using Modifier.touchTargetAwareSize.
      */
-    val LargeButtonSize = IconToggleButtonTokens.ContainerLargeSize
+    public val LargeSize: Dp = IconToggleButtonTokens.ContainerLargeSize
 
     /**
      * The recommended size for an extra icon large toggle button. It is recommended to apply this
      * size using Modifier.touchTargetAwareSize.
      */
-    val ExtraLargeButtonSize = IconToggleButtonTokens.ContainerExtraLargeSize
+    public val ExtraLargeSize: Dp = IconToggleButtonTokens.ContainerExtraLargeSize
 
     /**
      * Recommended icon size for a given icon toggle button size.
      *
      * Ensures that the minimum recommended icon size is applied.
      *
-     * Examples: for size [SmallButtonSize], returns [SmallIconSize], for size
-     * [ExtraLargeButtonSize] returns [ExtraLargeIconSize].
+     * Examples: for size [SmallSize], returns [SmallIconSize], for size [ExtraLargeSize] returns
+     * [ExtraLargeIconSize].
      *
      * @param buttonSize The size of the icon toggle button
      */
-    fun iconSizeFor(buttonSize: Dp): Dp =
-        if (buttonSize >= LargeButtonSize) {
+    public fun iconSizeFor(buttonSize: Dp): Dp =
+        if (buttonSize >= LargeSize) {
             max(LargeIconSize, buttonSize / 2f)
         } else {
             max(SmallIconSize, buttonSize / 2f)
         }
 
+    /** Returns the default [IconToggleButtonShapes] for a static [IconToggleButton]. */
+    @Composable
+    public fun shapes(): IconToggleButtonShapes = MaterialTheme.shapes.defaultIconToggleButtonShapes
+
     /**
-     * Creates a [IconToggleButtonShapes] with a static [shape].
+     * Returns an [IconToggleButtonShapes] for an [IconToggleButton] with a static shape.
      *
      * @param shape The normal shape of the IconToggleButton.
      */
     @Composable
-    fun shapes(
-        shape: Shape = IconToggleButtonDefaults.shape,
-    ): IconToggleButtonShapes = IconToggleButtonShapes(unchecked = shape)
+    public fun shapes(shape: Shape): IconToggleButtonShapes =
+        MaterialTheme.shapes.defaultIconToggleButtonShapes.copy(uncheckedShape = shape)
 
     /**
-     * Creates a [Shape] with a animation between two CornerBasedShapes.
+     * Returns the default [IconToggleButtonShapes] with an animation between two CornerBasedShapes
+     * when pressed.
      *
      * A simple icon toggle button using the default colors, animated when pressed.
      *
      * @sample androidx.wear.compose.material3.samples.IconToggleButtonSample
-     * @param shape The normal shape of the IconToggleButton.
-     * @param pressedShape The pressed shape of the IconToggleButton.
      */
     @Composable
-    fun animatedShapes(
-        shape: CornerBasedShape = IconToggleButtonDefaults.shape,
-        pressedShape: CornerBasedShape = IconToggleButtonDefaults.pressedShape,
-    ): IconToggleButtonShapes = IconToggleButtonShapes(shape, null, pressedShape, null)
+    public fun animatedShapes(): IconToggleButtonShapes =
+        MaterialTheme.shapes.defaultIconToggleButtonAnimatedShapes
 
     /**
-     * Creates a [Shape] with an animation between three [CornerSize]s based on the pressed state
-     * and checked/unchecked.
+     * Returns an [IconToggleButtonShapes] for an [IconToggleButton] with an animation between two
+     * CornerBasedShapes.
+     *
+     * A simple icon toggle button using the default colors, animated when pressed.
+     *
+     * @sample androidx.wear.compose.material3.samples.IconToggleButtonSample
+     * @param shape The normal shape of the IconToggleButton when unpressed - if null, the default
+     *   [IconToggleButtonDefaults.shape] is used.
+     * @param pressedShape The pressed shape of the IconToggleButton - if null, the default
+     *   [IconToggleButtonDefaults.pressedShape] is used.
+     */
+    @Composable
+    public fun animatedShapes(
+        shape: CornerBasedShape? = null,
+        pressedShape: CornerBasedShape? = null,
+    ): IconToggleButtonShapes =
+        MaterialTheme.shapes.defaultIconToggleButtonAnimatedShapes.copy(
+            uncheckedShape = shape,
+            uncheckedPressedShape = pressedShape
+        )
+
+    /**
+     * Returns the default [IconToggleButtonShapes] with an animation between three [CornerSize]s
+     * based on the pressed state and checked/unchecked.
      *
      * A simple icon toggle button using the default colors, animated on Press and Check/Uncheck:
      *
      * @sample androidx.wear.compose.material3.samples.IconToggleButtonVariantSample
-     * @param uncheckedShape the unchecked shape.
-     * @param checkedShape the checked shape.
-     * @param pressedShapeCornerSizeFraction The fraction to apply to the uncheckedShape and
-     *   checkedShape corner sizes, when the button is pressed. For example, the button shape
-     *   animates from uncheckedShape to a new [CornerBasedShape] with corner size =
-     *   uncheckedShape's corner size * pressedCornerShapeFraction. By default, the button corners
-     *   are reduced in size when pressed, so that the button becomes more square.
      */
     @Composable
-    fun variantAnimatedShapes(
-        uncheckedShape: CornerBasedShape = shape,
-        checkedShape: CornerBasedShape = this.checkedShape,
-        pressedShapeCornerSizeFraction: Float = PressedShapeCornerSizeFraction,
+    public fun variantAnimatedShapes(): IconToggleButtonShapes =
+        MaterialTheme.shapes.defaultVariantAnimatedShapes
+
+    /**
+     * Returns an [IconToggleButtonShapes] with an animation between three [CornerSize]s based on
+     * the pressed state and checked/unchecked.
+     *
+     * A simple icon toggle button using the default colors, animated on Press and Check/Uncheck:
+     *
+     * @sample androidx.wear.compose.material3.samples.IconToggleButtonVariantSample
+     * @param uncheckedShape the unchecked shape - if null, the default
+     *   [IconToggleButtonDefaults.shape] is used.
+     * @param checkedShape the checked shape - if null, the default
+     *   [IconToggleButtonDefaults.checkedShape] is used.
+     */
+    @Composable
+    public fun variantAnimatedShapes(
+        uncheckedShape: CornerBasedShape? = null,
+        checkedShape: CornerBasedShape? = null
     ): IconToggleButtonShapes =
-        IconToggleButtonShapes(
-            unchecked = uncheckedShape,
-            checked = checkedShape,
-            uncheckedPressed =
-                uncheckedShape.fractionalRoundedCornerShape(pressedShapeCornerSizeFraction),
-            checkedPressed =
-                checkedShape.fractionalRoundedCornerShape(pressedShapeCornerSizeFraction)
+        MaterialTheme.shapes.defaultVariantAnimatedShapes.copy(
+            uncheckedShape = uncheckedShape,
+            checkedShape = checkedShape,
+            uncheckedPressedShape =
+                uncheckedShape?.fractionalRoundedCornerShape(PressedShapeCornerSizeFraction),
+            checkedPressedShape =
+                checkedShape?.fractionalRoundedCornerShape(PressedShapeCornerSizeFraction)
         )
 
     /**
-     * Creates an [IconToggleButtonColors] for a [IconToggleButton]
+     * Returns an [IconToggleButtonColors] for a [IconToggleButton]
      * - by default, a colored background with a contrasting content color.
      *
      * If the button is disabled, then the colors will have an alpha ([DisabledContentAlpha] and
      * [DisabledContainerAlpha]) value applied.
      */
     @Composable
-    fun iconToggleButtonColors() = MaterialTheme.colorScheme.defaultIconToggleButtonColors
+    public fun colors(): IconToggleButtonColors =
+        MaterialTheme.colorScheme.defaultIconToggleButtonColors
 
     /**
-     * Creates a [IconToggleButtonColors] for a [IconToggleButton]
+     * Returns an [IconToggleButtonColors] for a [IconToggleButton]
      * - by default, a colored background with a contrasting content color.
      *
      * If the button is disabled, then the colors will have an alpha ([DisabledContentAlpha] and
@@ -300,7 +324,7 @@ object IconToggleButtonDefaults {
      *   unchecked and not enabled
      */
     @Composable
-    fun iconToggleButtonColors(
+    public fun colors(
         checkedContainerColor: Color = Color.Unspecified,
         checkedContentColor: Color = Color.Unspecified,
         uncheckedContainerColor: Color = Color.Unspecified,
@@ -320,6 +344,43 @@ object IconToggleButtonDefaults {
             disabledUncheckedContainerColor = disabledUncheckedContainerColor,
             disabledUncheckedContentColor = disabledUncheckedContentColor,
         )
+
+    internal val Shapes.defaultIconToggleButtonShapes: IconToggleButtonShapes
+        @Composable
+        get() {
+            return defaultIconToggleButtonShapesCached
+                ?: IconToggleButtonShapes(uncheckedShape = shape).also {
+                    defaultIconToggleButtonShapesCached = it
+                }
+        }
+
+    internal val Shapes.defaultIconToggleButtonAnimatedShapes: IconToggleButtonShapes
+        @Composable
+        get() {
+            return defaultIconToggleButtonAnimatedShapesCached
+                ?: IconToggleButtonShapes(
+                        uncheckedShape = shape,
+                        uncheckedPressedShape = pressedShape
+                    )
+                    .also { defaultIconToggleButtonAnimatedShapesCached = it }
+        }
+
+    internal val Shapes.defaultVariantAnimatedShapes: IconToggleButtonShapes
+        @Composable
+        get() {
+            return defaultIconToggleButtonVariantShapesCached
+                ?: IconToggleButtonShapes(
+                        uncheckedShape = shape,
+                        checkedShape = checkedShape,
+                        uncheckedPressedShape =
+                            shape.fractionalRoundedCornerShape(PressedShapeCornerSizeFraction),
+                        checkedPressedShape =
+                            checkedShape.fractionalRoundedCornerShape(
+                                PressedShapeCornerSizeFraction
+                            )
+                    )
+                    .also { defaultIconToggleButtonVariantShapesCached = it }
+        }
 
     private val ColorScheme.defaultIconToggleButtonColors: IconToggleButtonColors
         get() {
@@ -359,6 +420,13 @@ object IconToggleButtonDefaults {
                     )
                     .also { defaultIconToggleButtonColorsCached = it }
         }
+
+    /**
+     * Recommended pressed shape corner fraction for [variantAnimatedShapes]. This fraction will be
+     * applied to checked and unchecked shapes to generate the checkedPressed and uncheckedPressed
+     * shapes.
+     */
+    private const val PressedShapeCornerSizeFraction: Float = 0.66f
 }
 
 /**
@@ -379,15 +447,15 @@ object IconToggleButtonDefaults {
  *   disabled and unchecked
  */
 @Immutable
-class IconToggleButtonColors(
-    val checkedContainerColor: Color,
-    val checkedContentColor: Color,
-    val uncheckedContainerColor: Color,
-    val uncheckedContentColor: Color,
-    val disabledCheckedContainerColor: Color,
-    val disabledCheckedContentColor: Color,
-    val disabledUncheckedContainerColor: Color,
-    val disabledUncheckedContentColor: Color,
+public class IconToggleButtonColors(
+    public val checkedContainerColor: Color,
+    public val checkedContentColor: Color,
+    public val uncheckedContainerColor: Color,
+    public val uncheckedContentColor: Color,
+    public val disabledCheckedContainerColor: Color,
+    public val disabledCheckedContentColor: Color,
+    public val disabledUncheckedContainerColor: Color,
+    public val disabledUncheckedContentColor: Color,
 ) {
     /**
      * Returns a copy of this IconToggleButtonColors optionally overriding some of the values.
@@ -408,7 +476,7 @@ class IconToggleButtonColors(
      * @param disabledUncheckedContentColor Color of the content (text or icon) when the toggle
      *   button is disabled and unchecked
      */
-    fun copy(
+    public fun copy(
         checkedContainerColor: Color = this.checkedContainerColor,
         checkedContentColor: Color = this.checkedContentColor,
         uncheckedContainerColor: Color = this.uncheckedContainerColor,
@@ -511,41 +579,47 @@ class IconToggleButtonColors(
  * when pressed) and [IconToggleButtonDefaults.variantAnimatedShapes] (which applies different
  * shapes for checked/unchecked and an additional morph to the current shape when pressed).
  *
- * @param unchecked the shape of the [IconToggleButton] when unchecked
- * @param checked the shape of the [IconToggleButton] when checked
- * @param uncheckedPressed the shape of the [IconToggleButton] when unchecked and pressed
- * @param checkedPressed the shape of the [IconToggleButton] when checked and pressed
+ * @param uncheckedShape the shape of the [IconToggleButton] when unchecked
+ * @param checkedShape the shape of the [IconToggleButton] when checked
+ * @param uncheckedPressedShape the shape of the [IconToggleButton] when unchecked and pressed
+ * @param checkedPressedShape the shape of the [IconToggleButton] when checked and pressed
  */
-class IconToggleButtonShapes(
-    val unchecked: Shape,
-    val checked: Shape? = null,
-    val uncheckedPressed: Shape? = null,
-    val checkedPressed: Shape? = uncheckedPressed
+public class IconToggleButtonShapes(
+    public val uncheckedShape: Shape,
+    public val checkedShape: Shape = uncheckedShape,
+    public val uncheckedPressedShape: Shape = uncheckedShape,
+    public val checkedPressedShape: Shape = uncheckedPressedShape
 ) {
-    fun copy(
-        unchecked: Shape = this.unchecked,
-        checked: Shape? = this.checked,
-        uncheckedPressed: Shape? = this.uncheckedPressed,
-        checkedPressed: Shape? = this.checkedPressed,
-    ) = IconToggleButtonShapes(unchecked, checked, uncheckedPressed, checkedPressed)
+    public fun copy(
+        uncheckedShape: Shape? = this.uncheckedShape,
+        checkedShape: Shape? = this.checkedShape,
+        uncheckedPressedShape: Shape? = this.uncheckedPressedShape,
+        checkedPressedShape: Shape? = this.checkedPressedShape,
+    ): IconToggleButtonShapes =
+        IconToggleButtonShapes(
+            uncheckedShape = uncheckedShape ?: this.uncheckedShape,
+            checkedShape = checkedShape ?: this.checkedShape,
+            uncheckedPressedShape = uncheckedPressedShape ?: this.uncheckedPressedShape,
+            checkedPressedShape = checkedPressedShape ?: this.checkedPressedShape
+        )
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || other !is IconToggleButtonShapes) return false
 
-        if (unchecked != other.unchecked) return false
-        if (checked != other.checked) return false
-        if (uncheckedPressed != other.uncheckedPressed) return false
-        if (checkedPressed != other.checkedPressed) return false
+        if (uncheckedShape != other.uncheckedShape) return false
+        if (checkedShape != other.checkedShape) return false
+        if (uncheckedPressedShape != other.uncheckedPressedShape) return false
+        if (checkedPressedShape != other.checkedPressedShape) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = unchecked.hashCode()
-        result = 31 * result + checked.hashCode()
-        result = 31 * result + uncheckedPressed.hashCode()
-        result = 31 * result + checkedPressed.hashCode()
+        var result = uncheckedShape.hashCode()
+        result = 31 * result + checkedShape.hashCode()
+        result = 31 * result + uncheckedPressedShape.hashCode()
+        result = 31 * result + checkedPressedShape.hashCode()
 
         return result
     }

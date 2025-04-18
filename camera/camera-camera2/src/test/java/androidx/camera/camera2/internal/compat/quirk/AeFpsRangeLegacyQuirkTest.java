@@ -23,11 +23,11 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.os.Build;
 import android.util.Range;
 
-import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.internal.compat.quirk.AeFpsRangeQuirk;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -128,8 +128,7 @@ public class AeFpsRangeLegacyQuirkTest {
         assertThat(aeFpsRangeQuirk).isNull();
     }
 
-    @Nullable
-    private AeFpsRangeQuirk createAeFpsRangeQuirk(int hardwareLevel,
+    private @Nullable AeFpsRangeQuirk createAeFpsRangeQuirk(int hardwareLevel,
             Range<Integer>[] availableFpsRanges) {
         CameraCharacteristics characteristics =
                 ShadowCameraCharacteristics.newCameraCharacteristics();

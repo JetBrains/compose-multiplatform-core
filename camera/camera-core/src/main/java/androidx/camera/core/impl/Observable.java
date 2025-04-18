@@ -16,10 +16,10 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 
@@ -40,8 +40,7 @@ public interface Observable<T> {
      *
      * @return A future which will contain the latest value or an error.
      */
-    @NonNull
-    ListenableFuture<T> fetchData();
+    @NonNull ListenableFuture<T> fetchData();
 
     /**
      * Adds an observer which will receive the stream of data.

@@ -32,6 +32,7 @@ import kotlin.math.absoluteValue
  * given origin.
  */
 @Immutable
+@Suppress("DataClassDefinition")
 data class IntRect(
     /** The offset of the left edge of this rectangle from the x axis. */
     @Stable val left: Int,

@@ -21,7 +21,7 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.WindowManager;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

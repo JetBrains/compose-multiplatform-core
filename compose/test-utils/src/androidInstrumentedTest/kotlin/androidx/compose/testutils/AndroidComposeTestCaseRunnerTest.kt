@@ -209,7 +209,7 @@ class AndroidComposeTestCaseRunnerTest {
         lateinit var focusState: FocusState
         composeTestRule
             .forGivenContent {
-                val focusRequester = FocusRequester()
+                val focusRequester = remember { FocusRequester() }
                 Box(
                     Modifier.fillMaxSize()
                         .onFocusChanged { focusState = it }

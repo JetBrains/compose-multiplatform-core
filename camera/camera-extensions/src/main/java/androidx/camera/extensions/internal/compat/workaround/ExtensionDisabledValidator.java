@@ -16,9 +16,10 @@
 
 package androidx.camera.extensions.internal.compat.workaround;
 
-import androidx.annotation.NonNull;
 import androidx.camera.extensions.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.extensions.internal.compat.quirk.ExtensionDisabledQuirk;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Validates whether the specified extension mode should be disabled for the specified camera on

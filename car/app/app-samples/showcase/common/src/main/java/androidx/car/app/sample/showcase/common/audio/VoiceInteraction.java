@@ -27,7 +27,6 @@ import static android.os.Build.VERSION.SDK_INT;
 import static androidx.car.app.media.CarAudioRecord.AUDIO_CONTENT_BUFFER_SIZE;
 import static androidx.car.app.media.CarAudioRecord.AUDIO_CONTENT_SAMPLING_RATE;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
@@ -69,7 +68,6 @@ public class VoiceInteraction {
      * Starts recording the car microphone, then plays it back.
      */
     @RequiresPermission(RECORD_AUDIO)
-    @SuppressLint("ClassVerificationFailure") // runtime check for < API 26
     public void voiceInteractionDemo() {
         // Some of the functions for recording require API level 26, so verify that first
         if (SDK_INT < VERSION_CODES.O) {
@@ -93,7 +91,6 @@ public class VoiceInteraction {
      */
     @RequiresApi(api = VERSION_CODES.O)
     @RequiresPermission(RECORD_AUDIO)
-    @SuppressLint("ClassVerificationFailure") // runtime check for < API 26
     public @NonNull Thread createRecordingThread() {
         Thread recordingThread = new Thread(
                 () -> {
@@ -183,7 +180,6 @@ public class VoiceInteraction {
     }
 
     @RequiresApi(api = VERSION_CODES.O)
-    @SuppressLint("ClassVerificationFailure") // runtime check for < API 26
     @RequiresPermission(RECORD_AUDIO)
     private void recordAudio(CarAudioRecord record) {
 

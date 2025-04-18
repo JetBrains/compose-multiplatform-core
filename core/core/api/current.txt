@@ -191,8 +191,8 @@ package androidx.core.app {
     ctor @RequiresApi(26) public MultiWindowModeChangedInfo(boolean isInMultiWindowMode, android.content.res.Configuration newConfig);
     method @RequiresApi(26) public android.content.res.Configuration getNewConfig();
     method public boolean isInMultiWindowMode();
-    property public final boolean isInMultiWindowMode;
-    property @RequiresApi(26) public final android.content.res.Configuration newConfig;
+    property public boolean isInMultiWindowMode;
+    property @RequiresApi(26) public android.content.res.Configuration newConfig;
   }
 
   public final class NavUtils {
@@ -927,8 +927,8 @@ package androidx.core.app {
     ctor @RequiresApi(26) public PictureInPictureModeChangedInfo(boolean isInPictureInPictureMode, android.content.res.Configuration newConfig);
     method @RequiresApi(26) public android.content.res.Configuration getNewConfig();
     method public boolean isInPictureInPictureMode();
-    property public final boolean isInPictureInPictureMode;
-    property @RequiresApi(26) public final android.content.res.Configuration newConfig;
+    property public boolean isInPictureInPictureMode;
+    property @RequiresApi(26) public android.content.res.Configuration newConfig;
   }
 
   public final class RemoteActionCompat implements androidx.versionedparcelable.VersionedParcelable {
@@ -1584,7 +1584,7 @@ package androidx.core.graphics.drawable {
 
   public class IconCompat implements androidx.versionedparcelable.VersionedParcelable {
     method public static androidx.core.graphics.drawable.IconCompat? createFromBundle(android.os.Bundle);
-    method @RequiresApi(23) public static androidx.core.graphics.drawable.IconCompat? createFromIcon(android.content.Context, android.graphics.drawable.Icon);
+    method @RequiresApi(23) public static androidx.core.graphics.drawable.IconCompat createFromIcon(android.content.Context, android.graphics.drawable.Icon);
     method public static androidx.core.graphics.drawable.IconCompat createWithAdaptiveBitmap(android.graphics.Bitmap);
     method public static androidx.core.graphics.drawable.IconCompat createWithAdaptiveBitmapContentUri(android.net.Uri);
     method public static androidx.core.graphics.drawable.IconCompat createWithAdaptiveBitmapContentUri(String);
@@ -1653,7 +1653,11 @@ package androidx.core.hardware.display {
     method public android.view.Display![] getDisplays();
     method public android.view.Display![] getDisplays(String?);
     method public static androidx.core.hardware.display.DisplayManagerCompat getInstance(android.content.Context);
+    field @SuppressCompatibility @androidx.core.hardware.display.ExperimentalDisplayApi public static final String DISPLAY_CATEGORY_BUILT_IN_DISPLAYS = "android.hardware.display.category.BUILT_IN_DISPLAYS";
     field public static final String DISPLAY_CATEGORY_PRESENTATION = "android.hardware.display.category.PRESENTATION";
+  }
+
+  @SuppressCompatibility @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.WARNING) @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalDisplayApi {
   }
 
 }
@@ -1861,11 +1865,12 @@ package androidx.core.os {
   }
 
   public static final class BufferFillPolicy.Companion {
-    property public final androidx.core.os.BufferFillPolicy DISCARD;
-    property public final androidx.core.os.BufferFillPolicy RING_BUFFER;
+    property public androidx.core.os.BufferFillPolicy DISCARD;
+    property public androidx.core.os.BufferFillPolicy RING_BUFFER;
   }
 
   public final class BuildCompat {
+    method @ChecksSdkIntAtLeast(api=36, codename="Baklava") public static boolean isAtLeastB();
     method @Deprecated @ChecksSdkIntAtLeast(api=android.os.Build.VERSION_CODES.N) public static boolean isAtLeastN();
     method @Deprecated @ChecksSdkIntAtLeast(api=android.os.Build.VERSION_CODES.N_MR1) public static boolean isAtLeastNMR1();
     method @Deprecated @ChecksSdkIntAtLeast(api=android.os.Build.VERSION_CODES.O) public static boolean isAtLeastO();
@@ -1878,10 +1883,10 @@ package androidx.core.os {
     method @Deprecated @ChecksSdkIntAtLeast(api=33, codename="Tiramisu") public static boolean isAtLeastT();
     method @Deprecated @ChecksSdkIntAtLeast(api=34, codename="UpsideDownCake") public static boolean isAtLeastU();
     method @Deprecated @ChecksSdkIntAtLeast(api=35, codename="VanillaIceCream") public static boolean isAtLeastV();
-    property @ChecksSdkIntAtLeast(extension=android.os.ext.SdkExtensions.AD_SERVICES) public final int AD_SERVICES_EXTENSION_INT;
-    property @ChecksSdkIntAtLeast(extension=android.os.Build.VERSION_CODES.R) public final int R_EXTENSION_INT;
-    property @ChecksSdkIntAtLeast(extension=android.os.Build.VERSION_CODES.S) public final int S_EXTENSION_INT;
-    property @ChecksSdkIntAtLeast(extension=android.os.Build.VERSION_CODES.TIRAMISU) public final int T_EXTENSION_INT;
+    property @ChecksSdkIntAtLeast(extension=android.os.ext.SdkExtensions.AD_SERVICES) public int AD_SERVICES_EXTENSION_INT;
+    property @ChecksSdkIntAtLeast(extension=android.os.Build.VERSION_CODES.R) public int R_EXTENSION_INT;
+    property @ChecksSdkIntAtLeast(extension=android.os.Build.VERSION_CODES.S) public int S_EXTENSION_INT;
+    property @ChecksSdkIntAtLeast(extension=android.os.Build.VERSION_CODES.TIRAMISU) public int T_EXTENSION_INT;
     field @ChecksSdkIntAtLeast(extension=android.os.ext.SdkExtensions.AD_SERVICES) public static final int AD_SERVICES_EXTENSION_INT;
     field public static final androidx.core.os.BuildCompat INSTANCE;
     field @ChecksSdkIntAtLeast(extension=android.os.Build.VERSION_CODES.R) public static final int R_EXTENSION_INT;
@@ -2024,10 +2029,10 @@ package androidx.core.os {
     method public android.os.Bundle getParams();
     method public int getProfilingType();
     method public String? getTag();
-    property public final android.os.CancellationSignal? cancellationSignal;
-    property public final android.os.Bundle params;
-    property public final int profilingType;
-    property public final String? tag;
+    property public android.os.CancellationSignal? cancellationSignal;
+    property public android.os.Bundle params;
+    property public int profilingType;
+    property public String? tag;
   }
 
   @RequiresApi(api=35) public abstract class ProfilingRequestBuilder<T extends androidx.core.os.ProfilingRequestBuilder<T>> {
@@ -3177,6 +3182,7 @@ package androidx.core.view {
     method public static boolean startNestedScroll(android.view.View, int, int);
     method public static void stopNestedScroll(android.view.View);
     method public static void stopNestedScroll(android.view.View, int);
+    method public static void transformMatrixToGlobal(android.view.View, android.graphics.Matrix);
     method public static void updateDragShadow(android.view.View, android.view.View.DragShadowBuilder);
     field public static final int ACCESSIBILITY_LIVE_REGION_ASSERTIVE = 2; // 0x2
     field public static final int ACCESSIBILITY_LIVE_REGION_NONE = 0; // 0x0
@@ -3442,6 +3448,14 @@ package androidx.core.view {
     method public androidx.core.view.WindowInsetsCompat.Builder setVisible(int, boolean);
   }
 
+  public static final class WindowInsetsCompat.Side {
+    method public static int all();
+    field public static final int BOTTOM = 8; // 0x8
+    field public static final int LEFT = 1; // 0x1
+    field public static final int RIGHT = 4; // 0x4
+    field public static final int TOP = 2; // 0x2
+  }
+
   public static final class WindowInsetsCompat.Type {
     method public static int captionBar();
     method public static int displayCutout();
@@ -3576,6 +3590,7 @@ package androidx.core.view.accessibility {
     method @Deprecated public void getBoundsInParent(android.graphics.Rect!);
     method public void getBoundsInScreen(android.graphics.Rect!);
     method public void getBoundsInWindow(android.graphics.Rect);
+    method public int getChecked();
     method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat! getChild(int);
     method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat? getChild(int, int);
     method public int getChildCount();
@@ -3586,6 +3601,7 @@ package androidx.core.view.accessibility {
     method public CharSequence! getContentDescription();
     method public int getDrawingOrder();
     method public CharSequence! getError();
+    method public int getExpandedState();
     method public android.view.accessibility.AccessibilityNodeInfo.ExtraRenderingInfo? getExtraRenderingInfo();
     method public android.os.Bundle! getExtras();
     method public CharSequence? getHintText();
@@ -3604,6 +3620,7 @@ package androidx.core.view.accessibility {
     method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat.RangeInfoCompat! getRangeInfo();
     method public CharSequence? getRoleDescription();
     method public CharSequence? getStateDescription();
+    method public CharSequence? getSupplementalDescription();
     method public CharSequence! getText();
     method public int getTextSelectionEnd();
     method public int getTextSelectionStart();
@@ -3619,13 +3636,14 @@ package androidx.core.view.accessibility {
     method public boolean isAccessibilityDataSensitive();
     method public boolean isAccessibilityFocused();
     method public boolean isCheckable();
-    method public boolean isChecked();
+    method @Deprecated public boolean isChecked();
     method public boolean isClickable();
     method public boolean isContentInvalid();
     method public boolean isContextClickable();
     method public boolean isDismissable();
     method public boolean isEditable();
     method public boolean isEnabled();
+    method public boolean isFieldRequired();
     method public boolean isFocusable();
     method public boolean isFocused();
     method public boolean isGranularScrollingSupported();
@@ -3660,7 +3678,8 @@ package androidx.core.view.accessibility {
     method public void setBoundsInWindow(android.graphics.Rect);
     method public void setCanOpenPopup(boolean);
     method public void setCheckable(boolean);
-    method public void setChecked(boolean);
+    method @Deprecated public void setChecked(boolean);
+    method public void setChecked(int);
     method public void setClassName(CharSequence!);
     method public void setClickable(boolean);
     method public void setCollectionInfo(Object!);
@@ -3674,6 +3693,8 @@ package androidx.core.view.accessibility {
     method public void setEditable(boolean);
     method public void setEnabled(boolean);
     method public void setError(CharSequence!);
+    method public void setExpandedState(int);
+    method public void setFieldRequired(boolean);
     method public void setFocusable(boolean);
     method public void setFocused(boolean);
     method public void setGranularScrollingSupported(boolean);
@@ -3707,6 +3728,7 @@ package androidx.core.view.accessibility {
     method public void setSource(android.view.View!);
     method public void setSource(android.view.View!, int);
     method public void setStateDescription(CharSequence?);
+    method public void setSupplementalDescription(CharSequence?);
     method public void setText(CharSequence!);
     method public void setTextEntryKey(boolean);
     method public void setTextSelectable(boolean);
@@ -3761,6 +3783,7 @@ package androidx.core.view.accessibility {
     field public static final String EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH = "android.view.accessibility.extra.DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH";
     field public static final int EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_MAX_LENGTH = 20000; // 0x4e20
     field public static final String EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX = "android.view.accessibility.extra.DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX";
+    field public static final String EXTRA_DATA_TEXT_CHARACTER_LOCATION_IN_WINDOW_KEY = "android.view.accessibility.extra.DATA_TEXT_CHARACTER_LOCATION_IN_WINDOW_KEY";
     field public static final String EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY = "android.view.accessibility.extra.DATA_TEXT_CHARACTER_LOCATION_KEY";
     field public static final int FLAG_PREFETCH_ANCESTORS = 1; // 0x1
     field public static final int FLAG_PREFETCH_DESCENDANTS_BREADTH_FIRST = 16; // 0x10
@@ -4122,6 +4145,46 @@ package androidx.core.view.inputmethod {
     method public void requestPermission();
     method public Object? unwrap();
     method public static androidx.core.view.inputmethod.InputContentInfoCompat? wrap(Object?);
+  }
+
+}
+
+package androidx.core.view.insets {
+
+  public class ColorProtection extends androidx.core.view.insets.Protection {
+    ctor public ColorProtection(int);
+    ctor public ColorProtection(int, @ColorInt int);
+    method @ColorInt public int getColor();
+    method public void setColor(@ColorInt int);
+  }
+
+  public class GradientProtection extends androidx.core.view.insets.Protection {
+    ctor public GradientProtection(int);
+    ctor public GradientProtection(int, @ColorInt int);
+    method @ColorInt public int getColor();
+    method public float getScale();
+    method public void setColor(@ColorInt int);
+    method public void setScale(float);
+  }
+
+  public abstract class Protection {
+    ctor public Protection(int);
+    method public void animateAlpha(float);
+    method public void animateInsetsAmount(float);
+    method @FloatRange(from=0.0, to=1.0) public float getAlpha();
+    method public float getInsetAmount();
+    method public int getSide();
+    method public void setAlpha(@FloatRange(from=0.0, to=1.0) float);
+    method public void setInsetAmount(@FloatRange(from=0.0, to=1.0) float);
+  }
+
+  public class ProtectionLayout extends android.widget.FrameLayout {
+    ctor public ProtectionLayout(android.content.Context);
+    ctor public ProtectionLayout(android.content.Context, android.util.AttributeSet?);
+    ctor public ProtectionLayout(android.content.Context, android.util.AttributeSet?, @AttrRes int);
+    ctor public ProtectionLayout(android.content.Context, android.util.AttributeSet?, @AttrRes int, @StyleRes int);
+    ctor public ProtectionLayout(android.content.Context, java.util.List<androidx.core.view.insets.Protection!>);
+    method public void setProtections(java.util.List<androidx.core.view.insets.Protection!>);
   }
 
 }

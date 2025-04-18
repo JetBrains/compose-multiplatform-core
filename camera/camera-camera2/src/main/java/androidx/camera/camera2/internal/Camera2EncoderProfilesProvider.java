@@ -22,10 +22,7 @@ import static android.media.CamcorderProfile.QUALITY_LOW;
 import android.media.CamcorderProfile;
 import android.media.EncoderProfiles;
 import android.os.Build;
-import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.quirk.CamcorderProfileResolutionQuirk;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
@@ -36,6 +33,9 @@ import androidx.camera.core.impl.EncoderProfilesProxy;
 import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy;
 import androidx.camera.core.impl.Quirks;
 import androidx.camera.core.impl.compat.EncoderProfilesProxyCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -79,9 +79,8 @@ public class Camera2EncoderProfilesProvider implements EncoderProfilesProvider {
     }
 
     /** {@inheritDoc} */
-    @Nullable
     @Override
-    public EncoderProfilesProxy getAll(int quality) {
+    public @Nullable EncoderProfilesProxy getAll(int quality) {
         if (!mHasValidCameraId) {
             return null;
         }
@@ -109,8 +108,7 @@ public class Camera2EncoderProfilesProvider implements EncoderProfilesProvider {
         }
     }
 
-    @Nullable
-    private EncoderProfilesProxy findHighestQualityProfiles() {
+    private @Nullable EncoderProfilesProxy findHighestQualityProfiles() {
         for (int quality : QUALITY_HIGH_TO_LOW) {
             EncoderProfilesProxy profiles = getAll(quality);
             if (profiles != null) {
@@ -120,8 +118,7 @@ public class Camera2EncoderProfilesProvider implements EncoderProfilesProvider {
         return null;
     }
 
-    @Nullable
-    private EncoderProfilesProxy findLowestQualityProfiles() {
+    private @Nullable EncoderProfilesProxy findLowestQualityProfiles() {
         for (int quality = QUALITY_HIGH_TO_LOW.size() - 1; quality >= 0; quality--) {
             EncoderProfilesProxy profiles = getAll(quality);
             if (profiles != null) {
@@ -131,8 +128,7 @@ public class Camera2EncoderProfilesProvider implements EncoderProfilesProvider {
         return null;
     }
 
-    @Nullable
-    private EncoderProfilesProxy getProfilesInternal(int quality) {
+    private @Nullable EncoderProfilesProxy getProfilesInternal(int quality) {
         if (Build.VERSION.SDK_INT >= 31) {
             EncoderProfiles profiles = Api31Impl.getAll(mCameraId, quality);
             if (profiles == null) {
@@ -157,9 +153,8 @@ public class Camera2EncoderProfilesProvider implements EncoderProfilesProvider {
         return createProfilesFromCamcorderProfile(quality);
     }
 
-    @Nullable
     @SuppressWarnings("deprecation")
-    private EncoderProfilesProxy createProfilesFromCamcorderProfile(int quality) {
+    private @Nullable EncoderProfilesProxy createProfilesFromCamcorderProfile(int quality) {
         CamcorderProfile profile = null;
         try {
             profile = CamcorderProfile.get(mIntCameraId, quality);
@@ -188,7 +183,7 @@ public class Camera2EncoderProfilesProvider implements EncoderProfilesProvider {
         // need to check the first video profile.
         VideoProfileProxy videoProfile = videoProfiles.get(0);
         return camcorderProfileResolutionQuirk.getSupportedResolutions()
-                .contains(new Size(videoProfile.getWidth(), videoProfile.getHeight()));
+                .contains(videoProfile.getResolution());
     }
 
     @RequiresApi(31)

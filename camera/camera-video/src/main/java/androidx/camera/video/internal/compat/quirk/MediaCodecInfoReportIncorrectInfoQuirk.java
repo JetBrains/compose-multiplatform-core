@@ -26,9 +26,10 @@ import android.media.MediaFormat;
 import android.os.Build;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -166,8 +167,7 @@ public class MediaCodecInfoReportIncorrectInfoQuirk implements Quirk {
      * Returns the extra supported sizes for the problematic devices if any, otherwise returns an
      * empty set.
      */
-    @NonNull
-    public static Set<Size> getExtraSupportedSizes() {
+    public static @NonNull Set<Size> getExtraSupportedSizes() {
         if (isFHDProblematicDevice()) {
             return Collections.singleton(new Size(1920, 1080));
         }
@@ -204,8 +204,7 @@ public class MediaCodecInfoReportIncorrectInfoQuirk implements Quirk {
             return formatWidth == width && formatHeight == height;
         }
 
-        @Nullable
-        private String getMime() {
+        private @Nullable String getMime() {
             return mMediaFormat.getString(MediaFormat.KEY_MIME);
         }
     }

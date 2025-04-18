@@ -93,8 +93,8 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://m3.material.io/components/floating-action-button/overview" class="external"
- * target="_blank">Material Design floating action button</a>.
+ * [Material Design floating action
+ * button](https://m3.material.io/components/floating-action-button/overview)
  *
  * The FAB represents the most important action on a screen. It puts key actions within reach.
  *
@@ -189,8 +189,8 @@ private fun FloatingActionButton(
 }
 
 /**
- * <a href="https://m3.material.io/components/floating-action-button/overview" class="external"
- * target="_blank">Material Design small floating action button</a>.
+ * [Material Design small floating action
+ * button](https://m3.material.io/components/floating-action-button/overview)
  *
  * The FAB represents the most important action on a screen. It puts key actions within reach.
  *
@@ -248,8 +248,8 @@ fun SmallFloatingActionButton(
 }
 
 /**
- * <a href="https://m3.material.io/components/floating-action-button/overview" class="external"
- * target="_blank">Material Design medium floating action button</a>.
+ * [Material Design medium floating action
+ * button](https://m3.material.io/components/floating-action-button/overview)
  *
  * The FAB represents the most important action on a screen. It puts key actions within reach.
  *
@@ -305,8 +305,8 @@ fun MediumFloatingActionButton(
 }
 
 /**
- * <a href="https://m3.material.io/components/floating-action-button/overview" class="external"
- * target="_blank">Material Design large floating action button</a>.
+ * [Material Design large floating action
+ * button](https://m3.material.io/components/floating-action-button/overview)
  *
  * The FAB represents the most important action on a screen. It puts key actions within reach.
  *
@@ -365,8 +365,8 @@ fun LargeFloatingActionButton(
 
 // TODO link to image
 /**
- * <a href="https://m3.material.io/components/extended-fab/overview" class="external"
- * target="_blank">Material Design small extended floating action button</a>.
+ * [Material Design small extended floating action
+ * button](https://m3.material.io/components/extended-fab/overview)
  *
  * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
  * label and larger target area.
@@ -431,8 +431,8 @@ fun SmallExtendedFloatingActionButton(
 
 // TODO link to image
 /**
- * <a href="https://m3.material.io/components/extended-fab/overview" class="external"
- * target="_blank">Material Design medium extended floating action button</a>.
+ * [Material Design medium extended floating action
+ * button](https://m3.material.io/components/extended-fab/overview)
  *
  * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
  * label and larger target area.
@@ -497,8 +497,8 @@ fun MediumExtendedFloatingActionButton(
 
 // TODO link to image
 /**
- * <a href="https://m3.material.io/components/extended-fab/overview" class="external"
- * target="_blank">Material Design large extended floating action button</a>.
+ * [Material Design large extended floating action
+ * button](https://m3.material.io/components/extended-fab/overview)
  *
  * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
  * label and larger target area.
@@ -562,8 +562,8 @@ fun LargeExtendedFloatingActionButton(
 }
 
 /**
- * <a href="https://m3.material.io/components/extended-fab/overview" class="external"
- * target="_blank">Material Design extended floating action button</a>.
+ * [Material Design extended floating action
+ * button](https://m3.material.io/components/extended-fab/overview)
  *
  * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
  * label and larger target area.
@@ -624,8 +624,8 @@ fun ExtendedFloatingActionButton(
 }
 
 /**
- * <a href="https://m3.material.io/components/extended-fab/overview" class="external"
- * target="_blank">Material Design small extended floating action button</a>.
+ * [Material Design small extended floating action
+ * button](https://m3.material.io/components/extended-fab/overview)
  *
  * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
  * label and larger target area.
@@ -692,8 +692,8 @@ fun SmallExtendedFloatingActionButton(
     )
 
 /**
- * <a href="https://m3.material.io/components/extended-fab/overview" class="external"
- * target="_blank">Material Design medium extended floating action button</a>.
+ * [Material Design medium extended floating action
+ * button](https://m3.material.io/components/extended-fab/overview)
  *
  * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
  * label and larger target area.
@@ -760,8 +760,8 @@ fun MediumExtendedFloatingActionButton(
     )
 
 /**
- * <a href="https://m3.material.io/components/extended-fab/overview" class="external"
- * target="_blank">Material Design large extended floating action button</a>.
+ * [Material Design large extended floating action
+ * button](https://m3.material.io/components/extended-fab/overview)
  *
  * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
  * label and larger target area.
@@ -828,8 +828,8 @@ fun LargeExtendedFloatingActionButton(
     )
 
 /**
- * <a href="https://m3.material.io/components/extended-fab/overview" class="external"
- * target="_blank">Material Design extended floating action button</a>.
+ * [Material Design extended floating action
+ * button](https://m3.material.io/components/extended-fab/overview)
  *
  * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
  * label and larger target area.

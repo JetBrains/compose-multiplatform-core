@@ -28,8 +28,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.camera2.Camera2Config;
@@ -39,6 +37,9 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /** The main activity. */
 public class MainActivity extends AppCompatActivity {
@@ -150,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(
-            int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+            int requestCode, String @NonNull [] permissions, int @NonNull [] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {

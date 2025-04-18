@@ -17,11 +17,13 @@
 package androidx.security.state.provider
 
 import android.annotation.SuppressLint
+import android.content.ComponentName
 import android.content.ContentValues
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
+import android.content.pm.ProviderInfo
 import android.net.Uri
-import androidx.security.state.SecurityPatchState
 import androidx.security.state.SecurityPatchState.Companion.COMPONENT_SYSTEM
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.time.LocalDate
@@ -35,31 +37,21 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
-import org.mockito.Mockito.times
-import org.mockito.Mockito.`when`
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
-import org.robolectric.shadows.ShadowContentResolver
 
 @RunWith(AndroidJUnit4::class)
 class UpdateInfoProviderTest {
 
     private lateinit var provider: UpdateInfoProvider
-    private val mockSpl = SecurityPatchState.DateBasedSecurityPatchLevel(2022, 1, 1)
-    private val mockSecurityState: SecurityPatchState =
-        mock<SecurityPatchState> {
-            on {
-                getComponentSecurityPatchLevel(eq(COMPONENT_SYSTEM), Mockito.anyString())
-            } doReturn mockSpl
-        }
+    private val packageName = "androidx.security.state"
     private val authority = "com.example.provider"
     private val contentUri = Uri.parse("content://$authority/updateinfo")
     @SuppressLint("NewApi")
     private val publishedDate = Date.from(LocalDate.now().atStartOfDay().toInstant(ZoneOffset.UTC))
     private val updateInfo =
         UpdateInfo.Builder()
-            .setUri("content://example.com/updateinfo")
+            .setUri("content://$authority/updateinfo")
             .setComponent(COMPONENT_SYSTEM)
             .setSecurityPatchLevel("2022-01-01")
             .setPublishedDate(publishedDate)
@@ -80,16 +72,31 @@ class UpdateInfoProviderTest {
             on { edit() } doReturn mockEditor
             on { all } doReturn mapOf(Pair("key", expectedJson))
         }
+    private val componentName =
+        ComponentName(
+            mock<Context> { on { packageName } doReturn packageName },
+            UpdateInfoProvider::class.java
+        )
+    private val providerInfo =
+        ProviderInfo().apply { authority = this@UpdateInfoProviderTest.authority }
+    private val mockPackageManager: PackageManager =
+        mock<PackageManager> {
+            on { getProviderInfo(componentName, PackageManager.GET_META_DATA) } doReturn
+                providerInfo
+        }
     private val mockContext: Context =
         mock<Context> {
-            on { getSharedPreferences("UpdateInfoPrefs", Context.MODE_PRIVATE) } doReturn mockPrefs
+            on { getSharedPreferences("UPDATE_INFO_PREFS", Context.MODE_PRIVATE) } doReturn
+                mockPrefs
+            on { packageName } doReturn packageName
+            on { packageManager } doReturn mockPackageManager
         }
 
     @Before
     fun setUp() {
-        provider = UpdateInfoProvider(mockContext, authority, mockSecurityState)
+        provider = UpdateInfoProvider()
+        provider.attachInfo(mockContext, providerInfo)
         assertTrue(provider.onCreate())
-        ShadowContentResolver.registerProviderInternal(authority, provider)
     }
 
     @Test
@@ -127,39 +134,5 @@ class UpdateInfoProviderTest {
     @Test(expected = UnsupportedOperationException::class)
     fun update_NotSupported_ThrowsException() {
         provider.update(contentUri, ContentValues(), null, null)
-    }
-
-    @Test
-    fun testRegisterUnregisterUpdate() {
-        `when`(mockSecurityState.getDeviceSecurityPatchLevel(COMPONENT_SYSTEM))
-            .thenReturn(SecurityPatchState.DateBasedSecurityPatchLevel(2020, 1, 1))
-
-        provider.registerUpdate(updateInfo)
-
-        Mockito.verify(mockEditor).putString(Mockito.anyString(), Mockito.anyString())
-        Mockito.verify(mockEditor, times(2)).apply()
-
-        provider.unregisterUpdate(updateInfo)
-
-        Mockito.verify(mockEditor).remove(Mockito.anyString())
-    }
-
-    @Test
-    fun testCleanupUpdateInfo_removesUpdateInfoFromSharedPreferences() {
-        `when`(mockSecurityState.getDeviceSecurityPatchLevel(COMPONENT_SYSTEM))
-            .thenReturn(SecurityPatchState.DateBasedSecurityPatchLevel(2020, 1, 1))
-
-        provider.registerUpdate(updateInfo)
-
-        Mockito.verify(mockEditor).putString(Mockito.anyString(), Mockito.anyString())
-        Mockito.verify(mockEditor, times(2)).apply()
-
-        `when`(mockSecurityState.getDeviceSecurityPatchLevel(COMPONENT_SYSTEM))
-            .thenReturn(SecurityPatchState.DateBasedSecurityPatchLevel(2023, 1, 1))
-
-        provider.registerUpdate(updateInfo)
-
-        Mockito.verify(mockEditor).remove(Mockito.anyString())
-        Mockito.verify(mockEditor, times(4)).apply()
     }
 }

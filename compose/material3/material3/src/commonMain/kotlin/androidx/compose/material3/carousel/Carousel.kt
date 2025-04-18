@@ -57,8 +57,7 @@ import kotlin.jvm.JvmInline
 import kotlin.math.roundToInt
 
 /**
- * <a href=https://m3.material.io/components/carousel/overview" class="external"
- * target="_blank">Material Design Carousel</a>
+ * [Material Design Carousel](https://m3.material.io/components/carousel/overview)
  *
  * A horizontal carousel meant to display many items at once for quick browsing of smaller content
  * like album art or photo thumbnails.
@@ -69,8 +68,8 @@ import kotlin.math.roundToInt
  * on their scroll offset to create items which smoothly expand and collapse between the large,
  * medium, and small sizes.
  *
- * For more information, see <a href="https://material.io/components/carousel/overview">design
- * guidelines</a>.
+ * For more information, see
+ * [design guidelines](https://m3.material.io/components/carousel/overview)
  *
  * Example of a multi-browse carousel:
  *
@@ -119,7 +118,7 @@ fun HorizontalMultiBrowseCarousel(
                     density = this,
                     carouselMainAxisSize = availableSpace,
                     preferredItemSize = preferredItemWidth.toPx(),
-                    itemCount = state.itemCountState.value.invoke(),
+                    itemCount = state.pagerState.pageCountState.value.invoke(),
                     itemSpacing = itemSpacingPx,
                     minSmallItemSize = minSmallItemWidth.toPx(),
                     maxSmallItemSize = maxSmallItemWidth.toPx(),
@@ -138,8 +137,7 @@ fun HorizontalMultiBrowseCarousel(
 }
 
 /**
- * <a href=https://m3.material.io/components/carousel/overview" class="external"
- * target="_blank">Material Design Carousel</a>
+ * [Material Design Carousel](https://m3.material.io/components/carousel/overview)
  *
  * A horizontal carousel that displays its items with the given size except for one item at the end
  * that is cut off.
@@ -148,8 +146,8 @@ fun HorizontalMultiBrowseCarousel(
  * out as many items as it can in the given size, and changes the size of the last cut off item such
  * that there is a range of motion when items scroll off the edge.
  *
- * For more information, see <a href="https://material.io/components/carousel/overview">design
- * guidelines</a>.
+ * For more information, see
+ * [design guidelines](https://m3.material.io/components/carousel/overview)
  *
  * Example of an uncontained carousel:
  *
@@ -201,8 +199,7 @@ fun HorizontalUncontainedCarousel(
 }
 
 /**
- * <a href=https://m3.material.io/components/carousel/overview" class="external"
- * target="_blank">Material Design Carousel</a>
+ * [Material Design Carousel](https://m3.material.io/components/carousel/overview)
  *
  * Carousels contain a collection of items that changes sizes according to their placement and the
  * chosen strategy.

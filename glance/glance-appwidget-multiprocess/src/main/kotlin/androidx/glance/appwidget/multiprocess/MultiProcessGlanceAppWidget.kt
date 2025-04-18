@@ -66,7 +66,7 @@ public abstract class MultiProcessGlanceAppWidget(
         }
 
     @RestrictTo(Scope.LIBRARY_GROUP)
-    protected final override fun createAppWidgetSession(
+    final override fun createAppWidgetSession(
         context: Context,
         id: AppWidgetId,
         options: Bundle?

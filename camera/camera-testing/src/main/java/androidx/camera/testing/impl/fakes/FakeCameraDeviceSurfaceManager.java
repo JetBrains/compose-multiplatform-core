@@ -26,8 +26,6 @@ import static com.google.common.primitives.Ints.asList;
 import android.util.Pair;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.AttachedSurfaceInfo;
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraMode;
@@ -40,6 +38,9 @@ import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.streamsharing.StreamSharingConfig;
 import androidx.camera.video.impl.VideoCaptureConfig;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -75,8 +76,7 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
     }
 
     @Override
-    @Nullable
-    public SurfaceConfig transformSurfaceConfig(
+    public @Nullable SurfaceConfig transformSurfaceConfig(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             int imageFormat,
@@ -87,9 +87,8 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
                 SurfaceConfig.ConfigSize.PREVIEW);
     }
 
-    @NonNull
     @Override
-    public Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
+    public @NonNull Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
             getSuggestedStreamSpecs(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
@@ -119,8 +118,7 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
         return new Pair<>(suggestedStreamSpecs, existingStreamSpecs);
     }
 
-    @NonNull
-    private StreamSpec getStreamSpec(@NonNull String cameraId, @NonNull Class<?> classType,
+    private @NonNull StreamSpec getStreamSpec(@NonNull String cameraId, @NonNull Class<?> classType,
             boolean hasVideoCapture) {
         StreamSpec streamSpec = StreamSpec.builder(MAX_OUTPUT_SIZE)
                 .setZslDisabled(hasVideoCapture)
@@ -141,7 +139,7 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
      * {@link androidx.camera.core.impl.UseCaseConfigFactory.CaptureType}.
      */
     private Class<?> captureTypeToUseCaseConfigType(
-            @NonNull UseCaseConfigFactory.CaptureType captureType) {
+            UseCaseConfigFactory.@NonNull CaptureType captureType) {
         switch (captureType) {
             case METERING_REPEATING:
                 // Fall-through

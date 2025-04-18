@@ -95,7 +95,7 @@ internal constructor(
                     INSTANCE =
                         with(RxPreferenceDataStoreBuilder(applicationContext, fileName)) {
                             setIoScheduler(scheduler)
-                            @Suppress("NewApi", "ClassVerificationFailure") // b/187418647
+                            @Suppress("NewApi") // b/187418647
                             produceMigrations(applicationContext).forEach { addDataMigration(it) }
                             corruptionHandler?.let { setCorruptionHandler(it) }
                             build()

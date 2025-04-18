@@ -118,7 +118,7 @@ public fun Chip(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     role: Role? = Role.Button,
     content: @Composable RowScope.() -> Unit,
-) =
+): Unit =
     Chip(
         onClick = onClick,
         colors = colors,
@@ -274,7 +274,7 @@ public fun Chip(
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     contentPadding: PaddingValues = ChipDefaults.ContentPadding,
-) =
+): Unit =
     Chip(
         label,
         onClick,
@@ -443,7 +443,7 @@ public fun OutlinedChip(
     contentPadding: PaddingValues = ChipDefaults.ContentPadding,
     shape: Shape = MaterialTheme.shapes.large,
     border: ChipBorder = ChipDefaults.outlinedChipBorder()
-) =
+): Unit =
     Chip(
         label = label,
         onClick = onClick,
@@ -541,7 +541,7 @@ public fun CompactChip(
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     contentPadding: PaddingValues = ChipDefaults.CompactChipContentPadding,
-) =
+): Unit =
     CompactChip(
         onClick,
         modifier,
@@ -757,7 +757,7 @@ public fun OutlinedCompactChip(
     contentPadding: PaddingValues = ChipDefaults.CompactChipContentPadding,
     shape: Shape = MaterialTheme.shapes.large,
     border: ChipBorder = ChipDefaults.outlinedChipBorder()
-) =
+): Unit =
     CompactChip(
         onClick = onClick,
         modifier = modifier,
@@ -1100,8 +1100,8 @@ public object ChipDefaults {
         )
     }
 
-    public val ChipHorizontalPadding = 14.dp
-    public val ChipVerticalPadding = 6.dp
+    public val ChipHorizontalPadding: Dp = 14.dp
+    public val ChipVerticalPadding: Dp = 6.dp
 
     /** The default content padding used by [Chip] */
     public val ContentPadding: PaddingValues =
@@ -1112,8 +1112,8 @@ public object ChipDefaults {
             bottom = ChipVerticalPadding
         )
 
-    public val CompactChipHorizontalPadding = 12.dp
-    public val CompactChipVerticalPadding = 0.dp
+    public val CompactChipHorizontalPadding: Dp = 12.dp
+    public val CompactChipVerticalPadding: Dp = 0.dp
 
     /** The default content padding used by [CompactChip] */
     public val CompactChipContentPadding: PaddingValues =
@@ -1128,7 +1128,7 @@ public object ChipDefaults {
      * The default height applied for the [Chip]. Note that you can override it by applying
      * Modifier.heightIn directly on [Chip].
      */
-    public val Height = 52.dp
+    public val Height: Dp = 52.dp
 
     /**
      * The height applied for the [CompactChip]. This includes a visible chip height of 32.dp and
@@ -1138,7 +1138,7 @@ public object ChipDefaults {
      * Note that you can override it by adjusting Modifier.height and Modifier.padding directly on
      * [CompactChip].
      */
-    public val CompactChipHeight = 48.dp
+    public val CompactChipHeight: Dp = 48.dp
 
     /**
      * The default padding to be provided around a [CompactChip] in order to ensure that its

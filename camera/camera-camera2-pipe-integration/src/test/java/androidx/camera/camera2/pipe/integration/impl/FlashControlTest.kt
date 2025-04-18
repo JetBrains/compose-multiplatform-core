@@ -24,6 +24,7 @@ import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTes
 import androidx.camera.camera2.pipe.integration.compat.workaround.NoOpAutoFlashAEModeDisabler
 import androidx.camera.camera2.pipe.integration.compat.workaround.NotUseFlashModeTorchFor3aUpdate
 import androidx.camera.camera2.pipe.integration.compat.workaround.UseFlashModeTorchFor3aUpdateImpl
+import androidx.camera.camera2.pipe.integration.impl.TorchControl.TorchMode
 import androidx.camera.camera2.pipe.integration.testing.FakeCameraProperties
 import androidx.camera.camera2.pipe.integration.testing.FakeUseCaseCameraRequestControl
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
@@ -386,7 +387,7 @@ class FlashControlTest {
 
         flashControl.startScreenFlashCaptureTasks()
 
-        assertThat(torchControl.torchStateLiveData.value).isEqualTo(TorchState.ON)
+        assertThat(torchControl.torchMode).isEqualTo(TorchMode.USED_AS_FLASH)
     }
 
     @Test
@@ -396,7 +397,7 @@ class FlashControlTest {
 
         flashControl.startScreenFlashCaptureTasks()
 
-        assertThat(torchControl.torchStateLiveData.value).isEqualTo(TorchState.ON)
+        assertThat(torchControl.torchMode).isEqualTo(TorchMode.USED_AS_FLASH)
     }
 
     @Test

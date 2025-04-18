@@ -146,26 +146,26 @@ public class MyDao_Impl(
 
   private fun __entityStatementConverter_MyEntity(statement: SQLiteStatement): MyEntity {
     val _entity: MyEntity
-    val _cursorIndexOfPk: Int = getColumnIndex(statement, "pk")
-    val _cursorIndexOfDoubleColumn: Int = getColumnIndex(statement, "doubleColumn")
-    val _cursorIndexOfFloatColumn: Int = getColumnIndex(statement, "floatColumn")
+    val _columnIndexOfPk: Int = getColumnIndex(statement, "pk")
+    val _columnIndexOfDoubleColumn: Int = getColumnIndex(statement, "doubleColumn")
+    val _columnIndexOfFloatColumn: Int = getColumnIndex(statement, "floatColumn")
     val _tmpPk: Long
-    if (_cursorIndexOfPk == -1) {
+    if (_columnIndexOfPk == -1) {
       _tmpPk = 0
     } else {
-      _tmpPk = statement.getLong(_cursorIndexOfPk)
+      _tmpPk = statement.getLong(_columnIndexOfPk)
     }
     val _tmpDoubleColumn: Double
-    if (_cursorIndexOfDoubleColumn == -1) {
+    if (_columnIndexOfDoubleColumn == -1) {
       _tmpDoubleColumn = 0.0
     } else {
-      _tmpDoubleColumn = statement.getDouble(_cursorIndexOfDoubleColumn)
+      _tmpDoubleColumn = statement.getDouble(_columnIndexOfDoubleColumn)
     }
     val _tmpFloatColumn: Float
-    if (_cursorIndexOfFloatColumn == -1) {
+    if (_columnIndexOfFloatColumn == -1) {
       _tmpFloatColumn = 0f
     } else {
-      _tmpFloatColumn = statement.getDouble(_cursorIndexOfFloatColumn).toFloat()
+      _tmpFloatColumn = statement.getDouble(_columnIndexOfFloatColumn).toFloat()
     }
     _entity = MyEntity(_tmpPk,_tmpDoubleColumn,_tmpFloatColumn)
     return _entity

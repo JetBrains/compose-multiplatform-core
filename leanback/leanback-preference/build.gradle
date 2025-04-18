@@ -5,7 +5,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -13,6 +13,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
     implementation("androidx.collection:collection:1.4.2")
     api("androidx.appcompat:appcompat:1.0.0")
@@ -33,9 +34,11 @@ android {
 
 androidx {
     name = "Leanback Preference"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.LEANBACK_PREFERENCE
     inceptionYear = "2015"
     description = "AndroidX Leanback Preference"
     failOnDeprecationWarnings = false
+    // TODO: b/326456246
+    optOutJSpecify = true
 }

@@ -20,8 +20,9 @@ import android.database.AbstractWindowedCursor;
 import android.database.sqlite.SQLiteCursor;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing features in {@link AbstractWindowedCursor}

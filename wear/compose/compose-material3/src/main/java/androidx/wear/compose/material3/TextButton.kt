@@ -31,6 +31,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
 import androidx.wear.compose.material3.tokens.FilledTextButtonTokens
 import androidx.wear.compose.material3.tokens.FilledTonalTextButtonTokens
 import androidx.wear.compose.material3.tokens.OutlinedTextButtonTokens
@@ -93,7 +95,7 @@ import androidx.wear.compose.material3.tokens.TextButtonTokens
  */
 // TODO(b/261838497) Add Material3 UX guidance links
 @Composable
-fun TextButton(
+public fun TextButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
@@ -107,8 +109,8 @@ fun TextButton(
 ) {
     val (finalShape, finalInteractionSource) =
         animateButtonShape(
-            defaultShape = shapes.shape,
-            pressedShape = shapes.pressed,
+            shape = shapes.shape,
+            pressedShape = shapes.pressedShape,
             onPressAnimationSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>().faster(200f),
             onReleaseAnimationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),
             interactionSource = interactionSource
@@ -135,54 +137,72 @@ fun TextButton(
 }
 
 /** Contains the default values used by [TextButton]. */
-object TextButtonDefaults {
+public object TextButtonDefaults {
     /** Recommended [Shape] for [TextButton]. */
-    val shape: RoundedCornerShape
+    public val shape: RoundedCornerShape
         @Composable get() = ShapeTokens.CornerFull
 
     /** Recommended pressed [Shape] for [TextButton]. */
-    val pressedShape: CornerBasedShape
+    public val pressedShape: CornerBasedShape
         @Composable get() = MaterialTheme.shapes.small
 
-    /**
-     * Creates a [TextButtonShapes] with a static [shape].
-     *
-     * @param shape The normal shape of the TextButton.
-     */
-    @Composable
-    fun shapes(
-        shape: Shape = TextButtonDefaults.shape,
-    ): TextButtonShapes = TextButtonShapes(shape = shape)
+    /** Returns the default [TextButtonShapes] for a static [TextButton]. */
+    @Composable public fun shapes(): TextButtonShapes = MaterialTheme.shapes.defaultTextButtonShapes
 
     /**
-     * Creates a [Shape] with a animation between two CornerBasedShapes.
+     * Returns a [TextButtonShapes] for a static [TextButton].
      *
-     * A simple text button using the default colors, animated when pressed.
-     *
-     * @sample androidx.wear.compose.material3.samples.TextButtonWithCornerAnimationSample
      * @param shape The normal shape of the TextButton.
-     * @param pressedShape The pressed shape of the TextButton.
      */
     @Composable
-    fun animatedShapes(
-        shape: CornerBasedShape = TextButtonDefaults.shape,
-        pressedShape: CornerBasedShape = TextButtonDefaults.pressedShape,
+    public fun shapes(
+        shape: Shape,
+    ): TextButtonShapes = MaterialTheme.shapes.defaultTextButtonShapes.copy(shape = shape)
+
+    /**
+     * Returns the default [TextButtonShapes] for a [TextButton ] with an animation between two
+     * CornerBasedShapes when pressed.
+     *
+     * Example of a simple text button using the default colors, animated when pressed:
+     *
+     * @sample androidx.wear.compose.material3.samples.TextButtonWithCornerAnimationSample
+     */
+    @Composable
+    public fun animatedShapes(): TextButtonShapes =
+        MaterialTheme.shapes.defaultTextButtonAnimatedShapes
+
+    /**
+     * Returns a [TextButtonShapes] with an animation between two CornerBasedShapes when pressed.
+     *
+     * Example of a simple text button using the default colors, animated when pressed:
+     *
+     * @sample androidx.wear.compose.material3.samples.TextButtonWithCornerAnimationSample
+     * @param shape The normal shape of the TextButton - if null, the default
+     *   [TextButtonDefaults.shape] is used.
+     * @param pressedShape The pressed shape of the TextButton - if null, the default
+     *   [TextButtonDefaults.pressedShape] is used.
+     */
+    @Composable
+    public fun animatedShapes(
+        shape: CornerBasedShape? = null,
+        pressedShape: CornerBasedShape? = null,
     ): TextButtonShapes =
-        TextButtonShapes(
+        MaterialTheme.shapes.defaultTextButtonAnimatedShapes.copy(
             shape = shape,
-            pressed = pressedShape,
+            pressedShape = pressedShape
         )
 
     /**
-     * Creates a [TextButtonColors] with the colors for a filled [TextButton]- by default, a colored
+     * Returns a [TextButtonColors] with the colors for a filled [TextButton]- by default, a colored
      * background with a contrasting content color. If the text button is disabled then the colors
      * will default to [ColorScheme.onSurface] with suitable alpha values applied.
      */
     @Composable
-    fun filledTextButtonColors() = MaterialTheme.colorScheme.defaultFilledTextButtonColors
+    public fun filledTextButtonColors(): TextButtonColors =
+        MaterialTheme.colorScheme.defaultFilledTextButtonColors
 
     /**
-     * Creates a [TextButtonColors] with the colors for a filled [TextButton]- by default, a colored
+     * Returns a [TextButtonColors] with the colors for a filled [TextButton]- by default, a colored
      * background with a contrasting content color. If the text button is disabled then the colors
      * will default to [ColorScheme.onSurface] with suitable alpha values applied.
      *
@@ -195,7 +215,7 @@ object TextButtonDefaults {
      * @param disabledContentColor the content color of this text button when not enabled
      */
     @Composable
-    fun filledTextButtonColors(
+    public fun filledTextButtonColors(
         containerColor: Color = Color.Unspecified,
         contentColor: Color = Color.Unspecified,
         disabledContainerColor: Color = Color.Unspecified,
@@ -209,7 +229,7 @@ object TextButtonDefaults {
         )
 
     /**
-     * Creates a [TextButtonColors] as an alternative to the [filledTonal TextButtonColors], giving
+     * Returns a [TextButtonColors] as an alternative to the [filledTonal TextButtonColors], giving
      * a surface with more chroma to indicate selected or highlighted states that are not primary
      * calls-to-action. If the text button is disabled then the colors will default to the
      * MaterialTheme onSurface color with suitable alpha values applied.
@@ -219,11 +239,11 @@ object TextButtonDefaults {
      * @sample androidx.wear.compose.material3.samples.FilledVariantTextButtonSample
      */
     @Composable
-    fun filledVariantTextButtonColors() =
+    public fun filledVariantTextButtonColors(): TextButtonColors =
         MaterialTheme.colorScheme.defaultFilledVariantTextButtonColors
 
     /**
-     * Creates a [TextButtonColors] as an alternative to the [filledTonal TextButtonColors], giving
+     * Returns a [TextButtonColors] as an alternative to the [filledTonal TextButtonColors], giving
      * a surface with more chroma to indicate selected or highlighted states that are not primary
      * calls-to-action. If the text button is disabled then the colors will default to the
      * MaterialTheme onSurface color with suitable alpha values applied.
@@ -237,7 +257,7 @@ object TextButtonDefaults {
      * @param disabledContentColor the content color of this text button when not enabled
      */
     @Composable
-    fun filledVariantTextButtonColors(
+    public fun filledVariantTextButtonColors(
         containerColor: Color = Color.Unspecified,
         contentColor: Color = Color.Unspecified,
         disabledContainerColor: Color = Color.Unspecified,
@@ -251,15 +271,16 @@ object TextButtonDefaults {
         )
 
     /**
-     * Creates a [TextButtonColors] with the colors for a filled, tonal [TextButton]- by default, a
+     * Returns a [TextButtonColors] with the colors for a filled, tonal [TextButton]- by default, a
      * muted colored background with a contrasting content color. If the text button is disabled
      * then the colors will default to [ColorScheme.onSurface] with suitable alpha values applied.
      */
     @Composable
-    fun filledTonalTextButtonColors() = MaterialTheme.colorScheme.defaultFilledTonalTextButtonColors
+    public fun filledTonalTextButtonColors(): TextButtonColors =
+        MaterialTheme.colorScheme.defaultFilledTonalTextButtonColors
 
     /**
-     * Creates a [TextButtonColors] with the colors for a filled, tonal [TextButton]- by default, a
+     * Returns a [TextButtonColors] with the colors for a filled, tonal [TextButton]- by default, a
      * muted colored background with a contrasting content color. If the text button is disabled
      * then the colors will default to [ColorScheme.onSurface] with suitable alpha values applied.
      *
@@ -272,7 +293,7 @@ object TextButtonDefaults {
      * @param disabledContentColor the content color of this text button when not enabled
      */
     @Composable
-    fun filledTonalTextButtonColors(
+    public fun filledTonalTextButtonColors(
         containerColor: Color = Color.Unspecified,
         contentColor: Color = Color.Unspecified,
         disabledContainerColor: Color = Color.Unspecified,
@@ -286,15 +307,16 @@ object TextButtonDefaults {
         )
 
     /**
-     * Creates a [TextButtonColors] with the colors for an outlined [TextButton]- by default, a
+     * Returns a [TextButtonColors] with the colors for an outlined [TextButton]- by default, a
      * transparent background with contrasting content color. If the button is disabled, then the
      * colors will default to [ColorScheme.onSurface] with suitable alpha values applied.
      */
     @Composable
-    fun outlinedTextButtonColors() = MaterialTheme.colorScheme.defaultOutlinedTextButtonColors
+    public fun outlinedTextButtonColors(): TextButtonColors =
+        MaterialTheme.colorScheme.defaultOutlinedTextButtonColors
 
     /**
-     * Creates a [TextButtonColors] with the colors for an outlined [TextButton]- by default, a
+     * Returns a [TextButtonColors] with the colors for an outlined [TextButton]- by default, a
      * transparent background with contrasting content color. If the button is disabled, then the
      * colors will default to [ColorScheme.onSurface] with suitable alpha values applied.
      *
@@ -306,7 +328,7 @@ object TextButtonDefaults {
      * @param disabledContentColor The content color of this text button when not enabled
      */
     @Composable
-    fun outlinedTextButtonColors(
+    public fun outlinedTextButtonColors(
         contentColor: Color = Color.Unspecified,
         disabledContentColor: Color = Color.Unspecified,
     ): TextButtonColors =
@@ -318,14 +340,16 @@ object TextButtonDefaults {
         )
 
     /**
-     * Creates a [TextButtonColors] for a text button - by default, a transparent background with
+     * Returns a [TextButtonColors] for a text button - by default, a transparent background with
      * contrasting content color. If the button is disabled then the colors default to
      * [ColorScheme.onSurface] with suitable alpha values applied.
      */
-    @Composable fun textButtonColors() = MaterialTheme.colorScheme.defaultTextButtonColors
+    @Composable
+    public fun textButtonColors(): TextButtonColors =
+        MaterialTheme.colorScheme.defaultTextButtonColors
 
     /**
-     * Creates a [TextButtonColors] for a text button - by default, a transparent background with
+     * Returns a [TextButtonColors] for a text button - by default, a transparent background with
      * contrasting content color. If the button is disabled then the colors default to
      * [ColorScheme.onSurface] with suitable alpha values applied.
      *
@@ -335,7 +359,7 @@ object TextButtonDefaults {
      * @param disabledContentColor the content color of this text button when not enabled
      */
     @Composable
-    fun textButtonColors(
+    public fun textButtonColors(
         containerColor: Color = Color.Transparent,
         contentColor: Color = Color.Unspecified,
         disabledContainerColor: Color = Color.Transparent,
@@ -352,31 +376,51 @@ object TextButtonDefaults {
      * The recommended size for a small button. It is recommended to apply this size using
      * [Modifier.touchTargetAwareSize].
      */
-    val SmallButtonSize = TextButtonTokens.ContainerSmallSize
+    public val SmallButtonSize: Dp = TextButtonTokens.ContainerSmallSize
 
     /**
      * The default size applied for buttons. It is recommended to apply this size using
      * [Modifier.touchTargetAwareSize].
      */
-    val DefaultButtonSize = TextButtonTokens.ContainerDefaultSize
+    public val DefaultButtonSize: Dp = TextButtonTokens.ContainerDefaultSize
 
     /**
      * The recommended size for a large button. It is recommended to apply this size using
      * [Modifier.touchTargetAwareSize].
      */
-    val LargeButtonSize = TextButtonTokens.ContainerLargeSize
+    public val LargeButtonSize: Dp = TextButtonTokens.ContainerLargeSize
 
     /** The recommended text style for a small button. */
-    val smallButtonTextStyle
+    public val smallButtonTextStyle: TextStyle
         @ReadOnlyComposable @Composable get() = MaterialTheme.typography.labelMedium
 
     /** The default text style applied for buttons. */
-    val defaultButtonTextStyle
+    public val defaultButtonTextStyle: TextStyle
         @ReadOnlyComposable @Composable get() = MaterialTheme.typography.labelMedium
 
     /** The recommended text style for a large button. */
-    val largeButtonTextStyle
+    public val largeButtonTextStyle: TextStyle
         @ReadOnlyComposable @Composable get() = MaterialTheme.typography.labelLarge
+
+    internal val Shapes.defaultTextButtonShapes: TextButtonShapes
+        @Composable
+        get() {
+            return defaultTextButtonShapesCached
+                ?: TextButtonShapes(shape = TextButtonDefaults.shape).also {
+                    defaultTextButtonShapesCached = it
+                }
+        }
+
+    internal val Shapes.defaultTextButtonAnimatedShapes: TextButtonShapes
+        @Composable
+        get() {
+            return defaultTextButtonAnimatedShapesCached
+                ?: TextButtonShapes(
+                        shape = TextButtonDefaults.shape,
+                        pressedShape = TextButtonDefaults.pressedShape
+                    )
+                    .also { defaultTextButtonAnimatedShapesCached = it }
+        }
 
     private val ColorScheme.defaultFilledTextButtonColors: TextButtonColors
         get() {
@@ -487,11 +531,11 @@ object TextButtonDefaults {
  * @param disabledContentColor the content color of this text button when not enabled.
  */
 @Immutable
-class TextButtonColors(
-    val containerColor: Color,
-    val contentColor: Color,
-    val disabledContainerColor: Color,
-    val disabledContentColor: Color,
+public class TextButtonColors(
+    public val containerColor: Color,
+    public val contentColor: Color,
+    public val disabledContainerColor: Color,
+    public val disabledContentColor: Color,
 ) {
 
     /**
@@ -502,12 +546,12 @@ class TextButtonColors(
      * @param disabledContainerColor the background color of this text button when not enabled.
      * @param disabledContentColor the content color of this text button when not enabled.
      */
-    fun copy(
+    public fun copy(
         containerColor: Color = this.containerColor,
         contentColor: Color = this.contentColor,
         disabledContainerColor: Color = this.disabledContainerColor,
         disabledContentColor: Color = this.disabledContentColor
-    ) =
+    ): TextButtonColors =
         TextButtonColors(
             containerColor = containerColor.takeOrElse { this.containerColor },
             contentColor = contentColor.takeOrElse { this.contentColor },
@@ -561,33 +605,37 @@ class TextButtonColors(
 /**
  * Represents the shapes used for [TextButton] in various states.
  *
- * If [pressed] is non null the shape will be animated on press.
+ * If [pressedShape] is non null the shape will be animated on press.
  *
  * @param shape the shape of the text button when enabled
- * @param pressed the shape of the text button when pressed
+ * @param pressedShape the shape of the text button when pressed
  */
-class TextButtonShapes(
-    val shape: Shape,
-    val pressed: Shape? = null,
+public class TextButtonShapes(
+    public val shape: Shape,
+    public val pressedShape: Shape = shape,
 ) {
-    fun copy(
-        default: Shape = this.shape,
-        pressed: Shape? = this.pressed,
-    ) = TextButtonShapes(default, pressed)
+    public fun copy(
+        shape: Shape? = this.shape,
+        pressedShape: Shape? = this.pressedShape,
+    ): TextButtonShapes =
+        TextButtonShapes(
+            shape = shape ?: this.shape,
+            pressedShape = pressedShape ?: this.pressedShape
+        )
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || other !is TextButtonShapes) return false
 
         if (shape != other.shape) return false
-        if (pressed != other.pressed) return false
+        if (pressedShape != other.pressedShape) return false
 
         return true
     }
 
     override fun hashCode(): Int {
         var result = shape.hashCode()
-        result = 31 * result + pressed.hashCode()
+        result = 31 * result + pressedShape.hashCode()
 
         return result
     }

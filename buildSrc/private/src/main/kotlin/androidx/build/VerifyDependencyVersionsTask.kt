@@ -128,15 +128,8 @@ data class AndroidXDependency(
 }
 
 internal fun Project.createVerifyDependencyVersionsTask():
-    TaskProvider<VerifyDependencyVersionsTask>? {
-    /**
-     * Ignore -Pandroidx.useMaxDepVersions when verifying dependency versions because it is a
-     * hypothetical build which is only intended to check for forward compatibility.
-     */
-    if (project.usingMaxDepVersions()) {
-        return null
-    }
-
+    TaskProvider<VerifyDependencyVersionsTask> {
+    val usingMaxDepsVersions = project.usingMaxDepVersions()
     val taskProvider =
         tasks.register("verifyDependencyVersions", VerifyDependencyVersionsTask::class.java) { task
             ->
@@ -161,6 +154,14 @@ internal fun Project.createVerifyDependencyVersionsTask():
                     dependencies
                 }
             )
+            task.onlyIf {
+                /**
+                 * Ignore -Pandroidx.useMaxDepVersions when verifying dependency versions because it
+                 * is a hypothetical build which is only intended to check for forward
+                 * compatibility.
+                 */
+                !usingMaxDepsVersions.get()
+            }
             task.cacheEvenIfNoOutputs()
         }
 
@@ -225,6 +226,7 @@ private fun Project.shouldVerifyConfiguration(configuration: Configuration): Boo
     if (name.contains("TestCompile")) return false
     if (name.contains("commonTest", ignoreCase = true)) return false
     if (name.contains("nativeTest", ignoreCase = true)) return false
+    if (name.contains("TestCInterop", ignoreCase = true)) return false
     if (
         multiplatformExtension?.targets?.any {
             name.contains("${it.name}Test", ignoreCase = true)
@@ -247,7 +249,7 @@ private fun shouldVerifyDependency(dependency: Dependency): Boolean {
     if (dependency.group == null) return false
     if (!dependency.group.toString().startsWith("androidx.")) return false
     if (dependency.name == "annotation-sampled") return false
-    if (dependency.version == AndroidXPlaygroundRootImplPlugin.SNAPSHOT_MARKER) {
+    if (dependency.version == SNAPSHOT_MARKER) {
         // This only happens in playground builds where this magic version gets replaced with
         // the version from the snapshotBuildId defined in playground-common/playground.properties.
         // It is best to leave their validation to the aosp build to ensure it is the right

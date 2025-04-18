@@ -20,7 +20,7 @@ package androidx.core.view;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing API features in
@@ -45,7 +45,7 @@ public final class MarginLayoutParamsCompat {
      */
     @androidx.annotation.ReplaceWith(expression = "lp.getMarginStart()")
     @Deprecated
-    public static int getMarginStart(@NonNull ViewGroup.MarginLayoutParams lp) {
+    public static int getMarginStart(ViewGroup.@NonNull MarginLayoutParams lp) {
         return lp.getMarginStart();
     }
 
@@ -63,7 +63,7 @@ public final class MarginLayoutParamsCompat {
      */
     @androidx.annotation.ReplaceWith(expression = "lp.getMarginEnd()")
     @Deprecated
-    public static int getMarginEnd(@NonNull ViewGroup.MarginLayoutParams lp) {
+    public static int getMarginEnd(ViewGroup.@NonNull MarginLayoutParams lp) {
         return lp.getMarginEnd();
     }
 
@@ -81,7 +81,7 @@ public final class MarginLayoutParamsCompat {
      */
     @androidx.annotation.ReplaceWith(expression = "lp.setMarginStart(marginStart)")
     @Deprecated
-    public static void setMarginStart(@NonNull ViewGroup.MarginLayoutParams lp, int marginStart) {
+    public static void setMarginStart(ViewGroup.@NonNull MarginLayoutParams lp, int marginStart) {
         lp.setMarginStart(marginStart);
     }
 
@@ -99,7 +99,7 @@ public final class MarginLayoutParamsCompat {
      */
     @androidx.annotation.ReplaceWith(expression = "lp.setMarginEnd(marginEnd)")
     @Deprecated
-    public static void setMarginEnd(@NonNull ViewGroup.MarginLayoutParams lp, int marginEnd) {
+    public static void setMarginEnd(ViewGroup.@NonNull MarginLayoutParams lp, int marginEnd) {
         lp.setMarginEnd(marginEnd);
     }
 
@@ -111,7 +111,7 @@ public final class MarginLayoutParamsCompat {
      */
     @androidx.annotation.ReplaceWith(expression = "lp.isMarginRelative()")
     @Deprecated
-    public static boolean isMarginRelative(@NonNull ViewGroup.MarginLayoutParams lp) {
+    public static boolean isMarginRelative(ViewGroup.@NonNull MarginLayoutParams lp) {
         return lp.isMarginRelative();
     }
 
@@ -123,7 +123,7 @@ public final class MarginLayoutParamsCompat {
      * @deprecated Use {@link ViewGroup.MarginLayoutParams#getLayoutDirection} directly.
      */
     @Deprecated
-    public static int getLayoutDirection(@NonNull ViewGroup.MarginLayoutParams lp) {
+    public static int getLayoutDirection(ViewGroup.@NonNull MarginLayoutParams lp) {
         int result;
         result = lp.getLayoutDirection();
 
@@ -147,7 +147,7 @@ public final class MarginLayoutParamsCompat {
      */
     @androidx.annotation.ReplaceWith(expression = "lp.setLayoutDirection(layoutDirection)")
     @Deprecated
-    public static void setLayoutDirection(@NonNull ViewGroup.MarginLayoutParams lp,
+    public static void setLayoutDirection(ViewGroup.@NonNull MarginLayoutParams lp,
             int layoutDirection) {
         lp.setLayoutDirection(layoutDirection);
     }
@@ -160,7 +160,7 @@ public final class MarginLayoutParamsCompat {
      */
     @androidx.annotation.ReplaceWith(expression = "lp.resolveLayoutDirection(layoutDirection)")
     @Deprecated
-    public static void resolveLayoutDirection(@NonNull ViewGroup.MarginLayoutParams lp,
+    public static void resolveLayoutDirection(ViewGroup.@NonNull MarginLayoutParams lp,
             int layoutDirection) {
         lp.resolveLayoutDirection(layoutDirection);
     }

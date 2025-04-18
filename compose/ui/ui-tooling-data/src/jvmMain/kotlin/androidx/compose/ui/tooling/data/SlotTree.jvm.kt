@@ -68,6 +68,7 @@ sealed class Group(
 }
 
 @UiToolingDataApi
+@Suppress("DataClassDefinition")
 data class ParameterInformation(
     val name: String,
     val value: Any?,
@@ -80,6 +81,7 @@ data class ParameterInformation(
 
 /** Source location of the call that produced the call group. */
 @UiToolingDataApi
+@Suppress("DataClassDefinition")
 data class SourceLocation(
     /** A 0 offset line number of the source location. */
     val lineNumber: Int,
@@ -156,7 +158,9 @@ private object EmptyGroup :
     )
 
 /** A key that has being joined together to form one key. */
-@UiToolingDataApi data class JoinedKey(val left: Any?, val right: Any?)
+@UiToolingDataApi
+@Suppress("DataClassDefinition")
+data class JoinedKey(val left: Any?, val right: Any?)
 
 internal val emptyBox = IntRect(0, 0, 0, 0)
 

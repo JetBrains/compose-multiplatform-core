@@ -25,6 +25,7 @@ import androidx.privacysandbox.tools.core.model.ParsedApi
 import androidx.privacysandbox.tools.core.model.Type
 import androidx.privacysandbox.tools.core.model.Types
 import androidx.privacysandbox.tools.core.model.Types.asNullable
+import androidx.privacysandbox.tools.core.model.Types.sandboxedUiAdapter
 import androidx.room.compiler.processing.util.Source
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -125,9 +126,14 @@ class InterfaceParserTest {
                     |package com.mysdk
                     |import androidx.privacysandbox.tools.PrivacySandboxInterface
                     |import androidx.privacysandbox.ui.core.SandboxedUiAdapter as SUiAdapter
+                    |import androidx.privacysandbox.ui.core.SharedUiAdapter as ShUiAdapter
                     |
                     |@PrivacySandboxInterface
                     |interface MyUiInterface : SUiAdapter {
+                    |}
+                    |
+                    |@PrivacySandboxInterface
+                    |interface MySharedUiInterface : ShUiAdapter {
                     |}
                 """
                     .trimMargin()
@@ -159,10 +165,16 @@ class InterfaceParserTest {
                             AnnotatedInterface(
                                 type =
                                     Type(packageName = "com.mysdk", simpleName = "MyUiInterface"),
-                                superTypes =
-                                    listOf(
-                                        Types.sandboxedUiAdapter,
+                                superTypes = listOf(Types.sandboxedUiAdapter),
+                                methods = listOf()
+                            ),
+                            AnnotatedInterface(
+                                type =
+                                    Type(
+                                        packageName = "com.mysdk",
+                                        simpleName = "MySharedUiInterface"
                                     ),
+                                superTypes = listOf(Types.sharedUiAdapter),
                                 methods = listOf()
                             )
                         )
@@ -416,6 +428,31 @@ class InterfaceParserTest {
             .containsExactlyErrors(
                 "Error in com.mysdk.MyInterface: annotated interface inherits prohibited types (A, " +
                     "B, C, ...)."
+            )
+    }
+
+    @Test
+    fun interfaceInheritanceManyUiInterfaces_fails() {
+        val source =
+            Source.kotlin(
+                "com/mysdk/MySdk.kt",
+                """
+                    package com.mysdk
+                    import androidx.privacysandbox.tools.PrivacySandboxService
+                    import androidx.privacysandbox.tools.PrivacySandboxInterface
+                    import androidx.privacysandbox.ui.core.SandboxedUiAdapter as SUiAdapter
+                    import androidx.privacysandbox.ui.core.SharedUiAdapter as ShUiAdapter
+
+                    @PrivacySandboxService
+                    interface MySdk {}
+
+                    @PrivacySandboxInterface
+                    interface MyInterface : SUiAdapter, ShUiAdapter {
+                    }"""
+            )
+        checkSourceFails(source)
+            .containsExactlyErrors(
+                "Error in com.mysdk.MyInterface: annotated interface inherits more than one UI adapter interface (SandboxedUiAdapter, SharedUiAdapter)."
             )
     }
 

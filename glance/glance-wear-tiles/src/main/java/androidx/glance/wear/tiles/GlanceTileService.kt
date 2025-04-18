@@ -99,7 +99,7 @@ public abstract class GlanceTileService(
         super.onDestroy()
     }
 
-    @Suppress("DEPRECATION")
+    @Suppress("OVERRIDE_DEPRECATION") // b/407504857
     override fun onStart(intent: Intent?, startId: Int) {
         lifecycleDispatcher.onServicePreSuperOnStart()
         super.onStart(intent, startId)

@@ -23,13 +23,13 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
+import android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
 import android.media.Image
 import android.media.ImageWriter
 import android.os.Build
-import android.os.Looper
 import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.impl.Camera2ImplConfig
@@ -79,15 +79,14 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertThrows
-import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.mockito.Mockito.mock
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows
+import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
@@ -96,12 +95,12 @@ import org.robolectric.shadows.ShadowCameraManager
 
 private const val CAMERA_ID_0 = "0"
 
-@RunWith(RobolectricTestRunner::class)
+@RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
 @Config(
     minSdk = Build.VERSION_CODES.LOLLIPOP,
 )
-class Camera2CapturePipelineTest {
+class Camera2CapturePipelineTest(private val isLowLightBoostEnabled: Boolean) {
 
     private val context = ApplicationProvider.getApplicationContext() as Context
     private val executorService = Executors.newSingleThreadScheduledExecutor()
@@ -151,8 +150,17 @@ class Camera2CapturePipelineTest {
 
     private lateinit var testScreenFlash: MockScreenFlash
 
+    companion object {
+        @JvmStatic
+        @ParameterizedRobolectricTestRunner.Parameters(name = "isLowLightBoostEnabled: {0}")
+        fun data() = listOf(true, false)
+    }
+
     @Before
     fun setUp() {
+        if (isLowLightBoostEnabled) {
+            assumeTrue(Build.VERSION.SDK_INT >= 35)
+        }
         initCameras()
         testScreenFlash = MockScreenFlash()
     }
@@ -212,8 +220,8 @@ class Camera2CapturePipelineTest {
         )
 
         // Assert.
-        assertTrue(fakeTask.preCaptureCountDown.await(3, TimeUnit.SECONDS))
-        assertTrue(fakeTask.postCaptureCountDown.await(3, TimeUnit.SECONDS))
+        assertThat(fakeTask.preCaptureCountDown.await(3, TimeUnit.SECONDS)).isTrue()
+        assertThat(fakeTask.postCaptureCountDown.await(3, TimeUnit.SECONDS)).isTrue()
     }
 
     @Test
@@ -288,12 +296,19 @@ class Camera2CapturePipelineTest {
                 simulateRepeatingResult(initialDelay = 100)
             }
 
-        // Assert 1, verify the CONTROL_AE_PRECAPTURE_TRIGGER is triggered
+        // Assert 1, verify the CONTROL_AE_PRECAPTURE_TRIGGER is triggered when low-light boost is
+        // off, otherwise, is not triggered.
         immediateCompleteCapture.verifyRequestResult {
             it.requestContains(
                 CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                 CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START
-            )
+            ) != isLowLightBoostEnabled
+        }
+
+        // When low-light boost is on, AE pre-capture is not triggered. Therefore, converged stage
+        // is not required.
+        if (isLowLightBoostEnabled) {
+            return
         }
 
         // Switch the repeating result to 3A converged state.
@@ -302,7 +317,8 @@ class Camera2CapturePipelineTest {
             resultParameters = resultConverged
         )
 
-        // Assert 2 that CONTROL_AE_PRECAPTURE_TRIGGER should be cancelled finally.
+        // Assert 2 that CONTROL_AE_PRECAPTURE_TRIGGER should be cancelled finally when low-light
+        // boost is off, otherwise, TRIGGER_CANCEL is not triggered.
         if (Build.VERSION.SDK_INT >= 23) {
             immediateCompleteCapture.verifyRequestResult {
                 it.requestContains(
@@ -345,12 +361,19 @@ class Camera2CapturePipelineTest {
                 )
             }
 
-        // Assert 1, verify the CONTROL_AE_PRECAPTURE_TRIGGER is triggered
+        // Assert 1, verify the CONTROL_AE_PRECAPTURE_TRIGGER is triggered when low-light boost is
+        // off, otherwise, is not triggered.
         immediateCompleteCapture.verifyRequestResult {
             it.requestContains(
                 CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                 CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START
-            )
+            ) != isLowLightBoostEnabled
+        }
+
+        // When low-light boost is on, AE pre-capture is not triggered. Therefore, converged stage
+        // is not required.
+        if (isLowLightBoostEnabled) {
+            return
         }
 
         // Switch the repeating result to 3A converged state.
@@ -359,7 +382,8 @@ class Camera2CapturePipelineTest {
             resultParameters = resultConverged
         )
 
-        // Assert 2 that CONTROL_AE_PRECAPTURE_TRIGGER should be cancelled finally.
+        // Assert 2 that CONTROL_AE_PRECAPTURE_TRIGGER should be cancelled finally when low-light
+        // boost is off, otherwise, TRIGGER_CANCEL is not triggered.
         if (Build.VERSION.SDK_INT >= 23) {
             immediateCompleteCapture.verifyRequestResult {
                 it.requestContains(
@@ -430,7 +454,19 @@ class Camera2CapturePipelineTest {
                 }
 
         // Assert 1 torch should be turned on
-        cameraControl.waitForSessionConfig { it.isTorchParameterEnabled() }
+        cameraControl.waitForSessionConfig {
+            if (isLowLightBoostEnabled) {
+                it.isLowLightBoostEnabled()
+            } else {
+                it.isTorchParameterEnabled()
+            }
+        }
+
+        // When low-light boost is on, AE pre-capture is not triggered. Therefore, converged stage
+        // is not required.
+        if (isLowLightBoostEnabled) {
+            return
+        }
 
         // Switch the repeating result to 3A converged state.
         cameraControl.simulateRepeatingResult(
@@ -468,7 +504,19 @@ class Camera2CapturePipelineTest {
             }
 
         // Assert 1 torch should be turned on
-        cameraControl.waitForSessionConfig { it.isTorchParameterEnabled() }
+        cameraControl.waitForSessionConfig {
+            if (isLowLightBoostEnabled) {
+                it.isLowLightBoostEnabled()
+            } else {
+                it.isTorchParameterEnabled()
+            }
+        }
+
+        // When low-light boost is on, AE pre-capture is not triggered. Therefore, converged stage
+        // is not required.
+        if (isLowLightBoostEnabled) {
+            return
+        }
 
         // Switch the repeating result to 3A converged state.
         cameraControl.simulateRepeatingResult(
@@ -503,7 +551,19 @@ class Camera2CapturePipelineTest {
             }
 
         // Assert 1 torch should be turned on
-        cameraControl.waitForSessionConfig { it.isTorchParameterEnabled() }
+        cameraControl.waitForSessionConfig {
+            if (isLowLightBoostEnabled) {
+                it.isLowLightBoostEnabled()
+            } else {
+                it.isTorchParameterEnabled()
+            }
+        }
+
+        // When low-light boost is on, AE pre-capture is not triggered. Therefore, converged stage
+        // is not required.
+        if (isLowLightBoostEnabled) {
+            return
+        }
 
         // Switch the repeating result to 3A converged state.
         cameraControl.simulateRepeatingResult(
@@ -794,7 +854,7 @@ class Camera2CapturePipelineTest {
         // Assert.
         val exception =
             assertThrows(ExecutionException::class.java) { future.get(1, TimeUnit.SECONDS) }
-        assertTrue(exception.cause is ImageCaptureException)
+        assertThat(exception.cause).isInstanceOf(ImageCaptureException::class.java)
         assertThat((exception.cause as ImageCaptureException).imageCaptureError)
             .isEqualTo(ImageCapture.ERROR_CAPTURE_FAILED)
     }
@@ -830,7 +890,7 @@ class Camera2CapturePipelineTest {
         // Assert.
         val exception =
             assertThrows(ExecutionException::class.java) { future.get(1, TimeUnit.SECONDS) }
-        assertTrue(exception.cause is ImageCaptureException)
+        assertThat(exception.cause).isInstanceOf(ImageCaptureException::class.java)
         assertThat((exception.cause as ImageCaptureException).imageCaptureError)
             .isEqualTo(ImageCapture.ERROR_CAMERA_CLOSED)
     }
@@ -1170,6 +1230,13 @@ class Camera2CapturePipelineTest {
                 CameraMetadata.FLASH_MODE_TORCH
     }
 
+    private fun SessionConfig.isLowLightBoostEnabled(): Boolean {
+        val config = toCamera2Config()
+
+        return config.getCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE, null) ==
+            CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+    }
+
     private fun List<CaptureConfig>.isTorchParameterDisabled() =
         requestContains(
             CaptureRequest.CONTROL_AE_MODE,
@@ -1283,6 +1350,8 @@ class Camera2CapturePipelineTest {
                 setActive(true)
                 incrementUseCount()
                 this.screenFlash = testScreenFlash
+                // Applies low-light boost setting
+                enableLowLightBoostAndAssert(this)
             }
     }
 
@@ -1297,14 +1366,19 @@ class Camera2CapturePipelineTest {
                 set(CameraCharacteristics.FLASH_INFO_AVAILABLE, true)
                 set(
                     CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES,
-                    intArrayOf(
-                        CaptureRequest.CONTROL_AE_MODE_OFF,
-                        CaptureRequest.CONTROL_AE_MODE_ON,
-                        CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH,
-                        CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH,
-                        CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH_REDEYE,
-                        CaptureRequest.CONTROL_AE_MODE_ON_EXTERNAL_FLASH
-                    )
+                    mutableListOf<Int>()
+                        .apply {
+                            add(CaptureRequest.CONTROL_AE_MODE_OFF)
+                            add(CaptureRequest.CONTROL_AE_MODE_ON)
+                            add(CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
+                            add(CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH)
+                            add(CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH_REDEYE)
+                            add(CaptureRequest.CONTROL_AE_MODE_ON_EXTERNAL_FLASH)
+                            if (Build.VERSION.SDK_INT >= 35) {
+                                add(CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
+                            }
+                        }
+                        .toIntArray()
                 )
                 set(CameraCharacteristics.LENS_FACING, CameraMetadata.LENS_FACING_BACK)
             }
@@ -1334,7 +1408,7 @@ class Camera2CapturePipelineTest {
                     }
                     waitingList.add(resultPair)
                 }
-                assertTrue(resultPair.first.await(timeout, TimeUnit.MILLISECONDS))
+                assertThat(resultPair.first.await(timeout, TimeUnit.MILLISECONDS)).isTrue()
                 waitingList.remove(resultPair)
             }
 
@@ -1438,7 +1512,8 @@ class Camera2CapturePipelineTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = true,
                     isPrivateReprocessingSupported = true
-                )
+                ),
+                executorService
             )
 
         // Only need to initialize when not disabled
@@ -1450,7 +1525,10 @@ class Camera2CapturePipelineTest {
             val imageProxy = FakeImageProxy(CameraCaptureResultImageInfo(captureResult))
             imageProxy.image = mock(Image::class.java)
             zslControl.mImageRingBuffer.enqueue(imageProxy)
-            zslControl.mReprocessingImageWriter = mock(ImageWriter::class.java)
+            zslControl.mReprocessingImageWriterHolder =
+                ZslControlImpl.ImageWriterHolder(executorService).apply {
+                    onImageWriterCreated(mock(ImageWriter::class.java))
+                }
         }
 
         zslControl.isZslDisabledByFlashMode = isZslDisabledByFlashMode
@@ -1458,13 +1536,16 @@ class Camera2CapturePipelineTest {
 
         cameraControl.mZslControl = zslControl
 
+        // Applies low-light boost setting
+        enableLowLightBoostAndAssert(cameraControl)
+
         return cameraControl
     }
 
-    private fun Looper.advanceUntilIdle() {
-        val shadowLooper = Shadows.shadowOf(this)
-        while (!shadowLooper.isIdle) {
-            shadowLooper.idle()
+    private fun enableLowLightBoostAndAssert(cameraControlImpl: Camera2CameraControlImpl) {
+        if (isLowLightBoostEnabled) {
+            executorService.run { cameraControlImpl.enableLowLightBoostInternal(true) }
         }
+        assertThat(cameraControlImpl.isLowLightBoostOn).isEqualTo(isLowLightBoostEnabled)
     }
 }

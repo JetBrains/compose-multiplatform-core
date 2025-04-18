@@ -43,8 +43,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 
 /**
- * <a href="https://m3.material.io/components/radio-button/overview" class="external"
- * target="_blank">Material Design radio button</a>.
+ * [Material Design radio button](https://m3.material.io/components/radio-button/overview)
  *
  * Radio buttons allow users to select one option from a set.
  *

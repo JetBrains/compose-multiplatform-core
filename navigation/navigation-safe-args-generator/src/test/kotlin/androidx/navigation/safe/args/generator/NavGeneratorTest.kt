@@ -19,9 +19,11 @@ package androidx.navigation.safe.args.generator
 import androidx.navigation.safe.args.generator.java.JavaCodeFile
 import androidx.navigation.safe.args.generator.kotlin.KotlinCodeFile
 import com.google.common.truth.Truth
+import com.google.testing.compile.JavaFileObjects
 import com.google.testing.compile.JavaSourcesSubject
 import java.io.File
 import java.lang.IllegalStateException
+import java.nio.charset.Charset
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Rule
@@ -54,20 +56,38 @@ class NavGeneratorTest(private val generateKotlin: Boolean) {
             .generate()
 
     private fun CodeFile.assertParsesAs(fullClassName: String, folder: String) {
+        val goldenFile =
+            when (this) {
+                is JavaCodeFile ->
+                    loadSourceFile(
+                        fullClassName,
+                        "expected/nav_generator_test/java/$folder",
+                        "java"
+                    )
+                is KotlinCodeFile ->
+                    loadSourceFile(
+                        fullClassName,
+                        "expected/nav_generator_test/kotlin/$folder",
+                        "kt"
+                    )
+                else -> throw IllegalStateException("Unknown CodeFile type.")
+            }
+        val updateGoldenFiles = System.getProperty("update_golden_files")?.toBoolean() == true
         when (this) {
             is JavaCodeFile -> {
+                if (updateGoldenFiles) goldenFile.writer().use { it.write(this.wrapped.toString()) }
                 JavaSourcesSubject.assertThat(this.toJavaFileObject())
-                    .parsesAs(fullClassName, "expected/nav_generator_test/java/$folder")
-            }
-            is KotlinCodeFile -> {
-                Truth.assertThat(this.wrapped.toString())
-                    .isEqualTo(
-                        loadSourceString(
+                    .parsesAs(
+                        JavaFileObjects.forSourceString(
                             fullClassName,
-                            "expected/nav_generator_test/kotlin/$folder",
-                            "kt"
+                            goldenFile.readText(Charset.defaultCharset())
                         )
                     )
+            }
+            is KotlinCodeFile -> {
+                if (updateGoldenFiles) goldenFile.writer().use { it.write(this.wrapped.toString()) }
+                Truth.assertThat(this.wrapped.toString())
+                    .isEqualTo(goldenFile.readText(Charset.defaultCharset()))
             }
             else -> throw IllegalStateException("Unknown CodeFile type.")
         }
@@ -83,7 +103,9 @@ class NavGeneratorTest(private val generateKotlin: Boolean) {
                 "androidx.navigation.testapp.MainFragmentDirections",
                 "foo.flavor.NextFragmentDirections",
                 "androidx.navigation.testapp.MainFragmentArgs",
-                "foo.flavor.NextFragmentArgs"
+                "foo.flavor.NextFragmentArgs",
+                "com.example.HomeScreenKt_HomeScreenDirections",
+                "com.example.HomeScreenKt_HomeScreenArgs"
             )
         assertThat(output.errors.isEmpty(), `is`(true))
         assertThat(fileNames.toSet(), `is`(expectedSet))

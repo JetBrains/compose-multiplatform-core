@@ -29,7 +29,9 @@ import android.provider.MediaStore
 import android.util.Size
 import android.view.View
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.annotation.VisibleForTesting
+import androidx.camera.core.FlashState
 import androidx.camera.core.ImageCapture.OnImageCapturedCallback
 import androidx.camera.core.ImageCapture.OnImageSavedCallback
 import androidx.camera.core.ImageCapture.OutputFileOptions
@@ -99,6 +101,15 @@ private fun displayImage(context: Context, image: ImageProxy) {
         imageView.rotation = rotationDegrees.toFloat()
         dialog.findViewById<View>(R.id.dialog_button).setOnClickListener { dialog.dismiss() }
         dialog.show()
+
+        val flashState =
+            when (image.imageInfo.flashState) {
+                FlashState.FIRED -> "FIRED"
+                FlashState.UNAVAILABLE -> "UNAVAILABLE"
+                FlashState.NOT_FIRED -> "NOT_FIRED"
+                else -> "UNKNOWN"
+            }
+        Toast.makeText(context, "Flash state: $flashState", Toast.LENGTH_SHORT).show()
     }
 }
 

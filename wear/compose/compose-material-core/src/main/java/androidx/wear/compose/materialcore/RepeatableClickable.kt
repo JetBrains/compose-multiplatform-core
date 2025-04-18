@@ -66,7 +66,7 @@ import kotlinx.coroutines.launch
  *   each call until the touch is released
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun Modifier.repeatableClickable(
+public fun Modifier.repeatableClickable(
     interactionSource: MutableInteractionSource?,
     indication: Indication?,
     enabled: Boolean = true,

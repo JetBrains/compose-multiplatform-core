@@ -421,7 +421,7 @@ class RoomAndroidGradlePluginTest {
                 .contains(
                     "Failed to query the value of task ':copyRoomSchemas' property 'schemaDirectory'."
                 )
-            assertThat(result.output).contains("path may not be null or empty string.")
+            assertThat(result.output).contains("Cannot convert '' to File.")
         }
     }
 

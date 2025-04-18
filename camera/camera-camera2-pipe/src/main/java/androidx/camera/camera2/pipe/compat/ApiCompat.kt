@@ -525,4 +525,31 @@ internal object Api34Compat {
     ) {
         extensionSessionConfiguration.postviewOutputConfiguration = postviewOutputConfiguration
     }
+
+    @JvmStatic
+    fun isZoomOverrideSupported(cameraMetadata: CameraMetadata): Boolean =
+        cameraMetadata[CameraCharacteristics.CONTROL_AVAILABLE_SETTINGS_OVERRIDES]?.contains(
+            android.hardware.camera2.CameraMetadata.CONTROL_SETTINGS_OVERRIDE_ZOOM
+        ) == true
+}
+
+@RequiresApi(35)
+internal object Api35Compat {
+    @JvmStatic
+    fun isTorchStrengthSupported(cameraMetadata: CameraMetadata): Boolean {
+        val maxLevel = cameraMetadata[CameraCharacteristics.FLASH_TORCH_STRENGTH_MAX_LEVEL]
+        return maxLevel != null && maxLevel > 1
+    }
+
+    @JvmStatic
+    fun getDefaultTorchStrengthLevel(cameraMetadata: CameraMetadata): Int {
+        val defaultLevel = cameraMetadata[CameraCharacteristics.FLASH_TORCH_STRENGTH_DEFAULT_LEVEL]
+        return defaultLevel ?: 1
+    }
+
+    @JvmStatic
+    fun getMaxTorchStrengthLevel(cameraMetadata: CameraMetadata): Int {
+        val maxLevel = cameraMetadata[CameraCharacteristics.FLASH_TORCH_STRENGTH_MAX_LEVEL]
+        return maxLevel ?: 1
+    }
 }

@@ -23,8 +23,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.dp
 
 /**
- * <a href="https://material.io/design/shape/about-shape.html" class="external"
- * target="_blank">Material Design shape</a>.
+ * [Material Design shape](https://material.io/design/shape/about-shape.html)
  *
  * Material surfaces can be displayed in different shapes. Shapes direct attention, identify
  * components, communicate state, and express brand.

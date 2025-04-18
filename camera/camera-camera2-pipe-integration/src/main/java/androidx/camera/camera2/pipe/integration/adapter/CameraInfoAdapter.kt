@@ -28,8 +28,12 @@ import android.view.Surface
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLegacy
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.maxTorchStrengthLevel
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsHighSpeedVideo
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsLogicalMultiCamera
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsLowLightBoost
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsPrivateReprocessing
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsTorchStrength
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.UnsafeWrapper
 import androidx.camera.camera2.pipe.core.Log
@@ -70,6 +74,7 @@ import androidx.camera.core.impl.Quirks
 import androidx.camera.core.impl.Timebase
 import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import java.util.concurrent.Executor
 import javax.inject.Inject
 import kotlin.reflect.KClass
@@ -177,6 +182,23 @@ constructor(
 
     override fun getTorchState(): LiveData<Int> = cameraControlStateAdapter.torchStateLiveData
 
+    override fun isTorchStrengthSupported(): Boolean =
+        cameraProperties.metadata.supportsTorchStrength
+
+    override fun getMaxTorchStrengthLevel(): Int =
+        if (isTorchStrengthSupported) cameraProperties.metadata.maxTorchStrengthLevel
+        else CameraInfo.TORCH_STRENGTH_LEVEL_UNSUPPORTED
+
+    override fun getTorchStrengthLevel(): LiveData<Int> =
+        if (isTorchStrengthSupported) cameraControlStateAdapter.torchStrengthLiveData
+        else MutableLiveData(CameraInfo.TORCH_STRENGTH_LEVEL_UNSUPPORTED)
+
+    override fun isLowLightBoostSupported(): Boolean =
+        cameraProperties.metadata.supportsLowLightBoost
+
+    override fun getLowLightBoostState(): LiveData<Int> =
+        cameraControlStateAdapter.lowLightBoostState
+
     @SuppressLint("UnsafeOptInUsageError")
     override fun getExposureState(): ExposureState = cameraControlStateAdapter.exposureState
 
@@ -212,12 +234,10 @@ constructor(
         return streamConfigurationMapCompat.getOutputFormats()?.toSet() ?: emptySet()
     }
 
-    @SuppressLint("ClassVerificationFailure")
     override fun getSupportedResolutions(format: Int): List<Size> {
         return streamConfigurationMapCompat.getOutputSizes(format)?.toList() ?: emptyList()
     }
 
-    @SuppressLint("ClassVerificationFailure")
     override fun getSupportedHighResolutions(format: Int): List<Size> {
         return streamConfigurationMapCompat.getHighResolutionOutputSizes(format)?.toList()
             ?: emptyList()
@@ -259,6 +279,31 @@ constructor(
     override fun getSupportedDynamicRanges(): Set<DynamicRange> {
         return DynamicRangeProfilesCompat.fromCameraMetaData(cameraProperties.metadata)
             .supportedDynamicRanges
+    }
+
+    override fun isHighSpeedSupported(): Boolean =
+        Build.VERSION.SDK_INT >= 23 && cameraProperties.metadata.supportsHighSpeedVideo
+
+    override fun getSupportedHighSpeedFrameRateRanges(): Set<Range<Int>> {
+        return streamConfigurationMapCompat.getHighSpeedVideoFpsRanges()?.toSet() ?: emptySet()
+    }
+
+    override fun getSupportedHighSpeedFrameRateRangesFor(size: Size): Set<Range<Int>> {
+        return runCatching {
+                streamConfigurationMapCompat.getHighSpeedVideoFpsRangesFor(size)?.toSet()
+            }
+            .getOrNull() ?: emptySet()
+    }
+
+    override fun getSupportedHighSpeedResolutions(): List<Size> {
+        return streamConfigurationMapCompat.getHighSpeedVideoSizes()?.toList() ?: emptyList()
+    }
+
+    override fun getSupportedHighSpeedResolutionsFor(fpsRange: Range<Int>): List<Size> {
+        return runCatching {
+                streamConfigurationMapCompat.getHighSpeedVideoSizesFor(fpsRange)?.toList()
+            }
+            .getOrNull() ?: emptyList()
     }
 
     override fun querySupportedDynamicRanges(

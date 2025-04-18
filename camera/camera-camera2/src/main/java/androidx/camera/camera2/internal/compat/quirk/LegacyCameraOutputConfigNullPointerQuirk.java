@@ -19,9 +19,10 @@ package androidx.camera.camera2.internal.compat.quirk;
 import android.hardware.camera2.CameraCharacteristics;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Quirk addressing null pointer issue during CameraCaptureSession configuration.

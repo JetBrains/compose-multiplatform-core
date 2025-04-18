@@ -19,10 +19,11 @@ package androidx.camera.camera2.internal.compat.workaround;
 import android.hardware.camera2.CameraCharacteristics;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.FlashAvailabilityBufferUnderflowQuirk;
 import androidx.camera.core.Logger;
+
+import org.jspecify.annotations.NonNull;
 
 import java.nio.BufferUnderflowException;
 

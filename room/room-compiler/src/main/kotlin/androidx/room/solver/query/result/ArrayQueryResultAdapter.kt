@@ -31,10 +31,10 @@ class ArrayQueryResultAdapter(
     private val componentTypeName: XTypeName = arrayType.componentType.asTypeName()
     private val arrayTypeName = XTypeName.getArrayName(componentTypeName)
 
-    override fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope) {
+    override fun convert(outVarName: String, stmtVarName: String, scope: CodeGenScope) {
         val listVarName = scope.getTmpVar("_listResult")
         // Delegate to the ListQueryResultAdapter to convert query result to a List.
-        listResultAdapter.convert(listVarName, cursorVarName, scope)
+        listResultAdapter.convert(listVarName, stmtVarName, scope)
 
         // Initialize _result to be returned, using the list result we have.
         val tmpArrayResult = scope.getTmpVar("_tmpArrayResult")
@@ -107,6 +107,4 @@ class ArrayQueryResultAdapter(
             addLocalVariable(name = outVarName, typeName = arrayTypeName, assignExpr = assignCode)
         }
     }
-
-    override fun isMigratedToDriver(): Boolean = true
 }

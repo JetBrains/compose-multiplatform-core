@@ -312,5 +312,14 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".TextListActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat">
+            <intent-filter>
+                <action android:name="androidx.compose.integration.macrobenchmark.target.TEXT_LIST_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

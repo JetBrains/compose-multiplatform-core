@@ -16,41 +16,52 @@
 
 package androidx.privacysandbox.ui.integration.testapp
 
+import android.graphics.Color
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewGroup.MarginLayoutParams
 import android.widget.Button
+import androidx.core.view.setMargins
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
+import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdFormat
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdType
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.MediationOption
+import androidx.privacysandbox.ui.integration.testapp.util.AdHolder
 import kotlin.math.max
 
+// TODO(b/328046827): Add Resize from SDK CUJ
 class ResizeFragment : BaseFragment() {
 
-    private lateinit var resizableBannerView: SandboxedSdkView
+    private lateinit var resizableAdHolder: AdHolder
+
     private lateinit var resizeButton: Button
-    private lateinit var resizeFromSdkButton: Button
     private lateinit var setPaddingButton: Button
+    private lateinit var alphaButton: Button
     private lateinit var inflatedView: View
 
     override fun getSandboxedSdkViews(): List<SandboxedSdkView> {
-        return listOf(resizableBannerView)
+        return resizableAdHolder.sandboxedSdkViews
     }
 
     override fun handleLoadAdFromDrawer(
+        @AdFormat adFormat: Int,
         @AdType adType: Int,
         @MediationOption mediationOption: Int,
         drawViewabilityLayer: Boolean
     ) {
+        currentAdFormat = adFormat
         currentAdType = adType
         currentMediationOption = mediationOption
         shouldDrawViewabilityLayer = drawViewabilityLayer
-        loadBannerAd(
-            adType,
-            mediationOption,
-            resizableBannerView,
-            drawViewabilityLayer,
+        loadAd(
+            resizableAdHolder,
+            currentAdFormat,
+            currentAdType,
+            currentMediationOption,
+            shouldDrawViewabilityLayer,
             waitInsideOnDraw = true
         )
     }
@@ -61,23 +72,40 @@ class ResizeFragment : BaseFragment() {
         savedInstanceState: Bundle?
     ): View {
         inflatedView = inflater.inflate(R.layout.fragment_resize, container, false)
-        resizableBannerView = inflatedView.findViewById(R.id.resizable_ad_view)
+        resizableAdHolder =
+            inflatedView.findViewById<AdHolder>(R.id.resizable_ad_view).apply {
+                adViewLayoutParams =
+                    MarginLayoutParams(adViewLayoutParams).apply {
+                        setMargins(convertFromDpToPixels(MARGIN_DP))
+                    }
+                adViewBackgroundColor = Color.parseColor(AD_VIEW_BACKGROUND_COLOR)
+            }
         resizeButton = inflatedView.findViewById(R.id.resize_button)
-        resizeFromSdkButton = inflatedView.findViewById(R.id.resize_sdk_button)
         setPaddingButton = inflatedView.findViewById(R.id.set_padding_button)
-        loadResizableBannerAd()
+        alphaButton = inflatedView.findViewById(R.id.set_alpha_button)
+        initResizeButton()
+        initSetPaddingButton()
+        initAlphaButton()
+
+        loadAd(
+            resizableAdHolder,
+            currentAdFormat,
+            currentAdType,
+            currentMediationOption,
+            shouldDrawViewabilityLayer,
+            true
+        )
         return inflatedView
     }
 
-    private fun loadResizableBannerAd() {
-        loadBannerAd(
-            currentAdType,
-            currentMediationOption,
-            resizableBannerView,
-            shouldDrawViewabilityLayer,
-            waitInsideOnDraw = true
-        )
+    private fun initAlphaButton() {
+        alphaButton.setOnClickListener {
+            val alpha = 1f / (1..10).random().toFloat()
+            resizableAdHolder.currentAdView.alpha = alpha
+        }
+    }
 
+    private fun initResizeButton() {
         val displayMetrics = resources.displayMetrics
         val maxSizePixels = Math.min(displayMetrics.widthPixels, displayMetrics.heightPixels)
 
@@ -86,26 +114,42 @@ class ResizeFragment : BaseFragment() {
         }
 
         resizeButton.setOnClickListener {
-            val newWidth = newSize(resizableBannerView.width, maxSizePixels)
-            val newHeight = newSize(resizableBannerView.height, maxSizePixels)
-            resizableBannerView.layoutParams =
-                resizableBannerView.layoutParams.apply {
+            val newWidth = newSize(resizableAdHolder.currentAdView.width, maxSizePixels)
+            val newHeight =
+                newSize(resizableAdHolder.currentAdView.height, resizableAdHolder.height)
+            resizableAdHolder.currentAdView.layoutParams =
+                resizableAdHolder.currentAdView.layoutParams.apply {
                     width = newWidth
                     height = newHeight
                 }
         }
+    }
 
+    private fun initSetPaddingButton() {
         setPaddingButton.setOnClickListener {
             // Set halfWidth and halfHeight to minimum 10 to avoid crashes when the width and height
             // are very small
-            val halfWidth = max(10, (resizableBannerView.width / 2) - 10)
-            val halfHeight = max(10, resizableBannerView.height / 2) - 10
-            resizableBannerView.setPadding(
+            val halfWidth = max(10, (resizableAdHolder.currentAdView.width / 2) - 10)
+            val halfHeight = max(10, (resizableAdHolder.currentAdView.height / 2) - 10)
+            resizableAdHolder.currentAdView.setPadding(
                 (10..halfWidth).random(),
                 (10..halfHeight).random(),
                 (10..halfWidth).random(),
                 (10..halfHeight).random(),
             )
         }
+    }
+
+    private fun convertFromDpToPixels(dpValue: Float): Int =
+        TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                dpValue,
+                context?.resources?.displayMetrics
+            )
+            .toInt()
+
+    private companion object {
+        const val MARGIN_DP = 16.0f
+        const val AD_VIEW_BACKGROUND_COLOR = "#D3D3D3"
     }
 }

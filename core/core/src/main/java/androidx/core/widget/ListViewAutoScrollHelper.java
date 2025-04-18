@@ -19,7 +19,7 @@ package androidx.core.widget;
 import android.view.View;
 import android.widget.ListView;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An implementation of {@link AutoScrollHelper} that knows how to scroll

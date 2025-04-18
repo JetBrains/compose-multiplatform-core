@@ -19,9 +19,10 @@ package androidx.appsearch.safeparcel.stub;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.safeparcel.SafeParcelable;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An abstract class providing a default {@link #writeToParcel(SafeParcelable, Parcel, int)} to

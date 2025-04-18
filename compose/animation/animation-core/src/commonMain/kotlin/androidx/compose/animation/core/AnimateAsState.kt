@@ -375,6 +375,8 @@ private val intSizeDefaultSpring = spring(visibilityThreshold = IntSize.Visibili
  *   data class MySize(val width: Dp, val height: Dp)
  *
  * @param targetValue Target value of the animation
+ * @param typeConverter A [TwoWayConverter] to convert from the animation value from and to an
+ *   [AnimationVector]
  * @param animationSpec The animation that will be used to change the value through time. Physics
  *   animation will be used by default.
  * @param visibilityThreshold An optional threshold to define when the animation value can be

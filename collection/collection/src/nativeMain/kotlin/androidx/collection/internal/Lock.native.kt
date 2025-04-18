@@ -18,7 +18,8 @@ package androidx.collection.internal
 
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
-import kotlin.native.internal.createCleaner
+import kotlin.experimental.ExperimentalNativeApi
+import kotlin.native.ref.createCleaner
 
 /**
  * Wrapper for platform.posix.PTHREAD_MUTEX_RECURSIVE which is represented as kotlin.Int on darwin
@@ -38,10 +39,8 @@ internal actual class Lock actual constructor() {
 
     private val lockImpl = LockImpl()
 
-    // unused - The returned Cleaner must be assigned to a property
-    // TODO(/365786168) Replace with kotlin.native.ref.createCleaner, after kotlin bump to 1.9+
-    @Suppress("unused", "DEPRECATION")
-    @OptIn(ExperimentalStdlibApi::class)
+    @Suppress("unused") // cleaner must be assigned to a property
+    @OptIn(ExperimentalNativeApi::class)
     private val cleaner = createCleaner(lockImpl, LockImpl::destroy)
 
     actual inline fun <T> synchronizedImpl(block: () -> T): T {

@@ -117,6 +117,10 @@ public class UseCaseCameraConfig(
 
         Log.debug { "Prepare UseCaseCameraGraphConfig: $cameraGraph " }
 
+        // Start the CameraGraph first before setting up Surfaces. Surfaces can be closed, and we
+        // will close the CameraGraph when that happens, and we cannot start a closed CameraGraph.
+        cameraGraph.start()
+
         if (!sessionConfigAdapter.isSessionProcessorEnabled) {
             Log.debug { "Setting up Surfaces with UseCaseSurfaceManager" }
             if (sessionConfigAdapter.isSessionConfigValid()) {
@@ -128,8 +132,7 @@ public class UseCaseCameraConfig(
                     )
                     .invokeOnCompletion { throwable ->
                         // Only show logs for error cases, ignore CancellationException since the
-                        // task
-                        // could be cancelled by UseCaseSurfaceManager#stopAsync().
+                        // task could be cancelled by UseCaseSurfaceManager#stopAsync().
                         if (throwable != null && throwable !is CancellationException) {
                             Log.error(throwable) { "Surface setup error!" }
                         }
@@ -138,8 +141,6 @@ public class UseCaseCameraConfig(
                 Log.error { "Unable to create capture session due to conflicting configurations" }
             }
         }
-
-        cameraGraph.start()
 
         return UseCaseGraphConfig(
             graph = cameraGraph,

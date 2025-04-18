@@ -16,6 +16,7 @@
 
 package androidx.benchmark.macro
 
+import android.annotation.SuppressLint
 import androidx.benchmark.DeviceInfo
 import androidx.benchmark.json.BenchmarkData.TestResult.SingleMetricResult
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -26,11 +27,13 @@ import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@SdkSuppress(minSdkVersion = 31)
+@SdkSuppress(minSdkVersion = 35) // Currently can fail on 31-34, see b/372921569
 @RunWith(AndroidJUnit4::class)
 class RuntimeImageTest {
     private val className = RuntimeImageTest::class.java.name
+    private val iterCount = 3
 
+    @SuppressLint("BanThreadSleep")
     private fun captureRecyclerViewListStartupMetrics(
         testName: String,
     ): Map<String, SingleMetricResult> =
@@ -41,7 +44,7 @@ class RuntimeImageTest {
                 packageName = Packages.TARGET,
                 metrics = listOf(ArtMetric()),
                 compilationMode = CompilationMode.None(),
-                iterations = 3,
+                iterations = iterCount,
                 experimentalConfig = null,
                 startupMode = StartupMode.COLD,
                 setupBlock = {},
@@ -51,6 +54,14 @@ class RuntimeImageTest {
                         it.action =
                             "androidx.benchmark.integration.macrobenchmark.target.RECYCLER_VIEW"
                         it.putExtra("ITEM_COUNT", 5)
+                    }
+                    if (iteration != iterCount - 1) {
+                        // For every iter but last we wait for the runtime image flush. Subsequent
+                        // iterations will then be able to observe runtime image presence via class
+                        // loading counts. Unfortunately, there's no way to force runtime image
+                        // flush (b/372921569) other than waiting, though we skip it on the last
+                        // iter to save some time
+                        Thread.sleep(5000)
                     }
                 }
             )

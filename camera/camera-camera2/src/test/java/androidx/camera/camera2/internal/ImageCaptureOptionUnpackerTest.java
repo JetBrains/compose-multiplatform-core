@@ -21,13 +21,13 @@ import static com.google.common.truth.Truth.assertThat;
 import android.hardware.camera2.CaptureRequest;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.DeviceProperties;
 import androidx.camera.core.impl.ImageCaptureConfig;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -285,7 +285,7 @@ public final class ImageCaptureOptionUnpackerTest {
                 .isNull();
     }
 
-    private void setDeviceProperty(@NonNull final DeviceProperties properties) {
+    private void setDeviceProperty(final @NonNull DeviceProperties properties) {
         ReflectionHelpers.setStaticField(Build.class, "MANUFACTURER", properties.manufacturer());
         ReflectionHelpers.setStaticField(Build.class, "MODEL", properties.model());
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", properties.sdkVersion());

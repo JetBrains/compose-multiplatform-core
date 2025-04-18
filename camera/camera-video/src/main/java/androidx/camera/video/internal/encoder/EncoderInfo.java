@@ -16,13 +16,12 @@
 
 package androidx.camera.video.internal.encoder;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * EncoderInfo provides encoder related information and capabilities.
  */
 public interface EncoderInfo {
     /** Returns the name of the encoder. */
-    @NonNull
-    String getName();
+    @NonNull String getName();
 }

@@ -69,6 +69,10 @@ fun SharedElementDemos() {
             "AnimatedContent" to { SharedElementInAnimatedContentSample() },
             "Text transform" to { TextSharedBoundsExperiments() },
             "Nav Shared Tool Bar" to { NavigationWithSharedToolBarDemo() },
+            "Shared Element with Movable Content" to { SharedElementWithMovableContent() },
+            "Shared Element in Pager" to { SharedElementInPagerDemo() },
+            "Shared Element in LazyStaggeredGrid" to { SharedElementInLazyStaggeredGridDemo() },
+            "Shared Element in LazyGrid" to { LazyGridSharedElementDemo() },
         )
 
     Column {

@@ -31,7 +31,7 @@ internal inline fun <reified T : Task?> TaskContainer.maybeRegister(
         if (configureBlock != null) task.configure(configureBlock)
         task
     } catch (e: UnknownTaskException) {
-        register(name, T::class.java, configureBlock)
+        register(name, T::class.java, configureBlock!!)
     }
 }
 

@@ -40,12 +40,12 @@ internal fun DatabaseConfiguration.isMigrationRequired(fromVersion: Int, toVersi
     return if (isDowngrade && this.allowDestructiveMigrationOnDowngrade) {
         false
     } else {
+        val migrationNotRequiredFrom = this.migrationNotRequiredFrom
         // Migrations are required between the two versions if we generally require migrations
         // AND EITHER there are no exceptions OR the supplied fromVersion is not one of the
         // exceptions.
         this.requireMigration &&
-            (this.migrationNotRequiredFrom == null ||
-                !this.migrationNotRequiredFrom.contains(fromVersion))
+            (migrationNotRequiredFrom == null || !migrationNotRequiredFrom.contains(fromVersion))
     }
 }
 

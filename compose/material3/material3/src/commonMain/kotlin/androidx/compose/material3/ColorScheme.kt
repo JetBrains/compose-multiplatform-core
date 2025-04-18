@@ -479,12 +479,6 @@ class ColorScheme(
 
     @OptIn(ExperimentalMaterial3Api::class)
     internal var defaultTopAppBarColorsCached: TopAppBarColors? = null
-    @OptIn(ExperimentalMaterial3Api::class)
-    internal var defaultCenterAlignedTopAppBarColorsCached: TopAppBarColors? = null
-    @OptIn(ExperimentalMaterial3Api::class)
-    internal var defaultMediumTopAppBarColorsCached: TopAppBarColors? = null
-    @OptIn(ExperimentalMaterial3Api::class)
-    internal var defaultLargeTopAppBarColorsCached: TopAppBarColors? = null
 
     internal var defaultCheckboxColorsCached: CheckboxColors? = null
 
@@ -522,7 +516,6 @@ class ColorScheme(
 
     internal var defaultRadioButtonColorsCached: RadioButtonColors? = null
 
-    @OptIn(ExperimentalMaterial3Api::class)
     internal var defaultSegmentedButtonColorsCached: SegmentedButtonColors? = null
 
     internal var defaultSliderColorsCached: SliderColors? = null
@@ -537,6 +530,11 @@ class ColorScheme(
 
     @OptIn(ExperimentalMaterial3Api::class)
     internal var defaultRichTooltipColorsCached: RichTooltipColors? = null
+
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultFloatingToolbarStandardColorsCached: FloatingToolbarColors? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultFloatingToolbarVibrantColorsCached: FloatingToolbarColors? = null
 }
 
 /** Returns a light Material color scheme. */
@@ -868,6 +866,7 @@ fun ColorScheme.contentColorFor(backgroundColor: Color): Color =
         surfaceContainerHighest -> onSurface
         surfaceContainerLow -> onSurface
         surfaceContainerLowest -> onSurface
+        surfaceDim -> onSurface
         else -> Color.Unspecified
     }
 

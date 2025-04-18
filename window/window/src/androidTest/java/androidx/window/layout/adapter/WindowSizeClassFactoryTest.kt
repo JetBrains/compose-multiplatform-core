@@ -19,8 +19,8 @@ package androidx.window.layout.adapter
 import android.graphics.Rect
 import android.os.Build
 import android.util.TypedValue
-import androidx.annotation.RequiresApi
 import androidx.test.core.app.ActivityScenario
+import androidx.test.filters.SdkSuppress
 import androidx.window.TestActivity
 import androidx.window.core.layout.WindowSizeClass
 import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_EXPANDED_LOWER_BOUND
@@ -37,7 +37,7 @@ import org.junit.Test
 class WindowSizeClassFactoryTest {
 
     @Test
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun test_calculating_from_window_metrics_matches_conversion() {
         assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
         ActivityScenario.launch(TestActivity::class.java).onActivity { activity ->

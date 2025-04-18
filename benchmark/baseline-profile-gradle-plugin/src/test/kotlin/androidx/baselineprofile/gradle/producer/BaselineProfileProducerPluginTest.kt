@@ -18,7 +18,7 @@ package androidx.baselineprofile.gradle.producer
 
 import androidx.baselineprofile.gradle.utils.BaselineProfileProjectSetupRule
 import androidx.baselineprofile.gradle.utils.TestAgpVersion
-import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_1_0
+import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_1_1
 import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_2_0
 import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_3_1
 import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_4_2
@@ -241,7 +241,7 @@ class BaselineProfileProducerPluginTestWithAgp81AndAbove(agpVersion: TestAgpVers
     companion object {
         @Parameterized.Parameters(name = "agpVersion={0}")
         @JvmStatic
-        fun parameters() = TestAgpVersion.atLeast(TEST_AGP_VERSION_8_1_0)
+        fun parameters() = TestAgpVersion.atLeast(TEST_AGP_VERSION_8_1_1)
     }
 
     @get:Rule

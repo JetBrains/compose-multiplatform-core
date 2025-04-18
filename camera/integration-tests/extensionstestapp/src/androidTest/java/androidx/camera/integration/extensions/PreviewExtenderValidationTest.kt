@@ -163,13 +163,12 @@ class PreviewExtenderValidationTest(private val config: CameraXExtensionTestPara
                 cameraCharacteristics
             )
 
-        when (val processorType = impl.processorType) {
+        when (impl.processorType) {
             ProcessorType.PROCESSOR_TYPE_NONE -> assertThat(impl.processor).isNull()
             ProcessorType.PROCESSOR_TYPE_REQUEST_UPDATE_ONLY ->
                 assertThat(impl.processor).isInstanceOf(RequestUpdateProcessorImpl::class.java)
             ProcessorType.PROCESSOR_TYPE_IMAGE_PROCESSOR ->
                 assertThat(impl.processor).isInstanceOf(PreviewImageProcessorImpl::class.java)
-            else -> throw IllegalArgumentException("Unexpected ProcessorType: $processorType")
         }
     }
 }

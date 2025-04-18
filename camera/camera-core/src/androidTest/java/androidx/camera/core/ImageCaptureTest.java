@@ -32,7 +32,6 @@ import android.util.Rational;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.CameraCaptureCallback;
 import androidx.camera.core.impl.CameraCaptureMetaData;
 import androidx.camera.core.impl.CameraControlInternal;
@@ -57,6 +56,7 @@ import androidx.test.filters.MediumTest;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -358,8 +358,7 @@ public class ImageCaptureTest {
         return (FakeCameraControl) impl;
     }
 
-    @NonNull
-    private List<CaptureConfig> captureImage(@NonNull ImageCapture imageCapture,
+    private @NonNull List<CaptureConfig> captureImage(@NonNull ImageCapture imageCapture,
             @NonNull Class<?> callbackClass) {
         // Arrange.
         mInstrumentation.runOnMainSync(() -> {

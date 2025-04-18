@@ -113,7 +113,7 @@ class ParagraphIntrinsicsAsyncTypefaceTest {
             spanStyles,
             listOf(),
             fontFamilyResolver,
-            Density(1f)
+            Density(1f),
         )
     }
 }

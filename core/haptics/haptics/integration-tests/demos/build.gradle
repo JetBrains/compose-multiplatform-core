@@ -25,6 +25,7 @@ dependencies {
 
     implementation(project(":appcompat:appcompat"))
     implementation(project(":core:haptics:haptics"))
+    implementation(project(":lifecycle:lifecycle-viewmodel"))
 }
 
 android {

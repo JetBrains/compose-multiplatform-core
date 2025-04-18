@@ -24,8 +24,8 @@ import android.util.Pair;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 import java.util.concurrent.Executor;

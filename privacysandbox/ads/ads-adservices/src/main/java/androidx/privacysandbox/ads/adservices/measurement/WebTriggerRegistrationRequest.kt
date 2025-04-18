@@ -49,7 +49,7 @@ public constructor(val webTriggerParams: List<WebTriggerParams>, val destination
             "Destination=$destination"
     }
 
-    @SuppressLint("ClassVerificationFailure", "NewApi")
+    @SuppressLint("NewApi")
     @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 4)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)
     internal fun convertToAdServices():

@@ -28,8 +28,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * <a href="https://material.io/components/cards" class="external" target="_blank">Material Design
- * card</a>.
+ * [Material Design card](https://material.io/components/cards)
  *
  * Cards contain content and actions about a single subject.
  *

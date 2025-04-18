@@ -361,6 +361,11 @@ constructor(
                             addTag(tag, value)
                         }
                     }
+                    currentSessionConfig?.let {
+                        addAllCameraCaptureCallbacks(
+                            it.repeatingCaptureConfig.cameraCaptureCallbacks
+                        )
+                    }
                 }
                 .build()
                 .also { sessionConfig -> sessionProcessorManager.sessionConfig = sessionConfig }

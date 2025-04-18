@@ -23,14 +23,23 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.fragment.app.Fragment
 import androidx.privacysandbox.sdkruntime.client.SdkSandboxManagerCompat
 import androidx.privacysandbox.ui.client.SandboxedUiAdapterFactory
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.client.view.SandboxedSdkViewEventListener
+import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdFormat
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdType
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.MediationOption
-import androidx.privacysandbox.ui.integration.testaidl.ISdkApi
+import androidx.privacysandbox.ui.integration.testapp.util.AdHolder
+import androidx.privacysandbox.ui.integration.testsdkprovider.ISdkApi
+import androidx.privacysandbox.ui.integration.testsdkprovider.ISdkApiFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -45,6 +54,7 @@ abstract class BaseFragment : Fragment() {
 
     private lateinit var sdkSandboxManager: SdkSandboxManagerCompat
     private lateinit var activity: Activity
+    protected var providerUiOnTop by mutableStateOf(true)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,7 +67,10 @@ abstract class BaseFragment : Fragment() {
                 loadedSdk = sdkSandboxManager.loadSdk(SDK_NAME, Bundle())
                 sdkSandboxManager.loadSdk(MEDIATEE_SDK_NAME, Bundle())
             }
-            sdkApi = ISdkApi.Stub.asInterface(loadedSdk.getInterface())
+            sdkApi =
+                ISdkApiFactory.wrapToISdkApi(
+                    checkNotNull(loadedSdk.getInterface()) { "Cannot find Sdk Service!" }
+                )
         }
     }
 
@@ -72,6 +85,13 @@ abstract class BaseFragment : Fragment() {
 
     fun SandboxedSdkView.setEventListener() {
         setEventListener(TestEventListener(this))
+    }
+
+    fun handleOptionsFromIntent(options: FragmentOptions) {
+        currentMediationOption = options.mediation
+        currentAdType = options.adType
+        shouldDrawViewabilityLayer = options.drawViewability
+        providerUiOnTop = options.isZOrderOnTop
     }
 
     /**
@@ -93,11 +113,34 @@ abstract class BaseFragment : Fragment() {
     // TODO(b/343436839) : Handle this automatically
     // TODO(b/348194843): Clean up the options
     open fun handleLoadAdFromDrawer(
-        adType: Int,
-        mediationOption: Int,
+        @AdFormat adFormat: Int,
+        @AdType adType: Int,
+        @MediationOption mediationOption: Int,
         drawViewabilityLayer: Boolean
     ) {}
 
+    fun loadAd(
+        adHolder: AdHolder,
+        @AdFormat adFormat: Int,
+        @AdType adType: Int,
+        @MediationOption mediationOption: Int,
+        drawViewabilityLayer: Boolean,
+        waitInsideOnDraw: Boolean = false
+    ) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val sdkBundle =
+                sdkApi.loadAd(
+                    adFormat,
+                    adType,
+                    mediationOption,
+                    waitInsideOnDraw,
+                    drawViewabilityLayer
+                )
+            adHolder.populateAd(sdkBundle, adFormat)
+        }
+    }
+
+    // TODO(b/369355774): replace with loadAd on all supported fragments
     fun loadBannerAd(
         @AdType adType: Int,
         @MediationOption mediationOption: Int,
@@ -105,15 +148,23 @@ abstract class BaseFragment : Fragment() {
         drawViewabilityLayer: Boolean,
         waitInsideOnDraw: Boolean = false
     ) {
-        val sdkBundle =
-            sdkApi.loadBannerAd(adType, mediationOption, waitInsideOnDraw, drawViewabilityLayer)
-        sandboxedSdkView.setAdapter(SandboxedUiAdapterFactory.createFromCoreLibInfo(sdkBundle))
+        CoroutineScope(Dispatchers.Main).launch {
+            val sdkBundle =
+                sdkApi.loadAd(
+                    AdFormat.BANNER_AD,
+                    adType,
+                    mediationOption,
+                    waitInsideOnDraw,
+                    drawViewabilityLayer
+                )
+            sandboxedSdkView.setAdapter(SandboxedUiAdapterFactory.createFromCoreLibInfo(sdkBundle))
+            sandboxedSdkView.orderProviderUiAboveClientUi(providerUiOnTop)
+        }
     }
 
     open fun handleDrawerStateChange(isDrawerOpen: Boolean) {
-        getSandboxedSdkViews().forEach {
-            it.orderProviderUiAboveClientUi(!isDrawerOpen && isZOrderOnTop)
-        }
+        providerUiOnTop = !isDrawerOpen && isZOrderAboveToggleChecked
+        getSandboxedSdkViews().forEach { it.orderProviderUiAboveClientUi(providerUiOnTop) }
     }
 
     private inner class TestEventListener(val view: SandboxedSdkView) :
@@ -141,7 +192,8 @@ abstract class BaseFragment : Fragment() {
         private const val MEDIATEE_SDK_NAME =
             "androidx.privacysandbox.ui.integration.mediateesdkproviderwrapper"
         const val TAG = "TestSandboxClient"
-        var isZOrderOnTop = true
+        var isZOrderAboveToggleChecked = false
+        @AdFormat var currentAdFormat = AdFormat.BANNER_AD
         @AdType var currentAdType = AdType.BASIC_NON_WEBVIEW
         @MediationOption var currentMediationOption = MediationOption.NON_MEDIATED
         var shouldDrawViewabilityLayer = false

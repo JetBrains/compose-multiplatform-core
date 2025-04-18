@@ -23,7 +23,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Log.debug
-import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter.Companion.getSessionConfig
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
 import androidx.camera.camera2.pipe.integration.impl.STREAM_USE_HINT_OPTION
 import androidx.camera.camera2.pipe.integration.internal.StreamUseCaseUtil
@@ -36,6 +35,7 @@ import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.streamsharing.StreamSharing
+import java.util.Collections
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -87,7 +87,14 @@ public class SessionConfigAdapter(
     public val deferrableSurfaces: List<DeferrableSurface> by lazy {
         check(validatingBuilder.isValid)
 
-        sessionConfig.surfaces
+        sessionConfig.postviewOutputConfig?.let {
+            Collections.unmodifiableList(
+                mutableListOf<DeferrableSurface>().apply {
+                    addAll(sessionConfig.surfaces)
+                    add(it.surface)
+                }
+            )
+        } ?: sessionConfig.surfaces
     }
 
     public fun getValidSessionConfigOrNull(): SessionConfig? {

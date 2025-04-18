@@ -18,6 +18,7 @@ package androidx.credentials
 
 import android.os.Bundle
 import androidx.annotation.RequiresApi
+import androidx.annotation.RestrictTo
 import androidx.credentials.PublicKeyCredential.Companion.BUNDLE_KEY_SUBTYPE
 import androidx.credentials.internal.FrameworkClassParsingException
 import androidx.credentials.internal.RequestValidationHelper
@@ -51,6 +52,7 @@ private constructor(
     origin: String? = null,
     credentialData: Bundle = toCredentialDataBundle(requestJson, clientDataHash),
     candidateQueryData: Bundle = toCandidateDataBundle(requestJson, clientDataHash),
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY) val isConditionalCreateRequest: Boolean = false
 ) :
     CreateCredentialRequest(
         type = PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL,
@@ -111,6 +113,51 @@ private constructor(
      * @param clientDataHash a hash that is used to verify the relying party identity
      * @param preferImmediatelyAvailableCredentials true if you prefer the operation to return
      *   immediately when there is no available passkey registration offering instead of falling
+     *   back to discovering remote options, and false (default) otherwise
+     * @param origin the origin of a different application if the request is being made on behalf of
+     *   that application (Note: for API level >=34, setting a non-null value for this parameter
+     *   will throw a SecurityException if android.permission.CREDENTIAL_MANAGER_SET_ORIGIN is not
+     *   present)
+     * @param isAutoSelectAllowed whether a create option will be automatically chosen if it is the
+     *   only one available to the user (note that there is a chance that the crendeiatl provider
+     *   does not support auto-select even if you turn this bit on)
+     * @param isConditionalCreateRequest whether the public key should be created opportunistically
+     *   based on the user's credential provider already possessing a password for the same account,
+     *   and also based on internal system conditions, keeping in mind that this should be ideally
+     *   set to true when making a request immediately after a successful, non-public-key sign-in or
+     *   sign-up process (e.g. sign-in using a password)
+     * @throws NullPointerException If [requestJson] is null
+     * @throws IllegalArgumentException If [requestJson] is empty, or if it is not a valid JSON, or
+     *   if it doesn't have a valid `user.name` defined according to the [webauthn spec]
+     *   (https://w3c.github.io/webauthn/#dictdef-publickeycredentialcreationoptionsjson)
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    constructor(
+        requestJson: String,
+        clientDataHash: ByteArray? = null,
+        preferImmediatelyAvailableCredentials: Boolean = false,
+        origin: String? = null,
+        isAutoSelectAllowed: Boolean = false,
+        isConditionalCreateRequest: Boolean = false
+    ) : this(
+        requestJson = requestJson,
+        clientDataHash = clientDataHash,
+        preferImmediatelyAvailableCredentials = preferImmediatelyAvailableCredentials,
+        displayInfo = getRequestDisplayInfo(requestJson),
+        origin = origin,
+        isAutoSelectAllowed = isAutoSelectAllowed,
+        isConditionalCreateRequest = isConditionalCreateRequest
+    )
+
+    /**
+     * Constructs a [CreatePublicKeyCredentialRequest] to register a passkey from the user's public
+     * key credential provider.
+     *
+     * @param requestJson the privileged request in JSON format in the
+     *   [standard webauthn web json](https://w3c.github.io/webauthn/#dictdef-publickeycredentialcreationoptionsjson).
+     * @param clientDataHash a hash that is used to verify the relying party identity
+     * @param preferImmediatelyAvailableCredentials true if you prefer the operation to return
+     *   immediately when there is no available passkey registration offering instead of falling
      *   back to discovering remote options, and false (preferably) otherwise
      * @param origin the origin of a different application if the request is being made on behalf of
      *   that application (Note: for API level >=34, setting a non-null value for this parameter
@@ -149,6 +196,9 @@ private constructor(
         require(RequestValidationHelper.isValidJSON(requestJson)) {
             "requestJson must not be empty, and must be a valid JSON"
         }
+        if (isConditionalCreateRequest) {
+            candidateQueryData.putBoolean(BUNDLE_KEY_CONDITIONAL_CREATE, true)
+        }
     }
 
     internal companion object {
@@ -157,6 +207,8 @@ private constructor(
         internal const val BUNDLE_KEY_REQUEST_JSON = "androidx.credentials.BUNDLE_KEY_REQUEST_JSON"
         internal const val BUNDLE_VALUE_SUBTYPE_CREATE_PUBLIC_KEY_CREDENTIAL_REQUEST =
             "androidx.credentials.BUNDLE_VALUE_SUBTYPE_CREATE_PUBLIC_KEY_CREDENTIAL_REQUEST"
+        internal const val BUNDLE_KEY_CONDITIONAL_CREATE =
+            "androidx.credentials.BUNDLE_KEY_IS_CONDITIONAL_REQUEST"
 
         @JvmStatic
         internal fun getRequestDisplayInfo(
@@ -229,6 +281,7 @@ private constructor(
                         getRequestDisplayInfo(requestJson)
                     }
                 val isAutoSelectAllowed = data.getBoolean(BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED, false)
+                val isConditionalCreateRequest = data.getBoolean(BUNDLE_KEY_CONDITIONAL_CREATE)
                 return CreatePublicKeyCredentialRequest(
                     requestJson = requestJson,
                     clientDataHash = clientDataHash,
@@ -238,6 +291,7 @@ private constructor(
                     isAutoSelectAllowed = isAutoSelectAllowed,
                     credentialData = data,
                     candidateQueryData = candidateQueryData,
+                    isConditionalCreateRequest = isConditionalCreateRequest
                 )
             } catch (e: Exception) {
                 throw FrameworkClassParsingException()

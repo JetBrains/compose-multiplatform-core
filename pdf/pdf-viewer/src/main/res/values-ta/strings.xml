@@ -29,8 +29,9 @@
     <string name="desc_page_single" msgid="8459583146661044094">"பக்கம் <xliff:g id="PAGE">%1$d</xliff:g>/<xliff:g id="TOTAL">%2$d</xliff:g>"</string>
     <string name="desc_zoom" msgid="7318480946145947242">"<xliff:g id="FIRST">%1$d</xliff:g> சதவீத அளவை மாற்று"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"பக்கம் <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>க்கு செல்லும்"</string>
-    <string name="desc_page" msgid="5684226167093594168">"பக்கம் <xliff:g id="PAGE">%1$d</xliff:g>"</string>
+    <string name="desc_page" msgid="6702471448987833953">"பக்கம் <xliff:g id="PAGE">%1$d</xliff:g>"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"காலியான பக்கம்"</string>
+    <string name="desc_page_with_text" msgid="2564017005407577604">"பக்கம் <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>: <xliff:g id="PAGE_TEXT">%2$s</xliff:g>"</string>
     <string name="error_file_format_pdf" msgid="7567006188638831878">"PDFஐக் காட்ட முடியவில்லை (<xliff:g id="TITLE">%1$s</xliff:g> தவறான வடிவத்தில் உள்ளது)"</string>
     <string name="error_on_page" msgid="1592475819957182385">"பக்கம் <xliff:g id="PAGE">%1$d</xliff:g>ஐக் காட்ட முடியவில்லை (ஃபைல் பிழை)"</string>
     <string name="desc_web_link_shortened_to_domain" msgid="3323639528531061592">"இணைப்பு: <xliff:g id="DESTINATION_DOMAIN">%1$s</xliff:g> இல் உள்ள இணையப் பக்கம்"</string>
@@ -59,4 +60,7 @@
     <string name="page_broken" msgid="2968770793669433462">"PDF ஆவணத்தை ஏற்ற முடியவில்லை"</string>
     <string name="needs_more_data" msgid="3520133467908240802">"PDF ஆவணத்தைச் செயலாக்குவதற்குப் போதுமான தரவு இல்லை"</string>
     <string name="error_cannot_open_pdf" msgid="2361919778558145071">"PDF ஃபைலைத் திறக்க முடியவில்லை"</string>
+    <string name="cannot_edit_pdf" msgid="7677598370087228978">"இந்த PDF ஃபைலில் திருத்தம் செய்ய முடியாது"</string>
+    <string name="clipboard_label" msgid="8943155331324944981">"PDFல் இருந்து நகலெடுக்கப்பட்ட உள்ளடக்கம்"</string>
+    <string name="fast_scroller_thumb" msgid="6712048991132846541">"ஸ்க்ரோல் பார்"</string>
 </resources>

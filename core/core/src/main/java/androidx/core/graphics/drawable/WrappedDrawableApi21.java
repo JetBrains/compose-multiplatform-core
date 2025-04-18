@@ -29,8 +29,9 @@ import android.graphics.drawable.RippleDrawable;
 import android.os.Build;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Method;
 
@@ -64,9 +65,8 @@ class WrappedDrawableApi21 extends WrappedDrawableApi14 {
         mDrawable.getOutline(outline);
     }
 
-    @NonNull
     @Override
-    public Rect getDirtyBounds() {
+    public @NonNull Rect getDirtyBounds() {
         return mDrawable.getDirtyBounds();
     }
 
@@ -89,7 +89,7 @@ class WrappedDrawableApi21 extends WrappedDrawableApi14 {
     }
 
     @Override
-    public void setTintMode(@NonNull PorterDuff.Mode tintMode) {
+    public void setTintMode(PorterDuff.@NonNull Mode tintMode) {
         if (isCompatTintEnabled()) {
             super.setTintMode(tintMode);
         } else {
@@ -98,7 +98,7 @@ class WrappedDrawableApi21 extends WrappedDrawableApi14 {
     }
 
     @Override
-    public boolean setState(@NonNull int[] stateSet) {
+    public boolean setState(int @NonNull [] stateSet) {
         if (super.setState(stateSet)) {
             // Manually invalidate because the framework doesn't currently force an invalidation
             // on a state change

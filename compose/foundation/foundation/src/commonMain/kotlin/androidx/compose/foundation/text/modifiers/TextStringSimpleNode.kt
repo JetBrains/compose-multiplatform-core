@@ -18,7 +18,6 @@ package androidx.compose.foundation.text.modifiers
 
 import androidx.compose.foundation.internal.requirePreconditionNotNull
 import androidx.compose.foundation.text.DefaultMinLines
-import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorProducer
@@ -59,6 +58,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Constraints.Companion.fitPrioritizingWidth
 import androidx.compose.ui.util.fastRoundToInt
+import androidx.compose.ui.util.trace
 import kotlin.jvm.JvmName
 
 /**
@@ -76,9 +76,11 @@ internal class TextStringSimpleNode(
     private var softWrap: Boolean = true,
     private var maxLines: Int = Int.MAX_VALUE,
     private var minLines: Int = DefaultMinLines,
-    private var overrideColor: ColorProducer? = null,
-    private var autoSize: TextAutoSize? = null
+    private var overrideColor: ColorProducer? = null
 ) : Modifier.Node(), LayoutModifierNode, DrawModifierNode, SemanticsModifierNode {
+    override val shouldAutoInvalidate: Boolean
+        get() = false
+
     @Suppress("PrimitiveInCollection") // Map required for use in public API.
     // Usages of this collection are so few that the gains of using
     // MutableObjectIntMap<AlignmentLine> and then converting to a Map<AlignmentLine, Int>
@@ -97,8 +99,7 @@ internal class TextStringSimpleNode(
                         overflow,
                         softWrap,
                         maxLines,
-                        minLines,
-                        autoSize
+                        minLines
                     )
             }
             return _layoutCache!!
@@ -162,8 +163,7 @@ internal class TextStringSimpleNode(
         maxLines: Int,
         softWrap: Boolean,
         fontFamilyResolver: FontFamily.Resolver,
-        overflow: TextOverflow,
-        autoSize: TextAutoSize?
+        overflow: TextOverflow
     ): Boolean {
         var changed: Boolean
 
@@ -195,11 +195,6 @@ internal class TextStringSimpleNode(
             changed = true
         }
 
-        if (this.autoSize != autoSize) {
-            this.autoSize = autoSize
-            changed = true
-        }
-
         return changed
     }
 
@@ -214,8 +209,7 @@ internal class TextStringSimpleNode(
                 overflow = overflow,
                 softWrap = softWrap,
                 maxLines = maxLines,
-                minLines = minLines,
-                autoSize = autoSize
+                minLines = minLines
             )
         }
 
@@ -269,8 +263,7 @@ internal class TextStringSimpleNode(
                 overflow,
                 softWrap,
                 maxLines,
-                minLines,
-                autoSize
+                minLines
             ) ?: return false
         } else {
             val newTextSubstitution = TextSubstitutionValue(text, updatedText)
@@ -282,8 +275,7 @@ internal class TextStringSimpleNode(
                     overflow,
                     softWrap,
                     maxLines,
-                    minLines,
-                    autoSize
+                    minLines
                 )
             substitutionLayoutCache.density = layoutCache.density
             newTextSubstitution.layoutCache = substitutionLayoutCache
@@ -359,39 +351,41 @@ internal class TextStringSimpleNode(
         measurable: Measurable,
         constraints: Constraints
     ): MeasureResult {
-        val layoutCache = getLayoutCacheForMeasure()
+        trace("TextStringSimpleNode::measure") {
+            val layoutCache = getLayoutCacheForMeasure()
 
-        val didChangeLayout = layoutCache.layoutWithConstraints(constraints, layoutDirection)
-        // ensure measure restarts when hasStaleResolvedFonts by reading in measure
-        layoutCache.observeFontChanges
-        val paragraph = layoutCache.paragraph!!
-        val layoutSize = layoutCache.layoutSize
+            val didChangeLayout = layoutCache.layoutWithConstraints(constraints, layoutDirection)
+            // ensure measure restarts when hasStaleResolvedFonts by reading in measure
+            layoutCache.observeFontChanges
+            val paragraph = layoutCache.paragraph!!
+            val layoutSize = layoutCache.layoutSize
 
-        if (didChangeLayout) {
-            invalidateLayer()
-            // Map<AlignmentLine, Int> required for use in public API `layout` below
-            @Suppress("PrimitiveInCollection") var cache = baselineCache
-            if (cache == null) {
-                cache = HashMap(2)
-                baselineCache = cache
+            if (didChangeLayout) {
+                invalidateLayer()
+                // Map<AlignmentLine, Int> required for use in public API `layout` below
+                @Suppress("PrimitiveInCollection") var cache = baselineCache
+                if (cache == null) {
+                    cache = HashMap(2)
+                    baselineCache = cache
+                }
+                cache[FirstBaseline] = paragraph.firstBaseline.fastRoundToInt()
+                cache[LastBaseline] = paragraph.lastBaseline.fastRoundToInt()
             }
-            cache[FirstBaseline] = paragraph.firstBaseline.fastRoundToInt()
-            cache[LastBaseline] = paragraph.lastBaseline.fastRoundToInt()
-        }
 
-        // then allow children to measure _inside_ our final box, with the above placeholders
-        val placeable =
-            measurable.measure(
-                fitPrioritizingWidth(
-                    minWidth = layoutSize.width,
-                    maxWidth = layoutSize.width,
-                    minHeight = layoutSize.height,
-                    maxHeight = layoutSize.height
+            // then allow children to measure _inside_ our final box, with the above placeholders
+            val placeable =
+                measurable.measure(
+                    fitPrioritizingWidth(
+                        minWidth = layoutSize.width,
+                        maxWidth = layoutSize.width,
+                        minHeight = layoutSize.height,
+                        maxHeight = layoutSize.height
+                    )
                 )
-            )
 
-        return layout(layoutSize.width, layoutSize.height, baselineCache!!) {
-            placeable.place(0, 0)
+            return layout(layoutSize.width, layoutSize.height, baselineCache!!) {
+                placeable.place(0, 0)
+            }
         }
     }
 

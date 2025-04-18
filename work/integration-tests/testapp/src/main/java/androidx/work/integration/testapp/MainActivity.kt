@@ -15,7 +15,6 @@
  */
 package androidx.work.integration.testapp
 
-import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.job.JobInfo
 import android.app.job.JobScheduler
@@ -69,7 +68,6 @@ class MainActivity : AppCompatActivity() {
     private var lastNotificationId = 10
     private val workManager: WorkManager by lazy { WorkManager.getInstance(this) }
 
-    @SuppressLint("ClassVerificationFailure")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -443,7 +441,6 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-@SuppressLint("ClassVerificationFailure")
 private fun enqueueWithNetworkRequest(workManager: WorkManager) {
     if (Build.VERSION.SDK_INT < 21) {
         Log.w(TAG, "Ignoring enqueueWithNetworkRequest on old API levels")

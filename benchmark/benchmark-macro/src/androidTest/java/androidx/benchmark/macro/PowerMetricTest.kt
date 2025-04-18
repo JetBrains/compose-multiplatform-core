@@ -18,7 +18,7 @@ package androidx.benchmark.macro
 
 import androidx.benchmark.macro.Metric.Measurement
 import androidx.benchmark.perfetto.PerfettoHelper.Companion.isAbiSupported
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
+import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.filters.SdkSuppress
 import kotlin.test.assertEquals
 import org.junit.Assume.assumeTrue
@@ -44,7 +44,7 @@ class PowerMetricTest {
             PowerCategory.values().associateWith { PowerCategoryDisplayLevel.BREAKDOWN }
 
         val actualMetrics =
-            PerfettoTraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
+            TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
                 PowerMetric(PowerMetric.Energy(categories)).getMeasurements(captureInfo, this)
             }
 
@@ -82,7 +82,7 @@ class PowerMetricTest {
         val categories = PowerCategory.values().associateWith { PowerCategoryDisplayLevel.TOTAL }
 
         val actualMetrics =
-            PerfettoTraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
+            TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
                 PowerMetric(PowerMetric.Power(categories)).getMeasurements(captureInfo, this)
             }
 
@@ -118,7 +118,7 @@ class PowerMetricTest {
             )
 
         val actualMetrics =
-            PerfettoTraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
+            TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
                 PowerMetric(PowerMetric.Power(categories)).getMeasurements(captureInfo, this)
             }
 
@@ -147,7 +147,7 @@ class PowerMetricTest {
             PowerCategory.values().associateWith { PowerCategoryDisplayLevel.BREAKDOWN }
 
         val actualMetrics =
-            PerfettoTraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
+            TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
                 PowerMetric(PowerMetric.Energy(categories)).getMeasurements(captureInfo, this)
             }
 
@@ -162,7 +162,7 @@ class PowerMetricTest {
         val traceFile = createTempFileFromAsset("api31_battery_discharge", ".perfetto-trace")
 
         val actualMetrics =
-            PerfettoTraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
+            TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
                 PowerMetric(PowerMetric.Battery()).getMeasurements(captureInfo, this)
             }
 

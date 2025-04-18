@@ -27,7 +27,7 @@ actual constructor(
     actual val changes: LongSparseArray<PointerInputChange>,
     val pointerInputEvent: PointerInputEvent
 ) {
-    val motionEvent: MotionEvent
+    val motionEvent: MotionEvent?
         get() = pointerInputEvent.motionEvent
 
     actual fun activeHoverEvent(pointerId: PointerId): Boolean =

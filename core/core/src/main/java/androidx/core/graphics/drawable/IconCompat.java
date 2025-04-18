@@ -52,8 +52,6 @@ import androidx.annotation.ColorInt;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.IdRes;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
@@ -65,6 +63,9 @@ import androidx.versionedparcelable.CustomVersionedParcelable;
 import androidx.versionedparcelable.NonParcelField;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -169,16 +170,14 @@ public class IconCompat extends CustomVersionedParcelable {
 
     /**
      */
-    @Nullable
     @RestrictTo(LIBRARY)
     @ParcelField(value = 2, defaultValue = "null")
-    public byte[]          mData = null;
+    public byte @Nullable []          mData = null;
     /**
      */
-    @Nullable
     @RestrictTo(LIBRARY)
     @ParcelField(value = 3, defaultValue = "null")
-    public Parcelable      mParcelable = null;
+    public @Nullable Parcelable      mParcelable = null;
 
     // TYPE_RESOURCE: resId
     // TYPE_DATA: data offset
@@ -197,27 +196,24 @@ public class IconCompat extends CustomVersionedParcelable {
 
     /**
      */
-    @Nullable
     @RestrictTo(LIBRARY)
     @ParcelField(value = 6, defaultValue = "null")
-    public ColorStateList  mTintList = null;
+    public @Nullable ColorStateList  mTintList = null;
 
     static final PorterDuff.Mode DEFAULT_TINT_MODE = PorterDuff.Mode.SRC_IN; // SRC_IN
     @NonParcelField
     PorterDuff.Mode mTintMode = DEFAULT_TINT_MODE;
     /**
      */
-    @Nullable
     @RestrictTo(LIBRARY)
     @ParcelField(value = 7, defaultValue = "null")
-    public String mTintModeStr = null;
+    public @Nullable String mTintModeStr = null;
 
     /**
      */
-    @Nullable
     @RestrictTo(LIBRARY)
     @ParcelField(value = 8, defaultValue = "null")
-    public String mString1;
+    public @Nullable String mString1;
 
     /**
      * Create an Icon pointing to a drawable resource.
@@ -226,17 +222,17 @@ public class IconCompat extends CustomVersionedParcelable {
      * @param resId ID of the drawable resource
      * @see android.graphics.drawable.Icon#createWithResource(Context, int)
      */
-    @NonNull
-    public static IconCompat createWithResource(@NonNull Context context, @DrawableRes int resId) {
+    public static @NonNull IconCompat createWithResource(@NonNull Context context,
+            @DrawableRes int resId) {
         ObjectsCompat.requireNonNull(context);
         return createWithResource(context.getResources(), context.getPackageName(), resId);
     }
 
     /**
      */
-    @NonNull
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    public static IconCompat createWithResource(@Nullable Resources r, @NonNull String pkg,
+    public static @NonNull IconCompat createWithResource(@Nullable Resources r,
+            @NonNull String pkg,
             @DrawableRes int resId) {
         ObjectsCompat.requireNonNull(pkg);
         if (resId == 0) {
@@ -262,8 +258,7 @@ public class IconCompat extends CustomVersionedParcelable {
      * @param bits A valid {@link android.graphics.Bitmap} object
      * @see android.graphics.drawable.Icon#createWithBitmap(Bitmap)
      */
-    @NonNull
-    public static IconCompat createWithBitmap(@NonNull Bitmap bits) {
+    public static @NonNull IconCompat createWithBitmap(@NonNull Bitmap bits) {
         ObjectsCompat.requireNonNull(bits);
         final IconCompat rep = new IconCompat(TYPE_BITMAP);
         rep.mObj1 = bits;
@@ -276,8 +271,7 @@ public class IconCompat extends CustomVersionedParcelable {
      * @param bits A valid {@link android.graphics.Bitmap} object
      * @see android.graphics.drawable.Icon#createWithAdaptiveBitmap(Bitmap)
      */
-    @NonNull
-    public static IconCompat createWithAdaptiveBitmap(@NonNull Bitmap bits) {
+    public static @NonNull IconCompat createWithAdaptiveBitmap(@NonNull Bitmap bits) {
         ObjectsCompat.requireNonNull(bits);
         final IconCompat rep = new IconCompat(TYPE_ADAPTIVE_BITMAP);
         rep.mObj1 = bits;
@@ -293,8 +287,8 @@ public class IconCompat extends CustomVersionedParcelable {
      * @param length Length of the bitmap data
      * @see android.graphics.drawable.Icon#createWithData(byte[], int, int)
      */
-    @NonNull
-    public static IconCompat createWithData(@NonNull byte[] data, int offset, int length) {
+    public static @NonNull IconCompat createWithData(byte @NonNull [] data, int offset,
+            int length) {
         ObjectsCompat.requireNonNull(data);
         final IconCompat rep = new IconCompat(TYPE_DATA);
         rep.mObj1 = data;
@@ -309,8 +303,7 @@ public class IconCompat extends CustomVersionedParcelable {
      * @param uri A uri referring to local content:// or file:// image data.
      * @see android.graphics.drawable.Icon#createWithContentUri(String)
      */
-    @NonNull
-    public static IconCompat createWithContentUri(@NonNull String uri) {
+    public static @NonNull IconCompat createWithContentUri(@NonNull String uri) {
         ObjectsCompat.requireNonNull(uri);
         final IconCompat rep = new IconCompat(TYPE_URI);
         rep.mObj1 = uri;
@@ -323,8 +316,7 @@ public class IconCompat extends CustomVersionedParcelable {
      * @param uri A uri referring to local content:// or file:// image data.
      * @see android.graphics.drawable.Icon#createWithContentUri(String)
      */
-    @NonNull
-    public static IconCompat createWithContentUri(@NonNull Uri uri) {
+    public static @NonNull IconCompat createWithContentUri(@NonNull Uri uri) {
         ObjectsCompat.requireNonNull(uri);
         return createWithContentUri(uri.toString());
     }
@@ -336,8 +328,7 @@ public class IconCompat extends CustomVersionedParcelable {
      * @param uri A uri referring to local content:// or file:// image data.
      * @see android.graphics.drawable.Icon#createWithAdaptiveBitmapContentUri(String)
      */
-    @NonNull
-    public static IconCompat createWithAdaptiveBitmapContentUri(@NonNull String uri) {
+    public static @NonNull IconCompat createWithAdaptiveBitmapContentUri(@NonNull String uri) {
         ObjectsCompat.requireNonNull(uri);
         final IconCompat rep = new IconCompat(TYPE_URI_ADAPTIVE_BITMAP);
         rep.mObj1 = uri;
@@ -351,8 +342,7 @@ public class IconCompat extends CustomVersionedParcelable {
      * @param uri A uri referring to local content:// or file:// image data.
      * @see android.graphics.drawable.Icon#createWithAdaptiveBitmapContentUri(String)
      */
-    @NonNull
-    public static IconCompat createWithAdaptiveBitmapContentUri(@NonNull Uri uri) {
+    public static @NonNull IconCompat createWithAdaptiveBitmapContentUri(@NonNull Uri uri) {
         ObjectsCompat.requireNonNull(uri);
         return createWithAdaptiveBitmapContentUri(uri.toString());
     }
@@ -389,8 +379,7 @@ public class IconCompat extends CustomVersionedParcelable {
      * Note: This package may not be available if referenced in the future, and it is
      * up to the caller to ensure safety if this package is re-used and/or persisted.
      */
-    @NonNull
-    public String getResPackage() {
+    public @NonNull String getResPackage() {
         if (mType == TYPE_UNKNOWN && Build.VERSION.SDK_INT >= 23) {
             return Api23Impl.getResPackage(mObj1);
         }
@@ -436,8 +425,7 @@ public class IconCompat extends CustomVersionedParcelable {
      *
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    @Nullable
-    public Bitmap getBitmap() {
+    public @Nullable Bitmap getBitmap() {
         if (mType == TYPE_UNKNOWN && Build.VERSION.SDK_INT >= 23) {
             if (mObj1 instanceof Bitmap) {
                 return (Bitmap) mObj1;
@@ -460,8 +448,7 @@ public class IconCompat extends CustomVersionedParcelable {
      * Note: This uri may not be available in the future, and it is
      * up to the caller to ensure safety if this uri is re-used and/or persisted.
      */
-    @NonNull
-    public Uri getUri() {
+    public @NonNull Uri getUri() {
         if (mType == TYPE_UNKNOWN && Build.VERSION.SDK_INT >= 23) {
             return Api23Impl.getUri(mObj1);
         }
@@ -477,8 +464,7 @@ public class IconCompat extends CustomVersionedParcelable {
      * @param tint a color, as in {@link Drawable#setTint(int)}
      * @return this same object, for use in chained construction
      */
-    @NonNull
-    public IconCompat setTint(@ColorInt int tint) {
+    public @NonNull IconCompat setTint(@ColorInt int tint) {
         return setTintList(ColorStateList.valueOf(tint));
     }
 
@@ -488,8 +474,7 @@ public class IconCompat extends CustomVersionedParcelable {
      * @param tintList as in {@link Drawable#setTintList(ColorStateList)}, null to remove tint
      * @return this same object, for use in chained construction
      */
-    @NonNull
-    public IconCompat setTintList(@Nullable ColorStateList tintList) {
+    public @NonNull IconCompat setTintList(@Nullable ColorStateList tintList) {
         mTintList = tintList;
         return this;
     }
@@ -500,8 +485,7 @@ public class IconCompat extends CustomVersionedParcelable {
      * @param mode a blending mode, as in {@link Drawable#setTintMode(PorterDuff.Mode)}, may be null
      * @return this same object, for use in chained construction
      */
-    @NonNull
-    public IconCompat setTintMode(@Nullable PorterDuff.Mode mode) {
+    public @NonNull IconCompat setTintMode(PorterDuff.@Nullable Mode mode) {
         mTintMode = mode;
         return this;
     }
@@ -511,8 +495,7 @@ public class IconCompat extends CustomVersionedParcelable {
      */
     @RequiresApi(23)
     @Deprecated
-    @NonNull
-    public Icon toIcon() {
+    public @NonNull Icon toIcon() {
         return toIcon(null);
     }
 
@@ -522,8 +505,7 @@ public class IconCompat extends CustomVersionedParcelable {
      * @return {@link Icon} object
      */
     @RequiresApi(23)
-    @NonNull
-    public Icon toIcon(@Nullable Context context) {
+    public @NonNull Icon toIcon(@Nullable Context context) {
         if (Build.VERSION.SDK_INT >= 23) {
             return Api23Impl.toIcon(this, context);
         } else {
@@ -570,8 +552,7 @@ public class IconCompat extends CustomVersionedParcelable {
      *                to access {@link android.content.res.Resources Resources}, for example.
      * @return A fresh instance of a drawable for this image, yours to keep.
      */
-    @Nullable
-    public Drawable loadDrawable(@NonNull Context context) {
+    public @Nullable Drawable loadDrawable(@NonNull Context context) {
         checkResource(context);
         if (Build.VERSION.SDK_INT >= 23) {
             return Api23Impl.loadDrawable(toIcon(context), context);
@@ -645,9 +626,8 @@ public class IconCompat extends CustomVersionedParcelable {
      * Create an input stream for bitmap by resolving corresponding content uri.
      *
      */
-    @Nullable
     @RestrictTo(LIBRARY_GROUP)
-    public InputStream getUriInputStream(@NonNull Context context) {
+    public @Nullable InputStream getUriInputStream(@NonNull Context context) {
         final Uri uri = getUri();
         final String scheme = uri.getScheme();
         if (ContentResolver.SCHEME_CONTENT.equals(scheme)
@@ -751,8 +731,7 @@ public class IconCompat extends CustomVersionedParcelable {
      * Adds this Icon to a Bundle that can be read back with the same parameters
      * to {@link #createFromBundle(Bundle)}.
      */
-    @NonNull
-    public Bundle toBundle() {
+    public @NonNull Bundle toBundle() {
         Bundle bundle = new Bundle();
         switch (mType) {
             case TYPE_BITMAP:
@@ -787,9 +766,8 @@ public class IconCompat extends CustomVersionedParcelable {
         return bundle;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         if (mType == TYPE_UNKNOWN) {
             return String.valueOf(mObj1);
         }
@@ -964,8 +942,8 @@ public class IconCompat extends CustomVersionedParcelable {
      * Creates an IconCompat from an Icon.
      */
     @RequiresApi(23)
-    @Nullable
-    public static IconCompat createFromIcon(@NonNull Context context, @NonNull Icon icon) {
+    public static @NonNull IconCompat createFromIcon(@NonNull Context context,
+            @NonNull Icon icon) {
         Preconditions.checkNotNull(icon);
         return Api23Impl.createFromIcon(context, icon);
     }
@@ -975,8 +953,7 @@ public class IconCompat extends CustomVersionedParcelable {
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @RequiresApi(23)
-    @Nullable
-    public static IconCompat createFromIcon(@NonNull Icon icon) {
+    public static @NonNull IconCompat createFromIcon(@NonNull Icon icon) {
         return Api23Impl.createFromIconInner(icon);
     }
 
@@ -986,8 +963,7 @@ public class IconCompat extends CustomVersionedParcelable {
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @RequiresApi(23)
-    @Nullable
-    public static IconCompat createFromIconOrNullIfZeroResId(@NonNull Icon icon) {
+    public static @Nullable IconCompat createFromIconOrNullIfZeroResId(@NonNull Icon icon) {
         if (Api23Impl.getType(icon) == TYPE_RESOURCE && Api23Impl.getResId(icon) == 0) {
             return null;
         }
@@ -1098,8 +1074,7 @@ public class IconCompat extends CustomVersionedParcelable {
             // This class is not instantiable.
         }
 
-        @Nullable
-        static IconCompat createFromIcon(@NonNull Context context, @NonNull Icon icon) {
+        static @NonNull IconCompat createFromIcon(@NonNull Context context, @NonNull Icon icon) {
             switch (getType(icon)) {
                 case TYPE_RESOURCE:
                     String resPackage = getResPackage(icon);
@@ -1154,8 +1129,7 @@ public class IconCompat extends CustomVersionedParcelable {
          * up to the caller to ensure safety if this package is re-used and/or persisted.
          * Returns {@code null} when the value cannot be gotten.
          */
-        @Nullable
-        static String getResPackage(@NonNull Object icon) {
+        static @Nullable String getResPackage(@NonNull Object icon) {
             if (Build.VERSION.SDK_INT >= 28) {
                 return Api28Impl.getResPackage(icon);
             } else {
@@ -1229,8 +1203,7 @@ public class IconCompat extends CustomVersionedParcelable {
          * up to the caller to ensure safety if this uri is re-used and/or persisted.
          * Returns {@code null} if the uri cannot be gotten.
          */
-        @Nullable
-        static Uri getUri(@NonNull Object icon) {
+        static @Nullable Uri getUri(@NonNull Object icon) {
             if (Build.VERSION.SDK_INT >= 28) {
                 return Api28Impl.getUri(icon);
             } else {

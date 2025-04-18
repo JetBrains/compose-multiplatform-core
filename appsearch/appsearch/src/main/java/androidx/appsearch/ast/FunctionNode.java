@@ -16,12 +16,13 @@
 
 package androidx.appsearch.ast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StringDef;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -84,7 +85,6 @@ public interface FunctionNode extends Node {
     /**
      * Gets the name of the node that extends the {@link FunctionNode}.
      */
-    @NonNull
     @FunctionName
-    String getFunctionName();
+    @NonNull String getFunctionName();
 }

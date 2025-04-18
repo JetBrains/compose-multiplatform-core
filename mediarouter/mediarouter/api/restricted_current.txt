@@ -274,6 +274,7 @@ package androidx.mediarouter.media {
     method public boolean isGroupable();
     method public boolean isTransferable();
     method public boolean isUnselectable();
+    field public static final int NOT_IN_GROUP = 4; // 0x4
     field public static final int SELECTED = 3; // 0x3
     field public static final int SELECTING = 2; // 0x2
     field public static final int UNSELECTED = 1; // 0x1
@@ -379,7 +380,7 @@ package androidx.mediarouter.media {
     method @MainThread public void addProvider(androidx.mediarouter.media.MediaRouteProvider);
     method @Deprecated @MainThread public void addRemoteControlClient(Object);
     method @MainThread public androidx.mediarouter.media.MediaRouter.RouteInfo? getBluetoothRoute();
-    method @MainThread public java.util.List<androidx.mediarouter.media.MediaRouter.RouteInfo!> getConnectedRoutes();
+    method @MainThread public java.util.List<androidx.mediarouter.media.MediaRouter.GroupRouteInfo!> getConnectedGroupRoutes();
     method @MainThread public androidx.mediarouter.media.MediaRouter.RouteInfo getDefaultRoute();
     method @MainThread public static androidx.mediarouter.media.MediaRouter getInstance(android.content.Context);
     method public android.support.v4.media.session.MediaSessionCompat.Token? getMediaSessionToken();
@@ -405,7 +406,7 @@ package androidx.mediarouter.media {
     field public static final int CALLBACK_FLAG_PERFORM_ACTIVE_SCAN = 1; // 0x1
     field public static final int CALLBACK_FLAG_REQUEST_DISCOVERY = 4; // 0x4
     field public static final int CALLBACK_FLAG_UNFILTERED_EVENTS = 2; // 0x2
-    field public static final int REASON_DISCONNECTED = 1; // 0x1
+    field public static final int REASON_DISCONNECT_CALLED = 1; // 0x1
     field public static final int REASON_FAILED_TO_CREATE_DYNAMIC_GROUP_ROUTE_CONTROLLER = 6; // 0x6
     field public static final int REASON_REJECTED_FOR_SELECTED_ROUTE = 4; // 0x4
     field public static final int REASON_ROUTE_CONNECTION_TIMEOUT = 7; // 0x7
@@ -426,7 +427,7 @@ package androidx.mediarouter.media {
     method public void onRouteAdded(androidx.mediarouter.media.MediaRouter, androidx.mediarouter.media.MediaRouter.RouteInfo);
     method public void onRouteChanged(androidx.mediarouter.media.MediaRouter, androidx.mediarouter.media.MediaRouter.RouteInfo);
     method public void onRouteConnected(androidx.mediarouter.media.MediaRouter, androidx.mediarouter.media.MediaRouter.RouteInfo, androidx.mediarouter.media.MediaRouter.RouteInfo);
-    method public void onRouteDisconnected(androidx.mediarouter.media.MediaRouter, androidx.mediarouter.media.MediaRouter.RouteInfo, int);
+    method public void onRouteDisconnected(androidx.mediarouter.media.MediaRouter, androidx.mediarouter.media.MediaRouter.RouteInfo?, androidx.mediarouter.media.MediaRouter.RouteInfo, int);
     method public void onRoutePresentationDisplayChanged(androidx.mediarouter.media.MediaRouter, androidx.mediarouter.media.MediaRouter.RouteInfo);
     method public void onRouteRemoved(androidx.mediarouter.media.MediaRouter, androidx.mediarouter.media.MediaRouter.RouteInfo);
     method @Deprecated public void onRouteSelected(androidx.mediarouter.media.MediaRouter, androidx.mediarouter.media.MediaRouter.RouteInfo);
@@ -441,6 +442,27 @@ package androidx.mediarouter.media {
     ctor public MediaRouter.ControlRequestCallback();
     method public void onError(String?, android.os.Bundle?);
     method public void onResult(android.os.Bundle?);
+  }
+
+  public static class MediaRouter.GroupRouteInfo extends androidx.mediarouter.media.MediaRouter.RouteInfo {
+    method @MainThread public int addRoute(androidx.mediarouter.media.MediaRouter.RouteInfo);
+    method public java.util.List<androidx.mediarouter.media.MediaRouter.RouteInfo!> getRoutesInGroup();
+    method public int getSelectionState(androidx.mediarouter.media.MediaRouter.RouteInfo);
+    method @MainThread public boolean isConnected();
+    method public boolean isGroupable(androidx.mediarouter.media.MediaRouter.RouteInfo);
+    method public boolean isUnselectable(androidx.mediarouter.media.MediaRouter.RouteInfo);
+    method @MainThread public int removeRoute(androidx.mediarouter.media.MediaRouter.RouteInfo);
+    field public static final int ADD_ROUTE_FAILED_REASON_ALREADY_IN_GROUP = 3; // 0x3
+    field public static final int ADD_ROUTE_FAILED_REASON_NOT_AVAILABLE_ROUTE_CONNECTION = 5; // 0x5
+    field public static final int ADD_ROUTE_FAILED_REASON_NOT_GROUPABLE = 2; // 0x2
+    field public static final int ADD_ROUTE_FAILED_REASON_UNSUPPORTED_FOR_GROUP_ROUTE = 4; // 0x4
+    field public static final int ADD_ROUTE_SUCCESSFUL = 1; // 0x1
+    field public static final int REMOVE_ROUTE_FAILED_REASON_LAST_ROUTE_IN_GROUP = 4; // 0x4
+    field public static final int REMOVE_ROUTE_FAILED_REASON_NOT_AVAILABLE_ROUTE_CONNECTION = 6; // 0x6
+    field public static final int REMOVE_ROUTE_FAILED_REASON_NOT_IN_GROUP = 3; // 0x3
+    field public static final int REMOVE_ROUTE_FAILED_REASON_NOT_UNSELECTABLE = 2; // 0x2
+    field public static final int REMOVE_ROUTE_FAILED_REASON_UNSUPPORTED_FOR_GROUP_ROUTE = 5; // 0x5
+    field public static final int REMOVE_ROUTE_SUCCESSFUL = 1; // 0x1
   }
 
   public static interface MediaRouter.OnPrepareTransferListener {
@@ -471,13 +493,11 @@ package androidx.mediarouter.media {
     method public int getPlaybackType();
     method @MainThread public android.view.Display? getPresentationDisplay();
     method public androidx.mediarouter.media.MediaRouter.ProviderInfo getProvider();
-    method public java.util.List<androidx.mediarouter.media.MediaRouter.RouteInfo!> getRoutesInGroup();
     method public android.content.IntentSender? getSettingsIntent();
     method public int getVolume();
     method public int getVolumeHandling();
     method public int getVolumeMax();
     method @MainThread public boolean isBluetooth();
-    method @MainThread public boolean isConnected();
     method @Deprecated public boolean isConnecting();
     method @MainThread public boolean isDefault();
     method public boolean isDeviceSpeaker();

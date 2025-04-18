@@ -22,6 +22,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
@@ -72,6 +73,11 @@ public class UiObject2 implements Searchable {
     private static final int DEFAULT_PINCH_SPEED = 1_000; // dp/s
     // Retry if scrollFinished has null result
     private static final int MAX_NULL_SCROLL_RETRY = 2;
+
+    private static final int WAIT_FOR_SNAPPING_BACK = 1_000;
+    // b/278551289
+    private static final int MAX_RECYCLERVIEW_SCROLL = 10;
+
     private static final long SCROLL_TIMEOUT = 1_000; // ms
     private static final long FLING_TIMEOUT = 5_000; // ms; longer as motion may continue.
 
@@ -79,6 +85,7 @@ public class UiObject2 implements Searchable {
     private final BySelector mSelector;
     private final GestureController mGestureController;
     private final WaitMixin<UiObject2> mWaitMixin = new WaitMixin<>(this);
+    private final Gestures mGestureFactory;
     private final int mDisplayId;
     private final float mDisplayDensity;
     private AccessibilityNodeInfo mCachedNode;
@@ -95,12 +102,15 @@ public class UiObject2 implements Searchable {
 
         // Fetch and cache display information. This is safe as moving the underlying view to
         // another display would invalidate the cached node and require recreating this UiObject2.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            AccessibilityWindowInfo window = cachedNode.getWindow();
-            mDisplayId = window == null ? Display.DEFAULT_DISPLAY : Api30Impl.getDisplayId(window);
+        int windowId = -1; // AccessibilityWindowInfo.UNDEFINED_WINDOW_ID
+        AccessibilityWindowInfo window = cachedNode.getWindow();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && window != null) {
+            mDisplayId = Api30Impl.getDisplayId(window);
+            windowId = window.getId();
         } else {
             mDisplayId = Display.DEFAULT_DISPLAY;
         }
+        mGestureFactory = new Gestures(mDisplayId, windowId);
         Context uiContext = device.getUiContext(mDisplayId);
         int densityDpi = uiContext.getResources().getConfiguration().densityDpi;
         mDisplayDensity = (float) densityDpi / DisplayMetrics.DENSITY_DEFAULT;
@@ -393,7 +403,8 @@ public class UiObject2 implements Searchable {
      *
      * @see TextView#getText()
      */
-    @SuppressLint("UnknownNullness") // Avoid unnecessary null checks from nullable testing APIs.
+    // Avoid unnecessary null checks from nullable testing APIs.
+    @SuppressLint({"UnknownNullness", "GetterSetterNullability"})
     public String getText() {
         CharSequence chars = getAccessibilityNodeInfo().getText();
         return chars != null ? chars.toString() : null;
@@ -515,7 +526,7 @@ public class UiObject2 implements Searchable {
         if (!node.isClickable()) {
             Log.w(TAG, String.format("Clicking on non-clickable object: %s", node));
         }
-        mGestureController.performGesture(Gestures.click(center, getDisplayId()));
+        mGestureController.performGesture(mGestureFactory.click(center));
     }
 
     /**
@@ -530,7 +541,7 @@ public class UiObject2 implements Searchable {
         if (!node.isClickable()) {
             Log.w(TAG, String.format("Clicking on non-clickable object: %s", node));
         }
-        mGestureController.performGesture(Gestures.click(point, getDisplayId()));
+        mGestureController.performGesture(mGestureFactory.click(point));
     }
 
     /** Clicks on this object's center for {@code duration} milliseconds. */
@@ -541,7 +552,7 @@ public class UiObject2 implements Searchable {
         if (!node.isClickable()) {
             Log.w(TAG, String.format("Clicking on non-clickable object: %s", node));
         }
-        mGestureController.performGesture(Gestures.click(center, duration, getDisplayId()));
+        mGestureController.performGesture(mGestureFactory.click(center, duration));
     }
 
     /**
@@ -557,7 +568,7 @@ public class UiObject2 implements Searchable {
         if (!node.isClickable()) {
             Log.w(TAG, String.format("Clicking on non-clickable object: %s", node));
         }
-        mGestureController.performGesture(Gestures.click(point, duration, getDisplayId()));
+        mGestureController.performGesture(mGestureFactory.click(point, duration));
     }
 
     /**
@@ -574,8 +585,8 @@ public class UiObject2 implements Searchable {
         if (!node.isClickable()) {
             Log.w(TAG, String.format("Clicking on non-clickable object: %s", node));
         }
-        return mGestureController.performGestureAndWait(condition, timeout,
-                Gestures.click(center, getDisplayId()));
+        return mGestureController.performGestureAndWait(
+                condition, timeout, mGestureFactory.click(center));
     }
 
     /**
@@ -596,7 +607,7 @@ public class UiObject2 implements Searchable {
             Log.w(TAG, String.format("Clicking on non-clickable object: %s", node));
         }
         return mGestureController.performGestureAndWait(
-                condition, timeout, Gestures.click(point, getDisplayId()));
+                condition, timeout, mGestureFactory.click(point));
     }
 
     /**
@@ -621,7 +632,7 @@ public class UiObject2 implements Searchable {
         Point center = getVisibleCenter();
         Log.d(TAG, String.format("Dragging from (%d, %d) to (%d, %d) at %dpx/s.", center.x,
                 center.y, dest.x, dest.y, speed));
-        mGestureController.performGesture(Gestures.drag(center, dest, speed, getDisplayId()));
+        mGestureController.performGesture(mGestureFactory.drag(center, dest, speed));
     }
 
     /** Performs a long click on this object's center. */
@@ -632,7 +643,7 @@ public class UiObject2 implements Searchable {
         if (!node.isLongClickable()) {
             Log.w(TAG, String.format("Long-clicking on non-long-clickable object: %s", node));
         }
-        mGestureController.performGesture(Gestures.longClick(center, getDisplayId()));
+        mGestureController.performGesture(mGestureFactory.longClick(center));
     }
 
     /**
@@ -661,7 +672,7 @@ public class UiObject2 implements Searchable {
         Log.d(TAG, String.format("Pinching close (bounds=%s, percent=%f) at %dpx/s.", bounds,
                 percent, speed));
         mGestureController.performGesture(
-                Gestures.pinchClose(bounds, percent, speed, getDisplayId()));
+                mGestureFactory.pinchClose(bounds, percent, speed));
     }
 
     /**
@@ -690,7 +701,7 @@ public class UiObject2 implements Searchable {
         Log.d(TAG, String.format("Pinching open (bounds=%s, percent=%f) at %dpx/s.", bounds,
                 percent, speed));
         mGestureController.performGesture(
-                Gestures.pinchOpen(bounds, percent, speed, getDisplayId()));
+                mGestureFactory.pinchOpen(bounds, percent, speed));
     }
 
     /**
@@ -721,7 +732,7 @@ public class UiObject2 implements Searchable {
         Log.d(TAG, String.format("Swiping %s (bounds=%s, percent=%f) at %dpx/s.",
                 direction.name().toLowerCase(), bounds, percent, speed));
         mGestureController.performGesture(
-                Gestures.swipeRect(bounds, direction, percent, speed, getDisplayId()));
+                mGestureFactory.swipeRect(bounds, direction, percent, speed));
     }
 
     /**
@@ -764,8 +775,8 @@ public class UiObject2 implements Searchable {
         }
         for (; percent > 0.0f; percent -= 1.0f) {
             float segment = Math.min(percent, 1.0f);
-            PointerGesture swipe = Gestures.swipeRect(
-                    bounds, swipeDirection, segment, speed, getDisplayId()).pause(250);
+            PointerGesture swipe =
+                    mGestureFactory.swipeRect(bounds, swipeDirection, segment, speed).pause(250);
 
             // Perform the gesture and return early if we reached the end
             Boolean scrollFinishedResult = mGestureController.performGestureAndWait(
@@ -804,6 +815,8 @@ public class UiObject2 implements Searchable {
 
         // To scroll, we swipe in the opposite direction
         final Direction swipeDirection = Direction.reverse(direction);
+        Boolean scrollFinishedResult = false;
+        int scrollCount = 0;
         while (true) {
             if (Build.VERSION.SDK_INT == Build.VERSION_CODES.P) {
                 // b/267804786: clearing cache on API 28 before applying the condition.
@@ -814,10 +827,12 @@ public class UiObject2 implements Searchable {
                 // given condition is satisfied.
                 return result;
             }
-            PointerGesture swipe = Gestures.swipeRect(bounds, swipeDirection,
-                    DEFAULT_SCROLL_UNTIL_PERCENT, speed, getDisplayId()).pause(250);
+            PointerGesture swipe =
+                    mGestureFactory
+                            .swipeRect(bounds, swipeDirection, DEFAULT_SCROLL_UNTIL_PERCENT, speed)
+                            .pause(250);
             EventCondition<Boolean> scrollFinished = Until.scrollFinished(direction);
-            Boolean scrollFinishedResult =
+            scrollFinishedResult =
                     mGestureController.performGestureAndWait(scrollFinished, SCROLL_TIMEOUT, swipe);
             if (Boolean.TRUE.equals(scrollFinishedResult)) {
                 // Scroll has finished.
@@ -832,12 +847,24 @@ public class UiObject2 implements Searchable {
                 Log.i(TAG, String.format("Couldn't determine whether scroll was finished, "
                         + "retrying: count %d", nullScrollRetryCount - 1));
             }
+            if (scrollCount++ >= MAX_RECYCLERVIEW_SCROLL && isRecyclerView()) {
+                Log.d(TAG, String.format("Exit scrollUntil as Recyclerview has scrolled %d times, "
+                        + "threshold: %d", scrollCount, MAX_RECYCLERVIEW_SCROLL));
+                break;
+            }
         }
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.P) {
             // b/267804786: clearing cache on API 28 before applying the condition.
             clearCache();
         }
-        return condition.apply(this);
+        U result = condition.apply(this);
+        // b/339676505: sleep for snapping back animation when scroll reaches the end and
+        // also the condition is met.
+        if (result != null && !Boolean.FALSE.equals(result)
+                && Boolean.TRUE.equals(scrollFinishedResult)) {
+            SystemClock.sleep(WAIT_FOR_SNAPPING_BACK);
+        }
+        return result;
     }
 
     /**
@@ -861,6 +888,7 @@ public class UiObject2 implements Searchable {
 
         // To scroll, we swipe in the opposite direction
         final Direction swipeDirection = Direction.reverse(direction);
+        int scrollCount = 0;
         while (true) {
             // combine the input condition with scroll finished condition.
             EventCondition<Boolean> scrollFinished = Until.scrollFinished(direction);
@@ -885,8 +913,10 @@ public class UiObject2 implements Searchable {
                     return condition + " || " + scrollFinished;
                 }
             };
-            PointerGesture swipe = Gestures.swipeRect(bounds, swipeDirection,
-                    DEFAULT_SCROLL_UNTIL_PERCENT, speed, getDisplayId()).pause(250);
+            PointerGesture swipe =
+                    mGestureFactory
+                            .swipeRect(bounds, swipeDirection, DEFAULT_SCROLL_UNTIL_PERCENT, speed)
+                            .pause(250);
             if (mGestureController.performGestureAndWait(combinedEventCondition, SCROLL_TIMEOUT,
                     swipe)) {
                 if (Boolean.TRUE.equals(scrollFinished.getResult())) {
@@ -902,6 +932,11 @@ public class UiObject2 implements Searchable {
                 }
                 Log.i(TAG, String.format("Couldn't determine whether scroll was finished, "
                         + "retrying: count %d", nullScrollRetryCount - 1));
+            }
+            if (scrollCount++ >= MAX_RECYCLERVIEW_SCROLL && isRecyclerView()) {
+                Log.d(TAG, String.format("Exit scrollUntil as Recyclerview has scrolled %d times, "
+                        + "threshold: %d", scrollCount, MAX_RECYCLERVIEW_SCROLL));
+                break;
             }
         }
         return condition.getResult();
@@ -934,8 +969,7 @@ public class UiObject2 implements Searchable {
         final Direction swipeDirection = Direction.reverse(direction);
 
         Rect bounds = getVisibleBoundsForGestures();
-        PointerGesture swipe = Gestures.swipeRect(
-                bounds, swipeDirection, 1.0f, speed, getDisplayId());
+        PointerGesture swipe = mGestureFactory.swipeRect(bounds, swipeDirection, 1.0f, speed);
 
         // Perform the gesture and return true if we did not reach the end
         Log.d(TAG, String.format("Flinging %s (bounds=%s) at %dpx/s.",
@@ -970,7 +1004,8 @@ public class UiObject2 implements Searchable {
      * underlying {@link View}. Note that this method can be expensive as it wait for the device to
      * be idle and tries multiple time to refresh the {@link AccessibilityNodeInfo}.
      */
-    private AccessibilityNodeInfo getAccessibilityNodeInfo() {
+    @NonNull
+    public AccessibilityNodeInfo getAccessibilityNodeInfo() {
         if (mCachedNode == null) {
             throw new IllegalStateException("This object has already been recycled.");
         }
@@ -1011,6 +1046,10 @@ public class UiObject2 implements Searchable {
             Log.e(TAG, "Fail to call AccessibilityInteractionClient#clearCache() reflection", e);
         }
 
+    }
+
+    private boolean isRecyclerView() {
+        return this.getClassName().contains("RecyclerView");
     }
 
     UiDevice getDevice() {

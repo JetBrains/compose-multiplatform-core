@@ -18,10 +18,11 @@ package androidx.camera.featurecombinationquery.playservices;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.camera.featurecombinationquery.CameraDeviceSetupCompat;
 import androidx.camera.featurecombinationquery.CameraDeviceSetupCompatFactory;
 import androidx.camera.featurecombinationquery.CameraDeviceSetupCompatProvider;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A Google Play Services based {@link CameraDeviceSetupCompat} implementation.
@@ -37,9 +38,8 @@ public class PlayServicesCameraDeviceSetupCompatProvider implements
         // TODO: Implement this once Google Play Services CameraDeviceSetup is available.
     }
 
-    @NonNull
     @Override
-    public CameraDeviceSetupCompat getCameraDeviceSetupCompat(@NonNull String cameraId) {
+    public @NonNull CameraDeviceSetupCompat getCameraDeviceSetupCompat(@NonNull String cameraId) {
         return new PlayServicesCameraDeviceSetupCompat(cameraId);
     }
 }

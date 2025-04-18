@@ -16,15 +16,26 @@
 
 package androidx.pdf.viewer.coroutines
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
-suspend fun <T> Flow<T>.toListDuring(durationInMillis: Long): List<T> = coroutineScope {
+internal suspend fun <T> Flow<T>.toListDuring(durationInMillis: Long): List<T> = coroutineScope {
     val result = mutableListOf<T>()
     val job = launch { this@toListDuring.collect(result::add) }
     delay(durationInMillis)
     job.cancel()
     return@coroutineScope result
+}
+
+internal suspend fun <T> Flow<T>.collectTill(
+    result: MutableList<T>,
+    predicate: suspend (value: T) -> Boolean
+) {
+    collect { value ->
+        result.add(value)
+        if (predicate(value)) throw CancellationException()
+    }
 }

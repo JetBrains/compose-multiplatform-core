@@ -21,6 +21,7 @@ import android.util.Size
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageAnalysis.OUTPUT_IMAGE_FORMAT_NV21
 import androidx.camera.core.ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888
 import androidx.camera.core.Logger
 import androidx.camera.core.internal.CameraUseCaseAdapter
@@ -90,18 +91,30 @@ class ImageProcessingLatencyTest(private val targetResolution: Size) {
 
     @LabTestRule.LabTestRearCamera
     @Test
-    fun imageProcessingMeasurementViaRearCamera() {
-        measureImageProcessing(CameraSelector.LENS_FACING_BACK)
+    fun imageProcessingMeasurementViaRearCamera_RGBA_8888() {
+        measureImageProcessing(CameraSelector.LENS_FACING_BACK, OUTPUT_IMAGE_FORMAT_RGBA_8888)
     }
 
     @LabTestRule.LabTestFrontCamera
     @Test
-    fun imageProcessingMeasurementViaFrontCamera() {
-        measureImageProcessing(CameraSelector.LENS_FACING_FRONT)
+    fun imageProcessingMeasurementViaFrontCamera_RGBA_8888() {
+        measureImageProcessing(CameraSelector.LENS_FACING_FRONT, OUTPUT_IMAGE_FORMAT_RGBA_8888)
+    }
+
+    @LabTestRule.LabTestRearCamera
+    @Test
+    fun imageProcessingMeasurementViaRearCamera_NV21() {
+        measureImageProcessing(CameraSelector.LENS_FACING_BACK, OUTPUT_IMAGE_FORMAT_NV21)
+    }
+
+    @LabTestRule.LabTestFrontCamera
+    @Test
+    fun imageProcessingMeasurementViaFrontCamera_NV21() {
+        measureImageProcessing(CameraSelector.LENS_FACING_FRONT, OUTPUT_IMAGE_FORMAT_NV21)
     }
 
     @Suppress("DEPRECATION") // legacy resolution API
-    private fun measureImageProcessing(lensFacing: Int): Unit = runBlocking {
+    private fun measureImageProcessing(lensFacing: Int, outputFormat: Int): Unit = runBlocking {
         // The log is used to profile the ImageProcessing performance. The log parser identifies
         // the log pattern "Image processing performance profiling" in the device output log.
         Logger.d(
@@ -113,7 +126,7 @@ class ImageProcessingLatencyTest(private val targetResolution: Size) {
         val countDownLatch = CountDownLatch(200)
         val imageAnalyzer =
             ImageAnalysis.Builder()
-                .setOutputImageFormat(OUTPUT_IMAGE_FORMAT_RGBA_8888)
+                .setOutputImageFormat(outputFormat)
                 .setTargetResolution(targetResolution)
                 .build()
                 .also {

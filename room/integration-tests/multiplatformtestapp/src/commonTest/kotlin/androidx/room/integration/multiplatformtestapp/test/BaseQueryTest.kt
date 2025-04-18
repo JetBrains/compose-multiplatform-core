@@ -390,12 +390,11 @@ abstract class BaseQueryTest {
 
         assertThat(channel.receive()).isEmpty()
 
-        // Validates that a write using the connection directly will cause invalidation when
-        // a refresh is requested.
+        // Validates that a write using the connection directly will cause invalidation without
+        // the need to do a manual refresh.
         db.useWriterConnection { connection ->
             connection.execSQL("INSERT INTO SampleEntity (pk) VALUES (13)")
         }
-        db.invalidationTracker.refreshAsync()
         assertThat(channel.receive())
             .containsExactly(
                 SampleEntity(13),

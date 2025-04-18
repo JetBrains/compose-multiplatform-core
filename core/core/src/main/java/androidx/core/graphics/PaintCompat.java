@@ -25,10 +25,11 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Pair;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link Paint}.

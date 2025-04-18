@@ -50,7 +50,7 @@ public class WearNavigator : Navigator<WearNavigator.Destination>() {
         isPop.value = false
     }
 
-    override fun createDestination() = Destination(this) {}
+    override fun createDestination(): Destination = Destination(this) {}
 
     override fun popBackStack(popUpTo: NavBackStackEntry, savedState: Boolean) {
         state.popWithTransition(popUpTo, savedState)

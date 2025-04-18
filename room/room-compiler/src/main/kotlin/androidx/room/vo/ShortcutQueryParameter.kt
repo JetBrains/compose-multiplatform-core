@@ -20,7 +20,7 @@ import androidx.room.compiler.processing.XNullability
 import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.XVariableElement
 
-/** Parameters used in DAO methods that are annotated with Insert, Delete, Update, and Upsert. */
+/** Parameters used in DAO functions that are annotated with Insert, Delete, Update, and Upsert. */
 data class ShortcutQueryParameter(
     val element: XVariableElement,
     val name: String,
@@ -28,8 +28,8 @@ data class ShortcutQueryParameter(
     val pojoType: XType?, // extracted type, never a Collection
     val isMultiple: Boolean
 ) {
-    /** Method name in entity insertion or update adapter. */
-    val handleMethodName =
+    /** Function name in entity insertion or update adapter. */
+    val handleFunctionName =
         if (isMultiple) {
             "handleMultiple"
         } else {

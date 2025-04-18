@@ -142,7 +142,6 @@ fun DatePickerDialogSample() {
     }
 }
 
-@Suppress("ClassVerificationFailure")
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled

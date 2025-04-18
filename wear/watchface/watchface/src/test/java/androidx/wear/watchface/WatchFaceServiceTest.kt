@@ -56,6 +56,7 @@ import android.view.accessibility.AccessibilityManager
 import androidx.annotation.Px
 import androidx.annotation.RequiresApi
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.filters.SdkSuppress
 import androidx.wear.watchface.complications.ComplicationSlotBounds
 import androidx.wear.watchface.complications.DefaultComplicationDataSourcePolicy
 import androidx.wear.watchface.complications.SystemDataSources
@@ -171,8 +172,7 @@ internal enum class Priority {
     Interactive
 }
 
-@Config(manifest = Config.NONE)
-@RequiresApi(Build.VERSION_CODES.O)
+@Config(manifest = Config.NONE, sdk = [31, 32, 33, 34, 35])
 @RunWith(WatchFaceTestRunner::class)
 public class WatchFaceServiceTest {
 
@@ -1875,7 +1875,7 @@ public class WatchFaceServiceTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    @RequiresApi(Build.VERSION_CODES.R)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
     public fun onApplyWindowInsetsRAndAbove_setsChinHeight() {
         initWallpaperInteractiveWatchFaceInstance(
             WatchFaceType.ANALOG,
@@ -3808,7 +3808,7 @@ public class WatchFaceServiceTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
     public fun headless_complicationsInitialized_with_EmptyComplicationData() {
         testWatchFaceService =
             TestWatchFaceService(
@@ -5072,7 +5072,7 @@ public class WatchFaceServiceTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
     public fun glesRendererLifecycle() {
         val eventLog = ArrayList<String>()
         var renderer: Renderer
@@ -5208,7 +5208,7 @@ public class WatchFaceServiceTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
     public fun assetLifeCycle_CanvasRenderer() {
         val eventLog = ArrayList<String>()
         var renderer: Renderer
@@ -5348,7 +5348,7 @@ public class WatchFaceServiceTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
     public fun empty_eglConfigAttribListList() {
         class TestSharedAssets : Renderer.SharedAssets {
             override fun onDestroy() {}
@@ -5385,7 +5385,7 @@ public class WatchFaceServiceTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
     public fun assetLifeCycle_GlesRenderer() {
         val eventLog = ArrayList<String>()
         var renderer: Renderer
@@ -5746,7 +5746,7 @@ public class WatchFaceServiceTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
     public fun uiThreadPriority_headless() {
         testWatchFaceService =
             TestWatchFaceService(
@@ -5822,7 +5822,7 @@ public class WatchFaceServiceTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
     public fun headlessId() {
         testWatchFaceService =
             TestWatchFaceService(
@@ -7109,7 +7109,7 @@ public class WatchFaceServiceTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
     public fun sendPreviewImageNeedsUpdateRequest_headlessInstance() {
         @Suppress("DEPRECATION") lateinit var renderer: Renderer.CanvasRenderer
         testWatchFaceService =
@@ -7223,7 +7223,7 @@ public class WatchFaceServiceTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
     public fun doNotDisplayComplicationWhenScreenLocked() {
         initWallpaperInteractiveWatchFaceInstance(
             WatchFaceType.ANALOG,
@@ -7518,7 +7518,7 @@ public class WatchFaceServiceTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    @RequiresApi(Build.VERSION_CODES.R)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
     public fun interactive_wf_has_null_resourceOnlyWatchFacePackageName() {
         initWallpaperInteractiveWatchFaceInstance(
             WatchFaceType.ANALOG,
@@ -7540,7 +7540,7 @@ public class WatchFaceServiceTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
     public fun headless_wf_has_null_resourceOnlyWatchFacePackageName() {
         val service = TestNopCanvasWatchFaceService(context)
         val componentName = ComponentName("test.watchface.app", "test.watchface.class")
@@ -7562,7 +7562,7 @@ public class WatchFaceServiceTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    @RequiresApi(Build.VERSION_CODES.R)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
     public fun interactive_wf_runtime_has_non_null_resourceOnlyWatchFacePackageName() {
         val service = TestNopWatchFaceRuntimeService(context)
         InteractiveInstanceManager
@@ -7604,7 +7604,7 @@ public class WatchFaceServiceTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
     public fun headless_wf_runtime_has_non_null_resourceOnlyWatchFacePackageName() {
         val service = TestNopWatchFaceRuntimeService(context)
         val componentName = ComponentName("com.resource.only.package", "null")

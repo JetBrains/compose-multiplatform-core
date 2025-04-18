@@ -17,6 +17,7 @@
 package androidx.ink.brush
 
 import androidx.annotation.FloatRange
+import androidx.annotation.IntRange
 import androidx.annotation.RestrictTo
 import androidx.ink.geometry.AngleRadiansFloat
 import androidx.ink.nativeloader.NativeLoader
@@ -38,24 +39,31 @@ import kotlin.jvm.JvmSynthetic
  * - The final combined texture (source) is blended with the (possibly adjusted per-vertex) brush
  *   color (destination) according to the blend mode of the last texture layer.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 @ExperimentalInkCustomBrushApi
 @Suppress("NotCloseable") // Finalize is only used to free the native peer.
-public class BrushPaint(
+public class BrushPaint
+private constructor(
+    /** A handle to the underlying native [BrushPaint] object. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val nativePointer: Long,
     // The [textureLayers] val below is a defensive copy of this parameter.
-    textureLayers: List<TextureLayer> = emptyList()
+    textureLayers: List<TextureLayer>,
 ) {
     /** The textures to apply to the stroke. */
     public val textureLayers: List<TextureLayer> = unmodifiableList(textureLayers.toList())
 
-    /** A handle to the underlying native [BrushPaint] object. */
-    internal val nativePointer: Long = nativeCreateBrushPaint(textureLayers.size)
-
-    init {
-        for (layer in textureLayers) {
-            nativeAppendTextureLayer(nativePointer, layer.nativePointer)
-        }
-    }
+    /**
+     * Creates a [BrushPaint] with the given [textureLayers].
+     *
+     * @param textureLayers The textures to apply to the stroke.
+     */
+    @JvmOverloads
+    public constructor(
+        textureLayers: List<TextureLayer> = emptyList()
+    ) : this(
+        BrushPaintNative.create(textureLayers.map { it.nativePointer }.toLongArray()),
+        textureLayers,
+    )
 
     override fun equals(other: Any?): Boolean {
         if (other !is BrushPaint) return false
@@ -71,25 +79,11 @@ public class BrushPaint(
     /** Delete native BrushPaint memory. */
     protected fun finalize() {
         // NOMUTANTS -- Not tested post garbage collection.
-        nativeFreeBrushPaint(nativePointer)
+        BrushPaintNative.free(nativePointer)
     }
 
-    /** Create underlying native object and return reference for all subsequent native calls. */
-    @UsedByNative private external fun nativeCreateBrushPaint(textureLayersCount: Int): Long
-
-    /**
-     * Appends a texture layer to a *mutable* C++ BrushPaint object as referenced by
-     * [nativePointer]. Only call during `init{}` so to keep this BrushPaint object immutable after
-     * construction and equivalent across Kotlin and C++.
-     */
-    @UsedByNative
-    private external fun nativeAppendTextureLayer(nativePointer: Long, textureLayerPointer: Long)
-
-    /** Release the underlying memory allocated in [nativeCreateBrushPaint]. */
-    @UsedByNative private external fun nativeFreeBrushPaint(nativePointer: Long)
-
     /** Specification of how the texture should apply to the stroke. */
-    public class TextureMapping private constructor(v: Int) {
+    public class TextureMapping internal constructor(v: Int) {
 
         // Not declared in the constructor to avoid conflicting compile/lint errors/warnings.
         @JvmField
@@ -127,7 +121,7 @@ public class BrushPaint(
     }
 
     /** Specification of the origin point to use for the texture. */
-    public class TextureOrigin private constructor(@JvmField internal val value: Int) {
+    public class TextureOrigin internal constructor(@JvmField internal val value: Int) {
         override fun toString(): String =
             when (this) {
                 STROKE_SPACE_ORIGIN -> "BrushPaint.TextureOrigin.STROKE_SPACE_ORIGIN"
@@ -162,7 +156,7 @@ public class BrushPaint(
     }
 
     /** Units for specifying [TextureLayer.sizeX] and [TextureLayer.sizeY]. */
-    public class TextureSizeUnit private constructor(@JvmField internal val value: Int) {
+    public class TextureSizeUnit internal constructor(@JvmField internal val value: Int) {
         override fun toString(): String =
             when (this) {
                 BRUSH_SIZE -> "BrushPaint.TextureSizeUnit.BRUSH_SIZE"
@@ -197,7 +191,7 @@ public class BrushPaint(
     }
 
     /** Wrap modes for specifying [TextureLayer.wrapX] and [TextureLayer.wrapY]. */
-    public class TextureWrap private constructor(@JvmField internal val value: Int) {
+    public class TextureWrap internal constructor(@JvmField internal val value: Int) {
         override fun toString(): String =
             when (this) {
                 REPEAT -> "BrushPaint.TextureWrap.REPEAT"
@@ -237,7 +231,7 @@ public class BrushPaint(
      * color, and should typically be a mode whose output alpha is proportional to the destination
      * alpha, so that it can be adjusted by anti-aliasing.
      */
-    public class BlendMode private constructor(@JvmField internal val value: Int) {
+    public class BlendMode internal constructor(@JvmField internal val value: Int) {
         override fun toString(): String =
             when (this) {
                 MODULATE -> "BrushPaint.BlendMode.MODULATE"
@@ -418,69 +412,65 @@ public class BrushPaint(
         }
     }
 
-    /**
-     * An explicit layer defined by an image.
-     *
-     * @param colorTextureUri The URI of an image that provides the color for a particular pixel for
-     *   this layer. The coordinates within this image that will be used are determined by the other
-     *   parameters.
-     * @param sizeX The X size in [TextureSizeUnit] of the image specified by [colorTextureUri].
-     * @param sizeY The Y size in [TextureSizeUnit] of the image specified by [colorTextureUri].
-     * @param offsetX An offset into the texture, specified as fractions of the texture [sizeX].
-     * @param offsetY An offset into the texture, specified as fractions of the texture [sizeY].
-     * @param rotation Angle in radians specifying the rotation of the texture. The rotation is
-     *   carried out about the center of the texture's first repetition along both axes.
-     * @param opacity Overall layer opacity in the range [0,1], where 0 is transparent and 1 is
-     *   opaque.
-     * @param sizeUnit The units used to specify [sizeX] and [sizeY].
-     * @param origin The origin point to be used for texture space.
-     * @param mapping The method by which the coordinates of the [colorTextureUri] image will apply
-     *   to the stroke.
-     * @param wrapX The wrap mode along the horizontal texture axis.
-     * @param wrapY The wrap mode along the vertical texture axis.
-     * @param blendMode The method by which the texture layers up to this one (index <= i) are
-     *   combined with the subsequent texture layer (index == i+1). For the last texture layer, this
-     *   defines the method by which the texture layer is combined with the brush color (possibly
-     *   after that color gets per-vertex adjustments).
-     */
+    /** An explicit layer defined by an image. */
     @Suppress("NotCloseable") // Finalize is only used to free the native peer.
-    public class TextureLayer(
-        public val colorTextureUri: String,
-        @FloatRange(
-            from = 0.0,
-            fromInclusive = false,
-            to = Double.POSITIVE_INFINITY,
-            toInclusive = false,
-        )
-        public val sizeX: Float,
-        @FloatRange(
-            from = 0.0,
-            fromInclusive = false,
-            to = Double.POSITIVE_INFINITY,
-            toInclusive = false,
-        )
-        public val sizeY: Float,
-        public val offsetX: Float = 0f,
-        public val offsetY: Float = 0f,
-        @AngleRadiansFloat public val rotation: Float = 0F,
-        @FloatRange(from = 0.0, to = 1.0, fromInclusive = true, toInclusive = true)
-        public val opacity: Float = 1f,
-        public val sizeUnit: TextureSizeUnit = TextureSizeUnit.STROKE_COORDINATES,
-        public val origin: TextureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
-        public val mapping: TextureMapping = TextureMapping.TILING,
-        public val wrapX: TextureWrap = TextureWrap.REPEAT,
-        public val wrapY: TextureWrap = TextureWrap.REPEAT,
-        public val blendMode: BlendMode = BlendMode.MODULATE,
-    ) {
-        internal val nativePointer: Long =
-            nativeCreateTextureLayer(
-                colorTextureUri,
+    public class TextureLayer private constructor(internal val nativePointer: Long) {
+
+        /**
+         * Creates a new [TextureLayer] with the specified parameters.
+         *
+         * @param clientTextureId A string identifier of an image that provides the color for a
+         *   particular pixel for this layer. The coordinates within this image that will be used
+         *   are determined by the other parameters.
+         * @param sizeX The X size in [TextureSizeUnit] of (one animation frame of) the image
+         *   specified by [clientTextureId].
+         * @param sizeY The Y size in [TextureSizeUnit] of (one animation frame of) the image
+         *   specified by [clientTextureId].
+         * @param offsetX An offset into the texture, specified as fractions of the texture [sizeX].
+         * @param offsetY An offset into the texture, specified as fractions of the texture [sizeY].
+         * @param rotation Angle in radians specifying the rotation of the texture. The rotation is
+         *   carried out about the center of the texture's first repetition along both axes.
+         * @param opacity Overall layer opacity in the range [0,1], where 0 is transparent and 1 is
+         *   opaque.
+         * @param animationFrames The number of animation frames in this texture, or 1 for no
+         *   animation. If greater than 1, then the texture image is treated as a vertical strip of
+         *   this many frame images, in order from top to bottom.
+         * @param sizeUnit The units used to specify [sizeX] and [sizeY].
+         * @param origin The origin point to be used for texture space.
+         * @param mapping The method by which the coordinates of the [clientTextureId] image will
+         *   apply to the stroke.
+         * @param wrapX The wrap mode along the horizontal texture axis.
+         * @param wrapY The wrap mode along the vertical texture axis.
+         * @param blendMode The method by which the texture layers up to this one (index <= i) are
+         *   combined with the subsequent texture layer (index == i+1). For the last texture layer,
+         *   this defines the method by which the texture layer is combined with the brush color
+         *   (possibly after that color gets per-vertex adjustments).
+         */
+        public constructor(
+            clientTextureId: String,
+            @FloatRange(from = 0.0, fromInclusive = false, toInclusive = false) sizeX: Float,
+            @FloatRange(from = 0.0, fromInclusive = false, toInclusive = false) sizeY: Float,
+            offsetX: Float = 0f,
+            offsetY: Float = 0f,
+            @AngleRadiansFloat rotation: Float = 0F,
+            @FloatRange(from = 0.0, to = 1.0) opacity: Float = 1f,
+            @IntRange(from = 1) animationFrames: Int = 1,
+            sizeUnit: TextureSizeUnit = TextureSizeUnit.STROKE_COORDINATES,
+            origin: TextureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
+            mapping: TextureMapping = TextureMapping.TILING,
+            wrapX: TextureWrap = TextureWrap.REPEAT,
+            wrapY: TextureWrap = TextureWrap.REPEAT,
+            blendMode: BlendMode = BlendMode.MODULATE,
+        ) : this(
+            TextureLayerNative.create(
+                clientTextureId,
                 sizeX,
                 sizeY,
                 offsetX,
                 offsetY,
                 rotation,
                 opacity,
+                animationFrames,
                 sizeUnit.value,
                 origin.value,
                 mapping.value,
@@ -488,6 +478,44 @@ public class BrushPaint(
                 wrapY.value,
                 blendMode.value,
             )
+        )
+
+        public val clientTextureId: String = TextureLayerNative.getClientTextureId(nativePointer)
+
+        // Caching the native accessors here even for primitive fields because these are accessed
+        // mostly
+        // in Kotlin.
+
+        @FloatRange(from = 0.0, fromInclusive = false, toInclusive = false)
+        public val sizeX: Float = TextureLayerNative.getSizeX(nativePointer)
+
+        @FloatRange(from = 0.0, fromInclusive = false, toInclusive = false)
+        public val sizeY: Float = TextureLayerNative.getSizeY(nativePointer)
+
+        public val offsetX: Float = TextureLayerNative.getOffsetX(nativePointer)
+
+        public val offsetY: Float = TextureLayerNative.getOffsetY(nativePointer)
+
+        @AngleRadiansFloat
+        public val rotation: Float = TextureLayerNative.getRotationInRadians(nativePointer)
+
+        @FloatRange(from = 0.0, to = 1.0)
+        public val opacity: Float = TextureLayerNative.getOpacity(nativePointer)
+
+        @IntRange(from = 1)
+        public val animationFrames: Int = TextureLayerNative.getAnimationFrames(nativePointer)
+
+        public val sizeUnit: TextureSizeUnit = TextureLayerNative.getSizeUnit(nativePointer)
+
+        public val origin: TextureOrigin = TextureLayerNative.getOrigin(nativePointer)
+
+        public val mapping: TextureMapping = TextureLayerNative.getMapping(nativePointer)
+
+        public val wrapX: TextureWrap = TextureLayerNative.getWrapX(nativePointer)
+
+        public val wrapY: TextureWrap = TextureLayerNative.getWrapY(nativePointer)
+
+        public val blendMode: BlendMode = TextureLayerNative.getBlendMode(nativePointer)
 
         /**
          * Creates a copy of `this` and allows named properties to be altered while keeping the rest
@@ -495,13 +523,16 @@ public class BrushPaint(
          */
         @JvmSynthetic
         public fun copy(
-            colorTextureUri: String = this.colorTextureUri,
+            clientTextureId: String = this.clientTextureId,
+            @FloatRange(from = 0.0, fromInclusive = false, toInclusive = false)
             sizeX: Float = this.sizeX,
+            @FloatRange(from = 0.0, fromInclusive = false, toInclusive = false)
             sizeY: Float = this.sizeY,
             offsetX: Float = this.offsetX,
             offsetY: Float = this.offsetY,
             @AngleRadiansFloat rotation: Float = this.rotation,
-            opacity: Float = this.opacity,
+            @FloatRange(from = 0.0, to = 1.0) opacity: Float = this.opacity,
+            @IntRange(from = 1) animationFrames: Int = this.animationFrames,
             sizeUnit: TextureSizeUnit = this.sizeUnit,
             origin: TextureOrigin = this.origin,
             mapping: TextureMapping = this.mapping,
@@ -510,13 +541,14 @@ public class BrushPaint(
             blendMode: BlendMode = this.blendMode,
         ): TextureLayer {
             if (
-                colorTextureUri == this.colorTextureUri &&
+                clientTextureId == this.clientTextureId &&
                     sizeX == this.sizeX &&
                     sizeY == this.sizeY &&
                     offsetX == this.offsetX &&
                     offsetY == this.offsetY &&
                     rotation == this.rotation &&
                     opacity == this.opacity &&
+                    animationFrames == this.animationFrames &&
                     sizeUnit == this.sizeUnit &&
                     origin == this.origin &&
                     mapping == this.mapping &&
@@ -527,13 +559,14 @@ public class BrushPaint(
                 return this
             }
             return TextureLayer(
-                colorTextureUri,
+                clientTextureId,
                 sizeX,
                 sizeY,
                 offsetX,
                 offsetY,
                 rotation,
                 opacity,
+                animationFrames,
                 sizeUnit,
                 origin,
                 mapping,
@@ -549,13 +582,14 @@ public class BrushPaint(
          */
         public fun toBuilder(): Builder =
             Builder(
-                colorTextureUri = this.colorTextureUri,
+                clientTextureId = this.clientTextureId,
                 sizeX = this.sizeX,
                 sizeY = this.sizeY,
                 offsetX = this.offsetX,
                 offsetY = this.offsetY,
                 rotation = this.rotation,
                 opacity = this.opacity,
+                animationFrames = this.animationFrames,
                 sizeUnit = this.sizeUnit,
                 origin = this.origin,
                 mapping = this.mapping,
@@ -566,13 +600,14 @@ public class BrushPaint(
 
         override fun equals(other: Any?): Boolean {
             if (other !is TextureLayer) return false
-            return colorTextureUri == other.colorTextureUri &&
+            return clientTextureId == other.clientTextureId &&
                 sizeX == other.sizeX &&
                 sizeY == other.sizeY &&
                 offsetX == other.offsetX &&
                 offsetY == other.offsetY &&
                 rotation == other.rotation &&
                 opacity == other.opacity &&
+                animationFrames == other.animationFrames &&
                 sizeUnit == other.sizeUnit &&
                 origin == other.origin &&
                 mapping == other.mapping &&
@@ -582,19 +617,20 @@ public class BrushPaint(
         }
 
         override fun toString(): String =
-            "BrushPaint.TextureLayer(colorTextureUri=$colorTextureUri, sizeX=$sizeX, sizeY=$sizeY, " +
-                "offset=[$offsetX, $offsetY], rotation=$rotation, opacity=$opacity sizeUnit=$sizeUnit, " +
-                "origin=$origin, mapping=$mapping, wrapX=$wrapX, " +
-                "wrapY=$wrapY, blendMode=$blendMode)"
+            "BrushPaint.TextureLayer(clientTextureId=$clientTextureId, sizeX=$sizeX, " +
+                "sizeY=$sizeY, offset=[$offsetX, $offsetY], rotation=$rotation, opacity=$opacity, " +
+                "animationFrames=$animationFrames, sizeUnit=$sizeUnit, origin=$origin, " +
+                "mapping=$mapping, wrapX=$wrapX, wrapY=$wrapY, blendMode=$blendMode)"
 
         override fun hashCode(): Int {
-            var result = colorTextureUri.hashCode()
+            var result = clientTextureId.hashCode()
             result = 31 * result + sizeX.hashCode()
             result = 31 * result + sizeY.hashCode()
             result = 31 * result + offsetX.hashCode()
             result = 31 * result + offsetY.hashCode()
             result = 31 * result + rotation.hashCode()
             result = 31 * result + opacity.hashCode()
+            result = 31 * result + animationFrames.hashCode()
             result = 31 * result + sizeUnit.hashCode()
             result = 31 * result + origin.hashCode()
             result = 31 * result + mapping.hashCode()
@@ -607,39 +643,29 @@ public class BrushPaint(
         /** Delete native TextureLayer memory. */
         protected fun finalize() {
             // NOMUTANTS -- Not tested post garbage collection.
-            nativeFreeTextureLayer(nativePointer)
+            TextureLayerNative.free(nativePointer)
         }
 
         /**
          * Builder for [TextureLayer].
          *
-         * Construct from TextureLayer.toBuilder().
+         * Construct from `textureLayer.toBuilder()` or `TextureLayer.builder()`.
          */
         @Suppress(
             "ScopeReceiverThis"
         ) // Builder pattern supported for Java clients, despite being an anti-pattern in Kotlin.
         public class Builder
         internal constructor(
-            private var colorTextureUri: String,
-            @FloatRange(
-                from = 0.0,
-                fromInclusive = false,
-                to = Double.POSITIVE_INFINITY,
-                toInclusive = false,
-            )
+            private var clientTextureId: String,
+            @FloatRange(from = 0.0, fromInclusive = false, toInclusive = false)
             private var sizeX: Float,
-            @FloatRange(
-                from = 0.0,
-                fromInclusive = false,
-                to = Double.POSITIVE_INFINITY,
-                toInclusive = false,
-            )
+            @FloatRange(from = 0.0, fromInclusive = false, toInclusive = false)
             private var sizeY: Float,
             private var offsetX: Float = 0f,
             private var offsetY: Float = 0f,
             @AngleRadiansFloat private var rotation: Float = 0F,
-            @FloatRange(from = 0.0, to = 1.0, fromInclusive = true, toInclusive = true)
-            private var opacity: Float = 1f,
+            @FloatRange(from = 0.0, to = 1.0) private var opacity: Float = 1f,
+            @IntRange(from = 1) private var animationFrames: Int = 1,
             private var sizeUnit: TextureSizeUnit = TextureSizeUnit.STROKE_COORDINATES,
             private var origin: TextureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
             private var mapping: TextureMapping = TextureMapping.TILING,
@@ -647,21 +673,35 @@ public class BrushPaint(
             private var wrapY: TextureWrap = TextureWrap.REPEAT,
             private var blendMode: BlendMode = BlendMode.MODULATE,
         ) {
-            public fun setColorTextureUri(colorTextureUri: String): Builder = apply {
-                this.colorTextureUri = colorTextureUri
+            public fun setClientTextureId(clientTextureId: String): Builder = apply {
+                this.clientTextureId = clientTextureId
             }
 
-            public fun setSizeX(sizeX: Float): Builder = apply { this.sizeX = sizeX }
+            public fun setSizeX(
+                @FloatRange(from = 0.0, fromInclusive = false, toInclusive = false) sizeX: Float
+            ): Builder = apply { this.sizeX = sizeX }
 
-            public fun setSizeY(sizeY: Float): Builder = apply { this.sizeY = sizeY }
+            public fun setSizeY(
+                @FloatRange(from = 0.0, fromInclusive = false, toInclusive = false) sizeY: Float
+            ): Builder = apply { this.sizeY = sizeY }
 
             public fun setOffsetX(offsetX: Float): Builder = apply { this.offsetX = offsetX }
 
             public fun setOffsetY(offsetY: Float): Builder = apply { this.offsetY = offsetY }
 
-            public fun setRotation(rotation: Float): Builder = apply { this.rotation = rotation }
+            public fun setRotation(@AngleRadiansFloat rotation: Float): Builder = apply {
+                this.rotation = rotation
+            }
 
-            public fun setOpacity(opacity: Float): Builder = apply { this.opacity = opacity }
+            public fun setOpacity(@FloatRange(from = 0.0, to = 1.0) opacity: Float): Builder =
+                apply {
+                    this.opacity = opacity
+                }
+
+            public fun setAnimationFrames(@IntRange(from = 1) animationFrames: Int): Builder =
+                apply {
+                    this.animationFrames = animationFrames
+                }
 
             public fun setSizeUnit(sizeUnit: TextureSizeUnit): Builder = apply {
                 this.sizeUnit = sizeUnit
@@ -683,13 +723,14 @@ public class BrushPaint(
 
             public fun build(): TextureLayer =
                 TextureLayer(
-                    colorTextureUri,
+                    clientTextureId,
                     sizeX,
                     sizeY,
                     offsetX,
                     offsetY,
                     rotation,
                     opacity,
+                    animationFrames,
                     sizeUnit,
                     origin,
                     mapping,
@@ -699,34 +740,148 @@ public class BrushPaint(
                 )
         }
 
-        @UsedByNative
-        private external fun nativeCreateTextureLayer(
-            colorTextureUri: String,
-            sizeX: Float,
-            sizeY: Float,
-            offsetX: Float,
-            offsetY: Float,
-            rotation: Float,
-            opacity: Float,
-            sizeUnit: Int,
-            origin: Int,
-            mapping: Int,
-            wrapX: Int,
-            wrapY: Int,
-            blendMode: Int,
-        ): Long
-
-        /** Release the underlying memory allocated in [nativeCreateTextureLayer]. */
-        @UsedByNative private external fun nativeFreeTextureLayer(nativePointer: Long)
-
         // To be extended by extension methods.
-        public companion object
+        public companion object {
+            /**
+             * Returns a [Builder] with the required fields set.
+             *
+             * @param clientTextureId The texture ID of the texture to be used for the texture
+             *   layer.
+             * @param sizeX The size of the texture in the x-direction.
+             * @param sizeY The size of the texture in the y-direction.
+             */
+            @JvmStatic
+            public fun builder(
+                clientTextureId: String,
+                @FloatRange(from = 0.0, fromInclusive = false, toInclusive = false) sizeX: Float,
+                @FloatRange(from = 0.0, fromInclusive = false, toInclusive = false) sizeY: Float,
+            ): Builder = Builder(clientTextureId, sizeX, sizeY)
+
+            /**
+             * Construct a [TextureLayer] from an unowned heap-allocated native pointer to a C++
+             * `BrushPaint::TextureLayer`.
+             */
+            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+            public fun wrapNative(unownedNativePointer: Long): TextureLayer =
+                TextureLayer(unownedNativePointer)
+        }
     }
 
     // To be extended by extension methods.
     public companion object {
-        init {
-            NativeLoader.load()
-        }
+        /**
+         * Construct a [BrushPaint] from an unowned heap-allocated native pointer to a C++
+         * `BrushPaint`. Kotlin wrapper objects nested under the [BrushPaint] are initialized
+         * similarly using their own [wrapNative] methods, passing those pointers to newly
+         * copy-constructed heap-allocated objects. That avoids the need to call Kotlin constructors
+         * for those objects from C++.
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun wrapNative(unownedNativePointer: Long): BrushPaint =
+            BrushPaint(
+                unownedNativePointer,
+                List(BrushPaintNative.getTextureLayerCount(unownedNativePointer)) { index ->
+                    TextureLayer.wrapNative(
+                        BrushPaintNative.newCopyOfTextureLayer(unownedNativePointer, index)
+                    )
+                },
+            )
     }
+}
+
+/** Singleton wrapper around BrushPaint native JNI calls. */
+@UsedByNative
+private object BrushPaintNative {
+    init {
+        NativeLoader.load()
+    }
+
+    /** Create underlying native object and return reference for all subsequent native calls. */
+    @UsedByNative public external fun create(textureLayerNativePointers: LongArray): Long
+
+    /** Release the underlying memory allocated in [create]. */
+    @UsedByNative public external fun free(nativePointer: Long)
+
+    @UsedByNative public external fun getTextureLayerCount(nativePointer: Long): Int
+
+    /**
+     * Returns a new, unowned native pointer to a copy of the texture layer at the given index on
+     * the pointed-at native `BrushPaint`.
+     */
+    @UsedByNative public external fun newCopyOfTextureLayer(nativePointer: Long, index: Int): Long
+}
+
+/** Singleton wrapper around BrushPaint.TextureLayer native JNI calls. */
+@OptIn(ExperimentalInkCustomBrushApi::class)
+@UsedByNative
+private object TextureLayerNative {
+    init {
+        NativeLoader.load()
+    }
+
+    @UsedByNative
+    public external fun create(
+        clientTextureId: String,
+        sizeX: Float,
+        sizeY: Float,
+        offsetX: Float,
+        offsetY: Float,
+        rotation: Float,
+        opacity: Float,
+        animationFrames: Int,
+        sizeUnit: Int,
+        origin: Int,
+        mapping: Int,
+        wrapX: Int,
+        wrapY: Int,
+        blendMode: Int,
+    ): Long
+
+    @UsedByNative public external fun getClientTextureId(nativePointer: Long): String
+
+    @UsedByNative public external fun getSizeX(nativePointer: Long): Float
+
+    @UsedByNative public external fun getSizeY(nativePointer: Long): Float
+
+    @UsedByNative public external fun getOffsetX(nativePointer: Long): Float
+
+    @UsedByNative public external fun getOffsetY(nativePointer: Long): Float
+
+    @UsedByNative public external fun getRotationInRadians(nativePointer: Long): Float
+
+    @UsedByNative public external fun getOpacity(nativePointer: Long): Float
+
+    @UsedByNative public external fun getAnimationFrames(nativePointer: Long): Int
+
+    public fun getSizeUnit(nativePointer: Long): BrushPaint.TextureSizeUnit =
+        BrushPaint.TextureSizeUnit(getSizeUnitInt(nativePointer))
+
+    @UsedByNative public external fun getSizeUnitInt(nativePointer: Long): Int
+
+    public fun getOrigin(nativePointer: Long): BrushPaint.TextureOrigin =
+        BrushPaint.TextureOrigin(getOriginInt(nativePointer))
+
+    @UsedByNative private external fun getOriginInt(nativePointer: Long): Int
+
+    public fun getMapping(nativePointer: Long): BrushPaint.TextureMapping =
+        BrushPaint.TextureMapping(getMappingInt(nativePointer))
+
+    @UsedByNative private external fun getMappingInt(nativePointer: Long): Int
+
+    public fun getWrapX(nativePointer: Long): BrushPaint.TextureWrap =
+        BrushPaint.TextureWrap(getWrapXInt(nativePointer))
+
+    @UsedByNative private external fun getWrapXInt(nativePointer: Long): Int
+
+    public fun getWrapY(nativePointer: Long): BrushPaint.TextureWrap =
+        BrushPaint.TextureWrap(getWrapYInt(nativePointer))
+
+    @UsedByNative private external fun getWrapYInt(nativePointer: Long): Int
+
+    public fun getBlendMode(nativePointer: Long): BrushPaint.BlendMode =
+        BrushPaint.BlendMode(getBlendModeInt(nativePointer))
+
+    @UsedByNative private external fun getBlendModeInt(nativePointer: Long): Int
+
+    @UsedByNative public external fun free(nativePointer: Long)
 }

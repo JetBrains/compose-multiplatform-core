@@ -16,7 +16,7 @@
 
 package androidx.biometric;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A list item with bulleted text shown on {@link PromptVerticalListContentView}.
@@ -33,8 +33,7 @@ public final class PromptContentItemBulletedText implements PromptContentItem {
         mText = text;
     }
 
-    @NonNull
-    String getText() {
+    @NonNull String getText() {
         return mText;
     }
 }

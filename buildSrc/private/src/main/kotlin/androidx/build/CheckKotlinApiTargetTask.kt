@@ -36,12 +36,7 @@ abstract class CheckKotlinApiTargetTask : DefaultTask() {
     @get:Input
     val allDependencies: List<Pair<String, String>> =
         project.configurations
-            .filter {
-                it.isCanBeResolved &&
-                    !it.name.lowercase().contains("test") &&
-                    !it.name.lowercase().contains("metadata") &&
-                    !it.name.endsWith("CInterop")
-            }
+            .filter { it.isPublished() && it.isCanBeResolved }
             .flatMap { config ->
                 config.resolvedConfiguration.firstLevelModuleDependencies.map {
                     "${it.moduleName}:${it.moduleVersion}" to config.name

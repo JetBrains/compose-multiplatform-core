@@ -28,8 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
 
 /**
- * <a href="https://material.io/design/color/the-color-system.html" class="external"
- * target="_blank">Material Design color system</a>.
+ * [Material Design color system](https://material.io/design/color/the-color-system.html)
  *
  * The Material Design color system can help you create a color theme that reflects your brand or
  * style.

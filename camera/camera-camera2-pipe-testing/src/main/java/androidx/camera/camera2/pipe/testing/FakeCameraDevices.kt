@@ -22,6 +22,8 @@ import androidx.camera.camera2.pipe.CameraDevices
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 /**
  * This provides a fake implementation of [CameraDevices] for tests with a fixed list of Cameras.
@@ -43,6 +45,9 @@ public class FakeCameraDevices(
                 FakeCameraBackend(entry.value.associateBy { it.camera })
             }
     }
+
+    override fun cameraIdsFlow(cameraBackendId: CameraBackendId?): Flow<List<CameraId>> =
+        flowOf(awaitCameraIds(null) ?: emptyList())
 
     override suspend fun getCameraIds(cameraBackendId: CameraBackendId?): List<CameraId>? =
         awaitCameraIds(cameraBackendId)

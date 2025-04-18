@@ -23,7 +23,6 @@ import androidx.annotation.Sampled
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.contracts.ExerciseRouteRequestContract
-import androidx.health.connect.client.feature.ExperimentalFeatureAvailabilityApi
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.permission.HealthPermission.Companion.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND
 import androidx.health.connect.client.readRecord
@@ -38,7 +37,6 @@ import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import java.time.Instant
 
-@OptIn(ExperimentalFeatureAvailabilityApi::class)
 @Sampled
 suspend fun ReadSkinTemperatureRecord(
     healthConnectClient: HealthConnectClient,

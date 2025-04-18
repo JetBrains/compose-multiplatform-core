@@ -65,7 +65,7 @@ internal class MultipleDataStoresInMultipleProcessesTest(
 ) {
 
     companion object {
-        @Suppress("unused") // test parameters
+        @Suppress("TYPE_INTERSECTION_AS_REIFIED_WARNING", "unused") // test parameters
         @get:JvmStatic
         @get:Parameters(name = "storage_{0}_multipleProcesses={1}_sameParentFolder={2}")
         val params = buildList {

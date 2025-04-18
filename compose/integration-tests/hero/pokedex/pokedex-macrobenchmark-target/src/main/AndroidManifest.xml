@@ -43,7 +43,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <intent-filter>
-                <action android:name="androidx.compose.integration.hero.pokedex.macrobenchmark.target.POKEDEX_ACTIVITY" />
+                <action android:name="androidx.compose.integration.hero.pokedex.macrobenchmark.target.POKEDEX_COMPOSE_ACTIVITY" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>

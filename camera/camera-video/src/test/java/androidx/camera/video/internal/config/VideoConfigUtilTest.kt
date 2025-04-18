@@ -20,11 +20,16 @@ import android.media.EncoderProfiles
 import android.media.MediaFormat
 import android.media.MediaRecorder
 import android.os.Build
+import android.util.Range
+import android.util.Size
 import androidx.camera.core.DynamicRange
+import androidx.camera.core.SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy
 import androidx.camera.testing.impl.EncoderProfilesUtil
 import androidx.camera.video.MediaSpec
+import androidx.camera.video.VideoSpec
 import androidx.camera.video.internal.VideoValidatedEncoderProfilesProxy
+import androidx.camera.video.internal.config.VideoConfigUtil.VIDEO_FRAME_RATE_FIXED_DEFAULT
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -135,6 +140,50 @@ class VideoConfigUtilTest {
         }
     }
 
+    @Test
+    fun resolveFrameRates_expectedCaptureFrameRateUnspecified_videoSpecAuto() {
+        val videoSpec = VideoSpec.builder().build()
+        val expectedCaptureFrameRateRange = FRAME_RATE_RANGE_UNSPECIFIED
+
+        val result = VideoConfigUtil.resolveFrameRates(videoSpec, expectedCaptureFrameRateRange)
+
+        assertThat(result.captureRate).isEqualTo(VIDEO_FRAME_RATE_FIXED_DEFAULT)
+        assertThat(result.encodeRate).isEqualTo(VIDEO_FRAME_RATE_FIXED_DEFAULT)
+    }
+
+    @Test
+    fun resolveFrameRates_expectedCaptureFrameRateSpecified_videoSpecAuto() {
+        val videoSpec = VideoSpec.builder().build()
+        val expectedCaptureFrameRateRange = Range(24, 60)
+
+        val result = VideoConfigUtil.resolveFrameRates(videoSpec, expectedCaptureFrameRateRange)
+
+        assertThat(result.captureRate).isEqualTo(60)
+        assertThat(result.encodeRate).isEqualTo(60)
+    }
+
+    @Test
+    fun resolveFrameRates_expectedCaptureFrameRateUnspecified_videoSpecSpecified() {
+        val videoSpec = VideoSpec.builder().setFrameRate(Range(30, 30)).build()
+        val expectedCaptureFrameRateRange = FRAME_RATE_RANGE_UNSPECIFIED
+
+        val result = VideoConfigUtil.resolveFrameRates(videoSpec, expectedCaptureFrameRateRange)
+
+        assertThat(result.captureRate).isEqualTo(VIDEO_FRAME_RATE_FIXED_DEFAULT)
+        assertThat(result.encodeRate).isEqualTo(30)
+    }
+
+    @Test
+    fun resolveFrameRates_expectedCaptureFrameRateSpecified_videoSpecSpecified() {
+        val videoSpec = VideoSpec.builder().setFrameRate(Range(30, 30)).build()
+        val expectedCaptureFrameRateRange = Range(24, 60)
+
+        val result = VideoConfigUtil.resolveFrameRates(videoSpec, expectedCaptureFrameRateRange)
+
+        assertThat(result.captureRate).isEqualTo(60)
+        assertThat(result.encodeRate).isEqualTo(30)
+    }
+
     companion object {
         fun createFakeEncoderProfiles(videoProfileProxies: List<VideoProfileProxy>) =
             VideoValidatedEncoderProfilesProxy.create(
@@ -147,19 +196,14 @@ class VideoConfigUtilTest {
         fun createMediaSpec(outputFormat: Int = MediaSpec.OUTPUT_FORMAT_AUTO) =
             MediaSpec.builder().apply { setOutputFormat(outputFormat) }.build()
 
-        private const val DEFAULT_VIDEO_WIDTH = 1920
-        private const val DEFAULT_VIDEO_HEIGHT = 1080
+        private val DEFAULT_VIDEO_RESOLUTION = Size(1920, 1080)
 
         val VIDEO_PROFILE_DEFAULT =
-            EncoderProfilesUtil.createFakeVideoProfileProxy(
-                DEFAULT_VIDEO_WIDTH,
-                DEFAULT_VIDEO_HEIGHT
-            )
+            EncoderProfilesUtil.createFakeVideoProfileProxy(DEFAULT_VIDEO_RESOLUTION)
 
         val VIDEO_PROFILE_HEVC_HLG10 =
             EncoderProfilesUtil.createFakeVideoProfileProxy(
-                DEFAULT_VIDEO_WIDTH,
-                DEFAULT_VIDEO_HEIGHT,
+                DEFAULT_VIDEO_RESOLUTION,
                 videoCodec = MediaRecorder.VideoEncoder.HEVC,
                 videoMediaType = MediaFormat.MIMETYPE_VIDEO_HEVC,
                 videoHdrFormat = EncoderProfiles.VideoProfile.HDR_HLG,
@@ -168,8 +212,7 @@ class VideoConfigUtilTest {
 
         val VIDEO_PROFILE_HEVC_HDR10 =
             EncoderProfilesUtil.createFakeVideoProfileProxy(
-                DEFAULT_VIDEO_WIDTH,
-                DEFAULT_VIDEO_HEIGHT,
+                DEFAULT_VIDEO_RESOLUTION,
                 videoCodec = MediaRecorder.VideoEncoder.HEVC,
                 videoMediaType = MediaFormat.MIMETYPE_VIDEO_HEVC,
                 videoHdrFormat = EncoderProfiles.VideoProfile.HDR_HDR10,
@@ -178,8 +221,7 @@ class VideoConfigUtilTest {
 
         val VIDEO_PROFILE_HEVC_HDR10_PLUS =
             EncoderProfilesUtil.createFakeVideoProfileProxy(
-                DEFAULT_VIDEO_WIDTH,
-                DEFAULT_VIDEO_HEIGHT,
+                DEFAULT_VIDEO_RESOLUTION,
                 videoCodec = MediaRecorder.VideoEncoder.HEVC,
                 videoMediaType = MediaFormat.MIMETYPE_VIDEO_HEVC,
                 videoHdrFormat = EncoderProfiles.VideoProfile.HDR_HDR10PLUS,
@@ -188,8 +230,7 @@ class VideoConfigUtilTest {
 
         val VIDEO_PROFILE_DOLBY_VISION_10_BIT =
             EncoderProfilesUtil.createFakeVideoProfileProxy(
-                DEFAULT_VIDEO_WIDTH,
-                DEFAULT_VIDEO_HEIGHT,
+                DEFAULT_VIDEO_RESOLUTION,
                 videoCodec = MediaRecorder.VideoEncoder.DOLBY_VISION,
                 videoMediaType = MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION,
                 videoHdrFormat = EncoderProfiles.VideoProfile.HDR_DOLBY_VISION,
@@ -198,8 +239,7 @@ class VideoConfigUtilTest {
 
         val VIDEO_PROFILE_DOLBY_VISION_8_BIT =
             EncoderProfilesUtil.createFakeVideoProfileProxy(
-                DEFAULT_VIDEO_WIDTH,
-                DEFAULT_VIDEO_HEIGHT,
+                DEFAULT_VIDEO_RESOLUTION,
                 videoCodec = MediaRecorder.VideoEncoder.DOLBY_VISION,
                 videoMediaType = MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION,
                 videoHdrFormat = EncoderProfiles.VideoProfile.HDR_DOLBY_VISION,
@@ -208,8 +248,7 @@ class VideoConfigUtilTest {
 
         val VIDEO_PROFILE_VP9_HLG10 =
             EncoderProfilesUtil.createFakeVideoProfileProxy(
-                DEFAULT_VIDEO_WIDTH,
-                DEFAULT_VIDEO_HEIGHT,
+                DEFAULT_VIDEO_RESOLUTION,
                 videoCodec = MediaRecorder.VideoEncoder.VP9,
                 videoMediaType = MediaFormat.MIMETYPE_VIDEO_VP9,
                 videoHdrFormat = EncoderProfiles.VideoProfile.HDR_HLG,

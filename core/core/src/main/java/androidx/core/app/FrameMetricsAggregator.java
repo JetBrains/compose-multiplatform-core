@@ -27,10 +27,11 @@ import android.util.SparseIntArray;
 import android.view.Window;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -237,8 +238,7 @@ public class FrameMetricsAggregator {
      * the {@code [TOTAL_INDEX]} item.
      * @see #getMetrics()
      */
-    @Nullable
-    public SparseIntArray[] remove(@NonNull Activity activity) {
+    public SparseIntArray @Nullable [] remove(@NonNull Activity activity) {
         return mInstance.remove(activity);
     }
 
@@ -254,8 +254,7 @@ public class FrameMetricsAggregator {
      * @see #remove(Activity)
      * @see #getMetrics()
      */
-    @Nullable
-    public SparseIntArray[] stop() {
+    public SparseIntArray @Nullable [] stop() {
         return mInstance.stop();
     }
 
@@ -267,8 +266,7 @@ public class FrameMetricsAggregator {
      * the {@code [TOTAL_INDEX]} item.
      * @see #getMetrics()
      */
-    @Nullable
-    public SparseIntArray[] reset() {
+    public SparseIntArray @Nullable [] reset() {
         return mInstance.reset();
     }
 
@@ -295,8 +293,7 @@ public class FrameMetricsAggregator {
      * SparseIntArray object, e.g., data for {@code TOTAL_DURATION} is stored in
      * the {@code [TOTAL_INDEX]} item.
      */
-    @Nullable
-    public SparseIntArray[] getMetrics() {
+    public SparseIntArray @Nullable [] getMetrics() {
         return mInstance.getMetrics();
     }
 

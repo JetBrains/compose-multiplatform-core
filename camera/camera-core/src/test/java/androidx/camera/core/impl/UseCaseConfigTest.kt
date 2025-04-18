@@ -38,6 +38,17 @@ class UseCaseConfigTest {
     }
 
     @Test
+    fun canGetTargetHighSpeedFrameRate() {
+        val useCaseBuilder = FakeUseCaseConfig.Builder()
+        val range = Range(120, 120)
+        useCaseBuilder.mutableConfig.insertOption(
+            UseCaseConfig.OPTION_TARGET_HIGH_SPEED_FRAME_RATE,
+            range
+        )
+        Truth.assertThat(useCaseBuilder.useCaseConfig.targetHighSpeedFrameRate).isEqualTo(range)
+    }
+
+    @Test
     fun canGetIsZslDisabled() {
         val useCaseBuilder = FakeUseCaseConfig.Builder()
         useCaseBuilder.mutableConfig.insertOption(UseCaseConfig.OPTION_ZSL_DISABLED, true)

@@ -23,10 +23,11 @@ import android.os.Build;
 import android.util.Log;
 import android.widget.CompoundButton;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.graphics.drawable.DrawableCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Field;
 
@@ -68,8 +69,7 @@ public final class CompoundButtonCompat {
      *
      * @see #setButtonTintList(CompoundButton, ColorStateList)
      */
-    @Nullable
-    public static ColorStateList getButtonTintList(@NonNull CompoundButton button) {
+    public static @Nullable ColorStateList getButtonTintList(@NonNull CompoundButton button) {
         if (Build.VERSION.SDK_INT >= 21) {
             return Api21Impl.getButtonTintList(button);
         }
@@ -92,7 +92,7 @@ public final class CompoundButtonCompat {
      * @see DrawableCompat#setTintMode(Drawable, PorterDuff.Mode)
      */
     public static void setButtonTintMode(@NonNull CompoundButton button,
-            @Nullable PorterDuff.Mode tintMode) {
+            PorterDuff.@Nullable Mode tintMode) {
         if (Build.VERSION.SDK_INT >= 21) {
             Api21Impl.setButtonTintMode(button, tintMode);
         } else if (button instanceof TintableCompoundButton) {
@@ -105,8 +105,7 @@ public final class CompoundButtonCompat {
      * @attr name android:buttonTintMode
      * @see #setButtonTintMode(CompoundButton, PorterDuff.Mode)
      */
-    @Nullable
-    public static PorterDuff.Mode getButtonTintMode(@NonNull CompoundButton button) {
+    public static PorterDuff.@Nullable Mode getButtonTintMode(@NonNull CompoundButton button) {
         if (Build.VERSION.SDK_INT >= 21) {
             return Api21Impl.getButtonTintMode(button);
         }
@@ -121,8 +120,7 @@ public final class CompoundButtonCompat {
      *
      * @see CompoundButton#setButtonDrawable(Drawable)
      */
-    @Nullable
-    public static Drawable getButtonDrawable(@NonNull CompoundButton button) {
+    public static @Nullable Drawable getButtonDrawable(@NonNull CompoundButton button) {
         if (Build.VERSION.SDK_INT >= 23) {
             return Api23Impl.getButtonDrawable(button);
         }

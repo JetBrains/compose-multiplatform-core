@@ -506,7 +506,7 @@ class TransitionClockTest {
     @Test
     fun childTransition() {
         val search = AnimationSearch.TransitionSearch {}
-        rule.addAnimations(search) { childTransitions() }
+        rule.addAnimations(search) { ChildTransitions() }
         val clock = TransitionClock(search.animations.first().parse()!!)
 
         rule.runOnIdle {
@@ -531,7 +531,7 @@ class TransitionClockTest {
 
     @OptIn(ExperimentalTransitionApi::class)
     @Composable
-    fun childTransitions() {
+    fun ChildTransitions() {
         val state by remember { mutableStateOf(EnumState.One) }
         val parentTransition = updateTransition(state, label = "parent")
         parentTransition.animateDp(

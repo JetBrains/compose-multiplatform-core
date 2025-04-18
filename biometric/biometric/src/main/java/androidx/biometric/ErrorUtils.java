@@ -19,8 +19,8 @@ package androidx.biometric;
 import android.content.Context;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utilities related to biometric authentication errors.
@@ -30,12 +30,14 @@ class ErrorUtils {
     private ErrorUtils() {}
 
     /**
-     * Checks if the given error code matches any known (i.e. publicly defined) error.
+     * Checks if the given error code matches any known (i.e. publicly defined) error and matches
+     * unknown error code to known error code.
      *
      * @param errorCode An integer ID associated with the error.
-     * @return Whether the error code matches a known error.
+     * @return A matched known error.
      */
-    static boolean isKnownError(int errorCode) {
+    @BiometricPrompt.AuthenticationError
+    static int toKnownErrorCode(@BiometricPrompt.AuthenticationError int errorCode) {
         switch (errorCode) {
             case BiometricPrompt.ERROR_HW_UNAVAILABLE:
             case BiometricPrompt.ERROR_UNABLE_TO_PROCESS:
@@ -51,9 +53,14 @@ class ErrorUtils {
             case BiometricPrompt.ERROR_NEGATIVE_BUTTON:
             case BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL:
             case BiometricPrompt.ERROR_SECURITY_UPDATE_REQUIRED:
-                return true;
+            case BiometricPrompt.ERROR_IDENTITY_CHECK_NOT_ACTIVE:
+            case BiometricPrompt.ERROR_CONTENT_VIEW_MORE_OPTIONS_BUTTON:
+                return errorCode;
+            case BiometricPrompt.ERROR_NOT_ENABLED_FOR_APPS:
+            case BiometricPrompt.ERROR_SENSOR_PRIVACY_ENABLED:
+                return BiometricPrompt.ERROR_HW_UNAVAILABLE;
             default:
-                return false;
+                return BiometricPrompt.ERROR_VENDOR;
         }
     }
 
@@ -73,8 +80,7 @@ class ErrorUtils {
      * Only needs to provide a subset of the fingerprint error strings since the rest are translated
      * in FingerprintManager
      */
-    @NonNull
-    static String getFingerprintErrorString(@Nullable Context context, int errorCode) {
+    static @NonNull String getFingerprintErrorString(@Nullable Context context, int errorCode) {
         if (context == null) {
             return "";
         }

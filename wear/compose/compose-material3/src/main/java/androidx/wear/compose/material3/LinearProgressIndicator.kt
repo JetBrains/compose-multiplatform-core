@@ -32,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -72,7 +71,7 @@ import kotlinx.coroutines.flow.collectLatest
  *   visually disabled.
  */
 @Composable
-fun LinearProgressIndicator(
+public fun LinearProgressIndicator(
     progress: () -> Float,
     modifier: Modifier = Modifier,
     colors: ProgressIndicatorColors = ProgressIndicatorDefaults.colors(),
@@ -119,7 +118,7 @@ fun LinearProgressIndicator(
  *   visually disabled.
  */
 @Composable
-fun LinearProgressIndicatorContent(
+private fun LinearProgressIndicatorContent(
     progress: () -> Float,
     modifier: Modifier = Modifier,
     colors: ProgressIndicatorColors = ProgressIndicatorDefaults.colors(),
@@ -184,14 +183,14 @@ fun LinearProgressIndicatorContent(
 }
 
 /** Contains defaults for Linear Progress Indicator. */
-object LinearProgressIndicatorDefaults {
+public object LinearProgressIndicatorDefaults {
 
     /**
      * Large stroke width for [LinearProgressIndicator].
      *
      * This is also the default stroke width for [LinearProgressIndicator].
      */
-    val StrokeWidthLarge = 12.dp
+    public val StrokeWidthLarge: Dp = 12.dp
 
     /**
      * Small stroke width for [LinearProgressIndicator].
@@ -199,7 +198,7 @@ object LinearProgressIndicatorDefaults {
      * This is the minimum stroke value allowed for [LinearProgressIndicator] to ensure that the dot
      * shown at the end of the range can be distinguished.
      */
-    val StrokeWidthSmall = 8.dp
+    public val StrokeWidthSmall: Dp = 8.dp
 
     /** Radius for the dot shown at the end of the [LinearProgressIndicator]. */
     internal val DotRadius = 2.dp
@@ -243,15 +242,8 @@ private fun DrawScope.drawLinearIndicatorDot(
     val scaledDotRadius = radius * scaleFraction
     // Apply the scale fraction alpha to the dot color.
     val alpha = scaleFraction.coerceAtMost(1f)
-    val brushWithAlpha =
-        if (brush is SolidColor && alpha < 1f) {
-            SolidColor(brush.value.copy(alpha = brush.value.alpha * alpha))
-        } else {
-            brush
-        }
-
     // Draw the dot with scaled down radius and alpha color.
-    drawCircle(brush = brushWithAlpha, radius = scaledDotRadius, center = center)
+    drawCircle(brush = brushWithAlpha(brush, alpha), radius = scaledDotRadius, center = center)
 }
 
 /** Progress animation spec for [LinearProgressIndicator] */

@@ -16,6 +16,7 @@
 
 package androidx.privacysandbox.ads.adservices.customaudience
 
+import android.adservices.common.AdServicesOutcomeReceiver
 import android.adservices.common.AdServicesPermissions
 import android.annotation.SuppressLint
 import android.os.Build
@@ -28,11 +29,14 @@ import androidx.core.os.asOutcomeReceiver
 import androidx.privacysandbox.ads.adservices.common.AdData
 import androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures
 import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 
-@OptIn(ExperimentalFeatures.Ext10OptIn::class)
+@OptIn(ExperimentalFeatures.Ext10OptIn::class, ExperimentalFeatures.Ext14OptIn::class)
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-@SuppressLint("NewApi", "ClassVerificationFailure")
+@SuppressLint("NewApi")
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 4)
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)
 open class CustomAudienceManagerImplCommon(
@@ -59,6 +63,19 @@ open class CustomAudienceManagerImplCommon(
             return Ext10Impl.fetchAndJoinCustomAudience(customAudienceManager, request)
         }
         throw UnsupportedOperationException("API is not available. Min version is API 31 ext 10")
+    }
+
+    @DoNotInline
+    @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
+    override suspend fun scheduleCustomAudienceUpdate(
+        request: ScheduleCustomAudienceUpdateRequest
+    ) {
+        if (
+            AdServicesInfo.adServicesVersion() >= 14 || AdServicesInfo.extServicesVersionS() >= 14
+        ) {
+            return Ext14Impl.scheduleCustomAudienceUpdate(customAudienceManager, request)
+        }
+        throw UnsupportedOperationException("API is not available. Min version is API 31 ext 14")
     }
 
     @DoNotInline
@@ -90,9 +107,15 @@ open class CustomAudienceManagerImplCommon(
             .build()
     }
 
+    @SuppressLint("WrongConstant")
     private fun convertCustomAudience(
         request: CustomAudience
     ): android.adservices.customaudience.CustomAudience {
+        if (
+            AdServicesInfo.adServicesVersion() >= 14 || AdServicesInfo.extServicesVersionS() >= 14
+        ) {
+            return Ext14Impl.convertCustomAudience(request)
+        }
         return android.adservices.customaudience.CustomAudience.Builder()
             .setActivationTime(request.activationTime)
             .setAds(convertAds(request.ads))
@@ -122,6 +145,75 @@ open class CustomAudienceManagerImplCommon(
             .setTrustedBiddingKeys(input.trustedBiddingKeys)
             .setTrustedBiddingUri(input.trustedBiddingUri)
             .build()
+    }
+
+    @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 14)
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 14)
+    private class Ext14Impl private constructor() {
+        companion object {
+            @DoNotInline
+            @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
+            suspend fun scheduleCustomAudienceUpdate(
+                customAudienceManager: android.adservices.customaudience.CustomAudienceManager,
+                scheduleCustomAudienceUpdateRequest: ScheduleCustomAudienceUpdateRequest
+            ) {
+                suspendCancellableCoroutine { continuation ->
+                    customAudienceManager.scheduleCustomAudienceUpdate(
+                        scheduleCustomAudienceUpdateRequest.convertToAdServices(),
+                        Runnable::run,
+                        object : AdServicesOutcomeReceiver<Any, Exception>, AtomicBoolean(false) {
+                            override fun onResult(result: Any) {
+                                if (compareAndSet(false, true)) {
+                                    continuation.resume(result)
+                                }
+                            }
+
+                            override fun onError(error: Exception) {
+                                if (compareAndSet(false, true)) {
+                                    continuation.resumeWithException(error)
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+
+            fun convertCustomAudience(
+                request: CustomAudience
+            ): android.adservices.customaudience.CustomAudience {
+                return android.adservices.customaudience.CustomAudience.Builder()
+                    .setActivationTime(request.activationTime)
+                    .setAds(convertAds(request.ads))
+                    .setBiddingLogicUri(request.biddingLogicUri)
+                    .setBuyer(request.buyer.convertToAdServices())
+                    .setDailyUpdateUri(request.dailyUpdateUri)
+                    .setExpirationTime(request.expirationTime)
+                    .setName(request.name)
+                    .setTrustedBiddingData(convertTrustedSignals(request.trustedBiddingSignals))
+                    .setUserBiddingSignals(request.userBiddingSignals?.convertToAdServices())
+                    .setAuctionServerRequestFlags(request.auctionServerRequestFlags)
+                    .setPriority(request.priority)
+                    .build()
+            }
+
+            private fun convertAds(input: List<AdData>): List<android.adservices.common.AdData> {
+                val result = mutableListOf<android.adservices.common.AdData>()
+                for (ad in input) {
+                    result.add(ad.convertToAdServices())
+                }
+                return result
+            }
+
+            private fun convertTrustedSignals(
+                input: TrustedBiddingData?
+            ): android.adservices.customaudience.TrustedBiddingData? {
+                if (input == null) return null
+                return android.adservices.customaudience.TrustedBiddingData.Builder()
+                    .setTrustedBiddingKeys(input.trustedBiddingKeys)
+                    .setTrustedBiddingUri(input.trustedBiddingUri)
+                    .build()
+            }
+        }
     }
 
     @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 10)

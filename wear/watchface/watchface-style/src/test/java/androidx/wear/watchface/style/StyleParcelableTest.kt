@@ -21,7 +21,7 @@ import android.graphics.Color
 import android.graphics.RectF
 import android.graphics.drawable.Icon
 import android.os.Parcel
-import androidx.annotation.RequiresApi
+import androidx.test.filters.SdkSuppress
 import androidx.wear.watchface.complications.ComplicationSlotBounds
 import androidx.wear.watchface.style.UserStyleSetting.BooleanUserStyleSetting
 import androidx.wear.watchface.style.UserStyleSetting.ColorUserStyleSetting
@@ -49,7 +49,7 @@ private const val NAME_RESOURCE_ID = 123456
 private const val SCREEN_READER_NAME_RESOURCE_ID = 567890
 
 @RunWith(StyleTestRunner::class)
-@RequiresApi(34)
+@SdkSuppress(minSdkVersion = 34)
 public class StyleParcelableTest {
     private val icon1 = Icon.createWithContentUri("icon1")
     private val icon2 = Icon.createWithContentUri("icon2")

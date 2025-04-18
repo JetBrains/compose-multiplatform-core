@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -54,19 +54,16 @@ android {
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
     }
-    sourceSets {
-        androidTest.assets.srcDirs += project.rootDir.absolutePath + "/../../golden/emoji2/emoji2-emojipicker"
-    }
-
     namespace = "androidx.emoji2.emojipicker"
     testOptions.unitTests.includeAndroidResources = true
 }
 
 androidx {
     name = "Emoji2 Emoji Picker"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "This library provides the latest emoji support and emoji picker UI to input " +
             "emoji in current and older devices"
     legacyDisableKotlinStrictApiMode = true
+    addGoldenImageAssets()
 }

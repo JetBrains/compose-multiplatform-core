@@ -52,6 +52,7 @@ import androidx.compose.ui.text.substring
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
 
+@Suppress("DEPRECATION")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BasicSecureTextFieldDemos() {

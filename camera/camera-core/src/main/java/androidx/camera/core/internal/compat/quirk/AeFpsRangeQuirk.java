@@ -18,9 +18,10 @@ package androidx.camera.core.internal.compat.quirk;
 
 import android.util.Range;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.Quirk;
 import androidx.camera.core.impl.StreamSpec;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A Quirk interface denotes devices have specific issue and can be avoided by specific AE FPS
@@ -31,8 +32,7 @@ public interface AeFpsRangeQuirk extends Quirk {
     /**
      * Returns the target AE FPS range to avoid the issue.
      */
-    @NonNull
-    default Range<Integer> getTargetAeFpsRange() {
+    default @NonNull Range<Integer> getTargetAeFpsRange() {
         return StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
     }
 }

@@ -21,15 +21,16 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
     api(project(":camera:viewfinder:viewfinder-core"))
     implementation("androidx.annotation:annotation-experimental:1.4.1")
@@ -64,24 +65,25 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
+    androidTestImplementation(project(":internal-testutils-truth"))
+    androidTestImplementation(project(":test:screenshot:screenshot"))
+    androidTestImplementation("androidx.core:core-ktx:1.15.0")
 }
 
 android {
-    lintOptions {
-        enable 'CameraXQuirksClassDetector'
-    }
-
+    compileSdk = 35
     testOptions.unitTests.includeAndroidResources = true
-    namespace = "androidx.camera.viewfinder"
-    lintOptions {
-        enable 'CameraXQuirksClassDetector'
+    namespace = "androidx.camera.viewfinder.view"
+    lint {
+        enable.add("CameraXQuirksClassDetector")
     }
 }
 
 androidx {
     name = "Camera Viewfinder View"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "Standalone View-based Viewfinder for Camera"
     legacyDisableKotlinStrictApiMode = true
+    addGoldenImageAssets()
 }

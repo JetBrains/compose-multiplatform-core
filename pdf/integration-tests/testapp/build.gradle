@@ -11,7 +11,6 @@ android {
         applicationId = "androidx.pdf.testapp"
         minSdk = 31
         compileSdk = 35
-        targetSdk = 31
     }
 
     sourceSets {
@@ -20,6 +19,11 @@ android {
 
     viewBinding {
         enabled = true
+    }
+
+    testOptions {
+        // speed up execution and improve flakiness of instrumented tests.
+        animationsDisabled = true
     }
 }
 
@@ -40,6 +44,8 @@ dependencies {
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(project(":pdf:pdf-viewer-fragment"))
     androidTestImplementation(libs.espressoIdlingResource)
+    androidTestImplementation(libs.testUiautomator)
+    androidTestImplementation('androidx.test.espresso:espresso-intents:3.6.1')
 
     debugImplementation("androidx.fragment:fragment-testing-manifest:1.8.1")
     debugImplementation("androidx.fragment:fragment-testing:1.7.1")

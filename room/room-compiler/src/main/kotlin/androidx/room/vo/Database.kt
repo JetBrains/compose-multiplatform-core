@@ -35,7 +35,7 @@ data class Database(
     val type: XType,
     val entities: List<Entity>,
     val views: List<DatabaseView>,
-    val daoMethods: List<DaoMethod>,
+    val daoFunctions: List<DaoFunction>,
     val version: Int,
     val exportSchema: Boolean,
     val enableForeignKeys: Boolean,

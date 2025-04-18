@@ -26,6 +26,8 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlin.jvm.JvmMultifileClass
+import kotlin.jvm.JvmName
 import kotlin.reflect.KClass
 
 /**

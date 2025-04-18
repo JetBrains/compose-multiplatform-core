@@ -34,6 +34,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Dp
+import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.materialcore.screenHeightDp
 import androidx.wear.compose.materialcore.screenWidthDp
 import com.google.common.truth.Truth.assertThat
@@ -44,7 +45,7 @@ import org.junit.Test
 class PlaceholderTest {
     @get:Rule val rule = createComposeRule()
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @OptIn(ExperimentalWearMaterialApi::class)
     @Test
     fun placeholder_initially_show_content_when_contentready_true() {
@@ -65,7 +66,7 @@ class PlaceholderTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @OptIn(ExperimentalWearMaterialApi::class)
     @Test
     fun placeholder_initially_show_placeholder_transitions_correctly() {
@@ -97,7 +98,7 @@ class PlaceholderTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @OptIn(ExperimentalWearMaterialApi::class)
     @Test
     fun placeholder_resets_content_after_show_content_when_contentready_false() {
@@ -133,13 +134,13 @@ class PlaceholderTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun default_placeholder_is_correct_color() {
         placeholder_is_correct_color(null)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun custom_placeholder_is_correct_color() {
         placeholder_is_correct_color(Color.Blue)
@@ -203,7 +204,7 @@ class PlaceholderTest {
             .assertContainsColor(expectedBackgroundColor)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @OptIn(ExperimentalWearMaterialApi::class)
     @Test
     fun placeholder_shimmer_visible_during_showplaceholder_only() {
@@ -274,7 +275,7 @@ class PlaceholderTest {
             .assertContainsColor(expectedBackgroundColor, 80f)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @OptIn(ExperimentalWearMaterialApi::class)
     @Test
     fun wipeoff_takes_background_offset_into_account() {
@@ -376,7 +377,7 @@ class PlaceholderTest {
         LaunchedEffect(placeholderState) { placeholderState.startPlaceholderAnimation() }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @OptIn(ExperimentalWearMaterialApi::class)
     @Test
     fun placeholder_lambda_update_works() {
@@ -407,7 +408,7 @@ class PlaceholderTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @OptIn(ExperimentalWearMaterialApi::class)
     @Test
     fun placeholder_background_is_correct_color() {

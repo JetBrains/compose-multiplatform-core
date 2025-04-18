@@ -88,7 +88,7 @@ import androidx.compose.ui.unit.dp
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun ToggleButton(
+public fun ToggleButton(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier,
@@ -168,7 +168,7 @@ fun ToggleButton(
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun ToggleButton(
+public fun ToggleButton(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     label: @Composable RowScope.() -> Unit,
@@ -295,7 +295,7 @@ fun ToggleButton(
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun SplitToggleButton(
+public fun SplitToggleButton(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     label: @Composable RowScope.() -> Unit,

@@ -59,19 +59,24 @@ object Shell {
      * As this function is also used for package names (which never have a leading `/`), we simply
      * check for either.
      */
-    private fun psLineContainsProcess(psOutputLine: String, processName: String): Boolean {
-        return psOutputLine.endsWith(" $processName") || psOutputLine.endsWith("/$processName")
+    internal fun psLineContainsProcess(psOutputLine: String, processName: String): Boolean {
+        val processLabel = psOutputLine.substringAfterLast(" ")
+        return processLabel == processName || // exact match
+            processLabel.startsWith("$processName:") || // app subprocess
+            processLabel.endsWith("/$processName") // executable with relative path
     }
 
     /**
      * Equivalent of [psLineContainsProcess], but to be used with full process name string (e.g.
      * from pgrep)
      */
-    private fun fullProcessNameMatchesProcess(
+    internal fun fullProcessNameMatchesProcess(
         fullProcessName: String,
         processName: String
     ): Boolean {
-        return fullProcessName == processName || fullProcessName.endsWith("/$processName")
+        return fullProcessName == processName || // exact match
+            fullProcessName.startsWith("$processName:") || // app subprocess
+            fullProcessName.endsWith("/$processName") // executable with relative path
     }
 
     fun connectUiAutomation() {
@@ -495,7 +500,14 @@ object Shell {
     fun pgrepLF(pattern: String): List<ProcessPid> {
         // Note: we use the unsafe variant for performance, since this is a
         // common operation, and pgrep is stable after API 23 see [ShellBehaviorTest#pgrep]
-        return ShellImpl.executeCommandUnsafe("pgrep -l -f $pattern")
+        val apiSpecificArgs =
+            setOfNotNull(
+                    // aosp/3507001 -> needed to print full command line (so full package name)
+                    if (Build.VERSION.SDK_INT >= 36) "-a" else null
+                )
+                .joinToString(" ")
+
+        return ShellImpl.executeCommandUnsafe("pgrep -l -f $apiSpecificArgs $pattern")
             .split(Regex("\r?\n"))
             .filter { it.isNotEmpty() }
             .map {
@@ -568,25 +580,32 @@ object Shell {
         processName: String,
         waitPollPeriodMs: Long = DEFAULT_KILL_POLL_PERIOD_MS,
         waitPollMaxCount: Int = DEFAULT_KILL_POLL_MAX_COUNT,
-        processKiller: (List<ProcessPid>) -> Unit = ::killTerm
+        onFailure: (String) -> Unit = { errorMessage -> throw IllegalStateException(errorMessage) },
+        processKiller: (List<ProcessPid>) -> Unit = ::killTerm,
     ) {
         val processes =
             getPidsForProcess(processName).map { pid ->
                 ProcessPid(pid = pid, processName = processName)
             }
-        killProcessesAndWait(
-            processes,
-            waitPollPeriodMs = waitPollPeriodMs,
-            waitPollMaxCount = waitPollMaxCount,
-            processKiller
-        )
+        if (!processes.isEmpty()) {
+            killProcessesAndWait(
+                processes,
+                waitPollPeriodMs = waitPollPeriodMs,
+                waitPollMaxCount = waitPollMaxCount,
+                onFailure,
+                processKiller
+            )
+        } else {
+            Log.d(BenchmarkState.TAG, "No processes for name $processName, skipping kill")
+        }
     }
 
     fun killProcessesAndWait(
         processes: List<ProcessPid>,
         waitPollPeriodMs: Long = DEFAULT_KILL_POLL_PERIOD_MS,
         waitPollMaxCount: Int = DEFAULT_KILL_POLL_MAX_COUNT,
-        processKiller: (List<ProcessPid>) -> Unit = { killTerm(it) }
+        onFailure: (String) -> Unit = { errorMessage -> throw IllegalStateException(errorMessage) },
+        processKiller: (List<ProcessPid>) -> Unit = ::killTerm,
     ) {
         var runningProcesses = processes.toList()
         processKiller(runningProcesses)
@@ -600,7 +619,7 @@ object Shell {
             }
             Log.d(BenchmarkState.TAG, "Waiting $waitPollPeriodMs ms for $runningProcesses to die")
         }
-        throw IllegalStateException("Failed to stop $runningProcesses")
+        onFailure.invoke("Failed to stop $runningProcesses")
     }
 
     fun pathExists(absoluteFilePath: String) =

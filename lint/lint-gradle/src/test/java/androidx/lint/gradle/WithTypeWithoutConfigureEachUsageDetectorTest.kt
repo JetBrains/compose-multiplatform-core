@@ -71,4 +71,32 @@ class WithTypeWithoutConfigureEachUsageDetectorTest :
             )
         check(input).expectClean()
     }
+
+    @Test
+    fun `Test withType extension function usage`() {
+        val input =
+            kotlin(
+                """
+                import org.gradle.api.Project
+                import org.gradle.api.Task
+                import org.gradle.kotlin.dsl.withType
+
+                fun configure(project: Project) {
+                    project.tasks.withType<Task> {}
+                    project.tasks.withType<Task>().configureEach {}
+                }
+                """
+            )
+
+        val expected =
+            """
+            src/test.kt:7: Error: Avoid passing a closure to withType, use withType().configureEach instead [WithTypeWithoutConfigureEach]
+                                project.tasks.withType<Task> {}
+                                              ~~~~~~~~
+            1 errors, 0 warnings
+            """
+                .trimIndent()
+
+        check(input).expect(expected)
+    }
 }

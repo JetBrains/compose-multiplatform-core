@@ -16,17 +16,22 @@
 
 package androidx.camera.camera2.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.impl.SessionConfig;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * No-Op implementation for {@link ZslControl}.
  */
 public class ZslControlNoOpImpl implements ZslControl {
     @Override
-    public void addZslConfig(@NonNull SessionConfig.Builder sessionConfigBuilder) {
+    public void addZslConfig(SessionConfig.@NonNull Builder sessionConfigBuilder) {
+    }
+
+    @Override
+    public void clearZslConfig() {
     }
 
     @Override
@@ -47,9 +52,8 @@ public class ZslControlNoOpImpl implements ZslControl {
         return false;
     }
 
-    @Nullable
     @Override
-    public ImageProxy dequeueImageFromBuffer() {
+    public @Nullable ImageProxy dequeueImageFromBuffer() {
         return null;
     }
 

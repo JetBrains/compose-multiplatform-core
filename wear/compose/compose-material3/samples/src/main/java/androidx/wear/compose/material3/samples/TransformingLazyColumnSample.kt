@@ -23,14 +23,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement.spacedBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,26 +42,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.LocalReduceMotion
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.AppScaffold
+import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.EdgeButtonSize
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
-import androidx.wear.compose.material3.ScreenScaffoldDefaults
+import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.scrollTransform
-import androidx.wear.compose.material3.lazy.targetMorphingHeight
+import androidx.wear.compose.material3.lazy.transformedHeight
 import kotlin.random.Random
 import kotlinx.coroutines.launch
 
 @Preview
+@Sampled
 @Composable
 fun TransformingLazyColumnScrollingSample() {
     val state = rememberTransformingLazyColumnState()
@@ -76,6 +80,14 @@ fun TransformingLazyColumnScrollingSample() {
                 elements.subList(index, elements.count())
     }
 
+    fun rainbowColor(progress: Float): Color {
+        val hue = progress * 360f
+        val saturation = 1f
+        val value = 1f
+
+        return Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
+    }
+
     AppScaffold {
         ScreenScaffold(
             state,
@@ -89,18 +101,11 @@ fun TransformingLazyColumnScrollingSample() {
                     Text("Add item")
                 }
             }
-        ) {
+        ) { contentPadding ->
             val random = remember { Random }
             TransformingLazyColumn(
                 state = state,
-                contentPadding =
-                    ScreenScaffoldDefaults.contentPaddingWithEdgeButton(
-                        EdgeButtonSize.Small,
-                        start = 10.dp,
-                        end = 10.dp,
-                        top = 20.dp,
-                        extraBottom = 20.dp
-                    ),
+                contentPadding = contentPadding,
                 modifier = Modifier.background(MaterialTheme.colorScheme.background)
             ) {
                 items(elements, key = { it }) {
@@ -135,24 +140,25 @@ fun TransformingLazyColumnScrollingSample() {
                             Box(
                                 Modifier.size(25.dp)
                                     .drawWithContent {
-                                        drawContent()
-
-                                        val colorProgress =
-                                            scrollProgress?.let {
-                                                (it.topOffsetFraction + it.bottomOffsetFraction) /
-                                                    2f
-                                            } ?: 0f
-                                        val r = size.height / 2f
-                                        drawCircle(
-                                            rainbowColor(colorProgress),
-                                            radius = r,
-                                            center = Offset(size.width - r, r)
-                                        )
-                                        drawCircle(
-                                            rainbowColor(random.nextFloat()),
-                                            radius = r / 8,
-                                            center = Offset(size.width - r, r)
-                                        )
+                                        with(scrollProgress) {
+                                            if (isUnspecified) {
+                                                return@with
+                                            }
+                                            drawContent()
+                                            val colorProgress =
+                                                (topOffsetFraction + bottomOffsetFraction) / 2f
+                                            val r = size.height / 2f
+                                            drawCircle(
+                                                rainbowColor(colorProgress),
+                                                radius = r,
+                                                center = Offset(size.width - r, r)
+                                            )
+                                            drawCircle(
+                                                rainbowColor(random.nextFloat()),
+                                                radius = r / 8,
+                                                center = Offset(size.width - r, r)
+                                            )
+                                        }
                                     }
                                     .clickable {
                                         expandedItemKey =
@@ -185,22 +191,16 @@ fun TransformingLazyColumnScalingMorphingEffectSample() {
     AppScaffold {
         ScreenScaffold(
             state,
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 20.dp),
             edgeButton = {
                 EdgeButton(onClick = { coroutineScope.launch { state.scrollToItem(1) } }) {
                     Text("To top")
                 }
             }
-        ) {
+        ) { contentPadding ->
             TransformingLazyColumn(
                 state = state,
-                contentPadding =
-                    ScreenScaffoldDefaults.contentPaddingWithEdgeButton(
-                        EdgeButtonSize.Small,
-                        start = 10.dp,
-                        end = 10.dp,
-                        top = 20.dp,
-                        extraBottom = 20.dp
-                    ),
+                contentPadding = contentPadding,
                 modifier = Modifier.background(MaterialTheme.colorScheme.background)
             ) {
                 item(contentType = "header") {
@@ -232,82 +232,43 @@ fun TransformingLazyColumnScalingMorphingEffectSample() {
 @Sampled
 @Preview
 @Composable
-fun TransformingLazyColumnTargetMorphingHeightSample() {
-    data class MenuItem(val title: String, val price: Float)
-
-    val drinks =
-        listOf(
-            MenuItem("Cappuccino", 2.5f),
-            MenuItem("Late", 3f),
-            MenuItem("Flat White", 3.2f),
-            MenuItem("Americano", 1.5f),
-            MenuItem("Black tea", 2f),
-            MenuItem("London fog", 2.6f),
-        )
+fun TransformingLazyColumnReducedMotionSample() {
+    var enableReduceMotion by remember { mutableStateOf(true) }
     val state = rememberTransformingLazyColumnState()
-    val coroutineScope = rememberCoroutineScope()
     AppScaffold {
         ScreenScaffold(
             state,
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 20.dp),
+            modifier = Modifier.background(MaterialTheme.colorScheme.background),
             edgeButton = {
                 EdgeButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            // Scroll to the first non-header item.
-                            state.scrollToItem(1)
-                        }
-                    }
+                    onClick = { enableReduceMotion = !enableReduceMotion },
+                    buttonSize = EdgeButtonSize.Large
                 ) {
-                    Text("To top")
+                    Text("Toggle reduce motion")
                 }
             }
-        ) {
-            TransformingLazyColumn(
-                state = state,
-                contentPadding =
-                    ScreenScaffoldDefaults.contentPaddingWithEdgeButton(
-                        EdgeButtonSize.Medium,
-                        start = 10.dp,
-                        end = 10.dp
-                    ),
-                modifier = Modifier.background(MaterialTheme.colorScheme.background),
-            ) {
-                item(contentType = "header") {
-                    // No modifier is applied - no Material 3 Motion transformations.
-                    ListHeader { Text("Drinks", style = MaterialTheme.typography.labelLarge) }
-                }
-                items(drinks, key = { it.title }) { notification ->
-                    Column(
-                        modifier =
-                            Modifier.fillMaxWidth()
-                                // Apply Material 3 Motion effect.
-                                .scrollTransform(
-                                    this@items,
-                                    backgroundColor = Color.DarkGray,
-                                    shape = RoundedCornerShape(20.dp),
-                                )
-                                .padding(horizontal = 10.dp)
-                    ) {
-                        Text(
-                            notification.title,
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.labelLarge,
-                            // Morphing is focusing on the title.
-                            modifier = Modifier.targetMorphingHeight(this@items)
-                        )
-                        // Price is revealed after the morph.
-                        Text("$${notification.price}")
+        ) { contentPadding ->
+            CompositionLocalProvider(LocalReduceMotion provides enableReduceMotion) {
+                val transformationSpec = rememberTransformationSpec()
+                TransformingLazyColumn(
+                    state = state,
+                    contentPadding = contentPadding,
+                ) {
+                    items(count = 5) {
+                        Button(
+                            onClick = {},
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .transformedHeight(this, transformationSpec)
+                                    .animateItem(),
+                            transformation = SurfaceTransformation(transformationSpec)
+                        ) {
+                            Text("Item $it")
+                        }
                     }
                 }
             }
         }
     }
-}
-
-private fun rainbowColor(progress: Float): Color {
-    val hue = progress * 360f
-    val saturation = 1f
-    val value = 1f
-
-    return Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
 }

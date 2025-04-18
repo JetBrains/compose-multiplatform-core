@@ -27,7 +27,6 @@ import androidx.compose.ui.graphics.Fields
 import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.ReusableGraphicsLayerScope
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
@@ -42,6 +41,7 @@ import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.internal.requirePrecondition
 import androidx.compose.ui.layout.GraphicLayerInfo
 import androidx.compose.ui.node.OwnedLayer
+import androidx.compose.ui.ui.FrameRateCategory
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -78,14 +78,11 @@ internal class GraphicsLayerOwnerLayer(
     private var mutatedFields: Int = 0
     private var transformOrigin: TransformOrigin = TransformOrigin.Center
     private var outline: Outline? = null
-    /**
-     * Optional paint used when the RenderNode is rendered on a software backed canvas and is
-     * somewhat transparent (i.e. alpha less than 1.0f)
-     */
-    private var softwareLayerPaint: Paint? = null
     private var isMatrixDirty = false
     private var isInverseMatrixDirty = false
     private var isIdentity = true
+    override var frameRate: Float = 0f
+    override var isFrameRateFromParent = false
 
     override fun updateLayerProperties(scope: ReusableGraphicsLayerScope) {
         val maybeChangedFields = scope.mutatedFields or mutatedFields
@@ -155,6 +152,12 @@ internal class GraphicsLayerOwnerLayer(
         if (maybeChangedFields and Fields.RenderEffect != 0) {
             graphicsLayer.renderEffect = scope.renderEffect
         }
+        if (maybeChangedFields and Fields.ColorFilter != 0) {
+            graphicsLayer.colorFilter = scope.colorFilter
+        }
+        if (maybeChangedFields and Fields.BlendMode != 0) {
+            graphicsLayer.blendMode = scope.blendMode
+        }
         if (maybeChangedFields and Fields.CompositingStrategy != 0) {
             graphicsLayer.compositingStrategy =
                 when (scope.compositingStrategy) {
@@ -180,6 +183,9 @@ internal class GraphicsLayerOwnerLayer(
         mutatedFields = scope.mutatedFields
         if (maybeChangedFields != 0 || outlineChanged) {
             triggerRepaint()
+            if (ownerView.isArrEnabled) {
+                ownerView.requestedFrameRate = frameRate
+            }
         }
     }
 
@@ -219,12 +225,18 @@ internal class GraphicsLayerOwnerLayer(
     }
 
     override fun move(position: IntOffset) {
+        if (ownerView.isArrEnabled) {
+            ownerView.requestedFrameRate = FrameRateCategory.High.value
+        }
         graphicsLayer.topLeft = position
         triggerRepaint()
     }
 
     override fun resize(size: IntSize) {
         if (size != this.size) {
+            if (ownerView.isArrEnabled) {
+                ownerView.requestedFrameRate = FrameRateCategory.High.value
+            }
             this.size = size
             invalidate()
         }
@@ -243,6 +255,9 @@ internal class GraphicsLayerOwnerLayer(
     }
 
     override fun updateDisplayList() {
+        if (ownerView.isArrEnabled && frameRate != 0f) {
+            ownerView.requestedFrameRate = frameRate
+        }
         if (isDirty) {
             if (transformOrigin != TransformOrigin.Center && graphicsLayer.size != size) {
                 graphicsLayer.pivotOffset =
@@ -270,6 +285,8 @@ internal class GraphicsLayerOwnerLayer(
     }
 
     override fun destroy() {
+        frameRate = 0f
+        isFrameRateFromParent = false
         drawBlock = null
         invalidateParentLayer = null
         isDestroyed = true

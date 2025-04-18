@@ -16,11 +16,12 @@
 
 package androidx.camera.testing.fakes;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.CameraCaptureMetaData;
 import androidx.camera.core.impl.CameraCaptureResult;
 import androidx.camera.core.impl.TagBundle;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A fake implementation of {@link CameraCaptureResult} where the values are settable.
@@ -36,31 +37,31 @@ public final class FakeCameraCaptureResult implements CameraCaptureResult {
     private long mTimestamp = -1L;
     private TagBundle mTag = TagBundle.emptyBundle();
 
-    public void setAfMode(@NonNull CameraCaptureMetaData.AfMode mode) {
+    public void setAfMode(CameraCaptureMetaData.@NonNull AfMode mode) {
         mAfMode = mode;
     }
 
-    public void setAfState(@NonNull CameraCaptureMetaData.AfState state) {
+    public void setAfState(CameraCaptureMetaData.@NonNull AfState state) {
         mAfState = state;
     }
 
-    public void setAeState(@NonNull CameraCaptureMetaData.AeState state) {
+    public void setAeState(CameraCaptureMetaData.@NonNull AeState state) {
         mAeState = state;
     }
 
-    public void setAwbState(@NonNull CameraCaptureMetaData.AwbState state) {
+    public void setAwbState(CameraCaptureMetaData.@NonNull AwbState state) {
         mAwbState = state;
     }
 
-    public void setFlashState(@NonNull CameraCaptureMetaData.FlashState state) {
+    public void setFlashState(CameraCaptureMetaData.@NonNull FlashState state) {
         mFlashState = state;
     }
 
-    public void setAeMode(@NonNull CameraCaptureMetaData.AeMode mode) {
+    public void setAeMode(CameraCaptureMetaData.@NonNull AeMode mode) {
         mAeMode = mode;
     }
 
-    public void setAwbMode(@NonNull CameraCaptureMetaData.AwbMode mode) {
+    public void setAwbMode(CameraCaptureMetaData.@NonNull AwbMode mode) {
         mAwbMode = mode;
     }
 
@@ -72,45 +73,38 @@ public final class FakeCameraCaptureResult implements CameraCaptureResult {
         mTag = tag;
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AfMode getAfMode() {
+    public CameraCaptureMetaData.@NonNull AfMode getAfMode() {
         return mAfMode;
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AfState getAfState() {
+    public CameraCaptureMetaData.@NonNull AfState getAfState() {
         return mAfState;
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AeState getAeState() {
+    public CameraCaptureMetaData.@NonNull AeState getAeState() {
         return mAeState;
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AwbState getAwbState() {
+    public CameraCaptureMetaData.@NonNull AwbState getAwbState() {
         return mAwbState;
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.FlashState getFlashState() {
+    public CameraCaptureMetaData.@NonNull FlashState getFlashState() {
         return mFlashState;
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AeMode getAeMode() {
+    public CameraCaptureMetaData.@NonNull AeMode getAeMode() {
         return mAeMode;
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AwbMode getAwbMode() {
+    public CameraCaptureMetaData.@NonNull AwbMode getAwbMode() {
         return mAwbMode;
     }
 
@@ -119,9 +113,8 @@ public final class FakeCameraCaptureResult implements CameraCaptureResult {
         return mTimestamp;
     }
 
-    @NonNull
     @Override
-    public TagBundle getTagBundle() {
+    public @NonNull TagBundle getTagBundle() {
         return mTag;
     }
 
@@ -141,7 +134,7 @@ public final class FakeCameraCaptureResult implements CameraCaptureResult {
         private TagBundle mTag = TagBundle.emptyBundle();
 
         /** Constructs and returns a new instance of a {@link FakeCameraCaptureResult}. */
-        @NonNull public FakeCameraCaptureResult build() {
+        public @NonNull FakeCameraCaptureResult build() {
             FakeCameraCaptureResult fakeCameraCaptureResult = new FakeCameraCaptureResult();
             fakeCameraCaptureResult.setAfMode(mAfMode);
             fakeCameraCaptureResult.setAfState(mAfState);
@@ -155,50 +148,43 @@ public final class FakeCameraCaptureResult implements CameraCaptureResult {
         }
 
         /** Sets the {@link CameraCaptureMetaData.AfMode} */
-        @NonNull
-        public Builder setAfMode(@Nullable CameraCaptureMetaData.AfMode mode) {
+        public @NonNull Builder setAfMode(CameraCaptureMetaData.@Nullable AfMode mode) {
             mAfMode = mode;
             return this;
         }
 
         /** Sets the {@link CameraCaptureMetaData.AfState} */
-        @NonNull
-        public Builder setAfState(@Nullable CameraCaptureMetaData.AfState state) {
+        public @NonNull Builder setAfState(CameraCaptureMetaData.@Nullable AfState state) {
             mAfState = state;
             return this;
         }
 
         /** Sets the {@link CameraCaptureMetaData.AeState} */
-        @NonNull
-        public Builder setAeState(@Nullable CameraCaptureMetaData.AeState state) {
+        public @NonNull Builder setAeState(CameraCaptureMetaData.@Nullable AeState state) {
             mAeState = state;
             return this;
         }
 
         /** Sets the {@link CameraCaptureMetaData.AwbState} */
-        @NonNull
-        public Builder setAwbState(@Nullable CameraCaptureMetaData.AwbState state) {
+        public @NonNull Builder setAwbState(CameraCaptureMetaData.@Nullable AwbState state) {
             mAwbState = state;
             return this;
         }
 
         /** Sets the {@link CameraCaptureMetaData.FlashState} */
-        @NonNull
-        public Builder setFlashState(@Nullable CameraCaptureMetaData.FlashState state) {
+        public @NonNull Builder setFlashState(CameraCaptureMetaData.@Nullable FlashState state) {
             mFlashState = state;
             return this;
         }
 
         /** Sets the timestamp. */
-        @NonNull
-        public Builder setTimestamp(long timestamp) {
+        public @NonNull Builder setTimestamp(long timestamp) {
             mTimestamp = timestamp;
             return this;
         }
 
         /** Sets the {@link TagBundle}. */
-        @NonNull
-        public Builder setTagBundle(@NonNull TagBundle tag) {
+        public @NonNull Builder setTagBundle(@NonNull TagBundle tag) {
             mTag = tag;
             return this;
         }

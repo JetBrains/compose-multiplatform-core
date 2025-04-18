@@ -55,7 +55,13 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 /**
  * Connects to a watch face's WatchFaceControlService which allows the user to control the watch
  * face.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public interface WatchFaceControlClient : AutoCloseable {
 
     public companion object {

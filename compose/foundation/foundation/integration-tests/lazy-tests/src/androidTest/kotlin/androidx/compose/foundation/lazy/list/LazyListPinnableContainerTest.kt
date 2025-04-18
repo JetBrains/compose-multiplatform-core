@@ -16,23 +16,34 @@
 
 package androidx.compose.foundation.lazy.list
 
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.LocalPinnableContainer
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.PinnableContainer
 import androidx.compose.ui.layout.PinnableContainer.PinnedHandle
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsNotDisplayed
@@ -40,9 +51,11 @@ import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.collections.removeFirst as removeFirstKt
+import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -614,6 +627,70 @@ class LazyListPinnableContainerTest(val useLookaheadScope: Boolean) {
         rule.runOnIdle { active = !active }
 
         rule.onNodeWithTag("1:1").assertIsNotPlaced()
+    }
+
+    @Test
+    fun focusRestorer_shouldRestoreFocusCorrectly() {
+        val values = mutableStateListOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+        val focusRequester = FocusRequester()
+        val parentRequester = FocusRequester()
+        val lastItemRequester = FocusRequester()
+        val otherFocusRequester = FocusRequester()
+        lateinit var manager: FocusManager
+        val focused = mutableMapOf<Int, Boolean>()
+
+        // Arrange.
+        rule.setContentParameterized {
+            manager = LocalFocusManager.current
+            Column {
+                Box(Modifier.size(50.dp).focusRequester(otherFocusRequester).focusable())
+                LazyRow(
+                    state = rememberLazyListState(9),
+                    modifier =
+                        Modifier.size(itemSize * 2)
+                            .focusRestorer(focusRequester)
+                            .focusRequester(parentRequester)
+                            .focusable()
+                ) {
+                    items(values) { value ->
+                        val fallback =
+                            if (value == 9 || value == 10) {
+                                if (value == 9) {
+                                    Modifier.focusRequester(focusRequester)
+                                } else {
+                                    Modifier.focusRequester(lastItemRequester)
+                                }
+                            } else {
+                                Modifier
+                            }
+
+                        Box(
+                            Modifier.size(itemSize)
+                                .then(fallback)
+                                .testTag("$value")
+                                .onFocusChanged { focused[value] = it.isFocused }
+                                .focusable()
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { assertTrue { lastItemRequester.requestFocus() } }
+
+        // restorer will save last item to restore
+        rule.runOnIdle { assertTrue { otherFocusRequester.requestFocus() } }
+
+        // remove last item
+        rule.runOnIdle { values.removeAt(values.lastIndex) }
+
+        // focus will move down to list
+        rule.runOnIdle {
+            assertTrue { parentRequester.requestFocus() }
+            assertTrue { manager.moveFocus(FocusDirection.Enter) }
+        }
+
+        rule.runOnIdle { assertTrue { focused[9]!! } }
     }
 }
 

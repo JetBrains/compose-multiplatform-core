@@ -25,6 +25,7 @@ import android.os.Build
 import android.util.SizeF
 import android.view.ViewGroup.LayoutParams
 import android.widget.FrameLayout
+import android.widget.ListView
 import android.widget.RemoteViews
 import android.widget.TextView
 import androidx.compose.ui.unit.DpSize
@@ -33,6 +34,7 @@ import androidx.core.os.bundleOf
 import androidx.glance.GlanceId
 import androidx.glance.LocalGlanceId
 import androidx.glance.LocalSize
+import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.text.Text
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
@@ -483,6 +485,24 @@ class GlanceAppWidgetTest {
                 )
             assertIs<TextView>(view)
             assertThat(view.text.toString()).isEqualTo("${size.width} x ${size.height}")
+        }
+    }
+
+    @Config(minSdk = 32)
+    @Test
+    fun composeForPreview_listViewIds() = runMediumTest {
+        val rv =
+            TestWidget.forPreview {
+                    LazyColumn { items(5, { it.toLong() }) { index -> Text("$index") } }
+                }
+                .composeForPreview(context, WIDGET_CATEGORY_HOME_SCREEN)
+
+        val view = context.applyRemoteViews(rv)
+        assertIs<ListView>(view)
+        (0 until 5).forEach { i ->
+            val item = view.adapter.getItem(i) as RemoteViews
+            assertThat(item.layoutId).isAtLeast(FirstRootAlias)
+            assertThat(item.layoutId).isAtMost(LastRootAlias)
         }
     }
 

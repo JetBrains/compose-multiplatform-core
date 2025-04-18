@@ -17,6 +17,7 @@
 package androidx.privacysandbox.tools.core.generator
 
 import androidx.privacysandbox.tools.core.generator.SpecNames.bundleClass
+import androidx.privacysandbox.tools.core.generator.SpecNames.uiCoreLibInfoPropertyName
 import androidx.privacysandbox.tools.core.model.AnnotatedInterface
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
@@ -37,7 +38,8 @@ object CoreLibInfoAndBinderWrapperConverterGenerator {
         TypeSpec.objectBuilder(annotatedInterface.coreLibInfoConverterName()).build {
             addFunction(
                 FunSpec.builder("toParcelable").build {
-                    addParameter("coreLibInfo", bundleClass)
+                    if (annotatedInterface.inheritsUiAdapter)
+                        addParameter(uiCoreLibInfoPropertyName, bundleClass)
                     addParameter(
                         "interface",
                         annotatedInterface.aidlType().innerType.poetTypeName()
@@ -47,7 +49,10 @@ object CoreLibInfoAndBinderWrapperConverterGenerator {
                         "val parcelable = %T()",
                         annotatedInterface.uiAdapterAidlWrapper().poetTypeName()
                     )
-                    addStatement("parcelable.coreLibInfo = coreLibInfo")
+                    if (annotatedInterface.inheritsUiAdapter)
+                        addStatement(
+                            "parcelable.$uiCoreLibInfoPropertyName = $uiCoreLibInfoPropertyName"
+                        )
                     addStatement("parcelable.binder = %N", "interface")
                     addStatement("return parcelable")
                 }

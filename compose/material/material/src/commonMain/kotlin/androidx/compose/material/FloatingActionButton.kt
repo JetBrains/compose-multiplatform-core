@@ -50,8 +50,8 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://material.io/components/buttons-floating-action-button" class="external"
- * target="_blank">Material Design floating action button</a>.
+ * [Material Design floating action
+ * button](https://material.io/components/buttons-floating-action-button)
  *
  * A floating action button (FAB) represents the primary action of a screen.
  *
@@ -114,8 +114,8 @@ fun FloatingActionButton(
 }
 
 /**
- * <a href="https://material.io/components/buttons-floating-action-button#extended-fab"
- * class="external" target="_blank">Material Design extended floating action button</a>.
+ * [Material Design extended floating action
+ * button](https://material.io/components/buttons-floating-action-button#extended-fab)
  *
  * The extended FAB is wider than a regular FAB, and it includes a text label.
  *

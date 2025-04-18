@@ -20,8 +20,6 @@ import android.annotation.SuppressLint;
 import android.os.Build;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Camera;
@@ -35,6 +33,9 @@ import androidx.lifecycle.Lifecycle.State;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.OnLifecycleEvent;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -179,8 +180,7 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
         }
     }
 
-    @NonNull
-    public List<UseCase> getUseCases() {
+    public @NonNull List<UseCase> getUseCases() {
         synchronized (mLock) {
             return Collections.unmodifiableList(mCameraUseCaseAdapter.getUseCases());
         }
@@ -189,15 +189,13 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
     /**
      * Retrieves the lifecycle owner.
      */
-    @NonNull
-    public LifecycleOwner getLifecycleOwner() {
+    public @NonNull LifecycleOwner getLifecycleOwner() {
         synchronized (mLock) {
             return mLifecycleOwner;
         }
     }
 
-    @NonNull
-    public CameraUseCaseAdapter getCameraUseCaseAdapter() {
+    public @NonNull CameraUseCaseAdapter getCameraUseCaseAdapter() {
         return mCameraUseCaseAdapter;
     }
 
@@ -258,32 +256,28 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Camera interface
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    @NonNull
     @Override
-    public CameraControl getCameraControl() {
+    public @NonNull CameraControl getCameraControl() {
         return mCameraUseCaseAdapter.getCameraControl();
     }
 
-    @NonNull
     @Override
-    public CameraInfo getCameraInfo() {
+    public @NonNull CameraInfo getCameraInfo() {
         return mCameraUseCaseAdapter.getCameraInfo();
     }
 
-    @Nullable
-    CameraInfo getSecondaryCameraInfo() {
+    @Nullable CameraInfo getSecondaryCameraInfo() {
         return mCameraUseCaseAdapter.getSecondaryCameraInfo();
     }
 
-    @NonNull
     @Override
-    public CameraConfig getExtendedConfig() {
+    public @NonNull CameraConfig getExtendedConfig() {
         return mCameraUseCaseAdapter.getExtendedConfig();
     }
 
     @Override
     public boolean isUseCasesCombinationSupported(boolean withStreamSharing,
-            @NonNull UseCase... useCases) {
+            UseCase @NonNull ... useCases) {
         return mCameraUseCaseAdapter.isUseCasesCombinationSupported(withStreamSharing, useCases);
     }
 }

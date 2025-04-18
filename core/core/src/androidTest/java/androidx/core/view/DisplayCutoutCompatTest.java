@@ -38,6 +38,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 @RunWith(AndroidJUnit4.class)
 @SmallTest
@@ -117,6 +118,33 @@ public class DisplayCutoutCompatTest {
         } else {
             assertNull(cutoutWithPath.getCutoutPath());
         }
+    }
+
+    @Test
+    public void testNullBoundingRects() {
+        Path cutoutPath = new Path();
+        cutoutPath.addCircle(55, 10, 5, Path.Direction.CW);
+
+        DisplayCutoutCompat cutout =
+                new DisplayCutoutCompat(Insets.of(0, 20, 0, 20),
+                        null, null,
+                        null, null,
+                        Insets.of(0, 20, 0, 20),
+                        cutoutPath);
+
+        assertEquals(Collections.emptyList(), cutout.getBoundingRects());
+    }
+
+    @Test
+    public void testNullCutoutPath() {
+        DisplayCutoutCompat cutout =
+                new DisplayCutoutCompat(Insets.of(0, 20, 0, 20),
+                        ZERO_RECT, new Rect(50, 0, 60, 20),
+                        ZERO_RECT, ZERO_RECT,
+                        Insets.of(0, 20, 0, 20),
+                        null);
+
+        assertNull(cutout.getCutoutPath());
     }
 
     @Test

@@ -36,7 +36,7 @@ class ClientBinderCodeConverter(api: ParsedApi) : BinderCodeConverter(api) {
         annotatedInterface: AnnotatedInterface,
         expression: String
     ): CodeBlock {
-        if (annotatedInterface.inheritsSandboxedUiAdapter) {
+        if (annotatedInterface.inheritsUiAdapter) {
             return CodeBlock.of(
                 "%T(%L.binder, %L.coreLibInfo)",
                 annotatedInterface.clientProxyNameSpec(),
@@ -51,7 +51,7 @@ class ClientBinderCodeConverter(api: ParsedApi) : BinderCodeConverter(api) {
         annotatedInterface: AnnotatedInterface,
         expression: String
     ): CodeBlock {
-        if (annotatedInterface.inheritsSandboxedUiAdapter) {
+        if (annotatedInterface.inheritsUiAdapter) {
             return CodeBlock.builder().build {
                 addNamed(
                     "%coreLibInfoConverter:T.%toParcelable:N(" +
@@ -79,7 +79,7 @@ class ClientBinderCodeConverter(api: ParsedApi) : BinderCodeConverter(api) {
     }
 
     override fun convertToInterfaceBinderType(annotatedInterface: AnnotatedInterface): TypeName {
-        if (annotatedInterface.inheritsSandboxedUiAdapter) {
+        if (annotatedInterface.inheritsUiAdapter) {
             return annotatedInterface.uiAdapterAidlWrapper().poetTypeName()
         }
         return annotatedInterface.aidlType().innerType.poetTypeName()

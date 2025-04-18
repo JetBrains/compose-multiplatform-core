@@ -13,7 +13,7 @@
  */
 package androidx.leanback.widget;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface for receiving notification when an {@link Action} is clicked.

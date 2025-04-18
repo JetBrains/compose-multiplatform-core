@@ -75,6 +75,10 @@ class ListDelegateImpl<T> : ListDelegate<T> {
 
     override fun hashCode(): Int = listHashCode
 
+    override fun toString(): String {
+        return "ListDelegate { Size: $size, listHashCode: $listHashCode }"
+    }
+
     private class RemoteListStub<T>(private val mContent: List<T>) : IRemoteList.Stub() {
         @Throws(RemoteException::class)
         override fun requestItemRange(startIndex: Int, endIndex: Int, callback: IOnDoneCallback) {

@@ -22,9 +22,7 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
-import androidx.build.Publish
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
@@ -34,7 +32,7 @@ plugins {
 }
 
 androidXMultiplatform {
-    android()
+    androidTarget()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -45,8 +43,12 @@ androidXMultiplatform {
                 api("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 
                 implementation(libs.kotlinStdlib)
+                implementation("androidx.collection:collection-ktx:1.4.5")
                 implementation("androidx.compose.runtime:runtime:1.7.5")
                 implementation("androidx.compose.runtime:runtime-saveable:1.7.5")
+                implementation(project(":navigation3:navigation3"))
+                implementation(project(":savedstate:savedstate"))
+                implementation(project(":savedstate:savedstate-compose"))
             }
         }
 
@@ -68,8 +70,6 @@ androidXMultiplatform {
             dependsOn(jvmMain)
             dependencies {
                 implementation("androidx.activity:activity-compose:1.10.0-beta01")
-                implementation("androidx.compose.ui:ui:1.7.5")
-                implementation project(":navigation3:navigation3")
             }
         }
 
@@ -102,10 +102,9 @@ android {
 
 androidx {
     name = "Androidx Lifecycle Navigation3 ViewModel"
-    publish = Publish.SNAPSHOT_ONLY
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    mavenVersion = LibraryVersions.LIFECYCLE_VIEWMODEL_NAV3
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2024"
     description = "Provides the ViewModel wrapper for nav3."
     doNotDocumentReason = "Not published to maven"
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

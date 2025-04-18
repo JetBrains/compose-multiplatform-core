@@ -27,6 +27,7 @@ import androidx.camera.camera2.pipe.core.Log
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.flow.Flow
 
 /** Provides utilities for querying cameras and accessing metadata about those cameras. */
 @Singleton
@@ -62,6 +63,9 @@ internal class CameraDevicesImpl @Inject constructor(private val cameraBackends:
     )
     override fun awaitMetadata(camera: CameraId): CameraMetadata =
         checkNotNull(awaitCameraMetadata(camera))
+
+    override fun cameraIdsFlow(cameraBackendId: CameraBackendId?): Flow<List<CameraId>> =
+        getCameraBackend(cameraBackendId).cameraIds
 
     override suspend fun getCameraIds(cameraBackendId: CameraBackendId?): List<CameraId>? {
         val cameraBackend = getCameraBackend(cameraBackendId)

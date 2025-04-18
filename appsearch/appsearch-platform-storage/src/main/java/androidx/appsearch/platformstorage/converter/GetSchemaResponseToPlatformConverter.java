@@ -19,7 +19,6 @@ package androidx.appsearch.platformstorage.converter;
 import android.os.Build;
 
 import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.GetSchemaResponse;
@@ -28,6 +27,8 @@ import androidx.appsearch.app.SchemaVisibilityConfig;
 import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -47,9 +48,8 @@ public final class GetSchemaResponseToPlatformConverter {
      * Translates a platform {@link android.app.appsearch.GetSchemaResponse} into a jetpack
      * {@link GetSchemaResponse}.
      */
-    @NonNull
-    public static GetSchemaResponse toJetpackGetSchemaResponse(
-            @NonNull android.app.appsearch.GetSchemaResponse platformResponse) {
+    public static @NonNull GetSchemaResponse toJetpackGetSchemaResponse(
+            android.app.appsearch.@NonNull GetSchemaResponse platformResponse) {
         Preconditions.checkNotNull(platformResponse);
         GetSchemaResponse.Builder jetpackBuilder = new GetSchemaResponse.Builder();
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
@@ -108,8 +108,8 @@ public final class GetSchemaResponseToPlatformConverter {
      */
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private static void convertSchemasVisibleToPackages(
-            @NonNull android.app.appsearch.GetSchemaResponse platformResponse,
-            @NonNull GetSchemaResponse.Builder jetpackBuilder) {
+            android.app.appsearch.@NonNull GetSchemaResponse platformResponse,
+            GetSchemaResponse.@NonNull Builder jetpackBuilder) {
         // TODO(b/205749173): If there were no packages, getSchemaTypesVisibleToPackages
         //  incorrectly returns {@code null} in some prerelease versions of Android T. Remove
         //  this workaround after the issue is fixed in T.
@@ -163,8 +163,7 @@ public final class GetSchemaResponseToPlatformConverter {
         private ApiHelperForV() {}
 
         @DoNotInline
-        @NonNull
-        static Map<String, PackageIdentifier> getPubliclyVisibleSchemas(
+        static @NonNull Map<String, PackageIdentifier> getPubliclyVisibleSchemas(
                 android.app.appsearch.GetSchemaResponse platformResponse) {
             Map<String, android.app.appsearch.PackageIdentifier> platformPubliclyVisibleSchemas =
                     platformResponse.getPubliclyVisibleSchemas();
@@ -185,8 +184,7 @@ public final class GetSchemaResponseToPlatformConverter {
         }
 
         @DoNotInline
-        @NonNull
-        static Map<String, Set<SchemaVisibilityConfig>> getSchemasVisibleToConfigs(
+        static @NonNull Map<String, Set<SchemaVisibilityConfig>> getSchemasVisibleToConfigs(
                 android.app.appsearch.GetSchemaResponse platformResponse) {
             Map<String, Set<android.app.appsearch.SchemaVisibilityConfig>>
                     platformSchemasVisibleToConfigs =
@@ -215,9 +213,8 @@ public final class GetSchemaResponseToPlatformConverter {
          * Translates a platform {@link android.app.appsearch.SchemaVisibilityConfig} into a jetpack
          * {@link SchemaVisibilityConfig}.
          */
-        @NonNull
-        private static SchemaVisibilityConfig toJetpackSchemaVisibilityConfig(
-                @NonNull android.app.appsearch.SchemaVisibilityConfig platformConfig) {
+        private static @NonNull SchemaVisibilityConfig toJetpackSchemaVisibilityConfig(
+                android.app.appsearch.@NonNull SchemaVisibilityConfig platformConfig) {
             Preconditions.checkNotNull(platformConfig);
             SchemaVisibilityConfig.Builder jetpackBuilder = new SchemaVisibilityConfig.Builder();
 

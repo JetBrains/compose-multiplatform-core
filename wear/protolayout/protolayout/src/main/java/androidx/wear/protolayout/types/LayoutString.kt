@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:JvmName("LayoutStringUtil")
 
 package androidx.wear.protolayout.types
 
@@ -86,7 +87,7 @@ private constructor(
 
 /** Extension for creating a [LayoutString] from a String. */
 val String.layoutString: LayoutString
-    get() = LayoutString(this)
+    @JvmName("createLayoutString") get() = LayoutString(this)
 
 /**
  * Extension for creating a [LayoutString] from a [DynamicString]
@@ -96,6 +97,7 @@ val String.layoutString: LayoutString
  *   ensure that the layout is of a known size during the layout pass regardless of the
  *   `dynamicValue` String.
  */
+@JvmName("createLayoutString")
 @RequiresSchemaVersion(major = 1, minor = 200)
 fun DynamicString.asLayoutString(staticValue: String, layoutConstraint: StringLayoutConstraint) =
     LayoutString(staticValue, this, layoutConstraint)

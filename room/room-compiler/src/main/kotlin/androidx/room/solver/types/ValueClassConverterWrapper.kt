@@ -32,9 +32,9 @@ class ValueClassConverterWrapper(
     out: XType,
     val valuePropertyName: String
 ) : ColumnTypeAdapter(out, affinity) {
-    override fun readFromCursor(
+    override fun readFromStatement(
         outVarName: String,
-        cursorVarName: String,
+        stmtVarName: String,
         indexVarName: String,
         scope: CodeGenScope
     ) {
@@ -42,9 +42,9 @@ class ValueClassConverterWrapper(
             fun XCodeBlock.Builder.addTypeToValueClassStatement() {
                 val propertyValueVarName = scope.getTmpVar("_$valuePropertyName")
                 addLocalVariable(propertyValueVarName, valueTypeColumnAdapter.outTypeName)
-                valueTypeColumnAdapter.readFromCursor(
+                valueTypeColumnAdapter.readFromStatement(
                     propertyValueVarName,
-                    cursorVarName,
+                    stmtVarName,
                     indexVarName,
                     scope
                 )
@@ -57,7 +57,7 @@ class ValueClassConverterWrapper(
             if (out.nullability == XNullability.NONNULL) {
                 addTypeToValueClassStatement()
             } else {
-                beginControlFlow("if (%L.isNull(%L))", cursorVarName, indexVarName)
+                beginControlFlow("if (%L.isNull(%L))", stmtVarName, indexVarName)
                     .addStatement("%L = null", outVarName)
                 nextControlFlow("else").addTypeToValueClassStatement()
                 endControlFlow()

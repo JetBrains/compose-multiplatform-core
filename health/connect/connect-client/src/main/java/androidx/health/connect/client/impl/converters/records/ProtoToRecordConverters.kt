@@ -18,6 +18,7 @@
 package androidx.health.connect.client.impl.converters.records
 
 import androidx.annotation.RestrictTo
+import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.BasalBodyTemperatureRecord
 import androidx.health.connect.client.records.BasalMetabolicRateRecord
@@ -47,6 +48,7 @@ import androidx.health.connect.client.records.LeanBodyMassRecord
 import androidx.health.connect.client.records.MealType
 import androidx.health.connect.client.records.MenstruationFlowRecord
 import androidx.health.connect.client.records.MenstruationPeriodRecord
+import androidx.health.connect.client.records.MindfulnessSessionRecord
 import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.OvulationTestRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
@@ -80,6 +82,7 @@ import androidx.health.platform.client.proto.DataProto
 import java.time.Instant
 
 /** Converts public API object into internal proto for ipc. */
+@OptIn(ExperimentalMindfulnessSessionApi::class)
 fun toRecord(proto: DataProto.DataPoint): Record =
     with(proto) {
         when (dataType.name) {
@@ -286,6 +289,23 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                     endZoneOffset = endZoneOffset,
                     metadata = metadata,
                 )
+            "MindfulnessSession" -> {
+                MindfulnessSessionRecord(
+                    mindfulnessSessionType =
+                        mapEnum(
+                            "sessionType",
+                            MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_STRING_TO_INT_MAP,
+                            MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_UNKNOWN
+                        ),
+                    title = getString("title"),
+                    notes = getString("notes"),
+                    startTime = startTime,
+                    startZoneOffset = startZoneOffset,
+                    endTime = endTime,
+                    endZoneOffset = endZoneOffset,
+                    metadata = metadata,
+                )
+            }
             "OvulationTest" ->
                 OvulationTestRecord(
                     result =

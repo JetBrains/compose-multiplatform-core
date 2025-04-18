@@ -50,12 +50,13 @@ import android.util.Log;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -211,8 +212,7 @@ public final class NotificationManagerCompat {
     public static final int IMPORTANCE_MAX = 5;
 
     /** Get a {@link NotificationManagerCompat} instance for a provided context. */
-    @NonNull
-    public static NotificationManagerCompat from(@NonNull Context context) {
+    public static @NonNull NotificationManagerCompat from(@NonNull Context context) {
         return new NotificationManagerCompat(context);
     }
 
@@ -351,8 +351,7 @@ public final class NotificationManagerCompat {
      *
      * @return A list of {@link StatusBarNotification}.
      */
-    @NonNull
-    public List<StatusBarNotification> getActiveNotifications() {
+    public @NonNull List<StatusBarNotification> getActiveNotifications() {
         if (Build.VERSION.SDK_INT >= 23) {
             return Api23Impl.getActiveNotifications(mNotificationManager);
         } else {
@@ -602,8 +601,7 @@ public final class NotificationManagerCompat {
      *
      * Returns {@code null} on older SDKs which don't support Notification Channels.
      */
-    @Nullable
-    public NotificationChannel getNotificationChannel(@NonNull String channelId) {
+    public @Nullable NotificationChannel getNotificationChannel(@NonNull String channelId) {
         if (Build.VERSION.SDK_INT >= 26) {
             return Api26Impl.getNotificationChannel(mNotificationManager, channelId);
         }
@@ -615,8 +613,8 @@ public final class NotificationManagerCompat {
      *
      * Returns {@code null} on older SDKs which don't support Notification Channels.
      */
-    @Nullable
-    public NotificationChannelCompat getNotificationChannelCompat(@NonNull String channelId) {
+    public @Nullable NotificationChannelCompat getNotificationChannelCompat(
+            @NonNull String channelId) {
         if (Build.VERSION.SDK_INT >= 26) {
             NotificationChannel channel = getNotificationChannel(channelId);
             if (channel != null) {
@@ -634,8 +632,7 @@ public final class NotificationManagerCompat {
      *
      * Returns {@code null} on older SDKs which don't support Notification Channels.
      */
-    @Nullable
-    public NotificationChannel getNotificationChannel(@NonNull String channelId,
+    public @Nullable NotificationChannel getNotificationChannel(@NonNull String channelId,
             @NonNull String conversationId) {
         if (Build.VERSION.SDK_INT >= 30) {
             return Api30Impl.getNotificationChannel(mNotificationManager, channelId,
@@ -652,9 +649,8 @@ public final class NotificationManagerCompat {
      *
      * Returns {@code null} on older SDKs which don't support Notification Channels.
      */
-    @Nullable
-    public NotificationChannelCompat getNotificationChannelCompat(@NonNull String channelId,
-            @NonNull String conversationId) {
+    public @Nullable NotificationChannelCompat getNotificationChannelCompat(
+            @NonNull String channelId, @NonNull String conversationId) {
         if (Build.VERSION.SDK_INT >= 26) {
             NotificationChannel channel = getNotificationChannel(channelId, conversationId);
             if (channel != null) {
@@ -669,8 +665,8 @@ public final class NotificationManagerCompat {
      *
      * Returns {@code null} on older SDKs which don't support Notification Channels.
      */
-    @Nullable
-    public NotificationChannelGroup getNotificationChannelGroup(@NonNull String channelGroupId) {
+    public @Nullable NotificationChannelGroup getNotificationChannelGroup(
+            @NonNull String channelGroupId) {
         if (Build.VERSION.SDK_INT >= 28) {
             return Api28Impl.getNotificationChannelGroup(mNotificationManager, channelGroupId);
         } else if (Build.VERSION.SDK_INT >= 26) {
@@ -690,8 +686,7 @@ public final class NotificationManagerCompat {
      *
      * Returns {@code null} on older SDKs which don't support Notification Channels.
      */
-    @Nullable
-    public NotificationChannelGroupCompat getNotificationChannelGroupCompat(
+    public @Nullable NotificationChannelGroupCompat getNotificationChannelGroupCompat(
             @NonNull String channelGroupId) {
         if (Build.VERSION.SDK_INT >= 28) {
             NotificationChannelGroup group = getNotificationChannelGroup(channelGroupId);
@@ -711,8 +706,7 @@ public final class NotificationManagerCompat {
      * Returns all notification channels belonging to the calling app
      * or an empty list on older SDKs which don't support Notification Channels.
      */
-    @NonNull
-    public List<NotificationChannel> getNotificationChannels() {
+    public @NonNull List<NotificationChannel> getNotificationChannels() {
         if (Build.VERSION.SDK_INT >= 26) {
             return Api26Impl.getNotificationChannels(mNotificationManager);
         }
@@ -723,9 +717,8 @@ public final class NotificationManagerCompat {
      * Returns all notification channels belonging to the calling app
      * or an empty list on older SDKs which don't support Notification Channels.
      */
-    @NonNull
     @SuppressWarnings("MixedMutabilityReturnType")
-    public List<NotificationChannelCompat> getNotificationChannelsCompat() {
+    public @NonNull List<NotificationChannelCompat> getNotificationChannelsCompat() {
         if (Build.VERSION.SDK_INT >= 26) {
             List<NotificationChannel> channels = getNotificationChannels();
             if (!channels.isEmpty()) {
@@ -743,8 +736,7 @@ public final class NotificationManagerCompat {
      * Returns all notification channel groups belonging to the calling app
      * or an empty list on older SDKs which don't support Notification Channels.
      */
-    @NonNull
-    public List<NotificationChannelGroup> getNotificationChannelGroups() {
+    public @NonNull List<NotificationChannelGroup> getNotificationChannelGroups() {
         if (Build.VERSION.SDK_INT >= 26) {
             return Api26Impl.getNotificationChannelGroups(mNotificationManager);
         }
@@ -755,9 +747,8 @@ public final class NotificationManagerCompat {
      * Returns all notification channel groups belonging to the calling app
      * or an empty list on older SDKs which don't support Notification Channels.
      */
-    @NonNull
     @SuppressWarnings("MixedMutabilityReturnType")
-    public List<NotificationChannelGroupCompat> getNotificationChannelGroupsCompat() {
+    public @NonNull List<NotificationChannelGroupCompat> getNotificationChannelGroupsCompat() {
         if (Build.VERSION.SDK_INT >= 26) {
             List<NotificationChannelGroup> groups = getNotificationChannelGroups();
             if (!groups.isEmpty()) {
@@ -782,8 +773,7 @@ public final class NotificationManagerCompat {
     /**
      * Get the set of packages that have an enabled notification listener component within them.
      */
-    @NonNull
-    public static Set<String> getEnabledListenerPackages(@NonNull Context context) {
+    public static @NonNull Set<String> getEnabledListenerPackages(@NonNull Context context) {
         final String enabledNotificationListeners = Settings.Secure.getString(
                 context.getContentResolver(),
                 SETTING_ENABLED_NOTIFICATION_LISTENERS);
@@ -1182,9 +1172,8 @@ public final class NotificationManagerCompat {
             service.notify(packageName, id, tag, notif);
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             StringBuilder sb = new StringBuilder("NotifyTask[");
             sb.append("packageName:").append(packageName);
             sb.append(", id:").append(id);
@@ -1223,9 +1212,8 @@ public final class NotificationManagerCompat {
             }
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             StringBuilder sb = new StringBuilder("CancelTask[");
             sb.append("packageName:").append(packageName);
             sb.append(", id:").append(id);

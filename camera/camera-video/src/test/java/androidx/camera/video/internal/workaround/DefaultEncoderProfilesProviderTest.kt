@@ -19,7 +19,6 @@ package androidx.camera.video.internal.workaround
 import android.os.Build
 import android.util.Range
 import android.util.Size
-import androidx.arch.core.util.Function
 import androidx.camera.core.impl.EncoderProfilesProxy
 import androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
@@ -31,9 +30,9 @@ import androidx.camera.testing.impl.fakes.FakeVideoEncoderInfo
 import androidx.camera.video.Quality
 import androidx.camera.video.Quality.FHD
 import androidx.camera.video.Quality.HD
+import androidx.camera.video.Quality.QUALITY_SOURCE_REGULAR
 import androidx.camera.video.Quality.SD
 import androidx.camera.video.Quality.UHD
-import androidx.camera.video.internal.encoder.VideoEncoderConfig
 import androidx.camera.video.internal.encoder.VideoEncoderInfo
 import androidx.camera.video.internal.workaround.DefaultEncoderProfilesProvider.Companion.DEFAULT_AUDIO_BITRATE
 import androidx.camera.video.internal.workaround.DefaultEncoderProfilesProvider.Companion.DEFAULT_AUDIO_CHANNELS
@@ -375,13 +374,13 @@ class DefaultEncoderProfilesProviderTest {
     }
 
     private val Quality.value: Int
-        get() = (this as Quality.ConstantQuality).value
+        get() = (this as Quality.ConstantQuality).getQualityValue(QUALITY_SOURCE_REGULAR)
 
     private class FakeVideoEncoderInfoFinder(
         private val maxSupportedBitrate: Int = Int.MAX_VALUE,
         private val minSupportedBitrate: Int = 0,
-    ) : Function<VideoEncoderConfig, VideoEncoderInfo> {
-        override fun apply(input: VideoEncoderConfig?): VideoEncoderInfo =
+    ) : VideoEncoderInfo.Finder {
+        override fun find(mimeType: String): VideoEncoderInfo =
             FakeVideoEncoderInfo(
                 supportedBitrateRange = Range.create(minSupportedBitrate, maxSupportedBitrate)
             )

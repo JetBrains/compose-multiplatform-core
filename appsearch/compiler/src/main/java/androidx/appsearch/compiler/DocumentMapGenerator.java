@@ -19,8 +19,6 @@ package androidx.appsearch.compiler;
 import static androidx.appsearch.compiler.IntrospectionHelper.RESTRICT_TO_ANNOTATION_CLASS;
 import static androidx.appsearch.compiler.IntrospectionHelper.RESTRICT_TO_SCOPE_CLASS;
 
-import androidx.annotation.NonNull;
-
 import com.google.auto.common.GeneratedAnnotationSpecs;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.AnnotationSpec;
@@ -31,6 +29,8 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -59,8 +59,7 @@ public class DocumentMapGenerator {
      * @param restrictGeneratedCodeToLib Whether to annotate the generated class with
      *                                   {@code RestrictTo(LIBRARY)}.
      */
-    @NonNull
-    public static JavaFile generate(
+    public static @NonNull JavaFile generate(
             @NonNull ProcessingEnvironment processingEnv,
             @NonNull String packageName,
             @NonNull String classSuffix,

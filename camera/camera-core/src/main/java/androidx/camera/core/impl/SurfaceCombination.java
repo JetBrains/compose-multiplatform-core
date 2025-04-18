@@ -16,8 +16,8 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -72,8 +72,7 @@ public final class SurfaceCombination {
         return mSurfaceConfigList.remove(surfaceConfig);
     }
 
-    @NonNull
-    public List<SurfaceConfig> getSurfaceConfigList() {
+    public @NonNull List<SurfaceConfig> getSurfaceConfigList() {
         return mSurfaceConfigList;
     }
 
@@ -87,8 +86,7 @@ public final class SurfaceCombination {
      * @return the ordered surface configuration list or {@code null} if the configuration list
      * is not supported by this combination.
      */
-    @Nullable
-    public List<SurfaceConfig> getOrderedSupportedSurfaceConfigList(
+    public @Nullable List<SurfaceConfig> getOrderedSupportedSurfaceConfigList(
             @NonNull List<SurfaceConfig> configList) {
         boolean isSupported = false;
 

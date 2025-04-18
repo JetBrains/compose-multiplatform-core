@@ -233,7 +233,7 @@ class PaneExpansionStateTest {
                         ThreePaneScaffoldRole.Secondary,
                         ThreePaneScaffoldRole.Tertiary
                     ),
-                    PaneExpansionStateData(7, 0.8F, 9, PaneExpansionAnchor.Offset(200.dp))
+                    PaneExpansionStateData(7, 0.8F, 9, PaneExpansionAnchor.Offset.fromStart(200.dp))
                 ),
                 Pair(
                     TwoPaneExpansionStateKeyImpl(
@@ -271,12 +271,12 @@ class PaneExpansionStateTest {
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private val MockAnchor0 = PaneExpansionAnchor.Proportion(0f)
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
-private val MockAnchor1 = PaneExpansionAnchor.Offset(200.dp)
+private val MockAnchor1 = PaneExpansionAnchor.Offset.fromStart(200.dp)
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private val MockAnchor2 = PaneExpansionAnchor.Proportion(0.5f)
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
-private val MockAnchor3 = PaneExpansionAnchor.Offset((-200).dp)
+private val MockAnchor3 = PaneExpansionAnchor.Offset.fromEnd(200.dp)
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private val MockAnchor4 = PaneExpansionAnchor.Proportion(1f)
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
-private val MockAnchor5 = PaneExpansionAnchor.Offset(500.dp)
+private val MockAnchor5 = PaneExpansionAnchor.Offset.fromStart(500.dp)

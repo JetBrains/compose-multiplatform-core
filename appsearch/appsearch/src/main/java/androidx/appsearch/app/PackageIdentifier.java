@@ -25,9 +25,10 @@ import androidx.core.util.Preconditions;
 /**
  * This class represents a uniquely identifiable package.
  */
+// TODO(b/384721898): Switch to JSpecify annotations
+@SuppressWarnings("JSpecifyNullness")
 public class PackageIdentifier {
-    @NonNull
-    private final PackageIdentifierParcel mPackageIdentifierParcel;
+    private final @NonNull PackageIdentifierParcel mPackageIdentifierParcel;
 
     /**
      * Creates a unique identifier for a package.
@@ -63,20 +64,17 @@ public class PackageIdentifier {
      * @exportToFramework:hide
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    public PackageIdentifierParcel getPackageIdentifierParcel() {
+    public @NonNull PackageIdentifierParcel getPackageIdentifierParcel() {
         return mPackageIdentifierParcel;
     }
 
     /** Returns the name for a package. */
-    @NonNull
-    public String getPackageName() {
+    public @NonNull String getPackageName() {
         return mPackageIdentifierParcel.getPackageName();
     }
 
     /** Returns the SHA-256 certificate for a package. */
-    @NonNull
-    public byte[] getSha256Certificate() {
+    public @NonNull byte[] getSha256Certificate() {
         return mPackageIdentifierParcel.getSha256Certificate();
     }
 

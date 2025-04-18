@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import androidx.build.KotlinTarget
 
 plugins {
     id("AndroidXPlugin")
@@ -78,8 +77,6 @@ android {
     compileSdkExtension = 14
 
     defaultConfig {
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
         ksp {
             arg(aidlInput)
             arg(frameworkAidlInput)
@@ -99,5 +96,4 @@ dependencies {
 }
 
 androidx {
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

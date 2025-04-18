@@ -16,7 +16,7 @@
 
 package androidx.biometric;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -33,7 +33,7 @@ class BiometricErrorData {
     /**
      * A human-readable message that describes the error.
      */
-    @Nullable private final CharSequence mErrorMessage;
+    private final @Nullable CharSequence mErrorMessage;
 
     BiometricErrorData(int errorCode, @Nullable CharSequence errorMessage) {
         mErrorCode = errorCode;
@@ -45,8 +45,7 @@ class BiometricErrorData {
         return mErrorCode;
     }
 
-    @Nullable
-    CharSequence getErrorMessage() {
+    @Nullable CharSequence getErrorMessage() {
         return mErrorMessage;
     }
 
@@ -83,8 +82,7 @@ class BiometricErrorData {
      * @param message The message to be converted.
      * @return A string matching the given message, or {@code null} if message is {@code null}.
      */
-    @Nullable
-    private static String convertToString(@Nullable CharSequence message) {
+    private static @Nullable String convertToString(@Nullable CharSequence message) {
         return message != null ? message.toString() : null;
     }
 }

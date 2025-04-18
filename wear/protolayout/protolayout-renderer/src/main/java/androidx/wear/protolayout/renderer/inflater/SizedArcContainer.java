@@ -16,7 +16,7 @@
 
 package androidx.wear.protolayout.renderer.inflater;
 
-import static androidx.wear.protolayout.renderer.inflater.WearCurvedLineView.getSignForClockwise;
+import static androidx.wear.protolayout.renderer.inflater.ArcWidgetHelper.getSignForClockwise;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -244,7 +244,7 @@ class SizedArcContainer extends ViewGroup implements ArcLayout.Widget {
         float childSweep = ((ArcLayout.Widget) child).getSweepAngleDegrees();
         float offsetDegrees = (mSweepAngleDegrees - childSweep) / 2;
 
-        int sign = getSignForClockwise(mArcDirection, /* defaultValue= */ 1);
+        int sign = getSignForClockwise(this, mArcDirection, /* defaultValue= */ 1);
 
         switch (alignment) {
             case LayoutParams.ANGULAR_ALIGNMENT_START:

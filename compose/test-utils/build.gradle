@@ -21,8 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
-import androidx.build.Publish
+import androidx.build.SoftwareType
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
@@ -31,7 +31,7 @@ plugins {
 }
 
 androidXMultiplatform {
-    android()
+    androidTarget()
     desktop()
 
     sourceSets {
@@ -101,7 +101,7 @@ androidXMultiplatform {
 
 androidx {
     name = "Compose Internal Test Utils"
-    type = LibraryType.INTERNAL_TEST_LIBRARY
+    type = SoftwareType.INTERNAL_TEST_LIBRARY
     inceptionYear = "2020"
     description = "Compose internal test utils."
 }

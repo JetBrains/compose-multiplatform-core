@@ -21,7 +21,6 @@ import static androidx.camera.core.impl.utils.futures.Futures.immediateFailedFut
 import static java.util.Objects.requireNonNull;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraEffect;
 import androidx.camera.core.Logger;
@@ -32,6 +31,8 @@ import androidx.camera.core.SurfaceRequest;
 import androidx.core.util.Consumer;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -46,12 +47,9 @@ public class SurfaceProcessorWithExecutor implements SurfaceProcessorInternal {
 
     private static final String TAG = "SurfaceProcessor";
 
-    @NonNull
-    private final SurfaceProcessor mSurfaceProcessor;
-    @NonNull
-    private final Executor mExecutor;
-    @NonNull
-    private final Consumer<Throwable> mErrorListener;
+    private final @NonNull SurfaceProcessor mSurfaceProcessor;
+    private final @NonNull Executor mExecutor;
+    private final @NonNull Consumer<Throwable> mErrorListener;
 
     public SurfaceProcessorWithExecutor(@NonNull CameraEffect cameraEffect) {
         mSurfaceProcessor = requireNonNull(cameraEffect.getSurfaceProcessor());
@@ -59,15 +57,13 @@ public class SurfaceProcessorWithExecutor implements SurfaceProcessorInternal {
         mErrorListener = cameraEffect.getErrorListener();
     }
 
-    @NonNull
     @VisibleForTesting
-    public SurfaceProcessor getProcessor() {
+    public @NonNull SurfaceProcessor getProcessor() {
         return mSurfaceProcessor;
     }
 
-    @NonNull
     @VisibleForTesting
-    public Executor getExecutor() {
+    public @NonNull Executor getExecutor() {
         return mExecutor;
     }
 
@@ -95,9 +91,8 @@ public class SurfaceProcessorWithExecutor implements SurfaceProcessorInternal {
         });
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> snapshot(
+    public @NonNull ListenableFuture<Void> snapshot(
             @IntRange(from = 0, to = 100) int jpegQuality,
             @IntRange(from = 0, to = 359) int rotationDegrees) {
         return immediateFailedFuture(

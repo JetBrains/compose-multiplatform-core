@@ -191,7 +191,7 @@ class CoroutineContextOverridingWorker(
 ) : CoroutineWorker(appContext, params) {
     private val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
 
-    @Suppress("OVERRIDE_DEPRECATION")
+    @Suppress("OVERRIDE_DEPRECATION") // b/407503919
     override val coroutineContext: CoroutineDispatcher
         get() = dispatcher
 

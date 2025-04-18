@@ -114,7 +114,7 @@ public fun SelectableChip(
     selectionControl: @Composable () -> Unit = {
         RadioButton(selected = selected, enabled = enabled)
     }
-) =
+): Unit =
     androidx.wear.compose.materialcore.ToggleButton(
         checked = selected,
         onCheckedChange = onClick,
@@ -247,7 +247,7 @@ public fun SplitSelectableChip(
     selectionControl: @Composable BoxScope.() -> Unit = {
         RadioButton(selected = selected, enabled = enabled)
     },
-) =
+): Unit =
     androidx.wear.compose.materialcore.SplitToggleButton(
         checked = selected,
         onCheckedChange = onSelectionClick,
@@ -559,7 +559,7 @@ public object SelectableChipDefaults {
      * can override it by applying Modifier.heightIn directly on [SelectableChip] or
      * [SplitSelectableChip].
      */
-    public val Height = 52.dp
+    public val Height: Dp = 52.dp
 
     /**
      * The default size of app icons or selection controls when used inside a [SelectableChip] or

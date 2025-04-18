@@ -20,10 +20,11 @@ import android.graphics.ImageFormat;
 import android.util.Pair;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.impl.ConfigProvider;
 import androidx.camera.core.impl.ImageAnalysisConfig;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,9 +39,8 @@ public class ImageAnalysisConfigProvider implements ConfigProvider<ImageAnalysis
         mVendorExtender = vendorExtender;
     }
 
-    @NonNull
     @Override
-    public ImageAnalysisConfig getConfig() {
+    public @NonNull ImageAnalysisConfig getConfig() {
         ImageAnalysis.Builder builder = new ImageAnalysis.Builder();
         Size[] sizes = mVendorExtender.getSupportedYuvAnalysisResolutions();
         List<Pair<Integer, Size[]>> sizeList = new ArrayList<>();

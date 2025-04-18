@@ -21,6 +21,7 @@ import androidx.kruth.assertThrows
 import androidx.room.compiler.processing.KnownTypeNames
 import androidx.room.compiler.processing.XNullability
 import androidx.room.compiler.processing.util.Source
+import androidx.room.compiler.processing.util.getDeclaredField
 import androidx.room.compiler.processing.util.getField
 import androidx.room.compiler.processing.util.getMethodByJvmName
 import androidx.room.compiler.processing.util.runProcessorTest
@@ -350,5 +351,43 @@ class XTypeNameTest {
                     )
             }
         }
+    }
+
+    @Test
+    fun testInteropTypes() {
+        fun testIsTypeOf(type: String, typeName: XTypeName) {
+            runProcessorTest(
+                listOf(
+                    Source.kotlin(
+                        "KotlinSubject.kt",
+                        """
+                    class KotlinSubject {
+                      val field: $type = TODO()
+                    }
+                    """
+                            .trimIndent()
+                    )
+                )
+            ) { invocation ->
+                val subject = invocation.processingEnv.requireTypeElement("KotlinSubject")
+                val field = subject.getDeclaredField("field")
+                assertThat(field.type.rawType.asTypeName()).isEqualTo(typeName)
+            }
+        }
+
+        testIsTypeOf("String", XTypeName.STRING)
+        testIsTypeOf("Iterable<Unit>", XTypeName.ITERABLE)
+        testIsTypeOf("MutableIterable<Unit>", XTypeName.MUTABLE_ITERABLE)
+        testIsTypeOf("Collection<Unit>", XTypeName.COLLECTION)
+        testIsTypeOf("MutableCollection<Unit>", XTypeName.MUTABLE_COLLECTION)
+        testIsTypeOf("Set<Unit>", XTypeName.SET)
+        testIsTypeOf("MutableSet<Unit>", XTypeName.MUTABLE_SET)
+        testIsTypeOf("List<Unit>", XTypeName.LIST)
+        testIsTypeOf("MutableList<Unit>", XTypeName.MUTABLE_LIST)
+        testIsTypeOf("Map<Unit, Unit>", XTypeName.MAP)
+        testIsTypeOf("MutableMap<Unit, Unit>", XTypeName.MUTABLE_MAP)
+        testIsTypeOf("Map.Entry<Unit, Unit>", XTypeName.MAP_ENTRY)
+        // Uncomment after kotlinpoet bug is fixed: https://github.com/square/kotlinpoet/issues/2060
+        // testIsTypeOf("MutableMap.MutableEntry<Unit, Unit>", XTypeName.MUTABLE_MAP_ENTRY)
     }
 }

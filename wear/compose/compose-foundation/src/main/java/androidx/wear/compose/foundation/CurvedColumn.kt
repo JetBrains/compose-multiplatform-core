@@ -50,7 +50,7 @@ public fun CurvedScope.curvedColumn(
     radialDirection: CurvedDirection.Radial? = null,
     angularAlignment: CurvedAlignment.Angular? = null,
     contentBuilder: CurvedScope.() -> Unit
-) =
+): Unit =
     add(
         CurvedColumnChild(
             curvedLayoutDirection.copy(overrideRadial = radialDirection),

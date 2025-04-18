@@ -19,14 +19,15 @@ package androidx.camera.core.impl;
 import android.graphics.ImageFormat;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCapture.CaptureMode;
 import androidx.camera.core.ImageReaderProxyProvider;
 import androidx.camera.core.internal.IoConfig;
 import androidx.camera.core.resolutionselector.ResolutionSelector;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 
@@ -79,9 +80,8 @@ public final class ImageCaptureConfig implements UseCaseConfig<ImageCapture>, Im
         mConfig = config;
     }
 
-    @NonNull
     @Override
-    public Config getConfig() {
+    public @NonNull Config getConfig() {
         return mConfig;
     }
 
@@ -135,8 +135,7 @@ public final class ImageCaptureConfig implements UseCaseConfig<ImageCapture>, Im
      * @return The stored value or <code>valueIfMissing</code> if the value does not exist in this
      * configuration.
      */
-    @Nullable
-    public CaptureBundle getCaptureBundle(@Nullable CaptureBundle valueIfMissing) {
+    public @Nullable CaptureBundle getCaptureBundle(@Nullable CaptureBundle valueIfMissing) {
         return retrieveOption(OPTION_CAPTURE_BUNDLE, valueIfMissing);
     }
 
@@ -146,8 +145,7 @@ public final class ImageCaptureConfig implements UseCaseConfig<ImageCapture>, Im
      * @return The stored value, if it exists in this configuration.
      * @throws IllegalArgumentException if the option does not exist in this configuration.
      */
-    @NonNull
-    public CaptureBundle getCaptureBundle() {
+    public @NonNull CaptureBundle getCaptureBundle() {
         return retrieveOption(OPTION_CAPTURE_BUNDLE);
     }
 
@@ -158,8 +156,7 @@ public final class ImageCaptureConfig implements UseCaseConfig<ImageCapture>, Im
      * @return The stored value or <code>ValueIfMissing</code> if the value does not exist in this
      * configuration.
      */
-    @Nullable
-    public Integer getBufferFormat(@Nullable Integer valueIfMissing) {
+    public @Nullable Integer getBufferFormat(@Nullable Integer valueIfMissing) {
         return retrieveOption(OPTION_BUFFER_FORMAT, valueIfMissing);
     }
 
@@ -169,8 +166,7 @@ public final class ImageCaptureConfig implements UseCaseConfig<ImageCapture>, Im
      * @return The stored value, if it exists in the configuration.
      * @throws IllegalArgumentException if the option does not exist in this configuration.
      */
-    @NonNull
-    public Integer getBufferFormat() {
+    public @NonNull Integer getBufferFormat() {
         return retrieveOption(OPTION_BUFFER_FORMAT);
     }
 
@@ -210,8 +206,7 @@ public final class ImageCaptureConfig implements UseCaseConfig<ImageCapture>, Im
      *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @Nullable
-    public ImageReaderProxyProvider getImageReaderProxyProvider() {
+    public @Nullable ImageReaderProxyProvider getImageReaderProxyProvider() {
         return retrieveOption(OPTION_IMAGE_READER_PROXY_PROVIDER, null);
     }
 
@@ -273,16 +268,14 @@ public final class ImageCaptureConfig implements UseCaseConfig<ImageCapture>, Im
     /**
      * Gets the caller provided {@link ImageCapture.ScreenFlash} instance.
      */
-    @Nullable
-    public ImageCapture.ScreenFlash getScreenFlash() {
+    public ImageCapture.@Nullable ScreenFlash getScreenFlash() {
         return retrieveOption(OPTION_SCREEN_FLASH, null);
     }
 
     /**
      * @return the {@link ResolutionSelector} used to determine the size of the postview.
      */
-    @Nullable
-    public ResolutionSelector getPostviewResolutionSelector() {
+    public @Nullable ResolutionSelector getPostviewResolutionSelector() {
         return retrieveOption(OPTION_POSTVIEW_RESOLUTION_SELECTOR, null);
     }
 
@@ -307,9 +300,8 @@ public final class ImageCaptureConfig implements UseCaseConfig<ImageCapture>, Im
      * @return The stored value or <code>valueIfMissing</code> if the value does not exist in this
      * configuration.
      */
-    @Nullable
     @Override
-    public Executor getIoExecutor(@Nullable Executor valueIfMissing) {
+    public @Nullable Executor getIoExecutor(@Nullable Executor valueIfMissing) {
         return retrieveOption(OPTION_IO_EXECUTOR, valueIfMissing);
     }
 
@@ -324,9 +316,8 @@ public final class ImageCaptureConfig implements UseCaseConfig<ImageCapture>, Im
      * @return The stored value, if it exists in this configuration.
      * @throws IllegalArgumentException if the option does not exist in this configuration.
      */
-    @NonNull
     @Override
-    public Executor getIoExecutor() {
+    public @NonNull Executor getIoExecutor() {
         return retrieveOption(OPTION_IO_EXECUTOR);
     }
 }

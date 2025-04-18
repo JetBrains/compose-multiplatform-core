@@ -23,7 +23,7 @@ public class MyDao_Impl(
     this.__db = __db
   }
 
-  public override fun getListenableFuture(arg: Array<String?>?): ListenableFuture<MyEntity?>? {
+  public override fun getListenableFuture(arg: Array<out String?>?): ListenableFuture<MyEntity?>? {
     val _stringBuilder: StringBuilder = StringBuilder()
     _stringBuilder.append("SELECT * FROM MyEntity WHERE pk IN (")
     val _inputSize: Int = if (arg == null) 1 else arg.size
@@ -46,14 +46,14 @@ public class MyDao_Impl(
             _argIndex++
           }
         }
-        val _cursorIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
-        val _cursorIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
+        val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
+        val _columnIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
         val _result: MyEntity?
         if (_stmt.step()) {
           val _tmpPk: Int
-          _tmpPk = _stmt.getLong(_cursorIndexOfPk).toInt()
+          _tmpPk = _stmt.getLong(_columnIndexOfPk).toInt()
           val _tmpOther: String
-          _tmpOther = _stmt.getText(_cursorIndexOfOther)
+          _tmpOther = _stmt.getText(_columnIndexOfOther)
           _result = MyEntity(_tmpPk,_tmpOther)
         } else {
           _result = null

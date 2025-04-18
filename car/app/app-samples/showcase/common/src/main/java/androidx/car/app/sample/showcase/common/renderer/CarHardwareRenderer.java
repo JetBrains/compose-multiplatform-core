@@ -423,7 +423,7 @@ public final class CarHardwareRenderer implements Renderer {
                 } else {
                     info.append(
                             generateCarValueText(mCarContext.getString(R.string.odometer),
-                                    mMileage.getOdometerMeters(), " m. "));
+                                    mMileage.getOdometerInKilometers(), " km. "));
                     info.append(
                             generateCarValueText(mCarContext.getString(R.string.unit),
                                     mMileage.getDistanceDisplayUnit(), ". "));

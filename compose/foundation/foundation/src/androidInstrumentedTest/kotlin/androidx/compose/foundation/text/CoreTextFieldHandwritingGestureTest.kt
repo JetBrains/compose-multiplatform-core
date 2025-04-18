@@ -27,7 +27,6 @@ import android.view.inputmethod.PreviewableHandwritingGesture
 import android.view.inputmethod.RemoveSpaceGesture
 import android.view.inputmethod.SelectGesture
 import android.view.inputmethod.SelectRangeGesture
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.setFocusableContent
@@ -75,7 +74,6 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@RequiresApi(34)
 @SdkSuppress(minSdkVersion = 34)
 class CoreTextFieldHandwritingGestureTest {
     @get:Rule val rule = createComposeRule()

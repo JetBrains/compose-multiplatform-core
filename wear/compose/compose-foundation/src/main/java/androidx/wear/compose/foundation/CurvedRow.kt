@@ -48,7 +48,7 @@ public fun CurvedScope.curvedRow(
     radialAlignment: CurvedAlignment.Radial? = null,
     angularDirection: CurvedDirection.Angular? = null,
     contentBuilder: CurvedScope.() -> Unit
-) =
+): Unit =
     add(
         CurvedRowChild(
             curvedLayoutDirection.copy(overrideAngular = angularDirection),

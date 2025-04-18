@@ -29,13 +29,15 @@ import static java.util.Collections.unmodifiableMap;
 
 import android.hardware.camera2.CaptureRequest;
 
-import androidx.annotation.NonNull;
+import androidx.camera.camera2.internal.compat.quirk.AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk;
 import androidx.camera.camera2.internal.compat.quirk.ImageCaptureFailedForVideoSnapshotQuirk;
 import androidx.camera.camera2.internal.compat.quirk.ImageCaptureFailedWhenVideoCaptureIsBoundQuirk;
 import androidx.camera.camera2.internal.compat.quirk.PreviewDelayWhenVideoCaptureIsBoundQuirk;
 import androidx.camera.camera2.internal.compat.quirk.PreviewStretchWhenVideoCaptureIsBoundQuirk;
 import androidx.camera.camera2.internal.compat.quirk.TemporalNoiseQuirk;
 import androidx.camera.core.impl.Quirks;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -50,6 +52,7 @@ import java.util.Map;
  * @see ImageCaptureFailedWhenVideoCaptureIsBoundQuirk
  * @see TemporalNoiseQuirk
  * @see ImageCaptureFailedForVideoSnapshotQuirk
+ * @see AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk
  */
 public class TemplateParamsOverride {
     private final boolean mWorkaroundByCaptureIntentPreview;
@@ -64,8 +67,7 @@ public class TemplateParamsOverride {
     /**
      * Returns capture parameters used to override the default parameters of the input template.
      */
-    @NonNull
-    public Map<CaptureRequest.Key<?>, Object> getOverrideParams(int template) {
+    public @NonNull Map<CaptureRequest.Key<?>, Object> getOverrideParams(int template) {
         if (template == TEMPLATE_RECORD && mWorkaroundByCaptureIntentPreview) {
             Map<CaptureRequest.Key<?>, Object> params = new HashMap<>();
             params.put(CONTROL_CAPTURE_INTENT, CONTROL_CAPTURE_INTENT_PREVIEW);

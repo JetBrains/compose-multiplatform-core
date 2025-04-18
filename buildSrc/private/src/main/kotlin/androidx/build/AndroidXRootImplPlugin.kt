@@ -49,7 +49,7 @@ import org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinNpmInstallTask
 
 abstract class AndroidXRootImplPlugin : Plugin<Project> {
     @get:Inject abstract val registry: BuildEventsListenerRegistry
-    @Suppress("UnstableApiUsage") @get:Inject abstract val buildFeatures: BuildFeatures
+    @get:Inject abstract val buildFeatures: BuildFeatures
 
     override fun apply(project: Project) {
         if (!project.isRoot) {
@@ -63,6 +63,7 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
         tasks.register("listAndroidXProperties", ListAndroidXPropertiesTask::class.java)
         configureKtfmtCheckFile()
         maybeRegisterFilterableTask()
+        registerListAffectedProjectsTask()
 
         // If we're running inside Studio, validate the Android Gradle Plugin version.
         val expectedAgpVersion = System.getenv("EXPECTED_AGP_VERSION")
@@ -101,12 +102,12 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
         extra.set("projects", ConcurrentHashMap<String, String>())
 
         /**
-         * Copy PrivacySandbox related APKs into [getTestConfigDirectory] before zipping. Flatten
-         * directory hierarchy as both TradeFed and FTL work with flat hierarchy.
+         * Copy App APKs (from ApkOutputProviders) into [getTestConfigDirectory] before zipping.
+         * Flatten directory hierarchy as both TradeFed and FTL work with flat hierarchy.
          */
         val finalizeConfigsTask =
             project.tasks.register(FINALIZE_TEST_CONFIGS_WITH_APKS_TASK, Copy::class.java) {
-                it.from(project.getPrivacySandboxFilesDirectory())
+                it.from(project.getAppApksFilesDirectory())
                 it.into(project.getTestConfigDirectory())
                 it.eachFile { f -> f.relativePath = RelativePath(true, f.name) }
                 it.includeEmptyDirs = false
@@ -148,7 +149,7 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
          * Add dependency analysis plugin and add buildHealth task to buildOnServer when
          * maxDepVersions is not enabled
          */
-        if (!project.usingMaxDepVersions()) {
+        if (!project.usingMaxDepVersions().get()) {
             project.plugins.apply("com.autonomousapps.dependency-analysis")
 
             // Ignore advice regarding ktx dependencies

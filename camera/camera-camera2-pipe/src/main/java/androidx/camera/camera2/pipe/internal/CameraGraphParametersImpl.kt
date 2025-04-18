@@ -161,7 +161,7 @@ internal constructor(
         val unappliedParameters = fetchUpdatedParameters() ?: return
         if (update) {
             sessionLock.withTokenIn(graphScope) {
-                graphProcessor.updateParameters(unappliedParameters)
+                graphProcessor.updateGraphParameters(unappliedParameters)
             }
         }
     }

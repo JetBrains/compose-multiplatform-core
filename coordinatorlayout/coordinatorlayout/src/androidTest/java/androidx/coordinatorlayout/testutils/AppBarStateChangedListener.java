@@ -16,6 +16,7 @@
 package androidx.coordinatorlayout.testutils;
 
 import com.google.android.material.appbar.AppBarLayout;
+
 /**
  * Allows tests to determine if an AppBarLayout with a CollapsingToolbarLayout is expanded,
  * animating, or collapsed.

@@ -29,8 +29,6 @@ import android.graphics.Rect;
 import android.util.Size;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.CameraEffect;
 import androidx.camera.core.Logger;
 import androidx.camera.core.ProcessingException;
@@ -52,6 +50,9 @@ import androidx.core.util.Preconditions;
 import com.google.auto.value.AutoValue;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,17 +67,12 @@ public class DualSurfaceProcessorNode implements
 
     private static final String TAG = "DualSurfaceProcessorNode";
 
-    @NonNull
-    final SurfaceProcessorInternal mSurfaceProcessor;
-    @NonNull
-    final CameraInternal mPrimaryCameraInternal;
-    @NonNull
-    final CameraInternal mSecondaryCameraInternal;
+    final @NonNull SurfaceProcessorInternal mSurfaceProcessor;
+    final @NonNull CameraInternal mPrimaryCameraInternal;
+    final @NonNull CameraInternal mSecondaryCameraInternal;
     // Guarded by main thread.
-    @Nullable
-    private Out mOutput;
-    @Nullable
-    private In mInput;
+    private @Nullable Out mOutput;
+    private @Nullable In mInput;
 
     /**
      * Constructs the {@link DualSurfaceProcessorNode}.
@@ -98,9 +94,8 @@ public class DualSurfaceProcessorNode implements
      * {@inheritDoc}
      */
     @Override
-    @NonNull
     @MainThread
-    public Out transform(@NonNull In in) {
+    public @NonNull Out transform(@NonNull In in) {
         Threads.checkMainThread();
         mInput = in;
         mOutput = new Out();
@@ -121,8 +116,7 @@ public class DualSurfaceProcessorNode implements
         return mOutput;
     }
 
-    @NonNull
-    private SurfaceEdge transformSingleOutput(@NonNull SurfaceEdge input,
+    private @NonNull SurfaceEdge transformSingleOutput(@NonNull SurfaceEdge input,
             @NonNull OutConfig outConfig) {
         SurfaceEdge outputSurface;
         Rect cropRect = outConfig.getCropRect();
@@ -282,16 +276,14 @@ public class DualSurfaceProcessorNode implements
          *
          * <p> {@link DualSurfaceProcessorNode} supports dual camera streams.
          */
-        @NonNull
-        public abstract SurfaceEdge getPrimarySurfaceEdge();
+        public abstract @NonNull SurfaceEdge getPrimarySurfaceEdge();
 
         /**
          * Gets the input stream from secondary camera.
          *
          * <p> {@link DualSurfaceProcessorNode} supports dual camera streams.
          */
-        @NonNull
-        public abstract SurfaceEdge getSecondarySurfaceEdge();
+        public abstract @NonNull SurfaceEdge getSecondarySurfaceEdge();
 
         /**
          * Gets the config for generating output streams.
@@ -300,14 +292,12 @@ public class DualSurfaceProcessorNode implements
          * {@link DualOutConfig} in this list.
          */
         @SuppressWarnings("AutoValueImmutableFields")
-        @NonNull
-        public abstract List<DualOutConfig> getOutConfigs();
+        public abstract @NonNull List<DualOutConfig> getOutConfigs();
 
         /**
          * Creates a {@link In} instance.
          */
-        @NonNull
-        public static In of(
+        public static @NonNull In of(
                 @NonNull SurfaceEdge primaryEdge,
                 @NonNull SurfaceEdge secondaryEdge,
                 @NonNull List<DualOutConfig> configs) {

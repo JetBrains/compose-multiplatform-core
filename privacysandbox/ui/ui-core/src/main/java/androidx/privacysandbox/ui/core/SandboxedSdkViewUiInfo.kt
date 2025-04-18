@@ -18,6 +18,7 @@ package androidx.privacysandbox.ui.core
 
 import android.graphics.Rect
 import android.os.Bundle
+import androidx.annotation.RestrictTo
 import androidx.core.os.BundleCompat
 
 /** A class representing the UI state of a SandboxedSdkView. */
@@ -44,13 +45,30 @@ class SandboxedSdkViewUiInfo(
      *
      * When the opacity is not available, the value will be -1.
      */
-    val uiContainerOpacityHint: Float
+    val uiContainerOpacityHint: Float,
+    /**
+     * Returns the list of coordinate rectangles, relative to the UI container, that are obstructed.
+     *
+     * The container may be considered to be obstructed by another UI element if that UI element
+     * overlaps with the container, is displayed on top of it, and is not transparent. Ancestor
+     * views and children views will not be considered as obstructing the container. If the
+     * container's window is placed above the client window, no obstructions will be reported.
+     *
+     * The coordinates of each obstruction in this list are relative to the UI container, and
+     * measured in pixels. The rectangles may overlap each other.
+     *
+     * This value will only be non-empty if [SandboxedUiAdapterSignalOptions.OBSTRUCTIONS] is set on
+     * the [SessionObserverFactory] associated with the UI container's [SandboxedUiAdapter].
+     * Otherwise, this will return an empty list irrespective of any obstructions on the container.
+     */
+    val obstructedGeometry: List<Rect>
 ) {
     companion object {
         private const val UI_CONTAINER_WIDTH_KEY = "uiContainerWidth"
         private const val UI_CONTAINER_HEIGHT_KEY = "uiContainerHeight"
         private const val ONSCREEN_GEOMETRY_KEY = "onScreenGeometry"
         private const val UI_CONTAINER_OPACITY_KEY = "uiContainerOpacity"
+        private const val OBSTRUCTED_GEOMETRY_KEY = "obstructedGeometry"
 
         @JvmStatic
         fun fromBundle(bundle: Bundle): SandboxedSdkViewUiInfo {
@@ -61,11 +79,19 @@ class SandboxedSdkViewUiInfo(
                     BundleCompat.getParcelable(bundle, ONSCREEN_GEOMETRY_KEY, Rect::class.java)
                 )
             val uiContainerOpacityHint = bundle.getFloat(UI_CONTAINER_OPACITY_KEY)
+            val obstructedGeometry =
+                BundleCompat.getParcelableArrayList<Rect>(
+                        bundle,
+                        OBSTRUCTED_GEOMETRY_KEY,
+                        Rect::class.java
+                    )
+                    ?.toList() ?: listOf()
             return SandboxedSdkViewUiInfo(
                 uiContainerWidth,
                 uiContainerHeight,
                 onScreenGeometry,
-                uiContainerOpacityHint
+                uiContainerOpacityHint,
+                obstructedGeometry
             )
         }
 
@@ -76,7 +102,24 @@ class SandboxedSdkViewUiInfo(
             bundle.putInt(UI_CONTAINER_HEIGHT_KEY, sandboxedSdkViewUiInfo.uiContainerHeight)
             bundle.putParcelable(ONSCREEN_GEOMETRY_KEY, sandboxedSdkViewUiInfo.onScreenGeometry)
             bundle.putFloat(UI_CONTAINER_OPACITY_KEY, sandboxedSdkViewUiInfo.uiContainerOpacityHint)
+            bundle.putParcelableArrayList(
+                OBSTRUCTED_GEOMETRY_KEY,
+                ArrayList<Rect>(sandboxedSdkViewUiInfo.obstructedGeometry)
+            )
             return bundle
+        }
+
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        fun pruneBundle(bundle: Bundle, signalOptions: Set<String>) {
+            if (!signalOptions.contains(SandboxedUiAdapterSignalOptions.GEOMETRY)) {
+                bundle.remove(UI_CONTAINER_HEIGHT_KEY)
+                bundle.remove(UI_CONTAINER_WIDTH_KEY)
+                bundle.remove(UI_CONTAINER_OPACITY_KEY)
+                bundle.remove(ONSCREEN_GEOMETRY_KEY)
+            }
+            if (!signalOptions.contains(SandboxedUiAdapterSignalOptions.OBSTRUCTIONS)) {
+                bundle.remove(OBSTRUCTED_GEOMETRY_KEY)
+            }
         }
     }
 
@@ -94,6 +137,7 @@ class SandboxedSdkViewUiInfo(
         var result = uiContainerWidth
         result = 31 * result + uiContainerHeight
         result = 31 * result + onScreenGeometry.hashCode()
+        result = 31 * result + obstructedGeometry.hashCode()
         return result
     }
 
@@ -102,6 +146,7 @@ class SandboxedSdkViewUiInfo(
             "uiContainerWidth=$uiContainerWidth, " +
             "uiContainerHeight=$uiContainerHeight, " +
             "onScreenGeometry=$onScreenGeometry," +
-            "uiContainerOpacityHint=$uiContainerOpacityHint"
+            "uiContainerOpacityHint=$uiContainerOpacityHint," +
+            "obstructedGeometry=$obstructedGeometry"
     }
 }

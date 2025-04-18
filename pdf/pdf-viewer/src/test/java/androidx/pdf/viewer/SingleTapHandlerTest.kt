@@ -28,7 +28,6 @@ import androidx.pdf.util.ObservableValue
 import androidx.pdf.util.ZoomUtils
 import androidx.pdf.widget.ZoomView
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SmallTest
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.junit.Before
 import org.junit.Test
@@ -41,7 +40,6 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
 
-@SmallTest
 @RunWith(RobolectricTestRunner::class)
 class SingleTapHandlerTest {
 

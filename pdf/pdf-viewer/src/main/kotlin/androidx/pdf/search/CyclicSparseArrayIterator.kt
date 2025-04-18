@@ -19,13 +19,13 @@ package androidx.pdf.search
 import android.util.SparseArray
 import androidx.annotation.RestrictTo
 import androidx.pdf.content.PageMatchBounds
-import androidx.pdf.search.model.SelectedSearchResult
+import androidx.pdf.search.model.QueryResultsIndex
 
 /**
  * A cyclic iterator implementation over SparseArray.
  *
- * @param searchData: search result over which [CyclicSparseArrayIterator] will iterate.
- * @param visiblePage: current visible page to the user, used to init current result.
+ * @param searchData search result over which [CyclicSparseArrayIterator] will iterate.
+ * @param visiblePage current visible page to the user, used to init current result.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class CyclicSparseArrayIterator(
@@ -42,29 +42,23 @@ internal class CyclicSparseArrayIterator(
     private var pageNumIndex: Int
 
     /** Index of result selected on current page. */
-    private var searchIndexOnPage: Int
+    private var searchIndexOnPage: Int = 0
 
     init {
         if (totalPages == 0) {
             throw IllegalArgumentException("Search data must not be empty")
         }
-        val (pageIndex, searchIndex) = findInitialMatch(visiblePage)
-        pageNumIndex = pageIndex
-        searchIndexOnPage = searchIndex
+        pageNumIndex = findInitialMatch(visiblePage)
     }
 
     /** Get the current state of selected search result. */
-    fun current(): SelectedSearchResult {
+    fun current(): QueryResultsIndex {
         val currentPageNum = pageNumList[pageNumIndex]
-        return SelectedSearchResult(currentPageNum, searchIndexOnPage)
+        return QueryResultsIndex(pageNum = currentPageNum, resultBoundsIndex = searchIndexOnPage)
     }
 
     /** Move to the nex element in the current page, or to the next page cyclically. */
-    fun next(): SelectedSearchResult {
-        if (totalPages == 0) {
-            throw NoSuchElementException("No elements to iterate.")
-        }
-
+    fun next(): QueryResultsIndex {
         val currentPageNum = pageNumList[pageNumIndex]
         val resultsOnPage = searchData.get(currentPageNum)
 
@@ -80,11 +74,7 @@ internal class CyclicSparseArrayIterator(
     }
 
     /** Move to the previous element in the page list, or to the previous page cyclically. */
-    fun prev(): SelectedSearchResult {
-        if (totalPages == 0) {
-            throw NoSuchElementException("No elements to iterate.")
-        }
-
+    fun prev(): QueryResultsIndex {
         val currentPageNum = pageNumList[pageNumIndex]
         val resultsOnPage = searchData.get(currentPageNum)
 
@@ -94,9 +84,28 @@ internal class CyclicSparseArrayIterator(
         // If we're at the beginning of the current page, move to the previous page
         if (searchIndexOnPage == resultsOnPage.size - 1) {
             pageNumIndex = (pageNumIndex - 1 + totalPages) % totalPages
+            // update the search index of page to last result on updated page
+            searchIndexOnPage = searchData.valueAt(pageNumIndex).lastIndex
         }
 
         return current()
+    }
+
+    /**
+     * Moves the [searchIndexOnPage] to the provided index on the current page. This can be utilized
+     * in scenarios where restoring the current result is needed.
+     *
+     * @throws [IndexOutOfBoundsException] if the provided index is outside the bounds of the
+     *   results on the current page.
+     */
+    fun moveToIndex(index: Int) {
+        val resultSizeOnCurrentPage = searchData.valueAt(pageNumIndex).size
+        if (index !in 0 until resultSizeOnCurrentPage)
+            throw IndexOutOfBoundsException(
+                "Provided index is out of range in selected page results."
+            )
+
+        searchIndexOnPage = index
     }
 
     /**
@@ -105,13 +114,13 @@ internal class CyclicSparseArrayIterator(
      *
      * @param currentPageNum: current visible page.
      */
-    private fun findInitialMatch(currentPageNum: Int): Pair<Int, Int> {
+    private fun findInitialMatch(currentPageNum: Int): Int {
         // Perform binary search to find the closest page in forward direction
         val indexOfPage = pageNumList.binarySearch(currentPageNum)
 
         return if (indexOfPage >= 0) {
             // Search results exists on current page, return it
-            Pair(indexOfPage, INITIAL_INDEX_ON_PAGE)
+            indexOfPage
         } else {
             // If not found, find the position where it should be inserted
             val insertionPoint = -(indexOfPage + 1)
@@ -119,15 +128,11 @@ internal class CyclicSparseArrayIterator(
             // If the insertion point is out of bounds, return the first page having results (wrap
             // around)
             if (insertionPoint >= pageNumList.size) {
-                Pair(0, INITIAL_INDEX_ON_PAGE)
+                0
             } else {
                 // Otherwise, return the page at the insertion point (the next closest page)
-                Pair(insertionPoint, INITIAL_INDEX_ON_PAGE)
+                insertionPoint
             }
         }
-    }
-
-    companion object {
-        private const val INITIAL_INDEX_ON_PAGE = 0
     }
 }

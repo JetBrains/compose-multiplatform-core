@@ -74,6 +74,7 @@ import androidx.compose.ui.unit.LayoutDirection
  * @param modifier The modifier to be applied to the Column.
  * @param verticalArrangement The vertical arrangement of the layout's children.
  * @param horizontalAlignment The horizontal alignment of the layout's children.
+ * @param content The content of the Column
  * @see Row
  * @see [androidx.compose.foundation.lazy.LazyColumn]
  */

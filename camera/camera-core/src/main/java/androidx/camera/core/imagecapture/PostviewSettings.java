@@ -18,9 +18,9 @@ package androidx.camera.core.imagecapture;
 
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * The postview settings when creating the image capture pipeline.
@@ -30,8 +30,7 @@ public abstract class PostviewSettings {
     /**
      * Returns the postivew resolution when creating the image capture pipeline.
      */
-    @NonNull
-    public abstract Size getResolution();
+    public abstract @NonNull Size getResolution();
 
     /**
      * Returns the postview input format when creating the image capture pipeline.
@@ -41,8 +40,7 @@ public abstract class PostviewSettings {
     /**
      * Creates an instance of {@link PostviewSettings}.
      */
-    @NonNull
-    public static PostviewSettings create(@NonNull Size resolution, int inputFormat) {
+    public static @NonNull PostviewSettings create(@NonNull Size resolution, int inputFormat) {
         return new AutoValue_PostviewSettings(resolution, inputFormat);
     }
 }

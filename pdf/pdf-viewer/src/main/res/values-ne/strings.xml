@@ -29,8 +29,9 @@
     <string name="desc_page_single" msgid="8459583146661044094">"<xliff:g id="TOTAL">%2$d</xliff:g> मध्ये <xliff:g id="PAGE">%1$d</xliff:g> औँ पेज"</string>
     <string name="desc_zoom" msgid="7318480946145947242">"<xliff:g id="FIRST">%1$d</xliff:g> प्रतिशत जुम गर्नुहोस्"</string>
     <string name="desc_goto_link" msgid="2461368384824849714">"पेज <xliff:g id="PAGE_NUMBER">%1$d</xliff:g> मा जानुहोस्"</string>
-    <string name="desc_page" msgid="5684226167093594168">"पेज <xliff:g id="PAGE">%1$d</xliff:g>"</string>
+    <string name="desc_page" msgid="6702471448987833953">"पेज <xliff:g id="PAGE">%1$d</xliff:g>"</string>
     <string name="desc_empty_page" msgid="5041794048330057239">"यो पेज खाली छ"</string>
+    <string name="desc_page_with_text" msgid="2564017005407577604">"पेज <xliff:g id="PAGE_NUMBER">%1$d</xliff:g>: <xliff:g id="PAGE_TEXT">%2$s</xliff:g>"</string>
     <string name="error_file_format_pdf" msgid="7567006188638831878">"PDF देखाउन मिल्दैन (<xliff:g id="TITLE">%1$s</xliff:g> को फर्म्याट अवैध छ)"</string>
     <string name="error_on_page" msgid="1592475819957182385">"पेज <xliff:g id="PAGE">%1$d</xliff:g> देखाउन मिल्दैन (फाइलसम्बन्धी त्रुटि)"</string>
     <string name="desc_web_link_shortened_to_domain" msgid="3323639528531061592">"लिंक: <xliff:g id="DESTINATION_DOMAIN">%1$s</xliff:g> मा भएको वेबपेज"</string>
@@ -59,4 +60,7 @@
     <string name="page_broken" msgid="2968770793669433462">"PDF डकुमेन्टको पेज लोड गर्न सकिएन"</string>
     <string name="needs_more_data" msgid="3520133467908240802">"PDF डकुमेन्ट प्रोसेस गर्न पर्याप्त जानकारी छैन"</string>
     <string name="error_cannot_open_pdf" msgid="2361919778558145071">"PDF फाइल खोल्न सकिएन"</string>
+    <string name="cannot_edit_pdf" msgid="7677598370087228978">"यो PDF सम्पादन गर्न सकिएन"</string>
+    <string name="clipboard_label" msgid="8943155331324944981">"PDF बाट कपी गरिएको सामग्री"</string>
+    <string name="fast_scroller_thumb" msgid="6712048991132846541">"स्क्रोल बार"</string>
 </resources>

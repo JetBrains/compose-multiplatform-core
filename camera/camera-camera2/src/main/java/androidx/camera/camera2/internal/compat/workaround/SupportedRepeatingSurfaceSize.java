@@ -18,11 +18,12 @@ package androidx.camera.camera2.internal.compat.workaround;
 
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.RepeatingStreamConstraintForVideoRecordingQuirk;
 import androidx.camera.core.impl.utils.CompareSizesByArea;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -33,8 +34,7 @@ import java.util.List;
  */
 public class SupportedRepeatingSurfaceSize {
 
-    @Nullable
-    private final RepeatingStreamConstraintForVideoRecordingQuirk mQuirk;
+    private final @Nullable RepeatingStreamConstraintForVideoRecordingQuirk mQuirk;
 
     public SupportedRepeatingSurfaceSize() {
         mQuirk = DeviceQuirks.get(RepeatingStreamConstraintForVideoRecordingQuirk.class);
@@ -45,8 +45,7 @@ public class SupportedRepeatingSurfaceSize {
     private static final Comparator<Size> SIZE_COMPARATOR = new CompareSizesByArea();
 
     /** Gets the supported output resolution of the device. */
-    @NonNull
-    public Size[] getSupportedSizes(@NonNull Size[] sizes) {
+    public Size @NonNull [] getSupportedSizes(Size @NonNull [] sizes) {
         if (mQuirk != null) {
             if (RepeatingStreamConstraintForVideoRecordingQuirk.isHuaweiMate9()) {
                 List<Size> supportedSizes = new ArrayList<>();

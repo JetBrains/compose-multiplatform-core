@@ -17,7 +17,6 @@
 package androidx.work.integration.testapp
 
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
-import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -105,7 +104,6 @@ class ForegroundLocationWorker(context: Context, parameters: WorkerParameters) :
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    @SuppressLint("ClassVerificationFailure")
     private fun createChannel() {
         val id = applicationContext.getString(R.string.channel_id)
         val name = applicationContext.getString(R.string.channel_name)

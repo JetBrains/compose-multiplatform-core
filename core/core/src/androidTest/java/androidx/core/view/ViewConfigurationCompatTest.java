@@ -33,12 +33,12 @@ import android.hardware.input.InputManager;
 import android.view.InputDevice;
 import android.view.ViewConfiguration;
 
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -330,8 +330,7 @@ public class ViewConfigurationCompatTest {
                         mContext, vc, inputDeviceId, axis, source));
     }
 
-    @Nullable
-    private InputDevice findInputDevice(int source) {
+    private @Nullable InputDevice findInputDevice(int source) {
         InputManager inputManager =
                 (InputManager) mContext.getSystemService(Context.INPUT_SERVICE);
         int[] deviceIds = inputManager.getInputDeviceIds();

@@ -19,9 +19,10 @@ package androidx.camera.video;
 import android.location.Location;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Options for configuring output destination for generating a recording.
@@ -64,8 +65,7 @@ public abstract class OutputOptions {
      *
      * @return the location object or {@code null} if no location was set.
      */
-    @Nullable
-    public Location getLocation() {
+    public @Nullable Location getLocation() {
         return mOutputOptionsInternal.getLocation();
     }
 
@@ -88,7 +88,7 @@ public abstract class OutputOptions {
 
         final OutputOptionsInternal.Builder<?> mRootInternalBuilder;
 
-        Builder(@NonNull OutputOptionsInternal.Builder<?> builder) {
+        Builder(OutputOptionsInternal.@NonNull Builder<?> builder) {
             mRootInternalBuilder = builder;
             // Apply default value
             mRootInternalBuilder.setFileSizeLimit(FILE_SIZE_UNLIMITED);
@@ -110,8 +110,7 @@ public abstract class OutputOptions {
          * @return this Builder.
          * @throws IllegalArgumentException if the specified file size limit is negative.
          */
-        @NonNull
-        public B setFileSizeLimit(@IntRange(from = 0) long fileSizeLimitBytes) {
+        public @NonNull B setFileSizeLimit(@IntRange(from = 0) long fileSizeLimitBytes) {
             Preconditions.checkArgument(fileSizeLimitBytes >= 0, "The specified file size limit "
                     + "can't be negative.");
             mRootInternalBuilder.setFileSizeLimit(fileSizeLimitBytes);
@@ -133,8 +132,7 @@ public abstract class OutputOptions {
          * @return this Builder.
          * @throws IllegalArgumentException if the specified duration limit is negative.
          */
-        @NonNull
-        public B setDurationLimitMillis(@IntRange(from = 0) long durationLimitMillis) {
+        public @NonNull B setDurationLimitMillis(@IntRange(from = 0) long durationLimitMillis) {
             Preconditions.checkArgument(durationLimitMillis >= 0, "The specified duration limit "
                     + "can't be negative.");
             mRootInternalBuilder.setDurationLimitMillis(durationLimitMillis);
@@ -156,8 +154,7 @@ public abstract class OutputOptions {
          * {@code [-90, 90]} or the longitude of the location is not in the range {@code [-180,
          * 180]}.
          */
-        @NonNull
-        public B setLocation(@Nullable Location location) {
+        public @NonNull B setLocation(@Nullable Location location) {
             if (location != null) {
                 Preconditions.checkArgument(
                         location.getLatitude() >= -90 && location.getLatitude() <= 90,
@@ -173,8 +170,7 @@ public abstract class OutputOptions {
         /**
          * Builds the {@link OutputOptions} instance.
          */
-        @NonNull
-        abstract T build();
+        abstract @NonNull T build();
     }
 
     // A base class of a @AutoValue class
@@ -186,24 +182,20 @@ public abstract class OutputOptions {
         @IntRange(from = 0)
         abstract long getDurationLimitMillis();
 
-        @Nullable
-        abstract Location getLocation();
+        abstract @Nullable Location getLocation();
 
         // A base class of a @AutoValue.Builder class
         @SuppressWarnings("NullableProblems") // Nullable problem in AutoValue generated class
         abstract static class Builder<B> {
 
-            @NonNull
-            abstract B setFileSizeLimit(@IntRange(from = 0) long fileSizeLimitBytes);
+            abstract @NonNull B setFileSizeLimit(@IntRange(from = 0) long fileSizeLimitBytes);
 
-            @NonNull
-            abstract B setDurationLimitMillis(@IntRange(from = 0) long durationLimitMillis);
+            abstract @NonNull B setDurationLimitMillis(
+                    @IntRange(from = 0) long durationLimitMillis);
 
-            @NonNull
-            abstract B setLocation(@Nullable Location location);
+            abstract @NonNull B setLocation(@Nullable Location location);
 
-            @NonNull
-            abstract OutputOptionsInternal build();
+            abstract @NonNull OutputOptionsInternal build();
         }
     }
 }

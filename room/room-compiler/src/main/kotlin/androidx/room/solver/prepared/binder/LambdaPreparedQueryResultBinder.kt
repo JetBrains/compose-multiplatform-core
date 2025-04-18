@@ -40,15 +40,6 @@ class LambdaPreparedQueryResultBinder(
 ) : PreparedQueryResultBinder(adapter) {
 
     override fun executeAndReturn(
-        prepareQueryStmtBlock: CodeGenScope.() -> String,
-        preparedStmtProperty: XPropertySpec?,
-        dbProperty: XPropertySpec,
-        scope: CodeGenScope
-    ) {
-        error("Wrong executeAndReturn invoked")
-    }
-
-    override fun executeAndReturn(
         sqlQueryVar: String,
         dbProperty: XPropertySpec,
         bindStatement: CodeGenScope.(String) -> Unit,
@@ -90,6 +81,4 @@ class LambdaPreparedQueryResultBinder(
             )
         scope.builder.add("return %L", performBlock)
     }
-
-    override fun isMigratedToDriver() = true
 }

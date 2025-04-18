@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.input.nestedscroll
 
-import androidx.compose.ui.ComposeUiFlags.NewNestedScrollFlingDispatchingEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -219,7 +218,7 @@ class NestedScrollDispatcher {
         // methods because the problem with parity in this API comes from a node that detaches
         // during a fling. By the time a node detaches it already sent the onPreFling event and
         // consumers of Nested Scroll might expect an onPostFling event to close the cycle.
-        return if (parent == null && NewNestedScrollFlingDispatchingEnabled) {
+        return if (parent == null) {
             lastKnownParentNode?.onPostFling(consumed, available) ?: Velocity.Zero
         } else {
             parent?.onPostFling(consumed, available) ?: Velocity.Zero

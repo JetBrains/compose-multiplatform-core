@@ -196,6 +196,13 @@ internal constructor(
     ) {
         override fun toString(): String = description
 
+        // Override #hashCode to return consistent value every time.
+        @Suppress("EqualsAndHashCode")
+        override fun hashCode(): Int {
+            var result = description.hashCode()
+            return 31 * result + value
+        }
+
         companion object {
             /** Never finish the associated container. */
             @JvmField val NEVER = FinishBehavior("NEVER", 0)

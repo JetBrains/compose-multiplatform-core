@@ -50,7 +50,7 @@ interface SnapshotObserver {
      * @param readonly whether the snapshot being created will be read-only.
      * @return optional read and write observers that will be added to the snapshot created.
      */
-    fun onCreating(parent: Snapshot?, readonly: Boolean): SnapshotInstanceObservers? = null
+    fun onPreCreate(parent: Snapshot?, readonly: Boolean): SnapshotInstanceObservers? = null
 
     /**
      * Called after snapshot is created.
@@ -64,7 +64,7 @@ interface SnapshotObserver {
      * @param parent the parent snapshot for the new snapshot if it is a nested snapshot or null if
      *   it is a root snapshot.
      * @param observers the read and write observers that were installed by the value returned by
-     *   [onCreated]. This allows correlating which snapshot observers returned by [onCreating] to
+     *   [onCreated]. This allows correlating which snapshot observers returned by [onPreCreate] to
      *   the [snapshot] that was created.
      */
     fun onCreated(snapshot: Snapshot, parent: Snapshot?, observers: SnapshotInstanceObservers?) {}
@@ -76,7 +76,7 @@ interface SnapshotObserver {
      *
      * @param snapshot information about the snapshot that was created.
      */
-    fun onDisposing(snapshot: Snapshot) {}
+    fun onPreDispose(snapshot: Snapshot) {}
 
     /**
      * Called after a snapshot is applied.
@@ -96,8 +96,8 @@ interface SnapshotObserver {
 }
 
 /**
- * The return result of [SnapshotObserver.onCreating] allowing the reads and writes performed in the
- * newly created snapshot to be observed
+ * The return result of [SnapshotObserver.onPreCreate] allowing the reads and writes performed in
+ * the newly created snapshot to be observed
  */
 @ExperimentalComposeRuntimeApi
 class SnapshotInstanceObservers(
@@ -186,7 +186,7 @@ internal fun PersistentList<SnapshotObserver>.mergeObservers(
     var currentWriteObserver = writeObserver
     var observerMap: MutableMap<SnapshotObserver, SnapshotInstanceObservers>? = null
     fastForEach { observer ->
-        val instance = observer.onCreating(parent, readonly)
+        val instance = observer.onPreCreate(parent, readonly)
         if (instance != null) {
             currentReadObserver = mergeObservers(instance.readObserver, currentReadObserver)
             currentWriteObserver = mergeObservers(instance.writeObserver, currentWriteObserver)
@@ -223,8 +223,8 @@ internal fun PersistentList<SnapshotObserver>.dispatchCreatedObservers(
 }
 
 @OptIn(ExperimentalComposeRuntimeApi::class)
-internal fun dispatchObserverOnDispose(snapshot: Snapshot) {
-    observers?.fastForEach { observer -> observer.onDisposing(snapshot) }
+internal fun dispatchObserverOnPreDispose(snapshot: Snapshot) {
+    observers?.fastForEach { observer -> observer.onPreDispose(snapshot) }
 }
 
 @OptIn(ExperimentalComposeRuntimeApi::class)

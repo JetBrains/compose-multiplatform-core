@@ -26,21 +26,20 @@ class MapQueryResultAdapter(
     private val mapValueResultAdapter: MapValueResultAdapter.NestedMapValueResultAdapter,
 ) : MultimapQueryResultAdapter(context, parsedQuery, mapValueResultAdapter.rowAdapters) {
 
-    override fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope) {
+    override fun convert(outVarName: String, stmtVarName: String, scope: CodeGenScope) {
         scope.builder.apply {
-            generateCursorIndexes(cursorVarName, scope)
+            generateStatementIndexes(stmtVarName, scope)
             addLocalVariable(
                 name = outVarName,
                 typeName = mapValueResultAdapter.getDeclarationTypeName(),
                 assignExpr = mapValueResultAdapter.getInstantiationCodeBlock()
             )
-            val stepName = if (scope.useDriverApi) "step" else "moveToNext"
-            beginControlFlow("while (%L.$stepName())", cursorVarName)
+            beginControlFlow("while (%L.step())", stmtVarName)
                 .apply {
                     mapValueResultAdapter.convert(
                         scope,
                         outVarName,
-                        cursorVarName,
+                        stmtVarName,
                         dupeColumnsIndexAdapter,
                     )
                 }
@@ -48,25 +47,23 @@ class MapQueryResultAdapter(
         }
     }
 
-    private fun generateCursorIndexes(cursorVarName: String, scope: CodeGenScope) {
+    private fun generateStatementIndexes(stmtVarName: String, scope: CodeGenScope) {
         if (dupeColumnsIndexAdapter != null) {
             // There are duplicate columns in the result objects, generate code that provides
             // us with the indices resolved and pass it to the adapters so it can retrieve
             // the index of each column used by it.
-            dupeColumnsIndexAdapter.onCursorReady(cursorVarName, scope)
+            dupeColumnsIndexAdapter.onStatementReady(stmtVarName, scope)
             rowAdapters.forEach {
                 check(it is QueryMappedRowAdapter)
                 val indexVarNames = dupeColumnsIndexAdapter.getIndexVarsForMapping(it.mapping)
-                it.onCursorReady(
+                it.onStatementReady(
                     indices = indexVarNames,
-                    cursorVarName = cursorVarName,
+                    stmtVarName = stmtVarName,
                     scope = scope
                 )
             }
         } else {
-            rowAdapters.forEach { it.onCursorReady(cursorVarName = cursorVarName, scope = scope) }
+            rowAdapters.forEach { it.onStatementReady(stmtVarName = stmtVarName, scope = scope) }
         }
     }
-
-    override fun isMigratedToDriver(): Boolean = mapValueResultAdapter.isMigratedToDriver()
 }

@@ -25,11 +25,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A representation of settings that apply to a collection of similarly themed notifications.
@@ -50,8 +51,7 @@ public class NotificationChannelCompat {
     private static final int DEFAULT_LIGHT_COLOR = 0;
 
     // These fields are settable through the builder
-    @NonNull
-    final String mId;
+    final @NonNull String mId;
     CharSequence mName;
     int mImportance;
     String mDescription;
@@ -99,8 +99,7 @@ public class NotificationChannelCompat {
          * <p>The recommended maximum length is 40 characters; the value may be truncated if it
          * is too long.
          */
-        @NonNull
-        public Builder setName(@Nullable CharSequence name) {
+        public @NonNull Builder setName(@Nullable CharSequence name) {
             mChannel.mName = name;
             return this;
         }
@@ -114,8 +113,7 @@ public class NotificationChannelCompat {
          * @param importance the amount the user should be interrupted by notifications from this
          *                   channel.
          */
-        @NonNull
-        public Builder setImportance(int importance) {
+        public @NonNull Builder setImportance(int importance) {
             mChannel.mImportance = importance;
             return this;
         }
@@ -126,8 +124,7 @@ public class NotificationChannelCompat {
          * <p>The recommended maximum length is 300 characters; the value may be truncated if it is
          * too long.
          */
-        @NonNull
-        public Builder setDescription(@Nullable String description) {
+        public @NonNull Builder setDescription(@Nullable String description) {
             mChannel.mDescription = description;
             return this;
         }
@@ -144,8 +141,7 @@ public class NotificationChannelCompat {
          * @param groupId the id of a group created by
          *                {@link NotificationManagerCompat#createNotificationChannelGroup}.
          */
-        @NonNull
-        public Builder setGroup(@Nullable String groupId) {
+        public @NonNull Builder setGroup(@Nullable String groupId) {
             mChannel.mGroupId = groupId;
             return this;
         }
@@ -159,8 +155,7 @@ public class NotificationChannelCompat {
          *
          * @param showBadge true if badges should be allowed to be shown.
          */
-        @NonNull
-        public Builder setShowBadge(boolean showBadge) {
+        public @NonNull Builder setShowBadge(boolean showBadge) {
             mChannel.mShowBadge = showBadge;
             return this;
         }
@@ -174,8 +169,8 @@ public class NotificationChannelCompat {
          * Only modifiable before the channel is submitted to
          * {@link NotificationManagerCompat#createNotificationChannel(NotificationChannelCompat)}.
          */
-        @NonNull
-        public Builder setSound(@Nullable Uri sound, @Nullable AudioAttributes audioAttributes) {
+        public @NonNull Builder setSound(@Nullable Uri sound,
+                @Nullable AudioAttributes audioAttributes) {
             mChannel.mSound = sound;
             mChannel.mAudioAttributes = audioAttributes;
             return this;
@@ -188,8 +183,7 @@ public class NotificationChannelCompat {
          * Only modifiable before the channel is submitted to
          * {@link NotificationManagerCompat#createNotificationChannel(NotificationChannelCompat)}.
          */
-        @NonNull
-        public Builder setLightsEnabled(boolean lights) {
+        public @NonNull Builder setLightsEnabled(boolean lights) {
             mChannel.mLights = lights;
             return this;
         }
@@ -202,8 +196,7 @@ public class NotificationChannelCompat {
          * Only modifiable before the channel is submitted to
          * {@link NotificationManagerCompat#createNotificationChannel(NotificationChannelCompat)}.
          */
-        @NonNull
-        public Builder setLightColor(int argb) {
+        public @NonNull Builder setLightColor(int argb) {
             mChannel.mLightColor = argb;
             return this;
         }
@@ -215,8 +208,7 @@ public class NotificationChannelCompat {
          * Only modifiable before the channel is submitted to
          * {@link NotificationManagerCompat#createNotificationChannel(NotificationChannelCompat)}.
          */
-        @NonNull
-        public Builder setVibrationEnabled(boolean vibration) {
+        public @NonNull Builder setVibrationEnabled(boolean vibration) {
             mChannel.mVibrationEnabled = vibration;
             return this;
         }
@@ -229,8 +221,7 @@ public class NotificationChannelCompat {
          * Only modifiable before the channel is submitted to
          * {@link NotificationManagerCompat#createNotificationChannel(NotificationChannelCompat)}.
          */
-        @NonNull
-        public Builder setVibrationPattern(@Nullable long[] vibrationPattern) {
+        public @NonNull Builder setVibrationPattern(long @Nullable [] vibrationPattern) {
             mChannel.mVibrationEnabled = vibrationPattern != null && vibrationPattern.length > 0;
             mChannel.mVibrationPattern = vibrationPattern;
             return this;
@@ -252,8 +243,7 @@ public class NotificationChannelCompat {
          * @param conversationId  The {@link ShortcutInfoCompat#getId()} of the shortcut
          *                        representing this channel's conversation.
          */
-        @NonNull
-        public Builder setConversationId(@NonNull String parentChannelId,
+        public @NonNull Builder setConversationId(@NonNull String parentChannelId,
                 @NonNull String conversationId) {
             if (Build.VERSION.SDK_INT >= 30) {
                 mChannel.mParentId = parentChannelId;
@@ -265,8 +255,7 @@ public class NotificationChannelCompat {
         /**
          * Creates a {@link NotificationChannelCompat} instance.
          */
-        @NonNull
-        public NotificationChannelCompat build() {
+        public @NonNull NotificationChannelCompat build() {
             return mChannel;
         }
     }
@@ -335,8 +324,7 @@ public class NotificationChannelCompat {
     /**
      * Creates a {@link Builder} instance with all the writeable property values of this instance.
      */
-    @NonNull
-    public Builder toBuilder() {
+    public @NonNull Builder toBuilder() {
         return new Builder(mId, mImportance)
                 .setName(mName)
                 .setDescription(mDescription)
@@ -353,24 +341,21 @@ public class NotificationChannelCompat {
     /**
      * Returns the id of this channel.
      */
-    @NonNull
-    public String getId() {
+    public @NonNull String getId() {
         return mId;
     }
 
     /**
      * Returns the user visible name of this channel.
      */
-    @Nullable
-    public CharSequence getName() {
+    public @Nullable CharSequence getName() {
         return mName;
     }
 
     /**
      * Returns the user visible description of this channel.
      */
-    @Nullable
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return mDescription;
     }
 
@@ -390,16 +375,14 @@ public class NotificationChannelCompat {
     /**
      * Returns the notification sound for this channel.
      */
-    @Nullable
-    public Uri getSound() {
+    public @Nullable Uri getSound() {
         return mSound;
     }
 
     /**
      * Returns the audio attributes for sound played by notifications posted to this channel.
      */
-    @Nullable
-    public AudioAttributes getAudioAttributes() {
+    public @Nullable AudioAttributes getAudioAttributes() {
         return mAudioAttributes;
     }
 
@@ -429,8 +412,7 @@ public class NotificationChannelCompat {
      * Returns the vibration pattern for notifications posted to this channel. Will be ignored if
      * vibration is not enabled ({@link #shouldVibrate()}.
      */
-    @Nullable
-    public long[] getVibrationPattern() {
+    public long @Nullable [] getVibrationPattern() {
         return mVibrationPattern;
     }
 
@@ -449,8 +431,7 @@ public class NotificationChannelCompat {
      *
      * This is used only for visually grouping channels in the UI.
      */
-    @Nullable
-    public String getGroup() {
+    public @Nullable String getGroup() {
         return mGroupId;
     }
 
@@ -459,8 +440,7 @@ public class NotificationChannelCompat {
      * a conversation related channel.
      * See {@link Builder#setConversationId(String, String)}.
      */
-    @Nullable
-    public String getParentChannelId() {
+    public @Nullable String getParentChannelId() {
         return mParentId;
     }
 
@@ -469,8 +449,7 @@ public class NotificationChannelCompat {
      * if it's associated with a conversation.
      * See {@link Builder#setConversationId(String, String)}.
      */
-    @Nullable
-    public String getConversationId() {
+    public @Nullable String getConversationId() {
         return mConversationId;
     }
 

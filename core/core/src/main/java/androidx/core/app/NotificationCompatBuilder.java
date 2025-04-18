@@ -37,11 +37,12 @@ import android.text.TextUtils;
 import android.util.SparseArray;
 import android.widget.RemoteViews;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.collection.ArraySet;
 import androidx.core.graphics.drawable.IconCompat;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +66,7 @@ class NotificationCompatBuilder implements NotificationBuilderWithBuilderAccesso
     // @RequiresApi(21) - uncomment when lint bug is fixed.
     private RemoteViews mHeadsUpContentView;
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "MissingPermission"})
     NotificationCompatBuilder(NotificationCompat.Builder b) {
         mBuilderCompat = b;
         mContext = b.mContext;
@@ -291,9 +292,8 @@ class NotificationCompatBuilder implements NotificationBuilderWithBuilderAccesso
         }
     }
 
-    @Nullable
-    private static List<String> combineLists(@Nullable final List<String> first,
-            @Nullable final List<String> second) {
+    private static @Nullable List<String> combineLists(final @Nullable List<String> first,
+            final @Nullable List<String> second) {
         if (first == null) {
             return second;
         }
@@ -306,8 +306,7 @@ class NotificationCompatBuilder implements NotificationBuilderWithBuilderAccesso
         return new ArrayList<>(people);
     }
 
-    @Nullable
-    private static List<String> getPeople(@Nullable final List<Person> people) {
+    private static @Nullable List<String> getPeople(final @Nullable List<Person> people) {
         if (people == null) {
             return null;
         }

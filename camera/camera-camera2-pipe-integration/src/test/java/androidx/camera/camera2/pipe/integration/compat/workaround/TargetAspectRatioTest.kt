@@ -216,6 +216,7 @@ class TargetAspectRatioTest(val config: TestConfig) {
         else TargetAspectRatio.RATIO_ORIGINAL
     }
 
+    @Suppress("DATA_CLASS_COPY_VISIBILITY_WILL_BE_CHANGED_WARNING")
     data class TestConfig
     internal constructor(
         val brand: String?,

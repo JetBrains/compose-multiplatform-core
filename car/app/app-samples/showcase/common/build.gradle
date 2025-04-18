@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -43,7 +43,7 @@ dependencies {
 
     implementation(libs.kotlinStdlibCommon)
     implementation("androidx.core:core:1.7.0")
-    implementation project(":annotation:annotation-experimental")
+    implementation(project(":annotation:annotation-experimental"))
 }
 
 

@@ -64,6 +64,7 @@ class SplitAttributesTest {
                 .setAnimationBackground(
                     EmbeddingAnimationBackground.createColorBackground(Color.GREEN)
                 )
+                .setCloseAnimation(EmbeddingAnimationParams.AnimationSpec.JUMP_CUT)
                 .build()
         val attrs4 =
             SplitAttributes.Builder()

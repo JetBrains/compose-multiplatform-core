@@ -1,4 +1,3 @@
-import android.database.Cursor
 import androidx.paging.ListenableFuturePagingSource
 import androidx.paging.PagingSource
 import androidx.room.RoomDatabase
@@ -38,17 +37,16 @@ public class MyDao_Impl(
     val _sql: String = "SELECT pk FROM MyEntity"
     val _rawQuery: RoomRawQuery = RoomRawQuery(_sql)
     return object : LimitOffsetPagingSource<MyEntity>(_rawQuery, __db, "MyEntity") {
-      protected override suspend fun convertRows(limitOffsetQuery: RoomRawQuery, itemCount: Int):
-          List<MyEntity> = performSuspending(__db, true, false) { _connection ->
+      protected override suspend fun convertRows(limitOffsetQuery: RoomRawQuery, itemCount: Int): List<MyEntity> = performSuspending(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(limitOffsetQuery.sql)
         limitOffsetQuery.getBindingFunction().invoke(_stmt)
         try {
-          val _cursorIndexOfPk: Int = 0
+          val _columnIndexOfPk: Int = 0
           val _result: MutableList<MyEntity> = mutableListOf()
           while (_stmt.step()) {
             val _item: MyEntity
-            val _tmpPk: Int
-            _tmpPk = _stmt.getLong(_cursorIndexOfPk).toInt()
+            val _tmpPk: String
+            _tmpPk = _stmt.getText(_columnIndexOfPk)
             _item = MyEntity(_tmpPk)
             _result.add(_item)
           }
@@ -67,17 +65,16 @@ public class MyDao_Impl(
       _stmt.bindLong(_argIndex, gt)
     }
     return object : LimitOffsetPagingSource<MyEntity>(_rawQuery, __db, "MyEntity") {
-      protected override suspend fun convertRows(limitOffsetQuery: RoomRawQuery, itemCount: Int):
-          List<MyEntity> = performSuspending(__db, true, false) { _connection ->
+      protected override suspend fun convertRows(limitOffsetQuery: RoomRawQuery, itemCount: Int): List<MyEntity> = performSuspending(__db, true, false) { _connection ->
         val _stmt: SQLiteStatement = _connection.prepare(limitOffsetQuery.sql)
         limitOffsetQuery.getBindingFunction().invoke(_stmt)
         try {
-          val _cursorIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
+          val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
           val _result: MutableList<MyEntity> = mutableListOf()
           while (_stmt.step()) {
             val _item: MyEntity
-            val _tmpPk: Int
-            _tmpPk = _stmt.getLong(_cursorIndexOfPk).toInt()
+            val _tmpPk: String
+            _tmpPk = _stmt.getText(_columnIndexOfPk)
             _item = MyEntity(_tmpPk)
             _result.add(_item)
           }
@@ -93,13 +90,13 @@ public class MyDao_Impl(
     val _sql: String = "SELECT pk FROM MyEntity"
     val _statement: RoomSQLiteQuery = acquire(_sql, 0)
     return object : Rxjava2LimitOffsetRxPagingSource<MyEntity>(_statement, __db, "MyEntity") {
-      protected override fun convertRows(cursor: Cursor): List<MyEntity> {
-        val _cursorIndexOfPk: Int = 0
+      protected override fun convertRows(statement: SQLiteStatement): List<MyEntity> {
+        val _columnIndexOfPk: Int = 0
         val _result: MutableList<MyEntity> = mutableListOf()
-        while (cursor.moveToNext()) {
+        while (statement.step()) {
           val _item: MyEntity
-          val _tmpPk: Int
-          _tmpPk = cursor.getInt(_cursorIndexOfPk)
+          val _tmpPk: String
+          _tmpPk = statement.getText(_columnIndexOfPk)
           _item = MyEntity(_tmpPk)
           _result.add(_item)
         }
@@ -112,13 +109,13 @@ public class MyDao_Impl(
     val _sql: String = "SELECT pk FROM MyEntity"
     val _statement: RoomSQLiteQuery = acquire(_sql, 0)
     return object : Rxjava3LimitOffsetRxPagingSource<MyEntity>(_statement, __db, "MyEntity") {
-      protected override fun convertRows(cursor: Cursor): List<MyEntity> {
-        val _cursorIndexOfPk: Int = 0
+      protected override fun convertRows(statement: SQLiteStatement): List<MyEntity> {
+        val _columnIndexOfPk: Int = 0
         val _result: MutableList<MyEntity> = mutableListOf()
-        while (cursor.moveToNext()) {
+        while (statement.step()) {
           val _item: MyEntity
-          val _tmpPk: Int
-          _tmpPk = cursor.getInt(_cursorIndexOfPk)
+          val _tmpPk: String
+          _tmpPk = statement.getText(_columnIndexOfPk)
           _item = MyEntity(_tmpPk)
           _result.add(_item)
         }
@@ -130,15 +127,14 @@ public class MyDao_Impl(
   public override fun getAllIdsGuava(): ListenableFuturePagingSource<Int, MyEntity> {
     val _sql: String = "SELECT pk FROM MyEntity"
     val _statement: RoomSQLiteQuery = acquire(_sql, 0)
-    return object : LimitOffsetListenableFuturePagingSource<MyEntity>(_statement, __db, "MyEntity")
-        {
-      protected override fun convertRows(cursor: Cursor): List<MyEntity> {
-        val _cursorIndexOfPk: Int = 0
+    return object : LimitOffsetListenableFuturePagingSource<MyEntity>(_statement, __db, "MyEntity") {
+      protected override fun convertRows(statement: SQLiteStatement): List<MyEntity> {
+        val _columnIndexOfPk: Int = 0
         val _result: MutableList<MyEntity> = mutableListOf()
-        while (cursor.moveToNext()) {
+        while (statement.step()) {
           val _item: MyEntity
-          val _tmpPk: Int
-          _tmpPk = cursor.getInt(_cursorIndexOfPk)
+          val _tmpPk: String
+          _tmpPk = statement.getText(_columnIndexOfPk)
           _item = MyEntity(_tmpPk)
           _result.add(_item)
         }

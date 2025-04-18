@@ -402,6 +402,10 @@ internal class DataStoreImpl<T>(
     }
 
     @OptIn(ExperimentalContracts::class)
+    @Suppress(
+        "LEAKED_IN_PLACE_LAMBDA",
+        "WRONG_INVOCATION_KIND"
+    ) // https://youtrack.jetbrains.com/issue/KT-29963
     private suspend fun <R> doWithWriteFileLock(
         hasWriteFileLock: Boolean,
         block: suspend () -> R

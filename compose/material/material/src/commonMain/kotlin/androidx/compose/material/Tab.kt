@@ -53,8 +53,7 @@ import androidx.compose.ui.util.fastFirst
 import kotlin.math.max
 
 /**
- * <a href="https://material.io/components/tabs" class="external" target="_blank">Material Design
- * tab</a>.
+ * [Material Design tab](https://material.io/components/tabs)
  *
  * Tabs organize content across different screens, data sets, and other interactions.
  *
@@ -118,8 +117,7 @@ fun Tab(
 }
 
 /**
- * <a href="https://material.io/components/tabs" class="external" target="_blank">Material Design
- * tab</a>.
+ * [Material Design tab](https://material.io/components/tabs)
  *
  * Tabs organize content across different screens, data sets, and other interactions.
  *
@@ -192,8 +190,7 @@ fun LeadingIconTab(
 }
 
 /**
- * <a href="https://material.io/components/tabs" class="external" target="_blank">Material Design
- * tab</a>.
+ * [Material Design tab](https://material.io/components/tabs)
  *
  * Tabs organize content across different screens, data sets, and other interactions.
  *

@@ -26,22 +26,6 @@ import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCo
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 enum class ClientFeature {
     /**
-     * Support for starting SDK Activity:
-     * [SdkSandboxControllerCompat.registerSdkSandboxActivityHandler]
-     * [SdkSandboxControllerCompat.unregisterSdkSandboxActivityHandler]
-     */
-    SDK_ACTIVITY_HANDLER,
-
-    /**
-     * Support for retrieving App-owned interfaces:
-     * [SdkSandboxControllerCompat.getAppOwnedSdkSandboxInterfaces]
-     */
-    APP_OWNED_INTERFACES,
-
-    /** Support for loading SDKs by other SDKs: [SdkSandboxControllerCompat.loadSdk] */
-    LOAD_SDK,
-
-    /**
      * Support for retrieving client app package name:
      * [SdkSandboxControllerCompat.getClientPackageName]
      */

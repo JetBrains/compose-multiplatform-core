@@ -18,7 +18,7 @@ package androidx.wear.ongoing;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents the status or a part of the status of an ongoing activity.
@@ -37,8 +37,7 @@ public interface TimeDependentText {
      * @param timeNowMillis the timestamp of the time we want to display, usually now, as
      *                      returned by {@link android.os.SystemClock#elapsedRealtime()}.
      */
-    @NonNull
-    CharSequence getText(@NonNull Context context, long timeNowMillis);
+    @NonNull CharSequence getText(@NonNull Context context, long timeNowMillis);
 
     /**
      * Returns the timestamp of the next time when the display may be different from the one

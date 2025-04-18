@@ -19,7 +19,6 @@ package androidx.privacysandbox.ui.core
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
-import android.os.IBinder
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executor
 import kotlinx.coroutines.coroutineScope
@@ -71,7 +70,7 @@ class DelegatingSandboxedUiAdapter(private var delegate: Bundle) : SandboxedUiAd
 
     override fun openSession(
         context: Context,
-        windowInputToken: IBinder,
+        sessionData: SessionData,
         initialWidth: Int,
         initialHeight: Int,
         isZOrderOnTop: Boolean,
@@ -91,10 +90,6 @@ class DelegatingSandboxedUiAdapter(private var delegate: Bundle) : SandboxedUiAd
     fun removeDelegateChangeListener(listener: DelegateChangeListener) {
         delegateChangeListeners.remove(listener)
     }
-
-    override fun addObserverFactory(sessionObserverFactory: SessionObserverFactory) {}
-
-    override fun removeObserverFactory(sessionObserverFactory: SessionObserverFactory) {}
 
     /** Fetches the current delegate which is a [SandboxedUiAdapter] Bundle. */
     // TODO(b/375388971): Check coreLibInfo is present

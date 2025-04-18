@@ -16,8 +16,6 @@
 
 package androidx.camera.camera2.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.CameraState;
 import androidx.camera.core.CameraState.StateError;
 import androidx.camera.core.Logger;
@@ -26,6 +24,9 @@ import androidx.camera.core.impl.CameraStateRegistry;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.Objects;
 
 /** State machine that computes the camera's public state from its internal state. */
@@ -33,12 +34,10 @@ class CameraStateMachine {
 
     private static final String TAG = "CameraStateMachine";
 
-    @NonNull
-    private final CameraStateRegistry mCameraStateRegistry;
-    @NonNull
-    private final MutableLiveData<CameraState> mCameraStates;
+    private final @NonNull CameraStateRegistry mCameraStateRegistry;
+    private final @NonNull MutableLiveData<CameraState> mCameraStates;
 
-    CameraStateMachine(@NonNull final CameraStateRegistry cameraStateRegistry) {
+    CameraStateMachine(final @NonNull CameraStateRegistry cameraStateRegistry) {
         mCameraStateRegistry = cameraStateRegistry;
         mCameraStates = new MutableLiveData<>();
         mCameraStates.postValue(CameraState.create(CameraState.Type.CLOSED));
@@ -49,8 +48,8 @@ class CameraStateMachine {
      * camera's {@linkplain CameraInternal.State internal state} and potentially an error it
      * encountered.
      */
-    public void updateState(@NonNull final CameraInternal.State newInternalState,
-            @Nullable final StateError stateError) {
+    public void updateState(final CameraInternal.@NonNull State newInternalState,
+            final @Nullable StateError stateError) {
         final CameraState newPublicState;
         switch (newInternalState) {
             case PENDING_OPEN:
@@ -103,8 +102,7 @@ class CameraStateMachine {
     }
 
     /** Returns a {@link LiveData} that emits the camera's public states. */
-    @NonNull
-    public LiveData<CameraState> getStateLiveData() {
+    public @NonNull LiveData<CameraState> getStateLiveData() {
         return mCameraStates;
     }
 }

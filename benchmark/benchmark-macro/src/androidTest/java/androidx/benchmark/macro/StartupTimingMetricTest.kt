@@ -27,7 +27,7 @@ import androidx.benchmark.perfetto.PerfettoCapture.PerfettoSdkConfig.InitialProc
 import androidx.benchmark.perfetto.PerfettoCaptureWrapper
 import androidx.benchmark.perfetto.PerfettoConfig
 import androidx.benchmark.perfetto.PerfettoHelper.Companion.isAbiSupported
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
+import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.MediumTest
@@ -212,7 +212,7 @@ class StartupTimingMetricTest {
             )
 
         metric.configure(captureInfo)
-        return PerfettoTraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
+        return TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
             metric.getMeasurements(captureInfo = captureInfo, traceSession = this)
         }
     }
@@ -237,7 +237,7 @@ class StartupTimingMetricTest {
         metric.configure(captureInfo)
 
         val measurements =
-            PerfettoTraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
+            TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
                 metric.getMeasurements(captureInfo = captureInfo, traceSession = this)
             }
 
@@ -321,7 +321,7 @@ internal fun measureStartup(
                 block = measureBlock
             )!!
 
-    return PerfettoTraceProcessor.runSingleSessionServer(tracePath) {
+    return TraceProcessor.runSingleSessionServer(tracePath) {
         metric.getMeasurements(captureInfo = captureInfo, traceSession = this)
     }
 }

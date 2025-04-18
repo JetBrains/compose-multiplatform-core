@@ -19,6 +19,7 @@ package androidx.compose.material3.samples
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import androidx.annotation.Sampled
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -43,7 +44,6 @@ import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.WideNavigationRail
-import androidx.compose.material3.WideNavigationRailArrangement
 import androidx.compose.material3.WideNavigationRailItem
 import androidx.compose.material3.WideNavigationRailValue
 import androidx.compose.material3.rememberWideNavigationRailState
@@ -336,7 +336,9 @@ fun WideNavigationRailExpandedSample() {
     val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.Favorite, Icons.Filled.Star)
     val unselectedIcons =
         listOf(Icons.Outlined.Home, Icons.Outlined.FavoriteBorder, Icons.Outlined.StarBorder)
-    WideNavigationRail(state = rememberWideNavigationRailState()) {
+    WideNavigationRail(
+        state = rememberWideNavigationRailState(initialValue = WideNavigationRailValue.Expanded)
+    ) {
         items.forEachIndexed { index, item ->
             WideNavigationRailItem(
                 railExpanded = true,
@@ -365,7 +367,7 @@ fun WideNavigationRailArrangementsSample() {
         listOf(Icons.Outlined.Home, Icons.Outlined.FavoriteBorder, Icons.Outlined.StarBorder)
     val state = rememberWideNavigationRailState()
     val scope = rememberCoroutineScope()
-    var arrangement by remember { mutableStateOf(WideNavigationRailArrangement.Center) }
+    var arrangement: Arrangement.Vertical by remember { mutableStateOf(Arrangement.Center) }
 
     Row(Modifier.fillMaxWidth()) {
         WideNavigationRail(
@@ -419,7 +421,7 @@ fun WideNavigationRailArrangementsSample() {
             }
         }
 
-        val isArrangementCenter = arrangement == WideNavigationRailArrangement.Center
+        val isArrangementCenter = arrangement == Arrangement.Center
         val changeToString = if (isArrangementCenter) "Bottom" else "Center"
         Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(modifier = Modifier.padding(16.dp), text = "Change arrangement to:")
@@ -427,9 +429,9 @@ fun WideNavigationRailArrangementsSample() {
                 modifier = Modifier.padding(4.dp),
                 onClick = {
                     if (isArrangementCenter) {
-                        arrangement = WideNavigationRailArrangement.Bottom
+                        arrangement = Arrangement.Bottom
                     } else {
-                        arrangement = WideNavigationRailArrangement.Center
+                        arrangement = Arrangement.Center
                     }
                 }
             ) {

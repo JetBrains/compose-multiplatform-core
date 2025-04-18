@@ -49,14 +49,16 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastCoerceAtMost
+import androidx.compose.ui.util.fastCoerceIn
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
 /**
- * <a href="https://m3.material.io/components/progress-indicators/overview" class="external"
- * target="_blank">Determinate Material Design linear progress indicator</a>.
+ * [Material Design determinate linear progress
+ * indicator](https://m3.material.io/components/progress-indicators/overview)
  *
  * Progress indicators express an unspecified wait time or display the duration of a process.
  *
@@ -107,8 +109,8 @@ fun LinearProgressIndicator(
 }
 
 /**
- * <a href="https://m3.material.io/components/progress-indicators/overview" class="external"
- * target="_blank">Determinate Material Design linear progress indicator</a>.
+ * [Material Design determinate linear progress
+ * indicator](https://m3.material.io/components/progress-indicators/overview)
  *
  * Progress indicators express an unspecified wait time or display the duration of a process.
  *
@@ -148,12 +150,14 @@ fun LinearProgressIndicator(
         )
     },
 ) {
-    val coercedProgress = { progress().coerceIn(0f, 1f) }
+    val coercedProgress = { progress().fastCoerceIn(0f, 1f) }
     Canvas(
         modifier
             .then(IncreaseVerticalSemanticsBounds)
             .semantics(mergeDescendants = true) {
-                progressBarRangeInfo = ProgressBarRangeInfo(coercedProgress(), 0f..1f)
+                // Check for NaN, as the ProgressBarRangeInfo will throw an exception.
+                progressBarRangeInfo =
+                    ProgressBarRangeInfo(coercedProgress().takeUnless { it.isNaN() } ?: 0f, 0f..1f)
             }
             .size(LinearIndicatorWidth, LinearIndicatorHeight)
     ) {
@@ -181,8 +185,8 @@ fun LinearProgressIndicator(
 }
 
 /**
- * <a href="https://m3.material.io/components/progress-indicators/overview" class="external"
- * target="_blank">Indeterminate Material Design linear progress indicator</a>.
+ * [Material Design indeterminate linear progress
+ * indicator](https://m3.material.io/components/progress-indicators/overview)
  *
  * Progress indicators express an unspecified wait time or display the duration of a process.
  *
@@ -222,8 +226,8 @@ fun LinearProgressIndicator(
 }
 
 /**
- * <a href="https://m3.material.io/components/progress-indicators/overview" class="external"
- * target="_blank">Indeterminate Material Design linear progress indicator</a>.
+ * [Material Design indeterminate linear progress
+ * indicator](https://m3.material.io/components/progress-indicators/overview)
  *
  * Progress indicators express an unspecified wait time or display the duration of a process.
  *
@@ -413,9 +417,8 @@ private fun DrawScope.drawLinearIndicator(
     } else {
         // need to adjust barStart and barEnd for the stroke caps
         val strokeCapOffset = strokeWidth / 2
-        val coerceRange = strokeCapOffset..(width - strokeCapOffset)
-        val adjustedBarStart = barStart.coerceIn(coerceRange)
-        val adjustedBarEnd = barEnd.coerceIn(coerceRange)
+        val adjustedBarStart = barStart.fastCoerceIn(strokeCapOffset, width - strokeCapOffset)
+        val adjustedBarEnd = barEnd.fastCoerceIn(strokeCapOffset, width - strokeCapOffset)
 
         if (abs(endFraction - startFraction) > 0) {
             // Progress line
@@ -431,8 +434,8 @@ private fun DrawScope.drawLinearIndicator(
 }
 
 /**
- * <a href="https://m3.material.io/components/progress-indicators/overview" class="external"
- * target="_blank">Determinate Material Design circular progress indicator</a>.
+ * [Material Design determinate circular progress
+ * indicator](https://m3.material.io/components/progress-indicators/overview)
  *
  * Progress indicators express an unspecified wait time or display the duration of a process.
  *
@@ -486,8 +489,8 @@ fun CircularProgressIndicator(
 }
 
 /**
- * <a href="https://m3.material.io/components/progress-indicators/overview" class="external"
- * target="_blank">Determinate Material Design circular progress indicator</a>.
+ * [Material Design determinate circular progress
+ * indicator](https://m3.material.io/components/progress-indicators/overview)
  *
  * Progress indicators express an unspecified wait time or display the duration of a process.
  *
@@ -520,12 +523,14 @@ fun CircularProgressIndicator(
     strokeCap: StrokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap,
     gapSize: Dp = ProgressIndicatorDefaults.CircularIndicatorTrackGapSize,
 ) {
-    val coercedProgress = { progress().coerceIn(0f, 1f) }
+    val coercedProgress = { progress().fastCoerceIn(0f, 1f) }
     val stroke = with(LocalDensity.current) { Stroke(width = strokeWidth.toPx(), cap = strokeCap) }
     Canvas(
         modifier
             .semantics(mergeDescendants = true) {
-                progressBarRangeInfo = ProgressBarRangeInfo(coercedProgress(), 0f..1f)
+                // Check for NaN, as the ProgressBarRangeInfo will throw an exception.
+                progressBarRangeInfo =
+                    ProgressBarRangeInfo(coercedProgress().takeUnless { it.isNaN() } ?: 0f, 0f..1f)
             }
             .size(CircularIndicatorDiameter)
     ) {
@@ -551,8 +556,8 @@ fun CircularProgressIndicator(
 }
 
 /**
- * <a href="https://m3.material.io/components/progress-indicators/overview" class="external"
- * target="_blank">Indeterminate Material Design circular progress indicator</a>.
+ * [Material Design determinate circular progress
+ * indicator](https://m3.material.io/components/progress-indicators/overview)
  *
  * Progress indicators express an unspecified wait time or display the duration of a process.
  *
@@ -595,8 +600,8 @@ fun CircularProgressIndicator(
     )
 
 /**
- * <a href="https://m3.material.io/components/progress-indicators/overview" class="external"
- * target="_blank">Indeterminate Material Design circular progress indicator</a>.
+ * [Material Design determinate circular progress
+ * indicator](https://m3.material.io/components/progress-indicators/overview)
  *
  * Progress indicators express an unspecified wait time or display the duration of a process.
  *
@@ -891,7 +896,11 @@ object ProgressIndicatorDefaults {
         with(drawScope) {
             val adjustedStopSize =
                 min(stopSize.toPx(), size.height) // Stop can't be bigger than track
-            val stopOffset = (size.height - adjustedStopSize) / 2 // Offset from end
+            // The limit to prevent excessive padding when dealing with large progress height.
+            // TODO b/401511176 - Consider adding a new token.
+            val maxStopOffset = StopIndicatorTrailingSpace.toPx()
+            // Offset from end.
+            val stopOffset = ((size.height - adjustedStopSize) / 2).fastCoerceAtMost(maxStopOffset)
             if (strokeCap == StrokeCap.Round) {
                 drawCircle(
                     color = color,
@@ -1022,6 +1031,8 @@ internal val LinearIndicatorWidth = 240.dp
 
 /*@VisibleForTesting*/
 internal val LinearIndicatorHeight = LinearProgressIndicatorTokens.Height
+
+internal val StopIndicatorTrailingSpace = 6.dp
 
 // CircularProgressIndicator Material specs
 // Diameter of the indicator circle

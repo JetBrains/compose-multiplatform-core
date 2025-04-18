@@ -22,8 +22,6 @@ import android.media.CamcorderProfile;
 import android.util.Pair;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
@@ -35,6 +33,9 @@ import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.SurfaceConfig;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -121,9 +122,8 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
      * @return new {@link SurfaceConfig} object
      * @throws IllegalStateException if not initialized
      */
-    @Nullable
     @Override
-    public SurfaceConfig transformSurfaceConfig(
+    public @Nullable SurfaceConfig transformSurfaceConfig(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             int imageFormat,
@@ -164,9 +164,8 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
      *                                  available, or if the {@code cameraId}
      *                                  is not a valid id.
      */
-    @NonNull
     @Override
-    public Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
+    public @NonNull Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
             getSuggestedStreamSpecs(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,

@@ -137,7 +137,7 @@ class RequestFocusEnterExitTest {
                             onEnter = { parent1.enter = counter++ }
                             onExit = {
                                 parent1.exit = counter++
-                                cancelFocus()
+                                cancelFocusChange()
                             }
                         }
                         .focusTarget()

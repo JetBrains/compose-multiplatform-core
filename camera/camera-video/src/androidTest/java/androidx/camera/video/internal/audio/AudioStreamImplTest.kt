@@ -84,7 +84,8 @@ class AudioStreamImplTest {
             AudioStreamImpl(
                 AudioSettings.builder()
                     .setAudioSource(AUDIO_SOURCE)
-                    .setSampleRate(SAMPLE_RATE)
+                    .setCaptureSampleRate(SAMPLE_RATE)
+                    .setEncodeSampleRate(SAMPLE_RATE)
                     .setChannelCount(CHANNEL_COUNT)
                     .setAudioFormat(AUDIO_FORMAT)
                     .build(),

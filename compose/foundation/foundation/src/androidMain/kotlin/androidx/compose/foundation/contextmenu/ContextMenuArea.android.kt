@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.round
  * @param contextMenuBuilderBlock Block which builds the context menu.
  * @param modifier Modifier to apply to the Box surrounding the context menu and the content.
  * @param enabled Whether the context menu is enabled.
+ * @param onOpenGesture The callback that will be invoked on a right click (open menu gesture).
  * @param content The content that will have the context menu enabled.
  */
 @Composable
@@ -41,9 +42,18 @@ internal fun ContextMenuArea(
     contextMenuBuilderBlock: ContextMenuScope.() -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    onOpenGesture: () -> Unit = {},
     content: @Composable () -> Unit,
 ) {
-    val finalModifier = if (enabled) modifier.contextMenuGestures(state) else modifier
+    val finalModifier =
+        if (enabled) {
+            modifier.contextMenuGestures {
+                onOpenGesture()
+                state.status = Status.Open(offset = it)
+            }
+        } else {
+            modifier
+        }
     Box(finalModifier, propagateMinConstraints = true) {
         content()
         ContextMenu(

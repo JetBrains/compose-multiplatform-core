@@ -47,6 +47,7 @@ public class CameraPipeConfig private constructor() {
                 .setCameraFactoryProvider(cameraFactoryProvider)
                 .setDeviceSurfaceManagerProvider(::CameraSurfaceAdapter)
                 .setUseCaseConfigFactoryProvider(::CameraUseCaseAdapter)
+                .setConfigImplType(CameraXConfig.CAMERAX_CONFIG_IMPL_TYPE_PIPE)
                 .build()
         }
     }

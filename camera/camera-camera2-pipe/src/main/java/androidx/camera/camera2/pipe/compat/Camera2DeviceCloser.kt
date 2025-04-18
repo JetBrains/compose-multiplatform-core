@@ -135,7 +135,7 @@ constructor(
         shouldReopenCamera: Boolean,
         shouldCreateEmptyCaptureSession: Boolean,
     ): Pair<CameraDeviceWrapper, AndroidCameraState>? {
-        Log.debug { "$this#handleQuirksBeforeClosing($cameraDevice)" }
+        Log.debug { "handleQuirksBeforeClosing($cameraDevice)" }
         val cameraId = cameraDeviceWrapper.cameraId
         val cameras =
             if (shouldReopenCamera) {
@@ -167,16 +167,21 @@ constructor(
         cameraDevice: CameraDevice,
         androidCameraState: AndroidCameraState,
     ) {
-        Log.debug { "$this#closeCameraDevice($cameraDevice)" }
+        val cameraDeviceId = cameraDevice.id
+        Log.debug { "closeCameraDevice($cameraDeviceId)" }
         var cameraDeviceClosed = false
-        Threading.runBlockingCheckedOrNull(threads.backgroundDispatcher, CAMERA_CLOSE_TIMEOUT_MS) {
+        Threading.runBlockingCheckedOrNull(
+            threads.blockingDispatcher,
+            threads.backgroundDispatcher,
+            CAMERA_CLOSE_TIMEOUT_MS,
+        ) {
             cameraDevice.closeWithTrace()
             cameraDeviceClosed = true
         }
             ?: run {
                 Log.error {
-                    "Camera device close timed out after ${CAMERA_CLOSE_TIMEOUT_MS}ms. " +
-                        "The camera is likely in a bad state."
+                    "Failed to close CameraDevice($cameraDeviceId) after " +
+                        "${CAMERA_CLOSE_TIMEOUT_MS}ms. The camera is likely in a bad state."
                 }
             }
 
@@ -236,7 +241,9 @@ constructor(
 
                 override fun onActive(session: CameraCaptureSessionWrapper) {}
             }
-        if (!cameraDeviceWrapper.createCaptureSession(listOf(surface), callback)) {
+        if (cameraDeviceWrapper.createCaptureSession(listOf(surface), callback)) {
+            sessionConfigured.await()
+        } else {
             Log.error {
                 "Failed to create a blank capture session! " +
                     "Surfaces may not be disconnected properly."
@@ -246,7 +253,6 @@ constructor(
                 surfaceTexture.release()
             }
         }
-        sessionConfigured.await()
     }
 
     companion object {

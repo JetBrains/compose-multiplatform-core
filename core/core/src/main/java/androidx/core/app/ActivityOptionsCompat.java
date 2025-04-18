@@ -30,10 +30,11 @@ import android.view.Display;
 import android.view.View;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Pair;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -83,8 +84,7 @@ public class ActivityOptionsCompat {
      * @return Returns a new ActivityOptions object that you can use to supply
      * these options as the options Bundle when starting an activity.
      */
-    @NonNull
-    public static ActivityOptionsCompat makeCustomAnimation(@NonNull Context context,
+    public static @NonNull ActivityOptionsCompat makeCustomAnimation(@NonNull Context context,
             int enterResId, int exitResId) {
         return new ActivityOptionsCompatImpl(
                 ActivityOptions.makeCustomAnimation(context, enterResId, exitResId));
@@ -110,8 +110,7 @@ public class ActivityOptionsCompat {
      * @return Returns a new ActivityOptions object that you can use to supply
      * these options as the options Bundle when starting an activity.
      */
-    @NonNull
-    public static ActivityOptionsCompat makeScaleUpAnimation(@NonNull View source,
+    public static @NonNull ActivityOptionsCompat makeScaleUpAnimation(@NonNull View source,
             int startX, int startY, int startWidth, int startHeight) {
         return new ActivityOptionsCompatImpl(
                 ActivityOptions.makeScaleUpAnimation(source, startX, startY, startWidth,
@@ -132,8 +131,7 @@ public class ActivityOptionsCompat {
      * @return Returns a new ActivityOptions object that you can use to
      * supply these options as the options Bundle when starting an activity.
      */
-    @NonNull
-    public static ActivityOptionsCompat makeClipRevealAnimation(@NonNull View source,
+    public static @NonNull ActivityOptionsCompat makeClipRevealAnimation(@NonNull View source,
             int startX, int startY, int width, int height) {
         if (Build.VERSION.SDK_INT >= 23) {
             return new ActivityOptionsCompatImpl(
@@ -161,8 +159,7 @@ public class ActivityOptionsCompat {
      * @return Returns a new ActivityOptions object that you can use to supply
      * these options as the options Bundle when starting an activity.
      */
-    @NonNull
-    public static ActivityOptionsCompat makeThumbnailScaleUpAnimation(@NonNull View source,
+    public static @NonNull ActivityOptionsCompat makeThumbnailScaleUpAnimation(@NonNull View source,
             @NonNull Bitmap thumbnail, int startX, int startY) {
         return new ActivityOptionsCompatImpl(
                 ActivityOptions.makeThumbnailScaleUpAnimation(source, thumbnail, startX, startY));
@@ -186,9 +183,9 @@ public class ActivityOptionsCompat {
      * @return Returns a new ActivityOptions object that you can use to
      *         supply these options as the options Bundle when starting an activity.
      */
-    @NonNull
-    public static ActivityOptionsCompat makeSceneTransitionAnimation(@NonNull Activity activity,
-            @NonNull View sharedElement, @NonNull String sharedElementName) {
+    public static @NonNull ActivityOptionsCompat makeSceneTransitionAnimation(
+            @NonNull Activity activity, @NonNull View sharedElement,
+            @NonNull String sharedElementName) {
         return new ActivityOptionsCompatImpl(
                 ActivityOptions.makeSceneTransitionAnimation(activity, sharedElement,
                         sharedElementName));
@@ -211,10 +208,9 @@ public class ActivityOptionsCompat {
      * @return Returns a new ActivityOptions object that you can use to
      *         supply these options as the options Bundle when starting an activity.
      */
-    @NonNull
     @SuppressWarnings("unchecked")
-    public static ActivityOptionsCompat makeSceneTransitionAnimation(@NonNull Activity activity,
-            @Nullable Pair<View, String>... sharedElements) {
+    public static @NonNull ActivityOptionsCompat makeSceneTransitionAnimation(
+            @NonNull Activity activity, Pair<View, String> @Nullable ... sharedElements) {
         android.util.Pair<View, String>[] pairs = null;
         if (sharedElements != null) {
             pairs = new android.util.Pair[sharedElements.length];
@@ -237,8 +233,7 @@ public class ActivityOptionsCompat {
      * {@link android.R.attr#launchMode launchMode} values of
      * <code>singleInstance</code> or <code>singleTask</code>.
      */
-    @NonNull
-    public static ActivityOptionsCompat makeTaskLaunchBehind() {
+    public static @NonNull ActivityOptionsCompat makeTaskLaunchBehind() {
         return new ActivityOptionsCompatImpl(ActivityOptions.makeTaskLaunchBehind());
     }
 
@@ -246,8 +241,7 @@ public class ActivityOptionsCompat {
      * Create a basic ActivityOptions that has no special animation associated with it.
      * Other options can still be set.
      */
-    @NonNull
-    public static ActivityOptionsCompat makeBasic() {
+    public static @NonNull ActivityOptionsCompat makeBasic() {
         if (Build.VERSION.SDK_INT >= 23) {
             return new ActivityOptionsCompatImpl(ActivityOptions.makeBasic());
         }
@@ -282,9 +276,8 @@ public class ActivityOptionsCompat {
             }
         }
 
-        @NonNull
         @Override
-        public ActivityOptionsCompat setLaunchBounds(@Nullable Rect screenSpacePixelRect) {
+        public @NonNull ActivityOptionsCompat setLaunchBounds(@Nullable Rect screenSpacePixelRect) {
             if (Build.VERSION.SDK_INT < 24) {
                 return this;
             }
@@ -300,9 +293,8 @@ public class ActivityOptionsCompat {
             return mActivityOptions.getLaunchBounds();
         }
 
-        @NonNull
         @Override
-        public ActivityOptionsCompat setShareIdentityEnabled(boolean shareIdentity) {
+        public @NonNull ActivityOptionsCompat setShareIdentityEnabled(boolean shareIdentity) {
             if (Build.VERSION.SDK_INT < 34) {
                 return this;
             }
@@ -311,9 +303,8 @@ public class ActivityOptionsCompat {
         }
 
         @SuppressLint("WrongConstant")
-        @NonNull
         @Override
-        public ActivityOptionsCompat setPendingIntentBackgroundActivityStartMode(
+        public @NonNull ActivityOptionsCompat setPendingIntentBackgroundActivityStartMode(
                 @BackgroundActivityStartMode int state) {
             if (Build.VERSION.SDK_INT >= 34) {
                 mActivityOptions.setPendingIntentBackgroundActivityStartMode(state);
@@ -330,13 +321,12 @@ public class ActivityOptionsCompat {
             if (Build.VERSION.SDK_INT >= 26) {
                 return mActivityOptions.getLaunchDisplayId();
             } else {
-                return 0;
+                return Display.INVALID_DISPLAY;
             }
         }
 
-        @NonNull
         @Override
-        public ActivityOptionsCompat setLaunchDisplayId(int launchDisplayId) {
+        public @NonNull ActivityOptionsCompat setLaunchDisplayId(int launchDisplayId) {
             if (Build.VERSION.SDK_INT >= 26) {
                 mActivityOptions.setLaunchDisplayId(launchDisplayId);
             }
@@ -357,8 +347,7 @@ public class ActivityOptionsCompat {
      * {@link android.content.pm.PackageManager#FEATURE_PICTURE_IN_PICTURE} enabled.
      * @param screenSpacePixelRect Launch bounds to use for the activity or null for fullscreen.
      */
-    @NonNull
-    public ActivityOptionsCompat setLaunchBounds(@Nullable Rect screenSpacePixelRect) {
+    public @NonNull ActivityOptionsCompat setLaunchBounds(@Nullable Rect screenSpacePixelRect) {
         return this;
     }
 
@@ -367,8 +356,7 @@ public class ActivityOptionsCompat {
      * @see #setLaunchBounds(Rect)
      * @return Bounds used to launch the activity.
      */
-    @Nullable
-    public Rect getLaunchBounds() {
+    public @Nullable Rect getLaunchBounds() {
         return null;
     }
 
@@ -379,8 +367,7 @@ public class ActivityOptionsCompat {
      * object; you must not modify it, but can supply it to the startActivity
      * methods that take an options Bundle.
      */
-    @Nullable
-    public Bundle toBundle() {
+    public @Nullable Bundle toBundle() {
         return null;
     }
 
@@ -442,8 +429,7 @@ public class ActivityOptionsCompat {
      * @see Activity#getLaunchedFromPackage()
      * @see Activity#getLaunchedFromUid()
      */
-    @NonNull
-    public ActivityOptionsCompat setShareIdentityEnabled(boolean shareIdentity) {
+    public @NonNull ActivityOptionsCompat setShareIdentityEnabled(boolean shareIdentity) {
         return this;
     }
 
@@ -456,8 +442,7 @@ public class ActivityOptionsCompat {
      * {@link ActivityOptions#MODE_BACKGROUND_ACTIVITY_START_ALLOWED} if the PendingIntent is from a
      * trusted source and/or executed on behalf the user.
      */
-    @NonNull
-    public ActivityOptionsCompat setPendingIntentBackgroundActivityStartMode(
+    public @NonNull ActivityOptionsCompat setPendingIntentBackgroundActivityStartMode(
             @BackgroundActivityStartMode int state) {
         return this;
     }
@@ -489,8 +474,7 @@ public class ActivityOptionsCompat {
      * @param launchDisplayId The id of the display where the activity should be launched.
      * @return {@code this} {@link ActivityOptions} instance.
      */
-    @NonNull
-    public ActivityOptionsCompat setLaunchDisplayId(int launchDisplayId) {
+    public @NonNull ActivityOptionsCompat setLaunchDisplayId(int launchDisplayId) {
         return this;
     }
 }

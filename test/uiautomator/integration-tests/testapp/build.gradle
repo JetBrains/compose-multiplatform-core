@@ -17,7 +17,7 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("AndroidXComposePlugin")
 }
 
@@ -27,21 +27,21 @@ dependencies {
     implementation(libs.androidx.annotation)
     implementation("androidx.core:core:1.6.0")
 
-    implementation project(":activity:activity")
-    implementation(project(":activity:activity-compose"))
-    implementation project(":compose:foundation:foundation")
+    implementation("androidx.activity:activity-compose:1.10.1")
+    implementation(project(":compose:foundation:foundation"))
     implementation(project(":compose:foundation:foundation-layout"))
     implementation(project(":compose:material:material"))
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:ui:ui"))
-    implementation project(":compose:ui:ui-graphics")
-    implementation project(":compose:ui:ui-text")
-    implementation project(":compose:ui:ui-unit")
+    implementation(project(":compose:ui:ui-graphics"))
+    implementation(project(":compose:ui:ui-text"))
+    implementation(project(":compose:ui:ui-unit"))
 
     androidTestImplementation(project(":test:uiautomator:uiautomator"))
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
+    androidTestImplementation(project(":kruth:kruth"))
 
     // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.
 

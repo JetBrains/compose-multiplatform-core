@@ -32,13 +32,13 @@ import android.util.Xml;
 import androidx.annotation.ColorInt;
 import androidx.annotation.ColorRes;
 import androidx.annotation.FloatRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.XmlRes;
 import androidx.core.R;
 import androidx.core.math.MathUtils;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -63,9 +63,8 @@ public final class ColorStateListInflaterCompat {
      * @param theme     Optional theme to apply to the color, may be {@code null}.
      * @return A new color state list.
      */
-    @Nullable
-    public static ColorStateList inflate(@NonNull Resources resources, @XmlRes int resId,
-            @Nullable Resources.Theme theme) {
+    public static @Nullable ColorStateList inflate(@NonNull Resources resources, @XmlRes int resId,
+            Resources.@Nullable Theme theme) {
         try {
             XmlPullParser parser = resources.getXml(resId);
             return createFromXml(resources, parser, theme);
@@ -85,9 +84,9 @@ public final class ColorStateListInflaterCompat {
      *               {@code null}.
      * @return A new color state list.
      */
-    @NonNull
-    public static ColorStateList createFromXml(@NonNull Resources r, @NonNull XmlPullParser parser,
-            @Nullable Resources.Theme theme) throws XmlPullParserException, IOException {
+    public static @NonNull ColorStateList createFromXml(@NonNull Resources r,
+            @NonNull XmlPullParser parser, Resources.@Nullable Theme theme)
+            throws XmlPullParserException, IOException {
         final AttributeSet attrs = Xml.asAttributeSet(parser);
 
         int type;
@@ -110,10 +109,9 @@ public final class ColorStateListInflaterCompat {
      * @return A new color state list for the current tag.
      * @throws XmlPullParserException if the current tag is not &lt;selector>
      */
-    @NonNull
-    public static ColorStateList createFromXmlInner(@NonNull Resources r,
+    public static @NonNull ColorStateList createFromXmlInner(@NonNull Resources r,
             @NonNull XmlPullParser parser, @NonNull AttributeSet attrs,
-            @Nullable Resources.Theme theme)
+            Resources.@Nullable Theme theme)
             throws XmlPullParserException, IOException {
         final String name = parser.getName();
         if (!name.equals("selector")) {
@@ -128,7 +126,7 @@ public final class ColorStateListInflaterCompat {
      * Fill in this object based on the contents of an XML "selector" element.
      */
     private static ColorStateList inflate(@NonNull Resources r, @NonNull XmlPullParser parser,
-            @NonNull AttributeSet attrs, @Nullable Resources.Theme theme)
+            @NonNull AttributeSet attrs, Resources.@Nullable Theme theme)
             throws XmlPullParserException, IOException {
         final int innerDepth = parser.getDepth() + 1;
         int depth;
@@ -218,8 +216,7 @@ public final class ColorStateListInflaterCompat {
                 && value.type <= TypedValue.TYPE_LAST_COLOR_INT;
     }
 
-    @NonNull
-    private static TypedValue getTypedValue() {
+    private static @NonNull TypedValue getTypedValue() {
         TypedValue tv = sTempTypedValue.get();
         if (tv == null) {
             tv = new TypedValue();

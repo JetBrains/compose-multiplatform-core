@@ -243,6 +243,27 @@ class SliderTest {
         rule.runOnIdle { Truth.assertThat(state.value).isWithin(SliderTolerance).of(expected) }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+    @Test
+    fun vertical_slider_tap() {
+        val state = SliderState(0f)
+
+        rule.setMaterialContent(lightColorScheme()) {
+            VerticalSlider(state = state, modifier = Modifier.testTag(tag))
+        }
+
+        rule.runOnUiThread { Truth.assertThat(state.value).isEqualTo(0f) }
+
+        var expected = 0f
+
+        rule.onNodeWithTag(tag).performTouchInput {
+            down(Offset(centerX, centerY + 50))
+            up()
+            expected = calculateFraction(top, bottom, centerY + 50)
+        }
+        rule.runOnIdle { Truth.assertThat(state.value).isWithin(SliderTolerance).of(expected) }
+    }
+
     /** Guarantee slider doesn't move as we scroll, tapping still works */
     @OptIn(ExperimentalMaterial3Api::class)
     @Test

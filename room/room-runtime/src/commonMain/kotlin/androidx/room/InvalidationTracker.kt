@@ -17,18 +17,18 @@
 package androidx.room
 
 import androidx.annotation.RestrictTo
+import androidx.room.ObservedTableStates.ObserveOp
 import androidx.room.Transactor.SQLiteTransactionType
+import androidx.room.concurrent.AtomicBoolean
+import androidx.room.concurrent.ReentrantLock
 import androidx.room.concurrent.ifNotClosed
+import androidx.room.concurrent.withLock
 import androidx.room.util.getCoroutineContext
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteException
 import androidx.sqlite.execSQL
-import androidx.sqlite.use
 import kotlin.jvm.JvmOverloads
 import kotlin.jvm.JvmSuppressWildcards
-import kotlinx.atomicfu.atomic
-import kotlinx.atomicfu.locks.reentrantLock
-import kotlinx.atomicfu.locks.withLock
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
@@ -47,14 +47,16 @@ import kotlinx.coroutines.withContext
  * created from, then such table is considered 'invalidated' and the [Flow] will emit a new value.
  */
 expect class InvalidationTracker
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 constructor(
     database: RoomDatabase,
     shadowTablesMap: Map<String, String>,
     viewTables: Map<String, @JvmSuppressWildcards Set<String>>,
     vararg tableNames: String
 ) {
-    /** Internal method to initialize tracker for a given connection. Invoked by generated code. */
+    /**
+     * Internal function to initialize tracker for a given connection. Invoked by generated code.
+     */
     internal fun internalInit(connection: SQLiteConnection)
 
     /**
@@ -163,7 +165,7 @@ internal class TriggerBasedInvalidationTracker(
      * queue to be done asynchronously, this flag is used to control excessive scheduling of
      * refreshes.
      */
-    private val pendingRefresh = atomic(false)
+    private val pendingRefresh = AtomicBoolean(false)
 
     /** Callback to allow or disallow [refreshInvalidation] from proceeding. */
     internal var onAllowRefresh: () -> Boolean = { true }
@@ -302,14 +304,15 @@ internal class TriggerBasedInvalidationTracker(
                     // invoked before starting a top-level transaction.
                     return@useConnection
                 }
-                connection.withTransaction(SQLiteTransactionType.IMMEDIATE) {
-                    observedTableStates.getTablesToSync()?.forEachIndexed { tableId, observeOp ->
-                        when (observeOp) {
-                            ObservedTableStates.ObserveOp.NO_OP -> {}
-                            ObservedTableStates.ObserveOp.ADD ->
-                                startTrackingTable(connection, tableId)
-                            ObservedTableStates.ObserveOp.REMOVE ->
-                                stopTrackingTable(connection, tableId)
+                val tablesToSync = observedTableStates.getTablesToSync()
+                if (tablesToSync != null) {
+                    connection.withTransaction(SQLiteTransactionType.IMMEDIATE) {
+                        tablesToSync.forEachIndexed { tableId, observeOp ->
+                            when (observeOp) {
+                                ObserveOp.NO_OP -> {}
+                                ObserveOp.ADD -> startTrackingTable(connection, tableId)
+                                ObserveOp.REMOVE -> stopTrackingTable(connection, tableId)
+                            }
                         }
                     }
                 }
@@ -485,7 +488,7 @@ internal class TriggerBasedInvalidationTracker(
  */
 internal class ObservedTableStates(size: Int) {
 
-    private val lock = reentrantLock()
+    private val lock = ReentrantLock()
 
     // The number of observers per table
     private val tableObserversCount = LongArray(size)
@@ -499,7 +502,7 @@ internal class ObservedTableStates(size: Int) {
     /**
      * Gets an array of operations to be performed for table at index i from the last time this
      * function was called and based on the [onObserverAdded] and [onObserverRemoved] invocations
-     * that occurred in-between.
+     * that occurred in-between and if at least one operation is ADD or REMOVE.
      */
     internal fun getTablesToSync(): Array<ObserveOp>? =
         lock.withLock {
@@ -507,15 +510,19 @@ internal class ObservedTableStates(size: Int) {
                 return null
             }
             needsSync = false
-            Array(tableObserversCount.size) { i ->
-                val newState = tableObserversCount[i] > 0
-                if (newState != tableObservedState[i]) {
-                    tableObservedState[i] = newState
-                    if (newState) ObserveOp.ADD else ObserveOp.REMOVE
-                } else {
-                    ObserveOp.NO_OP
+            var addOrRemove = false
+            val ops =
+                Array(tableObserversCount.size) { i ->
+                    val newState = tableObserversCount[i] > 0
+                    if (newState != tableObservedState[i]) {
+                        addOrRemove = true
+                        tableObservedState[i] = newState
+                        if (newState) ObserveOp.ADD else ObserveOp.REMOVE
+                    } else {
+                        ObserveOp.NO_OP
+                    }
                 }
-            }
+            if (addOrRemove) ops else null
         }
 
     /** Notifies that an observer was added and return true if the state of some table changed. */

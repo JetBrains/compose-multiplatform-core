@@ -42,8 +42,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
@@ -78,6 +76,8 @@ import androidx.work.worker.SleepTestWorker;
 import androidx.work.worker.TestWorker;
 
 import org.hamcrest.collection.IsIterableContainingInOrder;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -146,14 +146,12 @@ public class SystemAlarmDispatcherTest extends DatabaseTest {
 
         TaskExecutor instantTaskExecutor = new TaskExecutor() {
             @Override
-            @NonNull
-            public Executor getMainThreadExecutor() {
+            public @NonNull Executor getMainThreadExecutor() {
                 return mMainThreadExecutor;
             }
 
-            @NonNull
             @Override
-            public SerialExecutor getSerialTaskExecutor() {
+            public @NonNull SerialExecutor getSerialTaskExecutor() {
                 return new SerialExecutorImpl(new SynchronousExecutor());
             }
         };

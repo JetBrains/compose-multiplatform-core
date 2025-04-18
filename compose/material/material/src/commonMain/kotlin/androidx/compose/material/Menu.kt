@@ -60,8 +60,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * <a href="https://material.io/components/menus#dropdown-menu" class="external"
- * target="_blank">Material Design dropdown menu</a>.
+ * [Material Design dropdown menu](https://material.io/components/menus#dropdown-menu)
  *
  * A dropdown menu is a compact way of displaying multiple choices. It appears upon interaction with
  * an element (such as an icon or button) or when users perform a specific action.
@@ -120,8 +119,7 @@ expect fun DropdownMenu(
 )
 
 /**
- * <a href="https://material.io/components/menus#dropdown-menu" class="external"
- * target="_blank">Material Design dropdown menu</a> item.
+ * [Material Design dropdown menu](https://material.io/components/menus#dropdown-menu)
  *
  * Example usage:
  *

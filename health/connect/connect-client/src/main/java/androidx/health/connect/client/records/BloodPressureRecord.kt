@@ -15,9 +15,11 @@
  */
 package androidx.health.connect.client.records
 
+import android.os.Build
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.health.connect.client.aggregate.AggregateMetric
+import androidx.health.connect.client.impl.platform.records.toPlatformRecord
 import androidx.health.connect.client.records.BloodPressureRecord.MeasurementLocation
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.units.Pressure
@@ -28,10 +30,13 @@ import java.time.ZoneOffset
 /**
  * Captures the blood pressure of a user. Each record represents a single instantaneous blood
  * pressure reading.
+ *
+ * @throws IllegalArgumentException if one of the values is outside the valid range.
  */
 public class BloodPressureRecord(
     override val time: Instant,
     override val zoneOffset: ZoneOffset?,
+    override val metadata: Metadata,
     /**
      * Systolic blood pressure measurement, in [Pressure] unit. Required field. Valid range: 20-200
      * mmHg.
@@ -57,14 +62,21 @@ public class BloodPressureRecord(
      */
     @property:MeasurementLocations
     public val measurementLocation: Int = MEASUREMENT_LOCATION_UNKNOWN,
-    override val metadata: Metadata = Metadata.EMPTY,
 ) : InstantaneousRecord {
 
+    /*
+     * Android U devices and later use the platform's validation instead of Jetpack validation.
+     * See b/316852544 for more context.
+     */
     init {
-        systolic.requireNotLess(other = MIN_SYSTOLIC, name = "systolic")
-        systolic.requireNotMore(other = MAX_SYSTOLIC, name = "systolic")
-        diastolic.requireNotLess(other = MIN_DIASTOLIC, name = "diastolic")
-        diastolic.requireNotMore(other = MAX_DIASTOLIC, name = "diastolic")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            this.toPlatformRecord()
+        } else {
+            systolic.requireNotLess(other = MIN_SYSTOLIC, name = "systolic")
+            systolic.requireNotMore(other = MAX_SYSTOLIC, name = "systolic")
+            diastolic.requireNotLess(other = MIN_DIASTOLIC, name = "diastolic")
+            diastolic.requireNotMore(other = MAX_DIASTOLIC, name = "diastolic")
+        }
     }
 
     /*

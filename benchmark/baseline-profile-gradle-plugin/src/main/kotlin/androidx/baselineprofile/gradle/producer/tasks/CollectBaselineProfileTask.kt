@@ -37,11 +37,13 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.work.DisableCachingByDefault
 
 /**
  * Collects the generated baseline profile from the instrumentation results of a previous run of the
  * ui tests.
  */
+@DisableCachingByDefault(because = "Mostly I/O bound task")
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.OPTIMIZATION)
 abstract class CollectBaselineProfileTask : DefaultTask() {
 

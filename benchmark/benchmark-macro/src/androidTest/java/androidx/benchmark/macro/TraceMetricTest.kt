@@ -17,7 +17,7 @@
 package androidx.benchmark.macro
 
 import androidx.benchmark.perfetto.PerfettoHelper
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
+import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.filters.MediumTest
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -35,7 +35,7 @@ class TraceMetricTest {
     class ActivityResumeMetric : TraceMetric() {
         override fun getMeasurements(
             captureInfo: CaptureInfo,
-            traceSession: PerfettoTraceProcessor.Session
+            traceSession: TraceProcessor.Session
         ): List<Measurement> {
             val rowSequence =
                 traceSession.query(
@@ -83,7 +83,7 @@ class TraceMetricTest {
             metric.configure(captureInfo)
 
             val result =
-                PerfettoTraceProcessor.runSingleSessionServer(tracePath) {
+                TraceProcessor.runSingleSessionServer(tracePath) {
                     metric.getMeasurements(captureInfo = captureInfo, traceSession = this)
                 }
 

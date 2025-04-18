@@ -33,28 +33,27 @@ import androidx.room.writer.TypeWriter
 class EnumColumnTypeAdapter(private val enumTypeElement: XEnumTypeElement, out: XType) :
     ColumnTypeAdapter(out, TEXT) {
 
-    override fun readFromCursor(
+    override fun readFromStatement(
         outVarName: String,
-        cursorVarName: String,
+        stmtVarName: String,
         indexVarName: String,
         scope: CodeGenScope
     ) {
         val stringToEnumMethod = stringToEnumMethod(scope)
         scope.builder.apply {
-            val getter = if (scope.useDriverApi) "getText" else "getString"
             fun XCodeBlock.Builder.addGetStringStatement() {
                 addStatement(
-                    "%L = %N(%L.$getter(%L))",
+                    "%L = %N(%L.getText(%L))",
                     outVarName,
                     stringToEnumMethod,
-                    cursorVarName,
+                    stmtVarName,
                     indexVarName
                 )
             }
             if (out.nullability == XNullability.NONNULL) {
                 addGetStringStatement()
             } else {
-                beginControlFlow("if (%L.isNull(%L))", cursorVarName, indexVarName)
+                beginControlFlow("if (%L.isNull(%L))", stmtVarName, indexVarName)
                     .addStatement("%L = null", outVarName)
                 nextControlFlow("else").addGetStringStatement()
                 endControlFlow()
@@ -69,11 +68,10 @@ class EnumColumnTypeAdapter(private val enumTypeElement: XEnumTypeElement, out: 
         scope: CodeGenScope
     ) {
         val enumToStringMethod = enumToStringMethod(scope)
-        val setter = if (scope.useDriverApi) "bindText" else "bindString"
         scope.builder.apply {
             fun XCodeBlock.Builder.addBindStringStatement() {
                 addStatement(
-                    "%L.$setter(%L, %N(%L))",
+                    "%L.bindText(%L, %N(%L))",
                     stmtName,
                     indexVarName,
                     enumToStringMethod,
@@ -102,7 +100,7 @@ class EnumColumnTypeAdapter(private val enumTypeElement: XEnumTypeElement, out: 
                 }
 
                 override fun prepare(
-                    methodName: String,
+                    functionName: String,
                     writer: TypeWriter,
                     builder: XFunSpec.Builder
                 ) {
@@ -167,7 +165,7 @@ class EnumColumnTypeAdapter(private val enumTypeElement: XEnumTypeElement, out: 
                 }
 
                 override fun prepare(
-                    methodName: String,
+                    functionName: String,
                     writer: TypeWriter,
                     builder: XFunSpec.Builder
                 ) {

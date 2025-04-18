@@ -62,10 +62,21 @@ internal expect fun createInputDispatcher(
  *
  * Chaining methods:
  * * [advanceEventTime]
+ *
+ * [exitHoverOnPress] and [moveOnScroll] allow controlling Android-specific behaviors that may not
+ * be appropriate on other platforms. While it is a quick and simple solution, if more significant
+ * differences are discovered, this problem may need to be revisited for a more robust solution.
+ *
+ * Note that the extra events sent due to [exitHoverOnPress] and [moveOnScroll] are in fact filtered
+ * out on Android before they reach any Compose elements. They nevertheless need to be sent for the
+ * benefit of any interop Android views inside Compose, which expect an Android-native model of the
+ * event stream.
  */
 internal abstract class InputDispatcher(
     private val testContext: TestContext,
-    private val root: RootForTest
+    private val root: RootForTest,
+    private val exitHoverOnPress: Boolean = true,
+    private val moveOnScroll: Boolean = true
 ) {
     companion object {
         /**
@@ -391,9 +402,11 @@ internal abstract class InputDispatcher(
         }
         mouse.setButtonBit(buttonId)
 
-        // Exit hovering if necessary
-        if (mouse.isEntered) {
-            mouse.exitHover()
+        // Exit hovering if necessary (Android-specific behavior)
+        if (exitHoverOnPress) {
+            if (mouse.isEntered) {
+                mouse.exitHover()
+            }
         }
         // down/move + press
         mouse.enqueuePress(buttonId)
@@ -459,10 +472,12 @@ internal abstract class InputDispatcher(
         mouse.unsetButtonBit(buttonId)
         mouse.enqueueRelease(buttonId)
 
-        // When no buttons remaining, enter hover state immediately
-        if (mouse.hasNoButtonsPressed && isWithinRootBounds(currentMousePosition)) {
-            mouse.enterHover()
-            mouse.enqueueMove()
+        // When no buttons remaining, enter hover state immediately (Android-specific behavior)
+        if (exitHoverOnPress) {
+            if (mouse.hasNoButtonsPressed && isWithinRootBounds(currentMousePosition)) {
+                mouse.enterHover()
+                mouse.enqueueMove()
+            }
         }
     }
 
@@ -523,8 +538,10 @@ internal abstract class InputDispatcher(
     fun enqueueMouseScroll(delta: Float, scrollWheel: ScrollWheel) {
         val mouse = mouseInputState
 
-        // A scroll is always preceded by a move(/hover) event
-        enqueueMouseMove(currentMousePosition)
+        if (moveOnScroll) {
+            // On Android a scroll is always preceded by a move(/hover) event
+            enqueueMouseMove(currentMousePosition)
+        }
         if (isWithinRootBounds(currentMousePosition)) {
             mouse.enqueueScroll(delta, scrollWheel)
         }

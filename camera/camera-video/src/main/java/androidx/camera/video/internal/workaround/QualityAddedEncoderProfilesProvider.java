@@ -18,16 +18,15 @@ package androidx.camera.video.internal.workaround;
 
 import static androidx.core.util.Preconditions.checkState;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.arch.core.util.Function;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.EncoderProfilesProvider;
 import androidx.camera.core.impl.EncoderProfilesProxy;
 import androidx.camera.core.impl.Quirks;
 import androidx.camera.video.internal.compat.quirk.ExtraSupportedQualityQuirk;
-import androidx.camera.video.internal.encoder.VideoEncoderConfig;
 import androidx.camera.video.internal.encoder.VideoEncoderInfo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -41,14 +40,13 @@ import java.util.Map;
 public class QualityAddedEncoderProfilesProvider implements EncoderProfilesProvider {
 
     private final EncoderProfilesProvider mProvider;
-    @Nullable
-    private Map<Integer, EncoderProfilesProxy> mExtraQualityToEncoderProfiles;
+    private @Nullable Map<Integer, EncoderProfilesProxy> mExtraQualityToEncoderProfiles;
 
     public QualityAddedEncoderProfilesProvider(
             @NonNull EncoderProfilesProvider provider,
             @NonNull Quirks quirks,
             @NonNull CameraInfoInternal cameraInfo,
-            @NonNull Function<VideoEncoderConfig, VideoEncoderInfo> videoEncoderInfoFinder) {
+            VideoEncoderInfo.@NonNull Finder videoEncoderInfoFinder) {
         mProvider = provider;
 
         List<ExtraSupportedQualityQuirk> extraQuirks = quirks.getAll(
@@ -68,14 +66,12 @@ public class QualityAddedEncoderProfilesProvider implements EncoderProfilesProvi
         return getProfilesInternal(quality) != null;
     }
 
-    @Nullable
     @Override
-    public EncoderProfilesProxy getAll(int quality) {
+    public @Nullable EncoderProfilesProxy getAll(int quality) {
         return getProfilesInternal(quality);
     }
 
-    @Nullable
-    private EncoderProfilesProxy getProfilesInternal(int quality) {
+    private @Nullable EncoderProfilesProxy getProfilesInternal(int quality) {
         if (mExtraQualityToEncoderProfiles != null
                 && mExtraQualityToEncoderProfiles.containsKey(quality)) {
             return mExtraQualityToEncoderProfiles.get(quality);

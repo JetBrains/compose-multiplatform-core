@@ -16,7 +16,9 @@
 
 package androidx.build
 
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import groovy.lang.Closure
+import java.io.File
 import javax.inject.Inject
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -77,7 +79,7 @@ abstract class AndroidXExtension(
         newProjectMap
     }
 
-    val name: Property<String?> = project.objects.property(String::class.java)
+    val name: Property<String> = project.objects.property(String::class.java)
 
     /** The name for this artifact to be used in .pom files. */
     fun setName(newName: String) {
@@ -292,26 +294,9 @@ abstract class AndroidXExtension(
 
     private var extraLicenses: MutableCollection<License> = ArrayList()
 
-    // Should only be used to override LibraryType.publish, if a library isn't ready to publish yet
-    var publish: Publish = Publish.UNSET
+    fun shouldPublish(): Boolean = type.publish.shouldPublish()
 
-    fun shouldPublish(): Boolean =
-        if (publish != Publish.UNSET) {
-            publish.shouldPublish()
-        } else if (type != LibraryType.UNSET) {
-            type.publish.shouldPublish()
-        } else {
-            false
-        }
-
-    fun shouldRelease(): Boolean =
-        if (publish != Publish.UNSET) {
-            publish.shouldRelease()
-        } else if (type != LibraryType.UNSET) {
-            type.publish.shouldRelease()
-        } else {
-            false
-        }
+    fun shouldRelease(): Boolean = type.publish.shouldRelease()
 
     fun ifReleasing(action: () -> Unit) {
         project.afterEvaluate {
@@ -321,36 +306,20 @@ abstract class AndroidXExtension(
         }
     }
 
-    fun isPublishConfigured(): Boolean = (publish != Publish.UNSET || type.publish != Publish.UNSET)
-
     fun shouldPublishSbom(): Boolean {
+        if (isIsolatedProjectsEnabled()) return false
         // IDE plugins are used by and ship inside Studio
-        return shouldPublish() || type == LibraryType.IDE_PLUGIN
+        return shouldPublish() || type == SoftwareType.IDE_PLUGIN
     }
-
-    /**
-     * Whether to run API tasks such as tracking and linting. The default value is
-     * [RunApiTasks.Auto], which automatically picks based on the project's properties.
-     */
-    // TODO: decide whether we want to support overriding runApiTasks
-    // @Deprecated("Replaced with AndroidXExtension.type: LibraryType.runApiTasks")
-    var runApiTasks: RunApiTasks = RunApiTasks.Auto
-        get() = if (field == RunApiTasks.Auto && type != LibraryType.UNSET) type.checkApi else field
-        set(value) {
-            if (value is RunApiTasks.No) {
-                throw GradleException(
-                    "runApiTasks cannot be disabled from the AndroidX extension. Ensure you're using the correct library type if you really do not need API tracking"
-                )
-            }
-            field = value
-        }
 
     var doNotDocumentReason: String? = null
 
-    var type: LibraryType = LibraryType.UNSET
+    var type: SoftwareType = SoftwareType.UNSET
+
+    val failOnDeprecationWarnings = project.objects.property(Boolean::class.java).convention(true)
 
     /** Whether this project should fail on javac compilation warnings */
-    var failOnDeprecationWarnings = true
+    fun failOnDeprecationWarnings(enabled: Boolean) = failOnDeprecationWarnings.set(enabled)
 
     /**
      * Whether Kotlin Strict API mode is enabled, see
@@ -364,13 +333,14 @@ abstract class AndroidXExtension(
     var metalavaK2UastEnabled = true
 
     /** Whether the project has not yet been migrated to use JSpecify annotations. */
-    var optOutJSpecify = true
+    var optOutJSpecify = false
 
     val additionalDeviceTestApkKeys = mutableListOf<String>()
 
     val additionalDeviceTestTags: MutableList<String> by lazy {
         val tags =
             when {
+                project.path.startsWith(":compose:") -> mutableListOf("compose")
                 project.path.startsWith(":privacysandbox:ads:") ->
                     mutableListOf("privacysandbox", "privacysandbox_ads")
                 project.path.startsWith(":privacysandbox:") -> mutableListOf("privacysandbox")
@@ -384,7 +354,7 @@ abstract class AndroidXExtension(
     }
 
     fun shouldEnforceKotlinStrictApiMode(): Boolean {
-        return !legacyDisableKotlinStrictApiMode && runApiTasks is RunApiTasks.Yes
+        return !legacyDisableKotlinStrictApiMode && type.checkApi is RunApiTasks.Yes
     }
 
     fun extraLicense(closure: Closure<Any>): License {
@@ -441,6 +411,20 @@ abstract class AndroidXExtension(
         samplesProjects.add(samplesProject)
     }
 
+    /** Adds golden image assets to Android test APKs to use for screenshot tests. */
+    fun addGoldenImageAssets() {
+        project.extensions.findByType(LibraryAndroidComponentsExtension::class.java)?.onVariants {
+            variant ->
+            val subdirectory = project.path.replace(":", "/")
+            variant.androidTest
+                ?.sources
+                ?.assets
+                ?.addStaticSourceDirectory(
+                    File(project.rootDir, "../../golden$subdirectory").absolutePath
+                )
+        }
+    }
+
     /** Locates a project by path. */
     // This method is needed for Gradle project isolation to avoid calls to parent projects due to
     // androidx { samples(project(":foo")) }
@@ -449,6 +433,21 @@ abstract class AndroidXExtension(
     // `androidx` block tries retrieves that project object and calls to look for :foo property
     // on it, then checking all the parents for it.
     fun project(name: String): Project = project.project(name)
+
+    /**
+     * Declare an optional project dependency on a project or its latest snapshot artifact. In AOSP
+     * builds this is a no-op and always returns a project reference
+     */
+    fun projectOrArtifact(name: String): Any {
+        return if (!ProjectLayoutType.isPlayground(project)) {
+            // In AndroidX build, this is always enforced to the project
+            project.project(name)
+        } else {
+            // In Playground builds, they are converted to the latest SNAPSHOT artifact if the
+            // project is not included in that playground.
+            playgroundProjectOrArtifact(project.rootProject, name)
+        }
+    }
 }
 
 class License {

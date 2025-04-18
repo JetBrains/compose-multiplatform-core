@@ -16,13 +16,14 @@
 
 package androidx.appsearch.playservicesstorage.converter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -40,9 +41,8 @@ public final class SchemaToGmsConverter {
      * Translates a jetpack {@link androidx.appsearch.app.AppSearchSchema} into a Gms
      * {@link com.google.android.gms.appsearch.AppSearchSchema}.
      */
-    @NonNull
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    public static com.google.android.gms.appsearch.AppSearchSchema toGmsSchema(
+    public static com.google.android.gms.appsearch.@NonNull AppSearchSchema toGmsSchema(
             @NonNull AppSearchSchema jetpackSchema) {
         Preconditions.checkNotNull(jetpackSchema);
         com.google.android.gms.appsearch.AppSearchSchema.Builder gmsBuilder =
@@ -73,9 +73,8 @@ public final class SchemaToGmsConverter {
      * to a jetpack
      * {@link androidx.appsearch.app.AppSearchSchema}.
      */
-    @NonNull
-    public static AppSearchSchema toJetpackSchema(
-            @NonNull com.google.android.gms.appsearch.AppSearchSchema gmsSchema) {
+    public static @NonNull AppSearchSchema toJetpackSchema(
+            com.google.android.gms.appsearch.@NonNull AppSearchSchema gmsSchema) {
         Preconditions.checkNotNull(gmsSchema);
         AppSearchSchema.Builder jetpackBuilder =
                 new AppSearchSchema.Builder(gmsSchema.getSchemaType());
@@ -94,10 +93,9 @@ public final class SchemaToGmsConverter {
         return jetpackBuilder.build();
     }
 
-    @NonNull
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    private static com.google.android.gms.appsearch.AppSearchSchema.PropertyConfig toGmsProperty(
-            @NonNull AppSearchSchema.PropertyConfig jetpackProperty) {
+    private static com.google.android.gms.appsearch.AppSearchSchema.@NonNull PropertyConfig
+            toGmsProperty(AppSearchSchema.@NonNull PropertyConfig jetpackProperty) {
         Preconditions.checkNotNull(jetpackProperty);
         if (!jetpackProperty.getDescription().isEmpty()) {
             // TODO(b/326987971): Remove this once description becomes available.
@@ -206,9 +204,8 @@ public final class SchemaToGmsConverter {
         }
     }
 
-    @NonNull
-    private static AppSearchSchema.PropertyConfig toJetpackProperty(
-            @NonNull com.google.android.gms.appsearch.AppSearchSchema.PropertyConfig
+    private static AppSearchSchema.@NonNull PropertyConfig toJetpackProperty(
+            com.google.android.gms.appsearch.AppSearchSchema.@NonNull PropertyConfig
                     gmsProperty) {
         Preconditions.checkNotNull(gmsProperty);
         if (gmsProperty

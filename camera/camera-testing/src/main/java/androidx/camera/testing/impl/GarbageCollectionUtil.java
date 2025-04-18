@@ -16,8 +16,7 @@
 
 package androidx.camera.testing.impl;
 
-import androidx.annotation.NonNull;
-
+import org.jspecify.annotations.NonNull;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
 
@@ -63,8 +62,7 @@ public final class GarbageCollectionUtil {
     /**
      * Returns a TestRule that runs garbage collection and ensures finalization after each test.
      */
-    @NonNull
-    public static TestRule getGcRule() {
+    public static @NonNull TestRule getGcRule() {
         return (base, description) -> new Statement() {
             @Override
             public void evaluate() throws Throwable {

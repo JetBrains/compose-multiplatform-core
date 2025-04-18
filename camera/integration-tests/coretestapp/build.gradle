@@ -1,3 +1,5 @@
+import androidx.build.ApkCopyHelperKt
+
 /*
  * Copyright (C) 2019 The Android Open Source Project
  *
@@ -17,10 +19,12 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
+    compileSdk = 35
+
     defaultConfig {
         applicationId = "androidx.camera.integration.core"
 
@@ -54,6 +58,7 @@ android {
 }
 
 dependencies {
+    api(libs.jspecify)
     // Internal library
     implementation(project(":camera:camera-camera2"))
     implementation(project(":camera:camera-camera2-pipe-integration"))
@@ -62,6 +67,8 @@ dependencies {
     implementation(project(":camera:camera-mlkit-vision"))
     implementation(project(":camera:camera-view"))
     implementation(project(":camera:camera-video"))
+    implementation(project(":camera:camera-extensions"))
+
     // Needed because AGP enforces same version between main and androidTest classpaths
     implementation(project(":concurrent:concurrent-futures"))
 
@@ -133,3 +140,6 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(project(":internal-testutils-ktx"))
 }
+
+// Publish the APK to dist/apk for testing.
+ApkCopyHelperKt.setupAppApkCopy(project, "release")

@@ -39,12 +39,12 @@ import androidx.room.ext.isUUID
 import androidx.room.parser.ParsedQuery
 import androidx.room.parser.SQLTypeAffinity
 import androidx.room.processor.Context
+import androidx.room.processor.DataClassProcessor
 import androidx.room.processor.EntityProcessor
-import androidx.room.processor.FieldProcessor
-import androidx.room.processor.PojoProcessor
 import androidx.room.processor.ProcessorErrors
 import androidx.room.processor.ProcessorErrors.DO_NOT_USE_GENERIC_IMMUTABLE_MULTIMAP
 import androidx.room.processor.ProcessorErrors.invalidQueryForSingleColumnArray
+import androidx.room.processor.PropertyProcessor
 import androidx.room.solver.binderprovider.CoroutineFlowResultBinderProvider
 import androidx.room.solver.binderprovider.CursorQueryResultBinderProvider
 import androidx.room.solver.binderprovider.DataSourceFactoryQueryResultBinderProvider
@@ -69,6 +69,7 @@ import androidx.room.solver.query.parameter.BasicQueryParameterAdapter
 import androidx.room.solver.query.parameter.CollectionQueryParameterAdapter
 import androidx.room.solver.query.parameter.QueryParameterAdapter
 import androidx.room.solver.query.result.ArrayQueryResultAdapter
+import androidx.room.solver.query.result.DataClassRowAdapter
 import androidx.room.solver.query.result.EntityRowAdapter
 import androidx.room.solver.query.result.GuavaImmutableMultimapQueryResultAdapter
 import androidx.room.solver.query.result.GuavaOptionalQueryResultAdapter
@@ -83,25 +84,24 @@ import androidx.room.solver.query.result.MultimapQueryResultAdapter.Companion.va
 import androidx.room.solver.query.result.MultimapQueryResultAdapter.Companion.validateMapValueTypeArg
 import androidx.room.solver.query.result.MultimapQueryResultAdapter.MapType.Companion.isSparseArray
 import androidx.room.solver.query.result.OptionalQueryResultAdapter
-import androidx.room.solver.query.result.PojoRowAdapter
 import androidx.room.solver.query.result.QueryResultAdapter
 import androidx.room.solver.query.result.QueryResultBinder
 import androidx.room.solver.query.result.RowAdapter
 import androidx.room.solver.query.result.SingleColumnRowAdapter
 import androidx.room.solver.query.result.SingleItemQueryResultAdapter
 import androidx.room.solver.query.result.SingleNamedColumnRowAdapter
-import androidx.room.solver.shortcut.binder.DeleteOrUpdateMethodBinder
-import androidx.room.solver.shortcut.binder.InsertOrUpsertMethodBinder
-import androidx.room.solver.shortcut.binderprovider.DeleteOrUpdateMethodBinderProvider
-import androidx.room.solver.shortcut.binderprovider.GuavaListenableFutureDeleteOrUpdateMethodBinderProvider
-import androidx.room.solver.shortcut.binderprovider.GuavaListenableFutureInsertOrUpsertMethodBinderProvider
-import androidx.room.solver.shortcut.binderprovider.InsertOrUpsertMethodBinderProvider
-import androidx.room.solver.shortcut.binderprovider.InstantDeleteOrUpdateMethodBinderProvider
-import androidx.room.solver.shortcut.binderprovider.InstantInsertOrUpsertMethodBinderProvider
-import androidx.room.solver.shortcut.binderprovider.RxCallableDeleteOrUpdateMethodBinderProvider
-import androidx.room.solver.shortcut.binderprovider.RxCallableInsertOrUpsertMethodBinderProvider
-import androidx.room.solver.shortcut.result.DeleteOrUpdateMethodAdapter
-import androidx.room.solver.shortcut.result.InsertOrUpsertMethodAdapter
+import androidx.room.solver.shortcut.binder.DeleteOrUpdateFunctionBinder
+import androidx.room.solver.shortcut.binder.InsertOrUpsertFunctionBinder
+import androidx.room.solver.shortcut.binderprovider.DeleteOrUpdateFunctionBinderProvider
+import androidx.room.solver.shortcut.binderprovider.GuavaListenableFutureDeleteOrUpdateFunctionBinderProvider
+import androidx.room.solver.shortcut.binderprovider.GuavaListenableFutureInsertOrUpsertFunctionBinderProvider
+import androidx.room.solver.shortcut.binderprovider.InsertOrUpsertFunctionBinderProvider
+import androidx.room.solver.shortcut.binderprovider.InstantDeleteOrUpdateFunctionBinderProvider
+import androidx.room.solver.shortcut.binderprovider.InstantInsertOrUpsertFunctionBinderProvider
+import androidx.room.solver.shortcut.binderprovider.RxCallableDeleteOrUpdateFunctionBinderProvider
+import androidx.room.solver.shortcut.binderprovider.RxCallableInsertOrUpsertFunctionBinderProvider
+import androidx.room.solver.shortcut.result.DeleteOrUpdateFunctionAdapter
+import androidx.room.solver.shortcut.result.InsertOrUpsertFunctionAdapter
 import androidx.room.solver.types.BoxedBooleanToBoxedIntConverter
 import androidx.room.solver.types.BoxedPrimitiveColumnTypeAdapter
 import androidx.room.solver.types.ByteArrayColumnTypeAdapter
@@ -109,11 +109,11 @@ import androidx.room.solver.types.ByteArrayWrapperColumnTypeAdapter
 import androidx.room.solver.types.ByteBufferColumnTypeAdapter
 import androidx.room.solver.types.ColumnTypeAdapter
 import androidx.room.solver.types.CompositeAdapter
-import androidx.room.solver.types.CursorValueReader
 import androidx.room.solver.types.EnumColumnTypeAdapter
 import androidx.room.solver.types.PrimitiveBooleanToIntConverter
 import androidx.room.solver.types.PrimitiveColumnTypeAdapter
 import androidx.room.solver.types.StatementValueBinder
+import androidx.room.solver.types.StatementValueReader
 import androidx.room.solver.types.StringColumnTypeAdapter
 import androidx.room.solver.types.TypeConverter
 import androidx.room.solver.types.UuidColumnTypeAdapter
@@ -229,18 +229,18 @@ private constructor(
             add(InstantPreparedQueryResultBinderProvider(context))
         }
 
-    private val insertOrUpsertBinderProviders: List<InsertOrUpsertMethodBinderProvider> =
-        mutableListOf<InsertOrUpsertMethodBinderProvider>().apply {
-            addAll(RxCallableInsertOrUpsertMethodBinderProvider.getAll(context))
-            add(GuavaListenableFutureInsertOrUpsertMethodBinderProvider(context))
-            add(InstantInsertOrUpsertMethodBinderProvider(context))
+    private val insertOrUpsertBinderProviders: List<InsertOrUpsertFunctionBinderProvider> =
+        mutableListOf<InsertOrUpsertFunctionBinderProvider>().apply {
+            addAll(RxCallableInsertOrUpsertFunctionBinderProvider.getAll(context))
+            add(GuavaListenableFutureInsertOrUpsertFunctionBinderProvider(context))
+            add(InstantInsertOrUpsertFunctionBinderProvider(context))
         }
 
-    private val deleteOrUpdateBinderProvider: List<DeleteOrUpdateMethodBinderProvider> =
-        mutableListOf<DeleteOrUpdateMethodBinderProvider>().apply {
-            addAll(RxCallableDeleteOrUpdateMethodBinderProvider.getAll(context))
-            add(GuavaListenableFutureDeleteOrUpdateMethodBinderProvider(context))
-            add(InstantDeleteOrUpdateMethodBinderProvider(context))
+    private val deleteOrUpdateBinderProvider: List<DeleteOrUpdateFunctionBinderProvider> =
+        mutableListOf<DeleteOrUpdateFunctionBinderProvider>().apply {
+            addAll(RxCallableDeleteOrUpdateFunctionBinderProvider.getAll(context))
+            add(GuavaListenableFutureDeleteOrUpdateFunctionBinderProvider(context))
+            add(InstantDeleteOrUpdateFunctionBinderProvider(context))
         }
 
     /** Searches 1 way to bind a value into a statement. */
@@ -279,8 +279,8 @@ private constructor(
         return null
     }
 
-    /** Searches 1 way to read it from cursor */
-    fun findCursorValueReader(output: XType, affinity: SQLTypeAffinity?): CursorValueReader? {
+    /** Searches 1 way to read it from a statement */
+    fun findStatementValueReader(output: XType, affinity: SQLTypeAffinity?): StatementValueReader? {
         if (output.isError()) {
             return null
         }
@@ -293,7 +293,7 @@ private constructor(
         fun findTypeConverterAdapter(): ColumnTypeAdapter? {
             val targetTypes = affinity?.getTypeMirrors(context.processingEnv)
             val converter =
-                typeConverterStore.findConverterFromCursor(
+                typeConverterStore.findConverterFromStatement(
                     columnTypes = targetTypes,
                     output = output
                 ) ?: return null
@@ -321,7 +321,7 @@ private constructor(
 
     /**
      * Finds a two way converter, if you need 1 way, use findStatementValueBinder or
-     * findCursorValueReader.
+     * findStatementValueReader.
      */
     fun findColumnTypeAdapter(
         out: XType,
@@ -344,7 +344,7 @@ private constructor(
                     columnTypes = targetTypes
                 ) ?: return null
             // ok found a converter, try the reverse now
-            val fromCursor =
+            val fromStmt =
                 typeConverterStore.reverse(intoStatement)
                     ?: typeConverterStore.findTypeConverter(intoStatement.to, out)
                     ?: return null
@@ -352,7 +352,7 @@ private constructor(
                 out,
                 getAllColumnAdapters(intoStatement.to).first(),
                 intoStatement,
-                fromCursor
+                fromStmt
             )
         }
 
@@ -385,7 +385,13 @@ private constructor(
                 findColumnTypeAdapter(
                     // Find an adapter for the non-null underlying type, nullability will be handled
                     // by the value class adapter.
-                    out = underlyingInfo.parameter.asMemberOf(type).makeNonNullable(),
+                    out =
+                        try {
+                            // Workaround for KSP2
+                            underlyingInfo.parameter.asMemberOf(type).makeNonNullable()
+                        } catch (ex: Throwable) {
+                            underlyingInfo.parameter.type.makeNonNullable()
+                        },
                     affinity = affinity,
                     skipDefaultConverter = false
                 ) ?: return null
@@ -413,23 +419,23 @@ private constructor(
         }
     }
 
-    fun findDeleteOrUpdateMethodBinder(typeMirror: XType): DeleteOrUpdateMethodBinder {
+    fun findDeleteOrUpdateFunctionBinder(typeMirror: XType): DeleteOrUpdateFunctionBinder {
         return deleteOrUpdateBinderProvider.first { it.matches(typeMirror) }.provide(typeMirror)
     }
 
-    fun findInsertMethodBinder(
+    fun findInsertFunctionBinder(
         typeMirror: XType,
         params: List<ShortcutQueryParameter>
-    ): InsertOrUpsertMethodBinder {
+    ): InsertOrUpsertFunctionBinder {
         return insertOrUpsertBinderProviders
             .first { it.matches(typeMirror) }
             .provide(typeMirror, params, false)
     }
 
-    fun findUpsertMethodBinder(
+    fun findUpsertFunctionBinder(
         typeMirror: XType,
         params: List<ShortcutQueryParameter>
-    ): InsertOrUpsertMethodBinder {
+    ): InsertOrUpsertFunctionBinder {
         return insertOrUpsertBinderProviders
             .first { it.matches(typeMirror) }
             .provide(typeMirror, params, true)
@@ -465,22 +471,22 @@ private constructor(
     fun findPreparedQueryResultAdapter(typeMirror: XType, query: ParsedQuery) =
         PreparedQueryResultAdapter.create(typeMirror, query.type)
 
-    fun findDeleteOrUpdateAdapter(typeMirror: XType): DeleteOrUpdateMethodAdapter? {
-        return DeleteOrUpdateMethodAdapter.create(typeMirror)
+    fun findDeleteOrUpdateAdapter(typeMirror: XType): DeleteOrUpdateFunctionAdapter? {
+        return DeleteOrUpdateFunctionAdapter.create(typeMirror)
     }
 
     fun findInsertAdapter(
         typeMirror: XType,
         params: List<ShortcutQueryParameter>
-    ): InsertOrUpsertMethodAdapter? {
-        return InsertOrUpsertMethodAdapter.createInsert(context, typeMirror, params)
+    ): InsertOrUpsertFunctionAdapter? {
+        return InsertOrUpsertFunctionAdapter.createInsert(context, typeMirror, params)
     }
 
     fun findUpsertAdapter(
         typeMirror: XType,
         params: List<ShortcutQueryParameter>
-    ): InsertOrUpsertMethodAdapter? {
-        return InsertOrUpsertMethodAdapter.createUpsert(context, typeMirror, params)
+    ): InsertOrUpsertFunctionAdapter? {
+        return InsertOrUpsertFunctionAdapter.createUpsert(context, typeMirror, params)
     }
 
     fun findQueryResultAdapter(
@@ -650,13 +656,13 @@ private constructor(
             validateMapKeyTypeArg(
                 context = context,
                 keyTypeArg = keyTypeArg,
-                keyReader = findCursorValueReader(keyTypeArg, null),
+                keyReader = findStatementValueReader(keyTypeArg, null),
                 keyColumnName = mappedKeyColumnName
             )
             validateMapValueTypeArg(
                 context = context,
                 valueTypeArg = valueTypeArg,
-                valueReader = findCursorValueReader(valueTypeArg, null),
+                valueReader = findStatementValueReader(valueTypeArg, null),
                 valueColumnName = mappedValueColumnName
             )
             return GuavaImmutableMultimapQueryResultAdapter(
@@ -724,7 +730,7 @@ private constructor(
             validateMapKeyTypeArg(
                 context = context,
                 keyTypeArg = keyTypeArg,
-                keyReader = findCursorValueReader(keyTypeArg, null),
+                keyReader = findStatementValueReader(keyTypeArg, null),
                 keyColumnName = mappedKeyColumnName
             )
 
@@ -766,7 +772,7 @@ private constructor(
         if (collectionType.nullability != XNullability.NONNULL) {
             context.logger.w(
                 Warning.UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE,
-                ProcessorErrors.nullableCollectionOrArrayReturnTypeInDaoMethod(
+                ProcessorErrors.nullableCollectionOrArrayReturnTypeInDaoFunction(
                     searchingType.asTypeName().toString(context.codeLanguage),
                     typeKeyword
                 )
@@ -777,7 +783,7 @@ private constructor(
         if (arrayComponentType != null && arrayComponentType.nullability != XNullability.NONNULL) {
             context.logger.w(
                 Warning.UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE,
-                ProcessorErrors.nullableComponentInDaoMethodReturnType(
+                ProcessorErrors.nullableComponentInDaoFunctionReturnType(
                     searchingType.asTypeName().toString(context.codeLanguage)
                 )
             )
@@ -788,7 +794,7 @@ private constructor(
             if (typeArg.nullability != XNullability.NONNULL) {
                 context.logger.w(
                     Warning.UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE,
-                    ProcessorErrors.nullableComponentInDaoMethodReturnType(
+                    ProcessorErrors.nullableComponentInDaoFunctionReturnType(
                         searchingType.asTypeName().toString(context.codeLanguage)
                     )
                 )
@@ -805,9 +811,10 @@ private constructor(
             context.processingEnv.requireType(CommonTypeNames.COLLECTION).rawType
         if (collectionTypeRaw.isAssignableFrom(mapValueTypeArg.rawType)) {
             // The Map's value type argument is assignable to a Collection, we need to make
-            // sure it is either a list or a set.
-            val listTypeRaw = context.processingEnv.requireType(CommonTypeNames.LIST).rawType
-            val setTypeRaw = context.processingEnv.requireType(CommonTypeNames.SET).rawType
+            // sure it is either a List or a Set.
+            val listTypeRaw =
+                context.processingEnv.requireType(CommonTypeNames.MUTABLE_LIST).rawType
+            val setTypeRaw = context.processingEnv.requireType(CommonTypeNames.MUTABLE_SET).rawType
             val collectionValueType =
                 when {
                     mapValueTypeArg.rawType.isAssignableFrom(listTypeRaw) ->
@@ -841,7 +848,7 @@ private constructor(
             validateMapValueTypeArg(
                 context = context,
                 valueTypeArg = valueTypeArg,
-                valueReader = findCursorValueReader(valueTypeArg, null),
+                valueReader = findStatementValueReader(valueTypeArg, null),
                 valueColumnName = mappedValueColumnName
             )
 
@@ -887,7 +894,7 @@ private constructor(
             validateMapValueTypeArg(
                 context = context,
                 valueTypeArg = mapValueTypeArg,
-                valueReader = findCursorValueReader(mapValueTypeArg, null),
+                valueReader = findStatementValueReader(mapValueTypeArg, null),
                 valueColumnName = mappedValueColumnName
             )
             return MapValueResultAdapter.EndMapValueResultAdapter(
@@ -899,8 +906,8 @@ private constructor(
     }
 
     /**
-     * Find a converter from cursor to the given type mirror. If there is information about the
-     * query result, we try to use it to accept *any* POJO.
+     * Find a converter from statement to the given type mirror. If there is information about the
+     * query result, we try to use it to accept *any* data class.
      */
     fun findRowAdapter(
         typeMirror: XType,
@@ -921,21 +928,21 @@ private constructor(
 
             val (rowAdapter, rowAdapterLogs) =
                 if (resultInfo != null && query.errors.isEmpty() && resultInfo.error == null) {
-                    // if result info is not null, first try a pojo row adapter
+                    // if result info is not null, first try a data class row adapter
                     context.collectLogs { subContext ->
-                        val pojo =
-                            PojoProcessor.createFor(
+                        val dataClass =
+                            DataClassProcessor.createFor(
                                     context = subContext,
                                     element = typeElement,
-                                    bindingScope = FieldProcessor.BindingScope.READ_FROM_CURSOR,
+                                    bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
                                     parent = null
                                 )
                                 .process()
-                        PojoRowAdapter(
+                        DataClassRowAdapter(
                             context = subContext,
                             info = resultInfo,
                             query = query,
-                            pojo = pojo,
+                            dataClass = dataClass,
                             out = typeMirror
                         )
                     }
@@ -961,7 +968,7 @@ private constructor(
 
             if (columnName != null) {
                 val singleNamedColumn =
-                    findCursorValueReader(
+                    findStatementValueReader(
                         typeMirror,
                         query.resultInfo?.columns?.find { it.name == columnName }?.type
                     )
@@ -972,7 +979,7 @@ private constructor(
 
             if ((resultInfo?.columns?.size ?: 1) == 1) {
                 val singleColumn =
-                    findCursorValueReader(typeMirror, resultInfo?.columns?.get(0)?.type)
+                    findStatementValueReader(typeMirror, resultInfo?.columns?.get(0)?.type)
                 if (singleColumn != null) {
                     return SingleColumnRowAdapter(singleColumn)
                 }
@@ -983,7 +990,7 @@ private constructor(
                 return rowAdapter
             }
 
-            // use pojo adapter as a last resort.
+            // use data class adapter as a last resort.
             // this happens when @RawQuery or @SkipVerification is used.
             if (
                 query.resultInfo == null &&
@@ -991,19 +998,19 @@ private constructor(
                     typeMirror.isNotVoidObject() &&
                     typeMirror.isNotKotlinUnit()
             ) {
-                val pojo =
-                    PojoProcessor.createFor(
+                val dataClass =
+                    DataClassProcessor.createFor(
                             context = context,
                             element = typeElement,
-                            bindingScope = FieldProcessor.BindingScope.READ_FROM_CURSOR,
+                            bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
                             parent = null
                         )
                         .process()
-                return PojoRowAdapter(
+                return DataClassRowAdapter(
                     context = context,
                     info = null,
                     query = query,
-                    pojo = pojo,
+                    dataClass = dataClass,
                     out = typeMirror
                 )
             }
@@ -1011,7 +1018,7 @@ private constructor(
         } else {
             if (columnName != null) {
                 val singleNamedColumn =
-                    findCursorValueReader(
+                    findStatementValueReader(
                         typeMirror,
                         query.resultInfo?.columns?.find { it.name == columnName }?.type
                     )
@@ -1019,7 +1026,7 @@ private constructor(
                     return SingleNamedColumnRowAdapter(singleNamedColumn, columnName)
                 }
             }
-            val singleColumn = findCursorValueReader(typeMirror, null) ?: return null
+            val singleColumn = findStatementValueReader(typeMirror, null) ?: return null
             return SingleColumnRowAdapter(singleColumn)
         }
     }

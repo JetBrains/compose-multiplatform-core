@@ -25,9 +25,9 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.Config.Option;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

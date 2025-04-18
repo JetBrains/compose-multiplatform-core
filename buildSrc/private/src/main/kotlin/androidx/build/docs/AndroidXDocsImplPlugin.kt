@@ -252,6 +252,8 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             // during the task execution, as that breaks configuration caching.
             val localVar = archiveOperations
             val tempDir = project.layout.buildDirectory.dir("tmp/JvmSources").get().asFile
+            // Get rid of stale files in the directory
+            tempDir.deleteRecursively()
             task.into(sourcesDestinationDirectory)
             task.from(
                 pairProvider
@@ -275,6 +277,8 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 // during the task execution, as that breaks configuration caching.
                 val localVar = archiveOperations
                 val tempDir = project.layout.buildDirectory.dir("tmp/SampleSources").get().asFile
+                // Get rid of stale files in the directory
+                tempDir.deleteRecursively()
                 task.into(samplesDestinationDirectory)
                 task.from(
                     pairProvider
@@ -471,7 +475,8 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             project.configurations.create("docs-runtime-classpath") {
                 it.setResolveClasspathForUsage(Usage.JAVA_RUNTIME)
             }
-        val kotlinDefaultCatalogVersion = androidx.build.KotlinTarget.DEFAULT.catalogVersion
+        // TODO: Set to DEFAULT when b/407754247 is fixed
+        val kotlinDefaultCatalogVersion = androidx.build.KotlinTarget.KOTLIN_1_8.catalogVersion
         val kotlinLatest = project.versionCatalog.findVersion(kotlinDefaultCatalogVersion).get()
         listOf(docsCompileClasspath, docsRuntimeClasspath).forEach { config ->
             config.resolutionStrategy {
@@ -562,7 +567,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
 
                     description =
                         "Generates reference documentation using a Google devsite Dokka" +
-                            " plugin. Places docs in $generatedDocsDir"
+                            " plugin. Places docs in ${generatedDocsDir.get()}"
                     group = JavaBasePlugin.DOCUMENTATION_GROUP
 
                     dackkaClasspath.from(project.files(dackkaConfiguration))
@@ -578,7 +583,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                     )
                     dependenciesClasspath.from(
                         dependencyClasspath +
-                            project.getAndroidJar() +
+                            project.getAndroidJar(
+                                project.defaultAndroidConfig.latestStableCompileSdk
+                            ) +
                             project.getExtraCommonDependencies()
                     )
                     excludedPackages.set(hiddenPackages.toSet())
@@ -852,6 +859,9 @@ abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
             projectLayout.buildDirectory.dir("tmp/MultiplatformSources").get().asFile
         val tempSamplesDir =
             projectLayout.buildDirectory.dir("tmp/MultiplatformSamples").get().asFile
+        // Get rid of stale files in the directories
+        tempSourcesDir.deleteRecursively()
+        tempSamplesDir.deleteRecursively()
 
         val (sources, samples) =
             inputJars
@@ -921,6 +931,10 @@ abstract class MergeMultiplatformMetadataTask : DefaultTask() {
                 mergedMetadata.merge(metadata)
             }
         val gson = GsonBuilder().setPrettyPrinting().create()
+        // Sort sourceSets to ensure that child sourceSets come after their parents, b/404784813
+        // Also ensure deterministic order--mergedMetadata.merge() uses .toSet() to deduplicate.
+        mergedMetadata.sourceSets =
+            mergedMetadata.sourceSets.sortedWith(compareBy({ it.dependencies.size }, { it.name }))
         val json = gson.toJson(mergedMetadata)
         mergedProjectMetadata.get().asFile.apply {
             parentFile.mkdirs()

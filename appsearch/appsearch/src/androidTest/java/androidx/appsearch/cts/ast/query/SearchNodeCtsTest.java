@@ -57,7 +57,7 @@ public class SearchNodeCtsTest {
         TextNode node = new TextNode("foo");
         SearchNode searchNode = new SearchNode(node);
 
-        assertThat(searchNode.getProperties()).isEmpty();
+        assertThat(searchNode.getPropertyPaths()).isEmpty();
     }
 
     @Test
@@ -117,7 +117,16 @@ public class SearchNodeCtsTest {
     }
 
     @Test
-    public void testGetProperties_returnsListView() {
+    public void testGetChild_returnsOnlyChild() {
+        TextNode node = new TextNode("foo");
+        SearchNode searchNode = new SearchNode(node);
+
+        Node childNode = searchNode.getChild();
+        assertThat(childNode).isEqualTo(node);
+    }
+
+    @Test
+    public void testGetPropertyPaths_returnsListView() {
         PropertyPath examplePath = new PropertyPath(
                 List.of(PropertyPath.PathSegment.create("example"),
                         PropertyPath.PathSegment.create("path")
@@ -133,22 +142,22 @@ public class SearchNodeCtsTest {
         TextNode node = new TextNode("foo");
         SearchNode searchNode = new SearchNode(node, properties);
 
-        List<PropertyPath> copyOfProperties = searchNode.getProperties();
+        List<PropertyPath> copyOfProperties = searchNode.getPropertyPaths();
 
         // Modify the original list
-        searchNode.setProperties(Collections.emptyList());
-        searchNode.addProperty(examplePath);
+        searchNode.setPropertyPaths(Collections.emptyList());
+        searchNode.addPropertyPath(examplePath);
         PropertyPath yetAnother = new PropertyPath(
                 List.of(PropertyPath.PathSegment.create("yet"),
                         PropertyPath.PathSegment.create("another")
                 )
         );
-        searchNode.addProperty(yetAnother);
+        searchNode.addPropertyPath(yetAnother);
         PropertyPath oneMore = new PropertyPath(
                 List.of(PropertyPath.PathSegment.create("one"),
                         PropertyPath.PathSegment.create("more"))
         );
-        searchNode.addProperty(oneMore);
+        searchNode.addPropertyPath(oneMore);
         // Check that the copy was also modified.
         assertThat(copyOfProperties).containsExactly(examplePath, yetAnother, oneMore).inOrder();
     }
@@ -161,14 +170,14 @@ public class SearchNodeCtsTest {
     }
 
     @Test
-    public void testSetProperties_throwsOnNull() {
+    public void testSetPropertyPaths_throwsOnNull() {
         TextNode node = new TextNode("foo");
         SearchNode searchNode = new SearchNode(node);
-        assertThrows(NullPointerException.class, () -> searchNode.setProperties(null));
+        assertThrows(NullPointerException.class, () -> searchNode.setPropertyPaths(null));
     }
 
     @Test
-    public void testSetProperties_throwsOnNullPropertyInList() {
+    public void testSetPropertyPaths_throwsOnNullPropertyInList() {
         PropertyPath examplePath = new PropertyPath(
                 List.of(PropertyPath.PathSegment.create("example"),
                         PropertyPath.PathSegment.create("path")
@@ -181,14 +190,14 @@ public class SearchNodeCtsTest {
 
         TextNode node = new TextNode("foo");
         SearchNode searchNode = new SearchNode(node);
-        assertThrows(NullPointerException.class, () -> searchNode.setProperties(properties));
+        assertThrows(NullPointerException.class, () -> searchNode.setPropertyPaths(properties));
     }
 
     @Test
-    public void testAddProperty_throwsOnNull() {
+    public void testAddPropertyPath_throwsOnNull() {
         TextNode node = new TextNode("foo");
         SearchNode searchNode = new SearchNode(node);
-        assertThrows(NullPointerException.class, () -> searchNode.addProperty(null));
+        assertThrows(NullPointerException.class, () -> searchNode.addPropertyPath(null));
     }
 
     @Test

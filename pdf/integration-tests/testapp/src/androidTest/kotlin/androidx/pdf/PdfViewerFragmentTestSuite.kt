@@ -18,6 +18,8 @@ package androidx.pdf
 
 import android.content.pm.ActivityInfo
 import android.os.Build
+import android.view.InputDevice
+import android.view.MotionEvent
 import androidx.annotation.RequiresExtension
 import androidx.fragment.app.testing.FragmentScenario
 import androidx.fragment.app.testing.launchFragmentInContainer
@@ -27,8 +29,11 @@ import androidx.pdf.matchers.SearchViewAssertions
 import androidx.pdf.util.Preconditions
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
+import androidx.test.espresso.action.GeneralClickAction
+import androidx.test.espresso.action.GeneralLocation
+import androidx.test.espresso.action.Press
+import androidx.test.espresso.action.Tap
 import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.action.ViewActions.longClick
 import androidx.test.espresso.action.ViewActions.swipeDown
 import androidx.test.espresso.action.ViewActions.swipeUp
 import androidx.test.espresso.action.ViewActions.typeText
@@ -42,7 +47,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.UiSelector
 import org.junit.After
+import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,12 +61,12 @@ import org.junit.runner.RunWith
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
 class PdfViewerFragmentTestSuite {
 
-    private lateinit var scenario: FragmentScenario<TestPdfViewerFragment>
+    private lateinit var scenario: FragmentScenario<TestPdfViewerFragmentV1>
 
     @Before
     fun setup() {
         scenario =
-            launchFragmentInContainer<TestPdfViewerFragment>(
+            launchFragmentInContainer<TestPdfViewerFragmentV1>(
                 themeResId =
                     com.google.android.material.R.style.Theme_Material3_DayNight_NoActionBar,
                 initialState = Lifecycle.State.INITIALIZED
@@ -84,7 +92,7 @@ class PdfViewerFragmentTestSuite {
         filename: String,
         nextState: Lifecycle.State,
         orientation: Int
-    ): FragmentScenario<TestPdfViewerFragment> {
+    ): FragmentScenario<TestPdfViewerFragmentV1> {
         val context = InstrumentationRegistry.getInstrumentation().context
         val inputStream = context.assets.open(filename)
 
@@ -128,7 +136,20 @@ class PdfViewerFragmentTestSuite {
 
         // Selection
         val selectionViewActions = SelectionViewActions()
-        onView(isRoot()).perform(longClick())
+        onView(isRoot())
+            .perform(
+                GeneralClickAction(
+                    Tap.LONG,
+                    { view ->
+                        GeneralLocation.CENTER.calculateCoordinates(view)
+                            .map { it + 20f }
+                            .toFloatArray()
+                    },
+                    Press.THUMB,
+                    InputDevice.SOURCE_UNKNOWN,
+                    MotionEvent.BUTTON_PRIMARY
+                )
+            )
         onView(withId(R.id.start_drag_handle)).check(matches(isDisplayed()))
         onView(withId(R.id.stop_drag_handle)).check(matches(isDisplayed()))
 
@@ -139,6 +160,7 @@ class PdfViewerFragmentTestSuite {
 
     @Test
     fun testPdfViewerFragment_isTextSearchActive_toggleMenu() {
+        val uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         val scenario =
             scenarioLoadDocument(
                 TEST_DOCUMENT_FILE,
@@ -166,6 +188,9 @@ class PdfViewerFragmentTestSuite {
 
         // Prev/next search results
         onView(withId(R.id.find_prev_btn)).perform(click())
+        val keyboard = uiDevice.findObject(UiSelector().descriptionContains(KEYBOARD_CONTENT_DESC))
+        // Assert keyboard is dismissed on clicking prev/next
+        assertFalse(keyboard.exists())
         onView(withId(R.id.match_status_textview)).check(searchViewAssertion.matchPrevious())
         onView(withId(R.id.find_next_btn)).perform(click())
         onView(withId(R.id.match_status_textview)).check(searchViewAssertion.matchNext())
@@ -264,7 +289,7 @@ class PdfViewerFragmentTestSuite {
         private const val TEST_PROTECTED_DOCUMENT_FILE = "sample-protected.pdf"
         private const val TEST_CORRUPTED_DOCUMENT_FILE = "corrupted.pdf"
         private const val PROTECTED_DOCUMENT_PASSWORD = "abcd1234"
-        private const val DELAY_TIME_MS = 500L
         private const val SEARCH_QUERY = "ipsum"
+        private const val KEYBOARD_CONTENT_DESC = "keyboard"
     }
 }

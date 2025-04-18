@@ -92,7 +92,7 @@ internal class ApproachMeasureScopeImpl(
     override fun layout(
         width: Int,
         height: Int,
-        alignmentLines: Map<out AlignmentLine, Int>,
+        alignmentLines: Map<AlignmentLine, Int>,
         rulers: (RulerScope.() -> Unit)?,
         placementBlock: Placeable.PlacementScope.() -> Unit
     ): MeasureResult {

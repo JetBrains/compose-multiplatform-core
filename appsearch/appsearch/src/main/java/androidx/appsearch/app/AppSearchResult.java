@@ -38,6 +38,8 @@ import java.lang.annotation.RetentionPolicy;
  *
  * @param <ValueType> The type of result object for successful calls.
  */
+// TODO(b/384721898): Switch to JSpecify annotations
+@SuppressWarnings("JSpecifyNullness")
 public final class AppSearchResult<ValueType> {
     private static final String TAG = "AppSearchResult";
 
@@ -57,7 +59,6 @@ public final class AppSearchResult<ValueType> {
             RESULT_SECURITY_ERROR,
             RESULT_DENIED,
             RESULT_RATE_LIMITED,
-            RESULT_TIMED_OUT,
             RESULT_ALREADY_EXISTS
     })
     @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -120,19 +121,14 @@ public final class AppSearchResult<ValueType> {
     @ExperimentalAppSearchApi
     public static final int RESULT_RATE_LIMITED = 10;
 
-    /** The operation was timed out. */
-    @FlaggedApi(Flags.FLAG_ENABLE_APP_FUNCTIONS)
-    @ExperimentalAppSearchApi
-    public static final int RESULT_TIMED_OUT = 11;
-
     /** The operation is invalid because the resource already exists and can't be replaced.   */
     @FlaggedApi(Flags.FLAG_ENABLE_RESULT_ALREADY_EXISTS)
     @ExperimentalAppSearchApi
     public static final int RESULT_ALREADY_EXISTS = 12;
 
     @ResultCode private final int mResultCode;
-    @Nullable private final ValueType mResultValue;
-    @Nullable private final String mErrorMessage;
+    private final @Nullable ValueType mResultValue;
+    private final @Nullable String mErrorMessage;
 
     private AppSearchResult(
             @ResultCode int resultCode,
@@ -162,8 +158,7 @@ public final class AppSearchResult<ValueType> {
      *
      * @throws IllegalStateException if this {@link AppSearchResult} is not successful.
      */
-    @Nullable
-    public ValueType getResultValue() {
+    public @Nullable ValueType getResultValue() {
         if (!isSuccess()) {
             throw new IllegalStateException("AppSearchResult is a failure: " + this);
         }
@@ -178,8 +173,7 @@ public final class AppSearchResult<ValueType> {
      * documentation of the particular {@link AppSearchSession} call producing this
      * {@link AppSearchResult} for what is returned by {@link #getErrorMessage}.
      */
-    @Nullable
-    public String getErrorMessage() {
+    public @Nullable String getErrorMessage() {
         return mErrorMessage;
     }
 
@@ -203,8 +197,7 @@ public final class AppSearchResult<ValueType> {
     }
 
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         if (isSuccess()) {
             return "[SUCCESS]: " + mResultValue;
         }
@@ -217,8 +210,7 @@ public final class AppSearchResult<ValueType> {
      * @param value An optional value to associate with the successful result of the operation
      *              being performed.
      */
-    @NonNull
-    public static <ValueType> AppSearchResult<ValueType> newSuccessfulResult(
+    public static @NonNull <ValueType> AppSearchResult<ValueType> newSuccessfulResult(
             @Nullable ValueType value) {
         return new AppSearchResult<>(RESULT_OK, value, /*errorMessage=*/ null);
     }
@@ -229,8 +221,7 @@ public final class AppSearchResult<ValueType> {
      * @param resultCode One of the constants documented in {@link AppSearchResult#getResultCode}.
      * @param errorMessage An optional string describing the reason or nature of the failure.
      */
-    @NonNull
-    public static <ValueType> AppSearchResult<ValueType> newFailedResult(
+    public static @NonNull <ValueType> AppSearchResult<ValueType> newFailedResult(
             @ResultCode int resultCode, @Nullable String errorMessage) {
         return new AppSearchResult<>(resultCode, /*resultValue=*/ null, errorMessage);
     }
@@ -241,8 +232,7 @@ public final class AppSearchResult<ValueType> {
      * @exportToFramework:hide
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    public static <ValueType> AppSearchResult<ValueType> newFailedResult(
+    public static @NonNull <ValueType> AppSearchResult<ValueType> newFailedResult(
             @NonNull AppSearchResult<?> otherFailedResult) {
         Preconditions.checkState(!otherFailedResult.isSuccess(),
                 "Cannot convert a success result to a failed result");
@@ -252,8 +242,7 @@ public final class AppSearchResult<ValueType> {
 
     /** @exportToFramework:hide */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    public static <ValueType> AppSearchResult<ValueType> throwableToFailedResult(
+    public static @NonNull <ValueType> AppSearchResult<ValueType> throwableToFailedResult(
             @NonNull Throwable t) {
         // Log for traceability. NOT_FOUND is logged at VERBOSE because this error can occur during
         // the regular operation of the system (b/183550974). Everything else is indicative of an

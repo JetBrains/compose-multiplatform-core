@@ -16,6 +16,7 @@
 
 package androidx.slidingpanelayout.widget
 
+import android.content.Context
 import android.graphics.Canvas
 import android.graphics.ColorFilter
 import android.graphics.PixelFormat
@@ -284,6 +285,53 @@ class SlidingPaneLayoutTest {
         assertWithMessage("isUserResizingEnabled").that(view.isUserResizingEnabled).isTrue()
         assertWithMessage("isUserResizable").that(view.isUserResizable).isTrue()
     }
+
+    @Test
+    fun userResizingDividerWidthInflated() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val inflater = LayoutInflater.from(context)
+        val view = inflater.inflate(R.layout.pane_spacing, null) as SlidingPaneLayout
+        assertWithMessage("paneSpacing is inflated").that(view.paneSpacing).isEqualTo(24)
+    }
+
+    @Test
+    fun testGenerateLayoutParams_fromViewGroupLayoutParams() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val spl = TestSlidingPaneLayout(context)
+        val layoutParams = spl.getGeneratedLayoutParams(ViewGroup.LayoutParams(10, 20))
+        assertThat(layoutParams).isInstanceOf(SlidingPaneLayout.LayoutParams::class.java)
+        assertThat(layoutParams.width).isEqualTo(10)
+        assertThat(layoutParams.height).isEqualTo(20)
+    }
+
+    @Test
+    fun testGenerateLayoutParams_fromMarginLayoutParams() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val spl = TestSlidingPaneLayout(context)
+        val layoutParams = spl.getGeneratedLayoutParams(ViewGroup.MarginLayoutParams(10, 20))
+        assertThat(layoutParams).isInstanceOf(SlidingPaneLayout.LayoutParams::class.java)
+        assertThat(layoutParams.width).isEqualTo(10)
+        assertThat(layoutParams.height).isEqualTo(20)
+    }
+
+    @Test
+    fun testGenerateLayoutParams_fromSlidingPaneLayoutLayoutParams() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val spl = TestSlidingPaneLayout(context)
+        val layoutParams = spl.getGeneratedLayoutParams(SlidingPaneLayout.LayoutParams(10, 20))
+        assertThat(layoutParams).isInstanceOf(SlidingPaneLayout.LayoutParams::class.java)
+        assertThat(layoutParams.width).isEqualTo(10)
+        assertThat(layoutParams.height).isEqualTo(20)
+    }
+
+    @Test
+    fun testGenerateLayoutParams_fromNull() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val spl = TestSlidingPaneLayout(context)
+        // Do not crash when input is null
+        val layoutParams = spl.getGeneratedLayoutParams(null)
+        assertThat(layoutParams).isInstanceOf(SlidingPaneLayout.LayoutParams::class.java)
+    }
 }
 
 private fun View.measureAndLayout(width: Int, height: Int) {
@@ -316,5 +364,12 @@ private fun testSingleLayoutPass(
     }
     secondChild.assertReportingMeasureCallTraces {
         assertWithMessage("second child measure count").that(measureCount).isEqualTo(1)
+    }
+}
+
+private class TestSlidingPaneLayout(context: Context) : SlidingPaneLayout(context) {
+    // ViewGroup.generateLayoutParams is protected.
+    fun getGeneratedLayoutParams(p: ViewGroup.LayoutParams?): ViewGroup.LayoutParams {
+        return generateLayoutParams(p)
     }
 }

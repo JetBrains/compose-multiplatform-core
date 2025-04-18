@@ -21,8 +21,6 @@ import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.FontVariantProp
 import androidx.wear.protolayout.LayoutElementBuilders.FontWeightProp
 import androidx.wear.protolayout.expression.ProtoLayoutExperimental
-import androidx.wear.protolayout.material3.Typography.ARC_MEDIUM
-import androidx.wear.protolayout.material3.Typography.ARC_SMALL
 import androidx.wear.protolayout.material3.Typography.BODY_EXTRA_SMALL
 import androidx.wear.protolayout.material3.Typography.BODY_LARGE
 import androidx.wear.protolayout.material3.Typography.BODY_MEDIUM
@@ -46,7 +44,7 @@ import androidx.wear.protolayout.material3.Typography.TypographyToken
 /**
  * Helper object for determining additional font specifics that should be used for each Typography.
  */
-// TODO: b/372068167 - Address the diff here.
+// Don't override this file automatically.
 internal object TypographyFontSelection {
     /**
      * Returns the [FontVariantProp] for the given typography which is used to select font when
@@ -57,8 +55,6 @@ internal object TypographyFontSelection {
         FontVariantProp.Builder()
             .setValue(
                 when (typographyToken) {
-                    ARC_MEDIUM,
-                    ARC_SMALL,
                     BODY_EXTRA_SMALL,
                     BODY_LARGE,
                     BODY_MEDIUM,
@@ -97,8 +93,6 @@ internal object TypographyFontSelection {
                     LABEL_SMALL,
                     BODY_EXTRA_SMALL,
                     BODY_SMALL,
-                    ARC_MEDIUM,
-                    ARC_SMALL,
                     NUMERAL_EXTRA_LARGE,
                     NUMERAL_LARGE,
                     NUMERAL_MEDIUM,
@@ -120,19 +114,17 @@ internal object TypographyFontSelection {
         when (typographyToken) {
             TITLE_MEDIUM,
             TITLE_SMALL,
+            LABEL_LARGE,
             LABEL_MEDIUM,
             LABEL_SMALL,
             BODY_EXTRA_SMALL,
             BODY_LARGE,
             BODY_MEDIUM,
-            BODY_SMALL,
-            ARC_MEDIUM,
-            ARC_SMALL -> true
+            BODY_SMALL -> true
             DISPLAY_LARGE,
             DISPLAY_MEDIUM,
             DISPLAY_SMALL,
             TITLE_LARGE,
-            LABEL_LARGE,
             NUMERAL_EXTRA_LARGE,
             NUMERAL_EXTRA_SMALL,
             NUMERAL_LARGE,

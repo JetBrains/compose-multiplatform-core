@@ -19,9 +19,10 @@ package androidx.core.view.inputmethod;
 import android.app.Activity;
 import android.os.Bundle;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.R;
+
+import org.jspecify.annotations.Nullable;
 
 @RequiresApi(30)
 public class ImeBaseSplitTestActivity extends Activity {

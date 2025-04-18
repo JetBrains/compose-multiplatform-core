@@ -16,6 +16,9 @@
 
 package androidx.compose.foundation.text.selection.gestures
 
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.internal.checkPreconditionNotNull
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.BasicText
@@ -55,6 +58,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -65,6 +70,7 @@ internal class MultiTextMinTouchBoundsSelectionGesturesTest(
     private val horizontal: TestHorizontal,
     private val vertical: TestVertical,
     private val expectedText: ExpectedText,
+    private val newContextMenuFlagValue: Boolean,
 ) : AbstractSelectionGesturesTest() {
     // dp and sp is the same with our density
     private val dpLen = 20.dp
@@ -149,37 +155,54 @@ internal class MultiTextMinTouchBoundsSelectionGesturesTest(
 
     companion object {
         @JvmStatic
-        @Parameterized.Parameters(name = "horizontal={0}, vertical={1} expectedId={2}")
+        @Parameterized.Parameters(
+            name = "horizontal={0}, vertical={1}, expectedId={2}, isNewContextMenuEnabled={3}"
+        )
         fun data(): Collection<Array<Any>> =
             listOf(
-                arrayOf(LEFT, ABOVE, FIRST_REVERSED),
-                arrayOf(LEFT, ON_FIRST, FIRST_REVERSED),
-                arrayOf(LEFT, NO_OVERLAP_BELONGS_TO_FIRST, FIRST),
-                arrayOf(LEFT, OVERLAP_BELONGS_TO_FIRST, FIRST),
-                arrayOf(LEFT, OVERLAP_EQUIDISTANT, EITHER),
-                arrayOf(LEFT, OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED),
-                arrayOf(LEFT, NO_OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED),
-                arrayOf(LEFT, ON_SECOND, SECOND_REVERSED),
-                arrayOf(LEFT, BELOW, SECOND),
-                arrayOf(CENTER, ABOVE, FIRST_REVERSED),
-                arrayOf(CENTER, ON_FIRST, FIRST),
-                arrayOf(CENTER, NO_OVERLAP_BELONGS_TO_FIRST, FIRST),
-                arrayOf(CENTER, OVERLAP_BELONGS_TO_FIRST, FIRST),
-                arrayOf(CENTER, OVERLAP_EQUIDISTANT, EITHER),
-                arrayOf(CENTER, OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED),
-                arrayOf(CENTER, NO_OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED),
-                arrayOf(CENTER, ON_SECOND, SECOND),
-                arrayOf(CENTER, BELOW, SECOND),
-                arrayOf(RIGHT, ABOVE, FIRST_REVERSED),
-                arrayOf(RIGHT, ON_FIRST, FIRST),
-                arrayOf(RIGHT, NO_OVERLAP_BELONGS_TO_FIRST, FIRST),
-                arrayOf(RIGHT, OVERLAP_BELONGS_TO_FIRST, FIRST),
-                arrayOf(RIGHT, OVERLAP_EQUIDISTANT, EITHER),
-                arrayOf(RIGHT, OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED),
-                arrayOf(RIGHT, NO_OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED),
-                arrayOf(RIGHT, ON_SECOND, SECOND),
-                arrayOf(RIGHT, BELOW, SECOND),
+                arrayOf(LEFT, ABOVE, FIRST_REVERSED, false),
+                arrayOf(LEFT, ON_FIRST, FIRST_REVERSED, false),
+                arrayOf(LEFT, NO_OVERLAP_BELONGS_TO_FIRST, FIRST, false),
+                arrayOf(LEFT, OVERLAP_BELONGS_TO_FIRST, FIRST, false),
+                arrayOf(LEFT, OVERLAP_EQUIDISTANT, EITHER, false),
+                arrayOf(LEFT, OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED, false),
+                arrayOf(LEFT, NO_OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED, false),
+                arrayOf(LEFT, ON_SECOND, SECOND_REVERSED, false),
+                arrayOf(LEFT, BELOW, SECOND, false),
+                arrayOf(CENTER, ABOVE, FIRST_REVERSED, false),
+                arrayOf(CENTER, ON_FIRST, FIRST, false),
+                arrayOf(CENTER, NO_OVERLAP_BELONGS_TO_FIRST, FIRST, false),
+                arrayOf(CENTER, OVERLAP_BELONGS_TO_FIRST, FIRST, false),
+                arrayOf(CENTER, OVERLAP_EQUIDISTANT, EITHER, false),
+                arrayOf(CENTER, OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED, false),
+                arrayOf(CENTER, NO_OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED, false),
+                arrayOf(CENTER, ON_SECOND, SECOND, false),
+                arrayOf(CENTER, BELOW, SECOND, false),
+                arrayOf(RIGHT, ABOVE, FIRST_REVERSED, false),
+                arrayOf(RIGHT, ON_FIRST, FIRST, false),
+                arrayOf(RIGHT, NO_OVERLAP_BELONGS_TO_FIRST, FIRST, false),
+                arrayOf(RIGHT, OVERLAP_BELONGS_TO_FIRST, FIRST, false),
+                arrayOf(RIGHT, OVERLAP_EQUIDISTANT, EITHER, false),
+                arrayOf(RIGHT, OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED, false),
+                arrayOf(RIGHT, NO_OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED, false),
+                arrayOf(RIGHT, ON_SECOND, SECOND, false),
+                arrayOf(RIGHT, BELOW, SECOND, false),
             )
+    }
+
+    private var initialFlagValue: Boolean? = null
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Before
+    fun before() {
+        initialFlagValue = ComposeFoundationFlags.isNewContextMenuEnabled
+        ComposeFoundationFlags.isNewContextMenuEnabled = newContextMenuFlagValue
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @After
+    fun after() {
+        ComposeFoundationFlags.isNewContextMenuEnabled = checkPreconditionNotNull(initialFlagValue)
     }
 
     @Test

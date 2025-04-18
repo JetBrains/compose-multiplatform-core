@@ -16,12 +16,13 @@
 
 package androidx.camera.extensions;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.impl.AdapterCameraControl;
 import androidx.camera.core.impl.SessionProcessor;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utility methods for operating on {@link CameraExtensionsControl} instances.
@@ -33,8 +34,7 @@ class CameraExtensionsControls {
      * object when the {@link CameraControl} is retrieved from a extensions-enabled camera.
      * Otherwise, returns {@code null}.
      */
-    @Nullable
-    static CameraExtensionsControl from(@NonNull CameraControl cameraControl) {
+    static @Nullable CameraExtensionsControl from(@NonNull CameraControl cameraControl) {
         Preconditions.checkArgument(cameraControl instanceof AdapterCameraControl, "The input "
                 + "camera control must be an instance retrieved from the camera that is returned "
                 + "by invoking CameraProvider#bindToLifecycle() with an extension enabled camera "

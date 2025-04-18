@@ -303,6 +303,7 @@ object RoomMemberNames {
     val DB_UTIL_DROP_FTS_SYNC_TRIGGERS = RoomTypeNames.DB_UTIL.packageMember("dropFtsSyncTriggers")
     val DB_UTIL_PERFORM_SUSPENDING = RoomTypeNames.DB_UTIL.packageMember("performSuspending")
     val DB_UTIL_PERFORM_BLOCKING = RoomTypeNames.DB_UTIL.packageMember("performBlocking")
+    val DB_UTIL_SUPPORT_DB_TO_CONNECTION = RoomTypeNames.DB_UTIL.packageMember("toSQLiteConnection")
     val DB_UTIL_PERFORM_IN_TRANSACTION_SUSPENDING =
         RoomTypeNames.DB_UTIL.packageMember("performInTransactionSuspending")
     val CURSOR_UTIL_GET_COLUMN_INDEX = RoomTypeNames.CURSOR_UTIL.packageMember("getColumnIndex")

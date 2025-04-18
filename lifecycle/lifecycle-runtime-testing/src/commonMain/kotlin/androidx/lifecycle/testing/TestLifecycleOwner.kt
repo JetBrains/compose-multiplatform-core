@@ -74,7 +74,7 @@ constructor(
      * not block that thread. If the state should be updated from outside of a suspending function,
      * use [currentState] property syntax instead.
      */
-    suspend fun setCurrentState(state: Lifecycle.State) {
+    public suspend fun setCurrentState(state: Lifecycle.State) {
         withContext(coroutineDispatcher) { lifecycleRegistry.currentState = state }
     }
 

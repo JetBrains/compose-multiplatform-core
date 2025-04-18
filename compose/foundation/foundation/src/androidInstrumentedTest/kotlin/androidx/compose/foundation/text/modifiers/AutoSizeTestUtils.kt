@@ -17,28 +17,37 @@
 package androidx.compose.foundation.text.modifiers
 
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.isUnspecified
 
 /**
  * Version of AutoSize that takes in an array and attempts to find the largest font size in the
- * array that doesn't overflow. If this is not found, `100.sp` will be returned
+ * array that doesn't overflow. Returns [TextUnit.Unspecified] if no preset fits.
  *
  * @param presets The array of font sizes to be checked
  */
-internal class AutoSizePreset(private val presets: Array<TextUnit>) : TextAutoSize {
-    override fun AutoSizeTextLayoutScope.getFontSize(): TextUnit {
-        var optimalFontSize = 0.sp
+internal class AutoSizePreset(
+    private val presets: Array<TextUnit>,
+    private val fallbackFontSize: TextUnit = TextUnit.Unspecified,
+) : TextAutoSize {
+
+    override fun TextAutoSizeLayoutScope.getFontSize(
+        constraints: Constraints,
+        text: AnnotatedString
+    ): TextUnit {
+        var optimalFontSize = fallbackFontSize
         for (size in presets) {
-            if (
-                size.toPx() > optimalFontSize.toPx() &&
-                    !performLayoutAndGetOverflow(size.toPx().toSp())
-            ) {
-                optimalFontSize = size
+            if (optimalFontSize.isUnspecified || size.toPx() > optimalFontSize.toPx()) {
+                val layoutResult = performLayout(constraints, text, size)
+                val didOverflow = layoutResult.didOverflowWidth || layoutResult.didOverflowHeight
+                if (!didOverflow) {
+                    optimalFontSize = size
+                }
             }
         }
-        return if (optimalFontSize != 0.sp) optimalFontSize else 100.sp
-        // 100.sp is the font size returned when all sizes in the presets array overflow
+        return if (optimalFontSize.isUnspecified) fallbackFontSize else optimalFontSize
     }
 
     override fun equals(other: Any?): Boolean {
@@ -50,31 +59,5 @@ internal class AutoSizePreset(private val presets: Array<TextUnit>) : TextAutoSi
 
     override fun hashCode(): Int {
         return presets.contentHashCode()
-    }
-}
-
-/**
- * [TextAutoSize] class with a binary implementation where `100.sp` is returned if the font size
- * given doesn't overflow, and `0.sp` if the font size does overflow.
- *
- * The aim of this class is to perform AutoSize without using density methods like `toPx()` to check
- * if [TextUnit.Unspecified] works correctly with `performLayoutAndGetOverflow()`
- */
-internal class AutoSizeWithoutToPx(private val fontSize: TextUnit) : TextAutoSize {
-    override fun AutoSizeTextLayoutScope.getFontSize(): TextUnit {
-        // if there is overflow then 100.sp is returned. Otherwise 0.sp is returned
-        if (performLayoutAndGetOverflow(fontSize)) return 100.sp
-        return 0.sp
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is AutoSizeWithoutToPx) return false
-
-        return fontSize == other.fontSize
-    }
-
-    override fun hashCode(): Int {
-        return fontSize.hashCode()
     }
 }

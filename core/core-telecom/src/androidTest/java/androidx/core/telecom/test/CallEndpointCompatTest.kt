@@ -19,7 +19,6 @@ package androidx.core.telecom.test
 import android.media.AudioDeviceInfo
 import android.os.Build.VERSION_CODES
 import android.telecom.CallAudioState
-import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.CallEndpointCompat.Companion.TYPE_BLUETOOTH
 import androidx.core.telecom.CallEndpointCompat.Companion.TYPE_EARPIECE
@@ -36,7 +35,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-@RequiresApi(VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = VERSION_CODES.O)
 class CallEndpointCompatTest {
     val mSessionId: Int = 222
 

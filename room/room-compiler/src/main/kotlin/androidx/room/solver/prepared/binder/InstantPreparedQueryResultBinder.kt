@@ -33,23 +33,6 @@ class InstantPreparedQueryResultBinder(adapter: PreparedQueryResultAdapter?) :
     PreparedQueryResultBinder(adapter) {
 
     override fun executeAndReturn(
-        prepareQueryStmtBlock: CodeGenScope.() -> String,
-        preparedStmtProperty: XPropertySpec?,
-        dbProperty: XPropertySpec,
-        scope: CodeGenScope
-    ) {
-        scope.builder.apply { addStatement("%N.assertNotSuspendingTransaction()", dbProperty) }
-        adapter?.executeAndReturn(
-            stmtQueryVal = scope.prepareQueryStmtBlock(),
-            preparedStmtProperty = preparedStmtProperty,
-            dbProperty = dbProperty,
-            scope = scope
-        )
-    }
-
-    override fun isMigratedToDriver(): Boolean = true
-
-    override fun executeAndReturn(
         sqlQueryVar: String,
         dbProperty: XPropertySpec,
         bindStatement: CodeGenScope.(String) -> Unit,

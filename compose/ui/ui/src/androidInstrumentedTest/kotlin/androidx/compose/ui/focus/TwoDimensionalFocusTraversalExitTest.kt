@@ -208,7 +208,7 @@ class TwoDimensionalFocusTraversalExitTest {
         val (parent, grandparent) = List(2) { mutableStateOf(false) }
         rule.setContentForTest {
             FocusableBox(grandparent, 0, 0, 50, 50) {
-                val customExit = Modifier.focusProperties { onExit = { cancelFocus() } }
+                val customExit = Modifier.focusProperties { onExit = { cancelFocusChange() } }
                 FocusableBox(parent, 10, 10, 30, 30, deactivated = true) {
                     FocusableBox(focusedItem, 10, 10, 10, 10, initialFocus, modifier = customExit)
                 }

@@ -29,9 +29,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
+import androidx.wear.compose.foundation.pager.HorizontalPager
 import androidx.wear.compose.foundation.pager.rememberPagerState
+import androidx.wear.compose.material3.AnimatedPage
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.HorizontalPagerScaffold
+import androidx.wear.compose.material3.PagerScaffoldDefaults
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 
@@ -47,13 +50,21 @@ object HorizontalPagerBenchmark : MacrobenchmarkScreen {
                         Modifier.fillMaxWidth().semantics {
                             contentDescription = CONTENT_DESCRIPTION
                         }
-                ) { page ->
-                    ScreenScaffold {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Page $page")
+                ) {
+                    HorizontalPager(
+                        state = pagerState,
+                        flingBehavior =
+                            PagerScaffoldDefaults.snapWithSpringFlingBehavior(state = pagerState)
+                    ) { page ->
+                        AnimatedPage(pageIndex = page, pagerState = pagerState) {
+                            ScreenScaffold {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("Page $page")
+                                }
+                            }
                         }
                     }
                 }
@@ -63,11 +74,18 @@ object HorizontalPagerBenchmark : MacrobenchmarkScreen {
     override val exercise: MacrobenchmarkScope.() -> Unit
         get() = {
             val horizontalPager = device.findObject(By.desc(CONTENT_DESCRIPTION))
-            horizontalPager.setGestureMargin(device.displayWidth / 5)
-            repeat(9) {
-                horizontalPager.swipe(Direction.LEFT, 1f, 500)
-                device.waitForIdle()
-                SystemClock.sleep(500)
+            if (horizontalPager != null) {
+                horizontalPager.setGestureMargin(device.displayWidth / 5)
+                repeat(2) {
+                    horizontalPager.swipe(Direction.LEFT, 1f, 1000)
+                    device.waitForIdle()
+                    SystemClock.sleep(500)
+                }
+                repeat(2) {
+                    horizontalPager.swipe(Direction.RIGHT, 1f, 1000)
+                    device.waitForIdle()
+                    SystemClock.sleep(500)
+                }
             }
         }
 }

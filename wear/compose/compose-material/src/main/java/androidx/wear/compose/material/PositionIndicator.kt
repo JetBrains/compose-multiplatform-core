@@ -88,15 +88,15 @@ import kotlinx.coroutines.launch
  */
 @kotlin.jvm.JvmInline
 public value class PositionIndicatorVisibility internal constructor(internal val value: Int) {
-    companion object {
+    public companion object {
         /** Show the Position Indicator. */
-        val Show = PositionIndicatorVisibility(1)
+        public val Show: PositionIndicatorVisibility = PositionIndicatorVisibility(1)
 
         /** Hide the Position Indicator. */
-        val Hide = PositionIndicatorVisibility(2)
+        public val Hide: PositionIndicatorVisibility = PositionIndicatorVisibility(2)
 
         /** Hide the Position Indicator after a short delay. */
-        val AutoHide = PositionIndicatorVisibility(3)
+        public val AutoHide: PositionIndicatorVisibility = PositionIndicatorVisibility(3)
     }
 }
 
@@ -113,12 +113,12 @@ public value class PositionIndicatorVisibility internal constructor(internal val
  * of 5 / 50 = 0.1f to indicate that 10% of the visible items are currently visible.
  */
 @Stable
-interface PositionIndicatorState {
+public interface PositionIndicatorState {
     /**
      * Position of the indicator in the range [0f,1f]. 0f means it is at the top|start, 1f means it
      * is positioned at the bottom|end.
      */
-    @get:FloatRange(from = 0.0, to = 1.0) val positionFraction: Float
+    @get:FloatRange(from = 0.0, to = 1.0) public val positionFraction: Float
 
     /**
      * Size of the indicator in the range [0f,1f]. 1f means it takes the whole space.
@@ -127,7 +127,7 @@ interface PositionIndicatorState {
      *   orientation of the indicator, (height for vertical, width for horizontal)
      */
     @FloatRange(from = 0.0, to = 1.0)
-    fun sizeFraction(@FloatRange(from = 0.0) scrollableContainerSizePx: Float): Float
+    public fun sizeFraction(@FloatRange(from = 0.0) scrollableContainerSizePx: Float): Float
 
     /**
      * Should we show the Position Indicator
@@ -135,7 +135,7 @@ interface PositionIndicatorState {
      * @param scrollableContainerSizePx the height or width of the container in pixels depending on
      *   orientation of the indicator, (height for vertical, width for horizontal)
      */
-    fun visibility(
+    public fun visibility(
         @FloatRange(from = 0.0) scrollableContainerSizePx: Float
     ): PositionIndicatorVisibility
 }
@@ -172,7 +172,7 @@ public fun PositionIndicator(
     fadeInAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
     fadeOutAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
     positionAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.positionAnimationSpec
-) =
+): Unit =
     PositionIndicator(
         ScrollStateAdapter(scrollState),
         indicatorHeight = 50.dp,
@@ -208,7 +208,7 @@ public fun PositionIndicator(
     scrollState: ScrollState,
     modifier: Modifier = Modifier,
     reverseDirection: Boolean = false
-) =
+): Unit =
     PositionIndicator(
         scrollState = scrollState,
         modifier = modifier,
@@ -248,7 +248,7 @@ public fun PositionIndicator(
     fadeInAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
     fadeOutAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
     positionAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.positionAnimationSpec
-) =
+): Unit =
     PositionIndicator(
         state = ScalingLazyColumnStateAdapter(state = scalingLazyListState),
         indicatorHeight = 50.dp,
@@ -285,7 +285,7 @@ public fun PositionIndicator(
     scalingLazyListState: ScalingLazyListState,
     modifier: Modifier = Modifier,
     reverseDirection: Boolean = false
-) =
+): Unit =
     PositionIndicator(
         scalingLazyListState = scalingLazyListState,
         modifier = modifier,
@@ -316,7 +316,7 @@ public fun PositionIndicator(
     scalingLazyListState: androidx.wear.compose.material.ScalingLazyListState,
     modifier: Modifier = Modifier,
     reverseDirection: Boolean = false
-) =
+): Unit =
     PositionIndicator(
         state = MaterialScalingLazyColumnStateAdapter(state = scalingLazyListState),
         indicatorHeight = 50.dp,
@@ -358,7 +358,7 @@ public fun PositionIndicator(
     fadeInAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
     fadeOutAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
     positionAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.positionAnimationSpec
-) =
+): Unit =
     PositionIndicator(
         state = LazyColumnStateAdapter(state = lazyListState),
         indicatorHeight = 50.dp,
@@ -394,7 +394,7 @@ public fun PositionIndicator(
     lazyListState: LazyListState,
     modifier: Modifier = Modifier,
     reverseDirection: Boolean = false
-) =
+): Unit =
     PositionIndicator(
         lazyListState = lazyListState,
         modifier = modifier,
@@ -403,13 +403,13 @@ public fun PositionIndicator(
 
 /** Specifies where in the screen the Position indicator will be. */
 @kotlin.jvm.JvmInline
-value class PositionIndicatorAlignment internal constructor(internal val pos: Int) {
-    companion object {
+public value class PositionIndicatorAlignment internal constructor(internal val pos: Int) {
+    public companion object {
         /**
          * Position the indicator at the end of the layout (at the right for LTR and left for RTL)
          * This is the norm for scroll indicators.
          */
-        val End = PositionIndicatorAlignment(0)
+        public val End: PositionIndicatorAlignment = PositionIndicatorAlignment(0)
 
         // TODO(b/224770222): Add tests.
         /**
@@ -418,21 +418,21 @@ value class PositionIndicatorAlignment internal constructor(internal val pos: In
          * RSB indicators as we want to avoid it being obscured when the user is interacting with
          * the RSB.
          */
-        val OppositeRsb = PositionIndicatorAlignment(1)
+        public val OppositeRsb: PositionIndicatorAlignment = PositionIndicatorAlignment(1)
 
         /**
          * Position the indicator at the left of the screen. This is useful to implement custom
          * positioning, but usually [PositionIndicatorAlignment#End] or
          * [PositionIndicatorAlignment#OppositeRsb] should be used.
          */
-        val Left = PositionIndicatorAlignment(2)
+        public val Left: PositionIndicatorAlignment = PositionIndicatorAlignment(2)
 
         /**
          * Position the indicator at the right of the screen This is useful to implement custom
          * positioning, but usually [PositionIndicatorAlignment#End] or
          * [PositionIndicatorAlignment#OppositeRsb] should be used.
          */
-        val Right = PositionIndicatorAlignment(3)
+        public val Right: PositionIndicatorAlignment = PositionIndicatorAlignment(3)
     }
 
     override fun toString(): String {
@@ -485,7 +485,7 @@ public fun PositionIndicator(
     fadeInAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
     fadeOutAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.visibilityAnimationSpec,
     positionAnimationSpec: AnimationSpec<Float> = PositionIndicatorDefaults.positionAnimationSpec
-) =
+): Unit =
     PositionIndicator(
         state =
             FractionPositionIndicatorState {
@@ -533,7 +533,7 @@ public fun PositionIndicator(
     color: Color = MaterialTheme.colors.onBackground,
     reverseDirection: Boolean = false,
     position: PositionIndicatorAlignment = PositionIndicatorAlignment.OppositeRsb
-) =
+): Unit =
     PositionIndicator(
         value = value,
         modifier = modifier,
@@ -957,14 +957,14 @@ public object PositionIndicatorDefaults {
      * [AnimationSpec] used for position animation. To disable this animation, pass [snap]
      * AnimationSpec instead
      */
-    val positionAnimationSpec: AnimationSpec<Float> =
+    public val positionAnimationSpec: AnimationSpec<Float> =
         tween(durationMillis = 500, easing = CubicBezierEasing(0f, 0f, 0f, 1f))
 
     /**
      * [AnimationSpec] used for visibility (fade-in and fade-out) animations. To disable this
      * animation, pass [snap] AnimationSpec instead
      */
-    val visibilityAnimationSpec: AnimationSpec<Float> =
+    public val visibilityAnimationSpec: AnimationSpec<Float> =
         spring(stiffness = Spring.StiffnessMediumLow)
 
     /** Horizontal padding from the PositionIndicator to the screen edge. */

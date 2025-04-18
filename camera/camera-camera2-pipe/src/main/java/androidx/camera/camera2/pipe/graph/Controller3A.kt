@@ -195,6 +195,7 @@ internal class Controller3A(
                 afRegions,
                 awbRegions
             )
+            graphProcessor.update3AParameters(graphState3A.readState())
             return deferredResult3ASubmitFailed
         }
 
@@ -210,7 +211,7 @@ internal class Controller3A(
 
         // Try submitting a new repeating request with the 3A parameters corresponding to the new
         // 3A state and corresponding listeners.
-        graphProcessor.invalidate()
+        graphProcessor.update3AParameters(graphState3A.readState())
 
         val result = listener.result
         synchronized(this) {
@@ -247,7 +248,7 @@ internal class Controller3A(
         afRegions?.let { extra3AParams.put(CaptureRequest.CONTROL_AF_REGIONS, it.toTypedArray()) }
         awbRegions?.let { extra3AParams.put(CaptureRequest.CONTROL_AWB_REGIONS, it.toTypedArray()) }
 
-        if (!graphProcessor.submit(extra3AParams)) {
+        if (!graphProcessor.trigger(extra3AParams)) {
             graphListener3A.removeListener(listener)
             return deferredResult3ASubmitFailed
         }
@@ -305,6 +306,7 @@ internal class Controller3A(
         // are given as null then they are ignored and the current metering regions continue to be
         // applied in subsequent requests to the camera device.
         graphState3A.update(aeRegions = aeRegions, afRegions = afRegions, awbRegions = awbRegions)
+        graphProcessor.update3AParameters(graphState3A.readState())
 
         // If the GraphProcessor does not have a repeating request we should update the current
         // parameters, but should not invalidate or trigger set a new listener.
@@ -316,7 +318,7 @@ internal class Controller3A(
         // a single request with TRIGGER = TRIGGER_CANCEL so that af can start a fresh scan.
         if (afLockBehaviorSanitized.shouldUnlockAf()) {
             debug { "lock3A - sending a request to unlock af first." }
-            if (!graphProcessor.submit(parameterForAfTriggerCancel)) {
+            if (!graphProcessor.trigger(parameterForAfTriggerCancel)) {
                 return deferredResult3ASubmitFailed
             }
         }
@@ -353,8 +355,8 @@ internal class Controller3A(
             if (aeLockValue != null || awbLockValue != null) {
                 debug { "lock3A - setting aeLock=$aeLockValue, awbLock=$awbLockValue" }
                 graphState3A.update(aeLock = aeLockValue, awbLock = awbLockValue)
+                graphProcessor.update3AParameters(graphState3A.readState())
             }
-            graphProcessor.invalidate()
 
             debug {
                 "lock3A - waiting for" +
@@ -417,7 +419,7 @@ internal class Controller3A(
         // a single request with TRIGGER = TRIGGER_CANCEL so that af can start a fresh scan.
         if (afSanitized == true) {
             debug { "unlock3A - sending a request to unlock af first." }
-            graphProcessor.submit(parameterForAfTriggerCancel)
+            graphProcessor.trigger(parameterForAfTriggerCancel)
         }
 
         // As needed unlock ae, awb and wait for ae, af and awb to converge.
@@ -439,8 +441,8 @@ internal class Controller3A(
         if (aeLockValue != null || awbLockValue != null) {
             debug { "unlock3A - updating graph state, aeLock=$aeLockValue, awbLock=$awbLockValue" }
             graphState3A.update(aeLock = aeLockValue, awbLock = awbLockValue)
+            graphProcessor.update3AParameters(graphState3A.readState())
         }
-        graphProcessor.invalidate()
         return listener.result
     }
 
@@ -568,11 +570,11 @@ internal class Controller3A(
         graphListener3A.addListener(listener)
         debug { "lock3AForCapture - sending a request to trigger ae precapture metering and af." }
 
-        if (!graphProcessor.submit(finalTriggerCondition)) {
+        if (!graphProcessor.trigger(finalTriggerCondition)) {
             graphListener3A.removeListener(listener)
             return deferredResult3ASubmitFailed
         }
-        graphProcessor.invalidate()
+        graphProcessor.update3AParameters(graphState3A.readState())
         return listener.result
     }
 
@@ -601,7 +603,7 @@ internal class Controller3A(
             } else {
                 unlock3APostCaptureLockAeParams
             }
-        if (!graphProcessor.submit(cancelParams)) return deferredResult3ASubmitFailed
+        if (!graphProcessor.trigger(cancelParams)) return deferredResult3ASubmitFailed
 
         // Listener to monitor when we receive the capture result corresponding to the request
         // below.
@@ -609,7 +611,7 @@ internal class Controller3A(
         graphListener3A.addListener(listener)
 
         debug { "unlock3AForCapture - sending a request to turn off ae." }
-        if (!graphProcessor.submit(unlock3APostCaptureUnlockAeParams)) {
+        if (!graphProcessor.trigger(unlock3APostCaptureUnlockAeParams)) {
             graphListener3A.removeListener(listener)
             return deferredResult3ASubmitFailed
         }
@@ -626,7 +628,7 @@ internal class Controller3A(
     private fun unlock3APostCaptureAndroidMAndAbove(cancelAf: Boolean = true): Deferred<Result3A> {
         debug { "unlock3APostCapture - sending a request to reset af and ae precapture metering." }
         val cancelParams = if (cancelAf) aePrecaptureAndAfCancelParams else aePrecaptureCancelParams
-        if (!graphProcessor.submit(cancelParams)) {
+        if (!graphProcessor.trigger(cancelParams)) {
             return deferredResult3ASubmitFailed
         }
 
@@ -641,7 +643,7 @@ internal class Controller3A(
                 Result3AStateListenerImpl(emptyMap())
             }
         graphListener3A.addListener(listener)
-        graphProcessor.invalidate()
+        graphProcessor.update3AParameters(graphState3A.readState())
         return listener.result
     }
 
@@ -692,7 +694,7 @@ internal class Controller3A(
                 "lock3A - submitting request with aeLock=$finalAeLockValue , " +
                     "awbLock=$finalAwbLockValue"
             }
-            graphProcessor.invalidate()
+            graphProcessor.update3AParameters(graphState3A.readState())
             resultForLocked = listener.result
         }
 
@@ -704,19 +706,17 @@ internal class Controller3A(
         afTriggerStartAeMode?.let {
             lastAeMode = graphState3A.aeMode
             graphState3A.update(it)
+            graphProcessor.update3AParameters(graphState3A.readState())
         }
 
         debug { "lock3A - submitting a request to lock af." }
-        if (!graphProcessor.submit(parameterForAfTriggerStart)) {
+        if (!graphProcessor.trigger(parameterForAfTriggerStart)) {
             return deferredResult3ASubmitFailed
         }
 
         lastAeMode?.let {
             graphState3A.update(aeMode = it)
-            // TODO(sushilnath@): Should be able to remove this invalidate() call
-            //  by making sure invalidate() and submit() don't interleave
-            //  w.r.t. building the parameter snapshot
-            graphProcessor.invalidate()
+            graphProcessor.update3AParameters(graphState3A.readState())
         }
         return resultForLocked!!
     }

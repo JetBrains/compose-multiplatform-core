@@ -22,7 +22,6 @@ import androidx.compose.foundation.text.selection.Direction.ON
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.text.TextRange
-import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
@@ -147,7 +146,6 @@ open class SelectionLayout2DTest {
     }
 }
 
-@SmallTest
 @RunWith(Parameterized::class)
 class SelectionLayoutStartSlot2DTest(
     private val vertical: TestVertical,
@@ -227,7 +225,6 @@ class SelectionLayoutStartSlot2DTest(
     }
 }
 
-@SmallTest
 @RunWith(Parameterized::class)
 class SelectionLayoutEndSlot2DTest(
     private val vertical: TestVertical,

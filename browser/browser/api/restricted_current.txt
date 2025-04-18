@@ -1,6 +1,13 @@
 // Signature format: 4.0
 package androidx.browser.auth {
 
+  @SuppressCompatibility @androidx.browser.auth.ExperimentalAuthTab public interface AuthTabCallback {
+    method public void onExtraCallback(String, android.os.Bundle);
+    method public android.os.Bundle onExtraCallbackWithResult(String, android.os.Bundle);
+    method public void onNavigationEvent(int, android.os.Bundle);
+    method public void onWarmupCompleted(android.os.Bundle);
+  }
+
   public final class AuthTabColorSchemeParams {
     method @ColorInt public Integer? getNavigationBarColor();
     method @ColorInt public Integer? getNavigationBarDividerColor();
@@ -16,7 +23,10 @@ package androidx.browser.auth {
   }
 
   @SuppressCompatibility @androidx.browser.auth.ExperimentalAuthTab public class AuthTabIntent {
+    method public android.graphics.Bitmap? getCloseButtonIcon();
     method public static androidx.browser.auth.AuthTabColorSchemeParams getColorSchemeParams(android.content.Intent, @IntRange(from=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_LIGHT, to=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_DARK) int);
+    method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalPendingSession public androidx.browser.auth.AuthTabSession.PendingSession? getPendingSession();
+    method public androidx.browser.auth.AuthTabSession? getSession();
     method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalEphemeralBrowsing public boolean isEphemeralBrowsingEnabled();
     method public void launch(androidx.activity.result.ActivityResultLauncher<android.content.Intent!>, android.net.Uri, String);
     method public void launch(androidx.activity.result.ActivityResultLauncher<android.content.Intent!>, android.net.Uri, String, String);
@@ -41,10 +51,27 @@ package androidx.browser.auth {
   public static final class AuthTabIntent.Builder {
     ctor public AuthTabIntent.Builder();
     method public androidx.browser.auth.AuthTabIntent build();
+    method public androidx.browser.auth.AuthTabIntent.Builder setCloseButtonIcon(android.graphics.Bitmap);
     method public androidx.browser.auth.AuthTabIntent.Builder setColorScheme(@IntRange(from=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_SYSTEM, to=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_DARK) int);
     method public androidx.browser.auth.AuthTabIntent.Builder setColorSchemeParams(@IntRange(from=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_LIGHT, to=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_DARK) int, androidx.browser.auth.AuthTabColorSchemeParams);
     method public androidx.browser.auth.AuthTabIntent.Builder setDefaultColorSchemeParams(androidx.browser.auth.AuthTabColorSchemeParams);
     method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalEphemeralBrowsing public androidx.browser.auth.AuthTabIntent.Builder setEphemeralBrowsingEnabled(boolean);
+    method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalPendingSession public androidx.browser.auth.AuthTabIntent.Builder setPendingSession(androidx.browser.auth.AuthTabSession.PendingSession);
+    method public androidx.browser.auth.AuthTabIntent.Builder setSession(androidx.browser.auth.AuthTabSession);
+  }
+
+  @SuppressCompatibility @androidx.browser.auth.ExperimentalAuthTab public final class AuthTabSession {
+  }
+
+  @SuppressCompatibility @androidx.browser.customtabs.ExperimentalPendingSession public static class AuthTabSession.PendingSession {
+  }
+
+  @SuppressCompatibility @androidx.browser.auth.ExperimentalAuthTab public final class AuthTabSessionToken {
+    method public static androidx.browser.auth.AuthTabSessionToken? createSessionTokenFromIntent(android.content.Intent);
+    method public androidx.browser.auth.AuthTabCallback? getCallback();
+    method public android.app.PendingIntent? getId();
+    method public boolean hasId();
+    method public boolean isAssociatedWith(androidx.browser.auth.AuthTabSession);
   }
 
   @SuppressCompatibility @RequiresOptIn @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface ExperimentalAuthTab {
@@ -161,14 +188,19 @@ package androidx.browser.customtabs {
   }
 
   public class CustomTabsClient {
+    method @SuppressCompatibility @androidx.browser.auth.ExperimentalAuthTab @androidx.browser.customtabs.ExperimentalPendingSession public androidx.browser.auth.AuthTabSession? attachAuthTabSession(androidx.browser.auth.AuthTabSession.PendingSession);
     method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalPendingSession public androidx.browser.customtabs.CustomTabsSession? attachSession(androidx.browser.customtabs.CustomTabsSession.PendingSession);
     method public static boolean bindCustomTabsService(android.content.Context, String?, androidx.browser.customtabs.CustomTabsServiceConnection);
     method public static boolean bindCustomTabsServicePreservePriority(android.content.Context, String?, androidx.browser.customtabs.CustomTabsServiceConnection);
     method public static boolean connectAndInitialize(android.content.Context, String);
+    method @SuppressCompatibility @androidx.browser.auth.ExperimentalAuthTab @androidx.browser.customtabs.ExperimentalPendingSession public static androidx.browser.auth.AuthTabSession.PendingSession createPendingAuthTabSession(android.content.Context, int);
+    method @SuppressCompatibility @androidx.browser.auth.ExperimentalAuthTab @androidx.browser.customtabs.ExperimentalPendingSession public static androidx.browser.auth.AuthTabSession.PendingSession createPendingAuthTabSession(android.content.Context, int, java.util.concurrent.Executor, androidx.browser.auth.AuthTabCallback);
     method public android.os.Bundle? extraCommand(String, android.os.Bundle?);
     method public static String? getPackageName(android.content.Context, java.util.List<java.lang.String!>?);
     method public static String? getPackageName(android.content.Context, java.util.List<java.lang.String!>?, boolean);
     method public static boolean isSetNetworkSupported(android.content.Context, String);
+    method @SuppressCompatibility @androidx.browser.auth.ExperimentalAuthTab public androidx.browser.auth.AuthTabSession? newAuthTabSession(androidx.browser.auth.AuthTabCallback?, java.util.concurrent.Executor?);
+    method @SuppressCompatibility @androidx.browser.auth.ExperimentalAuthTab public androidx.browser.auth.AuthTabSession? newAuthTabSession(androidx.browser.auth.AuthTabCallback?, java.util.concurrent.Executor?, int);
     method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalPendingSession public static androidx.browser.customtabs.CustomTabsSession.PendingSession newPendingSession(android.content.Context, androidx.browser.customtabs.CustomTabsCallback?, int);
     method public androidx.browser.customtabs.CustomTabsSession? newSession(androidx.browser.customtabs.CustomTabsCallback?);
     method public androidx.browser.customtabs.CustomTabsSession? newSession(androidx.browser.customtabs.CustomTabsCallback?, int);
@@ -193,6 +225,7 @@ package androidx.browser.customtabs {
     method public static boolean isActivitySideSheetMaximizationEnabled(android.content.Intent);
     method public static boolean isBackgroundInteractionEnabled(android.content.Intent);
     method public static boolean isBookmarksButtonEnabled(android.content.Intent);
+    method public static boolean isCloseButtonEnabled(android.content.Intent);
     method public static boolean isDownloadButtonEnabled(android.content.Intent);
     method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalEphemeralBrowsing public boolean isEphemeralBrowsingEnabled();
     method public static boolean isSendToExternalDefaultHandlerEnabled(android.content.Intent);
@@ -225,6 +258,7 @@ package androidx.browser.customtabs {
     field public static final String EXTRA_ACTIVITY_SIDE_SHEET_ENABLE_MAXIMIZATION = "androidx.browser.customtabs.extra.ACTIVITY_SIDE_SHEET_ENABLE_MAXIMIZATION";
     field public static final String EXTRA_ACTIVITY_SIDE_SHEET_POSITION = "androidx.browser.customtabs.extra.ACTIVITY_SIDE_SHEET_POSITION";
     field public static final String EXTRA_ACTIVITY_SIDE_SHEET_ROUNDED_CORNERS_POSITION = "androidx.browser.customtabs.extra.ACTIVITY_SIDE_SHEET_ROUNDED_CORNERS_POSITION";
+    field public static final String EXTRA_CLOSE_BUTTON_ENABLED = "androidx.browser.customtabs.extra.CLOSE_BUTTON_ENABLED";
     field public static final String EXTRA_CLOSE_BUTTON_ICON = "android.support.customtabs.extra.CLOSE_BUTTON_ICON";
     field public static final String EXTRA_CLOSE_BUTTON_POSITION = "androidx.browser.customtabs.extra.CLOSE_BUTTON_POSITION";
     field public static final String EXTRA_COLOR_SCHEME = "androidx.browser.customtabs.extra.COLOR_SCHEME";
@@ -290,6 +324,7 @@ package androidx.browser.customtabs {
     method public androidx.browser.customtabs.CustomTabsIntent.Builder setActivitySideSheetRoundedCornersPosition(int);
     method public androidx.browser.customtabs.CustomTabsIntent.Builder setBackgroundInteractionEnabled(boolean);
     method public androidx.browser.customtabs.CustomTabsIntent.Builder setBookmarksButtonEnabled(boolean);
+    method public androidx.browser.customtabs.CustomTabsIntent.Builder setCloseButtonEnabled(boolean);
     method public androidx.browser.customtabs.CustomTabsIntent.Builder setCloseButtonIcon(android.graphics.Bitmap);
     method public androidx.browser.customtabs.CustomTabsIntent.Builder setCloseButtonPosition(int);
     method public androidx.browser.customtabs.CustomTabsIntent.Builder setColorScheme(int);
@@ -324,9 +359,11 @@ package androidx.browser.customtabs {
 
   public abstract class CustomTabsService extends android.app.Service {
     ctor public CustomTabsService();
+    method @SuppressCompatibility @androidx.browser.auth.ExperimentalAuthTab protected boolean cleanUpSession(androidx.browser.auth.AuthTabSessionToken);
     method protected boolean cleanUpSession(androidx.browser.customtabs.CustomTabsSessionToken);
     method protected abstract android.os.Bundle? extraCommand(String, android.os.Bundle?);
     method protected boolean isEngagementSignalsApiAvailable(androidx.browser.customtabs.CustomTabsSessionToken, android.os.Bundle);
+    method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalEphemeralBrowsing protected boolean isEphemeralBrowsingSupported(android.os.Bundle);
     method protected abstract boolean mayLaunchUrl(androidx.browser.customtabs.CustomTabsSessionToken, android.net.Uri?, android.os.Bundle?, java.util.List<android.os.Bundle!>?);
     method protected abstract boolean newSession(androidx.browser.customtabs.CustomTabsSessionToken);
     method public android.os.IBinder onBind(android.content.Intent?);
@@ -334,6 +371,7 @@ package androidx.browser.customtabs {
     method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalPrefetch protected void prefetch(androidx.browser.customtabs.CustomTabsSessionToken, android.net.Uri, androidx.browser.customtabs.PrefetchOptions);
     method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalPrefetch protected void prefetch(androidx.browser.customtabs.CustomTabsSessionToken, java.util.List<android.net.Uri!>, androidx.browser.customtabs.PrefetchOptions);
     method protected abstract boolean receiveFile(androidx.browser.customtabs.CustomTabsSessionToken, android.net.Uri, int, android.os.Bundle?);
+    method @SuppressCompatibility @androidx.browser.auth.ExperimentalAuthTab protected boolean registerAuthTabSession(androidx.browser.auth.AuthTabSessionToken);
     method protected abstract boolean requestPostMessageChannel(androidx.browser.customtabs.CustomTabsSessionToken, android.net.Uri);
     method protected boolean requestPostMessageChannel(androidx.browser.customtabs.CustomTabsSessionToken, android.net.Uri, android.net.Uri?, android.os.Bundle);
     method protected boolean setEngagementSignalsCallback(androidx.browser.customtabs.CustomTabsSessionToken, androidx.browser.customtabs.EngagementSignalsCallback, android.os.Bundle);
@@ -373,6 +411,7 @@ package androidx.browser.customtabs {
   public final class CustomTabsSession {
     method @VisibleForTesting public static androidx.browser.customtabs.CustomTabsSession createMockSessionForTesting(android.content.ComponentName);
     method public boolean isEngagementSignalsApiAvailable(android.os.Bundle) throws android.os.RemoteException;
+    method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalEphemeralBrowsing public boolean isEphemeralBrowsingSupported(android.os.Bundle) throws android.os.RemoteException;
     method public boolean mayLaunchUrl(android.net.Uri?, android.os.Bundle?, java.util.List<android.os.Bundle!>?);
     method @androidx.browser.customtabs.CustomTabsService.Result public int postMessage(String, android.os.Bundle?);
     method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalPrefetch public void prefetch(android.net.Uri, androidx.browser.customtabs.PrefetchOptions);
@@ -457,6 +496,21 @@ package androidx.browser.customtabs {
 
 package androidx.browser.trusted {
 
+  public final class FileHandlingData {
+    ctor public FileHandlingData(java.util.List<android.net.Uri!>);
+    method public static androidx.browser.trusted.FileHandlingData fromBundle(android.os.Bundle);
+    method public android.os.Bundle toBundle();
+    field public static final String KEY_URIS = "androidx.browser.trusted.KEY_URIS";
+    field public final java.util.List<android.net.Uri!> uris;
+  }
+
+  public final class LaunchHandlerClientMode {
+    field public static final int AUTO = 0; // 0x0
+    field public static final int FOCUS_EXISTING = 2; // 0x2
+    field public static final int NAVIGATE_EXISTING = 1; // 0x1
+    field public static final int NAVIGATE_NEW = 3; // 0x3
+  }
+
   public final class ScreenOrientation {
     field public static final int ANY = 5; // 0x5
     field public static final int DEFAULT = 0; // 0x0
@@ -511,7 +565,10 @@ package androidx.browser.trusted {
   }
 
   public final class TrustedWebActivityIntent {
+    method public androidx.browser.trusted.FileHandlingData? getFileHandlingData();
     method public android.content.Intent getIntent();
+    method public int getLaunchHandlerClientMode();
+    method public android.net.Uri? getOriginalLaunchUrl();
     method public void launchTrustedWebActivity(android.content.Context);
   }
 
@@ -526,14 +583,20 @@ package androidx.browser.trusted {
     method public androidx.browser.trusted.TrustedWebActivityIntentBuilder setColorSchemeParams(int, androidx.browser.customtabs.CustomTabColorSchemeParams);
     method public androidx.browser.trusted.TrustedWebActivityIntentBuilder setDefaultColorSchemeParams(androidx.browser.customtabs.CustomTabColorSchemeParams);
     method public androidx.browser.trusted.TrustedWebActivityIntentBuilder setDisplayMode(androidx.browser.trusted.TrustedWebActivityDisplayMode);
+    method public androidx.browser.trusted.TrustedWebActivityIntentBuilder setFileHandlingData(androidx.browser.trusted.FileHandlingData);
+    method public androidx.browser.trusted.TrustedWebActivityIntentBuilder setLaunchHandlerClientMode(int);
     method @Deprecated public androidx.browser.trusted.TrustedWebActivityIntentBuilder setNavigationBarColor(@ColorInt int);
     method @Deprecated public androidx.browser.trusted.TrustedWebActivityIntentBuilder setNavigationBarDividerColor(@ColorInt int);
+    method public androidx.browser.trusted.TrustedWebActivityIntentBuilder setOriginalLaunchUrl(android.net.Uri);
     method public androidx.browser.trusted.TrustedWebActivityIntentBuilder setScreenOrientation(int);
     method public androidx.browser.trusted.TrustedWebActivityIntentBuilder setShareParams(androidx.browser.trusted.sharing.ShareTarget, androidx.browser.trusted.sharing.ShareData);
     method public androidx.browser.trusted.TrustedWebActivityIntentBuilder setSplashScreenParams(android.os.Bundle);
     method @Deprecated public androidx.browser.trusted.TrustedWebActivityIntentBuilder setToolbarColor(@ColorInt int);
     field public static final String EXTRA_ADDITIONAL_TRUSTED_ORIGINS = "android.support.customtabs.extra.ADDITIONAL_TRUSTED_ORIGINS";
     field public static final String EXTRA_DISPLAY_MODE = "androidx.browser.trusted.extra.DISPLAY_MODE";
+    field public static final String EXTRA_FILE_HANDLING_DATA = "androidx.browser.trusted.extra.FILE_HANDLING_DATA";
+    field public static final String EXTRA_LAUNCH_HANDLER_CLIENT_MODE = "androidx.browser.trusted.extra.LAUNCH_HANDLER_CLIENT_MODE";
+    field public static final String EXTRA_ORIGINAL_LAUNCH_URL = "androidx.browser.trusted.extra.ORIGINAL_LAUNCH_URL";
     field public static final String EXTRA_SCREEN_ORIENTATION = "androidx.browser.trusted.extra.SCREEN_ORIENTATION";
     field public static final String EXTRA_SHARE_DATA = "androidx.browser.trusted.extra.SHARE_DATA";
     field public static final String EXTRA_SHARE_TARGET = "androidx.browser.trusted.extra.SHARE_TARGET";

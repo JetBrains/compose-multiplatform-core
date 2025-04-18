@@ -69,7 +69,13 @@ public annotation class DisconnectReason
 /**
  * Disconnect reasons for
  * [InteractiveWatchFaceClient.ClientDisconnectListener.onClientDisconnected].
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public object DisconnectReasons {
 
     /**
@@ -95,7 +101,13 @@ public object DisconnectReasons {
  * [SurfaceControlViewHost.SurfacePackage] to the client, which the client can attach to a
  * [SurfaceView] with [SurfaceView.setChildSurfacePackage]. The client can request an updated screen
  * shot by calling [renderWatchFace].
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public interface RemoteWatchFaceViewHost : AutoCloseable {
     /**
      * Renders the watchface into the view associated with [surfacePackage].
@@ -127,7 +139,13 @@ public interface RemoteWatchFaceViewHost : AutoCloseable {
  * active watch face.
  *
  * Note clients should call [close] when finished.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public interface InteractiveWatchFaceClient : AutoCloseable {
 
     /**

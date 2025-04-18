@@ -18,6 +18,8 @@ package androidx.compose.ui.focus
 
 import androidx.collection.mutableScatterMapOf
 import androidx.compose.runtime.collection.mutableVectorOf
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.internal.checkPreconditionNotNull
 
 /**
@@ -28,7 +30,8 @@ import androidx.compose.ui.internal.checkPreconditionNotNull
 internal class FocusTransactionManager {
     private val states = mutableScatterMapOf<FocusTargetNode, FocusStateImpl>()
     private val cancellationListener = mutableVectorOf<() -> Unit>()
-    private var ongoingTransaction = false
+    var ongoingTransaction = false
+        private set
 
     /**
      * An indicator of changes to the transaction. When any state changes, the generation changes.
@@ -82,13 +85,20 @@ internal class FocusTransactionManager {
      * current transaction.
      */
     var FocusTargetNode.uncommittedFocusState: FocusStateImpl?
-        get() = states[this]
-        set(value) {
-            val currentFocusState = states[this] ?: FocusStateImpl.Inactive
-            if (currentFocusState != value) {
-                generation++
+        get() =
+            if (@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isTrackFocusEnabled) {
+                error("uncommittedFocusState must not be accessed when isTrackFocusEnabled is on")
+            } else {
+                states[this]
             }
-            states[this] = checkPreconditionNotNull(value) { "requires a non-null focus state" }
+        set(value) {
+            if (!@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isTrackFocusEnabled) {
+                val currentFocusState = states[this] ?: FocusStateImpl.Inactive
+                if (currentFocusState != value) {
+                    generation++
+                }
+                states[this] = checkPreconditionNotNull(value) { "requires a non-null focus state" }
+            }
         }
 
     private fun beginTransaction() {

@@ -29,11 +29,12 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.WorkRequest;
 import androidx.work.impl.WorkRequestHolder;
 import androidx.work.impl.model.WorkSpec;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -167,8 +168,7 @@ public class ParcelableWorkRequest implements Parcelable {
         parcel.writeString(workSpec.getTraceTag());
     }
 
-    @NonNull
-    public WorkRequest getWorkRequest() {
+    public @NonNull WorkRequest getWorkRequest() {
         return mWorkRequest;
     }
 }

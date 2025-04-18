@@ -78,5 +78,10 @@
         android:checkable="true"
         android:title="@string/disable_view_port"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/torch_as_flash"
+        android:checkable="true"
+        android:title="@string/enable_torch_as_flash"
+        app:showAsAction="never" />
 
 </menu>

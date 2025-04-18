@@ -22,11 +22,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.RadioButton
-import androidx.privacysandbox.activity.client.createSdkActivityLauncher
+import androidx.privacysandbox.activity.client.createManagedSdkActivityLauncher
 import androidx.privacysandbox.activity.client.toLauncherInfo
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.BackNavigation
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.ScreenOrientation
 
+// TODO(b/399092069): add non-LifecycleOwner activity CUJ to the fragment.
 class FullscreenSetupFragment : BaseFragment() {
 
     override fun onCreateView(
@@ -61,7 +62,7 @@ class FullscreenSetupFragment : BaseFragment() {
                     else -> BackNavigation.ENABLED
                 }
 
-            val activityLauncher = requireActivity().createSdkActivityLauncher({ true })
+            val activityLauncher = requireActivity().createManagedSdkActivityLauncher({ true })
             getSdkApi()
                 .launchFullscreenAd(
                     activityLauncher.toLauncherInfo(),

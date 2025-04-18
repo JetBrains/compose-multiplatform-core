@@ -21,11 +21,11 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("com.android.library")
 }
 
@@ -67,21 +67,13 @@ android {
     defaultConfig {
         minSdk = 26
     }
-
-    sourceSets {
-        androidTest.assets.srcDirs += project.rootDir.absolutePath + "/../../golden/wear/wear-protolayout-material"
-    }
-
-    defaultConfig {
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-    }
-
     namespace = "androidx.wear.protolayout.material"
 }
 
 androidx {
     name = "androidx.wear.protolayout:protolayout-material"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2023"
     description = "Material components library for ProtoLayout."
+    addGoldenImageAssets()
 }

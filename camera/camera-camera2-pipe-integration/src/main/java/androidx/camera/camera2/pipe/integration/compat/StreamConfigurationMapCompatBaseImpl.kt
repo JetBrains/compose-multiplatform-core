@@ -18,6 +18,7 @@ package androidx.camera.camera2.pipe.integration.compat
 
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.params.StreamConfigurationMap
+import android.util.Range
 import android.util.Size
 import androidx.camera.core.Logger
 import androidx.camera.core.impl.ImageFormatConstants
@@ -66,6 +67,22 @@ internal open class StreamConfigurationMapCompatBaseImpl(
 
     override fun getHighResolutionOutputSizes(format: Int): Array<Size>? {
         return null
+    }
+
+    override fun getHighSpeedVideoFpsRanges(): Array<Range<Int>>? {
+        return streamConfigurationMap?.getHighSpeedVideoFpsRanges()
+    }
+
+    override fun getHighSpeedVideoFpsRangesFor(size: Size): Array<Range<Int>>? {
+        return streamConfigurationMap?.getHighSpeedVideoFpsRangesFor(size)
+    }
+
+    override fun getHighSpeedVideoSizes(): Array<Size>? {
+        return streamConfigurationMap?.getHighSpeedVideoSizes()
+    }
+
+    override fun getHighSpeedVideoSizesFor(fpsRange: Range<Int>): Array<Size>? {
+        return streamConfigurationMap?.getHighSpeedVideoSizesFor(fpsRange)
     }
 
     override fun getOutputMinFrameDuration(format: Int, size: Size?): Long? {

@@ -19,8 +19,6 @@ package androidx.camera.core.impl;
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraInfo;
@@ -29,6 +27,9 @@ import androidx.camera.core.UseCase;
 import androidx.camera.core.streamsharing.StreamSharing;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 
@@ -154,14 +155,12 @@ public interface CameraInternal extends Camera, UseCase.StateChangeCallback {
      * <p>Once the camera is released it is permanently closed. A new instance must be created to
      * access the camera.
      */
-    @NonNull
-    ListenableFuture<Void> release();
+    @NonNull ListenableFuture<Void> release();
 
     /**
      * Retrieves an observable stream of the current state of the camera.
      */
-    @NonNull
-    Observable<State> getCameraState();
+    @NonNull Observable<State> getCameraState();
 
     /**
      * Sets the use case to be in the state where the capture session will be configured to handle
@@ -176,25 +175,21 @@ public interface CameraInternal extends Camera, UseCase.StateChangeCallback {
     void detachUseCases(@NonNull Collection<UseCase> useCases);
 
     /** Returns the global CameraControlInternal attached to this camera. */
-    @NonNull
-    CameraControlInternal getCameraControlInternal();
+    @NonNull CameraControlInternal getCameraControlInternal();
 
     /** Returns an interface to retrieve characteristics of the camera. */
-    @NonNull
-    CameraInfoInternal getCameraInfoInternal();
+    @NonNull CameraInfoInternal getCameraInfoInternal();
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Camera interface
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    @NonNull
     @Override
-    default CameraControl getCameraControl() {
+    default @NonNull CameraControl getCameraControl() {
         return getCameraControlInternal();
     }
 
-    @NonNull
     @Override
-    default CameraInfo getCameraInfo() {
+    default @NonNull CameraInfo getCameraInfo() {
         return getCameraInfoInternal();
     }
 
@@ -226,9 +221,8 @@ public interface CameraInternal extends Camera, UseCase.StateChangeCallback {
     /**
      * Returns the current {@link CameraConfig}.
      */
-    @NonNull
     @Override
-    default CameraConfig getExtendedConfig() {
+    default @NonNull CameraConfig getExtendedConfig() {
         return CameraConfigs.defaultConfig();
     }
 

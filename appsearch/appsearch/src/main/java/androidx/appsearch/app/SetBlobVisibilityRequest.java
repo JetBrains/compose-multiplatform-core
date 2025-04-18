@@ -18,13 +18,14 @@ package androidx.appsearch.app;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
 import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.Map;
@@ -58,8 +59,7 @@ public class SetBlobVisibilityRequest {
      * Returns all the blob namespaces that are opted out of being displayed and visible on any
      * system UI surface.
      */
-    @NonNull
-    public Set<String> getNamespacesNotDisplayedBySystem() {
+    public @NonNull Set<String> getNamespacesNotDisplayedBySystem() {
         return Collections.unmodifiableSet(mNamespacesNotDisplayedBySystem);
     }
 
@@ -76,8 +76,7 @@ public class SetBlobVisibilityRequest {
      *
      * @see Builder#addNamespaceVisibleToConfig
      */
-    @NonNull
-    public Map<String, Set<SchemaVisibilityConfig>> getNamespacesVisibleToConfigs() {
+    public @NonNull Map<String, Set<SchemaVisibilityConfig>> getNamespacesVisibleToConfigs() {
         return Collections.unmodifiableMap(mNamespacesVisibleToConfigs);
     }
 
@@ -106,8 +105,7 @@ public class SetBlobVisibilityRequest {
         // Merged list available from getBlobNamespacesNotDisplayedBySystem
         @CanIgnoreReturnValue
         @SuppressLint("MissingGetterMatchingBuilder")
-        @NonNull
-        public Builder setNamespaceDisplayedBySystem(
+        public @NonNull Builder setNamespaceDisplayedBySystem(
                 @NonNull String namespace, boolean displayed) {
             Preconditions.checkNotNull(namespace);
             if (displayed) {
@@ -136,8 +134,7 @@ public class SetBlobVisibilityRequest {
         // Merged list available from getNamespacesVisibleToConfigs
         @CanIgnoreReturnValue
         @SuppressLint("MissingGetterMatchingBuilder")
-        @NonNull
-        public Builder addNamespaceVisibleToConfig(@NonNull String namespace,
+        public @NonNull Builder addNamespaceVisibleToConfig(@NonNull String namespace,
                 @NonNull SchemaVisibilityConfig visibilityConfig) {
             Preconditions.checkNotNull(namespace);
             Preconditions.checkNotNull(visibilityConfig);
@@ -160,8 +157,7 @@ public class SetBlobVisibilityRequest {
          * @param namespace The blob namespace for which visibility config should be cleared.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder clearNamespaceVisibleToConfigs(@NonNull String namespace) {
+        public @NonNull Builder clearNamespaceVisibleToConfigs(@NonNull String namespace) {
             Preconditions.checkNotNull(namespace);
             mNamespacesVisibleToConfigs.remove(namespace);
             return this;
@@ -169,8 +165,7 @@ public class SetBlobVisibilityRequest {
 
 
         /**  Builds a new {@link SetBlobVisibilityRequest} object.         */
-        @NonNull
-        public SetBlobVisibilityRequest build() {
+        public @NonNull SetBlobVisibilityRequest build() {
             return new SetBlobVisibilityRequest(
                     new ArraySet<>(mNamespacesNotDisplayedBySystem),
                     new ArrayMap<>(mNamespacesVisibleToConfigs));

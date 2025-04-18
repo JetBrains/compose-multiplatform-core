@@ -18,9 +18,10 @@ package androidx.camera.camera2.internal.compat.quirk;
 
 import android.hardware.camera2.CaptureRequest;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.Quirk;
 import androidx.camera.core.impl.Quirks;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A Quirk interface denotes devices have specific issue and can be workaround by using

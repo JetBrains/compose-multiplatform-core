@@ -33,6 +33,7 @@ import androidx.wear.compose.material3.AppCard
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.CardDefaults
 import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ImageCard
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.OutlinedCard
 import androidx.wear.compose.material3.Text
@@ -72,17 +73,14 @@ val CardScreen =
                     ) {
                         Text("AppCard")
                     }
-                    TitleCard(
+                    ImageCard(
                         onClick = {},
-                        title = { Text("Title") },
-                        subtitle = { Text("Subtitle") },
+                        containerPainter =
+                            CardDefaults.containerPainter(
+                                image = painterResource(id = R.drawable.backgroundimage)
+                            ),
                         colors =
                             CardDefaults.imageCardColors(
-                                containerPainter =
-                                    CardDefaults.imageWithScrimBackgroundPainter(
-                                        backgroundImagePainter =
-                                            painterResource(id = R.drawable.backgroundimage)
-                                    ),
                                 contentColor = MaterialTheme.colorScheme.onSurface,
                                 titleColor = MaterialTheme.colorScheme.onSurface
                             ),
@@ -93,16 +91,6 @@ val CardScreen =
                         onClick = { /* Do something */ },
                         title = { Text("Card title") },
                         time = { Text("now") },
-                        colors =
-                            CardDefaults.imageCardColors(
-                                containerPainter =
-                                    CardDefaults.imageWithScrimBackgroundPainter(
-                                        backgroundImagePainter =
-                                            painterResource(id = R.drawable.backgroundimage)
-                                    ),
-                                contentColor = MaterialTheme.colorScheme.onSurface,
-                                titleColor = MaterialTheme.colorScheme.onSurface
-                            ),
                         contentPadding = CardDefaults.ImageContentPadding,
                         modifier = Modifier.semantics { contentDescription = "Background image" }
                     ) {

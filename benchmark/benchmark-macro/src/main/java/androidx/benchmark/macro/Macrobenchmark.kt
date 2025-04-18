@@ -37,10 +37,10 @@ import androidx.benchmark.conditionalError
 import androidx.benchmark.createInsightSummaries
 import androidx.benchmark.inMemoryTrace
 import androidx.benchmark.json.BenchmarkData
-import androidx.benchmark.macro.MacrobenchmarkScope.KillFlushMode
+import androidx.benchmark.macro.MacrobenchmarkScope.KillMode
 import androidx.benchmark.perfetto.PerfettoCapture.PerfettoSdkConfig
 import androidx.benchmark.perfetto.PerfettoCapture.PerfettoSdkConfig.InitialProcessState
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
+import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assume.assumeFalse
 
@@ -236,10 +236,7 @@ private fun macrobenchmark(
     val startTime = System.nanoTime()
     // Ensure method tracing is explicitly enabled and that we are not running in dry run mode.
     val requestMethodTracing = Arguments.macrobenchMethodTracingEnabled()
-    val applicationInfo = getInstalledPackageInfo(packageName)
     val scope = MacrobenchmarkScope(packageName, launchWithClearTask = launchWithClearTask)
-    // Capture if the app being benchmarked is a system app.
-    scope.isSystemApp = applicationInfo.isSystemApp()
 
     // Ensure the device is awake
     scope.device.wakeUp()
@@ -263,13 +260,11 @@ private fun macrobenchmark(
     val macrobenchPackageName = InstrumentationRegistry.getInstrumentation().context.packageName
     val iterationResults = mutableListOf<IterationResult>()
 
-    PerfettoTraceProcessor.runServer {
-        scope.withKillFlushMode(
-            current = KillFlushMode.None,
+    TraceProcessor.runServer {
+        scope.withKillMode(
+            current = KillMode.None,
             override =
-                if (compilationMode.requiresClearArtRuntimeImage())
-                    KillFlushMode.ClearArtRuntimeImage
-                else KillFlushMode.None
+                KillMode(clearArtRuntimeImage = compilationMode.requiresClearArtRuntimeImage())
         ) {
             // Measurement Phase
             iterationResults +=

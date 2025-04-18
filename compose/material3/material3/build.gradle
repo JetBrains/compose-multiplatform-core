@@ -22,8 +22,7 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
@@ -33,7 +32,7 @@ plugins {
 }
 
 androidXMultiplatform {
-    android()
+    androidTarget()
     jvmStubs()
     linuxX64Stubs()
 
@@ -106,11 +105,13 @@ androidXMultiplatform {
                 implementation(project(":compose:material3:material3:material3-samples"))
                 implementation(project(":compose:test-utils"))
                 implementation(project(":compose:runtime:runtime"))
-                implementation(project(':compose:foundation:foundation-layout'))
-                implementation(project(':compose:foundation:foundation'))
+                implementation(project(":compose:foundation:foundation-layout"))
+                implementation(project(":compose:foundation:foundation"))
                 implementation("androidx.compose.material:material-icons-core:1.7.5")
                 implementation(project(":test:screenshot:screenshot"))
-                implementation(project(":core:core"))
+                implementation("androidx.core:core:1.15.0")
+                implementation("androidx.compose.ui:ui-tooling:1.4.1")
+                implementation(libs.espressoCore)
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
                 implementation(libs.junit)
@@ -124,26 +125,23 @@ androidXMultiplatform {
 }
 
 dependencies {
-    lintChecks project(":compose:material3:material3-lint")
-    lintPublish project(":compose:material3:material3-lint")
+    lintChecks(project(":compose:material3:material3-lint"))
+    lintPublish(project(":compose:material3:material3-lint"))
 }
 
 androidx {
     name = "Compose Material3 Components"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2021"
     description = "Compose Material You Design Components library"
     legacyDisableKotlinStrictApiMode = true
     metalavaK2UastEnabled = false
     samples(project(":compose:material3:material3:material3-samples"))
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
+    addGoldenImageAssets()
 }
 
-// Screenshot tests related setup
 android {
     compileSdk = 35
-    sourceSets.androidTest.assets.srcDirs +=
-            project.rootDir.absolutePath + "/../../golden/compose/material3/material3"
     namespace = "androidx.compose.material3"
     // TODO(b/345531033)
     experimentalProperties["android.lint.useK2Uast"] = false

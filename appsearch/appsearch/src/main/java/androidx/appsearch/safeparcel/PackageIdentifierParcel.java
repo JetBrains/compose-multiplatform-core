@@ -20,13 +20,14 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.PackageIdentifier;
 import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -44,8 +45,7 @@ import java.util.Objects;
 @SafeParcelable.Class(creator = "PackageIdentifierParcelCreator")
 @SuppressLint("BanParcelableUsage")
 public final class PackageIdentifierParcel extends AbstractSafeParcelable implements Parcelable {
-    @NonNull
-    public static final Parcelable.Creator<PackageIdentifierParcel> CREATOR =
+    public static final Parcelable.@NonNull Creator<PackageIdentifierParcel> CREATOR =
             new PackageIdentifierParcelCreator();
 
     @Field(id = 1, getter = "getPackageName")
@@ -60,18 +60,16 @@ public final class PackageIdentifierParcel extends AbstractSafeParcelable implem
      */
     @Constructor
     public PackageIdentifierParcel(@Param(id = 1) @NonNull String packageName,
-            @Param(id = 2) @NonNull byte[] sha256Certificate) {
+            @Param(id = 2) byte @NonNull [] sha256Certificate) {
         mPackageName = Preconditions.checkNotNull(packageName);
         mSha256Certificate = Preconditions.checkNotNull(sha256Certificate);
     }
 
-    @NonNull
-    public String getPackageName() {
+    public @NonNull String getPackageName() {
         return mPackageName;
     }
 
-    @NonNull
-    public byte[] getSha256Certificate() {
+    public byte @NonNull [] getSha256Certificate() {
         return mSha256Certificate;
     }
 

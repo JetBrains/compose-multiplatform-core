@@ -46,7 +46,13 @@ import java.util.concurrent.Executor
  * affecting the current watchface.
  *
  * Note clients should call [close] when finished.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public interface HeadlessWatchFaceClient : AutoCloseable {
     public companion object {
         internal const val BINDER_KEY = "HeadlessWatchFaceClient"

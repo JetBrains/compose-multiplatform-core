@@ -18,10 +18,11 @@ package androidx.camera.camera2.internal.compat.params;
 
 import android.hardware.camera2.params.DynamicRangeProfiles;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.DynamicRange;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.Set;
@@ -32,18 +33,16 @@ class DynamicRangesCompatBaseImpl implements DynamicRangesCompat.DynamicRangePro
             new DynamicRangesCompat(new DynamicRangesCompatBaseImpl());
 
     private static final Set<DynamicRange> SDR_ONLY = Collections.singleton(DynamicRange.SDR);
-    @NonNull
     @Override
-    public Set<DynamicRange> getDynamicRangeCaptureRequestConstraints(
+    public @NonNull Set<DynamicRange> getDynamicRangeCaptureRequestConstraints(
             @NonNull DynamicRange dynamicRange) {
         Preconditions.checkArgument(DynamicRange.SDR.equals(dynamicRange),
                 "DynamicRange is not supported: " + dynamicRange);
         return SDR_ONLY;
     }
 
-    @NonNull
     @Override
-    public Set<DynamicRange> getSupportedDynamicRanges() {
+    public @NonNull Set<DynamicRange> getSupportedDynamicRanges() {
         return SDR_ONLY;
     }
 
@@ -54,9 +53,8 @@ class DynamicRangesCompatBaseImpl implements DynamicRangesCompat.DynamicRangePro
         return false;
     }
 
-    @Nullable
     @Override
-    public DynamicRangeProfiles unwrap() {
+    public @Nullable DynamicRangeProfiles unwrap() {
         return null;
     }
 }

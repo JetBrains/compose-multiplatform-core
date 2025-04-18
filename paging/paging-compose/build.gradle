@@ -22,8 +22,7 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -32,7 +31,7 @@ plugins {
 }
 
 androidXMultiplatform {
-    android()
+    androidTarget()
 
     sourceSets {
         commonMain {
@@ -54,7 +53,7 @@ androidXMultiplatform {
 
         commonTest {
             dependencies {
-                implementation project(":compose:ui:ui-tooling")
+                implementation(project(":compose:ui:ui-tooling"))
                 implementation(project(":compose:test-utils"))
                 implementation(project(":internal-testutils-paging"))
             }
@@ -80,12 +79,10 @@ androidXMultiplatform {
 
 androidx {
     name = "Paging-Compose"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2020"
     description = "Compose integration with Paging"
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = false
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
     samples(project(":paging:paging-compose:paging-compose-samples"))
 }
 

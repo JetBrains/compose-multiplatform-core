@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
+
 import androidx.build.PlatformIdentifier
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
@@ -25,7 +26,7 @@ plugins {
 }
 
 androidXMultiplatform {
-    android()
+    androidTarget()
     jvm()
     mac()
     linux()
@@ -39,7 +40,6 @@ androidXMultiplatform {
                 api(libs.kotlinStdlib)
                 api("androidx.paging:paging-common:3.3.2")
                 api(project(":room:room-runtime"))
-                implementation(libs.atomicFu)
             }
         }
 
@@ -64,6 +64,9 @@ androidXMultiplatform {
 
         nativeMain {
             dependsOn(jvmNativeMain)
+            dependencies {
+                implementation(libs.atomicFu)
+            }
         }
 
         androidInstrumentedTest {
@@ -99,8 +102,8 @@ dependencies {
 
 androidx {
     name = "Room Paging"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "Room Paging integration"
-    metalavaK2UastEnabled = false // Due to b/360195094
 }
+

@@ -46,13 +46,13 @@ import android.webkit.MimeTypeMap;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.XmlRes;
 import androidx.core.content.res.ResourcesCompat;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.File;
@@ -376,15 +376,13 @@ public class FileProvider extends ContentProvider {
     @GuardedBy("sCache")
     private static final HashMap<String, PathStrategy> sCache = new HashMap<>();
 
-    @NonNull
-    private final Object mLock = new Object();
+    private final @NonNull Object mLock = new Object();
     private final int mResourceId;
     @GuardedBy("mLock")
     private String mAuthority;
     // Do NOT access directly! Use getLocalPathStrategy() instead.
     @GuardedBy("mLock")
-    @Nullable
-    private PathStrategy mLocalPathStrategy;
+    private @Nullable PathStrategy mLocalPathStrategy;
 
     public FileProvider() {
         this(ResourcesCompat.ID_NULL);
@@ -443,8 +441,7 @@ public class FileProvider extends ContentProvider {
      *                                  the paths supported by the provider.
      */
     @SuppressLint("StreamFiles")
-    @NonNull
-    public static Uri getUriForFile(@NonNull Context context, @NonNull String authority,
+    public static @NonNull Uri getUriForFile(@NonNull Context context, @NonNull String authority,
             @NonNull File file, @NonNull String displayName) {
         Uri uri = getUriForFile(context, authority, file);
         return uri.buildUpon().appendQueryParameter(DISPLAYNAME_FIELD, displayName).build();
@@ -602,8 +599,7 @@ public class FileProvider extends ContentProvider {
         return result;
     }
 
-    @NonNull
-    private static String removeTrailingSlash(@NonNull String path) {
+    private static @NonNull String removeTrailingSlash(@NonNull String path) {
         if (path.length() > 0 && path.charAt(path.length() - 1) == '/') {
             return path.substring(0, path.length() - 1);
         } else {
@@ -641,6 +637,9 @@ public class FileProvider extends ContentProvider {
         }
         if (!info.grantUriPermissions) {
             throw new SecurityException("Provider must grant uri permissions");
+        }
+        if (info.authority == null || info.authority.trim().isEmpty()) {
+            throw new SecurityException("Provider must have a non-empty authority");
         }
 
         final String authority = info.authority.split(";")[0];
@@ -684,10 +683,10 @@ public class FileProvider extends ContentProvider {
      *                      the resulting {@link Cursor}.
      * @return A {@link Cursor} containing the results of the query.
      */
-    @NonNull
     @Override
-    public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection,
-            @Nullable String[] selectionArgs, @Nullable String sortOrder) {
+    public @NonNull Cursor query(@NonNull Uri uri, String @Nullable [] projection,
+            @Nullable String selection, String @Nullable [] selectionArgs,
+            @Nullable String sortOrder) {
         // ContentProvider has already checked granted permissions
         final File file = getLocalPathStrategy().getFileForUri(uri);
         String displayName = uri.getQueryParameter(DISPLAYNAME_FIELD);
@@ -726,9 +725,8 @@ public class FileProvider extends ContentProvider {
      * @return If the associated file has an extension, the MIME type associated with that
      * extension; otherwise <code>application/octet-stream</code>.
      */
-    @Nullable
     @Override
-    public String getType(@NonNull Uri uri) {
+    public @Nullable String getType(@NonNull Uri uri) {
         // ContentProvider has already checked granted permissions
         final File file = getLocalPathStrategy().getFileForUri(uri);
 
@@ -750,8 +748,7 @@ public class FileProvider extends ContentProvider {
      */
     //@Override
     @SuppressWarnings("MissingOverride")
-    @Nullable
-    public String getTypeAnonymous(@NonNull Uri uri) {
+    public @Nullable String getTypeAnonymous(@NonNull Uri uri) {
         return "application/octet-stream";
     }
 
@@ -770,7 +767,7 @@ public class FileProvider extends ContentProvider {
      */
     @Override
     public int update(@NonNull Uri uri, @NonNull ContentValues values, @Nullable String selection,
-            @Nullable String[] selectionArgs) {
+            String @Nullable [] selectionArgs) {
         throw new UnsupportedOperationException("No external updates");
     }
 
@@ -787,7 +784,7 @@ public class FileProvider extends ContentProvider {
      */
     @Override
     public int delete(@NonNull Uri uri, @Nullable String selection,
-            @Nullable String[] selectionArgs) {
+            String @Nullable [] selectionArgs) {
         // ContentProvider has already checked granted permissions
         final File file = getLocalPathStrategy().getFileForUri(uri);
         return file.delete() ? 1 : 0;
@@ -820,8 +817,7 @@ public class FileProvider extends ContentProvider {
     }
 
     /** Return the local {@link PathStrategy}, creating it if necessary. */
-    @NonNull
-    private PathStrategy getLocalPathStrategy() {
+    private @NonNull PathStrategy getLocalPathStrategy() {
         synchronized (mLock) {
             requireNonNull(mAuthority, "mAuthority is null. Did you override attachInfo and "
                     + "did not call super.attachInfo()?");

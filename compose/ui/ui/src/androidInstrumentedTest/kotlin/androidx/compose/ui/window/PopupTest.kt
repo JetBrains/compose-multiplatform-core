@@ -15,6 +15,7 @@
  */
 package androidx.compose.ui.window
 
+import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.View
 import android.view.View.MEASURED_STATE_TOO_SMALL
@@ -33,6 +34,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -44,6 +47,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onFirst
@@ -64,6 +68,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.uiautomator.UiDevice
+import androidx.window.layout.WindowMetricsCalculator
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -71,10 +76,15 @@ import kotlin.math.roundToInt
 import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.Description
 import org.hamcrest.TypeSafeMatcher
+import org.junit.After
+import org.junit.AfterClass
+import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@OptIn(ExperimentalComposeUiApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class PopupTest {
@@ -84,6 +94,30 @@ class PopupTest {
     private val testTag = "testedPopup"
     private val offset = IntOffset(10, 10)
     private val popupSize = IntSize(40, 20)
+
+    @Before
+    fun setup() {
+        // Checks if an active injected motion event exists before test (injected = -1).
+        val devicesPluggedIn = InputDevice.getDeviceIds()
+
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG PopupTest.setup(), devicesPluggedIn? $devicesPluggedIn"
+            )
+        }
+    }
+
+    @After
+    fun tearDown() {
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            val devicesPluggedIn = InputDevice.getDeviceIds()
+
+            println(
+                "POINTER_INPUT_DEBUG_LOG_TAG PopupTest.tearDown(), " +
+                    "devicesPluggedIn = $devicesPluggedIn"
+            )
+        }
+    }
 
     @Test
     fun isShowing() {
@@ -225,6 +259,10 @@ class PopupTest {
 
     @Test
     fun isDismissedOnTapOutside() {
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println("POINTER_INPUT_DEBUG_LOG_TAG PopupTest.isDismissedOnTapOutside() START")
+        }
+
         var showPopup by mutableStateOf(true)
         rule.setContent {
             Box(Modifier.fillMaxSize()) {
@@ -246,10 +284,29 @@ class PopupTest {
                 rule.onAllNodes(isRoot()).onFirst().getUnclippedBoundsInRoot().height.roundToPx() /
                     2
             }
+
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println("POINTER_INPUT_DEBUG_LOG_TAG \t\tTrigger click outside (Popup)")
+        }
         UiDevice.getInstance(getInstrumentation()).click(outsideX, outsideY)
+
+        rule.waitForIdle()
+
+        // Wait for the ui to disappear AND events to fully propagate through the non-standard
+        // input system used in this test. We can't rely on waitForIdle() or other methods related
+        // to the ui, because the input events aren't going through that standard input system.
+        rule.waitUntil(timeoutMillis = 2000) { rule.onNodeWithTag(testTag).isNotDisplayed() }
+
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println("POINTER_INPUT_DEBUG_LOG_TAG \t\tBefore assertDoesNotExist() (Popup)")
+        }
 
         // Popup should not exist
         rule.onNodeWithTag(testTag).assertDoesNotExist()
+
+        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
+            println("POINTER_INPUT_DEBUG_LOG_TAG PopupTest.isDismissedOnTapOutside() END")
+        }
     }
 
     @Test
@@ -418,11 +475,9 @@ class PopupTest {
             }
         }
         rule.runOnIdle {
-            assertThat(box1Width)
-                .isEqualTo(
-                    (rule.activity.resources.configuration.screenWidthDp * rule.density.density)
-                        .roundToInt()
-                )
+            val metrics =
+                WindowMetricsCalculator.getOrCreate().computeCurrentWindowMetrics(rule.activity)
+            assertThat(box1Width).isEqualTo(metrics.bounds.width())
             assertThat(box2Width).isLessThan(box1Width)
         }
     }
@@ -577,6 +632,22 @@ class PopupTest {
             override fun describeTo(description: Description?) {
                 description?.appendText("with width = $width height = $height")
             }
+        }
+    }
+
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun enableComposeUiFlags() {
+            ComposeUiFlags.isHitPathTrackerLoggingEnabled = true
+            println("POINTER_INPUT_DEBUG_LOG_TAG PopupTest.enableComposeUiFlags()")
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun disableComposeUiFlags() {
+            println("POINTER_INPUT_DEBUG_LOG_TAG PopupTest.disableComposeUiFlags()")
+            ComposeUiFlags.isHitPathTrackerLoggingEnabled = false
         }
     }
 }

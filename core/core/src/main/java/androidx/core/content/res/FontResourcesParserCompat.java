@@ -29,13 +29,13 @@ import android.util.Xml;
 
 import androidx.annotation.ArrayRes;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.R;
 import androidx.core.provider.FontRequest;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -101,8 +101,7 @@ public class FontResourcesParserCompat {
             return mRequest;
         }
 
-        @Nullable
-        public FontRequest getFallbackRequest() {
+        public @Nullable FontRequest getFallbackRequest() {
             return mFallbackRequest;
         }
 
@@ -170,13 +169,13 @@ public class FontResourcesParserCompat {
      * A class that represents a file based font-family element in an xml font file.
      */
     public static final class FontFamilyFilesResourceEntry implements FamilyResourceEntry {
-        private final @NonNull FontFileResourceEntry[] mEntries;
+        private final FontFileResourceEntry @NonNull [] mEntries;
 
-        public FontFamilyFilesResourceEntry(@NonNull FontFileResourceEntry[] entries) {
+        public FontFamilyFilesResourceEntry(FontFileResourceEntry @NonNull [] entries) {
             mEntries = entries;
         }
 
-        public @NonNull FontFileResourceEntry[] getEntries() {
+        public FontFileResourceEntry @NonNull [] getEntries() {
             return mEntries;
         }
     }
@@ -281,9 +280,8 @@ public class FontResourcesParserCompat {
      *
      * Provider cert entry must be cert string array or array of cert string array.
      */
-    @NonNull
     @SuppressWarnings("MixedMutabilityReturnType")
-    public static List<List<byte[]>> readCerts(@NonNull Resources resources,
+    public static @NonNull List<List<byte[]>> readCerts(@NonNull Resources resources,
             @ArrayRes int certsId) {
         if (certsId == 0) {
             return Collections.emptyList();

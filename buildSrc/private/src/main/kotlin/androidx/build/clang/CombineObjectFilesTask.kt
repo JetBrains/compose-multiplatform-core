@@ -114,7 +114,6 @@ abstract class CombineObjectFilesTask : DefaultTask() {
                     Architecture.X64 -> "x86_64"
                     Architecture.ARM32 -> "armeabi-v7a"
                     Architecture.ARM64 -> "arm64-v8a"
-                    else -> error("add this architecture for android ${konanTarget.architecture}")
                 }
             }
             val familyPrefix =

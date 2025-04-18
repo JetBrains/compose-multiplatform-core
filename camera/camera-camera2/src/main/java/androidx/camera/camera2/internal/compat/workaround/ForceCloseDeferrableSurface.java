@@ -16,14 +16,15 @@
 
 package androidx.camera.camera2.internal.compat.workaround;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.compat.quirk.ConfigureSurfaceToSecondarySessionFailQuirk;
 import androidx.camera.camera2.internal.compat.quirk.PreviewOrientationIncorrectQuirk;
 import androidx.camera.camera2.internal.compat.quirk.TextureViewIsClosedQuirk;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.DeferrableSurface;
 import androidx.camera.core.impl.Quirks;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 

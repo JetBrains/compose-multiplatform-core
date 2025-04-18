@@ -125,10 +125,11 @@ internal class TextFieldKeyInput(
                 KeyCommand.END -> moveCursorToEnd()
                 KeyCommand.DELETE_PREV_CHAR ->
                     deleteIfSelectedOr {
-                            DeleteSurroundingTextCommand(
-                                selection.end - getPrecedingCharacterIndex(),
-                                0
-                            )
+                            val precedingCodePointIndex = getPrecedingCodePointOrEmojiStartIndex()
+                            if (precedingCodePointIndex == NoCharacterFound) {
+                                return@deleteIfSelectedOr null
+                            }
+                            DeleteSurroundingTextCommand(selection.end - precedingCodePointIndex, 0)
                         }
                         ?.apply()
                 KeyCommand.DELETE_NEXT_CHAR -> {
@@ -179,7 +180,8 @@ internal class TextFieldKeyInput(
                     if (!singleLine) {
                         CommitTextCommand("\n", 1).apply()
                     } else {
-                        this@TextFieldKeyInput.state.onImeActionPerformed(imeAction)
+                        consumed =
+                            this@TextFieldKeyInput.state.onImeActionPerformedWithResult(imeAction)
                     }
                 KeyCommand.TAB ->
                     if (!singleLine) {

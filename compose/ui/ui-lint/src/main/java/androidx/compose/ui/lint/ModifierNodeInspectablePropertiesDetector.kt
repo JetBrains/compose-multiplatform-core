@@ -68,6 +68,7 @@ class ModifierNodeInspectablePropertiesDetector : Detector(), Detector.UastScann
         }
     }
 
+    @Suppress("NO_TAIL_CALLS_FOUND", "NON_TAIL_RECURSIVE_CALL")
     private tailrec fun UClass?.getInspectablePropertiesFunctionOverride(): UMethod? {
         if (this == null || qualifiedName == ModifierNodeElementFqName) {
             return null

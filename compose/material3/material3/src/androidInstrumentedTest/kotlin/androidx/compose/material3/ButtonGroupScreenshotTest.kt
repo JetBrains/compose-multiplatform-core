@@ -17,7 +17,10 @@
 package androidx.compose.material3
 
 import android.os.Build
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -36,7 +39,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O, maxSdkVersion = 32)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 class ButtonGroupScreenshotTest {
     @get:Rule val rule = createComposeRule()
@@ -84,17 +87,264 @@ class ButtonGroupScreenshotTest {
         assertAgainstGolden("buttonGroup_darkTheme")
     }
 
+    @Test
+    fun connectedButtonGroup_lightTheme() {
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(Modifier.testTag(wrapperTestTag)) {
+                Row(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
+                ) {
+                    ToggleButton(
+                        checked = false,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes()
+                    ) {
+                        Text("Work")
+                    }
+                    ToggleButton(
+                        checked = false,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes()
+                    ) {
+                        Text("Restaurant")
+                    }
+                    ToggleButton(
+                        checked = false,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes()
+                    ) {
+                        Text("Coffee")
+                    }
+                }
+            }
+        }
+
+        assertAgainstGolden("connectedButtonGroup_lightTheme")
+    }
+
+    @Test
+    fun connectedButtonGroup_darkTheme() {
+        rule.setMaterialContent(darkColorScheme()) {
+            Box(Modifier.testTag(wrapperTestTag)) {
+                Row(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
+                ) {
+                    ToggleButton(
+                        checked = false,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes()
+                    ) {
+                        Text("Work")
+                    }
+                    ToggleButton(
+                        checked = false,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes()
+                    ) {
+                        Text("Restaurant")
+                    }
+                    ToggleButton(
+                        checked = false,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes()
+                    ) {
+                        Text("Coffee")
+                    }
+                }
+            }
+        }
+
+        assertAgainstGolden("connectedButtonGroup_darkTheme")
+    }
+
+    @Test
+    fun connectedButtonGroup_startSelected_lightTheme() {
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(Modifier.testTag(wrapperTestTag)) {
+                Row(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
+                ) {
+                    ToggleButton(
+                        checked = true,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes()
+                    ) {
+                        Text("Work")
+                    }
+                    ToggleButton(
+                        checked = false,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes()
+                    ) {
+                        Text("Restaurant")
+                    }
+                    ToggleButton(
+                        checked = false,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes()
+                    ) {
+                        Text("Coffee")
+                    }
+                }
+            }
+        }
+
+        assertAgainstGolden("connectedButtonGroup_startSelected_lightTheme")
+    }
+
+    @Test
+    fun connectedButtonGroup_middleSelected_lightTheme() {
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(Modifier.testTag(wrapperTestTag)) {
+                Row(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
+                ) {
+                    ToggleButton(
+                        checked = false,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes()
+                    ) {
+                        Text("Work")
+                    }
+                    ToggleButton(
+                        checked = true,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes()
+                    ) {
+                        Text("Restaurant")
+                    }
+                    ToggleButton(
+                        checked = false,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes()
+                    ) {
+                        Text("Coffee")
+                    }
+                }
+            }
+        }
+
+        assertAgainstGolden("connectedButtonGroup_middleSelected_lightTheme")
+    }
+
+    @Test
+    fun connectedButtonGroup_endSelected_lightTheme() {
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(Modifier.testTag(wrapperTestTag)) {
+                Row(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
+                ) {
+                    ToggleButton(
+                        checked = false,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes()
+                    ) {
+                        Text("Work")
+                    }
+                    ToggleButton(
+                        checked = false,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes()
+                    ) {
+                        Text("Restaurant")
+                    }
+                    ToggleButton(
+                        checked = true,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes()
+                    ) {
+                        Text("Coffee")
+                    }
+                }
+            }
+        }
+
+        assertAgainstGolden("connectedButtonGroup_endSelected_lightTheme")
+    }
+
+    @Test
+    fun connectedButtonGroup_allSelected_lightTheme() {
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(Modifier.testTag(wrapperTestTag)) {
+                Row(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
+                ) {
+                    ToggleButton(
+                        checked = true,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes()
+                    ) {
+                        Text("Work")
+                    }
+                    ToggleButton(
+                        checked = true,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes()
+                    ) {
+                        Text("Restaurant")
+                    }
+                    ToggleButton(
+                        checked = true,
+                        onCheckedChange = { /* Do nothing */ },
+                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes()
+                    ) {
+                        Text("Coffee")
+                    }
+                }
+            }
+        }
+
+        assertAgainstGolden("connectedButtonGroup_allSelected_lightTheme")
+    }
+
     @Ignore
     @Test
     fun buttonGroup_firstPressed_lightTheme() {
+        val interactionSources = List(5) { MutableInteractionSource() }
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup {
-                    Button(modifier = Modifier.testTag(aButton), onClick = {}) { Text("A") }
-                    Button(modifier = Modifier.testTag(bButton), onClick = {}) { Text("B") }
-                    Button(modifier = Modifier.testTag(cButton), onClick = {}) { Text("C") }
-                    Button(modifier = Modifier.testTag(dButton), onClick = {}) { Text("D") }
-                    Button(modifier = Modifier.testTag(eButton), onClick = {}) { Text("E") }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[0]).testTag(aButton),
+                        interactionSource = interactionSources[0],
+                        onClick = {}
+                    ) {
+                        Text("A")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[1]).testTag(bButton),
+                        interactionSource = interactionSources[1],
+                        onClick = {}
+                    ) {
+                        Text("B")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[2]).testTag(cButton),
+                        interactionSource = interactionSources[2],
+                        onClick = {}
+                    ) {
+                        Text("C")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[3]).testTag(dButton),
+                        interactionSource = interactionSources[3],
+                        onClick = {}
+                    ) {
+                        Text("D")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[4]).testTag(eButton),
+                        interactionSource = interactionSources[4],
+                        onClick = {}
+                    ) {
+                        Text("E")
+                    }
                 }
             }
         }
@@ -113,17 +363,48 @@ class ButtonGroupScreenshotTest {
         assertAgainstGolden("buttonGroup_firstPressed_lightTheme")
     }
 
-    @Ignore
+    @Ignore("b/355413615")
     @Test
     fun buttonGroup_secondPressed_lightTheme() {
+        val interactionSources = List(5) { MutableInteractionSource() }
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup {
-                    Button(modifier = Modifier.testTag(aButton), onClick = {}) { Text("A") }
-                    Button(modifier = Modifier.testTag(bButton), onClick = {}) { Text("B") }
-                    Button(modifier = Modifier.testTag(cButton), onClick = {}) { Text("C") }
-                    Button(modifier = Modifier.testTag(dButton), onClick = {}) { Text("D") }
-                    Button(modifier = Modifier.testTag(eButton), onClick = {}) { Text("E") }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[0]).testTag(aButton),
+                        interactionSource = interactionSources[0],
+                        onClick = {}
+                    ) {
+                        Text("A")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[1]).testTag(bButton),
+                        interactionSource = interactionSources[1],
+                        onClick = {}
+                    ) {
+                        Text("B")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[2]).testTag(cButton),
+                        interactionSource = interactionSources[2],
+                        onClick = {}
+                    ) {
+                        Text("C")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[3]).testTag(dButton),
+                        interactionSource = interactionSources[3],
+                        onClick = {}
+                    ) {
+                        Text("D")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[4]).testTag(eButton),
+                        interactionSource = interactionSources[4],
+                        onClick = {}
+                    ) {
+                        Text("E")
+                    }
                 }
             }
         }
@@ -142,17 +423,48 @@ class ButtonGroupScreenshotTest {
         assertAgainstGolden("buttonGroup_secondPressed_lightTheme")
     }
 
-    @Ignore
+    @Ignore("b/355413615")
     @Test
     fun buttonGroup_thirdPressed_lightTheme() {
+        val interactionSources = List(5) { MutableInteractionSource() }
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup {
-                    Button(modifier = Modifier.testTag(aButton), onClick = {}) { Text("A") }
-                    Button(modifier = Modifier.testTag(bButton), onClick = {}) { Text("B") }
-                    Button(modifier = Modifier.testTag(cButton), onClick = {}) { Text("C") }
-                    Button(modifier = Modifier.testTag(dButton), onClick = {}) { Text("D") }
-                    Button(modifier = Modifier.testTag(eButton), onClick = {}) { Text("E") }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[0]).testTag(aButton),
+                        interactionSource = interactionSources[0],
+                        onClick = {}
+                    ) {
+                        Text("A")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[1]).testTag(bButton),
+                        interactionSource = interactionSources[1],
+                        onClick = {}
+                    ) {
+                        Text("B")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[2]).testTag(cButton),
+                        interactionSource = interactionSources[2],
+                        onClick = {}
+                    ) {
+                        Text("C")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[3]).testTag(dButton),
+                        interactionSource = interactionSources[3],
+                        onClick = {}
+                    ) {
+                        Text("D")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[4]).testTag(eButton),
+                        interactionSource = interactionSources[4],
+                        onClick = {}
+                    ) {
+                        Text("E")
+                    }
                 }
             }
         }
@@ -171,17 +483,48 @@ class ButtonGroupScreenshotTest {
         assertAgainstGolden("buttonGroup_thirdPressed_lightTheme")
     }
 
-    @Ignore
+    @Ignore("b/355413615")
     @Test
     fun buttonGroup_fourthPressed_lightTheme() {
+        val interactionSources = List(5) { MutableInteractionSource() }
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup {
-                    Button(modifier = Modifier.testTag(aButton), onClick = {}) { Text("A") }
-                    Button(modifier = Modifier.testTag(bButton), onClick = {}) { Text("B") }
-                    Button(modifier = Modifier.testTag(cButton), onClick = {}) { Text("C") }
-                    Button(modifier = Modifier.testTag(dButton), onClick = {}) { Text("D") }
-                    Button(modifier = Modifier.testTag(eButton), onClick = {}) { Text("E") }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[0]).testTag(aButton),
+                        interactionSource = interactionSources[0],
+                        onClick = {}
+                    ) {
+                        Text("A")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[1]).testTag(bButton),
+                        interactionSource = interactionSources[1],
+                        onClick = {}
+                    ) {
+                        Text("B")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[2]).testTag(cButton),
+                        interactionSource = interactionSources[2],
+                        onClick = {}
+                    ) {
+                        Text("C")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[3]).testTag(dButton),
+                        interactionSource = interactionSources[3],
+                        onClick = {}
+                    ) {
+                        Text("D")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[4]).testTag(eButton),
+                        interactionSource = interactionSources[4],
+                        onClick = {}
+                    ) {
+                        Text("E")
+                    }
                 }
             }
         }
@@ -200,17 +543,48 @@ class ButtonGroupScreenshotTest {
         assertAgainstGolden("buttonGroup_fourthPressed_lightTheme")
     }
 
-    @Ignore
+    @Ignore("b/355413615")
     @Test
     fun buttonGroup_fifthPressed_lightTheme() {
+        val interactionSources = List(5) { MutableInteractionSource() }
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup {
-                    Button(modifier = Modifier.testTag(aButton), onClick = {}) { Text("A") }
-                    Button(modifier = Modifier.testTag(bButton), onClick = {}) { Text("B") }
-                    Button(modifier = Modifier.testTag(cButton), onClick = {}) { Text("C") }
-                    Button(modifier = Modifier.testTag(dButton), onClick = {}) { Text("D") }
-                    Button(modifier = Modifier.testTag(eButton), onClick = {}) { Text("E") }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[0]).testTag(aButton),
+                        interactionSource = interactionSources[0],
+                        onClick = {}
+                    ) {
+                        Text("A")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[1]).testTag(bButton),
+                        interactionSource = interactionSources[1],
+                        onClick = {}
+                    ) {
+                        Text("B")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[2]).testTag(cButton),
+                        interactionSource = interactionSources[2],
+                        onClick = {}
+                    ) {
+                        Text("C")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[3]).testTag(dButton),
+                        interactionSource = interactionSources[3],
+                        onClick = {}
+                    ) {
+                        Text("D")
+                    }
+                    Button(
+                        modifier = Modifier.animateWidth(interactionSources[4]).testTag(eButton),
+                        interactionSource = interactionSources[4],
+                        onClick = {}
+                    ) {
+                        Text("E")
+                    }
                 }
             }
         }

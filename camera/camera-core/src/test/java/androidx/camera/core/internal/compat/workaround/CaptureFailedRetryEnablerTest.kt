@@ -17,7 +17,6 @@
 package androidx.camera.core.internal.compat.workaround
 
 import android.os.Build
-import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -29,7 +28,6 @@ import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.util.ReflectionHelpers
 
 /** Unit test for [CaptureFailedRetryEnabler] */
-@SmallTest
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)

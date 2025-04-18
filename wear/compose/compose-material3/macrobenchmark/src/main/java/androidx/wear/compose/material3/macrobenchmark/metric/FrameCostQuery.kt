@@ -16,7 +16,7 @@
 
 package androidx.wear.compose.material3.macrobenchmark.metric
 
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
+import androidx.benchmark.traceprocessor.TraceProcessor
 import org.intellij.lang.annotations.Language
 
 /** A copy from aosp/3328563 */
@@ -44,7 +44,7 @@ internal object FrameCostQuery {
         INNER JOIN slice post on post.name = 'postAndWait' and slice_is_ancestor(doFrame.id, post.id)
 
         WHERE
-            ${androidx.benchmark.perfetto.processNameLikePkg(packageName)}
+            ${androidx.benchmark.traceprocessor.processNameLikePkg(packageName)}
         AND
             -- remove "incomplete" frames
             a.dur > 0
@@ -52,7 +52,7 @@ internal object FrameCostQuery {
             .trimIndent()
 
     internal fun getFrameCost(
-        session: PerfettoTraceProcessor.Session,
+        session: TraceProcessor.Session,
         packageName: String,
     ): List<Double> {
         val queryResultIterator = session.query(query = getFullQuery(packageName))

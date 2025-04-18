@@ -29,6 +29,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlin.jvm.JvmInline
 
 /**
  * Calculates the recommended [PaneScaffoldDirective] from a given [WindowAdaptiveInfo]. Use this
@@ -79,15 +80,19 @@ fun calculatePaneScaffoldDirective(
     }
 
     // TODO(conradchen): add 412.dp for L/XL window size class when they are available
-    val defaultPanePreferredWidth = 360.dp
+    val defaultPanePreferredWidth = PaneScaffoldDirective.DefaultPreferredWidth
+
+    val defaultPanePreferredHeight = PaneScaffoldDirective.DefaultPreferredHeight
 
     return PaneScaffoldDirective(
-        maxHorizontalPartitions,
-        horizontalPartitionSpacerSize,
-        maxVerticalPartitions,
-        verticalPartitionSpacerSize,
-        defaultPanePreferredWidth,
-        getExcludedVerticalBounds(windowAdaptiveInfo.windowPosture, verticalHingePolicy)
+        maxHorizontalPartitions = maxHorizontalPartitions,
+        horizontalPartitionSpacerSize = horizontalPartitionSpacerSize,
+        maxVerticalPartitions = maxVerticalPartitions,
+        verticalPartitionSpacerSize = verticalPartitionSpacerSize,
+        defaultPanePreferredWidth = defaultPanePreferredWidth,
+        defaultPanePreferredHeight = defaultPanePreferredHeight,
+        excludedBounds =
+            getExcludedVerticalBounds(windowAdaptiveInfo.windowPosture, verticalHingePolicy),
     )
 }
 
@@ -153,8 +158,13 @@ private fun getExcludedVerticalBounds(posture: Posture, hingePolicy: HingePolicy
  * @property verticalPartitionSpacerSize Size of the spacers between vertical partitions. It's
  *   equivalent to the top/bottom margins of the vertical partitions.
  * @property defaultPanePreferredWidth Default preferred width of panes that will be used by the
- *   scaffold if there's no [Modifier.preferredWidth] provided with a pane. See
- *   [Modifier.preferredWidth] for more info about how and when preferred width will be used.
+ *   scaffold if there's no [PaneScaffoldScope.preferredWidth] provided with a pane; see
+ *   [PaneScaffoldScope.preferredWidth] for more info about how and when preferred width will be
+ *   used.
+ * @property defaultPanePreferredHeight Default preferred height of panes that will be used by the
+ *   scaffold if there's no [PaneScaffoldScope.preferredHeight] provided with a pane; see
+ *   [PaneScaffoldScope.preferredHeight] for more info about how and when preferred height will be
+ *   used.
  * @property excludedBounds the bounds of all areas in the window that the layout needs to avoid
  *   displaying anything upon it. Usually these bounds represent where physical hinges are.
  */
@@ -165,8 +175,26 @@ class PaneScaffoldDirective(
     val maxVerticalPartitions: Int,
     val verticalPartitionSpacerSize: Dp,
     val defaultPanePreferredWidth: Dp,
+    val defaultPanePreferredHeight: Dp,
     val excludedBounds: List<Rect>
 ) {
+    constructor(
+        maxHorizontalPartitions: Int,
+        horizontalPartitionSpacerSize: Dp,
+        maxVerticalPartitions: Int,
+        verticalPartitionSpacerSize: Dp,
+        defaultPanePreferredWidth: Dp,
+        excludedBounds: List<Rect>,
+    ) : this(
+        maxHorizontalPartitions = maxHorizontalPartitions,
+        horizontalPartitionSpacerSize = horizontalPartitionSpacerSize,
+        maxVerticalPartitions = maxVerticalPartitions,
+        verticalPartitionSpacerSize = verticalPartitionSpacerSize,
+        defaultPanePreferredWidth = defaultPanePreferredWidth,
+        defaultPanePreferredHeight = DefaultPreferredHeight,
+        excludedBounds = excludedBounds,
+    )
+
     /**
      * Returns a new copy of [PaneScaffoldDirective] with specified fields overwritten. Use this
      * method to create a custom [PaneScaffoldDirective] from the default instance or the result of
@@ -181,10 +209,53 @@ class PaneScaffoldDirective(
      * @param verticalPartitionSpacerSize Size of the spacers between vertical partitions. It's
      *   equivalent to the top/bottom margins of the vertical partitions.
      * @param defaultPanePreferredWidth Default preferred width of panes that will be used by the
-     *   scaffold if there's no [Modifier.preferredWidth] provided with a pane.
+     *   scaffold if there's no [PaneScaffoldScope.preferredWidth] provided with a pane.
+     * @param excludedBounds the bounds of all areas in the window that the layout needs to avoid
+     *   displaying anything upon it. Usually these bounds represent where physical hinges are.
+     * @param defaultPanePreferredHeight Default preferred height of panes that will be used by the
+     *   scaffold if there's no [PaneScaffoldScope.preferredHeight] provided with a pane.
+     */
+    fun copy(
+        maxHorizontalPartitions: Int = this.maxHorizontalPartitions,
+        horizontalPartitionSpacerSize: Dp = this.horizontalPartitionSpacerSize,
+        maxVerticalPartitions: Int = this.maxVerticalPartitions,
+        verticalPartitionSpacerSize: Dp = this.verticalPartitionSpacerSize,
+        defaultPanePreferredWidth: Dp = this.defaultPanePreferredWidth,
+        excludedBounds: List<Rect> = this.excludedBounds,
+        defaultPanePreferredHeight: Dp = this.defaultPanePreferredHeight
+    ): PaneScaffoldDirective =
+        PaneScaffoldDirective(
+            maxHorizontalPartitions = maxHorizontalPartitions,
+            horizontalPartitionSpacerSize = horizontalPartitionSpacerSize,
+            maxVerticalPartitions = maxVerticalPartitions,
+            verticalPartitionSpacerSize = verticalPartitionSpacerSize,
+            defaultPanePreferredWidth = defaultPanePreferredWidth,
+            defaultPanePreferredHeight = defaultPanePreferredHeight,
+            excludedBounds = excludedBounds,
+        )
+
+    /**
+     * Returns a new copy of [PaneScaffoldDirective] with specified fields overwritten. Use this
+     * method to create a custom [PaneScaffoldDirective] from the default instance or the result of
+     * [calculatePaneScaffoldDirective].
+     *
+     * @param maxHorizontalPartitions the max number of partitions along the horizontal axis the
+     *   layout can be split into.
+     * @param horizontalPartitionSpacerSize Size of the spacers between horizontal partitions. It's
+     *   equivalent to the left/right margins the horizontal partitions.
+     * @param maxVerticalPartitions the max number of partitions along the vertical axis the layout
+     *   can be split into.
+     * @param verticalPartitionSpacerSize Size of the spacers between vertical partitions. It's
+     *   equivalent to the top/bottom margins of the vertical partitions.
+     * @param defaultPanePreferredWidth Default preferred width of panes that will be used by the
+     *   scaffold if there's no [PaneScaffoldScope.preferredWidth] provided with a pane.
      * @param excludedBounds the bounds of all areas in the window that the layout needs to avoid
      *   displaying anything upon it. Usually these bounds represent where physical hinges are.
      */
+    @Deprecated(
+        "Maintained for binary compatibility. Use version with defaultPanePreferredHeight instead.",
+        level = DeprecationLevel.HIDDEN
+    )
     fun copy(
         maxHorizontalPartitions: Int = this.maxHorizontalPartitions,
         horizontalPartitionSpacerSize: Dp = this.horizontalPartitionSpacerSize,
@@ -194,12 +265,12 @@ class PaneScaffoldDirective(
         excludedBounds: List<Rect> = this.excludedBounds
     ): PaneScaffoldDirective =
         PaneScaffoldDirective(
-            maxHorizontalPartitions,
-            horizontalPartitionSpacerSize,
-            maxVerticalPartitions,
-            verticalPartitionSpacerSize,
-            defaultPanePreferredWidth,
-            excludedBounds
+            maxHorizontalPartitions = maxHorizontalPartitions,
+            horizontalPartitionSpacerSize = horizontalPartitionSpacerSize,
+            maxVerticalPartitions = maxVerticalPartitions,
+            verticalPartitionSpacerSize = verticalPartitionSpacerSize,
+            defaultPanePreferredWidth = defaultPanePreferredWidth,
+            excludedBounds = excludedBounds,
         )
 
     override fun equals(other: Any?): Boolean {
@@ -210,6 +281,7 @@ class PaneScaffoldDirective(
         if (maxVerticalPartitions != other.maxVerticalPartitions) return false
         if (verticalPartitionSpacerSize != other.verticalPartitionSpacerSize) return false
         if (defaultPanePreferredWidth != other.defaultPanePreferredWidth) return false
+        if (defaultPanePreferredHeight != other.defaultPanePreferredHeight) return false
         if (excludedBounds != other.excludedBounds) return false
         return true
     }
@@ -220,6 +292,7 @@ class PaneScaffoldDirective(
         result = 31 * result + maxVerticalPartitions
         result = 31 * result + verticalPartitionSpacerSize.hashCode()
         result = 31 * result + defaultPanePreferredWidth.hashCode()
+        result = 31 * result + defaultPanePreferredHeight.hashCode()
         result = 31 * result + excludedBounds.hashCode()
         return result
     }
@@ -230,10 +303,14 @@ class PaneScaffoldDirective(
             "maxVerticalPartitions=$maxVerticalPartitions, " +
             "verticalPartitionSpacerSize=$verticalPartitionSpacerSize, " +
             "defaultPanePreferredWidth=$defaultPanePreferredWidth, " +
+            "defaultPanePreferredHeight=$defaultPanePreferredHeight, " +
             "number of excluded bounds=${excludedBounds.size})"
     }
 
     companion object {
+        internal val DefaultPreferredWidth = 360.dp
+        internal val DefaultPreferredHeight = 420.dp
+
         /**
          * A default instance of [PaneScaffoldDirective] that suggests a single-pane layout that
          * occupies the full window. To create a customized [PaneScaffoldDirective], you can use
@@ -245,7 +322,8 @@ class PaneScaffoldDirective(
                 horizontalPartitionSpacerSize = 0.dp,
                 maxVerticalPartitions = 1,
                 verticalPartitionSpacerSize = 0.dp,
-                defaultPanePreferredWidth = 360.dp,
+                defaultPanePreferredWidth = DefaultPreferredWidth,
+                defaultPanePreferredHeight = DefaultPreferredHeight,
                 excludedBounds = emptyList()
             )
     }
@@ -253,7 +331,7 @@ class PaneScaffoldDirective(
 
 /** Policies that indicate how hinges are supposed to be addressed in an adaptive layout. */
 @Immutable
-@kotlin.jvm.JvmInline
+@JvmInline
 value class HingePolicy private constructor(private val value: Int) {
     override fun toString(): String {
         return "HingePolicy." +

@@ -91,4 +91,7 @@ public interface CameraProvider {
     public fun getCameraInfo(cameraSelector: CameraSelector): CameraInfo {
         throw UnsupportedOperationException("The camera provider is not implemented properly.")
     }
+
+    /** Returns the [CameraXConfig] implementation type. */
+    @get:RestrictTo(Scope.LIBRARY_GROUP) @CameraXConfig.ImplType public val configImplType: Int
 }

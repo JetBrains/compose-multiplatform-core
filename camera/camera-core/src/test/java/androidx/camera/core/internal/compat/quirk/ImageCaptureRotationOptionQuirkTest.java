@@ -20,11 +20,11 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.Config.Option;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.ParameterizedRobolectricTestRunner;
@@ -60,10 +60,9 @@ public class ImageCaptureRotationOptionQuirkTest {
         return data;
     }
 
-    @NonNull
-    private final Config mConfig;
+    private final @NonNull Config mConfig;
 
-    public ImageCaptureRotationOptionQuirkTest(@NonNull final Config config) {
+    public ImageCaptureRotationOptionQuirkTest(final @NonNull Config config) {
         mConfig = config;
     }
 
@@ -86,12 +85,9 @@ public class ImageCaptureRotationOptionQuirkTest {
     }
 
     static class Config {
-        @Nullable
-        final String mBrand;
-        @Nullable
-        final String mModel;
-        @NonNull
-        final Option<?> mOption;
+        final @Nullable String mBrand;
+        final @Nullable String mModel;
+        final @NonNull Option<?> mOption;
         final boolean mIsSupported;
 
         Config(@Nullable String brand, @Nullable String model, @NonNull Option<?> option,

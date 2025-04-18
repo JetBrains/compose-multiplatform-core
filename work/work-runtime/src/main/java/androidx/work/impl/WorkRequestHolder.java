@@ -16,10 +16,11 @@
 
 package androidx.work.impl;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.WorkRequest;
 import androidx.work.impl.model.WorkSpec;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Set;
 import java.util.UUID;

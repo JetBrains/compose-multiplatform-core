@@ -31,5 +31,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".BenchmarkActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:theme="@style/Base.Theme.AppCompat">
+            <intent-filter>
+                <action
+                    android:name=
+                        "androidx.privacysandbox.sdkruntime.integration.testapp.BenchmarkActivity" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

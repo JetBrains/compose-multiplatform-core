@@ -23,7 +23,7 @@ import androidx.collection.mutableLongObjectMapOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.util.fastForEach
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.fail
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -87,7 +88,7 @@ class SelectionManagerTest {
         )
 
     private val hapticFeedback = mock<HapticFeedback>()
-    private val clipboardManager = mock<ClipboardManager>()
+    private val clipboard = mock<Clipboard>()
     private val textToolbar = mock<TextToolbar>()
 
     @Before
@@ -106,7 +107,6 @@ class SelectionManagerTest {
             )
         selectionManager.containerLayoutCoordinates = containerLayoutCoordinates
         selectionManager.hapticFeedBack = hapticFeedback
-        selectionManager.clipboardManager = clipboardManager
         selectionManager.textToolbar = textToolbar
         selectionManager.selection = fakeSelection
         selectionManager.onSelectionChange = { onSelectionChangeCalledTimes++ }
@@ -819,17 +819,17 @@ class SelectionManagerTest {
     }
 
     @Test
-    fun copy_selection_null_not_trigger_clipboardManager() {
+    fun copy_selection_null_not_trigger_clipboardManager() = runTest {
         selectionManager.selection = null
         selectionRegistrar.subselections = emptyLongObjectMap()
 
         selectionManager.copy()
 
-        verify(clipboardManager, times(0)).setText(any())
+        verify(clipboard, times(0)).setClipEntry(any())
     }
 
     @Test
-    fun copy_selection_not_null_trigger_clipboardManager_setText() {
+    fun copy_selection_not_null_trigger_clipboardManager_setText() = runTest {
         val text = "Text Demo"
         val annotatedString = AnnotatedString(text = text)
         val startOffset = text.indexOf('m')
@@ -854,10 +854,11 @@ class SelectionManagerTest {
         selectionManager.selection = selection
         selectionRegistrar.subselections = longObjectMapOf(selectableId, selection)
 
+        var actualTextToCopy: AnnotatedString? = null
+        selectionManager.onCopyHandler = { textToCopy -> actualTextToCopy = textToCopy }
         selectionManager.copy()
 
-        verify(clipboardManager, times(1))
-            .setText(annotatedString.subSequence(endOffset, startOffset))
+        assertThat(actualTextToCopy).isEqualTo(annotatedString.subSequence(endOffset, startOffset))
     }
 
     @Test
@@ -943,9 +944,12 @@ class SelectionManagerTest {
                     )
             )
         var selection: Selection? = fakeSelection
-        val lambda: (Selection?) -> Unit = { selection = it }
-        val spyLambda = spy(lambda)
-        selectionManager.onSelectionChange = spyLambda
+        var onSelectionChangeInvocationCount = 0
+        val onSelectionChangeLambda: (Selection?) -> Unit = { newSelection ->
+            selection = newSelection
+            onSelectionChangeInvocationCount++
+        }
+        selectionManager.onSelectionChange = onSelectionChangeLambda
         selectionManager.selection = fakeSelection
 
         selectionManager.onRelease()
@@ -953,7 +957,7 @@ class SelectionManagerTest {
         verify(selectionRegistrar).subselections = emptyLongObjectMap()
 
         assertThat(selection).isNull()
-        verify(spyLambda, times(1)).invoke(null)
+        assertThat(onSelectionChangeInvocationCount).isEqualTo(1)
         verify(hapticFeedback, times(1)).performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 
@@ -975,9 +979,12 @@ class SelectionManagerTest {
                     )
             )
         var selection: Selection? = fakeSelection
-        val lambda: (Selection?) -> Unit = { selection = it }
-        val spyLambda = spy(lambda)
-        selectionManager.onSelectionChange = spyLambda
+        var onSelectionChangeInvocationCount = 0
+        val onSelectionChangeLambda: (Selection?) -> Unit = { newSelection ->
+            selection = newSelection
+            onSelectionChangeInvocationCount++
+        }
+        selectionManager.onSelectionChange = onSelectionChangeLambda
         selectionManager.selection = fakeSelection
 
         selectionRegistrar.subselections = longObjectMapOf(startSelectableId, fakeSelection)
@@ -985,7 +992,7 @@ class SelectionManagerTest {
 
         verify(selectionRegistrar).subselections = emptyLongObjectMap()
         assertThat(selection).isNull()
-        verify(spyLambda, times(1)).invoke(null)
+        assertThat(onSelectionChangeInvocationCount).isEqualTo(1)
         verify(hapticFeedback, times(1)).performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 

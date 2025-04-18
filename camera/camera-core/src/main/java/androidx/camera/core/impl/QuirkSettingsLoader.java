@@ -25,10 +25,11 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.IBinder;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.arch.core.util.Function;
 import androidx.camera.core.Logger;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -118,8 +119,7 @@ public class QuirkSettingsLoader implements Function<Context, QuirkSettings> {
      * could not be loaded.
      */
     @Override
-    @Nullable
-    public QuirkSettings apply(@NonNull Context context) {
+    public @Nullable QuirkSettings apply(@NonNull Context context) {
         PackageManager packageManager = context.getPackageManager();
         try {
             Bundle metadata = packageManager.getServiceInfo(
@@ -144,8 +144,7 @@ public class QuirkSettingsLoader implements Function<Context, QuirkSettings> {
      * @param metadata The Bundle containing the metadata.
      * @return A QuirkSettings object constructed from the metadata.
      */
-    @NonNull
-    private static QuirkSettings buildQuirkSettings(@NonNull Context context,
+    private static @NonNull QuirkSettings buildQuirkSettings(@NonNull Context context,
             @NonNull Bundle metadata) {
         boolean defaultEnabled = metadata.getBoolean(KEY_DEFAULT_QUIRK_ENABLED, true);
         String[] forceEnabled = loadQuirks(context, metadata, KEY_QUIRK_FORCE_ENABLED);
@@ -168,8 +167,7 @@ public class QuirkSettingsLoader implements Function<Context, QuirkSettings> {
      *
      * <p>If the resource ID is not found or invalid, an empty array is returned.
      */
-    @NonNull
-    private static String[] loadQuirks(@NonNull Context context, @NonNull Bundle metadata,
+    private static String @NonNull [] loadQuirks(@NonNull Context context, @NonNull Bundle metadata,
             @NonNull String key) {
         if (!metadata.containsKey(key)) {
             return new String[0];
@@ -188,8 +186,8 @@ public class QuirkSettingsLoader implements Function<Context, QuirkSettings> {
     }
 
     /** Resolves an array of quirk class names into a set of corresponding Quirk class objects. */
-    @NonNull
-    private static Set<Class<? extends Quirk>> resolveQuirkNames(@NonNull String[] nameArray) {
+    private static @NonNull Set<Class<? extends Quirk>> resolveQuirkNames(
+            String @NonNull [] nameArray) {
         Set<Class<? extends Quirk>> quirkSet = new HashSet<>();
         for (String quirkName : nameArray) {
             Class<? extends Quirk> clazz = resolveQuirkName(quirkName);
@@ -202,8 +200,7 @@ public class QuirkSettingsLoader implements Function<Context, QuirkSettings> {
 
     /** Attempts to resolve and load a Quirk class from its fully qualified name. */
     @SuppressWarnings("unchecked")
-    @Nullable
-    private static Class<? extends Quirk> resolveQuirkName(@NonNull String className) {
+    private static @Nullable Class<? extends Quirk> resolveQuirkName(@NonNull String className) {
         try {
             Class<?> clazz = Class.forName(className);
             if (Quirk.class.isAssignableFrom(clazz)) {
@@ -228,9 +225,8 @@ public class QuirkSettingsLoader implements Function<Context, QuirkSettings> {
         private MetadataHolderService() {
         }
 
-        @Nullable
         @Override
-        public IBinder onBind(Intent intent) {
+        public @Nullable IBinder onBind(Intent intent) {
             throw new UnsupportedOperationException();
         }
     }

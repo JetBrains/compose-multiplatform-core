@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.lazy.layout.CacheWindowLogic
 import androidx.compose.foundation.lazy.layout.LazyLayout
 import androidx.compose.foundation.lazy.layout.LazyLayoutMeasureScope
 import androidx.compose.foundation.lazy.layout.StickyItemsPlacement
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.trace
 import kotlinx.coroutines.CoroutineScope
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -231,7 +233,7 @@ private fun rememberLazyGridMeasurePolicy(
 
             val itemProvider = itemProviderLambda()
             val spanLayoutProvider = itemProvider.spanLayoutProvider
-            val resolvedSlots = slots.invoke(density = this, constraints = containerConstraints)
+            val resolvedSlots = slots.invoke(density = this, constraints = contentConstraints)
             val slotsPerLine = resolvedSlots.sizes.size
             spanLayoutProvider.slotsPerLine = slotsPerLine
 
@@ -416,6 +418,36 @@ private fun rememberLazyGridMeasurePolicy(
                     }
                 )
             state.applyMeasureResult(measureResult, isLookingAhead = isLookingAhead)
+            // apply keep around after updating the strategy with measure result.
+            (state.prefetchStrategy as? CacheWindowLogic)?.keepAroundItems(
+                measureResult.orientation,
+                measureResult.visibleItemsInfo,
+                measuredLineProvider
+            )
             measureResult
         }
     }
+
+@OptIn(ExperimentalFoundationApi::class)
+private fun CacheWindowLogic.keepAroundItems(
+    orientation: Orientation,
+    visibleItemsList: List<LazyGridMeasuredItem>,
+    measuredLineProvider: LazyGridMeasuredLineProvider
+) {
+    trace("compose:lazy:cache_window:keepAroundItems") {
+        // only run if window and new layout info is available
+        if (hasValidBounds() && visibleItemsList.isNotEmpty()) {
+            val firstVisibleItemIndex = visibleItemsList.first().lineIndex(orientation)
+            val lastVisibleItemIndex = visibleItemsList.last().lineIndex(orientation)
+            // we must send a message in case of changing directions for items
+            // that were keep around and become prefetch forward
+            for (line in prefetchWindowStartLine..<firstVisibleItemIndex) {
+                measuredLineProvider.keepAround(line)
+            }
+
+            for (line in (lastVisibleItemIndex + 1)..prefetchWindowEndLine) {
+                measuredLineProvider.keepAround(line)
+            }
+        }
+    }
+}

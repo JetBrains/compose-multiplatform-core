@@ -27,14 +27,13 @@ API level, (2) the latest stable API level, (3) API levels with major changes,
 pre-release API level.
 
 In practice, this is limited by device and emulator availability and
-reliability. As of November 2023, we run tests on the following API levels:
+reliability. As of January 2025, we run tests on the following API levels:
 
 -   API level 21: the lowest API level supported by Firebase Test Lab (FTL)
 -   API level 26: the lowest supported ARM-based emulator FTL runner, which has
     much greater performance and stability
--   API level 28: provides coverage between 26 and 30
--   API levels 30, 31, 33: the latest supported API levels, which represent the
-    majority of devices in the field
+-   API levels 30, 33, 34, 35: the latest supported API levels, which represent
+    the majority of devices in the field
 
 ## Adding tests {#adding}
 
@@ -348,7 +347,9 @@ prebuilts/fullsdk-darwin ln -s ~/Library/Android/sdk/emulator emulator ln -s
 ~/Library/Android/sdk/system-images system-images` (substituting `fullsdk-linux`
 and your local SDK path as appropriate)
 
-## Debugging with platform SDK sources {#sources}
+## Debugging tests
+
+### Using custom platform SDK sources {#sources}
 
 The platform SDK sources that are checked into the development branch may not
 match up with the build of Android present on the emulator or your physical
@@ -371,6 +372,29 @@ NOTE The `Project Structure` dialog reachable via `File > Project Structure` is
 **not** the same as the `Project Structure` dialog that will allow you to
 specify the SDK source path. You must use the "Module Settings" action as
 directed above.
+
+### Accessing FTL outputs
+
+When we run tests on Firebase Test Lab devices, we transfer the results and
+logcat output back to Android's test result infrastructure; however, FTL also
+captures screen recordings of the entire test run.
+
+To access these videos from the Android Test Investigate page for a failed test
+run:
+
+-   For the failing test, go to `Artifacts tab` in the Android Test Investigate
+    page
+-   Disable `Hide empty folders` (if enabled) by clicking on it
+-   Under `Run artifacts`, click on "i" icon next to the test module to open the
+    Information tab
+-   In the Information tab to the right, click on the link next to the `logs`
+    property
+
+The full logcat output and screen recording are available from the `Devices` tab
+by clicking on the test device under `Device details` and using the `Logs` and
+`Video` tabs, respectively.
+
+Per-test logcat output and videos are available from the `Test cases` tab.
 
 ## Running unit and integration tests {#running}
 
@@ -407,10 +431,13 @@ from `framework/support`:
 
 # Run instrumentation tests in Firebase Test Lab (remote)
 ./gradlew <project-name>:ftlnexus4api21
-./gradlew <project-name>:ftlpixel2api26
-./gradlew <project-name>:ftlpixel2api28
-./gradlew <project-name>:ftlpixel2api30
-./gradlew <project-name>:ftlpixel2api33
+./gradlew <project-name>:ftlmediumphoneapi26
+./gradlew <project-name>:ftlmediumphoneapi30
+./gradlew <project-name>:ftlmediumphoneapi33
+./gradlew <project-name>:ftlmediumphoneapi34
+./gradlew <project-name>:ftlmediumphoneapi35
+
+./gradlew <project-name>:ftlmediumphoneapi28 (For compose tests only)
 
 # Run local unit tests
 ./gradlew <project-name>:test
@@ -426,7 +453,7 @@ To run a specific instrumentation test in a given project, run
     -Pandroid.testInstrumentationRunnerArguments.class=<fully-qualified-class>[\#testName]
 
 # Run instrumentation tests on in Firebase Test Lab (remote)
-./gradlew <project-name>:ftlpixel2api30 --className=<fully-qualified-class>
+./gradlew <project-name>:ftlmediumphoneapi30 --className=<fully-qualified-class>
 ```
 
 substituting the Gradle project name (ex. `viewpager`) and fully-qualified class

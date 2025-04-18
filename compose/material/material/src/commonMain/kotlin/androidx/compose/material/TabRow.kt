@@ -58,8 +58,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://material.io/components/tabs#fixed-tabs" class="external"
- * target="_blank">Material Design fixed tabs</a>.
+ * [Material Design fixed tabs](https://material.io/components/tabs#fixed-tabs)
  *
  * Fixed tabs display all tabs in a set simultaneously. They are best for switching between related
  * content quickly, such as between transportation methods in a map. To navigate between fixed tabs,
@@ -184,8 +183,7 @@ fun TabRow(
 }
 
 /**
- * <a href="https://material.io/components/tabs#scrollable-tabs" class="external"
- * target="_blank">Material Design scrollable tabs</a>.
+ * [Material Design scrollable tabs](https://material.io/components/tabs#scrollable-tabs)
  *
  * When a set of tabs cannot fit on screen, use scrollable tabs. Scrollable tabs can use longer text
  * labels and a larger number of tabs. They are best used for browsing on touch interfaces.

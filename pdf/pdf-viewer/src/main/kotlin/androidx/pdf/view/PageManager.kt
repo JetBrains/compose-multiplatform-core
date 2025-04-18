@@ -21,7 +21,6 @@ import android.graphics.Point
 import android.graphics.Rect
 import android.util.Range
 import android.util.SparseArray
-import androidx.annotation.VisibleForTesting
 import androidx.core.util.keyIterator
 import androidx.core.util.valueIterator
 import androidx.pdf.PdfDocument
@@ -40,7 +39,14 @@ import kotlinx.coroutines.flow.SharedFlow
 internal class PageManager(
     private val pdfDocument: PdfDocument,
     private val backgroundScope: CoroutineScope,
-    private val pagePrefetchRadius: Int,
+    /**
+     * The maximum size of any single [android.graphics.Bitmap] we render for a page, i.e. the
+     * threshold for tiled rendering
+     */
+    private val maxBitmapSizePx: Point,
+    private val isTouchExplorationEnabled: Boolean,
+    /** Error flow for propagating error occurred while processing to [PdfView]. */
+    private val errorFlow: MutableSharedFlow<Throwable>
 ) {
     /**
      * Replay at least 1 value in case of an invalidation signal issued while [PdfView] is not
@@ -58,7 +64,11 @@ internal class PageManager(
     val invalidationSignalFlow: SharedFlow<Unit>
         get() = _invalidationSignalFlow
 
-    @VisibleForTesting val pages = SparseArray<Page>()
+    internal val pages = SparseArray<Page>()
+
+    private val _pageTextReadyFlow = MutableSharedFlow<Int>(replay = 1)
+    val pageTextReadyFlow: SharedFlow<Int>
+        get() = _pageTextReadyFlow
 
     /**
      * [Highlight]s supplied by the developer to be drawn along with the pages they belong to
@@ -69,25 +79,41 @@ internal class PageManager(
     private val highlights: MutableMap<Int, MutableList<Highlight>> = mutableMapOf()
 
     /**
-     * Updates the internal state of [Page]s owned by this manager in response to a viewport change
+     * Updates the visibility state of [Page]s owned by this manager.
+     *
+     * @param visiblePageAreas the visible area of each visible page, in page coordinates
+     * @param currentZoomLevel the current zoom level
+     * @param stablePosition true if we don't believe our position is actively changing
      */
-    fun maybeUpdateBitmaps(visiblePages: Range<Int>, currentZoomLevel: Float) {
+    fun updatePageVisibilities(
+        visiblePageAreas: SparseArray<Rect>,
+        currentZoomLevel: Float,
+        stablePosition: Boolean
+    ) {
         // Start preparing UI for visible pages
-        for (i in visiblePages.lower..visiblePages.upper) {
-            pages[i]?.setVisible(currentZoomLevel)
+        visiblePageAreas.keyIterator().forEach { pageNum ->
+            pages[pageNum]?.setVisible(
+                currentZoomLevel,
+                visiblePageAreas.get(pageNum),
+                stablePosition
+            )
         }
 
-        // Hide pages that are well outside the viewport. We deliberately don't set pages that
-        // are within nearPages, but outside visible pages to invisible to avoid rendering churn
-        // for pages likely to return to the viewport.
+        // We put pages that are near the viewport in a "nearly visible" state where some data is
+        // retained. We release all data from pages well outside the viewport
         val nearPages =
             Range(
-                maxOf(0, visiblePages.lower - pagePrefetchRadius),
-                minOf(visiblePages.upper + pagePrefetchRadius, pdfDocument.pageCount - 1),
+                maxOf(0, visiblePageAreas.keyAt(0) - PAGE_RETENTION_RADIUS),
+                minOf(
+                    visiblePageAreas.keyAt(visiblePageAreas.size() - 1) + PAGE_RETENTION_RADIUS,
+                    pdfDocument.pageCount - 1
+                ),
             )
         for (pageNum in pages.keyIterator()) {
             if (pageNum < nearPages.lower || pageNum > nearPages.upper) {
                 pages[pageNum]?.setInvisible()
+            } else if (!visiblePageAreas.contains(pageNum)) {
+                pages[pageNum]?.setNearlyVisible()
             }
         }
     }
@@ -96,13 +122,32 @@ internal class PageManager(
      * Updates the set of [Page]s owned by this manager when a new Page's dimensions are loaded.
      * Dimensions are the minimum data required to instantiate a page.
      */
-    fun onPageSizeReceived(pageNum: Int, size: Point, isVisible: Boolean, currentZoomLevel: Float) {
+    fun addPage(
+        pageNum: Int,
+        size: Point,
+        currentZoomLevel: Float,
+        stablePosition: Boolean,
+        viewArea: Rect? = null
+    ) {
         if (pages.contains(pageNum)) return
         val page =
-            Page(pageNum, size, pdfDocument, backgroundScope) {
-                    _invalidationSignalFlow.tryEmit(Unit)
+            Page(
+                    pageNum,
+                    size,
+                    pdfDocument,
+                    backgroundScope,
+                    maxBitmapSizePx,
+                    isTouchExplorationEnabled,
+                    onPageUpdate = { _invalidationSignalFlow.tryEmit(Unit) },
+                    onPageTextReady = { pageNumber -> _pageTextReadyFlow.tryEmit(pageNumber) },
+                    errorFlow = errorFlow
+                )
+                .apply {
+                    // If the page is visible, let it know
+                    if (viewArea != null) {
+                        setVisible(currentZoomLevel, viewArea, stablePosition)
+                    }
                 }
-                .apply { if (isVisible) setVisible(currentZoomLevel) }
         pages.put(pageNum, page)
     }
 
@@ -125,12 +170,18 @@ internal class PageManager(
      * Sets all [Page]s owned by this manager to invisible, i.e. to reduce memory when the host
      * [PdfView] is not in an interactive state.
      */
-    fun onDetached() {
+    fun cleanup() {
         for (page in pages.valueIterator()) {
             page.setInvisible()
         }
+    }
+
+    fun getLinkAtTapPoint(pdfPoint: PdfPoint): PdfDocument.PdfPageLinks? {
+        return pages[pdfPoint.pageNum]?.links
     }
 }
 
 /** Constant empty list to avoid allocations during drawing */
 private val EMPTY_HIGHLIGHTS = listOf<Highlight>()
+
+private val PAGE_RETENTION_RADIUS = 2

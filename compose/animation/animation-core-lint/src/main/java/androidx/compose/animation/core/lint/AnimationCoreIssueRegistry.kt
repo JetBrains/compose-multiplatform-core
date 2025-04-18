@@ -29,9 +29,11 @@ class AnimationCoreIssueRegistry : IssueRegistry() {
         get() =
             listOf(
                 TransitionDetector.UnusedTransitionTargetStateParameter,
-                UnrememberedAnimatableDetector.UnrememberedAnimatable,
                 ArcAnimationSpecTypeDetector.ArcAnimationSpecTypeIssue
             )
+
+    // Now handled by RememberInComposition
+    override val deletedIssues = listOf("UnrememberedAnimatable")
 
     override val vendor =
         Vendor(

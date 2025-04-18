@@ -24,6 +24,7 @@ import androidx.compose.runtime.ReusableComposeNode
 import androidx.compose.runtime.SkippableUpdater
 import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.currentCompositeKeyHash
+import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
@@ -77,7 +78,7 @@ inline fun Layout(
     modifier: Modifier = Modifier,
     measurePolicy: MeasurePolicy
 ) {
-    val compositeKeyHash = currentCompositeKeyHash
+    val compositeKeyHash = currentCompositeKeyHashCode.hashCode()
     val localMap = currentComposer.currentCompositionLocalMap
     val materialized = currentComposer.materialize(modifier)
     ReusableComposeNode<ComposeUiNode, Applier<Any>>(
@@ -119,7 +120,7 @@ inline fun Layout(
 @Composable
 @UiComposable
 inline fun Layout(modifier: Modifier = Modifier, measurePolicy: MeasurePolicy) {
-    val compositeKeyHash = currentCompositeKeyHash
+    val compositeKeyHash = currentCompositeKeyHashCode.hashCode()
     val materialized = currentComposer.materialize(modifier)
     val localMap = currentComposer.currentCompositionLocalMap
     ReusableComposeNode<ComposeUiNode, Applier<Any>>(
@@ -175,7 +176,7 @@ internal fun combineAsVirtualLayouts(
     contents: List<@Composable @UiComposable () -> Unit>
 ): @Composable @UiComposable () -> Unit = {
     contents.fastForEach { content ->
-        val compositeKeyHash = currentCompositeKeyHash
+        val compositeKeyHash = currentCompositeKeyHashCode.hashCode()
         ReusableComposeNode<ComposeUiNode, Applier<Any>>(
             factory = ComposeUiNode.VirtualConstructor,
             update = { set(compositeKeyHash, SetCompositeKeyHash) },
@@ -194,7 +195,7 @@ internal fun combineAsVirtualLayouts(
 internal fun materializerOf(
     modifier: Modifier
 ): @Composable SkippableUpdater<ComposeUiNode>.() -> Unit = {
-    val compositeKeyHash = currentCompositeKeyHash
+    val compositeKeyHash = currentCompositeKeyHashCode.hashCode()
     val materialized = currentComposer.materialize(modifier)
     update {
         set(materialized, SetModifier)
@@ -216,7 +217,7 @@ internal fun materializerOf(
 internal fun materializerOfWithCompositionLocalInjection(
     modifier: Modifier
 ): @Composable SkippableUpdater<ComposeUiNode>.() -> Unit = {
-    val compositeKeyHash = currentCompositeKeyHash
+    val compositeKeyHash = currentCompositeKeyHash.hashCode()
     val materialized = currentComposer.materializeWithCompositionLocalInjectionInternal(modifier)
     update {
         set(materialized, SetModifier)
@@ -236,7 +237,7 @@ fun MultiMeasureLayout(
     content: @Composable @UiComposable () -> Unit,
     measurePolicy: MeasurePolicy
 ) {
-    val compositeKeyHash = currentCompositeKeyHash
+    val compositeKeyHash = currentCompositeKeyHash.hashCode()
     val materialized = currentComposer.materialize(modifier)
     val localMap = currentComposer.currentCompositionLocalMap
 
@@ -352,7 +353,7 @@ internal class IntrinsicsMeasureScope(
     override fun layout(
         width: Int,
         height: Int,
-        alignmentLines: Map<out AlignmentLine, Int>,
+        alignmentLines: Map<AlignmentLine, Int>,
         rulers: (RulerScope.() -> Unit)?,
         placementBlock: Placeable.PlacementScope.() -> Unit
     ): MeasureResult {
@@ -366,7 +367,7 @@ internal class IntrinsicsMeasureScope(
             override val height: Int
                 get() = h
 
-            override val alignmentLines: Map<out AlignmentLine, Int>
+            override val alignmentLines: Map<AlignmentLine, Int>
                 get() = alignmentLines
 
             override val rulers: (RulerScope.() -> Unit)?
@@ -386,7 +387,7 @@ internal class ApproachIntrinsicsMeasureScope(
     override fun layout(
         width: Int,
         height: Int,
-        alignmentLines: Map<out AlignmentLine, Int>,
+        alignmentLines: Map<AlignmentLine, Int>,
         rulers: (RulerScope.() -> Unit)?,
         placementBlock: Placeable.PlacementScope.() -> Unit
     ): MeasureResult {
@@ -400,7 +401,7 @@ internal class ApproachIntrinsicsMeasureScope(
             override val height: Int
                 get() = h
 
-            override val alignmentLines: Map<out AlignmentLine, Int>
+            override val alignmentLines: Map<AlignmentLine, Int>
                 get() = alignmentLines
 
             override val rulers: (RulerScope.() -> Unit)?

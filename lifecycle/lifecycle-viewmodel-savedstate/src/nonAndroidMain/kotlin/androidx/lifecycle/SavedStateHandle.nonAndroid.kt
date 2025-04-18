@@ -28,26 +28,26 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-actual class SavedStateHandle {
+public actual class SavedStateHandle {
 
     private var impl: SavedStateHandleImpl
 
-    actual constructor(initialState: Map<String, Any?>) {
+    public actual constructor(initialState: Map<String, Any?>) {
         impl = SavedStateHandleImpl(initialState)
     }
 
-    actual constructor() {
+    public actual constructor() {
         impl = SavedStateHandleImpl()
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    actual fun savedStateProvider(): SavedStateRegistry.SavedStateProvider =
+    public actual fun savedStateProvider(): SavedStateRegistry.SavedStateProvider =
         impl.savedStateProvider()
 
-    @MainThread actual operator fun contains(key: String): Boolean = key in impl
+    @MainThread public actual operator fun contains(key: String): Boolean = key in impl
 
     @MainThread
-    actual fun <T> getStateFlow(key: String, initialValue: T): StateFlow<T> {
+    public actual fun <T> getStateFlow(key: String, initialValue: T): StateFlow<T> {
         // On platforms other than Android, LiveData is not available.
         // Therefore, there's no need to check for mutual exclusivity with LiveData.
         // We can directly use getMutableStateFlow and convert it to a StateFlow.
@@ -55,33 +55,36 @@ actual class SavedStateHandle {
     }
 
     @MainThread
-    actual fun <T> getMutableStateFlow(key: String, initialValue: T): MutableStateFlow<T> {
+    public actual fun <T> getMutableStateFlow(key: String, initialValue: T): MutableStateFlow<T> {
         return impl.getMutableStateFlow(key, initialValue)
     }
 
-    @MainThread actual fun keys(): Set<String> = impl.keys()
+    @MainThread public actual fun keys(): Set<String> = impl.keys()
 
-    @MainThread actual operator fun <T> get(key: String): T? = impl.get(key)
-
-    @MainThread actual operator fun <T> set(key: String, value: T?) = impl.set(key, value)
-
-    @MainThread actual fun <T> remove(key: String): T? = impl.remove(key)
+    @MainThread public actual operator fun <T> get(key: String): T? = impl.get(key)
 
     @MainThread
-    actual fun setSavedStateProvider(key: String, provider: SavedStateRegistry.SavedStateProvider) =
-        impl.setSavedStateProvider(key, provider)
+    public actual operator fun <T> set(key: String, value: T?): Unit = impl.set(key, value)
+
+    @MainThread public actual fun <T> remove(key: String): T? = impl.remove(key)
 
     @MainThread
-    actual fun clearSavedStateProvider(key: String) {
+    public actual fun setSavedStateProvider(
+        key: String,
+        provider: SavedStateRegistry.SavedStateProvider
+    ): Unit = impl.setSavedStateProvider(key, provider)
+
+    @MainThread
+    public actual fun clearSavedStateProvider(key: String) {
         impl.clearSavedStateProvider(key)
     }
 
-    actual companion object {
+    public actual companion object {
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
         @Suppress("DEPRECATION")
-        actual fun createHandle(
+        public actual fun createHandle(
             restoredState: SavedState?,
             defaultState: SavedState?,
         ): SavedStateHandle {
@@ -94,6 +97,6 @@ actual class SavedStateHandle {
         }
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        actual fun validateValue(value: Any?): Boolean = isAcceptableType(value)
+        public actual fun validateValue(value: Any?): Boolean = isAcceptableType(value)
     }
 }

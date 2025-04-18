@@ -32,7 +32,6 @@ import androidx.room.util.TableInfo
 import androidx.room.util.ViewInfo
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
-import androidx.sqlite.use
 import kotlin.reflect.KClass
 import kotlin.reflect.safeCast
 

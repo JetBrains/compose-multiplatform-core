@@ -62,7 +62,13 @@ import kotlinx.coroutines.flow.StateFlow
  * Interface for rendering complicationSlots onto a [Canvas]. These should be created by
  * [CanvasComplicationFactory.create]. If state needs to be shared with the [Renderer] that should
  * be set up inside [onRendererCreated].
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 @JvmDefaultWithCompatibility
 public interface CanvasComplication {
 
@@ -160,7 +166,15 @@ public interface CanvasComplication {
     public fun loadData(complicationData: ComplicationData, loadDrawablesAsynchronous: Boolean)
 }
 
-/** Interface for determining whether a tap hits a complication. */
+/**
+ * Interface for determining whether a tap hits a complication.
+ *
+ * @deprecated use Watch Face Format instead
+ */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 @JvmDefaultWithCompatibility
 public interface ComplicationTapFilter {
     /**
@@ -205,7 +219,13 @@ public interface ComplicationTapFilter {
 
 /**
  * Default [ComplicationTapFilter] for [ComplicationSlotBoundsType.ROUND_RECT] complicationSlots.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class RoundRectComplicationTapFilter : ComplicationTapFilter {
     override fun hitTest(
         complicationSlot: ComplicationSlot,
@@ -218,7 +238,13 @@ public class RoundRectComplicationTapFilter : ComplicationTapFilter {
 
 /**
  * Default [ComplicationTapFilter] for [ComplicationSlotBoundsType.BACKGROUND] complicationSlots.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class BackgroundComplicationTapFilter : ComplicationTapFilter {
     override fun hitTest(
         complicationSlot: ComplicationSlot,
@@ -240,7 +266,15 @@ public class BackgroundComplicationTapFilter : ComplicationTapFilter {
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public annotation class ComplicationSlotBoundsTypeIntDef
 
-/** The various types of [ComplicationSlot] bounds. */
+/**
+ * The various types of [ComplicationSlot] bounds.
+ *
+ * @deprecated use Watch Face Format instead
+ */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public object ComplicationSlotBoundsType {
     /** The default, most complication slots are either circular or rounded rectangles. */
     public const val ROUND_RECT: Int = 0
@@ -263,7 +297,12 @@ public object ComplicationSlotBoundsType {
  * @property totalAngle The total angle of the arc on degrees.
  * @property thickness The thickness of the arc as a fraction of min(boundingRect.width,
  *   boundingRect.height).
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 @ComplicationExperimental
 public class BoundingArc(val startAngle: Float, val totalAngle: Float, @Px val thickness: Float) {
     /**
@@ -359,7 +398,12 @@ public class BoundingArc(val startAngle: Float, val totalAngle: Float, @Px val t
  *   complications.
  * @property tapFilter The [ComplicationTapFilter] used to determine whether or not a tap hit the
  *   complication slot.
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class ComplicationSlot
 /**
  * Constructs a [ComplicationSlot].

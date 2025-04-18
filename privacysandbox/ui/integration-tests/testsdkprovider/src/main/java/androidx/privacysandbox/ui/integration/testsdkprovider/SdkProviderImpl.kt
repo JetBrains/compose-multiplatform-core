@@ -17,17 +17,7 @@
 package androidx.privacysandbox.ui.integration.testsdkprovider
 
 import android.content.Context
-import android.os.Bundle
-import android.view.View
-import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
-import androidx.privacysandbox.sdkruntime.core.SandboxedSdkProviderCompat
 
-class SdkProviderImpl : SandboxedSdkProviderCompat() {
-    override fun onLoadSdk(params: Bundle): SandboxedSdkCompat {
-        return SandboxedSdkCompat(SdkApi(context!!))
-    }
-
-    override fun getView(windowContext: Context, params: Bundle, width: Int, height: Int): View {
-        TODO("Not yet implemented")
-    }
+class SdkProviderImpl : AbstractSandboxedSdkProviderCompat() {
+    override fun createISdkApi(context: Context): ISdkApi = SdkApi(context)
 }

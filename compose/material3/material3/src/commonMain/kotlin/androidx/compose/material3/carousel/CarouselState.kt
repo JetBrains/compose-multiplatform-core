@@ -45,12 +45,10 @@ import androidx.compose.ui.geometry.Rect
 class CarouselState(
     currentItem: Int = 0,
     @FloatRange(from = -0.5, to = 0.5) currentItemOffsetFraction: Float = 0f,
-    itemCount: () -> Int
+    itemCount: () -> Int,
 ) : ScrollableState {
-    internal var itemCountState = mutableStateOf(itemCount)
-
-    internal var pagerState: PagerState =
-        PagerState(currentItem, currentItemOffsetFraction, itemCountState.value)
+    internal var pagerState: CarouselPagerState =
+        CarouselPagerState(currentItem, currentItemOffsetFraction, itemCount)
 
     override val isScrollInProgress: Boolean
         get() = pagerState.isScrollInProgress
@@ -108,7 +106,43 @@ fun rememberCarouselState(
                 itemCount = itemCount
             )
         }
-        .apply { itemCountState.value = itemCount }
+        .apply { pagerState.pageCountState.value = itemCount }
+}
+
+internal const val MinPageOffset = -0.5f
+internal const val MaxPageOffset = 0.5f
+
+internal class CarouselPagerState(
+    currentPage: Int,
+    currentPageOffsetFraction: Float,
+    updatedPageCount: () -> Int,
+) : PagerState(currentPage, currentPageOffsetFraction) {
+    var pageCountState = mutableStateOf(updatedPageCount)
+
+    // Observe changes to the lambda within the MutableState
+    override val pageCount: Int
+        get() = pageCountState.value.invoke()
+
+    companion object {
+        /** To keep current page and current page offset saved */
+        val Saver: Saver<CarouselPagerState, *> =
+            listSaver(
+                save = {
+                    listOf(
+                        it.currentPage,
+                        (it.currentPageOffsetFraction).coerceIn(MinPageOffset, MaxPageOffset),
+                        it.pageCountState.value
+                    )
+                },
+                restore = {
+                    CarouselPagerState(
+                        currentPage = it[0] as Int,
+                        currentPageOffsetFraction = it[1] as Float,
+                        updatedPageCount = { it[2] as Int },
+                    )
+                }
+            )
+    }
 }
 
 /**

@@ -20,9 +20,10 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utilities related to the system {@link PackageManager}.

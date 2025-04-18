@@ -84,6 +84,7 @@ internal class UpdatableAnimationState(animationSpec: AnimationSpec<Float>) {
      *   the caller to update [value] based on any layout changes performed in [beforeFrame].
      */
     @OptIn(ExperimentalContracts::class)
+    @Suppress("LEAKED_IN_PLACE_LAMBDA")
     suspend fun animateToZero(
         beforeFrame: (valueDelta: Float) -> Unit,
         afterFrame: () -> Unit,

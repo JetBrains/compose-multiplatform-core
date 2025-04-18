@@ -1078,14 +1078,20 @@ public class ZoomView extends GestureTrackingView implements ZoomScrollRestorer 
     }
 
     /**
-     * Given a point in the content's co-ordinates, convert it to the zoom-view's co-ordinates,
-     * using the current zoom and scroll position of the zoomview.
+     * Given an X coordinate in content space, return the same X coordinate in this
+     * {@link ZoomView}'s coordinate space, accounting for the current {@link #getScrollX()} and
+     * {@link #getZoom()} properties.
      */
-    protected float toZoomViewX(float contentX) {
+    public float toZoomViewX(float contentX) {
         return ZoomUtils.toZoomViewCoordinate(contentX, getZoom(), getScrollX());
     }
 
-    protected float toZoomViewY(float contentY) {
+    /**
+     * Given a Y coordinate in content space, return the same Y coordinate in this
+     * {@link ZoomView}'s coordinate space, accounting for the current {@link #getScrollY()} and
+     * {@link #getZoom()} properties.
+     */
+    public float toZoomViewY(float contentY) {
         return ZoomUtils.toZoomViewCoordinate(contentY, getZoom(), getScrollY());
     }
 

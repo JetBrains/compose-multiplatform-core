@@ -24,8 +24,9 @@ import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -96,8 +97,7 @@ public class RemoteCallback {
     /**
      * Gets the class the callback will be called on.
      */
-    @NonNull
-    public String getReceiverClass() {
+    public @NonNull String getReceiverClass() {
         return mReceiverClass;
     }
 
@@ -167,9 +167,8 @@ public class RemoteCallback {
             throw new UnsupportedOperationException("RemoteCallback.LOCAL cannot be used");
         }
 
-        @NonNull
         @Override
-        public String getReceiverClass() {
+        public @NonNull String getReceiverClass() {
             throw new UnsupportedOperationException("RemoteCallback.LOCAL cannot be used");
         }
 

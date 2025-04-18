@@ -37,6 +37,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.scale
@@ -53,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SmallTest
+import com.google.common.truth.Truth.assertThat
 import junit.framework.TestCase.assertFalse
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -244,6 +247,247 @@ class RectListIntegrationTest {
         }
 
         rule.runOnIdle { assertFalse(nodeId in rectList) }
+    }
+
+    @Test
+    @SmallTest
+    fun removesLayoutNodeWithInputModifier_forEachGesturableIntersectionReflectsOnlyInputInUI() {
+        var toggle by mutableStateOf(true)
+
+        rule.setContent {
+            Box(Modifier.size(20.dp)) {
+                if (toggle) {
+                    Box(
+                        Modifier.testTag("inputTag").size(10.dp).pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent()
+                                    event.changes.forEach { it.consume() }
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
+        val node = rule.onNodeWithTag("inputTag")
+
+        node.assertRectDp(0.dp, 0.dp, 10.dp, 10.dp)
+
+        val semanticsNode = node.fetchSemanticsNode()
+        val owner = semanticsNode.layoutNode.owner as? AndroidComposeView
+        val rectList = owner?.rectManager?.rects ?: error("Could not find rect list")
+
+        val nodeId = semanticsNode.id
+
+        rule.runOnIdle {
+            assertTrue(nodeId in rectList)
+
+            var idFound = false
+            var count = 0
+            rectList.forEachGesturableIntersection(l = 0, r = 5, t = 0, b = 5) { id ->
+                count++
+                if (id == nodeId) {
+                    idFound = true
+                }
+            }
+            assertTrue(idFound)
+            assertThat(count).isEqualTo(1)
+
+            // Remove LayoutNode with a pointer input
+            toggle = false
+        }
+
+        rule.runOnIdle {
+            assertFalse(nodeId in rectList)
+            var idFound = false
+            var count = 0
+            rectList.forEachGesturableIntersection(l = 0, r = 5, t = 0, b = 5) { id ->
+                count++
+                if (id == nodeId) {
+                    idFound = true
+                }
+            }
+            assertFalse(idFound)
+            assertThat(count).isEqualTo(0)
+        }
+    }
+
+    @Test
+    @SmallTest
+    fun addsLayoutNodeWithInputModifier_forEachGesturableIntersectionReflectsOnlyInputInUI() {
+        var toggle by mutableStateOf(false)
+
+        rule.setContent {
+            Box(Modifier.testTag("parentTag").size(20.dp)) {
+                if (toggle) {
+                    Box(
+                        Modifier.testTag("inputTag").size(10.dp).pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent()
+                                    event.changes.forEach { it.consume() }
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
+        val parentNode = rule.onNodeWithTag("parentTag")
+
+        parentNode.assertRectDp(0.dp, 0.dp, 20.dp, 20.dp)
+
+        val semanticsParentNode = parentNode.fetchSemanticsNode()
+        val ownerParentNode = semanticsParentNode.layoutNode.owner as? AndroidComposeView
+        val rectListParentNode =
+            ownerParentNode?.rectManager?.rects ?: error("Could not find input node's rect list")
+
+        val parentNodeId = semanticsParentNode.id
+
+        rule.runOnIdle {
+            assertTrue(parentNodeId in rectListParentNode)
+
+            var idFound = false
+            var count = 0
+            rectListParentNode.forEachGesturableIntersection(l = 0, r = 5, t = 0, b = 5) { id ->
+                count++
+                if (id == parentNodeId) {
+                    idFound = true
+                }
+            }
+            assertFalse(idFound)
+            assertThat(count).isEqualTo(0)
+
+            // Add pointer input to existing LayoutNode
+            toggle = true
+        }
+
+        rule.waitForIdle()
+
+        val inputNode = rule.onNodeWithTag("inputTag")
+        inputNode.assertRectDp(0.dp, 0.dp, 10.dp, 10.dp)
+
+        val semanticsInputNode = inputNode.fetchSemanticsNode()
+        val ownerInputNode = semanticsInputNode.layoutNode.owner as? AndroidComposeView
+        val rectListInputNode =
+            ownerInputNode?.rectManager?.rects ?: error("Could not find input node's rect list")
+
+        val inputNodeId = semanticsInputNode.id
+
+        rule.runOnIdle {
+            assertTrue(parentNodeId in rectListParentNode)
+            assertTrue(inputNodeId in rectListInputNode)
+
+            var idFound = false
+            var count = 0
+            rectListInputNode.forEachGesturableIntersection(l = 0, r = 5, t = 0, b = 5) { id ->
+                count++
+                if (id == inputNodeId) {
+                    idFound = true
+                }
+            }
+            assertTrue(idFound)
+            assertThat(count).isEqualTo(1)
+
+            // Remove pointer input modifier from LayoutNode
+            toggle = false
+        }
+
+        rule.runOnIdle {
+            assertTrue(parentNodeId in rectListParentNode)
+            assertFalse(inputNodeId in rectListInputNode)
+
+            var idFound = false
+            var count = 0
+            rectListInputNode.forEachGesturableIntersection(l = 0, r = 5, t = 0, b = 5) { id ->
+                count++
+                if (id == inputNodeId) {
+                    idFound = true
+                }
+            }
+            assertFalse(idFound)
+            assertThat(count).isEqualTo(0)
+        }
+    }
+
+    @Test
+    @SmallTest
+    fun removesAndAddsInputModifierNode_forEachGesturableIntersectionReflectsOnlyInputInUI() {
+        var activateDynamicPointerInput by mutableStateOf(true)
+
+        rule.setContent {
+            Box(
+                Modifier.testTag("inputTag")
+                    .size(10.dp)
+                    .dynamicPointerInputModifier(
+                        enabled = activateDynamicPointerInput,
+                        key = "unique_key_123",
+                        onPress = {}
+                    )
+            )
+        }
+
+        val node = rule.onNodeWithTag("inputTag")
+
+        node.assertRectDp(0.dp, 0.dp, 10.dp, 10.dp)
+
+        val semanticsNode = node.fetchSemanticsNode()
+        val owner = semanticsNode.layoutNode.owner as? AndroidComposeView
+        val rectList = owner?.rectManager?.rects ?: error("Could not find rect list")
+
+        val nodeId = semanticsNode.id
+
+        rule.runOnIdle {
+            assertTrue(nodeId in rectList)
+
+            var idFound = false
+            var count = 0
+            rectList.forEachGesturableIntersection(l = 0, r = 5, t = 0, b = 5) { id ->
+                count++
+                if (id == nodeId) {
+                    idFound = true
+                }
+            }
+            assertTrue(idFound)
+            assertThat(count).isEqualTo(1)
+
+            // Remove pointer input Modifier.Node (NOT the LayoutNode)
+            activateDynamicPointerInput = false
+        }
+
+        rule.runOnIdle {
+            assertTrue(nodeId in rectList)
+            var idFound = false
+            var count = 0
+            rectList.forEachGesturableIntersection(l = 0, r = 5, t = 0, b = 5) { id ->
+                count++
+                if (id == nodeId) {
+                    idFound = true
+                }
+            }
+            assertFalse(idFound)
+            assertThat(count).isEqualTo(0)
+        }
+
+        rule.runOnIdle { activateDynamicPointerInput = true }
+
+        rule.runOnIdle {
+            assertTrue(nodeId in rectList)
+
+            var idFound = false
+            var count = 0
+            rectList.forEachGesturableIntersection(l = 0, r = 5, t = 0, b = 5) { id ->
+                count++
+                if (id == nodeId) {
+                    idFound = true
+                }
+            }
+            assertTrue(idFound)
+            assertThat(count).isEqualTo(1)
+        }
     }
 
     @Test
@@ -483,5 +727,43 @@ class RectListIntegrationTest {
         val upper = ceil((dp.value + 1f) * density).toInt()
         return px in lower..upper
     }
+
     // TODO: assert on number of times insert/update/move called
+
+    // Helper functions for next several tests
+    private fun Modifier.dynamicPointerInputModifier(
+        enabled: Boolean,
+        key: Any? = Unit,
+        onEnter: () -> Unit = {},
+        onMove: () -> Unit = {},
+        onPress: () -> Unit = {},
+        onRelease: () -> Unit = {},
+        onExit: () -> Unit = {},
+    ) =
+        if (enabled) {
+            pointerInput(key) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        when (event.type) {
+                            PointerEventType.Enter -> {
+                                onEnter()
+                            }
+                            PointerEventType.Press -> {
+                                onPress()
+                            }
+                            PointerEventType.Move -> {
+                                onMove()
+                            }
+                            PointerEventType.Release -> {
+                                onRelease()
+                            }
+                            PointerEventType.Exit -> {
+                                onExit()
+                            }
+                        }
+                    }
+                }
+            }
+        } else this
 }

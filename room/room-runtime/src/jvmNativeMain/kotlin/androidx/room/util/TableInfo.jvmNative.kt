@@ -19,6 +19,7 @@ import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.room.ColumnInfo.SQLiteTypeAffinity
 import androidx.sqlite.SQLiteConnection
+import kotlin.jvm.JvmStatic
 
 /**
  * A data class that holds the information about a table.
@@ -29,7 +30,7 @@ import androidx.sqlite.SQLiteConnection
  *
  * Even though SQLite column names are case insensitive, this class uses case sensitive matching.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 actual class TableInfo
 actual constructor(
     /** The table name. */
@@ -72,13 +73,14 @@ actual constructor(
          * @param tableName The table name.
          * @return A TableInfo containing the schema information for the provided table name.
          */
+        @JvmStatic
         actual fun read(connection: SQLiteConnection, tableName: String): TableInfo {
             return readTableInfo(connection, tableName)
         }
     }
 
     /** Holds the information about a database column. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
     actual class Column
     actual constructor(
         /** The column name. */
@@ -115,7 +117,7 @@ actual constructor(
     }
 
     /** Holds the information about an SQLite foreign key */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
     actual class ForeignKey
     actual constructor(
         actual val referenceTable: String,
@@ -132,7 +134,7 @@ actual constructor(
     }
 
     /** Holds the information about an SQLite index */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
     actual class Index
     actual constructor(
         actual val name: String,

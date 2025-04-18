@@ -33,10 +33,13 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.Uri;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.browser.customtabs.CustomTabsIntent;
+import androidx.browser.customtabs.TestUtil;
+import androidx.core.content.IntentCompat;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -165,5 +168,58 @@ public class AuthTabIntentTest {
                 .build()
                 .intent;
         assertTrue(intent.getBooleanExtra(CustomTabsIntent.EXTRA_ENABLE_EPHEMERAL_BROWSING, false));
+    }
+
+    @Test
+    public void testPutsNullSessionExtra_WhenBuiltWithDefaultConstructor() {
+        Intent intent = new AuthTabIntent.Builder().build().intent;
+        assertNullSessionInExtras(intent);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testPutsSessionBinderAndId_IfSuppliedInConstructor() {
+        AuthTabSession session = TestUtil.makeMockAuthTabSession();
+        Intent intent = new AuthTabIntent.Builder().setSession(session).build().intent;
+        assertEquals(session.getBinder(),
+                intent.getExtras().getBinder(CustomTabsIntent.EXTRA_SESSION));
+        assertEquals(session.getId(), intent.getParcelableExtra(CustomTabsIntent.EXTRA_SESSION_ID));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testPutsSessionBinderAndId_IfSuppliedInSetter() {
+        AuthTabSession session = TestUtil.makeMockAuthTabSession();
+        AuthTabIntent authTabIntent = new AuthTabIntent.Builder().setSession(session).build();
+        assertEquals(session, authTabIntent.getSession());
+        assertEquals(session.getBinder(),
+                authTabIntent.intent.getExtras().getBinder(CustomTabsIntent.EXTRA_SESSION));
+        assertEquals(session.getId(),
+                authTabIntent.intent.getParcelableExtra(CustomTabsIntent.EXTRA_SESSION_ID));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testPutsPendingSessionId() {
+        AuthTabSession.PendingSession pendingSession = TestUtil.makeMockPendingAuthTabSession();
+        AuthTabIntent authTabIntent = new AuthTabIntent.Builder().setPendingSession(
+                pendingSession).build();
+        assertEquals(pendingSession, authTabIntent.getPendingSession());
+        assertEquals(pendingSession.getId(),
+                authTabIntent.intent.getParcelableExtra(CustomTabsIntent.EXTRA_SESSION_ID));
+    }
+
+    @Test
+    public void testPutsCloseButtonIcon() {
+        Bitmap bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
+        Intent intent = new AuthTabIntent.Builder().setCloseButtonIcon(bitmap).build().intent;
+        assertEquals(bitmap,
+                IntentCompat.getParcelableExtra(intent, CustomTabsIntent.EXTRA_CLOSE_BUTTON_ICON,
+                        Bitmap.class));
+    }
+
+    private void assertNullSessionInExtras(Intent intent) {
+        assertTrue(intent.hasExtra(CustomTabsIntent.EXTRA_SESSION));
+        assertNull(intent.getExtras().getBinder(CustomTabsIntent.EXTRA_SESSION));
     }
 }

@@ -122,6 +122,12 @@ public abstract class Box internal constructor() {
         )
 
     /**
+     * Returns an immutable copy of this object. This will return itself if called on an immutable
+     * instance.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public abstract fun asImmutable(): ImmutableBox
+
+    /**
      * Compares this [Box] with [other], and returns true if the difference between [xMin] and
      * [other.xMin] is less than [tolerance], and likewise for [xMax], [yMin], and [yMax].
      */

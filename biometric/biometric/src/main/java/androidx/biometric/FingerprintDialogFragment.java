@@ -36,14 +36,15 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.lifecycle.Observer;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -132,22 +133,20 @@ public class FingerprintDialogFragment extends DialogFragment {
     /**
      * An icon shown on the dialog during authentication.
      */
-    @Nullable private ImageView mFingerprintIcon;
+    private @Nullable ImageView mFingerprintIcon;
 
     /**
      * Help text shown below the fingerprint icon on the dialog.
      */
     @SuppressWarnings("WeakerAccess") /* synthetic access */
-    @Nullable
-    TextView mHelpMessageView;
+    @Nullable TextView mHelpMessageView;
 
     /**
      * Creates a new instance of {@link FingerprintDialogFragment}.
      *
      * @return A {@link FingerprintDialogFragment}.
      */
-    @NonNull
-    static FingerprintDialogFragment newInstance(boolean hostedInActivity) {
+    static @NonNull FingerprintDialogFragment newInstance(boolean hostedInActivity) {
         final FingerprintDialogFragment fragment = new FingerprintDialogFragment();
         final Bundle args = new Bundle();
         args.putBoolean(ARG_HOST_ACTIVITY, hostedInActivity);
@@ -176,8 +175,7 @@ public class FingerprintDialogFragment extends DialogFragment {
     }
 
     @Override
-    @NonNull
-    public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+    public @NonNull Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
         final AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         builder.setTitle(mViewModel.getTitle());
 

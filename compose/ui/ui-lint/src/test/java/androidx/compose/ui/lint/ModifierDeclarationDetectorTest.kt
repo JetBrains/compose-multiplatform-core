@@ -961,4 +961,50 @@ src/androidx/compose/ui/foo/TestModifier.kt:29: Error: Modifier factory function
 """
             )
     }
+
+    // Test for b/404027596
+    @Test
+    fun nullableReceivers() {
+        lint()
+            .files(
+                kotlin(
+                    """
+                package androidx.compose.ui.foo
+
+                import androidx.compose.ui.Modifier
+                import androidx.compose.ui.composed
+
+                object TestModifier : Modifier.Element
+
+                class NonModifierReceiver
+
+                fun Modifier?.fooModifier(): Modifier {
+                    return this?.then(TestModifier) ?: TestModifier
+                }
+
+                fun Modifier?.fooModifierUnreferencedReceiver(): Modifier {
+                    return TestModifier
+                }
+
+                fun NonModifierReceiver?.barModifier() : Modifier {
+                    return TestModifier
+                }
+            """
+                ),
+                Stubs.Modifier,
+                UiStubs.composed,
+            )
+            .run()
+            .expect(
+                """
+src/androidx/compose/ui/foo/TestModifier.kt:19: Warning: Modifier factory functions should be extensions on Modifier [ModifierFactoryExtensionFunction]
+                fun NonModifierReceiver?.barModifier() : Modifier {
+                                         ~~~~~~~~~~~
+src/androidx/compose/ui/foo/TestModifier.kt:15: Error: Modifier factory functions must use the receiver Modifier instance [ModifierFactoryUnreferencedReceiver]
+                fun Modifier?.fooModifierUnreferencedReceiver(): Modifier {
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 errors, 1 warnings
+"""
+            )
+    }
 }

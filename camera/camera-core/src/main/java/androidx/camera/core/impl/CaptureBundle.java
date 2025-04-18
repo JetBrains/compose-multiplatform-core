@@ -16,7 +16,7 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -27,6 +27,5 @@ public interface CaptureBundle {
     /**
      * Returns a list of {@link CaptureStage} in order of how they are to be issued.
      */
-    @Nullable
-    List<CaptureStage> getCaptureStages();
+    @Nullable List<CaptureStage> getCaptureStages();
 }

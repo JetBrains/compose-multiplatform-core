@@ -81,6 +81,7 @@ fun ReceiveContentFullSample() {
     var hovering by remember { mutableStateOf(false) }
     Column {
         Row { images.forEach { Image(bitmap = it, contentDescription = null) } }
+        // Note that only TextFieldState override of the text field supports contentReceiver
         BasicTextField(
             state = state,
             modifier =

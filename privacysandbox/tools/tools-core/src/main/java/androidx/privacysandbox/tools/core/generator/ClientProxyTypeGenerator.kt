@@ -22,15 +22,14 @@ import androidx.privacysandbox.tools.core.generator.SpecNames.contextClass
 import androidx.privacysandbox.tools.core.generator.SpecNames.contextPropertyName
 import androidx.privacysandbox.tools.core.generator.SpecNames.resumeWithExceptionMethod
 import androidx.privacysandbox.tools.core.generator.SpecNames.suspendCancellableCoroutineMethod
+import androidx.privacysandbox.tools.core.generator.SpecNames.uiCoreLibInfoPropertyName
 import androidx.privacysandbox.tools.core.model.AnnotatedInterface
 import androidx.privacysandbox.tools.core.model.Method
-import androidx.privacysandbox.tools.core.model.Types
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.joinToCode
@@ -40,9 +39,6 @@ class ClientProxyTypeGenerator(
     private val binderCodeConverter: BinderCodeConverter
 ) {
     private val cancellationSignalClassName = ClassName(basePackageName, "ICancellationSignal")
-    private val sandboxedUiAdapterPropertyName = "sandboxedUiAdapter"
-    private val sandboxedUiAdapterFactoryClass =
-        ClassName("androidx.privacysandbox.ui.client", "SandboxedUiAdapterFactory")
 
     /**
      * Generates a ClientProxy for this interface.
@@ -55,7 +51,6 @@ class ClientProxyTypeGenerator(
     fun generate(annotatedInterface: AnnotatedInterface, target: GenerationTarget): FileSpec {
         val className = annotatedInterface.clientProxyNameSpec().simpleName
         val remoteBinderClassName = annotatedInterface.aidlType().innerType.poetTypeName()
-        val inheritsUiAdapter = annotatedInterface.superTypes.contains(Types.sandboxedUiAdapter)
 
         val classSpec =
             TypeSpec.classBuilder(className).build {
@@ -75,33 +70,37 @@ class ClientProxyTypeGenerator(
                                     .build()
                             )
                         }
-                        if (inheritsUiAdapter)
+                        if (annotatedInterface.inheritsUiAdapter) {
                             add(
-                                PropertySpec.builder("coreLibInfo", SpecNames.bundleClass)
+                                PropertySpec.builder(
+                                        uiCoreLibInfoPropertyName,
+                                        SpecNames.bundleClass
+                                    )
                                     .addModifiers(KModifier.PUBLIC)
                                     .build()
                             )
+                        }
                     }
                 )
 
                 addFunctions(annotatedInterface.methods.map(::toFunSpec))
 
-                if (inheritsUiAdapter) {
+                if (annotatedInterface.inheritsUiAdapter) {
+                    val uiAdapterSpec = getUiAdapterSpecForInterface(annotatedInterface)
                     addProperty(
                         PropertySpec.builder(
-                                sandboxedUiAdapterPropertyName,
-                                Types.sandboxedUiAdapter.poetTypeName()
+                                uiAdapterSpec.adapterPropertyName,
+                                uiAdapterSpec.type.poetTypeName()
                             )
                             .addModifiers(KModifier.PUBLIC)
                             .initializer(
-                                "%T.createFromCoreLibInfo(coreLibInfo)",
-                                sandboxedUiAdapterFactoryClass
+                                "%T.createFromCoreLibInfo(%L)",
+                                uiAdapterSpec.adapterFactoryClass,
+                                uiCoreLibInfoPropertyName
                             )
                             .build()
                     )
-                    addFunction(generateOpenSession())
-                    addFunction(generateAddObserverFactory())
-                    addFunction(generateRemoveObserverFactory())
+                    addFunction(uiAdapterSpec.openSessionSpec)
                 }
             }
 
@@ -144,65 +143,6 @@ class ClientProxyTypeGenerator(
             addParameters(method.parameters.map { it.poetSpec() })
 
             addCode(generateRemoteCall(method))
-        }
-
-    private fun generateOpenSession() =
-        FunSpec.builder("openSession").build {
-            addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
-            addParameters(
-                listOf(
-                    ParameterSpec(contextPropertyName, contextClass),
-                    ParameterSpec("windowInputToken", ClassName("android.os", "IBinder")),
-                    ParameterSpec("initialWidth", Types.int.poetClassName()),
-                    ParameterSpec("initialHeight", Types.int.poetClassName()),
-                    ParameterSpec("isZOrderOnTop", Types.boolean.poetClassName()),
-                    ParameterSpec("clientExecutor", ClassName("java.util.concurrent", "Executor")),
-                    ParameterSpec(
-                        "client",
-                        ClassName(
-                            "androidx.privacysandbox.ui.core",
-                            "SandboxedUiAdapter.SessionClient"
-                        )
-                    ),
-                )
-            )
-            addStatement(
-                "$sandboxedUiAdapterPropertyName.openSession(%N, windowInputToken, initialWidth, " +
-                    "initialHeight, isZOrderOnTop, clientExecutor, client)",
-                contextPropertyName,
-            )
-        }
-
-    private fun generateAddObserverFactory() =
-        FunSpec.builder("addObserverFactory").build {
-            addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
-            addParameters(
-                listOf(
-                    ParameterSpec(
-                        "sessionObserverFactory",
-                        ClassName("androidx.privacysandbox.ui.core", "SessionObserverFactory")
-                    )
-                )
-            )
-            addStatement(
-                "$sandboxedUiAdapterPropertyName.addObserverFactory(" + "sessionObserverFactory)"
-            )
-        }
-
-    private fun generateRemoveObserverFactory() =
-        FunSpec.builder("removeObserverFactory").build {
-            addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
-            addParameters(
-                listOf(
-                    ParameterSpec(
-                        "sessionObserverFactory",
-                        ClassName("androidx.privacysandbox.ui.core", "SessionObserverFactory")
-                    )
-                )
-            )
-            addStatement(
-                "$sandboxedUiAdapterPropertyName.removeObserverFactory(" + "sessionObserverFactory)"
-            )
         }
 
     private fun generateTransactionCallbackObject(method: Method) =

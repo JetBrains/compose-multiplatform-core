@@ -30,11 +30,17 @@ class FoundationIssueRegistry : IssueRegistry() {
     override val issues
         get() =
             listOf(
-                LazyLayoutStateReadInCompositionDetector.FrequentlyChangedStateReadInComposition,
-                UnrememberedMutableInteractionSourceDetector.UnrememberedMutableInteractionSource,
                 NonLambdaOffsetModifierDetector.UseOfNonLambdaOverload,
                 BoxWithConstraintsDetector.UnusedConstraintsParameter
             )
+
+    override val deletedIssues =
+        listOf(
+            // Now handled by RememberInComposition
+            "UnrememberedMutableInteractionSource",
+            // Now handled by FrequentlyChangingValue
+            "FrequentlyChangedStateReadInComposition"
+        )
 
     override val vendor =
         Vendor(

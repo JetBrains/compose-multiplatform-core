@@ -19,10 +19,10 @@ package androidx.compose.foundation.text.input.internal.undo
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.internal.selection.FakeClipboardManager
+import androidx.compose.foundation.text.input.internal.selection.FakeClipboard
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -263,12 +263,10 @@ internal class BasicTextFieldUndoTest {
     @Test
     fun paste_neverMerges() {
         val state = TextFieldState()
-        val clipboardManager = FakeClipboardManager("ghi")
+        val clipboard = FakeClipboard("ghi")
 
         rule.setContent {
-            CompositionLocalProvider(LocalClipboardManager provides clipboardManager) {
-                BasicTextField(state)
-            }
+            CompositionLocalProvider(LocalClipboard provides clipboard) { BasicTextField(state) }
         }
 
         with(rule.onNode(hasSetTextAction())) {

@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,7 +29,8 @@ plugins {
 }
 
 dependencies {
-    implementation project(":appsearch:appsearch")
+    api(libs.jspecify)
+    implementation(project(":appsearch:appsearch"))
     implementation("androidx.core:core:1.12.0")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
     implementation("androidx.collection:collection:1.4.2")
@@ -46,7 +47,7 @@ dependencies {
 
 androidx {
     name = "AppSearch Play Services Storage"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2023"
     description =
             "An implementation of AppSearchSession and GlobalSearchSession on pre-S devices using " +
@@ -54,7 +55,7 @@ androidx {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
     namespace = "androidx.appsearch.playservicesstorage"
      defaultConfig {
     }

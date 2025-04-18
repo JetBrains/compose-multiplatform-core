@@ -36,13 +36,14 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
-import androidx.wear.compose.material3.Confirmation
-import androidx.wear.compose.material3.ConfirmationDefaults
-import androidx.wear.compose.material3.FailureConfirmation
+import androidx.wear.compose.material3.ConfirmationDialog
+import androidx.wear.compose.material3.ConfirmationDialogDefaults
+import androidx.wear.compose.material3.FailureConfirmationDialog
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
-import androidx.wear.compose.material3.SuccessConfirmation
+import androidx.wear.compose.material3.SuccessConfirmationDialog
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.confirmationDialogCurvedText
 import androidx.wear.compose.material3.macrobenchmark.common.FIND_OBJECT_TIMEOUT_MS
 import androidx.wear.compose.material3.macrobenchmark.common.MacrobenchmarkScreen
 import androidx.wear.compose.material3.macrobenchmark.common.R
@@ -108,24 +109,25 @@ private fun ButtonsForSubmenu(
 
 @Composable
 private fun Confirmation(showConfirmation: MutableState<Boolean>) {
-    Confirmation(
-        show = showConfirmation.value,
+    val style = ConfirmationDialogDefaults.curvedTextStyle
+    ConfirmationDialog(
+        visible = showConfirmation.value,
         onDismissRequest = { showConfirmation.value = false },
-        curvedText = ConfirmationDefaults.curvedText("Confirmed"),
+        curvedText = { confirmationDialogCurvedText("Confirmed", style) },
         durationMillis = DurationMillis
     ) {
         Icon(
             painterResource(R.drawable.ic_favorite_rounded),
             contentDescription = null,
-            modifier = Modifier.size(ConfirmationDefaults.IconSize),
+            modifier = Modifier.size(ConfirmationDialogDefaults.IconSize),
         )
     }
 }
 
 @Composable
 fun LongTextConfirmation(showConfirmation: MutableState<Boolean>) {
-    Confirmation(
-        show = showConfirmation.value,
+    ConfirmationDialog(
+        visible = showConfirmation.value,
         onDismissRequest = { showConfirmation.value = false },
         text = { Text(text = "Your message has been sent") },
         durationMillis = DurationMillis
@@ -133,15 +135,18 @@ fun LongTextConfirmation(showConfirmation: MutableState<Boolean>) {
         Icon(
             painterResource(R.drawable.ic_favorite_rounded),
             contentDescription = null,
-            modifier = Modifier.size(ConfirmationDefaults.SmallIconSize),
+            modifier = Modifier.size(ConfirmationDialogDefaults.SmallIconSize),
         )
     }
 }
 
 @Composable
 fun SuccessConfirmation(showConfirmation: MutableState<Boolean>) {
-    SuccessConfirmation(
-        show = showConfirmation.value,
+    val text = "Success"
+    val style = ConfirmationDialogDefaults.curvedTextStyle
+    SuccessConfirmationDialog(
+        curvedText = { confirmationDialogCurvedText(text, style) },
+        visible = showConfirmation.value,
         onDismissRequest = { showConfirmation.value = false },
         durationMillis = DurationMillis
     )
@@ -149,8 +154,11 @@ fun SuccessConfirmation(showConfirmation: MutableState<Boolean>) {
 
 @Composable
 fun FailureConfirmation(showConfirmation: MutableState<Boolean>) {
-    FailureConfirmation(
-        show = showConfirmation.value,
+    val text = "Failure"
+    val style = ConfirmationDialogDefaults.curvedTextStyle
+    FailureConfirmationDialog(
+        curvedText = { confirmationDialogCurvedText(text, style) },
+        visible = showConfirmation.value,
         onDismissRequest = { showConfirmation.value = false },
         durationMillis = DurationMillis
     )

@@ -26,10 +26,11 @@ import android.graphics.Rect;
 import android.hardware.HardwareBuffer;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link Bitmap}.
@@ -128,8 +129,7 @@ public final class BitmapCompat {
      *                           level 26 and earlier, this parameter has no effect).
      * @return A new bitmap in the requested size.
      */
-    public static @NonNull
-    Bitmap createScaledBitmap(@NonNull Bitmap srcBm, int dstW,
+    public static     @NonNull Bitmap createScaledBitmap(@NonNull Bitmap srcBm, int dstW,
             int dstH, @Nullable Rect srcRect, boolean scaleInLinearSpace) {
         if (dstW <= 0 || dstH <= 0) {
             throw new IllegalArgumentException("dstW and dstH must be > 0!");

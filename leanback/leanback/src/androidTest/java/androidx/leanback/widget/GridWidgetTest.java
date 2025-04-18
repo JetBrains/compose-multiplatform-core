@@ -49,8 +49,6 @@ import android.view.ViewGroup;
 import android.view.animation.Interpolator;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.leanback.test.R;
 import androidx.leanback.testutils.PollingCheck;
@@ -65,6 +63,8 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.testutils.AnimationActivityTestRule;
 import androidx.testutils.AnimationTest;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Rule;

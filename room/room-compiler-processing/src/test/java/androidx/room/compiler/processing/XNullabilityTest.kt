@@ -412,6 +412,69 @@ class XNullabilityTest {
         }
     }
 
+    @Test
+    fun nullability_from_jspecify() {
+        val src =
+            Source.java(
+                "foo.bar.Foo",
+                """
+                    package foo.bar;
+                    import org.jspecify.annotations.NonNull;
+                    import org.jspecify.annotations.Nullable;
+                    class Foo {
+                        public @NonNull String nonNullField = "";
+                        public @NonNull String returnsNonNull() {
+                            return "";
+                        }
+                        public String @Nullable [] returnsNullableArray() {
+                            return null;
+                        }
+                        public void hasNullableParam(@Nullable String param) {}
+                    }
+                """
+                    .trimIndent()
+            )
+        val nonNullSrc =
+            Source.java(
+                "NonNull",
+                """
+                    package org.jspecify.annotations;
+                    import java.lang.annotation.ElementType;
+                    import java.lang.annotation.Target;
+                    @Target(ElementType.TYPE_USE)
+                    public @interface NonNull {}
+                """
+                    .trimIndent()
+            )
+        val nullableSrc =
+            Source.java(
+                "Nullable",
+                """
+                    package org.jspecify.annotations;
+                    import java.lang.annotation.ElementType;
+                    import java.lang.annotation.Target;
+                    @Target(ElementType.TYPE_USE)
+                    public @interface Nullable {}
+                """
+                    .trimIndent()
+            )
+        runProcessorTestWithoutKsp(sources = listOf(src, nonNullSrc, nullableSrc)) { invocation ->
+            val element = invocation.processingEnv.requireTypeElement("foo.bar.Foo")
+            element.getField("nonNullField").let { field ->
+                assertThat(field.type.nullability).isEqualTo(NONNULL)
+            }
+            element.getMethodByJvmName("returnsNonNull").let { method ->
+                assertThat(method.returnType.nullability).isEqualTo(NONNULL)
+            }
+            element.getMethodByJvmName("returnsNullableArray").let { method ->
+                assertThat(method.returnType.nullability).isEqualTo(NULLABLE)
+            }
+            element.getMethodByJvmName("hasNullableParam").getParameter("param").let { param ->
+                assertThat(param.type.nullability).isEqualTo(NULLABLE)
+            }
+        }
+    }
+
     companion object {
         val PRIMITIVE_JTYPE_NAMES =
             listOf(

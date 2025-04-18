@@ -22,8 +22,9 @@ import android.media.Image;
 import android.util.LongSparseArray;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;

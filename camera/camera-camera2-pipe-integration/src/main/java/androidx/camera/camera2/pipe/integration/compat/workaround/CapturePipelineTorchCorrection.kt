@@ -28,6 +28,7 @@ import androidx.camera.camera2.pipe.integration.impl.CameraProperties
 import androidx.camera.camera2.pipe.integration.impl.CapturePipeline
 import androidx.camera.camera2.pipe.integration.impl.CapturePipelineImpl
 import androidx.camera.camera2.pipe.integration.impl.TorchControl
+import androidx.camera.camera2.pipe.integration.impl.TorchControl.TorchMode
 import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.TorchState
@@ -82,8 +83,8 @@ constructor(
             threads.sequentialScope.launch {
                 deferredResults.joinAll()
                 Log.debug { "Re-enable Torch to correct the Torch state" }
-                torchControl.setTorchAsync(torch = false).join()
-                torchControl.setTorchAsync(torch = true).join()
+                torchControl.setTorchAsync(TorchMode.OFF).join()
+                torchControl.setTorchAsync(TorchMode.USED_AS_FLASH).join()
                 Log.debug { "Re-enable Torch to correct the Torch state, done" }
             }
         }

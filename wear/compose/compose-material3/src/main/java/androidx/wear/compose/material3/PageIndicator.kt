@@ -16,30 +16,16 @@
 
 package androidx.wear.compose.material3
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -67,8 +53,6 @@ import androidx.wear.compose.foundation.size
 import androidx.wear.compose.foundation.weight
 import androidx.wear.compose.material3.tokens.ColorSchemeKeyTokens
 import androidx.wear.compose.materialcore.BoundsLimiter
-import androidx.wear.compose.materialcore.isLayoutDirectionRtl
-import androidx.wear.compose.materialcore.isRoundDevice
 import kotlin.math.roundToInt
 
 /**
@@ -103,7 +87,7 @@ import kotlin.math.roundToInt
  * @param backgroundColor The color which will be used for an indicator background.
  */
 @Composable
-fun HorizontalPageIndicator(
+public fun HorizontalPageIndicator(
     pagerState: PagerState,
     modifier: Modifier = Modifier,
     selectedColor: Color = PageIndicatorDefaults.selectedColor,
@@ -111,7 +95,7 @@ fun HorizontalPageIndicator(
     backgroundColor: Color = PageIndicatorDefaults.backgroundColor,
 ) {
     PageIndicatorImpl(
-        pagerState = pagerState,
+        state = pagerState,
         selectedColor = selectedColor,
         unselectedColor = unselectedColor,
         backgroundColor = backgroundColor,
@@ -144,7 +128,7 @@ fun HorizontalPageIndicator(
  * @param backgroundColor The color which will be used for an indicator background.
  */
 @Composable
-fun VerticalPageIndicator(
+public fun VerticalPageIndicator(
     pagerState: PagerState,
     modifier: Modifier = Modifier,
     selectedColor: Color = PageIndicatorDefaults.selectedColor,
@@ -152,7 +136,7 @@ fun VerticalPageIndicator(
     backgroundColor: Color = PageIndicatorDefaults.backgroundColor,
 ) {
     PageIndicatorImpl(
-        pagerState = pagerState,
+        state = pagerState,
         selectedColor = selectedColor,
         unselectedColor = unselectedColor,
         backgroundColor = backgroundColor,
@@ -164,20 +148,20 @@ fun VerticalPageIndicator(
 }
 
 /** Contains the default values used by [HorizontalPageIndicator] and [VerticalPageIndicator] */
-object PageIndicatorDefaults {
+public object PageIndicatorDefaults {
 
     /**
      * The recommended color to use for the selected indicator item in [VerticalPageIndicator] and
      * [HorizontalPageIndicator].
      */
-    val selectedColor: Color
+    public val selectedColor: Color
         @ReadOnlyComposable @Composable get() = ColorSchemeKeyTokens.OnBackground.value
 
     /**
      * The recommended color to use for the unselected indicator item in [VerticalPageIndicator] and
      * [HorizontalPageIndicator].
      */
-    val unselectedColor: Color
+    public val unselectedColor: Color
         @ReadOnlyComposable
         @Composable
         get() = ColorSchemeKeyTokens.OnBackground.value.copy(alpha = 0.3f)
@@ -186,7 +170,7 @@ object PageIndicatorDefaults {
      * The recommended color to use for the background in [VerticalPageIndicator] and
      * [HorizontalPageIndicator].
      */
-    val backgroundColor: Color
+    public val backgroundColor: Color
         @ReadOnlyComposable
         @Composable
         get() = ColorSchemeKeyTokens.Background.value.copy(alpha = 0.85f)
@@ -194,7 +178,7 @@ object PageIndicatorDefaults {
 
 @Composable
 internal fun PageIndicatorImpl(
-    pagerState: PagerState,
+    state: PagerState,
     selectedColor: Color,
     unselectedColor: Color,
     backgroundColor: Color,
@@ -203,17 +187,15 @@ internal fun PageIndicatorImpl(
     spacing: Dp,
     isHorizontal: Boolean,
 ) {
-    val isScreenRound = isRoundDevice()
     val layoutDirection = LocalLayoutDirection.current
     val edgePadding = PaddingDefaults.edgePadding
 
     // Converting offsetFraction into range 0..1f
-    val currentPageOffsetWithFraction =
-        pagerState.currentPage + pagerState.currentPageOffsetFraction
+    val currentPageOffsetWithFraction = state.currentPage + state.currentPageOffsetFraction
 
     val isLastPage =
         currentPageOffsetWithFraction.equalsWithTolerance(
-            number = pagerState.pageCount - 1f,
+            number = state.pageCount - 1f,
             tolerance = 0.001f
         )
 
@@ -223,11 +205,11 @@ internal fun PageIndicatorImpl(
         else currentPageOffsetWithFraction.toInt()
     val offset = currentPageOffsetWithFraction - selectedPage
 
-    val pagesOnScreen = Integer.min(MaxNumberOfIndicators, pagerState.pageCount)
+    val pagesOnScreen = Integer.min(MaxNumberOfIndicators, state.pageCount)
     val pagesState =
-        remember(pagerState.pageCount) {
+        remember(state.pageCount) {
             PagesState(
-                totalPages = pagerState.pageCount,
+                totalPages = state.pageCount,
                 pagesOnScreen = pagesOnScreen,
                 smallIndicatorSizeFraction = smallIndicatorSizeFraction,
                 shrinkThresholdStart = calculateShrinkThresholdStart(spacing, indicatorSize),
@@ -241,277 +223,89 @@ internal fun PageIndicatorImpl(
 
     val spacerSize = indicatorSize + spacing
 
-    if (isScreenRound) {
-        var containerSize by remember { mutableStateOf(IntSize.Zero) }
+    var containerSize by remember { mutableStateOf(IntSize.Zero) }
 
-        val boundsSize: Density.() -> IntSize = {
-            val width = (spacerSize.toPx() * pagesOnScreen).roundToInt()
-            val height = (indicatorSize * 2).roundToPx().coerceAtLeast(0)
-            val size =
-                IntSize(
-                    width = if (isHorizontal) width else height,
-                    height = if (isHorizontal) height else width
-                )
-            size
-        }
-
-        val boundsOffset: Density.() -> IntOffset = {
-            val measuredSize = boundsSize()
-            if (isHorizontal) {
-                // Offset here is the distance between top left corner of the outer container to
-                // the top left corner of the indicator. Its placement should look similar to
-                // Alignment.BottomCenter.
-                IntOffset(
-                    x = (containerSize.width - measuredSize.width) / 2 - edgePadding.roundToPx(),
-                    y = containerSize.height - measuredSize.height - edgePadding.roundToPx() * 2,
-                )
-            } else {
-                // Offset here is the distance between top left corner of the outer container to
-                // the top left corner of the indicator. Its placement should look similar to
-                // Alignment.CenterEnd.
-                IntOffset(
-                    x =
-                        if (layoutDirection == LayoutDirection.Ltr) {
-                            containerSize.width - measuredSize.width - edgePadding.roundToPx() * 2
-                        } else edgePadding.roundToPx(),
-                    y = (containerSize.height - measuredSize.height) / 2 - edgePadding.roundToPx(),
-                )
-            }
-        }
-        // As we use an extra spacers to the start and end of horizontal indicator ( and higher and
-        // lower for vertical), we have to set their size in angular padding to compensate for that.
-        val angularPadding = -(spacing + indicatorSize)
-        BoundsLimiter(
-            offset = boundsOffset,
-            size = boundsSize,
-            modifier = modifier.padding(edgePadding),
-            onSizeChanged = { containerSize = it }
-        ) {
-            if (pagesState.totalPages == 1) {
-                SingleDotCurvedPageIndicator(
-                    isHorizontal = isHorizontal,
-                    indicatorSize = indicatorSize,
-                    layoutDirection = layoutDirection,
-                    selectedColor = selectedColor,
-                    backgroundColor = backgroundColor,
-                )
-            } else {
-                CurvedPageIndicator(
-                    visibleDotIndex = pagesState.visibleDotIndex,
-                    pagesOnScreen = pagesOnScreen,
-                    indicator = { page ->
-                        curvedIndicator(
-                            page = page,
-                            size = indicatorSize,
-                            unselectedColor = unselectedColor,
-                            pagesState = pagesState
-                        )
-                    },
-                    spacer = { spacerIndex ->
-                        curvedSpacer(spacerSize * pagesState.spacersSizeRatio[spacerIndex])
-                    },
-                    selectedIndicator = {
-                        curvedSelectedIndicator(
-                            indicatorSize = indicatorSize,
-                            spacing = spacing,
-                            selectedColor = selectedColor,
-                            progress = offset
-                        )
-                    },
-                    angularPadding = angularPadding,
-                    isHorizontal = isHorizontal,
-                    layoutDirection = layoutDirection,
-                    backgroundColor = backgroundColor
-                )
-            }
-        }
-    } else {
-        LinearPageIndicator(
-            modifier = modifier.padding(vertical = edgePadding),
-            visibleDotIndex = pagesState.visibleDotIndex,
-            pagesOnScreen = pagesOnScreen,
-            indicator = { page ->
-                LinearIndicator(
-                    page = page,
-                    pagesState = pagesState,
-                    unselectedColor = unselectedColor,
-                    indicatorSize = indicatorSize,
-                    spacing = spacing,
-                )
-            },
-            selectedIndicator = {
-                LinearSelectedIndicator(
-                    indicatorSize = indicatorSize,
-                    spacing = spacing,
-                    selectedColor = selectedColor,
-                    progress = offset
-                )
-            },
-            spacerStart = { LinearSpacer(spacerSize * pagesState.spacersSizeRatio.first()) },
-            spacerEnd = { LinearSpacer(spacerSize * pagesState.spacersSizeRatio.last()) },
-            isHorizontal = isHorizontal,
-            layoutDirection = layoutDirection,
-            background = {
-                Box(
-                    modifier =
-                        Modifier.align(Alignment.BottomCenter)
-                            .size(
-                                width =
-                                    (pagesOnScreen * indicatorSize.value +
-                                            (pagesOnScreen - 1) * spacing.value)
-                                        .dp + BackgroundRadius * 2,
-                                height = indicatorSize + BackgroundRadius * 2
-                            )
-                            .background(color = backgroundColor, shape = RoundedCornerShape(50.dp))
-                )
-            },
-        )
+    val boundsSize: Density.() -> IntSize = {
+        val width = (spacerSize.toPx() * pagesOnScreen).roundToInt()
+        val height = (indicatorSize * 2).roundToPx().coerceAtLeast(0)
+        val size =
+            IntSize(
+                width = if (isHorizontal) width else height,
+                height = if (isHorizontal) height else width
+            )
+        size
     }
-}
 
-// TODO(b/369535289) Fix a visual issue with linear indicator when there are more than 6 pages.
-@Composable
-private fun LinearPageIndicator(
-    modifier: Modifier,
-    visibleDotIndex: Int,
-    pagesOnScreen: Int,
-    indicator: @Composable (Int) -> Unit,
-    selectedIndicator: @Composable () -> Unit,
-    spacerStart: @Composable () -> Unit,
-    spacerEnd: @Composable () -> Unit,
-    isHorizontal: Boolean,
-    layoutDirection: LayoutDirection,
-    background: @Composable BoxScope.() -> Unit
-) {
-    val width = LocalConfiguration.current.screenWidthDp
-    val height = LocalConfiguration.current.screenHeightDp
-    Box(Modifier.fillMaxSize()) {
-        Box(
-            modifier =
-                modifier.let {
-                    if (isHorizontal) it.size(width = width.dp, height = height.dp)
-                    // Flip width and height so that the indicator will fit into rectangular screen,
-                    // rotate it -90 degrees, and flip it vertically
-                    else
-                        it.size(width = height.dp, height = width.dp)
-                            .align(Alignment.Center)
-                            .graphicsLayer {
-                                rotationZ =
-                                    if (layoutDirection == LayoutDirection.Ltr) -90f else 90f
-                                scaleX = -1f
-                                scaleY = 1f
-                            }
-                }
-        ) {
-            background()
-            Row(
-                modifier =
-                    Modifier.padding(bottom = BackgroundRadius).align(Alignment.BottomCenter),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.Bottom,
-            ) {
-                // drawing 1 extra spacer for transition
-                spacerStart()
-                for (page in 0 until visibleDotIndex) {
-                    indicator(page)
-                }
-                Box(contentAlignment = Alignment.Center) {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        indicator(visibleDotIndex)
-                        indicator(visibleDotIndex + 1)
-                    }
-                    Box { selectedIndicator() }
-                }
-                for (page in visibleDotIndex + 2..pagesOnScreen) {
-                    indicator(page)
-                }
-                spacerEnd()
-            }
+    val boundsOffset: Density.() -> IntOffset = {
+        val measuredSize = boundsSize()
+        if (isHorizontal) {
+            // Offset here is the distance between top left corner of the outer container to
+            // the top left corner of the indicator. Its placement should look similar to
+            // Alignment.BottomCenter.
+            IntOffset(
+                x = (containerSize.width - measuredSize.width) / 2 - edgePadding.roundToPx(),
+                y = containerSize.height - measuredSize.height - edgePadding.roundToPx() * 2,
+            )
+        } else {
+            // Offset here is the distance between top left corner of the outer container to
+            // the top left corner of the indicator. Its placement should look similar to
+            // Alignment.CenterEnd.
+            IntOffset(
+                x =
+                    if (layoutDirection == LayoutDirection.Ltr) {
+                        containerSize.width - measuredSize.width - edgePadding.roundToPx() * 2
+                    } else edgePadding.roundToPx(),
+                y = (containerSize.height - measuredSize.height) / 2 - edgePadding.roundToPx(),
+            )
         }
     }
-}
-
-@Composable
-private fun LinearSelectedIndicator(
-    indicatorSize: Dp,
-    spacing: Dp,
-    selectedColor: Color,
-    progress: Float
-) {
-    val horizontalPadding = spacing / 2
-    val isRtl = isLayoutDirectionRtl()
-    Spacer(
-        modifier =
-            Modifier.drawWithCache {
-                // Adding 2px to fully cover edges of non-selected indicators
-                val strokeWidth = indicatorSize.toPx() + 2
-                val startX = horizontalPadding.toPx() + strokeWidth / 2
-                val endX = this.size.width - horizontalPadding.toPx() - strokeWidth / 2
-                val drawWidth = endX - startX
-
-                val startSpacerWeight = (progress * 2 - 1).coerceAtLeast(0f)
-                val endSpacerWeight = (1 - progress * 2).coerceAtLeast(0f)
-
-                // Adding +1 or -1 for cases when start and end have the same coordinates -
-                // otherwise on APIs <= 26 line will not be drawn
-                val additionalPixel = if (isRtl) -1 else 1
-
-                val start =
-                    Offset(
-                        startX +
-                            drawWidth * (if (isRtl) startSpacerWeight else endSpacerWeight) +
-                            additionalPixel,
-                        this.size.height / 2
+    // As we use an extra spacers to the start and end of horizontal indicator ( and higher and
+    // lower for vertical), we have to set their size in angular padding to compensate for that.
+    val angularPadding = -(spacing + indicatorSize)
+    BoundsLimiter(
+        offset = boundsOffset,
+        size = boundsSize,
+        modifier = modifier.padding(edgePadding),
+        onSizeChanged = { containerSize = it }
+    ) {
+        if (pagesState.totalPages == 1) {
+            SingleDotCurvedPageIndicator(
+                isHorizontal = isHorizontal,
+                indicatorSize = indicatorSize,
+                layoutDirection = layoutDirection,
+                selectedColor = selectedColor,
+                backgroundColor = backgroundColor,
+            )
+        } else {
+            CurvedPageIndicator(
+                visibleDotIndex = pagesState.visibleDotIndex,
+                pagesOnScreen = pagesOnScreen,
+                indicator = { page ->
+                    curvedIndicator(
+                        page = page,
+                        size = indicatorSize,
+                        unselectedColor = unselectedColor,
+                        pagesState = pagesState
                     )
-                val end =
-                    Offset(
-                        endX - drawWidth * (if (isRtl) endSpacerWeight else startSpacerWeight),
-                        this.size.height / 2
+                },
+                spacer = { spacerIndex ->
+                    curvedSpacer(spacerSize * pagesState.spacersSizeRatio[spacerIndex])
+                },
+                selectedIndicator = {
+                    curvedSelectedIndicator(
+                        indicatorSize = indicatorSize,
+                        spacing = spacing,
+                        selectedColor = selectedColor,
+                        progress = offset
                     )
-                onDrawBehind {
-                    drawLine(
-                        color = selectedColor,
-                        start = start,
-                        end = end,
-                        cap = StrokeCap.Round,
-                        strokeWidth = strokeWidth
-                    )
-                }
-            }
-    )
-}
-
-@Composable
-private fun LinearIndicator(
-    page: Int,
-    pagesState: PagesState,
-    unselectedColor: Color,
-    indicatorSize: Dp,
-    spacing: Dp,
-) {
-    Spacer(
-        modifier =
-            Modifier.padding(horizontal = spacing / 2).size(indicatorSize).drawWithCache {
-                val strokeWidth = indicatorSize.toPx() * pagesState.indicatorsSizeRatio[page]
-                val start = Offset(strokeWidth / 2 + 1, this.size.height / 2)
-                val end = Offset(strokeWidth / 2, this.size.height / 2)
-                onDrawBehind {
-                    drawLine(
-                        color = unselectedColor,
-                        start = start,
-                        end = end,
-                        cap = StrokeCap.Round,
-                        alpha = pagesState.indicatorsAlpha[page],
-                        strokeWidth = strokeWidth
-                    )
-                }
-            }
-    )
-}
-
-@Composable
-private fun LinearSpacer(leftSpacerSize: Dp) {
-    Spacer(Modifier.size(leftSpacerSize, 0.dp))
+                },
+                angularPadding = angularPadding,
+                isHorizontal = isHorizontal,
+                layoutDirection = layoutDirection,
+                backgroundColor = backgroundColor
+            )
+        }
+    }
 }
 
 @Composable

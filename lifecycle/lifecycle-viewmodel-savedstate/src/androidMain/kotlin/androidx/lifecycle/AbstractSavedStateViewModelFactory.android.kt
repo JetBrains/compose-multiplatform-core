@@ -20,6 +20,7 @@ import androidx.annotation.RestrictTo
 import androidx.lifecycle.LegacySavedStateHandleController.TAG_SAVED_STATE_HANDLE_CONTROLLER
 import androidx.lifecycle.LegacySavedStateHandleController.attachHandleIfNeeded
 import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryOwner
 
@@ -27,7 +28,19 @@ import androidx.savedstate.SavedStateRegistryOwner
  * Skeleton of androidx.lifecycle.ViewModelProvider.KeyedFactory that creates [SavedStateHandle] for
  * every requested [ViewModel]. The subclasses implement [create] to actually instantiate
  * `androidx.lifecycle.ViewModel`s.
+ *
+ * **Deprecated:** Use [viewModelFactory] or implement [ViewModelProvider.Factory] directly,
+ * combined with [CreationExtras.createSavedStateHandle]. This base class creates a
+ * [SavedStateHandle] for every [ViewModel], even when unnecessary, causing overhead.
+ *
+ * For example:
+ * ```
+ * viewModelFactory { initializer { MyViewModel(createSavedStateHandle()) } }
+ * ```
  */
+@Deprecated(
+    "Use `viewModelFactory` or implement `ViewModelProvider.Factory`, combined with `CreationExtras.createSavedStateHandle()`."
+)
 public abstract class AbstractSavedStateViewModelFactory :
     ViewModelProvider.OnRequeryFactory, ViewModelProvider.Factory {
 
@@ -42,7 +55,7 @@ public abstract class AbstractSavedStateViewModelFactory :
      * must have called [enableSavedStateHandles]. See [CreationExtras.createSavedStateHandle] docs
      * for more details.
      */
-    constructor() {}
+    public constructor() {}
 
     /**
      * Constructs this factory.
@@ -53,7 +66,7 @@ public abstract class AbstractSavedStateViewModelFactory :
      *   passed in [ViewModels][ViewModel] if there is no previously saved state or previously saved
      *   state misses a value by such key
      */
-    constructor(owner: SavedStateRegistryOwner, defaultArgs: Bundle?) {
+    public constructor(owner: SavedStateRegistryOwner, defaultArgs: Bundle?) {
         savedStateRegistry = owner.savedStateRegistry
         lifecycle = owner.lifecycle
         this.defaultArgs = defaultArgs

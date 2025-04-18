@@ -210,9 +210,11 @@ open class BasePagerTest(private val config: ParamConfig) :
     @Composable
     internal fun Page(index: Int, initialFocusedItemIndex: Int = 0) {
         val focusRequester =
-            FocusRequester().also {
-                if (index == initialFocusedItemIndex) initialFocusedItem = it
-                focusRequesters[index] = it
+            remember(index) {
+                FocusRequester().also {
+                    if (index == initialFocusedItemIndex) initialFocusedItem = it
+                    focusRequesters[index] = it
+                }
             }
         Box(
             modifier =

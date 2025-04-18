@@ -19,8 +19,11 @@ package androidx.appsearch.localstorage;
 import android.app.appsearch.SearchSpec;
 
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.flags.Flags;
 
 import com.google.android.icing.proto.IcingSearchEngineOptions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An interface exposing the optional config flags in {@link IcingSearchEngineOptions} used to
@@ -43,6 +46,12 @@ public interface IcingOptionsConfig {
      * previously-hardcoded document compression level in Icing (which is 3).
      */
     int DEFAULT_COMPRESSION_LEVEL = 3;
+
+    /**
+     * The default compression mem level in IcingSearchEngineOptions proto matches the
+     * previously-hardcoded document compression level in Icing (which is 8).
+     */
+    int DEFAULT_COMPRESSION_MEM_LEVEL = 8;
 
     boolean DEFAULT_USE_PREMAPPING_WITH_FILE_BACKED_VECTOR = false;
 
@@ -75,6 +84,10 @@ public interface IcingOptionsConfig {
     boolean DEFAULT_BUILD_PROPERTY_EXISTENCE_METADATA_HITS = false;
 
     long DEFAULT_ORPHAN_BLOB_TIME_TO_LIVE_MS = 7 * 24 * 60 * 60 * 1000L; // 1 week.
+
+    String DEFAULT_ICU_DATA_FILE_ABSOLUTE_PATH = "";
+
+    int DEFAULT_COMPRESSION_THRESHOLD_BYTES = 600;
 
     /**
      * The maximum allowable token length. All tokens in excess of this size will be truncated to
@@ -127,6 +140,15 @@ public interface IcingOptionsConfig {
      * <p>NO_COMPRESSION = 0, BEST_SPEED = 1, BEST_COMPRESSION = 9
      */
     int getCompressionLevel();
+
+
+    /**
+     * The mem level for gzip compression for documents in the Icing document store.
+     *
+     * <p> 1 uses minimum memory but is slow and reduces compression ratio; 9 uses maximum memory
+     * for optimal speed and compression ratio. Icing historically used a memLevel of 8.
+     */
+    int getCompressionMemLevel();
 
     /**
      * Whether to allow circular references between schema types for the schema definition.
@@ -235,4 +257,81 @@ public interface IcingOptionsConfig {
      * no reference document linked to it.
      */
     long getOrphanBlobTimeToLiveMs();
+
+    /**
+     * Config for {@link com.google.android.icing.proto.IcingSearchEngineOptions}.
+     *
+     * <p>The absolute path to the ICU data file. If a valid path has been provided, it will be used
+     * to initialize ICU. The path is not available in Jetpack and Framework. This method is
+     * functionally no-op and returns an empty string.
+     */
+    @NonNull String getIcuDataFileAbsolutePath();
+
+    /**
+     * The threshold in bytes for compressing documents. If a document is larger than or equal to
+     * this threshold, it will be compressed based on getCompressionLevel(). 0 means always
+     * compress.
+     */
+    int getCompressionThresholdBytes();
+
+    /**
+     * Converts to an {@link IcingSearchEngineOptions} instance.
+     *
+     * @param baseDir base directory of the icing instance.
+     */
+    default @NonNull IcingSearchEngineOptions toIcingSearchEngineOptions(
+            @NonNull String baseDir, boolean isVMEnabled) {
+        return IcingSearchEngineOptions.newBuilder()
+                .setBaseDir(baseDir)
+                .setMaxTokenLength(getMaxTokenLength())
+                .setIndexMergeSize(getIndexMergeSize())
+                .setDocumentStoreNamespaceIdFingerprint(
+                        getDocumentStoreNamespaceIdFingerprint())
+                .setOptimizeRebuildIndexThreshold(
+                        getOptimizeRebuildIndexThreshold())
+                .setCompressionLevel(getCompressionLevel())
+                .setAllowCircularSchemaDefinitions(
+                        getAllowCircularSchemaDefinitions())
+                .setPreMappingFbv(getUsePreMappingWithFileBackedVector())
+                .setUsePersistentHashMap(getUsePersistentHashMap())
+                .setIntegerIndexBucketSplitThreshold(
+                        getIntegerIndexBucketSplitThreshold())
+                .setLiteIndexSortAtIndexing(getLiteIndexSortAtIndexing())
+                .setLiteIndexSortSize(getLiteIndexSortSize())
+                .setUseNewQualifiedIdJoinIndex(
+                        getUseNewQualifiedIdJoinIndex())
+                .setBuildPropertyExistenceMetadataHits(
+                        getBuildPropertyExistenceMetadataHits())
+                .setEnableBlobStore(Flags.enableBlobStore())
+                .setOrphanBlobTimeToLiveMs(getOrphanBlobTimeToLiveMs())
+                .setEnableEmbeddingIndex(
+                        Flags.enableSchemaEmbeddingPropertyConfig())
+                .setEnableEmbeddingQuantization(
+                        Flags.enableSchemaEmbeddingQuantization())
+                .setEnableScorableProperties(Flags.enableScorableProperty())
+                .setIcuDataFileAbsolutePath(getIcuDataFileAbsolutePath())
+                .setManageBlobFiles(!Flags.enableAppSearchManageBlobFiles())
+                // Join index v3 is a prerequisite for delete propagation.
+                .setEnableDeletePropagationFrom(
+                        Flags.enableDeletePropagationType() && Flags.enableQualifiedIdJoinIndexV3())
+                .setCalculateTimeSinceLastAttemptedOptimize(
+                        Flags.enableCalculateTimeSinceLastAttemptedOptimize())
+                .setEnableQualifiedIdJoinIndexV3(Flags.enableQualifiedIdJoinIndexV3())
+                .setEnableSoftIndexRestoration(Flags.enableSoftIndexRestoration())
+                .setEnableMarkerFileForOptimize(Flags.enableMarkerFileForOptimize())
+                .setReleaseBackupSchemaFileIfOverlayPresent(
+                        Flags.enableReleaseBackupSchemaFileIfOverlayPresent())
+                // This is a necessary bug fix for the VMEnabled case. VMEnabled is guarded by its
+                // own trunk-stable flag, therefore this can be included there. Otherwise, we should
+                // use this trank-stable flag.
+                .setEnableStrictPageByteSizeLimit(
+                        Flags.enableStrictPageByteSizeLimit() || isVMEnabled)
+                .setCompressionThresholdBytes(
+                        (Flags.enableCompressionThreshold() || isVMEnabled)
+                                ? Math.max(0, getCompressionThresholdBytes()) : 0)
+                .setCompressionMemLevel(
+                        (Flags.enableCompressionMemLevelOne() || isVMEnabled) ? 1
+                                : DEFAULT_COMPRESSION_MEM_LEVEL)
+                .build();
+    }
 }

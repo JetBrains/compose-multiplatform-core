@@ -16,7 +16,10 @@
 
 package androidx.camera.camera2.internal;
 
+import static android.hardware.camera2.params.DynamicRangeProfiles.STANDARD;
+
 import static androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_CONCURRENT;
+import static androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -24,7 +27,9 @@ import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.params.DynamicRangeProfiles;
 import android.media.CamcorderProfile;
+import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.text.TextUtils;
@@ -33,8 +38,6 @@ import android.util.Size;
 import android.view.Surface;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.camera2.internal.annotation.CameraExecutor;
@@ -42,6 +45,7 @@ import androidx.camera.camera2.internal.compat.ApiCompat;
 import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
+import androidx.camera.camera2.internal.compat.params.DynamicRangeConversions;
 import androidx.camera.camera2.internal.compat.params.DynamicRangesCompat;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.LegacyCameraOutputConfigNullPointerQuirk;
@@ -50,6 +54,7 @@ import androidx.camera.camera2.internal.compat.workaround.CloseCameraBeforeCreat
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.CameraState;
 import androidx.camera.core.CameraUnavailableException;
+import androidx.camera.core.DynamicRange;
 import androidx.camera.core.Logger;
 import androidx.camera.core.Preview;
 import androidx.camera.core.UseCase;
@@ -88,6 +93,9 @@ import androidx.tracing.Trace;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -154,12 +162,10 @@ final class Camera2CameraImpl implements CameraInternal {
     private final StateCallback mStateCallback;
     /** Information about the characteristics of this camera */
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    @NonNull
-    final Camera2CameraInfoImpl mCameraInfoInternal;
+    final @NonNull Camera2CameraInfoImpl mCameraInfoInternal;
     /** The handle to the opened camera. */
-    @Nullable
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    CameraDevice mCameraDevice;
+    @Nullable CameraDevice mCameraDevice;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     int mCameraDeviceError = ERROR_NONE;
 
@@ -181,10 +187,10 @@ final class Camera2CameraImpl implements CameraInternal {
     // Used to keep track of number of state errors while tracing is enabled
     private int mTraceStateErrorCount = 0;
 
-    @NonNull final CameraAvailability mCameraAvailability;
-    @NonNull final CameraConfigureAvailable mCameraConfigureAvailable;
-    @NonNull final CameraCoordinator mCameraCoordinator;
-    @NonNull final CameraStateRegistry mCameraStateRegistry;
+    final @NonNull CameraAvailability mCameraAvailability;
+    final @NonNull CameraConfigureAvailable mCameraConfigureAvailable;
+    final @NonNull CameraCoordinator mCameraCoordinator;
+    final @NonNull CameraStateRegistry mCameraStateRegistry;
 
     private final boolean mShouldCloseCameraBeforeCreateNewSession;
     private final boolean mConfigAndCloseQuirk;
@@ -195,32 +201,24 @@ final class Camera2CameraImpl implements CameraInternal {
     // The metering repeating use case for ImageCapture only case.
     private MeteringRepeatingSession mMeteringRepeatingSession;
 
-    @NonNull
-    private final CaptureSessionRepository mCaptureSessionRepository;
-    @NonNull
-    private final SynchronizedCaptureSession.OpenerBuilder mCaptureSessionOpenerBuilder;
+    private final @NonNull CaptureSessionRepository mCaptureSessionRepository;
+    private final SynchronizedCaptureSession.@NonNull OpenerBuilder mCaptureSessionOpenerBuilder;
     private final Set<String> mNotifyStateAttachedSet = new HashSet<>();
 
-    @NonNull
-    private CameraConfig mCameraConfig = CameraConfigs.defaultConfig();
+    private @NonNull CameraConfig mCameraConfig = CameraConfigs.defaultConfig();
     final Object mLock = new Object();
     // mSessionProcessor will be used to transform capture session if non-null.
     @GuardedBy("mLock")
-    @Nullable
-    private SessionProcessor mSessionProcessor;
+    private @Nullable SessionProcessor mSessionProcessor;
     boolean mIsActiveResumingMode = false;
 
-    @NonNull
-    private final DisplayInfoManager mDisplayInfoManager;
+    private final @NonNull DisplayInfoManager mDisplayInfoManager;
 
-    @NonNull
-    private final CameraCharacteristicsCompat mCameraCharacteristicsCompat;
+    private final @NonNull CameraCharacteristicsCompat mCameraCharacteristicsCompat;
 
-    @NonNull
-    private final DynamicRangesCompat mDynamicRangesCompat;
+    private final @NonNull DynamicRangesCompat mDynamicRangesCompat;
 
-    @NonNull
-    private final SupportedSurfaceCombination mSupportedSurfaceCombination;
+    private final @NonNull SupportedSurfaceCombination mSupportedSurfaceCombination;
 
     private final ErrorTimeoutReopenScheduler
             mErrorTimeoutReopenScheduler = new ErrorTimeoutReopenScheduler();
@@ -314,8 +312,7 @@ final class Camera2CameraImpl implements CameraInternal {
                     });
     }
 
-    @NonNull
-    private CaptureSessionInterface newCaptureSession() {
+    private @NonNull CaptureSessionInterface newCaptureSession() {
         synchronized (mLock) {
             if (mSessionProcessor == null) {
                 return new CaptureSession(mDynamicRangesCompat,
@@ -503,8 +500,7 @@ final class Camera2CameraImpl implements CameraInternal {
      */
     @SuppressLint("MissingPermission")
     @ExecutedBy("mExecutor")
-    @NonNull
-    private ListenableFuture<Void> openCameraConfigAndClose() {
+    private @NonNull ListenableFuture<Void> openCameraConfigAndClose() {
         return CallbackToFutureAdapter.getFuture(completer -> {
             try {
                 SessionConfig config = mUseCaseAttachState.getAttachedBuilder().build();
@@ -554,8 +550,7 @@ final class Camera2CameraImpl implements CameraInternal {
     // Configure the camera with a no-op capture session in order to clear the
     // previous session. This should be released immediately after being configured.
     @ExecutedBy("mExecutor")
-    @NonNull
-    private ListenableFuture<Void> configAndClose(@NonNull CameraDevice cameraDevice) {
+    private @NonNull ListenableFuture<Void> configAndClose(@NonNull CameraDevice cameraDevice) {
         CaptureSession noOpSession = new CaptureSession(mDynamicRangesCompat);
         SurfaceTexture surfaceTexture = new SurfaceTexture(0);
         surfaceTexture.setDefaultBufferSize(640, 480);
@@ -639,9 +634,8 @@ final class Camera2CameraImpl implements CameraInternal {
      * <p>Once the camera is released it is permanently closed. A new instance must be created to
      * access the camera.
      */
-    @NonNull
     @Override
-    public ListenableFuture<Void> release() {
+    public @NonNull ListenableFuture<Void> release() {
         return CallbackToFutureAdapter.getFuture(
                 completer -> {
                     mExecutor.execute(
@@ -715,7 +709,7 @@ final class Camera2CameraImpl implements CameraInternal {
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     @ExecutedBy("mExecutor")
-    ListenableFuture<Void> releaseSession(@NonNull final CaptureSessionInterface captureSession,
+    ListenableFuture<Void> releaseSession(final @NonNull CaptureSessionInterface captureSession,
             boolean abortInFlightCaptures) {
         captureSession.close();
         ListenableFuture<Void> releaseFuture = captureSession.release(abortInFlightCaptures);
@@ -767,9 +761,8 @@ final class Camera2CameraImpl implements CameraInternal {
         return releaseFuture;
     }
 
-    @NonNull
     @Override
-    public Observable<CameraInternal.State> getCameraState() {
+    public @NonNull Observable<CameraInternal.State> getCameraState() {
         return mObservableState;
     }
 
@@ -996,6 +989,9 @@ final class Camera2CameraImpl implements CameraInternal {
 
         // Update Zsl disabled status by iterating all attached use cases.
         updateZslDisabledByUseCaseConfigStatus();
+        // Update low-light boost disabled status by the session config generated from all
+        // attached use cases.
+        updateLowLightBoostDisabledByUseCaseSessionConfigStatus();
 
         updateCaptureSessionConfig();
         resetCaptureSession(/*abortInFlightCaptures=*/false);
@@ -1012,8 +1008,7 @@ final class Camera2CameraImpl implements CameraInternal {
         }
     }
 
-    @NonNull
-    private Collection<UseCaseInfo> toUseCaseInfos(@NonNull Collection<UseCase> useCases) {
+    private @NonNull Collection<UseCaseInfo> toUseCaseInfos(@NonNull Collection<UseCase> useCases) {
         List<UseCaseInfo> useCaseInfos = new ArrayList<>();
 
         for (UseCase useCase : useCases) {
@@ -1034,9 +1029,8 @@ final class Camera2CameraImpl implements CameraInternal {
         }
     }
 
-    @NonNull
     @Override
-    public CameraConfig getExtendedConfig() {
+    public @NonNull CameraConfig getExtendedConfig() {
         return mCameraConfig;
     }
 
@@ -1119,8 +1113,10 @@ final class Camera2CameraImpl implements CameraInternal {
         // attached use cases.
         if (mUseCaseAttachState.getAttachedUseCaseConfigs().isEmpty()) {
             mCameraControlInternal.setZslDisabledByUserCaseConfig(false);
+            mCameraControlInternal.setLowLightBoostDisabledByUseCaseSessionConfig(false);
         } else {
             updateZslDisabledByUseCaseConfigStatus();
+            updateLowLightBoostDisabledByUseCaseSessionConfigStatus();
         }
 
         boolean allUseCasesDetached = mUseCaseAttachState.getAttachedSessionConfigs().isEmpty();
@@ -1151,6 +1147,51 @@ final class Camera2CameraImpl implements CameraInternal {
             isZslDisabledByUseCaseConfig |= useCaseConfig.isZslDisabled(false);
         }
         mCameraControlInternal.setZslDisabledByUserCaseConfig(isZslDisabledByUseCaseConfig);
+    }
+
+    private void updateLowLightBoostDisabledByUseCaseSessionConfigStatus() {
+        if (!mCameraInfoInternal.isLowLightBoostSupported()) {
+            return;
+        }
+
+        ValidatingBuilder validatingBuilder = mUseCaseAttachState.getActiveAndAttachedBuilder();
+
+        SessionConfig useCaseSessionConfig;
+
+        if (validatingBuilder.isValid()) {
+            useCaseSessionConfig = validatingBuilder.build();
+        } else {
+            return;
+        }
+
+        // Low-light boost should be disabled when expected frame rate range exceeds 30.
+        if (useCaseSessionConfig.getExpectedFrameRateRange().getUpper() > 30) {
+            mCameraControlInternal.setLowLightBoostDisabledByUseCaseSessionConfig(true);
+            return;
+        }
+
+        // HDR 10-bit can be supported since API level 33
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return;
+        }
+
+        for (SessionConfig.OutputConfig outputConfig : useCaseSessionConfig.getOutputConfigs()) {
+            DynamicRangeProfiles dynamicRangeProfiles =
+                    mDynamicRangesCompat.toDynamicRangeProfiles();
+            if (dynamicRangeProfiles != null) {
+                DynamicRange requestedDynamicRange = outputConfig.getDynamicRange();
+                Long dynamicRangeProfileOrNull =
+                        DynamicRangeConversions.dynamicRangeToFirstSupportedProfile(
+                                requestedDynamicRange, dynamicRangeProfiles);
+                // Low-light boost should be disabled when HDR 10-bit is enabled.
+                if (dynamicRangeProfileOrNull != null && dynamicRangeProfileOrNull != STANDARD) {
+                    mCameraControlInternal.setLowLightBoostDisabledByUseCaseSessionConfig(true);
+                    return;
+                }
+            }
+        }
+
+        mCameraControlInternal.setLowLightBoostDisabledByUseCaseSessionConfig(false);
     }
 
     // Check if it need the repeating surface for ImageCapture only use case.
@@ -1248,7 +1289,9 @@ final class Camera2CameraImpl implements CameraInternal {
                         useCaseInfo.getStreamSpec().getDynamicRange(),
                         useCaseInfo.getCaptureTypes(),
                         useCaseInfo.getStreamSpec().getImplementationOptions(),
-                        useCaseConfig.getTargetFrameRate(null));
+                        useCaseConfig.getTargetFrameRate(null),
+                        Preconditions.checkNotNull(useCaseConfig.getTargetHighSpeedFrameRate(
+                                FRAME_RATE_RANGE_UNSPECIFIED)));
 
                 attachedSurfaces.add(attachedSurfaceInfo);
             }
@@ -1316,15 +1359,13 @@ final class Camera2CameraImpl implements CameraInternal {
     }
 
     /** Returns an interface to retrieve characteristics of the camera. */
-    @NonNull
     @Override
-    public CameraInfoInternal getCameraInfoInternal() {
+    public @NonNull CameraInfoInternal getCameraInfoInternal() {
         return mCameraInfoInternal;
     }
 
-    @NonNull
     @VisibleForTesting
-    public CameraAvailability getCameraAvailability() {
+    public @NonNull CameraAvailability getCameraAvailability() {
         return mCameraAvailability;
     }
 
@@ -1461,8 +1502,7 @@ final class Camera2CameraImpl implements CameraInternal {
 
         private static final long ERROR_TIMEOUT_MILLIS = 2000;
 
-        @Nullable
-        private ScheduleNode mScheduleNode = null;
+        private @Nullable ScheduleNode mScheduleNode = null;
 
         @ExecutedBy("mExecutor")
         public void start() {
@@ -1644,9 +1684,8 @@ final class Camera2CameraImpl implements CameraInternal {
     }
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    @Nullable
     @ExecutedBy("mExecutor")
-    SessionConfig findSessionConfigForSurface(@NonNull DeferrableSurface surface) {
+    @Nullable SessionConfig findSessionConfigForSurface(@NonNull DeferrableSurface surface) {
         for (SessionConfig sessionConfig : mUseCaseAttachState.getAttachedSessionConfigs()) {
             if (sessionConfig.getSurfaces().contains(surface)) {
                 return sessionConfig;
@@ -1769,9 +1808,8 @@ final class Camera2CameraImpl implements CameraInternal {
     }
 
     /** Returns the Camera2CameraControlImpl attached to Camera */
-    @NonNull
     @Override
-    public CameraControlInternal getCameraControlInternal() {
+    public @NonNull CameraControlInternal getCameraControlInternal() {
         return mCameraControlInternal;
     }
 
@@ -1809,20 +1847,18 @@ final class Camera2CameraImpl implements CameraInternal {
         mCaptureSession.issueCaptureRequests(captureConfigsWithSurface);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return String.format(Locale.US, "Camera@%x[id=%s]", hashCode(),
                 mCameraInfoInternal.getCameraId());
     }
 
-    @NonNull
-    static String getUseCaseId(@NonNull UseCase useCase) {
+    static @NonNull String getUseCaseId(@NonNull UseCase useCase) {
         return useCase.getName() + useCase.hashCode();
     }
 
-    @Nullable
-    static List<UseCaseConfigFactory.CaptureType> getCaptureTypes(@NonNull UseCase useCase) {
+    static @Nullable List<UseCaseConfigFactory.CaptureType> getCaptureTypes(
+            @NonNull UseCase useCase) {
         if (useCase.getCamera() == null) {
             // camera is not bound, so the current use case config may not have capture type set
             return null;
@@ -1831,8 +1867,8 @@ final class Camera2CameraImpl implements CameraInternal {
         return StreamSharing.getCaptureTypes(useCase);
     }
 
-    @NonNull
-    static String getMeteringRepeatingId(@NonNull MeteringRepeatingSession meteringRepeating) {
+    static @NonNull String getMeteringRepeatingId(
+            @NonNull MeteringRepeatingSession meteringRepeating) {
         return meteringRepeating.getName() + meteringRepeating.hashCode();
     }
 
@@ -1950,7 +1986,7 @@ final class Camera2CameraImpl implements CameraInternal {
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     @ExecutedBy("mExecutor")
-    void setState(@NonNull InternalState state, @Nullable CameraState.StateError stateError) {
+    void setState(@NonNull InternalState state, CameraState.@Nullable StateError stateError) {
         setState(state, stateError, /*notifyImmediately=*/true);
     }
 
@@ -1964,7 +2000,7 @@ final class Camera2CameraImpl implements CameraInternal {
      */
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     @ExecutedBy("mExecutor")
-    void setState(@NonNull InternalState state, @Nullable CameraState.StateError stateError,
+    void setState(@NonNull InternalState state, CameraState.@Nullable StateError stateError,
             boolean notifyImmediately) {
         debugLog("Transitioning camera internal state: " + mState + " --> " + state);
         traceInternalState(state, stateError);
@@ -2009,7 +2045,7 @@ final class Camera2CameraImpl implements CameraInternal {
 
     @ExecutedBy("mExecutor")
     void traceInternalState(@NonNull InternalState state,
-            @Nullable CameraState.StateError stateError) {
+            CameraState.@Nullable StateError stateError) {
         if (Trace.isEnabled()) {
             String counterName = "CX:C2State[" + this + "]";
             Trace.setCounter(counterName, state.ordinal());
@@ -2055,8 +2091,7 @@ final class Camera2CameraImpl implements CameraInternal {
     @SuppressWarnings("AutoValueImmutableFields")  // avoid extra dependency for ImmutableList.
     @AutoValue
     abstract static class UseCaseInfo {
-        @NonNull
-        static UseCaseInfo create(@NonNull String useCaseId,
+        static @NonNull UseCaseInfo create(@NonNull String useCaseId,
                 @NonNull Class<?> useCaseType,
                 @NonNull SessionConfig sessionConfig,
                 @NonNull UseCaseConfig<?> useCaseConfig,
@@ -2067,8 +2102,7 @@ final class Camera2CameraImpl implements CameraInternal {
                     sessionConfig, useCaseConfig, surfaceResolution, streamSpec, captureTypes);
         }
 
-        @NonNull
-        static UseCaseInfo from(@NonNull UseCase useCase, boolean isPrimary) {
+        static @NonNull UseCaseInfo from(@NonNull UseCase useCase, boolean isPrimary) {
             return create(Camera2CameraImpl.getUseCaseId(useCase),
                     useCase.getClass(),
                     isPrimary ? useCase.getSessionConfig()
@@ -2078,26 +2112,19 @@ final class Camera2CameraImpl implements CameraInternal {
                     useCase.getAttachedStreamSpec(), Camera2CameraImpl.getCaptureTypes(useCase));
         }
 
-        @NonNull
-        abstract String getUseCaseId();
+        abstract @NonNull String getUseCaseId();
 
-        @NonNull
-        abstract Class<?> getUseCaseType();
+        abstract @NonNull Class<?> getUseCaseType();
 
-        @NonNull
-        abstract SessionConfig getSessionConfig();
+        abstract @NonNull SessionConfig getSessionConfig();
 
-        @NonNull
-        abstract UseCaseConfig<?> getUseCaseConfig();
+        abstract @NonNull UseCaseConfig<?> getUseCaseConfig();
 
-        @Nullable
-        abstract Size getSurfaceResolution();
+        abstract @Nullable Size getSurfaceResolution();
 
-        @Nullable
-        abstract StreamSpec getStreamSpec();
+        abstract @Nullable StreamSpec getStreamSpec();
 
-        @Nullable
-        abstract List<UseCaseConfigFactory.CaptureType> getCaptureTypes();
+        abstract @Nullable List<UseCaseConfigFactory.CaptureType> getCaptureTypes();
     }
 
     final class StateCallback extends CameraDevice.StateCallback {
@@ -2107,10 +2134,10 @@ final class Camera2CameraImpl implements CameraInternal {
         private ScheduledReopen mScheduledReopenRunnable;
         @SuppressWarnings("WeakerAccess") // synthetic accessor
         ScheduledFuture<?> mScheduledReopenHandle;
-        @NonNull private final CameraReopenMonitor mCameraReopenMonitor;
+        private final @NonNull CameraReopenMonitor mCameraReopenMonitor;
 
         StateCallback(
-                @NonNull @CameraExecutor Executor executor,
+                @CameraExecutor @NonNull Executor executor,
                 @NonNull ScheduledExecutorService scheduler,
                 long cameraOpenRetryMaxTimeoutInMs) {
             this.mExecutor = executor;
@@ -2365,7 +2392,7 @@ final class Camera2CameraImpl implements CameraInternal {
             private Executor mExecutor;
             private boolean mCancelled = false;
 
-            ScheduledReopen(@NonNull @CameraExecutor Executor executor) {
+            ScheduledReopen(@CameraExecutor @NonNull Executor executor) {
                 mExecutor = executor;
             }
 

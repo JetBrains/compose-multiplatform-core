@@ -66,8 +66,8 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://m3.material.io/components/bottom-sheets/overview" class="external"
- * target="_blank">Material Design standard bottom sheet scaffold</a>.
+ * [Material Design standard bottom sheet
+ * scaffold](https://m3.material.io/components/bottom-sheets/overview)
  *
  * Standard bottom sheets co-exist with the screen’s main UI region and allow for simultaneously
  * viewing and interacting with both regions. They are commonly used to keep a feature or secondary

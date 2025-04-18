@@ -18,12 +18,14 @@ package androidx.wear.compose.material3
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.SnapSpec
 import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
@@ -34,18 +36,25 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.wear.compose.foundation.LocalReduceMotion
 import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
 import androidx.wear.compose.material3.MotionScheme.Companion.standard
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.launch
 
 /**
- * A base dialog component used by [AlertDialog] and [Confirmation] variations. This dialog provides
- * a full-screen experience with custom entry/exit animations.
+ * A base dialog component used by [AlertDialog] and [ConfirmationDialog] variations. This dialog
+ * provides a full-screen experience with custom entry/exit animations.
  *
  * Dialogs provide important prompts in a user flow. They can require an action, communicate
  * information, or help users accomplish a task.
@@ -54,22 +63,25 @@ import kotlinx.coroutines.flow.collectLatest
  * case they should provide that in their content by using ScreenScaffold (with suitable scrollState
  * if that's required).
  *
- * @param show A boolean value that determines whether the dialog should be displayed.
+ * @param visible A boolean value that determines whether the dialog should be displayed.
  * @param onDismissRequest A lambda function to be called when the dialog is dismissed by swiping
- *   right.
+ *   right. Implementation of this lambda must remove the dialog from the composition hierarchy e.g.
+ *   by setting [visible] to false.
  * @param modifier Modifier to be applied to the dialog content.
  * @param properties An optional [DialogProperties] object for configuring the dialog's behavior.
  * @param content A composable function that defines the content of the dialog.
  */
 @Composable
-fun Dialog(
-    show: Boolean,
+public fun Dialog(
+    visible: Boolean,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     properties: DialogProperties = DialogProperties(),
     content: @Composable () -> Unit,
 ) {
-    val showState by rememberUpdatedState(show)
+    val showState by rememberUpdatedState(visible)
+    val swipeToDismissBoxState = rememberSwipeToDismissBoxState()
+
     // Transitions for dialog animation.
     var transitionState by remember {
         mutableStateOf(MutableTransitionState(DialogVisibility.Hide))
@@ -84,20 +96,32 @@ fun Dialog(
 
     val backgroundAnimationSpec = MaterialTheme.motionScheme.defaultEffectsSpec<Float>().faster(50f)
 
-    val isReduceMotionEnabled = LocalReduceMotion.current.enabled()
+    val isReduceMotionEnabled = LocalReduceMotion.current
+
+    val screenWidthPx =
+        with(LocalDensity.current) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
 
     if (!isReduceMotionEnabled) {
         LaunchedEffect(Unit) {
+            launch {
+                snapshotFlow { swipeToDismissBoxState.offset }
+                    .filter { !it.isNaN() }
+                    .collectLatest {
+                        val scale = lerp(BackgroundMinScale, BackgroundMaxScale, it / screenWidthPx)
+                        if (transitionState.currentState == DialogVisibility.Display) {
+                            scaffoldState.parentScale.floatValue = scale
+                            backgroundAnimatable.snapTo(scale)
+                        }
+                    }
+            }
+
             snapshotFlow { showState }
                 .collectLatest {
-                    if (it) {
-                        backgroundAnimatable.animateTo(0.85f, backgroundAnimationSpec) {
-                            scaffoldState.parentScale.floatValue = value
-                        }
-                    } else {
-                        backgroundAnimatable.animateTo(1f, backgroundAnimationSpec) {
-                            scaffoldState.parentScale.floatValue = value
-                        }
+                    backgroundAnimatable.animateTo(
+                        if (it) BackgroundMinScale else BackgroundMaxScale,
+                        backgroundAnimationSpec
+                    ) {
+                        scaffoldState.parentScale.floatValue = value
                     }
                 }
         }
@@ -113,8 +137,6 @@ fun Dialog(
             val dialogWindowProvider = view.parent as DialogWindowProvider
             dialogWindowProvider.window.setWindowAnimations(android.R.style.Animation)
             dialogWindowProvider.window.setDimAmount(0f)
-
-            val swipeToDismissBoxState = rememberSwipeToDismissBoxState()
 
             val contentAlpha by animateContentAlpha(transition)
             val scale by animateDialogScale(transition)
@@ -138,14 +160,17 @@ fun Dialog(
                         modifier =
                             Modifier.matchParentSize()
                                 .background(MaterialTheme.colorScheme.background)
+                                .graphicsLayer {
+                                    compositingStrategy = CompositingStrategy.Offscreen
+                                }
                     ) {
                         content()
                     }
                 }
             }
         }
-        LaunchedEffect(show) {
-            if (show) {
+        LaunchedEffect(visible) {
+            if (visible) {
                 // a) Fade out previous screen contents b) Scale down dialog contents from 125%
                 transitionState.targetState = DialogVisibility.Display
             } else {
@@ -154,6 +179,9 @@ fun Dialog(
             }
         }
     }
+
+    // We want to be sure that background is scaled back to 1f after dialog is disposed.
+    DisposableEffect(Unit) { onDispose { scaffoldState.parentScale.floatValue = 1f } }
 }
 
 @Composable
@@ -161,10 +189,12 @@ private fun animateContentAlpha(transition: Transition<DialogVisibility>): State
     val dialogAlphaAnimationSpec = MaterialTheme.motionScheme.fastEffectsSpec<Float>().faster(50f)
     return transition.animateFloat(
         transitionSpec = {
-            when (transition.targetState) {
-                DialogVisibility.Display -> dialogAlphaAnimationSpec
-                DialogVisibility.Hide -> standard().fastEffectsSpec()
-            }
+            if (LocalReduceMotion.current) SnapSpec()
+            else
+                when (transition.targetState) {
+                    DialogVisibility.Display -> dialogAlphaAnimationSpec
+                    DialogVisibility.Hide -> standard().fastEffectsSpec()
+                }
         },
         label = "background-scrim-alpha"
     ) { stage ->
@@ -180,10 +210,12 @@ private fun animateDialogScale(transition: Transition<DialogVisibility>): State<
     val dialogAnimationSpec = MaterialTheme.motionScheme.defaultEffectsSpec<Float>().faster(50f)
     return transition.animateFloat(
         transitionSpec = {
-            when (transition.targetState) {
-                DialogVisibility.Display -> dialogAnimationSpec
-                DialogVisibility.Hide -> dialogAnimationSpec
-            }
+            if (LocalReduceMotion.current) SnapSpec()
+            else
+                when (transition.targetState) {
+                    DialogVisibility.Display -> dialogAnimationSpec
+                    DialogVisibility.Hide -> dialogAnimationSpec
+                }
         },
         label = "scale"
     ) { stage ->
@@ -198,3 +230,6 @@ private enum class DialogVisibility {
     Hide,
     Display
 }
+
+private const val BackgroundMinScale = 0.85f
+private const val BackgroundMaxScale = 1f

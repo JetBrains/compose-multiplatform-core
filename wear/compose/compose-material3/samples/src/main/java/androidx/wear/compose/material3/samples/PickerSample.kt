@@ -17,6 +17,8 @@
 package androidx.wear.compose.material3.samples
 
 import androidx.annotation.Sampled
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -41,7 +43,18 @@ fun SimplePicker() {
     val items = listOf("One", "Two", "Three", "Four", "Five")
     val state = rememberPickerState(items.size)
     val contentDescription by remember { derivedStateOf { "${state.selectedOptionIndex + 1}" } }
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    // We forward scroll gestures from the whole screen to the Picker which makes this sample
+    // accessible for 2-finger vertical scrolling.
+    Box(
+        modifier =
+            Modifier.fillMaxSize()
+                .scrollable(
+                    state = state,
+                    orientation = Orientation.Vertical,
+                    reverseDirection = true
+                ),
+        contentAlignment = Alignment.Center
+    ) {
         Text(
             modifier = Modifier.align(Alignment.TopCenter).padding(top = 10.dp),
             text = "Selected: ${items[state.selectedOptionIndex]}"
@@ -64,7 +77,7 @@ fun PickerScrollToOption() {
     val contentDescription by remember { derivedStateOf { "${state.selectedOptionIndex + 1}" } }
     Picker(
         state = state,
-        spacing = 4.dp,
+        verticalSpacing = 4.dp,
         contentDescription = contentDescription,
     ) {
         Button(
@@ -84,7 +97,7 @@ fun PickerAnimateScrollToOption() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Picker(
             state = state,
-            spacing = 4.dp,
+            verticalSpacing = 4.dp,
             contentDescription = contentDescription,
         ) {
             Button(

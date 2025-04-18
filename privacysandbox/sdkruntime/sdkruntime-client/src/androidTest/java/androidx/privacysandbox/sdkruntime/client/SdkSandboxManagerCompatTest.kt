@@ -198,7 +198,9 @@ class SdkSandboxManagerCompatTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val managerCompat = SdkSandboxManagerCompat.from(context)
 
-        val localSdk = managerCompat.loadSdkWithFeature(ClientFeature.SDK_ACTIVITY_HANDLER)
+        val localSdk = runBlocking {
+            managerCompat.loadSdk(TestSdkConfigs.CURRENT.packageName, Bundle())
+        }
 
         val handler = CatchingSdkActivityHandler()
 
@@ -218,9 +220,11 @@ class SdkSandboxManagerCompatTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val managerCompat = SdkSandboxManagerCompat.from(context)
 
-        val localSdk = managerCompat.loadSdkWithFeature(ClientFeature.LOAD_SDK)
+        val localSdk = runBlocking {
+            managerCompat.loadSdk(TestSdkConfigs.CURRENT.packageName, Bundle())
+        }
 
-        val anotherLocalSdkName = TestSdkConfigs.forSdkName("v5").packageName
+        val anotherLocalSdkName = TestSdkConfigs.forSdkName("v7").packageName
         val anotherLocalSdk = localSdk.asTestSdk().loadSdk(anotherLocalSdkName, Bundle())
         assertThat(anotherLocalSdk.getSdkName()).isEqualTo(anotherLocalSdkName)
 
@@ -237,7 +241,9 @@ class SdkSandboxManagerCompatTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val managerCompat = SdkSandboxManagerCompat.from(context)
 
-        val localSdk = managerCompat.loadSdkWithFeature(ClientFeature.LOAD_SDK)
+        val localSdk = runBlocking {
+            managerCompat.loadSdk(TestSdkConfigs.CURRENT.packageName, Bundle())
+        }
 
         val params = Bundle()
         params.putBoolean("needFail", true)
@@ -247,7 +253,7 @@ class SdkSandboxManagerCompatTest {
                 runBlocking {
                     localSdk
                         .asTestSdk()
-                        .loadSdk(TestSdkConfigs.forSdkName("v5").packageName, params)
+                        .loadSdk(TestSdkConfigs.CURRENT_WITH_RESOURCES.packageName, params)
                 }
             }
 

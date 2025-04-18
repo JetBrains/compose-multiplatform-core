@@ -83,11 +83,10 @@ class SwipeToRevealBenchmark(private val compilationMode: CompilationMode) {
     companion object {
         private const val PACKAGE_NAME = "androidx.wear.compose.integration.macrobenchmark.target"
         private const val SWIPE_TO_REVEAL_ACTIVITY = "${PACKAGE_NAME}.SWIPE_TO_REVEAL_ACTIVITY"
+        private const val SWIPE_SPEED = 500
 
         @Parameterized.Parameters(name = "compilation={0}")
         @JvmStatic
         fun parameters() = createCompilationParams()
     }
-
-    private val SWIPE_SPEED = 500
 }

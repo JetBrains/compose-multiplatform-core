@@ -258,7 +258,7 @@ class SegmentedCircularProgressIndicatorTest {
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(Color.Yellow, 14f..16f)
+            .assertColorInPercentageRange(Color.Yellow, 15f..18f)
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)

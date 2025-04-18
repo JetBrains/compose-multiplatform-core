@@ -620,23 +620,24 @@ internal fun ConfirmationWithMaterialSlc(
 /** Contains the default values used by [Alert] and [Confirmation]. */
 public object DialogDefaults {
     /** Creates the recommended vertical arrangement for [Alert] dialog content. */
-    public val AlertVerticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
+    public val AlertVerticalArrangement: Arrangement.Vertical =
+        Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
 
     /** Creates the recommended vertical arrangement for [Confirmation] dialog content. */
-    public val ConfirmationVerticalArrangement =
+    public val ConfirmationVerticalArrangement: Arrangement.Vertical =
         Arrangement.spacedBy(space = 8.dp, alignment = Alignment.CenterVertically)
 
     /** The padding to apply around the contents. */
-    public val ContentPadding = PaddingValues(horizontal = 10.dp)
+    public val ContentPadding: PaddingValues = PaddingValues(horizontal = 10.dp)
 
     /** Short duration for showing [Confirmation]. */
-    public val ShortDurationMillis = 4000L
+    public val ShortDurationMillis: Long = 4000L
 
     /** Long duration for showing [Confirmation]. */
-    public val LongDurationMillis = 10000L
+    public val LongDurationMillis: Long = 10000L
 
     /** Show [Confirmation] indefinitely (supports swipe-to-dismiss). */
-    public val IndefiniteDurationMillis = Long.MAX_VALUE
+    public val IndefiniteDurationMillis: Long = Long.MAX_VALUE
 
     /** Spacing between [Button]s. */
     internal val ButtonSpacing = 12.dp

@@ -16,8 +16,8 @@
 
 package androidx.enterprise.feedback;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -116,16 +116,14 @@ public class FakeKeyedAppStatesReporter extends KeyedAppStatesReporter {
      * <p>This is in the order that they were set, and may contain multiple with the same key, if
      * that key has been set twice.
      */
-    @NonNull
-    public List<KeyedAppState> getKeyedAppStates() {
+    public @NonNull List<KeyedAppState> getKeyedAppStates() {
         return new ArrayList<>(mKeyedAppStates);
     }
 
     /**
      * Get a map of the latest {@link KeyedAppState} set for each key.
      */
-    @NonNull
-    public Map<String, KeyedAppState> getKeyedAppStatesByKey() {
+    public @NonNull Map<String, KeyedAppState> getKeyedAppStatesByKey() {
         return new HashMap<>(mKeyedAppStatesByKey);
     }
 
@@ -138,8 +136,7 @@ public class FakeKeyedAppStatesReporter extends KeyedAppStatesReporter {
      * <p>Once uploaded (using {@link #setStatesImmediate(Collection)}) instances will no longer be
      * returned by this method.
      */
-    @NonNull
-    public List<KeyedAppState> getOnDeviceKeyedAppStates() {
+    public @NonNull List<KeyedAppState> getOnDeviceKeyedAppStates() {
         return new ArrayList<>(mOnDeviceKeyedAppStates);
     }
 
@@ -149,8 +146,7 @@ public class FakeKeyedAppStatesReporter extends KeyedAppStatesReporter {
      * <p>Once uploaded (using {@link #setStatesImmediate(Collection)}) instances will no longer be
      * returned by this method.
      */
-    @NonNull
-    public Map<String, KeyedAppState> getOnDeviceKeyedAppStatesByKey() {
+    public @NonNull Map<String, KeyedAppState> getOnDeviceKeyedAppStatesByKey() {
         return new HashMap<>(mOnDeviceKeyedAppStatesByKey);
     }
 
@@ -164,8 +160,7 @@ public class FakeKeyedAppStatesReporter extends KeyedAppStatesReporter {
      * {@link #setStatesImmediate(Collection)} or if {@link #setStatesImmediate(Collection)} has
      * been called since they were set.
      */
-    @NonNull
-    public List<KeyedAppState> getUploadedKeyedAppStates() {
+    public @NonNull List<KeyedAppState> getUploadedKeyedAppStates() {
         return new ArrayList<>(mUploadedKeyedAppStates);
     }
 
@@ -179,8 +174,7 @@ public class FakeKeyedAppStatesReporter extends KeyedAppStatesReporter {
      * {@link #setStatesImmediate(Collection)} or if {@link #setStatesImmediate(Collection)} has
      * been called since they were set.
      */
-    @NonNull
-    public Map<String, KeyedAppState> getUploadedKeyedAppStatesByKey() {
+    public @NonNull Map<String, KeyedAppState> getUploadedKeyedAppStatesByKey() {
         return new HashMap<>(mUploadedKeyedAppStatesByKey);
     }
 

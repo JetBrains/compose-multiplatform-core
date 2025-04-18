@@ -153,7 +153,6 @@ private abstract class BaseAndroidExternalSurfaceState(val scope: CoroutineScope
     fun dispatchSurfaceDestroyed(surface: Surface) {
         onSurfaceDestroyed?.invoke(surface)
         job?.cancel()
-        job = null
     }
 }
 

@@ -18,22 +18,30 @@ package androidx.wear.compose.material3
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.testutils.assertContainsColor
 import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -61,8 +69,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
+import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.material3.samples.FilledTonalCompactButtonSample
 import androidx.wear.compose.material3.samples.SimpleButtonSample
+import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -275,7 +285,7 @@ class ButtonTest {
         assertEquals(expectedSecondaryTextStyle, actualSecondaryLabelTextStyle)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun default_shape_is_stadium() {
         rule.isShape(
@@ -288,7 +298,7 @@ class ButtonTest {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun allows_custom_shape_override() {
         val shape = CutCornerShape(4.dp)
@@ -357,6 +367,50 @@ class ButtonTest {
     }
 
     @Test
+    fun button_animate_content_size_animates_height() {
+        val boxHeight = mutableStateOf(60.dp)
+        val frames = 14
+        val animationMillis = frames * 16
+        val buttonPadding = ButtonDefaults.ButtonVerticalPadding
+
+        rule.setContentWithTheme {
+            Button(onClick = {}, modifier = Modifier.testTag(TEST_TAG).fillMaxWidth()) {
+                Box(
+                    modifier =
+                        Modifier.animateContentSize(
+                                animationSpec = tween(animationMillis, easing = LinearEasing)
+                            )
+                            .fillMaxWidth()
+                            .requiredHeight(boxHeight.value)
+                ) {}
+            }
+        }
+        // Verify initial height
+        rule.onNodeWithTag(TEST_TAG).assertHeightIsEqualTo(60.dp + buttonPadding * 2)
+
+        // Set autoAdvance off to test the content size animation
+        rule.mainClock.autoAdvance = false
+        boxHeight.value = 100.dp
+        // Advance to the actual start of the animation
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeByFrame()
+
+        // Advance to middle of animation
+        rule.mainClock.advanceTimeBy(animationMillis / 2L)
+        rule.waitForIdle()
+        // Verify that the animation is halfway finished
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .assertHeightIsEqualTo(80.dp + buttonPadding * 2, tolerance = 2.dp)
+
+        // Set autoAdvance back on to finish the animation
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        // Verify end height is correct
+        rule.onNodeWithTag(TEST_TAG).assertHeightIsEqualTo(100.dp + buttonPadding * 2)
+    }
+
+    @Test
     fun has_icon_in_correct_location_for_three_slot_button_and_label_only() {
         val iconTag = "TestIcon"
         rule.setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
@@ -376,7 +430,7 @@ class ButtonTest {
             .assertTopPositionInRootIsEqualTo((itemBounds.height - iconBounds.height) / 2)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_base_button_correct_colors() {
         rule.verifyButtonColors(
@@ -386,7 +440,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_base_button_correct_colors() {
         rule.verifyButtonColors(
@@ -400,7 +454,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_filled_tonal_base_button_correct_colors() {
         rule.verifyButtonColors(
@@ -411,7 +465,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_filled_tonal_base_button_correct_colors() {
         rule.verifyButtonColors(
@@ -426,7 +480,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_button_correct_filled_variant_colors() {
         rule.verifyButtonColors(
@@ -437,7 +491,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_button_correct_filled_variant_colors() {
         rule.verifyButtonColors(
@@ -452,7 +506,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_outlined_base_button_correct_colors() {
         rule.verifyButtonColors(
@@ -463,7 +517,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_outlined_base_button_correct_colors() {
         rule.verifyButtonColors(
@@ -476,7 +530,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_child_base_button_correct_colors() {
         rule.verifyButtonColors(
@@ -487,7 +541,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_child_base_button_correct_colors() {
         rule.verifyButtonColors(
@@ -500,7 +554,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_three_slot_button_correct_colors() {
         rule.verifyThreeSlotButtonColors(
@@ -510,7 +564,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_three_slot_button_correct_colors() {
         rule.verifyThreeSlotButtonColors(
@@ -520,7 +574,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_filled_tonal_three_slot_button_correct_colors() {
         rule.verifyThreeSlotButtonColors(
@@ -530,7 +584,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_filled_tonal_three_slot_button_correct_colors() {
         rule.verifyThreeSlotButtonColors(
@@ -540,7 +594,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_outlined_three_slot_button_correct_colors() {
         rule.verifyThreeSlotButtonColors(
@@ -550,7 +604,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_outlined_three_slot_button_correct_colors() {
         rule.verifyThreeSlotButtonColors(
@@ -560,7 +614,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_child_three_slot_button_correct_colors() {
         rule.verifyThreeSlotButtonColors(
@@ -570,7 +624,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_child_three_slot_button_correct_colors() {
         rule.verifyThreeSlotButtonColors(
@@ -580,7 +634,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_outlined_button_correct_border_colors() {
         val status = Status.Enabled
@@ -592,7 +646,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_outlined_button_correct_border_colors() {
         val status = Status.Disabled
@@ -614,7 +668,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun overrides_enabled_outlined_button_border_color() {
         val status = Status.Enabled
@@ -636,7 +690,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun overrides_disabled_outlined_button_border_color() {
         val status = Status.Disabled
@@ -774,7 +828,7 @@ class ButtonTest {
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_compact_button_correct_colors() {
         rule.verifyCompactButtonColors(
@@ -783,7 +837,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_compact_button_correct_colors() {
         rule.verifyCompactButtonColors(
@@ -792,7 +846,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_filled_tonal_compact_button_correct_colors() {
         rule.verifyCompactButtonColors(
@@ -801,7 +855,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_filled_tonal_compact_button_correct_colors() {
         rule.verifyCompactButtonColors(
@@ -810,7 +864,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_outlined_compact_button_correct_colors() {
         rule.verifyCompactButtonColors(
@@ -819,7 +873,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_outlined_compact_button_correct_colors() {
         rule.verifyCompactButtonColors(
@@ -828,7 +882,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_child_compact_button_correct_colors() {
         rule.verifyCompactButtonColors(
@@ -837,7 +891,7 @@ class ButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_child_compact_button_correct_colors() {
         rule.verifyCompactButtonColors(
@@ -1187,6 +1241,54 @@ class ButtonTest {
         assertEquals(TextAlign.Center, labelAlignment)
     }
 
+    @Test
+    fun button_long_click_triggers_haptic() {
+        val results = mutableMapOf<HapticFeedbackType, Int>()
+        val haptics = hapticFeedback(collectResultsFromHapticFeedback(results))
+
+        rule.setContentWithTheme {
+            CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                Button(
+                    onClick = { /* Do nothing */ },
+                    onLongClick = {},
+                    modifier = Modifier.testTag(TEST_TAG)
+                ) {
+                    Text("Test")
+                }
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { longClick() }
+
+        assertThat(results).hasSize(1)
+        assertThat(results).containsKey(HapticFeedbackType.LongPress)
+        assertThat(results[HapticFeedbackType.LongPress]).isEqualTo(1)
+    }
+
+    @Test
+    fun compactbutton_long_click_triggers_haptic() {
+        val results = mutableMapOf<HapticFeedbackType, Int>()
+        val haptics = hapticFeedback(collectResultsFromHapticFeedback(results))
+
+        rule.setContentWithTheme {
+            CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                CompactButton(
+                    onClick = { /* Do nothing */ },
+                    onLongClick = {},
+                    modifier = Modifier.testTag(TEST_TAG)
+                ) {
+                    Text("Test")
+                }
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { longClick() }
+
+        assertThat(results).hasSize(1)
+        assertThat(results).containsKey(HapticFeedbackType.LongPress)
+        assertThat(results[HapticFeedbackType.LongPress]).isEqualTo(1)
+    }
+
     private fun responds_to_long_click(
         enabled: Boolean,
         onLongClick: () -> Unit,
@@ -1316,9 +1418,7 @@ private fun ComposeContentTestRule.verifyThreeSlotButtonColors(
     setContentWithTheme {
         val buttonColors = expectedColor()
         containerColor =
-            ((buttonColors.containerPainter(status.enabled()) as ColorPainter).color).compositeOver(
-                testBackgroundColor
-            )
+            (buttonColors.containerColor(status.enabled())).compositeOver(testBackgroundColor)
         labelColor = buttonColors.contentColor(status.enabled())
         secondaryLabelColor = buttonColors.secondaryContentColor(status.enabled())
         iconColor = buttonColors.iconColor(status.enabled())
@@ -1434,7 +1534,7 @@ private fun ComposeContentTestRule.isShape(
     setContentWithTheme {
         background = MaterialTheme.colorScheme.surfaceContainer
         Box(Modifier.background(background)) {
-            buttonColor = (colors().containerPainter(true) as ColorPainter).color
+            buttonColor = colors().containerColor(true)
             if (buttonColor == Color.Transparent) {
                 buttonColor = background
             }
@@ -1469,9 +1569,7 @@ private fun ComposeContentTestRule.verifyCompactButtonColors(
 
     setContentWithTheme {
         containerColor =
-            ((colors().containerPainter(status.enabled()) as ColorPainter).color).compositeOver(
-                testBackgroundColor
-            )
+            (colors().containerColor(status.enabled())).compositeOver(testBackgroundColor)
         labelColor = colors().contentColor(status.enabled())
         iconColor = colors().iconColor(status.enabled())
 

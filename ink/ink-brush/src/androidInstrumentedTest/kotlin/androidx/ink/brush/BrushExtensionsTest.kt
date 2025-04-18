@@ -37,8 +37,7 @@ class BrushExtensionsTest {
     private val testColor = AndroidColor.valueOf(0.4f, 0.6f, 0.8f, 0.2f, displayP3)
     @ColorLong private val testColorLong = testColor.pack()
 
-    @OptIn(ExperimentalInkCustomBrushApi::class)
-    private val testFamily = BrushFamily(uri = "/brush-family:pencil")
+    @OptIn(ExperimentalInkCustomBrushApi::class) private val testFamily = BrushFamily()
 
     @Test
     fun brushCreateAndroidColor_getsCorrectColor() {

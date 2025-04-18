@@ -19,9 +19,10 @@ package androidx.appsearch.app;
 import android.content.Context;
 import android.os.UserHandle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.util.concurrent.BlockingQueue;
@@ -44,22 +45,20 @@ public class JetpackAppSearchEnvironment implements AppSearchEnvironment {
      * <p>This folder should only be accessed after unlock.
      */
     @Override
-    @NonNull
-    public File getAppSearchDir(@NonNull Context context, @Nullable UserHandle unused) {
+    public @NonNull File getAppSearchDir(@NonNull Context context, @Nullable UserHandle unused) {
         return new File(context.getFilesDir(), "appsearch");
     }
 
     /** Creates context for the user based on the userHandle. */
     @Override
-    @NonNull
-    public Context createContextAsUser(@NonNull Context context, @NonNull UserHandle userHandle) {
+    public @NonNull Context createContextAsUser(@NonNull Context context,
+            @NonNull UserHandle userHandle) {
         return context;
     }
 
     /** Creates and returns a ThreadPoolExecutor for given parameters. */
     @Override
-    @NonNull
-    public ExecutorService createExecutorService(
+    public @NonNull ExecutorService createExecutorService(
             int corePoolSize,
             int maxConcurrency,
             long keepAliveTime,
@@ -76,15 +75,13 @@ public class JetpackAppSearchEnvironment implements AppSearchEnvironment {
 
     /** Creates and returns an ExecutorService with a single thread. */
     @Override
-    @NonNull
-    public ExecutorService createSingleThreadExecutor() {
+    public @NonNull ExecutorService createSingleThreadExecutor() {
         return Executors.newSingleThreadExecutor();
     }
 
     /** Creates and returns an Executor with cached thread pools. */
     @Override
-    @NonNull
-    public ExecutorService createCachedThreadPoolExecutor() {
+    public @NonNull ExecutorService createCachedThreadPoolExecutor() {
         return Executors.newCachedThreadPool();
     }
 
@@ -92,8 +89,7 @@ public class JetpackAppSearchEnvironment implements AppSearchEnvironment {
      * Returns a cache directory for creating temporary files like in case of migrating documents.
      */
     @Override
-    @Nullable
-    public File getCacheDir(@NonNull Context context) {
+    public @Nullable File getCacheDir(@NonNull Context context) {
         return context.getCacheDir();
     }
 

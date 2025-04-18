@@ -16,22 +16,26 @@
 
 package androidx.compose.foundation.textfield
 
+import android.content.Context
 import android.view.KeyEvent
 import android.view.KeyEvent.META_ALT_ON
 import android.view.KeyEvent.META_CTRL_ON
 import android.view.KeyEvent.META_SHIFT_ON
+import androidx.compose.foundation.internal.toClipEntry
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
 import androidx.compose.foundation.text.input.InputMethodInterceptor
+import androidx.compose.foundation.text.test.withEmojiCompat
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.nativeKeyCode
-import androidx.compose.ui.platform.ClipboardManager
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.Clipboard
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasSetTextAction
@@ -48,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -137,12 +142,46 @@ class HardwareKeyboardTest {
     }
 
     @Test
+    fun textField_newLineNumpad() {
+        keysSequenceTest(initText = "hello") {
+            Key.NumPadEnter.downAndUp()
+            expectedText("\nhello")
+        }
+    }
+
+    @Test
     fun textField_backspace() {
         keysSequenceTest(initText = "hello") {
             Key.DirectionRight.downAndUp()
             Key.DirectionRight.downAndUp()
             Key.Backspace.downAndUp()
             expectedText("hllo")
+        }
+    }
+
+    @Test
+    fun textField_backspace_withDiacritic() {
+        keysSequenceTest(initText = "e\u0301f") { // e + combining acute accent + f
+            Key.DirectionRight.downAndUp(META_CTRL_ON) // move cursor to end of line
+            Key.Backspace.downAndUp()
+            expectedText("e\u0301")
+            Key.Backspace.downAndUp() // Should remove the accent, not the base character
+            expectedText("e")
+            Key.Backspace.downAndUp()
+            expectedText("")
+            Key.Backspace.downAndUp() // Shouldn't crash
+            expectedText("")
+        }
+    }
+
+    @Test
+    fun textField_backspace_withEmoji() {
+        val emojiText =
+            "\ud83d\udc69\u200d\u2764\ufe0f\u200d\ud83d\udc8b\u200d\ud83d\udc69" // 👩‍❤️‍💋‍👩
+        keysSequenceTest(initText = emojiText, useEmojiCompat = true) {
+            Key.DirectionRight.downAndUp(META_CTRL_ON) // move cursor to end of line
+            Key.Backspace.downAndUp()
+            expectedText("") // If it is deleting code points, the result will look like "👩‍❤️‍💋‍"
         }
     }
 
@@ -155,7 +194,7 @@ class HardwareKeyboardTest {
     }
 
     @Test
-    fun textField_delete_atEnd() {
+    fun textField_delete_atEnd() = runTest {
         val text = "hello"
         val value =
             mutableStateOf(
@@ -398,7 +437,7 @@ class HardwareKeyboardTest {
     }
 
     @Test
-    fun textField_onValueChangeRecomposeTest() {
+    fun textField_onValueChangeRecomposeTest() = runTest {
         // sample code in b/200577798
         val value = mutableStateOf(TextFieldValue(""))
         var lastNewValue: TextFieldValue? = null
@@ -556,27 +595,32 @@ class HardwareKeyboardTest {
         initText: String = "",
         modifier: Modifier = Modifier.fillMaxSize(),
         singleLine: Boolean = false,
+        useEmojiCompat: Boolean = false,
         sequence: SequenceScope.() -> Unit,
-    ) {
+    ) = runTest {
         val value = mutableStateOf(TextFieldValue(initText))
         keysSequenceTest(
             value = value,
             modifier = modifier,
             singleLine = singleLine,
+            useEmojiCompat = useEmojiCompat,
             sequence = sequence
         )
     }
 
-    private fun keysSequenceTest(
+    private suspend fun keysSequenceTest(
         value: MutableState<TextFieldValue>,
         modifier: Modifier = Modifier.fillMaxSize(),
         onValueChange: (TextFieldValue) -> Unit = { value.value = it },
         singleLine: Boolean = false,
+        useEmojiCompat: Boolean = false,
         sequence: SequenceScope.() -> Unit,
     ) {
-        lateinit var clipboardManager: ClipboardManager
+        lateinit var clipboard: Clipboard
+        lateinit var context: Context
         inputMethodInterceptor.setContent {
-            clipboardManager = LocalClipboardManager.current
+            clipboard = LocalClipboard.current
+            context = LocalContext.current
             BasicTextField(
                 value = value.value,
                 textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = 10.sp),
@@ -587,9 +631,12 @@ class HardwareKeyboardTest {
         }
 
         rule.onNodeWithTag("textfield").requestFocus()
-        rule.runOnIdle { clipboardManager.setText(AnnotatedString("InitialTestText")) }
+        rule.waitForIdle()
+        clipboard.setClipEntry(AnnotatedString("InitialTestText").toClipEntry())
 
-        sequence(SequenceScope(value) { rule.onNode(hasSetTextAction()) })
+        withEmojiCompat(context, enabled = useEmojiCompat) {
+            sequence(SequenceScope(value) { rule.onNode(hasSetTextAction()) })
+        }
     }
 }
 

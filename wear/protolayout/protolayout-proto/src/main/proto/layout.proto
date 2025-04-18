@@ -689,6 +689,8 @@ message ArcLine {
 
   // A brush used to draw this line. If set, the brush will be used instead of
   // the color provided in {@code setColor()}.
+  //
+  // Only SweepGradient is supported.
   Brush brush = 7;
 
   // Modifiers for this element.
@@ -736,16 +738,16 @@ message StrokeCapProp {
   Shadow shadow = 2;
 }
 
-// A dashed arc line that can be placed in an Arc container. It is an arc line made up of arc line
-// segments separated by gaps.
+// A dashed arc line. It is an arc line made up of arc line segments separated by gaps, and can be
+// placed in an Arc container.
 message DashedArcLine {
   // The length of this line in degrees, including gaps. <setter> If not defined,
   // defaults to 0.</setter>
   //
-  // When using a dynamic value, make sure to specify the bounding constraints
+  // <setter>When using a dynamic value, make sure to specify the bounding constraints
   // for the affected layout element through {@code
   // setLayoutConstraintsForDynamicLength(AngularLayoutConstraint)} otherwise
-  // {@code build()} fails.
+  // {@code build()} fails.<setter>
   DegreesProp length = 1;
 
   // The thickness of this line. <setter> If not defined, defaults to 0.</setter>
@@ -757,8 +759,8 @@ message DashedArcLine {
   // Modifiers for this element.
   ArcModifiers modifiers = 4;
 
-  // The direction in which this line is drawn.<setter> If not set, defaults to
-  // ARC_DIRECTION_CLOCKWISE.</setter>
+  // The direction in which this line is drawn.<setter> If not set, defaults to the Arc container's
+  // direction where it is placed in.</setter>
   ArcDirectionProp arc_direction = 5;
 
   // The dashed line pattern which describes how the arc line is segmented by gaps.

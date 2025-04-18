@@ -18,7 +18,6 @@ package androidx.appsearch.localstorage;
 
 import static androidx.appsearch.localstorage.util.PrefixUtil.getPackageName;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.exceptions.AppSearchException;
@@ -28,6 +27,8 @@ import androidx.collection.ArrayMap;
 import androidx.core.util.Preconditions;
 
 import com.google.android.icing.proto.NamespaceStorageInfoProto;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Map;

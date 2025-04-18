@@ -24,8 +24,6 @@ import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.draw
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.internal.JvmDefaultWithCompatibility
 import androidx.compose.ui.internal.checkPrecondition
@@ -91,7 +89,7 @@ interface BuildDrawCacheParams {
 /** Draw into a [Canvas] behind the modified content. */
 fun Modifier.drawBehind(onDraw: DrawScope.() -> Unit) = this then DrawBehindElement(onDraw)
 
-private data class DrawBehindElement(val onDraw: DrawScope.() -> Unit) :
+private class DrawBehindElement(val onDraw: DrawScope.() -> Unit) :
     ModifierNodeElement<DrawBackgroundModifier>() {
     override fun create() = DrawBackgroundModifier(onDraw)
 
@@ -102,6 +100,19 @@ private data class DrawBehindElement(val onDraw: DrawScope.() -> Unit) :
     override fun InspectorInfo.inspectableProperties() {
         name = "drawBehind"
         properties["onDraw"] = onDraw
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is DrawBehindElement) return false
+
+        if (onDraw !== other.onDraw) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return onDraw.hashCode()
     }
 }
 
@@ -131,7 +142,7 @@ internal class DrawBackgroundModifier(var onDraw: DrawScope.() -> Unit) :
 fun Modifier.drawWithCache(onBuildDrawCache: CacheDrawScope.() -> DrawResult) =
     this then DrawWithCacheElement(onBuildDrawCache)
 
-private data class DrawWithCacheElement(val onBuildDrawCache: CacheDrawScope.() -> DrawResult) :
+private class DrawWithCacheElement(val onBuildDrawCache: CacheDrawScope.() -> DrawResult) :
     ModifierNodeElement<CacheDrawModifierNodeImpl>() {
     override fun create(): CacheDrawModifierNodeImpl {
         return CacheDrawModifierNodeImpl(CacheDrawScope(), onBuildDrawCache)
@@ -144,6 +155,19 @@ private data class DrawWithCacheElement(val onBuildDrawCache: CacheDrawScope.() 
     override fun InspectorInfo.inspectableProperties() {
         name = "drawWithCache"
         properties["onBuildDrawCache"] = onBuildDrawCache
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is DrawWithCacheElement) return false
+
+        if (onBuildDrawCache !== other.onBuildDrawCache) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return onBuildDrawCache.hashCode()
     }
 }
 
@@ -334,20 +358,27 @@ class CacheDrawScope internal constructor() : Density {
         layoutDirection: LayoutDirection = this@CacheDrawScope.layoutDirection,
         size: IntSize = this@CacheDrawScope.size.toIntSize(),
         block: ContentDrawScope.() -> Unit
-    ) =
-        record(density, layoutDirection, size) {
-            val contentDrawScope = this@CacheDrawScope.contentDrawScope!!
-            drawIntoCanvas { canvas ->
-                contentDrawScope.draw(
-                    density,
-                    layoutDirection,
-                    canvas,
-                    Size(size.width.toFloat(), size.height.toFloat())
-                ) {
-                    block(contentDrawScope)
+    ) {
+        val scope = contentDrawScope!!
+        with(scope) {
+            val prevDensity = drawContext.density
+            val prevLayoutDirection = drawContext.layoutDirection
+            record(size) {
+                drawContext.apply {
+                    this.density = density
+                    this.layoutDirection = layoutDirection
+                }
+                try {
+                    block(scope)
+                } finally {
+                    drawContext.apply {
+                        this.density = prevDensity
+                        this.layoutDirection = prevLayoutDirection
+                    }
                 }
             }
         }
+    }
 
     /** Issue drawing commands to be executed before the layout content is drawn */
     fun onDrawBehind(block: DrawScope.() -> Unit): DrawResult = onDrawWithContent {
@@ -386,7 +417,7 @@ class DrawResult internal constructor(internal var block: ContentDrawScope.() ->
 fun Modifier.drawWithContent(onDraw: ContentDrawScope.() -> Unit): Modifier =
     this then DrawWithContentElement(onDraw)
 
-private data class DrawWithContentElement(val onDraw: ContentDrawScope.() -> Unit) :
+private class DrawWithContentElement(val onDraw: ContentDrawScope.() -> Unit) :
     ModifierNodeElement<DrawWithContentModifier>() {
     override fun create() = DrawWithContentModifier(onDraw)
 
@@ -397,6 +428,19 @@ private data class DrawWithContentElement(val onDraw: ContentDrawScope.() -> Uni
     override fun InspectorInfo.inspectableProperties() {
         name = "drawWithContent"
         properties["onDraw"] = onDraw
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is DrawWithContentElement) return false
+
+        if (onDraw !== other.onDraw) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return onDraw.hashCode()
     }
 }
 

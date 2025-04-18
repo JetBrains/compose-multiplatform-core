@@ -23,7 +23,6 @@ import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.graph.GraphProcessorImpl
 import androidx.camera.camera2.pipe.graph.GraphRequestProcessor
-import androidx.camera.camera2.pipe.graph.GraphState3A
 import androidx.camera.camera2.pipe.graph.Listener3A
 import androidx.camera.camera2.pipe.graph.SessionLock
 import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor
@@ -60,7 +59,6 @@ class CameraGraphParametersImplTest {
             FakeThreads.fromTestScope(testScope),
             CameraGraphId.nextId(),
             FakeGraphConfigs.graphConfig,
-            GraphState3A(),
             Listener3A(),
             arrayListOf(FakeRequestListener())
         )

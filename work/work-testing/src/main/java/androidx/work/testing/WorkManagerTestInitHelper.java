@@ -21,15 +21,15 @@ import static androidx.work.testing.WorkManagerTestInitHelper.ExecutorsMode.LEGA
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.work.Configuration;
 import androidx.work.impl.WorkManagerImpl;
 import androidx.work.impl.utils.SerialExecutorImpl;
 import androidx.work.impl.utils.taskexecutor.SerialExecutor;
 
-import java.util.UUID;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
+import java.util.UUID;
 
 /**
  * Helps initialize {@link androidx.work.WorkManager} for testing.

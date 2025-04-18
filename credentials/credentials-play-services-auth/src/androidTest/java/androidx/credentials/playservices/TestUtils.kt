@@ -17,7 +17,7 @@
 package androidx.credentials.playservices
 
 import android.os.Bundle
-import androidx.credentials.playservices.controllers.CreatePublicKeyCredential.PublicKeyCredentialControllerUtility
+import androidx.credentials.playservices.controllers.identityauth.createpublickeycredential.PublicKeyCredentialControllerUtility
 import com.google.android.gms.common.ConnectionResult
 import org.json.JSONArray
 import org.json.JSONObject

@@ -48,6 +48,7 @@ class CompatProvider : SandboxedSdkProviderCompat() {
         isBeforeUnloadSdkCalled = true
     }
 
+    @Deprecated("Deprecated in future version. Deprecating here to temporary pass max_dep_versions")
     override fun getView(windowContext: Context, params: Bundle, width: Int, height: Int): View {
         return View(windowContext)
     }

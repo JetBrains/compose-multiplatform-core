@@ -27,6 +27,7 @@ import android.os.RemoteException
 import android.util.Pair
 import androidx.annotation.RequiresApi
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.filters.SdkSuppress
 import androidx.wear.phone.interactions.WearPhoneInteractionsTestRunner
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Executor
@@ -51,7 +52,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @RunWith(WearPhoneInteractionsTestRunner::class)
 @DoNotInstrument // Needed because it is defined in the "android" package.
 @Config(minSdk = 26)
-@RequiresApi(Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 public class RemoteAuthTest {
 
     @Config(minSdk = 26)

@@ -61,7 +61,7 @@ public class FakeRequestMetadata(
             return FakeRequestMetadata(
                 requestParameters = request.parameters,
                 template = request.template ?: RequestTemplate(0),
-                streams = request.streams.map { it to streamToSurfaces[it]!! }.toMap(),
+                streams = request.streams.associate { it to checkNotNull(streamToSurfaces[it]) },
                 repeating = repeating,
                 request = request
             )

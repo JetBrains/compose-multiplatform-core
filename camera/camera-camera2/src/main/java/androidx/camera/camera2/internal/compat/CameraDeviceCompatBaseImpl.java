@@ -22,12 +22,13 @@ import android.hardware.camera2.CameraDevice;
 import android.os.Handler;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.compat.params.OutputConfigurationCompat;
 import androidx.camera.camera2.internal.compat.params.SessionConfigurationCompat;
 import androidx.camera.core.Logger;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -100,7 +101,7 @@ class CameraDeviceCompatBaseImpl implements CameraDeviceCompat.CameraDeviceCompa
 
     @SuppressWarnings("deprecation") /* createCaptureSession */
     void createBaseCaptureSession(@NonNull CameraDevice device, @NonNull List<Surface> surfaces,
-            @NonNull CameraCaptureSession.StateCallback cb, @NonNull Handler handler)
+            CameraCaptureSession.@NonNull StateCallback cb, @NonNull Handler handler)
             throws CameraAccessExceptionCompat {
         try {
             device.createCaptureSession(surfaces, cb, handler);
@@ -136,8 +137,7 @@ class CameraDeviceCompatBaseImpl implements CameraDeviceCompat.CameraDeviceCompa
     }
 
     @Override
-    @NonNull
-    public CameraDevice unwrap() {
+    public @NonNull CameraDevice unwrap() {
         return mCameraDevice;
     }
 

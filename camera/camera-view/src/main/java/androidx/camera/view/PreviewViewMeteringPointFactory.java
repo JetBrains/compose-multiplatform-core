@@ -24,12 +24,13 @@ import android.util.Size;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.camera.core.MeteringPointFactory;
 import androidx.camera.core.impl.utils.Threads;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * {@link MeteringPointFactory} for {@link PreviewView}.
@@ -40,24 +41,20 @@ class PreviewViewMeteringPointFactory extends MeteringPointFactory {
 
     static final PointF INVALID_POINT = new PointF(2F, 2F);
 
-    @NonNull
-    private final PreviewTransformation mPreviewTransformation;
+    private final @NonNull PreviewTransformation mPreviewTransformation;
     @GuardedBy("this")
-    @Nullable
-    private Rect mSensorRect = null;
+    private @Nullable Rect mSensorRect = null;
 
     @GuardedBy("this")
-    @Nullable
-    private Matrix mMatrix;
+    private @Nullable Matrix mMatrix;
 
     PreviewViewMeteringPointFactory(@NonNull PreviewTransformation previewTransformation) {
         mPreviewTransformation = previewTransformation;
     }
 
     @AnyThread
-    @NonNull
     @Override
-    protected PointF convertPoint(float x, float y) {
+    protected @NonNull PointF convertPoint(float x, float y) {
         float[] point = new float[]{x, y};
         synchronized (this) {
             if (mMatrix == null) {

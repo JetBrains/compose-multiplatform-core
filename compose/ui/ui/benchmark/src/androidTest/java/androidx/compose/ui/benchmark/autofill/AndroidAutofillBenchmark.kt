@@ -21,9 +21,6 @@ import android.view.View
 import android.view.autofill.AutofillValue
 import androidx.benchmark.junit4.BenchmarkRule
 import androidx.benchmark.junit4.measureRepeatedOnMainThread
-import androidx.compose.ui.autofill.AutofillNode
-import androidx.compose.ui.autofill.AutofillTree
-import androidx.compose.ui.autofill.AutofillType
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.platform.LocalView
@@ -44,13 +41,15 @@ class AndroidAutofillBenchmark {
 
     @get:Rule val benchmarkRule = BenchmarkRule()
 
-    private lateinit var autofillTree: AutofillTree
+    private lateinit var autofillTree:
+        @Suppress("Deprecation")
+        androidx.compose.ui.autofill.AutofillTree
     private lateinit var composeView: View
 
     @Before
     fun setup() {
         composeTestRule.setContent {
-            autofillTree = LocalAutofillTree.current
+            autofillTree = @Suppress("Deprecation") LocalAutofillTree.current
             composeView = LocalView.current
         }
     }
@@ -62,9 +61,11 @@ class AndroidAutofillBenchmark {
             composeTestRule.runOnUiThread {
                 // Arrange.
                 val autofillNode =
-                    AutofillNode(
+                    @Suppress("Deprecation")
+                    androidx.compose.ui.autofill.AutofillNode(
                         onFill = {},
-                        autofillTypes = listOf(AutofillType.PersonFullName),
+                        autofillTypes =
+                            listOf(androidx.compose.ui.autofill.AutofillType.PersonFullName),
                         boundingBox = Rect(0f, 0f, 0f, 0f)
                     )
 

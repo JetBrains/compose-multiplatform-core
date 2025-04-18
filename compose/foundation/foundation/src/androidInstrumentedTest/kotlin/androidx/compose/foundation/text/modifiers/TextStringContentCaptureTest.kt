@@ -17,16 +17,28 @@
 package androidx.compose.foundation.text.modifiers
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.unit.sp
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth
 import org.junit.Rule
@@ -54,6 +66,42 @@ class TextStringContentCaptureTest {
 
         val newSemantics = rule.onNodeWithText(after).fetchSemanticsNode()
         rule.runOnIdle { Truth.assertThat(newSemantics.fetchTranslation()).isNull() }
+    }
+
+    @Test
+    fun text_withInlineContent_doesNotCrash_invalidatesPlaceholders_whenApplyingTranslation() {
+        var layoutResult: TextLayoutResult? = null
+
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString {
+                    append("hey")
+                    appendInlineContent("inline", alternateText = "00")
+                },
+                modifier = Modifier.testTag("TAG"),
+                onTextLayout = { layoutResult = it },
+                inlineContent =
+                    mapOf(
+                        "inline" to
+                            InlineTextContent(
+                                placeholder = Placeholder(1.sp, 1.sp, PlaceholderVerticalAlign.Top)
+                            ) {}
+                    )
+            )
+        }
+
+        // show the translated text
+        val node = rule.onNodeWithTag("TAG").fetchSemanticsNode()
+        rule.runOnIdle {
+            val translatedText = buildAnnotatedString { append("hola") }
+            node.config[SemanticsActions.SetTextSubstitution].action?.invoke(translatedText)
+            node.config[SemanticsActions.ShowTextSubstitution].action?.invoke(true)
+        }
+
+        rule.runOnIdle {
+            Truth.assertThat(layoutResult).isNotNull()
+            Truth.assertThat(layoutResult!!.placeholderRects).isEqualTo(emptyList<Rect?>())
+        }
     }
 }
 

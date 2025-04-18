@@ -16,13 +16,13 @@
 
 package androidx.lifecycle.viewmodel.testing.internal
 
+import android.os.Bundle
 import android.os.Parcel
-import android.os.Parcelable
 import androidx.savedstate.SavedState
 
 internal actual fun platformEncodeDecode(savedState: SavedState): SavedState {
     val parcel = Parcel.obtain()
-    savedState.writeToParcel(parcel, Parcelable.PARCELABLE_WRITE_RETURN_VALUE)
+    savedState.writeToParcel(parcel, Bundle.PARCELABLE_WRITE_RETURN_VALUE)
     parcel.setDataPosition(0)
     val restored = SavedState.CREATOR.createFromParcel(parcel)
     val bytes = parcel.marshall()

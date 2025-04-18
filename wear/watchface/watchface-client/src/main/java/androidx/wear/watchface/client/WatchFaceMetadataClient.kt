@@ -54,7 +54,13 @@ import kotlinx.coroutines.CompletableDeferred
 /**
  * Interface for fetching watch face metadata. E.g. the [UserStyleSchema] and
  * [ComplicationSlotMetadata]. This must be [close]d after use to release resources.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public interface WatchFaceMetadataClient : AutoCloseable {
 
     public companion object {
@@ -299,7 +305,12 @@ private const val ANDROIDX_WATCHFACE_CONTROL_SERVICE =
  *   around specific complication complication data sources.
  * @property complicationConfigExtras Extras to be merged into the Intent sent when invoking the
  *   complication data source chooser activity.
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class ComplicationSlotMetadata
 @ComplicationExperimental
 constructor(

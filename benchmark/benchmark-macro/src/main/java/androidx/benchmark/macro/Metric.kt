@@ -22,9 +22,8 @@ import androidx.annotation.RestrictTo
 import androidx.benchmark.DeviceInfo
 import androidx.benchmark.Shell
 import androidx.benchmark.macro.BatteryCharge.hasMinimumCharge
-import androidx.benchmark.macro.PowerMetric.Type
+import androidx.benchmark.macro.PowerMetric.Companion.deviceSupportsHighPrecisionTracking
 import androidx.benchmark.macro.PowerRail.hasMetrics
-import androidx.benchmark.macro.TraceSectionMetric.Mode
 import androidx.benchmark.macro.perfetto.BatteryDischargeQuery
 import androidx.benchmark.macro.perfetto.FrameTimingQuery
 import androidx.benchmark.macro.perfetto.FrameTimingQuery.SubMetric
@@ -34,8 +33,8 @@ import androidx.benchmark.macro.perfetto.MemoryUsageQuery
 import androidx.benchmark.macro.perfetto.PowerQuery
 import androidx.benchmark.macro.perfetto.StartupTimingQuery
 import androidx.benchmark.macro.perfetto.camelCase
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
-import androidx.benchmark.perfetto.Slice
+import androidx.benchmark.traceprocessor.Slice
+import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.platform.app.InstrumentationRegistry
 
 /** Metric interface. */
@@ -49,26 +48,28 @@ sealed class Metric {
     /** After stopping, collect metrics */
     internal abstract fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: PerfettoTraceProcessor.Session
+        traceSession: TraceProcessor.Session
     ): List<Measurement>
 
     /**
      * Contextual information about the environment where metrics are captured, such as [apiLevel]
      * and [targetPackageName].
+     *
+     * @property apiLevel `Build.VERSION.SDK_INT` at time of capture.
+     * @property targetPackageName Package name of the app process being measured.
+     * @property testPackageName Package name of the test/benchmarking process.
+     * @property startupMode StartupMode for the target application, if the app was forced to launch
+     *   in a specific state, `null` otherwise.
+     * @property artMainlineVersion ART mainline version, or `-1` if on a OS version without ART
+     *   mainline (<30). `null` if captured from a fixed trace, where mainline version is unknown.
      */
     @ExperimentalMetricApi
     class CaptureInfo(
-        /** Build.VERSION.SDK_INT at time of capture */
         val apiLevel: Int,
         val targetPackageName: String,
         val testPackageName: String,
         val startupMode: StartupMode?,
-        /**
-         * ART mainline version, or -1 if on a OS version without ART mainline (<30)
-         *
-         * If `null`, ART version is unknown. This should only occur if capturing metrics from a
-         * fixed trace, where the ART version is unknown.
-         */
+
         // allocations for tests not relevant, not in critical path
         @Suppress("AutoBoxing")
         @get:Suppress("AutoBoxing")
@@ -97,6 +98,10 @@ sealed class Metric {
             /**
              * Constructs a CaptureInfo for a local run on the current device, from the current
              * process.
+             *
+             * @param targetPackageName Package name of the app being measured.
+             * @param startupMode StartupMode for the target application, if the app was forced to
+             *   launch in a specific state, `null` otherwise.
              */
             @JvmStatic
             fun forLocalCapture(targetPackageName: String, startupMode: StartupMode?) =
@@ -116,7 +121,9 @@ sealed class Metric {
      *
      * To validate results in tests, use [assertEqualMeasurements]
      */
+    @ConsistentCopyVisibility // Mirror copy()'s visibility with that of the constructor
     @ExperimentalMetricApi
+    @Suppress("DataClassDefinition")
     data class Measurement
     internal constructor(
         /**
@@ -196,7 +203,7 @@ private fun Long.nsToDoubleMs(): Double = this / 1_000_000.0
 class FrameTimingMetric : Metric() {
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: PerfettoTraceProcessor.Session
+        traceSession: TraceProcessor.Session
     ): List<Measurement> {
         val frameData =
             FrameTimingQuery.getFrameData(
@@ -314,7 +321,7 @@ class FrameTimingGfxInfoMetric : Metric() {
 
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: PerfettoTraceProcessor.Session
+        traceSession: TraceProcessor.Session
     ): List<Measurement> {
         return metrics
             .map {
@@ -346,7 +353,7 @@ class FrameTimingGfxInfoMetric : Metric() {
 class StartupTimingMetric : Metric() {
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: PerfettoTraceProcessor.Session
+        traceSession: TraceProcessor.Session
     ): List<Measurement> {
         return StartupTimingQuery.getFrameSubMetrics(
                 session = traceSession,
@@ -376,7 +383,7 @@ class StartupTimingMetric : Metric() {
 class StartupTimingLegacyMetric : Metric() {
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: PerfettoTraceProcessor.Session
+        traceSession: TraceProcessor.Session
     ): List<Measurement> {
         // Acquires perfetto metrics
         val traceMetrics = traceSession.getTraceMetrics("android_startup")
@@ -409,7 +416,7 @@ class StartupTimingLegacyMetric : Metric() {
 }
 
 /**
- * Metric which captures results from a Perfetto trace with custom [PerfettoTraceProcessor] queries.
+ * Metric which captures results from a Perfetto trace with custom [TraceProcessor] queries.
  *
  * This is a more customizable version of [TraceSectionMetric] which can perform arbitrary queries
  * against the captured PerfettoTrace.
@@ -420,7 +427,7 @@ class StartupTimingLegacyMetric : Metric() {
  * class ActivityResumeMetric : TraceMetric() {
  *     override fun getMeasurements(
  *         captureInfo: CaptureInfo,
- *         traceSession: PerfettoTraceProcessor.Session
+ *         traceSession: TraceProcessor.Session
  *     ): List<Measurement> {
  *         val rowSequence = traceSession.query(
  *             """
@@ -449,9 +456,9 @@ class StartupTimingLegacyMetric : Metric() {
  * }
  * ```
  *
- * @see PerfettoTraceProcessor
- * @see PerfettoTraceProcessor.Session
- * @see PerfettoTraceProcessor.Session.query
+ * @see TraceProcessor
+ * @see TraceProcessor.Session
+ * @see TraceProcessor.Session.query
  */
 @ExperimentalMetricApi
 abstract class TraceMetric : Metric() {
@@ -461,7 +468,7 @@ abstract class TraceMetric : Metric() {
      */
     public abstract override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: PerfettoTraceProcessor.Session
+        traceSession: TraceProcessor.Session
     ): List<Measurement>
 }
 
@@ -495,9 +502,9 @@ constructor(
     /**
      * Section name or pattern to match.
      *
-     * "%" can be used as a wildcard, as this is supported by the underlying
-     * [PerfettoTraceProcessor] query. For example `"JIT %"` will match a section named `"JIT
-     * compiling int com.package.MyClass.method(int)"` present in the trace.
+     * "%" can be used as a wildcard, as this is supported by the underlying [TraceProcessor] query.
+     * For example `"JIT %"` will match a section named `"JIT compiling int
+     * com.package.MyClass.method(int)"` present in the trace.
      */
     private val sectionName: String,
     /**
@@ -571,7 +578,7 @@ constructor(
 
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: PerfettoTraceProcessor.Session
+        traceSession: TraceProcessor.Session
     ): List<Measurement> {
         val slices =
             traceSession.querySlices(
@@ -713,7 +720,7 @@ constructor(
 class ArtMetric : Metric() {
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: PerfettoTraceProcessor.Session
+        traceSession: TraceProcessor.Session
     ): List<Measurement> {
         return traceSession
             .querySlices("JIT Compiling %", packageName = captureInfo.targetPackageName)
@@ -723,8 +730,8 @@ class ArtMetric : Metric() {
                 .asMeasurements("artVerifyClass") +
             if (
                 DeviceInfo.isClassLoadTracingAvailable(
-                    targetApiLevel = captureInfo.apiLevel,
-                    targetArtMainlineVersion = captureInfo.artMainlineVersion
+                    sdkInt = captureInfo.apiLevel,
+                    artVersion = captureInfo.artMainlineVersion
                 )
             ) {
                 traceSession
@@ -908,7 +915,7 @@ class PowerMetric(private val type: Type) : Metric() {
 
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: PerfettoTraceProcessor.Session
+        traceSession: TraceProcessor.Session
     ): List<Measurement> {
         // collect metrics between trace point flags
         val slice =
@@ -923,7 +930,7 @@ class PowerMetric(private val type: Type) : Metric() {
     }
 
     private fun getBatteryDischargeMetrics(
-        session: PerfettoTraceProcessor.Session,
+        session: TraceProcessor.Session,
         slice: Slice
     ): List<Measurement> {
         val metrics = BatteryDischargeQuery.getBatteryDischargeMetrics(session, slice)
@@ -932,10 +939,7 @@ class PowerMetric(private val type: Type) : Metric() {
         }
     }
 
-    private fun getPowerMetrics(
-        session: PerfettoTraceProcessor.Session,
-        slice: Slice
-    ): List<Measurement> {
+    private fun getPowerMetrics(session: TraceProcessor.Session, slice: Slice): List<Measurement> {
         val metrics = PowerQuery.getPowerMetrics(session, slice)
 
         val metricMap: Map<String, Double> = getSpecifiedMetrics(metrics)
@@ -1059,7 +1063,7 @@ class MemoryUsageMetric(
 
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: PerfettoTraceProcessor.Session
+        traceSession: TraceProcessor.Session
     ): List<Measurement> {
 
         val suffix = mode.toString()
@@ -1083,7 +1087,7 @@ class MemoryUsageMetric(
 class MemoryCountersMetric : TraceMetric() {
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: PerfettoTraceProcessor.Session
+        traceSession: TraceProcessor.Session
     ): List<Measurement> {
         val metrics =
             MemoryCountersQuery.getMemoryCounters(

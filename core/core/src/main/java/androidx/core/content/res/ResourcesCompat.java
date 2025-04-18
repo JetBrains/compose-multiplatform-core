@@ -45,8 +45,6 @@ import androidx.annotation.DimenRes;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.FontRes;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.res.FontResourcesParserCompat.FamilyResourceEntry;
@@ -56,6 +54,8 @@ import androidx.core.provider.FontsContractCompat.FontRequestCallback.FontReques
 import androidx.core.util.ObjectsCompat;
 import androidx.core.util.Preconditions;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -129,9 +129,8 @@ public final class ResourcesCompat {
      * @throws NotFoundException Throws NotFoundException if the given ID does
      *                           not exist.
      */
-    @Nullable
     @SuppressWarnings("deprecation")
-    public static Drawable getDrawable(@NonNull Resources res, @DrawableRes int id,
+    public static @Nullable Drawable getDrawable(@NonNull Resources res, @DrawableRes int id,
             @Nullable Theme theme) throws NotFoundException {
         if (SDK_INT >= 21) {
             return Api21Impl.getDrawable(res, id, theme);
@@ -163,10 +162,9 @@ public final class ResourcesCompat {
      * @throws NotFoundException Throws NotFoundException if the given ID does
      *                           not exist.
      */
-    @Nullable
     @SuppressWarnings("deprecation")
-    public static Drawable getDrawableForDensity(@NonNull Resources res, @DrawableRes int id,
-            int density, @Nullable Theme theme) throws NotFoundException {
+    public static @Nullable Drawable getDrawableForDensity(@NonNull Resources res,
+            @DrawableRes int id, int density, @Nullable Theme theme) throws NotFoundException {
         if (SDK_INT >= 21) {
             return Api21Impl.getDrawableForDensity(res, id, density, theme);
         } else {
@@ -220,10 +218,9 @@ public final class ResourcesCompat {
      * @throws NotFoundException Throws NotFoundException if the given ID does
      *                           not exist.
      */
-    @Nullable
     @SuppressWarnings("deprecation")
-    public static ColorStateList getColorStateList(@NonNull Resources res, @ColorRes int id,
-            @Nullable Theme theme) throws NotFoundException {
+    public static @Nullable ColorStateList getColorStateList(@NonNull Resources res,
+            @ColorRes int id, @Nullable Theme theme) throws NotFoundException {
         // We explicitly do not attempt to use the platform Resources impl on S+
         // in case the CSL is using only app:lStar
 
@@ -251,8 +248,7 @@ public final class ResourcesCompat {
     /**
      * Inflates a {@link ColorStateList} from resources, honouring theme attributes.
      */
-    @Nullable
-    private static ColorStateList inflateColorStateList(Resources resources, int resId,
+    private static @Nullable ColorStateList inflateColorStateList(Resources resources, int resId,
             @Nullable Theme theme) {
         if (isColorInt(resources, resId)) {
             // The resource is a color int, we can't handle it so return null
@@ -267,9 +263,8 @@ public final class ResourcesCompat {
         return null;
     }
 
-    @Nullable
-    private static ColorStateList getCachedColorStateList(@NonNull ColorStateListCacheKey key,
-            @ColorRes int resId) {
+    private static @Nullable ColorStateList getCachedColorStateList(
+            @NonNull ColorStateListCacheKey key, @ColorRes int resId) {
         synchronized (sColorStateCacheLock) {
             final SparseArray<ColorStateListCacheEntry> entries = sColorStateCaches.get(key);
             if (entries != null && entries.size() > 0) {
@@ -312,8 +307,7 @@ public final class ResourcesCompat {
                 && value.type <= TypedValue.TYPE_LAST_COLOR_INT;
     }
 
-    @NonNull
-    private static TypedValue getTypedValue() {
+    private static @NonNull TypedValue getTypedValue() {
         TypedValue tv = sTempTypedValue.get();
         if (tv == null) {
             tv = new TypedValue();
@@ -404,8 +398,7 @@ public final class ResourcesCompat {
      * @throws NotFoundException Throws NotFoundException if the given ID does not exist.
      * @see #getFont(Context, int, FontCallback, Handler)
      */
-    @Nullable
-    public static Typeface getFont(@NonNull Context context, @FontRes int id)
+    public static @Nullable Typeface getFont(@NonNull Context context, @FontRes int id)
             throws NotFoundException {
         if (context.isRestricted()) {
             return null;
@@ -432,8 +425,7 @@ public final class ResourcesCompat {
      * @throws NotFoundException Throws NotFoundException if the given ID does not exist.
      * @see #getFont(Context, int, FontCallback, Handler)
      */
-    @Nullable
-    public static Typeface getCachedFont(@NonNull Context context, @FontRes int id)
+    public static @Nullable Typeface getCachedFont(@NonNull Context context, @FontRes int id)
             throws NotFoundException {
         if (context.isRestricted()) {
             return null;
@@ -491,8 +483,7 @@ public final class ResourcesCompat {
         }
 
         @RestrictTo(LIBRARY)
-        @NonNull
-        public static Handler getHandler(@Nullable Handler handler) {
+        public static @NonNull Handler getHandler(@Nullable Handler handler) {
             return handler == null ? new Handler(Looper.getMainLooper()) : handler;
         }
     }
@@ -533,9 +524,8 @@ public final class ResourcesCompat {
      * Used by TintTypedArray.
      *
      */
-    @Nullable
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    public static Typeface getFont(@NonNull Context context, @FontRes int id,
+    public static @Nullable Typeface getFont(@NonNull Context context, @FontRes int id,
             @NonNull TypedValue value, int style, @Nullable FontCallback fontCallback)
             throws NotFoundException {
         if (context.isRestricted()) {
@@ -678,8 +668,7 @@ public final class ResourcesCompat {
             // This class is not instantiable.
         }
 
-        @NonNull
-        static ColorStateList getColorStateList(@NonNull Resources res, @ColorRes int id,
+        static @NonNull ColorStateList getColorStateList(@NonNull Resources res, @ColorRes int id,
                 @Nullable Theme theme) {
             return res.getColorStateList(id, theme);
         }

@@ -17,8 +17,6 @@
 
 package androidx.appsearch.usagereporting;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresFeature;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
 import androidx.appsearch.annotation.Document;
@@ -26,6 +24,9 @@ import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * {@link DismissAction} is a built-in AppSearch document type that contains different metrics.
@@ -64,14 +65,12 @@ import androidx.core.util.Preconditions;
 @Document(name = "builtin:DismissAction")
 @ExperimentalAppSearchApi
 public class DismissAction extends TakenAction {
-    @Nullable
     @Document.StringProperty(indexingType = StringPropertyConfig.INDEXING_TYPE_PREFIXES)
-    private final String mQuery;
+    private final @Nullable String mQuery;
 
-    @Nullable
     @Document.StringProperty(joinableValueType =
             StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID)
-    private final String mReferencedQualifiedId;
+    private final @Nullable String mReferencedQualifiedId;
 
     @Document.LongProperty
     private final int mResultRankInBlock;
@@ -95,8 +94,7 @@ public class DismissAction extends TakenAction {
      * Returns the user-entered search input (without any operators or rewriting) that yielded the
      * {@link androidx.appsearch.app.SearchResult} which impressed the user.
      */
-    @Nullable
-    public String getQuery() {
+    public @Nullable String getQuery() {
         return mQuery;
     }
 
@@ -108,8 +106,7 @@ public class DismissAction extends TakenAction {
      * {@link androidx.appsearch.util.DocumentIdUtil#createQualifiedId(String,String,String,String)}
      * for more details.
      */
-    @Nullable
-    public String getReferencedQualifiedId() {
+    public @Nullable String getReferencedQualifiedId() {
         return mReferencedQualifiedId;
     }
 
@@ -213,8 +210,7 @@ public class DismissAction extends TakenAction {
          * the {@link androidx.appsearch.app.SearchResult} which impressed the user.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setQuery(@Nullable String query) {
+        public @NonNull Builder setQuery(@Nullable String query) {
             mQuery = query;
             return this;
         }
@@ -228,8 +224,7 @@ public class DismissAction extends TakenAction {
          * String,String,String,String)} for more details.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setReferencedQualifiedId(@Nullable String referencedQualifiedId) {
+        public @NonNull Builder setReferencedQualifiedId(@Nullable String referencedQualifiedId) {
             mReferencedQualifiedId = referencedQualifiedId;
             return this;
         }
@@ -241,8 +236,7 @@ public class DismissAction extends TakenAction {
          * @see DismissAction#getResultRankInBlock
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setResultRankInBlock(int resultRankInBlock) {
+        public @NonNull Builder setResultRankInBlock(int resultRankInBlock) {
             mResultRankInBlock = resultRankInBlock;
             return this;
         }
@@ -253,16 +247,14 @@ public class DismissAction extends TakenAction {
          * @see DismissAction#getResultRankGlobal
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setResultRankGlobal(int resultRankGlobal) {
+        public @NonNull Builder setResultRankGlobal(int resultRankGlobal) {
             mResultRankGlobal = resultRankGlobal;
             return this;
         }
 
         /** Builds an {@link DismissAction}. */
         @Override
-        @NonNull
-        public DismissAction build() {
+        public @NonNull DismissAction build() {
             return new DismissAction(mNamespace, mId, mDocumentTtlMillis, mActionTimestampMillis,
                     mActionType, mQuery, mReferencedQualifiedId, mResultRankInBlock,
                     mResultRankGlobal);

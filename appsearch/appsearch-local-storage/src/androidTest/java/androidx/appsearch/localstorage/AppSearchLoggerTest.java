@@ -92,6 +92,7 @@ public class AppSearchLoggerTest {
                 /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
+                /*icingSearchEngine=*/ null,
                 ALWAYS_OPTIMIZE);
         mLogger = new SimpleTestLogger();
     }
@@ -383,6 +384,7 @@ public class AppSearchLoggerTest {
                 initStatsBuilder,
                 /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
+                /*icingSearchEngine=*/ null,
                 ALWAYS_OPTIMIZE);
         InitializeStats iStats = initStatsBuilder.build();
         appSearchImpl.close();
@@ -404,6 +406,7 @@ public class AppSearchLoggerTest {
 
     @Test
     @RequiresFlagsDisabled(Flags.FLAG_ENABLE_BLOB_STORE)
+    @SuppressWarnings("deprecation") // AppSearchImpl.putDocument
     public void testLoggingStats_initializeWithDocuments_success() throws Exception {
         final String testPackageName = "testPackage";
         final String testDatabase = "testDatabase";
@@ -415,6 +418,7 @@ public class AppSearchLoggerTest {
                 /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
+                /*icingSearchEngine=*/ null,
                 ALWAYS_OPTIMIZE);
         List<AppSearchSchema> schemas = ImmutableList.of(
                 new AppSearchSchema.Builder("Type1").build(),
@@ -451,6 +455,7 @@ public class AppSearchLoggerTest {
         appSearchImpl = AppSearchImpl.create(folder, mConfig,
                 initStatsBuilder, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
+                /*icingSearchEngine=*/ null,
                 ALWAYS_OPTIMIZE);
         InitializeStats iStats = initStatsBuilder.build();
 
@@ -473,6 +478,7 @@ public class AppSearchLoggerTest {
 
     @Test
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
+    @SuppressWarnings("deprecation") // AppSearchImpl.putDocument
     public void testLoggingStats_enableBlobStore_initializeWithDocuments_success()
             throws Exception {
         final String testPackageName = "testPackage";
@@ -485,6 +491,7 @@ public class AppSearchLoggerTest {
                 /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mConfig),
+                /*icingSearchEngine=*/ null,
                 ALWAYS_OPTIMIZE);
 
         List<AppSearchSchema> schemas = ImmutableList.of(
@@ -522,6 +529,7 @@ public class AppSearchLoggerTest {
         appSearchImpl = AppSearchImpl.create(folder, mConfig,
                 initStatsBuilder, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
+                /*icingSearchEngine=*/ null,
                 ALWAYS_OPTIMIZE);
         InitializeStats iStats = initStatsBuilder.build();
 
@@ -544,6 +552,7 @@ public class AppSearchLoggerTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation") // AppSearchImpl.putDocument
     public void testLoggingStats_initialize_failure() throws Exception {
         final String testPackageName = "testPackage";
         final String testDatabase = "testDatabase";
@@ -552,6 +561,7 @@ public class AppSearchLoggerTest {
         AppSearchImpl appSearchImpl = AppSearchImpl.create(folder, mConfig,
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
+                /*icingSearchEngine=*/ null,
                 ALWAYS_OPTIMIZE);
 
         List<AppSearchSchema> schemas = ImmutableList.of(
@@ -592,6 +602,7 @@ public class AppSearchLoggerTest {
         appSearchImpl = AppSearchImpl.create(folder, mConfig,
                 initStatsBuilder, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
+                /*icingSearchEngine=*/ null,
                 ALWAYS_OPTIMIZE);
         InitializeStats iStats = initStatsBuilder.build();
 
@@ -603,6 +614,7 @@ public class AppSearchLoggerTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation") // AppSearchImpl.putDocument
     public void testLoggingStats_putDocument_success() throws Exception {
         // Insert schema
         final String testPackageName = "testPackage";
@@ -649,6 +661,7 @@ public class AppSearchLoggerTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation") // AppSearchImpl.putDocument
     public void testLoggingStats_putDocument_failure() throws Exception {
         // Insert schema
         final String testPackageName = "testPackage";
@@ -694,6 +707,7 @@ public class AppSearchLoggerTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation") // AppSearchImpl.putDocument
     public void testLoggingStats_search_success() throws Exception {
         // Insert schema
         final String testPackageName = "testPackage";
@@ -819,6 +833,7 @@ public class AppSearchLoggerTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation") // AppSearchImpl.putDocument
     public void testLoggingStats_search_join() throws Exception {
         AppSearchSchema actionSchema = new AppSearchSchema.Builder("ViewAction")
                 .addProperty(new AppSearchSchema.StringPropertyConfig.Builder("entityId")
@@ -973,6 +988,7 @@ public class AppSearchLoggerTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation") // AppSearchImpl.putDocument
     public void testLoggingStats_remove_success() throws Exception {
         // Insert schema
         final String testPackageName = "testPackage";
@@ -1012,6 +1028,7 @@ public class AppSearchLoggerTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation") // AppSearchImpl.putDocument
     public void testLoggingStats_remove_failure() throws Exception {
         // Insert schema
         final String testPackageName = "testPackage";
@@ -1056,7 +1073,7 @@ public class AppSearchLoggerTest {
     }
 
     @Test
-    @SuppressWarnings("deprecation") // DEPRECATED_QUERY_VALUE
+    @SuppressWarnings("deprecation") // DEPRECATED_QUERY_VALUE, AppSearchImpl.putDocument
     public void testLoggingStats_removeByQuery_success() throws Exception {
         // Insert schema
         final String testPackageName = "testPackage";

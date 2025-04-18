@@ -18,13 +18,14 @@ package androidx.camera.video.internal;
 
 import static androidx.camera.video.internal.utils.DynamicRangeUtil.isHdrSettingsMatched;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.impl.EncoderProfilesProvider;
 import androidx.camera.core.impl.EncoderProfilesProxy;
 import androidx.camera.core.impl.EncoderProfilesProxy.ImmutableEncoderProfilesProxy;
 import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -58,14 +59,12 @@ public class DynamicRangeMatchedEncoderProfilesProvider implements EncoderProfil
     }
 
     /** {@inheritDoc} */
-    @Nullable
     @Override
-    public EncoderProfilesProxy getAll(int quality) {
+    public @Nullable EncoderProfilesProxy getAll(int quality) {
         return getProfilesInternal(quality);
     }
 
-    @Nullable
-    private EncoderProfilesProxy getProfilesInternal(int quality) {
+    private @Nullable EncoderProfilesProxy getProfilesInternal(int quality) {
         if (mEncoderProfilesCache.containsKey(quality)) {
             return mEncoderProfilesCache.get(quality);
         }
@@ -80,8 +79,7 @@ public class DynamicRangeMatchedEncoderProfilesProvider implements EncoderProfil
         return profiles;
     }
 
-    @Nullable
-    private static EncoderProfilesProxy filterUnmatchedDynamicRange(
+    private static @Nullable EncoderProfilesProxy filterUnmatchedDynamicRange(
             @Nullable EncoderProfilesProxy encoderProfiles, @NonNull DynamicRange dynamicRange) {
         if (encoderProfiles == null) {
             return null;

@@ -32,14 +32,14 @@ internal constructor(
 ) {
 
     /** This interface marks a component that contributes to saved state. */
-    fun interface SavedStateProvider {
+    public fun interface SavedStateProvider {
         /**
          * Called to retrieve a state from a component before being killed so later the state can be
          * received from [consumeRestoredStateForKey]
          *
          * Returns `S` with your saved state.
          */
-        fun saveState(): SavedState
+        public fun saveState(): SavedState
     }
 
     /**
@@ -48,7 +48,7 @@ internal constructor(
      *
      * [isRestored] == true if state was restored
      */
-    val isRestored: Boolean
+    public val isRestored: Boolean
 
     /**
      * Consumes saved state previously supplied by [SavedStateProvider] registered via
@@ -67,7 +67,7 @@ internal constructor(
      * @param key a key with which [SavedStateProvider] was previously registered.
      * @return `S` with the previously saved state or {@code null}
      */
-    @MainThread fun consumeRestoredStateForKey(key: String): SavedState?
+    @MainThread public fun consumeRestoredStateForKey(key: String): SavedState?
 
     /**
      * Registers a [SavedStateProvider] by the given `key`. This `savedStateProvider` will be called
@@ -83,7 +83,7 @@ internal constructor(
      * @param key a key with which returned saved state will be associated
      * @param provider savedStateProvider to get saved state.
      */
-    @MainThread fun registerSavedStateProvider(key: String, provider: SavedStateProvider)
+    @MainThread public fun registerSavedStateProvider(key: String, provider: SavedStateProvider)
 
     /**
      * Get a previously registered [SavedStateProvider].
@@ -94,12 +94,12 @@ internal constructor(
      * Returns the [SavedStateProvider] previously registered with [registerSavedStateProvider] or
      * null if no provider has been registered with the given key.
      */
-    fun getSavedStateProvider(key: String): SavedStateProvider?
+    public fun getSavedStateProvider(key: String): SavedStateProvider?
 
     /**
      * Unregisters a component previously registered by the given `key`
      *
      * @param key a key with which a component was previously registered.
      */
-    @MainThread fun unregisterSavedStateProvider(key: String)
+    @MainThread public fun unregisterSavedStateProvider(key: String)
 }

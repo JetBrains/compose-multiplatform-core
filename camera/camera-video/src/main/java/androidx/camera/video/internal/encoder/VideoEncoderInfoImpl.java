@@ -21,10 +21,10 @@ import static androidx.camera.video.internal.utils.CodecUtil.findCodecAndGetCode
 import android.media.MediaCodecInfo;
 import android.util.Range;
 
-import androidx.annotation.NonNull;
-import androidx.arch.core.util.Function;
 import androidx.camera.core.Logger;
 import androidx.camera.video.internal.workaround.VideoEncoderInfoWrapper;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -43,11 +43,12 @@ public class VideoEncoderInfoImpl extends EncoderInfoImpl implements VideoEncode
      *
      * <p>The function will return {@code null} if it can't find a VideoEncoderInfoImpl.
      */
-    @NonNull
-    public static final Function<VideoEncoderConfig, VideoEncoderInfo> FINDER =
-            videoEncoderConfig -> {
+    public static final VideoEncoderInfo.@NonNull Finder FINDER =
+            mimeType -> {
                 try {
-                    return VideoEncoderInfoWrapper.from(from(videoEncoderConfig), null);
+                    VideoEncoderInfoImpl videoEncoderInfo = new VideoEncoderInfoImpl(
+                            findCodecAndGetCodecInfo(mimeType), mimeType);
+                    return VideoEncoderInfoWrapper.from(videoEncoderInfo, null);
                 } catch (InvalidConfigException e) {
                     Logger.w(TAG, "Unable to find a VideoEncoderInfoImpl", e);
                     return null;
@@ -55,19 +56,6 @@ public class VideoEncoderInfoImpl extends EncoderInfoImpl implements VideoEncode
             };
 
     private final MediaCodecInfo.VideoCapabilities mVideoCapabilities;
-    /**
-     * Returns a VideoEncoderInfoImpl from a VideoEncoderConfig.
-     *
-     * <p>The input VideoEncoderConfig is used to find the corresponding encoder.
-     *
-     * @throws InvalidConfigException if the encoder is not found.
-     */
-    @NonNull
-    public static VideoEncoderInfoImpl from(@NonNull VideoEncoderConfig encoderConfig)
-            throws InvalidConfigException {
-        return new VideoEncoderInfoImpl(findCodecAndGetCodecInfo(encoderConfig),
-                encoderConfig.getMimeType());
-    }
 
     VideoEncoderInfoImpl(@NonNull MediaCodecInfo codecInfo, @NonNull String mime)
             throws InvalidConfigException {
@@ -95,21 +83,18 @@ public class VideoEncoderInfoImpl extends EncoderInfoImpl implements VideoEncode
         return mVideoCapabilities.isSizeSupported(width, height);
     }
 
-    @NonNull
     @Override
-    public Range<Integer> getSupportedWidths() {
+    public @NonNull Range<Integer> getSupportedWidths() {
         return mVideoCapabilities.getSupportedWidths();
     }
 
-    @NonNull
     @Override
-    public Range<Integer> getSupportedHeights() {
+    public @NonNull Range<Integer> getSupportedHeights() {
         return mVideoCapabilities.getSupportedHeights();
     }
 
-    @NonNull
     @Override
-    public Range<Integer> getSupportedWidthsFor(int height) {
+    public @NonNull Range<Integer> getSupportedWidthsFor(int height) {
         try {
             return mVideoCapabilities.getSupportedWidthsFor(height);
         } catch (Throwable t) {
@@ -117,9 +102,8 @@ public class VideoEncoderInfoImpl extends EncoderInfoImpl implements VideoEncode
         }
     }
 
-    @NonNull
     @Override
-    public Range<Integer> getSupportedHeightsFor(int width) {
+    public @NonNull Range<Integer> getSupportedHeightsFor(int width) {
         try {
             return mVideoCapabilities.getSupportedHeightsFor(width);
         } catch (Throwable t) {
@@ -137,14 +121,13 @@ public class VideoEncoderInfoImpl extends EncoderInfoImpl implements VideoEncode
         return mVideoCapabilities.getHeightAlignment();
     }
 
-    @NonNull
     @Override
-    public Range<Integer> getSupportedBitrateRange() {
+    public @NonNull Range<Integer> getSupportedBitrateRange() {
         return mVideoCapabilities.getBitrateRange();
     }
 
-    @NonNull
-    private static IllegalArgumentException toIllegalArgumentException(@NonNull Throwable t) {
+    private static @NonNull IllegalArgumentException toIllegalArgumentException(
+            @NonNull Throwable t) {
         if (t instanceof IllegalArgumentException) {
             return (IllegalArgumentException) t;
         } else {

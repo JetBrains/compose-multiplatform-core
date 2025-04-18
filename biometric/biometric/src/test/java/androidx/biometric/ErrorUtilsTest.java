@@ -27,28 +27,59 @@ import org.robolectric.annotation.internal.DoNotInstrument;
 @DoNotInstrument
 public class ErrorUtilsTest {
     @Test
-    public void testIsKnownError_ReturnsTrue_ForKnownErrors() {
-        assertThat(ErrorUtils.isKnownError(BiometricPrompt.ERROR_HW_UNAVAILABLE)).isTrue();
-        assertThat(ErrorUtils.isKnownError(BiometricPrompt.ERROR_UNABLE_TO_PROCESS)).isTrue();
-        assertThat(ErrorUtils.isKnownError(BiometricPrompt.ERROR_TIMEOUT)).isTrue();
-        assertThat(ErrorUtils.isKnownError(BiometricPrompt.ERROR_NO_SPACE)).isTrue();
-        assertThat(ErrorUtils.isKnownError(BiometricPrompt.ERROR_CANCELED)).isTrue();
-        assertThat(ErrorUtils.isKnownError(BiometricPrompt.ERROR_LOCKOUT)).isTrue();
-        assertThat(ErrorUtils.isKnownError(BiometricPrompt.ERROR_VENDOR)).isTrue();
-        assertThat(ErrorUtils.isKnownError(BiometricPrompt.ERROR_LOCKOUT_PERMANENT)).isTrue();
-        assertThat(ErrorUtils.isKnownError(BiometricPrompt.ERROR_USER_CANCELED)).isTrue();
-        assertThat(ErrorUtils.isKnownError(BiometricPrompt.ERROR_NO_BIOMETRICS)).isTrue();
-        assertThat(ErrorUtils.isKnownError(BiometricPrompt.ERROR_HW_NOT_PRESENT)).isTrue();
-        assertThat(ErrorUtils.isKnownError(BiometricPrompt.ERROR_NEGATIVE_BUTTON)).isTrue();
-        assertThat(ErrorUtils.isKnownError(BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL)).isTrue();
-        assertThat(ErrorUtils.isKnownError(BiometricPrompt.ERROR_SECURITY_UPDATE_REQUIRED))
-                .isTrue();
+    public void testToKnownErrorCode_ReturnsOriginalErrors_ForKnownErrors() {
+        assertThat(ErrorUtils.toKnownErrorCode(BiometricPrompt.ERROR_HW_UNAVAILABLE)).isEqualTo(
+                BiometricPrompt.ERROR_HW_UNAVAILABLE);
+        assertThat(ErrorUtils.toKnownErrorCode(BiometricPrompt.ERROR_UNABLE_TO_PROCESS)).isEqualTo(
+                BiometricPrompt.ERROR_UNABLE_TO_PROCESS);
+        assertThat(ErrorUtils.toKnownErrorCode(BiometricPrompt.ERROR_TIMEOUT)).isEqualTo(
+                BiometricPrompt.ERROR_TIMEOUT);
+        assertThat(ErrorUtils.toKnownErrorCode(BiometricPrompt.ERROR_NO_SPACE)).isEqualTo(
+                BiometricPrompt.ERROR_NO_SPACE);
+        assertThat(ErrorUtils.toKnownErrorCode(BiometricPrompt.ERROR_CANCELED)).isEqualTo(
+                BiometricPrompt.ERROR_CANCELED);
+        assertThat(ErrorUtils.toKnownErrorCode(BiometricPrompt.ERROR_LOCKOUT)).isEqualTo(
+                BiometricPrompt.ERROR_LOCKOUT);
+        assertThat(ErrorUtils.toKnownErrorCode(BiometricPrompt.ERROR_VENDOR)).isEqualTo(
+                BiometricPrompt.ERROR_VENDOR);
+        assertThat(ErrorUtils.toKnownErrorCode(BiometricPrompt.ERROR_LOCKOUT_PERMANENT)).isEqualTo(
+                BiometricPrompt.ERROR_LOCKOUT_PERMANENT);
+        assertThat(ErrorUtils.toKnownErrorCode(BiometricPrompt.ERROR_USER_CANCELED)).isEqualTo(
+                BiometricPrompt.ERROR_USER_CANCELED);
+        assertThat(ErrorUtils.toKnownErrorCode(BiometricPrompt.ERROR_NO_BIOMETRICS)).isEqualTo(
+                BiometricPrompt.ERROR_NO_BIOMETRICS);
+        assertThat(ErrorUtils.toKnownErrorCode(BiometricPrompt.ERROR_HW_NOT_PRESENT)).isEqualTo(
+                BiometricPrompt.ERROR_HW_NOT_PRESENT);
+        assertThat(ErrorUtils.toKnownErrorCode(BiometricPrompt.ERROR_NEGATIVE_BUTTON)).isEqualTo(
+                BiometricPrompt.ERROR_NEGATIVE_BUTTON);
+        assertThat(
+                ErrorUtils.toKnownErrorCode(BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL)).isEqualTo(
+                BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL);
+        assertThat(ErrorUtils.toKnownErrorCode(
+                BiometricPrompt.ERROR_SECURITY_UPDATE_REQUIRED)).isEqualTo(
+                BiometricPrompt.ERROR_SECURITY_UPDATE_REQUIRED);
+        assertThat(ErrorUtils.toKnownErrorCode(
+                BiometricPrompt.ERROR_IDENTITY_CHECK_NOT_ACTIVE)).isEqualTo(
+                BiometricPrompt.ERROR_IDENTITY_CHECK_NOT_ACTIVE);
+        assertThat(ErrorUtils.toKnownErrorCode(
+                BiometricPrompt.ERROR_CONTENT_VIEW_MORE_OPTIONS_BUTTON)).isEqualTo(
+                BiometricPrompt.ERROR_CONTENT_VIEW_MORE_OPTIONS_BUTTON);
     }
 
     @Test
-    public void testIsKnownError_ReturnsFalse_ForUnknownErrors() {
-        assertThat(ErrorUtils.isKnownError(-1)).isFalse();
-        assertThat(ErrorUtils.isKnownError(1337)).isFalse();
+    public void testToKnownErrorCode_ReturnsHWUnavailable_ForSomeHiddenErrors() {
+        assertThat(
+                ErrorUtils.toKnownErrorCode(BiometricPrompt.ERROR_NOT_ENABLED_FOR_APPS)).isEqualTo(
+                BiometricPrompt.ERROR_HW_UNAVAILABLE);
+        assertThat(ErrorUtils.toKnownErrorCode(
+                BiometricPrompt.ERROR_SENSOR_PRIVACY_ENABLED)).isEqualTo(
+                BiometricPrompt.ERROR_HW_UNAVAILABLE);
+    }
+
+    @Test
+    public void testToKnownErrorCode_ReturnsErrorVendor_ForUnknownErrors() {
+        assertThat(ErrorUtils.toKnownErrorCode(-1)).isEqualTo(BiometricPrompt.ERROR_VENDOR);
+        assertThat(ErrorUtils.toKnownErrorCode(1337)).isEqualTo(BiometricPrompt.ERROR_VENDOR);
     }
 
     @Test
@@ -74,6 +105,12 @@ public class ErrorUtilsTest {
         assertThat(ErrorUtils.isLockoutError(BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL)).isFalse();
         assertThat(ErrorUtils.isLockoutError(BiometricPrompt.ERROR_SECURITY_UPDATE_REQUIRED))
                 .isFalse();
+        assertThat(
+                ErrorUtils.isLockoutError(
+                        BiometricPrompt.ERROR_IDENTITY_CHECK_NOT_ACTIVE)).isFalse();
+        assertThat(ErrorUtils.isLockoutError(BiometricPrompt.ERROR_NOT_ENABLED_FOR_APPS)).isFalse();
+        assertThat(ErrorUtils.isLockoutError(
+                BiometricPrompt.ERROR_CONTENT_VIEW_MORE_OPTIONS_BUTTON)).isFalse();
     }
 
     @Test

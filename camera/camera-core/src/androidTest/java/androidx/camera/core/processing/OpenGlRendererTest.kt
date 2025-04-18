@@ -149,7 +149,7 @@ class OpenGlRendererTest {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
     @Test
     fun drawInputSurface_snapshotReturnsTheSame(): Unit =
         runBlocking(glDispatcher) {

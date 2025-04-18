@@ -46,8 +46,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * <a href="https://m3.material.io/components/snackbar/overview" class="external"
- * target="_blank">Material Design snackbar</a>.
+ * [Material Design snackbar](https://m3.material.io/components/snackbar/overview)
  *
  * Snackbars provide brief messages about app processes at the bottom of the screen.
  *
@@ -145,8 +144,7 @@ fun Snackbar(
 }
 
 /**
- * <a href="https://m3.material.io/components/snackbar/overview" class="external"
- * target="_blank">Material Design snackbar</a>.
+ * [Material Design snackbar](https://m3.material.io/components/snackbar/overview)
  *
  * Snackbars provide brief messages about app processes at the bottom of the screen.
  *

@@ -68,9 +68,6 @@ class KonanPrebuiltsDownloader(
         val compilationDependencies =
             findCompilationDependencies(konanProperties = distribution.properties)
         downloadDistributions(compilationDependencies)
-        // for linux x64 we need to provide the up-to-date sysroot, hence, update the config file
-        // with the kotlinVersion -> sysroot zip file.
-        updateSysrootFile(distribution.properties)
         downloadNativeCompiler(compilerVersion)
     }
 
@@ -113,27 +110,6 @@ class KonanPrebuiltsDownloader(
             )
         }
     }
-
-    private fun updateSysrootFile(properties: KonanProperties) {
-        val sysrootFile = downloadPath / "linux-prebuilts.properties"
-        val sysrootProps = Properties()
-        if (fileSystem.exists(sysrootFile)) {
-            fileSystem.read(sysrootFile) { sysrootProps.load(this.inputStream()) }
-        }
-        val compilerVersion = properties.requireResolvablePropertyString("compilerVersion")
-        val gccLinuxToolchain = properties.requireResolvablePropertyString("gccToolchain.linux_x64")
-        sysrootProps.setProperty(compilerVersion, gccLinuxToolchain)
-        fileSystem.write(sysrootFile) {
-            // write manually to avoid the timestamp
-            sysrootProps.forEach { key, value -> this.writeString("$key=$value\n", Charsets.UTF_8) }
-        }
-    }
-
-    private fun Properties.requireResolvablePropertyString(key: String) =
-        checkNotNull(resolvablePropertyString(key)) {
-            val allProperties = this.keys.sortedBy { it.toString() }.joinToString("\n")
-            "Cannot find required key : $key. Available properties:\n $allProperties"
-        }
 
     /**
      * Finds the compilation dependencies of each supported host machine.

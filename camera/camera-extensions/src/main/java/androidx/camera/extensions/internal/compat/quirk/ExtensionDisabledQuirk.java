@@ -18,11 +18,11 @@ package androidx.camera.extensions.internal.compat.quirk;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.Quirk;
 import androidx.camera.extensions.internal.ExtensionVersion;
 import androidx.camera.extensions.internal.Version;
 
+import org.jspecify.annotations.NonNull;
 
 /**
  * <p>QuirkSummary

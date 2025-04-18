@@ -30,3 +30,8 @@ android {
     }
     namespace = "androidx.draganddrop.sampleapp"
 }
+
+androidx {
+    // TODO: b/326456246
+    optOutJSpecify = true
+}

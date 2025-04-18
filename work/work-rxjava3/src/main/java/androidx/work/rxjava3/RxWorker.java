@@ -21,7 +21,6 @@ import static androidx.concurrent.futures.CallbackToFutureAdapter.getFuture;
 import android.content.Context;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
 import androidx.work.Configuration;
 import androidx.work.Data;
 import androidx.work.ForegroundInfo;
@@ -41,6 +40,8 @@ import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.core.SingleObserver;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -72,9 +73,8 @@ public abstract class RxWorker extends ListenableWorker {
         super(appContext, workerParams);
     }
 
-    @NonNull
     @Override
-    public final ListenableFuture<Result> startWork() {
+    public final @NonNull ListenableFuture<Result> startWork() {
         return convert(createWork());
     }
 
@@ -123,14 +123,12 @@ public abstract class RxWorker extends ListenableWorker {
      * @param data The progress {@link Data}
      * @return The {@link Completable}
      */
-    @NonNull
-    public final Completable setCompletableProgress(@NonNull Data data) {
+    public final @NonNull Completable setCompletableProgress(@NonNull Data data) {
         return Completable.fromFuture(setProgressAsync(data));
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<ForegroundInfo> getForegroundInfoAsync() {
+    public @NonNull ListenableFuture<ForegroundInfo> getForegroundInfoAsync() {
         return convert(getForegroundInfo());
     }
 
@@ -151,8 +149,7 @@ public abstract class RxWorker extends ListenableWorker {
      * is marked immediate. For more information look at
      * {@link WorkRequest.Builder#setExpedited(OutOfQuotaPolicy)}.
      */
-    @NonNull
-    public Single<ForegroundInfo> getForegroundInfo() {
+    public @NonNull Single<ForegroundInfo> getForegroundInfo() {
         String message =
                 "Expedited WorkRequests require a RxWorker to provide an implementation for"
                         + " `getForegroundInfo()`";
@@ -181,8 +178,7 @@ public abstract class RxWorker extends ListenableWorker {
      * @return A {@link Completable} which resolves after the {@link RxWorker}
      * transitions to running in the context of a foreground {@link android.app.Service}.
      */
-    @NonNull
-    public final Completable setForeground(@NonNull ForegroundInfo foregroundInfo) {
+    public final @NonNull Completable setForeground(@NonNull ForegroundInfo foregroundInfo) {
         return Completable.fromFuture(setForegroundAsync(foregroundInfo));
     }
 

@@ -16,74 +16,60 @@
 
 package androidx.security.state.provider
 
+import android.content.ComponentName
 import android.content.ContentProvider
 import android.content.ContentValues
 import android.content.Context
+import android.content.pm.PackageManager
 import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
-import androidx.security.state.SecurityPatchState
-import kotlinx.serialization.json.Json
 
 /**
- * A content provider for managing and serving update information for system components. This class
- * interfaces with a [SecurityPatchState] to fetch update data stored in JSON format and serves it
- * via a content URI. It only supports querying data; insert, delete, and update operations are not
- * supported.
+ * A content provider that serves update information for system components.
  *
- * This provider is typically used by OTA or other update client to expose update information to
+ * This class retrieves [UpdateInfo] stored in JSON format and serves it via a content URI. It only
+ * supports the [query] operation; [insert], [delete], and [update] operations are not permitted.
+ *
+ * Typically, OTA or other update clients utilize this provider to expose update information to
  * other applications or components within the system that need access to the latest security
- * updates data. The client calls registerUpdate() and unregisterUpdate() to add or remove update
- * information to a local store, from which the content provider serves the data to the
- * applications. To setup the content provider add following snippet to the client's manifest,
- * replacing com.example with correct namespace:
- * <pre>
- * <permission
- * android:name="com.example.updateinfoprovider.WRITE_UPDATES_INFO"
- * android:label="@string/write_permission_label"
- * android:description="@string/write_permission_description"
- * android:protectionLevel="signature" />
+ * updates data. The client calls [UpdateInfoManager.registerUpdate] and
+ * [UpdateInfoManager.unregisterUpdate] to add or remove update information to a local store, from
+ * which the content provider serves the data to the applications.
  *
+ * To setup the content provider add the following snippet to the client's manifest:
+ * ```
  * <provider
- * android:name=".UpdateInfoProvider"
- * android:authorities="com.example.updateinfoprovider"
- * android:exported="true"
- * android:writePermission="com.example.updateinfoprovider.WRITE_UPDATES_INFO"/>
- * </pre>
- *
- * @param context The [Context] of the calling application.
- * @param authority The authority for this content provider, used to construct the base URI.
- * @param customSecurityState An optional instance of [SecurityPatchState] to use. If not provided,
- *   a new instance is created.
+ * android:name="androidx.security.state.provider.UpdateInfoProvider"
+ * android:authorities="${applicationId}.updateinfoprovider"
+ * android:exported="true" />
+ * ```
  */
-public open class UpdateInfoProvider(
-    private val context: Context,
-    private val authority: String,
-    private val customSecurityState: SecurityPatchState? = null
-) : ContentProvider() {
+public class UpdateInfoProvider : ContentProvider() {
 
-    private val contentUri: Uri = Uri.parse("content://$authority/updateinfo")
-
-    private val updateInfoPrefs = "UpdateInfoPrefs"
-
-    private lateinit var securityState: SecurityPatchState
+    private var context: Context? = null
+    private lateinit var authority: String
+    private lateinit var contentUri: Uri
 
     /**
-     * Initializes the content provider. This method sets up the [SecurityPatchState] used to
-     * retrieve update information. If a custom security state is provided during instantiation, it
-     * will be used; otherwise, a new one is initialized.
+     * Initializes the content provider by constructing [contentUri] using the authority listed in
+     * the manifest.
      *
      * @return true if the provider was successfully created, false otherwise.
      */
     override fun onCreate(): Boolean {
-        securityState = customSecurityState ?: SecurityPatchState(context)
+        context =
+            getContext() ?: throw IllegalStateException("Cannot find context from the provider.")
+        authority = getAuthority(context!!)
+        contentUri = Uri.parse("content://$authority/updateinfo")
         return true
     }
 
     /**
-     * Handles queries for the update information. This method only responds to queries directed at
-     * the specific content URI corresponding to update data. It retrieves data from
-     * [SecurityPatchState], which is then returned as a [Cursor].
+     * Handles queries for the update information.
+     *
+     * This method only responds to queries directed at the specific content URI corresponding to
+     * update data. It returns a [Cursor] containing [UpdateInfo] represented in JSON format.
      *
      * @param uri The URI to query. This must match the expected content URI for update data.
      * @param projection The list of columns to put into the cursor. If null, all columns are
@@ -104,8 +90,9 @@ public open class UpdateInfoProvider(
     ): Cursor {
         // Verify that the caller has requested a correct URI for this provider
         if (uri == contentUri) {
+            val updateInfoManager = UpdateInfoManager(context!!)
+            val jsonUpdates = updateInfoManager.getAllUpdatesAsJson()
             val cursor = MatrixCursor(arrayOf("json"))
-            val jsonUpdates = getAllUpdatesAsJson()
             jsonUpdates.forEach { cursor.addRow(arrayOf(it)) }
             return cursor
         } else {
@@ -170,118 +157,22 @@ public open class UpdateInfoProvider(
     }
 
     /**
-     * Registers information about an available update for the specified component.
+     * Returns [android.content.pm.ProviderInfo.authority], the authority of the provider defined in
+     * the manifest.
      *
-     * @param updateInfo Update information structure.
+     * For example, "com.example.updateinfoprovider" would be returned for the following provider:
+     * ```
+     * <provider
+     * android:name="androidx.security.state.provider.UpdateInfoProvider"
+     * android:authorities="com.example.updateinfoprovider" />
+     * ```
      */
-    public fun registerUpdate(updateInfo: UpdateInfo) {
-        cleanupUpdateInfo()
-
-        val sharedPreferences = context.getSharedPreferences(updateInfoPrefs, Context.MODE_PRIVATE)
-        val editor = sharedPreferences?.edit()
-        val key = getKeyForUpdateInfo(updateInfo)
-        val json =
-            Json.encodeToString(
-                SerializableUpdateInfo.serializer(),
-                updateInfo.toSerializableUpdateInfo()
+    private fun getAuthority(context: Context): String {
+        return context.packageManager
+            .getProviderInfo(
+                ComponentName(context, UpdateInfoProvider::class.java),
+                PackageManager.GET_META_DATA
             )
-        editor?.putString(key, json)
-        editor?.apply()
-    }
-
-    /**
-     * Unregisters information about an available update for the specified component.
-     *
-     * @param updateInfo Update information structure.
-     */
-    public fun unregisterUpdate(updateInfo: UpdateInfo) {
-        cleanupUpdateInfo()
-
-        val sharedPreferences = context.getSharedPreferences(updateInfoPrefs, Context.MODE_PRIVATE)
-        val editor = sharedPreferences?.edit()
-        val key = getKeyForUpdateInfo(updateInfo)
-        editor?.remove(key)
-        editor?.apply()
-    }
-
-    private fun getKeyForUpdateInfo(updateInfo: UpdateInfo): String {
-        // Create a unique key for each update info.
-        return "${updateInfo.component}-${updateInfo.uri}"
-    }
-
-    /**
-     * Retrieves a list of all updates currently registered in the system's shared preferences. This
-     * method is primarily used for managing and tracking updates that have been registered but not
-     * yet applied or acknowledged by the system.
-     *
-     * @return A list of [UpdateInfo] objects, each representing a registered update.
-     */
-    private fun getAllUpdates(): List<UpdateInfo> {
-        val allUpdates = mutableListOf<UpdateInfo>()
-        val sharedPreferences = context.getSharedPreferences(updateInfoPrefs, Context.MODE_PRIVATE)
-        val allEntries = sharedPreferences?.all ?: return listOf()
-        for ((_, value) in allEntries) {
-            val json = value as? String
-            if (json != null) {
-                val serializableUpdateInfo: SerializableUpdateInfo = Json.decodeFromString(json)
-                val updateInfo: UpdateInfo = serializableUpdateInfo.toUpdateInfo()
-                allUpdates.add(updateInfo)
-            }
-        }
-        return allUpdates
-    }
-
-    /**
-     * Cleans up outdated or applied updates from the shared preferences. This method checks each
-     * registered update against the current device security patch levels and removes any updates
-     * that are no longer relevant (i.e., the update's patch level is less than or equal to the
-     * current device patch level).
-     */
-    private fun cleanupUpdateInfo() {
-        val allUpdates = getAllUpdates()
-        val sharedPreferences = context.getSharedPreferences(updateInfoPrefs, Context.MODE_PRIVATE)
-        val editor = sharedPreferences?.edit() ?: return
-
-        allUpdates.forEach { updateInfo ->
-            val component = updateInfo.component
-            val currentSpl: SecurityPatchState.SecurityPatchLevel
-            try {
-                currentSpl = securityState.getDeviceSecurityPatchLevel(component)
-            } catch (e: IllegalArgumentException) {
-                // Ignore unknown components.
-                return@forEach
-            }
-            val updateSpl =
-                securityState.getComponentSecurityPatchLevel(
-                    component,
-                    updateInfo.securityPatchLevel
-                )
-
-            if (updateSpl <= currentSpl) {
-                val key = getKeyForUpdateInfo(updateInfo)
-                editor.remove(key)
-            }
-        }
-
-        editor.apply()
-    }
-
-    /**
-     * Retrieves all registered updates in JSON format from the system's shared preferences. This
-     * can be useful for exporting or debugging update information.
-     *
-     * @return A list of strings, each representing an update in JSON format.
-     */
-    private fun getAllUpdatesAsJson(): List<String> {
-        val allUpdates = mutableListOf<String>()
-        val sharedPreferences = context.getSharedPreferences(updateInfoPrefs, Context.MODE_PRIVATE)
-        val allEntries = sharedPreferences?.all ?: return emptyList()
-        for ((_, value) in allEntries) {
-            val json = value as? String
-            if (json != null) {
-                allUpdates.add(json)
-            }
-        }
-        return allUpdates
+            .authority
     }
 }

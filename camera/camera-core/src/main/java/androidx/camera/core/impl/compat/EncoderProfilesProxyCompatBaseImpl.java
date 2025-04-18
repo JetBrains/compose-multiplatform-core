@@ -23,11 +23,12 @@ import static androidx.camera.core.impl.EncoderProfilesProxy.getVideoCodecMimeTy
 import android.media.CamcorderProfile;
 import android.media.EncoderProfiles;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.EncoderProfilesProxy;
 import androidx.camera.core.impl.EncoderProfilesProxy.AudioProfileProxy;
 import androidx.camera.core.impl.EncoderProfilesProxy.ImmutableEncoderProfilesProxy;
 import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,8 +36,7 @@ import java.util.List;
 class EncoderProfilesProxyCompatBaseImpl {
 
     /** Creates an EncoderProfilesProxy instance from {@link CamcorderProfile}. */
-    @NonNull
-    public static EncoderProfilesProxy from(
+    public static @NonNull EncoderProfilesProxy from(
             @NonNull CamcorderProfile camcorderProfile) {
         return ImmutableEncoderProfilesProxy.create(
                 camcorderProfile.duration,
@@ -47,8 +47,7 @@ class EncoderProfilesProxyCompatBaseImpl {
     }
 
     /** Creates VideoProfileProxy instances from {@link CamcorderProfile}. */
-    @NonNull
-    private static List<VideoProfileProxy> toVideoProfiles(
+    private static @NonNull List<VideoProfileProxy> toVideoProfiles(
             @NonNull CamcorderProfile camcorderProfile) {
         List<VideoProfileProxy> proxies = new ArrayList<>();
         proxies.add(VideoProfileProxy.create(
@@ -67,8 +66,7 @@ class EncoderProfilesProxyCompatBaseImpl {
     }
 
     /** Creates AudioProfileProxy instances from {@link CamcorderProfile}. */
-    @NonNull
-    private static List<AudioProfileProxy> toAudioProfiles(
+    private static @NonNull List<AudioProfileProxy> toAudioProfiles(
             @NonNull CamcorderProfile camcorderProfile) {
         List<AudioProfileProxy> proxies = new ArrayList<>();
         proxies.add(AudioProfileProxy.create(

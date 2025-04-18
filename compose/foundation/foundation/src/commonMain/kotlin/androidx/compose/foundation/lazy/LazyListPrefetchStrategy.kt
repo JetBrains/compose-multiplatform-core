@@ -20,6 +20,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState
 import androidx.compose.foundation.lazy.layout.NestedPrefetchScope
 import androidx.compose.foundation.lazy.layout.PrefetchScheduler
+import androidx.compose.foundation.lazy.layout.UnspecifiedNestedPrefetchCount
 import androidx.compose.runtime.Stable
 
 /**
@@ -94,8 +95,16 @@ interface LazyListPrefetchScope {
      * See [PrefetchScheduler].
      *
      * @param index the index of the child to prefetch
+     * @param onPrefetchFinished A callback that will be invoked when the prefetching of this item
+     *   is completed. This means precomposition and premeasuring. If the request is canceled before
+     *   either phases can complete, this callback won't be called. The item index and the main axis
+     *   size in pixels of the prefetched item is available as a parameter of this callback. See
+     *   [LazyListPrefetchResultScope] for additional information about the prefetched item.
      */
-    fun schedulePrefetch(index: Int): LazyLayoutPrefetchState.PrefetchHandle
+    fun schedulePrefetch(
+        index: Int,
+        onPrefetchFinished: (LazyListPrefetchResultScope.() -> Unit)? = null
+    ): LazyLayoutPrefetchState.PrefetchHandle
 }
 
 /**
@@ -105,7 +114,9 @@ interface LazyListPrefetchScope {
  * @param nestedPrefetchItemCount specifies how many inner items should be prefetched when this
  *   LazyList is nested inside another LazyLayout. For example, if this is the state for a
  *   horizontal LazyList nested in a vertical LazyList, you might want to set this to the number of
- *   items that will be visible when this list is scrolled into view.
+ *   items that will be visible when this list is scrolled into view. If automatic nested prefetch
+ *   is enabled, this value will be used as the initial count and the strategy will adapt the count
+ *   automatically.
  */
 @ExperimentalFoundationApi
 fun LazyListPrefetchStrategy(nestedPrefetchItemCount: Int = 2): LazyListPrefetchStrategy =
@@ -117,7 +128,7 @@ fun LazyListPrefetchStrategy(nestedPrefetchItemCount: Int = 2): LazyListPrefetch
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Stable
-private class DefaultLazyListPrefetchStrategy(private val nestedPrefetchItemCount: Int = 2) :
+private class DefaultLazyListPrefetchStrategy(private val initialNestedPrefetchItemCount: Int = 2) :
     LazyListPrefetchStrategy {
 
     /**
@@ -194,6 +205,34 @@ private class DefaultLazyListPrefetchStrategy(private val nestedPrefetchItemCoun
     }
 
     override fun NestedPrefetchScope.onNestedPrefetch(firstVisibleItemIndex: Int) {
-        repeat(nestedPrefetchItemCount) { i -> schedulePrefetch(firstVisibleItemIndex + i) }
+        val resolvedNestedPrefetchItemCount =
+            if (nestedPrefetchItemCount == UnspecifiedNestedPrefetchCount) {
+                initialNestedPrefetchItemCount
+            } else {
+                nestedPrefetchItemCount
+            }
+        repeat(resolvedNestedPrefetchItemCount) { i ->
+            schedulePrecomposition(firstVisibleItemIndex + i)
+        }
     }
 }
+
+/**
+ * A scope for [LazyListPrefetchScope.schedulePrefetch] callbacks. The scope provides additional
+ * information about a prefetched item.
+ */
+@ExperimentalFoundationApi
+interface LazyListPrefetchResultScope {
+
+    /** The index of the prefetched item */
+    val index: Int
+
+    /** The main axis size in pixels of the prefetched item */
+    val mainAxisSize: Int
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+internal class LazyListPrefetchResultScopeImpl(
+    override val index: Int,
+    override val mainAxisSize: Int
+) : LazyListPrefetchResultScope

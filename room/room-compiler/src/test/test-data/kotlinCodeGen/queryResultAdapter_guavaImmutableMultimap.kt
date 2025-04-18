@@ -26,23 +26,23 @@ public class MyDao_Impl(
     return performBlocking(__db, true, false) { _connection ->
       val _stmt: SQLiteStatement = _connection.prepare(_sql)
       try {
-        val _cursorIndexOfArtistId: Int = getColumnIndexOrThrow(_stmt, "artistId")
-        val _cursorIndexOfSongId: Int = getColumnIndexOrThrow(_stmt, "songId")
-        val _cursorIndexOfArtistKey: Int = getColumnIndexOrThrow(_stmt, "artistKey")
+        val _columnIndexOfArtistId: Int = getColumnIndexOrThrow(_stmt, "artistId")
+        val _columnIndexOfSongId: Int = getColumnIndexOrThrow(_stmt, "songId")
+        val _columnIndexOfArtistKey: Int = getColumnIndexOrThrow(_stmt, "artistKey")
         val _mapBuilder: ImmutableSetMultimap.Builder<Artist, Song> = ImmutableSetMultimap.builder()
         while (_stmt.step()) {
           val _key: Artist
           val _tmpArtistId: String
-          _tmpArtistId = _stmt.getText(_cursorIndexOfArtistId)
+          _tmpArtistId = _stmt.getText(_columnIndexOfArtistId)
           _key = Artist(_tmpArtistId)
-          if (_stmt.isNull(_cursorIndexOfSongId) && _stmt.isNull(_cursorIndexOfArtistKey)) {
+          if (_stmt.isNull(_columnIndexOfSongId) && _stmt.isNull(_columnIndexOfArtistKey)) {
             continue
           }
           val _value: Song
           val _tmpSongId: String
-          _tmpSongId = _stmt.getText(_cursorIndexOfSongId)
+          _tmpSongId = _stmt.getText(_columnIndexOfSongId)
           val _tmpArtistKey: String
-          _tmpArtistKey = _stmt.getText(_cursorIndexOfArtistKey)
+          _tmpArtistKey = _stmt.getText(_columnIndexOfArtistKey)
           _value = Song(_tmpSongId,_tmpArtistKey)
           _mapBuilder.put(_key, _value)
         }
@@ -59,24 +59,23 @@ public class MyDao_Impl(
     return performBlocking(__db, true, false) { _connection ->
       val _stmt: SQLiteStatement = _connection.prepare(_sql)
       try {
-        val _cursorIndexOfArtistId: Int = getColumnIndexOrThrow(_stmt, "artistId")
-        val _cursorIndexOfSongId: Int = getColumnIndexOrThrow(_stmt, "songId")
-        val _cursorIndexOfArtistKey: Int = getColumnIndexOrThrow(_stmt, "artistKey")
-        val _mapBuilder: ImmutableListMultimap.Builder<Artist, Song> =
-            ImmutableListMultimap.builder()
+        val _columnIndexOfArtistId: Int = getColumnIndexOrThrow(_stmt, "artistId")
+        val _columnIndexOfSongId: Int = getColumnIndexOrThrow(_stmt, "songId")
+        val _columnIndexOfArtistKey: Int = getColumnIndexOrThrow(_stmt, "artistKey")
+        val _mapBuilder: ImmutableListMultimap.Builder<Artist, Song> = ImmutableListMultimap.builder()
         while (_stmt.step()) {
           val _key: Artist
           val _tmpArtistId: String
-          _tmpArtistId = _stmt.getText(_cursorIndexOfArtistId)
+          _tmpArtistId = _stmt.getText(_columnIndexOfArtistId)
           _key = Artist(_tmpArtistId)
-          if (_stmt.isNull(_cursorIndexOfSongId) && _stmt.isNull(_cursorIndexOfArtistKey)) {
+          if (_stmt.isNull(_columnIndexOfSongId) && _stmt.isNull(_columnIndexOfArtistKey)) {
             continue
           }
           val _value: Song
           val _tmpSongId: String
-          _tmpSongId = _stmt.getText(_cursorIndexOfSongId)
+          _tmpSongId = _stmt.getText(_columnIndexOfSongId)
           val _tmpArtistKey: String
-          _tmpArtistKey = _stmt.getText(_cursorIndexOfArtistKey)
+          _tmpArtistKey = _stmt.getText(_columnIndexOfArtistKey)
           _value = Song(_tmpSongId,_tmpArtistKey)
           _mapBuilder.put(_key, _value)
         }

@@ -28,7 +28,7 @@ import androidx.room.ext.RoomTypeNames
 import androidx.room.parser.ParsedQuery
 import androidx.room.parser.Section
 import androidx.room.solver.CodeGenScope
-import androidx.room.vo.QueryMethod
+import androidx.room.vo.QueryFunction
 import androidx.room.vo.QueryParameter
 
 /** Writes the SQL query and arguments for a QueryMethod. */
@@ -39,8 +39,8 @@ class QueryWriter(
 ) {
 
     constructor(
-        queryMethod: QueryMethod
-    ) : this(queryMethod.parameters, queryMethod.sectionToParamMapping, queryMethod.query)
+        queryFunction: QueryFunction
+    ) : this(queryFunction.parameters, queryFunction.sectionToParamMapping, queryFunction.query)
 
     fun prepareReadAndBind(
         outSqlQueryName: String,

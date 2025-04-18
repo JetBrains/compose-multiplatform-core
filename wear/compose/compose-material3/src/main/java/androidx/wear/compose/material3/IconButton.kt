@@ -92,7 +92,7 @@ import androidx.wear.compose.material3.tokens.ShapeTokens
  */
 // TODO(b/261838497) Add Material3 samples and UX guidance links
 @Composable
-fun IconButton(
+public fun IconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
@@ -162,7 +162,7 @@ fun IconButton(
  */
 // TODO(b/261838497) Add Material3 samples and UX guidance links
 @Composable
-fun FilledIconButton(
+public fun FilledIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
@@ -232,7 +232,7 @@ fun FilledIconButton(
  */
 // TODO(b/261838497) Add Material3 samples and UX guidance links
 @Composable
-fun FilledTonalIconButton(
+public fun FilledTonalIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
@@ -306,7 +306,7 @@ fun FilledTonalIconButton(
  */
 // TODO(b/261838497) Add Material3 samples and UX guidance links
 @Composable
-fun OutlinedIconButton(
+public fun OutlinedIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
@@ -350,8 +350,8 @@ internal fun IconButtonImpl(
 ) {
     val (finalShape, finalInteractionSource) =
         animateButtonShape(
-            defaultShape = shapes.shape,
-            pressedShape = shapes.pressed,
+            shape = shapes.shape,
+            pressedShape = shapes.pressedShape,
             onPressAnimationSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>().faster(200f),
             onReleaseAnimationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),
             interactionSource = interactionSource
@@ -373,49 +373,66 @@ internal fun IconButtonImpl(
 }
 
 /** Contains the default values used by [IconButton]. */
-object IconButtonDefaults {
+public object IconButtonDefaults {
     /** Recommended [Shape] for [IconButton]. */
-    val shape: RoundedCornerShape
+    public val shape: RoundedCornerShape
         @Composable get() = ShapeTokens.CornerFull
 
     /** Recommended pressed [Shape] for [IconButton]. */
-    val pressedShape: CornerBasedShape
+    public val pressedShape: CornerBasedShape
         @Composable get() = MaterialTheme.shapes.small
 
     /** Recommended alpha to apply to an IconButton with Image content with disabled */
-    val disabledImageOpacity = DisabledContentAlpha
+    public val DisabledImageOpacity: Float = DisabledContentAlpha
+
+    /** Returns the default [IconButtonShapes] for a static [IconButton]. */
+    @Composable public fun shapes(): IconButtonShapes = MaterialTheme.shapes.defaultIconButtonShapes
 
     /**
-     * Creates a [IconButtonShapes] with a static [shape].
+     * Returns a [IconButtonShapes] for a static [IconButton].
      *
      * @param shape The normal shape of the IconButton.
      */
     @Composable
-    fun shapes(
-        shape: Shape = IconButtonDefaults.shape,
-    ): IconButtonShapes = IconButtonShapes(shape = shape)
+    public fun shapes(
+        shape: Shape,
+    ): IconButtonShapes = MaterialTheme.shapes.defaultIconButtonShapes.copy(shape = shape)
 
     /**
-     * Creates a [Shape] with a animation between two CornerBasedShapes.
+     * Returns the default [IconButtonShapes] with a animation between two CornerBasedShapes when
+     * pressed.
      *
-     * A simple icon button using the default colors, animated when pressed.
+     * Example of a simple icon button using the default colors, animated when pressed:
      *
      * @sample androidx.wear.compose.material3.samples.IconButtonWithCornerAnimationSample
      *
-     * A simple icon toggle button using the default colors, animated when pressed.
+     * Example of a simple icon toggle button using the default colors, animated when pressed:
      *
      * @sample androidx.wear.compose.material3.samples.IconToggleButtonSample
-     * @param shape The normal shape of the IconButton.
-     * @param pressedShape The pressed shape of the IconButton.
      */
     @Composable
-    fun animatedShapes(
-        shape: CornerBasedShape = IconButtonDefaults.shape,
-        pressedShape: CornerBasedShape = IconButtonDefaults.pressedShape,
+    public fun animatedShapes(): IconButtonShapes =
+        MaterialTheme.shapes.defaultIconButtonAnimatedShapes
+
+    /**
+     * Returns a [IconButtonShapes] with an animation between two CornerBasedShapes when pressed.
+     *
+     * Example of a simple icon button using the default colors, animated when pressed:
+     *
+     * @sample androidx.wear.compose.material3.samples.IconButtonWithCornerAnimationSample
+     * @param shape The normal shape of the IconButton - if null, the default
+     *   [IconButtonDefaults.shape] is used.
+     * @param pressedShape The pressed shape of the IconButton - if null, the default
+     *   [IconButtonDefaults.pressedShape] is used.
+     */
+    @Composable
+    public fun animatedShapes(
+        shape: CornerBasedShape? = null,
+        pressedShape: CornerBasedShape? = null,
     ): IconButtonShapes =
-        IconButtonShapes(
+        MaterialTheme.shapes.defaultIconButtonAnimatedShapes.copy(
             shape = shape,
-            pressed = pressedShape,
+            pressedShape = pressedShape
         )
 
     /**
@@ -428,7 +445,7 @@ object IconButtonDefaults {
      *
      * @param buttonSize The size of the icon button
      */
-    fun iconSizeFor(buttonSize: Dp): Dp =
+    public fun iconSizeFor(buttonSize: Dp): Dp =
         if (buttonSize >= LargeButtonSize) {
             LargeIconSize
         } else {
@@ -436,15 +453,16 @@ object IconButtonDefaults {
         }
 
     /**
-     * Creates a [IconButtonColors] with the colors for [FilledIconButton] - by default, a colored
+     * Returns an [IconButtonColors] with the colors for [FilledIconButton] - by default, a colored
      * background with a contrasting icon color. If the icon button is disabled then the colors will
      * default to the MaterialTheme onSurface color with suitable alpha values applied.
      */
     @Composable
-    fun filledIconButtonColors() = MaterialTheme.colorScheme.defaultFilledIconButtonColors
+    public fun filledIconButtonColors(): IconButtonColors =
+        MaterialTheme.colorScheme.defaultFilledIconButtonColors
 
     /**
-     * Creates a [IconButtonColors] with the colors for [FilledIconButton] - by default, a colored
+     * Returns an [IconButtonColors] with the colors for [FilledIconButton] - by default, a colored
      * background with a contrasting icon color. If the icon button is disabled then the colors will
      * default to the MaterialTheme onSurface color with suitable alpha values applied.
      *
@@ -454,7 +472,7 @@ object IconButtonDefaults {
      * @param disabledContentColor The color of this icon when not enabled.
      */
     @Composable
-    fun filledIconButtonColors(
+    public fun filledIconButtonColors(
         containerColor: Color = Color.Unspecified,
         contentColor: Color = Color.Unspecified,
         disabledContainerColor: Color = Color.Unspecified,
@@ -468,8 +486,8 @@ object IconButtonDefaults {
         )
 
     /**
-     * Creates a [IconButtonColors] as an alternative to the [filledTonalIconButtonColors], giving a
-     * surface with more chroma to indicate selected or highlighted states that are not primary
+     * Returns an [IconButtonColors] as an alternative to the [filledTonalIconButtonColors], giving
+     * a surface with more chroma to indicate selected or highlighted states that are not primary
      * calls-to-action. If the icon button is disabled then the colors will default to the
      * MaterialTheme onSurface color with suitable alpha values applied.
      *
@@ -478,12 +496,12 @@ object IconButtonDefaults {
      * @sample androidx.wear.compose.material3.samples.FilledVariantIconButtonSample
      */
     @Composable
-    fun filledVariantIconButtonColors() =
+    public fun filledVariantIconButtonColors(): IconButtonColors =
         MaterialTheme.colorScheme.defaultFilledVariantIconButtonColors
 
     /**
-     * Creates a [IconButtonColors] as an alternative to the [filledTonalIconButtonColors], giving a
-     * surface with more chroma to indicate selected or highlighted states that are not primary
+     * Returns an [IconButtonColors] as an alternative to the [filledTonalIconButtonColors], giving
+     * a surface with more chroma to indicate selected or highlighted states that are not primary
      * calls-to-action. If the icon button is disabled then the colors will default to the
      * MaterialTheme onSurface color with suitable alpha values applied.
      *
@@ -496,7 +514,7 @@ object IconButtonDefaults {
      * @param disabledContentColor The color of this icon when not enabled.
      */
     @Composable
-    fun filledVariantIconButtonColors(
+    public fun filledVariantIconButtonColors(
         containerColor: Color = Color.Unspecified,
         contentColor: Color = Color.Unspecified,
         disabledContainerColor: Color = Color.Unspecified,
@@ -510,17 +528,20 @@ object IconButtonDefaults {
         )
 
     /**
-     * Creates a [IconButtonColors] with the colors for [FilledTonalIconButton]- by default, a muted
-     * colored background with a contrasting icon color. If the icon button is disabled then the
-     * colors will default to the MaterialTheme onSurface color with suitable alpha values applied.
+     * Returns an [IconButtonColors] with the colors for [FilledTonalIconButton]- by default, a
+     * muted colored background with a contrasting icon color. If the icon button is disabled then
+     * the colors will default to the MaterialTheme onSurface color with suitable alpha values
+     * applied.
      */
     @Composable
-    fun filledTonalIconButtonColors() = MaterialTheme.colorScheme.defaultFilledTonalIconButtonColors
+    public fun filledTonalIconButtonColors(): IconButtonColors =
+        MaterialTheme.colorScheme.defaultFilledTonalIconButtonColors
 
     /**
-     * Creates a [IconButtonColors] with the colors for [FilledTonalIconButton]- by default, a muted
-     * colored background with a contrasting icon color. If the icon button is disabled then the
-     * colors will default to the MaterialTheme onSurface color with suitable alpha values applied.
+     * Returns an [IconButtonColors] with the colors for [FilledTonalIconButton]- by default, a
+     * muted colored background with a contrasting icon color. If the icon button is disabled then
+     * the colors will default to the MaterialTheme onSurface color with suitable alpha values
+     * applied.
      *
      * @param containerColor The background color of this icon button when enabled.
      * @param contentColor The color of this icon when enabled.
@@ -528,7 +549,7 @@ object IconButtonDefaults {
      * @param disabledContentColor The color of this icon when not enabled.
      */
     @Composable
-    fun filledTonalIconButtonColors(
+    public fun filledTonalIconButtonColors(
         containerColor: Color = Color.Unspecified,
         contentColor: Color = Color.Unspecified,
         disabledContainerColor: Color = Color.Unspecified,
@@ -542,15 +563,16 @@ object IconButtonDefaults {
         )
 
     /**
-     * Creates a [IconButtonColors] with the colors for [OutlinedIconButton]- by default, a
+     * Returns an [IconButtonColors] with the colors for [OutlinedIconButton]- by default, a
      * transparent background with contrasting icon color. If the icon button is disabled then the
      * colors will default to the MaterialTheme onSurface color with suitable alpha values applied.
      */
     @Composable
-    fun outlinedIconButtonColors() = MaterialTheme.colorScheme.defaultOutlinedIconButtonColors
+    public fun outlinedIconButtonColors(): IconButtonColors =
+        MaterialTheme.colorScheme.defaultOutlinedIconButtonColors
 
     /**
-     * Creates a [IconButtonColors] with the colors for [OutlinedIconButton]- by default, a
+     * Returns an [IconButtonColors] with the colors for [OutlinedIconButton]- by default, a
      * transparent background with contrasting icon color. If the icon button is disabled then the
      * colors will default to the MaterialTheme onSurface color with suitable alpha values applied.
      *
@@ -558,7 +580,7 @@ object IconButtonDefaults {
      * @param disabledContentColor The color of this icon when not enabled.
      */
     @Composable
-    fun outlinedIconButtonColors(
+    public fun outlinedIconButtonColors(
         contentColor: Color = Color.Unspecified,
         disabledContentColor: Color = Color.Unspecified
     ): IconButtonColors =
@@ -570,14 +592,16 @@ object IconButtonDefaults {
         )
 
     /**
-     * Creates a [IconButtonColors] with the colors for [IconButton] - by default, a transparent
+     * Returns an [IconButtonColors] with the colors for [IconButton] - by default, a transparent
      * background with a contrasting icon color. If the icon button is disabled then the colors will
      * default to the MaterialTheme onSurface color with suitable alpha values applied.
      */
-    @Composable fun iconButtonColors() = MaterialTheme.colorScheme.defaultIconButtonColors
+    @Composable
+    public fun iconButtonColors(): IconButtonColors =
+        MaterialTheme.colorScheme.defaultIconButtonColors
 
     /**
-     * Creates a [IconButtonColors] with the colors for [IconButton] - by default, a transparent
+     * Returns an [IconButtonColors] with the colors for [IconButton] - by default, a transparent
      * background with a contrasting icon color. If the icon button is disabled then the colors will
      * default to the MaterialTheme onSurface color with suitable alpha values applied.
      *
@@ -587,7 +611,7 @@ object IconButtonDefaults {
      * @param disabledContentColor The color of this icon when not enabled.
      */
     @Composable
-    fun iconButtonColors(
+    public fun iconButtonColors(
         containerColor: Color = Color.Transparent,
         contentColor: Color = Color.Unspecified,
         disabledContainerColor: Color = Color.Transparent,
@@ -604,43 +628,59 @@ object IconButtonDefaults {
      * The recommended size of an icon when used inside an icon button with size [SmallButtonSize]
      * or [ExtraSmallButtonSize]. Use [iconSizeFor] to easily determine the icon size.
      */
-    val SmallIconSize = IconButtonTokens.IconSmallSize
+    public val SmallIconSize: Dp = IconButtonTokens.IconSmallSize
 
     /**
      * The default size of an icon when used inside an icon button of size DefaultButtonSize. Use
      * [iconSizeFor] to easily determine the icon size.
      */
-    val DefaultIconSize = IconButtonTokens.IconDefaultSize
+    public val DefaultIconSize: Dp = IconButtonTokens.IconDefaultSize
 
     /**
      * The size of an icon when used inside an icon button with size [LargeButtonSize]. Use
      * [iconSizeFor] to easily determine the icon size.
      */
-    val LargeIconSize = IconButtonTokens.IconLargeSize
+    public val LargeIconSize: Dp = IconButtonTokens.IconLargeSize
 
     /**
      * The recommended background size of an extra small, compact button. It is recommended to apply
      * this size using Modifier.touchTargetAwareSize.
      */
-    val ExtraSmallButtonSize = IconButtonTokens.ContainerExtraSmallSize
+    public val ExtraSmallButtonSize: Dp = IconButtonTokens.ContainerExtraSmallSize
 
     /**
      * The recommended size for a small button. It is recommended to apply this size using
      * Modifier.touchTargetAwareSize.
      */
-    val SmallButtonSize = IconButtonTokens.ContainerSmallSize
+    public val SmallButtonSize: Dp = IconButtonTokens.ContainerSmallSize
 
     /**
      * The default size applied for buttons. It is recommended to apply this size using
      * Modifier.touchTargetAwareSize.
      */
-    val DefaultButtonSize = IconButtonTokens.ContainerDefaultSize
+    public val DefaultButtonSize: Dp = IconButtonTokens.ContainerDefaultSize
 
     /**
      * The recommended size for a large button. It is recommended to apply this size using
      * Modifier.touchTargetAwareSize.
      */
-    val LargeButtonSize = IconButtonTokens.ContainerLargeSize
+    public val LargeButtonSize: Dp = IconButtonTokens.ContainerLargeSize
+
+    internal val Shapes.defaultIconButtonShapes: IconButtonShapes
+        @Composable
+        get() {
+            return defaultIconButtonShapesCached
+                ?: IconButtonShapes(shape = shape).also { defaultIconButtonShapesCached = it }
+        }
+
+    internal val Shapes.defaultIconButtonAnimatedShapes: IconButtonShapes
+        @Composable
+        get() {
+            return defaultIconButtonAnimatedShapesCached
+                ?: IconButtonShapes(shape = shape, pressedShape = pressedShape).also {
+                    defaultIconButtonAnimatedShapesCached = it
+                }
+        }
 
     private val ColorScheme.defaultFilledIconButtonColors: IconButtonColors
         get() {
@@ -751,12 +791,11 @@ object IconButtonDefaults {
  * @param disabledContentColor the color of this icon when not enabled.
  */
 @Immutable
-class IconButtonColors
-constructor(
-    val containerColor: Color,
-    val contentColor: Color,
-    val disabledContainerColor: Color,
-    val disabledContentColor: Color,
+public class IconButtonColors(
+    public val containerColor: Color,
+    public val contentColor: Color,
+    public val disabledContainerColor: Color,
+    public val disabledContentColor: Color,
 ) {
     /**
      * Returns a copy of this [IconButtonColors], optionally overriding some of the values.
@@ -766,12 +805,12 @@ constructor(
      * @param disabledContainerColor the background color of this icon button when not enabled.
      * @param disabledContentColor the color of this icon when not enabled.
      */
-    fun copy(
+    public fun copy(
         containerColor: Color = this.containerColor,
         contentColor: Color = this.contentColor,
         disabledContainerColor: Color = this.disabledContainerColor,
         disabledContentColor: Color = this.disabledContentColor
-    ) =
+    ): IconButtonColors =
         IconButtonColors(
             containerColor = containerColor.takeOrElse { this.containerColor },
             contentColor = contentColor.takeOrElse { this.contentColor },
@@ -825,33 +864,37 @@ constructor(
 /**
  * Represents the shapes used for [IconButton] in various states.
  *
- * If [pressed] is non null the shape will be animated on press.
+ * If [pressedShape] is non null the shape will be animated on press.
  *
  * @param shape the shape of the icon button when enabled
- * @param pressed the shape of the icon button when pressed
+ * @param pressedShape the shape of the icon button when pressed
  */
-class IconButtonShapes(
-    val shape: Shape,
-    val pressed: Shape? = null,
+public class IconButtonShapes(
+    public val shape: Shape,
+    public val pressedShape: Shape = shape,
 ) {
-    fun copy(
-        default: Shape = this.shape,
-        pressed: Shape? = this.pressed,
-    ) = IconButtonShapes(default, pressed)
+    public fun copy(
+        shape: Shape? = this.shape,
+        pressedShape: Shape? = this.pressedShape,
+    ): IconButtonShapes =
+        IconButtonShapes(
+            shape = shape ?: this.shape,
+            pressedShape = pressedShape ?: this.pressedShape
+        )
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || other !is IconButtonShapes) return false
 
         if (shape != other.shape) return false
-        if (pressed != other.pressed) return false
+        if (pressedShape != other.pressedShape) return false
 
         return true
     }
 
     override fun hashCode(): Int {
         var result = shape.hashCode()
-        result = 31 * result + pressed.hashCode()
+        result = 31 * result + pressedShape.hashCode()
 
         return result
     }

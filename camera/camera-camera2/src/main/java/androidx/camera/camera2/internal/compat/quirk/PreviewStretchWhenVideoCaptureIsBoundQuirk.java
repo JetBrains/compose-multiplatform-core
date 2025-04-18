@@ -17,6 +17,7 @@
 package androidx.camera.camera2.internal.compat.quirk;
 
 import android.os.Build;
+
 /**
  * <p>QuirkSummary
  *     Bug Id: b/227469801, b/274738266

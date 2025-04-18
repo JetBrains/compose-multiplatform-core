@@ -57,6 +57,7 @@ internal abstract class TextField1SelectionGesturesTest(
                 textContent = textFieldValue.text,
                 rule = rule,
                 textToolbar = textToolbar,
+                spyTextActionModeCallback = spyTextActionModeCallback,
                 hapticFeedback = hapticFeedback,
                 getActual = { textFieldValue }
             )

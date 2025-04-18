@@ -105,9 +105,10 @@ fun toJetpackGetException(errorType: String, errorMsg: CharSequence?): GetCreden
     }
 }
 
-internal fun toJetpackCreateException(
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+fun toJetpackCreateException(
     errorType: String,
-    errorMsg: CharSequence?
+    errorMsg: CharSequence? = null
 ): CreateCredentialException {
     return when (errorType) {
         android.credentials.CreateCredentialException.TYPE_NO_CREATE_OPTIONS ->

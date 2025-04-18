@@ -105,7 +105,6 @@ fun DeviceConfigurationOverrideFontWeightAdjustmentSample() {
     }
 }
 
-@Suppress("ClassVerificationFailure") // Only used in sample
 @Sampled
 @Composable
 fun DeviceConfigurationOverrideRoundScreenSample() {

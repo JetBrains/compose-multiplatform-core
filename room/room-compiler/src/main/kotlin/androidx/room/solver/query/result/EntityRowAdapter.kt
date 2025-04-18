@@ -22,53 +22,38 @@ import androidx.room.compiler.codegen.XMemberName.Companion.packageMember
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.compat.XConverters.toString
 import androidx.room.compiler.processing.XType
-import androidx.room.ext.AndroidTypeNames
 import androidx.room.ext.ArrayLiteral
 import androidx.room.ext.CommonTypeNames
-import androidx.room.ext.RoomTypeNames.CURSOR_UTIL
 import androidx.room.ext.RoomTypeNames.STATEMENT_UTIL
 import androidx.room.ext.SQLiteDriverTypeNames
 import androidx.room.solver.CodeGenScope
 import androidx.room.vo.ColumnIndexVar
 import androidx.room.vo.Entity
 import androidx.room.vo.columnNames
-import androidx.room.writer.EntityCursorConverterWriter
+import androidx.room.writer.EntityStatementConverterWriter
 
 class EntityRowAdapter(val entity: Entity, out: XType) : QueryMappedRowAdapter(out) {
-
-    override fun isMigratedToDriver() = true
-
     override val mapping = EntityMapping(entity)
 
     private lateinit var functionSpec: XFunSpec
 
-    private var cursorDelegateVarName: String? = null
+    private var stmtDelegateVarName: String? = null
 
     private val indexAdapter =
         object : IndexAdapter {
 
             private var indexVars: List<ColumnIndexVar>? = null
 
-            override fun onCursorReady(cursorVarName: String, scope: CodeGenScope) {
+            override fun onStatementReady(stmtVarName: String, scope: CodeGenScope) {
                 indexVars =
                     entity.columnNames.map { columnName ->
-                        val packageMember =
-                            if (scope.useDriverApi) {
-                                STATEMENT_UTIL.packageMember("getColumnIndex")
-                            } else {
-                                CURSOR_UTIL.packageMember("getColumnIndex")
-                            }
+                        val packageMember = STATEMENT_UTIL.packageMember("getColumnIndex")
                         ColumnIndexVar(
                             column = columnName,
                             indexVar =
-                                XCodeBlock.of(
-                                        "%M(%L, %S)",
-                                        packageMember,
-                                        cursorVarName,
-                                        columnName
-                                    )
+                                XCodeBlock.of("%M(%L, %S)", packageMember, stmtVarName, columnName)
                                     // indexVar expects a string, and that depends on the language.
-                                    // We should change the method signature to accept XCodeBlock.
+                                    // We should change the function signature to accept XCodeBlock.
                                     .toString(scope.language)
                         )
                     }
@@ -77,63 +62,50 @@ class EntityRowAdapter(val entity: Entity, out: XType) : QueryMappedRowAdapter(o
             override fun getIndexVars() = indexVars ?: emptyList()
         }
 
-    override fun onCursorReady(
-        cursorVarName: String,
+    override fun onStatementReady(
+        stmtVarName: String,
         scope: CodeGenScope,
         indices: List<ColumnIndexVar>
     ) {
-        // Check if given indices are the default ones, i.e. onCursorReady() was called without
+        // Check if given indices are the default ones, i.e. onStatementReady() was called without
         // an indices argument and these are the default parameter ones, which means a wrapped
-        // cursor is not needed since the generated entity cursor converter has access to the
-        // original cursor.
+        // statement is not needed since the generated entity statement converter has access to the
+        // original statement.
         if (indices.isNotEmpty() && indices != indexAdapter.getIndexVars()) {
-            // Due to entity converter code being shared and using Cursor.getColumnIndex() we can't
-            // generate code that uses the mapping directly. Instead we create a wrapped Cursor that
-            // is solely used in the shared converter method and whose getColumnIndex() is
+            // Due to entity converter code being shared and using getColumnIndex() we can't
+            // generate code that uses the mapping directly. Instead we create a wrapped statement
+            // that is solely used in the shared converter function and whose getColumnIndex() is
             // overridden to return the resolved column index.
-            cursorDelegateVarName =
-                scope.getTmpVar(if (scope.useDriverApi) "_wrappedStmt" else "_wrappedCursor")
+            stmtDelegateVarName = scope.getTmpVar("_wrappedStmt")
             val entityColumnNamesParam =
                 ArrayLiteral(CommonTypeNames.STRING, *entity.columnNames.toTypedArray())
             val entityColumnIndicesParam =
                 ArrayLiteral(XTypeName.PRIMITIVE_INT, *indices.map { it.indexVar }.toTypedArray())
-            val wrapperTypeName =
-                if (scope.useDriverApi) {
-                    SQLiteDriverTypeNames.STATEMENT
-                } else {
-                    AndroidTypeNames.CURSOR
-                }
-            val packageMember =
-                if (scope.useDriverApi) {
-                    STATEMENT_UTIL.packageMember("wrapMappedColumns")
-                } else {
-                    CURSOR_UTIL.packageMember("wrapMappedColumns")
-                }
+            val wrapperTypeName = SQLiteDriverTypeNames.STATEMENT
+            val packageMember = STATEMENT_UTIL.packageMember("wrapMappedColumns")
             scope.builder.addLocalVariable(
-                checkNotNull(cursorDelegateVarName),
+                checkNotNull(stmtDelegateVarName),
                 wrapperTypeName,
                 assignExpr =
                     XCodeBlock.of(
                         "%M(%L, %L, %L)",
                         packageMember,
-                        cursorVarName,
+                        stmtVarName,
                         entityColumnNamesParam,
                         entityColumnIndicesParam
                     )
             )
         }
         functionSpec =
-            scope.writer.getOrCreateFunction(
-                EntityCursorConverterWriter(entity = entity, userDriverApi = scope.useDriverApi)
-            )
+            scope.writer.getOrCreateFunction(EntityStatementConverterWriter(entity = entity))
     }
 
-    override fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope) {
+    override fun convert(outVarName: String, stmtVarName: String, scope: CodeGenScope) {
         scope.builder.addStatement(
             "%L = %N(%L)",
             outVarName,
             functionSpec,
-            cursorDelegateVarName ?: cursorVarName
+            stmtDelegateVarName ?: stmtVarName
         )
     }
 

@@ -30,13 +30,13 @@ import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.platform.isHidden
 import androidx.compose.ui.semantics.SemanticsActions.ScrollByOffset
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties.Disabled
 import androidx.compose.ui.semantics.SemanticsProperties.VerticalScrollAxisRange
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.semantics.isHidden
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.roundToIntRect
 import java.util.function.Consumer

@@ -21,8 +21,9 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY;
 import android.content.Context;
 import android.provider.Settings;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper class for device boot count.

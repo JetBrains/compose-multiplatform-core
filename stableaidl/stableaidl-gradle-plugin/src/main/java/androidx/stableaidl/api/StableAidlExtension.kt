@@ -19,6 +19,7 @@ package androidx.stableaidl.api
 import java.io.File
 import org.gradle.api.Incubating
 import org.gradle.api.Task
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.tasks.TaskProvider
 
 /** Extension that allows access to the StableAidl plugin's public APIs. */
@@ -41,6 +42,8 @@ interface StableAidlExtension {
      * Static imports may be used in `import` statements, but are not exported to dependencies.
      */
     fun addStaticImportDirs(vararg dirs: File)
+
+    val shadowFrameworkDir: DirectoryProperty
 }
 
 interface Action {

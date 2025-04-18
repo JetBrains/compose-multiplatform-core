@@ -19,8 +19,8 @@ package androidx.camera.core.impl.utils;
 import android.graphics.ImageFormat;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public class SurfaceUtil {
     private static final String TAG = "SurfaceUtil";
@@ -54,8 +54,7 @@ public class SurfaceUtil {
     /**
      * Returns the surface pixel format.
      */
-    @NonNull
-    public static SurfaceInfo getSurfaceInfo(@NonNull Surface surface) {
+    public static @NonNull SurfaceInfo getSurfaceInfo(@NonNull Surface surface) {
         int[] surfaceInfoArray = nativeGetSurfaceInfo(surface);
         SurfaceInfo surfaceInfo = new SurfaceInfo();
         surfaceInfo.format = surfaceInfoArray[0];

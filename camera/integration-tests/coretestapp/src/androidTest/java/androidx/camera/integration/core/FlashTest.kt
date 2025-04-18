@@ -46,7 +46,7 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.impl.CameraInfoInternal
-import androidx.camera.integration.core.util.CameraPipeUtil
+import androidx.camera.integration.core.util.Camera2InteropUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
@@ -195,16 +195,19 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
         )
     }
 
+    @LabTestRule.LabTestRearCamera
     @Test
     fun requestAeModeIsOnAlwaysFlash_whenCapturedWithFlashOn() {
         verifyRequestAeOrFlashModeForFlashModeCapture(ImageCapture.FLASH_MODE_ON)
     }
 
+    @LabTestRule.LabTestRearCamera
     @Test
     fun requestAeModeIsOnAutoFlash_whenCapturedWithFlashAuto() {
         verifyRequestAeOrFlashModeForFlashModeCapture(ImageCapture.FLASH_MODE_AUTO)
     }
 
+    @LabTestRule.LabTestRearCamera
     @Test
     fun flashEnabledInRequest_whenCapturedWithFlashOnAndSharedEffect() {
         verifyRequestAeOrFlashModeForFlashModeCapture(
@@ -286,7 +289,7 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
             ImageCapture.Builder()
                 .also { builder ->
                     captureCallback?.let {
-                        CameraPipeUtil.setCameraCaptureSessionCallback(implName, builder, it)
+                        Camera2InteropUtil.setCameraCaptureSessionCallback(implName, builder, it)
                     }
                 }
                 .setFlashMode(flashMode)

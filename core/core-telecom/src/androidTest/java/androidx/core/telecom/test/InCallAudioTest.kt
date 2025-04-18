@@ -20,7 +20,6 @@ import android.media.AudioManager.MODE_IN_COMMUNICATION
 import android.os.Build
 import android.telecom.DisconnectCause
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallControlResult
 import androidx.core.telecom.internal.utils.Utils
 import androidx.core.telecom.test.utils.BaseTelecomTest
@@ -50,7 +49,6 @@ import org.junit.runner.RunWith
  * currentCallEndpoint.counter.getFirst() // The flow may never be collected } }
  */
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-@RequiresApi(Build.VERSION_CODES.O)
 @RunWith(AndroidJUnit4::class)
 class InCallAudioTest : BaseTelecomTest() {
     val LOG_TAG = "InCallAudioTest"

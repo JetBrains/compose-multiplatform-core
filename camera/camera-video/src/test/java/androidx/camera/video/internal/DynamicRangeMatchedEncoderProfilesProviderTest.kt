@@ -172,8 +172,7 @@ class DynamicRangeMatchedEncoderProfilesProviderTest {
     }
 
     companion object {
-        private val VIDEO_PROFILES_1080P_SDR =
-            createFakeVideoProfileProxy(RESOLUTION_1080P.width, RESOLUTION_1080P.height)
+        private val VIDEO_PROFILES_1080P_SDR = createFakeVideoProfileProxy(RESOLUTION_1080P)
         private val VIDEO_PROFILES_1080P_HLG =
             VIDEO_PROFILES_1080P_SDR.modifyDynamicRangeInfo(HDR_HLG, BIT_DEPTH_10)
         private val VIDEO_PROFILES_1080P_HDR10 =

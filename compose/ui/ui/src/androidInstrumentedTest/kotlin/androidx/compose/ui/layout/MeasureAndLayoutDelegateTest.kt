@@ -596,9 +596,7 @@ class MeasureAndLayoutDelegateTest {
             add(node())
         }
         val placedNode =
-            LayoutNode(isVirtual = true, permitChildrenToDetachFromParentLookahead = true).apply {
-                measurePolicy = MeasureInMeasureBlock()
-            }
+            LayoutNode(isVirtual = true).apply { measurePolicy = MeasureInMeasureBlock() }
         val anotherPlacedNode = node()
         val root = root {
             measurePolicy = MeasurePolicy { measurables, constraints ->
@@ -620,17 +618,13 @@ class MeasureAndLayoutDelegateTest {
                                 }
                             }
                             add(
-                                LayoutNode(
-                                        isVirtual = true,
-                                        permitChildrenToDetachFromParentLookahead = true
-                                    )
-                                    .apply {
-                                        add(unplacedNode)
-                                        unplacedNode.layoutDelegate.measurePassDelegate
-                                            .markDetachedFromParentLookaheadPass()
-                                        add(placedNode)
-                                        add(anotherPlacedNode)
-                                    }
+                                LayoutNode(isVirtual = true).apply {
+                                    add(unplacedNode)
+                                    unplacedNode.layoutDelegate.measurePassDelegate
+                                        .markDetachedFromParentLookaheadPass()
+                                    add(placedNode)
+                                    add(anotherPlacedNode)
+                                }
                             )
                             add(node())
                         }

@@ -18,33 +18,33 @@ package androidx.savedstate
 import androidx.annotation.MainThread
 import androidx.savedstate.internal.SavedStateRegistryImpl
 
-actual class SavedStateRegistry
+public actual class SavedStateRegistry
 internal actual constructor(
     private val impl: SavedStateRegistryImpl,
 ) {
 
     @get:MainThread
-    actual val isRestored: Boolean
+    public actual val isRestored: Boolean
         get() = impl.isRestored
 
     @MainThread
-    actual fun consumeRestoredStateForKey(key: String): SavedState? =
+    public actual fun consumeRestoredStateForKey(key: String): SavedState? =
         impl.consumeRestoredStateForKey(key)
 
     @MainThread
-    actual fun registerSavedStateProvider(key: String, provider: SavedStateProvider) {
+    public actual fun registerSavedStateProvider(key: String, provider: SavedStateProvider) {
         impl.registerSavedStateProvider(key, provider)
     }
 
-    actual fun getSavedStateProvider(key: String): SavedStateProvider? =
+    public actual fun getSavedStateProvider(key: String): SavedStateProvider? =
         impl.getSavedStateProvider(key)
 
     @MainThread
-    actual fun unregisterSavedStateProvider(key: String) {
+    public actual fun unregisterSavedStateProvider(key: String) {
         impl.unregisterSavedStateProvider(key)
     }
 
-    actual fun interface SavedStateProvider {
-        actual fun saveState(): SavedState
+    public actual fun interface SavedStateProvider {
+        public actual fun saveState(): SavedState
     }
 }

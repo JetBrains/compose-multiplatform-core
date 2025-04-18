@@ -70,7 +70,7 @@ import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
  * @param builder The builder used to construct the graph
  */
 @Composable
-fun SwipeDismissableNavHost(
+public fun SwipeDismissableNavHost(
     navController: NavHostController,
     startDestination: String,
     modifier: Modifier = Modifier,
@@ -78,7 +78,7 @@ fun SwipeDismissableNavHost(
     state: SwipeDismissableNavHostState = rememberSwipeDismissableNavHostState(),
     route: String? = null,
     builder: NavGraphBuilder.() -> Unit
-) =
+): Unit =
     SwipeDismissableNavHost(
         navController,
         remember(route, startDestination, builder) {
@@ -126,14 +126,14 @@ fun SwipeDismissableNavHost(
  * @throws IllegalArgumentException if no WearNavigation.Destination is on the navigation backstack.
  */
 @Composable
-fun SwipeDismissableNavHost(
+public fun SwipeDismissableNavHost(
     navController: NavHostController,
     graph: NavGraph,
     modifier: Modifier = Modifier,
     userSwipeEnabled: Boolean = true,
     state: SwipeDismissableNavHostState = rememberSwipeDismissableNavHostState(),
 ) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM) {
         PredictiveBackNavHost(
             navController = navController,
             graph = graph,
@@ -186,14 +186,14 @@ fun SwipeDismissableNavHost(
     level = DeprecationLevel.HIDDEN
 )
 @Composable
-fun SwipeDismissableNavHost(
+public fun SwipeDismissableNavHost(
     navController: NavHostController,
     startDestination: String,
     modifier: Modifier = Modifier,
     state: SwipeDismissableNavHostState = rememberSwipeDismissableNavHostState(),
     route: String? = null,
     builder: NavGraphBuilder.() -> Unit
-) =
+): Unit =
     SwipeDismissableNavHost(
         navController = navController,
         startDestination = startDestination,
@@ -238,12 +238,12 @@ fun SwipeDismissableNavHost(
     level = DeprecationLevel.HIDDEN
 )
 @Composable
-fun SwipeDismissableNavHost(
+public fun SwipeDismissableNavHost(
     navController: NavHostController,
     graph: NavGraph,
     modifier: Modifier = Modifier,
     state: SwipeDismissableNavHostState = rememberSwipeDismissableNavHostState(),
-) =
+): Unit =
     SwipeDismissableNavHost(
         navController = navController,
         graph = graph,
@@ -259,14 +259,16 @@ fun SwipeDismissableNavHost(
  *   swipe-to-dismiss gesture in [SwipeDismissableNavHost] and can also be used to support
  *   edge-swiping, using [edgeSwipeToDismiss].
  */
-class SwipeDismissableNavHostState(internal val swipeToDismissBoxState: SwipeToDismissBoxState) {
+public class SwipeDismissableNavHostState(
+    internal val swipeToDismissBoxState: SwipeToDismissBoxState
+) {
     @Suppress("DEPRECATION")
     @Deprecated(
         "This overload is provided for backward compatibility. " +
             "A newer overload is available which uses SwipeToDismissBoxState " +
             "from androidx.wear.compose.foundation package."
     )
-    constructor(
+    public constructor(
         swipeToDismissBoxState: androidx.wear.compose.material.SwipeToDismissBoxState
     ) : this(swipeToDismissBoxState.foundationState)
 }
@@ -281,7 +283,7 @@ class SwipeDismissableNavHostState(internal val swipeToDismissBoxState: SwipeToD
  *   the use of [BasicSwipeToDismissBox] in favour of predictive back based navigation.
  */
 @Composable
-fun rememberSwipeDismissableNavHostState(
+public fun rememberSwipeDismissableNavHostState(
     swipeToDismissBoxState: SwipeToDismissBoxState = rememberSwipeToDismissBoxState()
 ): SwipeDismissableNavHostState {
     return remember(swipeToDismissBoxState) { SwipeDismissableNavHostState(swipeToDismissBoxState) }
@@ -294,7 +296,7 @@ fun rememberSwipeDismissableNavHostState(
     level = DeprecationLevel.HIDDEN
 )
 @Composable
-fun rememberSwipeDismissableNavHostState(
+public fun rememberSwipeDismissableNavHostState(
     swipeToDismissBoxState: androidx.wear.compose.material.SwipeToDismissBoxState =
         androidx.wear.compose.material.rememberSwipeToDismissBoxState()
 ): SwipeDismissableNavHostState {

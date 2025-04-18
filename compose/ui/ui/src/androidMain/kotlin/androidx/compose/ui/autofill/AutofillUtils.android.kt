@@ -22,8 +22,6 @@ import android.view.autofill.AutofillId
 import android.view.autofill.AutofillManager
 import android.view.autofill.AutofillValue
 import androidx.annotation.RequiresApi
-import androidx.compose.ui.platform.AndroidComposeViewAccessibilityDelegateCompat.Companion.ClassName
-import androidx.compose.ui.semantics.Role
 
 /**
  * This class is here to ensure that the classes that use this API will get verified and can be AOT
@@ -62,7 +60,7 @@ internal object AutofillApi27Helper {
 @RequiresApi(26)
 internal object AutofillApi26Helper {
     @RequiresApi(26)
-    fun newChild(structure: ViewStructure, index: Int): ViewStructure? = structure.newChild(index)
+    fun newChild(structure: ViewStructure, index: Int): ViewStructure = structure.newChild(index)
 
     @RequiresApi(26)
     fun addChildCount(structure: ViewStructure, num: Int) = structure.addChildCount(num)
@@ -183,28 +181,4 @@ internal object AutofillApi26Helper {
     fun getAutofillTextValue(value: String): AutofillValue {
         return AutofillValue.forText(value)
     }
-
-    @RequiresApi(26)
-    fun setAutofillTypeForViewStruct(child: ViewStructure, dataType: ContentDataType) {
-        val autofillType =
-            when (dataType) {
-                ContentDataType.Text -> View.AUTOFILL_TYPE_TEXT
-                ContentDataType.Date -> View.AUTOFILL_TYPE_DATE
-                ContentDataType.Toggle -> View.AUTOFILL_TYPE_TOGGLE
-                ContentDataType.List -> View.AUTOFILL_TYPE_LIST
-                else -> View.AUTOFILL_TYPE_NONE
-            }
-        setAutofillType(child, autofillType)
-    }
 }
-
-internal fun Role.toLegacyClassName(): String =
-    when (this) {
-        Role.Button -> "android.widget.Button"
-        Role.Checkbox -> "android.widget.CheckBox"
-        Role.RadioButton -> "android.widget.RadioButton"
-        Role.Image -> "android.widget.ImageView"
-        Role.DropdownList -> "android.widget.Spinner"
-        Role.ValuePicker -> "android.widget.NumberPicker"
-        else -> ClassName
-    }

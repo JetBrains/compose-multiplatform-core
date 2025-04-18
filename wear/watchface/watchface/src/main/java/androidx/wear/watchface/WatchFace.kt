@@ -97,7 +97,13 @@ public annotation class WatchFaceTypeIntDef
 /**
  * The type of watch face, whether it's digital or analog. This influences the time displayed in
  * preview images.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public object WatchFaceType {
     /* The WatchFace has an analog time display. */
     public const val ANALOG: Int = 0
@@ -113,7 +119,12 @@ public object WatchFaceType {
  * @param watchFaceType The type of watch face, whether it's digital or analog. Used to determine
  *   the default time for editor preview screenshots.
  * @param renderer The [Renderer] for this WatchFace.
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class WatchFace(
     @WatchFaceTypeIntDef public var watchFaceType: Int,
     public val renderer: Renderer
@@ -604,6 +615,10 @@ internal class MockTime(var speed: Double, var minTime: Long, var maxTime: Long)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class WatchFaceImpl
 @UiThread
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 constructor(
     watchface: WatchFace,
     private val watchFaceHostApi: WatchFaceHostApi,

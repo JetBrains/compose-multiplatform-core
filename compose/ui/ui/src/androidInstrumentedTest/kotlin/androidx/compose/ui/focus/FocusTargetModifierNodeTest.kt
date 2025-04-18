@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.focus
 
-import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
@@ -49,12 +48,8 @@ import org.junit.runner.RunWith
 class FocusTargetModifierNodeTest {
     @get:Rule val rule = createComposeRule()
 
-    // TODO(b/267253920): Add a compose test API to set/reset InputMode.
     @After
-    fun resetTouchMode() =
-        with(InstrumentationRegistry.getInstrumentation()) {
-            if (SDK_INT < 33) setInTouchMode(true) else resetInTouchMode()
-        }
+    fun resetTouchMode() = InstrumentationRegistry.getInstrumentation().resetInTouchModeCompat()
 
     @Test
     fun requestFocus() {
@@ -251,6 +246,69 @@ class FocusTargetModifierNodeTest {
             assertThat(focusTargetModifierNode.focusState).isEqualTo(ActiveParent)
             assertThat(previousFocusStates).containsExactly(Inactive).inOrder()
             assertThat(currentFocusStates).containsExactly(ActiveParent).inOrder()
+        }
+    }
+
+    @Test
+    fun onFocusChange_requestingChildFocusAfterParent() {
+        // Arrange
+        val previousParentFocusStates = mutableListOf<FocusState?>()
+        val currentParentFocusStates = mutableListOf<FocusState?>()
+        val parentFocusTargetModifierNode = FocusTargetModifierNode { previous, current ->
+            previousParentFocusStates += previous
+            currentParentFocusStates += current
+        }
+        val previousChildFocusStates = mutableListOf<FocusState?>()
+        val currentChildFocusStates = mutableListOf<FocusState?>()
+        val childFocusTargetModifierNode = FocusTargetModifierNode { previous, current ->
+            previousChildFocusStates += previous
+            currentChildFocusStates += current
+        }
+
+        val parentFocusRequester = FocusRequester()
+        val childFocusRequester = FocusRequester()
+        rule.setFocusableContent {
+            FocusTargetModifierNodeBox(
+                parentFocusTargetModifierNode,
+                Modifier.focusRequester(parentFocusRequester)
+            ) {
+                FocusTargetModifierNodeBox(
+                    childFocusTargetModifierNode,
+                    Modifier.focusRequester(childFocusRequester)
+                ) {}
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(parentFocusTargetModifierNode.focusState).isEqualTo(Inactive)
+            assertThat(previousParentFocusStates).isEmpty()
+            assertThat(currentParentFocusStates).isEmpty()
+            assertThat(childFocusTargetModifierNode.focusState).isEqualTo(Inactive)
+            assertThat(previousChildFocusStates).isEmpty()
+            assertThat(currentChildFocusStates).isEmpty()
+            parentFocusRequester.requestFocus()
+        }
+
+        rule.runOnIdle {
+            assertThat(parentFocusTargetModifierNode.focusState).isEqualTo(Active)
+            assertThat(previousParentFocusStates).containsExactly(Inactive)
+            assertThat(currentParentFocusStates).containsExactly(Active)
+            assertThat(childFocusTargetModifierNode.focusState).isEqualTo(Inactive)
+            assertThat(previousChildFocusStates).isEmpty()
+            assertThat(currentChildFocusStates).isEmpty()
+        }
+
+        // Act
+        rule.runOnIdle { childFocusRequester.requestFocus() }
+
+        // Assert
+        rule.runOnIdle {
+            assertThat(parentFocusTargetModifierNode.focusState).isEqualTo(ActiveParent)
+            assertThat(previousParentFocusStates).containsExactly(Inactive, Active).inOrder()
+            assertThat(currentParentFocusStates).containsExactly(Active, ActiveParent).inOrder()
+            assertThat(childFocusTargetModifierNode.focusState).isEqualTo(Active)
+            assertThat(previousChildFocusStates).containsExactly(Inactive)
+            assertThat(currentChildFocusStates).containsExactly(Active)
         }
     }
 

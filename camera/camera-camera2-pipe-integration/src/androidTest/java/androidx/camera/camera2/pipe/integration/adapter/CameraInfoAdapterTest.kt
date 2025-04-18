@@ -17,6 +17,7 @@
 package androidx.camera.camera2.pipe.integration.adapter
 
 import android.content.Context
+import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.camera2.pipe.testing.toCameraInfoAdapter
@@ -30,6 +31,7 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
 import org.junit.After
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -48,6 +50,7 @@ class CameraInfoAdapterTest {
 
     @Before
     fun setUp() {
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(lensFacing))
         val context: Context = getApplicationContext()
         CameraXUtil.initialize(context, CameraPipeConfig.defaultConfig())
         val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
@@ -67,5 +70,18 @@ class CameraInfoAdapterTest {
         val streamConfigurationMap = cameraCharacteristics.get(SCALER_STREAM_CONFIGURATION_MAP)!!
 
         assertThat(formats).containsExactlyElementsIn(streamConfigurationMap.outputFormats.toSet())
+    }
+
+    @Test
+    fun returnLowLightBoostSupportedCorrectly() {
+        val availableAeModes: IntArray =
+            CameraUtil.getCameraCharacteristics(lensFacing)!![
+                CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES]!!
+        assertThat(cameraInfoAdapter.isLowLightBoostSupported)
+            .isEqualTo(
+                availableAeModes.contains(
+                    CameraCharacteristics.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                )
+            )
     }
 }

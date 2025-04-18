@@ -23,6 +23,7 @@ import static androidx.wear.protolayout.material.RunnerUtils.getFontScale;
 import static androidx.wear.protolayout.material.RunnerUtils.runSingleScreenshotTest;
 import static androidx.wear.protolayout.material.RunnerUtils.setFontScale;
 import static androidx.wear.protolayout.material.RunnerUtils.waitForNotificationToDisappears;
+import static androidx.wear.protolayout.material.ScreenshotKt.SCREENSHOT_GOLDEN_PATH;
 import static androidx.wear.protolayout.material.TestCasesGenerator.XXXL_SCALE_SUFFIX;
 import static androidx.wear.protolayout.material.TestCasesGenerator.generateTestCases;
 import static androidx.wear.protolayout.material.TestCasesGenerator.generateTextTestCasesLtrOnly;
@@ -63,7 +64,7 @@ public class MaterialGoldenXLTest {
 
     @Rule
     public AndroidXScreenshotTestRule mScreenshotRule =
-            new AndroidXScreenshotTestRule("wear/wear-protolayout-material");
+            new AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH);
 
     public MaterialGoldenXLTest(String expected, TestCase testCase) {
         mTestCase = testCase;

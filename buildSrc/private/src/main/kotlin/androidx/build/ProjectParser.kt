@@ -33,45 +33,23 @@ abstract class ProjectParser : BuildService<BuildServiceParameters.None> {
     }
 
     private fun parseProject(fileLines: List<String>): ParsedProject {
-        var libraryType: String? = null
+        var softwareType: String? = null
         var publish: String? = null
         var specifiesVersion = false
         fileLines.forEach { line ->
-            if (libraryType == null) libraryType = line.extractVariableValue(" type = LibraryType.")
+            if (softwareType == null)
+                softwareType = line.extractVariableValue(" type = SoftwareType.")
             if (publish == null) publish = line.extractVariableValue(" publish = Publish.")
             if (line.contains("mavenVersion =")) specifiesVersion = true
         }
-        val libraryTypeEnum = libraryType?.let { LibraryType.valueOf(it) } ?: LibraryType.UNSET
-        val publishEnum = publish?.let { Publish.valueOf(it) } ?: Publish.UNSET
-        return ParsedProject(
-            libraryType = libraryTypeEnum,
-            publish = publishEnum,
-            specifiesVersion = specifiesVersion
-        )
+        val softwareTypeEnum = softwareType?.let { SoftwareType.valueOf(it) } ?: SoftwareType.UNSET
+        return ParsedProject(softwareType = softwareTypeEnum, specifiesVersion = specifiesVersion)
     }
 
-    data class ParsedProject(
-        val libraryType: LibraryType,
-        val publish: Publish,
-        val specifiesVersion: Boolean
-    ) {
-        fun shouldPublish(): Boolean =
-            if (publish != Publish.UNSET) {
-                publish.shouldPublish()
-            } else if (libraryType != LibraryType.UNSET) {
-                libraryType.publish.shouldPublish()
-            } else {
-                false
-            }
+    data class ParsedProject(val softwareType: SoftwareType, val specifiesVersion: Boolean) {
+        fun shouldPublish(): Boolean = softwareType.publish.shouldPublish()
 
-        fun shouldRelease(): Boolean =
-            if (publish != Publish.UNSET) {
-                publish.shouldRelease()
-            } else if (libraryType != LibraryType.UNSET) {
-                libraryType.publish.shouldRelease()
-            } else {
-                false
-            }
+        fun shouldRelease(): Boolean = softwareType.publish.shouldRelease()
     }
 }
 
@@ -92,7 +70,7 @@ fun Project.parse(): ProjectParser.ParsedProject {
 
 fun Project.parseBuildFile(buildFile: File): ProjectParser.ParsedProject {
     val parserProvider =
-        project.rootProject.gradle.sharedServices.registerIfAbsent(
+        project.gradle.sharedServices.registerIfAbsent(
             "ProjectParser",
             ProjectParser::class.java
         ) {}

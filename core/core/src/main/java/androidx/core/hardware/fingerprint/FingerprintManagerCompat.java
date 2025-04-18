@@ -24,11 +24,12 @@ import android.os.Build;
 import android.os.CancellationSignal;
 import android.os.Handler;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.security.Signature;
 
@@ -51,8 +52,7 @@ public class FingerprintManagerCompat {
     private final Context mContext;
 
     /** Get a {@link FingerprintManagerCompat} instance for a provided context. */
-    @NonNull
-    public static FingerprintManagerCompat from(@NonNull Context context) {
+    public static @NonNull FingerprintManagerCompat from(@NonNull Context context) {
         return new FingerprintManagerCompat(context);
     }
 
@@ -110,7 +110,7 @@ public class FingerprintManagerCompat {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     @RequiresPermission(Manifest.permission.USE_FINGERPRINT)
     public void authenticate(@Nullable CryptoObject crypto, int flags,
-            @Nullable androidx.core.os.CancellationSignal cancel,
+            androidx.core.os.@Nullable CancellationSignal cancel,
             @NonNull AuthenticationCallback callback,
             @Nullable Handler handler) {
         authenticate(crypto, flags,
@@ -145,9 +145,9 @@ public class FingerprintManagerCompat {
         }
     }
 
-    @Nullable
     @RequiresApi(23)
-    private static FingerprintManager getFingerprintManagerOrNull(@NonNull Context context) {
+    private static @Nullable FingerprintManager getFingerprintManagerOrNull(
+            @NonNull Context context) {
         return Api23Impl.getFingerprintManagerOrNull(context);
     }
 
@@ -221,22 +221,19 @@ public class FingerprintManagerCompat {
          * Get {@link Signature} object.
          * @return {@link Signature} object or null if this doesn't contain one.
          */
-        @Nullable
-        public Signature getSignature() { return mSignature; }
+        public @Nullable Signature getSignature() { return mSignature; }
 
         /**
          * Get {@link Cipher} object.
          * @return {@link Cipher} object or null if this doesn't contain one.
          */
-        @Nullable
-        public Cipher getCipher() { return mCipher; }
+        public @Nullable Cipher getCipher() { return mCipher; }
 
         /**
          * Get {@link Mac} object.
          * @return {@link Mac} object or null if this doesn't contain one.
          */
-        @Nullable
-        public Mac getMac() { return mMac; }
+        public @Nullable Mac getMac() { return mMac; }
     }
 
     /**
@@ -255,8 +252,7 @@ public class FingerprintManagerCompat {
          * @return crypto object provided to {@link FingerprintManagerCompat#authenticate(
          *         CryptoObject, int, CancellationSignal, AuthenticationCallback, Handler)}.
          */
-        @NonNull
-        public CryptoObject getCryptoObject() { return mCryptoObject; }
+        public @NonNull CryptoObject getCryptoObject() { return mCryptoObject; }
     }
 
     /**

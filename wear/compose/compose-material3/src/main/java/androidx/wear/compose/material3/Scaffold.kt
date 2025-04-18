@@ -20,6 +20,7 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.withInfiniteAnimationFrameMillis
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,32 +28,44 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.util.fastForEach
 import androidx.wear.compose.foundation.ScrollInfoProvider
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-internal class ScaffoldState(private val appTimeText: (@Composable (() -> Unit))? = null) {
-    fun removeScreen(key: Any) {
-        screenContent.removeIf { it.key === key }
-    }
+internal class ScaffoldState(appTimeText: (@Composable (() -> Unit))? = null) {
+    val screenContent = ScreenContent(appTimeText)
 
-    fun addScreen(
-        key: Any,
-        timeText: @Composable (() -> Unit)?,
-        scrollInfoProvider: ScrollInfoProvider? = null
-    ) {
-        screenContent.add(ScreenContent(key, scrollInfoProvider, timeText))
-    }
+    /**
+     * Represents the scale factor applied to the parent screen. This should be used when scaling is
+     * needed for transitions or other animations affecting the parent.
+     */
+    var parentScale = mutableFloatStateOf(1f)
+}
+
+/**
+ * Manages the content and state of a screen, including the visibility and behavior of a time text
+ * element and handling screen stages (New, Scrolling, Idle).
+ *
+ * This class is designed to be used internally within a screen management system. It allows adding
+ * and removing screen content, displaying a time text element, and managing the screen's stage
+ * based on scrolling activity.
+ */
+internal class ScreenContent(private val appTimeText: @Composable (() -> Unit)?) {
 
     val timeText: @Composable (() -> Unit)
         get() = {
@@ -67,11 +80,17 @@ internal class ScaffoldState(private val appTimeText: (@Composable (() -> Unit))
             }
         }
 
-    /**
-     * Represents the scale factor applied to the parent screen. This should be used when scaling is
-     * needed for transitions or other animations affecting the parent.
-     */
-    var parentScale = mutableFloatStateOf(1f)
+    fun removeScreen(key: Any) {
+        contentItems.removeIf { it.key === key }
+    }
+
+    fun addScreen(
+        key: Any,
+        timeText: @Composable (() -> Unit)?,
+        scrollInfoProvider: ScrollInfoProvider? = null
+    ) {
+        contentItems.add(ScreenContent(key, scrollInfoProvider, timeText))
+    }
 
     internal val screenStage: MutableState<ScreenStage> = mutableStateOf(ScreenStage.New)
 
@@ -91,16 +110,10 @@ internal class ScaffoldState(private val appTimeText: (@Composable (() -> Unit))
         }
     }
 
-    internal data class ScreenContent(
-        val key: Any,
-        val scrollInfoProvider: ScrollInfoProvider? = null,
-        val timeText: (@Composable () -> Unit)? = null,
-    )
-
     private fun currentContent(): Pair<ScreenContent?, @Composable (() -> Unit)> {
         var resultTimeText: @Composable (() -> Unit)? = null
         var resultContent: ScreenContent? = null
-        screenContent.fastForEach {
+        contentItems.fastForEach {
             if (it.timeText != null) {
                 resultTimeText = it.timeText
             }
@@ -111,7 +124,13 @@ internal class ScaffoldState(private val appTimeText: (@Composable (() -> Unit))
         return resultContent to (resultTimeText ?: appTimeText ?: {})
     }
 
-    private val screenContent = mutableStateListOf<ScreenContent>()
+    private val contentItems = mutableStateListOf<ScreenContent>()
+
+    private data class ScreenContent(
+        val key: Any,
+        val scrollInfoProvider: ScrollInfoProvider? = null,
+        val timeText: (@Composable () -> Unit)? = null,
+    )
 }
 
 @Composable
@@ -153,4 +172,38 @@ internal fun AnimatedIndicator(
 
 internal val LocalScaffoldState = compositionLocalOf { ScaffoldState() }
 
-private const val IDLE_DELAY = 2500L
+private const val IDLE_DELAY = 2000L
+
+internal object AnimationCoordinator {
+    fun register() {
+        if (registeredCount.incrementAndGet() > 0) running = true
+    }
+
+    fun unregister() {
+        if (registeredCount.decrementAndGet() <= 0) running = false
+    }
+
+    /**
+     * The frame time in milliseconds in the calling context of frame dispatch. Used to coordinate
+     * animations. If animations are not running this will be Long.MAX_VALUE. Provided by
+     * [withInfiniteAnimationFrameMillis].
+     */
+    val frameMillis = mutableLongStateOf(Long.MAX_VALUE)
+
+    @Composable
+    fun Looper() {
+        LaunchedEffect(running) {
+            if (running) {
+                while (isActive && running) {
+                    withInfiniteAnimationFrameMillis { frameMillis.longValue = it }
+                }
+            } else {
+                // This should make all animations finish :)
+                frameMillis.longValue = Long.MAX_VALUE
+            }
+        }
+    }
+
+    private val registeredCount = AtomicInteger(0)
+    private var running by mutableStateOf(false)
+}

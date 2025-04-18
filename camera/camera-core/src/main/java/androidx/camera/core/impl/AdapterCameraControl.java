@@ -16,14 +16,17 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import android.util.Range;
+
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.FocusMeteringResult;
 import androidx.camera.core.impl.utils.SessionProcessorUtil;
 import androidx.camera.core.impl.utils.futures.Futures;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link CameraControlInternal} whose capabilities can be restricted by the associated
@@ -33,8 +36,7 @@ import com.google.common.util.concurrent.ListenableFuture;
  */
 public class AdapterCameraControl extends ForwardingCameraControl {
     private final CameraControlInternal mCameraControl;
-    @Nullable
-    private final SessionProcessor mSessionProcessor;
+    private final @Nullable SessionProcessor mSessionProcessor;
 
     /**
      * Creates the restricted version of the given {@link CameraControlInternal}.
@@ -49,23 +51,20 @@ public class AdapterCameraControl extends ForwardingCameraControl {
     /**
      * Returns implementation instance.
      */
-    @NonNull
     @Override
-    public CameraControlInternal getImplementation() {
+    public @NonNull CameraControlInternal getImplementation() {
         return mCameraControl;
     }
 
     /**
      * Returns the {@link SessionProcessor} associated with the AdapterCameraControl.
      */
-    @Nullable
-    public SessionProcessor getSessionProcessor() {
+    public @Nullable SessionProcessor getSessionProcessor() {
         return mSessionProcessor;
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> enableTorch(boolean torch) {
+    public @NonNull ListenableFuture<Void> enableTorch(boolean torch) {
         if (!SessionProcessorUtil.isOperationSupported(mSessionProcessor,
                 AdapterCameraInfo.CAMERA_OPERATION_TORCH)) {
             return Futures.immediateFailedFuture(
@@ -74,9 +73,8 @@ public class AdapterCameraControl extends ForwardingCameraControl {
         return mCameraControl.enableTorch(torch);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<FocusMeteringResult> startFocusAndMetering(
+    public @NonNull ListenableFuture<FocusMeteringResult> startFocusAndMetering(
             @NonNull FocusMeteringAction action) {
         FocusMeteringAction modifiedAction =
                 SessionProcessorUtil.getModifiedFocusMeteringAction(mSessionProcessor, action);
@@ -88,37 +86,62 @@ public class AdapterCameraControl extends ForwardingCameraControl {
         return mCameraControl.startFocusAndMetering(modifiedAction);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> cancelFocusAndMetering() {
+    public @NonNull ListenableFuture<Void> cancelFocusAndMetering() {
         return mCameraControl.cancelFocusAndMetering();
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> setZoomRatio(float ratio) {
+    public @NonNull ListenableFuture<Void> setZoomRatio(float ratio) {
         if (!SessionProcessorUtil.isOperationSupported(mSessionProcessor,
                 AdapterCameraInfo.CAMERA_OPERATION_ZOOM)) {
             return Futures.immediateFailedFuture(
                     new IllegalStateException("Zoom is not supported"));
+        }
+
+        if (mSessionProcessor != null) {
+            Range<Float> extensionZoomRange = mSessionProcessor.getExtensionZoomRange();
+            if (extensionZoomRange != null
+                    && (ratio < extensionZoomRange.getLower()
+                    || ratio > extensionZoomRange.getUpper())) {
+                String outOfRangeDesc = "Requested zoomRatio " + ratio + " is not within valid "
+                        + "range [" + extensionZoomRange.getLower() + " , "
+                        + extensionZoomRange.getUpper() + "]";
+                return Futures.immediateFailedFuture(new IllegalArgumentException(outOfRangeDesc));
+            }
         }
         return mCameraControl.setZoomRatio(ratio);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> setLinearZoom(float linearZoom) {
+    public @NonNull ListenableFuture<Void> setLinearZoom(float linearZoom) {
         if (!SessionProcessorUtil.isOperationSupported(mSessionProcessor,
                 AdapterCameraInfo.CAMERA_OPERATION_ZOOM)) {
             return Futures.immediateFailedFuture(
                     new IllegalStateException("Zoom is not supported"));
         }
+
+        if (mSessionProcessor != null) {
+            Range<Float> extensionZoomRange = mSessionProcessor.getExtensionZoomRange();
+            if (extensionZoomRange == null) {
+                return mCameraControl.setLinearZoom(linearZoom);
+            }
+
+            if (linearZoom > 1.0f || linearZoom < 0f) {
+                String outOfRangeDesc = "Requested linearZoom " + linearZoom + " is not within"
+                        + " valid range [0..1]";
+                return Futures.immediateFailedFuture(new IllegalArgumentException(outOfRangeDesc));
+            }
+            float zoomRatio = AdapterCameraInfo.getZoomRatioByPercentage(linearZoom,
+                    extensionZoomRange.getLower(), extensionZoomRange.getUpper());
+            return mCameraControl.setZoomRatio(zoomRatio);
+        }
+
         return mCameraControl.setLinearZoom(linearZoom);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Integer> setExposureCompensationIndex(int value) {
+    public @NonNull ListenableFuture<Integer> setExposureCompensationIndex(int value) {
         if (!SessionProcessorUtil.isOperationSupported(mSessionProcessor,
                 AdapterCameraInfo.CAMERA_OPERATION_EXPOSURE_COMPENSATION)) {
             return Futures.immediateFailedFuture(

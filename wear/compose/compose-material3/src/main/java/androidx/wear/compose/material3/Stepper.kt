@@ -40,7 +40,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -59,12 +61,12 @@ import kotlin.math.roundToInt
  * increase and decrease buttons. Buttons can have custom icons - [decreaseIcon] and [increaseIcon].
  * Step value is calculated as the difference between min and max values divided by [steps]+1.
  * Stepper itself doesn't show the current value but can be displayed via the content slot or
- * [LevelIndicator] if required. If [value] is not equal to any step value, then it will be coerced
- * to the closest step value. However, the [value] itself will not be changed and [onValueChange] in
- * this case will not be triggered. To add range semantics on Stepper, use
+ * [StepperLevelIndicator] if required. If [value] is not equal to any step value, then it will be
+ * coerced to the closest step value. However, the [value] itself will not be changed and
+ * [onValueChange] in this case will not be triggered. To add range semantics on Stepper, use
  * [Modifier.rangeSemantics].
  *
- * Example of a simple [Stepper] with [LevelIndicator]:
+ * Example of a simple [Stepper] with [StepperLevelIndicator]:
  *
  * @sample androidx.wear.compose.material3.samples.StepperSample
  *
@@ -92,7 +94,7 @@ import kotlin.math.roundToInt
  * @param content Content body for the Stepper.
  */
 @Composable
-fun Stepper(
+public fun Stepper(
     value: Float,
     onValueChange: (Float) -> Unit,
     steps: Int,
@@ -124,7 +126,8 @@ fun Stepper(
  * either [Text] or [Button]) in the middle. Value can be increased and decreased by clicking on the
  * increase and decrease buttons. Buttons can have custom icons - [decreaseIcon] and [increaseIcon].
  * Stepper itself doesn't show the current value but can be displayed via the content slot or
- * [LevelIndicator] if required. To add range semantics on Stepper, use [Modifier.rangeSemantics].
+ * [StepperLevelIndicator] if required. To add range semantics on Stepper, use
+ * [Modifier.rangeSemantics].
  *
  * Example of a [Stepper] with integer values:
  *
@@ -157,7 +160,7 @@ fun Stepper(
  * @param content Content body for the Stepper.
  */
 @Composable
-fun Stepper(
+public fun Stepper(
     value: Int,
     onValueChange: (Int) -> Unit,
     valueProgression: IntProgression,
@@ -183,12 +186,12 @@ fun Stepper(
 }
 
 /** Defaults used by [Stepper]. */
-object StepperDefaults {
+public object StepperDefaults {
     /** Default size for increase and decrease icons. */
-    val IconSize = 24.dp
+    public val IconSize: Dp = 24.dp
 
     /** Creates a [StepperColors] that represents the default colors used in a [Stepper]. */
-    @Composable fun colors() = MaterialTheme.colorScheme.defaultStepperColors
+    @Composable public fun colors(): StepperColors = MaterialTheme.colorScheme.defaultStepperColors
 
     /**
      * Creates a [StepperColors] that represents the default colors used in a [Stepper].
@@ -201,14 +204,14 @@ object StepperDefaults {
      * @param disabledButtonIconColor the disabled button icon color for this [Stepper].
      */
     @Composable
-    fun colors(
+    public fun colors(
         contentColor: Color = Color.Unspecified,
         buttonContainerColor: Color = Color.Unspecified,
         buttonIconColor: Color = Color.Unspecified,
         disabledContentColor: Color = Color.Unspecified,
         disabledButtonContainerColor: Color = Color.Unspecified,
         disabledButtonIconColor: Color = Color.Unspecified,
-    ) =
+    ): StepperColors =
         MaterialTheme.colorScheme.defaultStepperColors.copy(
             contentColor = contentColor,
             buttonContainerColor = buttonContainerColor,
@@ -250,13 +253,13 @@ object StepperDefaults {
  *   state.
  * @param disabledButtonIconColor icon tint [Color] for this [Stepper] in disabled state.
  */
-class StepperColors(
-    val contentColor: Color,
-    val buttonContainerColor: Color,
-    val buttonIconColor: Color,
-    val disabledContentColor: Color,
-    val disabledButtonContainerColor: Color,
-    val disabledButtonIconColor: Color,
+public class StepperColors(
+    public val contentColor: Color,
+    public val buttonContainerColor: Color,
+    public val buttonIconColor: Color,
+    public val disabledContentColor: Color,
+    public val disabledButtonContainerColor: Color,
+    public val disabledButtonIconColor: Color,
 ) {
     /**
      * Returns a copy of this [StepperColors] optionally overriding some of the values.
@@ -269,14 +272,14 @@ class StepperColors(
      *   state.
      * @param disabledButtonIconColor Icon tint [Color] for this [Stepper] in disabled state.
      */
-    fun copy(
+    public fun copy(
         contentColor: Color = this.contentColor,
         buttonContainerColor: Color = this.buttonContainerColor,
         buttonIconColor: Color = this.buttonIconColor,
         disabledContentColor: Color = this.disabledContentColor,
         disabledButtonContainerColor: Color = this.disabledButtonContainerColor,
         disabledButtonIconColor: Color = this.disabledButtonIconColor,
-    ) =
+    ): StepperColors =
         StepperColors(
             contentColor = contentColor.takeOrElse { this.contentColor },
             buttonContainerColor = buttonContainerColor.takeOrElse { this.buttonContainerColor },
@@ -343,11 +346,19 @@ private fun StepperImpl(
         remember(value, valueRange, steps) {
             RangeDefaults.snapValueToStep(value, valueRange, steps)
         }
+    val hapticFeedback = LocalHapticFeedback.current
 
     val updateValue: (Int) -> Unit = { stepDiff ->
         val newValue =
             RangeDefaults.calculateCurrentStepValue(currentStep + stepDiff, steps, valueRange)
-        if (newValue != value) onValueChange(newValue)
+        if (newValue != value) {
+            onValueChange(newValue)
+            if (newValue > valueRange.start && newValue < valueRange.endInclusive) {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+            } else {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
+            }
+        }
     }
 
     Column(
@@ -399,7 +410,7 @@ private fun ColumnScope.StepperButton(
 
     val (finalShape, finalInteractionSource) =
         animateButtonShape(
-            defaultShape = shape,
+            shape = shape,
             pressedShape = pressedShape,
             onPressAnimationSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>().faster(200f),
             onReleaseAnimationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),

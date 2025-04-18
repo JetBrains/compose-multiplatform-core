@@ -21,6 +21,7 @@ import android.app.Activity
 import android.app.Service
 import android.content.ComponentName
 import android.content.Intent
+import android.os.Binder
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -309,21 +310,26 @@ public annotation class IsForSafeWatchFace
  * system will append this value on your behalf.
  */
 public abstract class ComplicationDataSourceService : Service() {
-    private var wrapper: IComplicationProviderWrapper? = null
+    private val wrapper: IComplicationProviderWrapper by lazy { IComplicationProviderWrapper() }
+    private val complicationUpdateInterface: ComplicationDataRequester by lazy {
+        object : ComplicationDataRequester() {
+            override fun onComplicationRequest(
+                request: ComplicationRequest,
+                listener: ComplicationRequestListener
+            ) = this@ComplicationDataSourceService.onComplicationRequest(request, listener)
+        }
+    }
     internal val mainThreadHandler by lazy { createMainThreadHandler() }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     open fun createMainThreadHandler() = Handler(Looper.getMainLooper())
 
-    final override fun onBind(intent: Intent): IBinder? {
-        if (ACTION_COMPLICATION_UPDATE_REQUEST == intent.action) {
-            if (wrapper == null) {
-                wrapper = IComplicationProviderWrapper()
-            }
-            return wrapper
+    final override fun onBind(intent: Intent): IBinder? =
+        when (intent.action) {
+            ACTION_COMPLICATION_UPDATE_REQUEST -> wrapper
+            ACTION_WEAR_SDK_COMPLICATION_UPDATE_REQUEST -> complicationUpdateInterface
+            else -> null
         }
-        return null
-    }
 
     /**
      * Called when a complication is activated.
@@ -452,6 +458,14 @@ public abstract class ComplicationDataSourceService : Service() {
      *   from the complication slot used by the watch face itself.
      */
     @MainThread public open fun onComplicationDeactivated(complicationInstanceId: Int) {}
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public abstract class ComplicationDataRequester : Binder() {
+        abstract fun onComplicationRequest(
+            request: ComplicationRequest,
+            listener: ComplicationRequestListener
+        )
+    }
 
     private inner class IComplicationProviderWrapper : IComplicationProvider.Stub() {
         override fun onUpdate(complicationInstanceId: Int, type: Int, manager: IBinder): Unit =
@@ -757,6 +771,10 @@ public abstract class ComplicationDataSourceService : Service() {
         @SuppressWarnings("ActionValue")
         public const val ACTION_COMPLICATION_UPDATE_REQUEST: String =
             "android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST"
+
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public const val ACTION_WEAR_SDK_COMPLICATION_UPDATE_REQUEST: String =
+            "android.support.wearable.complications.ACTION_WEAR_SDK_COMPLICATION_UPDATE_REQUEST"
 
         /**
          * Metadata key used to declare supported complication types.

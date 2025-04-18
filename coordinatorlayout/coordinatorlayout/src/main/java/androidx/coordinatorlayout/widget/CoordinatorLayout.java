@@ -51,8 +51,6 @@ import androidx.annotation.DrawableRes;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IdRes;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.coordinatorlayout.R;
@@ -70,6 +68,9 @@ import androidx.core.view.ViewCompat.NestedScrollType;
 import androidx.core.view.ViewCompat.ScrollAxis;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.customview.view.AbsSavedState;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -115,8 +116,8 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
         NestedScrollingParent3 {
     static final String TAG = "CoordinatorLayout";
     static final String WIDGET_PACKAGE_NAME;
-    // For the UP/DOWN keys, we scroll 1/10th of the screen.
-    private static final float KEY_SCROLL_FRACTION_AMOUNT = 0.1f;
+    // For the UP/DOWN keys, we scroll 20% of the screen.
+    private static final float KEY_SCROLL_FRACTION_AMOUNT = 0.2f;
 
     static {
         final Package pkg = CoordinatorLayout.class.getPackage();
@@ -154,8 +155,7 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
     static final Comparator<View> TOP_SORTED_CHILDREN_COMPARATOR;
     private static final Pools.Pool<Rect> sRectPool = new Pools.SynchronizedPool<>(12);
 
-    @NonNull
-    private static Rect acquireTempRect() {
+    private static @NonNull Rect acquireTempRect() {
         Rect rect = sRectPool.acquire();
         if (rect == null) {
             rect = new Rect();
@@ -304,7 +304,7 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
      *
      * @param bg Background drawable to draw behind the status bar
      */
-    public void setStatusBarBackground(@Nullable final Drawable bg) {
+    public void setStatusBarBackground(final @Nullable Drawable bg) {
         if (mStatusBarBackground != bg) {
             if (mStatusBarBackground != null) {
                 mStatusBarBackground.setCallback(null);
@@ -328,8 +328,7 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
      *
      * @return The status bar background drawable, or null if none set
      */
-    @Nullable
-    public Drawable getStatusBarBackground() {
+    public @Nullable Drawable getStatusBarBackground() {
         return mStatusBarBackground;
     }
 
@@ -402,8 +401,7 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
     /**
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    @Nullable
-    public final WindowInsetsCompat getLastWindowInsets() {
+    public final @Nullable WindowInsetsCompat getLastWindowInsets() {
         return mLastInsets;
     }
 
@@ -1584,8 +1582,7 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
      * @param child the view to find dependencies for
      * @return a new list of views on which {@code child} depends
      */
-    @NonNull
-    public List<View> getDependencies(@NonNull View child) {
+    public @NonNull List<View> getDependencies(@NonNull View child) {
         List<View> result = mChildDag.getOutgoingEdges(child);
         return result == null ? Collections.<View>emptyList() : result;
     }
@@ -1596,8 +1593,7 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
      * @param child the view to find dependents of
      * @return a new list of views which depend on {@code child}
      */
-    @NonNull
-    public List<View> getDependents(@NonNull View child) {
+    public @NonNull List<View> getDependents(@NonNull View child) {
         List<View> result = mChildDag.getIncomingEdges(child);
         return result == null ? Collections.<View>emptyList() : result;
     }
@@ -1899,7 +1895,7 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
     @SuppressWarnings("unchecked")
     public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed,
             int dxUnconsumed, int dyUnconsumed, @ViewCompat.NestedScrollType int type,
-            @NonNull int[] consumed) {
+            int @NonNull [] consumed) {
         final int childCount = getChildCount();
         boolean accepted = false;
         int xConsumed = 0;
@@ -2087,6 +2083,16 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
                 ViewCompat.TYPE_NON_TOUCH
         );
 
+        onNestedPreScroll(
+                focusedView,
+                0,
+                yScrollDelta,
+                mKeyTriggeredScrollConsumed,
+                ViewCompat.TYPE_NON_TOUCH
+        );
+
+        int yScrollDeltaConsumed = mKeyTriggeredScrollConsumed[1];
+
         // Reset consumed values to zero.
         mKeyTriggeredScrollConsumed[0] = 0;
         mKeyTriggeredScrollConsumed[1] = 0;
@@ -2094,7 +2100,7 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
         onNestedScroll(
                 focusedView,
                 0,
-                0,
+                yScrollDeltaConsumed,
                 0,
                 yScrollDelta,
                 ViewCompat.TYPE_NON_TOUCH,
@@ -2112,14 +2118,14 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
 
     @Override
     public void onNestedPreScroll(@NonNull View target, int dx, int dy,
-            @NonNull int[] consumed) {
+            int @NonNull [] consumed) {
         onNestedPreScroll(target, dx, dy, consumed, ViewCompat.TYPE_TOUCH);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void onNestedPreScroll(@NonNull View target, int dx, int dy,
-            @NonNull int[] consumed, int  type) {
+            int @NonNull [] consumed, int  type) {
         int xConsumed = 0;
         int yConsumed = 0;
         boolean accepted = false;
@@ -2314,7 +2320,7 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
          *
          * @param params the LayoutParams instance that this Behavior has been attached to
          */
-        public void onAttachedToLayoutParams(@NonNull CoordinatorLayout.LayoutParams params) {
+        public void onAttachedToLayoutParams(CoordinatorLayout.@NonNull LayoutParams params) {
         }
 
         /**
@@ -2584,8 +2590,7 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
          * @param child child view to get tag with
          * @return the previously stored tag object
          */
-        @Nullable
-        public static Object getTag(@NonNull View child) {
+        public static @Nullable Object getTag(@NonNull View child) {
             final LayoutParams lp = (LayoutParams) child.getLayoutParams();
             return lp.mBehaviorTag;
         }
@@ -2780,7 +2785,7 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
          */
         public void onNestedScroll(@NonNull CoordinatorLayout coordinatorLayout, @NonNull V child,
                 @NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
-                int dyUnconsumed, @NestedScrollType int type, @NonNull int[] consumed) {
+                int dyUnconsumed, @NestedScrollType int type, int @NonNull [] consumed) {
             // In the case that this nested scrolling v3 version is not implemented, we call the v2
             // version in case the v2 version is. We Also consume all of the unconsumed scroll
             // distances.
@@ -2798,7 +2803,7 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
          */
         @Deprecated
         public void onNestedPreScroll(@NonNull CoordinatorLayout coordinatorLayout,
-                @NonNull V child, @NonNull View target, int dx, int dy, @NonNull int[] consumed) {
+                @NonNull V child, @NonNull View target, int dx, int dy, int @NonNull [] consumed) {
             // Do nothing
         }
 
@@ -2832,7 +2837,7 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
          * @see NestedScrollingParent2#onNestedPreScroll(View, int, int, int[], int)
          */
         public void onNestedPreScroll(@NonNull CoordinatorLayout coordinatorLayout,
-                @NonNull V child, @NonNull View target, int dx, int dy, @NonNull int[] consumed,
+                @NonNull V child, @NonNull View target, int dx, int dy, int @NonNull [] consumed,
                 @NestedScrollType int type) {
             if (type == ViewCompat.TYPE_TOUCH) {
                 onNestedPreScroll(coordinatorLayout, child, target, dx, dy, consumed);
@@ -2914,9 +2919,9 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
          *
          * @return The insets supplied, minus any insets that were consumed
          */
-        @NonNull
-        public WindowInsetsCompat onApplyWindowInsets(@NonNull CoordinatorLayout coordinatorLayout,
-                @NonNull V child, @NonNull WindowInsetsCompat insets) {
+        public @NonNull WindowInsetsCompat onApplyWindowInsets(
+                @NonNull CoordinatorLayout coordinatorLayout, @NonNull V child,
+                @NonNull WindowInsetsCompat insets) {
             return insets;
         }
 
@@ -2977,8 +2982,8 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
          * @see #onRestoreInstanceState(Parcelable)
          * @see View#onSaveInstanceState()
          */
-        @Nullable
-        public Parcelable onSaveInstanceState(@NonNull CoordinatorLayout parent, @NonNull V child) {
+        public @Nullable Parcelable onSaveInstanceState(@NonNull CoordinatorLayout parent,
+                @NonNull V child) {
             return BaseSavedState.EMPTY_STATE;
         }
 
@@ -3116,7 +3121,7 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
             super(p);
         }
 
-        public LayoutParams(@NonNull ViewGroup.LayoutParams p) {
+        public LayoutParams(ViewGroup.@NonNull LayoutParams p) {
             super(p);
         }
 
@@ -3151,8 +3156,7 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
          *
          * @return The current behavior or null if no behavior is specified
          */
-        @Nullable
-        public Behavior getBehavior() {
+        public @Nullable Behavior getBehavior() {
             return mBehavior;
         }
 
@@ -3468,10 +3472,9 @@ public class CoordinatorLayout extends ViewGroup implements NestedScrollingParen
         }
     }
 
-    @NonNull
     @Override
     @SuppressWarnings("unchecked")
-    protected Parcelable onSaveInstanceState() {
+    protected @NonNull Parcelable onSaveInstanceState() {
         final SavedState ss = new SavedState(super.onSaveInstanceState());
 
         final SparseArray<Parcelable> behaviorStates = new SparseArray<>();

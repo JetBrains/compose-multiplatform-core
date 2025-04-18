@@ -22,8 +22,12 @@ import androidx.compose.foundation.contextmenu.ContextMenuScope
 import androidx.compose.foundation.contextmenu.ContextMenuState
 import androidx.compose.foundation.isPlatformMagnifierSupported
 import androidx.compose.foundation.magnifier
+import androidx.compose.foundation.text.MenuItemsAvailability
 import androidx.compose.foundation.text.TextContextMenuItems
 import androidx.compose.foundation.text.TextItem
+import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithResources
+import androidx.compose.foundation.text.textItem
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,8 +36,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.IntSize
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
 
 internal actual val PointerEvent.isShiftPressed: Boolean
     get() = false
@@ -68,36 +74,71 @@ internal actual fun Modifier.textFieldMagnifier(manager: TextFieldSelectionManag
     }
 }
 
+internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
+    manager: TextFieldSelectionManager,
+    coroutineScope: CoroutineScope,
+): Modifier = addTextContextMenuComponentsWithResources { resources ->
+    separator()
+    if (manager.canCut())
+        textItem(resources, TextContextMenuItems.Cut) {
+            coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) { manager.cut() }
+            close()
+        }
+    if (manager.canCopy())
+        textItem(resources, TextContextMenuItems.Copy) {
+            coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                manager.copy(cancelSelection = manager.textToolbarShown)
+            }
+            close()
+        }
+    if (manager.canPaste())
+        textItem(resources, TextContextMenuItems.Paste) {
+            coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) { manager.paste() }
+            close()
+        }
+    if (manager.canSelectAll())
+        textItem(resources, TextContextMenuItems.SelectAll) {
+            manager.selectAll()
+            if (!manager.textToolbarShown) close()
+        }
+    if (Build.VERSION.SDK_INT >= 26 && manager.canAutofill())
+        textItem(resources, TextContextMenuItems.Autofill) {
+            manager.autofill()
+            close()
+        }
+    separator()
+}
+
 internal fun TextFieldSelectionManager.contextMenuBuilder(
-    contextMenuState: ContextMenuState
+    contextMenuState: ContextMenuState,
+    itemsAvailability: State<MenuItemsAvailability>
 ): ContextMenuScope.() -> Unit = {
-    val isPassword = visualTransformation is PasswordVisualTransformation
-    val hasSelection = !value.selection.collapsed
+    val availability: MenuItemsAvailability = itemsAvailability.value
     TextItem(
         state = contextMenuState,
         label = TextContextMenuItems.Cut,
-        enabled = hasSelection && editable && !isPassword,
+        enabled = availability.canCut,
     ) {
         cut()
     }
     TextItem(
         state = contextMenuState,
         label = TextContextMenuItems.Copy,
-        enabled = hasSelection && !isPassword,
+        enabled = availability.canCopy,
     ) {
         copy(cancelSelection = false)
     }
     TextItem(
         state = contextMenuState,
         label = TextContextMenuItems.Paste,
-        enabled = editable && clipboardManager?.hasText() == true,
+        enabled = availability.canPaste,
     ) {
         paste()
     }
     TextItem(
         state = contextMenuState,
         label = TextContextMenuItems.SelectAll,
-        enabled = value.selection.length != value.text.length,
+        enabled = availability.canSelectAll,
     ) {
         selectAll()
     }

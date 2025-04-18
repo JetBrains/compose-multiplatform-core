@@ -23,8 +23,8 @@ import android.hardware.camera2.CaptureResult;
 import android.util.Pair;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -107,8 +107,7 @@ public interface SessionProcessorImpl {
      *
      * @since 1.4
      */
-    @NonNull
-    Camera2SessionConfigImpl initSession(
+    @NonNull Camera2SessionConfigImpl initSession(
             @NonNull String cameraId,
             @NonNull Map<String, CameraCharacteristics> cameraCharacteristicsMap,
             @NonNull Context context,
@@ -159,8 +158,7 @@ public interface SessionProcessorImpl {
      * supported or mandatory stream combination BUT OEM must ensure this list will always
      * produce a valid camera capture session.
      */
-    @NonNull
-    Camera2SessionConfigImpl initSession(
+    @NonNull Camera2SessionConfigImpl initSession(
             @NonNull String cameraId,
             @NonNull Map<String, CameraCharacteristics> cameraCharacteristicsMap,
             @NonNull Context context,
@@ -301,8 +299,7 @@ public interface SessionProcessorImpl {
      * null pair.
      * @since 1.4
      */
-    @Nullable
-    Pair<Long, Long> getRealtimeCaptureLatency();
+    @Nullable Pair<Long, Long> getRealtimeCaptureLatency();
 
     /**
      * Callback for notifying the status of {@link #startCapture(CaptureCallback)} and

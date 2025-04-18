@@ -30,8 +30,9 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -103,7 +104,7 @@ final class ActivityRecreator {
      *
      * @return true if a recreate() task was successfully scheduled.
      */
-    static boolean recreate(@NonNull final Activity activity) {
+    static boolean recreate(final @NonNull Activity activity) {
         // On Android O and later we can rely on the platform recreate()
         if (SDK_INT >= 28) {
             activity.recreate();

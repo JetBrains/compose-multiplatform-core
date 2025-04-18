@@ -29,27 +29,17 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.ProcessCameraProvider.Companion.configureInstance
 import androidx.camera.view.PreviewView
+import androidx.concurrent.futures.await
 import androidx.lifecycle.LifecycleOwner
-import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.Executor
 
-// The ProcessCameraProvider instance.
-private lateinit var cameraProvider: ProcessCameraProvider
-// The lifecycle owner.
-private lateinit var lifecycleOwner: LifecycleOwner
-// The PreviewView of the front camera.
-private lateinit var frontPreviewView: PreviewView
-// The PreviewView of the back camera.
-private lateinit var backPreviewView: PreviewView
-// The application's executor.
-private lateinit var executor: Executor
-// The application's handler.
-private lateinit var scheduleHandler: Handler
-// Whether the camera provider has been configured or not.
-var configured = false
-
 @Sampled
-fun bindConcurrentCameraSample() {
+fun bindConcurrentCameraSample(
+    cameraProvider: ProcessCameraProvider,
+    lifecycleOwner: LifecycleOwner,
+    frontPreviewView: PreviewView,
+    backPreviewView: PreviewView
+) {
     var cameraSelectorPrimary: CameraSelector? = null
     var cameraSelectorSecondary: CameraSelector? = null
     for (cameraInfoList in cameraProvider.availableConcurrentCameraInfos) {
@@ -65,7 +55,7 @@ fun bindConcurrentCameraSample() {
         return
     }
     val previewFront = Preview.Builder().build()
-    previewFront.setSurfaceProvider(frontPreviewView.getSurfaceProvider())
+    previewFront.surfaceProvider = frontPreviewView.getSurfaceProvider()
     val primary =
         SingleCameraConfig(
             cameraSelectorPrimary,
@@ -73,7 +63,7 @@ fun bindConcurrentCameraSample() {
             lifecycleOwner
         )
     val previewBack = Preview.Builder().build()
-    previewBack.setSurfaceProvider(backPreviewView.getSurfaceProvider())
+    previewBack.surfaceProvider = backPreviewView.getSurfaceProvider()
     val secondary =
         SingleCameraConfig(
             cameraSelectorSecondary,
@@ -84,20 +74,21 @@ fun bindConcurrentCameraSample() {
 }
 
 @Sampled
-fun getCameraXConfigSample() {
+fun getCameraXConfigSample(executor: Executor, handler: Handler) {
     @Override
     fun getCameraXConfig(): CameraXConfig {
         return CameraXConfig.Builder.fromConfig(Camera2Config.defaultConfig())
             .setCameraExecutor(executor)
-            .setSchedulerHandler(scheduleHandler)
+            .setSchedulerHandler(handler)
             .build()
     }
 }
 
-// TODO(b/332277796): Change the samples to be more kotlin idiomatic.
 @Sampled
-fun configureAndGetInstanceSample() {
-    fun getInstance(context: Context): ListenableFuture<ProcessCameraProvider> {
+fun configureAndGetInstanceSample(executor: Executor, scheduleHandler: Handler) {
+    var configured = false // Whether the camera provider has been configured or not.
+
+    suspend fun getInstance(context: Context): ProcessCameraProvider {
         synchronized(CameraProvider::class.java) {
             if (!configured) {
                 configured = true
@@ -109,6 +100,6 @@ fun configureAndGetInstanceSample() {
                 )
             }
         }
-        return ProcessCameraProvider.getInstance(context)
+        return ProcessCameraProvider.getInstance(context).await()
     }
 }

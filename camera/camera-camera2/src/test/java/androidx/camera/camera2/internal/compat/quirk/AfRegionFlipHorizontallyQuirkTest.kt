@@ -39,6 +39,7 @@ class AfRegionFlipHorizontallyQuirkTest(
     private val enabled: Boolean
 ) {
     companion object {
+        @Suppress("TYPE_INTERSECTION_AS_REIFIED_WARNING")
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "Brand: {0} LensFacing = {1}")
         fun data() =

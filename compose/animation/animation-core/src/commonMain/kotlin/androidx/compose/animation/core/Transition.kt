@@ -37,6 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Offset
@@ -702,10 +703,14 @@ public class SeekableTransitionState<S>(initialState: S) : TransitionState<S>() 
         if (previousTotalDurationNanos != totalDurationNanos) {
             val animation = currentAnimation
             if (animation != null) {
-                animation.durationNanos = totalDurationNanos
-                if (animation.animationSpec == null) {
-                    animation.animationSpecDuration =
-                        ((1.0 - animation.start[0]) * totalDurationNanos).roundToLong()
+                if (animation.progressNanos > totalDurationNanos) {
+                    endAllAnimations()
+                } else {
+                    animation.durationNanos = totalDurationNanos
+                    if (animation.animationSpec == null) {
+                        animation.animationSpecDuration =
+                            ((1.0 - animation.start[0]) * totalDurationNanos).roundToLong()
+                    }
                 }
             } else if (totalDurationNanos != 0L) {
                 // seekTo() called with a fraction. If an animation is running, we can just wait
@@ -799,7 +804,13 @@ public fun <T> rememberTransition(
     label: String? = null
 ): Transition<T> {
     val transition =
-        remember(transitionState) { Transition(transitionState = transitionState, label) }
+        remember(transitionState) {
+            // Remember currently observes state reads in its calculation lambda, which leads to
+            // recomposition on some state changes even though the lambda will not be invoked again.
+            // Tracked at b/392921611. Until this is fixed, we need to explicitly disable state
+            // observation in remember.
+            Snapshot.withoutReadObservation { Transition(transitionState = transitionState, label) }
+        }
     if (transitionState is SeekableTransitionState) {
         LaunchedEffect(transitionState.currentState, transitionState.targetState) {
             transitionState.observeTotalDuration()
@@ -1161,18 +1172,12 @@ internal constructor(
             // If target state is changed, reset all the animations to be re-created in the
             // next frame w/ their new target value. Child animations target values are updated in
             // the side effect that may not have happened when this function in invoked.
-            resetAnimations()
+            _animations.fastForEach { it.resetAnimation() }
         }
-    }
-
-    private fun resetAnimations() {
-        _animations.fastForEach { it.resetAnimation() }
-        _transitions.fastForEach { it.resetAnimations() }
     }
 
     // This should only be called if PlayTime comes from clock directly, instead of from a parent
     // Transition.
-    @OptIn(InternalAnimationApi::class)
     @Suppress("ComposableNaming")
     @Composable
     internal fun animateTo(targetState: S) {
@@ -1180,7 +1185,13 @@ internal constructor(
             updateTarget(targetState)
             // target != currentState adds the effect into the tree in the same frame as
             // target change.
-            if (targetState != currentState || isRunning || updateChildrenNeeded) {
+            val runFrameLoop by
+                remember(this) {
+                    derivedStateOf {
+                        this.targetState != currentState || isRunning || updateChildrenNeeded
+                    }
+                }
+            if (runFrameLoop) {
                 // We're using a composition-obtained scope + DisposableEffect here to give us
                 // control over coroutine dispatching
                 val coroutineScope = rememberCoroutineScope()
@@ -1832,9 +1843,23 @@ public inline fun <S, T, V : AnimationVector> Transition<S>.animateValue(
     targetValueByState: @Composable (state: S) -> T
 ): State<T> {
 
-    val initialValue = targetValueByState(currentState)
-    val targetValue = targetValueByState(targetState)
-    val animationSpec = transitionSpec(segment)
+    val initialState =
+        if (!isSeeking) {
+            // For non-seeking use cases, we can avoid reading currentState frequently by querying
+            // it only once when initializing TransitionAnimation.
+            remember(this) { Snapshot.withoutReadObservation { currentState } }
+        } else {
+            currentState
+        }
+    val initialValue = targetValueByState(initialState)
+
+    // `targetState` is changed in composition in rememberTransition before consumed here. Due to
+    // b/393642162, this consumption will cause a 2nd recomposition, meaning this read will cause
+    // recomposition for both the first and second frame of the animation. As a temporary
+    // workaround, `derivedStateOf` is added here to avoid recomposing when the state value is the
+    // same.
+    val targetValue = targetValueByState(remember(this) { derivedStateOf { targetState } }.value)
+    val animationSpec = transitionSpec(remember(this) { derivedStateOf { segment } }.value)
 
     return createTransitionAnimation(initialValue, targetValue, animationSpec, typeConverter, label)
 }
@@ -1850,29 +1875,48 @@ internal fun <S, T, V : AnimationVector> Transition<S>.createTransitionAnimation
 ): State<T> {
     val transitionAnimation =
         remember(this) {
-            // Initialize the animation state to initialState value, so if it's added during a
-            // transition run, it'll participate in the animation.
-            // This is preferred because it's easy to opt out - Simply adding new animation once
-            // currentState == targetState would opt out.
-            TransitionAnimationState(
-                initialValue,
-                typeConverter.createZeroVectorFrom(targetValue),
-                typeConverter,
-                label
-            )
+            // Remember currently observes state reads in its calculation lambda, which leads to
+            // recomposition on some state changes even though the lambda will not be invoked again.
+            // Tracked at b/392921611. Until this is fixed, we need to explicitly disable state
+            // observation in remember.
+            Snapshot.withoutReadObservation {
+                // Initialize the animation state to initialState value, so if it's added during a
+                // transition run, it'll participate in the animation.
+                // This is preferred because it's easy to opt out - Simply adding new animation once
+                // currentState == targetState would opt out.
+                TransitionAnimationState(
+                    initialValue,
+                    typeConverter.createZeroVectorFrom(targetValue),
+                    typeConverter,
+                    label
+                )
+            }
         }
-    if (isSeeking) {
-        // In the case of seeking, we also need to update initial value as needed
-        transitionAnimation.updateInitialAndTargetValue(initialValue, targetValue, animationSpec)
-    } else {
-        transitionAnimation.updateTargetValue(targetValue, animationSpec)
-    }
+    UpdateInitialAndTargetValues(transitionAnimation, initialValue, targetValue, animationSpec)
 
     DisposableEffect(transitionAnimation) {
         addAnimation(transitionAnimation)
         onDispose { removeAnimation(transitionAnimation) }
     }
     return transitionAnimation
+}
+
+// This composable function is needed to contain recompositions caused by reads of the internal
+// animation states to an internal recomposition scope. Without this function, the caller of
+// animateValue gets recomposed when an animation starts.
+@Composable
+private fun <S, T, V : AnimationVector> Transition<S>.UpdateInitialAndTargetValues(
+    transitionAnimation: Transition<S>.TransitionAnimationState<T, V>,
+    initialValue: T,
+    targetValue: T,
+    animationSpec: FiniteAnimationSpec<T>
+) {
+    if (isSeeking) {
+        // In the case of seeking, we also need to update initial value as needed
+        transitionAnimation.updateInitialAndTargetValue(initialValue, targetValue, animationSpec)
+    } else {
+        transitionAnimation.updateTargetValue(targetValue, animationSpec)
+    }
 }
 
 // TODO: Remove noinline when b/174814083 is fixed.

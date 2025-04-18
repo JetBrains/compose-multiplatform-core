@@ -22,10 +22,8 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 
 plugins {
     id("AndroidXPlugin")
@@ -34,7 +32,7 @@ plugins {
 }
 
 androidXMultiplatform {
-    android()
+    androidTarget()
     desktop()
     ios()
     linux()
@@ -56,7 +54,7 @@ androidXMultiplatform {
 
         commonTest {
             dependencies {
-                implementation project(":lifecycle:lifecycle-runtime")
+                implementation(project(":lifecycle:lifecycle-runtime"))
                 implementation(libs.kotlinCoroutinesTest)
             }
         }
@@ -85,9 +83,9 @@ androidXMultiplatform {
         androidInstrumentedTest {
             dependsOn(jvmTest)
             dependencies {
-                implementation project(":lifecycle:lifecycle-livedata-core")
+                implementation(project(":lifecycle:lifecycle-livedata-core"))
                 implementation ("androidx.fragment:fragment:1.3.0")
-                implementation project(":internal-testutils-runtime")
+                implementation(project(":internal-testutils-runtime"))
                 implementation(project(":lifecycle:lifecycle-viewmodel"))
                 implementation(libs.truth)
                 implementation(libs.testExtJunit)
@@ -179,11 +177,8 @@ android {
 
 androidx {
     name = "Lifecycle ViewModel with SavedState"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
     description = "Android Lifecycle ViewModel"
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":lifecycle:lifecycle-viewmodel-savedstate-samples"))
-    metalavaK2UastEnabled = false // TODO(b/324624680)
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

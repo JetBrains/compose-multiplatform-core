@@ -22,13 +22,13 @@ import android.util.TypedValue
 import android.view.Display
 import android.view.WindowManager
 import android.widget.FrameLayout
-import androidx.annotation.RequiresApi
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ActivityScenario.ActivityAction
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.window.TestActivity
 import androidx.window.TestActivityEdgeToEdge
 import androidx.window.WindowTestUtils.Companion.assumePlatformBeforeR
@@ -228,7 +228,7 @@ class WindowMetricsCalculatorCompatTest {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @Test
     fun testConvertedWindowMetricsMatchesPlatformWindowMetrics() {
         assumePlatformUOrAbove()
@@ -243,7 +243,7 @@ class WindowMetricsCalculatorCompatTest {
     }
 
     @Test
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun testDpBoundsMatchCalculatedDimension() {
         assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
         activityScenarioRule.scenario.onActivity { activity ->

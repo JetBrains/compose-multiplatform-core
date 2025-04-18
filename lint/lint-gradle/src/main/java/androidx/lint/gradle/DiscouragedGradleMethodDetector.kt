@@ -27,8 +27,12 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
+import org.jetbrains.kotlin.psi.KtSimpleNameStringTemplateEntry
+import org.jetbrains.kotlin.psi.KtStringTemplateEntry
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
+import org.jetbrains.uast.UExpression
+import org.jetbrains.uast.util.isInstanceOf
 
 /**
  * Checks for usages of
@@ -38,7 +42,7 @@ import org.jetbrains.uast.UElement
 class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
 
     override fun getApplicableUastTypes(): List<Class<out UElement>> =
-        listOf(UCallExpression::class.java)
+        listOf(UCallExpression::class.java, UExpression::class.java)
 
     override fun createUastHandler(context: JavaContext): UElementHandler =
         object : UElementHandler() {
@@ -105,6 +109,50 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                         )
                         .scope(node)
                 context.report(incident)
+            }
+
+            /** Check for implicit calls to Provider.toString(). */
+            override fun visitExpression(node: UExpression) {
+                val parent = node.sourcePsi?.parent ?: return
+                // Check if the node is part of a Kotlin formatted string.
+                if (parent is KtStringTemplateEntry) {
+                    val type = node.getExpressionType() ?: return
+                    // Check if type is Provider
+                    if (
+                        type is PsiClassType &&
+                            type.resolve()?.isInstanceOf("org.gradle.api.provider.Provider") == true
+                    ) {
+                        // Use `Provider.get()` to not call `toString()` directly on the Provider.
+                        val nodeWithGet = node.asSourceString() + ".get()"
+                        // Curly braces are required for string templates more complex than a simple
+                        // reference, which the replacement will be. Check if the original template
+                        // already has braces, and add them if not.
+                        val replacement =
+                            if (parent is KtSimpleNameStringTemplateEntry) {
+                                "{$nodeWithGet}"
+                            } else {
+                                nodeWithGet
+                            }
+                        val fix =
+                            fix()
+                                .replace()
+                                .with(replacement)
+                                .reformat(true)
+                                // Allow applying the fix from the command line
+                                .autoFix(robot = true, independent = true)
+                                .build()
+
+                        val incident =
+                            Incident(context)
+                                .issue(TO_STRING_ON_PROVIDER_ISSUE)
+                                .location(context.getNameLocation(node))
+                                .message("Implicit usage of toString on a Provider")
+                                .scope(node)
+                                .fix(fix)
+
+                        context.report(incident)
+                    }
+                }
             }
         }
 
@@ -205,7 +253,8 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                 "getParent" to Replacement(PROJECT, null, PROJECT_ISOLATION_ISSUE),
                 "getProperties" to
                     Replacement(PROJECT, "providers.gradleProperty", PROJECT_ISOLATION_ISSUE),
-                "getRootProject" to Replacement(PROJECT, null, PROJECT_ISOLATION_ISSUE),
+                "getRootProject" to
+                    Replacement(PROJECT, "isolated.rootProject", PROJECT_ISOLATION_ISSUE),
                 "groupBy" to Replacement(TASK_CONTAINER, null, EAGER_CONFIGURATION_ISSUE),
                 "matching" to Replacement(TASK_COLLECTION, null, EAGER_CONFIGURATION_ISSUE),
                 "map" to Replacement(TASK_CONTAINER, null, EAGER_CONFIGURATION_ISSUE),

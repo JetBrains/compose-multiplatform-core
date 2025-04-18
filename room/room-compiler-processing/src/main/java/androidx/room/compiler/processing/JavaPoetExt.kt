@@ -15,6 +15,7 @@
  */
 package androidx.room.compiler.processing
 
+import androidx.room.compiler.processing.util.sanitizeAsJavaMethodName
 import com.squareup.javapoet.AnnotationSpec
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.ParameterSpec
@@ -172,7 +173,14 @@ object MethodSpecHelper {
         resolvedType: XMethodType = executableElement.executableType,
         vararg paramModifiers: Modifier
     ): MethodSpec.Builder {
-        return MethodSpec.methodBuilder(executableElement.jvmName).apply {
+        val methodJvmName =
+            if (executableElement.hasValidJvmSourceName()) {
+                executableElement.jvmName
+            } else {
+                // Workaround for b/384600605
+                executableElement.jvmName.sanitizeAsJavaMethodName()
+            }
+        return MethodSpec.methodBuilder(methodJvmName).apply {
             addTypeVariables(
                 resolvedType.typeVariables.map { it.asTypeName().java as JTypeVariableName }
             )

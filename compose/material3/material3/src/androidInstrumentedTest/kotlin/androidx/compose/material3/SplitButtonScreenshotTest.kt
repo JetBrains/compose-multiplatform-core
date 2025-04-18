@@ -93,6 +93,45 @@ class SplitButtonScreenshotTest(private val scheme: ColorSchemeWrapper) {
     }
 
     @Test
+    fun filledSplitButton_disabled() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            Box(wrap.testTag(wrapperTestTag)) {
+                SplitButtonLayout(
+                    leadingButton = {
+                        SplitButtonDefaults.LeadingButton(
+                            onClick = { /* Do Nothing */ },
+                            enabled = false,
+                        ) {
+                            Icon(
+                                Icons.Filled.Edit,
+                                modifier = Modifier.size(SplitButtonDefaults.LeadingIconSize),
+                                contentDescription = "Localized description",
+                            )
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Text("My Button")
+                        }
+                    },
+                    trailingButton = {
+                        SplitButtonDefaults.TrailingButton(
+                            checked = false,
+                            enabled = false,
+                            onCheckedChange = {},
+                        ) {
+                            Icon(
+                                Icons.Outlined.KeyboardArrowDown,
+                                contentDescription = "Localized description",
+                                Modifier.size(SplitButtonDefaults.TrailingIconSize)
+                            )
+                        }
+                    }
+                )
+            }
+        }
+
+        assertAgainstGolden("splitButton_disabled_${scheme.name}")
+    }
+
+    @Test
     fun filledSplitButtonChecked() {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(wrap.testTag(wrapperTestTag)) {
@@ -169,6 +208,45 @@ class SplitButtonScreenshotTest(private val scheme: ColorSchemeWrapper) {
     }
 
     @Test
+    fun tonalSplitButton_disabled() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            Box(wrap.testTag(wrapperTestTag)) {
+                SplitButtonLayout(
+                    leadingButton = {
+                        SplitButtonDefaults.TonalLeadingButton(
+                            onClick = { /* Do Nothing */ },
+                            enabled = false,
+                        ) {
+                            Icon(
+                                Icons.Filled.Edit,
+                                modifier = Modifier.size(SplitButtonDefaults.LeadingIconSize),
+                                contentDescription = "Localized description",
+                            )
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Text("My Button")
+                        }
+                    },
+                    trailingButton = {
+                        SplitButtonDefaults.TonalTrailingButton(
+                            checked = false,
+                            enabled = false,
+                            onCheckedChange = {},
+                        ) {
+                            Icon(
+                                Icons.Outlined.KeyboardArrowDown,
+                                contentDescription = "Localized description",
+                                Modifier.size(SplitButtonDefaults.TrailingIconSize)
+                            )
+                        }
+                    }
+                )
+            }
+        }
+
+        assertAgainstGolden("tonalSplitButton_disabled_${scheme.name}")
+    }
+
+    @Test
     fun elevatedSplitButton() {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(wrap.testTag(wrapperTestTag)) {
@@ -206,6 +284,45 @@ class SplitButtonScreenshotTest(private val scheme: ColorSchemeWrapper) {
     }
 
     @Test
+    fun elevatedSplitButton_disabled() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            Box(wrap.testTag(wrapperTestTag)) {
+                SplitButtonLayout(
+                    leadingButton = {
+                        SplitButtonDefaults.ElevatedLeadingButton(
+                            onClick = { /* Do Nothing */ },
+                            enabled = false,
+                        ) {
+                            Icon(
+                                Icons.Filled.Edit,
+                                modifier = Modifier.size(SplitButtonDefaults.LeadingIconSize),
+                                contentDescription = "Localized description",
+                            )
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Text("My Button")
+                        }
+                    },
+                    trailingButton = {
+                        SplitButtonDefaults.ElevatedTrailingButton(
+                            checked = false,
+                            enabled = false,
+                            onCheckedChange = {},
+                        ) {
+                            Icon(
+                                Icons.Outlined.KeyboardArrowDown,
+                                contentDescription = "Localized description",
+                                Modifier.size(SplitButtonDefaults.TrailingIconSize)
+                            )
+                        }
+                    }
+                )
+            }
+        }
+
+        assertAgainstGolden("elevatedSplitButton_disabled_${scheme.name}")
+    }
+
+    @Test
     fun outlinedSplitButton() {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(wrap.testTag(wrapperTestTag)) {
@@ -240,6 +357,45 @@ class SplitButtonScreenshotTest(private val scheme: ColorSchemeWrapper) {
         }
 
         assertAgainstGolden("outlinedSplitButton_${scheme.name}")
+    }
+
+    @Test
+    fun outlinedSplitButton_disabled() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            Box(wrap.testTag(wrapperTestTag)) {
+                SplitButtonLayout(
+                    leadingButton = {
+                        SplitButtonDefaults.OutlinedLeadingButton(
+                            onClick = { /* Do Nothing */ },
+                            enabled = false,
+                        ) {
+                            Icon(
+                                Icons.Filled.Edit,
+                                modifier = Modifier.size(SplitButtonDefaults.LeadingIconSize),
+                                contentDescription = "Localized description",
+                            )
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Text("My Button")
+                        }
+                    },
+                    trailingButton = {
+                        SplitButtonDefaults.OutlinedTrailingButton(
+                            checked = false,
+                            enabled = false,
+                            onCheckedChange = {},
+                        ) {
+                            Icon(
+                                Icons.Outlined.KeyboardArrowDown,
+                                contentDescription = "Localized description",
+                                Modifier.size(SplitButtonDefaults.TrailingIconSize)
+                            )
+                        }
+                    }
+                )
+            }
+        }
+
+        assertAgainstGolden("outlinedSplitButton_disabled_${scheme.name}")
     }
 
     @Test

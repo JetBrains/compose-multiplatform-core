@@ -23,10 +23,11 @@ import android.content.pm.Signature;
 import android.content.pm.SigningInfo;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.Size;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -79,9 +80,8 @@ public final class PackageInfoCompat {
      * @throws PackageManager.NameNotFoundException if the package cannot be found through the
      *                                              provided {@param packageManager}
      */
-    @NonNull
     @SuppressWarnings("deprecation")
-    public static List<Signature> getSignatures(@NonNull PackageManager packageManager,
+    public static @NonNull List<Signature> getSignatures(@NonNull PackageManager packageManager,
             @NonNull String packageName) throws PackageManager.NameNotFoundException {
         Signature[] array;
         if (Build.VERSION.SDK_INT >= 28) {
@@ -241,7 +241,7 @@ public final class PackageInfoCompat {
         return false;
     }
 
-    private static boolean byteArrayContains(@NonNull byte[][] array, @NonNull byte[] expected) {
+    private static boolean byteArrayContains(byte @NonNull [][] array, byte @NonNull [] expected) {
         for (byte[] item : array) {
             if (Arrays.equals(expected, item)) {
                 return true;
@@ -269,7 +269,7 @@ public final class PackageInfoCompat {
         }
 
         static boolean hasSigningCertificate(@NonNull PackageManager packageManager,
-                @NonNull String packageName, @NonNull byte[] bytes, int type) {
+                @NonNull String packageName, byte @NonNull [] bytes, int type) {
             return packageManager.hasSigningCertificate(packageName, bytes, type);
         }
 
@@ -277,13 +277,12 @@ public final class PackageInfoCompat {
             return signingInfo.hasMultipleSigners();
         }
 
-        @Nullable
-        static Signature[] getApkContentsSigners(@NonNull SigningInfo signingInfo) {
+        static Signature @Nullable [] getApkContentsSigners(@NonNull SigningInfo signingInfo) {
             return signingInfo.getApkContentsSigners();
         }
 
-        @Nullable
-        static Signature[] getSigningCertificateHistory(@NonNull SigningInfo signingInfo) {
+        static Signature @Nullable [] getSigningCertificateHistory(
+                @NonNull SigningInfo signingInfo) {
             return signingInfo.getSigningCertificateHistory();
         }
 

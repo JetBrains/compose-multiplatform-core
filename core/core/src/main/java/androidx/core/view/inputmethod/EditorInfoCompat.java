@@ -37,11 +37,12 @@ import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 
@@ -160,7 +161,7 @@ public final class EditorInfoCompat {
      *                         is not supported on this Editor
      */
     public static void setContentMimeTypes(@NonNull EditorInfo editorInfo,
-            @Nullable String[] contentMimeTypes) {
+            String @Nullable [] contentMimeTypes) {
         if (Build.VERSION.SDK_INT >= 25) {
             editorInfo.contentMimeTypes = contentMimeTypes;
         } else {
@@ -182,8 +183,7 @@ public final class EditorInfoCompat {
      * InputConnectionCompat#commitContent(InputConnection, EditorInfo, InputContentInfoCompat,
      * int, Bundle)} is not supported on this editor
      */
-    @NonNull
-    public static String[] getContentMimeTypes(@NonNull EditorInfo editorInfo) {
+    public static String @NonNull [] getContentMimeTypes(@NonNull EditorInfo editorInfo) {
         if (Build.VERSION.SDK_INT >= 25) {
             final String[] result = editorInfo.contentMimeTypes;
             return result != null ? result : EMPTY_STRING_ARRAY;
@@ -395,8 +395,7 @@ public final class EditorInfoCompat {
      * than <var>n</var>. When there is no text before the cursor, an empty string will be returned.
      * It could also be {@code null} when the editor or system could not support this protocol.
      */
-    @Nullable
-    public static CharSequence getInitialTextBeforeCursor(@NonNull EditorInfo editorInfo,
+    public static @Nullable CharSequence getInitialTextBeforeCursor(@NonNull EditorInfo editorInfo,
             int length, int flags) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             return Api30Impl.getInitialTextBeforeCursor(editorInfo, length, flags);
@@ -432,8 +431,8 @@ public final class EditorInfoCompat {
      * is no text selected. When {@code null} is returned, the selected text might be too long or
      * this protocol is not supported.
      */
-    @Nullable
-    public static CharSequence getInitialSelectedText(@NonNull EditorInfo editorInfo, int flags) {
+    public static @Nullable CharSequence getInitialSelectedText(@NonNull EditorInfo editorInfo,
+            int flags) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             return Api30Impl.getInitialSelectedText(editorInfo, flags);
         }
@@ -478,9 +477,8 @@ public final class EditorInfoCompat {
      * than <var>n</var>. When there is no text after the cursor, an empty string will be returned.
      * It could also be {@code null} when the editor or system could not support this protocol.
      */
-    @Nullable
-    public static CharSequence getInitialTextAfterCursor(@NonNull EditorInfo editorInfo, int length,
-            int flags) {
+    public static @Nullable CharSequence getInitialTextAfterCursor(@NonNull EditorInfo editorInfo,
+            int length, int flags) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             return Api30Impl.getInitialTextAfterCursor(editorInfo, length, flags);
         }

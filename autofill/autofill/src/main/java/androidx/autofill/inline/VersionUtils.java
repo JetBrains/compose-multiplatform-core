@@ -19,11 +19,12 @@ package androidx.autofill.inline;
 import android.os.Build;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.autofill.inline.common.BundledStyle;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,8 +57,7 @@ public final class VersionUtils {
      * @return the list of versions that are both specified in the {@code versionedBundle} and
      * supported by the current library.
      */
-    @NonNull
-    public static List<String> getSupportedVersions(
+    public static @NonNull List<String> getSupportedVersions(
             @NonNull Bundle bundleWithSupportedVersions) {
         List<String> ret = new ArrayList<>();
         ArrayList<String> versions = bundleWithSupportedVersions.getStringArrayList(
@@ -106,9 +106,8 @@ public final class VersionUtils {
     /**
      * Reads the style of {@code version} from the {@code versionedStylesBundle}.
      */
-    @Nullable
-    public static Bundle readStyleByVersion(@NonNull Bundle versionedStylesBundle,
-            @NonNull @UiVersions.InlineUiVersion String version) {
+    public static @Nullable Bundle readStyleByVersion(@NonNull Bundle versionedStylesBundle,
+            @UiVersions.InlineUiVersion @NonNull String version) {
         return versionedStylesBundle.getBundle(version);
     }
 

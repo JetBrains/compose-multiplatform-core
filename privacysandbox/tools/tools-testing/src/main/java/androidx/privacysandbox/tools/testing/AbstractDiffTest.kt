@@ -76,14 +76,18 @@ abstract class AbstractDiffTest {
                     expectedSourcesPath +
                     "/" +
                     expectedKotlinSource.relativePath
-            Truth.assertWithMessage(
-                    "Contents of generated file ${expectedKotlinSource.relativePath} don't " +
-                        "match golden.\n" +
-                        "Approval command:\n" +
-                        "cp $outputFilePath $goldenPath"
-                )
-                .that(actualRelativePathMap[expectedKotlinSource.relativePath]?.contents)
-                .isEqualTo(expectedKotlinSource.contents)
+            if (System.getProperty("update_golden_files")?.toBoolean() == true) {
+                File(outputFilePath).copyTo(File(goldenPath), overwrite = true)
+            } else {
+                Truth.assertWithMessage(
+                        "Contents of generated file ${expectedKotlinSource.relativePath} don't " +
+                            "match golden.\n" +
+                            "Approval command:\n" +
+                            "cp $outputFilePath $goldenPath"
+                    )
+                    .that(actualRelativePathMap[expectedKotlinSource.relativePath]?.contents)
+                    .isEqualTo(expectedKotlinSource.contents)
+            }
         }
     }
 

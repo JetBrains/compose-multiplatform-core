@@ -23,7 +23,6 @@ import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.ArrayLiteral
-import androidx.room.ext.CallableTypeSpecBuilder
 import androidx.room.ext.CommonTypeNames
 import androidx.room.ext.InvokeWithLambdaParameter
 import androidx.room.ext.LambdaSpec
@@ -36,59 +35,6 @@ class LiveDataQueryResultBinder(
     val tableNames: Set<String>,
     adapter: QueryResultAdapter?
 ) : BaseObservableQueryResultBinder(adapter) {
-    override fun convertAndReturn(
-        roomSQLiteQueryVar: String,
-        canReleaseQuery: Boolean,
-        dbProperty: XPropertySpec,
-        inTransaction: Boolean,
-        scope: CodeGenScope
-    ) {
-        val callableImpl =
-            CallableTypeSpecBuilder(typeArg.asTypeName()) {
-                    addCode(
-                        XCodeBlock.builder()
-                            .apply {
-                                createRunQueryAndReturnStatements(
-                                    builder = this,
-                                    roomSQLiteQueryVar = roomSQLiteQueryVar,
-                                    inTransaction = inTransaction,
-                                    dbProperty = dbProperty,
-                                    scope = scope,
-                                    cancellationSignalVar = "null" // LiveData can't be cancelled
-                                )
-                            }
-                            .build()
-                    )
-                }
-                .apply {
-                    if (canReleaseQuery) {
-                        createFinalizeMethod(roomSQLiteQueryVar)
-                    }
-                }
-                .build()
-
-        scope.builder.applyTo { language ->
-            val arrayOfTableNamesLiteral =
-                ArrayLiteral(CommonTypeNames.STRING, *tableNames.toTypedArray())
-            // Use property syntax in Kotlin and getter in Java
-            val getInvalidationTracker =
-                when (language) {
-                    CodeLanguage.JAVA -> "getInvalidationTracker()"
-                    CodeLanguage.KOTLIN -> "invalidationTracker"
-                }
-
-            addStatement(
-                "return %N.%L.createLiveData(%L, %L, %L)",
-                dbProperty,
-                getInvalidationTracker,
-                arrayOfTableNamesLiteral,
-                if (inTransaction) "true" else "false",
-                callableImpl
-            )
-        }
-    }
-
-    override fun isMigratedToDriver() = adapter?.isMigratedToDriver() == true
 
     override fun convertAndReturn(
         sqlQueryVar: String,

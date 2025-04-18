@@ -56,7 +56,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 
-@SuppressLint("ClassVerificationFailure")
 class SimpleChatActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,6 +76,9 @@ private data class Message(val content: String, val isReceived: Boolean = true)
 @Composable
 private fun SimpleChatPage() {
     val messages = remember { mutableStateListOf<Message>() }
+    for (i in 1..40) {
+        messages.add(Message("test msg $i", isReceived = i % 2 == 0))
+    }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     Scaffold(

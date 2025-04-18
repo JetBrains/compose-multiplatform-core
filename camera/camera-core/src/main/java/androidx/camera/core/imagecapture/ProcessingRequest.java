@@ -23,8 +23,6 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.ImageProxy;
@@ -32,6 +30,9 @@ import androidx.camera.core.impl.CaptureBundle;
 import androidx.camera.core.impl.CaptureStage;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,24 +43,17 @@ import java.util.List;
 class ProcessingRequest {
     private final int mRequestId;
     @NonNull TakePictureRequest mTakePictureRequest;
-    @Nullable
-    private final ImageCapture.OutputFileOptions mOutputFileOptions;
-    @Nullable
-    private final ImageCapture.OutputFileOptions mSecondaryOutputFileOptions;
-    @NonNull
-    private final Rect mCropRect;
+    private final ImageCapture.@Nullable OutputFileOptions mOutputFileOptions;
+    private final ImageCapture.@Nullable OutputFileOptions mSecondaryOutputFileOptions;
+    private final @NonNull Rect mCropRect;
     private final int mRotationDegrees;
     private final int mJpegQuality;
-    @NonNull
-    private final Matrix mSensorToBufferTransform;
-    @NonNull
-    private final TakePictureCallback mCallback;
-    @NonNull
-    private final String mTagBundleKey;
-    @NonNull
-    private final List<Integer> mStageIds;
+    private final @NonNull Matrix mSensorToBufferTransform;
+    private final @NonNull TakePictureCallback mCallback;
+    private final @NonNull String mTagBundleKey;
+    private final @NonNull List<Integer> mStageIds;
 
-    @NonNull final ListenableFuture<Void> mCaptureFuture;
+    final @NonNull ListenableFuture<Void> mCaptureFuture;
     static final int PROGRESS_NOT_RECEIVED = -1;
     private int mLastCaptureProcessProgressed = PROGRESS_NOT_RECEIVED;
 
@@ -93,13 +87,11 @@ class ProcessingRequest {
         mCaptureFuture = captureFuture;
     }
 
-    @NonNull
-    String getTagBundleKey() {
+    @NonNull String getTagBundleKey() {
         return mTagBundleKey;
     }
 
-    @NonNull
-    List<Integer> getStageIds() {
+    @NonNull List<Integer> getStageIds() {
         return mStageIds;
     }
 
@@ -107,23 +99,19 @@ class ProcessingRequest {
         return mRequestId;
     }
 
-    @NonNull
-    TakePictureRequest getTakePictureRequest() {
+    @NonNull TakePictureRequest getTakePictureRequest() {
         return mTakePictureRequest;
     }
 
-    @Nullable
-    ImageCapture.OutputFileOptions getOutputFileOptions() {
+    ImageCapture.@Nullable OutputFileOptions getOutputFileOptions() {
         return mOutputFileOptions;
     }
 
-    @Nullable
-    ImageCapture.OutputFileOptions getSecondaryOutputFileOptions() {
+    ImageCapture.@Nullable OutputFileOptions getSecondaryOutputFileOptions() {
         return mSecondaryOutputFileOptions;
     }
 
-    @NonNull
-    Rect getCropRect() {
+    @NonNull Rect getCropRect() {
         return mCropRect;
     }
 
@@ -135,8 +123,7 @@ class ProcessingRequest {
         return mJpegQuality;
     }
 
-    @NonNull
-    Matrix getSensorToBufferTransform() {
+    @NonNull Matrix getSensorToBufferTransform() {
         return mSensorToBufferTransform;
     }
 
@@ -177,7 +164,7 @@ class ProcessingRequest {
      * @see TakePictureCallback#onFinalResult
      */
     @MainThread
-    void onFinalResult(@NonNull ImageCapture.OutputFileResults outputFileResults) {
+    void onFinalResult(ImageCapture.@NonNull OutputFileResults outputFileResults) {
         mCallback.onFinalResult(outputFileResults);
     }
 
@@ -216,8 +203,7 @@ class ProcessingRequest {
         return mCallback.isAborted();
     }
 
-    @NonNull
-    ListenableFuture<Void> getCaptureFuture() {
+    @NonNull ListenableFuture<Void> getCaptureFuture() {
         return mCaptureFuture;
     }
 }

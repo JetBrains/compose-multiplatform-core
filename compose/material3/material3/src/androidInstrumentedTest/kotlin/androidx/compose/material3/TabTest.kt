@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -64,6 +65,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onParent
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.sp
@@ -298,6 +300,62 @@ class TabTest {
             .assertPositionInRootIsEqualTo(
                 expectedLeft = (tabRowBounds.width / 2),
                 expectedTop = tabRowBounds.height - indicatorHeight
+            )
+    }
+
+    @Test
+    fun fixedTabRowRt_indicatorPosition_rtl() {
+        val indicatorHeight = 1.dp
+
+        rule.setMaterialContent(lightColorScheme()) {
+            var state by remember { mutableStateOf(0) }
+            val titles = listOf("TAB 1", "TAB 2")
+
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Box(Modifier.testTag("tabRow")) {
+                    SecondaryTabRow(
+                        selectedTabIndex = state,
+                        indicator = {
+                            Box(
+                                Modifier.tabIndicatorOffset(state)
+                                    .fillMaxWidth()
+                                    .height(indicatorHeight)
+                                    .background(color = Color.Red)
+                                    .testTag("indicator")
+                            )
+                        },
+                    ) {
+                        titles.forEachIndexed { index, title ->
+                            Tab(
+                                selected = state == index,
+                                onClick = { state = index },
+                                text = { Text(title) },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        val tabRowBounds = rule.onNodeWithTag("tabRow").getUnclippedBoundsInRoot()
+
+        rule
+            .onNodeWithTag("indicator", true)
+            .assertPositionInRootIsEqualTo(
+                expectedLeft = (tabRowBounds.width / 2),
+                expectedTop = tabRowBounds.height - indicatorHeight,
+            )
+
+        // Click the second tab
+        rule.onAllNodes(isSelectable())[1].performClick()
+
+        // Indicator should now be placed in the bottom left of the second tab.
+        // For RTL layout, its x coordinate should be at the start of the TabRow.
+        rule
+            .onNodeWithTag("indicator", true)
+            .assertPositionInRootIsEqualTo(
+                expectedLeft = 0.dp,
+                expectedTop = tabRowBounds.height - indicatorHeight,
             )
     }
 
@@ -550,6 +608,80 @@ class TabTest {
     }
 
     @Test
+    fun scrollableTabRow_indicatorPosition_rtl() {
+        val indicatorHeight = 1.dp
+        val minimumTabWidth = 90.dp
+
+        rule.setMaterialContent(lightColorScheme()) {
+            var state by remember { mutableStateOf(0) }
+            val titles = listOf("TAB 1", "TAB 2")
+
+            val indicator: @Composable TabIndicatorScope.(index: Int) -> Unit = { index ->
+                Box(
+                    Modifier.tabIndicatorOffset(index)
+                        .fillMaxWidth()
+                        .height(indicatorHeight)
+                        .background(color = Color.Red)
+                        .testTag("indicator")
+                )
+            }
+
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Box {
+                    SecondaryScrollableTabRow(
+                        modifier = Modifier.testTag("tabRow"),
+                        selectedTabIndex = state,
+                        indicator = { indicator(state) },
+                    ) {
+                        titles.forEachIndexed { index, title ->
+                            Tab(
+                                selected = state == index,
+                                onClick = { state = index },
+                                text = { Text(title) },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        val tabRowBounds = rule.onNodeWithTag("tabRow").getUnclippedBoundsInRoot()
+        val tabRowPadding = 52.dp
+
+        // Indicator should be placed in the bottom left of the first tab
+        var indicatorBounds = rule.onNodeWithTag("indicator", true).getUnclippedBoundsInRoot()
+
+        // Split assertions to up tolerance to 1.dp
+        indicatorBounds.left.assertIsEqualTo(
+            expected = tabRowBounds.width - tabRowPadding - minimumTabWidth,
+            subject = "left",
+            tolerance = 1.dp
+        )
+        indicatorBounds.top.assertIsEqualTo(
+            expected = tabRowBounds.height - indicatorHeight,
+            subject = "top",
+            tolerance = 1.dp
+        )
+
+        // Click the second tab
+        rule.onAllNodes(isSelectable())[1].performClick()
+
+        // Indicator should now be placed in the bottom left of the second tab.
+        // For RTL layout, its x coordinate should be at the start of the TabRow.
+        indicatorBounds = rule.onNodeWithTag("indicator", true).getUnclippedBoundsInRoot()
+        indicatorBounds.left.assertIsEqualTo(
+            expected = tabRowBounds.width - tabRowPadding - minimumTabWidth - minimumTabWidth,
+            subject = "left",
+            tolerance = 1.dp
+        )
+        indicatorBounds.top.assertIsEqualTo(
+            expected = tabRowBounds.height - indicatorHeight,
+            subject = "top",
+            tolerance = 1.dp
+        )
+    }
+
+    @Test
     fun scrollableTabRow_dividerHeight() {
         rule.setMaterialContent(lightColorScheme()) {
             val titles = listOf("TAB 1", "TAB 2")
@@ -761,6 +893,7 @@ class TabTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
     fun testInspectorValue() {
         val pos = TabPosition(10.0.dp, 200.0.dp, 0.dp)
         rule.setContent {

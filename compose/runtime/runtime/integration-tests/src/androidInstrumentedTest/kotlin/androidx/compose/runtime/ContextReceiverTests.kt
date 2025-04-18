@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("CONTEXT_RECEIVERS_DEPRECATED")
+
 package androidx.compose.runtime
 
 import androidx.test.ext.junit.runners.AndroidJUnit4

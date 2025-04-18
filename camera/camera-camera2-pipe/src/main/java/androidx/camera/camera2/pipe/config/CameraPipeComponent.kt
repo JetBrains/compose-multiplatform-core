@@ -18,6 +18,7 @@ package androidx.camera.camera2.pipe.config
 
 import android.app.admin.DevicePolicyManager
 import android.content.Context
+import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
 import androidx.camera.camera2.pipe.CameraBackend
 import androidx.camera.camera2.pipe.CameraBackendFactory
@@ -129,6 +130,11 @@ internal abstract class CameraPipeModules {
                 override val threads: Threads = threads
                 override val cameraBackends: CameraBackends = cameraBackends
             }
+
+        @Singleton
+        @Provides
+        fun providePackageManager(@CameraPipeContext cameraPipeContext: Context): PackageManager =
+            cameraPipeContext.packageManager
 
         @Singleton
         @Provides

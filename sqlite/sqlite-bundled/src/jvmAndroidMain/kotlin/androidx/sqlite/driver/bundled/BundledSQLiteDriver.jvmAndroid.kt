@@ -38,7 +38,7 @@ public actual class BundledSQLiteDriver : SQLiteDriver {
     public actual val threadingMode: Int
         get() = nativeThreadSafeMode()
 
-    override fun open(fileName: String): SQLiteConnection {
+    actual override fun open(fileName: String): SQLiteConnection {
         return open(fileName, SQLITE_OPEN_READWRITE or SQLITE_OPEN_CREATE)
     }
 
@@ -52,11 +52,12 @@ public actual class BundledSQLiteDriver : SQLiteDriver {
      * @return the database connection.
      */
     public actual fun open(fileName: String, @OpenFlag flags: Int): SQLiteConnection {
+        NativeLibraryObject // loads native library
         val address = nativeOpen(fileName, flags)
         return BundledSQLiteConnection(address)
     }
 
-    private companion object {
+    private object NativeLibraryObject {
         init {
             NativeLibraryLoader.loadLibrary("sqliteJni")
         }

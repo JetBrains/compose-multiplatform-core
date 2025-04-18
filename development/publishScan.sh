@@ -30,15 +30,11 @@ if [ "$3" != "" ]; then
   fi
 fi
 # find scan dir
-if [ "$OUT_DIR" != "" ]; then
-  effectiveGradleUserHome="$OUT_DIR/.gradle"
-else
-  if [ "$GRADLE_USER_HOME" != "" ]; then
-    effectiveGradleUserHome="$GRADLE_USER_HOME"
-  else
-    effectiveGradleUserHome="$HOME/.gradle"
-  fi
+if [ -z "${OUT_DIR+x}" ] ; then
+  SCRIPT_PATH="$(cd $(dirname $0) && pwd -P)"
+  export OUT_DIR=$SCRIPT_PATH/../../../out
 fi
+effectiveGradleUserHome="$OUT_DIR/.gradle"
 scanDir="$effectiveGradleUserHome/build-scan-data"
 
 function downloadScan() {
@@ -81,7 +77,7 @@ function sendScan() {
   uploadScan
 }
 
-sendScan scan.zip
+sendScan scan.1.zip
 echo uploaded scan
 if [ "$sendUpToDateScan" == "true" ]; then
   sendScan scan-up-to-date.zip
