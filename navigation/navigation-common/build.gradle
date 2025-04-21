@@ -35,10 +35,12 @@ plugins {
 
 androidXMultiplatform {
     androidTarget()
-    desktop()
-    mac()
-    linux()
-    ios()
+    jvmStubs()
+    linuxX64Stubs()
+//    desktop()
+//    mac()
+//    linux()
+//    ios()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -79,14 +81,22 @@ androidXMultiplatform {
         jvmCommonTest {
             dependsOn(commonTest)
         }
-        desktopMain {
+        jvmStubsMain {
             dependsOn(jvmCommonMain)
             dependsOn(nonAndroidMain)
         }
-        desktopTest {
+        jvmStubsTest {
             dependsOn(jvmCommonTest)
             dependsOn(nonAndroidTest)
         }
+//        desktopMain {
+//            dependsOn(jvmCommonMain)
+//            dependsOn(nonAndroidMain)
+//        }
+//        desktopTest {
+//            dependsOn(jvmCommonTest)
+//            dependsOn(nonAndroidTest)
+//        }
         androidMain {
             dependsOn(jvmCommonMain)
             dependencies {
@@ -129,24 +139,29 @@ androidXMultiplatform {
 
         nativeMain { dependsOn(nonJvmCommonMain) }
         linuxMain { dependsOn(nativeMain) }
-        darwinMain { dependsOn(nativeMain) }
-
+//        darwinMain { dependsOn(nativeMain) }
+//
         nativeTest { dependsOn(nonJvmCommonTest) }
         linuxTest { dependsOn(nativeTest) }
-        darwinTest { dependsOn(nativeTest) }
-
+//        darwinTest { dependsOn(nativeTest) }
+//
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
-                if (target.konanTarget.family.appleFamily) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(darwinTest)
-                } else if (target.konanTarget.family == org.jetbrains.kotlin.konan.target.Family.LINUX) {
+//                if (target.konanTarget.family.appleFamily) {
+//                    target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
+//                    target.compilations["test"].defaultSourceSet.dependsOn(darwinTest)
+//                } else
+                if (target.konanTarget.family == org.jetbrains.kotlin.konan.target.Family.LINUX) {
                     target.compilations["main"].defaultSourceSet.dependsOn(linuxMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(linuxTest)
                 }
             }
         }
+        linuxx64StubsMain.dependsOn(linuxMain)
+        linuxx64StubsTest.dependsOn(linuxTest)
     }
+
+    enableBinaryCompatibilityValidator = false
 }
 
 android {
