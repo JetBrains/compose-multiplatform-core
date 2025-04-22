@@ -144,10 +144,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
         darwin()
         js()
         wasm()
-        // TODO: Migrate iosInstrumentedTest to kotlin 2.1.0
-        //  https://youtrack.jetbrains.com/issue/CMP-7390/Migrate-iosInstrumentedTest-target-to-kotlin-2.1.0
-        //  Kotlin 2.1.0 doesn't support declaring multiple targets of the same type
-        // iosInstrumentedTest()
+        iosInstrumentedTest()
 
         configureDarwinFlags()
     }
@@ -326,7 +323,10 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             }
             uikitInstrumentedTest.dependencies {
                 implementation(project(":compose:material:material"))
+                implementation(project(":compose:material3:material3"))
                 implementation(project(":compose:foundation:foundation"))
+                implementation(project(":compose:ui:ui-test-junit4"))
+                implementation(project(":internal-testutils-xctest"))
             }
 
             desktopTest.dependencies {

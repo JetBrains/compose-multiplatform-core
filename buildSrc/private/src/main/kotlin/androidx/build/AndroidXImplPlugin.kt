@@ -842,7 +842,17 @@ class AndroidXImplPlugin @Inject constructor(val componentFactory: SoftwareCompo
                 kotlinTarget.binaries.all {
                     // Use std allocator to avoid the following warning:
                     // w: Mimalloc allocator isn't supported on target <target>. Used standard mode.
-                    it.freeCompilerArgs += "-Xallocator=std"
+
+                    // TODO: Remove when the issue is fixed in KGP
+                    // https://youtrack.jetbrains.com/issue/KT-74564
+                    // it.freeCompilerArgs += "-Xallocator=std"
+                    //
+                    // Fixes problem when instrumented tests compilation is not properly applied to
+                    // the framework configuration.
+                    it.linkTaskProvider.configure {
+                        @Suppress("DEPRECATION")
+                        it.kotlinOptions.freeCompilerArgs += "-Xallocator=std"
+                    }
                 }
             }
         }

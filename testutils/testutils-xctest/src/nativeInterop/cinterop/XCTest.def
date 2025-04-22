@@ -1,5 +1,5 @@
 #
-# Copyright 2023 The Android Open Source Project
+# Copyright 2025 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +14,22 @@
 # limitations under the License.
 #
 
-linkerOpts = -framework UIKit
-package = androidx.compose.ui.uikit.utils
+depends = Foundation darwin posix
 language = Objective-C
-compilerOpts = -D_Float16=short
-headerFilter = CMP*
+package = platform.XCTest
+modules = XCTest
+
+compilerOpts = -framework XCTest
+linkerOpts = -framework XCTest
+
+foreignExceptionMode = objc-wrap
+
+---
+ #import <objc/runtime.h>
+
+ static IMP skipImplementation() {
+     return imp_implementationWithBlock(^void(id _self, SEL _sel) {
+         // Use the XCTSkip function to skip the test with the provided reason
+         XCTSkip(@"Test was skipped (ignored with @Ignore annotation)");
+     });
+ }

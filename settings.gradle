@@ -259,6 +259,7 @@ includeProject(":internal-testutils-navigation", "testutils/testutils-navigation
 //includeProject(":internal-testutils-paging", "testutils/testutils-paging")
 includeProject(":internal-testutils-gradle-plugin", "testutils/testutils-gradle-plugin")
 includeProject(":internal-testutils-mockito", "testutils/testutils-mockito")
+includeProject(":internal-testutils-xctest", "testutils/testutils-xctest")
 
 // Workaround for b/203825166
 includeBuild("placeholder")

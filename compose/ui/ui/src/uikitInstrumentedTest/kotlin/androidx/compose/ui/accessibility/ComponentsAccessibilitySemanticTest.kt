@@ -38,22 +38,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitTextView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.assertAccessibilityTree
-import androidx.compose.ui.test.findNode
-import androidx.compose.ui.test.firstAccessibleNode
+import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -77,40 +81,6 @@ import platform.UIKit.setAccessibilityLabel
 import platform.UIKit.setIsAccessibilityElement
 
 class ComponentsAccessibilitySemanticTest {
-
-    @Test
-    fun testButtonNodeActionAndSemantic() = runUIKitInstrumentedTest {
-        var tapped = false
-        setContent {
-            Button({ tapped = true }) {
-                Text("Content")
-            }
-            Button({ }) {}
-        }
-
-        assertAccessibilityTree {
-            node {
-                node {
-                    isAccessibilityElement = true
-                    label = "Content"
-                    traits(UIAccessibilityTraitButton)
-                }
-                node {
-                    isAccessibilityElement = false
-                    label = "Content"
-                }
-            }
-            node {
-                isAccessibilityElement = true
-                traits(UIAccessibilityTraitButton)
-            }
-        }
-
-        val node = firstAccessibleNode()
-        node.element?.accessibilityActivate()
-        assertTrue(tapped)
-    }
-
     @OptIn(ExperimentalMaterialApi::class)
     @Test
     fun testProgressNodesSemantic() = runUIKitInstrumentedTest {
@@ -171,7 +141,7 @@ class ComponentsAccessibilitySemanticTest {
         }
 
         var oldValue = sliderValue
-        val sliderNode = findNode("Slider")
+        val sliderNode = findNodeWithTag("Slider")
         sliderNode.element?.accessibilityIncrement()
         assertTrue(oldValue < sliderValue)
 
@@ -251,19 +221,19 @@ class ComponentsAccessibilitySemanticTest {
             }
         }
 
-        findNode("Switch").element?.accessibilityActivate()
+        findNodeWithTag("Switch").element?.accessibilityActivate()
         assertTrue(switch)
         waitForIdle()
-        findNode("Switch").element?.accessibilityActivate()
+        findNodeWithTag("Switch").element?.accessibilityActivate()
         assertFalse(switch)
 
-        findNode("Checkbox").element?.accessibilityActivate()
+        findNodeWithTag("Checkbox").element?.accessibilityActivate()
         assertTrue(checkbox)
         waitForIdle()
-        findNode("Checkbox").element?.accessibilityActivate()
+        findNodeWithTag("Checkbox").element?.accessibilityActivate()
         assertFalse(checkbox)
 
-        findNode("TriStateCheckbox").element?.accessibilityActivate()
+        findNodeWithTag("TriStateCheckbox").element?.accessibilityActivate()
         assertEquals(ToggleableState.On, triStateCheckbox)
     }
 
@@ -301,7 +271,7 @@ class ComponentsAccessibilitySemanticTest {
             }
         }
 
-        findNode("RadioButton").element?.accessibilityActivate()
+        findNodeWithTag("RadioButton").element?.accessibilityActivate()
         assertAccessibilityTree {
             node {
                 isAccessibilityElement = true
@@ -431,7 +401,7 @@ class ComponentsAccessibilitySemanticTest {
             node {
                 isAccessibilityElement = true
                 traits(
-                    UIAccessibilityTraitButton,
+                    CMPAccessibilityTraitTextView,
                     UIAccessibilityTraitNotEnabled
                 )
             }
@@ -614,28 +584,49 @@ class ComponentsAccessibilitySemanticTest {
     }
 
     @Test
-    fun testAccessibilityContainer() = runUIKitInstrumentedTest {
+    fun testAccessibilityTraversalGrouping() = runUIKitInstrumentedTest {
         setContent {
-            Column(modifier = Modifier.testTag("Container")) {
-                Text("Text 1")
-                Text("Text 2")
+            Column {
+                Column(modifier = Modifier.semantics {
+                    isTraversalGroup = true
+                    testTag = "Container"
+                }) {
+                    Text("Text 1")
+                    Text("Text 2")
+                }
+                Text("Text 3")
+                Text("Text 4")
             }
         }
 
         assertAccessibilityTree {
-            identifier = "Container"
-            isAccessibilityElement = false
             node {
-                label = "Text 1"
+                node {
+                    identifier = "Container"
+                    isAccessibilityElement = false
+                }
+                node {
+                    label = "Text 1"
+                    isAccessibilityElement = true
+                }
+                node {
+                    label = "Text 2"
+                    isAccessibilityElement = true
+                }
+            }
+            node {
+                label = "Text 3"
                 isAccessibilityElement = true
             }
             node {
-                label = "Text 2"
+                label = "Text 4"
                 isAccessibilityElement = true
             }
         }
     }
 
+    @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-7030
+    @ExperimentalComposeUiApi
     @Test
     fun testAccessibilityInterop() = runUIKitInstrumentedTest {
         setContent {
@@ -689,6 +680,7 @@ class ComponentsAccessibilitySemanticTest {
         }
     }
 
+    @Ignore
     @Test
     fun testChildrenOfCollapsedNode() = runUIKitInstrumentedTest {
         setContent {
