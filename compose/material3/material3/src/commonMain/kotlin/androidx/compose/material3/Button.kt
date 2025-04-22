@@ -104,7 +104,7 @@ import androidx.compose.ui.unit.dp
  *   preview the button in different states. Note that if `null` is provided, interactions will
  *   still happen internally.
  *
- * @story http://localhost:8080/#org.jetbrains.compose.storytale.gallery.navigation.Route.MobileHome
+ * @story /stories?embedded=true/#org.jetbrains.compose.storytale.gallery.navigation.Route.MobileHome
  */
 @Composable
 fun Button(

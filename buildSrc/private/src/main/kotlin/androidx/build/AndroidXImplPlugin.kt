@@ -337,6 +337,9 @@ class AndroidXImplPlugin @Inject constructor(val componentFactory: SoftwareCompo
         plugin: KotlinBasePluginWrapper
     ) {
         project.afterEvaluate {
+            project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile::class.java).configureEach {
+                it.jvmTargetValidationMode.set(org.jetbrains.kotlin.gradle.dsl.jvm.JvmTargetValidationMode.WARNING)
+            }
             project.tasks.withType(KotlinCompile::class.java).configureEach { task ->
                 if (extension.type.compilationTarget == CompilationTarget.HOST &&
                     extension.type != LibraryType.ANNOTATION_PROCESSOR_UTILS

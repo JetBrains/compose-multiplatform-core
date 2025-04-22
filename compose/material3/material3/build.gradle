@@ -84,7 +84,7 @@ dependencies {
 
 if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
     androidXComposeMultiplatform {
-//        android() // TODO: figure it out. Currently dokka forces its compilation but it doesn't work in our fork
+        android()
         desktop()
         darwin()
         wasm()
@@ -331,4 +331,16 @@ android {
     sourceSets.androidTest.assets.srcDirs +=
             project.rootDir.absolutePath + "/golden/compose/material3/material3"
     namespace "androidx.compose.material3"
+}
+
+tasks.named('dokkaHtml', org.jetbrains.dokka.gradle.DokkaTask).configure {
+    dokkaSourceSets {
+        configureEach {
+            if (name.contains("commonMain")) {
+                suppress.set(false)
+            } else {
+                suppress.set(true)
+            }
+        }
+    }
 }
