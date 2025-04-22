@@ -361,7 +361,8 @@ internal class ComposeSceneMediator(
         get() = scene.hasInvalidations() ||
             keyboardManager.isAnimating ||
             isLayoutTransitionAnimating ||
-            semanticsOwnerListener.hasInvalidations
+            semanticsOwnerListener.hasInvalidations ||
+            textInputService.hasInvalidations
 
     private fun hitTestInteropView(point: CValue<CGPoint>): UIView? =
         point.useContents {
