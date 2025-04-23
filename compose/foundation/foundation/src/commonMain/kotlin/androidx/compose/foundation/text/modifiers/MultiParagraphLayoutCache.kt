@@ -214,7 +214,7 @@ internal class MultiParagraphLayoutCache(
     private fun textLayoutResult(
         layoutDirection: LayoutDirection,
         finalConstraints: Constraints,
-        multiParagraph: MultiParagraph
+        multiParagraph: MultiParagraph,
     ): TextLayoutResult {
         val layoutWidth = min(multiParagraph.intrinsics.maxIntrinsicWidth, multiParagraph.width)
         return TextLayoutResult(
@@ -321,8 +321,7 @@ internal class MultiParagraphLayoutCache(
      */
     private fun layoutText(
         constraints: Constraints,
-        layoutDirection: LayoutDirection,
-        overflow: TextOverflow = this.overflow
+        layoutDirection: LayoutDirection
     ): MultiParagraph {
         val localParagraphIntrinsics = setLayoutDirection(layoutDirection)
 
@@ -431,14 +430,7 @@ internal class MultiParagraphLayoutCache(
                 if (minLines > 1) useMinLinesConstrainer(constraints, intrinsicsLayoutDirection!!)
                 else constraints
 
-            val multiParagraph =
-                layoutText(
-                    layoutConstraints,
-                    intrinsicsLayoutDirection!!,
-                    // We use TextOverflow.Clip for auto size layout as ellipsize won't overflow for
-                    // even the largest font size. The layout pass after will measure with ellipsize
-                    TextOverflow.Clip
-                )
+            val multiParagraph = layoutText(layoutConstraints, intrinsicsLayoutDirection!!)
             val layoutResult =
                 textLayoutResult(
                     intrinsicsLayoutDirection!!,
