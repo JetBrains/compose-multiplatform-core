@@ -903,6 +903,35 @@ class TextFieldTextToolbarTest : FocusedWindowTest {
         rule.runOnIdle { assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Hidden) }
     }
 
+    @Test
+    fun toolbarCanReappear_whenTextFieldStateChanges() {
+        val textToolbar = FakeTextToolbar()
+        val tfsState = mutableStateOf(TextFieldState("Hello"))
+
+        rule.setTextFieldTestContent {
+            CompositionLocalProvider(LocalTextToolbar provides textToolbar) {
+                BasicTextField(
+                    state = tfsState.value,
+                    modifier = Modifier.width(100.dp).testTag(TAG),
+                    textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = fontSize)
+                )
+            }
+        }
+
+        rule.onNodeWithTag(TAG).performTouchInput { click(Offset(fontSizePx * 2, fontSizePx / 2)) }
+        rule.onNode(isSelectionHandle(Handle.Cursor)).performClick()
+        rule.runOnIdle { assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Shown) }
+
+        // change the state
+        tfsState.value = TextFieldState("World")
+        rule.runOnIdle { assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Hidden) }
+
+        // toolbar can now reappear if requested
+        rule.onNodeWithTag(TAG).performTouchInput { click(Offset(fontSizePx * 2, fontSizePx / 2)) }
+        rule.onNode(isSelectionHandle(Handle.Cursor)).performClick()
+        rule.runOnIdle { assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Shown) }
+    }
+
     private fun setupContent(
         state: TextFieldState = TextFieldState(),
         toolbar: TextToolbar = FakeTextToolbar(),

@@ -16,12 +16,17 @@
 
 package androidx.compose.foundation.text
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
@@ -31,16 +36,22 @@ import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.node.Ref
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
@@ -203,6 +214,40 @@ class TextLayoutTest {
         rule.setContent { TestingText("aa", onTextLayout = { resultsFromCallback += it }) }
 
         rule.runOnIdle { assertThat(resultsFromCallback).hasSize(1) }
+    }
+
+    // Regression test for b/406305552
+    @Test
+    fun textLayout_updatesOnMinWidthChange_andEndAlign_multiParagraphLayoutCache() {
+        val tag = "tag"
+        var minWidth by mutableIntStateOf(200)
+        lateinit var textLayoutResult: TextLayoutResult
+        rule.setContent {
+            Box(Modifier.padding(32.dp)) {
+                BasicText(
+                    text = "text",
+                    style =
+                        TextStyle(
+                            textAlign = TextAlign.End,
+                            fontFamily = TEST_FONT_FAMILY,
+                            fontSize = 10.sp,
+                        ),
+                    onTextLayout = { textLayoutResult = it },
+                    modifier =
+                        Modifier.border(Dp.Hairline, Color.LightGray)
+                            .layout { measurable, constraints ->
+                                val placeable =
+                                    measurable.measure(constraints.copy(minWidth = minWidth))
+                                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                            }
+                            .testTag(tag)
+                )
+            }
+        }
+        assertThat(textLayoutResult.getLineRight(0)).isWithin(0.1f).of(200f)
+        minWidth = 300
+        rule.waitForIdle()
+        assertThat(textLayoutResult.getLineRight(0)).isWithin(0.1f).of(300f)
     }
 }
 
