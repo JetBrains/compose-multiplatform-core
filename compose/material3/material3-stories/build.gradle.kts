@@ -16,7 +16,6 @@ plugins {
 }
 
 kotlin {
-    // TODO: enable wasmJs target after fixes in storytale gradle plugin
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         moduleName = "composeApp"
@@ -35,6 +34,7 @@ kotlin {
                 implementation(project(":compose:ui:ui", null))
                 implementation(project(":compose:material3:material3", null))
                 implementation(project(":navigation:navigation-compose", null))
+                implementation(compose.components.resources)
             }
         }
 
