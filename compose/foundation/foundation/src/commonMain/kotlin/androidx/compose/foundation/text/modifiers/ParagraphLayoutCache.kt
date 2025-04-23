@@ -295,6 +295,7 @@ internal class ParagraphLayoutCache(
         if (constraints == prevConstraints) return false
 
         if (constraints.maxWidth != prevConstraints.maxWidth) return true
+        if (constraints.minWidth != prevConstraints.minWidth) return true
 
         // if we get here width won't change, height may be clipped
         if (constraints.maxHeight < localParagraph.height || localParagraph.didExceedMaxLines) {
