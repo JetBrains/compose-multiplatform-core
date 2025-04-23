@@ -360,6 +360,7 @@ internal class MultiParagraphLayoutCache(
         if (constraints == layoutInput.constraints) return false
 
         if (constraints.maxWidth != layoutInput.constraints.maxWidth) return true
+        if (constraints.minWidth != layoutInput.constraints.minWidth) return true
 
         // if we get here width won't change, height may be clipped
         if (constraints.maxHeight < multiParagraph.height || multiParagraph.didExceedMaxLines) {
