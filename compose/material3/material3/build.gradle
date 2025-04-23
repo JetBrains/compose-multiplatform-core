@@ -344,3 +344,11 @@ tasks.named('dokkaHtml', org.jetbrains.dokka.gradle.DokkaTask).configure {
         }
     }
 }
+
+tasks.withType(org.jetbrains.dokka.gradle.DokkaTask.class) {
+    String dokkaBaseConfiguration = """{"customStyleSheets": ["${file("material3-api-storytale-style.css")}"]}"""
+    pluginsMapConfiguration.set(
+            // fully qualified plugin name to json configuration
+            ["org.jetbrains.dokka.base.DokkaBase": dokkaBaseConfiguration]
+    )
+}
