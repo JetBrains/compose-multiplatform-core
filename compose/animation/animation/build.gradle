@@ -29,24 +29,12 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.compose.animation"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
-        withAndroidTestOnJvmBuilder {
-            it.defaultSourceSetName = "androidUnitTest"
-        }
-
-        compileSdk = 35
-        aarMetadata.minCompileSdk = 35
-    }
+    android()
     jvmStubs()
     linuxX64Stubs()
 
@@ -142,3 +130,7 @@ androidx {
     kotlinTarget = KotlinTarget.KOTLIN_1_9
 }
 
+android {
+    compileSdk = 35
+    namespace = "androidx.compose.animation"
+}
