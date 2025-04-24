@@ -391,7 +391,7 @@ private fun beforeInput(inputType: String, data: String?) =
 private fun mobileKeyDown() = keyEvent(type = "keydown", key = "Unidentified", code = "")
 private fun mobileKeyUp() = keyEvent(type = "keydown", key = "Unidentified", code = "")
 
-class BasicTestFieldTests : TextInputTests() {
+class BasicTextFieldTests : TextInputTests() {
 
     private class TextFieldValueHolder(private val textFieldValue: State<TextFieldValue>) : InputStateHolder {
         override val text: String
@@ -419,7 +419,7 @@ class BasicTestFieldTests : TextInputTests() {
     }
 }
 
-class BasicTestFieldTests2 : TextInputTests() {
+class BasicTextFieldTests2 : TextInputTests() {
     private class TextFieldStateHolder(private val textFieldState: TextFieldState) : InputStateHolder {
         override val text: CharSequence
             get() = textFieldState.text
