@@ -24,6 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.TestInputState
+import androidx.compose.ui.WebApplicationScope
 import androidx.compose.ui.events.InputEvent
 import androidx.compose.ui.events.InputEventInit
 import androidx.compose.ui.events.keyEvent
@@ -49,7 +50,7 @@ abstract class TextInputTests : OnCanvasTests {
 
     internal fun currentHtmlInput() = document.querySelector("textarea") as HTMLTextAreaElement
 
-    internal suspend fun createApplicationWithHolder(): TestInputState {
+    internal suspend fun WebApplicationScope.createApplicationWithHolder(): TestInputState {
         val focusRequester = FocusRequester()
         val textFieldStateHolder = createTestInputState()
 
@@ -73,7 +74,7 @@ abstract class TextInputTests : OnCanvasTests {
         withContext(Dispatchers.Default) { delay(millis) }
     }
 
-    internal suspend fun waitForHtmlInput(): HTMLTextAreaElement {
+    internal suspend fun WebApplicationScope.waitForHtmlInput(): HTMLTextAreaElement {
         while (true) {
             val element = document.querySelector("textarea")
             if (element is HTMLTextAreaElement) {
@@ -81,6 +82,7 @@ abstract class TextInputTests : OnCanvasTests {
             }
             yield()
         }
+        awaitIdle()
     }
 
     @Test
