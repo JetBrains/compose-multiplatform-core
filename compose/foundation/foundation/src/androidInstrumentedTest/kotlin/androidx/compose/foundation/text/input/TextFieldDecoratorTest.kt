@@ -275,7 +275,7 @@ class TextFieldDecoratorTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                decorator = { innerTextField ->
+                decorator = {
                     Box(
                         modifier =
                             Modifier.border(BorderStroke(2.dp, SolidColor(Color.Red)))
@@ -306,7 +306,7 @@ class TextFieldDecoratorTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                decorator = { innerTextField ->
+                decorator = {
                     Box(
                         modifier =
                             Modifier.border(BorderStroke(2.dp, SolidColor(Color.Red)))
