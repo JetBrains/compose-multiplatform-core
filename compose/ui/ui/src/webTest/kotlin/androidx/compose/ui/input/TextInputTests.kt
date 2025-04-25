@@ -18,10 +18,8 @@ package androidx.compose.ui.input
 
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
@@ -93,10 +91,6 @@ abstract class TextInputTests : OnCanvasTests {
         }
     }
 
-    private fun State<TextFieldValue>.assertTextEquals(expected: String, message: String? = null) {
-        assertEquals(expected = expected, actual = value.text, message = message)
-    }
-
     private fun InputStateHolder.assertTextEquals(expected: String, message: String? = null) {
         assertEquals(expected = expected, actual = text, message = message)
     }
@@ -104,7 +98,6 @@ abstract class TextInputTests : OnCanvasTests {
     private fun InputStateHolder.assertTextMatches(expected: Regex, message: String? = null) {
         assertTrue(expected.matches(text), message)
     }
-
 
     @Test
     fun regularInput() = runApplicationTest {
@@ -327,6 +320,7 @@ abstract class TextInputTests : OnCanvasTests {
         textFieldValue.assertTextEquals("abc", "XXX")
     }
 
+    @Test
     fun repeatedAccentMenuClicked() = runApplicationTest {
         val textFieldValue =  createApplicationWithHolder()
 
@@ -340,6 +334,8 @@ abstract class TextInputTests : OnCanvasTests {
             keyEvent("a", type = "keyup"),
             beforeInput(inputType = "insertText", data = "æ"),
         )
+
+        awaitIdle()
 
         textFieldValue.assertTextEquals("æ", "Choose symbol from Accent Menu")
     }
