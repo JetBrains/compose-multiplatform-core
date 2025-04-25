@@ -48,6 +48,7 @@ import androidx.compose.ui.input.pointer.EmptyPointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.scene.BaseComposeScene
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -498,5 +499,37 @@ class RenderPhasesTest {
         )
 
         assertTrue(keyHandledAfterDelay)
+    }
+
+    @Test
+    fun rotaryEventsProcessesScheduledCoroutines() = runInternalSkikoComposeUiTest(
+        coroutineDispatcher = StandardTestDispatcher()
+    ) {
+        var eventHandledAfterDelay by mutableStateOf(false)
+        setContent {
+            val coroutineScope = rememberCoroutineScope()
+            val focusRequester = remember { FocusRequester() }
+            val interactionSource = remember { MutableInteractionSource() }
+            Box(
+                modifier = Modifier
+                    .onRotaryScrollEvent { event ->
+                        coroutineScope.launch {
+                            eventHandledAfterDelay = true
+                        }
+                        true
+                    }
+                    .focusRequester(focusRequester)
+                    .focusable(interactionSource = interactionSource)
+            )
+            LaunchedEffect(Unit) {
+                focusRequester.requestFocus()
+            }
+        }
+
+        assertFalse(eventHandledAfterDelay)
+
+        scene.sendRotaryScrollEvent(1f, 1f)
+
+        assertTrue(eventHandledAfterDelay)
     }
 }
