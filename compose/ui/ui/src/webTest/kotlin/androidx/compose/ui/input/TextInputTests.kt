@@ -23,6 +23,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.TestInputState
 import androidx.compose.ui.events.InputEvent
 import androidx.compose.ui.events.InputEventInit
 import androidx.compose.ui.events.keyEvent
@@ -31,9 +32,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.TextFieldValue
 import kotlin.test.Ignore
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlin.test.assertTrue
 import kotlinx.browser.document
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -46,20 +45,13 @@ import org.w3c.dom.events.Event
 
 abstract class TextInputTests : OnCanvasTests {
 
-    abstract suspend fun createInputHolder(): InputStateHolder
-
-    interface InputStateHolder {
-        val text: CharSequence
-
-        @Composable
-        fun createBasicTextField(focusRequester: FocusRequester)
-    }
+    internal abstract suspend fun createTestInputState(): TestInputState
 
     internal fun currentHtmlInput() = document.querySelector("textarea") as HTMLTextAreaElement
 
-    suspend fun createApplicationWithHolder(): InputStateHolder {
+    internal suspend fun createApplicationWithHolder(): TestInputState {
         val focusRequester = FocusRequester()
-        val textFieldStateHolder = createInputHolder()
+        val textFieldStateHolder = createTestInputState()
 
         createComposeWindow {
             textFieldStateHolder.createBasicTextField(focusRequester)
@@ -91,14 +83,6 @@ abstract class TextInputTests : OnCanvasTests {
         }
     }
 
-    private fun InputStateHolder.assertTextEquals(expected: String, message: String? = null) {
-        assertEquals(expected = expected, actual = text, message = message)
-    }
-
-    private fun InputStateHolder.assertTextMatches(expected: Regex, message: String? = null) {
-        assertTrue(expected.matches(text), message)
-    }
-
     @Test
     fun regularInput() = runApplicationTest {
         val textFieldValue = createApplicationWithHolder()
@@ -111,16 +95,14 @@ abstract class TextInputTests : OnCanvasTests {
             keyEvent("1")
         )
 
-        awaitIdle()
-        textFieldValue.assertTextEquals("step1")
+        textFieldValue.awaitAndAssertTextEquals("step1")
 
         sendToHtmlInput(
             keyEvent("Backspace", code = "Backspace"),
             keyEvent("X"),
         )
 
-        awaitIdle()
-        textFieldValue.assertTextEquals(
+        textFieldValue.awaitAndAssertTextEquals(
             "stepX",
             "Backspace should delete last symbol typed"
         )
@@ -144,16 +126,14 @@ abstract class TextInputTests : OnCanvasTests {
             keyEvent("1", code = "Digit1", type = "keyup"),
         )
 
-        awaitIdle()
-        textFieldValue.assertTextEquals("啊")
+        textFieldValue.awaitAndAssertTextEquals("啊")
 
         sendToHtmlInput(
             keyEvent("x"),
             keyEvent("x", type = "keyup")
         )
 
-        awaitIdle()
-        textFieldValue.assertTextEquals("啊x")
+        textFieldValue.awaitAndAssertTextEquals("啊x")
     }
 
     @Test
@@ -176,8 +156,7 @@ abstract class TextInputTests : OnCanvasTests {
             keyEvent("1", type = "keyup", code = "Digit1"),
         )
 
-        awaitIdle()
-        textFieldValue.assertTextEquals("啊")
+        textFieldValue.awaitAndAssertTextEquals("啊")
 
         // We can not change timestamp for js events, so we just add some delay to enforce it
         waitFor(100)
@@ -187,7 +166,7 @@ abstract class TextInputTests : OnCanvasTests {
             keyEvent("b", type = "keyup")
         )
 
-        textFieldValue.assertTextEquals("啊b")
+        textFieldValue.awaitAndAssertTextEquals("啊b")
     }
 
     @Test
@@ -207,8 +186,7 @@ abstract class TextInputTests : OnCanvasTests {
             mobileKeyUp()
         )
 
-        awaitIdle()
-        textFieldValue.assertTextEquals("abc")
+        textFieldValue.awaitAndAssertTextEquals("abc")
     }
 
     @Ignore
@@ -233,7 +211,7 @@ abstract class TextInputTests : OnCanvasTests {
         )
 
         // TODO: this does not behave as desktop, ideally we should have "abc" here
-        textFieldValue.assertTextEquals(
+        textFieldValue.awaitAndAssertTextEquals(
             "bc",
             "Repeat mode should be resolved as Accent Dialogue"
         )
@@ -272,9 +250,8 @@ abstract class TextInputTests : OnCanvasTests {
             keyEvent("c")
         )
 
-        awaitIdle()
 
-        textFieldValue.assertTextMatches( Regex("a+bc"), "Repeat mode should be resolved as Default")
+        textFieldValue.awaitAndAssertTextMatches( Regex("a+bc"), "Repeat mode should be resolved as Default")
     }
 
     @Test
@@ -294,7 +271,7 @@ abstract class TextInputTests : OnCanvasTests {
             keyEvent("1", code = "Digit1", type = "keyup"),
         )
 
-        textFieldValue.assertTextEquals("à", "Choose symbol from Accent Menu")
+        textFieldValue.awaitAndAssertTextEquals("à", "Choose symbol from Accent Menu")
     }
 
     @Test
@@ -317,7 +294,7 @@ abstract class TextInputTests : OnCanvasTests {
             keyEvent("c", type = "keyup"),
         )
 
-        textFieldValue.assertTextEquals("abc", "XXX")
+        textFieldValue.awaitAndAssertTextEquals("abc", "XXX")
     }
 
     @Test
@@ -335,9 +312,7 @@ abstract class TextInputTests : OnCanvasTests {
             beforeInput(inputType = "insertText", data = "æ"),
         )
 
-        awaitIdle()
-
-        textFieldValue.assertTextEquals("æ", "Choose symbol from Accent Menu")
+        textFieldValue.awaitAndAssertTextEquals("æ", "Choose symbol from Accent Menu")
     }
 
 
@@ -346,8 +321,8 @@ abstract class TextInputTests : OnCanvasTests {
         val focusRequester1 = FocusRequester()
         val focusRequester2 = FocusRequester()
 
-        val inputHolder1 = createInputHolder()
-        val inputHolder2 = createInputHolder()
+        val inputHolder1 = createTestInputState()
+        val inputHolder2 = createTestInputState()
 
         createComposeWindow {
             inputHolder1.createBasicTextField(focusRequester1)
@@ -365,8 +340,7 @@ abstract class TextInputTests : OnCanvasTests {
             keyEvent("1")
         )
 
-        awaitIdle()
-        inputHolder1.assertTextEquals("step1")
+        inputHolder1.awaitAndAssertTextEquals("step1")
 
         focusRequester2.requestFocus()
         waitForHtmlInput()
@@ -379,8 +353,7 @@ abstract class TextInputTests : OnCanvasTests {
             keyEvent("2")
         )
 
-        awaitIdle()
-        inputHolder2.assertTextEquals("step2")
+        inputHolder2.awaitAndAssertTextEquals("step2")
     }
 }
 
@@ -398,7 +371,7 @@ private fun mobileKeyUp() = keyEvent(type = "keydown", key = "Unidentified", cod
 
 class BasicTextFieldTests : TextInputTests() {
 
-    private class TextFieldValueHolder(private val textFieldValue: MutableState<TextFieldValue>) : InputStateHolder {
+    private class TextFieldValueHolder(private val textFieldValue: MutableState<TextFieldValue>) : TestInputState {
         override val text: String
             get() = textFieldValue.value.text
 
@@ -414,11 +387,11 @@ class BasicTextFieldTests : TextInputTests() {
         }
     }
 
-    override suspend fun createInputHolder(): InputStateHolder = TextFieldValueHolder(mutableStateOf(TextFieldValue()))
+    override suspend fun createTestInputState(): TestInputState = TextFieldValueHolder(mutableStateOf(TextFieldValue()))
 }
 
 class BasicTextFieldTests2 : TextInputTests() {
-    private class TextFieldStateHolder(private val textFieldState: TextFieldState) : InputStateHolder {
+    private class TextFieldStateHolder(private val textFieldState: TextFieldState) : TestInputState {
         override val text: CharSequence
             get() = textFieldState.text
 
@@ -431,5 +404,5 @@ class BasicTextFieldTests2 : TextInputTests() {
         }
     }
 
-    override suspend fun createInputHolder(): InputStateHolder = TextFieldStateHolder(TextFieldState())
+    override suspend fun createTestInputState(): TestInputState = TextFieldStateHolder(TextFieldState())
 }
