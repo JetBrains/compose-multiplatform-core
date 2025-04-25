@@ -21,7 +21,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.selection.gestures.util.longPress
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -57,12 +59,12 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-class DecorationBoxTest {
+class TextFieldDecoratorTest {
 
     @get:Rule val rule = createComposeRule()
 
     private val Tag = "BasicTextField"
-    private val DecorationTag = "DecorationBox"
+    private val DecorationTag = "Decoration"
 
     @Test
     fun focusIsAppliedOnDecoratedComposable() {
@@ -263,5 +265,68 @@ class DecorationBoxTest {
 
         // assertThat selection happened
         rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(0, 5)) }
+    }
+
+    // b/308398612
+    @Test
+    fun longClickGestureIsIgnored_whenInnerTextFieldNotPlaced() {
+        val state = TextFieldState("hello")
+        rule.setContent {
+            BasicTextField(
+                state = state,
+                modifier = Modifier.testTag(Tag),
+                decorator = { innerTextField ->
+                    Box(
+                        modifier =
+                            Modifier.border(BorderStroke(2.dp, SolidColor(Color.Red)))
+                                .padding(16.dp)
+                                .testTag(DecorationTag)
+                    ) {
+                        BasicText(state.text.toString())
+                    }
+                }
+            )
+        }
+
+        // long click on decoration box
+        rule.onNodeWithTag(DecorationTag, useUnmergedTree = true).performTouchInput {
+            // should be on the box not on inner text field since there is a padding
+            longClick(Offset(1f, 1f))
+        }
+
+        // assertThat selection did not happen but we are actually asserting that no crash occurred
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(5)) }
+    }
+
+    // b/308398612
+    @Test
+    fun longClickAndDragGestureIsIgnored_whenInnerTextFieldNotPlaced() {
+        val state = TextFieldState("hello")
+        rule.setContent {
+            BasicTextField(
+                state = state,
+                modifier = Modifier.testTag(Tag),
+                decorator = { innerTextField ->
+                    Box(
+                        modifier =
+                            Modifier.border(BorderStroke(2.dp, SolidColor(Color.Red)))
+                                .padding(16.dp)
+                                .testTag(DecorationTag)
+                    ) {
+                        BasicText(state.text.toString())
+                    }
+                }
+            )
+        }
+
+        // long click then drag on decoration box
+        rule.onNodeWithTag(DecorationTag, useUnmergedTree = true).performTouchInput {
+            longPress(Offset(1f, 1f))
+            moveBy(Offset(viewConfiguration.touchSlop * 2, 0f))
+            up()
+        }
+
+        // assertThat selection did not happen but we are actually asserting that no crash occurred
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(5)) }
     }
 }

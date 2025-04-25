@@ -281,7 +281,9 @@ internal class TextFieldDecoratorModifierNode(
                 onMoved = { position ->
                     val positionOnTextField = textLayoutState.fromWindowToDecoration(position)
                     val cursorPosition = textLayoutState.getOffsetForPosition(positionOnTextField)
-                    textFieldState.selectCharsIn(TextRange(cursorPosition))
+                    if (cursorPosition >= 0) {
+                        textFieldState.selectCharsIn(TextRange(cursorPosition))
+                    }
                     textFieldSelectionState.updateHandleDragging(Handle.Cursor, positionOnTextField)
                 },
                 onDrop = { clipEntry, clipMetadata ->

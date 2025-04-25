@@ -802,6 +802,8 @@ internal class TextFieldSelectionState(
             dragTotalDistance = Offset.Zero
             previousRawDragOffset = -1
 
+            if (textLayoutState.layoutResult == null) return
+
             // Long Press at the blank area, the cursor should show up at the end of the line.
             if (!textLayoutState.isPositionOnText(startPoint)) {
                 val offset = textLayoutState.getOffsetForPosition(startPoint)
@@ -836,7 +838,12 @@ internal class TextFieldSelectionState(
 
         override fun onDrag(delta: Offset) {
             // selection never started, did not consume any drag
-            if (!enabled || textFieldState.visualText.isEmpty()) return
+            if (
+                !enabled ||
+                    textLayoutState.layoutResult == null ||
+                    textFieldState.visualText.isEmpty()
+            )
+                return
 
             dragTotalDistance += delta
 
