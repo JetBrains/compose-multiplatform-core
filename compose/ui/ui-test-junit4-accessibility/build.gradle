@@ -30,23 +30,11 @@ import androidx.build.PlatformIdentifier
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
+    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.compose.ui.test.junit4.accessibility"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
-        withAndroidTestOnJvmBuilder {
-            it.defaultSourceSetName = "androidUnitTest"
-        }
-
-        compileSdk = 35
-        aarMetadata.minCompileSdk = 35
-    }
+    android()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -90,4 +78,9 @@ androidx {
     kotlinTarget = KotlinTarget.KOTLIN_1_9
     samples(project(":compose:ui:ui-test-junit4-accessibility:ui-test-junit4-accessibility-samples"))
 
+}
+
+android {
+    namespace = "androidx.compose.ui.test.junit4.accessibility"
+    compileSdk = 35
 }
