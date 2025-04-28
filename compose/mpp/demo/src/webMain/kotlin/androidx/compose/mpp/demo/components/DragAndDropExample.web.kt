@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -52,6 +53,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import org.w3c.dom.DataTransfer
 import androidx.compose.ui.draganddrop.domDataTransferOrNull
+import androidx.compose.ui.graphics.Brush
 
 @Composable
 @OptIn(ExperimentalComposeUiApi::class)
@@ -63,6 +65,7 @@ actual fun DragAndDropExample() {
         modifier = Modifier.fillMaxSize()
     ) {
         val textMeasurer = rememberTextMeasurer()
+        TwoBoxesExample()
 
         Column(modifier = Modifier.height(300.dp), verticalArrangement = Arrangement.SpaceEvenly) {
             Box(
@@ -219,5 +222,88 @@ actual fun DragAndDropExample() {
         }
     }
 }
+
+@Composable
+fun TwoBoxesExample() {
+    Row {
+        Box(
+            modifier = Modifier
+                .dragAndDropSource { DragAndDropTransferData() }
+                .border(
+                    border = BorderStroke(
+                        width = 4.dp,
+                        brush = Brush.linearGradient(listOf(Color.Magenta, Color.Magenta))
+                    ),
+                )
+                .padding(24.dp)
+                .size(200.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .dragAndDropSource { DragAndDropTransferData() }
+                    .border(
+                        border = BorderStroke(
+                            width = 4.dp,
+                            brush = Brush.linearGradient(listOf(Color.Green, Color.Green))
+                        )
+                    )
+                    .padding(24.dp)
+                    .size(50.dp)
+            ) {}
+        }
+        var showTargetBorder by remember { mutableStateOf(false) }
+        var showHovered by remember { mutableStateOf(false) }
+        var dragCounter by remember { mutableStateOf(0) }
+        val targetText by remember { mutableStateOf("Drop Here") }
+
+        val dragAndDropTarget = remember {
+            object : DragAndDropTarget {
+                override fun onStarted(event: DragAndDropEvent) {
+                    showTargetBorder = true
+                }
+
+                override fun onEnded(event: DragAndDropEvent) {
+                    showTargetBorder = false
+                }
+
+                override fun onMoved(event: DragAndDropEvent) {
+                }
+
+                override fun onEntered(event: DragAndDropEvent) {
+                    showHovered = true
+                }
+
+                override fun onExited(event: DragAndDropEvent) {
+                    showHovered = false
+                }
+
+                override fun onDrop(event: DragAndDropEvent): Boolean {
+                    showHovered = false
+                    dragCounter++
+                    return true
+                }
+            }
+        }
+        Box(
+            Modifier
+                .size(200.dp)
+                .background(if (showHovered) Color.Magenta else Color.LightGray)
+                .border(
+                    border = BorderStroke(
+                        3.dp,
+                        if (showTargetBorder) Color.Black else Color.Transparent
+                    )
+                )
+                .dragAndDropTarget(
+                    shouldStartDragAndDrop = { true },
+                    target = dragAndDropTarget
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("$targetText [$dragCounter]", Modifier.align(Alignment.Center))
+        }
+    }
+}
+
 
 private fun createDataTransfer(): DataTransfer =  js("new DataTransfer()")

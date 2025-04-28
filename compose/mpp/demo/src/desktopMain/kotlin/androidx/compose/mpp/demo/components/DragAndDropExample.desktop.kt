@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -45,6 +46,7 @@ import androidx.compose.ui.draganddrop.DragAndDropTransferable
 import androidx.compose.ui.draganddrop.awtTransferable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.drawText
@@ -65,6 +67,9 @@ actual fun DragAndDropExample() {
         modifier = Modifier.fillMaxSize()
     ) {
         val textMeasurer = rememberTextMeasurer()
+
+        TwoBoxesExample()
+
         Box(
             Modifier
             .size(200.dp)
@@ -157,6 +162,164 @@ actual fun DragAndDropExample() {
             )
         ) {
             Text(targetText, Modifier.align(Alignment.Center))
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun TwoBoxesExample() {
+    val textMeasurer = rememberTextMeasurer()
+    val exportedText = "Parent!!!"
+
+    Row {
+        Box(
+            modifier = Modifier
+                .dragAndDropSource(
+                    drawDragDecoration = {
+                        drawRect(
+                            color = Color.White,
+                            topLeft = Offset(x = 0f, y = size.height/4),
+                            size = Size(size.width, size.height/2)
+                        )
+                        val textLayoutResult = textMeasurer.measure(
+                            text = AnnotatedString(exportedText),
+                            layoutDirection = layoutDirection,
+                            density = this
+                        )
+                        drawText(
+                            textLayoutResult = textLayoutResult,
+                            topLeft = Offset(
+                                x = (size.width - textLayoutResult.size.width) / 2,
+                                y = (size.height - textLayoutResult.size.height) / 2,
+                            )
+                        )
+                    }
+                ) { offset ->
+                    DragAndDropTransferData(
+                        transferable = DragAndDropTransferable(
+                            StringSelection(exportedText)
+                        ),
+                        supportedActions = listOf(
+                            DragAndDropTransferAction.Copy,
+                            DragAndDropTransferAction.Move,
+                            DragAndDropTransferAction.Link,
+                        ),
+                        dragDecorationOffset = offset,
+                        onTransferCompleted = { action ->
+                            println("Action at source: $action")
+                        }
+                    )
+                }
+
+                .border(
+                    border = BorderStroke(
+                        width = 4.dp,
+                        brush = Brush.linearGradient(listOf(Color.Magenta, Color.Magenta))
+                    ),
+                )
+                .padding(24.dp)
+                .size(200.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .dragAndDropSource(
+                        drawDragDecoration = {
+                            drawRect(
+                                color = Color.Magenta,
+                                topLeft = Offset(x = 0f, y = size.height/4),
+                                size = Size(size.width, size.height/2)
+                            )
+                            val textLayoutResult = textMeasurer.measure(
+                                text = AnnotatedString("CHILD"),
+                                layoutDirection = layoutDirection,
+                                density = this
+                            )
+                            drawText(
+                                textLayoutResult = textLayoutResult,
+                                topLeft = Offset(
+                                    x = (size.width - textLayoutResult.size.width) / 2,
+                                    y = (size.height - textLayoutResult.size.height) / 2,
+                                )
+                            )
+                        }
+                    ) { offset ->
+                        DragAndDropTransferData(
+                            transferable = DragAndDropTransferable(
+                                StringSelection("CHILD")
+                            ),
+                            supportedActions = listOf(
+                                DragAndDropTransferAction.Copy,
+                                DragAndDropTransferAction.Move,
+                                DragAndDropTransferAction.Link,
+                            ),
+                            dragDecorationOffset = offset,
+                            onTransferCompleted = { action ->
+                                println("Action at source: $action")
+                            }
+                        )
+                    }
+
+                    .border(
+                        border = BorderStroke(
+                            width = 4.dp,
+                            brush = Brush.linearGradient(listOf(Color.Green, Color.Green))
+                        )
+                    )
+                    .padding(24.dp)
+                    .size(50.dp)
+            ) {}
+        }
+        var showTargetBorder by remember { mutableStateOf(false) }
+        var showHovered by remember { mutableStateOf(false) }
+        var dragCounter by remember { mutableStateOf(0) }
+        val targetText by remember { mutableStateOf("Drop Here") }
+
+        val dragAndDropTarget = remember {
+            object : DragAndDropTarget {
+                override fun onStarted(event: DragAndDropEvent) {
+                    showTargetBorder = true
+                }
+
+                override fun onEnded(event: DragAndDropEvent) {
+                    showTargetBorder = false
+                }
+
+                override fun onMoved(event: DragAndDropEvent) {
+                }
+
+                override fun onEntered(event: DragAndDropEvent) {
+                    showHovered = true
+                }
+
+                override fun onExited(event: DragAndDropEvent) {
+                    showHovered = false
+                }
+
+                override fun onDrop(event: DragAndDropEvent): Boolean {
+                    showHovered = false
+                    dragCounter++
+                    return true
+                }
+            }
+        }
+        Box(
+            Modifier
+                .size(200.dp)
+                .background(if (showHovered) Color.Magenta else Color.LightGray)
+                .border(
+                    border = BorderStroke(
+                        3.dp,
+                        if (showTargetBorder) Color.Black else Color.Transparent
+                    )
+                )
+                .dragAndDropTarget(
+                    shouldStartDragAndDrop = { true },
+                    target = dragAndDropTarget
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("$targetText [$dragCounter]", Modifier.align(Alignment.Center))
         }
     }
 }
