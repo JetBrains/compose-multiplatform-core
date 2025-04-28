@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import platform.Foundation.NSLocale
 import platform.Foundation.autoupdatingCurrentLocale
+import platform.Foundation.preferredLanguages
 
 
 actual typealias CalendarLocale = NSLocale
