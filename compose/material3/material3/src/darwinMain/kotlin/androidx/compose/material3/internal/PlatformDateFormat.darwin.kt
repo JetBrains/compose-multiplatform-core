@@ -24,6 +24,8 @@ import platform.Foundation.NSCalendar
 import platform.Foundation.NSDate
 import platform.Foundation.NSDateFormatter
 import platform.Foundation.NSDateFormatterShortStyle
+import platform.Foundation.NSLocale
+import platform.Foundation.autoupdatingCurrentLocale
 import platform.Foundation.dateWithTimeIntervalSince1970
 import platform.Foundation.timeIntervalSince1970
 
@@ -106,8 +108,11 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
     // 'j' template requests the preferred hour format for the locale.
     // 'a' is a pattern for AM\PM symbol. Presence of this symbol means that locale has 12h format.
     actual fun is24HourFormat(): Boolean {
+        // Use autoupdatingCurrentLocale so the result reflects the user's current system settings.
+        val currentLocale = NSLocale.autoupdatingCurrentLocale()
+
         return NSDateFormatter
-            .dateFormatFromTemplate("j", 0UL, locale)
+            .dateFormatFromTemplate("j", 0UL, currentLocale)
             ?.contains('a') == false
     }
 }
