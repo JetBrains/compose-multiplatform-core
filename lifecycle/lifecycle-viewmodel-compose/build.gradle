@@ -44,7 +44,7 @@ androidXMultiplatform {
             dependencies {
                 api(project(":lifecycle:lifecycle-common"))
                 api(project(":lifecycle:lifecycle-viewmodel"))
-                api("androidx.annotation:annotation:1.8.1")
+                api("androidx.annotation:annotation:1.9.1")
                 api("androidx.compose.runtime:runtime:1.7.8")
                 api(libs.kotlinSerializationCore)
                 implementation(libs.kotlinStdlib)
