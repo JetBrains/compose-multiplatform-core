@@ -24,10 +24,8 @@ import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.useContents
 import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGPointMake
-import platform.CoreGraphics.CGRect
 import platform.UIKit.UIView
 
 @OptIn(ExperimentalForeignApi::class)
@@ -45,19 +43,6 @@ internal fun DpRect.intersect(other: DpRect): DpRect {
         top = max(top, other.top),
         right = min(right, other.right),
         bottom = min(bottom, other.bottom)
-    )
-}
-
-@OptIn(ExperimentalForeignApi::class)
-internal fun CValue<CGPoint>.toDpOffset(): DpOffset = useContents { DpOffset(x.dp, y.dp) }
-
-@OptIn(ExperimentalForeignApi::class)
-internal fun CValue<CGRect>.toDpRect() = useContents {
-    DpRect(
-        left = origin.x.dp,
-        top = origin.y.dp,
-        right = origin.x.dp + size.width.dp,
-        bottom = origin.y.dp + size.height.dp,
     )
 }
 

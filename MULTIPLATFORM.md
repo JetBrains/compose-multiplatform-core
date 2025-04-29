@@ -23,7 +23,20 @@ Run tests for Web:
 
 Run tests for UIKit:
 ```bash
-./gradlew :mpp:testUIKit -PiosSimulatorName='iPhone 15'
+./gradlew :mpp:testUIKit'
+```
+
+Run iOS instrumented tests.
+Note: To ensure the test runs on an iOS simulator with a detached hardware keyboard,
+we must shut down all simulators and update the ConnectHardwareKeyboard flag.
+```bash
+xcrun simctl shutdown all
+
+defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
+
+cd compose/ui/ui/src/uikitInstrumentedTest/launcher
+
+xcodebuild test -scheme Launcher -project Launcher.xcodeproj -destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
 ### API checks
