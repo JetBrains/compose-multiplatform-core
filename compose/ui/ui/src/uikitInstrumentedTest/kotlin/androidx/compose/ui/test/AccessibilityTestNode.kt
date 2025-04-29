@@ -16,9 +16,17 @@
 
 package androidx.compose.ui.test
 
+import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitIsEditing
+import androidx.compose.ui.platform.accessibility.CMPAccessibilityTraitTextView
+import androidx.compose.ui.test.utils.DpRectZero
+import androidx.compose.ui.test.utils.intersect
+import androidx.compose.ui.test.utils.toDpRect
 import androidx.compose.ui.unit.DpRect
-import androidx.compose.ui.unit.asDpRect
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.test.fail
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UIAccessibilityElement
@@ -43,8 +51,6 @@ import platform.UIKit.UIAccessibilityTraitTabBar
 import platform.UIKit.UIAccessibilityTraitToggleButton
 import platform.UIKit.UIAccessibilityTraitUpdatesFrequently
 import platform.UIKit.UIAccessibilityTraits
-import platform.UIKit.UICollectionView
-import platform.UIKit.UITableView
 import platform.UIKit.UIView
 import platform.UIKit.accessibilityCustomActions
 import platform.UIKit.accessibilityElementAtIndex
@@ -81,17 +87,11 @@ internal fun UIKitInstrumentedTest.getAccessibilityTree(): AccessibilityTestNode
         } else {
             val count = element.accessibilityElementCount()
             if (count == NSIntegerMax) {
-                when (element) {
-                    is UITableView -> {
-                        TODO("Unused in tests. Implement correct table view traversal.")
-                    }
-
-                    is UICollectionView -> {
-                        TODO("Unused in tests. Implement correct collection view traversal.")
-                    }
-
-                    else -> {
-                        error("Unsupported element: $element of type ${element::class}")
+                when {
+                    element is UIView -> {
+                        element.subviews.mapNotNull {
+                            children.add(buildNode(it as UIView, level = level + 1))
+                        }
                     }
                 }
             } else if (count > 0) {
@@ -111,16 +111,18 @@ internal fun UIKitInstrumentedTest.getAccessibilityTree(): AccessibilityTestNode
             identifier = (element as? UIAccessibilityElement)?.accessibilityIdentifier,
             label = element.accessibilityLabel,
             value = element.accessibilityValue,
-            frame = element.accessibilityFrame.asDpRect(),
+            frame = element.accessibilityFrame.toDpRect(),
             children = children,
             traits = allAccessibilityTraits.keys.filter {
                 element.accessibilityTraits and it != 0.toULong()
             },
             element = element
-        )
+        ).also { node ->
+            children.forEach { it.parent = node }
+        }
     }
 
-    return buildNode(window, 0)
+    return buildNode(appDelegate.window!!, 0)
 }
 
 private val allAccessibilityTraits = mapOf(
@@ -143,7 +145,9 @@ private val allAccessibilityTraits = mapOf(
     UIAccessibilityTraitCausesPageTurn to "UIAccessibilityTraitCausesPageTurn",
     UIAccessibilityTraitTabBar to "UIAccessibilityTraitTabBar",
     UIAccessibilityTraitToggleButton to "UIAccessibilityTraitToggleButton",
-    UIAccessibilityTraitSupportsZoom to "UIAccessibilityTraitSupportsZoom"
+    UIAccessibilityTraitSupportsZoom to "UIAccessibilityTraitSupportsZoom",
+    CMPAccessibilityTraitTextView to "CMPAccessibilityTraitTextView",
+    CMPAccessibilityTraitIsEditing to "CMPAccessibilityTraitIsEditing",
 )
 
 /**
@@ -151,7 +155,7 @@ private val allAccessibilityTraits = mapOf(
  * within a UI hierarchy. This class captures various accessibility properties of UI components
  * and structures them into a tree.
  */
-data class AccessibilityTestNode(
+internal data class AccessibilityTestNode(
     var isAccessibilityElement: Boolean? = null,
     var identifier: String? = null,
     var label: String? = null,
@@ -159,7 +163,8 @@ data class AccessibilityTestNode(
     var frame: DpRect? = null,
     var children: List<AccessibilityTestNode>? = null,
     var traits: List<UIAccessibilityTraits>? = null,
-    var element: NSObject? = null
+    var element: NSObject? = null,
+    var parent: AccessibilityTestNode? = null,
 ) {
     fun node(builder: AccessibilityTestNode.() -> Unit) {
         children = (children ?: emptyList()) + AccessibilityTestNode().apply(builder)
@@ -266,6 +271,20 @@ internal fun AccessibilityTestNode.normalized(): AccessibilityTestNode? {
     }
 }
 
+internal fun AccessibilityTestNode.assertVisibleInContainer() {
+    var frame = this.frame ?: DpRectZero()
+    var iterator = parent
+    while (iterator != null) {
+        frame = frame.intersect(iterator.frame ?: DpRectZero())
+        iterator = iterator.parent
+    }
+
+    assertTrue(
+        frame.width >= 1.dp && frame.height >= 1.dp,
+        "Element with frame ${this.frame} is not visible or has very small size"
+    )
+}
+
 /**
  * Asserts that the current accessibility tree matches the expected structure defined in the
  * provided lambda. The expected structure is defined by configuring an `AccessibilityTestNode`,
@@ -283,17 +302,13 @@ internal fun UIKitInstrumentedTest.assertAccessibilityTree(
     assertAccessibilityTree(validator)
 }
 
-internal fun UIKitInstrumentedTest.findNode(identifier: String) = findNodeOrNull {
-    it.identifier == identifier
-} ?: fail("Unable to find node with identifier: $identifier")
+internal fun UIKitInstrumentedTest.findNodeWithTag(tag: String) = findNodeOrNull {
+    it.identifier == tag
+} ?: fail("Unable to find node with identifier: $tag")
 
 internal fun UIKitInstrumentedTest.findNodeWithLabel(label: String) = findNodeOrNull {
     it.label == label
 } ?: fail("Unable to find node with label: $label")
-
-internal fun UIKitInstrumentedTest.firstAccessibleNode() =
-    findNodeOrNull { it.isAccessibilityElement == true }
-        ?: fail("Unable to find accessibility element")
 
 internal fun UIKitInstrumentedTest.findNodeOrNull(
     isValid: (AccessibilityTestNode) -> Boolean

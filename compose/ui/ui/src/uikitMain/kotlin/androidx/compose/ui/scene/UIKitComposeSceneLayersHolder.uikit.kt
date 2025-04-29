@@ -29,7 +29,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import org.jetbrains.skia.Canvas
-import platform.UIKit.UIWindow
+import platform.UIKit.UIView
 
 /**
  * A class responsible for managing and rendering [UIKitComposeSceneLayer]s.
@@ -72,7 +72,7 @@ internal class UIKitComposeSceneLayersHolder(
         )
     }
 
-    var window: UIWindow? = null
+    var containerView: UIView? = null
         set(value) {
             if (field != value) {
                 field = value
@@ -117,6 +117,7 @@ internal class UIKitComposeSceneLayersHolder(
 
         view.updateMetalView(metalView = null)
         view.removeFromSuperview()
+        containerView = null
     }
 
     fun attach(layer: UIKitComposeSceneLayer, hasViewAppeared: Boolean) {
@@ -128,7 +129,7 @@ internal class UIKitComposeSceneLayersHolder(
         view.embedSubview(layer.view)
 
         if (isFirstLayer) {
-            window?.embedSubview(view)
+            containerView?.embedSubview(view)
         }
 
         if (hasViewAppeared) {

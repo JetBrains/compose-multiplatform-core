@@ -76,6 +76,10 @@ internal class DesktopTextInputService(private val component: PlatformComponent)
     }
 
     override fun stopInput() {
+        // We may have been "started" with startInput() (with no arguments), but it's not a real
+        // session in this case, so let's not call component.disableInput()
+        if (currentInput == null) return
+
         component.disableInput()
         currentInput = null
     }

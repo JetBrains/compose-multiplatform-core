@@ -103,6 +103,11 @@ internal class IntermediateTextInputUIView(
 
     override fun canBecomeFirstResponder() = true
 
+    override fun resignFirstResponder(): Boolean {
+        hideTextMenu()
+        return super.resignFirstResponder()
+    }
+
     override fun beginFloatingCursorAtPoint(point: CValue<CGPoint>) {
         input?.beginFloatingCursor(point.useContents { DpOffset(x.dp, y.dp) })
     }

@@ -51,23 +51,14 @@ internal class MetalView(
             ?: throw IllegalStateException("Metal is not supported on this system")
 
     private val metalLayer: CAMetalLayer get() = layer as CAMetalLayer
-    private var layerBackground: Int = Color.TRANSPARENT
-        set(value) {
-            field = value
-            val metalColor = when (value) {
-                Color.WHITE -> UIColor.whiteColor
-                Color.BLACK -> UIColor.blackColor
-                else -> UIColor.clearColor
-            }
-            metalLayer.backgroundColor = metalColor.CGColor
-        }
+    private var canvasBackground: Int = Color.TRANSPARENT
 
     val redrawer = MetalRedrawer(
         metalLayer,
         retrieveInteropTransaction,
         useSeparateRenderThreadWhenPossible
     ) { canvas, targetTimestamp ->
-        canvas.clear(layerBackground)
+        canvas.clear(canvasBackground)
         render(canvas, targetTimestamp.toNanoSeconds())
     }
 
@@ -78,7 +69,7 @@ internal class MetalView(
         get() = redrawer.canBeOpaque
         set(value) {
             redrawer.canBeOpaque = value
-            updateLayerBackgroundColor()
+            updateCanvasBackgroundColor()
         }
 
     /**
@@ -103,19 +94,20 @@ internal class MetalView(
             it.device = device as objcnames.protocols.MTLDeviceProtocol?
 
             it.pixelFormat = MTLPixelFormatBGRA8Unorm
+            it.backgroundColor = UIColor.clearColor.CGColor
             it.framebufferOnly = false
         }
 
-        updateLayerBackgroundColor()
+        updateCanvasBackgroundColor()
     }
 
     override fun traitCollectionDidChange(previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
-        updateLayerBackgroundColor()
+        updateCanvasBackgroundColor()
     }
 
-    private fun updateLayerBackgroundColor() {
-        layerBackground = if (redrawer.canBeOpaque) {
+    private fun updateCanvasBackgroundColor() {
+        canvasBackground = if (redrawer.canBeOpaque) {
             when (traitCollection.userInterfaceStyle) {
                 UIUserInterfaceStyle.UIUserInterfaceStyleDark -> Color.BLACK
                 UIUserInterfaceStyle.UIUserInterfaceStyleLight -> Color.WHITE

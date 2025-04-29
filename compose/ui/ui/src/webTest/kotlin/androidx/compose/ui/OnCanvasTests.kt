@@ -17,14 +17,23 @@
 package androidx.compose.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Recomposer
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.window.ComposeViewport
 import kotlin.test.BeforeTest
 import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestResult
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventTarget
@@ -80,8 +89,42 @@ internal interface OnCanvasTests {
     fun requestFocus() {
         getCanvas().focus()
     }
+
+    fun runApplicationTest(body: suspend WebApplicationScope.() -> Unit): TestResult {
+        return runTest {
+            WebApplicationScope(this).body()
+        }
+    }
 }
 
 internal fun <T> Channel<T>.sendFromScope(value: T, scope: CoroutineScope = MainScope()) {
     scope.launch(Dispatchers.Unconfined) { send(value) }
+}
+
+internal class WebApplicationScope(
+    private val scope: CoroutineScope,
+) : CoroutineScope by CoroutineScope(scope.coroutineContext + Job()) {
+    private val initialRecomposers = Recomposer.runningRecomposers.value
+
+    suspend fun awaitIdle() {
+        awaitWithYield()
+
+        Snapshot.sendApplyNotifications()
+
+        for (recomposerInfo in Recomposer.runningRecomposers.value - initialRecomposers) {
+            recomposerInfo.state.takeWhile { it > Recomposer.State.Idle }.collect()
+        }
+
+        awaitWithYield()
+    }
+
+}
+
+/**
+ * This is heavily inspired by (if not to say borrowed from) the desktop awaitEDT helper function
+ */
+private suspend fun awaitWithYield() {
+    repeat(100) {
+        yield()
+    }
 }

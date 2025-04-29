@@ -5,7 +5,7 @@
 // - Show manifest properties: true
 // - Show declarations: true
 
-// Library unique name: <androidx.savedstate:savedstate-compose>
+// Library unique name: <org.jetbrains.androidx.savedstate:savedstate-compose>
 final class <#A: kotlin/Any?, #B: kotlin/Any?> androidx.savedstate.compose.serialization.serializers/SnapshotStateMapSerializer : kotlinx.serialization/KSerializer<androidx.compose.runtime.snapshots/SnapshotStateMap<#A, #B>> { // androidx.savedstate.compose.serialization.serializers/SnapshotStateMapSerializer|null[0]
     constructor <init>(kotlinx.serialization/KSerializer<#A>, kotlinx.serialization/KSerializer<#B>) // androidx.savedstate.compose.serialization.serializers/SnapshotStateMapSerializer.<init>|<init>(kotlinx.serialization.KSerializer<1:0>;kotlinx.serialization.KSerializer<1:1>){}[0]
 

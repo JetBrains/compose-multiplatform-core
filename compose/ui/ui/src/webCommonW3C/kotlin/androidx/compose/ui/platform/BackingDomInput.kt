@@ -54,8 +54,14 @@ internal class BackingDomInput(
     }
 
     fun focus() {
+        // we focus twice to be sure that ios and non-ios browser both manage to focus
+        // see https://youtrack.jetbrains.com/issue/CMP-8013
+        // and https://youtrack.jetbrains.com/issue/CMP-7836/
+        backingElement.focus()
         window.requestAnimationFrame {
-            backingElement.focus()
+            if (document.activeElement != backingElement) {
+                backingElement.focus()
+            }
         }
     }
 
