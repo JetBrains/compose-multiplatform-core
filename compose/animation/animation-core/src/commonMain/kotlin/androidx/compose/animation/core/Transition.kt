@@ -702,10 +702,14 @@ public class SeekableTransitionState<S>(initialState: S) : TransitionState<S>() 
         if (previousTotalDurationNanos != totalDurationNanos) {
             val animation = currentAnimation
             if (animation != null) {
-                animation.durationNanos = totalDurationNanos
-                if (animation.animationSpec == null) {
-                    animation.animationSpecDuration =
-                        ((1.0 - animation.start[0]) * totalDurationNanos).roundToLong()
+                if (animation.progressNanos > totalDurationNanos) {
+                    endAllAnimations()
+                } else {
+                    animation.durationNanos = totalDurationNanos
+                    if (animation.animationSpec == null) {
+                        animation.animationSpecDuration =
+                            ((1.0 - animation.start[0]) * totalDurationNanos).roundToLong()
+                    }
                 }
             } else if (totalDurationNanos != 0L) {
                 // seekTo() called with a fraction. If an animation is running, we can just wait
