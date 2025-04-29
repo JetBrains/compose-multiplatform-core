@@ -51,6 +51,7 @@ import androidx.xr.runtime.internal.ResizableComponent
 import androidx.xr.runtime.internal.SoundPoolExtensionsWrapper
 import androidx.xr.runtime.internal.SpatialCapabilities
 import androidx.xr.runtime.internal.SpatialEnvironment
+import androidx.xr.runtime.internal.SpatialPointerComponent
 import androidx.xr.runtime.internal.SpatialVisibility
 import androidx.xr.runtime.internal.SubspaceNodeEntity
 import androidx.xr.runtime.internal.SurfaceEntity
@@ -258,6 +259,9 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
         stateListener: PointerCaptureComponent.StateListener,
         inputListener: InputEventListener,
     ): PointerCaptureComponent = object : PointerCaptureComponent, FakeComponent() {}
+
+    override fun createSpatialPointerComponent(): SpatialPointerComponent =
+        FakeSpatialPointerComponent()
 
     override fun createPersistedAnchorEntity(uuid: UUID, searchTimeout: Duration): AnchorEntity =
         FakeAnchorEntity()

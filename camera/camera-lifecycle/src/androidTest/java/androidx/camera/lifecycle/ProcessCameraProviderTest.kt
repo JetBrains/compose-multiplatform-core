@@ -53,6 +53,7 @@ import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
+import androidx.camera.core.internal.StreamSpecsCalculator.Companion.NO_OP_STREAM_SPECS_CALCULATOR
 import androidx.camera.core.internal.utils.ImageUtil
 import androidx.camera.testing.fakes.FakeAppConfig
 import androidx.camera.testing.fakes.FakeCamera
@@ -380,7 +381,7 @@ class ProcessCameraProviderTest(
     fun bindUseCases_withNotExistedLensFacingCamera() {
         assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_FRONT))
         val cameraFactoryProvider =
-            CameraFactory.Provider { _, _, _, _ ->
+            CameraFactory.Provider { _, _, _, _, _ ->
                 val cameraFactory = FakeCameraFactory()
                 cameraFactory.insertCamera(LENS_FACING_BACK, "0") {
                     FakeCamera("0", null, FakeCameraInfoInternal("0", 0, LENS_FACING_BACK))
@@ -596,7 +597,8 @@ class ProcessCameraProviderTest(
                             Handler(Looper.getMainLooper())
                         ),
                         null,
-                        -1L
+                        -1L,
+                        NO_OP_STREAM_SPECS_CALCULATOR
                     )
                     .availableCameraIds
                     .size
@@ -1063,7 +1065,7 @@ class ProcessCameraProviderTest(
         cameraCoordinator.addConcurrentCameraIdsAndCameraSelectors(combination0)
         cameraCoordinator.addConcurrentCameraIdsAndCameraSelectors(combination1)
         val cameraFactoryProvider =
-            CameraFactory.Provider { _, _, _, _ ->
+            CameraFactory.Provider { _, _, _, _, _ ->
                 val cameraFactory = FakeCameraFactory()
                 cameraFactory.insertCamera(LENS_FACING_BACK, "0") {
                     FakeCamera("0", null, FakeCameraInfoInternal("0", 0, LENS_FACING_BACK))

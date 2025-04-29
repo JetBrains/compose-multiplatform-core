@@ -73,6 +73,7 @@ internal class CameraSelectionOptimizer {
                         cameraAppComponent
                             .cameraBuilder()
                             .config(CameraConfig(CameraId(id)))
+                            .streamSpecsCalculator(cameraFactory.streamSpecsCalculator)
                             .build()
                             .getCameraInternal()
                             .cameraInfoInternal

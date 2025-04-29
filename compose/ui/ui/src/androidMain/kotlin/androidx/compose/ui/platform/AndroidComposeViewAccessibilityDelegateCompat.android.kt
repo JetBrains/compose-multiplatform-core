@@ -50,6 +50,7 @@ import androidx.collection.MutableObjectIntMap
 import androidx.collection.SparseArrayCompat
 import androidx.collection.intListOf
 import androidx.collection.intObjectMapOf
+import androidx.collection.mutableIntIntMapOf
 import androidx.collection.mutableIntListOf
 import androidx.collection.mutableIntObjectMapOf
 import androidx.collection.mutableIntSetOf
@@ -367,6 +368,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         SemanticsNodeCopy(view.semanticsOwner.unmergedRootSemanticsNode, intObjectMapOf())
     private var checkingForSemanticsChanges = false
 
+    // A mapping from semantics node IDs to the local drawing order (among the children of a single
+    // parent) of the corresponding layout nodes.
+    private val drawingOrder = mutableIntIntMapOf()
+
     init {
         // Remove callbacks that rely on view being attached to a window when we become detached.
         view.addOnAttachStateChangeListener(
@@ -581,6 +586,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         //   and the root of the SemanticsNode tree.
         info.isImportantForAccessibility = semanticsNode.isImportantForAccessibility()
 
+        var childDrawingOrder = 0
         semanticsNode.replacedChildren.fastForEach { child ->
             if (currentSemanticsNodes.contains(child.id)) {
                 val holder = view.androidViewsHandler.layoutNodeToHolder[child.layoutNode]
@@ -593,6 +599,9 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 } else {
                     info.addChild(view, child.id)
                 }
+                // The children are already ordered by the drawing order at this point.
+                drawingOrder.put(child.id, childDrawingOrder)
+                childDrawingOrder++
             }
         }
 
@@ -670,6 +679,21 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         semanticsNode.unmergedConfig.getOrNull(SemanticsProperties.Heading)?.let {
             info.isHeading = true
         }
+
+        // Drawing order is not applicable for the root node.
+        if (virtualViewId != AccessibilityNodeProviderCompat.HOST_VIEW_ID) {
+            val drawingOrderForNode = drawingOrder.getOrDefault(semanticsNode.id, -1)
+            if (drawingOrderForNode != -1) {
+                info.drawingOrder = drawingOrderForNode
+            } else {
+                Log.w(
+                    LogTag,
+                    "Drawing order is not available, was AccessibilityNodeInfo requested " +
+                        "for a child node before its parent?"
+                )
+            }
+        }
+
         info.isPassword = semanticsNode.unmergedConfig.contains(SemanticsProperties.Password)
         info.isEditable = semanticsNode.unmergedConfig.contains(SemanticsProperties.IsEditable)
         info.maxTextLength =

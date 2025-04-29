@@ -136,10 +136,8 @@ package androidx.compose.ui {
     property public boolean isAdaptiveRefreshRateEnabled;
     property public boolean isClearFocusOnResetEnabled;
     property public boolean isFocusActionExitsTouchModeEnabled;
-    property public boolean isHitPathTrackerLoggingEnabled;
     property public boolean isNoPinningInFocusRestorationEnabled;
     property public boolean isOutOfFrameDeactivationEnabled;
-    property public boolean isPointerInteropFilterDispatchingFixEnabled;
     property public boolean isRectTrackingEnabled;
     property public boolean isRemoveFocusedViewFixEnabled;
     property public boolean isSemanticAutofillEnabled;
@@ -150,10 +148,8 @@ package androidx.compose.ui {
     field public static boolean isAdaptiveRefreshRateEnabled;
     field public static boolean isClearFocusOnResetEnabled;
     field public static boolean isFocusActionExitsTouchModeEnabled;
-    field public static boolean isHitPathTrackerLoggingEnabled;
     field public static boolean isNoPinningInFocusRestorationEnabled;
     field public static boolean isOutOfFrameDeactivationEnabled;
-    field public static boolean isPointerInteropFilterDispatchingFixEnabled;
     field public static boolean isRectTrackingEnabled;
     field public static boolean isRemoveFocusedViewFixEnabled;
     field public static boolean isSemanticAutofillEnabled;
@@ -2322,7 +2318,7 @@ package androidx.compose.ui.input.pointer {
 
 package androidx.compose.ui.input.pointer.util {
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="This an opt-in flag to test the Velocity Tracker strategy algorithm used " + "for calculating gesture velocities in Compose.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalVelocityTrackerApi {
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This an opt-in flag to test the Velocity Tracker strategy algorithm used for calculating gesture velocities in Compose.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalVelocityTrackerApi {
   }
 
   public final class VelocityTracker {
@@ -2514,10 +2510,6 @@ package androidx.compose.ui.layout {
     property @androidx.compose.runtime.Stable public androidx.compose.ui.layout.FixedScale None;
   }
 
-  public interface DerivedRuler {
-    method public float calculate(androidx.compose.ui.layout.Placeable.PlacementScope, float defaultValue);
-  }
-
   public final class DisplayCutoutInsetsRulers implements androidx.compose.ui.layout.RectRulers {
     method public java.util.List<androidx.compose.ui.layout.RectRulers> cutoutInsets(androidx.compose.ui.layout.Placeable.PlacementScope placementScope);
     method public java.util.List<androidx.compose.ui.layout.RectRulers> cutoutInsets(androidx.compose.ui.node.DelegatableNode node);
@@ -2551,8 +2543,15 @@ package androidx.compose.ui.layout {
     ctor public HorizontalAlignmentLine(kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Integer,java.lang.Integer> merger);
   }
 
-  public class HorizontalRuler extends androidx.compose.ui.layout.Ruler {
+  public final class HorizontalRuler extends androidx.compose.ui.layout.Ruler {
     ctor public HorizontalRuler();
+    field public static final androidx.compose.ui.layout.HorizontalRuler.Companion Companion;
+  }
+
+  public static final class HorizontalRuler.Companion {
+    method public androidx.compose.ui.layout.HorizontalRuler derived(kotlin.jvm.functions.Function2<? super androidx.compose.ui.layout.Placeable.PlacementScope,? super java.lang.Float,java.lang.Float> calculation);
+    method public androidx.compose.ui.layout.HorizontalRuler maxOf(androidx.compose.ui.layout.HorizontalRuler... rulers);
+    method public androidx.compose.ui.layout.HorizontalRuler minOf(androidx.compose.ui.layout.HorizontalRuler... rulers);
   }
 
   public final class InnerInsetsRulers implements androidx.compose.ui.layout.BasicAnimatableInsetsRulers {
@@ -2572,18 +2571,6 @@ package androidx.compose.ui.layout {
     property public androidx.compose.ui.layout.RectRulers[] rulers;
     property public androidx.compose.ui.layout.RectRulers source;
     property public androidx.compose.ui.layout.RectRulers target;
-    property public androidx.compose.ui.layout.HorizontalRuler top;
-  }
-
-  public final class InnerRectRulers implements androidx.compose.ui.layout.RectRulers {
-    ctor public InnerRectRulers(androidx.compose.ui.layout.RectRulers... rulers);
-    method public androidx.compose.ui.layout.HorizontalRuler getBottom();
-    method public androidx.compose.ui.layout.VerticalRuler getLeft();
-    method public androidx.compose.ui.layout.VerticalRuler getRight();
-    method public androidx.compose.ui.layout.HorizontalRuler getTop();
-    property public androidx.compose.ui.layout.HorizontalRuler bottom;
-    property public androidx.compose.ui.layout.VerticalRuler left;
-    property public androidx.compose.ui.layout.VerticalRuler right;
     property public androidx.compose.ui.layout.HorizontalRuler top;
   }
 
@@ -2788,16 +2775,6 @@ package androidx.compose.ui.layout {
     property public default Object? parentData;
   }
 
-  public final class MergedHorizontalRuler extends androidx.compose.ui.layout.HorizontalRuler implements androidx.compose.ui.layout.DerivedRuler {
-    ctor public MergedHorizontalRuler(boolean shouldUseGreater, androidx.compose.ui.layout.HorizontalRuler... rulers);
-    method public float calculate(androidx.compose.ui.layout.Placeable.PlacementScope, float defaultValue);
-  }
-
-  public final class MergedVerticalRuler extends androidx.compose.ui.layout.VerticalRuler implements androidx.compose.ui.layout.DerivedRuler {
-    ctor public MergedVerticalRuler(boolean shouldUseGreater, androidx.compose.ui.layout.VerticalRuler... rulers);
-    method public float calculate(androidx.compose.ui.layout.Placeable.PlacementScope, float defaultValue);
-  }
-
   public final class ModifierInfo {
     ctor public ModifierInfo(androidx.compose.ui.Modifier modifier, androidx.compose.ui.layout.LayoutCoordinates coordinates, optional Object? extra);
     method public androidx.compose.ui.layout.LayoutCoordinates getCoordinates();
@@ -2851,18 +2828,6 @@ package androidx.compose.ui.layout {
 
   public final class OnRemeasuredModifierKt {
     method @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier onSizeChanged(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.ui.unit.IntSize,kotlin.Unit> onSizeChanged);
-  }
-
-  public final class OuterRectRulers implements androidx.compose.ui.layout.RectRulers {
-    ctor public OuterRectRulers(androidx.compose.ui.layout.RectRulers... rulers);
-    method public androidx.compose.ui.layout.HorizontalRuler getBottom();
-    method public androidx.compose.ui.layout.VerticalRuler getLeft();
-    method public androidx.compose.ui.layout.VerticalRuler getRight();
-    method public androidx.compose.ui.layout.HorizontalRuler getTop();
-    property public androidx.compose.ui.layout.HorizontalRuler bottom;
-    property public androidx.compose.ui.layout.VerticalRuler left;
-    property public androidx.compose.ui.layout.VerticalRuler right;
-    property public androidx.compose.ui.layout.HorizontalRuler top;
   }
 
   @kotlin.jvm.JvmDefaultWithCompatibility public interface ParentDataModifier extends androidx.compose.ui.Modifier.Element {
@@ -2944,10 +2909,16 @@ package androidx.compose.ui.layout {
     property public abstract androidx.compose.ui.layout.VerticalRuler left;
     property public abstract androidx.compose.ui.layout.VerticalRuler right;
     property public abstract androidx.compose.ui.layout.HorizontalRuler top;
+    field public static final androidx.compose.ui.layout.RectRulers.Companion Companion;
+  }
+
+  public static final class RectRulers.Companion {
   }
 
   public final class RectRulersKt {
-    method public static androidx.compose.ui.layout.RectRulers RectRulers(optional String? name);
+    method public static androidx.compose.ui.layout.RectRulers RectRulers();
+    method public static androidx.compose.ui.layout.RectRulers innermostOf(androidx.compose.ui.layout.RectRulers.Companion, androidx.compose.ui.layout.RectRulers... rulers);
+    method public static androidx.compose.ui.layout.RectRulers outermostOf(androidx.compose.ui.layout.RectRulers.Companion, androidx.compose.ui.layout.RectRulers... rulers);
   }
 
   public interface Remeasurement {
@@ -3063,8 +3034,15 @@ package androidx.compose.ui.layout {
     ctor public VerticalAlignmentLine(kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Integer,java.lang.Integer> merger);
   }
 
-  public class VerticalRuler extends androidx.compose.ui.layout.Ruler {
+  public final class VerticalRuler extends androidx.compose.ui.layout.Ruler {
     ctor public VerticalRuler();
+    field public static final androidx.compose.ui.layout.VerticalRuler.Companion Companion;
+  }
+
+  public static final class VerticalRuler.Companion {
+    method public androidx.compose.ui.layout.VerticalRuler derived(kotlin.jvm.functions.Function2<? super androidx.compose.ui.layout.Placeable.PlacementScope,? super java.lang.Float,java.lang.Float> calculation);
+    method public androidx.compose.ui.layout.VerticalRuler maxOf(androidx.compose.ui.layout.VerticalRuler... rulers);
+    method public androidx.compose.ui.layout.VerticalRuler minOf(androidx.compose.ui.layout.VerticalRuler... rulers);
   }
 
 }
@@ -3450,13 +3428,13 @@ package androidx.compose.ui.platform {
     method public static androidx.compose.runtime.ProvidableCompositionLocal<android.content.Context> getLocalContext();
     method @Deprecated public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.lifecycle.LifecycleOwner> getLocalLifecycleOwner();
     method public static androidx.compose.runtime.ProvidableCompositionLocal<android.content.res.Resources> getLocalResources();
-    method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.savedstate.SavedStateRegistryOwner> getLocalSavedStateRegistryOwner();
+    method @Deprecated public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.savedstate.SavedStateRegistryOwner> getLocalSavedStateRegistryOwner();
     method public static androidx.compose.runtime.ProvidableCompositionLocal<android.view.View> getLocalView();
     property public static androidx.compose.runtime.ProvidableCompositionLocal<android.content.res.Configuration> LocalConfiguration;
     property public static androidx.compose.runtime.ProvidableCompositionLocal<android.content.Context> LocalContext;
     property @Deprecated public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.lifecycle.LifecycleOwner> LocalLifecycleOwner;
     property public static androidx.compose.runtime.ProvidableCompositionLocal<android.content.res.Resources> LocalResources;
-    property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.savedstate.SavedStateRegistryOwner> LocalSavedStateRegistryOwner;
+    property @Deprecated public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.savedstate.SavedStateRegistryOwner> LocalSavedStateRegistryOwner;
     property public static androidx.compose.runtime.ProvidableCompositionLocal<android.view.View> LocalView;
   }
 

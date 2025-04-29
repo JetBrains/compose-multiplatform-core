@@ -557,7 +557,7 @@ private class LookaheadCapablePlacementScope(private val within: LookaheadCapabl
         }
 
     override fun Ruler.current(defaultValue: Float): Float =
-        if (this is DerivedRuler) {
+        if (calculate !== null) {
             calculate(defaultValue)
         } else {
             within.findRulerValue(this, defaultValue)

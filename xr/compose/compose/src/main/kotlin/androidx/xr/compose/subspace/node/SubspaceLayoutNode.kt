@@ -99,6 +99,8 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
     internal var density: Density = DefaultDensity
         private set
 
+    private var ignoreRelayoutRequests = false
+
     /**
      * This function sets up CoreEntity parent/child relationships that reflect the parent/child
      * relationships of the corresponding SubspaceLayoutNodes. This should be called any time the
@@ -222,15 +224,24 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         }
 
         nodes.runOnDetach()
-        children.forEach { child -> child.detach() }
+        ignoreRelayoutRequests { children.forEach { child -> child.detach() } }
         nodes.markAsDetached()
 
         owner.onDetach(this)
         this.owner = null
     }
 
+    private inline fun <T> ignoreRelayoutRequests(block: () -> T): T {
+        ignoreRelayoutRequests = true
+        val result = block()
+        ignoreRelayoutRequests = false
+        return result
+    }
+
     internal fun requestRelayout() {
-        owner?.requestRelayout()
+        if (!ignoreRelayoutRequests) {
+            owner?.requestRelayout()
+        }
     }
 
     override fun toString(): String {

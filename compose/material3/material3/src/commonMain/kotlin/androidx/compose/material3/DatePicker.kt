@@ -55,6 +55,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.DatePickerStateImpl.Companion.Saver
 import androidx.compose.material3.OutlinedTextFieldDefaults.defaultOutlinedTextFieldColors
 import androidx.compose.material3.internal.CalendarModel
 import androidx.compose.material3.internal.CalendarMonth
@@ -91,6 +92,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.takeOrElse
@@ -152,8 +154,9 @@ import kotlinx.coroutines.launch
  * @param headline the headline to be displayed in the date picker
  * @param showModeToggle indicates if this DatePicker should show a mode toggle action that
  *   transforms it into a date input
- * @param requestFocus have a focus request be sent to the text field when the date picker is in an
- *   input mode
+ * @param focusRequester a focus requester that will be used to focus the text field when the date
+ *   picker is in an input mode. Pass `null` to not focus the text field if that's the desired
+ *   behavior.
  */
 @ExperimentalMaterial3Api
 @Composable
@@ -179,7 +182,7 @@ fun DatePicker(
         )
     },
     showModeToggle: Boolean = true,
-    requestFocus: Boolean = true
+    focusRequester: FocusRequester? = remember { FocusRequester() }
 ) {
     val calendarModel =
         remember(state.locale) {
@@ -223,7 +226,7 @@ fun DatePicker(
             dateFormatter = dateFormatter,
             selectableDates = state.selectableDates,
             colors = colors,
-            requestFocus = requestFocus
+            focusRequester = focusRequester
         )
     }
 }
@@ -255,17 +258,19 @@ fun DatePicker(
  * @param state state of the date picker. See [rememberDatePickerState].
  * @param modifier the [Modifier] to be applied to this date picker
  * @param dateFormatter a [DatePickerFormatter] that provides formatting skeletons for dates display
+ * @param colors [DatePickerColors] that will be used to resolve the colors used for this date
+ *   picker in different states. See [DatePickerDefaults.colors].
  * @param title the title to be displayed in the date picker
  * @param headline the headline to be displayed in the date picker
  * @param showModeToggle indicates if this DatePicker should show a mode toggle action that
  *   transforms it into a date input
- * @param colors [DatePickerColors] that will be used to resolve the colors used for this date
- *   picker in different states. See [DatePickerDefaults.colors].
+ * @param requestFocus have a focus request be sent to the text field when the date picker is in an
+ *   input mode
  */
 @Deprecated(
     message =
-        "Maintained for binary compatibility. Use the DatePicker with the different" +
-            " order of parameters.",
+        "Maintained for binary compatibility. Use the DatePicker with the focusRequester " +
+            "parameter.",
     level = DeprecationLevel.HIDDEN
 )
 @ExperimentalMaterial3Api
@@ -274,10 +279,12 @@ fun DatePicker(
     state: DatePickerState,
     modifier: Modifier = Modifier,
     dateFormatter: DatePickerFormatter = remember { DatePickerDefaults.dateFormatter() },
+    colors: DatePickerColors = DatePickerDefaults.colors(),
     title: (@Composable () -> Unit)? = {
         DatePickerDefaults.DatePickerTitle(
             displayMode = state.displayMode,
-            modifier = Modifier.padding(DatePickerTitlePadding)
+            modifier = Modifier.padding(DatePickerTitlePadding),
+            contentColor = colors.titleContentColor
         )
     },
     headline: (@Composable () -> Unit)? = {
@@ -285,12 +292,23 @@ fun DatePicker(
             selectedDateMillis = state.selectedDateMillis,
             displayMode = state.displayMode,
             dateFormatter = dateFormatter,
-            modifier = Modifier.padding(DatePickerHeadlinePadding)
+            modifier = Modifier.padding(DatePickerHeadlinePadding),
+            contentColor = colors.headlineContentColor
         )
     },
     showModeToggle: Boolean = true,
-    colors: DatePickerColors = DatePickerDefaults.colors()
-) = DatePicker(state, modifier, dateFormatter, colors, title, headline, showModeToggle)
+    requestFocus: Boolean = true
+) =
+    DatePicker(
+        state = state,
+        modifier = modifier,
+        dateFormatter = dateFormatter,
+        colors = colors,
+        title = title,
+        headline = headline,
+        showModeToggle = showModeToggle,
+        focusRequester = if (requestFocus) remember { FocusRequester() } else null
+    )
 
 /**
  * A state object that can be hoisted to observe the date picker state. See
@@ -1560,7 +1578,7 @@ private fun SwitchableDateEntryContent(
     dateFormatter: DatePickerFormatter,
     selectableDates: SelectableDates,
     colors: DatePickerColors,
-    requestFocus: Boolean
+    focusRequester: FocusRequester?
 ) {
     // Parallax effect offset that will slightly scroll in and out the navigation part of the picker
     // when the display mode changes.
@@ -1638,7 +1656,7 @@ private fun SwitchableDateEntryContent(
                     dateFormatter = dateFormatter,
                     selectableDates = selectableDates,
                     colors = colors,
-                    requestFocus = requestFocus
+                    focusRequester = focusRequester
                 )
         }
     }

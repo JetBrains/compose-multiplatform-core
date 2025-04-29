@@ -396,7 +396,8 @@ object BottomSheetDefaults {
 
     /** Default insets to be used and consumed by the [ModalBottomSheet]'s content. */
     val windowInsets: WindowInsets
-        @Composable get() = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)
+        @Composable
+        get() = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Top)
 
     internal val PositionalThreshold = 56.dp
 

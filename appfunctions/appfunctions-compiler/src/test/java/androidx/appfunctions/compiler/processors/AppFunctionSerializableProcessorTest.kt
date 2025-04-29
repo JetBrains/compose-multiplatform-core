@@ -289,4 +289,18 @@ class AppFunctionSerializableProcessorTest {
             goldenFileName = "${'$'}UpdateNoteParamsFactory.KT"
         )
     }
+
+    @Test
+    fun testProcessor_serializableWithEmptyConstructor_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("FunctionWithEmptySerializable.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}EmptyFactory.kt",
+            goldenFileName = "${'$'}EmptyFactory.KT"
+        )
+    }
 }

@@ -636,8 +636,11 @@ internal abstract class NodeCoordinator(
     }
 
     fun onDetach() {
-        layer?.destroy()
-        layer = null
+        layer?.let {
+            it.destroy()
+            invalidateParentLayer()
+            layer = null
+        }
     }
 
     /**

@@ -58,7 +58,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
@@ -338,19 +337,19 @@ class SpatialComposeAppActivity : ComponentActivity() {
     @SuppressLint("SetTextI18n")
     @Composable
     fun ViewBasedAppPanel(modifier: SubspaceModifier = SubspaceModifier, text: String = "") {
-        val context = LocalContext.current
-        val textView = remember {
-            TextView(context).apply {
-                setPadding(16, 16, 16, 16)
-                setText(text)
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
-                setBackgroundColor(LTGRAY)
-                setTextColor(BLACK)
-                setGravity(Gravity.CENTER)
-            }
-        }
-
-        SpatialPanel(view = textView, modifier = modifier)
+        SpatialPanel(
+            factory = { context ->
+                TextView(context).apply {
+                    setPadding(16, 16, 16, 16)
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+                    setBackgroundColor(LTGRAY)
+                    setTextColor(BLACK)
+                    gravity = Gravity.CENTER
+                }
+            },
+            update = { it.text = text },
+            modifier = modifier,
+        )
     }
 
     @SubspaceComposable

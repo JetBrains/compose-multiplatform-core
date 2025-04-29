@@ -21,7 +21,6 @@ import android.os.CancellationSignal
 import androidx.credentials.CreatePublicKeyCredentialRequest
 import androidx.credentials.CreatePublicKeyCredentialResponse
 import androidx.credentials.CredentialManagerCallback
-import androidx.credentials.PublicKeyCredential
 import androidx.credentials.exceptions.CreateCredentialCancellationException
 import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.CreateCredentialInterruptedException
@@ -72,23 +71,16 @@ internal class CreatePublicKeyCredentialController(private val context: Context)
                     }
                 }
                 if (createCredentialResponse != null) {
-                    try {
-                        val response =
-                            this.convertResponseToCredentialManager(createCredentialResponse)
+                    val response = this.convertResponseToCredentialManager(createCredentialResponse)
+                    if (response is CreatePublicKeyCredentialResponse) {
                         cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                            executor.execute { callback.onResult(response) }
+                            executor.execute { callback.onResult(result = response) }
                         }
-                    } catch (e: Exception) {
-                        cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                            if (e is CreateCredentialException) {
-                                executor.execute { callback.onError(e) }
-                            } else {
-                                executor.execute {
-                                    callback.onError(CreateCredentialUnknownException(e.message))
-                                }
-                            }
-                        }
+                        return@addOnSuccessListener
                     }
+                }
+                cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                    executor.execute { callback.onError(CreateCredentialUnknownException()) }
                 }
             }
             .addOnFailureListener { e ->
@@ -135,23 +127,10 @@ internal class CreatePublicKeyCredentialController(private val context: Context)
     override fun convertResponseToCredentialManager(
         response: CreateCredentialResponse
     ): androidx.credentials.CreateCredentialResponse {
-        when (response.type) {
-            PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL -> {
-                // TODO(359049355): Replace with
-                // CreatePublicKeyCredentialResponse.createFrom(response.data) after
-                // making this API public
-                try {
-                    val registrationResponseJson =
-                        response.data.getString(
-                            "androidx.credentials.BUNDLE_KEY_REGISTRATION_RESPONSE_JSON"
-                        )
-                    return CreatePublicKeyCredentialResponse(registrationResponseJson!!)
-                } catch (_: NullPointerException) {
-                    throw CreateCredentialUnknownException()
-                }
-            }
-            else -> throw CreateCredentialUnknownException()
-        }
+        return androidx.credentials.CreateCredentialResponse.createFrom(
+            response.type,
+            response.data
+        )
     }
 
     companion object {

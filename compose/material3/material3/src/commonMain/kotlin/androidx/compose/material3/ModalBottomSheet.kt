@@ -29,8 +29,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -59,7 +59,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.collapse
@@ -111,8 +110,10 @@ import kotlinx.coroutines.launch
  *   darker color in light theme and lighter color in dark theme. See also: [Surface].
  * @param scrimColor Color of the scrim that obscures content when the bottom sheet is open.
  * @param dragHandle Optional visual marker to swipe the bottom sheet.
- * @param contentWindowInsets window insets to be passed to the bottom sheet content via
- *   [PaddingValues] params.
+ * @param contentWindowInsets callback which provides window insets to be passed to the bottom sheet
+ *   content via [Modifier.windowInsetsPadding]. [ModalBottomSheet] will pre-emptively consume top
+ *   insets based on it's current offset. This keeps content outside of the expected window insets
+ *   at any position.
  * @param properties [ModalBottomSheetProperties] for further customization of this modal bottom
  *   sheet's window behavior.
  * @param content The content to be displayed inside the bottom sheet.
@@ -333,6 +334,7 @@ internal fun BoxScope.ModalBottomSheetContent(
                     paneTitle = bottomSheetPaneTitle
                     traversalIndex = 0f
                 }
+                .consumeWindowInsets(WindowInsets(top = sheetState.offset.toInt().coerceAtLeast(0)))
                 .graphicsLayer {
                     val sheetOffset = sheetState.anchoredDraggableState.offset
                     val sheetHeight = size.height
@@ -531,11 +533,6 @@ internal expect fun ModalBottomSheetDialog(
     predictiveBackProgress: Animatable<Float, AnimationVector1D>,
     content: @Composable () -> Unit
 )
-
-/** Determines if a color should be considered light or dark. */
-internal fun Color.isDark(): Boolean {
-    return this != Color.Transparent && luminance() <= 0.5
-}
 
 private val PredictiveBackMaxScaleXDistance = 48.dp
 private val PredictiveBackMaxScaleYDistance = 24.dp

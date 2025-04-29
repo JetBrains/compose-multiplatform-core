@@ -36,6 +36,7 @@ import androidx.camera.core.concurrent.CameraCoordinator
 import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.CameraThreadConfig
+import androidx.camera.core.internal.StreamSpecsCalculator
 
 /**
  * The [CameraFactoryAdapter] is responsible for creating the root dagger component that is used to
@@ -47,6 +48,7 @@ internal class CameraFactoryAdapter(
     threadConfig: CameraThreadConfig,
     camera2InteropCallbacks: CameraInteropStateCallbackRepository,
     availableCamerasSelector: CameraSelector?,
+    private val streamSpecsCalculator: StreamSpecsCalculator
 ) : CameraFactory {
     private val cameraCoordinator: CameraCoordinatorAdapter =
         CameraCoordinatorAdapter(
@@ -98,6 +100,7 @@ internal class CameraFactoryAdapter(
             appComponent
                 .cameraBuilder()
                 .config(CameraConfig(CameraId(cameraId)))
+                .streamSpecsCalculator(streamSpecsCalculator)
                 .build()
                 .getCameraInternal()
         cameraCoordinator.registerCamera(cameraId, cameraInternal)
@@ -112,4 +115,6 @@ internal class CameraFactoryAdapter(
 
     /** This is an implementation specific object that is specific to the integration package */
     override fun getCameraManager(): Any = appComponent
+
+    override fun getStreamSpecsCalculator(): StreamSpecsCalculator = streamSpecsCalculator
 }

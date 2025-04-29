@@ -32,6 +32,7 @@ import android.view.accessibility.AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CH
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -1985,6 +1986,106 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                         isPassword = true
                     }
                 )
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 24)
+    fun drawingOrder_defaultOrder() {
+        // Arrange.
+        rule.setContentWithAccessibilityEnabled {
+            Column(
+                Modifier.semantics {
+                    testTag = "container"
+                    text = AnnotatedString("container")
+                }
+            ) {
+                Box(
+                    Modifier.size(10.dp).semantics {
+                        testTag = "item0"
+                        text = AnnotatedString("item0")
+                    }
+                )
+                Box(
+                    Modifier.size(10.dp).semantics {
+                        testTag = "item1"
+                        text = AnnotatedString("item1")
+                    }
+                )
+                Box(
+                    Modifier.size(10.dp).semantics {
+                        testTag = "item2"
+                        text = AnnotatedString("item2")
+                    }
+                )
+            }
+        }
+        val containerId = rule.onNodeWithTag("container").semanticsId()
+        val item0Id = rule.onNodeWithTag("item0").semanticsId()
+        val item1Id = rule.onNodeWithTag("item1").semanticsId()
+        val item2Id = rule.onNodeWithTag("item2").semanticsId()
+
+        // Act.
+        rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(containerId) }
+        val info0 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item0Id) }
+        val info1 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item1Id) }
+        val info2 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item2Id) }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(info0.drawingOrder).isEqualTo(0)
+            assertThat(info1.drawingOrder).isEqualTo(1)
+            assertThat(info2.drawingOrder).isEqualTo(2)
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 24)
+    fun drawingOrder_customZIndex() {
+        // Arrange.
+        rule.setContentWithAccessibilityEnabled {
+            Column(
+                Modifier.semantics {
+                    testTag = "container"
+                    text = AnnotatedString("container")
+                }
+            ) {
+                Box(
+                    Modifier.zIndex(100f).size(10.dp).semantics {
+                        testTag = "item0"
+                        text = AnnotatedString("item0")
+                    }
+                )
+                Box(
+                    Modifier.size(10.dp).semantics {
+                        testTag = "item1"
+                        text = AnnotatedString("item1")
+                    }
+                )
+                Box(
+                    Modifier.size(10.dp).semantics {
+                        testTag = "item2"
+                        text = AnnotatedString("item2")
+                    }
+                )
+            }
+        }
+        val containerId = rule.onNodeWithTag("container").semanticsId()
+        val item0Id = rule.onNodeWithTag("item0").semanticsId()
+        val item1Id = rule.onNodeWithTag("item1").semanticsId()
+        val item2Id = rule.onNodeWithTag("item2").semanticsId()
+
+        // Act.
+        rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(containerId) }
+        val info0 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item0Id) }
+        val info1 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item1Id) }
+        val info2 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item2Id) }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(info0.drawingOrder).isEqualTo(2)
+            assertThat(info1.drawingOrder).isEqualTo(0)
+            assertThat(info2.drawingOrder).isEqualTo(1)
         }
     }
 

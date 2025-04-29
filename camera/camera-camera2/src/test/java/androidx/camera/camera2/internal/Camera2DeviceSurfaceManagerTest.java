@@ -335,7 +335,8 @@ public final class Camera2DeviceSurfaceManagerTest {
         CameraXConfig.Builder appConfigBuilder =
                 new CameraXConfig.Builder()
                         .setCameraFactoryProvider(
-                                (ignored0, ignored1, ignored2, ignored3) -> mCameraFactory)
+                                (ignored0, ignored1, ignored2,
+                                        ignored3, ignored4) -> mCameraFactory)
                         .setDeviceSurfaceManagerProvider(surfaceManagerProvider)
                         .setUseCaseConfigFactoryProvider(factoryProvider);
 

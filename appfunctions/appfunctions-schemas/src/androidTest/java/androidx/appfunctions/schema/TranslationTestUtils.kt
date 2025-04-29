@@ -16,6 +16,7 @@
 
 package androidx.appfunctions.schema
 
+import android.app.PendingIntent
 import android.app.appfunctions.ExecuteAppFunctionResponse.PROPERTY_RETURN_VALUE
 import android.os.Bundle
 import androidx.annotation.RequiresApi
@@ -50,6 +51,48 @@ internal class TranslatorTestUtils(private val translator: Translator) {
         assertThat(upgradedParams).isEqualTo(expectedJetpackOutput)
     }
 
+    internal fun assertUpgradeRequestTranslation(
+        legacyParameterName: String,
+        legacyInput: List<String>,
+        expectedJetpackOutput: Any
+    ) {
+        val legacyGenericDocument =
+            GenericDocument.Builder<GenericDocument.Builder<*>>("", "", "")
+                .setPropertyString(legacyParameterName, *legacyInput.toTypedArray())
+                .build()
+        val legacyData =
+            AppFunctionData(
+                genericDocument = legacyGenericDocument.toPlatformGenericDocument(),
+                extras = Bundle.EMPTY
+            )
+        val upgradedRequest = translator.upgradeRequest(legacyData)
+        val upgradedParams =
+            checkNotNull(upgradedRequest.getAppFunctionData(JETPACK_PARAMETERS_NAME))
+                .deserialize(expectedJetpackOutput::class.java)
+        assertThat(upgradedParams).isEqualTo(expectedJetpackOutput)
+    }
+
+    internal fun assertUpgradeRequestTranslation(
+        legacyParameterName: String,
+        legacyInput: String,
+        expectedJetpackOutput: Any
+    ) {
+        val legacyGenericDocument =
+            GenericDocument.Builder<GenericDocument.Builder<*>>("", "", "")
+                .setPropertyString(legacyParameterName, legacyInput)
+                .build()
+        val legacyData =
+            AppFunctionData(
+                genericDocument = legacyGenericDocument.toPlatformGenericDocument(),
+                extras = Bundle.EMPTY
+            )
+        val upgradedRequest = translator.upgradeRequest(legacyData)
+        val upgradedParams =
+            checkNotNull(upgradedRequest.getAppFunctionData(JETPACK_PARAMETERS_NAME))
+                .deserialize(expectedJetpackOutput::class.java)
+        assertThat(upgradedParams).isEqualTo(expectedJetpackOutput)
+    }
+
     internal fun assertDowngradeResponseTranslation(jetpackInput: Any, expectedLegacyOutput: Any) {
         val jetpackData =
             AppFunctionData.Builder(
@@ -67,6 +110,24 @@ internal class TranslatorTestUtils(private val translator: Translator) {
                 .genericDocument
                 .toJetpackGenericDocument()
                 .toDocumentClass(expectedLegacyOutput::class.java)
+        assertThat(downgradedResponse).isEqualTo(expectedLegacyOutput)
+    }
+
+    internal fun assertDowngradeResponseTranslation(
+        jetpackInput: Any,
+        expectedLegacyOutput: PendingIntent
+    ) {
+        val jetpackData =
+            AppFunctionData.Builder(
+                    qualifiedName = "",
+                )
+                .setAppFunctionData(
+                    PROPERTY_RETURN_VALUE,
+                    AppFunctionData.serialize(jetpackInput, jetpackInput.javaClass)
+                )
+                .build()
+        val downgradedResponse =
+            translator.downgradeResponse(jetpackData).getPendingIntent(PROPERTY_RETURN_VALUE)
         assertThat(downgradedResponse).isEqualTo(expectedLegacyOutput)
     }
 
@@ -106,6 +167,22 @@ internal class TranslatorTestUtils(private val translator: Translator) {
                 genericDocument = legacyGenericDocument.toPlatformGenericDocument(),
                 extras = Bundle.EMPTY
             )
+        val upgradedResponse =
+            translator
+                .upgradeResponse(legacyData)
+                .getAppFunctionData(PROPERTY_RETURN_VALUE)!!
+                .deserialize(expectedJetpackOutput::class.java)
+        assertThat(upgradedResponse).isEqualTo(expectedJetpackOutput)
+    }
+
+    internal fun assertUpgradeResponseTranslation(
+        legacyInput: PendingIntent,
+        expectedJetpackOutput: Any
+    ) {
+        val legacyData =
+            AppFunctionData.Builder(qualifiedName = "")
+                .setPendingIntent(PROPERTY_RETURN_VALUE, legacyInput)
+                .build()
         val upgradedResponse =
             translator
                 .upgradeResponse(legacyData)
@@ -157,6 +234,40 @@ internal class TranslatorTestUtils(private val translator: Translator) {
                 .genericDocument
                 .toJetpackGenericDocument()
                 .toDocumentClass(expectedLegacyOutput::class.java)
+        assertThat(downgradedParams).isEqualTo(expectedLegacyOutput)
+    }
+
+    internal fun assertDowngradeRequestTranslation(
+        legacyParameterName: String,
+        jetpackInput: Any,
+        expectedLegacyOutput: String
+    ) {
+        val jetpackData =
+            AppFunctionData.Builder(qualifiedName = "")
+                .setAppFunctionData(
+                    JETPACK_PARAMETERS_NAME,
+                    AppFunctionData.serialize(jetpackInput, jetpackInput.javaClass)
+                )
+                .build()
+        val downgradedParams =
+            translator.downgradeRequest(jetpackData).getString(legacyParameterName)
+        assertThat(downgradedParams).isEqualTo(expectedLegacyOutput)
+    }
+
+    internal fun assertDowngradeRequestTranslation(
+        legacyParameterName: String,
+        jetpackInput: Any,
+        expectedLegacyOutput: List<String>
+    ) {
+        val jetpackData =
+            AppFunctionData.Builder(qualifiedName = "")
+                .setAppFunctionData(
+                    JETPACK_PARAMETERS_NAME,
+                    AppFunctionData.serialize(jetpackInput, jetpackInput.javaClass)
+                )
+                .build()
+        val downgradedParams =
+            translator.downgradeRequest(jetpackData).getStringList(legacyParameterName)
         assertThat(downgradedParams).isEqualTo(expectedLegacyOutput)
     }
 

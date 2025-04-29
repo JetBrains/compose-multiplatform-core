@@ -30,7 +30,7 @@ public class RecordingSession(
 ) {
     public data class Defaults(
         val context: Context,
-        val recorder: Recorder,
+        val recorder: Recorder? = null,
         val outputOptionsProvider: () -> OutputOptions,
         val withAudio: Boolean = true,
         val recordingStopStrategy: (androidx.camera.video.Recording, Recorder) -> Unit =
@@ -47,7 +47,7 @@ public class RecordingSession(
 
     public fun createRecording(
         context: Context = defaults.context,
-        recorder: Recorder = defaults.recorder,
+        recorder: Recorder = defaults.recorder!!,
         outputOptions: OutputOptions = defaults.outputOptionsProvider.invoke(),
         withAudio: Boolean = defaults.withAudio,
         initialAudioMuted: Boolean = false,

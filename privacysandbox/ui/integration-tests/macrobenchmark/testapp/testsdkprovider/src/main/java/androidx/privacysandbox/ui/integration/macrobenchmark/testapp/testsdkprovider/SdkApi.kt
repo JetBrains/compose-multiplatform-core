@@ -35,7 +35,6 @@ import androidx.privacysandbox.ui.integration.macrobenchmark.testapp.sdkprovider
 import androidx.privacysandbox.ui.integration.macrobenchmark.testapp.sdkproviderutils.SdkApiConstants.Companion.MediationOption
 import androidx.privacysandbox.ui.integration.macrobenchmark.testapp.sdkproviderutils.SdkApiConstants.Companion.ScreenOrientation
 import androidx.privacysandbox.ui.integration.macrobenchmark.testapp.sdkproviderutils.TestAdapters
-import androidx.privacysandbox.ui.integration.macrobenchmark.testapp.sdkproviderutils.ViewabilityHandler
 import androidx.privacysandbox.ui.integration.macrobenchmark.testapp.sdkproviderutils.fullscreen.FullscreenAd
 import androidx.privacysandbox.ui.provider.AbstractSandboxedUiAdapter
 import androidx.privacysandbox.ui.provider.toCoreLibInfo
@@ -103,7 +102,6 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
     private fun loadBannerAd(
         @AdType adType: Int,
         waitInsideOnDraw: Boolean,
-        drawViewability: Boolean
     ): Bundle {
         val adapter: AbstractSandboxedUiAdapter =
             when (adType) {
@@ -120,7 +118,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                 else -> {
                     loadNonWebViewBannerAd("Ad type not present", waitInsideOnDraw)
                 }
-            }.also { ViewabilityHandler.addObserverFactoryToAdapter(it, drawViewability) }
+            }
         return adapter.toCoreLibInfo(sdkContext)
     }
 
@@ -186,7 +184,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
         when (mediationOption) {
             MediationOption.NON_MEDIATED -> {
                 return when (adFormat) {
-                    AdFormat.BANNER_AD -> loadBannerAd(adType, waitInsideOnDraw, drawViewability)
+                    AdFormat.BANNER_AD -> loadBannerAd(adType, waitInsideOnDraw)
                     AdFormat.NATIVE_AD -> loadNativeAd(adType)
                     else -> Bundle()
                 }

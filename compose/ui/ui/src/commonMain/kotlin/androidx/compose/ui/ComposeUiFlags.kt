@@ -119,13 +119,6 @@ object ComposeUiFlags {
      */
     @Suppress("MutableBareField") @JvmField var isNoPinningInFocusRestorationEnabled: Boolean = true
 
-    /*
-     * Enable lower-level logging of input events where a cancellation event does not stop input
-     * events from finishing processing before the cancellation event. This is to track down why a
-     * certain build of CI is failing with this functionality enabled: b/399055247
-     */
-    @Suppress("MutableBareField") @JvmField var isHitPathTrackerLoggingEnabled: Boolean = false
-
     /**
      * With this flag on, SubcomposeLayout will deactivate not used content slots outside of the
      * frame, not as part of a regular recomposition phase. It allows to not block the drawing
@@ -142,12 +135,4 @@ object ComposeUiFlags {
      * Modifier.requestedFrameRate(frameRate: Float)
      */
     @Suppress("MutableBareField") @JvmField var isAdaptiveRefreshRateEnabled: Boolean = true
-
-    /**
-     * Flag for enabling the fix for correctly dispatching interop pointer events during the
-     * [PointerEventPass.Main] pass and not the final pass.
-     */
-    @Suppress("MutableBareField")
-    @JvmField
-    var isPointerInteropFilterDispatchingFixEnabled: Boolean = true
 }

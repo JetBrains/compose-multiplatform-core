@@ -65,6 +65,7 @@ actual object PreferencesSerializer : OkioSerializer<Preferences> {
         }
 
         protoBuilder.build().writeTo(sink.outputStream())
+        sink.flush()
     }
 
     private fun getValueProto(value: Any): Value {

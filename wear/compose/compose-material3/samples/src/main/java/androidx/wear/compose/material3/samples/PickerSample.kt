@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -42,7 +41,7 @@ import kotlinx.coroutines.launch
 fun SimplePicker() {
     val items = listOf("One", "Two", "Three", "Four", "Five")
     val state = rememberPickerState(items.size)
-    val contentDescription by remember { derivedStateOf { "${state.selectedOptionIndex + 1}" } }
+    val contentDescription = remember(state) { { "${state.selectedOptionIndex + 1}" } }
     // We forward scroll gestures from the whole screen to the Picker which makes this sample
     // accessible for 2-finger vertical scrolling.
     Box(
@@ -74,7 +73,7 @@ fun SimplePicker() {
 fun PickerScrollToOption() {
     val coroutineScope = rememberCoroutineScope()
     val state = rememberPickerState(initialNumberOfOptions = 10)
-    val contentDescription by remember { derivedStateOf { "${state.selectedOptionIndex + 1}" } }
+    val contentDescription = remember(state) { { "${state.selectedOptionIndex + 1}" } }
     Picker(
         state = state,
         verticalSpacing = 4.dp,
@@ -92,7 +91,7 @@ fun PickerScrollToOption() {
 fun PickerAnimateScrollToOption() {
     val coroutineScope = rememberCoroutineScope()
     val state = rememberPickerState(initialNumberOfOptions = 10)
-    val contentDescription by remember { derivedStateOf { "${state.selectedOptionIndex + 1}" } }
+    val contentDescription = remember(state) { { "${state.selectedOptionIndex + 1}" } }
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Picker(

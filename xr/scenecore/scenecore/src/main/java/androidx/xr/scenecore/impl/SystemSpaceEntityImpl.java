@@ -121,10 +121,10 @@ abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSp
     private void subscribeToNodeTransform(Node node, ScheduledExecutorService executor) {
         mNodeTransformCloseable =
                 node.subscribeToTransform(
+                        executor,
                         (transform) ->
                                 setOpenXrReferenceSpacePose(
-                                        RuntimeUtils.getMatrix(transform.getTransform())),
-                        executor);
+                                        RuntimeUtils.getMatrix(transform.getTransform())));
     }
 
     @NonNull

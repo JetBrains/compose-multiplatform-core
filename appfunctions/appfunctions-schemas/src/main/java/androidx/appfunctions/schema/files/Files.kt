@@ -20,6 +20,7 @@ import android.net.Uri
 import androidx.annotation.StringDef
 import androidx.appfunctions.AppFunctionContext
 import androidx.appfunctions.AppFunctionSchemaDefinition
+import androidx.appfunctions.AppFunctionSerializableInterface
 
 // TODO(b/401518165): Add ShowFile app function.
 /**
@@ -59,6 +60,7 @@ public interface FindFilesAppFunction<
 
     /** The parameters for [findFiles]. */
     // TODO(b/401518165): Add pagination
+    @AppFunctionSerializableInterface
     public interface Parameters {
         /**
          * The search query to be processed. A null value means to query all files with the
@@ -78,6 +80,7 @@ public interface FindFilesAppFunction<
     }
 
     /** The response of [findFiles]. */
+    @AppFunctionSerializableInterface
     public interface Response {
         /** The files matching the query. */
         public val files: List<AppFunctionFile>
@@ -122,6 +125,7 @@ public interface GetFileContentUrisAppFunction<
     ): Response
 
     /** The parameters for [getFileContentUris]. */
+    @AppFunctionSerializableInterface
     public interface Parameters {
         /**
          * The [AppFunctionFile.id]s of files to find the content URIs for.
@@ -136,12 +140,14 @@ public interface GetFileContentUrisAppFunction<
      * The response of [getFileContentUris] including [FileContentUri]s of files successfully
      * retrieved.
      */
+    @AppFunctionSerializableInterface
     public interface Response {
         /** The list of [FileContentUri]s of the successfully retrieved files. */
         public val fileContentUris: List<FileContentUri>
     }
 
     /** A mapping of [AppFunctionFile.id] to its content URI. */
+    @AppFunctionSerializableInterface
     public interface FileContentUri {
         /** The [AppFunctionFile.id] of the file. */
         public val id: String
@@ -165,6 +171,7 @@ public interface GetFileContentUrisAppFunction<
 
 /** A file entity. This can be retrieved from [FindFilesAppFunction.findFiles]. */
 // TODO(b/401518165): Add dateCreated when DateTime is supported.
+@AppFunctionSerializableInterface
 public interface AppFunctionFile {
     /** The ID of the file. */
     public val id: String

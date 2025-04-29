@@ -127,6 +127,7 @@ package androidx.xr.runtime.testing {
     method public androidx.xr.runtime.internal.AnchorEntity createPersistedAnchorEntity(java.util.UUID uuid, java.time.Duration searchTimeout);
     method public androidx.xr.runtime.internal.PointerCaptureComponent createPointerCaptureComponent(java.util.concurrent.Executor executor, androidx.xr.runtime.internal.PointerCaptureComponent.StateListener stateListener, androidx.xr.runtime.internal.InputEventListener inputListener);
     method public androidx.xr.runtime.internal.ResizableComponent createResizableComponent(androidx.xr.runtime.internal.Dimensions minimumSize, androidx.xr.runtime.internal.Dimensions maximumSize);
+    method public androidx.xr.runtime.internal.SpatialPointerComponent createSpatialPointerComponent();
     method public androidx.xr.runtime.internal.SubspaceNodeEntity createSubspaceNodeEntity(com.google.androidxr.splitengine.SubspaceNode subspaceNode, androidx.xr.runtime.internal.Dimensions size);
     method public androidx.xr.runtime.internal.SurfaceEntity createSurfaceEntity(int stereoMode, androidx.xr.runtime.internal.SurfaceEntity.CanvasShape canvasShape, androidx.xr.runtime.math.Pose pose, androidx.xr.runtime.internal.Entity parentEntity);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.MaterialResource>? createWaterMaterial(boolean isAlphaMapVersion);
@@ -444,6 +445,12 @@ package androidx.xr.runtime.testing {
     property public float currentPassthroughOpacity;
     property public Float? passthroughOpacityPreference;
     property public androidx.xr.runtime.internal.SpatialEnvironment.SpatialEnvironmentPreference? spatialEnvironmentPreference;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSpatialPointerComponent extends androidx.xr.runtime.testing.FakeComponent implements androidx.xr.runtime.internal.SpatialPointerComponent {
+    ctor public FakeSpatialPointerComponent();
+    method @androidx.xr.runtime.internal.SpatialPointerIconType public int getSpatialPointerIcon();
+    method public void setSpatialPointerIcon(@androidx.xr.runtime.internal.SpatialPointerIconType int iconType);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeStateExtender implements androidx.xr.runtime.StateExtender {

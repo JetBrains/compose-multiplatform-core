@@ -31,8 +31,8 @@ plugins {
 
 dependencies {
     api("androidx.camera:camera-core:1.4.0")
-    implementation("androidx.media3:media3-common:1.5.0-alpha01")
-    implementation("androidx.media3:media3-effect:1.5.0-alpha01")
+    implementation("androidx.media3:media3-common:1.6.0")
+    implementation("androidx.media3:media3-effect:1.6.0")
 
     testImplementation(libs.kotlinCoroutinesAndroid)
     testImplementation(libs.kotlinCoroutinesTest)
@@ -50,6 +50,8 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
+    androidTestImplementation("androidx.camera:camera-camera2:1.4.0")
+    androidTestImplementation("androidx.camera:camera-lifecycle:1.4.0")
     androidTestImplementation(project(":camera:camera-testing"))
 }
 

@@ -23,6 +23,7 @@ import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.XFunSpec
 import androidx.room.compiler.codegen.XMemberName
 import androidx.room.compiler.codegen.XName
+import androidx.room.compiler.codegen.XParameterSpec
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XSpec
 import androidx.room.compiler.codegen.XTypeName
@@ -30,10 +31,11 @@ import androidx.room.compiler.codegen.XTypeSpec
 import androidx.room.compiler.codegen.impl.XAnnotationSpecImpl
 import androidx.room.compiler.codegen.impl.XCodeBlockImpl
 import androidx.room.compiler.codegen.impl.XFunSpecImpl
+import androidx.room.compiler.codegen.impl.XParameterSpecImpl
 import androidx.room.compiler.codegen.impl.XPropertySpecImpl
 import androidx.room.compiler.codegen.impl.XTypeSpecImpl
 
-internal class JavaCodeBlock(internal val actual: JCodeBlock) : XSpec(), XCodeBlock {
+internal class JavaCodeBlock(override val actual: JCodeBlock) : JavaSpec<JCodeBlock>(), XCodeBlock {
 
     internal class Builder(internal val actual: JCodeBlockBuilder) :
         XSpec.Builder(), XCodeBlock.Builder {
@@ -100,6 +102,7 @@ internal class JavaCodeBlock(internal val actual: JCodeBlock) : XSpec(), XCodeBl
                     is XMemberName -> arg.java
                     is XName -> arg.java
                     is XTypeSpec -> (arg as XTypeSpecImpl).java.actual
+                    is XParameterSpec -> (arg as XParameterSpecImpl).java.actual
                     is XPropertySpec -> (arg as XPropertySpecImpl).java.actual
                     is XFunSpec -> (arg as XFunSpecImpl).java.actual
                     is XCodeBlock -> (arg as XCodeBlockImpl).java.actual

@@ -27,6 +27,8 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.graphics.fonts.FontStyle;
+import android.graphics.fonts.FontVariationAxis;
 import android.os.Build;
 import android.os.LocaleList;
 import android.text.TextUtils;
@@ -40,10 +42,10 @@ import android.widget.TextView;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
+import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.R;
 import androidx.collection.LruCache;
 import androidx.core.content.res.ResourcesCompat;
-import androidx.core.util.Pair;
 import androidx.core.util.TypedValueCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.inputmethod.EditorInfoCompat;
@@ -779,11 +781,36 @@ class AppCompatTextHelper {
 
     @RequiresApi(26)
     static class Api26Impl {
+
         /**
          * Cache for variation instances created based on an existing Typeface
          */
-        private static final LruCache<Pair<Typeface, String>, Typeface> sVariationsCache =
-                new LruCache<>(30);
+        private static class VarCacheKey {
+            private final Typeface mTypeface;
+            private final String mFontVariationSettings;
+            private final int mWeightAdjustment;
+
+            VarCacheKey(Typeface typeface, String fontVariationSettings, int weightAdjustment) {
+                this.mTypeface = typeface;
+                this.mFontVariationSettings = fontVariationSettings;
+                this.mWeightAdjustment = weightAdjustment;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (!(o instanceof VarCacheKey)) return false;
+                VarCacheKey cacheKey = (VarCacheKey) o;
+                return mWeightAdjustment == cacheKey.mWeightAdjustment && Objects.equals(mTypeface,
+                        cacheKey.mTypeface) && Objects.equals(mFontVariationSettings,
+                        cacheKey.mFontVariationSettings);
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hash(mTypeface, mFontVariationSettings, mWeightAdjustment);
+            }
+        }
+        private static final LruCache<VarCacheKey, Typeface> sVariationsCache = new LruCache<>(30);
 
         /**
          * Used to create variation instances; initialized lazily
@@ -804,6 +831,52 @@ class AppCompatTextHelper {
                 textView.setFontVariationSettings("");
             }
             return textView.setFontVariationSettings(fontVariationSettings);
+        }
+
+        private static float clampWeight(float value) {
+            if (value < FontStyle.FONT_WEIGHT_MIN) {
+                return FontStyle.FONT_WEIGHT_MIN;
+            }
+            return Math.min(value, FontStyle.FONT_WEIGHT_MAX);
+        }
+
+        @VisibleForTesting
+        static String adjustFontVariationSettings(String fontVariationSettings,
+                int fontWeightAdjustment) {
+            if (fontWeightAdjustment == 0) {
+                return fontVariationSettings;
+            }
+
+            FontVariationAxis[] axes;
+            if (TextUtils.isEmpty(fontVariationSettings)) {
+                // fromFontVariationSettings returns null if the given text is empty. This should
+                // not be treated as error.
+                axes = new FontVariationAxis[0];
+            } else {
+                axes = FontVariationAxis.fromFontVariationSettings(fontVariationSettings);
+                if (axes == null) {
+                    // invalid format of the font variation settings. Let caller to handle this.
+                    return fontVariationSettings;
+                }
+            }
+
+            boolean wghtAdjusted = false;
+            for (int i = 0; i < axes.length; ++i) {
+                FontVariationAxis axis = axes[i];
+                if ("wght".equals(axis.getTag())) {
+                    axes[i] = new FontVariationAxis("wght",
+                            clampWeight(axis.getStyleValue() + fontWeightAdjustment));
+                    wghtAdjusted = true;
+                }
+            }
+            if (!wghtAdjusted) {
+                FontVariationAxis[] newAxes = new FontVariationAxis[axes.length + 1];
+                System.arraycopy(axes, 0, newAxes, 0, axes.length);
+                newAxes[axes.length] = new FontVariationAxis("wght",
+                        clampWeight(400 + fontWeightAdjustment));
+                axes = newAxes;
+            }
+            return FontVariationAxis.toFontVariationSettings(axes);
         }
 
         /**
@@ -827,14 +900,18 @@ class AppCompatTextHelper {
          */
         @UiThread
         static @Nullable Typeface createVariationInstance(@Nullable Typeface baseTypeface,
-                @Nullable String fontVariationSettings) {
-            Pair<Typeface, String> cacheKey = new Pair<>(baseTypeface, fontVariationSettings);
+                @Nullable String fontVariationSettings, int fontAdjustment) {
+            VarCacheKey cacheKey = new VarCacheKey(baseTypeface, fontVariationSettings,
+                    fontAdjustment);
 
             Typeface result = sVariationsCache.get(cacheKey);
             if (result != null) {
                 return result;
             }
             Paint paint = sPaint != null ? sPaint : (sPaint = new Paint());
+
+            fontVariationSettings = adjustFontVariationSettings(fontVariationSettings,
+                    fontAdjustment);
 
             // Work around b/353609778
             if (Objects.equals(paint.getFontVariationSettings(), fontVariationSettings)) {

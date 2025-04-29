@@ -327,19 +327,11 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment {
 
         try (NodeTransaction transaction = mXrExtensions.createNodeTransaction()) {
             transaction
-                    .setName(
-                            mGeometrySubspaceSplitEngine.getSubspaceNodeActual(),
-                            GEOMETRY_NODE_NAME)
-                    .setPosition(
-                            mGeometrySubspaceSplitEngine.getSubspaceNodeActual(), 0.0f, 0.0f, 0.0f)
-                    .setScale(
-                            mGeometrySubspaceSplitEngine.getSubspaceNodeActual(), 1.0f, 1.0f, 1.0f)
+                    .setName(mGeometrySubspaceSplitEngine.getSubspaceNode(), GEOMETRY_NODE_NAME)
+                    .setPosition(mGeometrySubspaceSplitEngine.getSubspaceNode(), 0.0f, 0.0f, 0.0f)
+                    .setScale(mGeometrySubspaceSplitEngine.getSubspaceNode(), 1.0f, 1.0f, 1.0f)
                     .setOrientation(
-                            mGeometrySubspaceSplitEngine.getSubspaceNodeActual(),
-                            0.0f,
-                            0.0f,
-                            0.0f,
-                            1.0f)
+                            mGeometrySubspaceSplitEngine.getSubspaceNode(), 0.0f, 0.0f, 0.0f, 1.0f)
                     .apply();
         }
 
@@ -443,8 +435,8 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment {
             // Detaching the app environment to go back to the system environment.
             mXrExtensions.detachSpatialEnvironment(
                     mActivity,
-                    (result) -> logXrExtensionResult("detachSpatialEnvironment", result),
-                    Runnable::run);
+                    Runnable::run,
+                    (result) -> logXrExtensionResult("detachSpatialEnvironment", result));
         } else {
             // TODO(b/408276187): Add unit test that verifies that the skybox mode is correctly set.
             int skyboxMode = XrExtensions.ENVIRONMENT_SKYBOX_APP;
@@ -462,7 +454,7 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment {
                     try (NodeTransaction transaction = mXrExtensions.createNodeTransaction()) {
                         NodeTransaction unused =
                                 transaction.setParent(
-                                        mGeometrySubspaceSplitEngine.getSubspaceNodeActual(),
+                                        mGeometrySubspaceSplitEngine.getSubspaceNode(),
                                         currentRootEnvironmentNode);
                         transaction.apply();
                     }
@@ -475,12 +467,12 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment {
                     mActivity,
                     currentRootEnvironmentNode,
                     skyboxMode,
+                    Runnable::run,
                     (result) -> {
                         // Update the root environment node to the current root node.
                         mRootEnvironmentNode = currentRootEnvironmentNode;
                         logXrExtensionResult("attachSpatialEnvironment", result);
-                    },
-                    Runnable::run);
+                    });
         }
 
         mSpatialEnvironmentPreference = newPreference;
@@ -553,7 +545,7 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment {
             if (mGeometrySubspaceSplitEngine != null) {
                 try (NodeTransaction transaction = mXrExtensions.createNodeTransaction()) {
                     transaction
-                            .setParent(mGeometrySubspaceSplitEngine.getSubspaceNodeActual(), null)
+                            .setParent(mGeometrySubspaceSplitEngine.getSubspaceNode(), null)
                             .apply();
                 }
                 mSplitEngineSubspaceManager.deleteSubspace(mGeometrySubspaceSplitEngine.subspaceId);

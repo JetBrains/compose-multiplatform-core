@@ -28,6 +28,7 @@ import androidx.camera.camera2.pipe.config.CameraGraphConfigModule
 import androidx.camera.camera2.pipe.config.CameraPipeComponent
 import androidx.camera.camera2.pipe.config.CameraPipeConfigModule
 import androidx.camera.camera2.pipe.config.DaggerCameraPipeComponent
+import androidx.camera.camera2.pipe.config.FrameGraphConfigModule
 import androidx.camera.camera2.pipe.config.ThreadConfigModule
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.DurationNs
@@ -56,6 +57,16 @@ public interface CameraPipe {
      * device. Multiple [CameraGraph]s can be created, but only one should be active at a time.
      */
     public fun create(config: CameraGraph.Config): CameraGraph
+
+    /**
+     * [FrameGraph] extends [CameraGraph] by adding stream management capabilities to it, so if
+     * stream management capabilities are desired, it's recommended to use [FrameGraph] over
+     * [CameraGraph].
+     *
+     * This creates a new [FrameGraph] that can be used to interact with a single Camera on the
+     * device. Multiple [FrameGraph]s can be created, but only one should be active at a time.
+     */
+    public fun create(config: CameraGraph.Config, frameGraphConfig: FrameGraph.Config): FrameGraph
 
     /**
      * This creates a list of [CameraGraph]s that can be used to interact with multiple cameras on
@@ -193,6 +204,23 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
                 .cameraGraphConfigModule(CameraGraphConfigModule(config))
                 .build()
                 .cameraGraph()
+        }
+
+    override fun create(
+        config: CameraGraph.Config,
+        frameGraphConfig: FrameGraph.Config
+    ): FrameGraph =
+        Debug.trace("CXCP#CreateFrameGraph-${config.camera}") {
+            val cameraGraphComponent =
+                component
+                    .cameraGraphComponentBuilder()
+                    .cameraGraphConfigModule(CameraGraphConfigModule(config))
+                    .build()
+            cameraGraphComponent
+                .frameGraphComponentBuilder()
+                .frameGraphConfigModule(FrameGraphConfigModule(frameGraphConfig))
+                .build()
+                .frameGraph()
         }
 
     override fun createCameraGraphs(config: CameraGraph.ConcurrentConfig): List<CameraGraph> {

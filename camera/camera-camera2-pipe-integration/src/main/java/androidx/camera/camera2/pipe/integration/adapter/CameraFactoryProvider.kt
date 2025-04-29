@@ -30,6 +30,7 @@ import androidx.camera.camera2.pipe.integration.impl.CameraInteropStateCallbackR
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraThreadConfig
+import androidx.camera.core.internal.StreamSpecsCalculator
 
 /**
  * The [CameraFactoryProvider] is responsible for creating the root dagger component that is used to
@@ -50,7 +51,8 @@ public class CameraFactoryProvider(
         context: Context,
         threadConfig: CameraThreadConfig,
         availableCamerasLimiter: CameraSelector?,
-        cameraOpenRetryMaxTimeoutInMs: Long
+        cameraOpenRetryMaxTimeoutInMs: Long,
+        streamSpecsCalculator: StreamSpecsCalculator
     ): CameraFactory {
 
         val openRetryMaxTimeout =
@@ -64,7 +66,8 @@ public class CameraFactoryProvider(
             sharedAppContext ?: context,
             sharedThreadConfig ?: threadConfig,
             sharedInteropCallbacks,
-            availableCamerasLimiter
+            availableCamerasLimiter,
+            streamSpecsCalculator
         )
     }
 

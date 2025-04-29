@@ -31,6 +31,7 @@ import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
 import androidx.annotation.WorkerThread
 import androidx.pdf.PdfDocument.BitmapSource
+import androidx.pdf.PdfDocument.DocumentClosedException
 import androidx.pdf.PdfDocument.PdfPageContent
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
@@ -39,7 +40,6 @@ import androidx.pdf.service.connect.PdfServiceConnection
 import androidx.pdf.utils.toAndroidClass
 import androidx.pdf.utils.toContentClass
 import java.util.concurrent.TimeoutException
-import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -264,7 +264,7 @@ public class SandboxedPdfDocument(
 
     private suspend fun <T> withDocumentWithoutRetry(block: (PdfDocumentRemote) -> T): T {
         // If document is already closed, cancel all the pending operations on this document
-        if (isDocumentClosedExplicitly) throw CancellationException("Document is already closed.")
+        if (isDocumentClosedExplicitly) throw DocumentClosedException()
 
         // Create a new job in parent's context. Since with document can be called from any scope,
         // we need a handle to check coroutines actively working with document. Linking to parent's
@@ -292,7 +292,16 @@ public class SandboxedPdfDocument(
                     ?: throw DeadObjectException("connection.documentBinder is still null")
 
             if (connection.needsToReopenDocument) {
-                binder.openPdfDocument(fileDescriptor, password)
+                try {
+                    binder.openPdfDocument(fileDescriptor, password)
+                } catch (e: Exception) {
+                    // Since `connection.connect(uri)` is suspending in nature, a explicit
+                    // document.close() could be triggered independently while current block is
+                    // waiting to be resumed.
+                    // Ensure cancelling any work on this document, if it's closed.
+                    throw if (isDocumentClosedExplicitly) DocumentClosedException(cause = e) else e
+                }
+
                 connection.needsToReopenDocument = false
             }
 

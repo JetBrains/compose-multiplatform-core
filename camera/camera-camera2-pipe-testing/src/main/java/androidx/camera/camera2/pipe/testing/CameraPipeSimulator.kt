@@ -24,6 +24,7 @@ import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.CameraPipe.CameraBackendConfig
 import androidx.camera.camera2.pipe.CameraSurfaceManager
+import androidx.camera.camera2.pipe.FrameGraph
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -70,6 +71,13 @@ private constructor(
             )
         _cameraGraphs.add(cameraGraphSimulator)
         return cameraGraphSimulator
+    }
+
+    override fun create(
+        config: CameraGraph.Config,
+        frameGraphConfig: FrameGraph.Config
+    ): FrameGraph {
+        TODO("Not yet implemented")
     }
 
     override fun createCameraGraphs(

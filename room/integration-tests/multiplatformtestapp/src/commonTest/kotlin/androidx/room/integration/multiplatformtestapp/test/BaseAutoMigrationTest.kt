@@ -118,6 +118,19 @@ abstract class BaseAutoMigrationTest {
     }
 
     @Test
+    fun repeatedProvidedAutoMigrationSpec() {
+        assertThrows<IllegalArgumentException> {
+                getDatabaseBuilder()
+                    .addAutoMigrationSpec(ProvidedSpecFrom2To3())
+                    .addAutoMigrationSpec(ProvidedSpecFrom2To3())
+                    .addAutoMigrationSpec(ProvidedSpecFrom2To3())
+                    .build()
+            }
+            .hasMessageThat()
+            .contains("Unexpected auto migration specs found.")
+    }
+
+    @Test
     fun subclassedProvidedAutoMigrationSpec() {
         val db = getDatabaseBuilder().addAutoMigrationSpec(SubProvidedSpecFrom2To3()).build()
         db.close()

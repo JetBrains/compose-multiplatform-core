@@ -508,6 +508,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
                     transformedHeight = transformedHeight
                 ),
             containerConstraints = containerConstraints,
+            spacing = 8,
             leftPadding = 0,
             rightPadding = 0,
             measureScrollProgress = progressProvider(itemHeights[index]),

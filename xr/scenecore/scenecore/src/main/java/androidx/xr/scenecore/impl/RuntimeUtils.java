@@ -31,6 +31,8 @@ import androidx.xr.runtime.internal.PlaneSemantic;
 import androidx.xr.runtime.internal.PlaneType;
 import androidx.xr.runtime.internal.ResizeEvent;
 import androidx.xr.runtime.internal.SpatialCapabilities;
+import androidx.xr.runtime.internal.SpatialPointerIcon;
+import androidx.xr.runtime.internal.SpatialPointerIconType;
 import androidx.xr.runtime.internal.SpatialVisibility;
 import androidx.xr.runtime.internal.TextureSampler;
 import androidx.xr.runtime.math.Matrix4;
@@ -43,6 +45,7 @@ import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.environment.EnvironmentVisibilityState;
 import com.android.extensions.xr.environment.PassthroughVisibilityState;
 import com.android.extensions.xr.node.Mat4f;
+import com.android.extensions.xr.node.NodeTransaction;
 import com.android.extensions.xr.node.Quatf;
 import com.android.extensions.xr.node.ReformEvent;
 import com.android.extensions.xr.node.Vec3;
@@ -565,5 +568,19 @@ final class RuntimeUtils {
             hitTestFilterResult |= XrExtensions.HIT_TEST_FILTER_INCLUDE_OUTSIDE_ACTIVITY;
         }
         return hitTestFilterResult;
+    }
+
+    static int convertSpatialPointerIconType(@SpatialPointerIconType int rtIconType) {
+        switch (rtIconType) {
+            case SpatialPointerIcon.TYPE_NONE:
+                return NodeTransaction.POINTER_ICON_TYPE_NONE;
+            case SpatialPointerIcon.TYPE_DEFAULT:
+                return NodeTransaction.POINTER_ICON_TYPE_DEFAULT;
+            case SpatialPointerIcon.TYPE_CIRCLE:
+                return NodeTransaction.POINTER_ICON_TYPE_CIRCLE;
+            default:
+                Log.e("RuntimeUtils", "Unknown Spatial Pointer Icon Type: " + rtIconType);
+                return NodeTransaction.POINTER_ICON_TYPE_DEFAULT;
+        }
     }
 }

@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.DateRangePickerStateImpl.Companion.Saver
 import androidx.compose.material3.internal.CalendarDate
 import androidx.compose.material3.internal.CalendarModel
 import androidx.compose.material3.internal.CalendarMonth
@@ -45,6 +46,7 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -85,8 +87,9 @@ import kotlinx.coroutines.launch
  * @param headline the headline to be displayed in the date range picker
  * @param showModeToggle indicates if this DateRangePicker should show a mode toggle action that
  *   transforms it into a date range input
- * @param requestFocus have a focus request be sent to the text field when the date picker is in an
- *   input mode
+ * @param focusRequester a focus requester that will be used to focus the text field when the date
+ *   picker is in an input mode. Pass `null` to not focus the text field if that's the desired
+ *   behavior.
  */
 @ExperimentalMaterial3Api
 @Composable
@@ -113,7 +116,7 @@ fun DateRangePicker(
         )
     },
     showModeToggle: Boolean = true,
-    requestFocus: Boolean = true
+    focusRequester: FocusRequester? = remember { FocusRequester() }
 ) {
     val calendarModel =
         remember(state.locale) {
@@ -169,7 +172,7 @@ fun DateRangePicker(
             dateFormatter = dateFormatter,
             selectableDates = state.selectableDates,
             colors = colors,
-            requestFocus = requestFocus
+            focusRequester = focusRequester
         )
     }
 }
@@ -188,17 +191,19 @@ fun DateRangePicker(
  * @param state state of the date range picker. See [rememberDateRangePickerState].
  * @param modifier the [Modifier] to be applied to this date range picker
  * @param dateFormatter a [DatePickerFormatter] that provides formatting skeletons for dates display
+ * @param colors [DatePickerColors] that will be used to resolve the colors used for this date range
+ *   picker in different states. See [DatePickerDefaults.colors].
  * @param title the title to be displayed in the date range picker
  * @param headline the headline to be displayed in the date range picker
  * @param showModeToggle indicates if this DateRangePicker should show a mode toggle action that
  *   transforms it into a date range input
- * @param colors [DatePickerColors] that will be used to resolve the colors used for this date range
- *   picker in different states. See [DatePickerDefaults.colors].
+ * @param requestFocus have a focus request be sent to the text field when the date picker is in an
+ *   input mode
  */
 @Deprecated(
     message =
-        "Maintained for binary compatibility. Use the DateRangePicker with the different" +
-            " order of parameters.",
+        "Maintained for binary compatibility. Use the DateRangePicker with the focusRequester " +
+            "parameter.",
     level = DeprecationLevel.HIDDEN
 )
 @ExperimentalMaterial3Api
@@ -207,10 +212,12 @@ fun DateRangePicker(
     state: DateRangePickerState,
     modifier: Modifier = Modifier,
     dateFormatter: DatePickerFormatter = remember { DatePickerDefaults.dateFormatter() },
+    colors: DatePickerColors = DatePickerDefaults.colors(),
     title: (@Composable () -> Unit)? = {
         DateRangePickerDefaults.DateRangePickerTitle(
             displayMode = state.displayMode,
-            modifier = Modifier.padding(DateRangePickerTitlePadding)
+            modifier = Modifier.padding(DateRangePickerTitlePadding),
+            contentColor = colors.titleContentColor
         )
     },
     headline: (@Composable () -> Unit)? = {
@@ -219,12 +226,23 @@ fun DateRangePicker(
             selectedEndDateMillis = state.selectedEndDateMillis,
             displayMode = state.displayMode,
             dateFormatter,
-            modifier = Modifier.padding(DateRangePickerHeadlinePadding)
+            modifier = Modifier.padding(DateRangePickerHeadlinePadding),
+            contentColor = colors.headlineContentColor
         )
     },
     showModeToggle: Boolean = true,
-    colors: DatePickerColors = DatePickerDefaults.colors()
-) = DateRangePicker(state, modifier, dateFormatter, colors, title, headline, showModeToggle)
+    requestFocus: Boolean = true
+) =
+    DateRangePicker(
+        state = state,
+        modifier = modifier,
+        dateFormatter = dateFormatter,
+        colors = colors,
+        title = title,
+        headline = headline,
+        showModeToggle = showModeToggle,
+        focusRequester = if (requestFocus) remember { FocusRequester() } else null
+    )
 
 /**
  * A state object that can be hoisted to observe the date range picker state. See
@@ -809,7 +827,7 @@ private fun SwitchableDateEntryContent(
     dateFormatter: DatePickerFormatter,
     selectableDates: SelectableDates,
     colors: DatePickerColors,
-    requestFocus: Boolean
+    focusRequester: FocusRequester?
 ) {
     // TODO(b/266480386): Apply the motion spec for this once we have it. Consider replacing this
     //  with AnimatedContent when it's out of experimental.
@@ -847,7 +865,7 @@ private fun SwitchableDateEntryContent(
                     dateFormatter = dateFormatter,
                     selectableDates = selectableDates,
                     colors = colors,
-                    requestFocus = requestFocus
+                    focusRequester = focusRequester
                 )
         }
     }

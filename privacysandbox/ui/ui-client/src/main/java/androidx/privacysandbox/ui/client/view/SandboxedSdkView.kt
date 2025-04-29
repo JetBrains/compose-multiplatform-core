@@ -469,6 +469,11 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
         private var pendingZOrderOnTop: Boolean? = null
         private var pendingConfiguration: Configuration? = null
         private val eventListener = sandboxedSdkView?.eventListener
+        private var supportedSignalOptions =
+            setOf(
+                SandboxedUiAdapterSignalOptions.GEOMETRY,
+                SandboxedUiAdapterSignalOptions.OBSTRUCTIONS
+            )
 
         fun notifyConfigurationChanged(configuration: Configuration) {
             val session = session
@@ -554,7 +559,7 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
         }
 
         fun notifySessionRendered() {
-            session?.notifySessionRendered(setOf(SandboxedUiAdapterSignalOptions.GEOMETRY))
+            session?.notifySessionRendered(supportedSignalOptions)
         }
     }
 

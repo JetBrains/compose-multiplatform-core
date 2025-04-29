@@ -86,7 +86,7 @@ class RectRulerTest {
     fun innerRectRulers() {
         val rectRulers1 = RectRulers()
         val rectRulers2 = RectRulers()
-        val mergedRulers = InnerRectRulers(rectRulers1, rectRulers2)
+        val mergedRulers = RectRulers.innermostOf(rectRulers1, rectRulers2)
         lateinit var rect: Rect
         rule.setContent {
             Box(
@@ -138,7 +138,7 @@ class RectRulerTest {
     fun outerRectRulers() {
         val rectRulers1 = RectRulers()
         val rectRulers2 = RectRulers()
-        val mergedRulers = OuterRectRulers(rectRulers1, rectRulers2)
+        val mergedRulers = RectRulers.outermostOf(rectRulers1, rectRulers2)
         lateinit var rect: Rect
         rule.setContent {
             Box(

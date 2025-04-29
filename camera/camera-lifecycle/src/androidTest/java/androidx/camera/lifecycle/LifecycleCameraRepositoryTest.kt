@@ -28,6 +28,7 @@ import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.internal.CameraUseCaseAdapter
+import androidx.camera.core.internal.StreamSpecsCalculatorImpl
 import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.impl.fakes.FakeCameraConfig
 import androidx.camera.testing.impl.fakes.FakeCameraCoordinator
@@ -57,11 +58,12 @@ class LifecycleCameraRepositoryTest {
         defaultCameraCoordinator = FakeCameraCoordinator()
         lifecycleOwner = FakeLifecycleOwner()
         repository = LifecycleCameraRepository()
+        val useCaseConfigFactory = FakeUseCaseConfigFactory()
         cameraUseCaseAdapter =
             CameraUseCaseAdapter(
                 camera,
                 defaultCameraCoordinator,
-                FakeCameraDeviceSurfaceManager(),
+                StreamSpecsCalculatorImpl(useCaseConfigFactory, FakeCameraDeviceSurfaceManager()),
                 FakeUseCaseConfigFactory()
             )
     }
@@ -598,16 +600,18 @@ class LifecycleCameraRepositoryTest {
     private fun createNewCameraUseCaseAdapter(): CameraUseCaseAdapter {
         val cameraId = (++cameraId).toString()
         val fakeCamera: CameraInternal = FakeCamera(cameraId)
+        val useCaseConfigFactory = FakeUseCaseConfigFactory()
         return CameraUseCaseAdapter(
             fakeCamera,
             defaultCameraCoordinator,
-            FakeCameraDeviceSurfaceManager(),
-            FakeUseCaseConfigFactory()
+            StreamSpecsCalculatorImpl(useCaseConfigFactory, FakeCameraDeviceSurfaceManager()),
+            useCaseConfigFactory
         )
     }
 
     private fun createCameraUseCaseAdapterWithNewCameraConfig(): CameraUseCaseAdapter {
         val cameraConfig: CameraConfig = FakeCameraConfig()
+        val useCaseConfigFactory = FakeUseCaseConfigFactory()
         return CameraUseCaseAdapter(
             camera,
             null,
@@ -616,8 +620,8 @@ class LifecycleCameraRepositoryTest {
             CompositionSettings.DEFAULT,
             CompositionSettings.DEFAULT,
             defaultCameraCoordinator,
-            FakeCameraDeviceSurfaceManager(),
-            FakeUseCaseConfigFactory()
+            StreamSpecsCalculatorImpl(useCaseConfigFactory, FakeCameraDeviceSurfaceManager()),
+            useCaseConfigFactory
         )
     }
 

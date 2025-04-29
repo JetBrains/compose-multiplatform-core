@@ -27,3 +27,5 @@ public typealias DepthEstimationMode = androidx.xr.runtime.internal.Config.Depth
 public typealias AnchorPersistenceMode = androidx.xr.runtime.internal.Config.AnchorPersistenceMode
 
 public typealias HeadTrackingMode = androidx.xr.runtime.internal.Config.HeadTrackingMode
+
+public typealias GeospatialMode = androidx.xr.runtime.internal.Config.GeospatialMode

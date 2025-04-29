@@ -18,6 +18,7 @@ package androidx.camera.core.impl;
 
 import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
+import android.graphics.Rect;
 import android.hardware.camera2.CaptureRequest;
 import android.util.Range;
 import android.util.Size;
@@ -25,6 +26,7 @@ import android.util.Size;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.DynamicRange;
+import androidx.camera.core.UseCase;
 import androidx.core.util.Preconditions;
 
 import org.jspecify.annotations.NonNull;
@@ -158,6 +160,12 @@ public interface CameraInfoInternal extends CameraInfo {
     List<Size> getSupportedHighSpeedResolutionsFor(@NonNull Range<Integer> fpsRange);
 
     /**
+     * Gets the full sensor rect.
+     */
+    @NonNull
+    Rect getSensorRect();
+
+    /**
      * Returns if preview stabilization is supported on the device.
      *
      * @return true if
@@ -221,4 +229,26 @@ public interface CameraInfoInternal extends CameraInfo {
                 .addCameraFilter(new LensFacingCameraFilter(getLensFacing()))
                 .build();
     }
+
+    /** Checks if a use case combination is supported. */
+    default boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases) {
+        return isUseCaseCombinationSupported(useCases, CameraMode.DEFAULT);
+    }
+
+    /** Checks if a use case combination is supported for some specific camera mode. */
+    default boolean isUseCaseCombinationSupported(
+            @NonNull List<@NonNull UseCase> useCases,
+            @CameraMode.Mode int cameraMode
+    ) {
+        return isUseCaseCombinationSupported(useCases, cameraMode, CameraConfigs.defaultConfig());
+    }
+
+    /**
+     * Checks if a use case combination is supported for some specific camera mode and
+     * {@link CameraConfig}.
+     */
+    default boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
+            int cameraMode, @NonNull CameraConfig cameraConfig) {
+        return false;
+    };
 }

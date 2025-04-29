@@ -48,6 +48,7 @@ import androidx.camera.camera2.pipe.integration.internal.CameraFovInfo
 import androidx.camera.camera2.pipe.testing.FakeCameraDevices
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.core.impl.ImageFormatConstants
+import androidx.camera.core.internal.StreamSpecsCalculator.Companion.NO_OP_STREAM_SPECS_CALCULATOR
 import androidx.camera.testing.impl.fakes.FakeEncoderProfilesProvider
 import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.CoroutineName
@@ -162,6 +163,7 @@ object FakeCameraInfoAdapterCreator {
             fakeEncoderProfilesProvider,
             fakeStreamConfigurationMap,
             CameraFovInfo(cameraDevices, cameraProperties),
+            NO_OP_STREAM_SPECS_CALCULATOR
         )
     }
 }

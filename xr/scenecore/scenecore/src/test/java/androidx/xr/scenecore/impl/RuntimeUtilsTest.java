@@ -33,6 +33,7 @@ import androidx.xr.runtime.internal.PlaneSemantic;
 import androidx.xr.runtime.internal.PlaneType;
 import androidx.xr.runtime.internal.ResizeEvent;
 import androidx.xr.runtime.internal.SpatialCapabilities;
+import androidx.xr.runtime.internal.SpatialPointerIcon;
 import androidx.xr.runtime.internal.SpatialVisibility;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
@@ -45,6 +46,7 @@ import com.android.extensions.xr.environment.EnvironmentVisibilityState;
 import com.android.extensions.xr.environment.PassthroughVisibilityState;
 import com.android.extensions.xr.environment.ShadowPassthroughVisibilityState;
 import com.android.extensions.xr.node.Mat4f;
+import com.android.extensions.xr.node.NodeTransaction;
 import com.android.extensions.xr.node.Vec3;
 import com.android.extensions.xr.space.ShadowSpatialCapabilities;
 import com.android.extensions.xr.space.VisibilityState;
@@ -594,5 +596,15 @@ public final class RuntimeUtilsTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> RuntimeUtils.convertSpatialVisibility(new VisibilityState(100)));
+    }
+
+    @Test
+    public void convertSpatialPointerIconType_convertsFromRuntimeIconType() {
+        assertThat(RuntimeUtils.convertSpatialPointerIconType(SpatialPointerIcon.TYPE_NONE))
+                .isEqualTo(NodeTransaction.POINTER_ICON_TYPE_NONE);
+        assertThat(RuntimeUtils.convertSpatialPointerIconType(SpatialPointerIcon.TYPE_DEFAULT))
+                .isEqualTo(NodeTransaction.POINTER_ICON_TYPE_DEFAULT);
+        assertThat(RuntimeUtils.convertSpatialPointerIconType(SpatialPointerIcon.TYPE_CIRCLE))
+                .isEqualTo(NodeTransaction.POINTER_ICON_TYPE_CIRCLE);
     }
 }

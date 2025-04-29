@@ -268,7 +268,10 @@ class SandboxedSdkUiTest {
         val session = testSandboxedUiAdapter.testSession!!
         assertThat(session.sessionOpenedLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)).isTrue()
         assertThat(session.supportedSignalOptions)
-            .containsExactly(SandboxedUiAdapterSignalOptions.GEOMETRY)
+            .containsExactly(
+                SandboxedUiAdapterSignalOptions.GEOMETRY,
+                SandboxedUiAdapterSignalOptions.OBSTRUCTIONS
+            )
     }
 
     @Test

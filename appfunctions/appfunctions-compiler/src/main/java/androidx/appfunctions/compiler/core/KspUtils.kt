@@ -39,6 +39,31 @@ import com.squareup.kotlinpoet.WildcardTypeName
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
+/**
+ * Resolves [KSTypeReference] based on the declaration.
+ *
+ * If the declaration is [KSClassDeclaration], returns the self type directly. If the declaration is
+ * [KSTypeParameter], returns the upper bound type instead.
+ */
+fun KSTypeReference.resolveSelfOrUpperBoundType(): KSTypeReference {
+    val declaration = this.resolve().declaration
+    return when (declaration) {
+        is KSClassDeclaration -> {
+            this
+        }
+        is KSTypeParameter -> {
+            declaration.bounds.singleOrNull()
+                ?: throw ProcessingException(
+                    "AppFunction compiler does not support multi-bounds type parameter",
+                    declaration
+                )
+        }
+        else -> {
+            throw ProcessingException("Unsupported declaration type", declaration)
+        }
+    }
+}
+
 /** Gets the [TypeVariableName] from [KSTypeParameter]. */
 fun KSTypeParameter.toTypeVariableName(): TypeVariableName {
     return TypeVariableName(name.asString())

@@ -140,7 +140,7 @@
     <string name="send_notification_title" msgid="4731688444696028193">"सूचना पाठवा"</string>
     <string name="start_notifications_title" msgid="8699668027543530460">"सूचना सुरू करा"</string>
     <string name="stop_notifications_title" msgid="3703892710275206239">"सूचना थांबवा"</string>
-    <string name="notification_title" msgid="5507590705935298176">"सूचना"</string>
+    <string name="notification_title" msgid="5507590705935298176">"नोटिफिकेशन"</string>
     <string name="importance_title" msgid="9034862997821839831">"महत्त्व"</string>
     <string name="category_title" msgid="4783851267093259949">"वर्गवारी"</string>
     <string name="ongoing_title" msgid="4957996003270280496">"सुरू असलेले"</string>

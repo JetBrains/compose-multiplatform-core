@@ -31,6 +31,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -102,6 +103,12 @@ class SearchResultsImpl implements SearchResults {
                             mPackageName, mDatabaseName, mQueryExpression, mSearchSpec, mLogger);
                 }
             } else {
+                if (mNextPageToken == AppSearchImpl.EMPTY_PAGE_TOKEN) {
+                    // Return an empty list directly if the next page token is empty token. This
+                    // will save a binder call.
+                    return Collections.emptyList();
+                }
+
                 SearchStats.Builder sStatsBuilder = null;
                 if (mLogger != null) {
                     sStatsBuilder =
@@ -132,11 +139,17 @@ class SearchResultsImpl implements SearchResults {
         // Checking the future result is not needed here since this is a cleanup step which is not
         // critical to the correct functioning of the system; also, the return value is void.
         if (!mIsClosed) {
-            FutureUtil.execute(mExecutor, () -> {
-                mAppSearchImpl.invalidateNextPageToken(mPackageName, mNextPageToken);
+            if (mNextPageToken == AppSearchImpl.EMPTY_PAGE_TOKEN) {
+                // Save a binder call for invalidateNextPageToken if the next page token is empty
+                // token.
                 mIsClosed = true;
-                return null;
-            });
+            } else {
+                FutureUtil.execute(mExecutor, () -> {
+                    mAppSearchImpl.invalidateNextPageToken(mPackageName, mNextPageToken);
+                    mIsClosed = true;
+                    return null;
+                });
+            }
         }
     }
 }

@@ -83,9 +83,10 @@ internal fun rememberTransformingLazyColumnMeasurePolicy(
                     horizontalAlignment = horizontalAlignment,
                     layoutDirection = layoutDirection,
                     key = key,
+                    spacing = verticalArrangement.spacing.roundToPx(),
                     leftPadding = measurementStrategy.leftContentPadding,
                     rightPadding = measurementStrategy.rightContentPadding,
-                    animation = state.animator.getAnimation(key, 0),
+                    animationProvider = { state.animator.getAnimation(key, 0) },
                     contentType = itemProvider.getContentType(index),
                 )
             }

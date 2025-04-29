@@ -35,6 +35,8 @@ internal data class TransformingLazyColumnMeasuredItem(
     val containerConstraints: Constraints,
     /** The vertical offset of the item from the top of the list after transformations applied. */
     override var offset: Int,
+    /** The spacing after the item. */
+    val spacing: Int,
     /**
      * The horizontal padding before the item. This doesn't affect vertical calculations, but needs
      * to be added to during final placement.
@@ -53,7 +55,7 @@ internal data class TransformingLazyColumnMeasuredItem(
     val horizontalAlignment: Alignment.Horizontal,
     /** The [LayoutDirection] of the `Layout`. */
     private val layoutDirection: LayoutDirection,
-    val animation: LazyLayoutItemAnimation? = null,
+    val animationProvider: () -> LazyLayoutItemAnimation? = { null },
     override val key: Any,
     override val contentType: Any?,
     /**
@@ -62,12 +64,14 @@ internal data class TransformingLazyColumnMeasuredItem(
      */
     var isInMeasure: Boolean = true,
 ) : TransformingLazyColumnVisibleItemInfo, LazyLayoutMeasuredItem {
+
+    private val initialAnimation = animationProvider()
     // This is the value of the ScrollProgress, either the one set at the end of the measure pass
     // if there are no animations configured or the one computed by the animation, updated each
     // frame.
     override val scrollProgress
         get() =
-            animation?.animatedScrollProgress.let {
+            initialAnimation?.animatedScrollProgress.let {
                 if (it == TransformingLazyColumnItemScrollProgress.Unspecified)
                     measureScrollProgress
                 else it
@@ -75,8 +79,7 @@ internal data class TransformingLazyColumnMeasuredItem(
 
     override val isVertical: Boolean = true
     override val mainAxisSizeWithSpacings: Int
-        // TODO: needs to add the spacing between items?
-        get() = transformedHeight
+        get() = transformedHeight + spacing
 
     override val placeablesCount = 1
     override var nonScrollableItem: Boolean = false
@@ -126,13 +129,14 @@ internal data class TransformingLazyColumnMeasuredItem(
                                 ),
                         y = offset
                     )
-                if (animation == null) {
+                val currentAnimation = animationProvider()
+                if (currentAnimation == null) {
                     placeable.placeWithLayer(intOffset)
                 } else {
-                    intOffset += animation.placementDelta
-                    animation.layer?.let { placeable.placeWithLayer(intOffset, it) }
+                    intOffset += currentAnimation.placementDelta
+                    currentAnimation.layer?.let { placeable.placeWithLayer(intOffset, it) }
                         ?: placeable.placeWithLayer(intOffset)
-                    animation.finalOffset = intOffset
+                    currentAnimation.finalOffset = intOffset
                 }
             }
         }

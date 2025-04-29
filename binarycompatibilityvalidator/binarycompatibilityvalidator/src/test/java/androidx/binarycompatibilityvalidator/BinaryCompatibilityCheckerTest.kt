@@ -97,6 +97,43 @@ class BinaryCompatibilityCheckerTest {
     }
 
     @Test
+    fun removeValueParametersWithSameType() {
+        val beforeText =
+            """
+        final fun my.lib/foo(kotlin/Int, kotlin/Int): kotlin/Int // my.lib/foo|foo(kotlin.Int;kotlin.Int){}[0]
+        """
+                .trimIndent()
+        val afterText =
+            """
+        final fun my.lib/foo(kotlin/Int): kotlin/Int // my.lib/foo|foo(kotlin.Int){}[0]
+        """
+                .trimIndent()
+        val expectedErrorMessages =
+            listOf("Removed declaration my.lib/foo(kotlin/Int, kotlin/Int) from androidx:library")
+        testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
+    }
+
+    @Test
+    fun removedDefaultFromTwoParametersWithSameType() {
+        val beforeText =
+            """
+        final fun my.lib/foo(kotlin/Int =..., kotlin/Int =...): kotlin/Int // my.lib/foo|foo(kotlin.Int;kotlin.Int){}[0]
+        """
+                .trimIndent()
+        val afterText =
+            """
+        final fun my.lib/foo(kotlin/Int, kotlin/Int): kotlin/Int // my.lib/foo|foo(kotlin.Int;kotlin.Int){}[0]
+        """
+                .trimIndent()
+        val expectedErrorMessages =
+            listOf(
+                "hasDefaultArg changed from true to false for parameter 0: kotlin/Int of my.lib/foo",
+                "hasDefaultArg changed from true to false for parameter 1: kotlin/Int of my.lib/foo"
+            )
+        testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
+    }
+
+    @Test
     fun addTypeParameters() {
         val beforeText =
             """
@@ -257,7 +294,7 @@ class BinaryCompatibilityCheckerTest {
         """
         val expectedErrorMessages =
             listOf(
-                "isNoinline changed from false to true for parameter kotlin/Function0 of my.lib/myFun"
+                "isNoinline changed from false to true for parameter 0: kotlin/Function0 of my.lib/myFun"
             )
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
     }
@@ -518,9 +555,9 @@ class BinaryCompatibilityCheckerTest {
         """
         val expectedErrorMessages =
             listOf(
-                "isNoinline changed from true to false for parameter kotlin/Function0" +
+                "isNoinline changed from true to false for parameter 0: kotlin/Function0" +
                     " of my.lib/myFun",
-                "isCrossinline changed from false to true for parameter kotlin/Function0 of " +
+                "isCrossinline changed from false to true for parameter 0: kotlin/Function0 of " +
                     "my.lib/myFun"
             )
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
@@ -718,7 +755,7 @@ class BinaryCompatibilityCheckerTest {
         """
         val expectedErrorMessages =
             listOf(
-                "hasDefaultArg changed from true to false for parameter kotlin/Int of my.lib/myFun"
+                "hasDefaultArg changed from true to false for parameter 0: kotlin/Int of my.lib/myFun"
             )
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
     }
@@ -756,9 +793,9 @@ class BinaryCompatibilityCheckerTest {
         """
         val expectedErrorMessages =
             listOf(
-                "isNoinline changed from false to true for parameter kotlin/Function0" +
+                "isNoinline changed from false to true for parameter 0: kotlin/Function0" +
                     " of my.lib/myFun",
-                "isCrossinline changed from true to false for parameter kotlin/Function0 of " +
+                "isCrossinline changed from true to false for parameter 0: kotlin/Function0 of " +
                     "my.lib/myFun"
             )
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
@@ -776,7 +813,7 @@ class BinaryCompatibilityCheckerTest {
         """
         val expectedErrorMessages =
             listOf(
-                "isVararg changed from true to false for parameter kotlin/IntArray of my.lib/myFun"
+                "isVararg changed from true to false for parameter 0: kotlin/IntArray of my.lib/myFun"
             )
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
     }

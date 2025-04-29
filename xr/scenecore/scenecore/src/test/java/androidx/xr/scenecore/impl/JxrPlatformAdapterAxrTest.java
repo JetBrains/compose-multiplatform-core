@@ -74,6 +74,7 @@ import androidx.xr.runtime.internal.ResizableComponent;
 import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.internal.SpatialCapabilities;
 import androidx.xr.runtime.internal.SpatialEnvironment;
+import androidx.xr.runtime.internal.SpatialPointerComponent;
 import androidx.xr.runtime.internal.SpatialVisibility;
 import androidx.xr.runtime.internal.SurfaceEntity;
 import androidx.xr.runtime.internal.TextureResource;
@@ -2230,6 +2231,12 @@ public final class JxrPlatformAdapterAxrTest {
         PointerCaptureComponent pointerCaptureComponent =
                 mRuntime.createPointerCaptureComponent(null, (inputEvent) -> {}, (state) -> {});
         assertThat(pointerCaptureComponent).isNotNull();
+    }
+
+    @Test
+    public void createSpatialPointerComponent_returnsComponent() {
+        SpatialPointerComponent pointerComponent = mRuntime.createSpatialPointerComponent();
+        assertThat(pointerComponent).isNotNull();
     }
 
     @Test
