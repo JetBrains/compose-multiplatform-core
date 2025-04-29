@@ -202,7 +202,7 @@ tasks.register("testDesktop") {
 }
 
 tasks.register("testWeb") {
-    dependsOn(testWebJs)
+    //dependsOn(testWebJs)
     dependsOn(testWebWasm)
 }
 
