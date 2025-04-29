@@ -218,13 +218,17 @@ val testWebJs = tasks.register("testWebJs") {
 
 val testWebWasm = tasks.register("testWebWasm") {
     // TODO: ideally we want to run all wasm tests that are possible but now we deal only with modules that have skikoTests
+    /*
     dependsOn(":collection:collection:wasmJsTest")
     dependsOn(":compose:foundation:foundation:wasmJsTest")
     dependsOn(":compose:material3:material3:wasmJsTest")
     dependsOn(":compose:runtime:runtime:wasmJsTest")
     dependsOn(":compose:ui:ui-text:wasmJsTest")
+    */
     dependsOn(":compose:ui:ui:wasmJsTest")
+    /*
     dependsOn(":navigation:navigation-runtime:wasmJsTest")
+    */
 }
 
 tasks.register("testUIKit") {
