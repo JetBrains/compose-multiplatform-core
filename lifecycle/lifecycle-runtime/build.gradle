@@ -21,6 +21,8 @@ androidXMultiplatform {
     mac()
     linux()
     ios()
+    watchos()
+    tvos()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -29,7 +31,7 @@ androidXMultiplatform {
             dependencies {
                 api(libs.kotlinStdlib)
                 api(project(":lifecycle:lifecycle-common"))
-                api("androidx.annotation:annotation:1.8.1")
+                api("androidx.annotation:annotation:1.9.1")
             }
         }
 
