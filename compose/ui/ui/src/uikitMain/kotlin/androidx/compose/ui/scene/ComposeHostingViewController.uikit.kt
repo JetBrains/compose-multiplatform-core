@@ -298,7 +298,6 @@ internal class ComposeHostingViewController(
         this.layers = layers
 
         mediator = ComposeSceneMediator(
-            parentView = rootView,
             interopContainerView = interopContainerView,
             onFocusBehavior = configuration.onFocusBehavior,
             focusStack = focusStack,
@@ -310,6 +309,7 @@ internal class ComposeHostingViewController(
             },
             backGestureDispatcher = backGestureDispatcher
         ).also { mediator ->
+            rootView.embedSubview(mediator.view)
             mediator.updateInteractionRect()
             mediator.setContent {
                 ProvideContainerCompositionLocals(content)

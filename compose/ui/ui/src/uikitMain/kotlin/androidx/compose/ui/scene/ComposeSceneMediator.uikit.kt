@@ -183,7 +183,6 @@ private class SemanticsOwnerListenerImpl(
 }
 
 internal class ComposeSceneMediator(
-    parentView: UIView,
     interopContainerView: UIView,
     private val onFocusBehavior: OnFocusBehavior,
     private val focusStack: FocusStack?,
@@ -269,9 +268,7 @@ internal class ComposeSceneMediator(
     /**
      * View wrapping the hierarchy managed by this Mediator.
      */
-    private val view = UIKitTransparentContainerView(
-        onLayoutSubviews = ::updateLayout
-    )
+    val view = UIKitTransparentContainerView(onLayoutSubviews = ::updateLayout)
 
     /**
      * View that handles the user input events and hosts interop views.
@@ -511,7 +508,6 @@ internal class ComposeSceneMediator(
     private var previousTouchEventKind: TouchesEventKind? = null
 
     init {
-        parentView.embedSubview(view)
         interopContainerView.embedSubview(userInputView)
     }
 
