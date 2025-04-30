@@ -50,6 +50,7 @@ import kotlin.math.absoluteValue
 import kotlin.math.min
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.skia.BreakIterator
 import platform.CoreGraphics.CGRectMake
