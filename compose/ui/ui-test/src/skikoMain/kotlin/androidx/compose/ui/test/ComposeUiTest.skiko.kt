@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.SessionMutex
 import androidx.compose.ui.draganddrop.DragAndDropTransferData
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -34,7 +33,6 @@ import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
 import androidx.compose.ui.platform.PlatformDragAndDropSource
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
-import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
@@ -67,12 +65,11 @@ import org.jetbrains.skia.Surface
 import org.jetbrains.skiko.currentNanoTime
 
 @ExperimentalTestApi
-@Deprecated(
-    level = DeprecationLevel.HIDDEN,
-    message = "Replaced with same function, but with suspend block, runTextContext, testTimeout"
-)
-@JvmName("runComposeUiTest")
-fun runComposeUiTestNonSuspendingLambda(
+//@Deprecated(
+//    level = DeprecationLevel.HIDDEN,
+//    message = "Replaced with same function, but with suspend block, runTextContext, testTimeout"
+//)
+fun runComposeUiTest(
     effectContext: CoroutineContext = EmptyCoroutineContext,
     block: ComposeUiTest.() -> Unit
 ) {
@@ -80,6 +77,10 @@ fun runComposeUiTestNonSuspendingLambda(
 }
 
 @ExperimentalTestApi
+@Deprecated(
+    level = DeprecationLevel.HIDDEN,
+    message = "TODO: Adopt runComposeUiTest with suspend lambda"
+)
 actual fun runComposeUiTest(
     effectContext: CoroutineContext,
     runTestContext: CoroutineContext,
@@ -421,13 +422,6 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             get() = size
     }
 
-    private inner class TestTextInputSession(
-        coroutineScope: CoroutineScope
-    ) : PlatformTextInputSessionScope, CoroutineScope by coroutineScope {
-        override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing =
-            awaitCancellation()
-    }
-
     private inner class TestDragAndDropManager : PlatformDragAndDropManager {
         override val isRequestDragAndDropTransferRequired: Boolean
             get() = true
@@ -466,13 +460,9 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
         override val dragAndDropManager: PlatformDragAndDropManager = TestDragAndDropManager()
 
-        private val textInputSessionMutex = SessionMutex<TestTextInputSession>()
-
-        override suspend fun textInputSession(
-            session: suspend PlatformTextInputSessionScope.() -> Nothing
-        ): Nothing = textInputSessionMutex.withSessionCancellingPrevious(
-            sessionInitializer = { TestTextInputSession(it) }, session = session
-        )
+        override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
+            awaitCancellation()
+        }
     }
 }
 

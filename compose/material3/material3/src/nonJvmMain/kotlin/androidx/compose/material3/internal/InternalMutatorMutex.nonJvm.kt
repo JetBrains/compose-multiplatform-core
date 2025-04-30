@@ -16,12 +16,14 @@
 
 package androidx.compose.material3.internal
 
-internal expect class AtomicReference<V>(value: V) {
-    fun get(): V
+import kotlinx.atomicfu.atomic
 
-    fun set(value: V)
-
-    fun getAndSet(value: V): V
-
-    fun compareAndSet(expect: V, newValue: V): Boolean
+internal actual class InternalAtomicReference<V> actual constructor(value: V) {
+    private val delegate = atomic(value)
+    actual fun get() = delegate.value
+    actual fun set(value: V) {
+        delegate.value = value
+    }
+    actual fun getAndSet(value: V) = delegate.getAndSet(value)
+    actual fun compareAndSet(expect: V, newValue: V) = delegate.compareAndSet(expect, newValue)
 }

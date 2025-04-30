@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.sw() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Kunja safu ya chini",
     Strings.BottomSheetDismissDescription to "Ondoa safu ya chini",
     Strings.BottomSheetExpandDescription to "Panua safu ya chini",
+    Strings.FloatingToolbarCollapse to "Kunja upau wa vidhibiti",
+    Strings.FloatingToolbarExpand to "Panua upau wa vidhibiti",
     Strings.TooltipPaneDescription to "Kidirisha cha vidokezo",
     Strings.TooltipLongPressLabel to "Onyesha kidirisha cha vidokezo",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.sw() = mapOf(
     Strings.TimePickerHour to "Saa",
     Strings.TimePickerMinuteTextField to "cha dakika",
     Strings.TimePickerHourTextField to "cha moja",
+    Strings.TimePickerToggleKeyboard to "Badilisha utumie mipangilio ya kuingiza data ya maandishi ukiweka muda",
+    Strings.TimePickerToggleTouch to "Badilisha utumie hali ya saa ukiweka muda",
+    Strings.TimePickerDialogTitle to "Chagua Muda",
+    Strings.TimeInputDialogTitle to "Weka Muda",
     Strings.CloseRail to "Funga reli ya usogezaji",
     Strings.WideNavigationRailPaneTitle to "Reli ya usogezaji",
 )

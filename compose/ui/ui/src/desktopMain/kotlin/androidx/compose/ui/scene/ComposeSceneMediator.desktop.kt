@@ -621,7 +621,7 @@ internal class ComposeSceneMediator(
         skiaLayerComponent.onRenderApiChanged(action)
     }
 
-    fun onChangeWindowFocus() {
+    fun onWindowFocusChanged() {
         keyboardModifiersRequireUpdate = true
     }
 
@@ -715,16 +715,27 @@ internal class ComposeSceneMediator(
         override val viewConfiguration: ViewConfiguration = DesktopViewConfiguration()
         override val textInputService = this@ComposeSceneMediator.textInputService
 
-        private val textInputSessionMutex = SessionMutex<DesktopTextInputSession>()
+        override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
+            coroutineScope {
+                launch {
+                    request.focusedRectInRoot.collect {
+                        textInputService2.focusedRectChanged(it)
+                    }
+                }
 
-        override suspend fun textInputSession(
-            session: suspend PlatformTextInputSessionScope.() -> Nothing
-        ): Nothing = textInputSessionMutex.withSessionCancellingPrevious(
-            sessionInitializer = {
-                DesktopTextInputSession(coroutineScope = it)
-            },
-            session = session
-        )
+                suspendCancellableCoroutine<Nothing> { continuation ->
+                    textInputService2.startInput(
+                        state = request.state,
+                        imeOptions = request.imeOptions,
+                        editText = request.editText,
+                    )
+
+                    continuation.invokeOnCancellation {
+                        textInputService2.stopInput()
+                    }
+                }
+            }
+        }
 
         override fun setPointerIcon(pointerIcon: PointerIcon) {
             contentComponent.cursor =
@@ -751,6 +762,12 @@ internal class ComposeSceneMediator(
     }
 
     private inner class DesktopPlatformComponent : PlatformComponent {
+        override val locationOnScreen: Point
+            get() = contentComponent.locationOnScreen
+
+        override val density: Density
+            get() = contentComponent.density
+
         override fun enableInput(inputMethodRequests: InputMethodRequests) {
             currentInputMethodRequests = inputMethodRequests
             contentComponent.enableInputMethods(true)
@@ -767,47 +784,6 @@ internal class ComposeSceneMediator(
             // enableInputMethods is design to used per-Swing component level at init stage,
             // not dynamically
             resetFocus()
-        }
-
-        override val locationOnScreen: Point
-            get() = contentComponent.locationOnScreen
-
-        override val density: Density
-            get() = contentComponent.density
-    }
-
-    @OptIn(InternalComposeUiApi::class)
-    private inner class DesktopTextInputSession(
-        coroutineScope: CoroutineScope,
-    ) : PlatformTextInputSessionScope, CoroutineScope by coroutineScope {
-
-        private val innerSessionMutex = SessionMutex<Nothing?>()
-
-        override suspend fun startInputMethod(
-            request: PlatformTextInputMethodRequest
-        ): Nothing = innerSessionMutex.withSessionCancellingPrevious(
-            // This session has no data, just init/dispose tasks.
-            sessionInitializer = { null }
-        ) {
-            coroutineScope {
-                launch {
-                    request.focusedRectInRoot.collect {
-                        textInputService2.focusedRectChanged(it)
-                    }
-                }
-
-                suspendCancellableCoroutine<Nothing> { continuation ->
-                    textInputService2.startInput(
-                        state = request.state,
-                        imeOptions = request.imeOptions,
-                        editText = request.editText,
-                    )
-
-                    continuation.invokeOnCancellation {
-                        textInputService2.stopInput()
-                    }
-                }
-            }
         }
     }
 

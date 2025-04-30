@@ -46,6 +46,26 @@ public final class androidx/compose/material3/AppBarKt {
 	public static final fun rememberTopAppBarState (FFFLandroidx/compose/runtime/Composer;II)Landroidx/compose/material3/TopAppBarState;
 }
 
+public final class androidx/compose/material3/AppBarRowKt {
+	public static final fun AppBarRow (Lkotlin/jvm/functions/Function3;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+}
+
+public final class androidx/compose/material3/AppBarRowMenuState {
+	public static final field $stable I
+	public fun <init> ()V
+	public final fun dismiss ()V
+	public final fun isExpanded ()Z
+	public final fun show ()V
+}
+
+public abstract interface class androidx/compose/material3/AppBarRowScope {
+	public abstract fun clickableItem (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;Ljava/lang/String;Z)V
+	public static synthetic fun clickableItem$default (Landroidx/compose/material3/AppBarRowScope;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;Ljava/lang/String;ZILjava/lang/Object;)V
+	public abstract fun customItem (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function3;)V
+	public abstract fun toggleableItem (ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Ljava/lang/String;Z)V
+	public static synthetic fun toggleableItem$default (Landroidx/compose/material3/AppBarRowScope;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Ljava/lang/String;ZILjava/lang/Object;)V
+}
+
 public final class androidx/compose/material3/AssistChipDefaults {
 	public static final field $stable I
 	public static final field INSTANCE Landroidx/compose/material3/AssistChipDefaults;
@@ -253,10 +273,26 @@ public final class androidx/compose/material3/ButtonGroupDefaults {
 
 public final class androidx/compose/material3/ButtonGroupKt {
 	public static final fun ButtonGroup (Landroidx/compose/ui/Modifier;FLandroidx/compose/foundation/layout/Arrangement$Horizontal;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+	public static final fun ButtonGroup (Lkotlin/jvm/functions/Function3;Landroidx/compose/ui/Modifier;FLandroidx/compose/foundation/layout/Arrangement$Horizontal;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+}
+
+public final class androidx/compose/material3/ButtonGroupMenuState {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun <init> (Z)V
+	public synthetic fun <init> (ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun dismiss ()V
+	public final fun isExpanded ()Z
+	public final fun show ()V
 }
 
 public abstract interface class androidx/compose/material3/ButtonGroupScope {
 	public abstract fun animateWidth (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/interaction/InteractionSource;)Landroidx/compose/ui/Modifier;
+	public abstract fun clickableItem (Lkotlin/jvm/functions/Function0;Ljava/lang/String;Lkotlin/jvm/functions/Function2;FZ)V
+	public static synthetic fun clickableItem$default (Landroidx/compose/material3/ButtonGroupScope;Lkotlin/jvm/functions/Function0;Ljava/lang/String;Lkotlin/jvm/functions/Function2;FZILjava/lang/Object;)V
+	public abstract fun customItem (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function3;)V
+	public abstract fun toggleableItem (ZLjava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;FZ)V
+	public static synthetic fun toggleableItem$default (Landroidx/compose/material3/ButtonGroupScope;ZLjava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;FZILjava/lang/Object;)V
 	public abstract fun weight (Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
 	public abstract synthetic fun weight (Landroidx/compose/ui/Modifier;FZ)Landroidx/compose/ui/Modifier;
 	public static synthetic fun weight$default (Landroidx/compose/material3/ButtonGroupScope;Landroidx/compose/ui/Modifier;FZILjava/lang/Object;)Landroidx/compose/ui/Modifier;
@@ -674,8 +710,8 @@ public abstract interface class androidx/compose/material3/DatePickerFormatter {
 }
 
 public final class androidx/compose/material3/DatePickerKt {
-	public static final fun DatePicker (Landroidx/compose/material3/DatePickerState;Landroidx/compose/ui/Modifier;Landroidx/compose/material3/DatePickerFormatter;Landroidx/compose/material3/DatePickerColors;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;ZZLandroidx/compose/runtime/Composer;II)V
-	public static final synthetic fun DatePicker (Landroidx/compose/material3/DatePickerState;Landroidx/compose/ui/Modifier;Landroidx/compose/material3/DatePickerFormatter;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;ZLandroidx/compose/material3/DatePickerColors;Landroidx/compose/runtime/Composer;II)V
+	public static final fun DatePicker (Landroidx/compose/material3/DatePickerState;Landroidx/compose/ui/Modifier;Landroidx/compose/material3/DatePickerFormatter;Landroidx/compose/material3/DatePickerColors;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;ZLandroidx/compose/ui/focus/FocusRequester;Landroidx/compose/runtime/Composer;II)V
+	public static final synthetic fun DatePicker (Landroidx/compose/material3/DatePickerState;Landroidx/compose/ui/Modifier;Landroidx/compose/material3/DatePickerFormatter;Landroidx/compose/material3/DatePickerColors;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;ZZLandroidx/compose/runtime/Composer;II)V
 	public static final fun DatePickerState-sHin3Bw (Ljava/util/Locale;Ljava/lang/Long;Ljava/lang/Long;Lkotlin/ranges/IntRange;ILandroidx/compose/material3/SelectableDates;)Landroidx/compose/material3/DatePickerState;
 	public static synthetic fun DatePickerState-sHin3Bw$default (Ljava/util/Locale;Ljava/lang/Long;Ljava/lang/Long;Lkotlin/ranges/IntRange;ILandroidx/compose/material3/SelectableDates;ILjava/lang/Object;)Landroidx/compose/material3/DatePickerState;
 	public static final fun rememberDatePickerState-EU0dCGE (Ljava/lang/Long;Ljava/lang/Long;Lkotlin/ranges/IntRange;ILandroidx/compose/material3/SelectableDates;Landroidx/compose/runtime/Composer;II)Landroidx/compose/material3/DatePickerState;
@@ -703,8 +739,8 @@ public final class androidx/compose/material3/DateRangePickerDefaults {
 }
 
 public final class androidx/compose/material3/DateRangePickerKt {
-	public static final fun DateRangePicker (Landroidx/compose/material3/DateRangePickerState;Landroidx/compose/ui/Modifier;Landroidx/compose/material3/DatePickerFormatter;Landroidx/compose/material3/DatePickerColors;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;ZZLandroidx/compose/runtime/Composer;II)V
-	public static final synthetic fun DateRangePicker (Landroidx/compose/material3/DateRangePickerState;Landroidx/compose/ui/Modifier;Landroidx/compose/material3/DatePickerFormatter;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;ZLandroidx/compose/material3/DatePickerColors;Landroidx/compose/runtime/Composer;II)V
+	public static final fun DateRangePicker (Landroidx/compose/material3/DateRangePickerState;Landroidx/compose/ui/Modifier;Landroidx/compose/material3/DatePickerFormatter;Landroidx/compose/material3/DatePickerColors;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;ZLandroidx/compose/ui/focus/FocusRequester;Landroidx/compose/runtime/Composer;II)V
+	public static final synthetic fun DateRangePicker (Landroidx/compose/material3/DateRangePickerState;Landroidx/compose/ui/Modifier;Landroidx/compose/material3/DatePickerFormatter;Landroidx/compose/material3/DatePickerColors;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;ZZLandroidx/compose/runtime/Composer;II)V
 	public static final fun DateRangePickerState-HVP43zI (Ljava/util/Locale;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Lkotlin/ranges/IntRange;ILandroidx/compose/material3/SelectableDates;)Landroidx/compose/material3/DateRangePickerState;
 	public static synthetic fun DateRangePickerState-HVP43zI$default (Ljava/util/Locale;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Lkotlin/ranges/IntRange;ILandroidx/compose/material3/SelectableDates;ILjava/lang/Object;)Landroidx/compose/material3/DateRangePickerState;
 	public static final fun rememberDateRangePickerState-IlFM19s (Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Lkotlin/ranges/IntRange;ILandroidx/compose/material3/SelectableDates;Landroidx/compose/runtime/Composer;II)Landroidx/compose/material3/DateRangePickerState;

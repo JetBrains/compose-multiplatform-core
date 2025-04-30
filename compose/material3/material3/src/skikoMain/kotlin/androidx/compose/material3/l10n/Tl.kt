@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.tl() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "I-collapse ang bottom sheet",
     Strings.BottomSheetDismissDescription to "I-dismiss ang bottom sheet",
     Strings.BottomSheetExpandDescription to "Palawakin ang bottom sheet",
+    Strings.FloatingToolbarCollapse to "I-collapse ang toolbar",
+    Strings.FloatingToolbarExpand to "I-expand ang toolbar",
     Strings.TooltipPaneDescription to "Tooltip",
     Strings.TooltipLongPressLabel to "Ipakita ang tooltip",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.tl() = mapOf(
     Strings.TimePickerHour to "Oras",
     Strings.TimePickerMinuteTextField to "nang ilang minuto",
     Strings.TimePickerHourTextField to "nang ilang oras",
+    Strings.TimePickerToggleKeyboard to "Lumipat sa pamamaraan ng pag-input ng text para sa pag-input ng oras",
+    Strings.TimePickerToggleTouch to "Lumipat sa clock mode para sa pag-input ng oras.",
+    Strings.TimePickerDialogTitle to "Pumili ng Oras",
+    Strings.TimeInputDialogTitle to "Maglagay ng Oras",
     Strings.CloseRail to "Isara ang rail",
     Strings.WideNavigationRailPaneTitle to "Navigation rail",
 )

@@ -111,9 +111,7 @@ interface PlatformContext {
     val inputModeManager: InputModeManager
     val textInputService: PlatformTextInputService get() = EmptyPlatformTextInputService
 
-    suspend fun textInputSession(
-        session: suspend PlatformTextInputSessionScope.() -> Nothing
-    ): Nothing {
+    suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
         awaitCancellation()
     }
 

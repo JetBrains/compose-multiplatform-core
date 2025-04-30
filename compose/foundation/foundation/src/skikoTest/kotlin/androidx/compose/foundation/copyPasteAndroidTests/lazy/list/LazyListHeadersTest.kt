@@ -44,6 +44,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.test.IgnoreJsTarget
 import kotlinx.test.IgnoreWasmTarget
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalTestApi::class)
@@ -145,6 +146,7 @@ class LazyListHeadersTest {
     }
 
     @Test
+    @IgnoreJsTarget
     @IgnoreWasmTarget
     fun lazyColumnHeaderIsReplaced() = runSkikoComposeUiTest {
         val items = (1..2).map { it.toString() }

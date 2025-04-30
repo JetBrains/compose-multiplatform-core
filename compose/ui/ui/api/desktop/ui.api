@@ -138,10 +138,11 @@ public final class androidx/compose/ui/ComposableSingletons$ImageComposeScene_sk
 public final class androidx/compose/ui/ComposeUiFlags {
 	public static final field $stable I
 	public static final field INSTANCE Landroidx/compose/ui/ComposeUiFlags;
+	public static field areWindowInsetsRulersEnabled Z
 	public static field isAdaptiveRefreshRateEnabled Z
 	public static field isClearFocusOnResetEnabled Z
 	public static field isFocusActionExitsTouchModeEnabled Z
-	public static field isHitPathTrackerLoggingEnabled Z
+	public static field isNoPinningInFocusRestorationEnabled Z
 	public static field isOutOfFrameDeactivationEnabled Z
 	public static field isRectTrackingEnabled Z
 	public static field isRemoveFocusedViewFixEnabled Z
@@ -199,6 +200,10 @@ public final class androidx/compose/ui/ImageComposeScene_skikoMainKt {
 	public static final fun renderComposeScene (IILandroidx/compose/ui/unit/Density;Lkotlin/jvm/functions/Function2;)Lorg/jetbrains/skia/Image;
 	public static synthetic fun renderComposeScene$default (IILandroidx/compose/ui/unit/Density;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lorg/jetbrains/skia/Image;
 	public static final fun use (Landroidx/compose/ui/ImageComposeScene;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+}
+
+public final class androidx/compose/ui/KeepScreenOnKt {
+	public static final fun keepScreenOn (Landroidx/compose/ui/Modifier;)Landroidx/compose/ui/Modifier;
 }
 
 public abstract interface class androidx/compose/ui/Modifier {
@@ -273,18 +278,18 @@ public final class androidx/compose/ui/SensitiveContentKt {
 }
 
 public final class androidx/compose/ui/SessionMutex {
-	public static final synthetic fun box-impl (Landroidx/compose/ui/AtomicReference;)Landroidx/compose/ui/SessionMutex;
-	public static fun constructor-impl ()Landroidx/compose/ui/AtomicReference;
+	public static final synthetic fun box-impl (Ljava/util/concurrent/atomic/AtomicReference;)Landroidx/compose/ui/SessionMutex;
+	public static fun constructor-impl ()Ljava/util/concurrent/atomic/AtomicReference;
 	public fun equals (Ljava/lang/Object;)Z
-	public static fun equals-impl (Landroidx/compose/ui/AtomicReference;Ljava/lang/Object;)Z
-	public static final fun equals-impl0 (Landroidx/compose/ui/AtomicReference;Landroidx/compose/ui/AtomicReference;)Z
-	public static final fun getCurrentSession-impl (Landroidx/compose/ui/AtomicReference;)Ljava/lang/Object;
+	public static fun equals-impl (Ljava/util/concurrent/atomic/AtomicReference;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/util/concurrent/atomic/AtomicReference;Ljava/util/concurrent/atomic/AtomicReference;)Z
+	public static final fun getCurrentSession-impl (Ljava/util/concurrent/atomic/AtomicReference;)Ljava/lang/Object;
 	public fun hashCode ()I
-	public static fun hashCode-impl (Landroidx/compose/ui/AtomicReference;)I
+	public static fun hashCode-impl (Ljava/util/concurrent/atomic/AtomicReference;)I
 	public fun toString ()Ljava/lang/String;
-	public static fun toString-impl (Landroidx/compose/ui/AtomicReference;)Ljava/lang/String;
-	public final synthetic fun unbox-impl ()Landroidx/compose/ui/AtomicReference;
-	public static final fun withSessionCancellingPrevious-impl (Landroidx/compose/ui/AtomicReference;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun toString-impl (Ljava/util/concurrent/atomic/AtomicReference;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/util/concurrent/atomic/AtomicReference;
+	public static final fun withSessionCancellingPrevious-impl (Ljava/util/concurrent/atomic/AtomicReference;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class androidx/compose/ui/SystemTheme : java/lang/Enum {
@@ -2569,7 +2574,15 @@ public final class androidx/compose/ui/layout/HorizontalAlignmentLine : androidx
 
 public final class androidx/compose/ui/layout/HorizontalRuler : androidx/compose/ui/layout/Ruler {
 	public static final field $stable I
+	public static final field Companion Landroidx/compose/ui/layout/HorizontalRuler$Companion;
 	public fun <init> ()V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class androidx/compose/ui/layout/HorizontalRuler$Companion {
+	public final fun derived (Lkotlin/jvm/functions/Function2;)Landroidx/compose/ui/layout/HorizontalRuler;
+	public final fun maxOf ([Landroidx/compose/ui/layout/HorizontalRuler;)Landroidx/compose/ui/layout/HorizontalRuler;
+	public final fun minOf ([Landroidx/compose/ui/layout/HorizontalRuler;)Landroidx/compose/ui/layout/HorizontalRuler;
 }
 
 public abstract interface class androidx/compose/ui/layout/IntrinsicMeasurable {
@@ -2885,11 +2898,13 @@ public abstract class androidx/compose/ui/layout/Placeable : androidx/compose/ui
 	protected final fun setMeasurementConstraints-BRTryo0 (J)V
 }
 
-public abstract class androidx/compose/ui/layout/Placeable$PlacementScope {
+public abstract class androidx/compose/ui/layout/Placeable$PlacementScope : androidx/compose/ui/unit/Density {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun current (Landroidx/compose/ui/layout/Ruler;F)F
 	public fun getCoordinates ()Landroidx/compose/ui/layout/LayoutCoordinates;
+	public fun getDensity ()F
+	public fun getFontScale ()F
 	protected abstract fun getParentLayoutDirection ()Landroidx/compose/ui/unit/LayoutDirection;
 	protected abstract fun getParentWidth ()I
 	public final fun place (Landroidx/compose/ui/layout/Placeable;IIF)V
@@ -2922,6 +2937,23 @@ public abstract class androidx/compose/ui/layout/Placeable$PlacementScope {
 public abstract interface annotation class androidx/compose/ui/layout/PlacementScopeMarker : java/lang/annotation/Annotation {
 }
 
+public abstract interface class androidx/compose/ui/layout/RectRulers {
+	public static final field Companion Landroidx/compose/ui/layout/RectRulers$Companion;
+	public abstract fun getBottom ()Landroidx/compose/ui/layout/HorizontalRuler;
+	public abstract fun getLeft ()Landroidx/compose/ui/layout/VerticalRuler;
+	public abstract fun getRight ()Landroidx/compose/ui/layout/VerticalRuler;
+	public abstract fun getTop ()Landroidx/compose/ui/layout/HorizontalRuler;
+}
+
+public final class androidx/compose/ui/layout/RectRulers$Companion {
+}
+
+public final class androidx/compose/ui/layout/RectRulersKt {
+	public static final fun RectRulers ()Landroidx/compose/ui/layout/RectRulers;
+	public static final fun innermostOf (Landroidx/compose/ui/layout/RectRulers$Companion;[Landroidx/compose/ui/layout/RectRulers;)Landroidx/compose/ui/layout/RectRulers;
+	public static final fun outermostOf (Landroidx/compose/ui/layout/RectRulers$Companion;[Landroidx/compose/ui/layout/RectRulers;)Landroidx/compose/ui/layout/RectRulers;
+}
+
 public abstract interface class androidx/compose/ui/layout/Remeasurement {
 	public abstract fun forceRemeasure ()V
 }
@@ -2940,6 +2972,7 @@ public final class androidx/compose/ui/layout/RemeasurementModifier$DefaultImpls
 
 public abstract class androidx/compose/ui/layout/Ruler {
 	public static final field $stable I
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public abstract interface class androidx/compose/ui/layout/RulerScope : androidx/compose/ui/unit/Density {
@@ -3067,7 +3100,15 @@ public final class androidx/compose/ui/layout/VerticalAlignmentLine : androidx/c
 
 public final class androidx/compose/ui/layout/VerticalRuler : androidx/compose/ui/layout/Ruler {
 	public static final field $stable I
+	public static final field Companion Landroidx/compose/ui/layout/VerticalRuler$Companion;
 	public fun <init> ()V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class androidx/compose/ui/layout/VerticalRuler$Companion {
+	public final fun derived (Lkotlin/jvm/functions/Function2;)Landroidx/compose/ui/layout/VerticalRuler;
+	public final fun maxOf ([Landroidx/compose/ui/layout/VerticalRuler;)Landroidx/compose/ui/layout/VerticalRuler;
+	public final fun minOf ([Landroidx/compose/ui/layout/VerticalRuler;)Landroidx/compose/ui/layout/VerticalRuler;
 }
 
 public abstract class androidx/compose/ui/modifier/ModifierLocal {
@@ -3189,6 +3230,7 @@ public abstract interface class androidx/compose/ui/node/DelegatableNode$Registr
 }
 
 public final class androidx/compose/ui/node/DelegatableNodeKt {
+	public static final fun dispatchOnScrollChanged-Uv8p0NA (Landroidx/compose/ui/node/DelegatableNode;J)V
 	public static final fun invalidateSubtree (Landroidx/compose/ui/node/DelegatableNode;)V
 	public static final fun requestAutofill (Landroidx/compose/ui/node/DelegatableNode;)V
 	public static final fun requireDensity (Landroidx/compose/ui/node/DelegatableNode;)Landroidx/compose/ui/unit/Density;
@@ -3580,7 +3622,7 @@ public abstract interface class androidx/compose/ui/platform/PlatformContext {
 	public fun isWindowTransparent ()Z
 	public fun requestFocus ()Z
 	public fun setPointerIcon (Landroidx/compose/ui/input/pointer/PointerIcon;)V
-	public fun textInputSession (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun startInputMethod (Landroidx/compose/ui/platform/PlatformTextInputMethodRequest;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class androidx/compose/ui/platform/PlatformContext$Companion {
@@ -4170,6 +4212,7 @@ public final class androidx/compose/ui/semantics/SemanticsProperties {
 	public final fun getRole ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getSelectableGroup ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getSelected ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
+	public final fun getShape ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getStateDescription ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getTestTag ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 	public final fun getText ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
@@ -4215,6 +4258,7 @@ public final class androidx/compose/ui/semantics/SemanticsPropertiesKt {
 	public static final fun getScrollViewportLength (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
 	public static synthetic fun getScrollViewportLength$default (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
 	public static final fun getSelected (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Z
+	public static final fun getShape (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Landroidx/compose/ui/graphics/Shape;
 	public static final fun getStateDescription (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Ljava/lang/String;
 	public static final fun getTestTag (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Ljava/lang/String;
 	public static final fun getText (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Landroidx/compose/ui/text/AnnotatedString;
@@ -4288,6 +4332,7 @@ public final class androidx/compose/ui/semantics/SemanticsPropertiesKt {
 	public static final fun setSelected (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Z)V
 	public static final fun setSelection (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function3;)V
 	public static synthetic fun setSelection$default (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+	public static final fun setShape (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Landroidx/compose/ui/graphics/Shape;)V
 	public static final fun setShowingTextSubstitution (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Z)V
 	public static final fun setStateDescription (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;)V
 	public static final fun setTestTag (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljava/lang/String;)V

@@ -42,6 +42,8 @@ val libraryToComponents = mapOf(
         ComposeComponent(":compose:material3:material3-window-size-class"),
         ComposeComponent(":compose:material3:material3-adaptive-navigation-suite"),
         ComposeComponent(":compose:runtime:runtime", supportedPlatforms = ComposePlatforms.ALL),
+        // TODO: It's published for all platforms by Google, so we don't need to re-publish it
+        ComposeComponent(":compose:runtime:runtime-annotation", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":compose:runtime:runtime-saveable", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":compose:ui:ui"),
         ComposeComponent(":compose:ui:ui-geometry"),
@@ -117,8 +119,8 @@ val libraryToComponents = mapOf(
         ComposeComponent(":performance:performance-annotation", viewModelPlatforms),
     ),
     "SAVEDSTATE" to listOf(
-        ComposeComponent(":savedstate:savedstate", viewModelPlatforms),
-        ComposeComponent(":savedstate:savedstate-compose"),
+        ComposeComponent(":savedstate:savedstate", supportedPlatforms = ComposePlatforms.ALL_AOSP),
+        ComposeComponent(":savedstate:savedstate-compose", supportedPlatforms = ComposePlatforms.ALL),
     ),
     "WINDOW" to listOf(
         ComposeComponent(":window:window-core", viewModelPlatforms),

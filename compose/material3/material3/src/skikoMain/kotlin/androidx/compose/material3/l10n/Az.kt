@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.az() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Aşağıdakı vərəqi yığcamlaşdırın",
     Strings.BottomSheetDismissDescription to "Aşağıdakı vərəqi rədd edin",
     Strings.BottomSheetExpandDescription to "Aşağıdakı vərəqi genişləndirin",
+    Strings.FloatingToolbarCollapse to "Alətlər panelini yığcamlaşdırın",
+    Strings.FloatingToolbarExpand to "Alətlər panelini genişləndirin",
     Strings.TooltipPaneDescription to "Alət izahı",
     Strings.TooltipLongPressLabel to "Alət izahını göstərin",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.az() = mapOf(
     Strings.TimePickerHour to "Saat",
     Strings.TimePickerMinuteTextField to "dəqiqəlik",
     Strings.TimePickerHourTextField to "saatlıq",
+    Strings.TimePickerToggleKeyboard to "Vaxtı daxil etmək üçün mətn daxiletmə rejiminə keçin",
+    Strings.TimePickerToggleTouch to "Vaxtı daxil etmək üçün saat rejiminə keçin",
+    Strings.TimePickerDialogTitle to "Vaxt seçin",
+    Strings.TimeInputDialogTitle to "Vaxt daxil edin",
     Strings.CloseRail to "Relsi bağlayın",
     Strings.WideNavigationRailPaneTitle to "Naviqasiya relsi",
 )

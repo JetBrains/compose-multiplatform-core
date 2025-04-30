@@ -22,7 +22,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.SessionMutex
 import androidx.compose.ui.animation.withAnimationProgress
 import androidx.compose.ui.backhandler.UIKitBackGestureDispatcher
 import androidx.compose.ui.draganddrop.UIKitDragAndDropManager
@@ -54,7 +53,6 @@ import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
-import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.UIKitTextInputService
 import androidx.compose.ui.platform.ViewConfiguration
@@ -94,7 +92,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.useContents
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -715,57 +712,38 @@ internal class ComposeSceneMediator(
         override val semanticsOwnerListener get() = this@ComposeSceneMediator.semanticsOwnerListener
         override val dragAndDropManager get() = this@ComposeSceneMediator.dragAndDropManager
 
-        private val textInputSessionMutex = SessionMutex<IOSTextInputSession>()
-
-        override suspend fun textInputSession(session: suspend PlatformTextInputSessionScope.() -> Nothing): Nothing =
-            textInputSessionMutex.withSessionCancellingPrevious(
-                sessionInitializer = {
-                    IOSTextInputSession(it)
-                },
-                session = session
-            )
-    }
-
-    private inner class IOSTextInputSession(
-        coroutineScope: CoroutineScope
-    ) : PlatformTextInputSessionScope, CoroutineScope by coroutineScope {
-        private val innerSessionMutex = SessionMutex<Nothing?>()
-
-        override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing =
-            innerSessionMutex.withSessionCancellingPrevious(
-                sessionInitializer = { null }
-            ) {
-                // TODO: Adopt PlatformTextInputService2 (https://youtrack.jetbrains.com/issue/CMP-7832/iOS-Adopt-PlatformTextInputService2)
-                coroutineScope {
-                    launch {
-                        request.outputValue.collect {
-                            textInputService.updateState(oldValue = null, newValue = it)
-                        }
+        override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
+            // TODO: Adopt PlatformTextInputService2 (https://youtrack.jetbrains.com/issue/CMP-7832/iOS-Adopt-PlatformTextInputService2)
+            coroutineScope {
+                launch {
+                    request.outputValue.collect {
+                        textInputService.updateState(oldValue = null, newValue = it)
                     }
-                    launch {
-                        request.textLayoutResult.collect {
-                            textInputService.updateTextLayoutResult(it)
-                        }
+                }
+                launch {
+                    request.textLayoutResult.collect {
+                        textInputService.updateTextLayoutResult(it)
                     }
-                    launch {
-                        request.textFieldRectInRoot.collect {
-                            textInputService.updateTextFrame(it)
-                        }
+                }
+                launch {
+                    request.textFieldRectInRoot.collect {
+                        textInputService.updateTextFrame(it)
                     }
-                    suspendCancellableCoroutine<Nothing> { continuation ->
-                        textInputService.startInput(
-                            value = request.value(),
-                            imeOptions = request.imeOptions,
-                            onEditCommand = request.onEditCommand,
-                            onImeActionPerformed = request.onImeAction ?: {}
-                        )
+                }
+                suspendCancellableCoroutine<Nothing> { continuation ->
+                    textInputService.startInput(
+                        value = request.value(),
+                        imeOptions = request.imeOptions,
+                        onEditCommand = request.onEditCommand,
+                        onImeActionPerformed = request.onImeAction ?: {}
+                    )
 
-                        continuation.invokeOnCancellation {
-                            textInputService.stopInput()
-                        }
+                    continuation.invokeOnCancellation {
+                        textInputService.stopInput()
                     }
                 }
             }
+        }
     }
 }
 

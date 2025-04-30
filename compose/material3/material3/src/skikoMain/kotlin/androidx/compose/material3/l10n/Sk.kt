@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.sk() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Zbaliť dolný hárok",
     Strings.BottomSheetDismissDescription to "Zavrieť dolný hárok",
     Strings.BottomSheetExpandDescription to "Rozbaliť dolný hárok",
+    Strings.FloatingToolbarCollapse to "Zbaliť panel s nástrojmi",
+    Strings.FloatingToolbarExpand to "Rozbaliť panel s nástrojmi",
     Strings.TooltipPaneDescription to "Popis",
     Strings.TooltipLongPressLabel to "Zobraziť popis",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.sk() = mapOf(
     Strings.TimePickerHour to "Hodina",
     Strings.TimePickerMinuteTextField to "minúty",
     Strings.TimePickerHourTextField to "hodiny",
+    Strings.TimePickerToggleKeyboard to "Ak chcete zadať čas, prepnite na režim zadávania textu",
+    Strings.TimePickerToggleTouch to "Ak chcete zadať čas, prepnite na režim hodín",
+    Strings.TimePickerDialogTitle to "Vyberte čas",
+    Strings.TimeInputDialogTitle to "Zadajte čas",
     Strings.CloseRail to "Zavrieť pruh",
     Strings.WideNavigationRailPaneTitle to "Navigačný pruh",
 )

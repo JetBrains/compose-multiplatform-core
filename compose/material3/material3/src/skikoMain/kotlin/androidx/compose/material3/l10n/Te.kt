@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.te() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "దిగువున ఉన్న షీట్‌ను కుదిస్తుంది",
     Strings.BottomSheetDismissDescription to "దిగువున ఉన్న షీట్‌ను విస్మరిస్తుంది",
     Strings.BottomSheetExpandDescription to "దిగువున ఉన్న షీట్‌ను విస్తరిస్తుంది",
+    Strings.FloatingToolbarCollapse to "టూల్‌బార్‌ను కుదించండి",
+    Strings.FloatingToolbarExpand to "టూల్‌బార్‌ను విస్తరించండి",
     Strings.TooltipPaneDescription to "టూల్‌టిప్",
     Strings.TooltipLongPressLabel to "టూల్‌టిప్‌ను చూడండి",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.te() = mapOf(
     Strings.TimePickerHour to "గంట",
     Strings.TimePickerMinuteTextField to "నిమిషాలను ఎంచుకోవడం కోసం",
     Strings.TimePickerHourTextField to "గంటలను ఎంచుకోవడం కోసం",
+    Strings.TimePickerToggleKeyboard to "సమయాన్ని ఇన్‌పుట్‌గా ఎంటర్ చేయడం కోసం టెక్స్ట్ ఇన్‌పుట్ మోడ్‌కు మారండి",
+    Strings.TimePickerToggleTouch to "సమయాన్ని ఇన్‌పుట్‌గా ఎంటర్ చేయడం కోసం గడియారం మోడ్‌కు మారండి",
+    Strings.TimePickerDialogTitle to "సమయాన్ని ఎంచుకోండి",
+    Strings.TimeInputDialogTitle to "సమయాన్ని ఎంటర్ చేయండి",
     Strings.CloseRail to "రైలును మూసివేయండి",
     Strings.WideNavigationRailPaneTitle to "నావిగేషన్ రైలు",
 )

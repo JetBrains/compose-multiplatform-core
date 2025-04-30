@@ -26,11 +26,13 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.test.IgnoreJsTarget
 import kotlinx.test.IgnoreNativeTarget
+import kotlinx.test.IgnoreWasmTarget
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SnapshotContextElementTests {
     @Test
     @IgnoreJsTarget
+    @IgnoreWasmTarget
     @IgnoreNativeTarget
     fun coroutineEntersExpectedSnapshot() =
         runTest(UnconfinedTestDispatcher()) {

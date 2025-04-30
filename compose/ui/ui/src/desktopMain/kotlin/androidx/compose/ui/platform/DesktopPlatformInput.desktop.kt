@@ -33,7 +33,6 @@ import java.awt.font.TextHitInfo
 import java.awt.im.InputMethodRequests
 import java.text.AttributedCharacterIterator
 import java.text.AttributedString
-import java.text.CharacterIterator
 import kotlin.math.max
 import kotlin.math.min
 import org.jetbrains.skiko.OS
@@ -117,8 +116,8 @@ internal class DesktopTextInputService(private val component: PlatformComponent)
     private fun replaceInputMethodText(event: InputMethodEvent) {
         val input = currentInput ?: return
 
-        val committed = event.text?.toStringUntil(event.committedCharacterCount).orEmpty()
-        val composing = event.text?.toStringFrom(event.committedCharacterCount).orEmpty()
+        val committed = event.committedText
+        val composing = event.composingText
         val ops = mutableListOf<EditCommand>()
 
         if (needToDeletePreviousChar && input.value.selection.min > 0 && composing.isEmpty()) {
@@ -215,28 +214,4 @@ internal class DesktopTextInputService(private val component: PlatformComponent)
                 return AttributedString(committed).iterator
             }
         }
-}
-
-private fun AttributedCharacterIterator.toStringUntil(index: Int): String {
-    val strBuf = StringBuffer()
-    var i = index
-    if (i > 0) {
-        var c: Char = setIndex(0)
-        while (i > 0) {
-            strBuf.append(c)
-            c = next()
-            i--
-        }
-    }
-    return String(strBuf)
-}
-
-private fun AttributedCharacterIterator.toStringFrom(index: Int): String {
-    val strBuf = StringBuffer()
-    var c: Char = setIndex(index)
-    while (c != CharacterIterator.DONE) {
-        strBuf.append(c)
-        c = next()
-    }
-    return String(strBuf)
 }

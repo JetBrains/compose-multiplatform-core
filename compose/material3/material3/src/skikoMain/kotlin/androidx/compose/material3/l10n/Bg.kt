@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.bg() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Свиване на долния лист",
     Strings.BottomSheetDismissDescription to "Отхвърляне на долния лист",
     Strings.BottomSheetExpandDescription to "Разгъване на долния лист",
+    Strings.FloatingToolbarCollapse to "Свиване на лентата с инструменти",
+    Strings.FloatingToolbarExpand to "Разгъване на лентата с инструменти",
     Strings.TooltipPaneDescription to "Подсказка",
     Strings.TooltipLongPressLabel to "Показване на подсказка",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.bg() = mapOf(
     Strings.TimePickerHour to "Час",
     Strings.TimePickerMinuteTextField to "за минутите",
     Strings.TimePickerHourTextField to "за часа",
+    Strings.TimePickerToggleKeyboard to "Превключете към режима за въвеждане на текст, за да въведете часа",
+    Strings.TimePickerToggleTouch to "Превключете към режима за часовник, за да въведете часа",
+    Strings.TimePickerDialogTitle to "Избиране на час",
+    Strings.TimeInputDialogTitle to "Въвеждане на час",
     Strings.CloseRail to "Затваряне на лентата",
     Strings.WideNavigationRailPaneTitle to "Лента за навигация",
 )

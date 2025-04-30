@@ -17,6 +17,7 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.PlatformTextInputService2
@@ -40,16 +41,19 @@ internal class DesktopTextInputService2(
     private val component: PlatformComponent
 ) : PlatformTextInputService2 {
 
-    private var currentInputMethodRequests: InputMethodRequestsImpl? = null
+    private var inputMethodSession: InputMethodSession? = null
+
+    private var receivedInputMethodEventsSinceStartInput = false
 
     override fun startInput(
         state: TextEditorState,
         imeOptions: ImeOptions,
         editText: (block: TextEditingScope.() -> Unit) -> Unit
     ) {
+        receivedInputMethodEventsSinceStartInput = false
         component.enableInput(
-            InputMethodRequestsImpl(component, state, editText).also {
-                currentInputMethodRequests = it
+            InputMethodSession(component, state, editText).also {
+                inputMethodSession = it
             }
         )
     }
@@ -57,33 +61,60 @@ internal class DesktopTextInputService2(
     override fun stopInput() {
         component.disableInput()
 
-        this.currentInputMethodRequests = null
+        this.inputMethodSession = null
     }
 
     override fun focusedRectChanged(rect: Rect) {
-        currentInputMethodRequests?.focusedRect = rect
+        inputMethodSession?.focusedRect = rect
     }
 
     fun onKeyEvent(keyEvent: KeyEvent) {
         when (keyEvent.id) {
             KeyEvent.KEY_TYPED ->
-                currentInputMethodRequests?.charKeyPressed = true
+                inputMethodSession?.charKeyPressed = true
             KeyEvent.KEY_RELEASED ->
-                currentInputMethodRequests?.charKeyPressed = false
+                inputMethodSession?.charKeyPressed = false
         }
     }
 
     fun inputMethodTextChanged(event: InputMethodEvent) {
-        val inputMethodRequests = currentInputMethodRequests ?: return
-        if (!event.isConsumed) {
-            inputMethodRequests.replaceInputMethodText(event)
-            event.consume()
-        }
+        if (event.isConsumed) return
+        val inputMethodSession = inputMethodSession ?: return
+
+        if (commitEventWorkaroundShouldIgnoreEvent(event)) return
+
+        inputMethodSession.replaceInputMethodText(event)
+        event.consume()
     }
 
+    /**
+     * Implements a workaround for https://youtrack.jetbrains.com/issue/CMP-7976; returns whether
+     * the given event should be ignored.
+     *
+     * JBR sends an extra [InputMethodEvent] when focus moves away from a text field. This event
+     * means to commit the current composition. Unfortunately, because we use a single actual Swing
+     * component (see [ComposeSceneMediator]) as a source of [InputMethodEvent]s, this event gets
+     * delivered to a new text session if the focus switches away to another text field.
+     *
+     * Regardless, Compose text fields commit their composition on focus loss (but not window focus
+     * loss) themselves, so we don't need this event.
+     */
+    private fun commitEventWorkaroundShouldIgnoreEvent(event: InputMethodEvent): Boolean {
+        val isFirstEventAfterStartInput = !receivedInputMethodEventsSinceStartInput
+        receivedInputMethodEventsSinceStartInput = true
+
+        // Note that we need to handle two cases:
+        // - Focus moves between Compose text fields.
+        // - Focus moves from a Swing text component into a Compose text field
+        // The 2nd case is why we can't have a more surgical check here, i.e. check that the
+        // previous composition matches the committed text.
+        // But this check is hopefully good enough; the IME should not be asking to immediately
+        // commit something without putting it into a composition first.
+        return isFirstEventAfterStartInput && event.committedText.isNotEmpty()
+    }
 }
 
-private class InputMethodRequestsImpl(
+private class InputMethodSession(
     private val component: PlatformComponent,
     private val state: TextEditorState,
     private val editText: (block: TextEditingScope.() -> Unit) -> Unit
@@ -183,8 +214,8 @@ private class InputMethodRequestsImpl(
     }
 
     fun replaceInputMethodText(event: InputMethodEvent) {
-        val committed = event.text?.toStringUntil(event.committedCharacterCount) ?: ""
-        val composing = event.text?.toStringFrom(event.committedCharacterCount) ?: ""
+        val committed = event.committedText
+        val composing = event.composingText
 
         editText {
             if (needToDeletePreviousChar && selection.min > 0 && composing.isEmpty()) {
@@ -197,25 +228,38 @@ private class InputMethodRequestsImpl(
             }
         }
     }
-
 }
 
-private fun AttributedCharacterIterator.toStringUntil(index: Int) = StringBuilder().apply {
-    var i = index
-    if (i > 0) {
-        var c: Char = setIndex(0)
-        while (i > 0) {
+/**
+ * The committed text specified by the event, or an empty string if none.
+ */
+internal val InputMethodEvent.committedText: String
+    get() = text.substringOrEmpty(0, committedCharacterCount)
+
+
+/**
+ * The composing text specified by the event, or an empty string if none.
+ */
+internal val InputMethodEvent.composingText: String
+    get() = text.substringOrEmpty(committedCharacterCount, null)
+
+
+/**
+ * Returns the substring between [start] (inclusive) and [end] (exclusive, or the end of the
+ * iterator, if `null`) of the given [AttributedCharacterIterator].
+ */
+private fun AttributedCharacterIterator?.substringOrEmpty(
+    start: Int,
+    end: Int? = null
+) : String {
+    if (this == null) return ""
+
+    return buildString {
+        index = start
+        var c: Char = current()
+        while ((c != CharacterIterator.DONE) && ((end == null) || (index < end))) {
             append(c)
             c = next()
-            i--
         }
-    }
-}
-
-private fun AttributedCharacterIterator.toStringFrom(index: Int) = StringBuilder().apply {
-    var c: Char = setIndex(index)
-    while (c != CharacterIterator.DONE) {
-        append(c)
-        c = next()
     }
 }

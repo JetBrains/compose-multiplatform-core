@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.test.internal
+package androidx.compose.ui.test
 
 import androidx.compose.runtime.NoLiveLiterals
 
 private var nextHash = 1
 
 private external interface WeakMap {
-    fun set(key: JsAny, value: Int)
-    fun get(key: JsAny): Int?
+    fun set(key: Any, value: Int)
+    fun get(key: Any): Int?
 }
 
 private val weakMap: WeakMap = js("new WeakMap()")
 @NoLiveLiterals
-private fun memoizeIdentityHashCode(instance: JsAny): Int {
+private fun memoizeIdentityHashCode(instance: Any): Int {
     val value = nextHash++
 
-    weakMap.set(instance.toJsReference(), value)
+    weakMap.set(instance, value)
 
     return value
 }
@@ -41,6 +41,5 @@ internal actual fun identityHashCode(instance: Any?): Int {
         return 0
     }
 
-    val jsRef = instance.toJsReference()
-    return weakMap.get(jsRef) ?: memoizeIdentityHashCode(jsRef)
+    return weakMap.get(instance) ?: memoizeIdentityHashCode(instance)
 }

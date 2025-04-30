@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.zu() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Goqa ishidi eliphansi",
     Strings.BottomSheetDismissDescription to "Chitha ishidi eliphansi",
     Strings.BottomSheetExpandDescription to "Nweba ishidi eliphansi",
+    Strings.FloatingToolbarCollapse to "Goqa ibha yamathuluzi",
+    Strings.FloatingToolbarExpand to "Nweba ibha yamathuluzi",
     Strings.TooltipPaneDescription to "Ithulithiphu",
     Strings.TooltipLongPressLabel to "Bonisa ithulithiphu",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.zu() = mapOf(
     Strings.TimePickerHour to "Ihora",
     Strings.TimePickerMinuteTextField to "ngemizuzu",
     Strings.TimePickerHourTextField to "ngehora",
+    Strings.TimePickerToggleKeyboard to "Shintshela kumodi yokufaka umbhalo ukuze ufake isikhathi",
+    Strings.TimePickerToggleTouch to "Shintshela kumodi yewashi ukuze ufake isikhathi",
+    Strings.TimePickerDialogTitle to "Khetha Isikhathi",
+    Strings.TimeInputDialogTitle to "Faka Isikhathi",
     Strings.CloseRail to "Vala ikhalamu lezikhangiso",
     Strings.WideNavigationRailPaneTitle to "Ikhalamu lezikhangiso lokufuna",
 )

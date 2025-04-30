@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Android Open Source Project
+ * Copyright 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package androidx.compose.foundation.internal
+package androidx.compose.material3.internal
 
-internal actual typealias AtomicReference<V> = java.util.concurrent.atomic.AtomicReference<V>
+/* Copy of androidx.compose.material.ActualJvm, mirrored from Foundation. This is used for the
+  M2/M3-internal copy of MutatorMutex.
+*/
 
-internal actual typealias AtomicLong = java.util.concurrent.atomic.AtomicLong
+internal actual typealias InternalAtomicReference<V> =
+    java.util.concurrent.atomic.AtomicReference<V>

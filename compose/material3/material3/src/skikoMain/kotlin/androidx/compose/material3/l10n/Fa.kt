@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ internal fun Translations.fa() = mapOf(
     Strings.DateInputInvalidNotAllowed to "‏تاریخ مجاز نیست: %1\$s",
     Strings.DateInputInvalidForPattern to "‏تاریخ با الگوی موردانتظار مطابقت ندارد: %1\$s",
     Strings.DateInputInvalidYearRange to "‏تاریخ خارج از بازه زمانی %1\$s تا %2\$s است",
-    Strings.DatePickerSwitchToCalendarMode to "رفتن به روش ورودی تقویم",
+    Strings.DatePickerSwitchToCalendarMode to "تعویض به حالت ورودی تقویم",
     Strings.DatePickerSwitchToInputMode to "رفتن به حالت ورودی نوشتاری",
     Strings.DatePickerScrollToShowLaterYears to "برای نمایش سال‌های بعد پیمایش کنید",
     Strings.DatePickerScrollToShowEarlierYears to "برای نمایش سال‌های قبل پیمایش کنید",
@@ -72,6 +72,8 @@ internal fun Translations.fa() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "جمع کردن برگ زیرین",
     Strings.BottomSheetDismissDescription to "بستن برگ زیرین",
     Strings.BottomSheetExpandDescription to "ازهم باز کردن برگ زیرین",
+    Strings.FloatingToolbarCollapse to "جمع کردن نوارابزار",
+    Strings.FloatingToolbarExpand to "ازهم بازکردن نوارابزار",
     Strings.TooltipPaneDescription to "نکته‌ابزار",
     Strings.TooltipLongPressLabel to "نمایش نکته‌ابزار",
     Strings.TimePickerPM to "ب.ظ.",
@@ -86,6 +88,10 @@ internal fun Translations.fa() = mapOf(
     Strings.TimePickerHour to "ساعت",
     Strings.TimePickerMinuteTextField to "برای دقیقه",
     Strings.TimePickerHourTextField to "برای ساعت",
+    Strings.TimePickerToggleKeyboard to "برای ورودی زمان، به حالت ورودی نوشتاری بروید",
+    Strings.TimePickerToggleTouch to "برای ورودی زمان، به حالت ساعت بروید",
+    Strings.TimePickerDialogTitle to "انتخاب زمان",
+    Strings.TimeInputDialogTitle to "وارد کردن زمان",
     Strings.CloseRail to "بستن ریل",
     Strings.WideNavigationRailPaneTitle to "ریل پیمایش",
 )

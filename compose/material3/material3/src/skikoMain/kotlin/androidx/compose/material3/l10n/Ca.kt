@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.ca() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Replega el full inferior",
     Strings.BottomSheetDismissDescription to "Ignora el full inferior",
     Strings.BottomSheetExpandDescription to "Desplega el full inferior",
+    Strings.FloatingToolbarCollapse to "Replega la barra d\'eines",
+    Strings.FloatingToolbarExpand to "Desplega la barra d\'eines",
     Strings.TooltipPaneDescription to "Descripció emergent",
     Strings.TooltipLongPressLabel to "Mostra la descripció emergent",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.ca() = mapOf(
     Strings.TimePickerHour to "Hora",
     Strings.TimePickerMinuteTextField to "per als minuts",
     Strings.TimePickerHourTextField to "per a l\'hora",
+    Strings.TimePickerToggleKeyboard to "Canvia al mode d\'introducció de text per introduir l\'hora",
+    Strings.TimePickerToggleTouch to "Canvia al mode de rellotge per introduir l\'hora",
+    Strings.TimePickerDialogTitle to "Selecciona l\'hora",
+    Strings.TimeInputDialogTitle to "Introdueix l\'hora",
     Strings.CloseRail to "Tanca la barra",
     Strings.WideNavigationRailPaneTitle to "Barra de navegació",
 )

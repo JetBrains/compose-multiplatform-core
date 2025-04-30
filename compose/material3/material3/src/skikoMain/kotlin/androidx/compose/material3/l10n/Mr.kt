@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.mr() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "तळाशी असलेली शीट कोलॅप्स करा",
     Strings.BottomSheetDismissDescription to "तळाशी असलेली शीट डिसमिस करा",
     Strings.BottomSheetExpandDescription to "तळाशी असलेली शीट विस्तारीत करा",
+    Strings.FloatingToolbarCollapse to "टूलबार कोलॅप्स करा",
+    Strings.FloatingToolbarExpand to "टूलबारचा विस्तार करा",
     Strings.TooltipPaneDescription to "टूलटिप",
     Strings.TooltipLongPressLabel to "टूलटिप दाखवा",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.mr() = mapOf(
     Strings.TimePickerHour to "तास",
     Strings.TimePickerMinuteTextField to "मिनिटांसाठी",
     Strings.TimePickerHourTextField to "तासासाठी",
+    Strings.TimePickerToggleKeyboard to "वेळ इनपुटसाठी टेक्स्ट इनपुट मोडवर स्विच करा",
+    Strings.TimePickerToggleTouch to "वेळेच्या इनपुटसाठी घड्याळ मोडवर स्विच करा",
+    Strings.TimePickerDialogTitle to "वेळ निवडा",
+    Strings.TimeInputDialogTitle to "वेळ एंटर करा",
     Strings.CloseRail to "रेल बंद करा",
     Strings.WideNavigationRailPaneTitle to "नेव्हिगेशन रेल",
 )

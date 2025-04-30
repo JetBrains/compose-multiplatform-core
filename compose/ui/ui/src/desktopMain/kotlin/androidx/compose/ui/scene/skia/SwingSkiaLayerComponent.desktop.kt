@@ -52,6 +52,19 @@ internal class SwingSkiaLayerComponent(
                 checkNotNull(mediator.accessible)
             }
         ) {
+            private var endCompositionWorkaround: InputMethodEndCompositionWorkaround? = null
+
+            override fun getInputContext() =
+                endCompositionWorkaround?.inputContext ?: super.getInputContext()
+
+            override fun addNotify() {
+                super.addNotify()
+
+                endCompositionWorkaround = InputMethodEndCompositionWorkaround.forCurrentEnvironment(
+                    componentInputContext = { super.getInputContext() }
+                )
+            }
+
             override fun paint(g: Graphics) {
                 mediator.onChangeDensity()
                 super.paint(g)

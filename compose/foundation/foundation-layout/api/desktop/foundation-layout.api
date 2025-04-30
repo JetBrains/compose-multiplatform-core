@@ -336,6 +336,11 @@ public final class androidx/compose/foundation/layout/RowScope$DefaultImpls {
 	public static synthetic fun weight$default (Landroidx/compose/foundation/layout/RowScope;Landroidx/compose/ui/Modifier;FZILjava/lang/Object;)Landroidx/compose/ui/Modifier;
 }
 
+public final class androidx/compose/foundation/layout/RulerAlignmentKt {
+	public static final fun fitInside (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/layout/RectRulers;)Landroidx/compose/ui/Modifier;
+	public static final fun fitOutside (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/layout/RectRulers;)Landroidx/compose/ui/Modifier;
+}
+
 public final class androidx/compose/foundation/layout/SizeKt {
 	public static final fun defaultMinSize-VpY3zN4 (Landroidx/compose/ui/Modifier;FF)Landroidx/compose/ui/Modifier;
 	public static synthetic fun defaultMinSize-VpY3zN4$default (Landroidx/compose/ui/Modifier;FFILjava/lang/Object;)Landroidx/compose/ui/Modifier;

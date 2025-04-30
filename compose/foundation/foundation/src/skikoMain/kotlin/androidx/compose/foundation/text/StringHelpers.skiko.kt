@@ -18,10 +18,12 @@
 
 package androidx.compose.foundation.text
 
+import androidx.compose.foundation.text.input.internal.selection.TextFieldPreparedSelection.Companion.NoCharacterFound
 import kotlin.experimental.ExperimentalNativeApi
 import kotlin.math.absoluteValue
 import kotlin.math.sign
 import org.jetbrains.skia.BreakIterator
+import org.jetbrains.skia.icu.CharProperties
 
 internal actual fun String.findPrecedingBreak(index: Int): Int {
     val it = BreakIterator.makeCharacterInstance()
@@ -69,6 +71,43 @@ internal fun CharSequence.offsetByCodePoints(index: Int, offset: Int): Int {
     return currentOffset
 }
 
+internal actual fun String.findCodePointOrEmojiStartBefore(index: Int, ifNotFound: Int): Int {
+    if (index <= 0) return NoCharacterFound
+
+    // Instead of trying to detect emoji sequences, which is hard, we jump to the preceding break
+    // and check whether the codepoint at that index can be the start of an emoji sequence.
+    val precedingCharBreakIndex = findPrecedingBreak(index)
+    val precedingCodePointIndex = offsetByCodePoints(index, -1)
+
+    // In the very common case of a regular character, avoid the complex computation below
+    if (precedingCharBreakIndex == precedingCodePointIndex) return precedingCodePointIndex
+
+    // If the substring between precedingCharBreakIndex and index can be an emoji, then return that
+    val substringFromCharBreak = substring(startIndex = precedingCharBreakIndex, endIndex = index)
+    return if (canBeEmojiOrPictographic(substringFromCharBreak)) precedingCharBreakIndex
+    else precedingCodePointIndex
+}
+
+// https://www.unicode.org/reports/tr51/index.html#def_emoji_presentation_selector
+// This is needed to detect keycaps. See Emoji_Keycap_Sequence in
+// https://unicode.org/Public/emoji/16.0/emoji-sequences.txt
+private const val EMOJI_PRESENTATION_SELECTOR = 0xFE0F
+
+private fun canBeEmojiOrPictographic(text: String): Boolean {
+    for (codePoint in text.codePoints) {
+        with(CharProperties) {
+            if (codePointHasBinaryProperty(codePoint, EMOJI_PRESENTATION) ||
+                codePointHasBinaryProperty(codePoint, EXTENDED_PICTOGRAPHIC) ||
+                codePoint == EMOJI_PRESENTATION_SELECTOR
+            ) {
+                return true
+            }
+        }
+    }
+
+    return false
+}
+
 // Copied from CharHelpers.skiko.kt
 // TODO Remove once it's available in common stdlib https://youtrack.jetbrains.com/issue/KT-23251
 internal typealias CodePoint = Int
@@ -101,14 +140,16 @@ internal fun CodePoint.charCount(): Int = if (this >= MIN_SUPPLEMENTARY_CODE_POI
 
 // Copied from CharHelpers.skiko.kt
 internal val String.codePoints
-    get() = sequence {
-        var index = 0
-        while (index < length) {
-            val codePoint = codePointAt(index)
-            yield(codePoint)
-            index += codePoint.charCount()
-        }
+    get() = codePointsAt(0)
+
+internal fun String.codePointsAt(index: Int) = sequence {
+    var current = index
+    while (current < length) {
+        val codePoint = codePointAt(current)
+        yield(codePoint)
+        current += codePoint.charCount()
     }
+}
 
 // Copied from CharHelpers.skiko.kt
 /**
@@ -264,12 +305,4 @@ private fun CodePoint.isPunctuation(): Boolean {
         CharCategory.FINAL_QUOTE_PUNCTUATION
     )
     return punctuationSet.any { it.contains(this.toChar()) }
-}
-
-internal actual fun String.findCodePointOrEmojiStartBefore(
-    index: Int,
-    ifNotFound: Int
-): Int {
-    // TODO https://github.com/JetBrains/compose-multiplatform-core/pull/1869
-    return index
 }

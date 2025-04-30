@@ -1,0 +1,27 @@
+// Klib ABI Dump
+// Targets: [iosArm64.uikitArm64, iosSimulatorArm64.uikitSimArm64, iosX64.uikitX64, js, linuxArm64, linuxX64, macosArm64, macosX64, mingwX64, tvosArm64, tvosSimulatorArm64, tvosX64, wasmJs, watchosArm32, watchosArm64, watchosSimulatorArm64, watchosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <org.jetbrains.compose.runtime:runtime-annotation>
+open annotation class androidx.compose.runtime.annotation/FrequentlyChangingValue : kotlin/Annotation { // androidx.compose.runtime.annotation/FrequentlyChangingValue|null[0]
+    constructor <init>() // androidx.compose.runtime.annotation/FrequentlyChangingValue.<init>|<init>(){}[0]
+}
+
+open annotation class androidx.compose.runtime.annotation/RememberInComposition : kotlin/Annotation { // androidx.compose.runtime.annotation/RememberInComposition|null[0]
+    constructor <init>() // androidx.compose.runtime.annotation/RememberInComposition.<init>|<init>(){}[0]
+}
+
+open annotation class androidx.compose.runtime/Immutable : kotlin/Annotation { // androidx.compose.runtime/Immutable|null[0]
+    constructor <init>() // androidx.compose.runtime/Immutable.<init>|<init>(){}[0]
+}
+
+open annotation class androidx.compose.runtime/Stable : kotlin/Annotation { // androidx.compose.runtime/Stable|null[0]
+    constructor <init>() // androidx.compose.runtime/Stable.<init>|<init>(){}[0]
+}
+
+open annotation class androidx.compose.runtime/StableMarker : kotlin/Annotation { // androidx.compose.runtime/StableMarker|null[0]
+    constructor <init>() // androidx.compose.runtime/StableMarker.<init>|<init>(){}[0]
+}

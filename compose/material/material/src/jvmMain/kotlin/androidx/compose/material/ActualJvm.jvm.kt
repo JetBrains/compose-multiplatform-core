@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.material.internal
+package androidx.compose.material
 
-internal expect class AtomicReference<V>(value: V) {
-    fun get(): V
-
-    fun set(value: V)
-
-    fun getAndSet(value: V): V
-
-    fun compareAndSet(expect: V, newValue: V): Boolean
-}
+internal actual typealias InternalAtomicReference<V> =
+    java.util.concurrent.atomic.AtomicReference<V>

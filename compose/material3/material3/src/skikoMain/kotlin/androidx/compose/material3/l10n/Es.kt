@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.es() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Contrae la hoja inferior",
     Strings.BottomSheetDismissDescription to "Cierra la hoja inferior",
     Strings.BottomSheetExpandDescription to "Despliega la hoja inferior",
+    Strings.FloatingToolbarCollapse to "Ocultar la barra de herramientas",
+    Strings.FloatingToolbarExpand to "Mostrar la barra de herramientas",
     Strings.TooltipPaneDescription to "Descripción emergente",
     Strings.TooltipLongPressLabel to "Mostrar descripción emergente",
     Strings.TimePickerPM to "p. m.",
@@ -86,6 +88,10 @@ internal fun Translations.es() = mapOf(
     Strings.TimePickerHour to "Hora",
     Strings.TimePickerMinuteTextField to "para los minutos",
     Strings.TimePickerHourTextField to "para la hora",
+    Strings.TimePickerToggleKeyboard to "Cambiar al modo de escritura para escribir la hora",
+    Strings.TimePickerToggleTouch to "Cambiar al modo de reloj para escribir la hora",
+    Strings.TimePickerDialogTitle to "Selecciona la hora",
+    Strings.TimeInputDialogTitle to "Introduce la hora",
     Strings.CloseRail to "Cerrar barra",
     Strings.WideNavigationRailPaneTitle to "Barra de navegación",
 )
@@ -143,6 +149,8 @@ internal fun Translations.esUS() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Contraer la hoja inferior",
     Strings.BottomSheetDismissDescription to "Descartar la hoja inferior",
     Strings.BottomSheetExpandDescription to "Expandir la hoja inferior",
+    Strings.FloatingToolbarCollapse to "Contraer la barra de herramientas",
+    Strings.FloatingToolbarExpand to "Expandir la barra de herramientas",
     Strings.TooltipPaneDescription to "Información",
     Strings.TooltipLongPressLabel to "Mostrar información",
     Strings.TimePickerPM to "PM",
@@ -157,6 +165,10 @@ internal fun Translations.esUS() = mapOf(
     Strings.TimePickerHour to "Hora",
     Strings.TimePickerMinuteTextField to "por minutos",
     Strings.TimePickerHourTextField to "por hora",
+    Strings.TimePickerToggleKeyboard to "Cambia al modo de entrada de texto para ingresar la hora",
+    Strings.TimePickerToggleTouch to "Cambia al modo de reloj para ingresar la hora",
+    Strings.TimePickerDialogTitle to "Selecciona la hora",
+    Strings.TimeInputDialogTitle to "Ingresa la hora",
     Strings.CloseRail to "Cerrar riel",
     Strings.WideNavigationRailPaneTitle to "Riel de navegación",
 )

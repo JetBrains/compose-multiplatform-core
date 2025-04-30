@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.nl() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Blad onderaan samenvouwen",
     Strings.BottomSheetDismissDescription to "Blad onderaan sluiten",
     Strings.BottomSheetExpandDescription to "Blad onderaan uitvouwen",
+    Strings.FloatingToolbarCollapse to "Werkbalk samenvouwen",
+    Strings.FloatingToolbarExpand to "Werkbalk uitvouwen",
     Strings.TooltipPaneDescription to "Tooltip",
     Strings.TooltipLongPressLabel to "Tooltip tonen",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.nl() = mapOf(
     Strings.TimePickerHour to "Uur",
     Strings.TimePickerMinuteTextField to "voor minuten",
     Strings.TimePickerHourTextField to "voor uur",
+    Strings.TimePickerToggleKeyboard to "Wisselen naar tekstinvoerstand om de tijd in te voeren",
+    Strings.TimePickerToggleTouch to "Wisselen naar klokmodus om de tijd in te voeren",
+    Strings.TimePickerDialogTitle to "Tijd selecteren",
+    Strings.TimeInputDialogTitle to "Tijd invoeren",
     Strings.CloseRail to "Rail sluiten",
     Strings.WideNavigationRailPaneTitle to "Navigatierail",
 )

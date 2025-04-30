@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.bn() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "স্ক্রিনের নিচে অ্যাটাচ করা শিট আড়াল করুন",
     Strings.BottomSheetDismissDescription to "স্ক্রিনের নিচে অ্যাটাচ করা শিট বাতিল করুন",
     Strings.BottomSheetExpandDescription to "স্ক্রিনের নিচে অ্যাটাচ করা শিট বড় করুন",
+    Strings.FloatingToolbarCollapse to "টুলবার আড়াল করুন",
+    Strings.FloatingToolbarExpand to "টুলবার বড় করুন",
     Strings.TooltipPaneDescription to "টুলটিপ",
     Strings.TooltipLongPressLabel to "টুলটিপ দেখান",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.bn() = mapOf(
     Strings.TimePickerHour to "ঘণ্টা",
     Strings.TimePickerMinuteTextField to "এত মিনিটের জন্য",
     Strings.TimePickerHourTextField to "এত ঘণ্টার জন্য",
+    Strings.TimePickerToggleKeyboard to "সময়ের ইনপুট লিখতে টেক্সট ইনপুট মোডে পাল্টে নিন",
+    Strings.TimePickerToggleTouch to "সময়ের ইনপুট লিখতে ঘড়ি মোডে পাল্টে নিন",
+    Strings.TimePickerDialogTitle to "সময় বেছে নিন",
+    Strings.TimeInputDialogTitle to "সময় লিখুন",
     Strings.CloseRail to "রেল বন্ধ করুন",
     Strings.WideNavigationRailPaneTitle to "নেভিগেশন রেল",
 )

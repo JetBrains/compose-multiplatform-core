@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2021 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,22 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.test.internal
+package androidx.compose.foundation
 
-import kotlin.native.identityHashCode
+internal expect class AtomicReference<V>(value: V) {
+    fun get(): V
 
-internal actual fun identityHashCode(instance: Any?): Int =
-    instance.identityHashCode()
+    fun set(value: V)
+
+    fun getAndSet(value: V): V
+
+    fun compareAndSet(expect: V, newValue: V): Boolean
+}
+
+internal expect class AtomicLong(value: Long) {
+    fun get(): Long
+
+    fun set(value: Long)
+
+    fun getAndIncrement(): Long
+}

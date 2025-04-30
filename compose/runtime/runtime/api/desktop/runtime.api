@@ -96,6 +96,7 @@ public final class androidx/compose/runtime/ComposablesKt {
 	public static final fun ReusableContentHost (ZLkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
 	public static final fun getCurrentComposer (Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/Composer;
 	public static final fun getCurrentCompositeKeyHash (Landroidx/compose/runtime/Composer;I)I
+	public static final fun getCurrentCompositeKeyHashCode (Landroidx/compose/runtime/Composer;I)J
 	public static final fun getCurrentCompositionLocalContext (Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/CompositionLocalContext;
 	public static final fun getCurrentRecomposeScope (Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/RecomposeScope;
 	public static final fun invalidApplier ()V
@@ -156,9 +157,10 @@ public abstract interface class androidx/compose/runtime/Composer {
 	public abstract fun endToMarker (I)V
 	public abstract fun getApplier ()Landroidx/compose/runtime/Applier;
 	public abstract fun getApplyCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public abstract fun getCompositeKeyHashCode ()J
 	public abstract fun getComposition ()Landroidx/compose/runtime/ControlledComposition;
 	public abstract fun getCompositionData ()Landroidx/compose/runtime/tooling/CompositionData;
-	public abstract fun getCompoundKeyHash ()I
+	public fun getCompoundKeyHash ()I
 	public abstract fun getCurrentCompositionLocalMap ()Landroidx/compose/runtime/CompositionLocalMap;
 	public abstract fun getCurrentMarker ()I
 	public abstract fun getDefaultsInvalid ()Z
@@ -220,6 +222,12 @@ public final class androidx/compose/runtime/ComposerKt {
 	public static final fun traceEventEnd ()V
 	public static final fun traceEventStart (IIILjava/lang/String;)V
 	public static final synthetic fun traceEventStart (ILjava/lang/String;)V
+}
+
+public final class androidx/compose/runtime/CompositeKeyHashCode_jvmKt {
+	public static final field EmptyCompositeKeyHashCode J
+	public static final fun toLong (J)J
+	public static final fun toString (JI)Ljava/lang/String;
 }
 
 public abstract interface class androidx/compose/runtime/Composition {

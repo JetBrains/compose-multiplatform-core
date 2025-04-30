@@ -23,7 +23,6 @@ import androidx.compose.ui.scene.ComposeHostingViewController
 import androidx.compose.ui.test.utils.center
 import androidx.compose.ui.test.utils.moveToLocationOnWindow
 import androidx.compose.ui.test.utils.toCGPoint
-import androidx.compose.ui.test.utils.toDpOffset
 import androidx.compose.ui.test.utils.touchDown
 import androidx.compose.ui.test.utils.up
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
@@ -54,6 +53,7 @@ import platform.UIKit.UIScreen
 import platform.UIKit.UITouch
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
+import platform.UIKit.endEditing
 import platform.UIKit.systemBackgroundColor
 import platform.darwin.NSObject
 
@@ -120,6 +120,10 @@ internal class UIKitInstrumentedTest {
     }
 
     fun tearDown() {
+        // Stop text editing and hide keyboard if any
+        hostingViewController.view.endEditing(force = true)
+        waitForIdle()
+
         appDelegate.cleanUp()
     }
 
@@ -254,7 +258,7 @@ internal class UIKitInstrumentedTest {
 
     val UITouch.location: DpOffset
         get() {
-        return locationInView(hostingViewController.view).toDpOffset()
+        return locationInView(hostingViewController.view).asDpOffset()
     }
 }
 

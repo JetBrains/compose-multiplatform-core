@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.`in`() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Menciutkan sheet bawah",
     Strings.BottomSheetDismissDescription to "Menutup sheet bawah",
     Strings.BottomSheetExpandDescription to "Meluaskan sheet bawah",
+    Strings.FloatingToolbarCollapse to "Ciutkan toolbar",
+    Strings.FloatingToolbarExpand to "Luaskan toolbar",
     Strings.TooltipPaneDescription to "Tooltip",
     Strings.TooltipLongPressLabel to "Tampilkan tooltip",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.`in`() = mapOf(
     Strings.TimePickerHour to "Jam",
     Strings.TimePickerMinuteTextField to "untuk menit",
     Strings.TimePickerHourTextField to "untuk jam",
+    Strings.TimePickerToggleKeyboard to "Beralih ke mode input teks untuk input waktu",
+    Strings.TimePickerToggleTouch to "Beralih ke mode jam untuk input waktu",
+    Strings.TimePickerDialogTitle to "Pilih Waktu",
+    Strings.TimeInputDialogTitle to "Masukkan Waktu",
     Strings.CloseRail to "Tutup kolom samping",
     Strings.WideNavigationRailPaneTitle to "Kolom samping navigasi",
 )

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.hr() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Sažimanje donje tablice",
     Strings.BottomSheetDismissDescription to "Odbacivanje donje tablice",
     Strings.BottomSheetExpandDescription to "Proširivanje donje tablice",
+    Strings.FloatingToolbarCollapse to "Sažmi alatnu traku",
+    Strings.FloatingToolbarExpand to "Proširi alatnu traku",
     Strings.TooltipPaneDescription to "Opis",
     Strings.TooltipLongPressLabel to "Prikaži opis",
     Strings.TimePickerPM to "Poslijepodne",
@@ -86,6 +88,10 @@ internal fun Translations.hr() = mapOf(
     Strings.TimePickerHour to "Sat",
     Strings.TimePickerMinuteTextField to "za minute",
     Strings.TimePickerHourTextField to "za sat",
+    Strings.TimePickerToggleKeyboard to "Prijeđite na način unosa teksta da biste unijeli vrijeme",
+    Strings.TimePickerToggleTouch to "Prijeđite na način rada sata da biste unijeli vrijeme",
+    Strings.TimePickerDialogTitle to "Odaberite vrijeme",
+    Strings.TimeInputDialogTitle to "Unesite vrijeme",
     Strings.CloseRail to "Zatvorena pruga",
     Strings.WideNavigationRailPaneTitle to "Pruga za navigaciju",
 )

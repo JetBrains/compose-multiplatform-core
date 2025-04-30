@@ -223,9 +223,10 @@ internal class ComposeContainer(
     override fun windowDeactivated(e: WindowEvent) = Unit
 
     private fun onWindowFocusChanged() {
-        isFocused = window?.isFocused ?: false
-        windowContext.setWindowFocused(isFocused)
-        mediator.onChangeWindowFocus()
+        val isNowFocused = window?.isFocused ?: false
+        isFocused = isNowFocused
+        windowContext.setWindowFocused(isNowFocused)
+        mediator.onWindowFocusChanged()
         layers.fastForEach(DesktopComposeSceneLayer::onWindowFocusChanged)
         updateLifecycleState()
     }

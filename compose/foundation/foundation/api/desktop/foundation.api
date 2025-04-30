@@ -107,6 +107,7 @@ public final class androidx/compose/foundation/ComposeFoundationFlags {
 	public static field isAutomaticNestedPrefetchEnabled Z
 	public static field isDetectTapGesturesImmediateCoroutineDispatchEnabled Z
 	public static field isNonComposedClickableEnabled Z
+	public static field isOnScrollChangedCallbackEnabled Z
 	public static field isPausableCompositionInPrefetchEnabled Z
 }
 

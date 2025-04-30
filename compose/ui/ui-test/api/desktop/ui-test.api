@@ -119,9 +119,9 @@ public final class androidx/compose/ui/test/ComposeUiTest_desktopKt {
 
 public final class androidx/compose/ui/test/ComposeUiTest_skikoKt {
 	public static final fun defaultTestDispatcher ()Lkotlinx/coroutines/test/TestDispatcher;
-	public static final synthetic fun runComposeUiTest (Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;)V
+	public static final fun runComposeUiTest (Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun runComposeUiTest$default (Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public static final fun runComposeUiTest-exY8QGI (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLkotlin/jvm/functions/Function2;)V
+	public static final synthetic fun runComposeUiTest-exY8QGI (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLkotlin/jvm/functions/Function2;)V
 	public static synthetic fun runComposeUiTest-exY8QGI$default (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 	public static final fun runInternalSkikoComposeUiTest (IILandroidx/compose/ui/unit/Density;Lkotlin/coroutines/CoroutineContext;Landroidx/compose/ui/platform/PlatformContext$SemanticsOwnerListener;Lkotlinx/coroutines/test/TestDispatcher;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun runInternalSkikoComposeUiTest$default (IILandroidx/compose/ui/unit/Density;Lkotlin/coroutines/CoroutineContext;Landroidx/compose/ui/platform/PlatformContext$SemanticsOwnerListener;Lkotlinx/coroutines/test/TestDispatcher;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V

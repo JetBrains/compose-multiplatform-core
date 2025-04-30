@@ -91,6 +91,7 @@ class TextInputTests : OnCanvasTests {
     }
 
     @Test
+    @Ignore // TODO: https://youtrack.jetbrains.com/issue/CMP-8094
     fun regularInput() = runApplicationTest {
         val textFieldValue = createTextFieldWithValue()
 

@@ -41,6 +41,8 @@ public final class androidx/compose/ui/text/AnnotatedString$Builder : java/lang/
 	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Landroidx/compose/ui/text/AnnotatedString;)V
 	public fun <init> (Ljava/lang/String;)V
+	public final fun addBullet (Landroidx/compose/ui/text/Bullet;II)V
+	public final fun addBullet-r9BaKPg (Landroidx/compose/ui/text/Bullet;JII)V
 	public final fun addLink (Landroidx/compose/ui/text/LinkAnnotation$Clickable;II)V
 	public final fun addLink (Landroidx/compose/ui/text/LinkAnnotation$Url;II)V
 	public final fun addStringAnnotation (Ljava/lang/String;Ljava/lang/String;II)V
@@ -61,6 +63,7 @@ public final class androidx/compose/ui/text/AnnotatedString$Builder : java/lang/
 	public final fun getLength ()I
 	public final fun pop ()V
 	public final fun pop (I)V
+	public final fun pushBullet (Landroidx/compose/ui/text/Bullet;)I
 	public final fun pushLink (Landroidx/compose/ui/text/LinkAnnotation;)I
 	public final fun pushStringAnnotation (Ljava/lang/String;Ljava/lang/String;)I
 	public final fun pushStyle (Landroidx/compose/ui/text/ParagraphStyle;)I
@@ -68,6 +71,14 @@ public final class androidx/compose/ui/text/AnnotatedString$Builder : java/lang/
 	public final fun pushTtsAnnotation (Landroidx/compose/ui/text/TtsAnnotation;)I
 	public final fun pushUrlAnnotation (Landroidx/compose/ui/text/UrlAnnotation;)I
 	public final fun toAnnotatedString ()Landroidx/compose/ui/text/AnnotatedString;
+	public final fun withBulletList-o2QH7mI (JLandroidx/compose/ui/text/Bullet;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static synthetic fun withBulletList-o2QH7mI$default (Landroidx/compose/ui/text/AnnotatedString$Builder;JLandroidx/compose/ui/text/Bullet;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun withBulletListItem (Landroidx/compose/ui/text/AnnotatedString$Builder$BulletScope;Landroidx/compose/ui/text/Bullet;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static synthetic fun withBulletListItem$default (Landroidx/compose/ui/text/AnnotatedString$Builder;Landroidx/compose/ui/text/AnnotatedString$Builder$BulletScope;Landroidx/compose/ui/text/Bullet;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class androidx/compose/ui/text/AnnotatedString$Builder$BulletScope {
+	public static final field $stable I
 }
 
 public final class androidx/compose/ui/text/AnnotatedString$Companion {
@@ -112,6 +123,32 @@ public final class androidx/compose/ui/text/AnnotatedStringKt {
 	public static final fun withLink (Landroidx/compose/ui/text/AnnotatedString$Builder;Landroidx/compose/ui/text/LinkAnnotation;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public static final fun withStyle (Landroidx/compose/ui/text/AnnotatedString$Builder;Landroidx/compose/ui/text/ParagraphStyle;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public static final fun withStyle (Landroidx/compose/ui/text/AnnotatedString$Builder;Landroidx/compose/ui/text/SpanStyle;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+}
+
+public final class androidx/compose/ui/text/Bullet : androidx/compose/ui/text/AnnotatedString$Annotation {
+	public static final field $stable I
+	public static final field Companion Landroidx/compose/ui/text/Bullet$Companion;
+	public synthetic fun <init> (Landroidx/compose/ui/graphics/Shape;JJJLandroidx/compose/ui/graphics/Brush;FLandroidx/compose/ui/graphics/drawscope/DrawStyle;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Landroidx/compose/ui/graphics/Shape;JJJLandroidx/compose/ui/graphics/Brush;FLandroidx/compose/ui/graphics/drawscope/DrawStyle;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun copy-w_4Rhrw (Landroidx/compose/ui/graphics/Shape;JJJLandroidx/compose/ui/graphics/Brush;FLandroidx/compose/ui/graphics/drawscope/DrawStyle;)Landroidx/compose/ui/text/Bullet;
+	public static synthetic fun copy-w_4Rhrw$default (Landroidx/compose/ui/text/Bullet;Landroidx/compose/ui/graphics/Shape;JJJLandroidx/compose/ui/graphics/Brush;FLandroidx/compose/ui/graphics/drawscope/DrawStyle;ILjava/lang/Object;)Landroidx/compose/ui/text/Bullet;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlpha ()F
+	public final fun getBrush ()Landroidx/compose/ui/graphics/Brush;
+	public final fun getDrawStyle ()Landroidx/compose/ui/graphics/drawscope/DrawStyle;
+	public final fun getHeight-XSAIIZE ()J
+	public final fun getPadding-XSAIIZE ()J
+	public final fun getShape ()Landroidx/compose/ui/graphics/Shape;
+	public final fun getWidth-XSAIIZE ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class androidx/compose/ui/text/Bullet$Companion {
+	public final fun getDefault ()Landroidx/compose/ui/text/Bullet;
+	public final fun getDefaultIndentation-XSAIIZE ()J
+	public final fun getDefaultPadding-XSAIIZE ()J
+	public final fun getDefaultSize-XSAIIZE ()J
 }
 
 public final class androidx/compose/ui/text/DesktopTextStyle_skikoKt {

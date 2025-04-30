@@ -170,7 +170,9 @@ open class BaseWindowTextFieldTest {
                     val focusRequester = FocusRequester()
                     BasicTextField(
                         value = textFieldValue,
-                        onValueChange = { textFieldValue = it },
+                        onValueChange = {
+                            textFieldValue = it.also { println(it) }
+                        },
                         modifier = Modifier.focusRequester(focusRequester)
                     )
 

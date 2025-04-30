@@ -28,14 +28,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.test.IgnoreJsTarget
+import kotlinx.test.IgnoreWasmTarget
 
-// TODO https://youtrack.jetbrains.com/issue/COMPOSE-797/Merge-1.6.-Fix-CompositionObserverTests fix ignored tests
+// TODO https://youtrack.jetbrains.com/issue/CMP-797
 @Stable
 @OptIn(ExperimentalComposeRuntimeApi::class)
 @Suppress("unused")
 class CompositionObserverTests {
     @Test
     @IgnoreJsTarget
+    @IgnoreWasmTarget
     fun observeScope() {
         var startCount = 0
         var endCount = 0
@@ -80,6 +82,7 @@ class CompositionObserverTests {
 
     @Test
     @IgnoreJsTarget
+    @IgnoreWasmTarget
     fun observeScope_dispose() {
         var startCount = 0
         var endCount = 0
@@ -132,6 +135,7 @@ class CompositionObserverTests {
 
     @Test
     @IgnoreJsTarget
+    @IgnoreWasmTarget
     fun observeScope_scopeRemoved() {
         var startCount = 0
         var endCount = 0

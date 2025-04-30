@@ -22,7 +22,6 @@ import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
-import androidx.compose.ui.SessionMutex
 import androidx.compose.ui.draganddrop.WebDragAndDropManager
 import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
@@ -45,7 +44,7 @@ import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
-import androidx.compose.ui.platform.PlatformTextInputSessionScope
+import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WebTextInputService
 import androidx.compose.ui.platform.WindowInfoImpl
@@ -68,6 +67,7 @@ import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -219,16 +219,12 @@ internal class ComposeWindow(
             }
         }
 
-        private val textInputSessionMutex = SessionMutex<WebTextInputSession>()
-
-        override suspend fun textInputSession(
-            session: suspend PlatformTextInputSessionScope.() -> Nothing
-        ): Nothing = textInputSessionMutex.withSessionCancellingPrevious(
-            sessionInitializer = {
-                WebTextInputSession(it, textInputService)
-            },
-            session = session
-        )
+        override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
+            coroutineScope {
+                WebTextInputSession(this, textInputService)
+                    .startInputMethod(request)
+            }
+        }
     }
 
     private val skiaLayer: SkiaLayer = SkiaLayer().apply {
