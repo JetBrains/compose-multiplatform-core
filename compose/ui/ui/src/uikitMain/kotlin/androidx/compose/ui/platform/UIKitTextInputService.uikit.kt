@@ -50,6 +50,7 @@ import kotlin.math.absoluteValue
 import kotlin.math.min
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.skia.BreakIterator
 import platform.CoreGraphics.CGRectMake
@@ -57,6 +58,11 @@ import platform.UIKit.UIPress
 import platform.UIKit.UIView
 import platform.UIKit.UIViewAutoresizingFlexibleHeight
 import platform.UIKit.UIViewAutoresizingFlexibleWidth
+
+// Due to unexpected delays between the commands to show/hide the keyboard,
+// it may jump when switching between text fields.
+// Adding a delay to the 'resignFirstResponder' function call to eliminate this issue.
+private val CLEAR_FOCUS_DELAY: Long = 10L
 
 internal class UIKitTextInputService(
     private val updateView: () -> Unit,
@@ -167,7 +173,7 @@ internal class UIKitTextInputService(
 
     override fun hideSoftwareKeyboard() {
         textUIView?.let {
-            focusStack?.popUntilNext(it)
+            focusStack?.popUntilNext(it, delayMillis = CLEAR_FOCUS_DELAY)
         }
     }
 
@@ -388,6 +394,7 @@ internal class UIKitTextInputService(
 
             view.resetOnKeyboardPressesCallback()
             mainScope.launch {
+                delay(CLEAR_FOCUS_DELAY)
                 view.removeFromSuperview()
             }
         }

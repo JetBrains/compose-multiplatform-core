@@ -18,6 +18,7 @@ package androidx.compose.ui.window
 
 import androidx.compose.ui.util.fastForEachReversed
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import platform.UIKit.UIView
 
@@ -40,13 +41,14 @@ internal class FocusStack {
      * Pop all elements until some element. Also pop this element too.
      * Last remaining element in Stack will be focused.
      */
-    fun popUntilNext(view: UIView) {
+    fun popUntilNext(view: UIView, delayMillis: Long = 0) {
         if (activeViews.contains(view)) {
             val index = activeViews.indexOf(view)
             resignedViews += activeViews.subList(index, activeViews.size)
             activeViews = activeViews.subList(0, index)
 
             mainScope.launch {
+                delay(delayMillis)
                 resignedViews.fastForEachReversed {
                     it.resignFirstResponder()
                 }
