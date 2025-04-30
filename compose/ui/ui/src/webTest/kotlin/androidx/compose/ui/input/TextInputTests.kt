@@ -91,6 +91,13 @@ class TextInputTests : OnCanvasTests {
     }
 
     @Test
+    fun minimalApplicationTest() = runApplicationTest {
+        createComposeWindow {  }
+        awaitIdle()
+    }
+
+
+    @Test
     fun regularInput() = runApplicationTest {
         val textFieldValue = createTextFieldWithValue()
 
