@@ -971,7 +971,7 @@ abstract interface androidx.compose.ui.platform/PlatformContext { // androidx.co
     open fun convertWindowToLocalPosition(androidx.compose.ui.geometry/Offset): androidx.compose.ui.geometry/Offset // androidx.compose.ui.platform/PlatformContext.convertWindowToLocalPosition|convertWindowToLocalPosition(androidx.compose.ui.geometry.Offset){}[0]
     open fun requestFocus(): kotlin/Boolean // androidx.compose.ui.platform/PlatformContext.requestFocus|requestFocus(){}[0]
     open fun setPointerIcon(androidx.compose.ui.input.pointer/PointerIcon) // androidx.compose.ui.platform/PlatformContext.setPointerIcon|setPointerIcon(androidx.compose.ui.input.pointer.PointerIcon){}[0]
-    open suspend fun textInputSession(kotlin.coroutines/SuspendFunction1<androidx.compose.ui.platform/PlatformTextInputSessionScope, kotlin/Nothing>): kotlin/Nothing // androidx.compose.ui.platform/PlatformContext.textInputSession|textInputSession(kotlin.coroutines.SuspendFunction1<androidx.compose.ui.platform.PlatformTextInputSessionScope,kotlin.Nothing>){}[0]
+    open suspend fun startInputMethod(androidx.compose.ui.platform/PlatformTextInputMethodRequest): kotlin/Nothing // androidx.compose.ui.platform/PlatformContext.startInputMethod|startInputMethod(androidx.compose.ui.platform.PlatformTextInputMethodRequest){}[0]
 
     abstract interface RootForTestListener { // androidx.compose.ui.platform/PlatformContext.RootForTestListener|null[0]
         abstract fun onRootForTestCreated(androidx.compose.ui.platform/PlatformRootForTest) // androidx.compose.ui.platform/PlatformContext.RootForTestListener.onRootForTestCreated|onRootForTestCreated(androidx.compose.ui.platform.PlatformRootForTest){}[0]
