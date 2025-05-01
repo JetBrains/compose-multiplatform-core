@@ -65,18 +65,6 @@ import org.jetbrains.skia.IRect
 import org.jetbrains.skia.Surface
 import org.jetbrains.skiko.currentNanoTime
 
-//@ExperimentalTestApi
-//@Deprecated(
-//    level = DeprecationLevel.HIDDEN,
-//    message = "Replaced with same function, but with suspend block, runTextContext, testTimeout"
-//)
-//fun runComposeUiTest(
-//    effectContext: CoroutineContext = EmptyCoroutineContext,
-//    block: ComposeUiTest.() -> Unit
-//): TestResult {
-//    return SkikoComposeUiTest(effectContext = effectContext).runTest(block)
-//}
-
 @ExperimentalTestApi
 actual fun runComposeUiTest(
     effectContext: CoroutineContext,
@@ -264,22 +252,13 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
                     block()
                 }
             } finally {
+                // the cleanup must happen only in the `runTest` block,
+                // because `runTest` call returns immediately on web,
+                // before the block starts running.
                 runOnUiThread(scene::close)
                 composeRootRegistry.tearDownRegistry()
                 uncaughtExceptionHandler.throwUncaught()
             }
-        }
-    }
-
-    private inline fun <R> withScene(block: () -> R): R {
-        scene = runOnUiThread(::createUi)
-        try {
-            return block()
-        } finally {
-            // Close the scene before calling testScope.runTest so that all the coroutines are
-            // cancelled when we call it.
-            runOnUiThread(scene::close)
-            uncaughtExceptionHandler.throwUncaught()
         }
     }
 
