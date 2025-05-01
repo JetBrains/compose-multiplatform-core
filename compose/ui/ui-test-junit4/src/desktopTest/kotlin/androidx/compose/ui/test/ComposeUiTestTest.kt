@@ -25,9 +25,16 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.TimeoutException
 import kotlin.coroutines.CoroutineContext
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 import kotlin.test.fail
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -156,6 +163,20 @@ class ComposeUiTestTest {
                 waitForIdle()
             }
         }
+    }
+
+    @Test
+    fun testTimeout() {
+        val timeout = 100.milliseconds
+        val error = assertFailsWith<AssertionError> {
+            runComposeUiTest(testTimeout = timeout) {
+                // switch a dispatcher to not skip the delay
+                withContext(Dispatchers.Default) { delay(1000) }
+            }
+        }
+        assertTrue(
+            error.message!!.startsWith("After waiting for $timeout, the test coroutine is not completing")
+        )
     }
 
     private class TestCoroutineContextElement : CoroutineContext.Element {
