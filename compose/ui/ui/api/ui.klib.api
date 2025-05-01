@@ -1138,6 +1138,8 @@ abstract interface androidx.compose.ui.relocation/BringIntoViewModifierNode : an
 }
 
 abstract interface androidx.compose.ui.scene/ComposeScene { // androidx.compose.ui.scene/ComposeScene|null[0]
+    abstract val compositionContext // androidx.compose.ui.scene/ComposeScene.compositionContext|{}compositionContext[0]
+        abstract fun <get-compositionContext>(): androidx.compose.runtime/CompositionContext // androidx.compose.ui.scene/ComposeScene.compositionContext.<get-compositionContext>|<get-compositionContext>(){}[0]
     abstract val focusManager // androidx.compose.ui.scene/ComposeScene.focusManager|{}focusManager[0]
         abstract fun <get-focusManager>(): androidx.compose.ui.scene/ComposeSceneFocusManager // androidx.compose.ui.scene/ComposeScene.focusManager.<get-focusManager>|<get-focusManager>(){}[0]
     abstract val rootDragAndDropNode // androidx.compose.ui.scene/ComposeScene.rootDragAndDropNode|{}rootDragAndDropNode[0]
