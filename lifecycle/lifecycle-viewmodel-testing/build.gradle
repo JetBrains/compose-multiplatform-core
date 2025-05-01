@@ -39,8 +39,6 @@ androidXMultiplatform {
     mac()
     linux()
     ios()
-    watchos()
-    tvos()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -141,15 +139,12 @@ androidXMultiplatform {
         }
 
         targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
+            if (target.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
                     def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily == Family.OSX ||
-                            konanTargetFamily == Family.IOS ||
-                            konanTargetFamily == Family.WATCHOS ||
-                            konanTargetFamily == Family.TVOS) {
+                    if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.OSX || konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.IOS) {
                         dependsOn(darwinMain)
-                    } else if (konanTargetFamily == Family.LINUX) {
+                    } else if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.LINUX) {
                         dependsOn(linuxMain)
                     } else {
                         throw new GradleException("unknown native target ${target}")
@@ -157,12 +152,9 @@ androidXMultiplatform {
                 }
                 target.compilations["test"].defaultSourceSet {
                     def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily == Family.OSX ||
-                            konanTargetFamily == Family.IOS ||
-                            konanTargetFamily == Family.WATCHOS ||
-                            konanTargetFamily == Family.TVOS) {
+                    if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.OSX || konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.IOS) {
                         dependsOn(darwinTest)
-                    } else if (konanTargetFamily == Family.LINUX) {
+                    } else if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.LINUX) {
                         dependsOn(linuxTest)
                     } else {
                         throw new GradleException("unknown native target ${target}")
