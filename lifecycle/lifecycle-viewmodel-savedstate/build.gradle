@@ -24,8 +24,6 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
@@ -39,16 +37,16 @@ androidXMultiplatform {
     ios()
     linux()
     mac()
-    watchos()
-    tvos()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                api("androidx.annotation:annotation:1.9.1")
-                api(project(":savedstate:savedstate"))
+
+                api("androidx.annotation:annotation:1.8.1")
+                api("androidx.savedstate:savedstate:1.3.0")
+
                 api(project(":lifecycle:lifecycle-viewmodel"))
                 api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
@@ -144,15 +142,12 @@ androidXMultiplatform {
         }
 
         targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
+            if (target.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
                     def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily == Family.OSX ||
-                            konanTargetFamily == Family.IOS ||
-                            konanTargetFamily == Family.WATCHOS ||
-                            konanTargetFamily == Family.TVOS) {
+                    if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.OSX || konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.IOS) {
                         dependsOn(darwinMain)
-                    } else if (konanTargetFamily == Family.LINUX) {
+                    } else if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.LINUX) {
                         dependsOn(linuxMain)
                     } else {
                         throw new GradleException("unknown native target ${target}")
@@ -160,12 +155,9 @@ androidXMultiplatform {
                 }
                 target.compilations["test"].defaultSourceSet {
                     def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily == Family.OSX ||
-                            konanTargetFamily == Family.IOS ||
-                            konanTargetFamily == Family.WATCHOS ||
-                            konanTargetFamily == Family.TVOS) {
+                    if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.OSX || konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.IOS) {
                         dependsOn(darwinTest)
-                    } else if (konanTargetFamily == Family.LINUX) {
+                    } else if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.LINUX) {
                         dependsOn(linuxTest)
                     } else {
                         throw new GradleException("unknown native target ${target}")
