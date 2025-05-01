@@ -38,8 +38,6 @@ androidXMultiplatform {
     mac()
     linux()
     ios()
-    watchos()
-    tvos()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -110,10 +108,7 @@ androidXMultiplatform {
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
                     def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily == Family.OSX ||
-                            konanTargetFamily == Family.IOS ||
-                            konanTargetFamily == Family.WATCHOS ||
-                            konanTargetFamily == Family.TVOS) {
+                    if (konanTargetFamily == Family.OSX || konanTargetFamily == Family.IOS) {
                         dependsOn(darwinMain)
                     } else if (konanTargetFamily == Family.LINUX) {
                         dependsOn(linuxMain)
