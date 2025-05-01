@@ -27,6 +27,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeoutException
 import kotlin.coroutines.CoroutineContext
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.test.fail
@@ -177,6 +178,17 @@ class ComposeUiTestTest {
         assertTrue(
             error.message!!.startsWith("After waiting for $timeout, the test coroutine is not completing")
         )
+    }
+
+    @Test
+    fun testFailedAssertion() {
+        val error = assertFailsWith<AssertionError> {
+            runComposeUiTest {
+                @Suppress("KotlinConstantConditions")
+                assertTrue(1 == -1)
+            }
+        }
+        assertEquals("Expected value to be true.", error.message)
     }
 
     private class TestCoroutineContextElement : CoroutineContext.Element {
