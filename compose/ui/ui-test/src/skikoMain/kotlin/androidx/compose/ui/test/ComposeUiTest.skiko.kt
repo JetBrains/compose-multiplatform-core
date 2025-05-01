@@ -51,6 +51,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -58,7 +59,9 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestResult
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.jetbrains.skia.Color
 import org.jetbrains.skia.IRect
@@ -157,7 +160,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     private val testTimeout: Duration = Duration.INFINITE,
     override val density: Density = Density(1f),
     private val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener?,
-    coroutineDispatcher: TestDispatcher = defaultTestDispatcher(),
+    private val coroutineDispatcher: TestDispatcher = defaultTestDispatcher(),
 ) : ComposeUiTest {
     init {
         require(effectContext == EmptyCoroutineContext) {
@@ -197,6 +200,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     )
 
     private val composeRootRegistry = ComposeRootRegistry()
+
     override val mainClock: MainTestClock = MainTestClockImpl(
         testScheduler = coroutineDispatcher.scheduler,
         frameDelayMillis = FRAME_DELAY_MILLIS
@@ -212,6 +216,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     }
     private val coroutineContext =
         coroutineDispatcher + uncaughtExceptionHandler + infiniteAnimationPolicy
+
     private val surface = Surface.makeRasterN32Premul(width, height)
     private val size = IntSize(width, height)
 
@@ -256,6 +261,11 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
                 // because `runTest` call returns immediately on web,
                 // before the block starts running.
                 runOnUiThread(scene::close)
+
+                // after the scene is closed, run all left foreground TestDispatchEvent.
+                // They might've been added outside the runTest call, using the provided coroutineDispatcher:
+                coroutineDispatcher.scheduler.advanceUntilIdle()
+                // Cleanup the rest:
                 composeRootRegistry.tearDownRegistry()
                 uncaughtExceptionHandler.throwUncaught()
             }
