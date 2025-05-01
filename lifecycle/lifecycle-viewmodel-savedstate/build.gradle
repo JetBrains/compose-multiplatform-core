@@ -43,8 +43,10 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
+
                 api("androidx.annotation:annotation:1.8.1")
-                api(project(":savedstate:savedstate"))
+                api("androidx.savedstate:savedstate:1.3.0")
+
                 api(project(":lifecycle:lifecycle-viewmodel"))
                 api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
