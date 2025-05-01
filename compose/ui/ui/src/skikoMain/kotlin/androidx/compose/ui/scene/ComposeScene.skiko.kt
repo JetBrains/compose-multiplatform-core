@@ -17,6 +17,7 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.LaunchedEffect
@@ -70,6 +71,12 @@ internal val LocalComposeScene = staticCompositionLocalOf<ComposeScene?> { null 
  */
 @InternalComposeUiApi
 interface ComposeScene {
+
+    /**
+     * [CompositionContext] of the composition managed by this Compose Scene
+     */
+    val compositionContext: CompositionContext
+
     /**
      * Density of the content which will be used to convert [Dp] units.
      */

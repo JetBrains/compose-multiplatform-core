@@ -42,53 +42,55 @@ import androidx.compose.ui.unit.IntSize
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.jvm.JvmName
 import kotlin.math.roundToInt
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestResult
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.jetbrains.skia.Color
 import org.jetbrains.skia.IRect
 import org.jetbrains.skia.Surface
 import org.jetbrains.skiko.currentNanoTime
 
-@ExperimentalTestApi
+//@ExperimentalTestApi
 //@Deprecated(
 //    level = DeprecationLevel.HIDDEN,
 //    message = "Replaced with same function, but with suspend block, runTextContext, testTimeout"
 //)
-fun runComposeUiTest(
-    effectContext: CoroutineContext = EmptyCoroutineContext,
-    block: ComposeUiTest.() -> Unit
-) {
-    SkikoComposeUiTest(effectContext = effectContext).runTest(block)
-}
+//fun runComposeUiTest(
+//    effectContext: CoroutineContext = EmptyCoroutineContext,
+//    block: ComposeUiTest.() -> Unit
+//): TestResult {
+//    return SkikoComposeUiTest(effectContext = effectContext).runTest(block)
+//}
 
 @ExperimentalTestApi
-@Deprecated(
-    level = DeprecationLevel.HIDDEN,
-    message = "TODO: Adopt runComposeUiTest with suspend lambda"
-)
 actual fun runComposeUiTest(
     effectContext: CoroutineContext,
     runTestContext: CoroutineContext,
     testTimeout: Duration,
     block: suspend ComposeUiTest.() -> Unit
 ): TestResult {
-    // TODO: https://youtrack.jetbrains.com/issue/CMP-7994
-    TODO("Adopt runComposeUiTest with suspend lambda")
+    return runSkikoComposeUiTest(
+        effectContext = effectContext,
+        runTestContext = runTestContext,
+        testTimeout = testTimeout,
+    ) {
+        block()
+    }
 }
 
 @ExperimentalTestApi
@@ -97,12 +99,17 @@ fun runSkikoComposeUiTest(
     density: Density = Density(1f),
     // TODO(https://github.com/JetBrains/compose-multiplatform/issues/2960) Support effectContext
     effectContext: CoroutineContext = EmptyCoroutineContext,
-    block: SkikoComposeUiTest.() -> Unit
-) {
-    SkikoComposeUiTest(
+    runTestContext: CoroutineContext = EmptyCoroutineContext,
+    testTimeout: Duration = Duration.INFINITE,
+    block: suspend SkikoComposeUiTest.() -> Unit
+): TestResult {
+    @OptIn(InternalTestApi::class)
+    return SkikoComposeUiTest(
         width = size.width.roundToInt(),
         height = size.height.roundToInt(),
         effectContext = effectContext,
+        testTimeout = testTimeout,
+        runTestContext = runTestContext,
         density = density
     ).runTest(block)
 }
@@ -114,18 +121,24 @@ fun runInternalSkikoComposeUiTest(
     height: Int = 768,
     density: Density = Density(1f),
     effectContext: CoroutineContext = EmptyCoroutineContext,
+    runTestContext: CoroutineContext = EmptyCoroutineContext,
+    testTimeout: Duration = Duration.INFINITE,
     semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? = null,
     coroutineDispatcher: TestDispatcher = defaultTestDispatcher(),
-    block: SkikoComposeUiTest.() -> Unit
-) {
-    SkikoComposeUiTest(
-        width = width,
-        height = height,
-        effectContext = effectContext,
-        density = density,
-        semanticsOwnerListener = semanticsOwnerListener,
-        coroutineDispatcher = coroutineDispatcher,
-    ).runTest(block)
+    block: suspend SkikoComposeUiTest.() -> Unit
+): TestResult {
+    return kotlinx.coroutines.test.runTest {
+        SkikoComposeUiTest(
+            width = width,
+            height = height,
+            effectContext = effectContext,
+            runTestContext = runTestContext,
+            testTimeout = testTimeout,
+            density = density,
+            semanticsOwnerListener = semanticsOwnerListener,
+            coroutineDispatcher = coroutineDispatcher,
+        ).runTest(block)
+    }
 }
 
 /**
@@ -139,7 +152,7 @@ private const val IDLING_RESOURCES_CHECK_INTERVAL_MS = 20L
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @InternalTestApi
-fun defaultTestDispatcher() = UnconfinedTestDispatcher()
+fun defaultTestDispatcher(): TestDispatcher = UnconfinedTestDispatcher()
 
 /**
  * @param effectContext The [CoroutineContext] used to run the composition. The context for
@@ -152,6 +165,8 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     height: Int = 768,
     // TODO(https://github.com/JetBrains/compose-multiplatform/issues/2960) Support effectContext
     effectContext: CoroutineContext = EmptyCoroutineContext,
+    private val runTestContext: CoroutineContext = EmptyCoroutineContext,
+    private val testTimeout: Duration = Duration.INFINITE,
     override val density: Density = Density(1f),
     private val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener?,
     coroutineDispatcher: TestDispatcher = defaultTestDispatcher(),
@@ -176,9 +191,24 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         semanticsOwnerListener = null,
     )
 
-    private val composeRootRegistry = ComposeRootRegistry()
+    constructor(
+        width: Int = 1024,
+        height: Int = 768,
+        effectContext: CoroutineContext = EmptyCoroutineContext,
+        runTestContext: CoroutineContext = EmptyCoroutineContext,
+        testTimeout: Duration = Duration.INFINITE,
+        density: Density = Density(1f)
+    ) : this(
+        width = width,
+        height = height,
+        effectContext = effectContext,
+        runTestContext = runTestContext,
+        testTimeout = testTimeout,
+        density = density,
+        semanticsOwnerListener = null,
+    )
 
-    private val testScope = TestScope(coroutineDispatcher)
+    private val composeRootRegistry = ComposeRootRegistry()
     override val mainClock: MainTestClock = MainTestClockImpl(
         testScheduler = coroutineDispatcher.scheduler,
         frameDelayMillis = FRAME_DELAY_MILLIS
@@ -205,17 +235,43 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     private val testOwner = SkikoTestOwner()
     private val testContext = TestContext(testOwner)
 
-    fun <R> runTest(block: SkikoComposeUiTest.() -> R): R {
-        return composeRootRegistry.withRegistry {
-            withScene {
+    fun runTest(
+        block: suspend SkikoComposeUiTest.() -> Unit
+    ): TestResult {
+        composeRootRegistry.setupRegistry()
+        scene = runOnUiThread(::createUi)
+
+        @OptIn(ExperimentalStdlibApi::class)
+        val testDispatcher = runTestContext[CoroutineDispatcher] as? TestDispatcher
+            ?: StandardTestDispatcher()
+
+        // It's required for a test block to run in a coroutine context with some
+        // elements from the current Recomposer context (e.g. MonotonicFrameClock)
+        val combinedCoroutineContext =
+            scene.compositionContext.effectCoroutineContext
+                .minusKey(CoroutineExceptionHandler.Key)
+                .minusKey(Job.Key)
+                .minusKey(TestCoroutineScheduler.Key)
+                .plus(runTestContext)
+                .plus(testDispatcher)
+
+        return kotlinx.coroutines.test.runTest(
+            timeout = testTimeout,
+            context = combinedCoroutineContext
+        ) {
+            try {
                 withRenderLoop {
                     block()
                 }
+            } finally {
+                runOnUiThread(scene::close)
+                composeRootRegistry.tearDownRegistry()
+                uncaughtExceptionHandler.throwUncaught()
             }
         }
     }
 
-    private fun <R> withScene(block: () -> R): R {
+    private inline fun <R> withScene(block: () -> R): R {
         scene = runOnUiThread(::createUi)
         try {
             return block()
@@ -223,8 +279,6 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             // Close the scene before calling testScope.runTest so that all the coroutines are
             // cancelled when we call it.
             runOnUiThread(scene::close)
-            // call runTest instead of deprecated cleanupTestCoroutines()
-            testScope.runTest { }
             uncaughtExceptionHandler.throwUncaught()
         }
     }
@@ -257,7 +311,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         )
     }
 
-    private fun createUi() = CanvasLayersComposeScene(
+    private fun createUi(): ComposeScene = CanvasLayersComposeScene(
         density = density,
         size = size,
         coroutineContext = coroutineContext,

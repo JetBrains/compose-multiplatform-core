@@ -36,8 +36,10 @@ fun runDesktopComposeUiTest(
     effectContext: CoroutineContext = EmptyCoroutineContext,
     block: DesktopComposeUiTest.() -> Unit
 ) {
-    with(DesktopComposeUiTest(width, height, effectContext)) {
-        runTest { block() }
+    kotlinx.coroutines.test.runTest {
+        with(DesktopComposeUiTest(width, height, effectContext)) {
+            runTest { block() }
+        }
     }
 }
 

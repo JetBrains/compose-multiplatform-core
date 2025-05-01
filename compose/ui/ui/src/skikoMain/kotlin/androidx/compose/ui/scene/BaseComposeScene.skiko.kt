@@ -72,7 +72,7 @@ internal abstract class BaseComposeScene(
         ComposeSceneRecomposer(coroutineContext, frameClock)
     private var composition: Composition? = null
 
-    protected val compositionContext: CompositionContext
+    override val compositionContext: CompositionContext
         get() = recomposer.compositionContext
 
     abstract val composeSceneContext: ComposeSceneContext

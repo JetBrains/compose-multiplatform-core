@@ -40,14 +40,14 @@ internal class ComposeRootRegistry : PlatformContext.RootForTestListener {
     /**
      * Sets up this registry to be notified of any [PlatformRootForTest] created
      */
-    private fun setupRegistry() {
+    internal fun setupRegistry() {
         isTracking = true
     }
 
     /**
      * Cleans up the changes made by [setupRegistry]. Call this after your test has run.
      */
-    private fun tearDownRegistry() {
+    internal fun tearDownRegistry() {
         // Stop accepting new roots
         isTracking = false
         synchronized(lock) {
@@ -79,7 +79,7 @@ internal class ComposeRootRegistry : PlatformContext.RootForTestListener {
         return synchronized(lock) { roots.toSet() }
     }
 
-    fun <R> withRegistry(block: () -> R): R {
+    inline fun <R> withRegistry(block: () -> R): R {
         try {
             setupRegistry()
             return block()
