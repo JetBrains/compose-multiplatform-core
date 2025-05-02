@@ -134,7 +134,6 @@ id _editInteraction;
             [self addInteraction:self.editInteraction];
         }
         [self presentEditMenuInteraction];
-        self.presentInteractionBlock = nil;
     });
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)),
                    dispatch_get_main_queue(),
@@ -154,6 +153,7 @@ id _editInteraction;
 - (void)hideEditMenu {
     if (@available(iOS 16, *)) {
         [self cancelPresentEditMenuInteraction];
+        self.presentInteractionBlock = nil;
 
         if (self.editInteraction != nil) {
             [self.editInteraction dismissMenu];
