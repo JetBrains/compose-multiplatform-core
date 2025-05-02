@@ -16,6 +16,7 @@
 
 package androidx.compose.mpp.demo
 
+import androidx.compose.mpp.demo.bugs.BugsScreen
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +51,7 @@ fun main() {
         val fontsLoaded = remember { mutableStateOf(false) }
         val app = remember { App(
             extraScreens = listOf(
+                BugsScreen,
                 Screen.Example("Web Clipboard API example") {
                     WebClipboardDemo()
                 }
