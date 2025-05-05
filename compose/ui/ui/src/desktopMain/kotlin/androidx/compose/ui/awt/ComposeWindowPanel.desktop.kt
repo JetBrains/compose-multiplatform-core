@@ -52,7 +52,7 @@ internal class ComposeWindowPanel(
         container = this,
         skiaLayerAnalytics = skiaLayerAnalytics,
         window = window,
-        useSwingGraphics = false,
+        useSwingGraphics = false, // Swing graphics is not supposed to be used here.
         layerType = ComposeFeatureFlags.layerType.let {
             // LayerType.OnComponent may can only be used with rendering via Swing graphics,
             // but it's always disabled here. Using fallback instead of [check] to support
@@ -101,6 +101,11 @@ internal class ComposeWindowPanel(
             override fun getDefaultComponent(aContainer: Container?) = null
         }
         isFocusCycleRoot = true
+
+        if (ComposeFeatureFlags.useSwingGraphics) {
+            println("Usage of \"compose.swing.render.on.graphics\" affect only behaviour of ComposePanel." +
+                "Usage together with ComposeWindow or ComposeDialog won't have any effect.")
+        }
     }
 
     override fun setBounds(x: Int, y: Int, width: Int, height: Int) {

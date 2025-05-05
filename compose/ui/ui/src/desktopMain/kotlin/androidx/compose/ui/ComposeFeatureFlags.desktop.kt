@@ -57,7 +57,7 @@ internal object ComposeFeatureFlags {
         get() = LayerType.parse(System.getProperty("compose.layers.type"))
 
     /**
-     * Indicates whether the Compose should use Swing graphics for rendering.
+     * Indicates whether the [androidx.compose.ui.awt.ComposePanel] should use Swing graphics for rendering.
      * This prevents transitional rendering issues when panels are being shown, hidden, or resized.
      * It also enables proper layering when combining Swing components and compose panels.
      *
