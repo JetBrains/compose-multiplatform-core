@@ -79,6 +79,7 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
                         // We need to set up at least one browser here due to kotlin tooling limitations
                         // Actual browser configuration is set in mpp/karma.config.d/js/config.js
                         useChrome()
+                        useFirefox()
                         useConfigDirectory(
                             project.rootProject.projectDir.resolve("mpp/karma.config.d/js")
                         )
@@ -132,6 +133,7 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
                         // We need to set up at least one browser here due to kotlin tooling limitations
                         // Actual browser configuration is set in mpp/karma.config.d/wasm/config.js
                         useChrome()
+                        useFirefox()
                         useConfigDirectory(
                             project.rootProject.projectDir.resolve("mpp/karma.config.d/wasm")
                         )
