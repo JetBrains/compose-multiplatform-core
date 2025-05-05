@@ -91,7 +91,7 @@ internal class ComposeContainer(
     window: Window? = null,
     windowContainer: JLayeredPane = container,
 
-    private val useSwingGraphics: Boolean = ComposeFeatureFlags.useSwingGraphics,
+    private val useSwingGraphics: Boolean = false,
     private val layerType: LayerType = ComposeFeatureFlags.layerType,
     private val renderSettings: RenderSettings,
 ) : WindowFocusListener, WindowListener, LifecycleOwner, ViewModelStoreOwner {
