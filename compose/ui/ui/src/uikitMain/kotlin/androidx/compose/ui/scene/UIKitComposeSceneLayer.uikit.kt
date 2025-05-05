@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
+import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -78,7 +79,7 @@ internal class UIKitComposeSceneLayer(
         isInterceptingOutsideEvents = { focusable }
     )
 
-    val overlayView: UIView get() = mediator.view
+    val overlayView: UIView get() = mediator.getOverlayView()
 
     private val backGestureDispatcher = UIKitBackGestureDispatcher(
         enableBackGesture = enableBackGesture,
@@ -87,7 +88,6 @@ internal class UIKitComposeSceneLayer(
     )
 
     private val mediator = ComposeSceneMediator(
-        interopContainerView = interactionView,
         onFocusBehavior = onFocusBehavior,
         focusStack = focusStack,
         windowContext = windowContext,
@@ -95,7 +95,9 @@ internal class UIKitComposeSceneLayer(
         redrawer = metalView.redrawer,
         composeSceneFactory = ::createComposeScene,
         backGestureDispatcher = backGestureDispatcher
-    )
+    ).also {
+        interactionView.embedSubview(it.getInputView())
+    }
 
     private fun isInsideInteractionBounds(point: CValue<CGPoint>): Boolean =
         boundsInWindow.contains(point.asDpOffset().toOffset(interactionView.density).round())
