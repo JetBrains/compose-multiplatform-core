@@ -619,7 +619,7 @@ internal class ComposeSceneMediator(
         onKeyEvent = { false }
 
         view.dispose()
-        textInputService.stopInput()
+        textInputService.dispose()
         applicationForegroundStateListener.dispose()
         focusStack?.popUntilNext(userInputView)
         keyboardManager.dispose()
