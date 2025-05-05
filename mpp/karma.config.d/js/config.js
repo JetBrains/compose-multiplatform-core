@@ -82,10 +82,17 @@ config.customLaunchers = {
     ChromeForComposeTests: {
         base: "Chrome",
         flags: ["--no-sandbox", "--disable-search-engine-choice-screen"]
+    },
+    FirefoxWithTouchEvents: {
+        base: "Firefox",
+        prefs: {
+ 		'dom.w3c_touch_events.enabled': 1
+       }
     }
 }
 
-config.browsers = ["ChromeForComposeTests"];
+console.log(process.env);
+config.browsers = ["FirefoxWithTouchEvents"];
 
 // A workaround from https://android-review.googlesource.com/c/platform/frameworks/support/+/3413540
 (function() {
