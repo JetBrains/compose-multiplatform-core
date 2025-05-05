@@ -79,7 +79,7 @@ internal class UIKitComposeSceneLayer(
         isInterceptingOutsideEvents = { focusable }
     )
 
-    val overlayView: UIView get() = mediator.getOverlayView()
+    val overlayView: UIView get() = mediator.overlayView
 
     private val backGestureDispatcher = UIKitBackGestureDispatcher(
         enableBackGesture = enableBackGesture,
@@ -96,7 +96,7 @@ internal class UIKitComposeSceneLayer(
         composeSceneFactory = ::createComposeScene,
         backGestureDispatcher = backGestureDispatcher
     ).also {
-        interactionView.embedSubview(it.getInputView())
+        interactionView.embedSubview(it.inputView)
     }
 
     private fun isInsideInteractionBounds(point: CValue<CGPoint>): Boolean =

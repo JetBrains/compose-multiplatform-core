@@ -304,9 +304,9 @@ internal class ComposeHostingViewController(
             },
             backGestureDispatcher = backGestureDispatcher
         ).also { mediator ->
-            rootView.embedSubview(mediator.getInputView())
+            rootView.embedSubview(mediator.inputView)
             rootView.updateMetalView(metalView, ::onDidMoveToWindow)
-            rootView.embedSubview(mediator.getOverlayView())
+            rootView.embedSubview(mediator.overlayView)
 
             mediator.updateInteractionRect()
             mediator.setContent {

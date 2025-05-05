@@ -266,9 +266,9 @@ internal class ComposeSceneMediator(
     /**
      * View wrapping the hierarchy managed by this Mediator.
      */
-    private val overlayView = UIKitTransparentContainerView(onLayoutSubviews = ::updateLayout)
+    private val _overlayView = UIKitTransparentContainerView(onLayoutSubviews = ::updateLayout)
 
-    fun getOverlayView(): UIView = overlayView
+    val overlayView: UIView get() = _overlayView
 
     /**
      * View that handles the user input events and hosts interop views.
@@ -285,7 +285,7 @@ internal class ComposeSceneMediator(
         backGestureDispatcher::isBackGestureActive
     )
 
-    fun getInputView(): UIView = userInputView
+    val inputView: UIView get() = userInputView
 
     /**
      * Container for managing UIKitView and UIKitViewController
@@ -308,11 +308,11 @@ internal class ComposeSceneMediator(
      * @param point Point in the interaction view coordinate space.
      */
     private fun isPointInsideInteractionBounds(point: CValue<CGPoint>) =
-        interactionBounds.contains(point.asDpOffset().toOffset(overlayView.density).round())
+        interactionBounds.contains(point.asDpOffset().toOffset(_overlayView.density).round())
 
     private val semanticsOwnerListener by lazy {
         SemanticsOwnerListenerImpl(
-            view = overlayView,
+            view = _overlayView,
             coroutineContext = coroutineContext,
             performEscape = {
                 val down = onKeyboardEvent(KeyEvent(Key.Escape, KeyEventType.KeyDown))
@@ -329,7 +329,7 @@ internal class ComposeSceneMediator(
 
     private val keyboardManager by lazy {
         ComposeSceneKeyboardOffsetManager(
-            view = overlayView,
+            view = _overlayView,
             keyboardOverlapHeightChanged = { height ->
                 if (keyboardOverlapHeight != height) {
                     animateKeyboardOffsetChanges = false
@@ -345,7 +345,7 @@ internal class ComposeSceneMediator(
                 redrawer.setNeedsRedraw()
                 CATransaction.flush() // clear all animations
             },
-            view = overlayView,
+            view = _overlayView,
             viewConfiguration = viewConfiguration,
             focusStack = focusStack,
             onInputStarted = {
@@ -479,7 +479,7 @@ internal class ComposeSceneMediator(
                 pressure = touch.force.toFloat(),
                 historical = event?.historicalChangesForTouch(
                     touch,
-                    overlayView,
+                    _overlayView,
                     density.density
                 ) ?: emptyList()
             )
@@ -517,7 +517,7 @@ internal class ComposeSceneMediator(
     }
 
     fun setContent(content: @Composable () -> Unit) {
-        overlayView.runOnceOnAppeared {
+        _overlayView.runOnceOnAppeared {
             focusStack?.pushAndFocus(userInputView)
 
             scene.setContent {
@@ -544,12 +544,12 @@ internal class ComposeSceneMediator(
                     withAnimationProgress(duration) { progress ->
                         layoutMargins = lerp(
                             start = initialLayoutMargins,
-                            stop = overlayView.layoutMargins.toPlatformInsets(),
+                            stop = _overlayView.layoutMargins.toPlatformInsets(),
                             fraction = progress
                         )
                         safeArea = lerp(
                             start = initialSafeArea,
-                            stop = overlayView.safeAreaInsets.toPlatformInsets(),
+                            stop = _overlayView.safeAreaInsets.toPlatformInsets(),
                             fraction = progress
                         )
                         size = lerp(
@@ -615,14 +615,14 @@ internal class ComposeSceneMediator(
         onPreviewKeyEvent = { false }
         onKeyEvent = { false }
 
-        overlayView.dispose()
+        _overlayView.dispose()
         textInputService.stopInput()
         applicationForegroundStateListener.dispose()
         focusStack?.popUntilNext(userInputView)
         keyboardManager.dispose()
         userInputView.dispose()
 
-        overlayView.removeFromSuperview()
+        _overlayView.removeFromSuperview()
         userInputView.removeFromSuperview()
 
         scene.close()
@@ -631,23 +631,23 @@ internal class ComposeSceneMediator(
     }
 
     /**
-     * Updates the [ComposeScene] with the properties derived from the [overlayView].
+     * Updates the [ComposeScene] with the properties derived from the [_overlayView].
      */
     private fun updateLayout() {
-        density = overlayView.density
+        density = _overlayView.density
 
         if (isLayoutTransitionAnimating) {
             return
         }
-        layoutMargins = overlayView.layoutMargins.toPlatformInsets()
-        safeArea = overlayView.safeAreaInsets.toPlatformInsets()
+        layoutMargins = _overlayView.layoutMargins.toPlatformInsets()
+        safeArea = _overlayView.safeAreaInsets.toPlatformInsets()
 
         size = currentViewSize.roundToIntSize()
     }
 
     private val currentViewSize: Size get() {
         return with(density) {
-            overlayView.frame.useContents { size.asDpSize() }.toSize()
+            _overlayView.frame.useContents { size.asDpSize() }.toSize()
         }
     }
 
@@ -691,16 +691,16 @@ internal class ComposeSceneMediator(
         override val screenReader: PlatformScreenReader get() = platformScreenReader
 
         override fun convertLocalToWindowPosition(localPosition: Offset): Offset =
-            windowContext.convertLocalToWindowPosition(overlayView, localPosition)
+            windowContext.convertLocalToWindowPosition(_overlayView, localPosition)
 
         override fun convertWindowToLocalPosition(positionInWindow: Offset): Offset =
-            windowContext.convertWindowToLocalPosition(overlayView, positionInWindow)
+            windowContext.convertWindowToLocalPosition(_overlayView, positionInWindow)
 
         override fun convertLocalToScreenPosition(localPosition: Offset): Offset =
-            windowContext.convertLocalToScreenPosition(overlayView, localPosition)
+            windowContext.convertLocalToScreenPosition(_overlayView, localPosition)
 
         override fun convertScreenToLocalPosition(positionOnScreen: Offset): Offset =
-            windowContext.convertScreenToLocalPosition(overlayView, positionOnScreen)
+            windowContext.convertScreenToLocalPosition(_overlayView, positionOnScreen)
 
         override val viewConfiguration get() = this@ComposeSceneMediator.viewConfiguration
         override val inputModeManager = DefaultInputModeManager(InputMode.Touch)
