@@ -92,10 +92,10 @@ config.customLaunchers = {
 }
 
 config.browsers = [];
-if (process.env["jetbrains.compose.web.tests.enableChrome"]) {
+if (process.env["jetbrains.androidx.web.tests.enableChrome"]) {
     config.browsers.push("ChromeForComposeTests");
 }
-if (process.env["jetbrains.compose.web.tests.enableFirefox"]) {
+if (process.env["jetbrains.androidx.web.tests.enableFirefox"]) {
     config.browsers.push("FirefoxForComposeTests");
 }
 

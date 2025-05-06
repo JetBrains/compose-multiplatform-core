@@ -37,8 +37,8 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
 
     private val skikoVersion: String
 
-    private val enableChromeTestsProperty = "jetbrains.compose.web.tests.enableChrome"
-    private val enableFirefoxTestsProperty = "jetbrains.compose.web.tests.enableFirefox"
+    private val enableChromeTestsProperty = "jetbrains.androidx.web.tests.enableChrome"
+    private val enableFirefoxTestsProperty = "jetbrains.androidx.web.tests.enableFirefox"
 
     init {
         val toml = Toml.parse(
