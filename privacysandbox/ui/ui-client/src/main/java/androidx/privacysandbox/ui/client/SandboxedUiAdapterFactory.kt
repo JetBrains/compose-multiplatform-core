@@ -22,12 +22,13 @@ import android.content.res.Configuration
 import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.Display
 import android.view.SurfaceControlViewHost
 import android.view.View
 import android.window.SurfaceSyncGroup
 import androidx.annotation.RequiresApi
+import androidx.privacysandbox.ui.client.SandboxedUiAdapterFactory.LocalAdapter
+import androidx.privacysandbox.ui.client.SandboxedUiAdapterFactory.RemoteAdapter
 import androidx.privacysandbox.ui.core.ClientAdapterWrapper
 import androidx.privacysandbox.ui.core.IDelegatingSandboxedUiAdapter
 import androidx.privacysandbox.ui.core.IRemoteSessionClient
@@ -50,20 +51,21 @@ import java.util.concurrent.Executor
  */
 object SandboxedUiAdapterFactory {
 
-    private const val TAG = "PrivacySandboxUiLib"
     // Bundle key is a binary compatibility requirement
     private const val UI_ADAPTER_BINDER = "uiAdapterBinder"
-    private const val TEST_ONLY_USE_REMOTE_ADAPTER = "testOnlyUseRemoteAdapter"
+
+    private val uiAdapterFactoryDelegate =
+        object : UiAdapterFactoryDelegate() {
+            override val uiAdapterBinderKey: String = UI_ADAPTER_BINDER
+            override val adapterDescriptor: String = ISandboxedUiAdapter.DESCRIPTOR
+        }
 
     /**
      * @throws IllegalArgumentException if {@code coreLibInfo} does not contain a Binder with the
      *   key UI_ADAPTER_BINDER
      */
     fun createFromCoreLibInfo(coreLibInfo: Bundle): SandboxedUiAdapter {
-        val uiAdapterBinder =
-            requireNotNull(coreLibInfo.getBinder(UI_ADAPTER_BINDER)) {
-                "Invalid bundle, missing $UI_ADAPTER_BINDER."
-            }
+        val uiAdapterBinder = uiAdapterFactoryDelegate.requireNotNullAdapterBinder(coreLibInfo)
         // the following check for DelegatingAdapter check must happen before the checks for
         // remote/local binder as the checks below have fallback to a RemoteAdapter if it's not
         // local.
@@ -82,14 +84,10 @@ object SandboxedUiAdapterFactory {
                 createFromCoreLibInfo(delegate)
             )
         }
-        val forceUseRemoteAdapter = coreLibInfo.getBoolean(TEST_ONLY_USE_REMOTE_ADAPTER)
-        val isLocalBinder =
-            uiAdapterBinder.queryLocalInterface(ISandboxedUiAdapter.DESCRIPTOR) != null
-        val useLocalAdapter = !forceUseRemoteAdapter && isLocalBinder
-        Log.d(TAG, "useLocalAdapter=$useLocalAdapter")
 
         return if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && !useLocalAdapter
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                !uiAdapterFactoryDelegate.shouldUseLocalAdapter(coreLibInfo)
         ) {
             RemoteAdapter(coreLibInfo)
         } else {

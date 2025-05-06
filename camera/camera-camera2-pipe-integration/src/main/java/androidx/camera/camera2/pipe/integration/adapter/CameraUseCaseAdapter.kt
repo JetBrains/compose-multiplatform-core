@@ -141,7 +141,7 @@ public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
 
         mutableConfig.insertOption(
             ImageOutputConfig.OPTION_TARGET_ROTATION,
-            displayInfoManager.defaultDisplay.rotation
+            displayInfoManager.getMaxSizeDisplay().rotation
         )
         return OptionsBundle.from(mutableConfig)
     }

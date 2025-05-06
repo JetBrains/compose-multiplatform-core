@@ -19,7 +19,6 @@ package androidx.privacysandbox.ui.client
 import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.IRemoteSharedUiSessionClient
@@ -42,10 +41,14 @@ import java.util.concurrent.Executor
 @ExperimentalFeatures.SharedUiPresentationApi
 object SharedUiAdapterFactory {
 
-    private const val TAG = "PrivacySandboxUiLib"
     // Bundle key is a binary compatibility requirement
     private const val SHARED_UI_ADAPTER_BINDER = "sharedUiAdapterBinder"
-    private const val TEST_ONLY_USE_REMOTE_ADAPTER = "testOnlyUseRemoteAdapter"
+
+    private val uiAdapterFactoryDelegate =
+        object : UiAdapterFactoryDelegate() {
+            override val uiAdapterBinderKey: String = SHARED_UI_ADAPTER_BINDER
+            override val adapterDescriptor: String = ISharedUiAdapter.DESCRIPTOR
+        }
 
     /**
      * Creates a [SharedUiAdapter] from a supplied [coreLibInfo] that acts as a proxy between the
@@ -54,23 +57,15 @@ object SharedUiAdapterFactory {
      * @throws IllegalArgumentException if `coreLibInfo` does not contain a Binder corresponding to
      *   [SharedUiAdapter]
      */
-    // TODO(b/365553832): add shim support to generate client proxy.
     @SuppressLint("NullAnnotationGroup")
     @ExperimentalFeatures.SharedUiPresentationApi
     fun createFromCoreLibInfo(coreLibInfo: Bundle): SharedUiAdapter {
-        val uiAdapterBinder =
-            requireNotNull(coreLibInfo.getBinder(SHARED_UI_ADAPTER_BINDER)) {
-                "Invalid bundle, missing $SHARED_UI_ADAPTER_BINDER."
-            }
+        val uiAdapterBinder = uiAdapterFactoryDelegate.requireNotNullAdapterBinder(coreLibInfo)
         val adapterInterface = ISharedUiAdapter.Stub.asInterface(uiAdapterBinder)
 
-        val forceUseRemoteAdapter = coreLibInfo.getBoolean(TEST_ONLY_USE_REMOTE_ADAPTER)
-        val isLocalBinder = uiAdapterBinder.queryLocalInterface(ISharedUiAdapter.DESCRIPTOR) != null
-        val useLocalAdapter = !forceUseRemoteAdapter && isLocalBinder
-        Log.d(TAG, "useLocalAdapter=$useLocalAdapter")
-
         return if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && !useLocalAdapter
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                !uiAdapterFactoryDelegate.shouldUseLocalAdapter(coreLibInfo)
         ) {
             RemoteAdapter(adapterInterface)
         } else {

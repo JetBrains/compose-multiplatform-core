@@ -262,6 +262,33 @@ public class CameraCallbackMap @Inject constructor() : Request.Listener {
         }
     }
 
+    override fun onCaptureProgress(requestMetadata: RequestMetadata, progress: Int) {
+        for ((callback, executor) in callbacks) {
+            if (callback is CameraUseCaseAdapter.CaptureCallbackContainer) {
+                val session: CameraCaptureSession? =
+                    requestMetadata.unwrapAs(CameraCaptureSession::class)
+                val request: CaptureRequest? = requestMetadata.unwrapAs(CaptureRequest::class)
+                val partialResult: CaptureResult? = requestMetadata.unwrapAs(CaptureResult::class)
+                if (session != null && request != null && partialResult != null) {
+                    executor.execute {
+                        callback.captureCallback.onCaptureProgressed(
+                            session,
+                            request,
+                            partialResult
+                        )
+                    }
+                }
+            } else {
+                executor.execute {
+                    callback.onCaptureProcessProgressed(
+                        requestMetadata.getCaptureConfigId(),
+                        progress
+                    )
+                }
+            }
+        }
+    }
+
     override fun onReadoutStarted(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,

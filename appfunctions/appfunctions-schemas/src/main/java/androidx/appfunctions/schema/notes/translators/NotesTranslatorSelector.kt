@@ -27,6 +27,7 @@ internal object NotesTranslatorSelector {
             "createNote" -> CreateNoteTranslator()
             "findNotes" -> FindNotesTranslator()
             "updateNote" -> UpdateNoteTranslator()
+            "showNote" -> ShowNoteTranslator()
             else -> null
         }
 }

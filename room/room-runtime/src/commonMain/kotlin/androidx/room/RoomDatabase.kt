@@ -518,7 +518,7 @@ internal fun validateMigrationsNotRequired(
 internal fun RoomDatabase.validateAutoMigrations(configuration: DatabaseConfiguration) {
     val autoMigrationSpecs = mutableMapOf<KClass<out AutoMigrationSpec>, AutoMigrationSpec>()
     val requiredAutoMigrationSpecs = getRequiredAutoMigrationSpecClasses()
-    val usedSpecs = BooleanArray(requiredAutoMigrationSpecs.size)
+    val usedSpecs = BooleanArray(configuration.autoMigrationSpecs.size)
     for (spec in requiredAutoMigrationSpecs) {
         var foundIndex = -1
         for (providedIndex in configuration.autoMigrationSpecs.indices.reversed()) {
@@ -561,7 +561,7 @@ internal fun RoomDatabase.validateTypeConverters(configuration: DatabaseConfigur
     // Indices for each converter on whether it is used or not so that we can throw an exception
     // if developer provides an unused converter. It is not necessarily an error but likely
     // to be because why would developer add a converter if it won't be used?
-    val used = BooleanArray(requiredFactories.size)
+    val used = BooleanArray(configuration.typeConverters.size)
     requiredFactories.forEach { (daoName, converters) ->
         for (converter in converters) {
             var foundIndex = -1

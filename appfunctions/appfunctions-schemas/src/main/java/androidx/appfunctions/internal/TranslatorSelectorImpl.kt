@@ -18,6 +18,8 @@ package androidx.appfunctions.internal
 
 import androidx.annotation.RequiresApi
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
+import androidx.appfunctions.schema.calendars.APP_FUNCTION_SCHEMA_CATEGORY_CALENDAR
+import androidx.appfunctions.schema.calendars.translators.CalendarTranslatorSelector
 import androidx.appfunctions.schema.notes.APP_FUNCTION_SCHEMA_CATEGORY_NOTES
 import androidx.appfunctions.schema.notes.translators.NotesTranslatorSelector
 
@@ -26,9 +28,14 @@ internal class TranslatorSelectorImpl : TranslatorSelector {
 
     override fun getTranslator(schemaMetadata: AppFunctionSchemaMetadata): Translator? {
         // TODO: Generate the mapping.
-        if (schemaMetadata.category == APP_FUNCTION_SCHEMA_CATEGORY_NOTES) {
-            return NotesTranslatorSelector.getTranslator(schemaMetadata.name)
+        return when (schemaMetadata.category) {
+            APP_FUNCTION_SCHEMA_CATEGORY_NOTES -> {
+                NotesTranslatorSelector.getTranslator(schemaMetadata.name)
+            }
+            APP_FUNCTION_SCHEMA_CATEGORY_CALENDAR -> {
+                CalendarTranslatorSelector.getTranslator(schemaMetadata.name)
+            }
+            else -> null
         }
-        return null
     }
 }

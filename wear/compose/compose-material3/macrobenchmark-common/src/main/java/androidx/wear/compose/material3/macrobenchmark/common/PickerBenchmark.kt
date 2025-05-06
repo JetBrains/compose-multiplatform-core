@@ -28,9 +28,10 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.rememberPickerState
 
 object PickerBenchmark : MacrobenchmarkScreen {
+    val items = listOf("One", "Two", "Three", "Four", "Five")
+
     override val content: @Composable (BoxScope.() -> Unit)
         get() = {
-            val items = listOf("One", "Two", "Three", "Four", "Five")
             val state = rememberPickerState(items.size)
             val contentDescription by remember {
                 derivedStateOf { "${state.selectedOptionIndex + 1}" }

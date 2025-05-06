@@ -30,7 +30,8 @@ class CursorTest {
         assertThat(cursor.currentLine).isEqualTo("two")
         cursor.nextLine()
         assertThat(cursor.currentLine).isEqualTo("three")
-        assertThat(cursor.hasNextRow()).isFalse()
+        cursor.nextLine()
+        assertThat(cursor.isFinished()).isTrue()
     }
 
     @Test

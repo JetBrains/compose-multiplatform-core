@@ -18,6 +18,7 @@ package androidx.room.integration.kotlintestapp.test
 import android.content.Context
 import androidx.kruth.assertThat
 import androidx.kruth.assertWithMessage
+import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
 import androidx.room.Insert
@@ -54,7 +55,7 @@ class ProvidedTypeConverterTest {
     fun testProvidedTypeConverter() {
         val context: Context = ApplicationProvider.getApplicationContext()
         val db =
-            Room.inMemoryDatabaseBuilder(context, TestDatabaseWithConverter::class.java)
+            Room.inMemoryDatabaseBuilder(context, TestDatabaseWithConverterOne::class.java)
                 .addTypeConverter(UUIDConverter())
                 .addTypeConverter(TimeStampConverter())
                 .build()
@@ -68,15 +69,32 @@ class ProvidedTypeConverterTest {
     }
 
     @Test
+    fun testSharedProvidedTypeConverter() {
+        val context: Context = ApplicationProvider.getApplicationContext()
+        val db =
+            Room.inMemoryDatabaseBuilder(context, TestDatabaseWithConverterTwo::class.java)
+                .addTypeConverter(UUIDConverter())
+                .addTypeConverter(TimeStampConverter())
+                .build()
+        val pet: Pet = TestUtil.createPet(3)
+        db.petRobotDao().putPet(pet)
+
+        val robot = Robot(UUID.randomUUID(), UUID.randomUUID())
+        db.petRobotDao().putRobot(robot)
+        db.close()
+    }
+
+    @Test
     fun testMissingProvidedTypeConverterInstance() {
         val context: Context = ApplicationProvider.getApplicationContext()
         try {
             val db =
-                Room.inMemoryDatabaseBuilder(context, TestDatabaseWithConverter::class.java).build()
+                Room.inMemoryDatabaseBuilder(context, TestDatabaseWithConverterOne::class.java)
+                    .build()
             val pet: Pet = TestUtil.createPet(3)
             pet.mName = "pet"
             db.petDao().insertOrReplace(pet)
-            assertWithMessage("Show have thrown an IllegalArgumentException").fail()
+            assertWithMessage("Should have thrown an IllegalArgumentException").fail()
         } catch (throwable: Throwable) {
             assertThat(throwable).isInstanceOf<IllegalArgumentException>()
         }
@@ -93,7 +111,7 @@ class ProvidedTypeConverterTest {
             val pet: Pet = TestUtil.createPet(3)
             pet.mName = "pet"
             db.petDao().insertOrReplace(pet)
-            assertWithMessage("Show have thrown an IllegalArgumentException").fail()
+            assertWithMessage("Should have thrown an IllegalArgumentException").fail()
         } catch (throwable: Throwable) {
             assertThat(throwable).isInstanceOf<IllegalArgumentException>()
         }
@@ -127,10 +145,29 @@ class ProvidedTypeConverterTest {
         exportSchema = false
     )
     @TypeConverters(TimeStampConverter::class, UUIDConverter::class)
-    internal abstract class TestDatabaseWithConverter : RoomDatabase() {
+    internal abstract class TestDatabaseWithConverterOne : RoomDatabase() {
         abstract fun petDao(): PetDao
 
         abstract fun robotsDao(): RobotsDao
+
+        abstract fun petRobotDao(): PetRobotDao
+    }
+
+    @Database(entities = [Pet::class, Robot::class], version = 1, exportSchema = false)
+    @TypeConverters(TimeStampConverter::class, UUIDConverter::class)
+    internal abstract class TestDatabaseWithConverterTwo : RoomDatabase() {
+        abstract fun petRobotDao(): PetRobotDao
+    }
+
+    /**
+     * A DAOs that uses two type converters that are shared with other DAOs. Used to validate the
+     * runtime validation of provided type converters.
+     */
+    @Dao
+    interface PetRobotDao {
+        @Insert fun putPet(pet: Pet)
+
+        @Insert fun putRobot(robot: Robot)
     }
 
     @Database(entities = [ProvidedTypeConverterEntity::class], version = 1, exportSchema = false)

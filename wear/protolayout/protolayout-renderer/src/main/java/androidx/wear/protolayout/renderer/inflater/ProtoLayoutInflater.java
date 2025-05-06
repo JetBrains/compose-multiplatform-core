@@ -3629,19 +3629,34 @@ public final class ProtoLayoutInflater {
         ArcLayout arcLayout = new ArcLayout(mUiContext);
         int anchorAngleSign = 1;
 
+        // androidx.wear.widget.ArcLayout has weird way of calculating direction of placing its
+        // children, where it would look into clockwise param XOR-ed with layout direction. This is
+        // causing issues with View based SysUI that is not fully propagating all direction
+        // parameters
+        // or making some changes causing the counterclockwise to not work properly (even though
+        // it's
+        // working in tests/viewer activity).
+        // Safer solution is to manually set the following on ArcLayout:
+        // * layout direction to LTR
+        // * clockwise parameter based on ArcDirection:
+        //   * true for CLOCKWISE
+        //   * false for COUNTER_CLOCKWISE
+        //   * depending on actual layout direction of device for NORMAL
         if (arc.hasArcDirection()) {
             switch (arc.getArcDirection().getValue()) {
                 case ARC_DIRECTION_CLOCKWISE:
                     arcLayout.setLayoutDirection(LAYOUT_DIRECTION_LTR);
+                    arcLayout.setClockwise(true);
                     break;
                 case ARC_DIRECTION_COUNTER_CLOCKWISE:
-                    arcLayout.setLayoutDirection(LAYOUT_DIRECTION_RTL);
+                    arcLayout.setLayoutDirection(LAYOUT_DIRECTION_LTR);
+                    arcLayout.setClockwise(false);
                     anchorAngleSign = -1;
                     break;
                 case ARC_DIRECTION_NORMAL:
                     boolean isRtl = isRtlLayoutDirectionFromLocale();
-                    arcLayout.setLayoutDirection(
-                            isRtl ? LAYOUT_DIRECTION_RTL : LAYOUT_DIRECTION_LTR);
+                    arcLayout.setLayoutDirection(LAYOUT_DIRECTION_LTR);
+                    arcLayout.setClockwise(!isRtl);
                     if (isRtl) {
                         anchorAngleSign = -1;
                     }

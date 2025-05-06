@@ -19,7 +19,6 @@ package androidx.wear.compose.material3
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.TargetedFlingBehavior
 import androidx.compose.foundation.layout.Box
@@ -31,6 +30,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
@@ -183,22 +183,31 @@ public fun AnimatedPage(
                 scaleX = scale
                 scaleY = scale
             }
-    Box(modifier = graphicsLayerModifier.clip(CircleShape)) {
+    Box(
+        modifier =
+            graphicsLayerModifier
+                .drawWithContent {
+                    drawContent()
+                    if (contentScrimColor.isSpecified) {
+                        val isCurrentPage: Boolean = pageIndex == pagerState.currentPage
+
+                        val pageTransitionFraction =
+                            getPageTransitionFraction(
+                                isCurrentPage,
+                                pagerState.currentPageOffsetFraction
+                            )
+                        val color =
+                            contentScrimColor.copy(
+                                alpha =
+                                    lerp(start = 0f, stop = 0.5f, fraction = pageTransitionFraction)
+                            )
+
+                        drawCircle(color = color)
+                    }
+                }
+                .clip(CircleShape)
+    ) {
         content()
-
-        if (contentScrimColor.isSpecified) {
-            Canvas(Modifier.fillMaxSize()) {
-                val isCurrentPage: Boolean = pageIndex == pagerState.currentPage
-                val pageTransitionFraction =
-                    getPageTransitionFraction(isCurrentPage, pagerState.currentPageOffsetFraction)
-                val color =
-                    contentScrimColor.copy(
-                        alpha = lerp(start = 0f, stop = 0.5f, fraction = pageTransitionFraction)
-                    )
-
-                drawRect(color = color)
-            }
-        }
     }
 }
 

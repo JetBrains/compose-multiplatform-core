@@ -142,12 +142,4 @@ object ComposeUiFlags {
      * Modifier.requestedFrameRate(frameRate: Float)
      */
     @Suppress("MutableBareField") @JvmField var isAdaptiveRefreshRateEnabled: Boolean = true
-
-    /**
-     * Flag for enabling the fix for correctly dispatching interop pointer events during the
-     * [PointerEventPass.Main] pass and not the final pass.
-     */
-    @Suppress("MutableBareField")
-    @JvmField
-    var isPointerInteropFilterDispatchingFixEnabled: Boolean = true
 }

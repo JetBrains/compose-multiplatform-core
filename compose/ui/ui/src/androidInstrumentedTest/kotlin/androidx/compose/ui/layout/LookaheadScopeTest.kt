@@ -104,7 +104,6 @@ import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.node.requireOwner
 import androidx.compose.ui.platform.AndroidOwnerExtraAssertionsRule
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalDensity
@@ -769,66 +768,6 @@ class LookaheadScopeTest {
             }
         }
         rule.runOnIdle { assertEquals(IntSize(500, 300), defaultIntermediateMeasureSize) }
-    }
-
-    @Test
-    fun testLookaheadPlacementInvalidatedAfterRoot() {
-        var layingOutEntireTree by mutableStateOf(false)
-        val root = node()
-        val delegate = createDelegate(root)
-        val child0 = node {
-            measurePolicy = MeasurePolicy { m, c ->
-                m.single().measure(c).run {
-                    layout(width, height) {
-                        if (layingOutEntireTree) {
-                            // Verify that during measureAndLayout call, lookahead
-                            // invalidation happens strictly after root and other
-                            // nodes outside LookaheadScope are placed.
-                            assertFalse(root.layoutPending)
-                            assertFalse(root.children[0].layoutPending)
-                        }
-                        place(0, 0)
-                    }
-                }
-            }
-            add(node())
-        }
-        val nodeGroup = node {
-            add(child0)
-            add(node())
-        }
-        root.add(
-            node {
-                add(
-                    // This is the LookaheadScope equivalent
-                    LayoutNode(isVirtual = true).apply {
-                        isVirtualLookaheadRoot = true
-                        add(node())
-                        add(nodeGroup)
-                        add(node())
-                    }
-                )
-            }
-        )
-        rule.runOnIdle {
-            delegate.measureOnly()
-            assertTrue(root.layoutPending)
-            // Imitate shallow placement
-            with(nodeGroup.requireOwner().placementScope) {
-                nodeGroup.lookaheadPassDelegate?.place(0, 0)
-            }
-            assertFalse(nodeGroup.lookaheadLayoutPending)
-            // Mark one node as requiring lookahead relayout. This allows us to check whether
-            // this node gets invalidated before root.
-            child0.requestLookaheadRelayout()
-            assertTrue(child0.lookaheadLayoutPending)
-            assertTrue(root.layoutPending)
-
-            layingOutEntireTree = true
-            delegate.measureAndLayout()
-            assertFalse(root.layoutPending)
-            assertFalse(child0.lookaheadLayoutPending)
-        }
     }
 
     @Test

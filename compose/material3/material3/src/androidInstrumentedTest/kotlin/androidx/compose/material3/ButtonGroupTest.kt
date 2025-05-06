@@ -31,6 +31,7 @@ import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
@@ -48,52 +49,30 @@ class ButtonGroupTest {
     @get:Rule val rule = createComposeRule()
 
     private val wrapperTestTag = "WrapperTestTag"
-    private val buttonGroupTestTag = "buttonGroupTestTag"
-    private val aButton = "AButton"
-    private val bButton = "BButton"
-    private val cButton = "CButton"
-    private val dButton = "DButton"
+    private val aButton = "A"
+    private val bButton = "B"
+    private val cButton = "C"
+    private val dButton = "D"
     private val overflowIndicator = "overflowIndicator"
 
     @Test
     fun default_positioning() {
-        val interactionSources = List(4) { MutableInteractionSource() }
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup(overflowIndicator = {}) {
-                    clickableItem(
-                        onClick = {},
-                        modifier = Modifier.animateWidth(interactionSources[0]).testTag(aButton),
-                        interactionSource = interactionSources[0],
-                        label = "A"
-                    )
-                    clickableItem(
-                        onClick = {},
-                        modifier = Modifier.animateWidth(interactionSources[1]).testTag(bButton),
-                        interactionSource = interactionSources[1],
-                        label = "B"
-                    )
-                    clickableItem(
-                        onClick = {},
-                        modifier = Modifier.animateWidth(interactionSources[2]).testTag(cButton),
-                        interactionSource = interactionSources[2],
-                        label = "C"
-                    )
-                    clickableItem(
-                        onClick = {},
-                        modifier = Modifier.animateWidth(interactionSources[3]).testTag(dButton),
-                        interactionSource = interactionSources[3],
-                        label = "D"
-                    )
+                    clickableItem(onClick = {}, label = "A")
+                    clickableItem(onClick = {}, label = "B")
+                    clickableItem(onClick = {}, label = "C")
+                    clickableItem(onClick = {}, label = "D")
                 }
             }
         }
 
         val wrapperBounds = rule.onNodeWithTag(wrapperTestTag).getUnclippedBoundsInRoot()
-        val aButtonBounds = rule.onNodeWithTag(aButton).getUnclippedBoundsInRoot()
-        val bButtonBounds = rule.onNodeWithTag(bButton).getUnclippedBoundsInRoot()
-        val cButtonBounds = rule.onNodeWithTag(cButton).getUnclippedBoundsInRoot()
-        val dButtonBounds = rule.onNodeWithTag(dButton).getUnclippedBoundsInRoot()
+        val aButtonBounds = rule.onNodeWithText(aButton).getUnclippedBoundsInRoot()
+        val bButtonBounds = rule.onNodeWithText(bButton).getUnclippedBoundsInRoot()
+        val cButtonBounds = rule.onNodeWithText(cButton).getUnclippedBoundsInRoot()
+        val dButtonBounds = rule.onNodeWithText(dButton).getUnclippedBoundsInRoot()
 
         (aButtonBounds.left - wrapperBounds.left).assertIsEqualTo(0.dp)
         (bButtonBounds.left - aButtonBounds.right).assertIsEqualTo(12.dp)
@@ -104,43 +83,22 @@ class ButtonGroupTest {
 
     @Test
     fun differentHorizontalSpacing_positioning() {
-        val interactionSources = List(4) { MutableInteractionSource() }
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup(overflowIndicator = {}) {
-                    clickableItem(
-                        onClick = {},
-                        modifier = Modifier.animateWidth(interactionSources[0]).testTag(aButton),
-                        interactionSource = interactionSources[0],
-                        label = "A"
-                    )
-                    clickableItem(
-                        onClick = {},
-                        modifier = Modifier.animateWidth(interactionSources[1]).testTag(bButton),
-                        interactionSource = interactionSources[1],
-                        label = "B"
-                    )
-                    clickableItem(
-                        onClick = {},
-                        modifier = Modifier.animateWidth(interactionSources[2]).testTag(cButton),
-                        interactionSource = interactionSources[2],
-                        label = "C"
-                    )
-                    clickableItem(
-                        onClick = {},
-                        modifier = Modifier.animateWidth(interactionSources[3]).testTag(dButton),
-                        interactionSource = interactionSources[3],
-                        label = "D"
-                    )
+                    clickableItem(onClick = {}, label = "A")
+                    clickableItem(onClick = {}, label = "B")
+                    clickableItem(onClick = {}, label = "C")
+                    clickableItem(onClick = {}, label = "D")
                 }
             }
         }
 
         val wrapperBounds = rule.onNodeWithTag(wrapperTestTag).getUnclippedBoundsInRoot()
-        val aButtonBounds = rule.onNodeWithTag(aButton).getUnclippedBoundsInRoot()
-        val bButtonBounds = rule.onNodeWithTag(bButton).getUnclippedBoundsInRoot()
-        val cButtonBounds = rule.onNodeWithTag(cButton).getUnclippedBoundsInRoot()
-        val dButtonBounds = rule.onNodeWithTag(dButton).getUnclippedBoundsInRoot()
+        val aButtonBounds = rule.onNodeWithText(aButton).getUnclippedBoundsInRoot()
+        val bButtonBounds = rule.onNodeWithText(bButton).getUnclippedBoundsInRoot()
+        val cButtonBounds = rule.onNodeWithText(cButton).getUnclippedBoundsInRoot()
+        val dButtonBounds = rule.onNodeWithText(dButton).getUnclippedBoundsInRoot()
 
         (aButtonBounds.left - wrapperBounds.left).assertIsEqualTo(0.dp)
         (bButtonBounds.left - aButtonBounds.right).assertIsEqualTo(12.dp)
@@ -160,41 +118,65 @@ class ButtonGroupTest {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup(overflowIndicator = {}, expandedRatio = expandedRatio) {
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[0])
-                                .testTag(aButton),
-                        interactionSource = interactionSources[0],
-                        label = "A"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[0])
+                                        .testTag(aButton),
+                                interactionSource = interactionSources[0],
+                            ) {
+                                Text("A")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[1])
-                                .testTag(bButton),
-                        interactionSource = interactionSources[1],
-                        label = "B"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[1])
+                                        .testTag(bButton),
+                                interactionSource = interactionSources[1],
+                            ) {
+                                Text("B")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[2])
-                                .testTag(cButton),
-                        interactionSource = interactionSources[2],
-                        label = "C"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[2])
+                                        .testTag(cButton),
+                                interactionSource = interactionSources[2],
+                            ) {
+                                Text("C")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[3])
-                                .testTag(dButton),
-                        interactionSource = interactionSources[3],
-                        label = "D"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[3])
+                                        .testTag(dButton),
+                                interactionSource = interactionSources[3],
+                            ) {
+                                Text("D")
+                            }
+                        },
+                        menuContent = {}
                     )
                 }
             }
@@ -231,41 +213,65 @@ class ButtonGroupTest {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup(overflowIndicator = {}, expandedRatio = expandedRatio) {
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[0])
-                                .testTag(aButton),
-                        interactionSource = interactionSources[0],
-                        label = "A"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[0])
+                                        .testTag(aButton),
+                                interactionSource = interactionSources[0],
+                            ) {
+                                Text("A")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[1])
-                                .testTag(bButton),
-                        interactionSource = interactionSources[1],
-                        label = "B"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[1])
+                                        .testTag(bButton),
+                                interactionSource = interactionSources[1],
+                            ) {
+                                Text("B")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[2])
-                                .testTag(cButton),
-                        interactionSource = interactionSources[2],
-                        label = "C"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[2])
+                                        .testTag(cButton),
+                                interactionSource = interactionSources[2],
+                            ) {
+                                Text("C")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[3])
-                                .testTag(dButton),
-                        interactionSource = interactionSources[3],
-                        label = "D"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[3])
+                                        .testTag(dButton),
+                                interactionSource = interactionSources[3],
+                            ) {
+                                Text("D")
+                            }
+                        },
+                        menuContent = {}
                     )
                 }
             }
@@ -302,41 +308,65 @@ class ButtonGroupTest {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup(overflowIndicator = {}, expandedRatio = expandedRatio) {
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[0])
-                                .testTag(aButton),
-                        interactionSource = interactionSources[0],
-                        label = "A"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[0])
+                                        .testTag(aButton),
+                                interactionSource = interactionSources[0],
+                            ) {
+                                Text("A")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[1])
-                                .testTag(bButton),
-                        interactionSource = interactionSources[1],
-                        label = "B"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[1])
+                                        .testTag(bButton),
+                                interactionSource = interactionSources[1],
+                            ) {
+                                Text("B")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[2])
-                                .testTag(cButton),
-                        interactionSource = interactionSources[2],
-                        label = "C"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[2])
+                                        .testTag(cButton),
+                                interactionSource = interactionSources[2],
+                            ) {
+                                Text("C")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[3])
-                                .testTag(dButton),
-                        interactionSource = interactionSources[3],
-                        label = "D"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[3])
+                                        .testTag(dButton),
+                                interactionSource = interactionSources[3],
+                            ) {
+                                Text("D")
+                            }
+                        },
+                        menuContent = {}
                     )
                 }
             }
@@ -373,41 +403,65 @@ class ButtonGroupTest {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup(overflowIndicator = {}, expandedRatio = expandedRatio) {
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[0])
-                                .testTag(aButton),
-                        interactionSource = interactionSources[0],
-                        label = "A"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[0])
+                                        .testTag(aButton),
+                                interactionSource = interactionSources[0],
+                            ) {
+                                Text("A")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[1])
-                                .testTag(bButton),
-                        interactionSource = interactionSources[1],
-                        label = "B"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[1])
+                                        .testTag(bButton),
+                                interactionSource = interactionSources[1],
+                            ) {
+                                Text("B")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[2])
-                                .testTag(cButton),
-                        interactionSource = interactionSources[2],
-                        label = "C"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[2])
+                                        .testTag(cButton),
+                                interactionSource = interactionSources[2],
+                            ) {
+                                Text("C")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[3])
-                                .testTag(dButton),
-                        interactionSource = interactionSources[3],
-                        label = "D"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[3])
+                                        .testTag(dButton),
+                                interactionSource = interactionSources[3],
+                            ) {
+                                Text("D")
+                            }
+                        },
+                        menuContent = {}
                     )
                 }
             }
@@ -444,41 +498,65 @@ class ButtonGroupTest {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup(overflowIndicator = {}, expandedRatio = expandedRatio) {
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[0])
-                                .testTag(aButton),
-                        interactionSource = interactionSources[0],
-                        label = "A"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[0])
+                                        .testTag(aButton),
+                                interactionSource = interactionSources[0],
+                            ) {
+                                Text("A")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[1])
-                                .testTag(bButton),
-                        interactionSource = interactionSources[1],
-                        label = "B"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[1])
+                                        .testTag(bButton),
+                                interactionSource = interactionSources[1],
+                            ) {
+                                Text("B")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[2])
-                                .testTag(cButton),
-                        interactionSource = interactionSources[2],
-                        label = "C"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[2])
+                                        .testTag(cButton),
+                                interactionSource = interactionSources[2],
+                            ) {
+                                Text("C")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[3])
-                                .testTag(dButton),
-                        interactionSource = interactionSources[3],
-                        label = "D"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[3])
+                                        .testTag(dButton),
+                                interactionSource = interactionSources[3],
+                            ) {
+                                Text("D")
+                            }
+                        },
+                        menuContent = {}
                     )
                 }
             }
@@ -515,41 +593,65 @@ class ButtonGroupTest {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup(overflowIndicator = {}, expandedRatio = expandedRatio) {
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[0])
-                                .testTag(aButton),
-                        interactionSource = interactionSources[0],
-                        label = "A"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[0])
+                                        .testTag(aButton),
+                                interactionSource = interactionSources[0],
+                            ) {
+                                Text("A")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[1])
-                                .testTag(bButton),
-                        interactionSource = interactionSources[1],
-                        label = "B"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[1])
+                                        .testTag(bButton),
+                                interactionSource = interactionSources[1],
+                            ) {
+                                Text("B")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[2])
-                                .testTag(cButton),
-                        interactionSource = interactionSources[2],
-                        label = "C"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[2])
+                                        .testTag(cButton),
+                                interactionSource = interactionSources[2],
+                            ) {
+                                Text("C")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[3])
-                                .testTag(dButton),
-                        interactionSource = interactionSources[3],
-                        label = "D"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[3])
+                                        .testTag(dButton),
+                                interactionSource = interactionSources[3],
+                            ) {
+                                Text("D")
+                            }
+                        },
+                        menuContent = {}
                     )
                 }
             }
@@ -586,41 +688,65 @@ class ButtonGroupTest {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup(overflowIndicator = {}, expandedRatio = expandedRatio) {
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[0])
-                                .testTag(aButton),
-                        interactionSource = interactionSources[0],
-                        label = "A"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[0])
+                                        .testTag(aButton),
+                                interactionSource = interactionSources[0],
+                            ) {
+                                Text("A")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[1])
-                                .testTag(bButton),
-                        interactionSource = interactionSources[1],
-                        label = "B"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[1])
+                                        .testTag(bButton),
+                                interactionSource = interactionSources[1],
+                            ) {
+                                Text("B")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[2])
-                                .testTag(cButton),
-                        interactionSource = interactionSources[2],
-                        label = "C"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[2])
+                                        .testTag(cButton),
+                                interactionSource = interactionSources[2],
+                            ) {
+                                Text("C")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[3])
-                                .testTag(dButton),
-                        interactionSource = interactionSources[3],
-                        label = "D"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[3])
+                                        .testTag(dButton),
+                                interactionSource = interactionSources[3],
+                            ) {
+                                Text("D")
+                            }
+                        },
+                        menuContent = {}
                     )
                 }
             }
@@ -657,41 +783,65 @@ class ButtonGroupTest {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup(overflowIndicator = {}, expandedRatio = expandedRatio) {
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[0])
-                                .testTag(aButton),
-                        interactionSource = interactionSources[0],
-                        label = "A"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[0])
+                                        .testTag(aButton),
+                                interactionSource = interactionSources[0],
+                            ) {
+                                Text("A")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[1])
-                                .testTag(bButton),
-                        interactionSource = interactionSources[1],
-                        label = "B"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[1])
+                                        .testTag(bButton),
+                                interactionSource = interactionSources[1],
+                            ) {
+                                Text("B")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[2])
-                                .testTag(cButton),
-                        interactionSource = interactionSources[2],
-                        label = "C"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[2])
+                                        .testTag(cButton),
+                                interactionSource = interactionSources[2],
+                            ) {
+                                Text("C")
+                            }
+                        },
+                        menuContent = {}
                     )
-                    clickableItem(
-                        onClick = {},
-                        modifier =
-                            Modifier.width(width)
-                                .animateWidth(interactionSources[3])
-                                .testTag(dButton),
-                        interactionSource = interactionSources[3],
-                        label = "D"
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier =
+                                    Modifier.width(width)
+                                        .animateWidth(interactionSources[3])
+                                        .testTag(dButton),
+                                interactionSource = interactionSources[3],
+                            ) {
+                                Text("D")
+                            }
+                        },
+                        menuContent = {}
                     )
                 }
             }
@@ -775,15 +925,27 @@ class ButtonGroupTest {
                     }
                 ) {
                     for (i in 0 until numButtons) {
-                        clickableItem(onClick = {}, label = "$i")
+                        customItem(
+                            buttonGroupContent = { Button(onClick = {}) { Text("$i") } },
+                            menuContent = {
+                                DropdownMenuItem(
+                                    enabled = true,
+                                    text = { Text("$i") },
+                                    modifier = Modifier.testTag("$i MenuItem"),
+                                    onClick = {}
+                                )
+                            }
+                        )
                     }
                 }
             }
         }
 
+        rule.onNodeWithTag("9 MenuItem").assertIsNotDisplayed()
+
         rule.onNodeWithTag(overflowIndicator).performClick()
 
-        rule.onNodeWithTag(buttonGroupMenuTestTag).assertIsDisplayed()
+        rule.onNodeWithTag("9 MenuItem").assertIsDisplayed()
     }
 
     @Test
@@ -794,25 +956,18 @@ class ButtonGroupTest {
             Box(Modifier.testTag(wrapperTestTag)) {
                 ButtonGroup(
                     overflowIndicator = {},
-                    modifier =
-                        Modifier.horizontalScroll(rememberScrollState()).testTag(buttonGroupTestTag)
+                    modifier = Modifier.horizontalScroll(rememberScrollState())
                 ) {
                     for (i in 0..interactionSources.lastIndex) {
-                        clickableItem(
-                            onClick = {},
-                            modifier =
-                                Modifier.animateWidth(interactionSources[i]).testTag("${i}Button"),
-                            interactionSource = interactionSources[i],
-                            label = "$i"
-                        )
+                        clickableItem(onClick = {}, label = "$i")
                     }
                 }
             }
         }
 
-        rule.onNodeWithTag("8Button").assertIsNotDisplayed()
+        rule.onNodeWithText("9").assertIsNotDisplayed()
 
-        rule.onNodeWithTag(buttonGroupTestTag).performTouchInput {
+        rule.onNodeWithTag(wrapperTestTag).performTouchInput {
             this.swipe(
                 start = this.center,
                 end = Offset(this.center.x - 1500f, this.center.y),
@@ -820,6 +975,6 @@ class ButtonGroupTest {
             )
         }
 
-        rule.onNodeWithTag("8Button").assertIsDisplayed()
+        rule.onNodeWithText("9").assertIsDisplayed()
     }
 }

@@ -23,7 +23,7 @@ import androidx.appfunctions.AppFunctionContext
 import androidx.appfunctions.AppFunctionOpenable
 import androidx.appfunctions.AppFunctionSchemaDefinition
 import androidx.appfunctions.schema.types.SetField
-import java.time.LocalDateTime
+import java.time.Instant
 
 // TODO(b/407951385): Expose schema version.
 /**
@@ -76,7 +76,7 @@ public interface FindNotesAppFunction<
             get() = null
 
         /**
-         * The date/time on or after which a note must have been modified to be included in the
+         * The instant on or after which a note must have been modified to be included in the
          * results.
          *
          * Acts as a lower bound for filtering notes based on their modification timestamp. A `null`
@@ -87,11 +87,11 @@ public interface FindNotesAppFunction<
          * [androidx.appfunctions.AppFunctionInvalidArgumentException] should be thrown if
          * `modifiedAfter` is specified and is after `modifiedBefore`.
          */
-        public val modifiedAfter: LocalDateTime?
+        public val modifiedAfter: Instant?
             get() = null
 
         /**
-         * The date/time before which a note must have been modified to be included in the results.
+         * The instant before which a note must have been modified to be included in the results.
          *
          * Acts as a strict upper bound for filtering notes based on their modification timestamp. A
          * `null` value means no upper bound is applied.
@@ -101,7 +101,7 @@ public interface FindNotesAppFunction<
          * [androidx.appfunctions.AppFunctionInvalidArgumentException] should be thrown if
          * `modifiedAfter` is specified and is after `modifiedBefore`.
          */
-        public val modifiedBefore: LocalDateTime?
+        public val modifiedBefore: Instant?
             get() = null
     }
 

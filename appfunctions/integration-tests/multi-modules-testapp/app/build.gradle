@@ -57,6 +57,5 @@ dependencies {
     androidTestImplementation("androidx.appsearch:appsearch-platform-storage:1.1.0-beta01")
     androidTestImplementation('androidx.concurrent:concurrent-futures-ktx:1.1.0')
     androidTestImplementation(project(":appfunctions:integration-tests:multi-modules-testapp:shared-library"))
-    // TODO(b/408436534): Re-enable once the issue has resolved.
-//    kspAndroidTest(project(":appfunctions:appfunctions-compiler"))
+   kspAndroidTest(project(":appfunctions:appfunctions-compiler"))
 }

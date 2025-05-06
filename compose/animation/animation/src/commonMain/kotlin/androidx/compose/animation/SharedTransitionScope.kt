@@ -929,23 +929,7 @@ internal constructor(lookaheadScope: LookaheadScope, val coroutineScope: Corouti
                                 @Suppress("UNCHECKED_CAST")
                                 val targetState = (visible as (Unit) -> Boolean).invoke(Unit)
                                 val transitionState =
-                                    remember {
-                                            MutableTransitionState(
-                                                initialState =
-                                                    if (sharedElement.currentBounds != null) {
-                                                        // In the transition that we completely own,
-                                                        // we could make the
-                                                        // assumption that if a new shared element
-                                                        // is added, it'll
-                                                        // always animate from current bounds to
-                                                        // target bounds. This ensures
-                                                        // continuity of shared element bounds.
-                                                        !targetState
-                                                    } else {
-                                                        targetState
-                                                    }
-                                            )
-                                        }
+                                    remember { MutableTransitionState(initialState = targetState) }
                                         .also { it.targetState = targetState }
                                 rememberTransition(transitionState)
                             }
