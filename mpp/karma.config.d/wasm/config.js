@@ -80,8 +80,11 @@ config.customLaunchers = {
     }
 }
 
-config.browsers = ["ChromeForComposeTests"];
-if (process.env.COMPOSE_WEB_TESTS_FIREFOX) {
+config.browsers = [];
+if (process.env["jetbrains.compose.web.tests.enableChrome"]) {
+    config.browsers.push("ChromeForComposeTests");
+}
+if (process.env["jetbrains.compose.web.tests.enableFirefox"]) {
     config.browsers.push("FirefoxForComposeTests");
 }
 
