@@ -35,6 +35,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import org.junit.ComparisonFailure
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -174,20 +175,23 @@ class ComposeUiTestTest {
                 withContext(Dispatchers.Default) { delay(1000) }
             }
         }
-        assertTrue(
-            error.message!!.startsWith("After waiting for $timeout, the test coroutine is not completing")
+        // Here our assert relies on the implementation details of kotlinx.coroutines.test library,
+        // It's purpose is to be sure that the AssertionError is of particular type
+        assertEquals(
+            "kotlinx.coroutines.test.UncompletedCoroutinesError",
+            error::class.qualifiedName
         )
     }
 
     @Test
     fun testFailedAssertion() {
-        val error = assertFailsWith<AssertionError> {
+        val error = assertFailsWith<ComparisonFailure> {
             runComposeUiTest {
-                @Suppress("KotlinConstantConditions")
-                assertTrue(1 == -1)
+                assertThat(1.0).isEqualTo(2.0)
             }
         }
-        assertEquals("Expected value to be true.", error.message)
+        assertEquals("1.0", error.actual)
+        assertEquals("2.0", error.expected)
     }
 
     private class TestCoroutineContextElement : CoroutineContext.Element {
