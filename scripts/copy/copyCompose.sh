@@ -1,0 +1,1 @@
+$(dirname "$0")/impl/copyToJbMain.sh 'compose' ':(exclude)compose/material3' ':(exclude)compose/compiler'
