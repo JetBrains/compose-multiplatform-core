@@ -113,8 +113,8 @@ public final class androidx/compose/ui/test/ComposeUiTestKt {
 }
 
 public final class androidx/compose/ui/test/ComposeUiTest_desktopKt {
-	public static final fun runDesktopComposeUiTest (IILkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun runDesktopComposeUiTest$default (IILkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun runDesktopComposeUiTest-myKFqkg (IILkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLkotlin/jvm/functions/Function2;)V
+	public static synthetic fun runDesktopComposeUiTest-myKFqkg$default (IILkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 }
 
 public final class androidx/compose/ui/test/ComposeUiTest_skikoKt {
@@ -129,9 +129,8 @@ public final class androidx/compose/ui/test/ComposeUiTest_skikoKt {
 
 public final class androidx/compose/ui/test/DesktopComposeUiTest : androidx/compose/ui/test/SkikoComposeUiTest {
 	public static final field $stable I
-	public fun <init> ()V
-	public fun <init> (IILkotlin/coroutines/CoroutineContext;Landroidx/compose/ui/unit/Density;)V
-	public synthetic fun <init> (IILkotlin/coroutines/CoroutineContext;Landroidx/compose/ui/unit/Density;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IILkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLandroidx/compose/ui/unit/Density;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IILkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLandroidx/compose/ui/unit/Density;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun registerIdlingResource (Landroidx/compose/ui/test/IdlingResource;)V
 	public final fun unregisterIdlingResource (Landroidx/compose/ui/test/IdlingResource;)V
 }

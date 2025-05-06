@@ -94,7 +94,6 @@ fun runSkikoComposeUiTest(
     testTimeout: Duration = Duration.INFINITE,
     block: suspend SkikoComposeUiTest.() -> Unit
 ): TestResult {
-    @OptIn(InternalTestApi::class)
     return SkikoComposeUiTest(
         width = size.width.roundToInt(),
         height = size.height.roundToInt(),
@@ -231,12 +230,22 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     fun runTest(
         block: suspend SkikoComposeUiTest.() -> Unit
     ): TestResult {
+        // The order of calls matters:
+        // First, we setup the registry.
+        // Then, we create a scene so the registry will be notified about it.
         composeRootRegistry.setupRegistry()
+        // Create a scene before calling `runTest`,
+        // so that we can get the actual recomposer's effectCoroutineContext and use its elements
+        // in a CoroutineContext for running the test block.
         scene = runOnUiThread(::createUi)
 
         @OptIn(ExperimentalStdlibApi::class)
-        val testDispatcher = runTestContext[CoroutineDispatcher] as? TestDispatcher
-            ?: StandardTestDispatcher()
+        // We don't restrict the type to be TestDispatcher, because it's not a requirement from
+        // ComposeUiTest perspective.
+        // Below we call `kotlinx.coroutines.test.runTest`, and it will throw an exception
+        // if the CoroutineDispatcher can't be used for tests (it expects a TestDispatcher).
+        val testDispatcher: CoroutineDispatcher =
+            runTestContext[CoroutineDispatcher] ?: StandardTestDispatcher()
 
         // It's required for a test block to run in a coroutine context with some
         // elements from the current Recomposer context (e.g. MonotonicFrameClock)
@@ -248,7 +257,9 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
                 .plus(runTestContext)
                 .plus(testDispatcher)
 
-        return kotlinx.coroutines.test.runTest(
+        // Note: on web this call returns immediately (it returns a Promise),
+        // so the test cleanup must be performed within the test block.
+        return runTest(
             timeout = testTimeout,
             context = combinedCoroutineContext
         ) {
