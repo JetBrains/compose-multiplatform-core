@@ -34,19 +34,6 @@ dokka {
 
     pluginsConfiguration.html {
         customStyleSheets.from(file("material3-api-storytale-style.css"))
+        templatesDir.set(file("dokka-templates"))
     }
 }
-
-//tasks.named("dokkaGeneratePublicationHtml") {
-////    error("Class = ${this::class}")
-//}
-//
-//tasks.withType<DokkaTask>().configureEach {
-//    error("${file("material3-api-storytale-style.css")}")
-//    val dokkaBaseConfiguration =
-//        """{"customStyleSheets": ["${file("material3-api-storytale-style.css")}"]}"""
-//    pluginsMapConfiguration.set(
-//        // fully qualified plugin name to json configuration
-//        mapOf("org.jetbrains.dokka.base.DokkaBase" to dokkaBaseConfiguration)
-//    )
-//}
