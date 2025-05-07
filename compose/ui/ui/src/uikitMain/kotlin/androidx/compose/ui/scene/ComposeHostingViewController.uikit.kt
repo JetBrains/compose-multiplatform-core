@@ -486,7 +486,7 @@ internal class ComposeHostingViewController(
             platformContext = platformContext,
             layersHolder = layersHolder
         ),
-        invalidate = invalidate,
+        invalidate = { invalidate() },
     )
 
     /**

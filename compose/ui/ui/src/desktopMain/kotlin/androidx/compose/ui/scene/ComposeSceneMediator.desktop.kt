@@ -176,7 +176,7 @@ internal class ComposeSceneMediator(
     private val interopContainer = SwingInteropContainer(
         root = container,
         placeInteropAbove = shouldPlaceInteropAbove,
-        requestRedraw = ::onComposeInvalidation
+        requestRedraw = { onComposeInvalidation(throttledToVsync = false) }
     )
 
     private val interopContainerListener = object : ContainerListener {
@@ -558,12 +558,13 @@ internal class ComposeSceneMediator(
         }
     }
 
-    fun onComposeInvalidation() = composeInvalidationExecutor.runOrScheduleDebounced {
-        catchExceptions {
-            if (isDisposed) return@catchExceptions
-            skiaLayerComponent.onComposeInvalidation()
+    fun onComposeInvalidation(throttledToVsync: Boolean) =
+        composeInvalidationExecutor.runOrScheduleDebounced(throttledToVsync) {
+            catchExceptions {
+                if (isDisposed) return@catchExceptions
+                skiaLayerComponent.onComposeInvalidation(throttledToVsync = throttledToVsync)
+            }
         }
-    }
 
     fun onComponentPositionChanged() = catchExceptions {
         if (!container.isDisplayable) return

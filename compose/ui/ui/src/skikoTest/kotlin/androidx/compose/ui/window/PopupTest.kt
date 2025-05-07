@@ -731,7 +731,7 @@ class PopupTest {
                 windowInfo.containerSize = IntSize(50, 50)
             },
             coroutineContext = coroutineContext,
-            invalidate = ::invalidate
+            invalidate = { invalidate() }
         )
         try {
             scene.size = size

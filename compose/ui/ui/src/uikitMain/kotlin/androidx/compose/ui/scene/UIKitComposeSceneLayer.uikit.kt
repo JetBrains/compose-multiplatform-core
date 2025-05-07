@@ -112,7 +112,7 @@ internal class UIKitComposeSceneLayer(
             layoutDirection = initLayoutDirection,
             coroutineContext = coroutineContext,
             composeSceneContext = createComposeSceneContext(platformContext),
-            invalidate = invalidate,
+            invalidate = { invalidate() },
         )
 
     val hasInvalidations by mediator::hasInvalidations

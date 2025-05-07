@@ -127,7 +127,9 @@ internal class SwingSkiaLayerComponent(
         contentComponent.requestNativeFocusOnAccessible(accessible)
     }
 
-    override fun onComposeInvalidation() {
+    override fun onComposeInvalidation(throttledToVsync: Boolean) {
+        // TODO: https://youtrack.jetbrains.com/issue/CMP-8124
+        // if throttledToVsync is true, delay until next frame
         contentComponent.repaint()
     }
 

@@ -57,7 +57,7 @@ import kotlinx.coroutines.withContext
 @OptIn(InternalComposeUiApi::class)
 internal abstract class BaseComposeScene(
     coroutineContext: CoroutineContext,
-    private val invalidate: () -> Unit,
+    private val invalidate: (canRenderImmediately: Boolean) -> Unit,
 ) : ComposeScene {
     protected val snapshotInvalidationTracker = SnapshotInvalidationTracker(::updateInvalidations)
     protected val inputHandler: ComposeSceneInputHandler =
@@ -71,7 +71,9 @@ internal abstract class BaseComposeScene(
     // Store this to avoid creating a lambda every frame
     private val updatePointerPosition = inputHandler::updatePointerPosition
 
-    private val frameClock = BroadcastFrameClock(onNewAwaiters = ::updateInvalidations)
+    private val frameClock = BroadcastFrameClock(
+        onNewAwaiters = { updateInvalidations(throttledToVsync = true) }
+    )
     private val recomposer: ComposeSceneRecomposer =
         ComposeSceneRecomposer(coroutineContext, frameClock)
     private var composition: Composition? = null
@@ -104,11 +106,11 @@ internal abstract class BaseComposeScene(
 
     @Volatile
     private var hasPendingDraws = true
-    protected fun updateInvalidations() {
+    protected fun updateInvalidations(throttledToVsync: Boolean = false) {
         hasPendingDraws = frameClock.hasAwaiters ||
             snapshotInvalidationTracker.hasInvalidations
         if (hasPendingDraws && !isInvalidationDisabled && !isClosed && composition != null) {
-            invalidate()
+            invalidate(throttledToVsync)
         }
     }
 

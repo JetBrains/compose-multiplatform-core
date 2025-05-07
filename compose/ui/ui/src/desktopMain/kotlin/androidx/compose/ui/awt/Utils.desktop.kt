@@ -24,7 +24,7 @@ import java.awt.Component
 import java.awt.EventQueue
 import java.awt.Graphics
 import java.awt.Rectangle
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.*
 import javax.swing.JComponent
 import javax.swing.JDialog
 import javax.swing.JFrame
@@ -165,30 +165,27 @@ internal open class JLayeredPaneWithTransparencyHack: JLayeredPane() {
  * than once.
  */
 internal class DebouncingEdtExecutor {
-
     /**
-     * Whether any code has been scheduled.
+     * The keys for which code has been scheduled.
      */
-    private val isScheduled = AtomicBoolean(false)
+    private val scheduledKeys = Collections.synchronizedSet(mutableSetOf<Any>())
 
     /**
-     * Calls [block] on the event dispatching thread.
+     * Calls [block] on the event dispatching thread, or schedules it to be called with the given
+     * [key].
      *
      * If the thread calling this function is the event dispatching thread, executes [block] and
-     * cancels any previously scheduled blocks. Otherwise, if no block is currently scheduled,
-     * schedules [block] to run event dispatching thread. If a block is already scheduled, does
-     * nothing.
-     *
-     * Note that this utility is not intended to run or schedule multiple different blocks of code
-     * at the same time, as only one block of code can be scheduled at a time.
+     * cancels any blocks previously scheduled with [key]. Otherwise, if no block is currently
+     * scheduled with [key], schedules [block] to run event dispatching thread. If a block is
+     * already scheduled with [key], does nothing.
      */
-    fun runOrScheduleDebounced(block: () -> Unit) {
+    fun runOrScheduleDebounced(key: Any, block: () -> Unit) {
         if (EventQueue.isDispatchThread()) {
-            isScheduled.set(false)
+            scheduledKeys.remove(key)
             block()
-        } else if (!isScheduled.getAndSet(true)) {
+        } else if (scheduledKeys.add(key)) {
             EventQueue.invokeLater {
-                if (isScheduled.getAndSet(false)) {
+                if (scheduledKeys.remove(key)) {
                     block()
                 }
             }

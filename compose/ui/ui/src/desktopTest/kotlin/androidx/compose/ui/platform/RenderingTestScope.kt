@@ -61,7 +61,7 @@ internal class RenderingTestScope(
     private val canvas = surface.canvas.asComposeCanvas()
     val scene = CanvasLayersComposeScene(
         coroutineContext = coroutineContext,
-        invalidate = frameDispatcher::scheduleFrame
+        invalidate = { frameDispatcher.scheduleFrame() }
     ).apply {
         size = IntSize(width = width, height = height)
     }

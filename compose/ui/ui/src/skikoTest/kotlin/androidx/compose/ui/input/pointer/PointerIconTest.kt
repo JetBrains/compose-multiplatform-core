@@ -351,5 +351,5 @@ private fun SingleLayerComposeScene(
     composeSceneContext = object : ComposeSceneContext {
         override val platformContext get() = platformContext
     },
-    invalidate = invalidate
+    invalidate = { invalidate() }
 )

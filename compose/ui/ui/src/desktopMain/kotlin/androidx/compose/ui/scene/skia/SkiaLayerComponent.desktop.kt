@@ -46,7 +46,7 @@ internal interface SkiaLayerComponent {
     fun dispose()
     fun requestNativeFocusOnAccessible(accessible: Accessible)
 
-    fun onComposeInvalidation()
+    fun onComposeInvalidation(throttledToVsync: Boolean)
     fun onRenderApiChanged(action: () -> Unit)
 }
 

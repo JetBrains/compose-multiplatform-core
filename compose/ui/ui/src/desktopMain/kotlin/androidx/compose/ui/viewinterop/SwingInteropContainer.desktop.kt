@@ -232,7 +232,6 @@ internal class SwingInteropContainer(
         if (hasAnyUpdates) {
             // Sometimes Swing displays the rest of interop views in incorrect order after an update
             // so we need to re-validate and repaint the root component.
-
             root.validate()
             root.repaint()
         }
