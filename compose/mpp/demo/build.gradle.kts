@@ -16,7 +16,7 @@
 
 import androidx.build.AndroidXComposePlugin
 import androidx.build.JetbrainsAndroidXPlugin
-import java.util.Locale
+import java.util.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
@@ -270,8 +270,6 @@ if (System.getProperty("os.name") == "Mac OS X") {
             throw IllegalStateException("Please run the task from Xcode")
         }
     } else {
-        kotlinBinary.debuggable = true
-        kotlinBinary.optimized = false
         // Otherwise copy the executable into the Xcode output directory.
         tasks.create("packForXCode", Copy::class.java) {
             dependsOn(kotlinBinary.linkTask)
