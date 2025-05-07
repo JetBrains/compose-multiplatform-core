@@ -74,6 +74,11 @@ internal class BackingDomInput(
         backingElement.style.top = "${offset.y}px"
     }
 
+    fun updateHtmlInputGeometry(width: Int, height: Int) {
+        backingElement.style.width = "${width}px"
+        backingElement.style.height = "${height}px"
+    }
+
     fun updateState(textFieldValue: TextFieldValue) {
         inputStrategy.updateState(textFieldValue)
         focus()
