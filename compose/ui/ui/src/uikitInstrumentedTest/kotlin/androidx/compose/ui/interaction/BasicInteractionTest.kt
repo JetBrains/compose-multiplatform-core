@@ -135,7 +135,7 @@ class BasicInteractionTest {
     fun testTextFieldCallout() = runUIKitInstrumentedTest {
         setContent {
             Column(modifier = Modifier.safeDrawingPadding()) {
-                TextField("Hello-long-long-long-long-long-text", {}, modifier = Modifier.testTag("TextField"))
+                TextField("Hello-long-longlonglong-long-text", {}, modifier = Modifier.testTag("TextField"))
             }
         }
 
