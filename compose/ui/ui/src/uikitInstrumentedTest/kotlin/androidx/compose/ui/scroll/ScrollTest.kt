@@ -374,7 +374,6 @@ internal class ScrollTest {
 
         val initialBoxRect = DpRect(DpOffset(x = 0.dp, y = 100.dp), DpSize(screenSize.width, 100.dp))
 
-        waitForIdle()
         assertEquals(initialBoxRect, boxRect)
 
         touchDown(DpOffset(screenSize.center.x, 50.dp))
