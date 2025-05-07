@@ -299,6 +299,23 @@ class OwnerLayerTest {
     }
 
     @Test
+    fun rotationZ_unspecified_origin() {
+        layer.resize(IntSize(100, 10))
+        layer.updateProperties(
+            rotationZ = 90f
+        )
+
+        assertMapping(
+            from = Offset(50f, 5f),
+            to = Offset(50f, 5f)
+        )
+        assertMapping(
+            from = Offset(45f, 10f),
+            to = Offset(55f, 10f)
+        )
+    }
+
+    @Test
     fun translation_scale_left_top_origin() {
         layer.resize(IntSize(100, 10))
         layer.updateProperties(
