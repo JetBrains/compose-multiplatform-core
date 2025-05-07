@@ -339,22 +339,17 @@ android {
     namespace "androidx.compose.material3"
 }
 
-tasks.named('dokkaHtml', org.jetbrains.dokka.gradle.DokkaTask).configure {
+dokka {
+    moduleName.set("Compose Material3")
+    modulePath.set("material3")
+
     dokkaSourceSets {
         configureEach {
-            if (name.contains("commonMain")) {
-                suppress.set(false)
-            } else {
-                suppress.set(true)
-            }
+            suppress.set(!name.contains("commonMain"))
         }
     }
-}
 
-tasks.withType(org.jetbrains.dokka.gradle.DokkaTask.class) {
-    String dokkaBaseConfiguration = """{"customStyleSheets": ["${file("material3-api-storytale-style.css")}"]}"""
-    pluginsMapConfiguration.set(
-            // fully qualified plugin name to json configuration
-            ["org.jetbrains.dokka.base.DokkaBase": dokkaBaseConfiguration]
-    )
+    pluginsConfiguration.named("html").configure {
+        customStyleSheets.from(project(":mpp:apiReferences").projectDir.absolutePath + "/material3-api-storytale-style.css")
+    }
 }

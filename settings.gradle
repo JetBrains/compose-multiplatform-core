@@ -268,5 +268,6 @@ includeProject(":internal-testutils-mockito", "testutils/testutils-mockito")
 includeBuild("placeholder")
 
 includeProject(":mpp")
+includeProject(":mpp:apiReferences")
 includeProject(":window:window-core")
 includeProject(":performance:performance-annotation")
