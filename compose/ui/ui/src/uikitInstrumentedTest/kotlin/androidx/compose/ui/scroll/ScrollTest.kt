@@ -180,11 +180,12 @@ internal class ScrollTest {
             val currentDiff = (currentBoxTop - previousBoxTop).value
 
             // skip the first two iterations as we don't want to take into account the first drag position
-            if (i > 2) {
-                val epsilon = 5e-5f
-                val isDiffZero = abs(abs(currentDiff) - abs(previousDiff)) <= epsilon
-                val isDiffDecreasing = abs(currentDiff) < abs(previousDiff)
-                assertTrue(isDiffDecreasing || isDiffZero)
+            if (i > 1) {
+                try {
+                    assertEquals(currentDiff, previousDiff, 5e-5f)
+                } catch (e: AssertionError) {
+                    assertTrue(currentDiff < previousDiff)
+                }
             }
 
             previousBoxTop = currentBoxTop
@@ -234,11 +235,12 @@ internal class ScrollTest {
             val currentDiff = (currentBoxTop - previousBoxTop).value
 
             // skip the first two iterations as we don't want to take into account the first drag position
-            if (i > 2) {
-                val epsilon = 5e-5f
-                val isDiffZero = abs(abs(currentDiff) - abs(previousDiff)) <= epsilon
-                val isDiffDecreasing = abs(currentDiff) < abs(previousDiff)
-                assertTrue(isDiffDecreasing || isDiffZero)
+            if (i > 1) {
+                try {
+                    assertEquals(currentDiff, previousDiff, 5e-5f)
+                } catch (e: AssertionError) {
+                    assertTrue(currentDiff > previousDiff)
+                }
             }
 
             previousBoxTop = currentBoxTop
