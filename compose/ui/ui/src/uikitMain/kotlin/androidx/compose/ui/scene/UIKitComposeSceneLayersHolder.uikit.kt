@@ -124,9 +124,9 @@ internal class UIKitComposeSceneLayersHolder(
         val isFirstLayer = layers.isEmpty()
 
         layers.add(layer)
-        view.insertSubview(layer.interopContainerView, belowSubview = metalView)
-        layer.interopContainerView.addLayoutConstraintsToMatch(view)
-        view.embedSubview(layer.view)
+        view.insertSubview(layer.interactionView, belowSubview = metalView)
+        layer.interactionView.addLayoutConstraintsToMatch(view)
+        view.embedSubview(layer.overlayView)
 
         if (isFirstLayer) {
             containerView?.embedSubview(view)

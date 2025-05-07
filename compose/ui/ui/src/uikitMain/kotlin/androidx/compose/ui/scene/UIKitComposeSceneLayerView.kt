@@ -117,7 +117,7 @@ internal class UIKitComposeSceneLayerView(
             }
         }
 
-        return null
+        return result
     }
 
     fun dispose() {
