@@ -130,12 +130,12 @@ class BasicInteractionTest {
         assertTrue(doubleClicked)
     }
 
-    @Ignore
+    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8133/Fix-keyboard-dependent-instrumented-tests-on-CI
     @Test
     fun testTextFieldCallout() = runUIKitInstrumentedTest {
         setContent {
             Column(modifier = Modifier.safeDrawingPadding()) {
-                TextField("Hello-long-longlonglong-long-text", {}, modifier = Modifier.testTag("TextField"))
+                TextField("Hello-long-long-long-long-long-text", {}, modifier = Modifier.testTag("TextField"))
             }
         }
 
