@@ -182,7 +182,7 @@ internal class ScrollTest {
             if (i > 1) {
                 try {
                     assertEquals(currentDiff, previousDiff, 5e-5f)
-                } catch (e: AssertionError) {
+                } catch (_: AssertionError) {
                     assertTrue(currentDiff < previousDiff)
                 }
             }
@@ -237,7 +237,7 @@ internal class ScrollTest {
             if (i > 1) {
                 try {
                     assertEquals(currentDiff, previousDiff, 5e-5f)
-                } catch (e: AssertionError) {
+                } catch (_: AssertionError) {
                     assertTrue(currentDiff > previousDiff)
                 }
             }
