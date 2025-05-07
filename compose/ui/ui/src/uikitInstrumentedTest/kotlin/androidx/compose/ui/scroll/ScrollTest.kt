@@ -97,8 +97,6 @@ internal class ScrollTest {
             }
         }
 
-        waitForIdle()
-
         val initialBoxRect = boxRect.copy()
         val dyExact = CUPERTINO_TOUCH_SLOP.dp
 
@@ -170,7 +168,6 @@ internal class ScrollTest {
             }
         }
 
-        waitForIdle()
         val touch = touchDown(screenSize.center)
         var previousBoxTop = boxRect.top
         var previousDiff = 0f
@@ -225,7 +222,6 @@ internal class ScrollTest {
             }
         }
 
-        waitForIdle()
         val touch = touchDown(screenSize.center)
         var previousBoxTop = boxRect.top
         var previousDiff = 0f
@@ -406,7 +402,6 @@ internal class ScrollTest {
 
         val initialBoxRect = DpRect(DpOffset.Zero, screenSize)
 
-        waitForIdle()
         assertEquals(initialBoxRect, boxRect)
 
         touchDown(DpOffset(screenSize.center.x, 50.dp))
@@ -645,8 +640,6 @@ internal class ScrollTest {
                 )
             }
         }
-
-        waitForIdle()
 
         // start in red box and drag upwards
         touchDown(DpOffset(screenSize.center.x, 250.dp))
