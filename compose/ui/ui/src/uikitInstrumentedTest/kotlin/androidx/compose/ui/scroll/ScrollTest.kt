@@ -172,8 +172,8 @@ internal class ScrollTest {
         var previousBoxTop = boxRect.top
         var previousDiff = 0f
 
-        for (i in 1..11) {
-            touch.dragBy(dy = 20.dp, duration = 0.1.seconds)
+        repeat(10) { i ->
+            touch.dragBy(dy = 20.dp, duration = 100.milliseconds)
             waitForIdle()
 
             val currentBoxTop = boxRect.top
@@ -226,7 +226,7 @@ internal class ScrollTest {
         var previousBoxTop = boxRect.top
         var previousDiff = 0f
 
-        for (i in 1..10) {
+        repeat(10) { i ->
             touch.dragBy(dy = -20.dp, duration = 0.1.seconds)
             waitForIdle()
 
@@ -259,7 +259,7 @@ internal class ScrollTest {
 
         setContent {
             Column(modifier = Modifier.fillMaxSize().verticalScroll(state)) {
-                for (index in 0 until 10) {
+                repeat(10) { index ->
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
