@@ -79,9 +79,11 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
             browser {
                 testTask {
                     if (project.findProperty(enableChromeTestsProperty)?.toString()?.toBoolean() == true) {
+                        println("[DBG][JS] enabling Chrome because ${project.findProperty(enableChromeTestsProperty)}")
                         it.environment(enableChromeTestsProperty, "1")
                     }
                     if (project.findProperty(enableFirefoxTestsProperty)?.toString()?.toBoolean() == true) {
+                        println("[DBG][JS] enabling Firefox because ${project.findProperty(enableFirefoxTestsProperty)}")
                         it.environment(enableFirefoxTestsProperty, "1")
                     }
 
@@ -140,9 +142,11 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
             browser {
                 testTask {
                     if (project.findProperty(enableChromeTestsProperty)?.toString()?.toBoolean() == true) {
+                        println("[DBG][WASM] enabling Chrome because ${project.findProperty(enableChromeTestsProperty)}")
                         it.environment(enableChromeTestsProperty, "1")
                     }
                     if (project.findProperty(enableFirefoxTestsProperty)?.toString()?.toBoolean() == true) {
+                        println("[DBG][WASM] enabling Firefox because ${project.findProperty(enableFirefoxTestsProperty)}")
                         it.environment(enableFirefoxTestsProperty, "1")
                     }
 
