@@ -71,10 +71,22 @@ config.customLaunchers = {
     ChromeForComposeTests: {
         base: "Chrome",
         flags: ["--no-sandbox", "--disable-search-engine-choice-screen"]
+    },
+    FirefoxForComposeTests: {
+        base: "Firefox",
+        prefs: {
+ 		'dom.w3c_touch_events.enabled': 1
+       }
     }
 }
 
-config.browsers = ["ChromeForComposeTests"];
+config.browsers = [];
+if (process.env["jetbrains.compose.web.tests.enableChrome"]) {
+    config.browsers.push("ChromeForComposeTests");
+}
+if (process.env["jetbrains.compose.web.tests.enableFirefox"]) {
+    config.browsers.push("FirefoxForComposeTests");
+}
 
 // A workaround from https://android-review.googlesource.com/c/platform/frameworks/support/+/3413540
 (function() {
