@@ -70,7 +70,7 @@ import platform.CoreGraphics.CGRect
 import platform.UIKit.UIView
 import platform.UIKit.UIViewAnimationOptions
 
-@Ignore
+@Ignore // https://youtrack.jetbrains.com/issue/CMP-8133/Fix-keyboard-dependent-instrumented-tests-on-CI
 internal class KeyboardInsetsTest {
     @Test
     fun testImeInsetsAnimationFrames_FocusAboveKeyboard() = runUIKitInstrumentedTest {
