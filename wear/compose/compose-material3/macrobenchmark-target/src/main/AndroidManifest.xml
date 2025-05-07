@@ -236,6 +236,17 @@
         </activity>
 
         <activity
+            android:name=".ScrollIndicatorActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name=
+                    "androidx.wear.compose.material3.macrobenchmark.target.SCROLL_INDICATOR_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".ScalingLazyColumnActivity"
             android:theme="@style/AppTheme"
             android:exported="true">

@@ -485,7 +485,10 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
         assertThat(sessionObserver.sessionObserverContext).isNotNull()
         assertThat(sessionObserver.sessionObserverContext?.view).isEqualTo(adapter.session?.view)
         assertThat(sessionObserver.sessionObserverContext?.supportedSignalOptions)
-            .containsExactly(SandboxedUiAdapterSignalOptions.GEOMETRY)
+            .containsExactly(
+                SandboxedUiAdapterSignalOptions.GEOMETRY,
+                SandboxedUiAdapterSignalOptions.OBSTRUCTIONS
+            )
     }
 
     @Test

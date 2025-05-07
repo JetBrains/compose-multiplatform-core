@@ -16,6 +16,7 @@
 
 package androidx.wear.compose.material3
 
+import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.Animatable
@@ -36,7 +37,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +49,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -64,7 +65,6 @@ import androidx.wear.compose.material3.ButtonDefaults.buttonColors
 import androidx.wear.compose.material3.internal.Icons
 import androidx.wear.compose.material3.internal.Plurals
 import androidx.wear.compose.material3.internal.Strings
-import androidx.wear.compose.material3.internal.getPlurals
 import androidx.wear.compose.material3.internal.getString
 import androidx.wear.compose.material3.tokens.TimePickerTokens
 import androidx.wear.compose.materialcore.is24HourFormat
@@ -151,22 +151,35 @@ public fun TimePicker(
             initiallySelectedIndex = initialTime.minute,
         )
 
+    val context = LocalContext.current
     val hoursContentDescription =
-        createDescription(
-            selectedIndex,
-            if (is12hour) hourState.selectedOptionIndex + 1 else hourState.selectedOptionIndex,
-            hourString,
-            Plurals.TimePickerHoursContentDescription,
-        )
-    val minutesContentDescription =
-        createDescription(
-            selectedIndex,
-            minuteState.selectedOptionIndex,
-            minuteString,
-            Plurals.TimePickerMinutesContentDescription,
-        )
+        remember(context, selectedIndex, hourState) {
+            {
+                createDescription(
+                    context,
+                    selectedIndex,
+                    if (is12hour) hourState.selectedOptionIndex + 1
+                    else hourState.selectedOptionIndex,
+                    hourString,
+                    Plurals.TimePickerHoursContentDescription
+                )
+            }
+        }
 
-    val thirdPicker = getOptionalThirdPicker(timePickerType, selectedIndex, initialTime)
+    val minutesContentDescription =
+        remember(context, selectedIndex, minuteState) {
+            {
+                createDescription(
+                    context,
+                    selectedIndex,
+                    minuteState.selectedOptionIndex,
+                    minuteString,
+                    Plurals.TimePickerMinutesContentDescription,
+                )
+            }
+        }
+
+    val thirdPicker = getOptionalThirdPicker(context, timePickerType, selectedIndex, initialTime)
 
     val onPickerSelected = { current: FocusableElements, next: FocusableElements ->
         if (selectedIndex != current.index) {
@@ -630,6 +643,7 @@ private fun getTimePickerStyles(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun getOptionalThirdPicker(
+    context: Context,
     timePickerType: TimePickerType,
     selectedIndex: Int?,
     time: LocalTime
@@ -642,13 +656,19 @@ private fun getOptionalThirdPicker(
                     initialNumberOfOptions = 60,
                     initiallySelectedIndex = time.second,
                 )
+
             val secondsContentDescription =
-                createDescription(
-                    selectedIndex,
-                    secondState.selectedOptionIndex,
-                    secondString,
-                    Plurals.TimePickerSecondsContentDescription,
-                )
+                remember(context, selectedIndex, secondState) {
+                    {
+                        createDescription(
+                            context,
+                            selectedIndex,
+                            secondState.selectedOptionIndex,
+                            secondString,
+                            Plurals.TimePickerSecondsContentDescription,
+                        )
+                    }
+                }
             PickerData(
                 state = secondState,
                 contentDescription = secondsContentDescription,
@@ -672,12 +692,9 @@ private fun getOptionalThirdPicker(
                             LocalTime.of(12, 0).format(formatter)
                     }
                 }
-            val periodContentDescription by
-                remember(
-                    selectedIndex,
-                    periodState.selectedOptionIndex,
-                ) {
-                    derivedStateOf {
+            val periodContentDescription =
+                remember(periodState, selectedIndex) {
+                    {
                         if (selectedIndex == null) {
                             periodString
                         } else if (periodState.selectedOptionIndex == 0) {
@@ -699,7 +716,7 @@ private fun getOptionalThirdPicker(
 
 private class PickerData(
     val state: PickerState,
-    val contentDescription: String,
+    val contentDescription: () -> String,
     val label: String,
     val indexToText: (Int) -> String,
 )
@@ -732,8 +749,8 @@ private fun Separator(
     }
 }
 
-@Composable
 private fun createDescription(
+    context: Context,
     selectedIndex: Int?,
     selectedValue: Int,
     label: String,
@@ -742,7 +759,7 @@ private fun createDescription(
     if (selectedIndex == null) {
         label
     } else {
-        getPlurals(plurals, selectedValue, selectedValue)
+        context.resources.getQuantityString(plurals.value, selectedValue, selectedValue)
     }
 
 @Immutable

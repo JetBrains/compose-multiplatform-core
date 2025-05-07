@@ -19,6 +19,8 @@ package androidx.appfunctions.compiler.core
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.PRIMITIVE_ARRAY
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.PRIMITIVE_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.PRIMITIVE_SINGULAR
+import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_INTERFACE_LIST
+import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_INTERFACE_SINGULAR
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_SINGULAR
@@ -51,6 +53,10 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
             isAppFunctionSerializableProxyListType(selfTypeReference) -> SERIALIZABLE_PROXY_LIST
             isAppFunctionSerializableListType(selfTypeReference) -> SERIALIZABLE_LIST
             isAppFunctionSerializableType(selfTypeReference) -> SERIALIZABLE_SINGULAR
+            isAppFunctionSerializableInterfaceType(selfTypeReference) ->
+                SERIALIZABLE_INTERFACE_SINGULAR
+            isAppFunctionSerializableInterfaceListType(selfTypeReference) ->
+                SERIALIZABLE_INTERFACE_LIST
             else ->
                 throw ProcessingException(
                     "Unsupported type reference ${selfTypeReference.ensureQualifiedTypeName().asString()}",
@@ -113,7 +119,9 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
         SERIALIZABLE_SINGULAR,
         SERIALIZABLE_LIST,
         SERIALIZABLE_PROXY_SINGULAR,
-        SERIALIZABLE_PROXY_LIST
+        SERIALIZABLE_PROXY_LIST,
+        SERIALIZABLE_INTERFACE_SINGULAR,
+        SERIALIZABLE_INTERFACE_LIST,
     }
 
     companion object {
@@ -122,8 +130,23 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
          *
          * A supported type is a primitive type, a type annotated as @AppFunctionSerializable, or a
          * list of a supported type.
+         *
+         * @param allowSerializableInterfaceTypes Indicates if @AppFunctionSerializableInterface is
+         *   also supported. The @AppFunctionSerializableInterface should only be considered as a
+         *   supported type when processing schema definitions.
          */
-        fun isSupportedType(typeReferenceArgument: KSTypeReference): Boolean {
+        fun isSupportedType(
+            typeReferenceArgument: KSTypeReference,
+            allowSerializableInterfaceTypes: Boolean = false,
+        ): Boolean {
+            if (allowSerializableInterfaceTypes) {
+                if (
+                    isAppFunctionSerializableInterfaceType(typeReferenceArgument) ||
+                        isAppFunctionSerializableInterfaceListType(typeReferenceArgument)
+                ) {
+                    return true
+                }
+            }
             return typeReferenceArgument.asStringWithoutNullQualifier() in SUPPORTED_TYPES ||
                 isSupportedPrimitiveListType(typeReferenceArgument) ||
                 isAppFunctionSerializableType(typeReferenceArgument) ||
@@ -210,6 +233,27 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
                     .findAnnotation(
                         IntrospectionHelper.AppFunctionSerializableProxyAnnotation.CLASS_NAME
                     ) != null
+        }
+
+        private fun isAppFunctionSerializableInterfaceType(
+            typeReferenceArgument: KSTypeReference
+        ): Boolean {
+            return typeReferenceArgument
+                .resolve()
+                .declaration
+                .annotations
+                .findAnnotation(
+                    IntrospectionHelper.AppFunctionSerializableInterfaceAnnotation.CLASS_NAME
+                ) != null
+        }
+
+        private fun isAppFunctionSerializableInterfaceListType(
+            typeReferenceArgument: KSTypeReference
+        ): Boolean {
+            return typeReferenceArgument.isOfType(LIST) &&
+                isAppFunctionSerializableInterfaceType(
+                    typeReferenceArgument.resolveListParameterizedType()
+                )
         }
 
         private fun TypeName.ignoreNullable(): TypeName {

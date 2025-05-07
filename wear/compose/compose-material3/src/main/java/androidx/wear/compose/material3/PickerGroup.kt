@@ -118,11 +118,9 @@ public class PickerGroupScope {
      * @param selected If the [Picker] is selected.
      * @param onSelected Action triggered when the [Picker] is selected by clicking.
      * @param modifier [Modifier] to be applied to the [Picker].
-     * @param contentDescription Text used by accessibility services to describe what the selected
-     *   option represents. This text should be localized, such as by using
-     *   [androidx.compose.ui.res.stringResource] or similar. Typically, the content description is
-     *   inferred via derivedStateOf to avoid unnecessary recompositions, like this: val description
-     *   by remember { derivedStateOf { /* expression using state.selectedOption */ } }.
+     * @param contentDescription A block which computes text used by accessibility services to
+     *   describe what the selected option represents. This text should be localized, such as by
+     *   using [androidx.compose.ui.res.stringResource] or similar.
      * @param focusRequester Optional [FocusRequester] for the [Picker]. If not provided, a local
      *   instance of [FocusRequester] will be created to handle the focus between different pickers.
      *   If it is provided, the caller is responsible for handling the focus.
@@ -140,7 +138,7 @@ public class PickerGroupScope {
         selected: Boolean,
         onSelected: () -> Unit,
         modifier: Modifier = Modifier,
-        contentDescription: String? = null,
+        contentDescription: (() -> String)? = null,
         focusRequester: FocusRequester? = null,
         readOnlyLabel: @Composable (BoxScope.() -> Unit)? = null,
         verticalSpacing: Dp = 0.dp,

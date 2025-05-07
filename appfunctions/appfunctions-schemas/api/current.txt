@@ -12,20 +12,22 @@ package androidx.appfunctions.schema.calendars {
 
   public interface AppFunctionCalendarEvent {
     method public default String? getDescription();
+    method public default java.time.ZoneId? getEndTimeZone();
     method public java.time.Instant getEndsAt();
     method public String getId();
     method public default String? getLocation();
     method public default String? getRecurrenceSchedule();
     method public default String? getSelfAttendeeStatus();
+    method public java.time.ZoneId getStartTimeZone();
     method public java.time.Instant getStartsAt();
     method public default String? getStatus();
-    method public java.time.ZoneId getTimeZone();
     method public String getTitle();
     method public default boolean isAllDay();
     method public default boolean isInPublicCalendar();
     method public default boolean isOrganizer();
     method public default boolean isReadOnly();
     property public default String? description;
+    property public default java.time.ZoneId? endTimeZone;
     property public abstract java.time.Instant endsAt;
     property public abstract String id;
     property public default boolean isAllDay;
@@ -35,9 +37,9 @@ package androidx.appfunctions.schema.calendars {
     property public default String? location;
     property public default String? recurrenceSchedule;
     property public default String? selfAttendeeStatus;
+    property public abstract java.time.ZoneId startTimeZone;
     property public abstract java.time.Instant startsAt;
     property public default String? status;
-    property public abstract java.time.ZoneId timeZone;
     property public abstract String title;
     field public static final String ATTENDEE_ACCEPTED = "ACCEPTED";
     field public static final String ATTENDEE_DECLINED = "DECLINED";
@@ -66,6 +68,44 @@ package androidx.appfunctions.schema.calendars {
   public final class CalendarsKt {
     property public static String APP_FUNCTION_SCHEMA_CATEGORY_CALENDAR;
     field public static final String APP_FUNCTION_SCHEMA_CATEGORY_CALENDAR = "calendar";
+  }
+
+  public interface CreateCalendarEventAppFunction<Parameters extends androidx.appfunctions.schema.calendars.CreateCalendarEventAppFunction.Parameters, Response extends androidx.appfunctions.schema.calendars.CreateCalendarEventAppFunction.Response> {
+    method public suspend Object? createCalendarEvent(androidx.appfunctions.AppFunctionContext appFunctionContext, Parameters parameters, kotlin.coroutines.Continuation<? super Response>);
+    field public static final androidx.appfunctions.schema.calendars.CreateCalendarEventAppFunction.Companion Companion;
+  }
+
+  public static final class CreateCalendarEventAppFunction.Companion {
+  }
+
+  public static interface CreateCalendarEventAppFunction.Parameters {
+    method public default String? getDescription();
+    method public default java.time.ZoneId getEndTimeZone();
+    method public java.time.Instant getEndsAt();
+    method public default String? getExternalUuid();
+    method public default String? getLocation();
+    method public default String? getRecurrenceSchedule();
+    method public java.time.ZoneId getStartTimeZone();
+    method public java.time.Instant getStartsAt();
+    method public default String? getStatus();
+    method public String getTitle();
+    method public default boolean isAllDay();
+    property public default String? description;
+    property public default java.time.ZoneId endTimeZone;
+    property public abstract java.time.Instant endsAt;
+    property public default String? externalUuid;
+    property public default boolean isAllDay;
+    property public default String? location;
+    property public default String? recurrenceSchedule;
+    property public abstract java.time.ZoneId startTimeZone;
+    property public abstract java.time.Instant startsAt;
+    property public default String? status;
+    property public abstract String title;
+  }
+
+  public static interface CreateCalendarEventAppFunction.Response {
+    method public androidx.appfunctions.schema.calendars.AppFunctionCalendarEvent getCreatedCalendarEvent();
+    property public abstract androidx.appfunctions.schema.calendars.AppFunctionCalendarEvent createdCalendarEvent;
   }
 
   public interface GetCalendarEventsAppFunction<Parameters extends androidx.appfunctions.schema.calendars.GetCalendarEventsAppFunction.Parameters, Response extends androidx.appfunctions.schema.calendars.GetCalendarEventsAppFunction.Response> {
@@ -275,11 +315,11 @@ package androidx.appfunctions.schema.notes {
   }
 
   public static interface FindNotesAppFunction.Parameters {
-    method public default java.time.LocalDateTime? getModifiedAfter();
-    method public default java.time.LocalDateTime? getModifiedBefore();
+    method public default java.time.Instant? getModifiedAfter();
+    method public default java.time.Instant? getModifiedBefore();
     method public default String? getQuery();
-    property public default java.time.LocalDateTime? modifiedAfter;
-    property public default java.time.LocalDateTime? modifiedBefore;
+    property public default java.time.Instant? modifiedAfter;
+    property public default java.time.Instant? modifiedBefore;
     property public default String? query;
   }
 

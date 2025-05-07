@@ -29,8 +29,6 @@ private constructor(private val lines: List<String>, rowIndex: Int = 0, columnIn
     val currentLine: String
         get() = lines[rowIndex].slice(columnIndex until lines[rowIndex].length)
 
-    fun hasNextRow() = rowIndex < (lines.size - 1)
-
     /** Check if we have passed the last line in [lines] and there is nothing left to parse */
     fun isFinished() = rowIndex >= lines.size
 

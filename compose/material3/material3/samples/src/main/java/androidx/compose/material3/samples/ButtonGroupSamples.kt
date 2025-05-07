@@ -17,7 +17,6 @@
 package androidx.compose.material3.samples
 
 import androidx.annotation.Sampled
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -55,7 +54,6 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ButtonGroupSample() {
     val numButtons = 10
-    val interactionSources = remember { List(numButtons) { MutableInteractionSource() } }
     ButtonGroup(
         overflowIndicator = { menuState ->
             IconButton(
@@ -75,12 +73,7 @@ fun ButtonGroupSample() {
         }
     ) {
         for (i in 0 until numButtons) {
-            clickableItem(
-                onClick = {},
-                label = "$i",
-                interactionSource = interactionSources[i],
-                modifier = Modifier.animateWidth(interactionSources[i])
-            )
+            clickableItem(onClick = {}, label = "$i")
         }
     }
 }

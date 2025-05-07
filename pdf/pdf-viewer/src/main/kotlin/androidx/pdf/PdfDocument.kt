@@ -30,6 +30,8 @@ import androidx.pdf.content.PdfPageImageContent
 import androidx.pdf.content.PdfPageLinkContent
 import androidx.pdf.content.PdfPageTextContent
 import java.io.Closeable
+import kotlin.jvm.Throws
+import kotlinx.coroutines.CancellationException
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 /** Represents a PDF document and provides methods to interact with its content. */
@@ -52,7 +54,9 @@ public interface PdfDocument : Closeable {
      *
      * @param pageNumber The page number (0-based).
      * @return A [PageInfo] object containing information about the page.
+     * @throws DocumentClosedException if executed after [PdfDocument.close] is called.
      */
+    @Throws(DocumentClosedException::class)
     public suspend fun getPageInfo(pageNumber: Int): PageInfo
 
     /**
@@ -60,7 +64,9 @@ public interface PdfDocument : Closeable {
      *
      * @param pageRange The range of page numbers (0-based, inclusive).
      * @return A list of [PageInfo] objects, one for each page in the range.
+     * @throws DocumentClosedException if executed after [PdfDocument.close] is called.
      */
+    @Throws(DocumentClosedException::class)
     public suspend fun getPageInfos(pageRange: IntRange): List<PageInfo>
 
     /**
@@ -70,7 +76,9 @@ public interface PdfDocument : Closeable {
      * @param pageRange The range of page numbers (0-based, inclusive) to search within.
      * @return A [SparseArray] mapping page numbers to lists of [PageMatchBounds] objects
      *   representing the search results on each page.
+     * @throws DocumentClosedException if executed after [PdfDocument.close] is called.
      */
+    @Throws(DocumentClosedException::class)
     public suspend fun searchDocument(
         query: String,
         pageRange: IntRange
@@ -85,6 +93,7 @@ public interface PdfDocument : Closeable {
      * @param stop The ending point of the text selection.
      * @return A [PageSelection] object representing the selection bounds on the page.
      */
+    @Throws(DocumentClosedException::class)
     public suspend fun getSelectionBounds(
         pageNumber: Int,
         start: PointF,
@@ -97,7 +106,9 @@ public interface PdfDocument : Closeable {
      *
      * @param pageNumber The page on which text to be selected.
      * @return A [PageSelection] object representing the selection bounds on the page.
+     * @throws DocumentClosedException if executed after [PdfDocument.close] is called.
      */
+    @Throws(DocumentClosedException::class)
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public suspend fun getSelectAllSelectionBounds(
         pageNumber: Int,
@@ -108,7 +119,9 @@ public interface PdfDocument : Closeable {
      *
      * @param pageNumber The page number (0-based).
      * @return A [PdfPageContent] object representing the page's content.
+     * @throws DocumentClosedException if executed after [PdfDocument.close] is called.
      */
+    @Throws(DocumentClosedException::class)
     public suspend fun getPageContent(pageNumber: Int): PdfPageContent?
 
     /**
@@ -116,7 +129,9 @@ public interface PdfDocument : Closeable {
      *
      * @param pageNumber The page number (0-based).
      * @return A [PdfPageLinks] object representing the page's links.
+     * @throws DocumentClosedException if executed after [PdfDocument.close] is called.
      */
+    @Throws(DocumentClosedException::class)
     public suspend fun getPageLinks(pageNumber: Int): PdfPageLinks
 
     /**
@@ -124,7 +139,9 @@ public interface PdfDocument : Closeable {
      *
      * @param pageNumber The page number (0-based).
      * @return A [BitmapSource] for the specified page, or null if the page number is invalid.
+     * @throws DocumentClosedException if executed after [PdfDocument.close] is called.
      */
+    @Throws(DocumentClosedException::class)
     public fun getPageBitmapSource(pageNumber: Int): BitmapSource
 
     /**
@@ -150,7 +167,9 @@ public interface PdfDocument : Closeable {
          *   within the `scaledPageSizePx`. This identifies the tile. If null, the entire page is
          *   included.
          * @return The bitmap representation of the page.
+         * @throws DocumentClosedException if executed after [PdfDocument.close] is called.
          */
+        @Throws(DocumentClosedException::class)
         public suspend fun getBitmap(scaledPageSizePx: Size, tileRegion: Rect? = null): Bitmap
     }
 
@@ -187,4 +206,16 @@ public interface PdfDocument : Closeable {
      * @property pagePoint The coordinates (x, y) of the point relative to the page's origin.
      */
     public class PdfPoint(public val pageNumber: Int, public val pagePoint: PointF)
+
+    /**
+     * A [CancellationException] indicating that a document has been closed.
+     *
+     * @property message: the detail message
+     * @property cause: the cause of the exception, if available. This will be present if an
+     *   exception occurred while executing operation that needs to be cancelled.
+     */
+    public class DocumentClosedException(
+        public override val message: String = "Document already closed",
+        public override val cause: Throwable? = null
+    ) : CancellationException()
 }

@@ -17,18 +17,27 @@
 package androidx.appfunctions.compiler.core
 
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSchemaDefinitionAnnotation
-import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
-import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 
 /** Represents the annotated @AppFunctionSchemaDefinition. */
 class AnnotatedAppFunctionSchemaDefinition(
     private val classDeclaration: KSClassDeclaration,
 ) {
+    private val schemaFunctionDeclaration: KSFunctionDeclaration by lazy {
+        classDeclaration.declarations.filterIsInstance<KSFunctionDeclaration>().singleOrNull()
+            ?: throw ProcessingException(
+                "The @AppFunctionSchemaDefinition should have exactly one function declaration",
+                classDeclaration,
+            )
+    }
+
     /** The qualified name of the @AppFunctionSchemaDefinition */
     val qualifiedName: String by lazy { classDeclaration.ensureQualifiedName() }
 
@@ -47,9 +56,12 @@ class AnnotatedAppFunctionSchemaDefinition(
         }
     }
 
-    // TODO(b/403525399): Reuse the logic from AnnotatedAppFunction to create metadata
     /** Creates [CompileTimeAppFunctionMetadata] from @AppFunctionSchemaDefinition. */
-    fun createAppFunctionMetadata(): CompileTimeAppFunctionMetadata {
+    fun createAppFunctionMetadata(
+        resolvedAnnotatedSerializableProxies:
+            AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies,
+    ): CompileTimeAppFunctionMetadata {
+        val metadataCreatorHelper = AppFunctionMetadataCreatorHelper()
         val annotation =
             classDeclaration.annotations.findAnnotation(
                 AppFunctionSchemaDefinitionAnnotation.CLASS_NAME
@@ -58,32 +70,41 @@ class AnnotatedAppFunctionSchemaDefinition(
                     "Class not annotated with @AppFunctionSchemaDefinition",
                     classDeclaration
                 )
+        val annotationProperties =
+            metadataCreatorHelper.computeAppFunctionAnnotationProperties(
+                schemaDefinitionAnnotation = annotation
+            )
 
-        val schemaCategory =
-            annotation.requirePropertyValueOfType(
-                AppFunctionSchemaDefinitionAnnotation.PROPERTY_CATEGORY,
-                String::class,
+        val sharedDataTypeMap: MutableMap<String, AppFunctionDataTypeMetadata> = mutableMapOf()
+        val seenDataTypeQualifiers: MutableSet<String> = mutableSetOf()
+
+        val parameterTypeMetadataList =
+            metadataCreatorHelper.buildParameterTypeMetadataList(
+                parameters = schemaFunctionDeclaration.parameters,
+                resolvedAnnotatedSerializableProxies = resolvedAnnotatedSerializableProxies,
+                sharedDataTypeMap = sharedDataTypeMap,
+                seenDataTypeQualifiers = seenDataTypeQualifiers,
+                allowSerializableInterfaceTypes = true,
             )
-        val schemaName =
-            annotation.requirePropertyValueOfType(
-                AppFunctionSchemaDefinitionAnnotation.PROPERTY_NAME,
-                String::class,
+        val responseTypeMetadata =
+            metadataCreatorHelper.buildResponseTypeMetadata(
+                returnType =
+                    checkNotNull(schemaFunctionDeclaration.returnType)
+                        .resolveSelfOrUpperBoundType(),
+                resolvedAnnotatedSerializableProxies = resolvedAnnotatedSerializableProxies,
+                sharedDataTypeMap = sharedDataTypeMap,
+                seenDataTypeQualifiers = seenDataTypeQualifiers,
+                allowSerializableInterfaceTypes = true,
             )
-        val schemaVersion =
-            annotation
-                .requirePropertyValueOfType(
-                    AppFunctionSchemaDefinitionAnnotation.PROPERTY_VERSION,
-                    Int::class,
-                )
-                .toLong()
 
         return CompileTimeAppFunctionMetadata(
-            id = "${schemaCategory}/${schemaName}/${schemaVersion}",
+            id =
+                "${annotationProperties.schemaCategory}/${annotationProperties.schemaName}/${annotationProperties.schemaVersion}",
             isEnabledByDefault = true,
-            schema = AppFunctionSchemaMetadata(schemaCategory, schemaName, schemaVersion),
-            parameters = emptyList(),
-            response =
-                AppFunctionResponseMetadata(AppFunctionReferenceTypeMetadata("placeholder", false)),
+            schema = annotationProperties.getAppFunctionSchemaMetadata(),
+            parameters = parameterTypeMetadataList,
+            response = AppFunctionResponseMetadata(responseTypeMetadata),
+            components = AppFunctionComponentsMetadata(sharedDataTypeMap)
         )
     }
 }

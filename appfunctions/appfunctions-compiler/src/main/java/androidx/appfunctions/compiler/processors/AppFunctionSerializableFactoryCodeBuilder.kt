@@ -477,6 +477,12 @@ class AppFunctionSerializableFactoryCodeBuilder(
                     targetSerializableProxy.serializableReferenceType.getTypeShortName()
                 )
             }
+            else -> {
+                throw ProcessingException(
+                    "Unsupported type for @AppFunctionSerializable: ${afType.typeCategory}",
+                    afType.selfTypeReference,
+                )
+            }
         }
     }
 
@@ -710,6 +716,12 @@ class AppFunctionSerializableFactoryCodeBuilder(
                     targetSerializableProxy.serializableReferenceType.getTypeShortName()
                 )
             }
+            else -> {
+                throw ProcessingException(
+                    "Unsupported type for @AppFunctionSerializable: ${afType.typeCategory}",
+                    afType.selfTypeReference,
+                )
+            }
         }
     }
 
@@ -782,6 +794,12 @@ class AppFunctionSerializableFactoryCodeBuilder(
             SERIALIZABLE_PROXY_LIST,
             SERIALIZABLE_LIST -> "getAppFunctionDataList"
             PRIMITIVE_LIST -> "get${shortTypeName}List"
+            else -> {
+                throw ProcessingException(
+                    "Unsupported type for @AppFunctionSerializable: ${afType.typeCategory}",
+                    afType.selfTypeReference,
+                )
+            }
         }
     }
 
@@ -801,6 +819,12 @@ class AppFunctionSerializableFactoryCodeBuilder(
             PRIMITIVE_LIST,
             SERIALIZABLE_PROXY_LIST,
             SERIALIZABLE_LIST -> if (afType.isNullable) "" else " ?: emptyList()"
+            else -> {
+                throw ProcessingException(
+                    "Unsupported type for @AppFunctionSerializable: ${afType.typeCategory}",
+                    afType.selfTypeReference,
+                )
+            }
         }
     }
 
@@ -813,6 +837,12 @@ class AppFunctionSerializableFactoryCodeBuilder(
             SERIALIZABLE_PROXY_SINGULAR -> "setAppFunctionData"
             SERIALIZABLE_PROXY_LIST,
             SERIALIZABLE_LIST -> "setAppFunctionDataList"
+            else -> {
+                throw ProcessingException(
+                    "Unsupported type for @AppFunctionSerializable: ${afType.typeCategory}",
+                    afType.selfTypeReference,
+                )
+            }
         }
     }
 

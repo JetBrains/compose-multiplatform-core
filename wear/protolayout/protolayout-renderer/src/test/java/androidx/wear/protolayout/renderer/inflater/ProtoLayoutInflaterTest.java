@@ -18,9 +18,12 @@ package androidx.wear.protolayout.renderer.inflater;
 
 import static android.os.Looper.getMainLooper;
 import static android.view.View.INVISIBLE;
+import static android.view.View.LAYOUT_DIRECTION_LTR;
 import static android.view.View.VISIBLE;
 
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
+import static androidx.wear.protolayout.proto.LayoutElementProto.ArcDirection.ARC_DIRECTION_CLOCKWISE;
+import static androidx.wear.protolayout.proto.LayoutElementProto.ArcDirection.ARC_DIRECTION_COUNTER_CLOCKWISE;
 import static androidx.wear.protolayout.proto.ModifiersProto.SlideParentSnapOption.SLIDE_PARENT_SNAP_TO_INSIDE;
 import static androidx.wear.protolayout.proto.ModifiersProto.SlideParentSnapOption.SLIDE_PARENT_SNAP_TO_OUTSIDE;
 import static androidx.wear.protolayout.renderer.R.id.clickable_id_tag;
@@ -144,6 +147,7 @@ import androidx.wear.protolayout.proto.DimensionProto.WrappedDimensionProp;
 import androidx.wear.protolayout.proto.LayoutElementProto;
 import androidx.wear.protolayout.proto.LayoutElementProto.Arc;
 import androidx.wear.protolayout.proto.LayoutElementProto.ArcAdapter;
+import androidx.wear.protolayout.proto.LayoutElementProto.ArcDirectionProp;
 import androidx.wear.protolayout.proto.LayoutElementProto.ArcLayoutElement;
 import androidx.wear.protolayout.proto.LayoutElementProto.ArcLine;
 import androidx.wear.protolayout.proto.LayoutElementProto.ArcSpacer;
@@ -2285,6 +2289,46 @@ public class ProtoLayoutInflaterTest {
         assertThat(line.getStrokeCap()).isEqualTo(Cap.BUTT);
         // Dimensions are in DP, but the density is currently 1 in the tests, so this is fine:
         assertThat(line.getThickness()).isEqualTo(12);
+    }
+
+    @Test
+    public void inflate_arc_clockwise() {
+        LayoutElement root =
+                LayoutElement.newBuilder()
+                        .setArc(
+                                Arc.newBuilder()
+                                        .setArcDirection(
+                                                ArcDirectionProp.newBuilder()
+                                                        .setValue(ARC_DIRECTION_CLOCKWISE)
+                                                        .build()))
+                        .build();
+
+        FrameLayout rootLayout = renderer(fingerprintedLayout(root)).inflate();
+
+        assertThat(rootLayout.getChildCount()).isEqualTo(1);
+        ArcLayout arcLayout = (ArcLayout) rootLayout.getChildAt(0);
+        assertThat(arcLayout.isClockwise()).isTrue();
+        assertThat(arcLayout.getLayoutDirection()).isEqualTo(LAYOUT_DIRECTION_LTR);
+    }
+
+    @Test
+    public void inflate_arc_counterClockwise() {
+        LayoutElement root =
+                LayoutElement.newBuilder()
+                        .setArc(
+                                Arc.newBuilder()
+                                        .setArcDirection(
+                                                ArcDirectionProp.newBuilder()
+                                                        .setValue(ARC_DIRECTION_COUNTER_CLOCKWISE)
+                                                        .build()))
+                        .build();
+
+        FrameLayout rootLayout = renderer(fingerprintedLayout(root)).inflate();
+
+        assertThat(rootLayout.getChildCount()).isEqualTo(1);
+        ArcLayout arcLayout = (ArcLayout) rootLayout.getChildAt(0);
+        assertThat(arcLayout.isClockwise()).isFalse();
+        assertThat(arcLayout.getLayoutDirection()).isEqualTo(LAYOUT_DIRECTION_LTR);
     }
 
     @Test

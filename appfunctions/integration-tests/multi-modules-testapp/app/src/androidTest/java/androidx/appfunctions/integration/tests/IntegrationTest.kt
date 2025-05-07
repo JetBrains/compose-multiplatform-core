@@ -24,6 +24,7 @@ import androidx.appfunctions.AppFunctionManagerCompat
 import androidx.appfunctions.AppFunctionSearchSpec
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
+import androidx.appfunctions.integration.tests.AppSearchMetadataHelper.isDynamicIndexerAvailable
 import androidx.appfunctions.integration.tests.TestUtil.doBlocking
 import androidx.appfunctions.integration.tests.TestUtil.retryAssert
 import androidx.test.filters.LargeTest
@@ -34,8 +35,8 @@ import kotlin.test.assertIs
 import kotlinx.coroutines.flow.first
 import org.junit.After
 import org.junit.Assume.assumeNotNull
+import org.junit.Assume.assumeTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 
 @LargeTest
@@ -70,7 +71,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Ignore("b/408436534")
     fun executeAppFunction_success() = doBlocking {
         val response =
             appFunctionManager.executeAppFunction(
@@ -91,9 +91,10 @@ class IntegrationTest {
             .isEqualTo(3)
     }
 
+    // TODO: b/410548653 - Add proper tests for query API
     @Test
-    @Ignore("b/408436534")
     fun searchAllAppFunctions_success() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val searchFunctionSpec = AppFunctionSearchSpec(packageNames = setOf(context.packageName))
         // Total number of serializable types used as an appfunction parameter or return value in
         // the set of appfunctions defined by this integration test.
@@ -105,7 +106,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Ignore("b/408436534")
     fun executeAppFunction_voidReturnType_success() = doBlocking {
         val response =
             appFunctionManager.executeAppFunction(
@@ -121,7 +121,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Ignore("b/408436534")
     fun executeAppFunction_setFactory_success() = doBlocking {
         // A factory is set to create the enclosing class of the function.
         // See [TestApplication.appFunctionConfiguration].
@@ -147,7 +146,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Ignore("b/408436534")
     fun executeAppFunction_functionInLibraryModule_success() = doBlocking {
         var response =
             appFunctionManager.executeAppFunction(
@@ -172,7 +170,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Ignore("b/408436534")
     fun executeAppFunction_functionNotFound_fail() = doBlocking {
         val response =
             appFunctionManager.executeAppFunction(
@@ -190,7 +187,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Ignore("b/408436534")
     fun executeAppFunction_appThrows_fail() = doBlocking {
         val response =
             appFunctionManager.executeAppFunction(
@@ -209,7 +205,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Ignore("b/408436534")
     fun executeAppFunction_createNote() = doBlocking {
         val response =
             appFunctionManager.executeAppFunction(
@@ -252,7 +247,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Ignore("b/408436534")
     fun executeAppFunction_createNote_withOpenableCapability_returnsNote() = doBlocking {
         val response =
             appFunctionManager.executeAppFunction(
@@ -295,7 +289,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Ignore("b/408436534")
     fun executeAppFunction_createNote_withOpenableCapability_returnsOpenableNote() = doBlocking {
         val response =
             appFunctionManager.executeAppFunction(
@@ -344,7 +337,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Ignore("b/408436534")
     fun executeAppFunction_serializableProxyParam_dateTime_success() = doBlocking {
         val localDateTimeClass = DateTime(LocalDateTime.now())
         val response =
@@ -371,7 +363,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Ignore("b/408436534")
     fun executeAppFunction_serializableProxyParam_androidUri_success() = doBlocking {
         val androidUri = Uri.parse("https://www.google.com/")
         val response =
@@ -395,7 +386,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Ignore("b/408436534")
     fun executeAppFunction_serializableProxyResponse_dateTime_success() = doBlocking {
         val response =
             appFunctionManager.executeAppFunction(
@@ -419,7 +409,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Ignore("b/408436534")
     fun executeAppFunction_serializableProxyResponse_androidUri_success() = doBlocking {
         val response =
             appFunctionManager.executeAppFunction(
@@ -444,7 +433,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Ignore("b/408436534")
     fun executeAppFunction_updateNote_success() = doBlocking {
         val response =
             appFunctionManager.executeAppFunction(
@@ -486,7 +474,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Ignore("b/408436534")
     fun executeAppFunction_updateNoteSetFieldNullContent_success() = doBlocking {
         val response =
             appFunctionManager.executeAppFunction(
@@ -528,7 +515,6 @@ class IntegrationTest {
     }
 
     @Test
-    @Ignore("b/408436534")
     fun executeAppFunction_updateNoteNullSetFields_success() = doBlocking {
         val response =
             appFunctionManager.executeAppFunction(

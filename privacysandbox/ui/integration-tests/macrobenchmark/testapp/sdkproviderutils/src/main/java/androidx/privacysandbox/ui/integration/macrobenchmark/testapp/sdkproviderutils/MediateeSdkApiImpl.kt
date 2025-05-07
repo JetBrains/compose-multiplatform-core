@@ -66,7 +66,6 @@ class MediateeSdkApiImpl() {
                     else ->
                         loadNonWebViewBannerAd(testAdapters, mediationDescription, waitInsideOnDraw)
                 }
-            ViewabilityHandler.addObserverFactoryToAdapter(adapter, drawViewability)
             return adapter.toCoreLibInfo(sdkContext)
         }
 

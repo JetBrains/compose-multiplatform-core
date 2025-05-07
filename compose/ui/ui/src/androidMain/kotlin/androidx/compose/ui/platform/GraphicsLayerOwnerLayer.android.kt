@@ -184,7 +184,7 @@ internal class GraphicsLayerOwnerLayer(
         if (maybeChangedFields != 0 || outlineChanged) {
             triggerRepaint()
             if (ownerView.isArrEnabled) {
-                ownerView.requestedFrameRate = frameRate
+                ownerView.voteFrameRate(frameRate)
             }
         }
     }
@@ -226,7 +226,7 @@ internal class GraphicsLayerOwnerLayer(
 
     override fun move(position: IntOffset) {
         if (ownerView.isArrEnabled) {
-            ownerView.requestedFrameRate = FrameRateCategory.High.value
+            ownerView.voteFrameRate(FrameRateCategory.High.value)
         }
         graphicsLayer.topLeft = position
         triggerRepaint()
@@ -235,7 +235,7 @@ internal class GraphicsLayerOwnerLayer(
     override fun resize(size: IntSize) {
         if (size != this.size) {
             if (ownerView.isArrEnabled) {
-                ownerView.requestedFrameRate = FrameRateCategory.High.value
+                ownerView.voteFrameRate(FrameRateCategory.High.value)
             }
             this.size = size
             invalidate()
@@ -256,7 +256,7 @@ internal class GraphicsLayerOwnerLayer(
 
     override fun updateDisplayList() {
         if (ownerView.isArrEnabled && frameRate != 0f) {
-            ownerView.requestedFrameRate = frameRate
+            ownerView.voteFrameRate(frameRate)
         }
         if (isDirty) {
             if (transformOrigin != TransformOrigin.Center && graphicsLayer.size != size) {

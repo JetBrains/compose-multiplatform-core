@@ -462,10 +462,38 @@ class AppFunctionCompilerTest {
     }
 
     @Test
+    fun testFunctionWithInvalidSerializableInterface_fail() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("FunctionWithInvalidSerializableInterface.KT")
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report = report,
+            expectedErrorMessage =
+                "AppFunctionSerializable properties must be one of the following types:\n"
+        )
+    }
+
+    @Test
     fun testFunctionWithInvalidGenericSerializable_fail() {
         val report =
             compilationTestHelper.compileAll(
                 sourceFileNames = listOf("FunctionWithInvalidGenericSerializable.KT")
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report = report,
+            expectedErrorMessage =
+                "AppFunctionSerializable properties must be one of the following types:\n"
+        )
+    }
+
+    @Test
+    fun testFunctionWithInvalidGenericSerializableInterface_fail() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("FunctionWithInvalidGenericSerializableInterface.KT")
             )
 
         compilationTestHelper.assertErrorWithMessage(

@@ -50,6 +50,9 @@ public class SceneStrategyResult<T : Any>(
      *
      * This is required for calculating the proper predictive back state, which may result in a
      * different scene being shown.
+     *
+     * When predictive back is occurring, this list of entries will be passed through the
+     * [SceneStrategy] again, to determine what the resulting scene would be if the back happens.
      */
     public val previousEntries: List<NavEntry<T>>,
 )

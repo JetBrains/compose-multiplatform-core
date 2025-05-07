@@ -34,11 +34,21 @@ dependencies {
     implementation(project(":benchmark:benchmark-macro-junit4"))
     implementation(project(":tracing:tracing-perfetto-binary"))
     implementation(libs.kotlinStdlib)
+
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.kotlinTest)
+    androidTestImplementation(libs.truth)
 }
 
 android {
     defaultConfig {
         minSdk = 23
+    }
+    sourceSets {
+        androidTest.assets.srcDirs += new File(
+                androidx.build.AndroidXConfig.getPrebuiltsRoot(project),
+                "androidx/traceprocessor/testdata"
+        )
     }
     namespace = "androidx.testutils.macrobenchmark"
 }

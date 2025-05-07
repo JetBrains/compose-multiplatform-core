@@ -24,7 +24,7 @@ import androidx.appfunctions.internal.Translator
 import androidx.appfunctions.schema.notes.FindNotesAppFunction
 import androidx.appfunctions.schema.notes.translators.NoteTranslator.downgradeNote
 import androidx.appfunctions.schema.notes.translators.NoteTranslator.upgradeNote
-import java.time.LocalDateTime
+import java.time.Instant
 import java.time.ZoneId
 
 @RequiresApi(33)
@@ -36,9 +36,13 @@ internal class FindNotesTranslator : Translator {
             FindNotesAppFunctionParams(
                 query = legacyFindNoteParams.getStringOrNull("query"),
                 modifiedAfter =
-                    legacyFindNoteParams.getAppFunctionData("startDate")?.toLocalDateTime(),
+                    legacyFindNoteParams.getAppFunctionData("startDate")?.let {
+                        DateTimeTranslator.upgradeToInstant(it)
+                    },
                 modifiedBefore =
-                    legacyFindNoteParams.getAppFunctionData("endDate")?.toLocalDateTime()
+                    legacyFindNoteParams.getAppFunctionData("endDate")?.let {
+                        DateTimeTranslator.upgradeToInstant(it)
+                    },
             )
 
         return AppFunctionData.Builder(qualifiedName = "")
@@ -79,13 +83,19 @@ internal class FindNotesTranslator : Translator {
                     if (findNotesAppFunctionParams.modifiedAfter != null) {
                         setAppFunctionData(
                             "startDate",
-                            findNotesAppFunctionParams.modifiedAfter.toLegacyAppFunctionData()
+                            DateTimeTranslator.downgradeToDateTime(
+                                findNotesAppFunctionParams.modifiedAfter,
+                                ZoneId.systemDefault()
+                            )
                         )
                     }
                     if (findNotesAppFunctionParams.modifiedBefore != null) {
                         setAppFunctionData(
                             "endDate",
-                            findNotesAppFunctionParams.modifiedBefore.toLegacyAppFunctionData()
+                            DateTimeTranslator.downgradeToDateTime(
+                                findNotesAppFunctionParams.modifiedBefore,
+                                ZoneId.systemDefault()
+                            )
                         )
                     }
 
@@ -108,53 +118,13 @@ internal class FindNotesTranslator : Translator {
             )
             .build()
     }
-
-    companion object {
-        private fun AppFunctionData.toLocalDateTime(): LocalDateTime {
-            val date = checkNotNull(getAppFunctionData("date"))
-            val timeOfDay = checkNotNull(getAppFunctionData("timeOfDay"))
-            return LocalDateTime.of(
-                /* year= */ date.getInt("year"),
-                /* month= */ date.getInt("month"),
-                /* dayOfMonth= */ date.getInt("day"),
-                /* hour= */ timeOfDay.getInt("hours"),
-                /* minute= */ timeOfDay.getInt("minutes"),
-                /* second= */ timeOfDay.getInt("seconds"),
-                /* nanoOfSecond= */ timeOfDay.getInt("nanos")
-            )
-        }
-
-        private fun LocalDateTime.toLegacyAppFunctionData() =
-            AppFunctionData.Builder(qualifiedName = "")
-                // Use default time zone on device since in new schema we don't support specifying
-                // time zone.
-                .setString("timeZone", ZoneId.systemDefault().toString())
-                .setAppFunctionData(
-                    "date",
-                    AppFunctionData.Builder(qualifiedName = "")
-                        .setInt("year", year)
-                        .setInt("month", monthValue)
-                        .setInt("day", dayOfMonth)
-                        .build()
-                )
-                .setAppFunctionData(
-                    "timeOfDay",
-                    AppFunctionData.Builder(qualifiedName = "")
-                        .setInt("hours", hour)
-                        .setInt("minutes", minute)
-                        .setInt("seconds", second)
-                        .setInt("nanos", nano)
-                        .build()
-                )
-                .build()
-    }
 }
 
 @AppFunctionSerializable
 internal data class FindNotesAppFunctionParams(
     override val query: String? = null,
-    override val modifiedAfter: LocalDateTime? = null,
-    override val modifiedBefore: LocalDateTime? = null
+    override val modifiedAfter: Instant? = null,
+    override val modifiedBefore: Instant? = null
 ) : FindNotesAppFunction.Parameters
 
 @AppFunctionSerializable

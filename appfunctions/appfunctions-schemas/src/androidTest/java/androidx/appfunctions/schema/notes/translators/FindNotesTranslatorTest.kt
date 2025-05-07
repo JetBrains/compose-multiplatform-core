@@ -26,8 +26,10 @@ import androidx.appfunctions.LegacyTimeOfDay
 import androidx.appfunctions.LegacyUri
 import androidx.appfunctions.schema.TranslatorTestUtils
 import androidx.test.filters.SdkSuppress
-import java.time.LocalDateTime
+import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import org.junit.Test
 
 @SdkSuppress(minSdkVersion = 33)
@@ -60,26 +62,8 @@ class FindNotesTranslatorTest {
         val expectedUpgradedParams =
             FindNotesAppFunctionParams(
                 query = "query",
-                modifiedAfter =
-                    LocalDateTime.of(
-                        /* year= */ 2024,
-                        /* month= */ 1,
-                        /* dayOfMonth= */ 1,
-                        /* hour= */ 12,
-                        /* minute= */ 7,
-                        /* second= */ 8,
-                        /* nanoOfSecond= */ 9,
-                    ),
-                modifiedBefore =
-                    LocalDateTime.of(
-                        /* year= */ 2024,
-                        /* month= */ 1,
-                        /* dayOfMonth= */ 2,
-                        /* hour= */ 12,
-                        /* minute= */ 7,
-                        /* second= */ 8,
-                        /* nanoOfSecond= */ 9,
-                    ),
+                modifiedAfter = legacyParams.startDate?.toZonedDateTime()?.toInstant(),
+                modifiedBefore = legacyParams.endDate?.toZonedDateTime()?.toInstant(),
             )
         translatorTestUtils.assertUpgradeRequestTranslation(
             legacyParameterName = "findNotesParams",
@@ -106,25 +90,29 @@ class FindNotesTranslatorTest {
             FindNotesAppFunctionParams(
                 query = "query",
                 modifiedAfter =
-                    LocalDateTime.of(
-                        /* year= */ 2024,
-                        /* month= */ 1,
-                        /* dayOfMonth= */ 1,
-                        /* hour= */ 12,
-                        /* minute= */ 7,
-                        /* second= */ 8,
-                        /* nanoOfSecond= */ 9,
-                    ),
+                    ZonedDateTime.of(
+                            LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 1),
+                            LocalTime.of(
+                                /* hour= */ 12,
+                                /* minute= */ 7,
+                                /* second= */ 8,
+                                /* nanoOfSecond= */ 9
+                            ),
+                            ZoneId.systemDefault()
+                        )
+                        .toInstant(),
                 modifiedBefore =
-                    LocalDateTime.of(
-                        /* year= */ 2024,
-                        /* month= */ 1,
-                        /* dayOfMonth= */ 2,
-                        /* hour= */ 12,
-                        /* minute= */ 7,
-                        /* second= */ 8,
-                        /* nanoOfSecond= */ 9,
-                    ),
+                    ZonedDateTime.of(
+                            LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 2),
+                            LocalTime.of(
+                                /* hour= */ 12,
+                                /* minute= */ 7,
+                                /* second= */ 8,
+                                /* nanoOfSecond= */ 9
+                            ),
+                            ZoneId.systemDefault()
+                        )
+                        .toInstant(),
             )
 
         val expectedDowngradedParams =

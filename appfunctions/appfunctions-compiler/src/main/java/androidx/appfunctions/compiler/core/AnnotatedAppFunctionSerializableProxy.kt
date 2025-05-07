@@ -77,8 +77,10 @@ data class AnnotatedAppFunctionSerializableProxy(
      *
      * @return The validated class.
      */
-    override fun validate(): AnnotatedAppFunctionSerializableProxy {
-        super.validate()
+    override fun validate(
+        allowSerializableInterfaceTypes: Boolean
+    ): AnnotatedAppFunctionSerializableProxy {
+        super.validate(allowSerializableInterfaceTypes)
         validateProxyHasToTargetClassMethod()
         validateProxyHasFromTargetClassMethod()
         return this

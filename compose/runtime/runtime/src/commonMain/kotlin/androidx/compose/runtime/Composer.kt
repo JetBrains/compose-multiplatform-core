@@ -44,7 +44,6 @@ import androidx.compose.runtime.internal.persistentCompositionLocalHashMapOf
 import androidx.compose.runtime.internal.trace
 import androidx.compose.runtime.snapshots.currentSnapshot
 import androidx.compose.runtime.snapshots.fastForEach
-import androidx.compose.runtime.snapshots.fastMap
 import androidx.compose.runtime.snapshots.fastToSet
 import androidx.compose.runtime.tooling.ComposeStackTraceFrame
 import androidx.compose.runtime.tooling.CompositionData
@@ -3880,8 +3879,10 @@ internal class ComposerImpl(
             val parameter = reader.groupGet(group, 0)
             val anchor = reader.anchor(group)
             val end = group + reader.groupSize(group)
-            val invalidations =
-                this.invalidations.filterToRange(group, end).fastMap { it.scope to it.instances }
+            val invalidations = mutableListOf<Pair<RecomposeScopeImpl, Any?>>()
+            this.invalidations.forEachInRange(group, end) {
+                invalidations += it.scope to it.instances
+            }
             val reference =
                 MovableContentStateReference(
                     movableContent,
@@ -4514,7 +4515,7 @@ private fun getKey(value: Any?, left: Any?, right: Any?): Any? =
     }
 
 // Invalidation helpers
-private fun MutableList<Invalidation>.findLocation(location: Int): Int {
+private fun List<Invalidation>.findLocation(location: Int): Int {
     var low = 0
     var high = size - 1
 
@@ -4532,7 +4533,7 @@ private fun MutableList<Invalidation>.findLocation(location: Int): Int {
     return -(low + 1) // key not found
 }
 
-private fun MutableList<Invalidation>.findInsertLocation(location: Int): Int =
+private fun List<Invalidation>.findInsertLocation(location: Int): Int =
     findLocation(location).let { if (it < 0) -(it + 1) else it }
 
 private fun MutableList<Invalidation>.insertIfMissing(
@@ -4594,18 +4595,19 @@ private fun MutableList<Invalidation>.removeRange(start: Int, end: Int) {
     }
 }
 
-private fun MutableList<Invalidation>.filterToRange(
+private inline fun List<Invalidation>.forEachInRange(
     start: Int,
-    end: Int
-): MutableList<Invalidation> {
-    val result = mutableListOf<Invalidation>()
+    end: Int,
+    block: (Invalidation) -> Unit
+) {
     var index = findInsertLocation(start)
     while (index < size) {
         val invalidation = get(index)
-        if (invalidation.location < end) result.add(invalidation) else break
+        if (invalidation.location >= end) break
+
+        block(invalidation)
         index++
     }
-    return result
 }
 
 private fun Boolean.asInt() = if (this) 1 else 0

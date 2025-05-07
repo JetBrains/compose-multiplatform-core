@@ -82,6 +82,117 @@ public interface GetCalendarEventsAppFunction<
     }
 }
 
+/** Creates an [AppFunctionCalendarEvent]. */
+@AppFunctionSchemaDefinition(
+    name = "createEvent",
+    version = CreateCalendarEventAppFunction.SCHEMA_VERSION,
+    category = APP_FUNCTION_SCHEMA_CATEGORY_CALENDAR
+)
+public interface CreateCalendarEventAppFunction<
+    Parameters : CreateCalendarEventAppFunction.Parameters,
+    Response : CreateCalendarEventAppFunction.Response
+> {
+    /**
+     * Creates an [AppFunctionCalendarEvent].
+     *
+     * The implementing app should throw an appropriate subclass of
+     * [androidx.appfunctions.AppFunctionException] in exceptional cases.
+     *
+     * @param appFunctionContext The AppFunction execution context.
+     * @param parameters The parameters for creating an event.
+     * @return The response including the created calendar event.
+     */
+    public suspend fun createCalendarEvent(
+        appFunctionContext: AppFunctionContext,
+        parameters: Parameters,
+    ): Response
+
+    /** The parameters for creating a calendar event. */
+    public interface Parameters {
+        /** The title of the event. */
+        public val title: String
+
+        /** The description of the event. */
+        public val description: String?
+            get() = null
+
+        /**
+         * The start time of the event. If [isAllDay] is true, this representation is converted to
+         * date in the [startTimeZone], and the time-of-day component is disregarded.
+         */
+        public val startsAt: Instant
+
+        /**
+         * The end time of the event. If [isAllDay] is true, this representation is converted to
+         * date in the [endTimeZone], and the time-of-day component is disregarded.
+         */
+        public val endsAt: Instant
+
+        /**
+         * The time zone of the start time of the event. Used as a time zone of [recurrenceSchedule]
+         * if provided.
+         */
+        public val startTimeZone: ZoneId
+
+        /** The time zone of the end time of the event. */
+        public val endTimeZone: ZoneId
+            get() = startTimeZone
+
+        // TODO(b/409376846): add attendeeIds once Persons are added
+
+        /** Whether the event is an all-day event. */
+        public val isAllDay: Boolean
+            get() = false
+
+        /** The geographical location associated with the event. */
+        public val location: String?
+            get() = null
+
+        /**
+         * Defines the rules for the recurrence schedule of the event, following the Internet
+         * Calendaring and Scheduling Core Object Specification (RFC5545).
+         *
+         * @see [AppFunctionCalendarEvent.recurrenceSchedule]
+         */
+        public val recurrenceSchedule: String?
+            get() = null
+
+        /** The status of the event. */
+        @AppFunctionCalendarEvent.Companion.EventStatus
+        public val status: String?
+            get() = null
+
+        /**
+         * An optional UUID for this event provided by the caller. If provided, the caller can use
+         * this UUID as well as the returned [AppFunctionCalendarEvent.id] to reference this
+         * specific event in subsequent requests, such as a request to update the note that was just
+         * created.
+         *
+         * To support [externalUuid], the application should maintain a mapping between the
+         * [externalUuid] and the internal id of this event. This allows the application to retrieve
+         * the correct event when the caller references it using the provided `externalUuid` in
+         * subsequent requests.
+         *
+         * If the `externalUuid` is not provided by the caller in the creation request, the
+         * application should expect subsequent requests from the caller to reference the event
+         * using the application generated [AppFunctionCalendarEvent.id].
+         */
+        public val externalUuid: String?
+            get() = null
+    }
+
+    /** The response including the created event. */
+    public interface Response {
+        /** The created calendar event. */
+        public val createdCalendarEvent: AppFunctionCalendarEvent
+    }
+
+    public companion object {
+        /** Current schema version. */
+        @RestrictTo(LIBRARY_GROUP) internal const val SCHEMA_VERSION: Int = 2
+    }
+}
+
 /** Represents a calendar event entity. */
 public interface AppFunctionCalendarEvent {
     /** The unique ID of the event. */
@@ -96,7 +207,7 @@ public interface AppFunctionCalendarEvent {
 
     /**
      * The start time of the event. If [isAllDay] is true, this representation is converted to date
-     * in the [timeZone], and the time-of-day component is disregarded.
+     * in the [startTimeZone], and the time-of-day component is disregarded.
      *
      * @see isAllDay
      */
@@ -104,14 +215,21 @@ public interface AppFunctionCalendarEvent {
 
     /**
      * The end time of the event. If [isAllDay] is true, this representation is converted to date in
-     * the [timeZone], and the time-of-day component is disregarded.
+     * the [endTimeZone], and the time-of-day component is disregarded.
      *
      * @see isAllDay
      */
     public val endsAt: Instant
 
-    /** The time zone of the event. */
-    public val timeZone: ZoneId
+    /**
+     * The time zone of the start of the event. Used as a time zone of [recurrenceSchedule] if
+     * provided.
+     */
+    public val startTimeZone: ZoneId
+
+    /** The time zone of the end time of the event. */
+    public val endTimeZone: ZoneId?
+        get() = startTimeZone
 
     // TODO: Add attendeeIds
 
