@@ -8,6 +8,8 @@
 
 import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
@@ -112,20 +114,28 @@ androidXMultiplatform {
             dependsOn(nonAndroidTest)
         }
 
-        darwinMain {
+        unixMain {
             dependsOn(nativeMain)
+        }
+
+        unixTest {
+            dependsOn(nativeTest)
+        }
+
+        darwinMain {
+            dependsOn(unixMain)
         }
 
         darwinTest {
-            dependsOn(nativeTest)
+            dependsOn(unixTest)
         }
 
         linuxMain {
-            dependsOn(nativeMain)
+            dependsOn(unixMain)
         }
 
         linuxTest {
-            dependsOn(nativeTest)
+            dependsOn(unixTest)
         }
 
         webMain {
@@ -137,29 +147,18 @@ androidXMultiplatform {
         }
 
         targets.configureEach { target ->
-            if (target.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet {
-                    def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily.appleFamily) {
-                        dependsOn(darwinMain)
-                    } else if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.LINUX) {
-                        dependsOn(linuxMain)
-                    } else {
-                        throw new GradleException("unknown native target ${target}")
-                    }
+            if (target.platformType == KotlinPlatformType.native) {
+                if (target.konanTarget.family.appleFamily) {
+                    target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(darwinTest)
+                } else if (target.konanTarget.family == Family.LINUX) {
+                    target.compilations["main"].defaultSourceSet.dependsOn(linuxMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(linuxTest)
+                } else {
+                    target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
                 }
-                target.compilations["test"].defaultSourceSet {
-                    def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily.appleFamily) {
-                        dependsOn(darwinTest)
-                    } else if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.LINUX) {
-                        dependsOn(linuxTest)
-                    } else {
-                        throw new GradleException("unknown native target ${target}")
-                    }
-                }
-            } else if (target.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.js ||
-                    target.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.wasm) {
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
                 target.compilations["main"].defaultSourceSet.dependsOn(webMain)
                 target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
@@ -175,6 +174,7 @@ kotlin {
     tvosArm64()
     tvosX64()
     tvosSimulatorArm64()
+    mingwX64()
 }
 
 android {
