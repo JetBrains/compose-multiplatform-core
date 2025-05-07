@@ -350,6 +350,8 @@ dokka {
     }
 
     pluginsConfiguration.named("html").configure {
-        customStyleSheets.from(project(":mpp:apiReferences").projectDir.absolutePath + "/material3-api-storytale-style.css")
+        def apiReferenceProjectDir = project(":mpp:apiReferences").projectDir
+        customStyleSheets.from(file("${apiReferenceProjectDir}/material3-api-storytale-style.css"))
+        templatesDir.set(file("${apiReferenceProjectDir}/dokka-templates"))
     }
 }
