@@ -79,7 +79,7 @@ internal class ScrollTest {
     @Test
     fun testExactTouchSlopDrag() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
-        var boxRect = DpRect(DpOffset.Zero, DpSize.Zero)
+        var boxRect = DpRectZero()
 
         setContent {
             Column(modifier = Modifier.fillMaxSize().verticalScroll(state)) {
@@ -115,7 +115,7 @@ internal class ScrollTest {
     @Test
     fun testJustOverTouchSlopDrag() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
-        var boxRect = DpRect(DpOffset.Zero, DpSize.Zero)
+        var boxRect = DpRectZero()
 
         setContent {
             Column(modifier = Modifier.fillMaxSize().verticalScroll(state)) {
@@ -148,7 +148,7 @@ internal class ScrollTest {
     @Test
     fun testTopOverscrollDragResistance() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
-        var boxRect = DpRect(DpOffset.Zero, DpSize.Zero)
+        var boxRect = DpRectZero()
 
         setContent {
             Column(modifier = Modifier.fillMaxSize().verticalScroll(state)) {
@@ -202,7 +202,7 @@ internal class ScrollTest {
     fun testBottomOverscrollDragResistance() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
         val boxHeight = 100.0
-        var boxRect = DpRect(DpOffset.Zero, DpSize.Zero)
+        var boxRect = DpRectZero()
 
         setContent {
             Column(modifier = Modifier.fillMaxSize().verticalScroll(state)) {
@@ -255,7 +255,7 @@ internal class ScrollTest {
     fun testOverscrollAndFlick() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
         val boxHeight = 100.0
-        var boxRect = DpRect(DpOffset.Zero, DpSize.Zero)
+        var boxRect = DpRectZero()
 
         setContent {
             Column(modifier = Modifier.fillMaxSize().verticalScroll(state)) {
@@ -308,7 +308,7 @@ internal class ScrollTest {
     @Test
     fun testNotScrollingForSmallDrag() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
-        var boxRect = DpRect(DpOffset.Zero, DpSize.Zero)
+        var boxRect = DpRectZero()
 
         setContent {
             Column(modifier = Modifier.fillMaxSize().verticalScroll(state)) {
@@ -354,7 +354,7 @@ internal class ScrollTest {
     @Test
     fun testOverscrollForContentSmallerThanScreenSize() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
-        var boxRect = DpRect(DpOffset.Zero, DpSize.Zero)
+        var boxRect = DpRectZero()
 
         setContent {
             Column(modifier = Modifier.fillMaxSize().verticalScroll(state)) {
@@ -386,7 +386,7 @@ internal class ScrollTest {
     @Test
     fun testOverscrollForContentSizeOfScreenSize() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
-        var boxRect = DpRect(DpOffset.Zero, DpSize.Zero)
+        var boxRect = DpRectZero()
 
         setContent {
             Column(modifier = Modifier.fillMaxSize().verticalScroll(state)) {
@@ -522,8 +522,8 @@ internal class ScrollTest {
     @Test
     fun testDragWithTouchStartInUIKitViewAndComposeView() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
-        var boxRect = DpRect(DpOffset.Zero, DpSize.Zero)
-        var labelRect = DpRect(DpOffset.Zero, DpSize.Zero)
+        var boxRect = DpRectZero()
+        var labelRect = DpRectZero()
 
         setContent {
             Column(modifier = Modifier.fillMaxSize().verticalScroll(state)) {
@@ -591,7 +591,7 @@ internal class ScrollTest {
     @Test
     fun testUIKitScrollViewInsideComposeScrollViewInteractions() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
-        var boxRect = DpRect(DpOffset.Zero, DpSize.Zero)
+        var boxRect = DpRectZero()
         var contentOffset: () -> DpOffset = { DpOffset.Zero }
 
         setContent {
@@ -696,7 +696,7 @@ internal class ScrollTest {
     @Test
     fun testOverscrollWhenUIKitHorizontalScrollViewIsAtTop() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
-        var uiKitViewRect = DpRect(DpOffset.Zero, DpSize.Zero)
+        var uiKitViewRect = DpRectZero()
         var contentOffset: () -> DpOffset = { DpOffset.Zero }
 
         setContent {
@@ -757,7 +757,7 @@ internal class ScrollTest {
     @Test
     fun testVerticalComposeScrollsWhenDraggingFromUIKitHorizontalScroll() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
-        var uiKitViewRect = DpRect(DpOffset.Zero, DpSize.Zero)
+        var uiKitViewRect = DpRectZero()
         var contentOffset: () -> DpOffset = { DpOffset.Zero }
 
         setContent {
@@ -790,7 +790,7 @@ internal class ScrollTest {
     @Test
     fun testHorizontalUIScrollViewInComposeScroll_HorizontalDrag() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
-        var uiKitViewRect = DpRect(DpOffset.Zero, DpSize.Zero)
+        var uiKitViewRect = DpRectZero()
         var contentOffset: () -> DpOffset = { DpOffset.Zero }
 
         setContent {
@@ -823,7 +823,7 @@ internal class ScrollTest {
     @Test
     fun testHorizontalUIScrollViewInComposeVerticalScroll_VerticalDrag() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
-        var uiKitViewRect = DpRect(DpOffset.Zero, DpSize.Zero)
+        var uiKitViewRect = DpRectZero()
         var contentOffset: () -> DpOffset = { DpOffset.Zero }
 
         setContent {
@@ -859,7 +859,7 @@ internal class ScrollTest {
     @Test
     fun testHorizontalUIScrollViewInComposeVerticalScroll_MixedDrag() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
-        var uiKitViewRect = DpRect(DpOffset.Zero, DpSize.Zero)
+        var uiKitViewRect = DpRectZero()
         var contentOffset: () -> DpOffset = { DpOffset.Zero }
 
         setContent {
@@ -897,7 +897,7 @@ internal class ScrollTest {
     @Test
     fun testHorizontalUIScrollViewInComposeVerticalScroll_VerticalAndSmallHorizontalDrag() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
-        var uiKitViewRect = DpRect(DpOffset.Zero, DpSize.Zero)
+        var uiKitViewRect = DpRectZero()
         var contentOffset: () -> DpOffset = { DpOffset.Zero }
 
         setContent {
