@@ -60,9 +60,10 @@ internal class RippleAnimation(
     private val radius: Float,
     private val bounded: Boolean
 ) {
-    private var startRadius: Float? = null
 
-    private var targetCenter: Offset? = null
+    private val isUnspecifiedOrigin : Boolean = origin == null
+
+    private var startRadius: Float? = null
 
     private val animatedAlpha = Animatable(0f)
     private val animatedRadiusPercent = Animatable(0f)
@@ -123,12 +124,12 @@ internal class RippleAnimation(
         if (startRadius == null) {
             startRadius = getRippleStartRadius(size)
         }
-        if (origin == null) {
+        if (isUnspecifiedOrigin) {
             origin = center
         }
-        if (targetCenter == null) {
-            targetCenter = Offset(size.width / 2.0f, size.height / 2.0f)
-        }
+
+        val targetX = size.width / 2.0f
+        val targetY = size.height / 2.0f
 
         val alpha =
             if (finishRequested && !finishedFadingIn) {
@@ -141,8 +142,8 @@ internal class RippleAnimation(
         val radius = lerp(startRadius!!, radius, animatedRadiusPercent.value)
         val centerOffset =
             Offset(
-                lerp(origin!!.x, targetCenter!!.x, animatedCenterPercent.value),
-                lerp(origin!!.y, targetCenter!!.y, animatedCenterPercent.value),
+                lerp(origin!!.x, targetX, animatedCenterPercent.value),
+                lerp(origin!!.y, targetY, animatedCenterPercent.value),
             )
 
         val modulatedColor = color.copy(alpha = color.alpha * alpha)
