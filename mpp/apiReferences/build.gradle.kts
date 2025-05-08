@@ -1,6 +1,3 @@
-import org.jetbrains.dokka.gradle.DokkaTask
-import org.jetbrains.dokka.gradle.tasks.DokkaGenerateModuleTask
-
 /*
  * Copyright 2025 The Android Open Source Project
  *
@@ -29,7 +26,7 @@ dependencies {
 
 
 dokka {
-    moduleName.set("Compose Multiplatform API Reference")
+    moduleName.set("Compose Multiplatform")
     moduleVersion.set("1.8.0")
 
     pluginsConfiguration.html {
@@ -38,80 +35,63 @@ dokka {
     }
 }
 
-// Task to copy WebAssembly stories to the Dokka output directory
-tasks.register("copyStoriesToDokka") {
-    description = "Copies WebAssembly stories to the Dokka output directory"
-    group = "documentation"
+fun includeMaterial3Stories(storiesRootPath: String) {
+    if (!storiesRootPath.endsWith("/stories")) {
+        error("The storiesRootPath must end with `/stories`")
+    }
+    // Step 1: Copy Material3 stories to the Dokka output directory
+    val storiesDir = project(":compose:material3:material3-stories")
+        .buildDir.resolve("dist/wasmJs/StoriesProductionExecutable")
+    val destDir = project.buildDir.resolve("dokka/html/stories/material3")
 
-    // Depend on the required tasks
-    dependsOn(":mpp:apiReferences:dokkaGeneratePublicationHtml")
-    dependsOn(":compose:material3:material3-stories:wasmJsBrowserStoriesProductionExecutableDistribution")
+    if (storiesDir.exists()) {
+        if (destDir.exists()) {
+            destDir.deleteRecursively()
+        }
+        destDir.parentFile.mkdirs()
+        storiesDir.copyRecursively(destDir)
+    } else {
+        return
+    }
 
-    doLast {
-        // Define source and destination directories
-        val sourceDir = rootProject.file("out/androidx/compose/material3/material3-stories/build/dist/wasmJs/StoriesProductionExecutable")
-        val destDir = rootProject.file("out/androidx/mpp/apiReferences/build/dokka/html/stories")
+    // Step 2: Update stories references in HTML files
+    val htmlDir = project.buildDir.resolve("dokka/html/material3")
+    val newRoot = "$storiesRootPath/material3"
 
-        // Ensure the source directory exists
-        if (sourceDir.exists()) {
-            // Delete destination directory if it exists
-            if (destDir.exists()) {
-                destDir.deleteRecursively()
+    if (htmlDir.exists()) {
+        // Find all HTML files in the directory and its subdirectories
+        val htmlFiles = htmlDir.walk()
+            .filter { it.isFile && it.extension.equals("html", ignoreCase = true) }
+            .toList()
+
+        htmlFiles.forEach { file ->
+            val content = file.readText()
+
+            // change the path to a story
+            val updatedContent = content.replace("""src="/stories""", """src="$newRoot""")
+
+            if (content != updatedContent) {
+                file.writeText(updatedContent)
             }
-
-            // Create parent directories if they don't exist
-            destDir.parentFile.mkdirs()
-
-            // Copy the directory with a new name
-            sourceDir.copyRecursively(destDir)
-
-            println("Successfully copied WebAssembly stories to Dokka output directory")
-        } else {
-            println("Source directory does not exist: $sourceDir")
         }
     }
 }
 
-// Task to update stories references in HTML files
-tasks.register("updateStoriesReferences") {
-    description = "Updates stories references in HTML files"
-    group = "documentation"
+// The result will be in .../out/androidx/mpp/apiReferences/build/dokka/html
+tasks.register("buildApiReferencesWithStories") {
 
-    // Depend on the copyStoriesToDokka task
-    dependsOn("copyStoriesToDokka")
+    // build the api references
+    dependsOn(":mpp:apiReferences:dokkaGeneratePublicationHtml")
+    // build the material3 stories
+    dependsOn(":compose:material3:material3-stories:wasmJsBrowserStoriesProductionExecutableDistribution")
 
     doLast {
-        // Define the directory containing HTML files to update
-        val htmlDir = project.buildDir.resolve("dokka/html/material3")
-        val storiesRoot = project.properties["apiReferences.storiesRootPath"] as String?
-
-        if (storiesRoot.isNullOrBlank()) {
-            return@doLast
-        }
-
-        val newRoot = if (storiesRoot.startsWith("/")) { storiesRoot } else { "/$storiesRoot"}
-
-        if (htmlDir.exists()) {
-            // Find all HTML files in the directory and its subdirectories
-            val htmlFiles = htmlDir.walk()
-                .filter { it.isFile && it.extension.equals("html", ignoreCase = true) }
-                .toList()
-
-            var filesUpdated = 0
-
-            // Process each HTML file
-            htmlFiles.forEach { file ->
-                val content = file.readText()
-
-                // change the path to a story
-                val updatedContent = content.replace("""src="/stories""", """src="/$newRoot""")
-
-                // Write the updated content back to the file if changes were made
-                if (content != updatedContent) {
-                    file.writeText(updatedContent)
-                    filesUpdated++
-                }
-            }
-        }
+        // Additional processing to include the stories and update the paths
+        includeMaterial3Stories(
+            // storiesRootPath is a path relative to the root.
+            // the parameter value must end with `/stories`.
+            // example: `/api/compose-multiplatform/stories`
+            storiesRootPath = project.properties["apiReferences.storiesRootPath"] as String? ?: "/stories"
+        )
     }
 }

@@ -334,7 +334,7 @@ android {
 }
 
 dokka {
-    moduleName.set("Compose Material3")
+    moduleName.set("Compose Multiplatform Material3")
     modulePath.set("material3")
 
     dokkaSourceSets {
