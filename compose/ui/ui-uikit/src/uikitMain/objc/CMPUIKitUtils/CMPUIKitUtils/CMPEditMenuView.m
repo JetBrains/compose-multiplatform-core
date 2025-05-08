@@ -64,8 +64,9 @@ id _editInteraction;
 
     if (@available(iOS 16, *)) {
         if (self.editInteraction == nil || contextMenuItemsChanged || !self.isEditMenuShown) {
+            BOOL isFirstMenuPresentation = self.presentInteractionBlock == nil;
             [self cancelPresentEditMenuInteraction];
-            NSTimeInterval delay = self.presentInteractionBlock == nil ? 0 : [self editMenuDelay];
+            NSTimeInterval delay = isFirstMenuPresentation ? 0 : [self editMenuDelay];
             [self schedulePresentEditMenuInteractionWithDelay:delay];
         } else if (positionChanged) {
             [self.editInteraction updateVisibleMenuPositionAnimated:NO];
@@ -134,7 +135,6 @@ id _editInteraction;
             [self addInteraction:self.editInteraction];
         }
         [self presentEditMenuInteraction];
-        self.presentInteractionBlock = nil;
     });
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)),
                    dispatch_get_main_queue(),
@@ -144,6 +144,7 @@ id _editInteraction;
 - (void)cancelPresentEditMenuInteraction API_AVAILABLE(ios(16.0)) {
     if (self.presentInteractionBlock != nil) {
         dispatch_block_cancel(self.presentInteractionBlock);
+        self.presentInteractionBlock = nil;
     }
 }
 

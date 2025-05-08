@@ -50,6 +50,7 @@ import kotlin.math.absoluteValue
 import kotlin.math.min
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.skia.BreakIterator
 import platform.CoreGraphics.CGRectMake
@@ -58,18 +59,23 @@ import platform.UIKit.UIView
 import platform.UIKit.UIViewAutoresizingFlexibleHeight
 import platform.UIKit.UIViewAutoresizingFlexibleWidth
 
+// Due to unexpected delays between the commands to show/hide the keyboard,
+// it may jump when switching between text fields.
+// Adding a delay to the 'resignFirstResponder' function call to eliminate this issue.
+private val CLEAR_FOCUS_DELAY: Long = 10L
+
 internal class UIKitTextInputService(
     private val updateView: () -> Unit,
     private val view: UIView,
     private val viewConfiguration: ViewConfiguration,
     private val focusStack: FocusStack?,
-    private val onInputStarted: () -> Unit,
+    private var onInputStarted: () -> Unit,
     /**
      * Callback to handle keyboard presses. The parameter is a [Set] of [UIPress] objects.
      * Erasure happens due to K/N not supporting Obj-C lightweight generics.
      */
-    private val onKeyboardPresses: (Set<*>) -> Unit,
-    private val focusManager: () -> ComposeSceneFocusManager
+    private var onKeyboardPresses: (Set<*>) -> Unit,
+    private var focusManager: () -> ComposeSceneFocusManager?
 ) : PlatformTextInputService, TextToolbar {
 
     private var currentOnEditCommand: ((List<EditCommand>) -> Unit)? = null
@@ -167,15 +173,14 @@ internal class UIKitTextInputService(
 
     override fun hideSoftwareKeyboard() {
         textUIView?.let {
-            focusStack?.popUntilNext(it)
+            focusStack?.popUntilNext(it, delayMillis = CLEAR_FOCUS_DELAY)
         }
     }
 
     override fun updateState(oldValue: TextFieldValue?, newValue: TextFieldValue) {
         val internalOldValue = sessionEditProcessor?.toTextFieldValue()
         val textChanged = internalOldValue == null || internalOldValue.text != newValue.text
-        val selectionChanged =
-            textChanged || internalOldValue == null || internalOldValue.selection != newValue.selection
+        val selectionChanged = textChanged || internalOldValue.selection != newValue.selection
         if (textChanged) {
             textUIView?.textWillChange()
         }
@@ -240,7 +245,7 @@ internal class UIKitTextInputService(
 
     private fun handleEscape(event: KeyEvent): Boolean {
         return if (sessionEditProcessor != null && event.type == KeyEventType.KeyUp) {
-            focusManager().releaseFocus()
+            focusManager()?.releaseFocus()
             true
         } else {
             false
@@ -368,7 +373,7 @@ internal class UIKitTextInputService(
         detachIntermediateTextInputView()
         showMenuOrUpdatePosition = {}
         textUIView = IntermediateTextInputUIView(
-            viewConfiguration = viewConfiguration
+            doubleTapTimeoutMillis = viewConfiguration.doubleTapTimeoutMillis
         ).also {
             it.setAutoresizingMask(
                 UIViewAutoresizingFlexibleWidth or UIViewAutoresizingFlexibleHeight
@@ -388,10 +393,18 @@ internal class UIKitTextInputService(
 
             view.resetOnKeyboardPressesCallback()
             mainScope.launch {
+                delay(CLEAR_FOCUS_DELAY)
                 view.removeFromSuperview()
             }
         }
         textUIView = null
+    }
+
+    fun dispose() {
+        stopInput()
+        onInputStarted = { }
+        onKeyboardPresses = { }
+        focusManager = { null }
     }
 
     private fun createSkikoInput() = object : IOSSkikoInput {

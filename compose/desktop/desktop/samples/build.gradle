@@ -38,6 +38,13 @@ kotlin {
         jvmMain.dependencies {
             implementation(libs.skikoCurrentOs)
             implementation(project(":compose:desktop:desktop"))
+
+            implementation("org.jetbrains.compose.material:material-icons-core:1.6.11") {
+                // exclude dependencies, because they override local projects when we build 0.0.0-* version
+                // (see https://repo1.maven.org/maven2/org/jetbrains/compose/material/material-icons-core-desktop/1.6.11/material-icons-core-desktop-1.6.11.module)
+                exclude group: "org.jetbrains.compose.runtime"
+                exclude group: "org.jetbrains.compose.ui"
+            }
         }
     }
 }

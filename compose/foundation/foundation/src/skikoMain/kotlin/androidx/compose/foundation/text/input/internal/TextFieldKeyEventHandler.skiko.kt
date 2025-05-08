@@ -16,13 +16,57 @@
 
 package androidx.compose.foundation.text.input.internal
 
+import androidx.compose.foundation.text.KeyCommand
+import androidx.compose.foundation.text.commonKeyMapping
+import androidx.compose.foundation.text.input.internal.selection.TextFieldSelectionState
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.isShiftPressed
 
 /**
  * Factory function to create a platform specific [TextFieldKeyEventHandler].
  */
 // TODO https://youtrack.jetbrains.com/issue/COMPOSE-741/Implement-createTextFieldKeyEventHandler
-internal actual fun createTextFieldKeyEventHandler() = object : TextFieldKeyEventHandler() {}
+internal fun createSkikoTextFieldKeyEventHandler() = object : TextFieldKeyEventHandler() {}
+
+internal fun createIOSTextFieldKeyEventHandler() = object : TextFieldKeyEventHandler() {
+    override fun onKeyEvent(
+        event: KeyEvent,
+        textFieldState: TransformedTextFieldState,
+        textLayoutState: TextLayoutState,
+        textFieldSelectionState: TextFieldSelectionState,
+        clipboardKeyCommandsHandler: ClipboardKeyCommandsHandler,
+        editable: Boolean,
+        singleLine: Boolean,
+        onSubmit: () -> Unit
+    ): Boolean {
+        return when(commonKeyMapping{
+            event.isShiftPressed && event.isMetaPressed
+        }.map(event)) {
+            // iOS has its own Key Input handler for these keys:
+            KeyCommand.LEFT_CHAR,
+            KeyCommand.RIGHT_CHAR,
+            KeyCommand.UP,
+            KeyCommand.DOWN,
+            KeyCommand.SELECT_LEFT_CHAR,
+            KeyCommand.SELECT_RIGHT_CHAR,
+            KeyCommand.SELECT_UP,
+            KeyCommand.SELECT_DOWN -> return false
+            else -> {
+                super.onKeyEvent(
+                    event,
+                    textFieldState,
+                    textLayoutState,
+                    textFieldSelectionState,
+                    clipboardKeyCommandsHandler,
+                    editable,
+                    singleLine,
+                    onSubmit
+                )
+            }
+        }
+    }
+}
 
 // TODO https://youtrack.jetbrains.com/issue/COMPOSE-1361/Implement-isFromSoftKeyboard
 /**
