@@ -104,9 +104,6 @@ internal class ComposeHostingViewController(
         transparentForTouches = false,
         useOpaqueConfiguration = configuration.opaque,
     )
-    private val interopContainerView = UIView().also {
-        rootView.embedSubview(it)
-    }
     private var mediator: ComposeSceneMediator? = null
     private val windowContext = PlatformWindowContext()
     private var layers: UIKitComposeSceneLayersHolder? = null
@@ -291,7 +288,6 @@ internal class ComposeHostingViewController(
                 mediator?.render(canvas.asComposeCanvas(), nanoTime)
             }
         )
-        rootView.updateMetalView(metalView, ::onDidMoveToWindow)
         metalView.canBeOpaque = configuration.opaque
 
         val layers = UIKitComposeSceneLayersHolder(windowContext, configuration.parallelRendering)
@@ -299,8 +295,6 @@ internal class ComposeHostingViewController(
         this.layers = layers
 
         mediator = ComposeSceneMediator(
-            parentView = rootView,
-            interopContainerView = interopContainerView,
             onFocusBehavior = configuration.onFocusBehavior,
             focusStack = focusStack,
             windowContext = windowContext,
@@ -311,6 +305,10 @@ internal class ComposeHostingViewController(
             },
             backGestureDispatcher = backGestureDispatcher
         ).also { mediator ->
+            rootView.embedSubview(mediator.inputView)
+            rootView.updateMetalView(metalView, ::onDidMoveToWindow)
+            rootView.embedSubview(mediator.overlayView)
+
             mediator.updateInteractionRect()
             mediator.setContent {
                 ProvideContainerCompositionLocals(content)
