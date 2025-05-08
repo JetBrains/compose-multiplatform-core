@@ -56,13 +56,10 @@ import kotlinx.coroutines.launch
  * @param bounded If true the effect should be clipped by the target layout bounds.
  */
 internal class RippleAnimation(
-    private var origin: Offset?,
+    private val origin: Offset?,
     private val radius: Float,
     private val bounded: Boolean
 ) {
-
-    private val isUnspecifiedOrigin : Boolean = origin == null
-
     private var startRadius: Float? = null
 
     private val animatedAlpha = Animatable(0f)
@@ -124,9 +121,8 @@ internal class RippleAnimation(
         if (startRadius == null) {
             startRadius = getRippleStartRadius(size)
         }
-        if (isUnspecifiedOrigin) {
-            origin = center
-        }
+
+        val originOffset = origin ?: center
 
         val targetX = size.width / 2.0f
         val targetY = size.height / 2.0f
@@ -142,8 +138,8 @@ internal class RippleAnimation(
         val radius = lerp(startRadius!!, radius, animatedRadiusPercent.value)
         val centerOffset =
             Offset(
-                lerp(origin!!.x, targetX, animatedCenterPercent.value),
-                lerp(origin!!.y, targetY, animatedCenterPercent.value),
+                lerp(originOffset.x, targetX, animatedCenterPercent.value),
+                lerp(originOffset.y, targetY, animatedCenterPercent.value),
             )
 
         val modulatedColor = color.copy(alpha = color.alpha * alpha)
