@@ -34,6 +34,7 @@ kotlin {
                 implementation(project(":compose:ui:ui", null))
                 implementation(project(":compose:material3:material3", null))
                 implementation(project(":navigation:navigation-compose", null))
+                implementation("org.jetbrains.compose.material:material-icons-core:1.7.3")
                 implementation(compose.components.resources)
             }
         }
