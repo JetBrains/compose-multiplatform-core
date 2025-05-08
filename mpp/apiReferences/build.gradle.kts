@@ -37,3 +37,81 @@ dokka {
         templatesDir.set(file("dokka-templates"))
     }
 }
+
+// Task to copy WebAssembly stories to the Dokka output directory
+tasks.register("copyStoriesToDokka") {
+    description = "Copies WebAssembly stories to the Dokka output directory"
+    group = "documentation"
+
+    // Depend on the required tasks
+    dependsOn(":mpp:apiReferences:dokkaGeneratePublicationHtml")
+    dependsOn(":compose:material3:material3-stories:wasmJsBrowserStoriesProductionExecutableDistribution")
+
+    doLast {
+        // Define source and destination directories
+        val sourceDir = rootProject.file("out/androidx/compose/material3/material3-stories/build/dist/wasmJs/StoriesProductionExecutable")
+        val destDir = rootProject.file("out/androidx/mpp/apiReferences/build/dokka/html/stories")
+
+        // Ensure the source directory exists
+        if (sourceDir.exists()) {
+            // Delete destination directory if it exists
+            if (destDir.exists()) {
+                destDir.deleteRecursively()
+            }
+
+            // Create parent directories if they don't exist
+            destDir.parentFile.mkdirs()
+
+            // Copy the directory with a new name
+            sourceDir.copyRecursively(destDir)
+
+            println("Successfully copied WebAssembly stories to Dokka output directory")
+        } else {
+            println("Source directory does not exist: $sourceDir")
+        }
+    }
+}
+
+// Task to update stories references in HTML files
+tasks.register("updateStoriesReferences") {
+    description = "Updates stories references in HTML files"
+    group = "documentation"
+
+    // Depend on the copyStoriesToDokka task
+    dependsOn("copyStoriesToDokka")
+
+    doLast {
+        // Define the directory containing HTML files to update
+        val htmlDir = project.buildDir.resolve("dokka/html/material3")
+        val storiesRoot = project.properties["apiReferences.storiesRootPath"] as String?
+
+        if (storiesRoot.isNullOrBlank()) {
+            return@doLast
+        }
+
+        val newRoot = if (storiesRoot.startsWith("/")) { storiesRoot } else { "/$storiesRoot"}
+
+        if (htmlDir.exists()) {
+            // Find all HTML files in the directory and its subdirectories
+            val htmlFiles = htmlDir.walk()
+                .filter { it.isFile && it.extension.equals("html", ignoreCase = true) }
+                .toList()
+
+            var filesUpdated = 0
+
+            // Process each HTML file
+            htmlFiles.forEach { file ->
+                val content = file.readText()
+
+                // change the path to a story
+                val updatedContent = content.replace("""src="/stories""", """src="/$newRoot""")
+
+                // Write the updated content back to the file if changes were made
+                if (content != updatedContent) {
+                    file.writeText(updatedContent)
+                    filesUpdated++
+                }
+            }
+        }
+    }
+}
