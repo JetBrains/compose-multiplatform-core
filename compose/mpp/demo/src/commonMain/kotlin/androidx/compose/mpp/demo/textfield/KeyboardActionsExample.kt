@@ -92,6 +92,7 @@ fun KeyboardActionsExample() {
         item { TextBlock(imeActionName = ImeAction.Send, keyboardActions = definedKeyboardActions) }
     }
 }
+
 @Composable
 private fun TextBlock(
     imeActionName: ImeAction,
