@@ -47,9 +47,6 @@ internal class WebInteropContainer(
 
         val countBelow = countInteropComponentsBelow(holder)
 
-        print(countBelow)
-        print(interopViews)
-        println(interopView)
         if (isAdded) {
             scheduleUpdate {
                 holder.insertInteropView(root = root, index = countBelow)
