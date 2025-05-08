@@ -22,7 +22,6 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
@@ -108,5 +107,4 @@ androidx {
     inceptionYear = "2024"
     description = "Provides the ViewModel wrapper for nav3."
     doNotDocumentReason = "Not published to maven"
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

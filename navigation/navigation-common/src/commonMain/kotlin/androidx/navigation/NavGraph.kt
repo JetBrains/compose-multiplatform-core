@@ -112,6 +112,25 @@ public expect open class NavGraph(navGraphNavigator: Navigator<out NavGraph>) :
     public fun addDestinations(vararg nodes: NavDestination)
 
     /**
+     * Searches all children and parents recursively.
+     *
+     * Does not revisit graphs (whether it's a child or parent) if it has already been visited.
+     *
+     * @param resId the [NavDestination.id]
+     * @param lastVisited the previously visited node
+     * @param searchChildren searches the graph's children for the node when true
+     * @param matchingDest an optional NavDestination that the node should match with. This is
+     *   because [resId] is only unique to a local graph. Nodes in sibling graphs can have the same
+     *   id.
+     */
+    public fun findNodeComprehensive(
+        resId: Int,
+        lastVisited: NavDestination?,
+        searchChildren: Boolean,
+        matchingDest: NavDestination? = null,
+    ): NavDestination?
+
+    /**
      * Finds a destination in the collection by route. This will recursively check the
      * [parent][parent] of this navigation graph if node is not found in this navigation graph.
      *
@@ -173,6 +192,13 @@ public expect open class NavGraph(navGraphNavigator: Navigator<out NavGraph>) :
     public fun clear()
 
     override val displayName: String
+
+    /**
+     * The starting destination id for this NavGraph. When navigating to the NavGraph, the
+     * destination represented by this id is the one the user will initially see.
+     */
+    public var startDestinationId: Int
+        private set
 
     /**
      * Sets the starting destination for this NavGraph.

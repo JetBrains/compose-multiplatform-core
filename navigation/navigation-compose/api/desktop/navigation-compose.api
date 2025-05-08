@@ -1,11 +1,11 @@
-public final class androidx/navigation/compose/ComposableSingletons$ComposeNavigator_nonAndroidKt {
-	public static final field INSTANCE Landroidx/navigation/compose/ComposableSingletons$ComposeNavigator_nonAndroidKt;
+public final class androidx/navigation/compose/ComposableSingletons$ComposeNavigatorKt {
+	public static final field INSTANCE Landroidx/navigation/compose/ComposableSingletons$ComposeNavigatorKt;
 	public fun <init> ()V
 	public final fun getLambda-1$navigation_compose ()Lkotlin/jvm/functions/Function4;
 }
 
-public final class androidx/navigation/compose/ComposableSingletons$DialogNavigator_nonAndroidKt {
-	public static final field INSTANCE Landroidx/navigation/compose/ComposableSingletons$DialogNavigator_nonAndroidKt;
+public final class androidx/navigation/compose/ComposableSingletons$DialogNavigatorKt {
+	public static final field INSTANCE Landroidx/navigation/compose/ComposableSingletons$DialogNavigatorKt;
 	public fun <init> ()V
 	public final fun getLambda-1$navigation_compose ()Lkotlin/jvm/functions/Function3;
 }
@@ -24,6 +24,7 @@ public final class androidx/navigation/compose/ComposeNavigator : androidx/navig
 
 public final class androidx/navigation/compose/ComposeNavigator$Destination : androidx/navigation/NavDestination {
 	public static final field $stable I
+	public synthetic fun <init> (Landroidx/navigation/compose/ComposeNavigator;Lkotlin/jvm/functions/Function3;)V
 	public fun <init> (Landroidx/navigation/compose/ComposeNavigator;Lkotlin/jvm/functions/Function4;)V
 }
 
@@ -72,7 +73,7 @@ public final class androidx/navigation/compose/DialogNavigatorDestinationBuilder
 	public synthetic fun instantiateDestination ()Landroidx/navigation/NavDestination;
 }
 
-public final class androidx/navigation/compose/NavBackStackEntryProvider_nonAndroidKt {
+public final class androidx/navigation/compose/NavBackStackEntryProviderKt {
 	public static final fun LocalOwnersProvider (Landroidx/navigation/NavBackStackEntry;Landroidx/compose/runtime/saveable/SaveableStateHolder;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
 }
 

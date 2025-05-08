@@ -22,6 +22,7 @@ import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import org.jetbrains.skia.Canvas
+import org.jetbrains.skia.Color
 import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectZero
 import platform.CoreGraphics.CGSizeMake
@@ -30,6 +31,8 @@ import platform.Metal.MTLDeviceProtocol
 import platform.Metal.MTLPixelFormatBGRA8Unorm
 import platform.QuartzCore.CAMetalLayer
 import platform.UIKit.UIColor
+import platform.UIKit.UITraitCollection
+import platform.UIKit.UIUserInterfaceStyle
 import platform.UIKit.UIView
 import platform.UIKit.UIViewMeta
 
@@ -48,19 +51,26 @@ internal class MetalView(
             ?: throw IllegalStateException("Metal is not supported on this system")
 
     private val metalLayer: CAMetalLayer get() = layer as CAMetalLayer
+    private var canvasBackground: Int = Color.TRANSPARENT
 
     val redrawer = MetalRedrawer(
         metalLayer,
         retrieveInteropTransaction,
         useSeparateRenderThreadWhenPossible
     ) { canvas, targetTimestamp ->
+        canvas.clear(canvasBackground)
         render(canvas, targetTimestamp.toNanoSeconds())
     }
 
     /**
      * @see [MetalRedrawer.canBeOpaque]
      */
-    var canBeOpaque by redrawer::canBeOpaque
+    var canBeOpaque: Boolean
+        get() = redrawer.canBeOpaque
+        set(value) {
+            redrawer.canBeOpaque = value
+            updateCanvasBackgroundColor()
+        }
 
     /**
      * Indicates that the view needs to be drawn synchronously with the next layout pass to avoid
@@ -86,6 +96,25 @@ internal class MetalView(
             it.pixelFormat = MTLPixelFormatBGRA8Unorm
             it.backgroundColor = UIColor.clearColor.CGColor
             it.framebufferOnly = false
+        }
+
+        updateCanvasBackgroundColor()
+    }
+
+    override fun traitCollectionDidChange(previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        updateCanvasBackgroundColor()
+    }
+
+    private fun updateCanvasBackgroundColor() {
+        canvasBackground = if (redrawer.canBeOpaque) {
+            when (traitCollection.userInterfaceStyle) {
+                UIUserInterfaceStyle.UIUserInterfaceStyleDark -> Color.BLACK
+                UIUserInterfaceStyle.UIUserInterfaceStyleLight -> Color.WHITE
+                else -> Color.TRANSPARENT
+            }
+        } else {
+            Color.TRANSPARENT
         }
     }
 

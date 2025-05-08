@@ -36,7 +36,8 @@ import kotlinx.serialization.serializer
  *
  * @sample androidx.savedstate.encode
  * @param value The serializable object to encode.
- * @param configuration The [SavedStateConfiguration] to use.
+ * @param configuration The [SavedStateConfiguration] to use. Defaults to
+ *   [SavedStateConfiguration.DEFAULT].
  * @return The encoded [SavedState].
  * @throws SerializationException in case of any encoding-specific error.
  */
@@ -52,7 +53,8 @@ public inline fun <reified T : Any> encodeToSavedState(
  * @sample androidx.savedstate.encodeWithExplicitSerializerAndConfig
  * @param serializer The serializer to use.
  * @param value The serializable object to encode.
- * @param configuration The [SavedStateConfiguration] to use.
+ * @param configuration The [SavedStateConfiguration] to use. Defaults to
+ *   [SavedStateConfiguration.DEFAULT].
  * @return The encoded [SavedState].
  * @throws SerializationException in case of any encoding-specific error.
  */

@@ -105,13 +105,13 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
             val layoutCoords = layoutState.textLayoutNodeCoordinates ?: return@snapshotFlow null
             focusedRectInRoot(
                 layoutResult = layoutResult,
-                layoutCoordinates = layoutCoords,
                 focusOffset = state.visualText.selection.max,
                 sizeForDefaultText = {
                     layoutResult.layoutInput.let {
                         computeSizeForDefaultText(it.style, it.density, it.fontFamilyResolver)
                     }
-                }
+                },
+                convertLocalToRoot = layoutCoords::localToRoot,
             )
         }.filterNotNull()
 
@@ -130,7 +130,6 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
                 imeOptions = imeOptions,
                 onEditCommand = ::onEditCommand,
                 onImeAction = onImeAction,
-                editProcessor = editProcessor,
                 outputValue = outputValueFlow,
                 textLayoutResult = snapshotFlow(layoutState::layoutResult).filterNotNull(),
                 focusedRectInRoot = focusedRectInRootFlow,
@@ -246,13 +245,12 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
 
 
 @OptIn(ExperimentalComposeUiApi::class)
-private data class SkikoPlatformTextInputMethodRequest(
+internal data class SkikoPlatformTextInputMethodRequest(
     override val value: () -> TextFieldValue,
     override val state: TextEditorState,
     override val imeOptions: ImeOptions,
     override val onEditCommand: (List<EditCommand>) -> Unit,
     override val onImeAction: ((ImeAction) -> Unit)?,
-    override val editProcessor: EditProcessor?,
     override val outputValue: Flow<TextFieldValue>,
     override val textLayoutResult: Flow<TextLayoutResult>,
     override val focusedRectInRoot: Flow<Rect>,

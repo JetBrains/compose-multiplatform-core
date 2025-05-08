@@ -19,9 +19,9 @@ CAMERA_VIEWFINDER = "1.4.0-alpha08"
 CARDVIEW = "1.1.0-alpha01"
 CAR_APP = "1.7.0-beta02"
 COLLECTION = "1.5.0-alpha03"
-COMPOSE = "1.8.0-rc02"
-COMPOSE_MATERIAL_NAVIGATION = "1.8.0-rc02"
-COMPOSE_MATERIAL3 = "1.3.1"
+COMPOSE = "1.8.0-rc03"
+COMPOSE_MATERIAL_NAVIGATION = "1.8.0-rc03"
+COMPOSE_MATERIAL3 = "1.3.2"
 COMPOSE_MATERIAL3_ADAPTIVE = "1.1.0"
 COMPOSE_MATERIAL3_COMMON = "1.0.0-alpha01"
 COMPOSE_RUNTIME_TRACING = "1.0.0-beta01"
@@ -90,14 +90,14 @@ LEANBACK_PREFERENCE = "1.2.0-beta01"
 LEANBACK_TAB = "1.1.0-beta01"
 LEGACY = "1.1.0-alpha01"
 LIBYUV = "0.1.0-dev01"
-LIFECYCLE = "2.9.0-alpha12"
+LIFECYCLE = "2.9.0-beta01"
 LIFECYCLE_EXTENSIONS = "2.2.0"
 LINT = "1.0.0-alpha02"
 LOADER = "1.2.0-alpha01"
 MEDIA = "1.7.0-rc01"
 MEDIAROUTER = "1.8.0-alpha01"
 METRICS = "1.0.0-beta02"
-NAVIGATION = "2.9.0-alpha08"
+NAVIGATION = "2.9.0-beta01"
 PAGING = "3.4.0-alpha01"
 PALETTE = "1.1.0-alpha01"
 PDF = "1.0.0-alpha03"
@@ -119,7 +119,7 @@ REMOTECALLBACK = "1.0.0-alpha02"
 RESOURCEINSPECTION = "1.1.0-alpha01"
 ROOM = "2.7.0-alpha08"
 SAFEPARCEL = "1.0.0-alpha01"
-SAVEDSTATE = "1.3.0-alpha10"
+SAVEDSTATE = "1.3.0-beta01"
 SECURITY = "1.1.0-alpha07"
 SECURITY_APP_AUTHENTICATOR = "1.0.0-rc01"
 SECURITY_APP_AUTHENTICATOR_TESTING = "1.0.0-rc01"
@@ -321,7 +321,6 @@ COMPOSE_MATERIAL3_COMMON = { group = "org.jetbrains.compose.material3.common", a
 
 GRAPHICS_SHAPES_JETBRAINS = { group = "org.jetbrains.androidx.graphics", atomicGroupVersion = "versions.GRAPHICS_SHAPES", overrideInclude = [ ":graphics:graphics-shapes" ] }
 PERFORMANCE_JETBRAINS = { group = "org.jetbrains.androidx.performance", atomicGroupVersion = "versions.PERFORMANCE", overrideInclude = [ ":performance:performance-annotation" ] }
-SAVEDSTATE_JETBRAINS = { group = "org.jetbrains.androidx.savedstate", atomicGroupVersion = "versions.SAVEDSTATE", overrideInclude = [ ":savedstate:savedstate" ] }
 WINDOW_CORE_JETBRAINS = { group = "org.jetbrains.androidx.window", atomicGroupVersion = "versions.WINDOW", overrideInclude = [ ":window:window-core" ]  }
 
 [groups.LIFECYCLE_JETBRAINS]
@@ -343,4 +342,12 @@ overrideInclude = [
     ":navigation:navigation-common",
     ":navigation:navigation-runtime",
     ":navigation:navigation-compose"
+]
+
+[groups.SAVEDSTATE_JETBRAINS]
+group = "org.jetbrains.androidx.savedstate"
+atomicGroupVersion = "versions.SAVEDSTATE"
+overrideInclude = [
+    ":savedstate:savedstate",
+    ":savedstate:savedstate-compose"
 ]

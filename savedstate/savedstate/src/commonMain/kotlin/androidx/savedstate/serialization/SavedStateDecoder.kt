@@ -34,7 +34,8 @@ import kotlinx.serialization.serializer
  *
  * @sample androidx.savedstate.decode
  * @param savedState The [SavedState] to decode from.
- * @param configuration The [SavedStateConfiguration] to use.
+ * @param configuration The [SavedStateConfiguration] to use. Defaults to
+ *   [SavedStateConfiguration.DEFAULT].
  * @return The decoded object.
  * @throws SerializationException in case of any decoding-specific error.
  * @throws IllegalArgumentException if the decoded input is not a valid instance of [T].
@@ -51,7 +52,8 @@ public inline fun <reified T : Any> decodeFromSavedState(
  * @sample androidx.savedstate.decodeWithExplicitSerializerAndConfig
  * @param deserializer The deserializer to use.
  * @param savedState The [SavedState] to decode from.
- * @param configuration The [SavedStateConfiguration] to use.
+ * @param configuration The [SavedStateConfiguration] to use. Defaults to
+ *   [SavedStateConfiguration.DEFAULT].
  * @return The deserialized object.
  * @throws SerializationException in case of any decoding-specific error.
  * @throws IllegalArgumentException if the decoded input is not a valid instance of [T].

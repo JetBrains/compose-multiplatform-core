@@ -16,6 +16,21 @@
 package androidx.navigation
 
 import androidx.annotation.RestrictTo
+import androidx.navigation.NavType.Companion.BoolArrayType
+import androidx.navigation.NavType.Companion.BoolListType
+import androidx.navigation.NavType.Companion.BoolType
+import androidx.navigation.NavType.Companion.FloatArrayType
+import androidx.navigation.NavType.Companion.FloatListType
+import androidx.navigation.NavType.Companion.FloatType
+import androidx.navigation.NavType.Companion.IntArrayType
+import androidx.navigation.NavType.Companion.IntListType
+import androidx.navigation.NavType.Companion.IntType
+import androidx.navigation.NavType.Companion.LongArrayType
+import androidx.navigation.NavType.Companion.LongListType
+import androidx.navigation.NavType.Companion.LongType
+import androidx.navigation.NavType.Companion.StringArrayType
+import androidx.navigation.NavType.Companion.StringListType
+import androidx.navigation.NavType.Companion.StringType
 import androidx.savedstate.SavedState
 import androidx.savedstate.read
 import androidx.savedstate.write
@@ -283,6 +298,98 @@ public expect abstract class NavType<T>(isNullableAllowed: Boolean) {
          * Null values are supported. List NavTypes in Navigation XML files are not supported.
          */
         public val StringListType: NavType<List<String>?>
+    }
+}
+
+internal fun <T> NavType<T>.navTypeParseAndPut(bundle: SavedState, key: String, value: String): T {
+    val parsedValue = parseValue(value)
+    put(bundle, key, parsedValue)
+    return parsedValue
+}
+
+internal fun <T> NavType<T>.navTypeParseAndPut(
+    bundle: SavedState,
+    key: String,
+    value: String?,
+    previousValue: T
+): T {
+    if (!bundle.read { contains(key) }) {
+        throw IllegalArgumentException("There is no previous value in this savedState.")
+    }
+    if (value != null) {
+        val parsedCombinedValue = parseValue(value, previousValue)
+        put(bundle, key, parsedCombinedValue)
+        return parsedCombinedValue
+    }
+    return previousValue
+}
+
+internal fun navTypeFromArgType(type: String?): NavType<*>? {
+    when {
+        IntType.name == type -> return IntType
+        IntArrayType.name == type -> return IntArrayType
+        IntListType.name == type -> return IntListType
+        LongType.name == type -> return LongType
+        LongArrayType.name == type -> return LongArrayType
+        LongListType.name == type -> return LongListType
+        BoolType.name == type -> return BoolType
+        BoolArrayType.name == type -> return BoolArrayType
+        BoolListType.name == type -> return BoolListType
+        StringType.name == type -> return StringType
+        StringArrayType.name == type -> return StringArrayType
+        StringListType.name == type -> return StringListType
+        FloatType.name == type -> return FloatType
+        FloatArrayType.name == type -> return FloatArrayType
+        FloatListType.name == type -> return FloatListType
+    }
+    return null
+}
+
+@Suppress("UNCHECKED_CAST") // needed for cast to NavType<Any>
+internal fun navTypeInferFromValue(value: String): NavType<Any> {
+    // because we allow Long literals without the L suffix at runtime,
+    // the order of IntType and LongType parsing has to be reversed compared to Safe Args
+    try {
+        IntType.parseValue(value)
+        return IntType as NavType<Any>
+    } catch (_: IllegalArgumentException) {
+        // ignored, proceed to check next type
+    }
+    try {
+        LongType.parseValue(value)
+        return LongType as NavType<Any>
+    } catch (_: IllegalArgumentException) {
+        // ignored, proceed to check next type
+    }
+    try {
+        FloatType.parseValue(value)
+        return FloatType as NavType<Any>
+    } catch (_: IllegalArgumentException) {
+        // ignored, proceed to check next type
+    }
+    try {
+        BoolType.parseValue(value)
+        return BoolType as NavType<Any>
+    } catch (_: IllegalArgumentException) {
+        // ignored, proceed to check next type
+    }
+    return StringType as NavType<Any>
+}
+
+@Suppress("UNCHECKED_CAST") // needed for cast to NavType<Any>
+internal fun navTypeInferFromValueType(value: Any?): NavType<Any>? {
+    return when (value) {
+        is Int -> IntType as NavType<Any>
+        is IntArray -> IntArrayType as NavType<Any>
+        is Long -> LongType as NavType<Any>
+        is LongArray -> LongArrayType as NavType<Any>
+        is Float -> FloatType as NavType<Any>
+        is FloatArray -> FloatArrayType as NavType<Any>
+        is Boolean -> BoolType as NavType<Any>
+        is BooleanArray -> BoolArrayType as NavType<Any>
+        is String,
+        null -> StringType as NavType<Any>
+        else -> null
     }
 }
 

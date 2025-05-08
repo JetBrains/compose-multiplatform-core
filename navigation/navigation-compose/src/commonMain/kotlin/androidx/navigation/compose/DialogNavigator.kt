@@ -25,47 +25,64 @@ import androidx.navigation.NavDestination
 import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
 import androidx.navigation.compose.DialogNavigator.Destination
-import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Navigator that navigates through [Composable]s that will be hosted within a [Dialog]. Every
  * destination using this Navigator must set a valid [Composable] by setting it directly on an
  * instantiated [Destination] or calling [dialog].
  */
-public expect class DialogNavigator() : Navigator<Destination> {
+@Navigator.Name("dialog")
+public class DialogNavigator() : Navigator<Destination>(NAME) {
 
     /** Get the back stack from the [state]. */
-    internal val backStack: StateFlow<List<NavBackStackEntry>>
+    internal val backStack
+        get() = state.backStack
 
     /** Get the transitioning dialogs from the [state]. */
-    internal val transitionInProgress: StateFlow<Set<NavBackStackEntry>>
+    internal val transitionInProgress
+        get() = state.transitionsInProgress
 
     /** Dismiss the dialog destination associated with the given [backStackEntry]. */
-    internal fun dismiss(backStackEntry: NavBackStackEntry)
+    internal fun dismiss(backStackEntry: NavBackStackEntry) {
+        popBackStack(backStackEntry, false)
+    }
 
     override fun navigate(
         entries: List<NavBackStackEntry>,
         navOptions: NavOptions?,
         navigatorExtras: Extras?
-    )
-
-    override fun createDestination(): Destination
-
-    override fun popBackStack(popUpTo: NavBackStackEntry, savedState: Boolean)
-
-    internal fun onTransitionComplete(entry: NavBackStackEntry)
-
-    /** NavDestination specific to [DialogNavigator] */
-    public class Destination(
-        navigator: DialogNavigator,
-        dialogProperties: DialogProperties = DialogProperties(),
-        content: @Composable (NavBackStackEntry) -> Unit
-    ) : NavDestination, FloatingWindow {
-        internal val dialogProperties: DialogProperties
-        internal val content: @Composable (NavBackStackEntry) -> Unit
+    ) {
+        entries.forEach { entry -> state.push(entry) }
     }
 
+    override fun createDestination(): Destination {
+        return Destination(this) {}
+    }
+
+    override fun popBackStack(popUpTo: NavBackStackEntry, savedState: Boolean) {
+        state.popWithTransition(popUpTo, savedState)
+        // When popping, the incoming dialog is marked transitioning to hold it in
+        // STARTED. With pop complete, we can remove it from transition so it can move to RESUMED.
+        val popIndex = state.transitionsInProgress.value.indexOf(popUpTo)
+        // do not mark complete for entries up to and including popUpTo
+        state.transitionsInProgress.value.forEachIndexed { index, entry ->
+            if (index > popIndex) onTransitionComplete(entry)
+        }
+    }
+
+    internal fun onTransitionComplete(entry: NavBackStackEntry) {
+        state.markTransitionComplete(entry)
+    }
+
+    /** NavDestination specific to [DialogNavigator] */
+    @NavDestination.ClassType(Composable::class)
+    public class Destination(
+        navigator: DialogNavigator,
+        internal val dialogProperties: DialogProperties = DialogProperties(),
+        internal val content: @Composable (NavBackStackEntry) -> Unit
+    ) : NavDestination(navigator), FloatingWindow
+
     internal companion object {
-        internal val NAME: String
+        internal const val NAME = "dialog"
     }
 }

@@ -213,7 +213,6 @@ internal class TextFieldDelegate {
             textInputSession.notifyFocusedRect(
                 focusedRectInRoot(
                     layoutResult = textLayoutResult,
-                    layoutCoordinates = layoutCoordinates,
                     focusOffset = offsetMapping.originalToTransformed(value.selection.max),
                     sizeForDefaultText = {
                         computeSizeForDefaultText(
@@ -221,7 +220,8 @@ internal class TextFieldDelegate {
                             textDelegate.density,
                             textDelegate.fontFamilyResolver
                         )
-                    }
+                    },
+                    convertLocalToRoot = layoutCoordinates::localToRoot
                 )
             )
         }
@@ -432,8 +432,8 @@ internal class TextFieldDelegate {
 /** Computes the bounds of the area where text editing is in progress, relative to the root. */
 internal fun focusedRectInRoot(
     layoutResult: TextLayoutResult,
-    layoutCoordinates: LayoutCoordinates,
     focusOffset: Int,
+    convertLocalToRoot: (Offset) -> Offset,
     sizeForDefaultText: () -> IntSize
 ): Rect {
     val bbox =
@@ -449,6 +449,6 @@ internal fun focusedRectInRoot(
                 Rect(0f, 0f, 1.0f, size.height.toFloat())
             }
         }
-    val globalLT = layoutCoordinates.localToRoot(Offset(bbox.left, bbox.top))
+    val globalLT = convertLocalToRoot(Offset(bbox.left, bbox.top))
     return Rect(Offset(globalLT.x, globalLT.y), Size(bbox.width, bbox.height))
 }

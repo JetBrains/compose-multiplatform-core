@@ -22,6 +22,7 @@ import androidx.compose.ui.text.input.EditCommand
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.TextFieldValue
 import kotlinx.browser.document
+import kotlinx.browser.window
 
 
 internal interface ComposeCommandCommunicator {
@@ -53,7 +54,15 @@ internal class BackingDomInput(
     }
 
     fun focus() {
+        // we focus twice to be sure that ios and non-ios browser both manage to focus
+        // see https://youtrack.jetbrains.com/issue/CMP-8013
+        // and https://youtrack.jetbrains.com/issue/CMP-7836/
         backingElement.focus()
+        window.requestAnimationFrame {
+            if (document.activeElement != backingElement) {
+                backingElement.focus()
+            }
+        }
     }
 
     fun blur() {
@@ -63,12 +72,16 @@ internal class BackingDomInput(
     fun updateHtmlInputPosition(offset: Offset) {
         backingElement.style.left = "${offset.x}px"
         backingElement.style.top = "${offset.y}px"
+    }
 
-        focus()
+    fun updateHtmlInputGeometry(width: Int, height: Int) {
+        backingElement.style.width = "${width}px"
+        backingElement.style.height = "${height}px"
     }
 
     fun updateState(textFieldValue: TextFieldValue) {
         inputStrategy.updateState(textFieldValue)
+        focus()
     }
 
     fun dispose() {

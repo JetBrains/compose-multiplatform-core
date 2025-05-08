@@ -20,7 +20,6 @@ import androidx.compose.ui.platform.EmptyInputTraits
 import androidx.compose.ui.platform.IOSSkikoInput
 import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.TextActions
-import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.uikit.utils.CMPEditMenuView
 import androidx.compose.ui.unit.DpOffset
@@ -28,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
 import kotlinx.cinterop.CValue
+import kotlinx.cinterop.ObjCSignatureOverride
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.MainScope
@@ -77,9 +77,8 @@ private val NoOpOnKeyboardPresses: (Set<*>) -> Unit = {}
  * Hidden UIView to interact with iOS Keyboard and TextInput system.
  * TODO maybe need to call reloadInputViews() to update UIKit text features?
  */
-@Suppress("CONFLICTING_OVERLOADS")
 internal class IntermediateTextInputUIView(
-    private val viewConfiguration: ViewConfiguration
+    private val doubleTapTimeoutMillis: Long
 ) : CMPEditMenuView(frame = CGRectZero.readValue()),
     UIKeyInputProtocol, UITextInputProtocol {
     private var _inputDelegate: UITextInputDelegateProtocol? = null
@@ -102,6 +101,11 @@ internal class IntermediateTextInputUIView(
     var inputTraits: SkikoUITextInputTraits = EmptyInputTraits
 
     override fun canBecomeFirstResponder() = true
+
+    override fun resignFirstResponder(): Boolean {
+        hideTextMenu()
+        return super.resignFirstResponder()
+    }
 
     override fun beginFloatingCursorAtPoint(point: CValue<CGPoint>) {
         input?.beginFloatingCursor(point.useContents { DpOffset(x.dp, y.dp) })
@@ -360,11 +364,13 @@ internal class IntermediateTextInputUIView(
         return (toPosition.position - from.position).toLong()
     }
 
+    @ObjCSignatureOverride
     override fun positionWithinRange(
         range: UITextRange,
         atCharacterOffset: NSInteger
     ): UITextPosition? = null // TODO positionWithinRange
 
+    @ObjCSignatureOverride
     override fun positionWithinRange(
         range: UITextRange,
         farthestInDirection: UITextLayoutDirection
@@ -498,7 +504,7 @@ internal class IntermediateTextInputUIView(
     override fun isUserInteractionEnabled(): Boolean = false // disable clicks
 
     override fun editMenuDelay(): Double =
-        viewConfiguration.doubleTapTimeoutMillis.milliseconds.toDouble(DurationUnit.SECONDS)
+        doubleTapTimeoutMillis.milliseconds.toDouble(DurationUnit.SECONDS)
 
     /**
      * Show copy/paste text menu

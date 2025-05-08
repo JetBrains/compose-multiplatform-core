@@ -17,7 +17,6 @@
 package androidx.navigation.testing
 
 import android.content.Context
-import androidx.core.bundle.Bundle
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelStore
 import androidx.navigation.FloatingWindow
@@ -25,7 +24,10 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination
 import androidx.navigation.NavViewModelStoreProvider
 import androidx.navigation.NavigatorState
-import kotlin.jvm.JvmOverloads
+import androidx.navigation.SupportingPane
+import androidx.navigation.internal.NavContext
+import androidx.savedstate.SavedState
+import androidx.savedstate.savedState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -42,14 +44,13 @@ import kotlinx.coroutines.withContext
  * updated as they are added and removed from the state. This work is kicked off on the
  * [coroutineDispatcher].
  */
-public actual class TestNavigatorState @JvmOverloads constructor(
+public class TestNavigatorState
+@JvmOverloads
+constructor(
     private val context: Context? = null,
     private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate
 ) : NavigatorState() {
-    public actual constructor() : this(
-        context = null,
-        coroutineDispatcher = Dispatchers.Main.immediate
-    )
+    internal val navContext = NavContext(context)
 
     private val viewModelStoreProvider =
         object : NavViewModelStoreProvider {
@@ -59,15 +60,15 @@ public actual class TestNavigatorState @JvmOverloads constructor(
                 viewModelStores.getOrPut(backStackEntryId) { ViewModelStore() }
         }
 
-    private val savedStates = mutableMapOf<String, Bundle>()
+    private val savedStates = mutableMapOf<String, SavedState>()
     private val entrySavedState = mutableMapOf<NavBackStackEntry, Boolean>()
 
     override fun createBackStackEntry(
         destination: NavDestination,
-        arguments: Bundle?
+        arguments: SavedState?
     ): NavBackStackEntry =
         NavBackStackEntry.create(
-            context,
+            navContext,
             destination,
             arguments,
             Lifecycle.State.RESUMED,
@@ -78,14 +79,14 @@ public actual class TestNavigatorState @JvmOverloads constructor(
      * Restore a previously saved [NavBackStackEntry]. You must have previously called [pop] with
      * [previouslySavedEntry] and `true`.
      */
-    public actual fun restoreBackStackEntry(previouslySavedEntry: NavBackStackEntry): NavBackStackEntry {
+    public fun restoreBackStackEntry(previouslySavedEntry: NavBackStackEntry): NavBackStackEntry {
         val savedState =
             checkNotNull(savedStates[previouslySavedEntry.id]) {
                 "restoreBackStackEntry(previouslySavedEntry) must be passed a NavBackStackEntry " +
                     "that was previously popped with popBackStack(previouslySavedEntry, true)"
             }
         return NavBackStackEntry.create(
-            context,
+            navContext,
             previouslySavedEntry.destination,
             previouslySavedEntry.arguments,
             Lifecycle.State.RESUMED,
@@ -149,7 +150,7 @@ public actual class TestNavigatorState @JvmOverloads constructor(
                     ) {
                         // Move the NavBackStackEntry to the stopped state, then save its state
                         entry.maxLifecycle = Lifecycle.State.CREATED
-                        val savedState = Bundle()
+                        val savedState = savedState()
                         entry.saveState(savedState)
                         savedStates[entry.id] = savedState
                     }
@@ -177,6 +178,17 @@ public actual class TestNavigatorState @JvmOverloads constructor(
                                 } else {
                                     Lifecycle.State.STARTED
                                 }
+                            previousEntry.destination is SupportingPane -> {
+                                // Match the previous entry's destination, making sure
+                                // a transitioning destination does not go to resumed
+                                previousEntry.maxLifecycle.coerceAtMost(
+                                    if (!transitioning) {
+                                        Lifecycle.State.RESUMED
+                                    } else {
+                                        Lifecycle.State.STARTED
+                                    }
+                                )
+                            }
                             previousEntry.destination is FloatingWindow -> Lifecycle.State.STARTED
                             else -> Lifecycle.State.CREATED
                         }

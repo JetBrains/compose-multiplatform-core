@@ -34,7 +34,8 @@ import kotlinx.serialization.serializer
  * @sample androidx.lifecycle.delegateExplicitKey
  * @param key An optional [String] key to use for storing the value in the [SavedStateHandle]. A
  *   default key will be generated if it's omitted or when 'null' is passed.
- * @param configuration The [SavedStateConfiguration] to use.
+ * @param configuration The [SavedStateConfiguration] to use. Defaults to
+ *   [SavedStateConfiguration.DEFAULT].
  * @param init The function to provide the initial value of the property.
  * @return A property delegate that manages the saving and restoring of the value.
  */
@@ -52,7 +53,8 @@ public inline fun <reified T : Any> SavedStateHandle.saved(
  * @param serializer The [KSerializer] to use for serializing and deserializing the value.
  * @param key An optional [String] key to use for storing the value in the [SavedStateHandle]. A
  *   default key will be generated if it's omitted or when 'null' is passed.
- * @param configuration The [SavedStateConfiguration] to use.
+ * @param configuration The [SavedStateConfiguration] to use. Defaults to
+ *   [SavedStateConfiguration.DEFAULT].
  * @param init The function to provide the initial value of the property.
  * @return A property delegate that manages the saving and restoring of the value.
  */

@@ -945,7 +945,6 @@ public class androidx/compose/runtime/snapshots/MutableSnapshot : androidx/compo
 	public fun getReadOnly ()Z
 	public fun getRoot ()Landroidx/compose/runtime/snapshots/Snapshot;
 	public fun hasPendingChanges ()Z
-	public fun setModified (Landroidx/collection/MutableScatterSet;)V
 	public fun takeNestedMutableSnapshot (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Landroidx/compose/runtime/snapshots/MutableSnapshot;
 	public static synthetic fun takeNestedMutableSnapshot$default (Landroidx/compose/runtime/snapshots/MutableSnapshot;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Landroidx/compose/runtime/snapshots/MutableSnapshot;
 	public fun takeNestedSnapshot (Lkotlin/jvm/functions/Function1;)Landroidx/compose/runtime/snapshots/Snapshot;

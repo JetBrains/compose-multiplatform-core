@@ -17,16 +17,12 @@
 package androidx.compose.ui.backhandler
 
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.uikit.utils.CMPScreenEdgePanGestureRecognizer
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.asDpOffset
+import androidx.compose.ui.unit.asDpRect
 import androidx.compose.ui.unit.toOffset
 import kotlin.math.abs
 import kotlinx.cinterop.BetaInteropApi
@@ -85,11 +81,20 @@ internal class UIKitBackGestureDispatcher(
         rightEdgePanGestureRecognizer.enabled = listener != null
     }
 
+    private val activeGestureStates = listOf(
+        UIGestureRecognizerStateBegan,
+        UIGestureRecognizerStateChanged
+    )
+
+    val isBackGestureActive: Boolean
+        get() =
+            leftEdgePanGestureRecognizer.state in activeGestureStates ||
+                rightEdgePanGestureRecognizer.state in activeGestureStates
+
     fun onDidMoveToWindow(window: UIWindow?, composeRootView: UIView) {
         if (enableBackGesture) {
-            if (window == null) {
-                removeGestureListeners()
-            } else {
+            removeGestureListeners()
+            if (window != null) {
                 var view: UIView = composeRootView
                 while (view.superview != window) {
                     view = requireNotNull(view.superview) {
@@ -134,28 +139,16 @@ private class UiKitScreenEdgePanGestureHandler(
             }
 
             UIGestureRecognizerStateChanged -> {
-                val touchLocation = recognizer.locationOfTouch(0u, view)
-                touchLocation.useContents {
-                    view.bounds.useContents {
-                        val topLeft = getTopLeftOffsetInWindow()
-                        val touch = DpOffset(x.dp, y.dp).toOffset(density)
+                val touch = recognizer.locationOfTouch(0u, view).asDpOffset()
+                val eventOffset = touch.toOffset(density) - getTopLeftOffsetInWindow().toOffset()
+                val event = backEventCompat(
+                    eventOffset = eventOffset,
+                    leftEdge = recognizer.edges == UIRectEdgeLeft,
+                    touch = touch,
+                    bounds = view.bounds.asDpRect()
+                )
 
-                        val edge = recognizer.edges
-                        val absX: Double = if (edge == UIRectEdgeLeft) x else size.width - x
-                        val event = BackEventCompat(
-                            touchX = touch.x - topLeft.x,
-                            touchY = touch.y - topLeft.y,
-                            progress = (absX / size.width).toFloat(),
-                            swipeEdge = if (edge == UIRectEdgeLeft) {
-                                BackEventCompat.EDGE_LEFT
-                            } else {
-                                BackEventCompat.EDGE_RIGHT
-                            }
-                        )
-
-                        listener?.onProgressed(event)
-                    }
-                }
+                listener?.onProgressed(event)
             }
 
             UIGestureRecognizerStateEnded -> {
@@ -198,7 +191,7 @@ private class UiKitScreenEdgePanGestureHandler(
 
 /**
  * A special gesture recognizer that can cancel touches in the Compose scene.
- * See [androidx.compose.ui.window.UserInputGestureRecognizer.canBePreventedByGestureRecognizer]
+ * See [androidx.compose.ui.window.TouchesGestureRecognizer.canBePreventedByGestureRecognizer]
  */
 internal class UIKitBackGestureRecognizer(
     target: Any?, action: CPointer<out CPointed>?

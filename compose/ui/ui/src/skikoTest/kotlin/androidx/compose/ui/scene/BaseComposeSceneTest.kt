@@ -39,7 +39,7 @@ import kotlinx.coroutines.test.runTest
 class BaseComposeSceneTest {
 
     @Test
-    fun `test move events consumption`() = runTest(StandardTestDispatcher()) {
+    fun testMoveEventsConsumption() = runTest(StandardTestDispatcher()) {
         val scenes: List<ComposeScene> = listOf(
             PlatformLayersComposeScene(size = IntSize(100, 100)),
             CanvasLayersComposeScene(size = IntSize(100, 100))
@@ -86,7 +86,7 @@ class BaseComposeSceneTest {
     }
 
     @Test
-    fun `cancel all pointers should cancel input coroutines`() = runTest(StandardTestDispatcher()) {
+    fun cancelAllPointersShouldCancelInputCoroutines() = runTest(StandardTestDispatcher()) {
         val scenes: List<ComposeScene> = listOf(
             PlatformLayersComposeScene(size = IntSize(100, 100)),
             CanvasLayersComposeScene(size = IntSize(100, 100))
@@ -108,7 +108,7 @@ class BaseComposeSceneTest {
     }
 
     @Test
-    fun `cancel all pointers should cancel clicks`() = runTest(StandardTestDispatcher()) {
+    fun cancelAllPointersShouldCancelClicks() = runTest(StandardTestDispatcher()) {
         val scenes: List<ComposeScene> = listOf(
             PlatformLayersComposeScene(size = IntSize(100, 100)),
             CanvasLayersComposeScene(size = IntSize(100, 100))

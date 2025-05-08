@@ -20,7 +20,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.EditCommand
-import androidx.compose.ui.text.input.EditProcessor
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.TextEditingScope
@@ -48,10 +47,6 @@ actual interface PlatformTextInputMethodRequest {
     /** The callback called when the editor action arrives. */
     @ExperimentalComposeUiApi
     val onImeAction: ((ImeAction) -> Unit)?
-
-    /** The edit processor. */
-    @ExperimentalComposeUiApi
-    val editProcessor: EditProcessor?
 
     @ExperimentalComposeUiApi
     val outputValue: Flow<TextFieldValue>

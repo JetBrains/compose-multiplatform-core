@@ -18,73 +18,79 @@ package androidx.compose.foundation.text
 
 import androidx.compose.foundation.assertThat
 import androidx.compose.foundation.isEqualTo
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.isFalse
+import androidx.compose.foundation.isNotNull
+import androidx.compose.foundation.isNull
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Matrix
-import androidx.compose.ui.platform.LocalTextInputService
+import androidx.compose.ui.platform.InterceptPlatformTextInput
+import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.input.EditCommand
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.CommitTextCommand
 import androidx.compose.ui.text.input.ImeOptions
-import androidx.compose.ui.text.input.OffsetMapping
-import androidx.compose.ui.text.input.PlatformTextInputService
+import androidx.compose.ui.text.input.TextEditorState
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.input.TextInputService
 import kotlin.test.Test
-import kotlin.test.assertTrue
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 class LegacyPlatformTextInputServiceAdapterTest {
-
-    @Suppress("DEPRECATION")
-    @OptIn(ExperimentalTestApi::class)
+    @OptIn(ExperimentalTestApi::class, ExperimentalComposeUiApi::class)
     @Test
-    fun textLayoutResultIsProvided() = runComposeUiTest {
-
-        var textFromUpdateTextLayoutResult = ""
-
-        val platformTextInputService = object : PlatformTextInputService {
-
-            override fun startInput(
-                value: TextFieldValue,
-                imeOptions: ImeOptions,
-                onEditCommand: (List<EditCommand>) -> Unit,
-                onImeActionPerformed: (ImeAction) -> Unit
-            ) {}
-
-            override fun stopInput() {}
-
-            override fun showSoftwareKeyboard() {}
-
-            override fun hideSoftwareKeyboard() {}
-
-            override fun updateState(oldValue: TextFieldValue?, newValue: TextFieldValue) {}
-
-            override fun updateTextLayoutResult(
-                textFieldValue: TextFieldValue,
-                offsetMapping: OffsetMapping,
-                textLayoutResult: TextLayoutResult,
-                textFieldToRootTransform: (Matrix) -> Unit,
-                innerTextFieldBounds: Rect,
-                decorationBoxBounds: Rect
-            ) {
-                textFromUpdateTextLayoutResult = textFieldValue.text
-            }
-        }
-        val textInputService = TextInputService(platformTextInputService)
+    fun testRequestValuesUpdate() = runComposeUiTest {
+        var value: TextFieldValue? = null
+        var state: TextEditorState? = null
+        var imeOptions: ImeOptions? = null
+        var outputValue: TextFieldValue? = null
+        var textLayoutResult: TextLayoutResult? = null
+        var focusedRectInRoot: Rect? = null
+        var textFieldRectInRoot: Rect? = null
+        var textClippingRectInRoot: Rect? = null
 
         setContent {
-            CompositionLocalProvider(LocalTextInputService provides textInputService) {
+            InterceptPlatformTextInput({ request, nextHandler ->
+                coroutineScope {
+                    launch {
+                        snapshotFlow { request.value() }.collect { value = it }
+                    }
+                    launch {
+                        snapshotFlow { request.state }.collect { state = it }
+                    }
+                    launch {
+                        snapshotFlow { request.imeOptions }.collect { imeOptions = it }
+                    }
+                    launch {
+                        request.outputValue.collect { outputValue = it }
+                    }
+                    launch {
+                        request.textLayoutResult.collect { textLayoutResult = it }
+                    }
+                    launch {
+                        request.focusedRectInRoot.collect { focusedRectInRoot = it }
+                    }
+                    launch {
+                        request.textFieldRectInRoot.collect { textFieldRectInRoot = it }
+                    }
+                    launch {
+                        request.textClippingRectInRoot.collect { textClippingRectInRoot = it }
+                    }
+                }
+                awaitCancellation()
+            }) {
                 var text by remember { mutableStateOf("") }
                 BasicTextField(
                     modifier = Modifier.testTag("input"),
@@ -96,12 +102,70 @@ class LegacyPlatformTextInputServiceAdapterTest {
             }
         }
 
-        waitForIdle()
-
         onNodeWithTag("input").performTextInput("abc")
 
         waitForIdle()
 
-        assertThat(textFromUpdateTextLayoutResult).isEqualTo("abc")
+        assertThat(value?.text).isEqualTo("abc")
+        assertThat(state?.length).isEqualTo(3)
+        assertThat(state?.selection).isEqualTo(TextRange(3, 3))
+        assertThat(state?.let { it.substring(startIndex = 0, it.length) }).isEqualTo("abc")
+        assertThat(imeOptions).isNotNull()
+        assertThat(outputValue?.text).isEqualTo("abc")
+        assertThat(outputValue?.selection).isEqualTo(TextRange(3, 3))
+        assertThat(textLayoutResult?.layoutInput?.text?.text).isEqualTo("abc")
+        assertThat(focusedRectInRoot?.isEmpty).isFalse()
+        assertThat(textFieldRectInRoot?.isEmpty).isFalse()
+        assertThat(textClippingRectInRoot?.isEmpty).isFalse()
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+    @Test
+    fun testTextEditing() = runComposeUiTest {
+        var text by mutableStateOf(TextFieldValue(""))
+        lateinit var request: PlatformTextInputMethodRequest
+        setContent {
+            InterceptPlatformTextInput({ r, nextHandler ->
+                request = r
+                awaitCancellation()
+            }) {
+                BasicTextField(
+                    modifier = Modifier.testTag("input"),
+                    value = text,
+                    onValueChange = { text = it }
+                )
+            }
+        }
+        onNodeWithTag("input").requestFocus()
+
+        request.editText {
+            commitText("abc", 1)
+        }
+        request.onEditCommand(
+            listOf(CommitTextCommand("def", 1))
+        )
+
+        waitForIdle()
+
+        assertThat(text.text).isEqualTo("abcdef")
+        assertThat(text.selection).isEqualTo(TextRange(6, 6))
+        assertThat(text.composition).isNull()
+
+        request.editText {
+            this.setComposingText("qwe", 1)
+        }
+        waitForIdle()
+
+        assertThat(text.text).isEqualTo("abcdefqwe")
+        assertThat(text.selection).isEqualTo(TextRange(9, 9))
+        assertThat(text.composition).isEqualTo(TextRange(6, 9))
+
+        request.editText {
+            this.deleteSurroundingTextInCodePoints(lengthBeforeCursor = 1, lengthAfterCursor = 0)
+        }
+        waitForIdle()
+
+        assertThat(text.text).isEqualTo("abcdefqw")
+        assertThat(text.selection).isEqualTo(TextRange(8, 8))
     }
 }

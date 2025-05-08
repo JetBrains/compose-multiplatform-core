@@ -40,3 +40,11 @@ body:has(textarea) {
 body:has(textarea:focus) {
     background-color: #eaffe3;
 }
+
+body:has(input) {
+    background-color: aliceblue;
+}
+
+body:has(input:focus) {
+    background-color: #eaffe3;
+}

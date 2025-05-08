@@ -197,7 +197,7 @@ package androidx.compose.material3.common {
 
   public final class TonalPaletteDefaults {
     method public androidx.compose.material3.common.TonalPalette getBaselineTonalPalette();
-    property @androidx.compose.runtime.Stable public final androidx.compose.material3.common.TonalPalette BaselineTonalPalette;
+    property public final androidx.compose.material3.common.TonalPalette BaselineTonalPalette;
     field public static final androidx.compose.material3.common.TonalPaletteDefaults INSTANCE;
   }
 

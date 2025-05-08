@@ -28,6 +28,7 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.get
 import androidx.lifecycle.testing.TestLifecycleOwner
 import androidx.lifecycle.viewmodel.MutableCreationExtras
+import androidx.navigation.internal.NavContext
 import androidx.navigation.test.R
 import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ActivityScenario
@@ -299,7 +300,7 @@ class NavBackStackEntryTest {
     fun testGetSavedStateHandle() {
         val entry =
             NavBackStackEntry.create(
-                ApplicationProvider.getApplicationContext(),
+                NavContext(ApplicationProvider.getApplicationContext()),
                 NavDestination(TestNavigator()),
                 null,
                 Lifecycle.State.STARTED,
@@ -315,7 +316,7 @@ class NavBackStackEntryTest {
     fun testGetSavedStateHandleBeforeUpdateState() {
         val entry =
             NavBackStackEntry.create(
-                ApplicationProvider.getApplicationContext(),
+                NavContext(ApplicationProvider.getApplicationContext()),
                 NavDestination(TestNavigator()),
                 viewModelStoreProvider = NavControllerViewModel()
             )
@@ -342,7 +343,7 @@ class NavBackStackEntryTest {
     fun testGetSavedStateHandleInitializedLifecycle() {
         val entry =
             NavBackStackEntry.create(
-                ApplicationProvider.getApplicationContext(),
+                NavContext(ApplicationProvider.getApplicationContext()),
                 NavDestination(TestNavigator()),
                 viewModelStoreProvider = NavControllerViewModel()
             )
@@ -356,7 +357,7 @@ class NavBackStackEntryTest {
     fun testGetSavedStateHandleDestroyedLifecycle() {
         val entry =
             NavBackStackEntry.create(
-                ApplicationProvider.getApplicationContext(),
+                NavContext(ApplicationProvider.getApplicationContext()),
                 NavDestination(TestNavigator()),
                 viewModelStoreProvider = NavControllerViewModel()
             )
@@ -385,7 +386,7 @@ class NavBackStackEntryTest {
     fun testGetSavedStateHandleNoViewModelSet() {
         val entry =
             NavBackStackEntry.create(
-                ApplicationProvider.getApplicationContext(),
+                NavContext(ApplicationProvider.getApplicationContext()),
                 NavDestination(TestNavigator())
             )
         entry.maxLifecycle = Lifecycle.State.CREATED

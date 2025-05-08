@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.tokens.ListTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -42,6 +43,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -156,6 +158,33 @@ class ListItemTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun listItem_multipleItems_intrinsicSize() {
+        rule.setMaterialContent(lightColorScheme()) {
+            Column(Modifier.width(300.dp).height(IntrinsicSize.Min)) {
+                // 2 identical list items. Leading content leaves small space
+                // for headline, so it has to wrap.
+                ListItem(
+                    modifier = Modifier.testTag("ListItem1"),
+                    leadingContent = { Box(Modifier.width(240.dp)) },
+                    headlineContent = { Text("A B C D E F G H") },
+                )
+                ListItem(
+                    modifier = Modifier.testTag("ListItem2"),
+                    leadingContent = { Box(Modifier.width(240.dp)) },
+                    headlineContent = { Text("A B C D E F G H") },
+                )
+            }
+        }
+
+        val item1Height =
+            rule
+                .onNodeWithTag("ListItem1", useUnmergedTree = true)
+                .getUnclippedBoundsInRoot()
+                .height
+        rule.onNodeWithTag("ListItem2", useUnmergedTree = true).assertHeightIsEqualTo(item1Height)
     }
 
     @Test

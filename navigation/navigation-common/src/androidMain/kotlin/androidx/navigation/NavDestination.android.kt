@@ -16,7 +16,6 @@
 package androidx.navigation
 
 import android.content.Context
-import android.content.res.Resources
 import android.net.Uri
 import android.util.AttributeSet
 import androidx.annotation.CallSuper
@@ -26,13 +25,12 @@ import androidx.collection.SparseArrayCompat
 import androidx.collection.keyIterator
 import androidx.collection.valueIterator
 import androidx.core.content.res.use
-import androidx.core.net.toUri
 import androidx.navigation.common.R
+import androidx.navigation.internal.NavContext
+import androidx.navigation.internal.NavDestinationImpl
 import androidx.navigation.serialization.generateHashCode
 import androidx.savedstate.SavedState
 import androidx.savedstate.read
-import androidx.savedstate.savedState
-import androidx.savedstate.write
 import java.util.regex.Pattern
 import kotlin.reflect.KClass
 import kotlinx.serialization.InternalSerializationApi
@@ -40,17 +38,16 @@ import kotlinx.serialization.serializer
 
 public actual open class NavDestination
 actual constructor(public actual val navigatorName: String) {
-    /**
-     * This optional annotation allows tooling to offer auto-complete for the `android:name`
-     * attribute. This should match the class type passed to [parseClassFromName] when parsing the
-     * `android:name` attribute.
-     */
-    @kotlin.annotation.Retention(AnnotationRetention.BINARY)
+
+    private val impl = NavDestinationImpl(this)
+
+    @Retention(AnnotationRetention.BINARY)
     @Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.CLASS)
-    public annotation class ClassType(val value: KClass<*>)
+    public actual annotation class ClassType(actual val value: KClass<*>)
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public actual class DeepLinkMatch(
+    public actual class DeepLinkMatch
+    actual constructor(
         public actual val destination: NavDestination,
         @get:Suppress("NullableCollection") // Needed for nullable savedState
         public actual val matchingArgs: SavedState?,
@@ -59,7 +56,7 @@ actual constructor(public actual val navigatorName: String) {
         private val hasMatchingAction: Boolean,
         private val mimeTypeMatchLevel: Int
     ) : Comparable<DeepLinkMatch> {
-        override fun compareTo(other: DeepLinkMatch): Int {
+        public actual override fun compareTo(other: DeepLinkMatch): Int {
             // Prefer exact deep links
             if (isExactDeepLink && !other.isExactDeepLink) {
                 return 1
@@ -102,7 +99,7 @@ actual constructor(public actual val navigatorName: String) {
                 // the arguments must at least contain every argument stored in this deep link
                 if (!arguments.read { contains(key) }) return false
 
-                val type = destination._arguments[key]?.type
+                val type = destination.arguments[key]?.type
                 val matchingArgValue = type?.get(matchingArgs, key)
                 val entryArgValue = type?.get(arguments, key)
                 if (type?.valueEquals(matchingArgValue, entryArgValue) == false) {
@@ -116,16 +113,15 @@ actual constructor(public actual val navigatorName: String) {
     public actual var parent: NavGraph? = null
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public set
 
-    private var idName: String? = null
+    private var idName: String? by impl::idName
 
     public actual var label: CharSequence? = null
-    private val deepLinks = mutableListOf<NavDeepLink>()
+    private val deepLinks by impl::deepLinks
+
     private val actions: SparseArrayCompat<NavAction> = SparseArrayCompat()
 
-    private var _arguments: MutableMap<String, NavArgument> = mutableMapOf()
-
     public actual val arguments: Map<String, NavArgument>
-        get() = _arguments.toMap()
+        get() = impl.arguments.toMap()
 
     public actual constructor(
         navigator: Navigator<out NavDestination>
@@ -144,7 +140,7 @@ actual constructor(public actual val navigatorName: String) {
 
             if (array.hasValue(R.styleable.Navigator_android_id)) {
                 id = array.getResourceId(R.styleable.Navigator_android_id, 0)
-                idName = getDisplayName(context, id)
+                idName = getDisplayName(NavContext(context), id)
             }
             label = array.getText(R.styleable.Navigator_android_label)
         }
@@ -158,47 +154,13 @@ actual constructor(public actual val navigatorName: String) {
      * from KClass.
      */
     @get:IdRes
-    public var id: Int = 0
-        set(@IdRes id) {
-            field = id
-            idName = null
+    public actual var id: Int
+        get() = impl.id
+        set(@IdRes value) {
+            impl.id = value
         }
 
-    public actual var route: String? = null
-        set(route) {
-            if (route == null) {
-                id = 0
-            } else {
-                require(route.isNotBlank()) { "Cannot have an empty route" }
-
-                // make sure the route contains all required arguments
-                val tempRoute = createRoute(route)
-                val tempDeepLink = NavDeepLink.Builder().setUriPattern(tempRoute).build()
-                val missingRequiredArguments =
-                    _arguments.missingRequiredArguments { key ->
-                        key !in tempDeepLink.argumentsNames
-                    }
-                require(missingRequiredArguments.isEmpty()) {
-                    "Cannot set route \"$route\" for destination $this. " +
-                        "Following required arguments are missing: $missingRequiredArguments"
-                }
-
-                routeDeepLink = lazy { NavDeepLink.Builder().setUriPattern(tempRoute).build() }
-                id = tempRoute.hashCode()
-            }
-            field = route
-        }
-
-    /**
-     * This destination's unique route as a NavDeepLink.
-     *
-     * This deeplink must be kept private and segregated from the explicitly added public deeplinks
-     * to ensure that external users cannot deeplink into this destination with this routeDeepLink.
-     *
-     * This value is reassigned a new lazy value every time [route] is updated to ensure that any
-     * initialized lazy value is overwritten with the latest value.
-     */
-    private var routeDeepLink: Lazy<NavDeepLink>? = null
+    public actual var route: String? by impl::route
 
     public actual open val displayName: String
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) get() = idName ?: id.toString()
@@ -216,86 +178,17 @@ actual constructor(public actual val navigatorName: String) {
     }
 
     public actual fun addDeepLink(navDeepLink: NavDeepLink) {
-        val missingRequiredArguments =
-            _arguments.missingRequiredArguments { key -> key !in navDeepLink.argumentsNames }
-        require(missingRequiredArguments.isEmpty()) {
-            "Deep link ${navDeepLink.uriPattern} can't be used to open destination $this.\n" +
-                "Following required arguments are missing: $missingRequiredArguments"
-        }
-
-        deepLinks.add(navDeepLink)
+        impl.addDeepLink(navDeepLink)
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public actual fun matchRoute(route: String): DeepLinkMatch? {
-        val routeDeepLink = this.routeDeepLink?.value ?: return null
-
-        val uri = createRoute(route).toUri()
-
-        // includes matching args for path, query, and fragment
-        val matchingArguments = routeDeepLink.getMatchingArguments(uri, _arguments) ?: return null
-        val matchingPathSegments = routeDeepLink.calculateMatchingPathSegments(uri)
-        return DeepLinkMatch(
-            this,
-            matchingArguments,
-            routeDeepLink.isExactDeepLink,
-            matchingPathSegments,
-            false,
-            -1
-        )
+        return impl.matchRoute(route)
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public actual open fun matchDeepLink(navDeepLinkRequest: NavDeepLinkRequest): DeepLinkMatch? {
-        if (deepLinks.isEmpty()) {
-            return null
-        }
-        var bestMatch: DeepLinkMatch? = null
-        for (deepLink in deepLinks) {
-            val uri = navDeepLinkRequest.uri
-            // first filter out invalid matches
-            if (!deepLink.matches(navDeepLinkRequest)) continue
-            // then look for positive matches
-            val matchingArguments =
-                // includes matching args for path, query, and fragment
-                if (uri != null) deepLink.getMatchingArguments(uri, _arguments) else null
-            val matchingPathSegments = deepLink.calculateMatchingPathSegments(uri)
-            val requestAction = navDeepLinkRequest.action
-            val matchingAction = requestAction != null && requestAction == deepLink.action
-            val mimeType = navDeepLinkRequest.mimeType
-            val mimeTypeMatchLevel =
-                if (mimeType != null) deepLink.getMimeTypeMatchRating(mimeType) else -1
-            if (
-                matchingArguments != null ||
-                    ((matchingAction || mimeTypeMatchLevel > -1) &&
-                        hasRequiredArguments(deepLink, uri, _arguments))
-            ) {
-                val newMatch =
-                    DeepLinkMatch(
-                        this,
-                        matchingArguments,
-                        deepLink.isExactDeepLink,
-                        matchingPathSegments,
-                        matchingAction,
-                        mimeTypeMatchLevel
-                    )
-                if (bestMatch == null || newMatch > bestMatch) {
-                    bestMatch = newMatch
-                }
-            }
-        }
-        return bestMatch
-    }
-
-    private fun hasRequiredArguments(
-        deepLink: NavDeepLink,
-        uri: Uri?,
-        arguments: Map<String, NavArgument>
-    ): Boolean {
-        val matchingArgs = deepLink.getMatchingPathAndQueryArgs(uri, arguments)
-        val missingRequiredArguments =
-            arguments.missingRequiredArguments { key -> !matchingArgs.read { contains(key) } }
-        return missingRequiredArguments.isEmpty()
+        return impl.matchDeepLink(navDeepLinkRequest)
     }
 
     /**
@@ -333,19 +226,7 @@ actual constructor(public actual val navigatorName: String) {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public actual fun hasRoute(route: String, arguments: SavedState?): Boolean {
-        // this matches based on routePattern
-        if (this.route == route) return true
-
-        // if no match based on routePattern, this means route contains filled in args or query
-        // params
-        val matchingDeepLink = matchRoute(route)
-
-        // if no matchingDeepLink or mismatching destination, return false directly
-        if (this != matchingDeepLink?.destination) return false
-
-        // Any args (partially or completely filled in) must exactly match between
-        // the route and entry's route.
-        return matchingDeepLink.hasMatchingArgs(arguments)
+        return impl.hasRoute(route, arguments)
     }
 
     /**
@@ -411,37 +292,17 @@ actual constructor(public actual val navigatorName: String) {
     }
 
     public actual fun addArgument(argumentName: String, argument: NavArgument) {
-        _arguments[argumentName] = argument
+        impl.addArgument(argumentName, argument)
     }
 
     public actual fun removeArgument(argumentName: String) {
-        _arguments.remove(argumentName)
+        impl.removeArgument(argumentName)
     }
 
     @Suppress("NullableCollection") // Needed for nullable savedState
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public actual fun addInDefaultArgs(args: SavedState?): SavedState? {
-        if (args == null && _arguments.isEmpty()) {
-            return null
-        }
-        val defaultArgs = savedState()
-        for ((key, value) in _arguments) {
-            value.putDefaultValue(key, defaultArgs)
-        }
-        if (args != null) {
-            defaultArgs.write { putAll(args) }
-            // Don't verify unknown default values - these default values are only available
-            // during deserialization for safe args.
-            for ((key, value) in _arguments) {
-                if (!value.isDefaultValueUnknown) {
-                    require(value.verify(key, defaultArgs)) {
-                        "Wrong argument type for '$key' in argument savedState. ${value.type.name} " +
-                            "expected."
-                    }
-                }
-            }
-        }
-        return defaultArgs
+        return impl.addInDefaultArgs(args)
     }
 
     /**
@@ -476,7 +337,7 @@ actual constructor(public actual val navigatorName: String) {
 
             matcher.appendReplacement(builder, /* replacement= */ "")
 
-            val argType = _arguments[argName]?.type
+            val argType = arguments[argName]?.type
             val argValue =
                 if (argType == NavType.ReferenceType) {
                     context.getString(/* resId= */ NavType.ReferenceType[bundle!!, argName] as Int)
@@ -522,9 +383,9 @@ actual constructor(public actual val navigatorName: String) {
                 actions.keyIterator().asSequence().all { actions.get(it) == other.actions.get(it) }
 
         val equalArguments =
-            _arguments.size == other._arguments.size &&
-                _arguments.asSequence().all {
-                    other._arguments.containsKey(it.key) && other._arguments[it.key] == it.value
+            arguments.size == other.arguments.size &&
+                arguments.asSequence().all {
+                    other.arguments.containsKey(it.key) && other.arguments[it.key] == it.value
                 }
 
         return id == other.id &&
@@ -548,9 +409,9 @@ actual constructor(public actual val navigatorName: String) {
             result = 31 * result + value.navOptions.hashCode()
             value.defaultArguments?.read { result = 31 * result + contentDeepHashCode() }
         }
-        _arguments.keys.forEach {
+        arguments.keys.forEach {
             result = 31 * result + it.hashCode()
-            result = 31 * result + _arguments[it].hashCode()
+            result = 31 * result + arguments[it].hashCode()
         }
         return result
     }
@@ -623,17 +484,14 @@ actual constructor(public actual val navigatorName: String) {
          */
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public fun getDisplayName(context: Context, id: Int): String {
+        public actual fun getDisplayName(context: NavContext, id: Int): String {
             // aapt-generated IDs have the high byte nonzero,
             // so anything below that cannot be a valid resource id
             return if (id <= 0x00FFFFFF) {
                 id.toString()
-            } else
-                try {
-                    context.resources.getResourceName(id)
-                } catch (e: Resources.NotFoundException) {
-                    id.toString()
-                }
+            } else {
+                context.getResourceName(id)
+            }
         }
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

@@ -20,15 +20,16 @@ import androidx.savedstate.SavedState
 
 /** A [Navigator] that only supports creating destinations. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public expect class NoOpNavigator() : Navigator<NavDestination> {
-    override fun createDestination(): NavDestination
+@Navigator.Name("NoOp")
+public class NoOpNavigator() : Navigator<NavDestination>("NoOp") {
+    override fun createDestination(): NavDestination = NavDestination(this)
 
     override fun navigate(
         destination: NavDestination,
         args: SavedState?,
         navOptions: NavOptions?,
         navigatorExtras: Extras?
-    ): NavDestination
+    ): NavDestination = destination
 
-    override fun popBackStack(): Boolean
+    override fun popBackStack(): Boolean = true
 }

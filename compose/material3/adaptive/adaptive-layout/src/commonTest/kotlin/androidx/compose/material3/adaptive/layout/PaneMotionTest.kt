@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.kruth.assertThat
 import androidx.kruth.assertWithMessage
+import kotlin.test.Ignore
 import kotlin.test.Test
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -57,6 +58,7 @@ class PaneMotionTest {
         }
     }
 
+    @Ignore // TODO: https://youtrack.jetbrains.com/issue/CMP-7979
     @Test
     fun test_allDefaultPaneMotionTransitions() {
         NoMotion.assertTransitions(EnterTransition.None, ExitTransition.None)

@@ -37,7 +37,7 @@ public expect abstract class NavUri {
  * @param uriString an RFC 2396-compliant, encoded URI
  * @return NavUri for this given uri string
  */
-public fun parseStringAsNavUri(uriString: String): NavUri = NavUriUtils.parse(uriString)
+public fun NavUri(uriString: String): NavUri = NavUriUtils.parse(uriString)
 
 internal expect object NavUriUtils {
 

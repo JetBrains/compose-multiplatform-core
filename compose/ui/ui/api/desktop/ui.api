@@ -3585,7 +3585,6 @@ public abstract interface class androidx/compose/ui/platform/PlatformTextInputIn
 }
 
 public abstract interface class androidx/compose/ui/platform/PlatformTextInputMethodRequest {
-	public abstract fun getEditProcessor ()Landroidx/compose/ui/text/input/EditProcessor;
 	public abstract fun getEditText ()Lkotlin/jvm/functions/Function1;
 	public abstract fun getFocusedRectInRoot ()Lkotlinx/coroutines/flow/Flow;
 	public abstract fun getImeOptions ()Landroidx/compose/ui/text/input/ImeOptions;

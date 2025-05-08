@@ -341,6 +341,7 @@ private constructor(provider: LifecycleOwner, private val enforceMainThread: Boo
          * present.
          */
         @VisibleForTesting
+        @Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
         public actual fun createUnsafe(owner: LifecycleOwner): LifecycleRegistry {
             return LifecycleRegistry(owner, false)
         }

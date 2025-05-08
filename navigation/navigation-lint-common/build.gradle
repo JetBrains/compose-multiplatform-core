@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,21 +21,34 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+
 import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
-    id("kotlin")
+    id("AndroidXComposePlugin")
+    id("com.android.library")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    compileOnly(libs.androidLintMinApi)
-    compileOnly(libs.kotlinStdlib)
+    implementation(libs.kotlinStdlib)
+
+    compileOnly(project(":annotation:annotation-sampled"))
+    implementation(project(":compose:ui:ui-test-accessibility"))
+    implementation("androidx.activity:activity-compose:1.3.0")
+    implementation(libs.espressoAccessibility)
+}
+
+android {
+    compileSdk = 35
+    namespace = "androidx.compose.ui.test.accessibility.samples"
 }
 
 androidx {
-    name = "Navigation Lint Utils"
-    type = SoftwareType.LINT
-    inceptionYear = "2024"
-    description = "Lint utils for Navigation lint checks"
+    name = "Compose Accessibility Testing Samples"
+    type = SoftwareType.SAMPLES
+    inceptionYear = "2025"
+    description = "Contains the sample code for the Androidx Compose UI Test Accessibility library"
 }

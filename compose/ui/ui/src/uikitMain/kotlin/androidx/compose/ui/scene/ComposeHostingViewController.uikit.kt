@@ -19,7 +19,6 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -91,7 +90,7 @@ import platform.UIKit.UIWindow
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 
-@OptIn(BetaInteropApi::class, ExperimentalComposeApi::class)
+@OptIn(BetaInteropApi::class)
 @ExportObjCClass
 internal class ComposeHostingViewController(
     private val configuration: ComposeUIViewControllerConfiguration,
@@ -105,9 +104,6 @@ internal class ComposeHostingViewController(
         transparentForTouches = false,
         useOpaqueConfiguration = configuration.opaque,
     )
-    private val interopContainerView = UIView().also {
-        rootView.embedSubview(it)
-    }
     private var mediator: ComposeSceneMediator? = null
     private val windowContext = PlatformWindowContext()
     private var layers: UIKitComposeSceneLayersHolder? = null
@@ -212,7 +208,7 @@ internal class ComposeHostingViewController(
 
         updateInterfaceOrientationState()
 
-        layers?.window = window
+        layers?.containerView = layersContainerView()
         windowContext.setWindowContainer(windowContainer)
         updateMotionSpeed()
     }
@@ -247,6 +243,11 @@ internal class ComposeHostingViewController(
         mediator?.sceneDidAppear()
         layers?.viewDidAppear()
         configuration.delegate.viewDidAppear(animated)
+
+        // Because the container view can change during the modal transition animation,
+        // the gesture handlers and layers view are added back when the animation ends.
+        backGestureDispatcher.onDidMoveToWindow(view.window, rootView)
+        layers?.containerView = layersContainerView()
     }
 
     @Suppress("DEPRECATION")
@@ -256,6 +257,8 @@ internal class ComposeHostingViewController(
         mediator?.sceneWillDisappear()
         layers?.viewWillDisappear()
         configuration.delegate.viewWillDisappear(animated)
+
+        backGestureDispatcher.onDidMoveToWindow(null, rootView)
     }
 
     @Suppress("DEPRECATION")
@@ -285,16 +288,13 @@ internal class ComposeHostingViewController(
                 mediator?.render(canvas.asComposeCanvas(), nanoTime)
             }
         )
-        rootView.updateMetalView(metalView, ::onDidMoveToWindow)
         metalView.canBeOpaque = configuration.opaque
 
         val layers = UIKitComposeSceneLayersHolder(windowContext, configuration.parallelRendering)
-        layers.window = rootView.window
+        layers.containerView = layersContainerView()
         this.layers = layers
 
         mediator = ComposeSceneMediator(
-            parentView = rootView,
-            interopContainerView = interopContainerView,
             onFocusBehavior = configuration.onFocusBehavior,
             focusStack = focusStack,
             windowContext = windowContext,
@@ -305,6 +305,10 @@ internal class ComposeHostingViewController(
             },
             backGestureDispatcher = backGestureDispatcher
         ).also { mediator ->
+            rootView.embedSubview(mediator.inputView)
+            rootView.updateMetalView(metalView, ::onDidMoveToWindow)
+            rootView.embedSubview(mediator.overlayView)
+
             mediator.updateInteractionRect()
             mediator.setContent {
                 ProvideContainerCompositionLocals(content)
@@ -317,6 +321,7 @@ internal class ComposeHostingViewController(
             }
         }
 
+        backGestureDispatcher.onDidMoveToWindow(view.window, rootView)
         onAccessibilityChanged()
     }
 
@@ -332,6 +337,7 @@ internal class ComposeHostingViewController(
         )
 
         rootView.updateMetalView(metalView = null)
+        backGestureDispatcher.onDidMoveToWindow(null, rootView)
 
         mediator?.dispose()
         mediator = null
@@ -347,6 +353,21 @@ internal class ComposeHostingViewController(
     override fun didReceiveMemoryWarning() {
         GC.collect()
         super.didReceiveMemoryWarning()
+    }
+
+    // The Layers view is a full screen overlay of the current content. To do this, the layers
+    // container view should be placed as close as possible to the current UIWindow.
+    // If another view controller is presented modaly, UIWindow changes accessibility elements,
+    // so the layers view can't be accessed by the iOS accessibility engine.
+    // Find the next view in the hierarchy. This view is unique to the root and each modal
+    // view controller.
+    private fun layersContainerView(): UIView? {
+        val window = view.window ?: return null
+        var iteratingView = view.superview
+        while (iteratingView != null && iteratingView.superview != window) {
+            iteratingView = iteratingView.superview
+        }
+        return iteratingView
     }
 
     /**

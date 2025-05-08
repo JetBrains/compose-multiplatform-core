@@ -16,6 +16,7 @@
 package androidx.navigation
 
 import androidx.annotation.CallSuper
+import androidx.annotation.RestrictTo
 import androidx.savedstate.SavedState
 
 /**
@@ -39,7 +40,37 @@ import androidx.savedstate.SavedState
  *   about an intent to navigate to other activities, or a fragment class name to instantiate and
  *   swap to a new fragment.
  */
-public expect abstract class Navigator<D : NavDestination>() {
+public abstract class Navigator<D : NavDestination> {
+    public constructor() {
+        _name = null
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public constructor(name: String) {
+        _name = name
+    }
+
+    private val _name: String?
+
+    internal val name: String
+        get() = _name ?: this::class.simpleName!!.removeSuffix("Navigator")
+
+    /**
+     * This annotation should be added to each Navigator subclass in Android to denote the default
+     * name used to register the Navigator with a [NavigatorProvider].
+     *
+     * On all non-Android platforms, this annotation will do nothing and you should set the name via
+     * the constructor or it will default to the className with any "Navigator" suffix removed.
+     * (i.e. DestinationNavigator will become Destination.)
+     *
+     * @see NavigatorProvider.addNavigator
+     * @see NavigatorProvider.getNavigator
+     */
+    @Retention(AnnotationRetention.RUNTIME)
+    @Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.CLASS)
+    public annotation class Name(val value: String)
+
+    private var _state: NavigatorState? = null
 
     /**
      * The state of the Navigator is the communication conduit between the Navigator and the
@@ -52,20 +83,28 @@ public expect abstract class Navigator<D : NavDestination>() {
      * @throws IllegalStateException if [isAttached] is `false`
      */
     protected val state: NavigatorState
+        get() =
+            checkNotNull(_state) {
+                "You cannot access the Navigator's state until the Navigator is attached"
+            }
 
     /**
      * Whether this Navigator is actively being used by a [NavController].
      *
      * This is set to `true` when [onAttach] is called.
      */
-    public var isAttached: Boolean
+    public var isAttached: Boolean = false
         private set
 
     /**
      * Indicator that this Navigator is actively being used by a [NavController]. This is called
      * when the NavController's state is ready to be restored.
      */
-    @CallSuper public open fun onAttach(state: NavigatorState)
+    @CallSuper
+    public open fun onAttach(state: NavigatorState) {
+        _state = state
+        isAttached = true
+    }
 
     /**
      * Construct a new NavDestination associated with this Navigator.
@@ -93,14 +132,39 @@ public expect abstract class Navigator<D : NavDestination>() {
         entries: List<NavBackStackEntry>,
         navOptions: NavOptions?,
         navigatorExtras: Extras?
-    )
+    ) {
+        entries
+            .asSequence()
+            .map { backStackEntry ->
+                val destination = backStackEntry.destination as? D ?: return@map null
+                val navigatedToDestination =
+                    navigate(destination, backStackEntry.arguments, navOptions, navigatorExtras)
+                when (navigatedToDestination) {
+                    null -> null
+                    destination -> backStackEntry
+                    else -> {
+                        state.createBackStackEntry(
+                            navigatedToDestination,
+                            navigatedToDestination.addInDefaultArgs(backStackEntry.arguments)
+                        )
+                    }
+                }
+            }
+            .filterNotNull()
+            .forEach { backStackEntry -> state.push(backStackEntry) }
+    }
 
     /**
      * Informational callback indicating that the given [backStackEntry] has been affected by a
      * [NavOptions.shouldLaunchSingleTop] operation. The entry provided is a new [NavBackStackEntry]
      * instance with all the previous state of the old entry and possibly new arguments.
      */
-    @Suppress("UNCHECKED_CAST") public open fun onLaunchSingleTop(backStackEntry: NavBackStackEntry)
+    @Suppress("UNCHECKED_CAST")
+    public open fun onLaunchSingleTop(backStackEntry: NavBackStackEntry) {
+        val destination = backStackEntry.destination as? D ?: return
+        navigate(destination, null, navOptions { launchSingleTop = true }, null)
+        state.onLaunchSingleTop(backStackEntry)
+    }
 
     /**
      * Navigate to a destination.
@@ -124,7 +188,7 @@ public expect abstract class Navigator<D : NavDestination>() {
         args: SavedState?,
         navOptions: NavOptions?,
         navigatorExtras: Extras?
-    ): NavDestination?
+    ): NavDestination? = destination
 
     /**
      * Attempt to pop this navigator's back stack, performing the appropriate navigation.
@@ -137,7 +201,24 @@ public expect abstract class Navigator<D : NavDestination>() {
      *   saved to later be restored by a call to [navigate] with [NavOptions.shouldRestoreState].
      */
     @Suppress("UNUSED_PARAMETER")
-    public open fun popBackStack(popUpTo: NavBackStackEntry, savedState: Boolean)
+    public open fun popBackStack(popUpTo: NavBackStackEntry, savedState: Boolean) {
+        val backStack = state.backStack.value
+        check(backStack.contains(popUpTo)) {
+            "popBackStack was called with $popUpTo which does not exist in back stack $backStack"
+        }
+        val iterator = backStack.listIterator(backStack.size)
+        var lastPoppedEntry: NavBackStackEntry? = null
+        do {
+            if (!popBackStack()) {
+                // Quit early if popBackStack() returned false
+                break
+            }
+            lastPoppedEntry = iterator.previous()
+        } while (lastPoppedEntry != popUpTo)
+        if (lastPoppedEntry != null) {
+            state.pop(lastPoppedEntry, savedState)
+        }
+    }
 
     /**
      * Attempt to pop this navigator's back stack, performing the appropriate navigation.
@@ -149,13 +230,15 @@ public expect abstract class Navigator<D : NavDestination>() {
      * @return `true` if pop was successful
      */
     // TODO Deprecate this method once all call sites are removed
-    public open fun popBackStack(): Boolean
+    public open fun popBackStack(): Boolean = true
 
     /**
      * Called to ask for a [SavedState] representing the Navigator's state. This will be restored in
      * [onRestoreState].
      */
-    public open fun onSaveState(): SavedState?
+    public open fun onSaveState(): SavedState? {
+        return null
+    }
 
     /**
      * Restore any state previously saved in [onSaveState]. This will be called before any calls to
@@ -166,7 +249,7 @@ public expect abstract class Navigator<D : NavDestination>() {
      *
      * @param savedState The state previously saved
      */
-    public open fun onRestoreState(savedState: SavedState)
+    public open fun onRestoreState(savedState: SavedState) {}
 
     /**
      * Interface indicating that this class should be passed to its respective [Navigator] to enable

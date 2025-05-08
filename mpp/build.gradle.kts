@@ -117,7 +117,8 @@ val libraryToComponents = mapOf(
         ComposeComponent(":performance:performance-annotation", viewModelPlatforms),
     ),
     "SAVEDSTATE" to listOf(
-        ComposeComponent(":savedstate:savedstate", viewModelPlatforms),
+        ComposeComponent(":savedstate:savedstate", supportedPlatforms = ComposePlatforms.ALL_AOSP),
+        ComposeComponent(":savedstate:savedstate-compose", supportedPlatforms = ComposePlatforms.ALL),
     ),
     "WINDOW" to listOf(
         ComposeComponent(":window:window-core", viewModelPlatforms),

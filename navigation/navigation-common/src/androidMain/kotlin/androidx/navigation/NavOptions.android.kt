@@ -19,7 +19,6 @@ import androidx.annotation.AnimRes
 import androidx.annotation.AnimatorRes
 import androidx.annotation.IdRes
 import androidx.navigation.NavDestination.Companion.createRoute
-import androidx.navigation.NavOptions.Builder
 import androidx.navigation.serialization.generateHashCode
 import kotlin.reflect.KClass
 import kotlinx.serialization.InternalSerializationApi
@@ -38,7 +37,7 @@ internal constructor(
      * @see isPopUpToInclusive
      * @see shouldPopUpToSaveState
      */
-    @field:IdRes @get:IdRes @param:IdRes public val popUpToId: Int,
+    @field:IdRes @get:IdRes @param:IdRes public actual val popUpToId: Int,
     private val popUpToInclusive: Boolean,
     private val popUpToSaveState: Boolean,
     /**

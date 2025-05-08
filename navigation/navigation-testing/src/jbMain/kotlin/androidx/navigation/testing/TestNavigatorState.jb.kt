@@ -23,10 +23,12 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination
 import androidx.navigation.NavViewModelStoreProvider
 import androidx.navigation.NavigatorState
+import androidx.navigation.internal.NavContext
 import androidx.savedstate.SavedState
 import androidx.savedstate.savedState
 
 public actual class TestNavigatorState actual constructor() : NavigatorState() {
+    internal val navContext = NavContext()
 
     private val viewModelStoreProvider = object : NavViewModelStoreProvider {
         private val viewModelStores = mutableMapOf<String, ViewModelStore>()
@@ -40,12 +42,15 @@ public actual class TestNavigatorState actual constructor() : NavigatorState() {
     private val savedStates = mutableMapOf<String, SavedState>()
     private val entrySavedState = mutableMapOf<NavBackStackEntry, Boolean>()
 
-    override fun createBackStackEntry(
+    public override fun createBackStackEntry(
         destination: NavDestination,
         arguments: SavedState?
     ) = NavBackStackEntry.create(
-        destination, arguments,
-        Lifecycle.State.RESUMED, viewModelStoreProvider
+        context = navContext,
+        destination = destination,
+        arguments = arguments,
+        hostLifecycleState = Lifecycle.State.RESUMED,
+        viewModelStoreProvider = viewModelStoreProvider
     )
 
     /**
@@ -58,30 +63,34 @@ public actual class TestNavigatorState actual constructor() : NavigatorState() {
                 "that was previously popped with popBackStack(previouslySavedEntry, true)"
         }
         return NavBackStackEntry.create(
-            previouslySavedEntry.destination, previouslySavedEntry.arguments,
-            Lifecycle.State.RESUMED, viewModelStoreProvider,
-            previouslySavedEntry.id, savedState
+            context = navContext,
+            destination = previouslySavedEntry.destination,
+            arguments = previouslySavedEntry.arguments,
+            hostLifecycleState = Lifecycle.State.RESUMED,
+            viewModelStoreProvider = viewModelStoreProvider,
+            id = previouslySavedEntry.id,
+            savedState = savedState
         )
     }
 
-    override fun push(backStackEntry: NavBackStackEntry) {
+    public override fun push(backStackEntry: NavBackStackEntry) {
         super.push(backStackEntry)
         updateMaxLifecycle()
     }
 
-    override fun pop(popUpTo: NavBackStackEntry, saveState: Boolean) {
+    public override fun pop(popUpTo: NavBackStackEntry, saveState: Boolean) {
         val beforePopList = backStack.value
         val poppedList = beforePopList.subList(beforePopList.indexOf(popUpTo), beforePopList.size)
         super.pop(popUpTo, saveState)
         updateMaxLifecycle(poppedList, saveState)
     }
 
-    override fun popWithTransition(popUpTo: NavBackStackEntry, saveState: Boolean) {
+    public override fun popWithTransition(popUpTo: NavBackStackEntry, saveState: Boolean) {
         super.popWithTransition(popUpTo, saveState)
         entrySavedState[popUpTo] = saveState
     }
 
-    override fun markTransitionComplete(entry: NavBackStackEntry) {
+    public override fun markTransitionComplete(entry: NavBackStackEntry) {
         val savedState = entrySavedState[entry] == true
         super.markTransitionComplete(entry)
         entrySavedState.remove(entry)
@@ -92,7 +101,7 @@ public actual class TestNavigatorState actual constructor() : NavigatorState() {
         }
     }
 
-    override fun prepareForTransition(entry: NavBackStackEntry) {
+    public override fun prepareForTransition(entry: NavBackStackEntry) {
         super.prepareForTransition(entry)
         entry.maxLifecycle = Lifecycle.State.STARTED
     }

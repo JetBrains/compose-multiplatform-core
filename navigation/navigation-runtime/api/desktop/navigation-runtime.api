@@ -1,8 +1,8 @@
 public class androidx/navigation/NavController {
 	public static final field Companion Landroidx/navigation/NavController$Companion;
+	public static final field KEY_DEEP_LINK_HANDLED Ljava/lang/String;
 	public fun <init> ()V
 	public fun addOnDestinationChangedListener (Landroidx/navigation/NavController$OnDestinationChangedListener;)V
-	public final fun clearBackStack (I)Z
 	public final fun clearBackStack (Ljava/lang/Object;)Z
 	public final fun clearBackStack (Ljava/lang/String;)Z
 	public final fun clearBackStack (Lkotlin/reflect/KClass;)Z
@@ -40,7 +40,8 @@ public class androidx/navigation/NavController {
 	public static synthetic fun navigate$default (Landroidx/navigation/NavController;Ljava/lang/String;Landroidx/navigation/NavOptions;Landroidx/navigation/Navigator$Extras;ILjava/lang/Object;)V
 	public fun navigateUp ()Z
 	public fun popBackStack ()Z
-	public final fun popBackStack (IZZ)Z
+	public fun popBackStack (IZ)Z
+	public fun popBackStack (IZZ)Z
 	public final fun popBackStack (Ljava/lang/Object;Z)Z
 	public final fun popBackStack (Ljava/lang/Object;ZZ)Z
 	public final fun popBackStack (Ljava/lang/String;Z)Z

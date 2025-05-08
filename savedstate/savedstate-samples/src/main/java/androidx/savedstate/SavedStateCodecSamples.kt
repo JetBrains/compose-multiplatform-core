@@ -24,8 +24,6 @@ import androidx.annotation.Sampled
 import androidx.savedstate.serialization.SavedStateConfiguration
 import androidx.savedstate.serialization.decodeFromSavedState
 import androidx.savedstate.serialization.encodeToSavedState
-import androidx.savedstate.serialization.serializers.CharSequenceSerializer
-import androidx.savedstate.serialization.serializers.IBinderSerializer
 import androidx.savedstate.serialization.serializers.JavaSerializableSerializer
 import androidx.savedstate.serialization.serializers.ParcelableSerializer
 import androidx.savedstate.serialization.serializers.SavedStateSerializer
@@ -157,14 +155,6 @@ fun sizeFSerializer() {
     data class MyModel(@Serializable(with = SizeFSerializer::class) val sizeF: android.util.SizeF)
 }
 
-@Sampled
-fun charSequenceSerializer() {
-    @Serializable
-    data class MyModel(
-        @Serializable(with = CharSequenceSerializer::class) val charSequence: CharSequence
-    )
-}
-
 private class MyJavaSerializable : java.io.Serializable
 
 private class MyJavaSerializableSerializer : JavaSerializableSerializer<MyJavaSerializable>()
@@ -195,14 +185,6 @@ fun parcelableSerializer() {
     @Serializable
     data class MyModel(
         @Serializable(with = MyParcelableSerializer::class) val parcelable: MyParcelable
-    )
-}
-
-@Sampled
-fun iBinderSerializer() {
-    @Serializable
-    data class MyModel(
-        @Serializable(with = IBinderSerializer::class) val binder: android.os.IBinder
     )
 }
 

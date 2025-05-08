@@ -24,16 +24,11 @@ import androidx.build.SupportConfig.DEFAULT_MIN_SDK_VERSION
 import androidx.build.SupportConfig.INSTRUMENTATION_RUNNER
 import androidx.build.SupportConfig.TARGET_SDK_VERSION
 import androidx.build.buildInfo.addCreateLibraryBuildInfoFileTasks
-import androidx.build.checkapi.JavaApiTaskConfig
-import androidx.build.checkapi.KmpApiTaskConfig
-import androidx.build.checkapi.LibraryApiTaskConfig
-import androidx.build.checkapi.configureProjectForApiTasks
 import androidx.build.dependencies.KOTLIN_VERSION
 import androidx.build.docs.AndroidXKmpDocsImplPlugin
 import androidx.build.gradle.isRoot
 import androidx.build.license.configureExternalDependencyLicenseCheck
 import androidx.build.resources.configurePublicResourcesStub
-import androidx.build.sbom.validateAllArchiveInputsRecognized
 import androidx.build.studio.StudioTask
 import androidx.build.testConfiguration.ModuleInfoGenerator
 import androidx.build.testConfiguration.TestModule
@@ -56,7 +51,7 @@ import com.android.build.gradle.TestPlugin
 import com.android.build.gradle.TestedExtension
 import java.io.File
 import java.time.Duration
-import java.util.Locale
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
@@ -86,13 +81,12 @@ import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.dsl.HasConfigurableKotlinCompilerOptions
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithSimulatorTests
 import org.jetbrains.kotlin.gradle.tasks.CInteropProcess
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -176,32 +170,9 @@ class AndroidXImplPlugin @Inject constructor(val componentFactory: SoftwareCompo
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         project.pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
             project.extensions.configure(KotlinMultiplatformExtension::class.java) {
-                val commonOrJvmPlatforms = setOf(
-                    KotlinPlatformType.common,
-                    KotlinPlatformType.jvm,
-                    KotlinPlatformType.androidJvm
-                )
-
-                /**
-                 * Here we configure the language version.
-                 * For klibs targets we can't use K1 anymore, so we switch to K2.
-                 * For k/jvm targets we still use K1 (LV 1_9).
-                 * For common metadata compilations the LV is 1_9 too, because otherwise
-                 * k/jvm compilations do not work:
-                 * `The language version of the dependent source set must be greater than or equal to that of its dependency.`
-                 * It happens because jvmMain is considered a common (metadata).
-                 */
-                it.targets.all { target ->
-                    val lv = if (target.platformType in commonOrJvmPlatforms) {
-                        org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
-                    } else {
-                        org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1
-                    }
-
-                    (target as? HasConfigurableKotlinCompilerOptions<*>)?.compilerOptions?.languageVersion?.set(lv)
-                }
                 it.compilerOptions {
-                    apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
+                    languageVersion.set(KotlinVersion.KOTLIN_2_0)
+                    apiVersion.set(KotlinVersion.KOTLIN_2_0)
                 }
             }
         }

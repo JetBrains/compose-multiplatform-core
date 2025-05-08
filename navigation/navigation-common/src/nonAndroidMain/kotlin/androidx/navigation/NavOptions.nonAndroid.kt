@@ -27,16 +27,7 @@ public actual class NavOptions
 internal constructor(
     private val singleTop: Boolean,
     private val restoreState: Boolean,
-    /**
-     * The destination to pop up to before navigating. When set, all non-matching destinations
-     * should be popped from the back stack.
-     *
-     * @return the destinationId to pop up to, clearing all intervening destinations
-     * @see Builder.setPopUpTo
-     * @see isPopUpToInclusive
-     * @see shouldPopUpToSaveState
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val popUpToId: Int,
+    public actual val popUpToId: Int,
     private val popUpToInclusive: Boolean,
     private val popUpToSaveState: Boolean,
 ) {

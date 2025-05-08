@@ -16,11 +16,16 @@
 
 package androidx.compose.ui.backhandler
 
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.width
 
 internal fun BackGestureDispatcher.handleBackKeyEvent(
     event: KeyEvent,
@@ -33,4 +38,34 @@ internal fun BackGestureDispatcher.handleBackKeyEvent(
     } else {
         return false
     }
+}
+
+/*
+ FIXME: Figure out why calling [BackEventCompat] constructor from uikitMain causes errors
+  e: Cannot infer type for this parameter. Please specify it explicitly.
+  e: Unresolved reference. None of the following candidates is applicable because of a receiver type mismatch:
+  fun <T, R> DeepRecursiveFunction<T, R>.invoke(value: T): R
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+internal fun backEventCompat(
+    eventOffset: Offset,
+    leftEdge: Boolean,
+    touch: DpOffset,
+    bounds: DpRect
+): BackEventCompat {
+    val progress = if (leftEdge) {
+        touch.x / bounds.width
+    } else {
+        (bounds.width - touch.x) / bounds.width
+    }
+    return BackEventCompat(
+        touchX = eventOffset.x,
+        touchY = eventOffset.y,
+        progress = progress,
+        swipeEdge = if (leftEdge) {
+            BackEventCompat.EDGE_LEFT
+        } else {
+            BackEventCompat.EDGE_RIGHT
+        }
+    )
 }

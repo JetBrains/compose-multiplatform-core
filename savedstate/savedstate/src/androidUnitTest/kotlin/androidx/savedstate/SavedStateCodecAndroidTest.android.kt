@@ -27,12 +27,9 @@ import android.util.SizeF
 import android.util.SparseArray
 import androidx.core.os.bundleOf
 import androidx.kruth.assertThat
-import androidx.kruth.assertThrows
 import androidx.savedstate.SavedStateCodecTestUtils.encodeDecode
 import androidx.savedstate.serialization.decodeFromSavedState
 import androidx.savedstate.serialization.encodeToSavedState
-import androidx.savedstate.serialization.serializers.CharSequenceSerializer
-import androidx.savedstate.serialization.serializers.IBinderSerializer
 import androidx.savedstate.serialization.serializers.JavaSerializableSerializer
 import androidx.savedstate.serialization.serializers.ParcelableSerializer
 import androidx.savedstate.serialization.serializers.SavedStateSerializer
@@ -46,7 +43,6 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ArraySerializer
-import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -156,10 +152,7 @@ internal class SavedStateCodecAndroidTest : RobolectricTest() {
 
     @Test
     fun interfaceTypes() {
-        @Serializable
-        data class CharSequenceContainer(
-            @Serializable(with = CharSequenceSerializer::class) val value: CharSequence
-        )
+        @Serializable data class CharSequenceContainer(val value: CharSequence)
         CharSequenceContainer("foo").encodeDecode {
             assertThat(size()).isEqualTo(1)
             assertThat(getCharSequence("value")).isEqualTo("foo")
@@ -188,12 +181,9 @@ internal class SavedStateCodecAndroidTest : RobolectricTest() {
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            @Serializable
-            data class IBinderContainer(
-                @Serializable(with = IBinderSerializer::class) val value: IBinder
-            )
+            @Serializable data class IBinderContainer(val value: IBinder)
             val binder = Binder("foo")
-            IBinderContainer(binder).encodeDecode {
+            IBinderContainer(binder).encodeDecode(doMarshalling = false) {
                 assertThat(size()).isEqualTo(1)
                 assertThat(getBinder("value")).isEqualTo(binder)
             }
@@ -228,7 +218,7 @@ internal class SavedStateCodecAndroidTest : RobolectricTest() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             @Serializable data class IBinderContainer(val value: IBinder)
             val binder = Binder("foo")
-            IBinderContainer(binder).encodeDecode {
+            IBinderContainer(binder).encodeDecode(doMarshalling = false) {
                 assertThat(size()).isEqualTo(1)
                 assertThat(getBinder("value")).isEqualTo(binder)
             }
@@ -259,22 +249,6 @@ internal class SavedStateCodecAndroidTest : RobolectricTest() {
         ParcelableContainer(myParcelable).encodeDecode {
             assertThat(size()).isEqualTo(1)
             assertThat(getParcelable<MyParcelable>("value")).isEqualTo(myParcelable)
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            @Serializable
-            data class IBinderContainer(
-                @Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
-                @Serializable(with = IBinderSerializer::class)
-                val value: Binder
-            )
-            val binder = Binder("foo")
-            IBinderContainer(binder).encodeDecode {
-                assertThat(size()).isEqualTo(1)
-                assertThat(getBinder("value")).isEqualTo(binder)
-            }
-        } else {
-            error("VERSION.SDK_INT < Q")
         }
     }
 
@@ -547,23 +521,6 @@ internal class SavedStateCodecAndroidTest : RobolectricTest() {
     fun collectionTypesWithConcreteElement() {
         @Suppress("ArrayInDataClass")
         @Serializable
-        data class CharSequenceArrayContainer(
-            @Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
-            val value: Array<@Serializable(with = CharSequenceSerializer::class) StringBuilder>
-        )
-        val myCharSequenceArray = arrayOf<StringBuilder>(StringBuilder("foo"), StringBuilder("bar"))
-        // `Bundle.getCharSequenceArray()` returns a `CharSequence[]` and the actual element type
-        // is not being retained after parcel/unparcel so the plugin-generated serializer will
-        // get `ClassCastException` when trying to cast it back to `Array<StringBuilder>`.
-        assertThrows(ClassCastException::class) {
-            CharSequenceArrayContainer(myCharSequenceArray).encodeDecode {
-                assertThat(size()).isEqualTo(1)
-                assertThat(getCharSequenceArray("value")).isEqualTo(myCharSequenceArray)
-            }
-        }
-
-        @Suppress("ArrayInDataClass")
-        @Serializable
         data class ParcelableArrayContainer(
             val value: Array<@Serializable(with = MyParcelableSerializer::class) MyParcelable>
         )
@@ -581,37 +538,6 @@ internal class SavedStateCodecAndroidTest : RobolectricTest() {
                     assertThat(
                         getParcelableArray<MyParcelable>("value").contentEquals(myParcelableArray)
                     )
-                }
-            )
-
-        @Serializable
-        data class CharSequenceListContainer(
-            @Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
-            val value: List<@Serializable(with = CharSequenceSerializer::class) StringBuilder>
-        )
-        val myCharSequenceList = listOf(StringBuilder("foo"), StringBuilder("bar"))
-        myCharSequenceList.encodeDecode<List<CharSequence>>(
-            checkDecoded = { decoded, original -> assertCharSequenceList(decoded, original) },
-            checkEncoded = {
-                assertThat(size()).isEqualTo(1)
-                assertCharSequenceList(getCharSequenceList(""), myCharSequenceList)
-            }
-        )
-
-        CharSequenceListContainer(myCharSequenceList)
-            .encodeDecode(
-                checkDecoded = { decoded, original ->
-                    assertThat(original.value[0]::class).isEqualTo(StringBuilder::class)
-                    // This is similar to the `CharSequenceArray` case where the element type of the
-                    // restored List after parcel/unparcel is of `String` instead of
-                    // `StringBuilder`. However, since the element type of Lists is erased no
-                    // `CastCastException` is thrown when the plugin-generated serializer tried to
-                    // assign the restored list back to `List<StringBuilder>`.
-                    assertThat(decoded.value[0]::class).isEqualTo(String::class)
-                },
-                checkEncoded = {
-                    assertThat(size()).isEqualTo(1)
-                    assertCharSequenceList(getCharSequenceList("value"), myCharSequenceList)
                 }
             )
 

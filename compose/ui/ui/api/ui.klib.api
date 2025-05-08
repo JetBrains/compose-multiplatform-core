@@ -1022,8 +1022,6 @@ abstract interface androidx.compose.ui.platform/PlatformScreenReader { // androi
 }
 
 abstract interface androidx.compose.ui.platform/PlatformTextInputMethodRequest { // androidx.compose.ui.platform/PlatformTextInputMethodRequest|null[0]
-    abstract val editProcessor // androidx.compose.ui.platform/PlatformTextInputMethodRequest.editProcessor|{}editProcessor[0]
-        abstract fun <get-editProcessor>(): androidx.compose.ui.text.input/EditProcessor? // androidx.compose.ui.platform/PlatformTextInputMethodRequest.editProcessor.<get-editProcessor>|<get-editProcessor>(){}[0]
     abstract val editText // androidx.compose.ui.platform/PlatformTextInputMethodRequest.editText|{}editText[0]
         abstract fun <get-editText>(): kotlin/Function1<kotlin/Function1<androidx.compose.ui.text.input/TextEditingScope, kotlin/Unit>, kotlin/Unit> // androidx.compose.ui.platform/PlatformTextInputMethodRequest.editText.<get-editText>|<get-editText>(){}[0]
     abstract val focusedRectInRoot // androidx.compose.ui.platform/PlatformTextInputMethodRequest.focusedRectInRoot|{}focusedRectInRoot[0]

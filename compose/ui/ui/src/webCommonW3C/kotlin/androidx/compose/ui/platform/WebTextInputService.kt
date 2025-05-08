@@ -24,10 +24,20 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.PlatformTextInputService
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 
 internal interface InputAwareInputService {
     fun getOffset(rect: Rect): Offset
     fun processKeyboardEvent(keyboardEvent: KeyEvent): Boolean
+
+    /**
+     * @param rect is the rect in Compose coordinates
+     *
+     * @return a DpRect appropriate for positioning and laying out the HTML backing input
+     */
+    fun getNewGeometryForBackingInput(rect: Rect): DpRect
 }
 
 internal abstract class WebTextInputService : PlatformTextInputService, InputAwareInputService {
@@ -79,8 +89,9 @@ internal abstract class WebTextInputService : PlatformTextInputService, InputAwa
     }
 
     override fun notifyFocusedRect(rect: Rect) {
-        super.notifyFocusedRect(rect)
-        backingDomInput?.updateHtmlInputPosition(getOffset(rect))
+        val newRect = getNewGeometryForBackingInput(rect)
+        backingDomInput?.updateHtmlInputPosition(Offset(newRect.left.value, newRect.top.value))
+        backingDomInput?.updateHtmlInputGeometry(newRect.width.value.toInt(), newRect.height.value.toInt())
     }
 
 }

@@ -24,13 +24,17 @@ import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import kotlin.math.roundToInt
 import kotlinx.cinterop.*
 import org.jetbrains.skia.*
+import platform.UIKit.UIColor
 import platform.Foundation.NSRunLoop
 import platform.Foundation.NSSelectorFromString
 import platform.Foundation.NSThread
 import platform.Metal.MTLCommandBufferProtocol
 import platform.QuartzCore.*
 import platform.darwin.*
+import platform.CoreGraphics.*
+import platform.CoreGraphics. CGColorRenderingIntent.kCGRenderingIntentDefault
 import org.jetbrains.skia.Rect
+import org.jetbrains.skiko.currentSystemTheme
 import platform.Foundation.NSLock
 import platform.Foundation.NSRunLoopCommonModes
 import platform.Foundation.NSTimeInterval
@@ -325,7 +329,6 @@ internal class MetalRedrawer(
                         height.toFloat()
                     )
                 ).also { canvas ->
-                    canvas.clear(if (metalLayer.isOpaque()) Color.WHITE else Color.TRANSPARENT)
                     render(canvas, lastRenderTimestamp)
                 }
 

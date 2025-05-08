@@ -28,18 +28,24 @@ import kotlinx.serialization.KSerializer
  */
 internal object SavedStateCodecTestUtils {
 
-    /* Test the following steps: 1. encode `T` to a `SavedState`, 2. parcelize it to a `Parcel`,
-     * 3. un-parcelize it back to a `SavedState`, and 4. decode it back to a `T`. Step 2 and 3
-     * are only performed on Android. Here's the whole process:
+    /**
+     * Test the following steps: 1. encode `T` to a `SavedState`, 2. parcelize it to a `Parcel`,
+     * 3. marshall it to a byte array, 4. unmarshall it back to a parcel, 5. un-parcelize it back to
+     *    a `SavedState`, and 6. decode it back to a `T`. Step 2 to 5 are only performed on Android.
      *
-     * (A)Serializable -1-> (B)SavedState -2-> (C)Parcel -3-> (D)SavedState -4-> (E)Serializable
+     * Here's the whole process:
      *
-     * `checkEncoded` can be used to check the content of "B", and `checkDecoded` can be
-     *  used to compare the instances of "E" and "A".
+     * (A)Serializable -1-> (B)SavedState -2-> (C)Parcel -3-> (D)byte array -4-> (E)Parcel -5->
+     * (F)SavedState -6-> (G)Serializable
+     *
+     * @param doMarshalling Used to enable/disable step 3 and 4.
+     * @param checkEncoded Used to check the content of "B"
+     * @param checkDecoded Used to compare the instances of "G" and "A".
      */
     inline fun <reified T : Any> T.encodeDecode(
         serializer: KSerializer<T>? = null,
         configuration: SavedStateConfiguration? = null,
+        doMarshalling: Boolean = true,
         checkDecoded: (T, T) -> Unit = { decoded, original ->
             assertThat(decoded).isEqualTo(original)
         },
@@ -61,7 +67,7 @@ internal object SavedStateCodecTestUtils {
             }
         encoded.read { checkEncoded() }
 
-        val restored = platformEncodeDecode(encoded)
+        val restored = platformEncodeDecode(encoded, doMarshalling)
 
         val decoded =
             if (serializer == null) {
@@ -89,6 +95,7 @@ internal object SavedStateCodecTestUtils {
  * and unparcelization logic (on Android) to simulate real-world behavior.
  *
  * @param savedState The `SavedState` to be encoded and then decoded.
+ * @param doMarshalling A boolean flag indicating whether to perform bytes marshalling.
  * @return The resulting `SavedState` after going through the platform encoding-decoding process.
  */
-expect fun platformEncodeDecode(savedState: SavedState): SavedState
+expect fun platformEncodeDecode(savedState: SavedState, doMarshalling: Boolean = true): SavedState
