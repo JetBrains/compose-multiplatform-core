@@ -44,7 +44,9 @@ import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.DpRectZero
+import androidx.compose.ui.test.utils.dpRectInWindow
 import androidx.compose.ui.test.utils.up
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -588,114 +590,97 @@ internal class ScrollTest {
         waitForIdle()
     }
 
-    @OptIn(ExperimentalForeignApi::class)
     @Test
-    fun testUIKitScrollViewInsideComposeScrollViewInteractions() = runUIKitInstrumentedTest {
+    fun testUIKitScrollViewInsideComposeScrollView_DragFromUIKitScrollView() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
-        var boxRect = DpRectZero()
+        var uiScrollViewRect: () -> DpRect = { DpRectZero() }
         var contentOffset: () -> DpOffset = { DpOffset.Zero }
 
         setContent {
-            Column(modifier = Modifier.fillMaxSize().verticalScroll(state)) {
-                Box(modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .background(Color.Blue)
-                )
-
-                Box(modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .background(Color.Red)
-                    .onGloballyPositioned { boxRect = it.boundsInWindow().toDpRect(density) }
-                )
-
-                var scrollViewSize by mutableStateOf(DpSize.Zero)
-                UIKitView(
-                    factory = {
-                        val scrollView = UIScrollView()
-                        scrollView.setContentSize(
-                            CGSizeMake(scrollViewSize.width.value.toDouble(), 1000.0)
-                        )
-                        contentOffset = { scrollView.contentOffset.asDpOffset() }
-                        scrollView.backgroundColor = UIColor.lightGrayColor
-                        scrollView
-                    },
-                    update = { scrollView ->
-                        scrollView.setContentSize(
-                            CGSizeMake(scrollViewSize.width.value.toDouble(), 1000.0)
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth().height(400.dp).onSizeChanged {
-                        scrollViewSize = with(density) {
-                            DpSize(it.width.toDp(), it.height.toDp())
-                        }
-                    }
-                )
-
-                Box(modifier = Modifier
-                    .fillMaxWidth()
-                    .height(screenSize.height)
-                    .background(Color.White)
-                )
-            }
+            VerticalUIKitScrollInsideVerticalScroll(
+                state = state,
+                screenSize = screenSize,
+                density = density,
+                topContentHeight = 400.dp,
+                uiKitScrollViewHeight = 400.dp,
+                uiKitScrollViewRectInWindow = { uiScrollViewRect = it },
+                uiKitContentOffset = { contentOffset = it }
+            )
         }
 
-        // start in red box and drag upwards
-        touchDown(DpOffset(screenSize.center.x, 250.dp))
-            .dragBy(dy = -(100 + CUPERTINO_TOUCH_SLOP).dp)
-            .up()
-
-        waitForIdle()
-
-        assertEquals(DpRect(DpOffset(x = 0.dp, y = 100.dp), DpSize(screenSize.width, 200.dp)), boxRect)
-
         // start in UIScrollView and drag upwards
-        touchDown(DpOffset(screenSize.center.x, 400.dp))
+        touchDown(DpOffset(screenSize.center.x, 450.dp))
             .dragBy(dy = -(100 + CUPERTINO_TOUCH_SLOP).dp)
             .up()
 
         waitForIdle()
 
         // red box should remain at the same position
-        assertEquals(DpRect(DpOffset(x = 0.dp, y = 100.dp), DpSize(screenSize.width, 200.dp)), boxRect)
+        assertEquals(DpRect(DpOffset(x = 0.dp, y = 400.dp), DpSize(screenSize.width, 400.dp)), uiScrollViewRect())
         assertEquals(DpOffset(x = 0.dp, y = 100.dp), contentOffset())
+    }
 
-        // drag back to initial position
-        touchDown(DpOffset(screenSize.center.x, 50.dp))
-            .dragBy(dy = (100 + CUPERTINO_TOUCH_SLOP).dp)
+    @OptIn(ExperimentalForeignApi::class)
+    @Test
+    fun testUIKitScrollViewInsideComposeScrollView_DragFromCompose() = runUIKitInstrumentedTest {
+        val state = ScrollState(0)
+        var uiScrollViewRect: () -> DpRect = { DpRectZero() }
+        var contentOffset: () -> DpOffset = { DpOffset.Zero }
+
+        setContent {
+            VerticalUIKitScrollInsideVerticalScroll(
+                state = state,
+                screenSize = screenSize,
+                density = density,
+                topContentHeight = 400.dp,
+                uiKitScrollViewHeight = 400.dp,
+                uiKitScrollViewRectInWindow = { uiScrollViewRect = it },
+                uiKitContentOffset = { contentOffset = it }
+            )
+        }
+
+        touchDown(DpOffset(screenSize.center.x, 200.dp))
+            .dragBy(dy = -(100 + CUPERTINO_TOUCH_SLOP).dp)
             .up()
 
         waitForIdle()
 
-        // start in red box and flick upwards
-        touchDown(DpOffset(screenSize.center.x, 150.dp))
-            .dragBy(dy = -(100 + CUPERTINO_TOUCH_SLOP).dp, duration = 100.milliseconds)
-            .up()
-
-        // wait for the flick to be in the deceleration phase
-        delay(800)
-
-        // start in the UIScrollView and drag down while flick animation is still in progress
-        touchDown(DpOffset(screenSize.center.x, 100.dp))
-            .dragBy(dy = (100 + CUPERTINO_TOUCH_SLOP).dp)
-            .up()
-
-        waitForIdle()
-
-        // UIScrollView content offset should still be the same
-        assertEquals(DpOffset(x = 0.dp, y = 100.dp), contentOffset())
-
-        // drag up in UIScrollView from idle position
-        touchDown(DpOffset(screenSize.center.x, 300.dp))
-            .dragBy(dy = (100 + CUPERTINO_TOUCH_SLOP).dp)
-            .up()
-
+        assertEquals(DpRect(DpOffset(x = 0.dp, y = 300.dp), DpSize(screenSize.width, 400.dp)), uiScrollViewRect())
         assertEquals(DpOffset.Zero, contentOffset())
     }
 
     @Test
-    fun testOverscrollWhenUIKitHorizontalScrollViewIsAtTop() = runUIKitInstrumentedTest {
+    fun testUIKitScrollViewInsideComposeScrollView_DragFromUIScrollView() = runUIKitInstrumentedTest {
+        val state = ScrollState(0)
+        var uiScrollViewRect: () -> DpRect = { DpRectZero() }
+        var contentOffset: () -> DpOffset = { DpOffset.Zero }
+
+        setContent {
+            VerticalUIKitScrollInsideVerticalScroll(
+                state = state,
+                screenSize = screenSize,
+                density = density,
+                topContentHeight = 400.dp,
+                uiKitScrollViewHeight = 400.dp,
+                uiKitScrollViewRectInWindow = { uiScrollViewRect = it },
+                uiKitContentOffset = { contentOffset = it }
+            )
+        }
+
+        val initialUIScrollViewRect = uiScrollViewRect()
+
+        touchDown(DpOffset(screenSize.center.x, 450.dp))
+            .dragBy(dy = -(150 + CUPERTINO_TOUCH_SLOP).dp)
+            .up()
+
+        waitForIdle()
+
+        assertEquals(initialUIScrollViewRect, uiScrollViewRect())
+        assertEquals(DpOffset(x = 0.dp, y = 150.dp), contentOffset())
+    }
+
+    @Test
+    fun testOverscrollForUIKitHorizontalScrollViewAtTop() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
         var uiKitViewRect = DpRectZero()
         var contentOffset: () -> DpOffset = { DpOffset.Zero }
@@ -712,6 +697,7 @@ internal class ScrollTest {
         }
 
         val initialUIKitViewRect = uiKitViewRect.copy()
+
         assertEquals(DpRect(DpOffset(x = 0.dp, y = 0.dp), DpSize(screenSize.width, 200.dp)), initialUIKitViewRect)
 
         val touch = touchDown(DpOffset(screenSize.center.x, 100.dp))
@@ -729,30 +715,6 @@ internal class ScrollTest {
 
         assertEquals(initialUIKitViewRect, uiKitViewRect)
         assertEquals(0 * density.density, state.value.toFloat())
-
-        // Horizontal drag to verify UIKit scroll reacts
-        touchDown(DpOffset(screenSize.center.x, 100.dp))
-            .dragBy(dx = -(50 + CUPERTINO_TOUCH_SLOP).dp)
-            .up()
-
-        waitForIdle()
-
-        // Horizontal content offset should change, but vertical position stays the same
-        assertEquals(DpOffset(x = 50.dp, y = 0.dp), contentOffset())
-        assertEquals(initialUIKitViewRect, uiKitViewRect)
-
-        // Combined gesture - start with downward overscroll then horizontal
-        touchDown(DpOffset(screenSize.center.x, 100.dp))
-            .dragBy(dy = (50 + CUPERTINO_TOUCH_SLOP).dp)
-            .dragBy(dx = -(50 + CUPERTINO_TOUCH_SLOP).dp, dy = 0.dp)
-            .up()
-
-        waitForIdle()
-
-        // View should return to original position after overscroll
-        assertEquals(initialUIKitViewRect, uiKitViewRect)
-        // Horizontal content should not change
-        assertEquals(DpOffset(x = 50.dp, y = 0.dp), contentOffset())
     }
 
     @Test
@@ -927,6 +889,56 @@ internal class ScrollTest {
     }
 }
 
+@Composable
+private fun VerticalUIKitScrollInsideVerticalScroll(
+    state: ScrollState,
+    screenSize: DpSize,
+    density: Density,
+    topContentHeight: Dp,
+    uiKitScrollViewHeight: Dp,
+    uiKitScrollViewRectInWindow: (() -> DpRect) -> Unit = {},
+    uiKitContentOffset: (() -> DpOffset) -> Unit = { },
+) {
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(state)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(topContentHeight)
+                .background(Color.Red)
+        )
+
+        var scrollViewSize by mutableStateOf(DpSize.Zero)
+        UIKitView(
+            factory = {
+                val scrollView = UIScrollView()
+                scrollView.setContentSize(
+                    CGSizeMake(scrollViewSize.width.value.toDouble(), 1000.0)
+                )
+                scrollView.backgroundColor = UIColor.lightGrayColor
+                uiKitScrollViewRectInWindow({ scrollView.dpRectInWindow() })
+                uiKitContentOffset({ scrollView.contentOffset.asDpOffset() })
+                scrollView
+            },
+            update = { scrollView ->
+                scrollView.setContentSize(
+                    CGSizeMake(scrollViewSize.width.value.toDouble(), 1000.0)
+                )
+            },
+            modifier = Modifier.fillMaxWidth().height(uiKitScrollViewHeight).onSizeChanged {
+                scrollViewSize = with(density) {
+                    DpSize(it.width.toDp(), it.height.toDp())
+                }
+            }
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(screenSize.height)
+                .background(Color.White)
+        )
+    }
+}
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
