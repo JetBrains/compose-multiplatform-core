@@ -78,4 +78,13 @@ internal class ComposeRootRegistry : PlatformContext.RootForTestListener {
     fun getComposeRoots(): Set<PlatformRootForTest> {
         return synchronized(lock) { roots.toSet() }
     }
+
+    inline fun <R> withRegistry(block: () -> R): R {
+        try {
+            setupRegistry()
+            return block()
+        } finally {
+            tearDownRegistry()
+        }
+    }
 }

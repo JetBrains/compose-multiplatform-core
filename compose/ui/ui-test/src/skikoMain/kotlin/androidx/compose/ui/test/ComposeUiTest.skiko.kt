@@ -230,15 +230,6 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     fun runTest(
         block: suspend SkikoComposeUiTest.() -> Unit
     ): TestResult {
-        // The order of calls matters:
-        // First, we setup the registry.
-        // Then, we create a scene so the registry will be notified about it.
-        composeRootRegistry.setupRegistry()
-        // Create a scene before calling `runTest`,
-        // so that we can get the actual recomposer's effectCoroutineContext and use its elements
-        // in a CoroutineContext for running the test block.
-        scene = runOnUiThread(::createUi)
-
         @OptIn(ExperimentalStdlibApi::class)
         // We don't restrict the type to be TestDispatcher, because it's not a requirement from
         // ComposeUiTest perspective.
@@ -247,39 +238,38 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         val testDispatcher: CoroutineDispatcher =
             runTestContext[CoroutineDispatcher] ?: StandardTestDispatcher()
 
-        // It's required for a test block to run in a coroutine context with some
-        // elements from the current Recomposer context (e.g. MonotonicFrameClock)
-        val combinedCoroutineContext =
-            scene.compositionContext.effectCoroutineContext
-                .minusKey(CoroutineExceptionHandler.Key)
-                .minusKey(Job.Key)
-                .minusKey(TestCoroutineScheduler.Key)
-                .plus(runTestContext)
-                .plus(testDispatcher)
-
         // Note: on web this call returns immediately (it returns a Promise),
-        // so the test cleanup must be performed within the test block.
         return runTest(
             timeout = testTimeout,
-            context = combinedCoroutineContext
+            context = runTestContext.plus(testDispatcher)
         ) {
-            try {
-                withRenderLoop {
-                    block()
+            composeRootRegistry.withRegistry {
+                withScene {
+                    withRenderLoop {
+                        // MonotonicFrameClock is necessary. See the CL for details:
+                        // https://android-review.googlesource.com/c/platform/frameworks/support/+/3284298
+                        // > Anything that might result in animation may require the MonotonicFrameClock,
+                        // > and to get the timing right it should be the clock provided by the Recomposer's effect context
+                        // It's covered by SkikoComposeUiTestTest.canDriveAnimationsFromTest.
+                        scene.withMonotonicFrameClock {
+                            block()
+                        }
+                    }
                 }
-            } finally {
-                // the cleanup must happen only in the `runTest` block,
-                // because `runTest` call returns immediately on web,
-                // before the block starts running.
-                runOnUiThread(scene::close)
-
-                // after the scene is closed, run all left foreground TestDispatchEvent.
-                // They might've been added outside the runTest call, using the provided coroutineDispatcher:
-                coroutineDispatcher.scheduler.advanceUntilIdle()
-                // Cleanup the rest:
-                composeRootRegistry.tearDownRegistry()
-                uncaughtExceptionHandler.throwUncaught()
             }
+        }
+    }
+
+    private inline fun <R> withScene(block: () -> R): R {
+        scene = runOnUiThread(::createUi)
+        try {
+            return block()
+        } finally {
+            runOnUiThread(scene::close)
+            // After the scene is closed, run all left foreground TestDispatchEvent.
+            // They might've been added outside the runTest call, using the provided coroutineDispatcher:
+            coroutineDispatcher.scheduler.advanceUntilIdle()
+            uncaughtExceptionHandler.throwUncaught()
         }
     }
 
