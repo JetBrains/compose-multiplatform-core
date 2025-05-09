@@ -558,8 +558,7 @@ internal class ScrollTest {
                         .fillMaxWidth()
                         .height(200.dp)
                         .onGloballyPositioned { labelRect = it.boundsInWindow().toDpRect(density) }
-                        .testTag("UIKit.UILabel"),
-                    onReset = { /* Just to make it reusable */ }
+                        .testTag("UIKit.UILabel")
                 )
 
                 Box(modifier = Modifier
