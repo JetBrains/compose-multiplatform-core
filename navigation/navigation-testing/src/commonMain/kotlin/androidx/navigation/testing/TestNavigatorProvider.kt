@@ -20,7 +20,6 @@ import androidx.navigation.NavDestination
 import androidx.navigation.NavGraphNavigator
 import androidx.navigation.Navigator
 import androidx.navigation.NavigatorProvider
-import androidx.navigation.NoOpNavigator
 
 /**
  * A [NavigatorProvider] for testing that only parses
@@ -29,7 +28,10 @@ import androidx.navigation.NoOpNavigator
 internal class TestNavigatorProvider : NavigatorProvider() {
 
     /** A [Navigator] that only supports creating destinations. */
-    private val navigator = NoOpNavigator()
+    private val navigator =
+        object : Navigator<NavDestination>() {
+            override fun createDestination() = NavDestination("test")
+        }
 
     init {
         addNavigator(NavGraphNavigator(this))
@@ -39,7 +41,7 @@ internal class TestNavigatorProvider : NavigatorProvider() {
     override fun <T : Navigator<out NavDestination>> getNavigator(name: String): T {
         return try {
             super.getNavigator(name)
-        } catch (e: IllegalStateException) {
+        } catch (_: IllegalStateException) {
             @Suppress("UNCHECKED_CAST")
             navigator as T
         }

@@ -450,6 +450,12 @@ abstract class RouteDecoderTest(val source: ArgumentSource) {
 
     @Serializable private class CustomType(val nestedArg: Int)
 
+    @Serializable
+    private enum class TestEnum {
+        ONE,
+        TWO
+    }
+
     private val customNavType =
         navArgument("arg") {
             type =

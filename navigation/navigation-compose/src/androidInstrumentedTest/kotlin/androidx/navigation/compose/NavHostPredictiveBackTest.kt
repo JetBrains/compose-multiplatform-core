@@ -102,6 +102,58 @@ class NavHostPredictiveBackTest {
             assertThat(firstEntry?.lifecycle?.currentState).isEqualTo(Lifecycle.State.CREATED)
         }
     }
+
+    @Test
+    fun testDisabledInSameFramePredictiveBack() {
+        lateinit var navController: NavHostController
+        lateinit var backPressedDispatcher: OnBackPressedDispatcher
+        composeTestRule.setContent {
+            navController = rememberNavController()
+            backPressedDispatcher =
+                LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
+            NavHost(navController, startDestination = first) {
+                composable(first) { BasicText(first) }
+                composable(second) { BasicText(second) }
+            }
+        }
+
+        val firstEntry = navController.currentBackStackEntry
+
+        composeTestRule.runOnIdle {
+            assertThat(firstEntry?.lifecycle?.currentState).isEqualTo(Lifecycle.State.RESUMED)
+        }
+
+        composeTestRule.runOnIdle { navController.navigate(second) }
+
+        assertThat(firstEntry?.lifecycle?.currentState).isEqualTo(Lifecycle.State.CREATED)
+        assertThat(navController.currentBackStackEntry?.lifecycle?.currentState)
+            .isEqualTo(Lifecycle.State.STARTED)
+
+        composeTestRule.runOnIdle {
+            assertThat(firstEntry?.lifecycle?.currentState).isEqualTo(Lifecycle.State.CREATED)
+            assertThat(navController.currentBackStackEntry?.lifecycle?.currentState)
+                .isEqualTo(Lifecycle.State.RESUMED)
+        }
+
+        val secondEntry = navController.currentBackStackEntry
+
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.runOnIdle {
+            navController.popBackStack()
+            backPressedDispatcher.dispatchOnBackStarted(
+                BackEventCompat(0.1F, 0.1F, 0.1F, BackEvent.EDGE_LEFT)
+            )
+            backPressedDispatcher.onBackPressed()
+        }
+
+        composeTestRule.mainClock.autoAdvance = true
+
+        composeTestRule.runOnIdle {
+            assertThat(firstEntry?.lifecycle?.currentState).isEqualTo(Lifecycle.State.RESUMED)
+            assertThat(secondEntry?.lifecycle?.currentState).isEqualTo(Lifecycle.State.DESTROYED)
+        }
+    }
 }
 
 private const val first = "first"
