@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -2512,6 +2513,75 @@ class SeekableTransitionStateTest {
             assertFalse(transition.isRunning)
             assertFalse(animatedVisibilityTransition!!.isRunning)
         }
+    }
+
+    @Test
+    fun isRunningFalseAfterRemovingAnimationWhileAnimatingToPreviousState() {
+        val seekableTransitionState = SeekableTransitionState(AnimStates.From)
+        lateinit var coroutineScope: CoroutineScope
+        lateinit var transition: Transition<AnimStates>
+        var floatAnim: State<Float>? = null
+        var conditionalAnim: State<Float>? = null
+        var addConditionalAnim by mutableStateOf(true)
+        rule.setContent {
+            coroutineScope = rememberCoroutineScope()
+            transition = rememberTransition(seekableTransitionState)
+            floatAnim =
+                transition.animateFloat(transitionSpec = { tween(500) }) {
+                    if (it == AnimStates.From) 0f else 1000f
+                }
+            conditionalAnim =
+                if (addConditionalAnim) {
+                    // Longer duration than floatAnim so we can check if it keeps the transition
+                    // running
+                    transition.animateFloat(transitionSpec = { tween(10000000) }) {
+                        if (it == AnimStates.From) 0f else 1000f
+                    }
+                } else {
+                    null
+                }
+        }
+        rule.waitForIdle()
+
+        // Check initial values
+        assertEquals(0f, floatAnim?.value)
+        assertEquals(0f, conditionalAnim?.value)
+
+        rule.mainClock.autoAdvance = false
+
+        // Animate
+        rule.runOnUiThread {
+            coroutineScope.launch { seekableTransitionState.animateTo(AnimStates.To) }
+        }
+        rule.mainClock.advanceTimeByFrame()
+
+        // Finish floatAnim but not conditionalAnim
+        rule.mainClock.advanceTimeBy(750)
+
+        assertEquals(1000f, floatAnim?.value)
+        assertTrue(conditionalAnim!!.value < 1000f)
+        assertTrue(transition.isRunning)
+
+        // Animate back
+        rule.runOnUiThread {
+            coroutineScope.launch { seekableTransitionState.animateTo(AnimStates.From) }
+        }
+        rule.mainClock.advanceTimeByFrame()
+
+        // Finish floatAnim but not conditionalAnim
+        rule.mainClock.advanceTimeBy(500)
+
+        assertEquals(0f, floatAnim?.value)
+        assertTrue(conditionalAnim!!.value > 0f)
+        assertTrue(transition.isRunning)
+
+        // Remove conditionalAnim
+        addConditionalAnim = false
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeByFrame()
+
+        assertTrue(conditionalAnim == null)
+        assertFalse(transition.isRunning)
     }
 
     @Test

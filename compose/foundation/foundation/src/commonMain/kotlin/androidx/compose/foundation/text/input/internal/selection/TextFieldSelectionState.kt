@@ -426,7 +426,7 @@ internal class TextFieldSelectionState(
      * Starts observing changes in the current state for reactive rules. For example, the cursor
      * handle or the selection handles should hide whenever the text content changes.
      */
-    suspend fun observeChanges() {
+    suspend fun startToolbarAndHandlesVisibilityObserver() {
         try {
             coroutineScope {
                 launch { observeTextChanges() }
@@ -771,6 +771,8 @@ internal class TextFieldSelectionState(
             dragTotalDistance = Offset.Zero
             previousRawDragOffset = -1
 
+            if (textLayoutState.layoutResult == null) return
+
             // Long Press at the blank area, the cursor should show up at the end of the line.
             if (!textLayoutState.isPositionOnText(startPoint)) {
                 val offset = textLayoutState.getOffsetForPosition(startPoint)
@@ -805,7 +807,12 @@ internal class TextFieldSelectionState(
 
         override fun onDrag(delta: Offset) {
             // selection never started, did not consume any drag
-            if (!enabled || textFieldState.visualText.isEmpty()) return
+            if (
+                !enabled ||
+                    textLayoutState.layoutResult == null ||
+                    textFieldState.visualText.isEmpty()
+            )
+                return
 
             dragTotalDistance += delta
 
