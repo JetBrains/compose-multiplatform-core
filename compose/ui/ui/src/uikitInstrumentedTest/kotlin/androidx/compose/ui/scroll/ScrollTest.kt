@@ -612,16 +612,17 @@ internal class ScrollTest {
             )
         }
 
-        // start in UIScrollView and drag upwards
-        touchDown(DpOffset(screenSize.center.x, 450.dp))
-            .dragBy(dy = -(100 + CUPERTINO_TOUCH_SLOP).dp)
+        val initialUIScrollViewRect = uiScrollViewRect()
+
+        findNodeWithTag("UIKit.UIScrollView")
+            .touchDown()
+            .dragBy(dy = -(250 + CUPERTINO_TOUCH_SLOP).dp)
             .up()
 
         waitForIdle()
 
-        // red box should remain at the same position
-        assertEquals(DpRect(DpOffset(x = 0.dp, y = 400.dp), DpSize(screenSize.width, 400.dp)), uiScrollViewRect())
-        assertEquals(DpOffset(x = 0.dp, y = 100.dp), contentOffset())
+        assertEquals(initialUIScrollViewRect, uiScrollViewRect())
+        assertEquals(DpOffset(x = 0.dp, y = 250.dp), contentOffset())
     }
 
     @OptIn(ExperimentalForeignApi::class)
@@ -643,7 +644,8 @@ internal class ScrollTest {
             )
         }
 
-        touchDown(DpOffset(screenSize.center.x, 200.dp))
+        findNodeWithTag("Top Box")
+            .touchDown()
             .dragBy(dy = -(100 + CUPERTINO_TOUCH_SLOP).dp)
             .up()
 
@@ -713,14 +715,17 @@ internal class ScrollTest {
             )
         }
 
-        touchDown(DpOffset(screenSize.center.x, 250.dp))
+        val initialUIKitViewRect = uiKitViewRect().copy()
+
+        findNodeWithTag("UIKit.UIScrollView")
+            .touchDown()
             .dragBy(dx = -(50 + CUPERTINO_TOUCH_SLOP).dp)
             .up()
 
         waitForIdle()
 
         assertEquals(0 * density.density, state.value.toFloat())
-        assertEquals(DpRect(DpOffset(x = 0.dp, y = 200.dp), DpSize(screenSize.width, 200.dp)), uiKitViewRect())
+        assertEquals(initialUIKitViewRect, uiKitViewRect())
         assertEquals(DpOffset(x = 50.dp, y = 0.dp), contentOffset())
     }
 
@@ -746,7 +751,8 @@ internal class ScrollTest {
             )
         }
 
-        touchDown(DpOffset(screenSize.center.x, 250.dp))
+        findNodeWithTag("UIKit.UIScrollView")
+            .touchDown()
             .dragBy(dy = -(50 + CUPERTINO_TOUCH_SLOP).dp)
             .up()
 
@@ -820,8 +826,8 @@ internal class ScrollTest {
             )
         }
 
-        // start inside UIScrollView and drag slightly to the side and upwards
-        touchDown(DpOffset(screenSize.center.x, 250.dp))
+        findNodeWithTag("UIKit.UIScrollView")
+            .touchDown()
             .dragBy(dx = -(5 + CUPERTINO_TOUCH_SLOP).dp, dy = -(50 + CUPERTINO_TOUCH_SLOP).dp)
             .dragBy(dx = -50.dp, dy = -50.dp)
             .up()
@@ -851,6 +857,7 @@ private fun VerticalUIKitScrollInsideVerticalScroll(
                 .fillMaxWidth()
                 .height(topContentHeight)
                 .background(Color.Red)
+                .testTag("Top Box")
         )
 
         var scrollViewSize by mutableStateOf(DpSize.Zero)
@@ -870,7 +877,11 @@ private fun VerticalUIKitScrollInsideVerticalScroll(
                     CGSizeMake(scrollViewSize.width.value.toDouble(), 1000.0)
                 )
             },
-            modifier = Modifier.fillMaxWidth().height(uiKitScrollViewHeight).onSizeChanged {
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("UIKit.UIScrollView")
+                .height(uiKitScrollViewHeight)
+                .onSizeChanged {
                 scrollViewSize = with(density) {
                     DpSize(it.width.toDp(), it.height.toDp())
                 }
@@ -918,7 +929,8 @@ private fun VerticalScrollWithHorizontalUIKitScroll(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(uiKitScrollViewHeight),
+                .height(uiKitScrollViewHeight)
+                .testTag("UIKit.UIScrollView"),
             update = {}
         )
 
