@@ -17,7 +17,9 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.ExperimentalComposeUiApi
+import java.awt.HeadlessException
 import java.awt.Toolkit
+import java.awt.datatransfer.ClipboardOwner
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.awt.datatransfer.UnsupportedFlavorException
@@ -29,7 +31,7 @@ internal class AwtPlatformClipboard internal constructor() : Clipboard {
     private val systemClipboard by lazy {
         try {
             Toolkit.getDefaultToolkit().systemClipboard
-        } catch (e: java.awt.HeadlessException) {
+        } catch (_: HeadlessException) {
             null
         }
     }
@@ -44,8 +46,8 @@ internal class AwtPlatformClipboard internal constructor() : Clipboard {
     override suspend fun setClipEntry(clipEntry: ClipEntry?) {
         val transferable = clipEntry?.nativeClipEntry as? Transferable
         systemClipboard?.setContents(
-            transferable ?: EmptyTransferable,
-            null
+            /* contents = */ transferable ?: EmptyTransferable,
+            /* owner = */ transferable as? ClipboardOwner,
         )
     }
 
@@ -67,11 +69,12 @@ val Clipboard.awtClipboard: java.awt.datatransfer.Clipboard?
     get() = nativeClipboard as? java.awt.datatransfer.Clipboard
 
 /**
- * A wrapper for platform clip entry instance which can be used to access or set the Clipboard content.
- * The actual implementation may vary depending on the underlying GUI toolkit
- * and on the actual implementation of Clipboard.nativeClipboard.
+ * A wrapper for platform clip entry instance which can be used to access
+ * or set the Clipboard content. The actual implementation may vary
+ * depending on the underlying GUI toolkit and on the actual implementation
+ * of Clipboard.nativeClipboard.
  *
- * See [asAwtTransferable] to access [java.awt.datatransfer.Transferable].
+ * See [asAwtTransferable] to access [Transferable].
  */
 actual class ClipEntry(val nativeClipEntry: Any) {
     // TODO https://youtrack.jetbrains.com/issue/CMP-1260/ClipboardManager.-Implement-getClip-getClipMetadata-setClip
@@ -80,8 +83,8 @@ actual class ClipEntry(val nativeClipEntry: Any) {
 }
 
 /**
- * Returns [Transferable] instance if ClipEntry.nativeClipEntry type is [Transferable].
- * Otherwise, it returns null.
+ * Returns a [Transferable] instance if the [ClipEntry.nativeClipEntry]
+ * type is [Transferable]. Otherwise, it returns null.
  */
 @ExperimentalComposeUiApi
 val ClipEntry.asAwtTransferable: Transferable?
