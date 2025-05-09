@@ -26,7 +26,7 @@ import kotlin.reflect.KClass
  * contributing to a saved state via [SavedStateHandle] received in a constructor. If `defaultArgs`
  * bundle was passed into the constructor, it will provide default values in `SavedStateHandle`.
  */
-expect class SavedStateViewModelFactory : ViewModelProvider.Factory {
+public expect class SavedStateViewModelFactory : ViewModelProvider.Factory {
 
     /**
      * Constructs this factory.
@@ -36,7 +36,7 @@ expect class SavedStateViewModelFactory : ViewModelProvider.Factory {
      *
      * @see [createSavedStateHandle] docs for more details.
      */
-    constructor()
+    public constructor()
 
     override fun <T : ViewModel> create(modelClass: KClass<T>, extras: CreationExtras): T
 }

@@ -26,8 +26,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.NavEntry
-import androidx.navigation3.SavedStateNavLocalProvider
-import androidx.navigation3.SinglePaneNavDisplay
+import androidx.navigation3.SavedStateNavEntryDecorator
+import androidx.navigation3.SceneNavDisplay
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import kotlin.test.Test
@@ -36,13 +36,13 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-class ViewModelStoreNavLocalProviderTest {
+class ViewModelStoreNavEntryDecoratorTest {
     @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun testViewModelProvided() {
-        val savedStateWrapper = SavedStateNavLocalProvider
-        val viewModelWrapper = ViewModelStoreNavLocalProvider
+        val savedStateWrapper = SavedStateNavEntryDecorator
+        val viewModelWrapper = ViewModelStoreNavEntryDecorator
         lateinit var viewModel1: MyViewModel
         lateinit var viewModel2: MyViewModel
         val entry1Arg = "entry1 Arg"
@@ -58,13 +58,13 @@ class ViewModelStoreNavLocalProviderTest {
                 viewModel2.myArg = entry2Arg
             }
         composeTestRule.setContent {
-            savedStateWrapper.ProvideToBackStack(backStack = listOf(entry1.key, entry2.key)) {
-                viewModelWrapper.ProvideToBackStack(backStack = listOf(entry1.key, entry2.key)) {
-                    savedStateWrapper.ProvideToEntry(
-                        NavEntry(entry1.key) { viewModelWrapper.ProvideToEntry(entry1) }
+            savedStateWrapper.DecorateBackStack(backStack = listOf(entry1.key, entry2.key)) {
+                viewModelWrapper.DecorateBackStack(backStack = listOf(entry1.key, entry2.key)) {
+                    savedStateWrapper.DecorateEntry(
+                        NavEntry(entry1.key) { viewModelWrapper.DecorateEntry(entry1) }
                     )
-                    savedStateWrapper.ProvideToEntry(
-                        NavEntry(entry2.key) { viewModelWrapper.ProvideToEntry(entry2) }
+                    savedStateWrapper.DecorateEntry(
+                        NavEntry(entry2.key) { viewModelWrapper.DecorateEntry(entry2) }
                     )
                 }
             }
@@ -81,8 +81,8 @@ class ViewModelStoreNavLocalProviderTest {
     }
 
     @Test
-    fun testViewModelNoSavedStateNavLocalProvider() {
-        val viewModelWrapper = ViewModelStoreNavLocalProvider
+    fun testViewModelNoSavedStateNavEntryDecorator() {
+        val viewModelWrapper = ViewModelStoreNavEntryDecorator
         lateinit var viewModel1: MyViewModel
         val entry1Arg = "entry1 Arg"
         val entry1 =
@@ -92,8 +92,8 @@ class ViewModelStoreNavLocalProviderTest {
             }
         try {
             composeTestRule.setContent {
-                viewModelWrapper.ProvideToBackStack(backStack = listOf(entry1.key)) {
-                    viewModelWrapper.ProvideToEntry(entry1)
+                viewModelWrapper.DecorateBackStack(backStack = listOf(entry1.key)) {
+                    viewModelWrapper.DecorateEntry(entry1)
                 }
             }
         } catch (e: Exception) {
@@ -101,8 +101,8 @@ class ViewModelStoreNavLocalProviderTest {
                 .hasMessageThat()
                 .isEqualTo(
                     "The Lifecycle state is already beyond INITIALIZED. The " +
-                        "ViewModelStoreNavLocalProvider requires adding the " +
-                        "SavedStateNavLocalProvider to ensure support for " +
+                        "ViewModelStoreNavEntryDecorator requires adding the " +
+                        "SavedStateNavEntryDecorator to ensure support for " +
                         "SavedStateHandles."
                 )
         }
@@ -113,9 +113,10 @@ class ViewModelStoreNavLocalProviderTest {
         lateinit var backStack: MutableList<Any>
         composeTestRule.setContent {
             backStack = remember { mutableStateListOf("Home") }
-            SinglePaneNavDisplay(
+            SceneNavDisplay(
                 backStack = backStack,
-                localProviders = listOf(SavedStateNavLocalProvider, ViewModelStoreNavLocalProvider),
+                postEntryDecorators =
+                    listOf(SavedStateNavEntryDecorator, ViewModelStoreNavEntryDecorator),
                 onBack = { backStack.removeAt(backStack.lastIndex) },
             ) { key ->
                 when (key) {
@@ -163,9 +164,10 @@ class ViewModelStoreNavLocalProviderTest {
         lateinit var viewModel: SavedStateViewModel
         composeTestRule.setContent {
             backStack = remember { mutableStateListOf("Home") }
-            SinglePaneNavDisplay(
+            SceneNavDisplay(
                 backStack = backStack,
-                localProviders = listOf(SavedStateNavLocalProvider, ViewModelStoreNavLocalProvider),
+                postEntryDecorators =
+                    listOf(SavedStateNavEntryDecorator, ViewModelStoreNavEntryDecorator),
                 onBack = { backStack.removeAt(backStack.lastIndex) },
             ) { key ->
                 when (key) {

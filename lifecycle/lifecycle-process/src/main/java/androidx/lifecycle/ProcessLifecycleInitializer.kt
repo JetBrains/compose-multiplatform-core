@@ -20,7 +20,7 @@ import androidx.startup.AppInitializer
 import androidx.startup.Initializer
 
 /** Initializes [ProcessLifecycleOwner] using `androidx.startup`. */
-class ProcessLifecycleInitializer : Initializer<LifecycleOwner> {
+public class ProcessLifecycleInitializer : Initializer<LifecycleOwner> {
     override fun create(context: Context): LifecycleOwner {
         val appInitializer = AppInitializer.getInstance(context)
         check(appInitializer.isEagerlyInitialized(javaClass)) {

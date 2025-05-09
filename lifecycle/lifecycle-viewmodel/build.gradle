@@ -70,11 +70,11 @@ androidXMultiplatform {
             }
         }
 
-        jvmCommonMain {
+        jvmMain {
             dependsOn(commonMain)
         }
 
-        jvmCommonTest {
+        jvmTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.junit)
@@ -82,7 +82,7 @@ androidXMultiplatform {
         }
 
         androidMain {
-            dependsOn(jvmCommonMain)
+            dependsOn(jvmMain)
             dependencies {
                 api(libs.kotlinCoroutinesAndroid)
                 implementation("androidx.core:core-viewtree:1.0.0-alpha01")
@@ -90,7 +90,7 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(jvmCommonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation(libs.mockitoCore4)
             }
@@ -106,12 +106,12 @@ androidXMultiplatform {
             }
         }
 
-        desktopMain.dependsOn(jvmCommonMain)
-        nonJvmCommonMain.dependsOn(commonMain)
-        nativeMain.dependsOn(nonJvmCommonMain)
+        desktopMain.dependsOn(jvmMain)
+        nonjvmMain.dependsOn(commonMain)
+        nativeMain.dependsOn(nonjvmMain)
         darwinMain.dependsOn(nativeMain)
         linuxMain.dependsOn(nativeMain)
-        webMain.dependsOn(nonJvmCommonMain)
+        webMain.dependsOn(nonjvmMain)
 
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {

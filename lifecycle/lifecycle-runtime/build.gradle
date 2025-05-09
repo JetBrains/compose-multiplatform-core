@@ -51,7 +51,7 @@ androidXMultiplatform {
             }
         }
 
-        jvmCommonMain {
+        jvmMain {
             dependsOn(commonMain)
             dependencies {
                 api("androidx.arch.core:core-common:2.2.0")
@@ -59,7 +59,7 @@ androidXMultiplatform {
         }
 
         desktopMain {
-            dependsOn(jvmCommonMain)
+            dependsOn(jvmMain)
         }
 
         desktopTest {
@@ -70,7 +70,7 @@ androidXMultiplatform {
         }
 
         androidMain {
-            dependsOn(jvmCommonMain)
+            dependsOn(jvmMain)
             dependencies {
                 api(libs.kotlinCoroutinesAndroid)
                 implementation("androidx.core:core-viewtree:1.0.0-alpha01")
@@ -100,30 +100,30 @@ androidXMultiplatform {
             }
         }
 
-        nonJvmCommonMain {
+        nonjvmMain {
             dependsOn(commonMain)
         }
-        nonJvmCommonTest {
+        nonJvmTest {
             dependsOn(commonTest)
         }
 
         nativeMain {
-            dependsOn(nonJvmCommonMain)
+            dependsOn(nonjvmMain)
 
             // Required for WeakReference usage
             languageSettings.optIn("kotlin.experimental.ExperimentalNativeApi")
         }
 
         nativeTest {
-            dependsOn(nonJvmCommonTest)
+            dependsOn(nonJvmTest)
         }
 
         webMain {
-            dependsOn(nonJvmCommonMain)
+            dependsOn(nonjvmMain)
         }
 
         webTest {
-            dependsOn(nonJvmCommonTest)
+            dependsOn(nonJvmTest)
         }
 
         targets.configureEach { target ->

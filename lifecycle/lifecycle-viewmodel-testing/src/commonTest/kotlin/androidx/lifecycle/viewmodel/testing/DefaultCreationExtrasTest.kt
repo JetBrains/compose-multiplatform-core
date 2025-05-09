@@ -16,7 +16,6 @@
 
 package androidx.lifecycle.viewmodel.testing
 
-import android.os.Bundle
 import androidx.kruth.assertThat
 import androidx.lifecycle.DEFAULT_ARGS_KEY
 import androidx.lifecycle.SAVED_STATE_REGISTRY_OWNER_KEY
@@ -24,14 +23,11 @@ import androidx.lifecycle.VIEW_MODEL_STORE_OWNER_KEY
 import androidx.lifecycle.ViewModelProvider.Companion.VIEW_MODEL_KEY
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.MutableCreationExtras
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SmallTest
-import org.junit.Test
-import org.junit.runner.RunWith
+import androidx.savedstate.read
+import androidx.savedstate.savedState
+import kotlin.test.Test
 
-@RunWith(AndroidJUnit4::class)
-@SmallTest
-internal class DefaultCreationExtrasInstrumentedTest {
+internal class DefaultCreationExtrasTest : RobolectricTest() {
 
     @Test
     fun creationExtras_hasAllExtras() {
@@ -40,12 +36,12 @@ internal class DefaultCreationExtrasInstrumentedTest {
         assertThat(creationExtras[SAVED_STATE_REGISTRY_OWNER_KEY]).isNotNull()
         assertThat(creationExtras[VIEW_MODEL_STORE_OWNER_KEY]).isNotNull()
         assertThat(creationExtras[DEFAULT_ARGS_KEY]).isNotNull()
-        assertThat(creationExtras[DEFAULT_ARGS_KEY]!!.isEmpty()).isTrue()
+        assertThat(creationExtras[DEFAULT_ARGS_KEY]!!.read { isEmpty() }).isTrue()
     }
 
     @Test
     fun creationExtras_withCustomDefaultArgs() {
-        val defaultArgs = Bundle().apply { putString("key", "value") }
+        val defaultArgs = savedState { putString("key", "value") }
         val creationExtras = DefaultCreationExtras(defaultArgs)
 
         assertThat(creationExtras[DEFAULT_ARGS_KEY]).isEqualTo(defaultArgs)
