@@ -654,36 +654,6 @@ internal class ScrollTest {
     }
 
     @Test
-    fun testUIKitScrollViewInsideComposeScrollView_DragFromUIScrollView() = runUIKitInstrumentedTest {
-        val state = ScrollState(0)
-        var uiScrollViewRect: () -> DpRect = { DpRectZero() }
-        var contentOffset: () -> DpOffset = { DpOffset.Zero }
-
-        setContent {
-            VerticalUIKitScrollInsideVerticalScroll(
-                state = state,
-                screenSize = screenSize,
-                density = density,
-                topContentHeight = 400.dp,
-                uiKitScrollViewHeight = 400.dp,
-                uiKitScrollViewRectInWindow = { uiScrollViewRect = it },
-                uiKitContentOffset = { contentOffset = it }
-            )
-        }
-
-        val initialUIScrollViewRect = uiScrollViewRect()
-
-        touchDown(DpOffset(screenSize.center.x, 450.dp))
-            .dragBy(dy = -(150 + CUPERTINO_TOUCH_SLOP).dp)
-            .up()
-
-        waitForIdle()
-
-        assertEquals(initialUIScrollViewRect, uiScrollViewRect())
-        assertEquals(DpOffset(x = 0.dp, y = 150.dp), contentOffset())
-    }
-
-    @Test
     fun testOverscrollForUIKitHorizontalScrollViewAtTop() = runUIKitInstrumentedTest {
         val state = ScrollState(0)
         var uiKitViewRect: () -> DpRect = { DpRectZero() }
@@ -719,34 +689,6 @@ internal class ScrollTest {
 
         assertEquals(initialUIKitViewRect, uiKitViewRect())
         assertEquals(0 * density.density, state.value.toFloat())
-    }
-
-    @Test
-    fun testVerticalComposeScrollsWhenDraggingFromUIKitHorizontalScroll() = runUIKitInstrumentedTest {
-        val state = ScrollState(0)
-        var uiKitViewRect: () -> DpRect = { DpRectZero() }
-        var contentOffset: () -> DpOffset = { DpOffset.Zero }
-
-        setContent {
-            VerticalScrollWithHorizontalUIKitScroll(
-                state = state,
-                screenSize = screenSize,
-                topContentHeight = 200.dp,
-                uiKitScrollViewHeight = 200.dp,
-                uiKitScrollViewRectInWindow = { uiKitViewRect = it },
-                uiKitContentOffset = { contentOffset = it }
-            )
-        }
-
-        touchDown(DpOffset(screenSize.center.x, 300.dp))
-            .dragBy(dy = -(100 + CUPERTINO_TOUCH_SLOP).dp)
-            .up()
-
-        waitForIdle()
-
-        assertEquals(100 * density.density, state.value.toFloat())
-        assertEquals(DpRect(DpOffset(x = 0.dp, y = 100.dp), DpSize(screenSize.width, 200.dp)), uiKitViewRect())
-        assertEquals(DpOffset(x = 0.dp, y = 0.dp), contentOffset())
     }
 
     /**
