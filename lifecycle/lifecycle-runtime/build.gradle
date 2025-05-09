@@ -100,7 +100,7 @@ androidXMultiplatform {
             }
         }
 
-        nonjvmMain {
+        nonJvmMain {
             dependsOn(commonMain)
         }
         nonJvmTest {
@@ -108,7 +108,7 @@ androidXMultiplatform {
         }
 
         nativeMain {
-            dependsOn(nonjvmMain)
+            dependsOn(nonJvmMain)
 
             // Required for WeakReference usage
             languageSettings.optIn("kotlin.experimental.ExperimentalNativeApi")
@@ -119,7 +119,7 @@ androidXMultiplatform {
         }
 
         webMain {
-            dependsOn(nonjvmMain)
+            dependsOn(nonJvmMain)
         }
 
         webTest {
