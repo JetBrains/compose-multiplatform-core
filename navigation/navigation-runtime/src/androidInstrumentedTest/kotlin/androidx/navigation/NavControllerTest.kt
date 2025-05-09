@@ -56,8 +56,8 @@ import androidx.test.filters.MediumTest
 import androidx.testutils.TestNavigator
 import androidx.testutils.test
 import androidx.testutils.withActivity
-import androidx.kruth.assertThat
-import androidx.kruth.assertWithMessage
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import kotlin.test.assertFailsWith
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
@@ -313,9 +313,9 @@ class NavControllerTest {
             }
         assertThat(expected.message)
             .isEqualTo(
-                "Deep link android-app://androidx.navigation/graph can't be used to open destination " +
-                    "NavGraph(0xa22391e1) startDestination=0x0.\n" +
-                    "Following required arguments are missing: [intArg]"
+                "Cannot set route \"graph\" for destination " +
+                    "NavGraph(0x0) startDestination=0x0. Following required " +
+                    "arguments are missing: [intArg]"
             )
     }
 
@@ -339,9 +339,9 @@ class NavControllerTest {
             }
         assertThat(expected.message)
             .isEqualTo(
-                "Deep link android-app://androidx.navigation/graph/{intArg} can't be used to " +
-                    "open destination NavGraph(0xf9423909) startDestination=0x0.\n" +
-                    "Following required arguments are missing: [longArg]"
+                "Cannot set route \"graph/{intArg}\" for destination " +
+                    "NavGraph(0x0) startDestination=0x0. Following required " +
+                    "arguments are missing: [longArg]"
             )
     }
 
@@ -365,9 +365,9 @@ class NavControllerTest {
             }
         assertThat(expected.message)
             .isEqualTo(
-                "Deep link android-app://androidx.navigation/graph can't be used to open " +
-                    "destination NavGraph(0xa22391e1) startDestination=0x0.\n" +
-                    "Following required arguments are missing: [intArg, longArg]"
+                "Cannot set route \"graph\" for destination NavGraph(0x0) " +
+                    "startDestination=0x0. Following required arguments " +
+                    "are missing: [intArg, longArg]"
             )
     }
 
@@ -389,9 +389,8 @@ class NavControllerTest {
             }
         assertThat(expected.message)
             .isEqualTo(
-                "Deep link android-app://androidx.navigation/dest1 can't be used to open " +
-                    "destination Destination(0xa1f3a662).\n" +
-                    "Following required arguments are missing: [intArg]"
+                "Cannot set route \"dest1\" for destination " +
+                    "Destination(0x0). Following required arguments are missing: [intArg]"
             )
     }
 
@@ -420,9 +419,9 @@ class NavControllerTest {
             }
         assertThat(expected.message)
             .isEqualTo(
-                "Deep link android-app://androidx.navigation/dest1/{intArg} can't be used to " +
-                    "open destination Destination(0x994aa5a8).\n" +
-                    "Following required arguments are missing: [longArg]"
+                "Cannot set route \"dest1/{intArg}\" for " +
+                    "destination Destination(0x0). Following required " +
+                    "arguments are missing: [longArg]"
             )
     }
 
@@ -448,9 +447,7 @@ class NavControllerTest {
             }
         assertThat(expected.message)
             .isEqualTo(
-                "Deep link android-app://androidx.navigation/dest can't be used to open " +
-                    "destination Destination(0x78d64faf).\n" +
-                    "Following required arguments are missing: [intArg, longArg]"
+                "Cannot set route \"dest\" for destination Destination(0x0). Following required arguments are missing: [intArg, longArg]"
             )
     }
 
@@ -1770,6 +1767,43 @@ class NavControllerTest {
 
     @UiThreadTest
     @Test
+    fun testNavigateFromLifecycleObserverDuringHostLifecycleChange() {
+        val navController = createNavController()
+        val hostLifecycleOwner = TestLifecycleOwner(Lifecycle.State.CREATED)
+        navController.setLifecycleOwner(hostLifecycleOwner)
+        navController.setGraph(R.navigation.nav_simple)
+
+        val receivedDestinationIds = mutableListOf<Int>()
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            receivedDestinationIds += destination.id
+        }
+
+        navController.navigate(R.id.second_test)
+
+        val destinationLifecycle = navController.getBackStackEntry(R.id.second_test).lifecycle
+        assertThat(destinationLifecycle.currentState).isEqualTo(Lifecycle.State.CREATED)
+        destinationLifecycle.addObserver(
+            object : LifecycleEventObserver {
+                override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        navController.popBackStack()
+                    }
+                }
+            }
+        )
+
+        // Now change the host lifecycle to trigger our observer
+        hostLifecycleOwner.currentState = Lifecycle.State.RESUMED
+
+        // And assert that we navigated correctly
+        assertThat(navController.currentDestination?.id).isEqualTo(R.id.start_test)
+        assertThat(receivedDestinationIds)
+            .containsExactly(R.id.start_test, R.id.second_test, R.id.start_test)
+            .inOrder()
+    }
+
+    @UiThreadTest
+    @Test
     fun testPopFromLifecycleObserver() {
         val navController = createNavController()
         navController.setLifecycleOwner(TestLifecycleOwner(Lifecycle.State.RESUMED))
@@ -1867,8 +1901,12 @@ class NavControllerTest {
 
         val nestedId = ("android-app://androidx.navigation/nested/{longArg}").hashCode()
 
-        val expected = assertFailsWith<NullPointerException> { navController.navigate(nestedId) }
-        assertThat(expected.message).isEqualTo("null cannot be cast to non-null type kotlin.Long")
+        val expected =
+            assertFailsWith<IllegalArgumentException> { navController.navigate(nestedId) }
+        assertThat(expected.message)
+            .isEqualTo(
+                "Cannot navigate to startDestination Destination(0x893cce52) route=dest2/{longArg}. Missing required arguments [[longArg]]"
+            )
     }
 
     @UiThreadTest

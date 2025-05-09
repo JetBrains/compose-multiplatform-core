@@ -17,7 +17,9 @@
 package androidx.navigation.testing
 
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavDestination
 import androidx.navigation.NavigatorState
+import androidx.savedstate.SavedState
 
 /**
  * An implementation of [NavigatorState] that allows testing a
@@ -25,6 +27,10 @@ import androidx.navigation.NavigatorState
  * [androidx.navigation.NavController]).
  */
 public expect class TestNavigatorState() : NavigatorState {
+    public override fun createBackStackEntry(
+        destination: NavDestination,
+        arguments: SavedState?
+    ): NavBackStackEntry
 
     /**
      * Restore a previously saved [NavBackStackEntry]. You must have previously called

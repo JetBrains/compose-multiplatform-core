@@ -23,6 +23,7 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination
 import androidx.navigation.NavViewModelStoreProvider
 import androidx.navigation.NavigatorState
+import androidx.navigation.SupportingPane
 import androidx.navigation.internal.NavContext
 import androidx.savedstate.SavedState
 import androidx.savedstate.savedState
@@ -42,7 +43,7 @@ public actual class TestNavigatorState actual constructor() : NavigatorState() {
     private val savedStates = mutableMapOf<String, SavedState>()
     private val entrySavedState = mutableMapOf<NavBackStackEntry, Boolean>()
 
-    public override fun createBackStackEntry(
+    public actual override fun createBackStackEntry(
         destination: NavDestination,
         arguments: SavedState?
     ) = NavBackStackEntry.create(
@@ -138,16 +139,28 @@ public actual class TestNavigatorState actual constructor() : NavigatorState() {
         var previousEntry: NavBackStackEntry? = null
         for (entry in currentList.reversed()) {
             val transitioning = transitionsInProgress.value.contains(entry)
-            entry.maxLifecycle = when {
-                previousEntry == null ->
-                    if (!transitioning) {
-                        Lifecycle.State.RESUMED
-                    } else {
-                        Lifecycle.State.STARTED
+            entry.maxLifecycle =
+                when {
+                    previousEntry == null ->
+                        if (!transitioning) {
+                            Lifecycle.State.RESUMED
+                        } else {
+                            Lifecycle.State.STARTED
+                        }
+                    previousEntry.destination is SupportingPane -> {
+                        // Match the previous entry's destination, making sure
+                        // a transitioning destination does not go to resumed
+                        previousEntry.maxLifecycle.coerceAtMost(
+                            if (!transitioning) {
+                                Lifecycle.State.RESUMED
+                            } else {
+                                Lifecycle.State.STARTED
+                            }
+                        )
                     }
-                previousEntry.destination is FloatingWindow -> Lifecycle.State.STARTED
-                else -> Lifecycle.State.CREATED
-            }
+                    previousEntry.destination is FloatingWindow -> Lifecycle.State.STARTED
+                    else -> Lifecycle.State.CREATED
+                }
             previousEntry = entry
         }
     }

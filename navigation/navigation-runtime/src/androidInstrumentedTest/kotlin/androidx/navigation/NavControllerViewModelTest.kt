@@ -19,7 +19,7 @@ package androidx.navigation
 import androidx.lifecycle.ViewModelStore
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.kruth.assertThat
+import com.google.common.truth.Truth.assertThat
 import java.util.UUID
 import org.junit.Test
 import org.junit.runner.RunWith
