@@ -16,5 +16,7 @@
 
 package androidx.lifecycle.viewmodel.compose
 
-internal actual fun getSaveableKeyPrefix(thisRef: Any?): String =
-    if (thisRef != null) thisRef::class.simpleName + "." else ""
+import androidx.compose.runtime.Composable
+import androidx.lifecycle.ViewModelStoreOwner
+
+@Composable internal actual fun findViewTreeViewModelStoreOwner(): ViewModelStoreOwner? = null

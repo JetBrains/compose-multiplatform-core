@@ -164,6 +164,7 @@ jcodecJavaSe = { module = "org.jcodec:jcodec-javase", version.ref = "jcodec" }
 johnrengelmanShadow = { module = "com.github.johnrengelman:shadow", version.ref = "shadow" }
 json = { module = "org.json:json", version = "20180813" }
 jsoup = { module = "org.jsoup:jsoup", version = "1.16.2" }
+jspecify = { module = "org.jspecify:jspecify", version = "1.0.0" }
 jsqlparser = { module = "com.github.jsqlparser:jsqlparser", version = "3.1" }
 jsr250 = { module = "javax.annotation:javax.annotation-api", version = "1.2" }
 junit = { module = "junit:junit", version = "4.13.2" }

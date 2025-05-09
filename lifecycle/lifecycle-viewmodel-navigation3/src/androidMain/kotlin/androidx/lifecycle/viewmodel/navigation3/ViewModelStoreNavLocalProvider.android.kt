@@ -38,7 +38,7 @@ import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.NavEntry
-import androidx.navigation3.NavLocalProvider
+import androidx.navigation3.NavEntryDecorator
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 
@@ -46,13 +46,13 @@ import androidx.savedstate.compose.LocalSavedStateRegistryOwner
  * Provides the content of a [NavEntry] with a [ViewModelStoreOwner] and provides that
  * [ViewModelStoreOwner] as a [LocalViewModelStoreOwner] so that it is available within the content.
  *
- * This requires that usage of the [SavedStateNavLocalProvider] to ensure that the [NavEntry] scoped
- * [ViewModel]s can properly provide access to [SavedStateHandle]s
+ * This requires that usage of the [SavedStateNavEntryDecorator] to ensure that the [NavEntry]
+ * scoped [ViewModel]s can properly provide access to [SavedStateHandle]s
  */
-public object ViewModelStoreNavLocalProvider : NavLocalProvider {
+public object ViewModelStoreNavEntryDecorator : NavEntryDecorator {
 
     @Composable
-    override fun ProvideToBackStack(backStack: List<Any>, content: @Composable () -> Unit) {
+    override fun DecorateBackStack(backStack: List<Any>, content: @Composable () -> Unit) {
         val entryViewModelStoreProvider = viewModel { EntryViewModel() }
         entryViewModelStoreProvider.ownerInBackStack.clear()
         entryViewModelStoreProvider.ownerInBackStack.addAll(backStack)
@@ -62,7 +62,7 @@ public object ViewModelStoreNavLocalProvider : NavLocalProvider {
         val activity = LocalActivity.current
         backStack.forEachIndexed { index, key ->
             // We update here as part of composition to ensure the value is available to
-            // ProvideToEntry
+            // DecorateEntry
             localInfo.refCount.getOrPut(key) { LinkedHashSet<Int>() }.add(getIdForKey(key, index))
             DisposableEffect(key1 = key) {
                 localInfo.refCount
@@ -103,7 +103,7 @@ public object ViewModelStoreNavLocalProvider : NavLocalProvider {
     }
 
     @Composable
-    override fun <T : Any> ProvideToEntry(entry: NavEntry<T>) {
+    override fun <T : Any> DecorateEntry(entry: NavEntry<T>) {
         val key = entry.key
         val entryViewModelStoreProvider = viewModel { EntryViewModel() }
 
@@ -174,8 +174,8 @@ public object ViewModelStoreNavLocalProvider : NavLocalProvider {
                 init {
                     require(this.lifecycle.currentState == Lifecycle.State.INITIALIZED) {
                         "The Lifecycle state is already beyond INITIALIZED. The " +
-                            "ViewModelStoreNavLocalProvider requires adding the " +
-                            "SavedStateNavLocalProvider to ensure support for " +
+                            "ViewModelStoreNavEntryDecorator requires adding the " +
+                            "SavedStateNavEntryDecorator to ensure support for " +
                             "SavedStateHandles."
                     }
                     enableSavedStateHandles()
@@ -205,7 +205,7 @@ internal val LocalViewModelStoreNavLocalInfo =
     staticCompositionLocalOf<ViewModelStoreNavLocalInfo> {
         error(
             "CompositionLocal LocalViewModelStoreNavLocalInfo not present. You must call " +
-                "ProvideToBackStack before calling ProvideToEntry."
+                "DecorateBackStack before calling DecorateEntry."
         )
     }
 

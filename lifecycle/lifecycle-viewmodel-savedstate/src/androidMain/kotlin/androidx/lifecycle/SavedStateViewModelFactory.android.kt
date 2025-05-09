@@ -40,7 +40,7 @@ import kotlin.reflect.KClass
  * constructor that receives [SavedStateHandle] only. [androidx.lifecycle.AndroidViewModel] is only
  * supported if you pass a non-null [Application] instance.
  */
-actual class SavedStateViewModelFactory :
+public actual class SavedStateViewModelFactory :
     ViewModelProvider.OnRequeryFactory, ViewModelProvider.Factory {
     private var application: Application? = null
     private val factory: ViewModelProvider.Factory
@@ -56,7 +56,7 @@ actual class SavedStateViewModelFactory :
      *
      * @see [createSavedStateHandle] docs for more details.
      */
-    actual constructor() {
+    public actual constructor() {
         factory = ViewModelProvider.AndroidViewModelFactory()
     }
 
@@ -71,7 +71,7 @@ actual class SavedStateViewModelFactory :
      * @param owner [SavedStateRegistryOwner] that will provide restored state for created
      *   [ViewModels][androidx.lifecycle.ViewModel]
      */
-    constructor(
+    public constructor(
         application: Application?,
         owner: SavedStateRegistryOwner
     ) : this(application, owner, null)
@@ -94,7 +94,11 @@ actual class SavedStateViewModelFactory :
      *   if there is no previously saved state or previously saved state misses a value by such key.
      */
     @SuppressLint("LambdaLast")
-    constructor(application: Application?, owner: SavedStateRegistryOwner, defaultArgs: Bundle?) {
+    public constructor(
+        application: Application?,
+        owner: SavedStateRegistryOwner,
+        defaultArgs: Bundle?
+    ) {
         savedStateRegistry = owner.savedStateRegistry
         lifecycle = owner.lifecycle
         this.defaultArgs = defaultArgs
@@ -172,7 +176,7 @@ actual class SavedStateViewModelFactory :
      * @return a newly created ViewModel
      * @throws UnsupportedOperationException if the there is no lifecycle
      */
-    fun <T : ViewModel> create(key: String, modelClass: Class<T>): T {
+    public fun <T : ViewModel> create(key: String, modelClass: Class<T>): T {
         // empty constructor was called.
         val lifecycle =
             lifecycle
