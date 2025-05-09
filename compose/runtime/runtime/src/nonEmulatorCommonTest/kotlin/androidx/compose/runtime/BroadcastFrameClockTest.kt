@@ -17,10 +17,12 @@
 package androidx.compose.runtime
 
 import androidx.compose.runtime.internal.AtomicInt
+import androidx.compose.runtime.internal.sleep
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.Deferred
@@ -33,6 +35,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
+import kotlinx.test.IgnoreJsTarget
+import kotlinx.test.IgnoreWasmTarget
 
 @ExperimentalCoroutinesApi
 class BroadcastFrameClockTest {
@@ -84,8 +88,11 @@ class BroadcastFrameClockTest {
         }
 
     @OptIn(InternalCoroutinesApi::class)
-    @Test(timeout = 5_000)
-    fun locklessCancellation() = runTest {
+    @IgnoreJsTarget
+    @IgnoreWasmTarget
+    @Test
+    fun locklessCancellation() = runTest(timeout = 5_000.milliseconds) {
+
         val clock = BroadcastFrameClock()
         val cancellationGate = AtomicInt(1)
 
@@ -93,7 +100,7 @@ class BroadcastFrameClockTest {
         async(start = UNDISPATCHED) {
             clock.withFrameNanos {
                 cancellationGate.add(-1)
-                @Suppress("BanThreadSleep") while (spin) Thread.sleep(100)
+                while (spin) sleep(100u)
             }
         }
 
