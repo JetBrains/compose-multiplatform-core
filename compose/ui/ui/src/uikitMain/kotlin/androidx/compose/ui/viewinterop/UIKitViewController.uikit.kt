@@ -56,6 +56,11 @@ fun <T : UIViewController> UIKitViewController(
     val interopContainer = LocalInteropContainer.current
     val parentViewController = LocalUIViewController.current
 
+    val isDescendant = interopContainer.root.isDescendantOfView(parentViewController.view)
+    assert(isDescendant) {
+        "Currently, UIKitViewController cannot be used within Popups or Dialogs"
+    }
+
     InteropView(
         factory = { compositeKeyHash ->
             UIKitInteropViewControllerHolder(
