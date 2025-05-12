@@ -104,9 +104,6 @@ internal class ComposeHostingViewController(
         transparentForTouches = false,
         useOpaqueConfiguration = configuration.opaque,
     )
-    private val interopContainerView = UIView().also {
-        rootView.embedSubview(it)
-    }
     private var mediator: ComposeSceneMediator? = null
     private val windowContext = PlatformWindowContext()
     private var layers: UIKitComposeSceneLayersHolder? = null
@@ -229,7 +226,14 @@ internal class ComposeHostingViewController(
         super.viewWillTransitionToSize(size, withTransitionCoordinator)
 
         updateInterfaceOrientationState()
-        animateSizeTransition(withTransitionCoordinator)
+
+        if (mediator?.hasInteropViews == true || layers?.hasInteropViews == true) {
+            // Heavy interop views may slow down the animation of per-frame screen rotation.
+            // For these cases, a cross-fade transition will be used instead.
+            crossFadeSizeTransition(withTransitionCoordinator)
+        } else {
+            animateSizeTransition(withTransitionCoordinator)
+        }
     }
 
     @Suppress("DEPRECATION")
@@ -248,8 +252,9 @@ internal class ComposeHostingViewController(
         configuration.delegate.viewDidAppear(animated)
 
         // Because the container view can change during the modal transition animation,
-        // the gesture handlers are added back when the animation ends.
+        // the gesture handlers and layers view are added back when the animation ends.
         backGestureDispatcher.onDidMoveToWindow(view.window, rootView)
+        layers?.containerView = layersContainerView()
     }
 
     @Suppress("DEPRECATION")
@@ -290,7 +295,6 @@ internal class ComposeHostingViewController(
                 mediator?.render(canvas.asComposeCanvas(), nanoTime)
             }
         )
-        rootView.updateMetalView(metalView, ::onDidMoveToWindow)
         metalView.canBeOpaque = configuration.opaque
 
         val layers = UIKitComposeSceneLayersHolder(windowContext, configuration.parallelRendering)
@@ -298,8 +302,6 @@ internal class ComposeHostingViewController(
         this.layers = layers
 
         mediator = ComposeSceneMediator(
-            parentView = rootView,
-            interopContainerView = interopContainerView,
             onFocusBehavior = configuration.onFocusBehavior,
             focusStack = focusStack,
             windowContext = windowContext,
@@ -310,6 +312,10 @@ internal class ComposeHostingViewController(
             },
             backGestureDispatcher = backGestureDispatcher
         ).also { mediator ->
+            rootView.embedSubview(mediator.inputView)
+            rootView.updateMetalView(metalView, ::onDidMoveToWindow)
+            rootView.embedSubview(mediator.overlayView)
+
             mediator.updateInteractionRect()
             mediator.setContent {
                 ProvideContainerCompositionLocals(content)
@@ -410,6 +416,27 @@ internal class ComposeHostingViewController(
             completion = {
                 sizeTransitionScope.cancel()
                 displayLinkListener.invalidate()
+            }
+        )
+    }
+
+    private fun crossFadeSizeTransition(
+        transitionCoordinator: UIViewControllerTransitionCoordinatorProtocol
+    ) {
+        val duration = transitionCoordinator.transitionDuration.toDuration(DurationUnit.SECONDS)
+        if (duration == Duration.ZERO) return
+
+        val transitionScope = CoroutineScope(composeCoroutineContext)
+        val viewAnimationClosure = rootView.animateCrossFadeTransition(transitionScope)
+        val layersAnimationClosure = layers?.animateCrossFadeTransition(transitionScope)
+
+        transitionCoordinator.animateAlongsideTransition(
+            animation = {
+                viewAnimationClosure()
+                layersAnimationClosure?.invoke()
+            },
+            completion = {
+                transitionScope.cancel()
             }
         )
     }

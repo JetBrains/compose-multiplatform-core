@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toDpRect
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -129,6 +130,7 @@ class BasicInteractionTest {
         assertTrue(doubleClicked)
     }
 
+    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8133/Fix-keyboard-dependent-instrumented-tests-on-CI
     @Test
     fun testTextFieldCallout() = runUIKitInstrumentedTest {
         setContent {

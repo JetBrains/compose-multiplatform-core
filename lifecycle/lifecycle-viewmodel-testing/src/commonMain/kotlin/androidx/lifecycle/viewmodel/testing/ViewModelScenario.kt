@@ -16,37 +16,92 @@
 
 package androidx.lifecycle.viewmodel.testing
 
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.VIEW_MODEL_STORE_OWNER_KEY
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.Factory
 import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.CreationExtras.Empty
+import androidx.lifecycle.viewmodel.testing.internal.createScenarioExtras
+import androidx.lifecycle.viewmodel.testing.internal.saveScenarioExtras
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.SavedStateRegistryOwner
 import kotlin.reflect.KClass
 
 /**
  * [ViewModelScenario] provides API to start and drive a [ViewModel]'s lifecycle state for testing.
+ *
+ * [ViewModelScenario.recreate] allows you to simulate a System Process Death and restoration.
+ *
+ * [ViewModelScenario] does not clean up the [ViewModel] automatically. Call [close] in your test to
+ * clean up the state or use [AutoCloseable.use] to ensure [ViewModelStore.clear] and
+ * [ViewModel.onCleared] is invoked.
  */
 @OptIn(ExperimentalStdlibApi::class)
 public class ViewModelScenario<VM : ViewModel>
 @PublishedApi
 internal constructor(
     private val modelClass: KClass<VM>,
-    private val modelStore: ViewModelStore,
-    modelFactory: Factory,
-    modelExtras: CreationExtras = Empty,
+    private val modelFactory: Factory,
+    initialModelExtras: CreationExtras = Empty
 ) : AutoCloseable {
 
-    private val modelProvider = ViewModelProvider.create(modelStore, modelFactory, modelExtras)
+    /**
+     * The current [CreationExtras] associated with the [viewModel]. This instance is updated when
+     * [recreate] is executed.
+     */
+    private var modelExtras = createScenarioExtras(initialModelExtras)
 
-    /** The current [ViewModel]. The instance might update if the [ViewModelStore] is cleared. */
+    /**
+     * The current [ViewModelProvider] responsible for retrieve the [ViewModel]. This instance is
+     * updated when [recreate] is executed.
+     */
+    private var modelProvider =
+        ViewModelProvider.create(
+            owner = modelExtras[VIEW_MODEL_STORE_OWNER_KEY]!!,
+            factory = modelFactory,
+            extras = modelExtras,
+        )
+
+    /**
+     * The current [ViewModel] being managed by this scenario. This instance is change if the
+     * [ViewModelStore] is cleared or if [recreate] is invoked.
+     */
     public val viewModel: VM
         get() = modelProvider[modelClass]
 
     /** Finishes the managed [ViewModel] and clear the [ViewModelStore]. */
     override fun close() {
-        modelStore.clear()
+        modelExtras[VIEW_MODEL_STORE_OWNER_KEY]!!.viewModelStore.clear()
+    }
+
+    /**
+     * Simulates a System Process Death recreating the [ViewModel] and all associated components.
+     *
+     * This method:
+     * - Saves the state of the [ViewModel] with [SavedStateRegistryController.performSave].
+     * - Recreates the [ViewModelStoreOwner], [LifecycleOwner] and [SavedStateRegistryOwner].
+     * - Recreates the [ViewModelProvider] instance.
+     *
+     * Call this method to verify that the [ViewModel] correctly preserves and restores its state.
+     */
+    public fun recreate() {
+        val savedState = saveScenarioExtras(modelExtras)
+        modelExtras =
+            createScenarioExtras(
+                initialExtras = modelExtras,
+                restoredState = savedState,
+            )
+        modelProvider =
+            ViewModelProvider.create(
+                owner = modelExtras[VIEW_MODEL_STORE_OWNER_KEY]!!,
+                factory = modelFactory,
+                extras = modelExtras,
+            )
     }
 }
 
@@ -107,8 +162,7 @@ public inline fun <reified VM : ViewModel> viewModelScenario(
 ): ViewModelScenario<VM> {
     return ViewModelScenario(
         modelClass = VM::class,
-        modelStore = ViewModelStore(),
         modelFactory = factory,
-        modelExtras = creationExtras,
+        initialModelExtras = creationExtras,
     )
 }

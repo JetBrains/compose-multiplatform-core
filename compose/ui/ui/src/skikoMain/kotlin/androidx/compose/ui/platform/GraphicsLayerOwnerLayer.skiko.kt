@@ -353,8 +353,8 @@ internal class GraphicsLayerOwnerLayer(
             val pivotX: Float
             val pivotY: Float
             if (pivotOffset.isUnspecified) {
-                pivotX = size.width / 2f
-                pivotY = size.height / 2f
+                pivotX = this@GraphicsLayerOwnerLayer.size.width / 2f
+                pivotY = this@GraphicsLayerOwnerLayer.size.height / 2f
             } else {
                 pivotX = pivotOffset.x
                 pivotY = pivotOffset.y

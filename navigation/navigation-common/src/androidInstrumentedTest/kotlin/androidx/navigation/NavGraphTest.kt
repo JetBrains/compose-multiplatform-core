@@ -152,6 +152,24 @@ class NavGraphTest {
     }
 
     @Test
+    fun graphSetStartDestinationKClassNonReified() {
+        @Serializable @SerialName("route") class TestClass(val arg: Int)
+
+        val graph =
+            NavGraph(navGraphNavigator).apply {
+                setStartDestination(15)
+                addDestination(
+                    NavDestinationBuilder(navGraphNavigator, TestClass::class, emptyMap()).build()
+                )
+            }
+        assertThat(graph.startDestinationId).isEqualTo(15)
+
+        graph.setStartDestination(TestClass::class)
+        assertThat(graph.startDestinationRoute).isEqualTo("route/{arg}")
+        assertThat(graph.startDestinationId).isEqualTo(serializer<TestClass>().expectedSafeArgsId())
+    }
+
+    @Test
     fun graphSetStartDestinationKClassMissingStartDestination() {
         @Serializable class TestClass
 
@@ -203,6 +221,21 @@ class NavGraphTest {
             }
 
         val dest = graph.findNode<TestClass>()
+        assertThat(dest).isNotNull()
+    }
+
+    @Test
+    fun findNodeKClassNonReified() {
+        @Serializable class TestClass(val arg: Int)
+
+        val graph =
+            NavGraph(navGraphNavigator).apply {
+                addDestination(
+                    NavDestinationBuilder(navGraphNavigator, TestClass::class, emptyMap()).build()
+                )
+            }
+
+        val dest = graph.findNode(TestClass::class)
         assertThat(dest).isNotNull()
     }
 

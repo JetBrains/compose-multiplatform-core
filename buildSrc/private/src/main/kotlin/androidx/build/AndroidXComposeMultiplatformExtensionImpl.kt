@@ -37,6 +37,9 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
 
     private val skikoVersion: String
 
+    private val enableChromeTestsProperty = "jetbrains.compose.web.tests.enableChrome"
+    private val enableFirefoxTestsProperty = "jetbrains.compose.web.tests.enableFirefox"
+
     init {
         val toml = Toml.parse(
             project.rootProject.projectDir.resolve("gradle/libs.versions.toml").toPath()
@@ -75,10 +78,18 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         js(KotlinJsCompilerType.IR) {
             browser {
                 testTask {
+                    if (project.findProperty(enableChromeTestsProperty)?.toString()?.toBoolean() == true) {
+                        it.environment(enableChromeTestsProperty, "1")
+                    }
+                    if (project.findProperty(enableFirefoxTestsProperty)?.toString()?.toBoolean() == true) {
+                        it.environment(enableFirefoxTestsProperty, "1")
+                    }
+
                     it.useKarma {
                         // We need to set up at least one browser here due to kotlin tooling limitations
                         // Actual browser configuration is set in mpp/karma.config.d/js/config.js
                         useChrome()
+                        useFirefox()
                         useConfigDirectory(
                             project.rootProject.projectDir.resolve("mpp/karma.config.d/js")
                         )
@@ -128,10 +139,18 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
         wasmJs {
             browser {
                 testTask {
+                    if (project.findProperty(enableChromeTestsProperty)?.toString()?.toBoolean() == true) {
+                        it.environment(enableChromeTestsProperty, "1")
+                    }
+                    if (project.findProperty(enableFirefoxTestsProperty)?.toString()?.toBoolean() == true) {
+                        it.environment(enableFirefoxTestsProperty, "1")
+                    }
+
                     it.useKarma {
                         // We need to set up at least one browser here due to kotlin tooling limitations
                         // Actual browser configuration is set in mpp/karma.config.d/wasm/config.js
                         useChrome()
+                        useFirefox()
                         useConfigDirectory(
                             project.rootProject.projectDir.resolve("mpp/karma.config.d/wasm")
                         )

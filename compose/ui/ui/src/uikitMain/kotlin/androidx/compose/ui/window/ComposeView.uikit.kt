@@ -22,6 +22,7 @@ import kotlinx.cinterop.CValue
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGRectEqualToRect
@@ -29,9 +30,13 @@ import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGRectZero
 import platform.UIKit.UIColor
 import platform.UIKit.UIEvent
+import platform.UIKit.UIGraphicsImageRenderer
+import platform.UIKit.UIImage
+import platform.UIKit.UIImageView
 import platform.UIKit.UITraitCollection
 import platform.UIKit.UIUserInterfaceStyle
 import platform.UIKit.UIView
+import platform.UIKit.UIViewContentMode
 import platform.UIKit.UIWindow
 
 internal class ComposeView(
@@ -103,7 +108,9 @@ internal class ComposeView(
     private var isAnimating: Boolean = false
 
     override fun layoutSubviews() {
-        super.layoutSubviews()
+        performWithoutAnimation {
+            super.layoutSubviews()
+        }
 
         onLayoutSubviews()
         updateLayout()
@@ -127,18 +134,40 @@ internal class ComposeView(
                 max(oldSize.height.value, newSize.height.value).toDouble()
             )
             if (!CGRectEqualToRect(metalView.frame, targetRect)) {
-                UIView.performWithoutAnimation {
+                performWithoutAnimation {
                     metalView.setFrame(targetRect)
                     metalView.setNeedsSynchronousDrawOnNextLayout()
                 }
             }
         } else {
             if (!CGRectEqualToRect(metalView.frame, bounds)) {
-                UIView.performWithoutAnimation {
+                performWithoutAnimation {
                     metalView.setFrame(bounds)
                     metalView.setNeedsSynchronousDrawOnNextLayout()
                 }
             }
+        }
+    }
+
+    fun animateCrossFadeTransition(scope: CoroutineScope): () -> Unit {
+        val image = viewContentImage()
+        val imageView = UIImageView(frame = bounds).also(::addSubview)
+        imageView.image = image
+        imageView.setContentMode(UIViewContentMode.UIViewContentModeScaleToFill)
+
+        setClipsToBounds(false)
+
+        scope.launch {
+            try {
+                awaitCancellation()
+            } finally {
+                setClipsToBounds(true)
+                imageView.removeFromSuperview()
+            }
+        }
+
+        return {
+            imageView.alpha = 0.0
         }
     }
 
@@ -163,5 +192,12 @@ internal class ComposeView(
 
     override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
         return super.hitTest(point, withEvent).takeUnless { transparentForTouches && it == this }
+    }
+
+    private fun viewContentImage(): UIImage {
+        val renderer = UIGraphicsImageRenderer(bounds = bounds)
+        return renderer.imageWithActions { context ->
+            this.drawViewHierarchyInRect(bounds, false)
+        }
     }
 }

@@ -19,7 +19,7 @@ package androidx.lifecycle.testapp;
 import android.app.Activity;
 import android.os.Bundle;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;

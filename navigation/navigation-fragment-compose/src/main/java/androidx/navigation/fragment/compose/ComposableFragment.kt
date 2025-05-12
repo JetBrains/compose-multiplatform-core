@@ -35,7 +35,7 @@ import androidx.fragment.app.Fragment
  * This class is constructed via a factory method: make sure you add `import
  * androidx.navigation.fragment.compose.ComposableFragment.Companion.ComposableFragment`
  */
-class ComposableFragment internal constructor() : Fragment() {
+public class ComposableFragment internal constructor() : Fragment() {
 
     private val composableMethod by lazy {
         val arguments = requireArguments()
@@ -65,7 +65,7 @@ class ComposableFragment internal constructor() : Fragment() {
         }
     }
 
-    companion object {
+    public companion object {
         internal const val FULLY_QUALIFIED_NAME =
             "androidx.navigation.fragment.compose.FULLY_QUALIFIED_NAME"
 
@@ -78,7 +78,7 @@ class ComposableFragment internal constructor() : Fragment() {
          *   `com.example.NameOfFileKt/$MethodName`.
          */
         @JvmStatic
-        fun ComposableFragment(fullyQualifiedName: String): ComposableFragment {
+        public fun ComposableFragment(fullyQualifiedName: String): ComposableFragment {
             return ComposableFragment().apply {
                 arguments = bundleOf(FULLY_QUALIFIED_NAME to fullyQualifiedName)
             }

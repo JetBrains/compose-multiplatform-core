@@ -19,8 +19,11 @@ package androidx.compose.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.window.ComposeViewport
 import kotlin.test.BeforeTest
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +35,6 @@ import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.events.Event
@@ -118,6 +120,22 @@ internal class WebApplicationScope(
         awaitWithYield()
     }
 
+    suspend fun TestInputState.awaitAndAssertTextEquals(expected: String, message: String? = null) {
+        awaitIdle()
+        assertEquals(expected = expected, actual = text, message = message)
+    }
+
+    suspend fun TestInputState.awaitAndAssertTextMatches(expected: Regex, message: String? = null) {
+        awaitIdle()
+        assertTrue(expected.matches(text), message)
+    }
+}
+
+internal interface TestInputState {
+    val text: CharSequence
+
+    @Composable
+    fun createBasicTextField(focusRequester: FocusRequester)
 }
 
 /**

@@ -102,6 +102,8 @@ internal class UIKitComposeSceneLayersHolder(
         }
     }
 
+    fun animateCrossFadeTransition(scope: CoroutineScope) = view.animateCrossFadeTransition(scope)
+
     fun dispose(hasViewAppeared: Boolean) {
         // `dispose` is called instead of `close`, because `close` is also used imperatively
         // to remove the layer from the array based on user interaction.
@@ -124,9 +126,9 @@ internal class UIKitComposeSceneLayersHolder(
         val isFirstLayer = layers.isEmpty()
 
         layers.add(layer)
-        view.insertSubview(layer.interopContainerView, belowSubview = metalView)
-        layer.interopContainerView.addLayoutConstraintsToMatch(view)
-        view.embedSubview(layer.view)
+        view.insertSubview(layer.interactionView, belowSubview = metalView)
+        layer.interactionView.addLayoutConstraintsToMatch(view)
+        view.embedSubview(layer.overlayView)
 
         if (isFirstLayer) {
             containerView?.embedSubview(view)
@@ -174,6 +176,17 @@ internal class UIKitComposeSceneLayersHolder(
         this.layers.fastForEach {
             it.sceneWillDisappear()
         }
+    }
+
+    val hasInteropViews: Boolean get() {
+        layersCache.withCopy { layers ->
+            layers.fastForEach {
+                if (it.hasInteropViews) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     /**

@@ -78,7 +78,7 @@ public actual open class NavigatorProvider actual constructor() {
         navigator: Navigator<out NavDestination>
     ): Navigator<out NavDestination>? {
         require(validateName(name)) { "Navigator name cannot be an empty string" }
-        _typeToNavigatorName[navigator::class] = navigator.name
+        _typeToNavigatorName[navigator::class] = name
         val previousNavigator = _namedNavigators[name]
         if (previousNavigator == navigator) {
             return navigator

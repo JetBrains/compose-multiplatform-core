@@ -16,6 +16,7 @@
 
 package androidx.navigation.test
 
-enum class TestEnum {
-    VALUE_ONE, VALUE_TWO
+public enum class TestEnum {
+    VALUE_ONE,
+    VALUE_TWO
 }

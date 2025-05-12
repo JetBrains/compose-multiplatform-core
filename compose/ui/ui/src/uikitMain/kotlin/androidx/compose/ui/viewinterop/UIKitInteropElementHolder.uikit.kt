@@ -33,6 +33,7 @@ import kotlinx.cinterop.CValue
 import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectIntersection
 import platform.CoreGraphics.CGRectIsEmpty
+import platform.UIKit.UIView
 
 internal abstract class UIKitInteropElementHolder<T : InteropView>(
     factory: () -> T,
@@ -119,7 +120,9 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
                 .asCGRect()
 
             container.scheduleUpdate {
-                group.setFrame(groupFrame)
+                UIView.performWithoutAnimation {
+                    group.setFrame(groupFrame)
+                }
             }
         }
 
@@ -145,7 +148,9 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
                         .asCGRect()
 
                 container.scheduleUpdate {
-                    userComponentCGRect = newUserComponentCGRect
+                    UIView.performWithoutAnimation {
+                        userComponentCGRect = newUserComponentCGRect
+                    }
                 }
 
                 currentUserComponentRect = userComponentRect
