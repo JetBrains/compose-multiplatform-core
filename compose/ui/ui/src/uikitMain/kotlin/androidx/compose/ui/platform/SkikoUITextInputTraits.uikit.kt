@@ -66,19 +66,6 @@ internal interface SkikoUITextInputTraits {
 
     fun autocorrectionType(): UITextAutocorrectionType =
         UITextAutocorrectionType.UITextAutocorrectionTypeYes
-
-    fun spellCheckingType(): UITextSpellCheckingType =
-        UITextSpellCheckingType.UITextSpellCheckingTypeDefault
-
-    fun smartQuotesType(): UITextSmartQuotesType =
-        UITextSmartQuotesType.UITextSmartQuotesTypeDefault
-
-    fun smartDashesType(): UITextSmartDashesType =
-        UITextSmartDashesType.UITextSmartDashesTypeDefault
-
-    fun smartInsertDeleteType(): UITextSmartInsertDeleteType =
-        UITextSmartInsertDeleteType.UITextSmartInsertDeleteTypeDefault
-
 }
 
 internal object EmptyInputTraits : SkikoUITextInputTraits
