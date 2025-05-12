@@ -278,10 +278,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
     }
 
     fun cleanUp() {
-        _window?.resignKeyWindow()
-        _window?.rootViewController = null
         _window = null
-
         val window = UIWindow(frame = UIScreen.mainScreen.bounds)
         window.rootViewController = UIViewController()
         window.makeKeyAndVisible()
