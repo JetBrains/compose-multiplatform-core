@@ -64,8 +64,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://m3.material.io/components/floating-action-button/overview" class="external"
- * target="_blank">Material Design floating action button</a>.
+ * <a href="https://m3.material.io/components/floating-action-button/overview" class="external" target="_blank">Material Design floating action button</a>.
  *
  * The FAB represents the most important action on a screen. It puts key actions within reach.
  *
@@ -93,6 +92,8 @@ import kotlinx.coroutines.launch
  *   preview the FAB in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
  * @param content the content of this FAB, typically an [Icon]
+ *
+ * @story /stories?embedded=true#story/PrimaryButton%2520Story
  */
 @Composable
 fun FloatingActionButton(
@@ -136,13 +137,11 @@ fun FloatingActionButton(
 }
 
 /**
- * <a href="https://m3.material.io/components/floating-action-button/overview" class="external"
- * target="_blank">Material Design small floating action button</a>.
+ * <a href="https://m3.material.io/components/floating-action-button/overview" class="external" target="_blank">Material Design small floating action button</a>.
  *
  * The FAB represents the most important action on a screen. It puts key actions within reach.
  *
- * ![Small FAB
- * image](https://developer.android.com/images/reference/androidx/compose/material3/small-fab.png)
+ * ![Small FAB image](https://developer.android.com/images/reference/androidx/compose/material3/small-fab.png)
  *
  * @sample androidx.compose.material3.samples.SmallFloatingActionButtonSample
  *
@@ -192,13 +191,11 @@ fun SmallFloatingActionButton(
 }
 
 /**
- * <a href="https://m3.material.io/components/floating-action-button/overview" class="external"
- * target="_blank">Material Design large floating action button</a>.
+ * <a href="https://m3.material.io/components/floating-action-button/overview" class="external" target="_blank">Material Design large floating action button</a>.
  *
  * The FAB represents the most important action on a screen. It puts key actions within reach.
  *
- * ![Large FAB
- * image](https://developer.android.com/images/reference/androidx/compose/material3/large-fab.png)
+ * ![Large FAB image](https://developer.android.com/images/reference/androidx/compose/material3/large-fab.png)
  *
  * @sample androidx.compose.material3.samples.LargeFloatingActionButtonSample
  *
@@ -248,14 +245,12 @@ fun LargeFloatingActionButton(
 }
 
 /**
- * <a href="https://m3.material.io/components/extended-fab/overview" class="external"
- * target="_blank">Material Design extended floating action button</a>.
+ * <a href="https://m3.material.io/components/extended-fab/overview" class="external" target="_blank">Material Design extended floating action button</a>.
  *
  * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
  * label and larger target area.
  *
- * ![Extended FAB
- * image](https://developer.android.com/images/reference/androidx/compose/material3/extended-fab.png)
+ * ![Extended FAB image](https://developer.android.com/images/reference/androidx/compose/material3/extended-fab.png)
  *
  * The other extended floating action button overload supports a text label and icon.
  *
@@ -311,14 +306,12 @@ fun ExtendedFloatingActionButton(
 }
 
 /**
- * <a href="https://m3.material.io/components/extended-fab/overview" class="external"
- * target="_blank">Material Design extended floating action button</a>.
+ * <a href="https://m3.material.io/components/extended-fab/overview" class="external" target="_blank">Material Design extended floating action button</a>.
  *
  * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
  * label and larger target area.
  *
- * ![Extended FAB
- * image](https://developer.android.com/images/reference/androidx/compose/material3/extended-fab.png)
+ * ![Extended FAB image](https://developer.android.com/images/reference/androidx/compose/material3/extended-fab.png)
  *
  * The other extended floating action button overload is for FABs without an icon.
  *

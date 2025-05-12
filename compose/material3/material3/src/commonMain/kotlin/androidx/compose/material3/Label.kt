@@ -59,6 +59,8 @@ import kotlinx.coroutines.flow.collectLatest
  *   label will always show and be anchored to [content]. if false, then the label will only show
  *   when pressing down or hovering over the [content].
  * @param content the composable that [label] will anchor to.
+ *
+ * @story /stories?embedded=true#story/PrimaryButton%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable

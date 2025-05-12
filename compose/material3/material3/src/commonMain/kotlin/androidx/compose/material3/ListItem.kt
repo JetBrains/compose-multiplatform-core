@@ -54,13 +54,11 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.max
 
 /**
- * <a href="https://m3.material.io/components/lists/overview" class="external"
- * target="_blank">Material Design list item.</a>
+ * <a href="https://m3.material.io/components/lists/overview" class="external" target="_blank">Material Design list item.</a>
  *
  * Lists are continuous, vertical indexes of text or images.
  *
- * ![Lists
- * image](https://developer.android.com/images/reference/androidx/compose/material3/lists.png)
+ * ![Lists image](https://developer.android.com/images/reference/androidx/compose/material3/lists.png)
  *
  * This component can be used to achieve the list item templates existing in the spec. One-line list
  * items have a singular line of headline content. Two-line list items additionally have either

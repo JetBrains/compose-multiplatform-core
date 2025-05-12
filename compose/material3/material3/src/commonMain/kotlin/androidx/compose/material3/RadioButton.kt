@@ -43,13 +43,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 
 /**
- * <a href="https://m3.material.io/components/radio-button/overview" class="external"
- * target="_blank">Material Design radio button</a>.
+ * <a href="https://m3.material.io/components/radio-button/overview" class="external" target="_blank">Material Design radio button</a>.
  *
  * Radio buttons allow users to select one option from a set.
  *
- * ![Radio button
- * image](https://developer.android.com/images/reference/androidx/compose/material3/radio-button.png)
+ * ![Radio button image](https://developer.android.com/images/reference/androidx/compose/material3/radio-button.png)
  *
  * @sample androidx.compose.material3.samples.RadioButtonSample
  *
@@ -71,6 +69,8 @@ import androidx.compose.ui.unit.dp
  *   emitting [Interaction]s for this radio button. You can use this to change the radio button's
  *   appearance or preview the radio button in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
+ *
+ * @story /stories?embedded=true#story/PrimaryButton%2520Story
  */
 @Composable
 fun RadioButton(

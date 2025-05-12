@@ -58,15 +58,13 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://m3.material.io/components/bottom-sheets/overview" class="external"
- * target="_blank">Material Design standard bottom sheet scaffold</a>.
+ * <a href="https://m3.material.io/components/bottom-sheets/overview" class="external" target="_blank">Material Design standard bottom sheet scaffold</a>.
  *
  * Standard bottom sheets co-exist with the screen’s main UI region and allow for simultaneously
  * viewing and interacting with both regions. They are commonly used to keep a feature or secondary
  * content visible on screen when content in main UI region is frequently scrolled or panned.
  *
- * ![Bottom sheet
- * image](https://developer.android.com/images/reference/androidx/compose/material3/bottom_sheet.png)
+ * ![Bottom sheet image](https://developer.android.com/images/reference/androidx/compose/material3/bottom_sheet.png)
  *
  * This component provides API to put together several material components to construct your screen,
  * by ensuring proper layout strategy for them and collecting necessary data so these components
@@ -106,6 +104,8 @@ import kotlinx.coroutines.launch
  *   applied to the content root via [Modifier.padding] and [Modifier.consumeWindowInsets] to
  *   properly offset top and bottom bars. If using [Modifier.verticalScroll], apply this modifier to
  *   the child of the scroll, and not on the scroll itself.
+ *
+ * @story /stories?embedded=true#story/BottomSheetScaffold%2520Story
  */
 @Composable
 @ExperimentalMaterial3Api

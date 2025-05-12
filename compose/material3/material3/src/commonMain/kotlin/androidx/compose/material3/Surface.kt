@@ -88,6 +88,8 @@ import androidx.compose.ui.unit.dp
  *   separation from a patterned background. Note that It will not affect z index of the Surface. If
  *   you want to change the drawing order you can use `Modifier.zIndex`.
  * @param border Optional border to draw on top of the surface
+ *
+ * @story /stories?embedded=true#story/Surface%2520Story
  */
 @Composable
 @NonRestartableComposable

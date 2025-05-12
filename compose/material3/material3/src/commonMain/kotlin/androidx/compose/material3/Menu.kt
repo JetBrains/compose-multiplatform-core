@@ -66,14 +66,12 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * <a href="https://m3.material.io/components/menus/overview" class="external"
- * target="_blank">Material Design dropdown menu</a>.
+ * <a href="https://m3.material.io/components/menus/overview" class="external" target="_blank">Material Design dropdown menu</a>.
  *
  * Menus display a list of choices on a temporary surface. They appear when users interact with a
  * button, action, or other control.
  *
- * ![Dropdown menu
- * image](https://developer.android.com/images/reference/androidx/compose/material3/menu.png)
+ * ![Dropdown menu image](https://developer.android.com/images/reference/androidx/compose/material3/menu.png)
  *
  * A [DropdownMenu] behaves similarly to a [Popup], and will use the position of the parent layout
  * to position itself on screen. Commonly a [DropdownMenu] will be placed in a [Box] with a sibling
@@ -121,6 +119,8 @@ import kotlin.math.min
  * @param shadowElevation the elevation for the shadow below the menu
  * @param border the border to draw around the container of the menu. Pass `null` for no border.
  * @param content the content of this dropdown menu, typically a [DropdownMenuItem]
+ *
+ * @story /stories?embedded=true#story/DropdownMenu%2520Story
  */
 @Composable
 expect fun DropdownMenu(
@@ -139,14 +139,12 @@ expect fun DropdownMenu(
 )
 
 /**
- * <a href="https://m3.material.io/components/menus/overview" class="external"
- * target="_blank">Material Design dropdown menu</a> item.
+ * <a href="https://m3.material.io/components/menus/overview" class="external" target="_blank">Material Design dropdown menu</a> item.
  *
  * Menus display a list of choices on a temporary surface. They appear when users interact with a
  * button, action, or other control.
  *
- * ![Dropdown menu
- * image](https://developer.android.com/images/reference/androidx/compose/material3/menu.png)
+ * ![Dropdown menu image](https://developer.android.com/images/reference/androidx/compose/material3/menu.png)
  *
  * Example usage:
  *
@@ -168,6 +166,8 @@ expect fun DropdownMenu(
  *   emitting [Interaction]s for this menu item. You can use this to change the menu item's
  *   appearance or preview the menu item in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
+ *
+ * @story /stories?embedded=true#story/DropdownMenuItem%2520Story
  */
 @Composable
 expect fun DropdownMenuItem(

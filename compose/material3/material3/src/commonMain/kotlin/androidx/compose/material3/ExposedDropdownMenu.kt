@@ -60,8 +60,7 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * <a href="https://m3.material.io/components/menus/overview" class="external"
- * target="_blank">Material Design Exposed Dropdown Menu</a>.
+ * <a href="https://m3.material.io/components/menus/overview" class="external" target="_blank">Material Design Exposed Dropdown Menu</a>.
  *
  * Menus display a list of choices on a temporary surface. They appear when users interact with a
  * button, action, or other control.
@@ -71,8 +70,7 @@ import kotlin.math.roundToInt
  * display user input (whether or not it’s listed as a menu choice), in which case it may be used to
  * implement autocomplete.
  *
- * ![Exposed dropdown menu
- * image](https://developer.android.com/images/reference/androidx/compose/material3/exposed-dropdown-menu.png)
+ * ![Exposed dropdown menu image](https://developer.android.com/images/reference/androidx/compose/material3/exposed-dropdown-menu.png)
  *
  * The [ExposedDropdownMenuBox] is expected to contain a [TextField] (or [OutlinedTextField]) and
  * [ExposedDropdownMenu][ExposedDropdownMenuBoxScope.ExposedDropdownMenu] as content. The
@@ -92,6 +90,8 @@ import kotlin.math.roundToInt
  * @param modifier the [Modifier] to be applied to this ExposedDropdownMenuBox
  * @param content the content of this ExposedDropdownMenuBox, typically a [TextField] and an
  *   [ExposedDropdownMenu][ExposedDropdownMenuBoxScope.ExposedDropdownMenu].
+ *
+ * @story /stories?embedded=true#story/PrimaryButton%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable

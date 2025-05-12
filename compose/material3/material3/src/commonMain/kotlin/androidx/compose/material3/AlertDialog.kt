@@ -45,14 +45,12 @@ import androidx.compose.ui.window.DialogProperties
 import kotlin.math.max
 
 /**
- * <a href="https://m3.material.io/components/dialogs/overview" class="external"
- * target="_blank">Material Design basic dialog</a>.
+ * <a href="https://m3.material.io/components/dialogs/overview" class="external" target="_blank">Material Design basic dialog</a>.
  *
  * Dialogs provide important prompts in a user flow. They can require an action, communicate
  * information, or help users accomplish a task.
  *
- * ![Basic dialog
- * image](https://developer.android.com/images/reference/androidx/compose/material3/basic-dialog.png)
+ * ![Basic dialog image](https://developer.android.com/images/reference/androidx/compose/material3/basic-dialog.png)
  *
  * The dialog will position its buttons, typically [TextButton]s, based on the available space. By
  * default it will try to place them horizontally next to each other and fallback to horizontal
@@ -90,6 +88,8 @@ import kotlin.math.max
  *   darker color in light theme and lighter color in dark theme. See also: [Surface].
  * @param properties typically platform specific properties to further configure the dialog.
  * @see BasicAlertDialog
+ *
+ * @story /stories?embedded=true#story/AlertDialog%2520Story
  */
 @Composable
 expect fun AlertDialog(
@@ -110,14 +110,12 @@ expect fun AlertDialog(
 )
 
 /**
- * <a href="https://m3.material.io/components/dialogs/overview" class="external"
- * target="_blank">Basic alert dialog dialog</a>.
+ * <a href="https://m3.material.io/components/dialogs/overview" class="external" target="_blank">Basic alert dialog dialog</a>.
  *
  * Dialogs provide important prompts in a user flow. They can require an action, communicate
  * information, or help users accomplish a task.
  *
- * ![Basic dialog
- * image](https://developer.android.com/images/reference/androidx/compose/material3/basic-dialog.png)
+ * ![Basic dialog image](https://developer.android.com/images/reference/androidx/compose/material3/basic-dialog.png)
  *
  * This basic alert dialog expects an arbitrary content that is defined by the caller. Note that
  * your content will need to define its own styling.
@@ -135,6 +133,8 @@ expect fun AlertDialog(
  * @param modifier the [Modifier] to be applied to this dialog's content.
  * @param properties typically platform specific properties to further configure the dialog.
  * @param content the content of the dialog
+ *
+ * @story /stories?embedded=true#story/BasicAlertDialog%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable
@@ -162,14 +162,12 @@ fun BasicAlertDialog(
 }
 
 /**
- * <a href="https://m3.material.io/components/dialogs/overview" class="external"
- * target="_blank">Basic alert dialog dialog</a>.
+ * <a href="https://m3.material.io/components/dialogs/overview" class="external" target="_blank">Basic alert dialog dialog</a>.
  *
  * Dialogs provide important prompts in a user flow. They can require an action, communicate
  * information, or help users accomplish a task.
  *
- * ![Basic dialog
- * image](https://developer.android.com/images/reference/androidx/compose/material3/basic-dialog.png)
+ * ![Basic dialog image](https://developer.android.com/images/reference/androidx/compose/material3/basic-dialog.png)
  *
  * This basic alert dialog expects an arbitrary content that is defined by the caller. Note that
  * your content will need to define its own styling.

@@ -290,16 +290,14 @@ fun rememberDrawerState(
 }
 
 /**
- * <a href="https://m3.material.io/components/navigation-drawer/overview" class="external"
- * target="_blank">Material Design navigation drawer</a>.
+ * <a href="https://m3.material.io/components/navigation-drawer/overview" class="external" target="_blank">Material Design navigation drawer</a>.
  *
  * Navigation drawers provide ergonomic access to destinations in an app.
  *
  * Modal navigation drawers block interaction with the rest of an app’s content with a scrim. They
  * are elevated above most of the app’s UI and don’t affect the screen’s layout grid.
  *
- * ![Navigation drawer
- * image](https://developer.android.com/images/reference/androidx/compose/material3/navigation-drawer.png)
+ * ![Navigation drawer image](https://developer.android.com/images/reference/androidx/compose/material3/navigation-drawer.png)
  *
  * @sample androidx.compose.material3.samples.ModalNavigationDrawerSample
  *
@@ -309,6 +307,8 @@ fun rememberDrawerState(
  * @param gesturesEnabled whether or not the drawer can be interacted by gestures
  * @param scrimColor color of the scrim that obscures content when the drawer is open
  * @param content content of the rest of the UI
+ *
+ * @story /stories?embedded=true#story/PrimaryButton%2520Story
  */
 @Composable
 fun ModalNavigationDrawer(
@@ -413,14 +413,12 @@ fun ModalNavigationDrawer(
 }
 
 /**
- * <a href="https://m3.material.io/components/navigation-drawer/overview" class="external"
- * target="_blank">Material Design navigation drawer</a>.
+ * <a href="https://m3.material.io/components/navigation-drawer/overview" class="external" target="_blank">Material Design navigation drawer</a>.
  *
  * Navigation drawers provide ergonomic access to destinations in an app. They’re often next to app
  * content and affect the screen’s layout grid.
  *
- * ![Navigation drawer
- * image](https://developer.android.com/images/reference/androidx/compose/material3/navigation-drawer.png)
+ * ![Navigation drawer image](https://developer.android.com/images/reference/androidx/compose/material3/navigation-drawer.png)
  *
  * Dismissible standard drawers can be used for layouts that prioritize content (such as a photo
  * gallery) or for apps where users are unlikely to switch destinations often. They should use a
@@ -512,14 +510,12 @@ fun DismissibleNavigationDrawer(
 }
 
 /**
- * <a href="https://m3.material.io/components/navigation-drawer/overview" class="external"
- * target="_blank">Material Design navigation permanent drawer</a>.
+ * <a href="https://m3.material.io/components/navigation-drawer/overview" class="external" target="_blank">Material Design navigation permanent drawer</a>.
  *
  * Navigation drawers provide ergonomic access to destinations in an app. They’re often next to app
  * content and affect the screen’s layout grid.
  *
- * ![Navigation drawer
- * image](https://developer.android.com/images/reference/androidx/compose/material3/navigation-drawer.png)
+ * ![Navigation drawer image](https://developer.android.com/images/reference/androidx/compose/material3/navigation-drawer.png)
  *
  * The permanent navigation drawer is always visible and usually used for frequently switching
  * destinations. On mobile screens, use [ModalNavigationDrawer] instead.

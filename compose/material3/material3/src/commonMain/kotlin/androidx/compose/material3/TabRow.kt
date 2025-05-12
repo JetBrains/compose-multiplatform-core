@@ -79,8 +79,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://m3.material.io/components/tabs/overview" class="external"
- * target="_blank">Material Design Fixed Primary tabs</a>
+ * <a href="https://m3.material.io/components/tabs/overview" class="external" target="_blank">Material Design Fixed Primary tabs</a>
  *
  * Primary tabs are placed at the top of the content pane under a top app bar. They display the main
  * content destinations. Fixed tabs display all tabs in a set simultaneously. They are best for
@@ -147,6 +146,8 @@ import kotlinx.coroutines.launch
  * @param tabs the tabs inside this tab row. Typically this will be multiple [Tab]s. Each element
  *   inside this lambda will be measured and placed evenly across the row, each taking up equal
  *   space.
+ *
+ * @story /stories?embedded=true#story/PrimaryButton%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable
@@ -168,8 +169,7 @@ fun PrimaryTabRow(
 }
 
 /**
- * <a href="https://m3.material.io/components/tabs/overview" class="external"
- * target="_blank">Material Design Fixed Secondary tabs</a>
+ * <a href="https://m3.material.io/components/tabs/overview" class="external" target="_blank">Material Design Fixed Secondary tabs</a>
  *
  * Secondary tabs are used within a content area to further separate related content and establish
  * hierarchy. Fixed tabs display all tabs in a set simultaneously. To navigate between fixed tabs,
@@ -222,8 +222,7 @@ fun SecondaryTabRow(
 }
 
 /**
- * <a href="https://m3.material.io/components/tabs/overview" class="external"
- * target="_blank">Material Design tabs</a>
+ * <a href="https://m3.material.io/components/tabs/overview" class="external" target="_blank">Material Design tabs</a>
  *
  * Material Design fixed tabs.
  *
@@ -296,6 +295,8 @@ fun SecondaryTabRow(
  * @param tabs the tabs inside this tab row. Typically this will be multiple [Tab]s. Each element
  *   inside this lambda will be measured and placed evenly across the row, each taking up equal
  *   space.
+ *
+ * @story /stories?embedded=true#story/TabRow%2520Story
  */
 @Composable
 fun TabRow(
@@ -318,8 +319,7 @@ fun TabRow(
 }
 
 /**
- * <a href="https://m3.material.io/components/tabs/overview" class="external"
- * target="_blank">Material Design Scrollable Primary tabs</a>
+ * <a href="https://m3.material.io/components/tabs/overview" class="external" target="_blank">Material Design Scrollable Primary tabs</a>
  *
  * Primary tabs are placed at the top of the content pane under a top app bar. They display the main
  * content destinations. When a set of tabs cannot fit on screen, use scrollable tabs. Scrollable
@@ -384,8 +384,7 @@ fun PrimaryScrollableTabRow(
 }
 
 /**
- * <a href="https://m3.material.io/components/tabs/overview" class="external"
- * target="_blank">Material Design Scrollable Secondary tabs</a>
+ * <a href="https://m3.material.io/components/tabs/overview" class="external" target="_blank">Material Design Scrollable Secondary tabs</a>
  *
  * Material Design scrollable tabs.
  *
@@ -453,8 +452,7 @@ fun SecondaryScrollableTabRow(
 }
 
 /**
- * <a href="https://m3.material.io/components/tabs/overview" class="external"
- * target="_blank">Material Design tabs</a>
+ * <a href="https://m3.material.io/components/tabs/overview" class="external" target="_blank">Material Design tabs</a>
  *
  * Material Design scrollable tabs.
  *

@@ -88,8 +88,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://m3.material.io/components/segmented-buttons/overview" class="external"
- * target="_blank">Material Segmented Button</a>. Segmented buttons help people select options,
+ * <a href="https://m3.material.io/components/segmented-buttons/overview" class="external" target="_blank">Material Segmented Button</a>. Segmented buttons help people select options,
  * switch views, or sort elements.
  *
  * A default Toggleable Segmented Button. Also known as Outlined Segmented Button. See
@@ -122,6 +121,8 @@ import kotlinx.coroutines.launch
  *   content will displace to show the checked icon, or pass different icon lambdas for unchecked
  *   and checked in which case the icons will crossfade.
  * @param label content to be rendered inside this button
+ *
+ * @story /stories?embedded=true#story/PrimaryButton%2520Story
  */
 @Composable
 fun MultiChoiceSegmentedButtonRowScope.SegmentedButton(
@@ -166,8 +167,7 @@ fun MultiChoiceSegmentedButtonRowScope.SegmentedButton(
 }
 
 /**
- * <a href="https://m3.material.io/components/segmented-buttons/overview" class="external"
- * target="_blank">Material Segmented Button</a>. Segmented buttons help people select options,
+ * <a href="https://m3.material.io/components/segmented-buttons/overview" class="external" target="_blank">Material Segmented Button</a>. Segmented buttons help people select options,
  * switch views, or sort elements.
  *
  * A default Toggleable Segmented Button. Also known as Outlined Segmented Button. See
@@ -245,8 +245,7 @@ fun SingleChoiceSegmentedButtonRowScope.SegmentedButton(
 }
 
 /**
- * <a href="https://m3.material.io/components/segmented-buttons/overview" class="external"
- * target="_blank">Material Segmented Button</a>.
+ * <a href="https://m3.material.io/components/segmented-buttons/overview" class="external" target="_blank">Material Segmented Button</a>.
  *
  * A Layout to correctly position and size [SegmentedButton]s in a Row. It handles overlapping items
  * so that strokes of the item are correctly on top of each other. [SingleChoiceSegmentedButtonRow]
@@ -281,8 +280,7 @@ fun SingleChoiceSegmentedButtonRow(
 }
 
 /**
- * <a href="https://m3.material.io/components/segmented-buttons/overview" class="external"
- * target="_blank">Material Segmented Button</a>.
+ * <a href="https://m3.material.io/components/segmented-buttons/overview" class="external" target="_blank">Material Segmented Button</a>.
  *
  * A Layout to correctly position, size, and add semantics to [SegmentedButton]s in a Row. It
  * handles overlapping items so that strokes of the item are correctly on top of each other.

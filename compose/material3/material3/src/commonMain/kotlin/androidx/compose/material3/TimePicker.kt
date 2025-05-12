@@ -187,16 +187,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://m3.material.io/components/time-pickers/overview" class="external"
- * target="_blank">Material Design time picker</a>.
+ * <a href="https://m3.material.io/components/time-pickers/overview" class="external" target="_blank">Material Design time picker</a>.
  *
  * Time pickers help users select and set a specific time.
  *
  * Shows a picker that allows the user to select time. Subscribe to updates through
  * [TimePickerState]
  *
- * ![Time picker
- * image](https://developer.android.com/images/reference/androidx/compose/material3/time-picker.png)
+ * ![Time picker image](https://developer.android.com/images/reference/androidx/compose/material3/time-picker.png)
  *
  * @sample androidx.compose.material3.samples.TimePickerSample
  *
@@ -212,6 +210,8 @@ import kotlinx.coroutines.launch
  *   time picker in different states. See [TimePickerDefaults.colors].
  * @param layoutType, the different [TimePickerLayoutType] supported by this time picker, it will
  *   change the position and sizing of different components of the timepicker.
+ *
+ * @story /stories?embedded=true#story/TimePicker%2520Story
  */
 @Composable
 @ExperimentalMaterial3Api
@@ -253,6 +253,8 @@ fun TimePicker(
  * @param modifier the [Modifier] to be applied to this time input
  * @param colors colors [TimePickerColors] that will be used to resolve the colors used for this
  *   time input in different states. See [TimePickerDefaults.colors].
+ *
+ * @story /stories?embedded=true#story/TimeInput%2520Story
  */
 @Composable
 @ExperimentalMaterial3Api
@@ -866,7 +868,7 @@ internal class AnalogTimePickerState(val state: TimePickerState) : TimePickerSta
 internal val TimePickerState.hourForDisplay: Int
     get() =
         when {
-            is24hour -> hour % 24
+            is24hour -> hour
             hour % 12 == 0 -> 12
             isAfternoon -> hour - 12
             else -> hour

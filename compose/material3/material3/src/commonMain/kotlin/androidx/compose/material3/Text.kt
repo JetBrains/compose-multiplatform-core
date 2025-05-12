@@ -87,6 +87,8 @@ import androidx.compose.ui.unit.TextUnit
  *   text, baselines and other details. The callback can be used to add additional decoration or
  *   functionality to the text. For example, to draw selection around the text.
  * @param style style configuration for the text such as color, font, line height etc.
+ *
+ * @story /stories?embedded=true#story/Text%2520Story
  */
 @Composable
 fun Text(

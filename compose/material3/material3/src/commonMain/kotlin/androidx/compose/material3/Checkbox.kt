@@ -56,14 +56,12 @@ import kotlin.math.floor
 import kotlin.math.max
 
 /**
- * <a href="https://m3.material.io/components/checkbox/overview" class="external"
- * target="_blank">Material Design checkbox</a>.
+ * <a href="https://m3.material.io/components/checkbox/overview" class="external" target="_blank">Material Design checkbox</a>.
  *
  * Checkboxes allow users to select one or more items from a set. Checkboxes can turn an option on
  * or off.
  *
- * ![Checkbox
- * image](https://developer.android.com/images/reference/androidx/compose/material3/checkbox.png)
+ * ![Checkbox image](https://developer.android.com/images/reference/androidx/compose/material3/checkbox.png)
  *
  * Simple Checkbox sample:
  *
@@ -87,6 +85,8 @@ import kotlin.math.max
  *   or preview the checkbox in different states. Note that if `null` is provided, interactions will
  *   still happen internally.
  * @see [TriStateCheckbox] if you require support for an indeterminate state.
+ *
+ * @story /stories?embedded=true#story/Checkbox%2520Story
  */
 @Composable
 fun Checkbox(
@@ -113,16 +113,14 @@ fun Checkbox(
 }
 
 /**
- * <a href="https://m3.material.io/components/checkbox/guidelines" class="external"
- * target="_blank">Material Design checkbox</a> parent.
+ * <a href="https://m3.material.io/components/checkbox/guidelines" class="external" target="_blank">Material Design checkbox</a> parent.
  *
  * Checkboxes can have a parent-child relationship with other checkboxes. When the parent checkbox
  * is checked, all child checkboxes are checked. If a parent checkbox is unchecked, all child
  * checkboxes are unchecked. If some, but not all, child checkboxes are checked, the parent checkbox
  * becomes an indeterminate checkbox.
  *
- * ![Checkbox
- * image](https://developer.android.com/images/reference/androidx/compose/material3/indeterminate-checkbox.png)
+ * ![Checkbox image](https://developer.android.com/images/reference/androidx/compose/material3/indeterminate-checkbox.png)
  *
  * @sample androidx.compose.material3.samples.TriStateCheckboxSample
  *
@@ -140,6 +138,8 @@ fun Checkbox(
  *   or preview the checkbox in different states. Note that if `null` is provided, interactions will
  *   still happen internally.
  * @see [Checkbox] if you want a simple component that represents Boolean state
+ *
+ * @story /stories?embedded=true#story/TriStateCheckbox%2520Story
  */
 @Composable
 fun TriStateCheckbox(

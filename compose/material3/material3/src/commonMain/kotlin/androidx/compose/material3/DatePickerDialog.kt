@@ -46,6 +46,8 @@ import androidx.compose.ui.window.DialogProperties
  * picker in different states. See [DatePickerDefaults.colors].
  * @param properties typically platform specific properties to further configure the dialog
  * @param content the content of the dialog (i.e. a [DatePicker], for example)
+ *
+ * @story /stories?embedded=true#story/DatePickerDialog%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable

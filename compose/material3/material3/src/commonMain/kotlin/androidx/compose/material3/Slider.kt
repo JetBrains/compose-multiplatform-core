@@ -112,8 +112,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://m3.material.io/components/sliders/overview" class="external"
- * target="_blank">Material Design slider</a>.
+ * <a href="https://m3.material.io/components/sliders/overview" class="external" target="_blank">Material Design slider</a>.
  *
  * Sliders allow users to make selections from a range of values.
  *
@@ -122,8 +121,7 @@ import kotlinx.coroutines.launch
  * Sliders reflect a range of values along a bar, from which users may select a single value. They
  * are ideal for adjusting settings such as volume, brightness, or applying image filters.
  *
- * ![Sliders
- * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
+ * ![Sliders image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
  *
  * Use continuous sliders to allow users to make meaningful selections that don’t require a specific
  * value:
@@ -155,6 +153,8 @@ import kotlinx.coroutines.launch
  * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
  *   for this slider. You can create and pass in your own `remember`ed instance to observe
  *   [Interaction]s and customize the appearance / behavior of this slider in different states.
+ *
+ * @story /stories?embedded=true#story/PrimaryButton%2520Story
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -193,16 +193,14 @@ fun Slider(
 }
 
 /**
- * <a href="https://m3.material.io/components/sliders/overview" class="external"
- * target="_blank">Material Design slider</a>.
+ * <a href="https://m3.material.io/components/sliders/overview" class="external" target="_blank">Material Design slider</a>.
  *
  * Sliders allow users to make selections from a range of values.
  *
  * Sliders reflect a range of values along a bar, from which users may select a single value. They
  * are ideal for adjusting settings such as volume, brightness, or applying image filters.
  *
- * ![Sliders
- * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
+ * ![Sliders image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
  *
  * Use continuous sliders to allow users to make meaningful selections that don’t require a specific
  * value:
@@ -288,16 +286,14 @@ fun Slider(
 }
 
 /**
- * <a href="https://m3.material.io/components/sliders/overview" class="external"
- * target="_blank">Material Design slider</a>.
+ * <a href="https://m3.material.io/components/sliders/overview" class="external" target="_blank">Material Design slider</a>.
  *
  * Sliders allow users to make selections from a range of values.
  *
  * Sliders reflect a range of values along a bar, from which users may select a single value. They
  * are ideal for adjusting settings such as volume, brightness, or applying image filters.
  *
- * ![Sliders
- * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
+ * ![Sliders image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
  *
  * Use continuous sliders to allow users to make meaningful selections that don’t require a specific
  * value:
@@ -364,8 +360,7 @@ fun Slider(
 }
 
 /**
- * <a href="https://m3.material.io/components/sliders/overview" class="external"
- * target="_blank">Material Design Range slider</a>.
+ * <a href="https://m3.material.io/components/sliders/overview" class="external" target="_blank">Material Design Range slider</a>.
  *
  * Range Sliders expand upon [Slider] using the same concepts but allow the user to select 2 values.
  *
@@ -447,8 +442,7 @@ fun RangeSlider(
 }
 
 /**
- * <a href="https://m3.material.io/components/sliders/overview" class="external"
- * target="_blank">Material Design Range slider</a>.
+ * <a href="https://m3.material.io/components/sliders/overview" class="external" target="_blank">Material Design Range slider</a>.
  *
  * Range Sliders expand upon [Slider] using the same concepts but allow the user to select 2 values.
  *
@@ -565,8 +559,7 @@ fun RangeSlider(
 }
 
 /**
- * <a href="https://m3.material.io/components/sliders/overview" class="external"
- * target="_blank">Material Design Range slider</a>.
+ * <a href="https://m3.material.io/components/sliders/overview" class="external" target="_blank">Material Design Range slider</a>.
  *
  * Range Sliders expand upon [Slider] using the same concepts but allow the user to select 2 values.
  *
