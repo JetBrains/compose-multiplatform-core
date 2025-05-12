@@ -154,6 +154,8 @@ internal class UIKitComposeSceneLayer(
 
     fun retrieveInteropTransaction() = mediator.retrieveInteropTransaction()
 
+    val hasInteropViews: Boolean get() = mediator.hasInteropViews
+
     fun prepareAndGetSizeTransitionAnimation() = mediator.prepareAndGetSizeTransitionAnimation()
 
     override fun close() {
