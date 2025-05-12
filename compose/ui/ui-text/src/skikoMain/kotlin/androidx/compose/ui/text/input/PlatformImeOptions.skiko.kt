@@ -17,6 +17,15 @@
 package androidx.compose.ui.text.input
 
 import androidx.compose.runtime.Immutable
+import platform.UIKit.UIKeyboardAppearance
+import platform.UIKit.UIKeyboardAppearanceDefault
+import platform.UIKit.UIKeyboardType
+import platform.UIKit.UIKeyboardTypeDefault
+import platform.UIKit.UIReturnKeyType
+import platform.UIKit.UITextAutocapitalizationType
+import platform.UIKit.UITextAutocorrectionType
+import platform.UIKit.UITextContentType
+import platform.UIKit.UITextSpellCheckingType
 
 /**
  * Used to configure the platform specific IME options.
