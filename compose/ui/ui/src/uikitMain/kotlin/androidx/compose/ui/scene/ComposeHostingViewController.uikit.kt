@@ -226,7 +226,14 @@ internal class ComposeHostingViewController(
         super.viewWillTransitionToSize(size, withTransitionCoordinator)
 
         updateInterfaceOrientationState()
-        animateSizeTransition(withTransitionCoordinator)
+
+        if (mediator?.hasInteropViews == true || layers?.hasInteropViews == true) {
+            // Heavy interop views may slow down the animation of per-frame screen rotation.
+            // For these cases, a cross-fade transition will be used instead.
+            crossFadeSizeTransition(withTransitionCoordinator)
+        } else {
+            animateSizeTransition(withTransitionCoordinator)
+        }
     }
 
     @Suppress("DEPRECATION")
@@ -409,6 +416,27 @@ internal class ComposeHostingViewController(
             completion = {
                 sizeTransitionScope.cancel()
                 displayLinkListener.invalidate()
+            }
+        )
+    }
+
+    private fun crossFadeSizeTransition(
+        transitionCoordinator: UIViewControllerTransitionCoordinatorProtocol
+    ) {
+        val duration = transitionCoordinator.transitionDuration.toDuration(DurationUnit.SECONDS)
+        if (duration == Duration.ZERO) return
+
+        val transitionScope = CoroutineScope(composeCoroutineContext)
+        val viewAnimationClosure = rootView.animateCrossFadeTransition(transitionScope)
+        val layersAnimationClosure = layers?.animateCrossFadeTransition(transitionScope)
+
+        transitionCoordinator.animateAlongsideTransition(
+            animation = {
+                viewAnimationClosure()
+                layersAnimationClosure?.invoke()
+            },
+            completion = {
+                transitionScope.cancel()
             }
         )
     }

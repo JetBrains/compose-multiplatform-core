@@ -250,6 +250,8 @@ internal class ComposeSceneMediator(
             }
         }
 
+    val hasInteropViews: Boolean get() = interopContainer.hasInteropViews
+
     private val applicationForegroundStateListener =
         ApplicationForegroundStateListener { _ ->
             // Sometimes the application can trigger animation and go background before the animation is
