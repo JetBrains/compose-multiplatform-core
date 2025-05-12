@@ -861,6 +861,11 @@ src/androidx/compose/ui/foo/TestModifier.kt:34: Error: Modifier factory function
 
                 import androidx.compose.ui.Modifier
 
+                // Can't point out synthetic copy
+                data class TestDataElement(
+                    val onRemeasured: () -> Unit,
+                ) : Modifier.Element
+
                 object TestModifier : Modifier.Element
 
                 fun Modifier.fooModifier(): Modifier {
