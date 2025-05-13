@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -447,6 +448,10 @@ internal class RootNodeOwner(
             measureAndLayoutDelegate.onNodeDetached(node)
             snapshotObserver.clear(node)
             needClearObservations = true
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (ComposeUiFlags.isRectTrackingEnabled) {
+                rectManager.remove(node)
+            }
         }
 
         override fun measureAndLayout(sendPointerUpdate: Boolean) {
@@ -474,6 +479,10 @@ internal class RootNodeOwner(
                 // it allows us to not traverse the hierarchy twice.
                 if (!measureAndLayoutDelegate.hasPendingMeasureOrLayout) {
                     measureAndLayoutDelegate.dispatchOnPositionedCallbacks()
+                }
+                @OptIn(ExperimentalComposeUiApi::class)
+                if (ComposeUiFlags.isRectTrackingEnabled) {
+                    rectManager.dispatchCallbacks()
                 }
             }
         }
@@ -545,6 +554,10 @@ internal class RootNodeOwner(
         }
 
         override fun onLayoutNodeDeactivated(layoutNode: LayoutNode) {
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (ComposeUiFlags.isRectTrackingEnabled) {
+                rectManager.remove(layoutNode)
+            }
         }
 
         override fun onPreLayoutNodeReused(layoutNode: LayoutNode, oldSemanticsId: Int) {
