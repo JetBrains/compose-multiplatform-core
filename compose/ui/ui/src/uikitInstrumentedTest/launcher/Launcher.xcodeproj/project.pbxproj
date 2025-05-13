@@ -574,8 +574,6 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
-					"-L$SRCROOT/../../../../../../out/androidx/internal-testutils-xctest/build/objc/iphonesimulator.xcarchive/Products/usr/local/lib",
-					"-lCMPTestUtils",
 					"-ObjC",
 					"-framework",
 					InstrumentedTest,
@@ -605,8 +603,6 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
-					"-L$SRCROOT/../../../../../../out/androidx/internal-testutils-xctest/build/objc/iphonesimulator.xcarchive/Products/usr/local/lib",
-					"-lCMPTestUtils",
 					"-ObjC",
 					"-framework",
 					InstrumentedTest,
