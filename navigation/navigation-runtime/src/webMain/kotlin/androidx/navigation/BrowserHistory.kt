@@ -187,7 +187,11 @@ private fun NavController.tryToNavigateToUrlFragment(localWindow: BrowserWindow)
         try {
             navigate(route)
         } catch (e: IllegalArgumentException) {
-            localWindow.console.warn("Can't navigate to '$route'")
+            localWindow.console.warn("""
+                Can't navigate to '$route'! Error: ${e.message}
+                Check that the NavGraph is set up already in the NavController.
+                A typical mistake is to call `bindToNavigation` before the NavHost function is called.
+            """.trimIndent())
         }
     }
 }
