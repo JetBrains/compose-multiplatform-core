@@ -31,7 +31,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.test.runTest
@@ -140,7 +141,7 @@ class GesturesTest : OnCanvasTests {
 
     @Test
     // test that both TouchEvent.changedTouches and TouchEvent.targetTouches are handled
-    fun canReceiveTouchEvents() = runTest {
+    fun canReceiveTouchEvents() = runApplicationTest {
         var lastPointerEvent: PointerEvent? = null
 
         createComposeWindow {
@@ -153,23 +154,29 @@ class GesturesTest : OnCanvasTests {
             })
         }
 
-        assertEquals(null, lastPointerEvent)
+        assertNull(lastPointerEvent)
 
         dispatchEvents(
             TouchEvent("touchstart", touchEventInit(createTouch(0, getCanvas(), clientX = 50.0, clientY = 50.0))),
             TouchEvent("touchmove", touchEventInit(createTouch(0, getCanvas(), clientX = 60.0, clientY = 60.0)))
         )
 
-        assertNotEquals(null, lastPointerEvent)
-        assertEquals(1, lastPointerEvent!!.changes.size)
-        assertEquals(PointerEventType.Move, lastPointerEvent!!.type)
+        awaitIdle()
+
+        assertNotNull(lastPointerEvent)
+        assertEquals(1, lastPointerEvent.changes.size)
+        assertEquals(PointerEventType.Move, lastPointerEvent.type)
+
         lastPointerEvent = null
 
         dispatchEvents(
             TouchEvent("touchstart", touchEventWithTargetTouchesInit(createTouch(1, getCanvas(), clientX = 10.0, clientY = 10.0))),
             TouchEvent("touchmove", touchEventWithTargetTouchesInit(createTouch(1, getCanvas(), clientX = 20.0, clientY = 20.0)))
         )
-        assertNotEquals(null, lastPointerEvent)
+
+        awaitIdle()
+
+        assertNotNull(lastPointerEvent)
         assertEquals(1, lastPointerEvent!!.changes.size)
         assertEquals(PointerEventType.Move, lastPointerEvent!!.type)
     }
