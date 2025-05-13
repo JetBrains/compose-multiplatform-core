@@ -57,8 +57,8 @@ fun <T : UIViewController> UIKitViewController(
     val parentViewController = LocalUIViewController.current
 
     val isDescendant = interopContainer.root.isDescendantOfView(parentViewController.view)
-    assert(isDescendant) {
-        "Currently, UIKitViewController cannot be used within Popups or Dialogs"
+    if (!isDescendant) {
+        error("Currently, UIKitViewController cannot be used within Popups or Dialogs")
     }
 
     InteropView(
