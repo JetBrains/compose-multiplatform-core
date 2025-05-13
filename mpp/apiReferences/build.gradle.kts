@@ -56,7 +56,7 @@ fun includeMaterial3Stories(storiesRootPath: String) {
 
     // Step 2: Update stories references in HTML files
     val htmlDir = project.buildDir.resolve("dokka/html/material3")
-    val newRoot = "$storiesRootPath/material3"
+    val newRoot = "$storiesRootPath/material3/"
 
     if (htmlDir.exists()) {
         // Find all HTML files in the directory and its subdirectories
