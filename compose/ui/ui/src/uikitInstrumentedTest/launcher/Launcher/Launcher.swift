@@ -18,7 +18,4 @@ import XCTest
 import InstrumentedTest
 
 class TestLauncher: XCTestCase {
-    override class var defaultTestSuite: XCTestSuite {
-        ConfigurationKt.testSuite()
-    }
 }

@@ -15,19 +15,3 @@
  */
 
 package androidx.compose.ui
-
-import androidx.compose.xctest.setupXCTestSuite
-import kotlinx.cinterop.ExperimentalForeignApi
-import platform.XCTest.XCTestSuite
-
-@Suppress("unused")
-@OptIn(ExperimentalForeignApi::class)
-fun testSuite(): XCTestSuite = setupXCTestSuite(
-    // Run all test cases from the tests
-    // BasicInteractionTest::class,
-    // LayersAccessibilityTest::class,
-
-    // Run test cases from a test
-    // BasicInteractionTest::testTextFieldCallout,
-    // LayersAccessibilityTest::testLayersAppearanceOrder
-)

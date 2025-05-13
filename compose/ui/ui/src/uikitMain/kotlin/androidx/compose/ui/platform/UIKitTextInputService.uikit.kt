@@ -69,13 +69,13 @@ internal class UIKitTextInputService(
     private val view: UIView,
     private val viewConfiguration: ViewConfiguration,
     private val focusStack: FocusStack?,
-    private var onInputStarted: () -> Unit,
+    private val onInputStarted: () -> Unit,
     /**
      * Callback to handle keyboard presses. The parameter is a [Set] of [UIPress] objects.
      * Erasure happens due to K/N not supporting Obj-C lightweight generics.
      */
-    private var onKeyboardPresses: (Set<*>) -> Unit,
-    private var focusManager: () -> ComposeSceneFocusManager?
+    private val onKeyboardPresses: (Set<*>) -> Unit,
+    private val focusManager: () -> ComposeSceneFocusManager
 ) : PlatformTextInputService, TextToolbar {
 
     private var currentOnEditCommand: ((List<EditCommand>) -> Unit)? = null
@@ -180,7 +180,8 @@ internal class UIKitTextInputService(
     override fun updateState(oldValue: TextFieldValue?, newValue: TextFieldValue) {
         val internalOldValue = sessionEditProcessor?.toTextFieldValue()
         val textChanged = internalOldValue == null || internalOldValue.text != newValue.text
-        val selectionChanged = textChanged || internalOldValue.selection != newValue.selection
+        val selectionChanged =
+            textChanged || internalOldValue == null || internalOldValue.selection != newValue.selection
         if (textChanged) {
             textUIView?.textWillChange()
         }
@@ -245,7 +246,7 @@ internal class UIKitTextInputService(
 
     private fun handleEscape(event: KeyEvent): Boolean {
         return if (sessionEditProcessor != null && event.type == KeyEventType.KeyUp) {
-            focusManager()?.releaseFocus()
+            focusManager().releaseFocus()
             true
         } else {
             false
@@ -314,18 +315,6 @@ internal class UIKitTextInputService(
         return true
     }
 
-    private var textMenuInvalidationsCount = 0
-    private fun textMenuAppearanceChanged() {
-        textMenuInvalidationsCount++
-        mainScope.launch {
-            // Time to show, hide or update state of context menu
-            delay(500)
-            textMenuInvalidationsCount--
-        }
-    }
-
-    val hasInvalidations: Boolean get() = textMenuInvalidationsCount > 0
-
     private fun getState(): TextFieldValue? = sessionEditProcessor?.toTextFieldValue()
 
     // Fixes a problem where the menu is shown before the textUIView gets its final layout.
@@ -358,7 +347,6 @@ internal class UIKitTextInputService(
                         override val selectAll: (() -> Unit)? = onSelectAllRequested
                     }
                 )
-                textMenuAppearanceChanged()
             }
         }
         showMenuOrUpdatePosition()
@@ -369,10 +357,7 @@ internal class UIKitTextInputService(
      */
     override fun hide() {
         showMenuOrUpdatePosition = {}
-        textUIView?.let {
-            it.hideTextMenu()
-            textMenuAppearanceChanged()
-        }
+        textUIView?.hideTextMenu()
         if ((textUIView != null) && (sessionEditProcessor == null)) { // means that editing context menu shown in selection container
             textUIView?.resignFirstResponder()
             detachIntermediateTextInputView()
@@ -414,13 +399,6 @@ internal class UIKitTextInputService(
             }
         }
         textUIView = null
-    }
-
-    fun dispose() {
-        stopInput()
-        onInputStarted = { }
-        onKeyboardPresses = { }
-        focusManager = { null }
     }
 
     private fun createSkikoInput() = object : IOSSkikoInput {
