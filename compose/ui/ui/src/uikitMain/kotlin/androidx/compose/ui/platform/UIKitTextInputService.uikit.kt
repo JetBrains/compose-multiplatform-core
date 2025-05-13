@@ -314,18 +314,6 @@ internal class UIKitTextInputService(
         return true
     }
 
-    private var textMenuInvalidationsCount = 0
-    private fun textMenuAppearanceChanged() {
-        textMenuInvalidationsCount++
-        mainScope.launch {
-            // Time to show, hide or update state of context menu
-            delay(500)
-            textMenuInvalidationsCount--
-        }
-    }
-
-    val hasInvalidations: Boolean get() = textMenuInvalidationsCount > 0
-
     private fun getState(): TextFieldValue? = sessionEditProcessor?.toTextFieldValue()
 
     // Fixes a problem where the menu is shown before the textUIView gets its final layout.
@@ -358,7 +346,6 @@ internal class UIKitTextInputService(
                         override val selectAll: (() -> Unit)? = onSelectAllRequested
                     }
                 )
-                textMenuAppearanceChanged()
             }
         }
         showMenuOrUpdatePosition()
@@ -369,10 +356,7 @@ internal class UIKitTextInputService(
      */
     override fun hide() {
         showMenuOrUpdatePosition = {}
-        textUIView?.let {
-            it.hideTextMenu()
-            textMenuAppearanceChanged()
-        }
+        textUIView?.hideTextMenu()
         if ((textUIView != null) && (sessionEditProcessor == null)) { // means that editing context menu shown in selection container
             textUIView?.resignFirstResponder()
             detachIntermediateTextInputView()
