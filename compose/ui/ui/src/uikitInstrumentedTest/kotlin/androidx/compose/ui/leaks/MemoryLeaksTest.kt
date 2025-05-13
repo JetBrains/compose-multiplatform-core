@@ -108,9 +108,9 @@ class MemoryLeaksTest {
         collectSubviewsRecursively(appDelegate.window?.rootViewController?.view!!, subviewsReferences)
 
         assertEquals(
-            expected = 5,
+            expected = 4,
             actual = subviewsReferences.count(),
-            message = "Expected 5 subviews: [ComposeView, UIView, UserInputView, MetalView, UIKitTransparentContainerView]" +
+            message = "Expected 4 subviews: [ComposeView, UserInputView, MetalView, UIKitTransparentContainerView]" +
                 ", but given: ${subviewsReferences.mapNotNull { it.get()?.let { it::class.simpleName } }}"
         )
 
@@ -185,9 +185,9 @@ class MemoryLeaksTest {
         collectSubviewsRecursively(appDelegate.window?.rootViewController?.view!!, subviewsReferences)
 
         assertEquals(
-            expected = 6,
+            expected = 5,
             actual = subviewsReferences.count(),
-            message = "Expected 6 subviews: [ComposeView, UIView, UserInputView, MetalView, UIKitTransparentContainerView, IntermediateTextInputUIView]" +
+            message = "Expected 5 subviews: [ComposeView, UserInputView, MetalView, UIKitTransparentContainerView, IntermediateTextInputUIView]" +
                 ", but given: ${subviewsReferences.mapNotNull { it.get()?.let { it::class.simpleName } }}"
         )
 
