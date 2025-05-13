@@ -173,6 +173,7 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 api(project(":compose:material:material"))
                 implementation(libs.kotlinTest)
                 implementation(libs.atomicFu)
+                implementation(project(":kruth:kruth"))
             }
             skikoTest.dependsOn(commonTest)
 
@@ -182,9 +183,11 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             desktopTest.dependsOn(skikoTest)
             desktopTest.dependsOn(jvmTest)
 
-            wasmJsTest.dependsOn(skikoTest)
-            jsTest.dependsOn(skikoTest)
             nativeTest.dependsOn(skikoTest)
+
+            webTest.dependsOn(skikoTest)
+            wasmJsTest.dependsOn(webTest)
+            jsTest.dependsOn(webTest)
 
             androidCommonTest.dependsOn(commonTest)
             androidTest.dependsOn(androidCommonTest)

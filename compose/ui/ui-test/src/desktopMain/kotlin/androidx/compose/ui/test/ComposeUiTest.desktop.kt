@@ -19,6 +19,7 @@ package androidx.compose.ui.test
 import androidx.compose.ui.unit.Density
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.time.Duration
 
 /**
  * Variant of [runComposeUiTest] that allows you to specify the size of the surface.
@@ -34,10 +35,22 @@ fun runDesktopComposeUiTest(
     height: Int = 768,
     // TODO(https://github.com/JetBrains/compose-multiplatform/issues/2960) Support effectContext
     effectContext: CoroutineContext = EmptyCoroutineContext,
-    block: DesktopComposeUiTest.() -> Unit
+    runTestContext: CoroutineContext = EmptyCoroutineContext,
+    testTimeout: Duration = Duration.INFINITE,
+    block: suspend DesktopComposeUiTest.() -> Unit
 ) {
-    with(DesktopComposeUiTest(width, height, effectContext)) {
-        runTest { block() }
+    kotlinx.coroutines.test.runTest {
+        with(
+            DesktopComposeUiTest(
+                width = width,
+                height = height,
+                effectContext = effectContext,
+                runTestContext = runTestContext,
+                testTimeout = testTimeout
+            )
+        ) {
+            runTest { block() }
+        }
     }
 }
 
@@ -46,8 +59,17 @@ class DesktopComposeUiTest(
     width: Int = 1024,
     height: Int = 768,
     effectContext: CoroutineContext = EmptyCoroutineContext,
+    runTestContext: CoroutineContext = EmptyCoroutineContext,
+    testTimeout: Duration = Duration.INFINITE,
     density: Density = Density(1f),
-) : SkikoComposeUiTest(width, height, effectContext, density) {
+) : SkikoComposeUiTest(
+    width = width,
+    height = height,
+    effectContext = effectContext,
+    runTestContext = runTestContext,
+    testTimeout = testTimeout,
+    density = density,
+) {
 
     private val idlingResources = mutableSetOf<IdlingResource>()
 
