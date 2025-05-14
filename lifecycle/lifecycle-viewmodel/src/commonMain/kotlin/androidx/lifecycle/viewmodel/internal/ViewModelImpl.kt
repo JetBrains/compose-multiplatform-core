@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalStdlibApi::class)
+
 package androidx.lifecycle.viewmodel.internal
 
 import androidx.annotation.MainThread
