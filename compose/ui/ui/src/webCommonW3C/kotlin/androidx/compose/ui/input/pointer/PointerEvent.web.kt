@@ -17,6 +17,7 @@
 package androidx.compose.ui.input.pointer
 
 import org.w3c.dom.events.MouseEvent
+import org.w3c.dom.pointerevents.PointerEvent
 
 internal val MouseEvent.composeButton get(): PointerButton? {
     // `MouseEvent.button` property only guarantees to indicate which buttons are pressed during
@@ -43,5 +44,34 @@ internal val MouseEvent.composeButton get(): PointerButton? {
 
 internal val MouseEvent.composeButtons get() =
     // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons
+    // The bit mask matches as-is with Compose's [ButtonMasks]
+    PointerButtons(buttons.toInt())
+
+
+internal val PointerEvent.composeButton get(): PointerButton? {
+    // `MouseEvent.button` property only guarantees to indicate which buttons are pressed during
+    // events caused by pressing or releasing one or multiple buttons
+    when (type) {
+        "pointerdown", "pointerup" -> Unit
+        else -> return null
+    }
+    // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
+    return when (val buttonIndex = button.toInt()) {
+        // Main button pressed, usually the left button or the un-initialized state
+        0 -> PointerButton.Primary
+        // Auxiliary button pressed, usually the wheel button or the middle button (if present)
+        1 -> PointerButton.Tertiary
+        // Secondary button pressed, usually the right button
+        2 -> PointerButton.Secondary
+        // Fourth button, typically the Browser Back button
+        3 -> PointerButton.Back
+        // Fifth button, typically the Browser Forward button
+        4 -> PointerButton.Forward
+        else -> PointerButton(buttonIndex)
+    }
+}
+
+internal val PointerEvent.composeButtons get() =
+// https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons
     // The bit mask matches as-is with Compose's [ButtonMasks]
     PointerButtons(buttons.toInt())

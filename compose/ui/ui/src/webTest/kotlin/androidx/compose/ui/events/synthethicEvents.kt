@@ -18,7 +18,8 @@ package androidx.compose.ui.events
 
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.KeyboardEventInit
-import org.w3c.dom.events.MouseEvent
+import org.w3c.dom.pointerevents.PointerEvent
+import org.w3c.dom.pointerevents.PointerEventInit
 
 internal external interface KeyboardEventInitExtended : KeyboardEventInit {
     var keyCode: Int?
@@ -64,7 +65,11 @@ internal fun createTouchEvent(type: String): TouchEvent {
     return TouchEvent(type, DummyTouchEventInit())
 }
 
-internal fun createMouseEvent(type: String): MouseEvent {
-    return MouseEvent(type)
+internal fun createPointerEvent(type: String, pointerInitEvent: PointerEventInit, pointerType: String = "mouse"): PointerEvent {
+    pointerInitEvent.pointerType = pointerType
+    return PointerEvent(type, pointerInitEvent)
 }
 
+internal fun createPointerEvent(type: String, pointerType: String = "mouse"): PointerEvent {
+    return PointerEvent(type, PointerEventInit(pointerType = pointerType))
+}

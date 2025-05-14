@@ -94,6 +94,7 @@ import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.events.WheelEvent
+import org.w3c.dom.pointerevents.PointerEvent
 
 private val actualDensity
     get() = window.devicePixelRatio
@@ -314,24 +315,24 @@ internal class ComposeWindow(
             onTouchEvent(event, offset)
         }
 
-        addTypedEvent<MouseEvent>("mousedown") { event ->
-            onMouseEvent(event)
+        addTypedEvent<PointerEvent>("pointerdown") { event ->
+            onPointerEvent(event)
         }
 
-        addTypedEvent<MouseEvent>("mouseup") { event ->
-            onMouseEvent(event)
+        addTypedEvent<PointerEvent>("pointerup") { event ->
+            onPointerEvent(event)
         }
 
-        addTypedEvent<MouseEvent>("mousemove") { event ->
-            onMouseEvent(event)
+        addTypedEvent<PointerEvent>("pointermove") { event ->
+            onPointerEvent(event)
         }
 
-        addTypedEvent<MouseEvent>("mouseenter") { event ->
-            onMouseEvent(event)
+        addTypedEvent<PointerEvent>("pointerenter") { event ->
+            onPointerEvent(event)
         }
 
-        addTypedEvent<MouseEvent>("mouseleave") { event ->
-            onMouseEvent(event)
+        addTypedEvent<PointerEvent>("pointerleave") { event ->
+            onPointerEvent(event)
         }
 
         addTypedEvent<WheelEvent>("wheel") { event ->
@@ -482,18 +483,27 @@ internal class ComposeWindow(
 
     }
 
-    private fun onMouseEvent(
-        event: MouseEvent,
+    private fun onPointerEvent(
+        event: PointerEvent,
     ) {
         keyboardModeState = KeyboardModeState.Hardware
         val eventType = when (event.type) {
-            "mousedown" -> PointerEventType.Press
-            "mousemove" -> PointerEventType.Move
-            "mouseup" -> PointerEventType.Release
-            "mouseenter" -> PointerEventType.Enter
-            "mouseleave" -> PointerEventType.Exit
+            "pointerdown" -> PointerEventType.Press
+            "pointermove" -> PointerEventType.Move
+            "pointerup" -> PointerEventType.Release
+            "pointerenter" -> PointerEventType.Enter
+            "pointerleave" -> PointerEventType.Exit
             else -> PointerEventType.Unknown
         }
+
+        // https://developer.mozilla.org/en-US/docs/Web/API/PointerEvent/pointerType
+        val pointerType = when (event.pointerType) {
+            "mouse" -> PointerType.Mouse
+            "touch" -> PointerType.Touch
+            "pen" -> PointerType.Stylus
+            else -> PointerType.Unknown
+        }
+
         scene.sendPointerEvent(
             eventType = eventType,
             position = event.offset,
@@ -504,6 +514,7 @@ internal class ComposeWindow(
                 isAltPressed = event.altKey,
                 isShiftPressed = event.shiftKey,
             ),
+            type = pointerType,
             nativeEvent = event,
             button = event.composeButton,
         )
@@ -522,7 +533,7 @@ internal class ComposeWindow(
 
         val verticalScroll = if (horizontalScroll == 0f) event.deltaY else 0f
 
-        val result = scene.sendPointerEvent(
+        scene.sendPointerEvent(
             eventType = PointerEventType.Scroll,
             position = event.offset,
             scrollDelta = Offset(
@@ -545,6 +556,11 @@ internal class ComposeWindow(
     }
 
     private val MouseEvent.offset get() = Offset(
+        x = offsetX.toFloat(),
+        y = offsetY.toFloat()
+    ) * density.density
+
+    private val PointerEvent.offset get() = Offset(
         x = offsetX.toFloat(),
         y = offsetY.toFloat()
     ) * density.density

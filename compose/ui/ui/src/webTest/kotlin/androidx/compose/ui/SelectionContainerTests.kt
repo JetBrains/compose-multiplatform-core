@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.events.createPointerEvent
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
 import kotlin.test.Test
@@ -40,14 +41,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import org.w3c.dom.HTMLCanvasElement
-import org.w3c.dom.events.MouseEvent
-import org.w3c.dom.events.MouseEventInit
+import org.w3c.dom.pointerevents.PointerEventInit
 
 class SelectionContainerTests : OnCanvasTests {
 
     private fun HTMLCanvasElement.doClick() {
-        dispatchEvent(MouseEvent("mousedown", MouseEventInit(clientX = 8, clientY = 8, buttons = 1, button = 1)))
-        dispatchEvent(MouseEvent("mouseup", MouseEventInit(clientX = 8, clientY = 8, buttons = 0, button = 1)))
+        dispatchEvent(createPointerEvent("pointerdown",
+            PointerEventInit(clientX = 8, clientY = 8, buttons = 1, button = 1)
+        ))
+        dispatchEvent(createPointerEvent("pointerup",
+            PointerEventInit(clientX = 8, clientY = 8, buttons = 0, button = 1)
+        ))
     }
 
     @Test
@@ -81,7 +85,7 @@ class SelectionContainerTests : OnCanvasTests {
         }
 
         val canvas = getCanvas()
-        canvas.dispatchEvent(MouseEvent("mouseenter"))
+        canvas.dispatchEvent(createPointerEvent("pointerenter"))
 
         // single click - no selection expected
         canvas.doClick()
@@ -143,7 +147,7 @@ class SelectionContainerTests : OnCanvasTests {
         }
 
         val canvas = getCanvas()
-        canvas.dispatchEvent(MouseEvent("mouseenter"))
+        canvas.dispatchEvent(createPointerEvent("pointerenter"))
 
         // triple click
         canvas.doClick()
@@ -196,7 +200,7 @@ class SelectionContainerTests : OnCanvasTests {
         }
 
         val canvas = getCanvas()
-        canvas.dispatchEvent(MouseEvent("mouseenter"))
+        canvas.dispatchEvent(createPointerEvent("pointerenter"))
 
         // first single click
         canvas.doClick()
