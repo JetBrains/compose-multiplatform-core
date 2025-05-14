@@ -20,9 +20,11 @@ const path = require("node:path");
 config.browserConsoleLogOptions.level = "debug";
 
 const basePath = config.basePath;
-// const rootPath = path.resolve(basePath, "..", "..", "..", "..", "..", "..");
 const rootPath = path.resolve(basePath, "..", "..", "..", "..", "..", "..");
-const configPath = path.resolve(rootPath, "mpp", "karma.config.d", "js");
+const karmaPath = path.resolve(rootPath, "mpp", "karma.config.d")
+const configPath = path.resolve(karmaPath, "js");
+
+const {configLaunchers} = require(path.resolve(karmaPath, "web", "commmonKarmaConfig.js"))
 
 const debug = message => console.error(`[karma-config] ${message}`);
 debug(`karma basePath: ${basePath}`);
@@ -78,26 +80,7 @@ config.frameworks.push("webpack-output");
 config.files.push({pattern: path.resolve(basePath, "kotlin", "skiko.wasm"), included: false, served: true, watched: false},);
 config.files.push(path.resolve(basePath, "kotlin", "skiko.js"));
 
-config.customLaunchers = {
-    ChromeForComposeTests: {
-        base: "Chrome",
-        flags: ["--no-sandbox", "--disable-search-engine-choice-screen"]
-    },
-    FirefoxForComposeTests: {
-        base: "Firefox",
-        prefs: {
- 		'dom.w3c_touch_events.enabled': 1
-       }
-    }
-}
-
-config.browsers = [];
-if (process.env["jetbrains.androidx.web.tests.enableChrome"]) {
-    config.browsers.push("ChromeForComposeTests");
-}
-if (process.env["jetbrains.androidx.web.tests.enableFirefox"]) {
-    config.browsers.push("FirefoxForComposeTests");
-}
+configLaunchers(config);
 
 // A workaround from https://android-review.googlesource.com/c/platform/frameworks/support/+/3413540
 (function() {
