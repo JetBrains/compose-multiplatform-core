@@ -104,7 +104,7 @@ internal actual fun legacyTextInputServiceAdapterAndService():
                 textClippingRectInRoot = matrix.map(innerTextFieldBounds)
                 focusedRectInRoot = focusedRectInRoot(
                     layoutResult = textLayoutResult,
-                    focusOffset = textFieldValue.selection.max,
+                    focusOffset = offsetMapping.originalToTransformed(textFieldValue.selection.max),
                     sizeForDefaultText = {
                         textLayoutResult.layoutInput.let {
                             computeSizeForDefaultText(it.style, it.density, it.fontFamilyResolver)
