@@ -251,6 +251,10 @@ internal class RootNodeOwner(
     fun draw(canvas: Canvas) = trace("RootNodeOwner:draw") {
         ownedLayerManager.draw(canvas)
         clearInvalidObservations()
+        @OptIn(ExperimentalComposeUiApi::class)
+        if (ComposeUiFlags.isRectTrackingEnabled) {
+            owner.rectManager.dispatchCallbacks()
+        }
     }
 
     fun setRootModifier(modifier: Modifier) {
@@ -466,6 +470,10 @@ internal class RootNodeOwner(
                         snapshotInvalidationTracker.requestDraw()
                     }
                     measureAndLayoutDelegate.dispatchOnPositionedCallbacks()
+                    @OptIn(ExperimentalComposeUiApi::class)
+                    if (ComposeUiFlags.isRectTrackingEnabled) {
+                       rectManager.dispatchCallbacks()
+                    }
                 }
             }
         }
