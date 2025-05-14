@@ -16,11 +16,20 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.ui.text.input.DefaultPlatformImeOptions
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PlatformImeOptions
+import androidx.compose.ui.text.input.autocapitalizationType
+import androidx.compose.ui.text.input.autocorrectionType
+import androidx.compose.ui.text.input.enablesReturnKeyAutomatically
+import androidx.compose.ui.text.input.hasExplicitTextContentType
+import androidx.compose.ui.text.input.isSecureTextEntry
+import androidx.compose.ui.text.input.keyboardAppearance
+import androidx.compose.ui.text.input.keyboardType
+import androidx.compose.ui.text.input.returnKeyType
+import androidx.compose.ui.text.input.textContentType
 import platform.UIKit.UIKeyboardAppearance
 import platform.UIKit.UIKeyboardAppearanceDefault
 import platform.UIKit.UIKeyboardType
@@ -38,10 +47,6 @@ import platform.UIKit.UITextContentType
 import platform.UIKit.UITextContentTypeEmailAddress
 import platform.UIKit.UITextContentTypePassword
 import platform.UIKit.UITextContentTypeTelephoneNumber
-import platform.UIKit.UITextSmartDashesType
-import platform.UIKit.UITextSmartInsertDeleteType
-import platform.UIKit.UITextSmartQuotesType
-import platform.UIKit.UITextSpellCheckingType
 
 internal interface SkikoUITextInputTraits {
     fun keyboardType(): UIKeyboardType =
@@ -93,7 +98,7 @@ internal fun getUITextInputTraits(currentImeOptions: ImeOptions?) =
         }
 
         override fun keyboardAppearance(): UIKeyboardAppearance {
-            return currentImeOptions?.platformImeOptions?.keyboardAppearance ?: PlatformImeOptions.Default.keyboardAppearance
+            return currentImeOptions?.platformImeOptions?.keyboardAppearance ?: DefaultPlatformImeOptions.keyboardAppearance
         }
 
         override fun returnKeyType(): UIReturnKeyType {
@@ -141,7 +146,7 @@ internal fun getUITextInputTraits(currentImeOptions: ImeOptions?) =
         }
 
         override fun enablesReturnKeyAutomatically(): Boolean {
-            return currentImeOptions?.platformImeOptions?.enablesReturnKeyAutomatically ?: PlatformImeOptions.Default.enablesReturnKeyAutomatically
+            return currentImeOptions?.platformImeOptions?.enablesReturnKeyAutomatically ?: DefaultPlatformImeOptions.enablesReturnKeyAutomatically
         }
 
         override fun autocapitalizationType(): UITextAutocapitalizationType {
