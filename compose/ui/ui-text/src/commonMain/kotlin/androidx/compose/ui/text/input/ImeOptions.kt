@@ -20,7 +20,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.intl.LocaleList
 
 /**
- * The IME configuration options for [TextInputService]. It is not guaranteed that IME will comply
+ * The IME configuration options for [TextInputService]. It is not guaranteed if IME will comply
  * with the options provided here.
  *
  * @param singleLine informs the IME that the text field is single line and IME should not show
@@ -39,11 +39,7 @@ import androidx.compose.ui.text.intl.LocaleList
  * @param imeAction The IME action. This IME action is honored by IME and may show specific icons on
  *   the keyboard. For example, search icon may be shown if [ImeAction.Search] is specified. When
  *   [singleLine] is false, the IME might show return key rather than the action requested here.
- * @param platformImeOptions Defines the platform-specific IME options. Note that any values specified
- *   by this value might override the corresponding settings from the enclosing IME options. For
- *   example, setting a specific keyboard type in platformImeOptions might, depending on the platform
- *   implementation, take precedence over any keyboard type that would be derived from the enclosing
- *   IME options.
+ * @param platformImeOptions defines the platform specific IME options.
  * @param hintLocales List of the languages that the user is supposed to switch to no matter what
  *   input method subtype is currently used. This special "hint" can be used mainly for, but not
  *   limited to, multilingual users who want IMEs to switch language based on editor's context. Pass
