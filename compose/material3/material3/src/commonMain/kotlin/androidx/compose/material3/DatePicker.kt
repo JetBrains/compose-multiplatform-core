@@ -126,8 +126,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://m3.material.io/components/date-pickers/overview" class="external"
- * target="_blank">Material Design date picker</a>.
+ * <a href="https://m3.material.io/components/date-pickers/overview" class="external" target="_blank">Material Design date picker</a>.
  *
  * Date pickers let people select a date and preferably should be embedded into Dialogs. See
  * [DatePickerDialog].
@@ -135,8 +134,7 @@ import kotlinx.coroutines.launch
  * By default, a date picker lets you pick a date via a calendar UI. However, it also allows
  * switching into a date input mode for a manual entry of dates using the numbers on a keyboard.
  *
- * ![Date picker
- * image](https://developer.android.com/images/reference/androidx/compose/material3/date-picker.png)
+ * ![Date picker image](https://developer.android.com/images/reference/androidx/compose/material3/date-picker.png)
  *
  * A simple DatePicker looks like:
  *
@@ -160,6 +158,8 @@ import kotlinx.coroutines.launch
  *   transforms it into a date input
  * @param colors [DatePickerColors] that will be used to resolve the colors used for this date
  *   picker in different states. See [DatePickerDefaults.colors].
+ *
+ * @story /stories?embedded=true#story/DatePicker%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable

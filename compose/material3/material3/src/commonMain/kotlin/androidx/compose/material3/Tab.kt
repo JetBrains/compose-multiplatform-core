@@ -54,14 +54,12 @@ import androidx.compose.ui.util.fastFirst
 import kotlin.math.max
 
 /**
- * <a href="https://m3.material.io/components/tabs/overview" class="external"
- * target="_blank">Material Design tab.</a>
+ * <a href="https://m3.material.io/components/tabs/overview" class="external" target="_blank">Material Design tab.</a>
  *
  * A default Tab, also known as a Primary Navigation Tab. Tabs organize content across different
  * screens, data sets, and other interactions.
  *
- * ![Tabs
- * image](https://developer.android.com/images/reference/androidx/compose/material3/secondary-tabs.png)
+ * ![Tabs image](https://developer.android.com/images/reference/androidx/compose/material3/secondary-tabs.png)
  *
  * A Tab represents a single page of content using a text label and/or icon. It represents its
  * selected state by tinting the text label and/or image with [selectedContentColor].
@@ -88,6 +86,8 @@ import kotlin.math.max
  *   preview the tab in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
  * @see LeadingIconTab
+ *
+ * @story /stories?embedded=true#story/Tab%2520Story
  */
 @Composable
 fun Tab(
@@ -125,8 +125,7 @@ fun Tab(
 }
 
 /**
- * <a href="https://m3.material.io/components/tabs/overview" class="external"
- * target="_blank">Material Design tab.</a>
+ * <a href="https://m3.material.io/components/tabs/overview" class="external" target="_blank">Material Design tab.</a>
  *
  * Tabs organize content across different screens, data sets, and other interactions.
  *
@@ -153,6 +152,8 @@ fun Tab(
  *   preview the tab in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
  * @see Tab
+ *
+ * @story /stories?embedded=true#story/LeadingIconTab%2520Story
  */
 @Composable
 fun LeadingIconTab(
@@ -199,13 +200,11 @@ fun LeadingIconTab(
 }
 
 /**
- * <a href="https://m3.material.io/components/tabs/overview" class="external"
- * target="_blank">Material Design tab.</a>
+ * <a href="https://m3.material.io/components/tabs/overview" class="external" target="_blank">Material Design tab.</a>
  *
  * Tabs organize content across different screens, data sets, and other interactions.
  *
- * ![Tabs
- * image](https://developer.android.com/images/reference/androidx/compose/material3/secondary-tabs.png)
+ * ![Tabs image](https://developer.android.com/images/reference/androidx/compose/material3/secondary-tabs.png)
  *
  * Generic [Tab] overload that is not opinionated about content / color. See the other overload for
  * a Tab that has specific slots for text and / or an icon, as well as providing the correct colors

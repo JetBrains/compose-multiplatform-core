@@ -33,18 +33,18 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * <a href="https://m3.material.io/components/divider/overview" class="external"
- * target="_blank">Material Design divider</a>.
+ * <a href="https://m3.material.io/components/divider/overview" class="external" target="_blank">Material Design divider</a>.
  *
  * A divider is a thin line that groups content in lists and layouts.
  *
- * ![Divider
- * image](https://developer.android.com/images/reference/androidx/compose/material3/divider.png)
+ * ![Divider image](https://developer.android.com/images/reference/androidx/compose/material3/divider.png)
  *
  * @param modifier the [Modifier] to be applied to this divider line.
  * @param thickness thickness of this divider line. Using [Dp.Hairline] will produce a single pixel
  *   divider regardless of screen density.
  * @param color color of this divider line.
+ *
+ * @story /stories?embedded=true#story/Horizontal%2520Divider%2520Story
  */
 @Composable
 fun HorizontalDivider(
@@ -62,18 +62,18 @@ fun HorizontalDivider(
     }
 
 /**
- * <a href="https://m3.material.io/components/divider/overview" class="external"
- * target="_blank">Material Design divider</a>.
+ * <a href="https://m3.material.io/components/divider/overview" class="external" target="_blank">Material Design divider</a>.
  *
  * A divider is a thin line that groups content in lists and layouts.
  *
- * ![Divider
- * image](https://developer.android.com/images/reference/androidx/compose/material3/divider.png)
+ * ![Divider image](https://developer.android.com/images/reference/androidx/compose/material3/divider.png)
  *
  * @param modifier the [Modifier] to be applied to this divider line.
  * @param thickness thickness of this divider line. Using [Dp.Hairline] will produce a single pixel
  *   divider regardless of screen density.
  * @param color color of this divider line.
+ *
+ * @story /stories?embedded=true#story/VerticalDivider%2520Story
  */
 @Composable
 fun VerticalDivider(

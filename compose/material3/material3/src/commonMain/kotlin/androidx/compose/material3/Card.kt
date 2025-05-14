@@ -49,8 +49,7 @@ import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.unit.Dp
 
 /**
- * <a href="https://m3.material.io/components/cards/overview" class="external"
- * target="_blank">Material Design filled card</a>.
+ * <a href="https://m3.material.io/components/cards/overview" class="external" target="_blank">Material Design filled card</a>.
  *
  * Cards contain contain content and actions that relate information about a subject. Filled cards
  * provide subtle separation from the background. This has less emphasis than elevated or outlined
@@ -59,8 +58,7 @@ import androidx.compose.ui.unit.Dp
  * This Card does not handle input events - see the other Card overloads if you want a clickable or
  * selectable Card.
  *
- * ![Filled card
- * image](https://developer.android.com/images/reference/androidx/compose/material3/filled-card.png)
+ * ![Filled card image](https://developer.android.com/images/reference/androidx/compose/material3/filled-card.png)
  *
  * Card sample:
  *
@@ -76,6 +74,8 @@ import androidx.compose.ui.unit.Dp
  *   [ColorScheme.surface], this controls the amount of primary color applied as an overlay. See
  *   also: [Surface].
  * @param border the border to draw around the container of this card
+ *
+ * @story /stories?embedded=true#story/Card%2520Story
  */
 @Composable
 fun Card(
@@ -99,8 +99,7 @@ fun Card(
 }
 
 /**
- * <a href="https://m3.material.io/components/cards/overview" class="external"
- * target="_blank">Material Design filled card</a>.
+ * <a href="https://m3.material.io/components/cards/overview" class="external" target="_blank">Material Design filled card</a>.
  *
  * Cards contain contain content and actions that relate information about a subject. Filled cards
  * provide subtle separation from the background. This has less emphasis than elevated or outlined
@@ -108,8 +107,7 @@ fun Card(
  *
  * This Card handles click events, calling its [onClick] lambda.
  *
- * ![Filled card
- * image](https://developer.android.com/images/reference/androidx/compose/material3/filled-card.png)
+ * ![Filled card image](https://developer.android.com/images/reference/androidx/compose/material3/filled-card.png)
  *
  * Clickable card sample:
  *
@@ -164,8 +162,7 @@ fun Card(
 }
 
 /**
- * <a href="https://m3.material.io/components/cards/overview" class="external"
- * target="_blank">Material Design elevated card</a>.
+ * <a href="https://m3.material.io/components/cards/overview" class="external" target="_blank">Material Design elevated card</a>.
  *
  * Elevated cards contain content and actions that relate information about a subject. They have a
  * drop shadow, providing more separation from the background than filled cards, but less than
@@ -174,8 +171,7 @@ fun Card(
  * This ElevatedCard does not handle input events - see the other ElevatedCard overloads if you want
  * a clickable or selectable ElevatedCard.
  *
- * ![Elevated card
- * image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-card.png)
+ * ![Elevated card image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-card.png)
  *
  * Elevated card sample:
  *
@@ -189,6 +185,8 @@ fun Card(
  *   This controls the size of the shadow below the card. Additionally, when the container color is
  *   [ColorScheme.surface], this controls the amount of primary color applied as an overlay. See
  *   also: [Surface].
+ *
+ * @story /stories?embedded=true#story/ElevatedCard%2520Story
  */
 @Composable
 fun ElevatedCard(
@@ -208,8 +206,7 @@ fun ElevatedCard(
     )
 
 /**
- * <a href="https://m3.material.io/components/cards/overview" class="external"
- * target="_blank">Material Design elevated card</a>.
+ * <a href="https://m3.material.io/components/cards/overview" class="external" target="_blank">Material Design elevated card</a>.
  *
  * Elevated cards contain content and actions that relate information about a subject. They have a
  * drop shadow, providing more separation from the background than filled cards, but less than
@@ -217,8 +214,7 @@ fun ElevatedCard(
  *
  * This ElevatedCard handles click events, calling its [onClick] lambda.
  *
- * ![Elevated card
- * image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-card.png)
+ * ![Elevated card image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-card.png)
  *
  * Clickable elevated card sample:
  *
@@ -265,8 +261,7 @@ fun ElevatedCard(
     )
 
 /**
- * <a href="https://m3.material.io/components/cards/overview" class="external"
- * target="_blank">Material Design outlined card</a>.
+ * <a href="https://m3.material.io/components/cards/overview" class="external" target="_blank">Material Design outlined card</a>.
  *
  * Outlined cards contain content and actions that relate information about a subject. They have a
  * visual boundary around the container. This can provide greater emphasis than the other types.
@@ -274,8 +269,7 @@ fun ElevatedCard(
  * This OutlinedCard does not handle input events - see the other OutlinedCard overloads if you want
  * a clickable or selectable OutlinedCard.
  *
- * ![Outlined card
- * image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-card.png)
+ * ![Outlined card image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-card.png)
  *
  * Outlined card sample:
  *
@@ -291,6 +285,8 @@ fun ElevatedCard(
  *   [ColorScheme.surface], this controls the amount of primary color applied as an overlay. See
  *   also: [Surface].
  * @param border the border to draw around the container of this card
+ *
+ * @story /stories?embedded=true#story/OutlinedCard%2520Story
  */
 @Composable
 fun OutlinedCard(
@@ -311,16 +307,14 @@ fun OutlinedCard(
     )
 
 /**
- * <a href="https://m3.material.io/components/cards/overview" class="external"
- * target="_blank">Material Design outlined card</a>.
+ * <a href="https://m3.material.io/components/cards/overview" class="external" target="_blank">Material Design outlined card</a>.
  *
  * Outlined cards contain content and actions that relate information about a subject. They have a
  * visual boundary around the container. This can provide greater emphasis than the other types.
  *
  * This OutlinedCard handles click events, calling its [onClick] lambda.
  *
- * ![Outlined card
- * image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-card.png)
+ * ![Outlined card image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-card.png)
  *
  * Clickable outlined card sample:
  *

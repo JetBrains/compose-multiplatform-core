@@ -72,8 +72,7 @@ import androidx.compose.ui.util.fastFirst
 import androidx.compose.ui.util.fastFirstOrNull
 
 /**
- * <a href="https://m3.material.io/components/chips/overview" class="external"
- * target="_blank">Material Design assist chip</a>.
+ * <a href="https://m3.material.io/components/chips/overview" class="external" target="_blank">Material Design assist chip</a>.
  *
  * Chips help people enter information, make selections, filter content, or trigger actions. Chips
  * can show multiple interactive elements together in the same area, such as a list of selectable
@@ -83,8 +82,7 @@ import androidx.compose.ui.util.fastFirstOrNull
  * calendar event from the home screen. Assist chips function as though the user asked an assistant
  * to complete the action. They should appear dynamically and contextually in a UI.
  *
- * ![Assist chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/assist-chip.png)
+ * ![Assist chip image](https://developer.android.com/images/reference/androidx/compose/material3/assist-chip.png)
  *
  * This assist chip is applied with a flat style. If you want an elevated style, use the
  * [ElevatedAssistChip].
@@ -115,6 +113,8 @@ import androidx.compose.ui.util.fastFirstOrNull
  *   emitting [Interaction]s for this chip. You can use this to change the chip's appearance or
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ * @story /stories?embedded=true#story/AssistChip%2520Story
  */
 @Composable
 fun AssistChip(
@@ -149,8 +149,7 @@ fun AssistChip(
     )
 
 /**
- * <a href="https://m3.material.io/components/chips/overview" class="external"
- * target="_blank">Material Design assist chip</a>.
+ * <a href="https://m3.material.io/components/chips/overview" class="external" target="_blank">Material Design assist chip</a>.
  *
  * Chips help people enter information, make selections, filter content, or trigger actions. Chips
  * can show multiple interactive elements together in the same area, such as a list of selectable
@@ -160,8 +159,7 @@ fun AssistChip(
  * calendar event from the home screen. Assist chips function as though the user asked an assistant
  * to complete the action. They should appear dynamically and contextually in a UI.
  *
- * ![Assist chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/assist-chip.png)
+ * ![Assist chip image](https://developer.android.com/images/reference/androidx/compose/material3/assist-chip.png)
  *
  * This assist chip is applied with a flat style. If you want an elevated style, use the
  * [ElevatedAssistChip].
@@ -236,8 +234,7 @@ fun AssistChip(
     )
 
 /**
- * <a href="https://m3.material.io/components/chips/overview" class="external"
- * target="_blank">Material Design elevated assist chip</a>.
+ * <a href="https://m3.material.io/components/chips/overview" class="external" target="_blank">Material Design elevated assist chip</a>.
  *
  * Chips help people enter information, make selections, filter content, or trigger actions. Chips
  * can show multiple interactive elements together in the same area, such as a list of selectable
@@ -247,8 +244,7 @@ fun AssistChip(
  * calendar event from the home screen. Assist chips function as though the user asked an assistant
  * to complete the action. They should appear dynamically and contextually in a UI.
  *
- * ![Assist chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-assist-chip.png)
+ * ![Assist chip image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-assist-chip.png)
  *
  * This assist chip is applied with an elevated style. If you want a flat style, use the
  * [AssistChip].
@@ -278,6 +274,8 @@ fun AssistChip(
  *   emitting [Interaction]s for this chip. You can use this to change the chip's appearance or
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ * @story /stories?embedded=true#story/ElevatedAssistChip%2520Story
  */
 @Composable
 fun ElevatedAssistChip(
@@ -312,8 +310,7 @@ fun ElevatedAssistChip(
     )
 
 /**
- * <a href="https://m3.material.io/components/chips/overview" class="external"
- * target="_blank">Material Design elevated assist chip</a>.
+ * <a href="https://m3.material.io/components/chips/overview" class="external" target="_blank">Material Design elevated assist chip</a>.
  *
  * Chips help people enter information, make selections, filter content, or trigger actions. Chips
  * can show multiple interactive elements together in the same area, such as a list of selectable
@@ -323,8 +320,7 @@ fun ElevatedAssistChip(
  * calendar event from the home screen. Assist chips function as though the user asked an assistant
  * to complete the action. They should appear dynamically and contextually in a UI.
  *
- * ![Assist chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-assist-chip.png)
+ * ![Assist chip image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-assist-chip.png)
  *
  * This assist chip is applied with an elevated style. If you want a flat style, use the
  * [AssistChip].
@@ -398,8 +394,7 @@ fun ElevatedAssistChip(
     )
 
 /**
- * <a href="https://m3.material.io/components/chips/overview" class="external"
- * target="_blank">Material Design filter chip</a>.
+ * <a href="https://m3.material.io/components/chips/overview" class="external" target="_blank">Material Design filter chip</a>.
  *
  * Chips help people enter information, make selections, filter content, or trigger actions. Chips
  * can show multiple interactive elements together in the same area, such as a list of selectable
@@ -408,8 +403,7 @@ fun ElevatedAssistChip(
  * Filter chips use tags or descriptive words to filter content. They can be a good alternative to
  * toggle buttons or checkboxes.
  *
- * ![Filter chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/filter-chip.png)
+ * ![Filter chip image](https://developer.android.com/images/reference/androidx/compose/material3/filter-chip.png)
  *
  * This filter chip is applied with a flat style. If you want an elevated style, use the
  * [ElevatedFilterChip].
@@ -450,6 +444,8 @@ fun ElevatedAssistChip(
  *   emitting [Interaction]s for this chip. You can use this to change the chip's appearance or
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ * @story /stories?embedded=true#story/FilterChip%2520Story
  */
 @Composable
 fun FilterChip(
@@ -486,8 +482,7 @@ fun FilterChip(
     )
 
 /**
- * <a href="https://m3.material.io/components/chips/overview" class="external"
- * target="_blank">Material Design elevated filter chip</a>.
+ * <a href="https://m3.material.io/components/chips/overview" class="external" target="_blank">Material Design elevated filter chip</a>.
  *
  * Chips help people enter information, make selections, filter content, or trigger actions. Chips
  * can show multiple interactive elements together in the same area, such as a list of selectable
@@ -496,8 +491,7 @@ fun FilterChip(
  * Filter chips use tags or descriptive words to filter content. They can be a good alternative to
  * toggle buttons or checkboxes.
  *
- * ![Filter chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-filter-chip.png)
+ * ![Filter chip image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-filter-chip.png)
  *
  * This filter chip is applied with an elevated style. If you want a flat style, use the
  * [FilterChip].
@@ -534,6 +528,8 @@ fun FilterChip(
  *   emitting [Interaction]s for this chip. You can use this to change the chip's appearance or
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ * @story /stories?embedded=true#story/ElevatedFilterChip%2520Story
  */
 @Composable
 fun ElevatedFilterChip(
@@ -570,8 +566,7 @@ fun ElevatedFilterChip(
     )
 
 /**
- * <a href="https://m3.material.io/components/chips/overview" class="external"
- * target="_blank">Material Design input chip</a>.
+ * <a href="https://m3.material.io/components/chips/overview" class="external" target="_blank">Material Design input chip</a>.
  *
  * Chips help people enter information, make selections, filter content, or trigger actions. Chips
  * can show multiple interactive elements together in the same area, such as a list of selectable
@@ -579,8 +574,7 @@ fun ElevatedFilterChip(
  *
  * Input chips represent discrete pieces of information entered by a user.
  *
- * ![Input chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/input-chip.png)
+ * ![Input chip image](https://developer.android.com/images/reference/androidx/compose/material3/input-chip.png)
  *
  * An Input Chip can have a leading icon or an avatar at its start. In case both are provided, the
  * avatar will take precedence and will be displayed.
@@ -625,6 +619,8 @@ fun ElevatedFilterChip(
  *   emitting [Interaction]s for this chip. You can use this to change the chip's appearance or
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ * @story /stories?embedded=true#story/InputChip%2520Story
  */
 @Composable
 fun InputChip(
@@ -689,8 +685,7 @@ fun InputChip(
 }
 
 /**
- * <a href="https://m3.material.io/components/chips/overview" class="external"
- * target="_blank">Material Design suggestion chip</a>.
+ * <a href="https://m3.material.io/components/chips/overview" class="external" target="_blank">Material Design suggestion chip</a>.
  *
  * Chips help people enter information, make selections, filter content, or trigger actions. Chips
  * can show multiple interactive elements together in the same area, such as a list of selectable
@@ -699,8 +694,7 @@ fun InputChip(
  * Suggestion chips help narrow a user's intent by presenting dynamically generated suggestions,
  * such as possible responses or search filters.
  *
- * ![Suggestion chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/suggestion-chip.png)
+ * ![Suggestion chip image](https://developer.android.com/images/reference/androidx/compose/material3/suggestion-chip.png)
  *
  * This suggestion chip is applied with a flat style. If you want an elevated style, use the
  * [ElevatedSuggestionChip].
@@ -730,6 +724,8 @@ fun InputChip(
  *   emitting [Interaction]s for this chip. You can use this to change the chip's appearance or
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ * @story /stories?embedded=true#story/SuggestionChip%2520Story
  */
 @Composable
 fun SuggestionChip(
@@ -763,8 +759,7 @@ fun SuggestionChip(
     )
 
 /**
- * <a href="https://m3.material.io/components/chips/overview" class="external"
- * target="_blank">Material Design suggestion chip</a>.
+ * <a href="https://m3.material.io/components/chips/overview" class="external" target="_blank">Material Design suggestion chip</a>.
  *
  * Chips help people enter information, make selections, filter content, or trigger actions. Chips
  * can show multiple interactive elements together in the same area, such as a list of selectable
@@ -773,8 +768,7 @@ fun SuggestionChip(
  * Suggestion chips help narrow a user's intent by presenting dynamically generated suggestions,
  * such as possible responses or search filters.
  *
- * ![Suggestion chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/suggestion-chip.png)
+ * ![Suggestion chip image](https://developer.android.com/images/reference/androidx/compose/material3/suggestion-chip.png)
  *
  * This suggestion chip is applied with a flat style. If you want an elevated style, use the
  * [ElevatedSuggestionChip].
@@ -847,8 +841,7 @@ fun SuggestionChip(
     )
 
 /**
- * <a href="https://m3.material.io/components/chips/overview" class="external"
- * target="_blank">Material Design elevated suggestion chip</a>.
+ * <a href="https://m3.material.io/components/chips/overview" class="external" target="_blank">Material Design elevated suggestion chip</a>.
  *
  * Chips help people enter information, make selections, filter content, or trigger actions. Chips
  * can show multiple interactive elements together in the same area, such as a list of selectable
@@ -857,8 +850,7 @@ fun SuggestionChip(
  * Suggestion chips help narrow a user's intent by presenting dynamically generated suggestions,
  * such as possible responses or search filters.
  *
- * ![Suggestion chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-suggestion-chip.png)
+ * ![Suggestion chip image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-suggestion-chip.png)
  *
  * This suggestion chip is applied with an elevated style. If you want a flat style, use the
  * [SuggestionChip].
@@ -887,6 +879,8 @@ fun SuggestionChip(
  *   emitting [Interaction]s for this chip. You can use this to change the chip's appearance or
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ *   @story /stories?embedded=true#story/ElevatedSuggestionChip%2520Story
  */
 @Composable
 fun ElevatedSuggestionChip(
@@ -920,8 +914,7 @@ fun ElevatedSuggestionChip(
     )
 
 /**
- * <a href="https://m3.material.io/components/chips/overview" class="external"
- * target="_blank">Material Design elevated suggestion chip</a>.
+ * <a href="https://m3.material.io/components/chips/overview" class="external" target="_blank">Material Design elevated suggestion chip</a>.
  *
  * Chips help people enter information, make selections, filter content, or trigger actions. Chips
  * can show multiple interactive elements together in the same area, such as a list of selectable
@@ -930,8 +923,7 @@ fun ElevatedSuggestionChip(
  * Suggestion chips help narrow a user's intent by presenting dynamically generated suggestions,
  * such as possible responses or search filters.
  *
- * ![Suggestion chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-suggestion-chip.png)
+ * ![Suggestion chip image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-suggestion-chip.png)
  *
  * This suggestion chip is applied with an elevated style. If you want a flat style, use the
  * [SuggestionChip].

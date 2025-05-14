@@ -94,15 +94,13 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * <a href="https://m3.material.io/components/text-fields/overview" class="external"
- * target="_blank">Material Design filled text field</a>.
+ * <a href="https://m3.material.io/components/text-fields/overview" class="external" target="_blank">Material Design filled text field</a>.
  *
  * Text fields allow users to enter text into a UI. They typically appear in forms and dialogs.
  * Filled text fields have more visual emphasis than outlined text fields, making them stand out
  * when surrounded by other content and components.
  *
- * ![Filled text field
- * image](https://developer.android.com/images/reference/androidx/compose/material3/filled-text-field.png)
+ * ![Filled text field image](https://developer.android.com/images/reference/androidx/compose/material3/filled-text-field.png)
  *
  * If you are looking for an outlined version, see [OutlinedTextField].
  *
@@ -190,6 +188,8 @@ import kotlin.math.roundToInt
  * @param shape defines the shape of this text field's container
  * @param colors [TextFieldColors] that will be used to resolve the colors used for this text field
  *   in different states. See [TextFieldDefaults.colors].
+ *
+ * @story /stories?embedded=true#story/TextField%2520Story
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -277,15 +277,13 @@ fun TextField(
 }
 
 /**
- * <a href="https://m3.material.io/components/text-fields/overview" class="external"
- * target="_blank">Material Design filled text field</a>.
+ * <a href="https://m3.material.io/components/text-fields/overview" class="external" target="_blank">Material Design filled text field</a>.
  *
  * Text fields allow users to enter text into a UI. They typically appear in forms and dialogs.
  * Filled text fields have more visual emphasis than outlined text fields, making them stand out
  * when surrounded by other content and components.
  *
- * ![Filled text field
- * image](https://developer.android.com/images/reference/androidx/compose/material3/filled-text-field.png)
+ * ![Filled text field image](https://developer.android.com/images/reference/androidx/compose/material3/filled-text-field.png)
  *
  * If you are looking for an outlined version, see [OutlinedTextField].
  *

@@ -66,13 +66,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://m3.material.io/components/date-pickers/overview" class="external"
- * target="_blank">Material Design date range picker</a>.
+ * <a href="https://m3.material.io/components/date-pickers/overview" class="external" target="_blank">Material Design date range picker</a>.
  *
  * Date range pickers let people select a range of dates and can be embedded into Dialogs.
  *
- * ![Date range picker
- * image](https://developer.android.com/images/reference/androidx/compose/material3/range-picker.png)
+ * ![Date range picker image](https://developer.android.com/images/reference/androidx/compose/material3/range-picker.png)
  *
  * A simple DateRangePicker looks like:
  *
@@ -87,6 +85,8 @@ import kotlinx.coroutines.launch
  *   transforms it into a date range input
  * @param colors [DatePickerColors] that will be used to resolve the colors used for this date range
  *   picker in different states. See [DatePickerDefaults.colors].
+ *
+ * @story /stories?embedded=true#story/DateRangePicker%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable

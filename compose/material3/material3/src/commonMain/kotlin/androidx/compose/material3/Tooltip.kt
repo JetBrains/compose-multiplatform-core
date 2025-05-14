@@ -126,7 +126,9 @@ import kotlinx.coroutines.withTimeout
  *   component.
  * @param enableUserInput [Boolean] which determines if this TooltipBox will handle long press and
  *   mouse hover to trigger the tooltip through the state provided.
- * @param content the composable that the tooltip will anchor to.
+ * @param content the composable that the tooltip will anchor to
+ *
+ * @story /stories?embedded=true#story/TooltipBox%2520Story
  */
 @Composable
 @ExperimentalMaterial3Api

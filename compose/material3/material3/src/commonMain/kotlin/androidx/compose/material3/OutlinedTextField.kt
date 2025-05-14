@@ -97,16 +97,14 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * <a href="https://m3.material.io/components/text-fields/overview" class="external"
- * target="_blank">Material Design outlined text field</a>.
+ * <a href="https://m3.material.io/components/text-fields/overview" class="external" target="_blank">Material Design outlined text field</a>.
  *
  * Text fields allow users to enter text into a UI. They typically appear in forms and dialogs.
  * Outlined text fields have less visual emphasis than filled text fields. When they appear in
  * places like forms, where many text fields are placed together, their reduced emphasis helps
  * simplify the layout.
  *
- * ![Outlined text field
- * image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-text-field.png)
+ * ![Outlined text field image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-text-field.png)
  *
  * See example usage:
  *
@@ -164,6 +162,8 @@ import kotlin.math.roundToInt
  * @param shape defines the shape of this text field's border
  * @param colors [TextFieldColors] that will be used to resolve the colors used for this text field
  *   in different states. See [OutlinedTextFieldDefaults.colors].
+ *
+ * @story /stories?embedded=true#story/OutlinedTextField%2520Story
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -271,16 +271,14 @@ fun OutlinedTextField(
 }
 
 /**
- * <a href="https://m3.material.io/components/text-fields/overview" class="external"
- * target="_blank">Material Design outlined text field</a>.
+ * <a href="https://m3.material.io/components/text-fields/overview" class="external" target="_blank">Material Design outlined text field</a>.
  *
  * Text fields allow users to enter text into a UI. They typically appear in forms and dialogs.
  * Outlined text fields have less visual emphasis than filled text fields. When they appear in
  * places like forms, where many text fields are placed together, their reduced emphasis helps
  * simplify the layout.
  *
- * ![Outlined text field
- * image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-text-field.png)
+ * ![Outlined text field image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-text-field.png)
  *
  * See example usage:
  *

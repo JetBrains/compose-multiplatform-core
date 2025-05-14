@@ -212,6 +212,8 @@ fun rememberSwipeToDismissBoxState(
  * @param enableDismissFromEndToStart Whether SwipeToDismissBox can be dismissed from end to start.
  * @param gesturesEnabled Whether swipe-to-dismiss can be interacted by gestures.
  * @param content The content that can be dismissed.
+ *
+ * @story /stories?embedded=true#story/SwipeToDismissBox%2520Story
  */
 @Composable
 fun SwipeToDismissBox(

@@ -58,14 +58,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * <a href="https://m3.material.io/components/buttons/overview" class="external"
- * target="_blank">Material Design button</a>.
+ * <a href="https://m3.material.io/components/buttons/overview" class="external" target="_blank">Material Design button</a>.
  *
  * Buttons help people initiate actions, from sending an email, to sharing a document, to liking a
  * post.
  *
- * ![Filled button
- * image](https://developer.android.com/images/reference/androidx/compose/material3/filled-button.png)
+ * ![Filled button image](https://developer.android.com/images/reference/androidx/compose/material3/filled-button.png)
  *
  * Filled buttons are high-emphasis buttons. Filled buttons have the most visual impact after the
  * [FloatingActionButton], and should be used for important, final actions that complete a flow,
@@ -104,7 +102,7 @@ import androidx.compose.ui.unit.dp
  *   preview the button in different states. Note that if `null` is provided, interactions will
  *   still happen internally.
  *
- * @story /stories?embedded=true#story/PrimaryButton default state
+ * @story /stories?embedded=true#story/Button%2520Story
  */
 @Composable
 fun Button(
@@ -154,14 +152,12 @@ fun Button(
 }
 
 /**
- * <a href="https://m3.material.io/components/buttons/overview" class="external"
- * target="_blank">Material Design elevated button</a>.
+ * <a href="https://m3.material.io/components/buttons/overview" class="external" target="_blank">Material Design elevated button</a>.
  *
  * Buttons help people initiate actions, from sending an email, to sharing a document, to liking a
  * post.
  *
- * ![Elevated button
- * image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-button.png)
+ * ![Elevated button image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-button.png)
  *
  * Elevated buttons are high-emphasis buttons that are essentially [FilledTonalButton]s with a
  * shadow. To prevent shadow creep, only use them when absolutely necessary, such as when the button
@@ -198,6 +194,8 @@ fun Button(
  *   emitting [Interaction]s for this button. You can use this to change the button's appearance or
  *   preview the button in different states. Note that if `null` is provided, interactions will
  *   still happen internally.
+ *
+ * @story /stories?embedded=true#story/ElevatedButton%2520Story
  */
 @Composable
 fun ElevatedButton(
@@ -226,14 +224,12 @@ fun ElevatedButton(
     )
 
 /**
- * <a href="https://m3.material.io/components/buttons/overview" class="external"
- * target="_blank">Material Design filled tonal button</a>.
+ * <a href="https://m3.material.io/components/buttons/overview" class="external" target="_blank">Material Design filled tonal button</a>.
  *
  * Buttons help people initiate actions, from sending an email, to sharing a document, to liking a
  * post.
  *
- * ![Filled tonal button
- * image](https://developer.android.com/images/reference/androidx/compose/material3/filled-tonal-button.png)
+ * ![Filled tonal button image](https://developer.android.com/images/reference/androidx/compose/material3/filled-tonal-button.png)
  *
  * Filled tonal buttons are medium-emphasis buttons that is an alternative middle ground between
  * default [Button]s (filled) and [OutlinedButton]s. They can be used in contexts where
@@ -271,6 +267,8 @@ fun ElevatedButton(
  *   emitting [Interaction]s for this button. You can use this to change the button's appearance or
  *   preview the button in different states. Note that if `null` is provided, interactions will
  *   still happen internally.
+ *
+ * @story /stories?embedded=true#story/FilledTonalButton%2520Story
  */
 @Composable
 fun FilledTonalButton(
@@ -299,14 +297,12 @@ fun FilledTonalButton(
     )
 
 /**
- * <a href="https://m3.material.io/components/buttons/overview" class="external"
- * target="_blank">Material Design outlined button</a>.
+ * <a href="https://m3.material.io/components/buttons/overview" class="external" target="_blank">Material Design outlined button</a>.
  *
  * Buttons help people initiate actions, from sending an email, to sharing a document, to liking a
  * post.
  *
- * ![Outlined button
- * image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-button.png)
+ * ![Outlined button image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-button.png)
  *
  * Outlined buttons are medium-emphasis buttons. They contain actions that are important, but are
  * not the primary action in an app. Outlined buttons pair well with [Button]s to indicate an
@@ -343,6 +339,8 @@ fun FilledTonalButton(
  *   emitting [Interaction]s for this button. You can use this to change the button's appearance or
  *   preview the button in different states. Note that if `null` is provided, interactions will
  *   still happen internally.
+ *
+ * @story /stories?embedded=true#story/OutlinedButton%2520Story
  */
 @Composable
 fun OutlinedButton(
@@ -371,14 +369,12 @@ fun OutlinedButton(
     )
 
 /**
- * <a href="https://m3.material.io/components/buttons/overview" class="external"
- * target="_blank">Material Design text button</a>.
+ * <a href="https://m3.material.io/components/buttons/overview" class="external" target="_blank">Material Design text button</a>.
  *
  * Buttons help people initiate actions, from sending an email, to sharing a document, to liking a
  * post.
  *
- * ![Text button
- * image](https://developer.android.com/images/reference/androidx/compose/material3/text-button.png)
+ * ![Text button image](https://developer.android.com/images/reference/androidx/compose/material3/text-button.png)
  *
  * Text buttons are typically used for less-pronounced actions, including those located in dialogs
  * and cards. In cards, text buttons help maintain an emphasis on card content. Text buttons are
@@ -416,6 +412,8 @@ fun OutlinedButton(
  *   emitting [Interaction]s for this button. You can use this to change the button's appearance or
  *   preview the button in different states. Note that if `null` is provided, interactions will
  *   still happen internally.
+ *
+ * @story /stories?embedded=true#story/TextButton%2520Story
  */
 @Composable
 fun TextButton(

@@ -120,8 +120,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://m3.material.io/components/search/overview" class="external"
- * target="_blank">Material Design search</a>.
+ * <a href="https://m3.material.io/components/search/overview" class="external" target="_blank">Material Design search</a>.
  *
  * A search bar represents a floating search field that allows users to enter a keyword or phrase
  * and get relevant information. It can be used as a way to navigate through an app via search
@@ -130,8 +129,7 @@ import kotlinx.coroutines.launch
  * A search bar expands into a search "view" and can be used to display dynamic suggestions or
  * search results.
  *
- * ![Search bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/search-bar.png)
+ * ![Search bar image](https://developer.android.com/images/reference/androidx/compose/material3/search-bar.png)
  *
  * A [SearchBar] tries to occupy the entirety of its allowed size in the expanded state. For
  * full-screen behavior as specified by Material guidelines, parent layouts of the [SearchBar] must
@@ -161,6 +159,8 @@ import kotlinx.coroutines.launch
  * @param shadowElevation the elevation for the shadow below this search bar
  * @param windowInsets the window insets that this search bar will respect
  * @param content the content of this search bar to display search results below the [inputField].
+ *
+ * @story /stories?embedded=true#story/DockedSearchBar%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable
@@ -244,8 +244,7 @@ fun SearchBar(
 }
 
 /**
- * <a href="https://m3.material.io/components/search/overview" class="external"
- * target="_blank">Material Design search</a>.
+ * <a href="https://m3.material.io/components/search/overview" class="external" target="_blank">Material Design search</a>.
  *
  * A search bar represents a floating search field that allows users to enter a keyword or phrase
  * and get relevant information. It can be used as a way to navigate through an app via search
@@ -254,8 +253,7 @@ fun SearchBar(
  * An search bar expands into a search "view" and can be used to display dynamic suggestions or
  * search results.
  *
- * ![Search bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/docked-search-bar.png)
+ * ![Search bar image](https://developer.android.com/images/reference/androidx/compose/material3/docked-search-bar.png)
  *
  * A [DockedSearchBar] displays search results in a bounded table below the input field. It is an
  * alternative to [SearchBar] when expanding to full-screen size is undesirable on large screens
@@ -279,6 +277,8 @@ fun SearchBar(
  *   [Surface].
  * @param shadowElevation the elevation for the shadow below the search bar.
  * @param content the content of this search bar to display search results below the [inputField].
+ *
+ * @story /stories?embedded=true#story/DockedSearchBar%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable

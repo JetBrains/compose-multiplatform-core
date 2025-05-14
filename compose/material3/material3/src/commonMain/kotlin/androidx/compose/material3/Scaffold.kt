@@ -41,8 +41,7 @@ import androidx.compose.ui.util.fastMapNotNull
 import androidx.compose.ui.util.fastMaxBy
 
 /**
- * <a href="https://material.io/design/layout/understanding-layout.html" class="external"
- * target="_blank">Material Design layout</a>.
+ * <a href="https://material.io/design/layout/understanding-layout.html" class="external" target="_blank">Material Design layout</a>.
  *
  * Scaffold implements the basic material design visual layout structure.
  *
@@ -79,6 +78,8 @@ import androidx.compose.ui.util.fastMaxBy
  *   applied to the content root via [Modifier.padding] and [Modifier.consumeWindowInsets] to
  *   properly offset top and bottom bars. If using [Modifier.verticalScroll], apply this modifier to
  *   the child of the scroll, and not on the scroll itself.
+ *
+ * @story /stories?embedded=true#story/Scaffold%2520Story
  */
 @Composable
 fun Scaffold(
