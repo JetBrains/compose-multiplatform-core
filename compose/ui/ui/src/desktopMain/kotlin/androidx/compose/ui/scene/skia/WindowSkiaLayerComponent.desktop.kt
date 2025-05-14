@@ -21,6 +21,8 @@ import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.ComposeSceneMediator
 import java.awt.Dimension
 import java.awt.Graphics
+import java.awt.event.FocusEvent
+import java.awt.event.FocusListener
 import javax.accessibility.Accessible
 import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.SkiaLayer
@@ -60,6 +62,14 @@ internal class WindowSkiaLayerComponent(
         analytics = skiaLayerAnalytics
     ) {
 
+        init {
+            // SkiaLayer never receives focus, only its underlying canvas
+            canvas.addFocusListener(object : FocusListener {
+                override fun focusGained(e: FocusEvent?) = onFocusEvent()
+                override fun focusLost(e: FocusEvent?) = onFocusEvent()
+            })
+        }
+
         private var endCompositionWorkaround: InputMethodEndCompositionWorkaround? = null
 
         override fun getInputContext() =
@@ -89,6 +99,21 @@ internal class WindowSkiaLayerComponent(
             super.getPreferredSize()
         } else {
             mediator.preferredSize
+        }
+
+        // Workaround for enableInputMethods being ignored until the component is actually focused.
+        // This also controls the default state, without needing it to be set from the outside.
+        private var inputMethodsEnabled = false
+
+        private fun onFocusEvent() {
+            // enableInputMethods is idempotent (and quick when applying the same value),
+            // so it's ok to call it on every event
+            super.enableInputMethods(inputMethodsEnabled)
+        }
+
+        override fun enableInputMethods(enable: Boolean) {
+            inputMethodsEnabled = enable
+            super.enableInputMethods(enable)
         }
     }
 

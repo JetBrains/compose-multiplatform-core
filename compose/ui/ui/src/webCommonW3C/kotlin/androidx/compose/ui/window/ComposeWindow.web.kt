@@ -52,8 +52,14 @@ import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeSceneDragAndDropNode
 import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.size
+import androidx.compose.ui.unit.toDpRect
+import androidx.compose.ui.unit.width
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -200,6 +206,27 @@ internal class ComposeWindow(
                 val offsetX = viewportRect.left.toFloat().coerceAtLeast(0f) + (rect.left / density.density)
                 val offsetY = viewportRect.top.toFloat().coerceAtLeast(0f) + (rect.top / density.density)
                 return Offset(offsetX, offsetY)
+            }
+
+            override fun getNewGeometryForBackingInput(rect: Rect): DpRect {
+                val viewportRect = canvas.getBoundingClientRect()
+                val dpRect = rect.toDpRect(density)
+                var left = viewportRect.left.toFloat() + dpRect.left.value
+                var top = viewportRect.top.toFloat() + dpRect.top.value
+
+                if (left < viewportRect.left) {
+                    left = viewportRect.left.toFloat()
+                } else if (left + dpRect.width.value > viewportRect.right) {
+                    left = viewportRect.right.toFloat() - dpRect.width.value
+                }
+
+                if (top < viewportRect.top) {
+                    top = viewportRect.top.toFloat()
+                } else if (top + dpRect.height.value > viewportRect.bottom) {
+                    top = viewportRect.bottom.toFloat() - dpRect.height.value
+                }
+
+                return DpRect(DpOffset(left.dp, top.dp), dpRect.size)
             }
 
             override fun processKeyboardEvent(keyEvent: KeyEvent): Boolean {

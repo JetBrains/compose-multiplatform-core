@@ -381,8 +381,6 @@ internal class ComposeSceneMediator(
         container.transferHandler = dragAndDropManager.transferHandler
         container.dropTarget = dragAndDropManager.dropTarget
 
-        // It will be enabled dynamically. See DesktopPlatformComponent
-        contentComponent.enableInputMethods(false)
         contentComponent.focusTraversalKeysEnabled = false
 
         subscribe(contentComponent)

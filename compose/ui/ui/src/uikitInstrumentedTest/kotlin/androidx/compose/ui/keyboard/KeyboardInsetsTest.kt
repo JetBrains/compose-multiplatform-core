@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.TextField
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -58,6 +59,7 @@ import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.window.KeyboardVisibilityListener
 import androidx.compose.ui.window.KeyboardVisibilityObserver
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -69,6 +71,7 @@ import platform.CoreGraphics.CGRect
 import platform.UIKit.UIView
 import platform.UIKit.UIViewAnimationOptions
 
+@Ignore // https://youtrack.jetbrains.com/issue/CMP-8133/Fix-keyboard-dependent-instrumented-tests-on-CI
 internal class KeyboardInsetsTest {
     @Test
     fun testImeInsetsAnimationFrames_FocusAboveKeyboard() = runUIKitInstrumentedTest {
@@ -355,7 +358,7 @@ internal class KeyboardInsetsTest {
 
     @OptIn(ExperimentalForeignApi::class)
     @Test
-    fun testRefocusKeyboardSizeNotChanges() = runUIKitInstrumentedTest {
+    fun testRefocusByTapKeyboardSizeNotChanges() = runUIKitInstrumentedTest {
         val keyboardFrames = mutableListOf<DpRect>()
         val contentFrames = mutableListOf<DpRect>()
         val observer = object : KeyboardVisibilityObserver {
@@ -394,8 +397,7 @@ internal class KeyboardInsetsTest {
                     modifier = Modifier.testTag("TF1")
                 )
                 TextField(
-                    value = "",
-                    onValueChange = {},
+                    state = rememberTextFieldState(),
                     modifier = Modifier.testTag("TF2")
                 )
             }
@@ -414,6 +416,77 @@ internal class KeyboardInsetsTest {
         findNodeWithTag("TF2").tap()
         waitForIdle()
         findNodeWithTag("TF1").tap()
+        waitForIdle()
+        KeyboardVisibilityListener.removeObserver(observer)
+
+        // Verify that nor keyboard or content size changed and keyboard presents on the screen.
+        assertTrue(keyboardFrames.emptyOrAllEqual())
+        assertTrue(contentFrames.emptyOrAllEqual())
+        assertNotEquals(0.dp, keyboardHeight)
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    @Test
+    fun testRefocusProgrammaticallyKeyboardSizeNotChanges() = runUIKitInstrumentedTest {
+        val focusRequester1 = FocusRequester()
+        val focusRequester2 = FocusRequester()
+        val keyboardFrames = mutableListOf<DpRect>()
+        val contentFrames = mutableListOf<DpRect>()
+        val observer = object : KeyboardVisibilityObserver {
+            override fun keyboardWillShow(
+                targetFrame: CValue<CGRect>,
+                duration: Double,
+                animationOptions: UIViewAnimationOptions
+            ) {
+            }
+
+            override fun keyboardWillHide(
+                targetFrame: CValue<CGRect>,
+                duration: Double,
+                animationOptions: UIViewAnimationOptions
+            ) {
+            }
+
+            override fun keyboardWillChangeFrame(
+                targetFrame: CValue<CGRect>,
+                duration: Double,
+                animationOptions: UIViewAnimationOptions
+            ) {
+                keyboardFrames.add(targetFrame.asDpRect())
+            }
+        }
+        KeyboardVisibilityListener.addObserver(observer)
+
+        setContent {
+            Column(modifier = Modifier.fillMaxSize().imePadding().onGloballyPositioned {
+                contentFrames.add(it.boundsInRoot().toDpRect(density))
+            }) {
+                Spacer(Modifier.weight(100f))
+                TextField(
+                    value = "",
+                    onValueChange = {},
+                    modifier = Modifier.focusRequester(focusRequester1)
+                )
+                TextField(
+                    state = rememberTextFieldState(),
+                    modifier = Modifier.focusRequester(focusRequester2)
+                )
+            }
+        }
+
+        focusRequester1.requestFocus()
+        waitForIdle()
+
+        assertFalse(keyboardFrames.isEmpty(), "No keyboard frame changes detected")
+        assertFalse(contentFrames.emptyOrAllEqual(), "No content size changes due to ime height changes detected")
+        // Remove frame changes during the keyboard appearance
+        keyboardFrames.clear()
+        contentFrames.clear()
+
+        // Switch between text fields
+        focusRequester2.requestFocus()
+        waitForIdle()
+        focusRequester1.requestFocus()
         waitForIdle()
         KeyboardVisibilityListener.removeObserver(observer)
 

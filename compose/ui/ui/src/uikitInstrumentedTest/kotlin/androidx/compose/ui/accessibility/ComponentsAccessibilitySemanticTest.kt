@@ -583,6 +583,7 @@ class ComponentsAccessibilitySemanticTest {
         }
     }
 
+    @Ignore // TODO https://youtrack.jetbrains.com/issue/CMP-7030
     @Test
     fun testAccessibilityTraversalGrouping() = runUIKitInstrumentedTest {
         setContent {

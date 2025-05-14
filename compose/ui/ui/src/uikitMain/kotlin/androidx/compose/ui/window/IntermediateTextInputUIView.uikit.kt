@@ -20,7 +20,6 @@ import androidx.compose.ui.platform.EmptyInputTraits
 import androidx.compose.ui.platform.IOSSkikoInput
 import androidx.compose.ui.platform.SkikoUITextInputTraits
 import androidx.compose.ui.platform.TextActions
-import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.uikit.utils.CMPEditMenuView
 import androidx.compose.ui.unit.DpOffset
@@ -79,7 +78,7 @@ private val NoOpOnKeyboardPresses: (Set<*>) -> Unit = {}
  * TODO maybe need to call reloadInputViews() to update UIKit text features?
  */
 internal class IntermediateTextInputUIView(
-    private val viewConfiguration: ViewConfiguration
+    private val doubleTapTimeoutMillis: Long
 ) : CMPEditMenuView(frame = CGRectZero.readValue()),
     UIKeyInputProtocol, UITextInputProtocol {
     private var _inputDelegate: UITextInputDelegateProtocol? = null
@@ -505,7 +504,7 @@ internal class IntermediateTextInputUIView(
     override fun isUserInteractionEnabled(): Boolean = false // disable clicks
 
     override fun editMenuDelay(): Double =
-        viewConfiguration.doubleTapTimeoutMillis.milliseconds.toDouble(DurationUnit.SECONDS)
+        doubleTapTimeoutMillis.milliseconds.toDouble(DurationUnit.SECONDS)
 
     /**
      * Show copy/paste text menu
