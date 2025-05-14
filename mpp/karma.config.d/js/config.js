@@ -24,7 +24,7 @@ const rootPath = path.resolve(basePath, "..", "..", "..", "..", "..", "..");
 const karmaPath = path.resolve(rootPath, "mpp", "karma.config.d")
 const configPath = path.resolve(karmaPath, "js");
 
-const {configLaunchers} = require(path.resolve(karmaPath, "web", "commmonKarmaConfig.js"))
+const {configLaunchers} = require(path.resolve(karmaPath, "web", "commonKarmaConfig.js"))
 
 const debug = message => console.error(`[karma-config] ${message}`);
 debug(`karma basePath: ${basePath}`);

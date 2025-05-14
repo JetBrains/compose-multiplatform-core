@@ -24,7 +24,7 @@ const rootPath = path.resolve(basePath, "..", "..", "..", "..", "..", "..");
 const karmaPath = path.resolve(rootPath, "mpp", "karma.config.d")
 const configPath = path.resolve(karmaPath, "wasm");
 
-const {configLaunchers} = require(path.resolve(karmaPath, "web", "commmonKarmaConfig.js"))
+const {configLaunchers} = require(path.resolve(karmaPath, "web", "commonKarmaConfig.js"))
 
 // https://github.com/JetBrains/compose-multiplatform-core/pull/1008#issuecomment-1956354231
 config.client.mocha = config.client.mocha || {};
