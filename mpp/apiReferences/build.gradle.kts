@@ -35,13 +35,22 @@ dokka {
     }
 }
 
+val isDevStoriesBuild = project.hasProperty("apiReferences.devStoriesBuild")
+
 fun includeMaterial3Stories(storiesRootPath: String) {
     if (!storiesRootPath.endsWith("/stories")) {
         error("The storiesRootPath must end with `/stories`")
     }
     // Step 1: Copy Material3 stories to the Dokka output directory
-    val storiesDir = project(":compose:material3:material3-stories")
-        .buildDir.resolve("dist/wasmJs/StoriesProductionExecutable")
+    val storiesDir = project(":compose:material3:material3-stories").let {
+        val path = if (isDevStoriesBuild) {
+            "dist/wasmJs/StoriesDevelopmentExecutable"
+        } else {
+            "dist/wasmJs/StoriesProductionExecutable"
+        }
+        it.buildDir.resolve(path)
+    }
+
     val destDir = project.buildDir.resolve("dokka/html/stories/material3")
 
     if (storiesDir.exists()) {
@@ -67,23 +76,34 @@ fun includeMaterial3Stories(storiesRootPath: String) {
         htmlFiles.forEach { file ->
             val content = file.readText()
 
-            // change the path to a story
-            val updatedContent = content.replace("""src="/stories""", """src="$newRoot""")
+            if (!content.contains("""src="$newRoot""")) {
+                // change the path to a story
+                val updatedContent = content.replace("""src="/stories""", """src="$newRoot""")
 
-            if (content != updatedContent) {
-                file.writeText(updatedContent)
+                if (content != updatedContent) {
+                    file.writeText(updatedContent)
+                }
             }
         }
     }
 }
+
+//tasks.getByName("dokkaGeneratePublicationHtml") {
+//    outputs.upToDateWhen { false }
+//}
 
 // The result will be in .../out/androidx/mpp/apiReferences/build/dokka/html
 tasks.register("buildApiReferencesWithStories") {
 
     // build the api references
     dependsOn(":mpp:apiReferences:dokkaGeneratePublicationHtml")
+
     // build the material3 stories
-    dependsOn(":compose:material3:material3-stories:wasmJsBrowserStoriesProductionExecutableDistribution")
+    if (isDevStoriesBuild) {
+        dependsOn(":compose:material3:material3-stories:wasmJsBrowserStoriesDevelopmentExecutableDistribution")
+    } else {
+        dependsOn(":compose:material3:material3-stories:wasmJsBrowserStoriesProductionExecutableDistribution")
+    }
 
     doLast {
         // Additional processing to include the stories and update the paths

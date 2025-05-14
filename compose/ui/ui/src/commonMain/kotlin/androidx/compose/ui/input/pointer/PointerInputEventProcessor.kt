@@ -127,6 +127,16 @@ internal class PointerInputEventProcessor(val root: LayoutNode) {
                             result = true
                             break
                         }
+
+                        // TODO (o.karpovich): make a PR? it's a workaround for embedded Storytale needs
+                        // https://youtrack.jetbrains.com/issue/CMP-8140
+                        // Or it seems to be a valid change, because scroll events (wheel) do not change the position of a pointer
+                        // and `positionChangedIgnoreConsumed` is false, and scrolls needs different handling:
+                        if (event.scrollDelta != Offset.Zero && event.isConsumed) {
+                            result = true
+                            break
+                        }
+                        // workaround ends here
                     }
                     result
                 }

@@ -49,11 +49,16 @@ internal class BackingDomInput(
 
     private val backingElement = inputStrategy.htmlInput
 
+    // TODO: Make a PR? For now, it's a workaround for an embedded Storytale
+    // https://youtrack.jetbrains.com/issue/CMP-8141
+    private var isPositioned = false
+
     fun register() {
         document.body?.appendChild(backingElement)
     }
 
     fun focus() {
+        if (!isPositioned) return
         // we focus twice to be sure that ios and non-ios browser both manage to focus
         // see https://youtrack.jetbrains.com/issue/CMP-8013
         // and https://youtrack.jetbrains.com/issue/CMP-7836/
@@ -72,11 +77,16 @@ internal class BackingDomInput(
     fun updateHtmlInputPosition(offset: Offset) {
         backingElement.style.left = "${offset.x}px"
         backingElement.style.top = "${offset.y}px"
+        isPositioned = true
     }
 
     fun updateState(textFieldValue: TextFieldValue) {
         inputStrategy.updateState(textFieldValue)
-        focus()
+        if (isPositioned) {
+            window.requestAnimationFrame {
+                focus()
+            }
+        }
     }
 
     fun dispose() {

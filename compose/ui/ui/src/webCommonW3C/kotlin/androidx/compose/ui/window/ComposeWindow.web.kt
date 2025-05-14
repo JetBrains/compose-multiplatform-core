@@ -517,8 +517,9 @@ internal class ComposeWindow(
             button = event.composeButton,
         )
 
-        // TODO: anyMovementConsumed is always false
-        // if (result.anyMovementConsumed) event.preventDefault()
+         if (result.anyMovementConsumed) {
+             event.preventDefault()
+         }
     }
 
     private val MouseEvent.offset get() = Offset(
