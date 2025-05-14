@@ -94,7 +94,7 @@ private val autocapitalizationTypes = listOf(
 private val IosImeOptionsKeyboardTypeExample = Screen.Example("Keyboard Type") {
     LazyColumn {
         items(keyboardTypes) {
-            Item(it.first, PlatformImeOptions(keyboardType = it.second))
+            Item(it.first, PlatformImeOptions { keyboardType(it.second) })
         }
     }
 }
@@ -102,7 +102,7 @@ private val IosImeOptionsKeyboardTypeExample = Screen.Example("Keyboard Type") {
 private val IosImeOptionsKeyboardAppearanceExample = Screen.Example("Keyboard Appearance") {
     LazyColumn {
         items(keyboardAppearances) {
-            Item(it.first, PlatformImeOptions(keyboardAppearance = it.second))
+            Item(it.first, PlatformImeOptions { keyboardAppearance(it.second) })
         }
     }
 }
@@ -110,15 +110,15 @@ private val IosImeOptionsKeyboardAppearanceExample = Screen.Example("Keyboard Ap
 private val IosImeOptionsReturnKeyTypeExample = Screen.Example("Return Key Type") {
     LazyColumn {
         items(returnKeyTypes) {
-            Item(it.first, PlatformImeOptions(returnKeyType = it.second))
+            Item(it.first, PlatformImeOptions { returnKeyType(it.second) })
         }
     }
 }
 
 private val IosImeOptionsIsSecureTextEntryExample = Screen.Example("Is Secure Text Entry") {
     LazyColumn {
-        item { Item("Is Secure", PlatformImeOptions(isSecureTextEntry = true)) }
-        item { Item("Is Not Secure", PlatformImeOptions(isSecureTextEntry = false)) }
+        item { Item("Is Secure", PlatformImeOptions { isSecureTextEntry(true) }) }
+        item { Item("Is Not Secure", PlatformImeOptions { isSecureTextEntry(false) }) }
     }
 }
 
@@ -127,13 +127,13 @@ private val IosImeOptionsEnablesReturnKeyTypeAutomaticallyExample = Screen.Examp
         item {
             Item(
                 "Enables Return Key Type Automatically",
-                PlatformImeOptions(enablesReturnKeyAutomatically = true)
+                PlatformImeOptions { enablesReturnKeyAutomatically(true) }
             )
         }
         item {
             Item(
                 "Doesn't Enable Return Key Type Automatically",
-                PlatformImeOptions(enablesReturnKeyAutomatically = false)
+                PlatformImeOptions { enablesReturnKeyAutomatically(false) }
             )
         }
     }
@@ -142,7 +142,7 @@ private val IosImeOptionsEnablesReturnKeyTypeAutomaticallyExample = Screen.Examp
 private val IosImeOptionsAutocapitalizationTypeExample = Screen.Example("Autocapitalization Type") {
     LazyColumn {
         items(autocapitalizationTypes) {
-            Item(it.first, PlatformImeOptions(autocapitalizationType = it.second))
+            Item(it.first, PlatformImeOptions { autocapitalizationType(it.second) })
         }
     }
 }
@@ -150,7 +150,7 @@ private val IosImeOptionsAutocapitalizationTypeExample = Screen.Example("Autocap
 private val IosImeOptionsAutocorrectionTypeExample = Screen.Example("Autocapitalization Type") {
     LazyColumn {
         items(autocorrectionTypes) {
-            Item(it.first, PlatformImeOptions(autocorrectionType = it.second))
+            Item(it.first, PlatformImeOptions { autocorrectionType(it.second) })
         }
     }
 }
