@@ -20,8 +20,9 @@ package androidx.compose.ui.text
  * Get strong (R, L or AL) direction type.
  * See https://www.unicode.org/reports/tr9/
  */
-internal actual fun CodePoint.strongDirectionType(): StrongDirectionType =
-    when (getDirectionality()) {
+internal actual fun CodePoint.strongDirectionType(): StrongDirectionType {
+    val directionality = getDirectionality()
+    return when (directionality) {
         CharDirectionality.LEFT_TO_RIGHT -> StrongDirectionType.Ltr
 
         CharDirectionality.RIGHT_TO_LEFT,
@@ -29,6 +30,7 @@ internal actual fun CodePoint.strongDirectionType(): StrongDirectionType =
 
         else -> StrongDirectionType.None
     }
+}
 internal actual fun CodePoint.isNeutralDirection(): Boolean =
     when (getDirectionality()) {
         CharDirectionality.OTHER_NEUTRALS,
@@ -37,6 +39,9 @@ internal actual fun CodePoint.isNeutralDirection(): Boolean =
 
         else -> false
     }
+
+internal actual fun CodePoint.isNonSpacingMark(): Boolean =
+    getDirectionality() == CharDirectionality.NONSPACING_MARK
 
 /**
  * Get the Unicode directionality of a character.

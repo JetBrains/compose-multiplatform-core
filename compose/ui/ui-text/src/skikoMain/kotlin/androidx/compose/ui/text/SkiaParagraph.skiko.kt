@@ -439,6 +439,23 @@ internal class SkiaParagraph(
             return glyphPosition
         }
 
+        // Check if the last character of the line is a non-spacing mark
+        val hasNonSpacingMarkAtEnd = if (isNotEmptyLine && expectedLine.endExcludingWhitespaces > 0) {
+            val lastCharIndex = expectedLine.endExcludingWhitespaces - 1
+            if (lastCharIndex >= 0 && lastCharIndex < text.length) {
+                text.codePointAt(lastCharIndex).isNonSpacingMark()
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+
+        // If the line ends with a non-spacing mark, don't apply the workaround
+        if (hasNonSpacingMarkAtEnd) {
+            return glyphPosition
+        }
+
         var correctedGlyphPosition = glyphPosition
 
         if (position.x <= leftX) { // when clicked to the left of a text line
