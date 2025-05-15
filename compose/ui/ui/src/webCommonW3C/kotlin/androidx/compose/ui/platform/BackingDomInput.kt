@@ -24,15 +24,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import kotlinx.browser.document
 import kotlinx.browser.window
 
-private external interface ElementCSSInlineStyle {
-    val style: CSSStyleDeclaration
-}
-
-private abstract external class CSSStyleDeclaration  {
-    fun getPropertyValue(property: String): Float
-    fun setProperty(property: String, value: Float)
-}
-
 internal interface ComposeCommandCommunicator {
     fun sendEditCommand(commands: List<EditCommand>)
     fun sendEditCommand(command: EditCommand) = sendEditCommand(listOf(command))
@@ -40,7 +31,7 @@ internal interface ComposeCommandCommunicator {
     fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean
 }
 
-private fun setGlobalCssProperty(property: String, value: Float) = (document.documentElement as ElementCSSInlineStyle).style.setProperty(property, value)
+private fun setGlobalCssProperty(property: String, value: Float): Unit = js("document.documentElement.style.setProperty(property, value)")
 
 /**
  * The purpose of this entity is to isolate synchronization between a TextFieldValue
