@@ -45,11 +45,16 @@ import kotlinx.coroutines.withContext
  * [coroutineDispatcher].
  */
 public actual class TestNavigatorState
-@JvmOverloads
-constructor(
+// TODO: @JvmOverloads conflicts with "actual" constructor
+public constructor(
     private val context: Context? = null,
     private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate
 ) : NavigatorState() {
+    public actual constructor() : this(
+        context = null,
+        coroutineDispatcher = Dispatchers.Main.immediate
+    )
+
     internal val navContext = NavContext(context)
 
     private val viewModelStoreProvider =

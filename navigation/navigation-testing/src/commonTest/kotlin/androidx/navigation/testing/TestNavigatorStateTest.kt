@@ -20,7 +20,6 @@ import androidx.kruth.assertThat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.testing.TestLifecycleOwner
@@ -33,7 +32,6 @@ import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
 import androidx.navigation.SupportingPane
 import androidx.navigation.navOptions
-import androidx.navigation.testing.TestNavigatorStateTest.FloatingTestDestination
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 

@@ -79,27 +79,26 @@ androidXMultiplatform {
             dependsOn(commonTest)
         }
 
-        // TODO: Sync names: jvmMain
-        jvmCommonMain {
+        jvmMain {
             dependsOn(commonMain)
         }
 
-        jvmCommonTest {
+        jvmTest {
             dependsOn(commonTest)
         }
 
         desktopMain {
-            dependsOn(jvmCommonMain)
+            dependsOn(jvmMain)
             dependsOn(nonAndroidMain)
         }
 
         desktopTest {
-            dependsOn(jvmCommonTest)
+            dependsOn(jvmTest)
             dependsOn(nonAndroidTest)
         }
 
         androidMain {
-            dependsOn(jvmCommonMain)
+            dependsOn(jvmMain)
             dependencies {
                 api(project(":lifecycle:lifecycle-runtime"))
                 api(project(":lifecycle:lifecycle-viewmodel"))
@@ -134,19 +133,12 @@ androidXMultiplatform {
             }
         }
 
-        // TODO: Sync names: nonJvmMain
-        nonJvmCommonMain {
+        nativeMain {
             dependsOn(nonAndroidMain)
         }
 
-        nonJvmCommonTest { dependsOn(nonAndroidTest) }
-
-        nativeMain {
-            dependsOn(nonJvmCommonMain)
-        }
-
         nativeTest {
-            dependsOn(nonJvmCommonTest)
+            dependsOn(nonAndroidTest)
         }
 
         linuxMain {
@@ -166,11 +158,11 @@ androidXMultiplatform {
         }
 
         webMain {
-            dependsOn(nonJvmCommonMain)
+            dependsOn(nonAndroidMain)
         }
 
         webTest {
-            dependsOn(nonJvmCommonTest)
+            dependsOn(nonAndroidTest)
         }
 
         targets.configureEach { target ->

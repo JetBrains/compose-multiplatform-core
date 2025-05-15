@@ -117,20 +117,28 @@ androidXMultiplatform {
             dependsOn(nonAndroidTest)
         }
 
-        darwinMain {
+        unixMain {
             dependsOn(nativeMain)
+        }
+
+        unixTest {
+            dependsOn(nativeTest)
+        }
+
+        darwinMain {
+            dependsOn(unixMain)
         }
 
         darwinTest {
-            dependsOn(nativeTest)
+            dependsOn(unixTest)
         }
 
         linuxMain {
-            dependsOn(nativeMain)
+            dependsOn(unixMain)
         }
 
         linuxTest {
-            dependsOn(nativeTest)
+            dependsOn(unixTest)
         }
 
         webMain {

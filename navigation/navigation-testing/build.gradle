@@ -28,28 +28,18 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
     alias(libs.plugins.kotlinSerialization)
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.navigation.testing"
-        experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
-
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
-        withAndroidTestOnJvmBuilder {
-            it.compilationName = "unitTest"
-            it.defaultSourceSetName = "androidUnitTest"
-        }
-    }
+    androidTarget()
     desktop()
     linux()
     mac()
     ios()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -74,6 +64,8 @@ androidXMultiplatform {
 
         commonTest {
             dependencies {
+                implementation(libs.kotlinTest)
+                implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":kruth:kruth"))
             }
         }
@@ -109,7 +101,7 @@ androidXMultiplatform {
         }
 
         androidMain {
-            dependsOn(commonMain)
+            dependsOn(jvmMain)
             dependencies {
                 api(project(":lifecycle:lifecycle-runtime"))
                 api(project(":lifecycle:lifecycle-viewmodel"))
@@ -120,7 +112,7 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation(libs.robolectric)
 
@@ -132,7 +124,7 @@ androidXMultiplatform {
         }
 
         androidInstrumentedTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation(project(":internal-testutils-navigation"))
                 implementation("androidx.lifecycle:lifecycle-runtime:2.6.2")
@@ -147,15 +139,12 @@ androidXMultiplatform {
             }
         }
 
-        nonAndroidMain { dependsOn(commonMain) }
-        nonAndroidTest { dependsOn(commonTest) }
-
-        targets.configureEach { target ->
-            if (target.platformType !in [KotlinPlatformType.androidJvm, KotlinPlatformType.common]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(nonAndroidMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(nonAndroidTest)
-            }
-        }
+         targets.configureEach { target ->
+             if (target.platformType !in [KotlinPlatformType.androidJvm, KotlinPlatformType.common]) {
+                 target.compilations["main"].defaultSourceSet.dependsOn(nonAndroidMain)
+                 target.compilations["test"].defaultSourceSet.dependsOn(nonAndroidTest)
+             }
+         }
     }
 }
 
@@ -164,4 +153,9 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Navigation-Testing"
+}
+
+android {
+    namespace = "androidx.navigation.testing"
+    experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
 }
