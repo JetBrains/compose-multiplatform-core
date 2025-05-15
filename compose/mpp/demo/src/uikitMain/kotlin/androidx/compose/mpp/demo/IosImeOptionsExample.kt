@@ -27,6 +27,7 @@ import androidx.compose.mpp.demo.textfield.android.fontSize8
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PlatformImeOptions
@@ -91,6 +92,7 @@ private val autocapitalizationTypes = listOf(
     "Null" to null
 )
 
+@OptIn(ExperimentalComposeUiApi::class)
 private val IosImeOptionsKeyboardTypeExample = Screen.Example("Keyboard Type") {
     LazyColumn {
         items(keyboardTypes) {
@@ -99,6 +101,7 @@ private val IosImeOptionsKeyboardTypeExample = Screen.Example("Keyboard Type") {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 private val IosImeOptionsKeyboardAppearanceExample = Screen.Example("Keyboard Appearance") {
     LazyColumn {
         items(keyboardAppearances) {
@@ -107,6 +110,7 @@ private val IosImeOptionsKeyboardAppearanceExample = Screen.Example("Keyboard Ap
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 private val IosImeOptionsReturnKeyTypeExample = Screen.Example("Return Key Type") {
     LazyColumn {
         items(returnKeyTypes) {
@@ -115,6 +119,7 @@ private val IosImeOptionsReturnKeyTypeExample = Screen.Example("Return Key Type"
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 private val IosImeOptionsIsSecureTextEntryExample = Screen.Example("Is Secure Text Entry") {
     LazyColumn {
         item { Item("Is Secure", PlatformImeOptions { isSecureTextEntry(true) }) }
@@ -122,6 +127,7 @@ private val IosImeOptionsIsSecureTextEntryExample = Screen.Example("Is Secure Te
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 private val IosImeOptionsEnablesReturnKeyTypeAutomaticallyExample = Screen.Example("Enables Return Key Type Automatically") {
     LazyColumn {
         item {
@@ -139,6 +145,7 @@ private val IosImeOptionsEnablesReturnKeyTypeAutomaticallyExample = Screen.Examp
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 private val IosImeOptionsAutocapitalizationTypeExample = Screen.Example("Autocapitalization Type") {
     LazyColumn {
         items(autocapitalizationTypes) {
@@ -147,6 +154,7 @@ private val IosImeOptionsAutocapitalizationTypeExample = Screen.Example("Autocap
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 private val IosImeOptionsAutocorrectionTypeExample = Screen.Example("Autocapitalization Type") {
     LazyColumn {
         items(autocorrectionTypes) {
