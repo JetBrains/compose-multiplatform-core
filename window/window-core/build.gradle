@@ -44,6 +44,9 @@ androidXMultiplatform {
     ios()
     watchos()
     tvos()
+    mingwX64()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
