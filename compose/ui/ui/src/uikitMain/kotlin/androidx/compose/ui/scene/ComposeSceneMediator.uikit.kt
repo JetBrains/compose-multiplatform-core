@@ -22,6 +22,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.animation.withAnimationProgress
 import androidx.compose.ui.backhandler.UIKitBackGestureDispatcher
 import androidx.compose.ui.draganddrop.UIKitDragAndDropManager
@@ -92,6 +93,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.jetbrains.skiko.OS
@@ -712,17 +714,17 @@ internal class ComposeSceneMediator(
             // TODO: Adopt PlatformTextInputService2 (https://youtrack.jetbrains.com/issue/CMP-7832/iOS-Adopt-PlatformTextInputService2)
             coroutineScope {
                 launch {
-                    request.outputValue.collect {
+                    snapshotFlow { request.value() }.collect {
                         textInputService.updateState(oldValue = null, newValue = it)
                     }
                 }
                 launch {
-                    request.textLayoutResult.collect {
+                    snapshotFlow { request.textLayoutResult() }.filterNotNull().collect {
                         textInputService.updateTextLayoutResult(it)
                     }
                 }
                 launch {
-                    request.textFieldRectInRoot.collect {
+                    snapshotFlow { request.textFieldRectInRoot() }.filterNotNull().collect {
                         textInputService.updateTextFrame(it)
                     }
                 }

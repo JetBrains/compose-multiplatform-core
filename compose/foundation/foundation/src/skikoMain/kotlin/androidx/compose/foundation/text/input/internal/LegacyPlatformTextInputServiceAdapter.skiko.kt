@@ -21,7 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Matrix
@@ -39,7 +38,6 @@ import androidx.compose.ui.text.input.TextEditorState
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TextInputService
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.filterNotNull
 
 // TODO remove after https://youtrack.jetbrains.com/issue/COMPOSE-740/Implement-BasicTextField2
 @OptIn(ExperimentalComposeUiApi::class)
@@ -161,11 +159,10 @@ internal actual fun legacyTextInputServiceAdapterAndService():
                     imeOptions = imeOptions,
                     onEditCommand = onEditCommand,
                     onImeAction = onImeActionPerformed,
-                    outputValue = snapshotFlow { textFieldValue },
-                    textLayoutResult = snapshotFlow { textLayoutResult }.filterNotNull(),
-                    focusedRectInRoot = snapshotFlow { focusedRectInRoot },
-                    textFieldRectInRoot = snapshotFlow { textFieldRectInRoot },
-                    textClippingRectInRoot = snapshotFlow { textClippingRectInRoot },
+                    textLayoutResult = { textLayoutResult },
+                    focusedRectInRoot = { focusedRectInRoot },
+                    textFieldRectInRoot = { textFieldRectInRoot },
+                    textClippingRectInRoot = { textClippingRectInRoot },
                     editText = editBlock
                 )
             }

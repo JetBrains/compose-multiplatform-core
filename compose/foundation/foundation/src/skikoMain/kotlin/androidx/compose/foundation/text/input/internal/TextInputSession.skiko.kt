@@ -22,7 +22,6 @@ import androidx.compose.foundation.text.input.TextFieldCharSequence
 import androidx.compose.foundation.text.input.delete
 import androidx.compose.foundation.text.input.setSelectionCoerced
 import androidx.compose.foundation.text.offsetByCodePoints
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -40,10 +39,7 @@ import androidx.compose.ui.text.input.TextEditingScope
 import androidx.compose.ui.text.input.TextEditorState
 import androidx.compose.ui.text.input.TextFieldValue
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.filterNotNull
 
 @OptIn(ExperimentalComposeUiApi::class)
 internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
@@ -91,29 +87,17 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
     }
 
     coroutineScope {
-        val outputValueFlow = callbackFlow {
-            state.collectImeNotifications { _, _, _ ->
-                // SkikoPlatformTextInputMethodRequest should work with an untransformed text on all platforms
-                // This updates platform text input services after changing the state with latest value in onEditCommand
-                trySend(state.untransformedText.toTextFieldValue())
-            }
-        }
-
-        val focusedRectInRootFlow = snapshotFlow {
-            val layoutResult = layoutState.layoutResult ?: return@snapshotFlow null
-            val layoutCoords = layoutState.textLayoutNodeCoordinates ?: return@snapshotFlow null
-            layoutResult
+        fun focusedRectInRoot(): Rect? {
+            val layoutResult = layoutState.layoutResult ?: return null
+            val layoutCoords = layoutState.textLayoutNodeCoordinates ?: return null
+            return layoutResult
                 .getCursorRect(state.visualText.selection.max)
                 .translate(layoutCoords.localToRoot(Offset.Zero))
-        }.filterNotNull()
+        }
 
-        val textFieldRectInRoot = snapshotFlow {
-            layoutState.decoratorNodeCoordinates?.boundsInRoot()
-        }.filterNotNull()
+        fun textFieldRectInRoot() = layoutState.decoratorNodeCoordinates?.boundsInRoot()
 
-        val textClippingRectInRoot = snapshotFlow {
-            layoutState.coreNodeCoordinates?.boundsInRoot()
-        }.filterNotNull()
+        fun textClippingRectInRoot() = layoutState.coreNodeCoordinates?.boundsInRoot()
 
         startInputMethod(
             SkikoPlatformTextInputMethodRequest(
@@ -122,11 +106,10 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
                 imeOptions = imeOptions,
                 onEditCommand = ::onEditCommand,
                 onImeAction = onImeAction,
-                outputValue = outputValueFlow,
-                textLayoutResult = snapshotFlow(layoutState::layoutResult).filterNotNull(),
-                focusedRectInRoot = focusedRectInRootFlow,
-                textFieldRectInRoot = textFieldRectInRoot,
-                textClippingRectInRoot = textClippingRectInRoot,
+                textLayoutResult = layoutState::layoutResult,
+                focusedRectInRoot = ::focusedRectInRoot,
+                textFieldRectInRoot = ::textFieldRectInRoot,
+                textClippingRectInRoot = ::textClippingRectInRoot,
                 editText = ::editText
             )
         )
@@ -242,10 +225,9 @@ internal data class SkikoPlatformTextInputMethodRequest(
     override val imeOptions: ImeOptions,
     override val onEditCommand: (List<EditCommand>) -> Unit,
     override val onImeAction: ((ImeAction) -> Unit)?,
-    override val outputValue: Flow<TextFieldValue>,
-    override val textLayoutResult: Flow<TextLayoutResult>,
-    override val focusedRectInRoot: Flow<Rect>,
-    override val textFieldRectInRoot: Flow<Rect>,
-    override val textClippingRectInRoot: Flow<Rect>,
+    override val textLayoutResult: () -> TextLayoutResult?,
+    override val focusedRectInRoot: () -> Rect?,
+    override val textFieldRectInRoot: () -> Rect?,
+    override val textClippingRectInRoot: () -> Rect?,
     override val editText: (block: TextEditingScope.() -> Unit) -> Unit
 ): PlatformTextInputMethodRequest

@@ -30,6 +30,8 @@ import androidx.compose.ui.window.WindowPosition
 import java.awt.*
 import java.awt.event.InputMethodEvent
 import java.awt.event.KeyEvent
+import java.awt.event.KeyEvent.KEY_PRESSED
+import java.awt.event.KeyEvent.KEY_RELEASED
 import java.awt.event.MouseEvent
 import java.awt.event.MouseWheelEvent
 import java.awt.font.TextHitInfo
@@ -99,6 +101,12 @@ fun Window.sendKeyTypedEvent(
     id = KeyEvent.KEY_TYPED,
     modifiers = modifiers
 )
+
+fun Window.sendCharTypedEvents(char: Char) {
+    sendKeyEvent(char.code, char, KEY_PRESSED)
+    sendKeyTypedEvent(char)
+    sendKeyEvent(char.code, char, KEY_RELEASED)
+}
 
 fun Window.sendInputMethodEvent(
     text: String?,
