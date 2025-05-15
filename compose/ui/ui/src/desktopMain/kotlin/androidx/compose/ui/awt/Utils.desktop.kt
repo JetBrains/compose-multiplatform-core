@@ -31,6 +31,7 @@ import javax.swing.JFrame
 import javax.swing.JLayeredPane
 import kotlin.math.ceil
 import kotlin.math.floor
+import kotlin.math.roundToInt
 import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.hostOs
@@ -70,13 +71,19 @@ internal fun IntRect.toAwtRectangle(density: Density = Density(1f)) = toAwtRecta
     density = density.density
 )
 
-internal fun Rect.toAwtRectangle(density: Density) = toAwtRectangle(
-    left = left,
-    top = top,
-    right = right,
-    bottom = bottom,
-    density = density.density
-)
+/**
+ * Returns a [java.awt.Rectangle] corresponding to this [Rect], in the given density.
+ *
+ * The coordinates are rounded to the nearest integer.
+ */
+internal fun Rect.toAwtRectangleRounded(density: Density): Rectangle {
+    val densityValue = density.density
+    val left = (this.left / densityValue).roundToInt()
+    val top = (this.top / densityValue).roundToInt()
+    val right = (this.right / densityValue).roundToInt()
+    val bottom = (this.bottom / densityValue).roundToInt()
+    return Rectangle(left, top, right - left, bottom - top)
+}
 
 internal fun Color.toAwtColor() = java.awt.Color(red, green, blue, alpha)
 

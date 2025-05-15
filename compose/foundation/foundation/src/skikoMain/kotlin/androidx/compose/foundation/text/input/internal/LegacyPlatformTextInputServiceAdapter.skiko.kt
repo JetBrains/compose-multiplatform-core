@@ -16,8 +16,6 @@
 
 package androidx.compose.foundation.text.input.internal
 
-import androidx.compose.foundation.text.computeSizeForDefaultText
-import androidx.compose.foundation.text.focusedRectInRoot
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -102,16 +100,8 @@ internal actual fun legacyTextInputServiceAdapterAndService():
                 val matrix = Matrix().also { textFieldToRootTransform(it) }
                 textFieldRectInRoot = matrix.map(decorationBoxBounds)
                 textClippingRectInRoot = matrix.map(innerTextFieldBounds)
-                focusedRectInRoot = focusedRectInRoot(
-                    layoutResult = textLayoutResult,
-                    focusOffset = offsetMapping.originalToTransformed(textFieldValue.selection.max),
-                    sizeForDefaultText = {
-                        textLayoutResult.layoutInput.let {
-                            computeSizeForDefaultText(it.style, it.density, it.fontFamilyResolver)
-                        }
-                    },
-                    convertLocalToRoot = matrix::map
-                )
+                val cursorOffset = offsetMapping.originalToTransformed(textFieldValue.selection.max)
+                focusedRectInRoot = matrix.map(textLayoutResult.getCursorRect(cursorOffset))
             }
 
             override fun startStylusHandwriting() {}

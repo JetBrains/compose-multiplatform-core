@@ -114,7 +114,7 @@ class LegacyPlatformTextInputServiceAdapterTest {
         assertThat(outputValue?.text).isEqualTo("abc")
         assertThat(outputValue?.selection).isEqualTo(TextRange(3, 3))
         assertThat(textLayoutResult?.layoutInput?.text?.text).isEqualTo("abc")
-        assertThat(focusedRectInRoot?.isEmpty).isFalse()
+        assertThat(focusedRectInRoot).isNotNull()
         assertThat(textFieldRectInRoot?.isEmpty).isFalse()
         assertThat(textClippingRectInRoot?.isEmpty).isFalse()
     }

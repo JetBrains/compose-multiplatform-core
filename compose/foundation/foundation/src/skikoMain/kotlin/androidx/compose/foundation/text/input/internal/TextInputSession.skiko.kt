@@ -17,8 +17,6 @@
 package androidx.compose.foundation.text.input.internal
 
 import androidx.compose.foundation.content.internal.ReceiveContentConfiguration
-import androidx.compose.foundation.text.computeSizeForDefaultText
-import androidx.compose.foundation.text.focusedRectInRoot
 import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.TextFieldCharSequence
 import androidx.compose.foundation.text.input.delete
@@ -26,6 +24,7 @@ import androidx.compose.foundation.text.input.setSelectionCoerced
 import androidx.compose.foundation.text.offsetByCodePoints
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
@@ -103,16 +102,9 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
         val focusedRectInRootFlow = snapshotFlow {
             val layoutResult = layoutState.layoutResult ?: return@snapshotFlow null
             val layoutCoords = layoutState.textLayoutNodeCoordinates ?: return@snapshotFlow null
-            focusedRectInRoot(
-                layoutResult = layoutResult,
-                focusOffset = state.visualText.selection.max,
-                sizeForDefaultText = {
-                    layoutResult.layoutInput.let {
-                        computeSizeForDefaultText(it.style, it.density, it.fontFamilyResolver)
-                    }
-                },
-                convertLocalToRoot = layoutCoords::localToRoot,
-            )
+            layoutResult
+                .getCursorRect(state.visualText.selection.max)
+                .translate(layoutCoords.localToRoot(Offset.Zero))
         }.filterNotNull()
 
         val textFieldRectInRoot = snapshotFlow {
@@ -242,7 +234,6 @@ private fun TextEditingScope(buffer: TextFieldBuffer) = object : TextEditingScop
         buffer.cursor = newCursorInBuffer
     }
 }
-
 
 @OptIn(ExperimentalComposeUiApi::class)
 internal data class SkikoPlatformTextInputMethodRequest(
