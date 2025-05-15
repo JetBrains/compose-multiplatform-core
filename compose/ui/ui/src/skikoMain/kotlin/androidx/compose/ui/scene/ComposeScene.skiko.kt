@@ -17,6 +17,7 @@
 package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.LaunchedEffect
@@ -70,6 +71,7 @@ internal val LocalComposeScene = staticCompositionLocalOf<ComposeScene?> { null 
  */
 @InternalComposeUiApi
 interface ComposeScene {
+
     /**
      * Density of the content which will be used to convert [Dp] units.
      */
@@ -248,6 +250,12 @@ interface ComposeScene {
      * @return The [InteropView] associated with the resulting node in case there is any, or null.
      */
     fun hitTestInteropView(position: Offset): InteropView?
+
+    /**
+     * Run the [block] in a coroutine with a [androidx.compose.runtime.MonotonicFrameClock] instance
+     * provided by the [androidx.compose.runtime.Recomposer] of the current scene.
+     */
+    suspend fun withMonotonicFrameClock(block: suspend () -> Unit)
 }
 
 private fun currentTimeForEvent(): Long =

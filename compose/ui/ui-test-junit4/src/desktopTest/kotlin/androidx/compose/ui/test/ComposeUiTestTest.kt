@@ -26,8 +26,16 @@ import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.google.common.truth.Truth.assertThat
 import kotlin.coroutines.CoroutineContext
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 import kotlin.test.fail
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import org.junit.ComparisonFailure
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -156,6 +164,34 @@ class ComposeUiTestTest {
                 waitForIdle()
             }
         }
+    }
+
+    @Test
+    fun testTimeout() {
+        val timeout = 100.milliseconds
+        val error = assertFailsWith<AssertionError> {
+            runComposeUiTest(testTimeout = timeout) {
+                // switch a dispatcher to not skip the delay
+                withContext(Dispatchers.Default) { delay(1000) }
+            }
+        }
+        // Here our assert relies on the implementation details of kotlinx.coroutines.test library,
+        // It's purpose is to be sure that the AssertionError is of particular type
+        assertEquals(
+            "kotlinx.coroutines.test.UncompletedCoroutinesError",
+            error::class.qualifiedName
+        )
+    }
+
+    @Test
+    fun testFailedAssertion() {
+        val error = assertFailsWith<ComparisonFailure> {
+            runComposeUiTest {
+                assertThat(1.0).isEqualTo(2.0)
+            }
+        }
+        assertEquals("1.0", error.actual)
+        assertEquals("2.0", error.expected)
     }
 
     private class TestCoroutineContextElement : CoroutineContext.Element {

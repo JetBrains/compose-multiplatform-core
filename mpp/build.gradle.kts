@@ -215,6 +215,7 @@ val testWebJs = tasks.register("testWebJs") {
     dependsOn(":compose:runtime:runtime:jsTest")
     dependsOn(":compose:ui:ui-text:jsTest")
     dependsOn(":compose:ui:ui:jsTest")
+    dependsOn(":compose:ui:ui-test:jsTest")
     dependsOn(":navigation:navigation-runtime:jsTest")
 }
 
@@ -226,6 +227,7 @@ val testWebWasm = tasks.register("testWebWasm") {
     dependsOn(":compose:runtime:runtime:wasmJsTest")
     dependsOn(":compose:ui:ui-text:wasmJsTest")
     dependsOn(":compose:ui:ui:wasmJsTest")
+    dependsOn(":compose:ui:ui-test:wasmJsTest")
     dependsOn(":navigation:navigation-runtime:wasmJsTest")
 }
 

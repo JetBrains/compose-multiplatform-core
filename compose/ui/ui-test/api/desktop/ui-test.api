@@ -113,27 +113,24 @@ public final class androidx/compose/ui/test/ComposeUiTestKt {
 }
 
 public final class androidx/compose/ui/test/ComposeUiTest_desktopKt {
-	public static final fun runDesktopComposeUiTest (IILkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun runDesktopComposeUiTest$default (IILkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun runDesktopComposeUiTest-myKFqkg (IILkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLkotlin/jvm/functions/Function2;)V
+	public static synthetic fun runDesktopComposeUiTest-myKFqkg$default (IILkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 }
 
 public final class androidx/compose/ui/test/ComposeUiTest_skikoKt {
 	public static final fun defaultTestDispatcher ()Lkotlinx/coroutines/test/TestDispatcher;
-	public static final fun runComposeUiTest (Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun runComposeUiTest$default (Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public static final synthetic fun runComposeUiTest-exY8QGI (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLkotlin/jvm/functions/Function2;)V
+	public static final fun runComposeUiTest-exY8QGI (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLkotlin/jvm/functions/Function2;)V
 	public static synthetic fun runComposeUiTest-exY8QGI$default (Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
-	public static final fun runInternalSkikoComposeUiTest (IILandroidx/compose/ui/unit/Density;Lkotlin/coroutines/CoroutineContext;Landroidx/compose/ui/platform/PlatformContext$SemanticsOwnerListener;Lkotlinx/coroutines/test/TestDispatcher;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun runInternalSkikoComposeUiTest$default (IILandroidx/compose/ui/unit/Density;Lkotlin/coroutines/CoroutineContext;Landroidx/compose/ui/platform/PlatformContext$SemanticsOwnerListener;Lkotlinx/coroutines/test/TestDispatcher;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public static final fun runSkikoComposeUiTest-Cqks5Fs (JLandroidx/compose/ui/unit/Density;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun runSkikoComposeUiTest-Cqks5Fs$default (JLandroidx/compose/ui/unit/Density;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun runInternalSkikoComposeUiTest-Tu6dINM (IILandroidx/compose/ui/unit/Density;Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLandroidx/compose/ui/platform/PlatformContext$SemanticsOwnerListener;Lkotlinx/coroutines/test/TestDispatcher;Lkotlin/jvm/functions/Function2;)V
+	public static synthetic fun runInternalSkikoComposeUiTest-Tu6dINM$default (IILandroidx/compose/ui/unit/Density;Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLandroidx/compose/ui/platform/PlatformContext$SemanticsOwnerListener;Lkotlinx/coroutines/test/TestDispatcher;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
+	public static final fun runSkikoComposeUiTest-uV_hrag (JLandroidx/compose/ui/unit/Density;Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLkotlin/jvm/functions/Function2;)V
+	public static synthetic fun runSkikoComposeUiTest-uV_hrag$default (JLandroidx/compose/ui/unit/Density;Lkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 }
 
 public final class androidx/compose/ui/test/DesktopComposeUiTest : androidx/compose/ui/test/SkikoComposeUiTest {
 	public static final field $stable I
-	public fun <init> ()V
-	public fun <init> (IILkotlin/coroutines/CoroutineContext;Landroidx/compose/ui/unit/Density;)V
-	public synthetic fun <init> (IILkotlin/coroutines/CoroutineContext;Landroidx/compose/ui/unit/Density;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IILkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLandroidx/compose/ui/unit/Density;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IILkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLandroidx/compose/ui/unit/Density;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun registerIdlingResource (Landroidx/compose/ui/test/IdlingResource;)V
 	public final fun unregisterIdlingResource (Landroidx/compose/ui/test/IdlingResource;)V
 }
@@ -654,8 +651,10 @@ public class androidx/compose/ui/test/SkikoComposeUiTest : androidx/compose/ui/t
 	public field scene Landroidx/compose/ui/scene/ComposeScene;
 	public fun <init> (IILkotlin/coroutines/CoroutineContext;Landroidx/compose/ui/unit/Density;)V
 	public synthetic fun <init> (IILkotlin/coroutines/CoroutineContext;Landroidx/compose/ui/unit/Density;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (IILkotlin/coroutines/CoroutineContext;Landroidx/compose/ui/unit/Density;Landroidx/compose/ui/platform/PlatformContext$SemanticsOwnerListener;Lkotlinx/coroutines/test/TestDispatcher;)V
-	public synthetic fun <init> (IILkotlin/coroutines/CoroutineContext;Landroidx/compose/ui/unit/Density;Landroidx/compose/ui/platform/PlatformContext$SemanticsOwnerListener;Lkotlinx/coroutines/test/TestDispatcher;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IILkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLandroidx/compose/ui/unit/Density;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IILkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLandroidx/compose/ui/unit/Density;Landroidx/compose/ui/platform/PlatformContext$SemanticsOwnerListener;Lkotlinx/coroutines/test/TestDispatcher;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IILkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLandroidx/compose/ui/unit/Density;Landroidx/compose/ui/platform/PlatformContext$SemanticsOwnerListener;Lkotlinx/coroutines/test/TestDispatcher;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IILkotlin/coroutines/CoroutineContext;Lkotlin/coroutines/CoroutineContext;JLandroidx/compose/ui/unit/Density;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	protected fun areAllResourcesIdle ()Z
 	public fun awaitIdle (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun captureToImage ()Landroidx/compose/ui/graphics/ImageBitmap;
@@ -668,7 +667,7 @@ public class androidx/compose/ui/test/SkikoComposeUiTest : androidx/compose/ui/t
 	public fun onNode (Landroidx/compose/ui/test/SemanticsMatcher;Z)Landroidx/compose/ui/test/SemanticsNodeInteraction;
 	public fun runOnIdle (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 	public fun runOnUiThread (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
-	public final fun runTest (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public final fun runTest (Lkotlin/jvm/functions/Function2;)V
 	public fun setContent (Lkotlin/jvm/functions/Function2;)V
 	public final fun setScene (Landroidx/compose/ui/scene/ComposeScene;)V
 	public fun waitForIdle ()V

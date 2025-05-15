@@ -102,6 +102,8 @@ internal class UIKitComposeSceneLayersHolder(
         }
     }
 
+    fun animateCrossFadeTransition(scope: CoroutineScope) = view.animateCrossFadeTransition(scope)
+
     fun dispose(hasViewAppeared: Boolean) {
         // `dispose` is called instead of `close`, because `close` is also used imperatively
         // to remove the layer from the array based on user interaction.
@@ -174,6 +176,17 @@ internal class UIKitComposeSceneLayersHolder(
         this.layers.fastForEach {
             it.sceneWillDisappear()
         }
+    }
+
+    val hasInteropViews: Boolean get() {
+        layersCache.withCopy { layers ->
+            layers.fastForEach {
+                if (it.hasInteropViews) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     /**

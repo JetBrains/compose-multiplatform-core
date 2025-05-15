@@ -171,7 +171,7 @@ open class BaseWindowTextFieldTest {
                     BasicTextField(
                         value = textFieldValue,
                         onValueChange = {
-                            textFieldValue = it.also { println(it) }
+                            textFieldValue = it
                         },
                         modifier = Modifier.focusRequester(focusRequester)
                     )

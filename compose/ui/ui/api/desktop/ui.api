@@ -3873,6 +3873,7 @@ public abstract interface class androidx/compose/ui/scene/ComposeScene {
 	public abstract fun setDensity (Landroidx/compose/ui/unit/Density;)V
 	public abstract fun setLayoutDirection (Landroidx/compose/ui/unit/LayoutDirection;)V
 	public abstract fun setSize-fhxjrPA (Landroidx/compose/ui/unit/IntSize;)V
+	public abstract fun withMonotonicFrameClock (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public abstract interface class androidx/compose/ui/scene/ComposeSceneContext {

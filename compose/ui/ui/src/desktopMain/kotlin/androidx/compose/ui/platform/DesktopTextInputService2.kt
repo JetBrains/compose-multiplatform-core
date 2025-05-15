@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.ui.awt.toAwtRectangle
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.text.TextRange
@@ -178,13 +179,13 @@ private class InputMethodSession(
     }
 
     override fun getTextLocation(offset: TextHitInfo?): Rectangle? {
-        return focusedRect?.let {
-            val x = (it.right / component.density.density).toInt() +
-                component.locationOnScreen.x
-            val y = (it.top / component.density.density).toInt() +
-                component.locationOnScreen.y
-            Rectangle(x, y, it.width.toInt(), it.height.toInt())
-        }
+        val awtRect = focusedRect?.let {
+            it.copy(left = it.right).toAwtRectangle(component.density)
+        } ?: return null
+
+        val locationOnScreen = component.locationOnScreen
+        awtRect.translate(locationOnScreen.x, locationOnScreen.y)
+        return awtRect
     }
 
     override fun getCommittedText(

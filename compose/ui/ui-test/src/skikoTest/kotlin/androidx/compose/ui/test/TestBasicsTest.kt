@@ -226,6 +226,7 @@ class TestBasicsTest {
     }
 
     @Test
+    @IgnoreWebTest
     fun runOnIdleExecutesOnUiThread() = runComposeUiTest {
         setContent { }
         runOnIdle {

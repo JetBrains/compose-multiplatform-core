@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -42,6 +43,7 @@ import androidx.compose.ui.platform.LocalPlatformScreenReader
 import androidx.compose.ui.util.trace
 import kotlin.concurrent.Volatile
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.withContext
 
 /**
  * BaseComposeScene is an internal abstract class that implements the ComposeScene interface.
@@ -260,6 +262,14 @@ internal abstract class BaseComposeScene(
     override fun sendKeyEvent(keyEvent: KeyEvent): Boolean = postponeInvalidation("BaseComposeScene:sendKeyEvent") {
         inputHandler.onKeyEvent(keyEvent).also {
             recomposer.performScheduledEffects()
+        }
+    }
+
+    override suspend fun withMonotonicFrameClock(block: suspend () -> Unit) {
+        val monotonicFrameClock = compositionContext.effectCoroutineContext[MonotonicFrameClock]
+            ?: error("No MonotonicFrameClock found in compositionContext")
+        withContext(monotonicFrameClock) {
+            block()
         }
     }
 
