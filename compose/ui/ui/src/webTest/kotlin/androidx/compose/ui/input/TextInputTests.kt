@@ -30,9 +30,13 @@ import androidx.compose.ui.events.InputEventInit
 import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import kotlin.test.Ignore
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.browser.document
 import kotlinx.coroutines.Dispatchers
@@ -85,6 +89,39 @@ abstract class TextInputTests : OnCanvasTests {
         }
         awaitIdle()
     }
+
+    @Test
+    fun positionInput() = runApplicationTest {
+        val textFieldValue = createApplicationWithHolder()
+
+        textFieldValue.awaitAndAssertTextEquals("")
+
+        val initialBoundingRect = currentHtmlInput().getBoundingClientRect()
+
+//        assertEquals(0.0, initialBoundingRect.left, "backing element left initially set to zero")
+//        assertEquals(0.0, initialBoundingRect.top, "backing element right initially set to zero")
+
+        sendToHtmlInput(
+            keyEvent("_"), keyEvent("_"), keyEvent("_")
+        )
+
+        textFieldValue.awaitAndAssertTextEquals("___")
+
+        val boundingRect0 = currentHtmlInput().getBoundingClientRect()
+
+        sendToHtmlInput(
+            keyEvent("_"), keyEvent("_"), keyEvent("_")
+        )
+
+        textFieldValue.awaitAndAssertTextEquals("______")
+
+        val boundingRect1 = currentHtmlInput().getBoundingClientRect()
+
+        assertEquals(boundingRect0.left, boundingRect1.left / boundingRect0.left, "backing element left")
+        assertEquals(0.0, boundingRect1.top, "backing element right")
+
+    }
+
 
     @Test
     fun regularInput() = runApplicationTest {
@@ -385,7 +422,8 @@ class BasicTextFieldTests : TextInputTests() {
                 onValueChange = { value ->
                     textFieldValue.value = value
                 },
-                modifier = Modifier.focusRequester(focusRequester)
+                modifier = Modifier.focusRequester(focusRequester),
+                textStyle = TextStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
             )
         }
     }
@@ -402,7 +440,8 @@ class BasicTextFieldTests2 : TextInputTests() {
         override fun createBasicTextField(focusRequester: FocusRequester) {
             BasicTextField(
                 state = textFieldState,
-                modifier = Modifier.focusRequester(focusRequester)
+                modifier = Modifier.focusRequester(focusRequester),
+                textStyle = TextStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
             )
         }
     }
