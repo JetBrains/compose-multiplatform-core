@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import org.jetbrains.compose.storytale.gallery.material3.openFullScreenStory
 import org.jetbrains.compose.storytale.story
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -216,4 +217,21 @@ val `AlertDialog Story` by story {
             )
         )
     }
+}
+
+
+// Doing some initialization for our gallery. It's a bit hacky, but works for our needs now.
+// This relies on the fact that Storytale compiler plugin will invoke the initialization of all properties in any file with stories.
+private val initialization = initializationForParameters()
+private fun initializationForParameters(): Int {
+    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+    org.jetbrains.compose.storytale.gallery.material3.parameterUiControllerCustomizer = null
+    // org.jetbrains.compose.storytale.gallery.material3.ParameterUiControllerCustomizer { { Text(it.name) } }
+
+    // To open the full Stories Gallery from an embedded view:
+    openFullScreenStory = { story, urlHandler ->
+        urlHandler.openUri("./#story/${story.storyName}")
+    }
+
+    return 1
 }
