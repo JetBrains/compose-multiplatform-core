@@ -328,19 +328,20 @@ private fun Project.createBuildInfoTask(
             variant = VariantPublishPlan(
                 artifactId = artifactId,
                 taskSuffix = computeTaskSuffix(artifactId),
-                dependencies =
-                    pub.component.map { component ->
+                dependencies = project.provider {
+                    pub.component?.let { component ->
                         val usageDependencies =
                             component.usages.orEmpty().flatMap { it.dependencies }
                         usageDependencies + dependenciesOnKmpVariants(component)
-                    },
-                dependencyConstraints =
-                    pub.component.map { component ->
-                        component.usages.orEmpty().flatMap { it.dependencyConstraints }
-                    },
-            ),
+                    }.orEmpty()
+                },
+                dependencyConstraints = project.provider {
+                    pub.component?.let { component ->
+                            component.usages.orEmpty().flatMap { it.dependencyConstraints }
+                    }.orEmpty()
+            }),
         shaProvider = shaProvider
-    )
+        )
 }
 
 private fun dependenciesOnKmpVariants(component: SoftwareComponentInternal) =
