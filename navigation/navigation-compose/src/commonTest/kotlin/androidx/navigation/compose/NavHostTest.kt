@@ -34,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithText
@@ -61,8 +60,7 @@ import androidx.navigation.createGraph
 import androidx.navigation.navigation
 import androidx.navigation.plusAssign
 import androidx.navigation.testing.TestNavHostController
-import androidx.savedstate.SavedStateRegistry
-import androidx.savedstate.compose.LocalSavedStateRegistryOwner
+import androidx.savedstate.SavedState
 import androidx.testutils.TestNavigator
 import androidx.testutils.test
 import kotlin.reflect.KClass

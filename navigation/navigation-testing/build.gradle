@@ -24,6 +24,7 @@
 
 import androidx.build.PlatformIdentifier
 import androidx.build.SoftwareType
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
@@ -85,11 +86,11 @@ androidXMultiplatform {
             dependsOn(commonTest)
         }
 
-        jvmCommonMain {
+        jvmMain {
             dependsOn(commonMain)
         }
 
-        jvmCommonTest {
+        jvmTest {
             dependsOn(commonTest)
             dependencies {
                 runtimeOnly(libs.kotlinTestJunit)
@@ -98,12 +99,12 @@ androidXMultiplatform {
         }
 
         desktopMain {
-            dependsOn(jvmCommonMain)
+            dependsOn(jvmMain)
             dependsOn(nonAndroidMain)
         }
 
         desktopTest {
-            dependsOn(jvmCommonTest)
+            dependsOn(jvmTest)
             dependsOn(nonAndroidTest)
         }
 
@@ -146,23 +147,13 @@ androidXMultiplatform {
             }
         }
 
-        nativeMain { dependsOn(commonMain) }
-        linuxMain { dependsOn(nativeMain) }
-        darwinMain { dependsOn(nativeMain) }
-
-        nativeTest { dependsOn(commonTest) }
-        linuxTest { dependsOn(nativeTest) }
-        darwinTest { dependsOn(nativeTest) }
+        nonAndroidMain { dependsOn(commonMain) }
+        nonAndroidTest { dependsOn(commonTest) }
 
         targets.configureEach { target ->
-            if (target.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.native) {
-                if (target.konanTarget.family.appleFamily) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(darwinTest)
-                } else if (target.konanTarget.family == org.jetbrains.kotlin.konan.target.Family.LINUX) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(linuxMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(linuxTest)
-                }
+            if (target.platformType !in [KotlinPlatformType.androidJvm, KotlinPlatformType.common]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(nonAndroidMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nonAndroidTest)
             }
         }
     }
