@@ -29,7 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.storytale.story
 
-val `Content Badge Story` by story {
+val `Badge Story` by story {
     // Common parameters
     val containerColor by parameter(Color(0xFFB3261E))
     val contentColor by parameter(Color.White)

@@ -52,7 +52,7 @@ val `SwipeToDismissBox Story` by story {
     val dismissFromEndToStart by parameter(true)
 
     // Background colors
-    val startToEndColor by parameter(Color.Green)
+    val startToEndColor by parameter(Color(0xFF1B5E20))
     val endToStartColor by parameter(Color.Red)
 
     // Content parameters
@@ -70,7 +70,7 @@ val `SwipeToDismissBox Story` by story {
     }
 
     Column(
-        modifier = Modifier.padding(16.dp),
+        modifier = Modifier.padding(16.dp).width(300.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(

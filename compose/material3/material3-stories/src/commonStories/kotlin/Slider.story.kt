@@ -42,43 +42,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.storytale.story
 
-val `Stepped Slider Story` by story {
-    // Parameters for customization
-    var sliderValue by parameter(0.5f)
-    val enabled by parameter(true)
-    val steps by parameter(4)
-
-    Column(modifier = Modifier.padding(16.dp)) {
-        Slider(
-            modifier = Modifier.width(200.dp),
-            value = sliderValue,
-            onValueChange = { sliderValue = it },
-            enabled = enabled,
-            steps = steps,
-            valueRange = 0f..1f
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Current value: ${(sliderValue * 100).toInt()}%",
-            style = MaterialTheme.typography.bodyLarge
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "Steps: $steps",
-            style = MaterialTheme.typography.bodyMedium
-        )
-    }
-}
-
-// Slider with custom colors
 val `Slider Story` by story {
     // Parameters for customization
     var sliderValue by parameter(0.5f)
     val enabled by parameter(true)
     val useCustomColors by parameter(true)
-    val activeTrackColor by parameter(Color.Green)
+    val activeTrackColor by parameter(Color.Black)
     val inactiveTrackColor by parameter(Color.LightGray)
     val thumbColor by parameter(Color.Blue)
 
@@ -110,48 +79,6 @@ val `Slider Story` by story {
     }
 }
 
-// Slider with custom thumb
-@OptIn(ExperimentalMaterial3Api::class)
-val `Slider With Custom Thumb` by story {
-    // Parameters for customization
-    var sliderValue by parameter(0.5f)
-    val enabled by parameter(true)
-
-    Column(modifier = Modifier.padding(16.dp)) {
-        Slider(
-            modifier = Modifier.width(200.dp),
-            value = sliderValue,
-            onValueChange = { sliderValue = it },
-            enabled = enabled,
-            thumb = {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .background(
-                            color = if (enabled) MaterialTheme.colorScheme.primary else 
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                            shape = CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Star,
-                        contentDescription = "Star",
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Current value: ${(sliderValue * 100).toInt()}%",
-            style = MaterialTheme.typography.bodyLarge
-        )
-    }
-}
-
 val `RangeSlider Story` by story {
     // Parameters for customization
     val startValue by parameter(0.2f)
@@ -159,7 +86,7 @@ val `RangeSlider Story` by story {
     val enabled by parameter(true)
 
     // State to track range slider values
-    var sliderPosition by remember { mutableStateOf(startValue..endValue) }
+    var sliderPosition by remember(startValue, endValue) { mutableStateOf(startValue..endValue) }
 
     Column(modifier = Modifier.padding(16.dp)) {
         RangeSlider(

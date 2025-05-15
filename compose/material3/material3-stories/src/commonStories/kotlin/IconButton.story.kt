@@ -410,13 +410,6 @@ val `FilledTonalIconButton Story` by story {
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp)
                 )
-                
-                // Display current icon size for clarity
-                Text(
-                    text = "Icon size: ${iconSizeFloat.toInt()}dp",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
             }
         }
     }
@@ -635,8 +628,6 @@ val `OutlinedIconToggleButton Story` by story {
     val checkedContentColor by parameter(MaterialTheme.colorScheme.primary)
     val disabledContainerColor by parameter(Color.Transparent)
     val disabledContentColor by parameter(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
-    val disabledCheckedContainerColor by parameter(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
-    val disabledCheckedContentColor by parameter(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
 
     // Border
     val useCustomBorder by parameter(false)
@@ -742,17 +733,4 @@ val `OutlinedIconToggleButton Story` by story {
             )
         }
     }
-}
-
-// A hack for development needs:
-// If we need to customize the parameters controller UI, for example for a missing parameter type,
-// then we can do it here.
-// This relies on the fact that Storytale compile plugin will invoke the initialization of all properties in any file with stories.
-private val initialization: Int = initializationForParameters()
-private fun initializationForParameters(): Int {
-    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-    org.jetbrains.compose.storytale.gallery.material3.parameterUiControllerCustomizer = null
-    // org.jetbrains.compose.storytale.gallery.material3.ParameterUiControllerCustomizer { { Text(it.name) } }
-
-    return 1
 }

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -57,7 +59,6 @@ val `DockedSearchBar Story` by story {
     val cornerRadius by parameter(16f)
     val customContainerColor by parameter(false)
     val containerColor by parameter(MaterialTheme.colorScheme.primaryContainer)
-    val dividerColor by parameter(MaterialTheme.colorScheme.outline)
     val tonalElevation by parameter(4f)
     val shadowElevation by parameter(8f)
 
@@ -73,18 +74,15 @@ val `DockedSearchBar Story` by story {
     val effectiveContainerColor = if (customContainerColor) containerColor else MaterialTheme.colorScheme.surface
 
     val colors = SearchBarDefaults.colors(
-        containerColor = effectiveContainerColor,
-        dividerColor = dividerColor
+        containerColor = effectiveContainerColor
     )
 
     Column(
-        modifier = Modifier.padding(16.dp),
+        modifier = Modifier.padding(16.dp).width(380.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // The DockedSearchBar component
         DockedSearchBar(
             inputField = {
-                // Custom input field
                 TextField(
                     value = query,
                     onValueChange = {
@@ -172,15 +170,126 @@ val `DockedSearchBar Story` by story {
     }
 }
 
-// A hack for development needs:
-// If we need to customize the parameters controller UI, for example for a missing parameter type,
-// then we can do it here.
-// This relies on the fact that Storytale compile plugin will invoke the initialization of all properties in any file with stories.
-private val initialization: Int = initializationForParameters()
-private fun initializationForParameters(): Int {
-    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-    org.jetbrains.compose.storytale.gallery.material3.parameterUiControllerCustomizer = null
-    // org.jetbrains.compose.storytale.gallery.material3.ParameterUiControllerCustomizer { { Text(it.name) } }
+@OptIn(ExperimentalMaterial3Api::class)
+val `SearchBar Story` by story {
+    // Common parameters
+    val placeholder by parameter("Search...")
 
-    return 1
+    // State management
+    var query by remember { mutableStateOf("") }
+
+    // Shape and color parameters
+    val cornerRadius by parameter(16f)
+    val customContainerColor by parameter(false)
+    val containerColor by parameter(MaterialTheme.colorScheme.primaryContainer)
+    val tonalElevation by parameter(4f)
+    val shadowElevation by parameter(8f)
+
+    val shape = RoundedCornerShape(cornerRadius.dp)
+
+    // State management
+    var expanded by remember { mutableStateOf(false) }
+
+    val filteredResults = remember(query) {
+        emptyList<String>()
+    }
+
+    val effectiveContainerColor = if (customContainerColor) containerColor else MaterialTheme.colorScheme.surface
+
+    val colors = SearchBarDefaults.colors(
+        containerColor = effectiveContainerColor
+    )
+
+    Column(
+        modifier = Modifier.padding(16.dp).width(380.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        SearchBar(
+            inputField = {
+                TextField(
+                    value = query,
+                    onValueChange = {
+                        query = it
+                        if (it.isNotEmpty() && !expanded) {
+                            expanded = true
+                        }
+                    },
+                    placeholder = { Text(placeholder) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search Icon"
+                        )
+                    },
+                    trailingIcon = {
+                        if (query.isNotEmpty()) {
+                            IconButton(
+                                onClick = {
+                                    query = ""
+                                    expanded = false
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "Clear search"
+                                )
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            expanded = expanded,
+            onExpandedChange = { expanded = it },
+            shape = shape,
+            colors = colors,
+            tonalElevation = tonalElevation.dp,
+            shadowElevation = shadowElevation.dp,
+            windowInsets = SearchBarDefaults.windowInsets,
+            modifier = Modifier.fillMaxWidth(),
+            content = {
+                LazyColumn {
+                    if (filteredResults.isEmpty() && query.isNotEmpty()) {
+                        item {
+                            ListItem(
+                                headlineContent = { Text("No results found for \"$query\"") }
+                            )
+                        }
+                    } else {
+                        items(filteredResults) { result ->
+                            ListItem(
+                                headlineContent = { Text(result) },
+                                leadingContent = {
+                                    Icon(
+                                        Icons.Default.Search,
+                                        contentDescription = null
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Status information
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Search for something",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
 }

@@ -352,6 +352,8 @@ fun TabRow(
  * @param tabs the tabs inside this tab row. Typically this will be multiple [Tab]s. Each element
  *   inside this lambda will be measured and placed evenly across the row, each taking up equal
  *   space.
+ *
+ * @story /stories?embedded=true#story/PrimaryScrollableTabRow%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable

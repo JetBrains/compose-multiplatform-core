@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.dp
  *   divider regardless of screen density.
  * @param color color of this divider line.
  *
- * @story /stories?embedded=true#story/Horizontal%2520Divider%2520Story
+ * @story /stories?embedded=true#story/HorizontalDivider%2520Story
  */
 @Composable
 fun HorizontalDivider(

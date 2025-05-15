@@ -295,6 +295,8 @@ fun SingleChoiceSegmentedButtonRow(
  *   used on the items.
  * @param content the content of this Segmented Button Row, typically a sequence of
  *   [SegmentedButton]s
+ *
+ * @story /stories?embedded=true#story/MultiChoiceSegmentedButtonRow%2520Story
  */
 @Composable
 fun MultiChoiceSegmentedButtonRow(

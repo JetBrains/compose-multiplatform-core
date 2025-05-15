@@ -58,8 +58,7 @@ import kotlin.math.roundToInt
 import kotlin.jvm.JvmInline
 
 /**
- * <a href=https://m3.material.io/components/carousel/overview" class="external"
- * target="_blank">Material Design Carousel</a>
+ * <a href=https://m3.material.io/components/carousel/overview" class="external" target="_blank">Material Design Carousel</a>
  *
  * A horizontal carousel meant to display many items at once for quick browsing of smaller content
  * like album art or photo thumbnails.
@@ -70,8 +69,7 @@ import kotlin.jvm.JvmInline
  * on their scroll offset to create items which smoothly expand and collapse between the large,
  * medium, and small sizes.
  *
- * For more information, see <a href="https://material.io/components/carousel/overview">design
- * guidelines</a>.
+ * For more information, see <a href="https://material.io/components/carousel/overview">design guidelines</a>.
  *
  * Example of a multi-browse carousel:
  *
@@ -96,6 +94,8 @@ import kotlin.jvm.JvmInline
  *   after it has been clipped. You can use it to add a padding before the first item or after the
  *   last one. Use [itemSpacing] to add spacing between the items.
  * @param content The carousel's content Composable
+ *
+ * @story /stories?embedded=true#story/HorizontalMultiBrowseCarousel%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable
@@ -166,6 +166,8 @@ fun HorizontalMultiBrowseCarousel(
  *   after it has been clipped. You can use it to add a padding before the first item or after the
  *   last one. Use [itemSpacing] to add spacing between the items.
  * @param content The carousel's content Composable
+ *
+ * @story /stories?embedded=true#story/HorizontalUncontainedCarousel%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable

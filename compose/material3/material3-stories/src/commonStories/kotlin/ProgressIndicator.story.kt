@@ -95,33 +95,6 @@ val `CircularProgressIndicator Story` by story {
     }
 }
 
-
-
-
-
-val `Animated Progress LinearProgressIndicator` by story {
-    var progress by parameter(0.1f)
-    val animatedProgress by animateFloatAsState(
-        targetValue = progress,
-        animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
-    )
-
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        LinearProgressIndicator(
-            progress = { animatedProgress },
-            modifier = Modifier.width(280.dp)
-        )
-        Spacer(Modifier.height(30.dp))
-        Text("Set progress:")
-        Slider(
-            modifier = Modifier.width(280.dp),
-            value = progress,
-            valueRange = 0f..1f,
-            onValueChange = { progress = it },
-        )
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 val `LinearProgressIndicator Story` by story {
     // Progress (determinate or indeterminate)
@@ -173,17 +146,4 @@ val `LinearProgressIndicator Story` by story {
             )
         }
     }
-}
-
-// A hack for development needs:
-// If we need to customize the parameters controller UI, for example for a missing parameter type,
-// then we can do it here.
-// This relies on the fact that Storytale compile plugin will invoke the initialization of all properties in any file with stories.
-private val initialization: Int = initializationForParameters()
-private fun initializationForParameters(): Int {
-    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-    org.jetbrains.compose.storytale.gallery.material3.parameterUiControllerCustomizer = null
-    // org.jetbrains.compose.storytale.gallery.material3.ParameterUiControllerCustomizer { { Text(it.name) } }
-
-    return 1
 }

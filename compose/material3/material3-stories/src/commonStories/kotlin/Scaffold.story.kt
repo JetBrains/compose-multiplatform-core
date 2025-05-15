@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -53,7 +54,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.storytale.story
 import kotlinx.coroutines.launch
@@ -79,9 +79,6 @@ val `Scaffold Story` by story {
     val containerColor by parameter(MaterialTheme.colorScheme.background)
     val contentColor by parameter(contentColorFor(MaterialTheme.colorScheme.background))
     
-    // Generate list of items
-    val items = (1..20).map { "Item $it" }
-    
     // Snackbar state
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -104,7 +101,7 @@ val `Scaffold Story` by story {
     }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.width(380.dp),
         topBar = {
             if (showTopBar) {
                 @OptIn(ExperimentalMaterial3Api::class)
@@ -235,40 +232,6 @@ val `Scaffold Story` by story {
                     )
                 }
             }
-            
-            items(items) { item ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(vertical = 4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = item,
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
         }
     }
 }
-
-// A hack for development needs:
-// If we need to customize the parameters controller UI, for example for a missing parameter type,
-// then we can do it here.
-// This relies on the fact that Storytale compile plugin will invoke the initialization of all properties in any file with stories.
-private val initialization: Int = initializationForParameters()
-private fun initializationForParameters(): Int {
-    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-    org.jetbrains.compose.storytale.gallery.material3.parameterUiControllerCustomizer = null
-    // org.jetbrains.compose.storytale.gallery.material3.ParameterUiControllerCustomizer { { Text(it.name) } }
-
-    return 1
-} 

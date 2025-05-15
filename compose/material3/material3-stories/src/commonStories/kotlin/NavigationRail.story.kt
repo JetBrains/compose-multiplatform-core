@@ -58,11 +58,7 @@ val `NavigationRail Story` by story {
     val itemCount by parameter(listOf("Three", "Four", "Five"), 0)
     val alwaysShowLabel by parameter(true)
     val differentIconsForStates by parameter(false)
-    
-    // Header parameters
-    val showHeader by parameter(false)
-    val headerType by parameter(listOf("None", "FAB", "Text"), 0)
-    
+
     // Color parameters
     val useCustomColors by parameter(false)
     val containerColor by parameter(MaterialTheme.colorScheme.surface)
@@ -72,7 +68,6 @@ val `NavigationRail Story` by story {
     val useCustomItemColors by parameter(false)
     val selectedIconColor by parameter(MaterialTheme.colorScheme.primary)
     val selectedTextColor by parameter(MaterialTheme.colorScheme.primary)
-    val indicatorColor by parameter(MaterialTheme.colorScheme.primaryContainer)
     val unselectedIconColor by parameter(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
     val unselectedTextColor by parameter(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
 
@@ -105,7 +100,7 @@ val `NavigationRail Story` by story {
     )
     
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.width(380.dp)
     ) {
         Row {
             NavigationRail(
@@ -113,7 +108,7 @@ val `NavigationRail Story` by story {
                 contentColor = if (useCustomColors) contentColor else contentColorFor(
                     if (useCustomColors) containerColor else NavigationRailDefaults.ContainerColor
                 ),
-                modifier = Modifier.height(300.dp).padding(top = 80.dp)
+                modifier = Modifier.height(500.dp).padding(top = 80.dp)
             ) {
                 items.forEachIndexed { index, item ->
                     NavigationRailItem(
@@ -136,7 +131,6 @@ val `NavigationRail Story` by story {
                             NavigationRailItemDefaults.colors(
                                 selectedIconColor = selectedIconColor,
                                 selectedTextColor = selectedTextColor,
-                                indicatorColor = indicatorColor,
                                 unselectedIconColor = unselectedIconColor,
                                 unselectedTextColor = unselectedTextColor
                             )
@@ -155,6 +149,10 @@ val `NavigationRail Story` by story {
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Context area",
+                        style = MaterialTheme.typography.labelSmall,
+                    )
                     Icon(
                         imageVector = selectedIcons[selectedItem.coerceIn(0, selectedIcons.size - 1)],
                         contentDescription = null,
@@ -253,17 +251,4 @@ val `NavigationRailItem Story` by story {
             }
         }
     }
-}
-
-// A hack for development needs:
-// If we need to customize the parameters controller UI, for example for a missing parameter type,
-// then we can do it here.
-// This relies on the fact that Storytale compile plugin will invoke the initialization of all properties in any file with stories.
-private val initialization: Int = initializationForParameters()
-private fun initializationForParameters(): Int {
-    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-    org.jetbrains.compose.storytale.gallery.material3.parameterUiControllerCustomizer = null
-    // org.jetbrains.compose.storytale.gallery.material3.ParameterUiControllerCustomizer { { Text(it.name) } }
-
-    return 1
 }

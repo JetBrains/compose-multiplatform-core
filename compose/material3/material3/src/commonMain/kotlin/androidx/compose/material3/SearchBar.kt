@@ -160,7 +160,7 @@ import kotlinx.coroutines.launch
  * @param windowInsets the window insets that this search bar will respect
  * @param content the content of this search bar to display search results below the [inputField].
  *
- * @story /stories?embedded=true#story/DockedSearchBar%2520Story
+ * @story /stories?embedded=true#story/SearchBar%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable

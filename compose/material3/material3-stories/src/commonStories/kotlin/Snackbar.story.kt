@@ -55,7 +55,6 @@ val `Snackbar Story` by story {
     val showActionButton by parameter(true)
     val showDismissAction by parameter(false)
     val actionOnNewLine by parameter(false)
-    val duration by parameter(3000L) // Duration in milliseconds
 
     // State for displaying Snackbar and tracking actions
     val snackbarHostState = remember { SnackbarHostState() }

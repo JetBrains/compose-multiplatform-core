@@ -102,7 +102,7 @@ val `PermanentNavigationDrawer Story` by story {
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    contentTitle, 
+                    contentTitle,
                     style = MaterialTheme.typography.headlineMedium
                 )
                 Spacer(Modifier.height(20.dp))
@@ -127,9 +127,8 @@ val `DismissibleDrawerSheet Story` by story {
     val drawerTonalElevationValue by parameter(1f)
 
     // Content parameters
-    val showTitle by parameter(true)
     val titleText by parameter("Drawer Content")
-    val numItems by parameter(3)
+    val numItems by parameter(6)
 
     // Determine shape based on selection
     val drawerShape = if (useCustomShape) {
@@ -149,15 +148,13 @@ val `DismissibleDrawerSheet Story` by story {
             modifier = Modifier.width(300.dp).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (showTitle) {
-                Text(
-                    text = titleText,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+            Text(
+                text = titleText,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
 
-                Spacer(Modifier.height(8.dp))
-            }
+            Spacer(Modifier.height(8.dp))
 
             // Add navigation items
             repeat(numItems) { index ->
@@ -165,7 +162,7 @@ val `DismissibleDrawerSheet Story` by story {
                     label = { Text("Item ${index + 1}") },
                     selected = index == 0,
                     onClick = { /* Handle click */ },
-                    icon = { 
+                    icon = {
                         Icon(
                             imageVector = when (index % 5) {
                                 0 -> Icons.Default.Home
@@ -175,7 +172,7 @@ val `DismissibleDrawerSheet Story` by story {
                                 else -> Icons.Default.Face
                             },
                             contentDescription = null
-                        ) 
+                        )
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )

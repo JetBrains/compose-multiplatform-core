@@ -30,7 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.storytale.story
 
-val `Horizontal Divider Story` by story {
+val `HorizontalDivider Story` by story {
     // Parameters for customization
     val thickness by parameter(1f)
     val useCustomColor by parameter(false)
@@ -72,43 +72,5 @@ val `VerticalDivider Story` by story {
 
         Spacer(modifier = Modifier.width(16.dp))
         Text("Right content")
-    }
-}
-
-val `Divider Combined` by story {
-    // Parameters for customization
-    val horizontalThickness by parameter(2f)
-    val verticalThickness by parameter(2f)
-    val useCustomColors by parameter(false)
-    val horizontalColor by parameter(Color.Red)
-    val verticalColor by parameter(Color.Blue)
-
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text("Top section")
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Horizontal divider
-        HorizontalDivider(
-            modifier = Modifier.height(20.dp).width(200.dp),
-            thickness = horizontalThickness.dp,
-            color = if (useCustomColors) horizontalColor else Color.Black
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Left section")
-            Spacer(modifier = Modifier.width(16.dp))
-
-            // Vertical divider
-            VerticalDivider(
-                modifier = Modifier.height(100.dp),
-                thickness = verticalThickness.dp,
-                color = if (useCustomColors) verticalColor else DividerDefaults.color
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-            Text("Right section")
-        }
     }
 }

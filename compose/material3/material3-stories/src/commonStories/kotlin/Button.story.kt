@@ -32,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -487,15 +488,104 @@ val `FilledTonalButton Story` by story {
     }
 }
 
-// A hack for development needs:
-// If we need to customize the parameters controller UI, for example for a missing parameter type,
-// then we can do it here.
-// This relies on the fact that Storytale compile plugin will invoke the initialization of all properties in any file with stories.
-private val initialization: Int = initializationForParameters()
-private fun initializationForParameters(): Int {
-    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-    org.jetbrains.compose.storytale.gallery.material3.parameterUiControllerCustomizer = null
-    // org.jetbrains.compose.storytale.gallery.material3.ParameterUiControllerCustomizer { { Text(it.name) } }
+val `TextButton Story` by story {
+    // Basic parameters
+    val buttonText by parameter("Text Button")
+    val enabled by parameter(true)
 
-    return 1
+    // Icon
+    val showIcon by parameter(false)
+    val iconPosition by parameter(listOf("start", "end"), 0)
+
+    // Colors
+    val useCustomColors by parameter(false)
+    val containerColor by parameter(Color.Transparent)
+    val contentColor by parameter(MaterialTheme.colorScheme.primary)
+    val disabledContainerColor by parameter(Color.Transparent)
+    val disabledContentColor by parameter(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+
+    // Shape
+    val useCustomShape by parameter(false)
+    val cornerSize by parameter(4f)
+
+    // Border
+    val useCustomBorder by parameter(false)
+    val borderWidth by parameter(1f)
+    val borderColor by parameter(MaterialTheme.colorScheme.primary)
+
+    // Padding
+    val useCustomPadding by parameter(false)
+    val horizontalPadding by parameter(12f)
+    val verticalPadding by parameter(8f)
+
+    // Set up all parameters
+    val shape: Shape = if (useCustomShape) {
+        RoundedCornerShape(cornerSize.dp)
+    } else {
+        ButtonDefaults.textShape
+    }
+
+    val colors = if (useCustomColors) {
+        ButtonDefaults.textButtonColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+            disabledContainerColor = disabledContainerColor,
+            disabledContentColor = disabledContentColor
+        )
+    } else {
+        ButtonDefaults.textButtonColors()
+    }
+
+    val border = if (useCustomBorder) {
+        BorderStroke(width = borderWidth.dp, color = borderColor)
+    } else {
+        null
+    }
+
+    val contentPadding = if (useCustomPadding) {
+        PaddingValues(
+            start = horizontalPadding.dp,
+            top = verticalPadding.dp,
+            end = horizontalPadding.dp,
+            bottom = verticalPadding.dp
+        )
+    } else {
+        ButtonDefaults.TextButtonContentPadding
+    }
+
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        TextButton(
+            onClick = {},
+            modifier = Modifier,
+            enabled = enabled,
+            shape = shape,
+            colors = colors,
+            border = border,
+            contentPadding = contentPadding,
+            interactionSource = interactionSource
+        ) {
+            if (showIcon && iconPosition == "start") {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = "Add",
+                    modifier = Modifier.size(18.dp).padding(end = 8.dp)
+                )
+            }
+            Text(buttonText)
+            if (showIcon && iconPosition == "end") {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = "Add",
+                    modifier = Modifier.size(18.dp).padding(start = 8.dp)
+                )
+            }
+        }
+    }
 }

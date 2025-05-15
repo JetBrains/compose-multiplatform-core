@@ -56,7 +56,10 @@ import org.jetbrains.compose.storytale.story
 @OptIn(ExperimentalMaterial3Api::class)
 val `BasicAlertDialog Story` by story {
     // Content parameters
-    val dialogText by parameter("This area typically contains the supportive text which presents the details regarding the Dialog's purpose.")
+    val dialogText by parameter(
+        "This area typically contains the supportive text " +
+            "which presents the details regarding the Dialog's purpose."
+    )
     val showButtons by parameter(true)
     val confirmButtonText by parameter("Confirm")
     val dismissButtonText by parameter("Dismiss")
@@ -141,29 +144,37 @@ val `BasicAlertDialog Story` by story {
     }
 }
 
+// Define an enum for icon types
+enum class IconType {
+    Info,
+    Warning
+}
+
 val `AlertDialog Story` by story {
     val title by parameter("Dialog Title")
-    val text by parameter("This is the dialog message text that explains the purpose of the dialog.")
+    val text by parameter(
+        "This is the dialog message text that explains the purpose of the dialog."
+    )
     val confirmButtonText by parameter("Confirm")
     val dismissButtonText by parameter("Dismiss")
     val showDismissButton by parameter(true)
     val showIcon by parameter(true)
-    
+
     // Visual parameters
-    val iconType by parameter(0) // 0 = Info, 1 = Warning
+    val iconType by parameter(IconType.Info)
     val containerColor by parameter(AlertDialogDefaults.containerColor)
     val iconContentColor by parameter(AlertDialogDefaults.iconContentColor)
     val titleContentColor by parameter(AlertDialogDefaults.titleContentColor)
     val textContentColor by parameter(AlertDialogDefaults.textContentColor)
     val tonalElevation by parameter(AlertDialogDefaults.TonalElevation.value)
-    
+
     // Dialog properties
     val dismissOnBackPress by parameter(true)
     val dismissOnClickOutside by parameter(true)
-    
+
     // State to control dialog visibility
     var showDialog by remember { mutableStateOf(false) }
-    
+
     // Main content with button to show dialog
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -175,7 +186,7 @@ val `AlertDialog Story` by story {
             Text("Show Dialog")
         }
     }
-    
+
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -198,7 +209,10 @@ val `AlertDialog Story` by story {
             icon = if (showIcon) {
                 {
                     Icon(
-                        imageVector = if (iconType == 0) Icons.Filled.Info else Icons.Filled.Warning,
+                        imageVector = when (iconType) {
+                            IconType.Info -> Icons.Filled.Info
+                            IconType.Warning -> Icons.Filled.Warning
+                        },
                         contentDescription = null
                     )
                 }

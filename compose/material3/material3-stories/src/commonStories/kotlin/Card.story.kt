@@ -48,7 +48,6 @@ val `Card Story` by story {
     val borderWidth by parameter(2f)
     val borderColor by parameter(Color(0xFF6750A4))
     val paddingValue by parameter(0f)
-    val displayText = cardText
     var isToggled by remember { mutableStateOf(false) }
 
     Card(
@@ -79,7 +78,7 @@ val `Card Story` by story {
                 .padding(paddingValue.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text(displayText)
+            Text(cardText)
         }
     }
 }
@@ -200,17 +199,4 @@ val `OutlinedCard Story` by story {
             Text(cardText + (if (isToggled) " (Clicked)" else ""))
         }
     }
-}
-
-// A hack for development needs:
-// If we need to customize the parameters controller UI, for example for a missing parameter type,
-// then we can do it here.
-// This relies on the fact that Storytale compile plugin will invoke the initialization of all properties in any file with stories.
-private val initialization: Int = initializationForParameters()
-private fun initializationForParameters(): Int {
-    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-    org.jetbrains.compose.storytale.gallery.material3.parameterUiControllerCustomizer = null
-    // org.jetbrains.compose.storytale.gallery.material3.ParameterUiControllerCustomizer { { Text(it.name) } }
-
-    return 1
 }

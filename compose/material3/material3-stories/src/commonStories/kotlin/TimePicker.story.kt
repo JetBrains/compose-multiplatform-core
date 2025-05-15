@@ -17,6 +17,7 @@
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -51,7 +52,7 @@ val `TimeInput Story` by story {
 
     val formattedTime = formatTime(timePickerState.hour, timePickerState.minute)
 
-    Surface(modifier = Modifier.padding(16.dp)) {
+    Surface(modifier = Modifier.width(280.dp).padding(16.dp)) {
         Column(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -102,7 +103,7 @@ val `TimePicker Story` by story {
         else -> TimePickerLayoutType.Vertical
     }
 
-    Surface(modifier = Modifier.padding(16.dp)) {
+    Surface(modifier = Modifier.padding(16.dp).width(600.dp)) {
         Column(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -122,16 +123,3 @@ val `TimePicker Story` by story {
         }
     }
 }
-
-// A hack for development needs:
-// If we need to customize the parameters controller UI, for example for a missing parameter type,
-// then we can do it here.
-// This relies on the fact that Storytale compile plugin will invoke the initialization of all properties in any file with stories.
-private val initialization: Int = initializationForParameters()
-private fun initializationForParameters(): Int {
-    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-    org.jetbrains.compose.storytale.gallery.material3.parameterUiControllerCustomizer = null
-    // org.jetbrains.compose.storytale.gallery.material3.ParameterUiControllerCustomizer { { Text(it.name) } }
-
-    return 1
-} 

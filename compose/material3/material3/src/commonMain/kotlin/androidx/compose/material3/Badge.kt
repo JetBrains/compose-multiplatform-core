@@ -175,7 +175,7 @@ fun BadgedBox(
  *   [containerColor] is not a color from the theme.
  * @param content optional content to be rendered inside this badge
  *
- * @story /stories?embedded=true#story/Content%2520Badge%2520Story
+ * @story /stories?embedded=true#story/Badge%2520Story
  */
 @Composable
 fun Badge(

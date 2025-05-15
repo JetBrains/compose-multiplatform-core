@@ -79,7 +79,7 @@ import kotlinx.coroutines.withTimeout
 /**
  * Material TooltipBox that wraps a composable with a tooltip.
  *
- * tooltips provide a descriptive message for an anchor. It can be used to call the users attention
+ * Tooltips provide a descriptive message for an anchor. It can be used to call the users attention
  * to the anchor.
  *
  * Tooltip that is invoked when the anchor is long pressed:
@@ -198,6 +198,8 @@ internal class TooltipScopeImpl(val getAnchorBounds: () -> LayoutCoordinates?) :
  * @param tonalElevation the tonal elevation of the tooltip.
  * @param shadowElevation the shadow elevation of the tooltip.
  * @param content the composable that will be used to populate the tooltip's content.
+ *
+ * @story /stories?embedded=true#story/PlainTooltip%2520Story
  */
 @Composable
 @ExperimentalMaterial3Api
@@ -270,6 +272,8 @@ fun TooltipScope.PlainTooltip(
  * @param tonalElevation the tonal elevation of the tooltip.
  * @param shadowElevation the shadow elevation of the tooltip.
  * @param text the composable that will be used to populate the rich tooltip's text.
+ *
+ * @story /stories?embedded=true#story/RichTooltip%2520Story
  */
 @Composable
 @ExperimentalMaterial3Api

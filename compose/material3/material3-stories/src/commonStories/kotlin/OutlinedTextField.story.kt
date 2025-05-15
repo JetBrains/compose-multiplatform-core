@@ -160,6 +160,32 @@ val `OutlinedTextField Story` by story {
                     onValueChange = { text = it },
                     label = { Text(label) },
                     placeholder = { Text(placeholder) },
+                    leadingIcon = if (showLeadingIcon) { 
+                        { Icon(Icons.Filled.Email, contentDescription = "Email Icon") }
+                    } else null,
+                    trailingIcon = if (showTrailingIcon) {
+                        {
+                            if (text.isNotEmpty()) {
+                                IconButton(onClick = { text = "" }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Clear,
+                                        contentDescription = "Clear text"
+                                    )
+                                }
+                            }
+                        }
+                    } else null,
+                    isError = isError,
+                    supportingText = {
+                        if (isError) {
+                            Text(
+                                text = errorMessage,
+                                color = Color.Red
+                            )
+                        }
+                    },
+                    prefix = { Text(prefix) },
+                    suffix = { Text(suffix) },
                     enabled = enabled,
                     readOnly = readOnly,
                     singleLine = singleLine,
@@ -197,6 +223,17 @@ val `OutlinedTextField Story` by story {
                             }
                         }
                     } else null,
+                    isError = isError,
+                    supportingText = {
+                        if (isError) {
+                            Text(
+                                text = errorMessage,
+                                color = Color.Red
+                            )
+                        }
+                    },
+                    prefix = { Text(prefix) },
+                    suffix = { Text(suffix) },
                     enabled = enabled,
                     readOnly = readOnly,
                     singleLine = singleLine,
@@ -223,6 +260,32 @@ val `OutlinedTextField Story` by story {
                         VisualTransformation.None 
                     else 
                         PasswordVisualTransformation(),
+                    leadingIcon = if (showLeadingIcon) { 
+                        { Icon(Icons.Filled.Email, contentDescription = "Email Icon") }
+                    } else null,
+                    trailingIcon = if (showTrailingIcon) {
+                        {
+                            if (text.isNotEmpty()) {
+                                IconButton(onClick = { text = "" }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Clear,
+                                        contentDescription = "Clear text"
+                                    )
+                                }
+                            }
+                        }
+                    } else null,
+                    isError = isError,
+                    supportingText = {
+                        if (isError) {
+                            Text(
+                                text = errorMessage,
+                                color = Color.Red
+                            )
+                        }
+                    },
+                    prefix = { Text(prefix) },
+                    suffix = { Text(suffix) },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
                         imeAction = selectedImeAction
@@ -245,6 +308,21 @@ val `OutlinedTextField Story` by story {
                     onValueChange = { text = it },
                     label = { Text(label) },
                     placeholder = { Text(placeholder) },
+                    leadingIcon = if (showLeadingIcon) { 
+                        { Icon(Icons.Filled.Email, contentDescription = "Email Icon") }
+                    } else null,
+                    trailingIcon = if (showTrailingIcon) {
+                        {
+                            if (text.isNotEmpty()) {
+                                IconButton(onClick = { text = "" }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Clear,
+                                        contentDescription = "Clear text"
+                                    )
+                                }
+                            }
+                        }
+                    } else null,
                     isError = isError,
                     supportingText = {
                         if (isError) {
@@ -254,6 +332,8 @@ val `OutlinedTextField Story` by story {
                             )
                         }
                     },
+                    prefix = { Text(prefix) },
+                    suffix = { Text(suffix) },
                     enabled = enabled,
                     readOnly = readOnly,
                     singleLine = singleLine,
@@ -276,6 +356,30 @@ val `OutlinedTextField Story` by story {
                     onValueChange = { text = it },
                     label = { Text(label) },
                     placeholder = { Text(placeholder) },
+                    leadingIcon = if (showLeadingIcon) { 
+                        { Icon(Icons.Filled.Email, contentDescription = "Email Icon") }
+                    } else null,
+                    trailingIcon = if (showTrailingIcon) {
+                        {
+                            if (text.isNotEmpty()) {
+                                IconButton(onClick = { text = "" }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Clear,
+                                        contentDescription = "Clear text"
+                                    )
+                                }
+                            }
+                        }
+                    } else null,
+                    isError = isError,
+                    supportingText = {
+                        if (isError) {
+                            Text(
+                                text = errorMessage,
+                                color = Color.Red
+                            )
+                        }
+                    },
                     prefix = { Text(prefix) },
                     suffix = { Text(suffix) },
                     enabled = enabled,
@@ -284,7 +388,7 @@ val `OutlinedTextField Story` by story {
                     maxLines = maxLines,
                     minLines = minLines,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
+                        keyboardType = selectedKeyboardType,
                         imeAction = selectedImeAction
                     ),
                     keyboardActions = keyboardActionsInstance,
@@ -306,6 +410,32 @@ val `OutlinedTextField Story` by story {
                         fontWeight = MaterialTheme.typography.bodyLarge.fontWeight,
                         fontFamily = MaterialTheme.typography.bodyLarge.fontFamily
                     ),
+                    leadingIcon = if (showLeadingIcon) { 
+                        { Icon(Icons.Filled.Email, contentDescription = "Email Icon") }
+                    } else null,
+                    trailingIcon = if (showTrailingIcon) {
+                        {
+                            if (text.isNotEmpty()) {
+                                IconButton(onClick = { text = "" }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Clear,
+                                        contentDescription = "Clear text"
+                                    )
+                                }
+                            }
+                        }
+                    } else null,
+                    isError = isError,
+                    supportingText = {
+                        if (isError) {
+                            Text(
+                                text = errorMessage,
+                                color = Color.Red
+                            )
+                        }
+                    },
+                    prefix = { Text(prefix) },
+                    suffix = { Text(suffix) },
                     enabled = enabled,
                     readOnly = readOnly,
                     singleLine = singleLine,
@@ -323,17 +453,4 @@ val `OutlinedTextField Story` by story {
             }
         }
     }
-}
-
-// A hack for development needs:
-// If we need to customize the parameters controller UI, for example for a missing parameter type,
-// then we can do it here.
-// This relies on the fact that Storytale compile plugin will invoke the initialization of all properties in any file with stories.
-private val initialization: Int = initializationForParameters()
-private fun initializationForParameters(): Int {
-    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-    org.jetbrains.compose.storytale.gallery.material3.parameterUiControllerCustomizer = null
-    // org.jetbrains.compose.storytale.gallery.material3.ParameterUiControllerCustomizer { { Text(it.name) } }
-
-    return 1
 }

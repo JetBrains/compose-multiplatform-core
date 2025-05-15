@@ -16,13 +16,13 @@
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -33,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -57,24 +56,24 @@ val `TextField Story` by story {
         "With Prefix and Suffix"
     ), 0)
 
-    // Icon parameters
+    // Icon parameters (used in "With Icons" variant)
     val showLeadingIcon by parameter(false)
     val showTrailingIcon by parameter(false)
 
-    // Error state parameters
+    // Error state parameters (used in "Error State" variant)
     val isError by parameter(false)
     val errorMessage by parameter("Error message")
 
-    // Prefix/suffix parameters
+    // Prefix/suffix parameters (used in "With Prefix and Suffix" variant)
     val prefix by parameter("$")
     val suffix by parameter(".00")
 
-    // Password parameters
+    // Password parameters (used in "Password" variant)
     val hidePassword by parameter(true)
 
     // State management
     var passwordVisible by remember { mutableStateOf(false) }
-    
+
     // Custom implementation of Visibility and VisibilityOff icons
     // These are copied from the material-icons-extended library to avoid adding it as a dependency
     val visibilityIcon = remember {
@@ -101,7 +100,7 @@ val `TextField Story` by story {
             }
         }
     }
-    
+
     val visibilityOffIcon = remember {
         materialIcon(name = "Filled.VisibilityOff") {
             materialPath {
@@ -147,7 +146,20 @@ val `TextField Story` by story {
         }
     }
 
-    Column(modifier = Modifier.padding(16.dp)) {
+    Column(modifier = Modifier.width(400.dp).padding(16.dp)) {
+        // Display helper text to guide users about which parameters to use
+        Text(
+            text = when (variant) {
+                "Basic" -> "Use common parameters for this variant."
+                "With Icons" -> "Use common parameters and icon parameters (showLeadingIcon, showTrailingIcon) for this variant."
+                "Password" -> "Use common parameters and password parameters (hidePassword) for this variant."
+                "Error State" -> "Use common parameters and error state parameters (isError, errorMessage) for this variant."
+                "With Prefix and Suffix" -> "Use common parameters and prefix/suffix parameters (prefix, suffix) for this variant."
+                else -> ""
+            },
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
         when (variant) {
             "Basic" -> {
                 // Basic TextField
@@ -257,17 +269,4 @@ val `TextField Story` by story {
             }
         }
     }
-}
-
-// A hack for development needs:
-// If we need to customize the parameters controller UI, for example for a missing parameter type,
-// then we can do it here.
-// This relies on the fact that Storytale compile plugin will invoke the initialization of all properties in any file with stories.
-private val initialization: Int = initializationForParameters()
-private fun initializationForParameters(): Int {
-    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-    org.jetbrains.compose.storytale.gallery.material3.parameterUiControllerCustomizer = null
-    // org.jetbrains.compose.storytale.gallery.material3.ParameterUiControllerCustomizer { { Text(it.name) } }
-
-    return 1
 }

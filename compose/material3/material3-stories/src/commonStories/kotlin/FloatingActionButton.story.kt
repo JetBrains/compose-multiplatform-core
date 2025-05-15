@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -103,11 +104,11 @@ val `FloatingActionButton Story` by story {
     val interactionSource = remember { MutableInteractionSource() }
     
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.width(380.dp),
         color = MaterialTheme.colorScheme.background
     ) {
         Box(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(14.dp),
             contentAlignment = Alignment.Center
         ) {
             FloatingActionButton(
@@ -183,7 +184,7 @@ val `LargeFloatingActionButton Story` by story {
     val interactionSource = remember { MutableInteractionSource() }
     
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.width(380.dp),
         color = MaterialTheme.colorScheme.background
     ) {
         Box(
@@ -219,7 +220,7 @@ val `ExtendedFloatingActionButton Story` by story {
     val contentColor by parameter(Color.White)
     
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.width(380.dp),
         color = MaterialTheme.colorScheme.background
     ) {
         Box(
@@ -247,40 +248,7 @@ val `ExtendedFloatingActionButton Story` by story {
     }
 }
 
-val `Animated Extended FloatingActionButton Story` by story {
-    // Basic parameters
-    val buttonText by parameter("Extended")
-    val initialExpanded by parameter(true)
-    
-    // State to track expanded state
-    var expanded by remember { mutableStateOf(initialExpanded) }
-    
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            ExtendedFloatingActionButton(
-                text = { Text(buttonText) },
-                icon = { Icon(Icons.Filled.Edit, contentDescription = "Edit") },
-                onClick = { expanded = !expanded },
-                expanded = expanded
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                text = "Click the FAB to ${if (expanded) "collapse" else "expand"} it",
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-    }
-}
-
-val `Small FloatingActionButton Story` by story {
+val `SmallFloatingActionButton Story` by story {
     // Icon parameters
     val iconOptions = listOf("Add", "Edit", "Home")
     val iconType by parameter(iconOptions, 0)
@@ -334,7 +302,7 @@ val `Small FloatingActionButton Story` by story {
     val interactionSource = remember { MutableInteractionSource() }
     
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.width(380.dp),
         color = MaterialTheme.colorScheme.background
     ) {
         Box(

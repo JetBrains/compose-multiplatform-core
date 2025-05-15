@@ -523,6 +523,8 @@ fun DismissibleNavigationDrawer(
  * @param drawerContent content inside this drawer
  * @param modifier the [Modifier] to be applied to this drawer
  * @param content content of the rest of the UI
+ *
+ * @story /stories?embedded=true#story/PermanentNavigationDrawer%2520Story
  */
 @Composable
 fun PermanentNavigationDrawer(
@@ -643,6 +645,8 @@ fun ModalDrawerSheet(
  *   result in a darker color in light theme and lighter color in dark theme. See also: [Surface].
  * @param windowInsets a window insets for the sheet.
  * @param content content inside of a dismissible navigation drawer
+ *
+ * @story /stories?embedded=true#story/DismissibleDrawerSheet%2520Story
  */
 @Composable
 fun DismissibleDrawerSheet(
