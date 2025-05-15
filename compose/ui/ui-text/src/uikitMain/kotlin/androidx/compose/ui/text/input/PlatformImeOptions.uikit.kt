@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text.input
 
+import androidx.compose.ui.ExperimentalComposeUiApi
 import platform.UIKit.UIKeyboardAppearance
 import platform.UIKit.UIKeyboardAppearanceDefault
 import platform.UIKit.UIKeyboardType
@@ -40,6 +41,7 @@ private class PlatformImeOptionsImpl(
 /**
  * Configuration for creating instances of PlatformImeOptions.
  */
+@ExperimentalComposeUiApi
 class PlatformImeOptionsConfiguration internal constructor() {
     private var keyboardType: UIKeyboardType? = null
     private var keyboardAppearance: UIKeyboardAppearance = UIKeyboardAppearanceDefault
@@ -57,6 +59,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
      *
      * See [UIKit documentation](https://developer.apple.com/documentation/uikit/uitextinputtraits/keyboardtype).
      */
+    @ExperimentalComposeUiApi
     fun keyboardType(value: UIKeyboardType?): PlatformImeOptionsConfiguration = apply {
         keyboardType = value
     }
@@ -66,6 +69,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
      *
      * See [UIKit documentation](https://developer.apple.com/documentation/uikit/uitextinputtraits/keyboardappearance).
      */
+    @ExperimentalComposeUiApi
     fun keyboardAppearance(value: UIKeyboardAppearance): PlatformImeOptionsConfiguration = apply {
         keyboardAppearance = value
     }
@@ -76,6 +80,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
      *
      * See [UIKit documentation](https://developer.apple.com/documentation/uikit/uitextinputtraits/returnkeytype).
      */
+    @ExperimentalComposeUiApi
     fun returnKeyType(value: UIReturnKeyType?): PlatformImeOptionsConfiguration = apply {
         returnKeyType = value
     }
@@ -85,6 +90,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
      *
      * See [UIKit documentation](https://developer.apple.com/documentation/uikit/uitextinputtraits/textcontenttype).
      */
+    @ExperimentalComposeUiApi
     fun textContentType(value: UITextContentType): PlatformImeOptionsConfiguration = apply {
         textContentType = value
         hasExplicitTextContentType = true
@@ -96,6 +102,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
      *
      * See [UIKit documentation](https://developer.apple.com/documentation/uikit/uitextinputtraits/issecuretextentry).
      */
+    @ExperimentalComposeUiApi
     fun isSecureTextEntry(value: Boolean?): PlatformImeOptionsConfiguration = apply {
         isSecureTextEntry = value
     }
@@ -105,6 +112,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
      *
      * See [UIKit documentation](https://developer.apple.com/documentation/uikit/uitextinputtraits/enablesreturnkeyautomatically).
      */
+    @ExperimentalComposeUiApi
     fun enablesReturnKeyAutomatically(value: Boolean): PlatformImeOptionsConfiguration = apply {
         enablesReturnKeyAutomatically = value
     }
@@ -115,6 +123,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
      *
      * See [UIKit documentation](https://developer.apple.com/documentation/uikit/uitextinputtraits/autocapitalizationtype).
      */
+    @ExperimentalComposeUiApi
     fun autocapitalizationType(value: UITextAutocapitalizationType?): PlatformImeOptionsConfiguration = apply {
         autocapitalizationType = value
     }
@@ -125,6 +134,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
      *
      * See [UIKit documentation](https://developer.apple.com/documentation/uikit/uitextinputtraits/autocorrectiontype).
      */
+    @ExperimentalComposeUiApi
     fun autocorrectionType(value: UITextAutocorrectionType?): PlatformImeOptionsConfiguration = apply {
         autocorrectionType = value
     }
@@ -152,6 +162,7 @@ class PlatformImeOptionsConfiguration internal constructor() {
  * Allows specifying UIKit-specific input method editor options. Note that any values
  * explicitly specified here will override the corresponding settings from the enclosing [ImeOptions].
  */
+@ExperimentalComposeUiApi
 fun PlatformImeOptions(configure: PlatformImeOptionsConfiguration.() -> Unit): PlatformImeOptions {
     return PlatformImeOptionsConfiguration().apply(configure).build()
 }
@@ -161,6 +172,7 @@ fun PlatformImeOptions(configure: PlatformImeOptionsConfiguration.() -> Unit): P
  *
  * This instance sets all properties to their UIKit default values.
  */
+@ExperimentalComposeUiApi
 val DefaultPlatformImeOptions: PlatformImeOptions = PlatformImeOptions {
     keyboardType(UIKeyboardTypeDefault)
     keyboardAppearance(UIKeyboardAppearanceDefault)
@@ -172,29 +184,38 @@ val DefaultPlatformImeOptions: PlatformImeOptions = PlatformImeOptions {
     autocorrectionType(UITextAutocorrectionType.UITextAutocorrectionTypeDefault)
 }
 
+@ExperimentalComposeUiApi
 val PlatformImeOptions.keyboardType: UIKeyboardType?
     get() = (this as? PlatformImeOptionsImpl)?.keyboardType
 
+@ExperimentalComposeUiApi
 val PlatformImeOptions.keyboardAppearance: UIKeyboardAppearance
     get() = (this as? PlatformImeOptionsImpl)?.keyboardAppearance ?: UIKeyboardAppearanceDefault
 
+@ExperimentalComposeUiApi
 val PlatformImeOptions.returnKeyType: UIReturnKeyType?
     get() = (this as? PlatformImeOptionsImpl)?.returnKeyType
 
+@ExperimentalComposeUiApi
 val PlatformImeOptions.textContentType: UITextContentType
     get() = (this as? PlatformImeOptionsImpl)?.textContentType
 
+@ExperimentalComposeUiApi
 val PlatformImeOptions.isSecureTextEntry: Boolean?
     get() = (this as? PlatformImeOptionsImpl)?.isSecureTextEntry
 
+@ExperimentalComposeUiApi
 val PlatformImeOptions.enablesReturnKeyAutomatically: Boolean
     get() = (this as? PlatformImeOptionsImpl)?.enablesReturnKeyAutomatically ?: false
 
+@ExperimentalComposeUiApi
 val PlatformImeOptions.autocapitalizationType: UITextAutocapitalizationType?
     get() = (this as? PlatformImeOptionsImpl)?.autocapitalizationType
 
+@ExperimentalComposeUiApi
 val PlatformImeOptions.autocorrectionType: UITextAutocorrectionType?
     get() = (this as? PlatformImeOptionsImpl)?.autocorrectionType
 
+@ExperimentalComposeUiApi
 val PlatformImeOptions.hasExplicitTextContentType: Boolean
     get() = (this as? PlatformImeOptionsImpl)?.hasExplicitTextContentType ?: false
