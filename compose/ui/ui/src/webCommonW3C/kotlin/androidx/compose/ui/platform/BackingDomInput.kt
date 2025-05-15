@@ -40,6 +40,8 @@ internal interface ComposeCommandCommunicator {
     fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean
 }
 
+private fun setGlobalCssProperty(property: String, value: Float) = (document.documentElement as ElementCSSInlineStyle).style.setProperty(property, value)
+
 /**
  * The purpose of this entity is to isolate synchronization between a TextFieldValue
  * and the DOM HTMLTextAreaElement we are actually listening events on in order to show
@@ -55,24 +57,13 @@ internal class BackingDomInput(
     )
 
     private companion object {
-        fun getDocumentRoot() = document.documentElement as ElementCSSInlineStyle
-
         private const val leftPropertyName = "--compose-internal-web-backing-input-left"
         private const val topPropertyName = "--compose-internal-web-backing-input-top"
 
-        var cssInternalWebBackingInputLeft: Float
-            get() = getDocumentRoot().style.getPropertyValue(leftPropertyName)
-            set(value) = getDocumentRoot().style.setProperty(leftPropertyName, value)
-
-        var cssInternalWebBackingInputTop: Float
-            get() = getDocumentRoot().style.getPropertyValue(topPropertyName)
-            set(value) = getDocumentRoot().style.setProperty(topPropertyName, value)
 
         init {
-            getDocumentRoot().style.apply {
-                cssInternalWebBackingInputLeft = 0f
-                cssInternalWebBackingInputTop = 0f
-            }
+            setGlobalCssProperty(leftPropertyName, 0f)
+            setGlobalCssProperty(topPropertyName, 0f)
         }
     }
 
@@ -99,8 +90,8 @@ internal class BackingDomInput(
     }
 
     fun updateHtmlInputPosition(offset: Offset) {
-          cssInternalWebBackingInputLeft = offset.x
-          cssInternalWebBackingInputTop = offset.y
+        setGlobalCssProperty(leftPropertyName, offset.x)
+        setGlobalCssProperty(topPropertyName, offset.y)
     }
 
     fun updateHtmlInputGeometry(width: Int, height: Int) {
