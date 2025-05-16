@@ -205,6 +205,14 @@ internal class UIKitInstrumentedTest {
     }
 
     /**
+     * Simulates a touch-down event at the center of a given AccessibilityTestNode.
+     */
+    fun AccessibilityTestNode.touchDown(): UITouch {
+        val frame = frame ?: error("Internal error. Frame is missing.")
+        return touchDown(frame.center())
+    }
+
+    /**
      * Simulates a drag gesture on the screen, moving the touch from its current location to a specified position
      * over a given duration.
      *
