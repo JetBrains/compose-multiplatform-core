@@ -24,7 +24,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import kotlinx.browser.document
 import kotlinx.browser.window
 
-
 internal interface ComposeCommandCommunicator {
     fun sendEditCommand(commands: List<EditCommand>)
     fun sendEditCommand(command: EditCommand) = sendEditCommand(listOf(command))
@@ -32,6 +31,7 @@ internal interface ComposeCommandCommunicator {
     fun sendKeyboardEvent(keyboardEvent: KeyEvent): Boolean
 }
 
+private fun setGlobalCssProperty(property: String, value: Float): Unit = js("document.documentElement.style.setProperty(property, value)")
 
 /**
  * The purpose of this entity is to isolate synchronization between a TextFieldValue
@@ -46,6 +46,21 @@ internal class BackingDomInput(
         imeOptions,
         composeCommunicator
     )
+
+    private companion object {
+        private const val leftPropertyName = "--compose-internal-web-backing-input-left"
+        private const val topPropertyName = "--compose-internal-web-backing-input-top"
+        private const val widthPropertyName = "--compose-internal-web-backing-input-width"
+        private const val heightPropertyName = "--compose-internal-web-backing-input-height"
+
+
+        init {
+            setGlobalCssProperty(leftPropertyName, 0f)
+            setGlobalCssProperty(topPropertyName, 0f)
+            setGlobalCssProperty(widthPropertyName, 0f)
+            setGlobalCssProperty(heightPropertyName, 0f)
+        }
+    }
 
     private val backingElement = inputStrategy.htmlInput
 
@@ -70,13 +85,13 @@ internal class BackingDomInput(
     }
 
     fun updateHtmlInputPosition(offset: Offset) {
-        backingElement.style.left = "${offset.x}px"
-        backingElement.style.top = "${offset.y}px"
+        setGlobalCssProperty(leftPropertyName, offset.x)
+        setGlobalCssProperty(topPropertyName, offset.y)
     }
 
-    fun updateHtmlInputGeometry(width: Int, height: Int) {
-        backingElement.style.width = "${width}px"
-        backingElement.style.height = "${height}px"
+    fun updateHtmlInputGeometry(width: Float, height: Float) {
+        setGlobalCssProperty(widthPropertyName, width)
+        setGlobalCssProperty(heightPropertyName, height)
     }
 
     fun updateState(textFieldValue: TextFieldValue) {
