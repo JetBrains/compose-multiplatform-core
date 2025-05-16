@@ -25,8 +25,10 @@ import androidx.compose.material3.TimeInput
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerLayoutType
 import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.storytale.story
 
@@ -103,23 +105,25 @@ val `TimePicker Story` by story {
         else -> TimePickerLayoutType.Vertical
     }
 
-    Surface(modifier = Modifier.padding(16.dp).width(600.dp)) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Display the current time
-            Text(
-                text = "Selected time: $formattedTime",
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+    CompositionLocalProvider(LocalDensity provides scaledStoryDensity()) {
+        Surface(modifier = Modifier.padding(16.dp).width(600.dp)) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Display the current time
+                Text(
+                    text = "Selected time: $formattedTime",
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
 
-            // Show TimePicker component
-            TimePicker(
-                state = timePickerState,
-                modifier = Modifier.fillMaxWidth(),
-                layoutType = layoutType
-            )
+                // Show TimePicker component
+                TimePicker(
+                    state = timePickerState,
+                    modifier = Modifier.fillMaxWidth(),
+                    layoutType = layoutType
+                )
+            }
         }
     }
 }

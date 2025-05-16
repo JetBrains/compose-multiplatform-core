@@ -40,12 +40,15 @@ import org.jetbrains.compose.storytale.story
 val `DateRangePicker Story` by story {
     val allowPastDates by parameter(false)
 
-    Row(modifier = Modifier.width(300.dp)) {
+    Row(modifier = Modifier.sizeIn(maxWidth = 450.dp)) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.background
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+            ) {
                 Text(
                     text = "DateRangePicker with Selectable Dates",
                     style = MaterialTheme.typography.headlineSmall
@@ -59,7 +62,8 @@ val `DateRangePicker Story` by story {
                     } else {
                         "Allows today and future dates."
                     },
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -83,7 +87,7 @@ val `DateRangePicker Story` by story {
                     selectableDates = selectableDates
                 )
 
-                CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                CompositionLocalProvider(LocalDensity provides scaledStoryDensity()) {
                     DateRangePicker(
                         state = dateRangePickerState,
                         modifier = Modifier.sizeIn(maxWidth = 450.dp).height(450.dp)

@@ -59,7 +59,7 @@ val `DatePicker Story` by story {
                 // Create a formatter
                 val dateFormatter = remember { DatePickerDefaults.dateFormatter() }
 
-                CompositionLocalProvider(LocalDensity provides Density(0.8f)) {
+                CompositionLocalProvider(LocalDensity provides scaledStoryDensity()) {
                     DatePicker(
                         state = datePickerState,
                         dateFormatter = dateFormatter,
