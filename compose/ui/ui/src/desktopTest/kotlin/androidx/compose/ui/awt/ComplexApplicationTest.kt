@@ -134,7 +134,6 @@ import kotlin.random.Random
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
-import org.junit.Ignore
 import org.junit.Test
 
 @Suppress("ConstPropertyName")
@@ -652,7 +651,6 @@ private suspend fun performGC() {
 
 private val availableMemory get() = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
 
-@Ignore
 class ComplexApplicationTest {
     @Test
     fun `no memory leak when open window multiple times`() = runApplicationTest(
