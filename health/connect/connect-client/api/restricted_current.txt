@@ -755,6 +755,7 @@ package androidx.health.connect.client.records {
     method public int getRepetitions();
     method public int getSegmentType();
     method public java.time.Instant getStartTime();
+    method public static boolean isSegmentTypeCompatibleWithSessionType(int segmentType, int sessionType);
     property public java.time.Instant endTime;
     property public int repetitions;
     property public int segmentType;
@@ -831,6 +832,7 @@ package androidx.health.connect.client.records {
   }
 
   public static final class ExerciseSegment.Companion {
+    method public boolean isSegmentTypeCompatibleWithSessionType(int segmentType, int sessionType);
     property public static int EXERCISE_SEGMENT_TYPE_ARM_CURL;
     property public static int EXERCISE_SEGMENT_TYPE_BACK_EXTENSION;
     property public static int EXERCISE_SEGMENT_TYPE_BALL_SLAM;

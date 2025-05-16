@@ -324,6 +324,18 @@
         </activity>
 
         <activity
+            android:name=".TimePickerScrollMinutesActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true"
+            tools:targetApi="o">
+            <intent-filter>
+                <action android:name=
+                    "androidx.wear.compose.material3.macrobenchmark.target.TIME_PICKER_SCROLL_MINUTES_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".TimeTextActivity"
             android:theme="@style/AppTheme"
             android:exported="true">

@@ -16,23 +16,23 @@
 
 package androidx.appfunctions.compiler.core
 
+import androidx.appfunctions.compiler.core.metadata.AppFunctionAllOfTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionArrayTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionObjectTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionParameterMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionPrimitiveTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionReferenceTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionResponseMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionSchemaMetadata
+import androidx.appfunctions.compiler.core.metadata.CompileTimeAppFunctionMetadata
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.APP_FUNCTION_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.COMPONENT_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.FUNCTION_ID_TO_METADATA_MAP_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.PARAMETER_METADATA_LIST_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.RESPONSE_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.SCHEMA_METADATA_PROPERTY_NAME
-import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
-import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionResponseMetadata
-import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
-import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
@@ -925,7 +925,7 @@ class AppFunctionInventoryCodeBuilder(
      * @return The name of the property.
      */
     private fun getObjectTypeMetadataPropertyNameForComponent(componentName: String): String {
-        return "${componentName.uppercase().replace(Regex("[.<>]"), "_").replace("?", "_NULLABLE")}_OBJECT_DATA_TYPE"
+        return "${componentName.uppercase().replace(Regex("[.<>$]"), "_").replace("?", "_NULLABLE")}_OBJECT_DATA_TYPE"
     }
 
     /**
@@ -935,6 +935,6 @@ class AppFunctionInventoryCodeBuilder(
      * @return The name of the property.
      */
     private fun getAllOfTypeMetadataPropertyNameForComponent(componentName: String): String {
-        return "${componentName.uppercase().replace(".", "_")}_ALL_OF_DATA_TYPE"
+        return "${componentName.uppercase().replace(Regex("[.<>$]"), "_")}_ALL_OF_DATA_TYPE"
     }
 }

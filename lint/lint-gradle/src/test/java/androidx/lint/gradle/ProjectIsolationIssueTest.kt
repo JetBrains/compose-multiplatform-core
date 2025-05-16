@@ -145,4 +145,34 @@ class ProjectIsolationIssueTest :
             )
         check(input).expectClean()
     }
+
+    @Test
+    fun `Test usage of evaluationDependsOn`() {
+        val input =
+            kotlin(
+                """
+                import org.gradle.api.Project
+
+                fun configure(project: Project) {
+                    project.evaluationDependsOn(":foo:bar")
+                    project.evaluationDependsOnChildren()
+                }
+            """
+                    .trimIndent()
+            )
+
+        val expected =
+            """
+            src/test.kt:4: Error: Avoid using method evaluationDependsOn [GradleProjectIsolation]
+                project.evaluationDependsOn(":foo:bar")
+                        ~~~~~~~~~~~~~~~~~~~
+            src/test.kt:5: Error: Avoid using method evaluationDependsOnChildren [GradleProjectIsolation]
+                project.evaluationDependsOnChildren()
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            2 errors, 0 warnings
+        """
+                .trimIndent()
+
+        check(input).expect(expected)
+    }
 }

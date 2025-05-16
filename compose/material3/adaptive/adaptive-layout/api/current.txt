@@ -11,7 +11,27 @@ package androidx.compose.material3.adaptive.layout {
     property public androidx.compose.material3.adaptive.layout.AdaptStrategy Hide;
   }
 
-  public static final class AdaptStrategy.Reflow implements androidx.compose.material3.adaptive.layout.AdaptStrategy {
+  @androidx.compose.runtime.Immutable public static final class AdaptStrategy.Levitate implements androidx.compose.material3.adaptive.layout.AdaptStrategy {
+    ctor public AdaptStrategy.Levitate();
+    ctor public AdaptStrategy.Levitate(optional String strategy, optional androidx.compose.ui.Alignment alignment);
+    method public androidx.compose.ui.Alignment getAlignment();
+    method public String getStrategy();
+    property public androidx.compose.ui.Alignment alignment;
+    property public String strategy;
+  }
+
+  @kotlin.jvm.JvmInline public static final value class AdaptStrategy.Levitate.Strategy {
+    field public static final androidx.compose.material3.adaptive.layout.AdaptStrategy.Levitate.Strategy.Companion Companion;
+  }
+
+  public static final class AdaptStrategy.Levitate.Strategy.Companion {
+    method public String getAlways();
+    method public String getSinglePaneOnly();
+    property public String Always;
+    property public String SinglePaneOnly;
+  }
+
+  @androidx.compose.runtime.Immutable public static final class AdaptStrategy.Reflow implements androidx.compose.material3.adaptive.layout.AdaptStrategy {
     ctor public AdaptStrategy.Reflow(Object targetPane);
     method public Object getTargetPane();
     property public Object targetPane;
@@ -111,7 +131,13 @@ package androidx.compose.material3.adaptive.layout {
     property public androidx.compose.material3.adaptive.layout.PaneAdaptedValue Hidden;
   }
 
-  public static final class PaneAdaptedValue.Reflowed implements androidx.compose.material3.adaptive.layout.PaneAdaptedValue {
+  @androidx.compose.runtime.Immutable public static final class PaneAdaptedValue.Levitated implements androidx.compose.material3.adaptive.layout.PaneAdaptedValue {
+    ctor public PaneAdaptedValue.Levitated(androidx.compose.ui.Alignment alignment);
+    method public androidx.compose.ui.Alignment getAlignment();
+    property public androidx.compose.ui.Alignment alignment;
+  }
+
+  @androidx.compose.runtime.Immutable public static final class PaneAdaptedValue.Reflowed implements androidx.compose.material3.adaptive.layout.PaneAdaptedValue {
     ctor public PaneAdaptedValue.Reflowed(Object targetPane);
     method public Object getTargetPane();
     property public Object targetPane;
@@ -207,21 +233,25 @@ package androidx.compose.material3.adaptive.layout {
 
   public static final class PaneMotion.Companion {
     method public androidx.compose.material3.adaptive.layout.PaneMotion getAnimateBounds();
+    method public androidx.compose.material3.adaptive.layout.PaneMotion getEnterAsModal();
     method public androidx.compose.material3.adaptive.layout.PaneMotion getEnterFromLeft();
     method public androidx.compose.material3.adaptive.layout.PaneMotion getEnterFromLeftDelayed();
     method public androidx.compose.material3.adaptive.layout.PaneMotion getEnterFromRight();
     method public androidx.compose.material3.adaptive.layout.PaneMotion getEnterFromRightDelayed();
     method public androidx.compose.material3.adaptive.layout.PaneMotion getEnterWithExpand();
+    method public androidx.compose.material3.adaptive.layout.PaneMotion getExitAsModal();
     method public androidx.compose.material3.adaptive.layout.PaneMotion getExitToLeft();
     method public androidx.compose.material3.adaptive.layout.PaneMotion getExitToRight();
     method public androidx.compose.material3.adaptive.layout.PaneMotion getExitWithShrink();
     method public androidx.compose.material3.adaptive.layout.PaneMotion getNoMotion();
     property public androidx.compose.material3.adaptive.layout.PaneMotion AnimateBounds;
+    property public androidx.compose.material3.adaptive.layout.PaneMotion EnterAsModal;
     property public androidx.compose.material3.adaptive.layout.PaneMotion EnterFromLeft;
     property public androidx.compose.material3.adaptive.layout.PaneMotion EnterFromLeftDelayed;
     property public androidx.compose.material3.adaptive.layout.PaneMotion EnterFromRight;
     property public androidx.compose.material3.adaptive.layout.PaneMotion EnterFromRightDelayed;
     property public androidx.compose.material3.adaptive.layout.PaneMotion EnterWithExpand;
+    property public androidx.compose.material3.adaptive.layout.PaneMotion ExitAsModal;
     property public androidx.compose.material3.adaptive.layout.PaneMotion ExitToLeft;
     property public androidx.compose.material3.adaptive.layout.PaneMotion ExitToRight;
     property public androidx.compose.material3.adaptive.layout.PaneMotion ExitWithShrink;
@@ -236,11 +266,15 @@ package androidx.compose.material3.adaptive.layout {
 
   public static final class PaneMotion.Type.Companion {
     method public int getEntering();
+    method public int getEnteringModal();
     method public int getExiting();
+    method public int getExitingModal();
     method public int getHidden();
     method public int getShown();
     property public int Entering;
+    property public int EnteringModal;
     property public int Exiting;
+    property public int ExitingModal;
     property public int Hidden;
     property public int Shown;
   }
@@ -265,12 +299,14 @@ package androidx.compose.material3.adaptive.layout {
     method public androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntSize> getDelayedSizeAnimationSpec();
     method public androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntOffset> getOffsetAnimationSpec();
     method public androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntSize> getSizeAnimationSpec();
+    method public androidx.compose.animation.core.FiniteAnimationSpec<java.lang.Float> getVisibilityAnimationSpec();
     property public androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntRect> AnimationSpec;
     property public androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntRect> DelayedAnimationSpec;
     property public androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntOffset> DelayedOffsetAnimationSpec;
     property public androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntSize> DelayedSizeAnimationSpec;
     property public androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntOffset> OffsetAnimationSpec;
     property public androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntSize> SizeAnimationSpec;
+    property public androidx.compose.animation.core.FiniteAnimationSpec<java.lang.Float> VisibilityAnimationSpec;
     field public static final androidx.compose.material3.adaptive.layout.PaneMotionDefaults INSTANCE;
   }
 

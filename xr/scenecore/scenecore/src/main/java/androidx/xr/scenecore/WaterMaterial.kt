@@ -17,7 +17,6 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.MainThread
-import androidx.annotation.RestrictTo
 import androidx.concurrent.futures.ResolvableFuture
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
@@ -25,13 +24,11 @@ import androidx.xr.runtime.internal.MaterialResource as RtMaterial
 import com.google.common.util.concurrent.ListenableFuture
 
 /** Represents a Material in SceneCore. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public open class Material(internal val material: RtMaterial?)
 
 /** A Material which implements a water effect. */
 // TODO(b/396201066): Add unit tests for this class if we end up making it public.
 @Suppress("NotCloseable")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class WaterMaterial
 internal constructor(
     internal val materialResource: RtMaterial,
@@ -233,6 +230,7 @@ internal constructor(
          */
         @MainThread
         @JvmStatic
+        @Suppress("AsyncSuffixFuture")
         public fun create(
             session: Session,
             isAlphaMapVersion: Boolean,

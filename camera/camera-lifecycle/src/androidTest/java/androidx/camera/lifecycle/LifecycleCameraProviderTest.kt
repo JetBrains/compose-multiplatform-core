@@ -278,4 +278,14 @@ class LifecycleCameraProviderTest(
         // Assert: The camera not bound by the provider should not be removed.
         assertThat(repository.lifecycleCameras).containsExactly(fakeCamera)
     }
+
+    @Test
+    fun bindWithoutUseCases_returnCameraCorrectly() =
+        runBlocking(Dispatchers.Main) {
+            val cameraInfo = provider1.getCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
+            val camera =
+                provider1.bindToLifecycle(lifecycleOwner1, CameraSelector.DEFAULT_BACK_CAMERA)
+            assertThat(camera.cameraInfo).isEqualTo(cameraInfo)
+            assertThat(camera.cameraInfo.lensFacing).isEqualTo(LENS_FACING_BACK)
+        }
 }

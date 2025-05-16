@@ -114,6 +114,6 @@ class SdkApiConstants {
             }
         }
 
-        const val MEDIATION_TEST_CALLBACK = "mediation-test-callback"
+        const val AUTOMATED_TEST_CALLBACK = "automated-test-callback"
     }
 }

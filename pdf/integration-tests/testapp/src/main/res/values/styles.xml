@@ -19,5 +19,6 @@
         <item name="fastScrollVerticalThumbDrawable">@drawable/custom_thumb_drawable</item>
         <item name="fastScrollPageIndicatorBackgroundDrawable">@drawable/custom_page_indicator_background</item>
         <item name="fastScrollVerticalThumbMarginEnd">8dp</item>
+        <item name="fastScrollPageIndicatorMarginEnd">24dp</item>
     </style>
 </resources>

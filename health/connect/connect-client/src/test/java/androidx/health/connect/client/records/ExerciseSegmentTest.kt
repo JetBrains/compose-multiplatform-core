@@ -20,6 +20,7 @@ import androidx.health.connect.client.records.ExerciseSegment.Companion.EXERCISE
 import androidx.health.connect.client.records.ExerciseSegment.Companion.SWIMMING_SEGMENTS
 import androidx.health.connect.client.records.ExerciseSegment.Companion.UNIVERSAL_SEGMENTS
 import androidx.health.connect.client.records.ExerciseSegment.Companion.UNIVERSAL_SESSION_TYPES
+import androidx.health.connect.client.records.ExerciseSegment.Companion.isSegmentTypeCompatibleWithSessionType
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import java.time.Instant
@@ -286,13 +287,7 @@ class ExerciseSegmentTest {
     ) {
         assertEquals(
             expected = isCompatible,
-            actual =
-                ExerciseSegment(
-                        startTime = Instant.ofEpochMilli(1),
-                        endTime = Instant.ofEpochMilli(2),
-                        segmentType = segmentType
-                    )
-                    .isCompatibleWith(sessionType),
+            actual = isSegmentTypeCompatibleWithSessionType(segmentType, sessionType),
             message = "$sessionType and $segmentType is not compatible"
         )
     }

@@ -27,11 +27,14 @@ import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.UseCase;
+import androidx.camera.core.featurecombination.ExperimentalFeatureCombination;
+import androidx.camera.core.featurecombination.Feature;
 import androidx.core.util.Preconditions;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -240,15 +243,44 @@ public interface CameraInfoInternal extends CameraInfo {
             @NonNull List<@NonNull UseCase> useCases,
             @CameraMode.Mode int cameraMode
     ) {
-        return isUseCaseCombinationSupported(useCases, cameraMode, CameraConfigs.defaultConfig());
+        return isUseCaseCombinationSupported(useCases, cameraMode, false);
     }
 
     /**
-     * Checks if a use case combination is supported for some specific camera mode and
-     * {@link CameraConfig}.
+     * Checks if a use case combination is supported for some specific camera mode and the option to
+     * allow feature combination resolutions.
      */
     default boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
-            int cameraMode, @NonNull CameraConfig cameraConfig) {
+            int cameraMode, boolean allowFeatureCombinationResolutions) {
+        return isUseCaseCombinationSupported(useCases, cameraMode,
+                allowFeatureCombinationResolutions, CameraConfigs.defaultConfig());
+    }
+
+    /**
+     * Checks if a use case combination is supported for some specific camera mode,
+     * {@link CameraConfig}, and the option to allow feature combination resolutions.
+     */
+    default boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
+            int cameraMode, boolean allowFeatureCombinationResolutions,
+            @NonNull CameraConfig cameraConfig) {
         return false;
-    };
+    }
+
+    @ExperimentalFeatureCombination
+    @Override
+    default boolean isFeatureCombinationSupported(@NonNull Set<@NonNull UseCase> useCases,
+            @NonNull Set<@NonNull Feature> features) {
+        for (UseCase useCase : useCases) {
+            useCase.setFeatureCombination(features);
+        }
+
+        boolean isSupported = isUseCaseCombinationSupported(new ArrayList<>(useCases),
+                CameraMode.DEFAULT, true);
+
+        for (UseCase useCase : useCases) {
+            useCase.setFeatureCombination(Collections.emptySet());
+        }
+
+        return isSupported;
+    }
 }

@@ -17,7 +17,9 @@
 package androidx.compose.material3.adaptive.layout
 
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
+import androidx.compose.ui.Alignment
 
 /**
  * The adapted state of a pane. It gives clues to pane scaffolds about if a certain pane should be
@@ -37,6 +39,7 @@ sealed interface PaneAdaptedValue {
      * @param targetPane the target pane of the reflowing, i.e., the pane that the reflowed pane
      *   will be put under.
      */
+    @Immutable
     class Reflowed(val targetPane: Any) : PaneAdaptedValue {
         override fun toString() = "PaneAdaptedValue[Reflowed to $targetPane]"
 
@@ -48,6 +51,28 @@ sealed interface PaneAdaptedValue {
 
         override fun hashCode(): Int {
             return targetPane.hashCode()
+        }
+    }
+
+    /**
+     * Indicates that the associated pane should be levitated with the specified [alignment].
+     *
+     * @param alignment the alignment of the levitated pane relative to the pane scaffold; the
+     *   alignment can also be provided as anchoring to a certain alignment line or a certain
+     *   element in the window. See [Alignment] for more information.
+     */
+    @Immutable
+    class Levitated(val alignment: Alignment) : PaneAdaptedValue {
+        override fun toString() = "PaneAdaptedValue[Levitated with $alignment]"
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Levitated) return false
+            return alignment == other.alignment
+        }
+
+        override fun hashCode(): Int {
+            return alignment.hashCode()
         }
     }
 

@@ -27,11 +27,13 @@ import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.BundleCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
+import androidx.pdf.testapp.ui.v2.StyledPdfViewerFragment
 import androidx.pdf.viewer.fragment.PdfViewerFragment
 import com.google.android.material.button.MaterialButton
 
@@ -44,7 +46,7 @@ class MainActivityV2 : AppCompatActivity() {
 
     @VisibleForTesting
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
-    var filePicker: ActivityResultLauncher<String> =
+    private var filePicker: ActivityResultLauncher<String> =
         registerForActivityResult(GetContent()) { uri: Uri? ->
             uri?.let {
                 if (pdfViewerFragment == null) {
@@ -59,17 +61,24 @@ class MainActivityV2 : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        if (pdfViewerFragment == null) {
-            pdfViewerFragment =
-                supportFragmentManager.findFragmentByTag(PDF_VIEWER_FRAGMENT_TAG)
-                    as PdfViewerFragment?
-        }
+        pdfViewerFragment =
+            supportFragmentManager.findFragmentByTag(PDF_VIEWER_FRAGMENT_TAG) as PdfViewerFragment?
 
         val getContentButton: MaterialButton = findViewById(R.id.launch_button)
         val searchButton: MaterialButton = findViewById(R.id.search_pdf_button)
 
         getContentButton.setOnClickListener { filePicker.launch(MIME_TYPE_PDF) }
         if (savedInstanceState == null) {
+            val fragmentType =
+                intent.extras?.let {
+                    BundleCompat.getSerializable(it, FRAGMENT_TYPE_KEY, FragmentType::class.java)
+                } ?: FragmentType.BASIC_FRAGMENT
+
+            pdfViewerFragment =
+                when (fragmentType) {
+                    FragmentType.BASIC_FRAGMENT -> PdfViewerFragment()
+                    FragmentType.STYLED_FRAGMENT -> StyledPdfViewerFragment.newInstance()
+                }
             setPdfView()
         }
 
@@ -87,17 +96,18 @@ class MainActivityV2 : AppCompatActivity() {
         val fragmentManager: FragmentManager = supportFragmentManager
 
         // Fragment initialization
-        pdfViewerFragment = PdfViewerFragment()
-        val transaction: FragmentTransaction = fragmentManager.beginTransaction()
+        pdfViewerFragment?.let {
+            val transaction: FragmentTransaction = fragmentManager.beginTransaction()
 
-        // Replace an existing fragment in a container with an instance of a new fragment
-        transaction.replace(
-            R.id.fragment_container_view,
-            pdfViewerFragment!!,
-            PDF_VIEWER_FRAGMENT_TAG
-        )
-        transaction.commitAllowingStateLoss()
-        fragmentManager.executePendingTransactions()
+            // Replace an existing fragment in a container with an instance of a new fragment
+            transaction.replace(
+                R.id.fragment_container_view,
+                pdfViewerFragment!!,
+                PDF_VIEWER_FRAGMENT_TAG
+            )
+            transaction.commitAllowingStateLoss()
+            fragmentManager.executePendingTransactions()
+        }
     }
 
     private fun handleWindowInsets() {
@@ -122,5 +132,11 @@ class MainActivityV2 : AppCompatActivity() {
     companion object {
         private const val MIME_TYPE_PDF = "application/pdf"
         private const val PDF_VIEWER_FRAGMENT_TAG = "pdf_viewer_fragment_tag"
+        internal const val FRAGMENT_TYPE_KEY = "fragmentTypeKey"
+
+        internal enum class FragmentType {
+            BASIC_FRAGMENT,
+            STYLED_FRAGMENT
+        }
     }
 }

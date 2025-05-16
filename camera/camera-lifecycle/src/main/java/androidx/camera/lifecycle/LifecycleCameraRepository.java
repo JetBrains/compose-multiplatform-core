@@ -16,14 +16,13 @@
 
 package androidx.camera.lifecycle;
 
-import android.util.Range;
-
 import androidx.annotation.GuardedBy;
+import androidx.annotation.OptIn;
 import androidx.annotation.VisibleForTesting;
-import androidx.camera.core.CameraEffect;
+import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.Logger;
+import androidx.camera.core.SessionConfig;
 import androidx.camera.core.UseCase;
-import androidx.camera.core.ViewPort;
 import androidx.camera.core.concurrent.CameraCoordinator;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.internal.CameraUseCaseAdapter;
@@ -44,7 +43,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -72,6 +70,7 @@ import java.util.Set;
  * When it is released, all UseCases bound to the LifecycleCamera will be unbound and the
  * LifecycleCamera will be released.
  */
+@OptIn(markerClass = ExperimentalSessionConfig.class)
 final class LifecycleCameraRepository {
     private static final String TAG = "LifecycleCameraRepository";
     private static final Object INSTANCE_LOCK = new Object();
@@ -91,7 +90,8 @@ final class LifecycleCameraRepository {
     private final ArrayDeque<LifecycleOwner> mActiveLifecycleOwners = new ArrayDeque<>();
 
     @GuardedBy("mLock")
-@Nullable CameraCoordinator mCameraCoordinator;
+    @Nullable
+    CameraCoordinator mCameraCoordinator;
 
     @VisibleForTesting
     LifecycleCameraRepository() {
@@ -116,10 +116,10 @@ final class LifecycleCameraRepository {
      *
      * @param lifecycleOwner       to associate with the LifecycleCamera
      * @param cameraUseCaseAdaptor the CameraUseCaseAdapter to wrap in a LifecycleCamera
-     *
      * @throws IllegalArgumentException if the LifecycleOwner is already in a destroyed state or
-     * if the repository already contains a LifecycleCamera that has the same LifecycleOwner and
-     * CameraInternal set as the CameraUseCaseAdapter.
+     *                                  if the repository already contains a LifecycleCamera that
+     *                                  has the same LifecycleOwner and
+     *                                  CameraInternal set as the CameraUseCaseAdapter.
      */
     LifecycleCamera createLifecycleCamera(
             @NonNull LifecycleOwner lifecycleOwner,
@@ -154,7 +154,8 @@ final class LifecycleCameraRepository {
      *
      * @return null if no such LifecycleCamera exists.
      */
-    @Nullable LifecycleCamera getLifecycleCamera(LifecycleOwner lifecycleOwner,
+    @Nullable
+    LifecycleCamera getLifecycleCamera(LifecycleOwner lifecycleOwner,
             CameraUseCaseAdapter.@NonNull CameraId cameraId
     ) {
         synchronized (mLock) {
@@ -291,7 +292,6 @@ final class LifecycleCameraRepository {
 
             mLifecycleObserverMap.remove(observer);
             observer.getLifecycleOwner().getLifecycle().removeObserver(observer);
-
         }
     }
 
@@ -309,7 +309,7 @@ final class LifecycleCameraRepository {
     }
 
     /**
-     * Binds the use cases to the specified LifecycleCamera.
+     * Binds the SessionConfig to the specified LifecycleCamera.
      *
      * <p>The LifecycleCamera will become active if its Lifecycle state is ON_START. When
      * multiple LifecycleCameras are controlled by the same Lifecycle, only one LifecycleCamera
@@ -317,26 +317,21 @@ final class LifecycleCameraRepository {
      * state, only the most recently started Lifecycle which has any LifecycleCamera with use
      * case bound can become active.
      *
-     * @param lifecycleCamera The LifecycleCamera which the use cases will be bound to.
-     * @param viewPort The viewport which represents the visible camera sensor rect.
-     * @param effects The effects applied to the camera outputs.
-     * @param targetHighSpeedFrameRate The target high speed frame rate.
-     * @param useCases The use cases to bind to a lifecycle.
+     * @param lifecycleCamera   The LifecycleCamera which the use cases will be bound to.
+     * @param sessionConfig     the sessionConfig to be bound.
      * @param cameraCoordinator The {@link CameraCoordinator} for concurrent camera mode.
-     *
      * @throws IllegalArgumentException If multiple LifecycleCameras with use cases are
-     * registered to the same LifecycleOwner. Or all use cases will exceed the capability of the
-     * camera after binding them to the LifecycleCamera.
+     *                                  registered to the same LifecycleOwner. Or all use cases
+     *                                  will exceed the capability of the
+     *                                  camera after binding them to the LifecycleCamera.
      */
     void bindToLifecycleCamera(
             @NonNull LifecycleCamera lifecycleCamera,
-            @Nullable ViewPort viewPort,
-            @NonNull List<CameraEffect> effects,
-            @NonNull Range<Integer> targetHighSpeedFrameRate,
-            @NonNull Collection<UseCase> useCases,
-            @Nullable CameraCoordinator cameraCoordinator) {
+            @NonNull SessionConfig sessionConfig,
+            @Nullable CameraCoordinator cameraCoordinator
+    ) {
         synchronized (mLock) {
-            Preconditions.checkArgument(!useCases.isEmpty());
+            Preconditions.checkArgument(!sessionConfig.getUseCases().isEmpty());
             mCameraCoordinator = cameraCoordinator;
             LifecycleOwner lifecycleOwner = lifecycleCamera.getLifecycleOwner();
             // Disallow multiple LifecycleCameras with use cases to be registered to the same
@@ -365,11 +360,7 @@ final class LifecycleCameraRepository {
             }
 
             try {
-                lifecycleCamera.getCameraUseCaseAdapter().setViewPort(viewPort);
-                lifecycleCamera.getCameraUseCaseAdapter().setEffects(effects);
-                lifecycleCamera.getCameraUseCaseAdapter()
-                        .setTargetHighSpeedFrameRate(targetHighSpeedFrameRate);
-                lifecycleCamera.bind(useCases);
+                lifecycleCamera.bind(sessionConfig);
             } catch (CameraUseCaseAdapter.CameraException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -384,22 +375,22 @@ final class LifecycleCameraRepository {
     }
 
     /**
-     * Unbinds all specified use cases from the LifecycleCameras managed by the repository.
+     * Unbinds the SessionConfig from the LifecycleCameras managed by the repository.
      *
-     * <p>If a LifecycleCamera is active but all use cases are removed at the end of this call,
-     * the LifecycleCamera will become inactive. This will also initiate a close of the existing
-     * open camera since there is zero {@link UseCase} associated with it.
+     * <p>If a LifecycleCamera is active but all use cases inside the SessionConfig are removed at
+     * the end of this call, the LifecycleCamera will become inactive. This will also initiate a
+     * close of the existing open camera since there is zero {@link UseCase} associated with it.
      *
      * <p>If a use case in the argument list is not bound, then it is simply ignored.
      *
-     * @param useCases The collection of use cases to remove.
+     * @param sessionConfig The SessionConfig that contains a collection of use cases to remove.
      */
-    void unbind(@NonNull Collection<UseCase> useCases) {
-        unbind(useCases, null);
+    void unbind(@NonNull SessionConfig sessionConfig) {
+        unbind(sessionConfig, null);
     }
 
     /**
-     * Unbinds all specified use cases from the given {@link LifecycleCamera}s.
+     * Unbinds the SessionConfig from the given {@link LifecycleCamera}s.
      *
      * <p>If the given {@link LifecycleCamera} set is {@code null}, this method will unbind the use
      * cases from all the {@link LifecycleCamera}s managed by the repository.
@@ -407,10 +398,11 @@ final class LifecycleCameraRepository {
      * <p>If the {@link LifecycleCamera} isn't contained in the repository, it will be no-op for
      * that {@link LifecycleCamera}.
      *
-     * @param useCases The collection of use cases to remove.
+     * @param sessionConfig       The SessionConfig that contains a collection of use cases to
+     *                            remove.
      * @param lifecycleCameraKeys The keys of {@link LifecycleCamera} to unbind the use cases from.
      */
-    void unbind(@NonNull Collection<UseCase> useCases, @Nullable Set<Key> lifecycleCameraKeys) {
+    void unbind(@NonNull SessionConfig sessionConfig, @Nullable Set<Key> lifecycleCameraKeys) {
         synchronized (mLock) {
             Set<Key> keysToUnbind =
                     lifecycleCameraKeys == null ? mCameraMap.keySet() : lifecycleCameraKeys;
@@ -418,7 +410,7 @@ final class LifecycleCameraRepository {
                 if (mCameraMap.containsKey(key)) {
                     LifecycleCamera lifecycleCamera = mCameraMap.get(key);
                     boolean hasUseCase = !lifecycleCamera.getUseCases().isEmpty();
-                    lifecycleCamera.unbind(useCases);
+                    lifecycleCamera.unbind(sessionConfig);
 
                     // For a LifecycleOwner, there can be only one LifecycleCamera with use cases
                     // bound. Set the target LifecycleOwner as inactive if the LifecycleCamera

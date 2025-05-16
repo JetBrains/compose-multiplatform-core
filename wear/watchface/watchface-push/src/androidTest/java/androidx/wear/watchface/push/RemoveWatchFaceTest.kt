@@ -30,7 +30,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-public class RemoveWatchFaceTest {
+class RemoveWatchFaceTest {
     private var context: Context = ApplicationProvider.getApplicationContext()
     private var wfp = WatchFacePushManager(context)
 
@@ -40,6 +40,7 @@ public class RemoveWatchFaceTest {
     }
 
     @Test
+    @RequiresWatch
     fun removeWatchFace() {
         runBlocking {
             val details: WatchFaceDetails =
@@ -53,6 +54,7 @@ public class RemoveWatchFaceTest {
     }
 
     @Test
+    @RequiresWatch
     fun removeWatchFace_invalidSlot() {
         val exception =
             Assert.assertThrows(RemoveWatchFaceException::class.java) {

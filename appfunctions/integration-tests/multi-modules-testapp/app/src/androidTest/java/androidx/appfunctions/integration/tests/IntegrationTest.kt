@@ -31,7 +31,6 @@ import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
-import androidx.appfunctions.schema.notes.APP_FUNCTION_SCHEMA_CATEGORY_NOTES
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
@@ -570,7 +569,7 @@ class IntegrationTest {
                 .observeAppFunctions(
                     AppFunctionSearchSpec(
                         packageNames = setOf(context.packageName),
-                        schemaCategory = APP_FUNCTION_SCHEMA_CATEGORY_NOTES,
+                        schemaCategory = "myNotes",
                         schemaName = "createNote",
                         minSchemaVersion = 2,
                     )
@@ -620,7 +619,7 @@ class IntegrationTest {
                 .observeAppFunctions(
                     AppFunctionSearchSpec(
                         packageNames = setOf(context.packageName),
-                        schemaCategory = APP_FUNCTION_SCHEMA_CATEGORY_NOTES,
+                        schemaCategory = "myNotes",
                         schemaName = "createNote",
                         minSchemaVersion = 2,
                     )
@@ -655,7 +654,7 @@ class IntegrationTest {
                 .observeAppFunctions(
                     AppFunctionSearchSpec(
                         packageNames = setOf(context.packageName),
-                        schemaCategory = APP_FUNCTION_SCHEMA_CATEGORY_NOTES,
+                        schemaCategory = "myNotes",
                         schemaName = "createNote",
                         minSchemaVersion = 2,
                     )

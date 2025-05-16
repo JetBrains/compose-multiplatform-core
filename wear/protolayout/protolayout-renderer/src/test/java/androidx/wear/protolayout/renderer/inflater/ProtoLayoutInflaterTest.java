@@ -377,6 +377,7 @@ public class ProtoLayoutInflaterTest {
     // obsoleteContentDescription is tested for backward compatibility
     @SuppressWarnings("deprecation")
     @Test
+    @Config(minSdk = VERSION_CODES.P) //android.view.View#isAccessibilityHeading API requirement
     public void inflate_textView_withSemanticsContentDescription() {
         String textContents = "Hello World";
         String staticDescription = "StaticDescription";
@@ -414,6 +415,7 @@ public class ProtoLayoutInflaterTest {
         assertThat(info.isImportantForAccessibility()).isTrue();
         assertThat(tv.isImportantForAccessibility()).isTrue();
         assertThat(info.isFocusable()).isTrue();
+        assertThat(tv.isAccessibilityHeading()).isFalse();
     }
 
     @Test
@@ -517,6 +519,36 @@ public class ProtoLayoutInflaterTest {
         assertThat(info.getContentDescription().toString())
                 .isEqualTo(targetDynamicContentDescription);
         assertThat(info.getStateDescription().toString()).isEqualTo(targetDynamicStateDescription);
+    }
+
+    @Test
+    @Config(minSdk = VERSION_CODES.P) //android.view.View#isAccessibilityHeading API requirement
+    public void inflate_textView_withSemanticsHeading() {
+        String textContents = "Heading";
+
+        Semantics semantics = Semantics.newBuilder().setHeading(true).build();
+        LayoutElement root =
+                LayoutElement.newBuilder()
+                        .setText(
+                                Text.newBuilder()
+                                        .setText(string(textContents))
+                                        .setModifiers(
+                                                Modifiers.newBuilder().setSemantics(semantics)))
+                        .build();
+
+        FrameLayout rootLayout = renderer(fingerprintedLayout(root)).inflate();
+
+        // Check that there's a text element in the layout...
+        assertThat(rootLayout.getChildCount()).isEqualTo(1);
+        assertThat(rootLayout.getChildAt(0)).isInstanceOf(TextView.class);
+
+        TextView tv = (TextView) rootLayout.getChildAt(0);
+
+        // Check the text contents.
+        assertThat(tv.getText().toString()).isEqualTo(textContents);
+
+        // Check the accessibility heading.
+        assertThat(tv.isAccessibilityHeading()).isTrue();
     }
 
     @Test

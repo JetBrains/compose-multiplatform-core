@@ -1203,7 +1203,9 @@ public class WebSettingsCompat {
      * {@link WebViewFeature#PAYMENT_REQUEST}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
-     * @param enabled Whether PaymentRequest should be enabled for this {@link WebSettings}.
+     * @param enabled Whether
+     *     <a href="https://w3c.github.io/payment-request/">PaymentRequest</a> should be enabled
+     *     for this {@link WebSettings}.
      */
     @RequiresFeature(name = WebViewFeature.PAYMENT_REQUEST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1217,7 +1219,8 @@ public class WebSettingsCompat {
     }
 
     /**
-     * Get the current status of PaymentRequest for this {@link WebSettings}.
+     * Get the current status of <a href="https://w3c.github.io/payment-request/">PaymentRequest</a>
+     * for the given {@link WebSettings}.
      *
      * <p>
      * This method should only be called if
@@ -1225,7 +1228,8 @@ public class WebSettingsCompat {
      * {@link WebViewFeature#PAYMENT_REQUEST}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
-     * @return Whether PaymentRequest is enabled.
+     * @return Whether <a href="https://w3c.github.io/payment-request/">PaymentRequest</a> is
+     *     enabled.
      */
     @RequiresFeature(name = WebViewFeature.PAYMENT_REQUEST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1239,10 +1243,14 @@ public class WebSettingsCompat {
     }
 
     /**
-     * Enables support for <code>hasEnrolledInstrument()</code> method in <a
-     * href="https://w3c.github.io/payment-request/">PaymentRequest</a> for the given {@link
-     * WebSettings}. This only has any effect if {@code setPaymentRequestEnabled(settings, true)}
-     * has been called.
+     * Enables support for {@code hasEnrolledInstrument()} method in <a
+     * href="https://w3c.github.io/payment-request/">PaymentRequest</a> for the given
+     * {@link WebSettings}. This only has any effect if
+     * {@code WebSettingsCompat.setPaymentRequestEnabled(settings, true)} has been called.
+     *
+     * <p>
+     * When this setting is disabled, the {@code PaymentRequest.hasEnrolledInstrument()} method
+     * always returns {@code false}.
      *
      * <p>
      * This method should only be called if
@@ -1250,8 +1258,8 @@ public class WebSettingsCompat {
      * {@link WebViewFeature#PAYMENT_REQUEST}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
-     * @param enabled Whether PaymentRequest.hasEnrolledInstrument() should be enabled for this
-     *     {@link WebSettings}.
+     * @param enabled Whether {@code PaymentRequest.hasEnrolledInstrument()} should be enabled
+     *     for this {@link WebSettings}.
      */
     @RequiresFeature(name = WebViewFeature.PAYMENT_REQUEST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -1266,8 +1274,9 @@ public class WebSettingsCompat {
     }
 
     /**
-     * Get the current status of PaymentRequest.hasEnrolledInstrument() for this {@link
-     * WebSettings}.
+     * Get the current status of {@code hasEnrolledInstrument()} method in <a
+     * href="https://w3c.github.io/payment-request/">PaymentRequest</a> for the given
+     * {@link WebSettings}.
      *
      * <p>
      * This method should only be called if
@@ -1275,7 +1284,8 @@ public class WebSettingsCompat {
      * {@link WebViewFeature#PAYMENT_REQUEST}.
      *
      * @param settings Settings retrieved from {@link WebView#getSettings()}.
-     * @return Whether PaymentRequest.hasEnrolledInstrument() is enabled.
+     * @return Whether {@code PaymentRequest.hasEnrolledInstrument()} is enabled for this
+     *     {@link WebSettings}.
      */
     @RequiresFeature(name = WebViewFeature.PAYMENT_REQUEST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")

@@ -16,7 +16,6 @@
 
 package androidx.xr.scenecore
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.Entity as RtEntity
 import androidx.xr.runtime.internal.JxrPlatformAdapter
@@ -26,7 +25,6 @@ import androidx.xr.runtime.math.Pose
  * An Entity that itself has no content. ContentlessEntity is useful for organizing the placement,
  * movement of a group of SceneCore Entities.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ContentlessEntity
 private constructor(rtEntity: RtEntity, entityManager: EntityManager) :
     BaseEntity<RtEntity>(rtEntity, entityManager) {

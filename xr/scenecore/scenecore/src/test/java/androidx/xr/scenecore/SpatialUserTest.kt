@@ -18,7 +18,7 @@ package androidx.xr.scenecore
 
 import android.app.Activity
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.HeadTrackingMode
+import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.runtime.internal.JxrPlatformAdapter

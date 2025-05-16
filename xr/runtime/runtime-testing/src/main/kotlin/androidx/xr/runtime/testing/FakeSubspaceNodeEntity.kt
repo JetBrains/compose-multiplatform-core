@@ -16,12 +16,10 @@
 
 package androidx.xr.runtime.testing
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Dimensions
 import androidx.xr.runtime.internal.SubspaceNodeEntity
 import com.google.androidxr.splitengine.SubspaceNode
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeSubspaceNodeEntity(
     subspaceNode: SubspaceNode,
     public override var size: Dimensions,

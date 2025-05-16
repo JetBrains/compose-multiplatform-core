@@ -17,16 +17,29 @@
 package androidx.core.telecom.reference.view
 
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.core.content.ContextCompat
 import androidx.core.telecom.reference.CallRepository
+import androidx.core.telecom.reference.Constants.ACTION_ANSWER_AND_SHOW_UI
+import androidx.core.telecom.reference.Constants.ACTION_ANSWER_CALL
+import androidx.core.telecom.reference.Constants.DEEP_LINK_BASE_URI
+import androidx.core.telecom.reference.Constants.EXTRA_CALL_ID
+import androidx.core.telecom.reference.Constants.EXTRA_REMOTE_USER_NAME
+import androidx.core.telecom.reference.Constants.EXTRA_SIMULATED_NUMBER
 import androidx.core.telecom.reference.VoipApplication
+import androidx.core.telecom.reference.service.TelecomVoipService
+import androidx.core.telecom.reference.viewModel.DialerActivityViewModel
 import androidx.core.telecom.reference.viewModel.DialerViewModel
 import androidx.core.telecom.reference.viewModel.InCallViewModel
 import androidx.lifecycle.LifecycleOwner
@@ -37,6 +50,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navDeepLink
 
 /**
  * The main activity for the Dialer application.
@@ -45,14 +59,84 @@ import androidx.navigation.compose.rememberNavController
  */
 @RequiresApi(Build.VERSION_CODES.S)
 class DialerActivity : ComponentActivity() {
+    private val activityViewModel: DialerActivityViewModel by viewModels()
+    private val callRepository: CallRepository by lazy {
+        (application as VoipApplication).callRepository
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.d("DialerActivity", "onCreate")
         super.onCreate(savedInstanceState)
         // Set the content to be the DialerApp composable, wrapped in the app's theme.
         setContent {
             AppTheme { // Apply the defined Material theme
                 DialerApp(context = applicationContext)
             }
+        }
+        // Handle new incoming call intents etc.
+        handleIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        activityViewModel.processNewIntent(intent)
+        Log.d("DialerActivity", "onNewIntent:")
+        // Handle new incoming call intents etc.
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent) {
+        val action = intent.action
+        val callId = intent.getStringExtra(EXTRA_CALL_ID)
+        val isAnswerAction = ACTION_ANSWER_AND_SHOW_UI == action
+        val isViewCallAction =
+            Intent.ACTION_VIEW == action &&
+                intent.data?.toString()?.contains(NavRoutes.IN_CALL) == true
+
+        Log.d(
+            "DialerActivity",
+            "Handling intent: action=$action, callId=$callId," +
+                " isAnswerAction=$isAnswerAction, isViewCallAction=$isViewCallAction"
+        )
+
+        // --- Ensure service is connected whenever showing/interacting with a call ---
+        if (isAnswerAction || isViewCallAction || callId != null) {
+            Log.d("DialerActivity", "Intent relates to a call, ensuring service" + " connection.")
+            callRepository.maybeConnectService(applicationContext)
+        }
+
+        // --- Handle ANSWER action ---
+        if (isAnswerAction && callId != null) {
+            Log.i(
+                "DialerActivity",
+                "[$callId] Received answer action from notification. Signaling service."
+            )
+            val number = intent.getStringExtra(EXTRA_SIMULATED_NUMBER)
+            val name = intent.getStringExtra(EXTRA_REMOTE_USER_NAME)
+            if (number != null && name != null) {
+                val serviceIntent =
+                    Intent(this, TelecomVoipService::class.java).apply {
+                        this.action = ACTION_ANSWER_CALL
+                        putExtra(EXTRA_CALL_ID, callId)
+                        putExtra(EXTRA_SIMULATED_NUMBER, number)
+                        putExtra(EXTRA_REMOTE_USER_NAME, name)
+                    }
+                Log.i("DialerActivity", "[$callId] Calling startForegroundService")
+                ContextCompat.startForegroundService(this, serviceIntent)
+            } else {
+                Log.w(
+                    "DialerActivity",
+                    "[$callId] Received answer without a name or" + " number arg!"
+                )
+            }
+        } else if (isViewCallAction || callId != null) {
+            Log.d(
+                "DialerActivity",
+                "[$callId] Handling regular view intent (deep link or existing call)." +
+                    " Navigation should handle screen display."
+            )
+        } else {
+            Log.w("DialerActivity", "Received intent unrelated to a specific call" + " action.")
         }
     }
 }
@@ -74,6 +158,7 @@ fun DialerApp(lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current, cont
     val navController = rememberNavController()
     val appContext = context.applicationContext
     val callRepository = (appContext as VoipApplication).callRepository
+    val activityViewModel: DialerActivityViewModel = viewModel()
 
     // Remember a custom ViewModelProvider.Factory for DialerViewModel.
     // This allows injecting the Context and CallRepository into DialerViewModel.
@@ -110,9 +195,18 @@ fun DialerApp(lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current, cont
     val inCallViewModel: InCallViewModel = viewModel(factory = inCallViewModelFactory)
 
     DisposableEffect(lifecycleOwner, appContext) {
-        callRepository.connectService(appContext)
+        callRepository.maybeConnectService(appContext)
         // When the effect leaves the Composition, teardown
-        onDispose { callRepository.disconnectService() }
+        onDispose { callRepository.maybeDisconnectService() }
+    }
+
+    // Effect to handle intents passed from the Activity
+    LaunchedEffect(Unit) {
+        activityViewModel.newIntentFlow.collect { intent ->
+            Log.d("DialerApp", "Collected new intent from ViewModel, calling" + " handleDeepLink")
+            val navigated = navController.handleDeepLink(intent)
+            Log.d("DialerApp", "handleDeepLink result: $navigated")
+        }
     }
 
     // Define the navigation graph for the application.
@@ -128,15 +222,24 @@ fun DialerApp(lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current, cont
             )
         }
         // Define the In-Call screen destination.
-        composable(NavRoutes.IN_CALL) {
-            // Pass the InCallViewModel to the InCallScreen.
+        composable(
+            route = NavRoutes.IN_CALL,
+            // *** Add Deep Link Information ***
+            deepLinks =
+                listOf(
+                    navDeepLink {
+                        uriPattern = "${DEEP_LINK_BASE_URI}/${NavRoutes.IN_CALL}"
+                        action = ACTION_ANSWER_AND_SHOW_UI
+                    },
+                    navDeepLink {
+                        uriPattern = "${DEEP_LINK_BASE_URI}/${NavRoutes.IN_CALL}"
+                        action = Intent.ACTION_VIEW
+                    }
+                ),
+        ) { _ ->
             InCallScreen(inCallViewModel)
         }
-        // Define the Settings screen destination.
-        composable(NavRoutes.SETTINGS) {
-            // Display the SettingsScreen. (Assumes it doesn't need a specific ViewModel here).
-            SettingsScreen()
-        }
+        composable(NavRoutes.SETTINGS) { SettingsScreen() }
     }
 }
 

@@ -38,6 +38,7 @@ import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsTorchStreng
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.UnsafeWrapper
 import androidx.camera.camera2.pipe.core.Log
+import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.compat.DynamicRangeProfilesCompat
 import androidx.camera.camera2.pipe.integration.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.pipe.integration.compat.quirk.CameraQuirks
@@ -359,7 +360,8 @@ constructor(
     override fun isUseCaseCombinationSupported(
         useCases: List<UseCase>,
         cameraMode: Int,
-        cameraConfig: androidx.camera.core.impl.CameraConfig
+        allowFeatureCombinationResolutions: Boolean,
+        cameraConfig: androidx.camera.core.impl.CameraConfig,
     ): Boolean {
         // If the UseCases exceed the resolutions then it will throw an exception
         try {
@@ -367,9 +369,13 @@ constructor(
                 cameraMode = cameraMode,
                 cameraInfoInternal = this,
                 newUseCases = useCases,
-                cameraConfig = cameraConfig,
+                allowFeatureCombinationResolutions = allowFeatureCombinationResolutions
             )
-        } catch (_: IllegalArgumentException) {
+        } catch (e: IllegalArgumentException) {
+            debug(e) {
+                "CameraInfoAdapter#isUseCaseCombinationSupported:" +
+                    " calculateSuggestedStreamSpecs failed"
+            }
             return false
         }
         return true

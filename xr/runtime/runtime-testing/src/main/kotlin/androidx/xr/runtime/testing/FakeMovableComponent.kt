@@ -16,7 +16,6 @@
 
 package androidx.xr.runtime.testing
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Dimensions
 import androidx.xr.runtime.internal.MovableComponent
 import androidx.xr.runtime.internal.MoveEventListener
@@ -24,7 +23,6 @@ import java.util.concurrent.Executor
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [MovableComponent] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeMovableComponent : MovableComponent, FakeComponent() {
 
     @MovableComponent.ScaleWithDistanceMode

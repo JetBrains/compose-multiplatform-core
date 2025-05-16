@@ -158,22 +158,6 @@ private fun SwipeToRevealChipExpandable(
     onUndoDuplicate: (() -> Unit)?
 ) {
     SwipeToRevealChip(
-        modifier =
-            modifier.semantics {
-                customActions =
-                    listOfNotNull(
-                        CustomAccessibilityAction("Delete") {
-                            onDeleteAction()
-                            true
-                        },
-                        onDuplicateAction?.let {
-                            CustomAccessibilityAction("Duplicate") {
-                                onDuplicateAction()
-                                true
-                            }
-                        }
-                    )
-            },
         revealState = revealState,
         onFullSwipe = onDeleteAction,
         primaryAction = {
@@ -215,7 +199,22 @@ private fun SwipeToRevealChipExpandable(
         Chip(
             onClick = { /*TODO*/ },
             colors = ChipDefaults.secondaryChipColors(),
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier.fillMaxWidth().semantics {
+                    customActions =
+                        listOfNotNull(
+                            CustomAccessibilityAction("Delete") {
+                                onDeleteAction()
+                                true
+                            },
+                            onDuplicateAction?.let {
+                                CustomAccessibilityAction("Duplicate") {
+                                    onDuplicateAction()
+                                    true
+                                }
+                            }
+                        )
+                },
             label = { Text(text) }
         )
     }
@@ -285,22 +284,6 @@ private fun SwipeToRevealCardExpandable(
         onDismiss = { showDialog = false },
     )
     SwipeToRevealCard(
-        modifier =
-            modifier.semantics {
-                customActions =
-                    listOf(
-                        CustomAccessibilityAction("Delete") {
-                            coroutineScope.launch {
-                                revealState.animateTo(RevealValue.RightRevealed)
-                            }
-                            true
-                        },
-                        CustomAccessibilityAction("More Options") {
-                            showDialog = true
-                            true
-                        }
-                    )
-            },
         revealState = revealState,
         onFullSwipe = {
             coroutineScope.launch { revealState.animateTo(RevealValue.RightRevealed) }
@@ -343,7 +326,22 @@ private fun SwipeToRevealCardExpandable(
     ) {
         AppCard(
             onClick = {},
-            modifier = Modifier.width(width = 200.dp),
+            modifier =
+                Modifier.width(width = 200.dp).semantics {
+                    customActions =
+                        listOf(
+                            CustomAccessibilityAction("Delete") {
+                                coroutineScope.launch {
+                                    revealState.animateTo(RevealValue.RightRevealed)
+                                }
+                                true
+                            },
+                            CustomAccessibilityAction("More Options") {
+                                showDialog = true
+                                true
+                            }
+                        )
+                },
             appName = { Text("Gmail") },
             appImage = {
                 Icon(

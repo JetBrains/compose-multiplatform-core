@@ -54,7 +54,7 @@ package androidx.room {
 
   public class InvalidationTracker {
     method @WorkerThread public void addObserver(androidx.room.InvalidationTracker.Observer observer);
-    method public final kotlinx.coroutines.flow.Flow<java.util.Set<java.lang.String>> createFlow(String[] tables);
+    method public final kotlinx.coroutines.flow.Flow<java.util.Set<java.lang.String>> createFlow(java.lang.String... tables);
     method public final kotlinx.coroutines.flow.Flow<java.util.Set<java.lang.String>> createFlow(String[] tables, optional boolean emitInitialState);
     method public final void refreshAsync();
     method public void refreshVersionsAsync();

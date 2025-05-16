@@ -40,6 +40,9 @@ import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.mocks.MockScreenFlash
 import androidx.camera.testing.impl.video.AudioChecker
 import androidx.camera.testing.impl.video.RecordingSession
+import androidx.camera.testing.impl.video.RecordingSession.Companion.DEFAULT_VERIFY_STATUS_COUNT
+import androidx.camera.testing.impl.video.RecordingSession.Companion.DEFAULT_VERIFY_STATUS_TIMEOUT_MS
+import androidx.camera.testing.impl.video.RecordingSession.Companion.DEFAULT_VERIFY_TIMEOUT_MS
 import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapabilities
@@ -480,6 +483,40 @@ class UseCaseCombinationTest(
         imageAnalysisMonitor.waitForImageAnalysis()
     }
 
+    @Test
+    fun canRecordVideoAfterImageCaptureCompletes_whenAllUseCasesCombined() {
+        // Arrange.
+        checkAndPrepareVideoCaptureSources(
+            verifyStatusCount = 30, // records video for around 1s assuming 30 FPS,
+            verifyTimeoutMs = 8000L, // increased timeout for higher status count
+            verifyStatusTimeoutMs = 18000L,
+        )
+        checkAndBindUseCases(preview, videoCapture, imageCapture, imageAnalysis)
+
+        // Act & assert.
+        imageCapture.waitForCapturing()
+        recordingSession.createRecording().recordAndVerify()
+    }
+
+    @Test
+    fun canRecordVideoAfterTwoImageCapturesRequested_whenAllUseCasesCombined() {
+        // Arrange.
+        checkAndPrepareVideoCaptureSources(
+            verifyStatusCount = 60, // records video for around 2s assuming 30 FPS,
+            verifyTimeoutMs = 10000L, // increased timeout for higher status count
+            verifyStatusTimeoutMs = 20000L,
+        )
+        checkAndBindUseCases(preview, videoCapture, imageCapture, imageAnalysis)
+
+        // Act & assert.
+        val callback1 = imageCapture.triggerCapturing()
+        val callback2 = imageCapture.triggerCapturing()
+        recordingSession.createRecording().recordAndVerify()
+        callback1.verifyCapture()
+        callback2.verifyCapture()
+        imageCapture.waitForCapturing()
+    }
+
     private fun initPreview(monitor: PreviewMonitor, setSurfaceProvider: Boolean = true): Preview {
         return Preview.Builder().setTargetName("Preview").build().apply {
             if (setSurfaceProvider) {
@@ -499,21 +536,14 @@ class UseCaseCombinationTest(
     }
 
     private fun ImageCapture.waitForCapturing(timeMillis: Long = 10000, useFlash: Boolean = false) {
-        val callback =
-            object : ImageCapture.OnImageCapturedCallback() {
-                val latch = CountDownLatch(1)
-                val errors = mutableListOf<ImageCaptureException>()
+        val callback = triggerCapturing(useFlash = useFlash)
+        callback.verifyCapture(timeMillis = timeMillis)
+    }
 
-                override fun onCaptureSuccess(image: ImageProxy) {
-                    image.close()
-                    latch.countDown()
-                }
-
-                override fun onError(exception: ImageCaptureException) {
-                    errors.add(exception)
-                    latch.countDown()
-                }
-            }
+    private fun ImageCapture.triggerCapturing(
+        useFlash: Boolean = false,
+    ): ImageCaptureCallback {
+        val callback = ImageCaptureCallback()
 
         if (useFlash) {
             if (cameraSelector.lensFacing == CameraSelector.LENS_FACING_FRONT) {
@@ -526,15 +556,21 @@ class UseCaseCombinationTest(
             flashMode = ImageCapture.FLASH_MODE_OFF
         }
 
-        takePicture(Dispatchers.Main.asExecutor(), callback)
+        takePicture(
+            Dispatchers.Main.asExecutor(),
+            callback.apply {
+                invokeOnComplete {
+                    // Just in case same imageCapture is bound to rear camera later
+                    screenFlash = null
+                }
+            }
+        )
 
-        assertThat(
-                callback.latch.await(timeMillis, TimeUnit.MILLISECONDS) && callback.errors.isEmpty()
-            )
-            .isTrue()
+        return callback
+    }
 
-        // Just in case same imageCapture is bound to rear camera later
-        screenFlash = null
+    private fun ImageCaptureCallback.verifyCapture(timeMillis: Long = 10000) {
+        assertThat(latch.await(timeMillis, TimeUnit.MILLISECONDS) && errors.isEmpty()).isTrue()
     }
 
     class PreviewMonitor {
@@ -619,7 +655,11 @@ class UseCaseCombinationTest(
         instrumentation.runOnMainSync { cameraProvider.unbind(*useCases) }
     }
 
-    private fun checkAndPrepareVideoCaptureSources() {
+    private fun checkAndPrepareVideoCaptureSources(
+        verifyStatusCount: Int = DEFAULT_VERIFY_STATUS_COUNT,
+        verifyTimeoutMs: Long = DEFAULT_VERIFY_TIMEOUT_MS,
+        verifyStatusTimeoutMs: Long = DEFAULT_VERIFY_STATUS_TIMEOUT_MS,
+    ) {
         skipVideoRecordingTestIfNotSupportedByEmulator()
         videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
         videoCapabilities = Recorder.getVideoCapabilities(cameraInfo)
@@ -632,7 +672,33 @@ class UseCaseCombinationTest(
                         FileOutputOptions.Builder(temporaryFolder.newFile()).build()
                     },
                     withAudio = audioStreamAvailable,
+                    verifyStatusCount = verifyStatusCount,
+                    verifyTimeoutMs = verifyTimeoutMs,
+                    verifyStatusTimeoutMs = verifyStatusTimeoutMs,
                 )
             )
+    }
+
+    class ImageCaptureCallback : ImageCapture.OnImageCapturedCallback() {
+        val latch = CountDownLatch(1)
+        val errors = mutableListOf<ImageCaptureException>()
+
+        private val onCompleteBlocks = mutableListOf<() -> Unit>()
+
+        override fun onCaptureSuccess(image: ImageProxy) {
+            image.close()
+            latch.countDown()
+            onCompleteBlocks.forEach { it.invoke() }
+        }
+
+        override fun onError(exception: ImageCaptureException) {
+            errors.add(exception)
+            latch.countDown()
+            onCompleteBlocks.forEach { it.invoke() }
+        }
+
+        fun invokeOnComplete(block: () -> Unit) {
+            onCompleteBlocks.add(block)
+        }
     }
 }

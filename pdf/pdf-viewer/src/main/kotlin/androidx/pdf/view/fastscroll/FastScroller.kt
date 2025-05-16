@@ -25,6 +25,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.util.Range
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.core.animation.doOnEnd
 import androidx.core.graphics.toRect
 import androidx.pdf.R
@@ -44,7 +45,7 @@ import androidx.pdf.util.buildPageIndicatorLabel
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FastScroller(
-    public val fastScrollDrawer: FastScrollDrawer,
+    @get:VisibleForTesting public val fastScrollDrawer: FastScrollDrawer,
     private val scrollCalculator: FastScrollCalculator
 ) {
     // Init position for fastScrollY with the top margin of the scroller.
@@ -202,7 +203,8 @@ public class FastScroller(
      * @return True if the touch event is within the bounds of the scrubber, false otherwise.
      */
     internal fun isPointOnThumb(x: Float, y: Float, viewWidth: Int): Boolean {
-        val thumbX = viewWidth - fastScrollDrawer.thumbWidthPx.toFloat()
+        val thumbX =
+            viewWidth - (fastScrollDrawer.thumbWidthPx.toFloat() + fastScrollDrawer.thumbMarginEnd)
         val thumbYRange =
             fastScrollY.toFloat()..(fastScrollY.toFloat() +
                     fastScrollDrawer.thumbHeightPx.toFloat())

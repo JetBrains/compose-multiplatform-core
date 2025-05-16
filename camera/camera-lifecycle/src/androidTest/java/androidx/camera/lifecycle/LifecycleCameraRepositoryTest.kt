@@ -18,6 +18,8 @@ package androidx.camera.lifecycle
 import android.util.Range
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CompositionSettings
+import androidx.camera.core.ExperimentalSessionConfig
+import androidx.camera.core.LegacySessionConfig
 import androidx.camera.core.UseCase
 import androidx.camera.core.ViewPort
 import androidx.camera.core.concurrent.CameraCoordinator
@@ -45,6 +47,7 @@ import org.junit.Test
 
 @SmallTest
 @SdkSuppress(minSdkVersion = 21)
+@OptIn(ExperimentalSessionConfig::class)
 class LifecycleCameraRepositoryTest {
     private lateinit var lifecycleOwner: FakeLifecycleOwner
     private lateinit var repository: LifecycleCameraRepository
@@ -180,7 +183,7 @@ class LifecycleCameraRepositoryTest {
         repository.bindToLifecycleCameraExt(lifecycleCamera, listOf(useCase))
 
         // Unbinds the use case that was bound previously.
-        repository.unbind(listOf(useCase))
+        repository.unbind(LegacySessionConfig(listOf(useCase)))
 
         // LifecycleCamera is not active if LifecycleCamera has no use case bound after unbinding
         // the use case.
@@ -197,7 +200,7 @@ class LifecycleCameraRepositoryTest {
         repository.bindToLifecycleCameraExt(lifecycleCamera, listOf(useCase0, useCase1))
 
         // Only unbinds one use case but another one is kept in the LifecycleCamera.
-        repository.unbind(listOf(useCase0))
+        repository.unbind(LegacySessionConfig(listOf(useCase0)))
 
         // LifecycleCamera is active if LifecycleCamera still has use case bound after unbinding
         // the use case.
@@ -281,7 +284,7 @@ class LifecycleCameraRepositoryTest {
         repository.bindToLifecycleCameraExt(lifecycleCamera1, listOf(useCase))
 
         // Unbinds use case from the most recent active LifecycleCamera.
-        repository.unbind(listOf(useCase))
+        repository.unbind(LegacySessionConfig(listOf(useCase)))
 
         // The most recent active LifecycleCamera becomes inactive after all use case unbound
         // from it.
@@ -627,7 +630,7 @@ class LifecycleCameraRepositoryTest {
 
     private fun LifecycleCameraRepository.bindToLifecycleCameraExt(
         lifecycleCamera: LifecycleCamera,
-        useCases: Collection<UseCase>,
+        useCases: List<UseCase>,
         viewPort: ViewPort? = null,
         effects: List<CameraEffect> = emptyList(),
         targetHighSpeedFrameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
@@ -635,10 +638,7 @@ class LifecycleCameraRepositoryTest {
     ) {
         bindToLifecycleCamera(
             lifecycleCamera,
-            viewPort,
-            effects,
-            targetHighSpeedFrameRate,
-            useCases,
+            LegacySessionConfig(useCases, viewPort, effects, targetHighSpeedFrameRate),
             cameraCoordinator
         )
     }

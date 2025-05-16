@@ -37,7 +37,6 @@ dependencies {
     api(libs.kotlinStdlib)
     implementation(project(":wear:protolayout:protolayout-material-core"))
     lintChecks(project(":wear:protolayout:protolayout-lint"))
-    lintPublish(project(":wear:protolayout:protolayout-lint"))
     compileOnly(project(":annotation:annotation-sampled"))
     implementation("androidx.annotation:annotation-experimental:1.4.1")
     implementation("androidx.core:core:1.15.0")

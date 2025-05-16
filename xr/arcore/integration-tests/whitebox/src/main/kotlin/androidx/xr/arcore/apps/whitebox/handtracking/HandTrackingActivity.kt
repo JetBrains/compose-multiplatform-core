@@ -40,7 +40,6 @@ import androidx.xr.arcore.apps.whitebox.common.BackToMainActivityButton
 import androidx.xr.arcore.apps.whitebox.common.SessionLifecycleHelper
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.HandJointType
-import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
@@ -149,7 +148,9 @@ class HandTrackingActivity : ComponentActivity() {
 
                     lifecycleScope.launch {
                         session.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                            session.configure(Config(handTracking = HandTrackingMode.Enabled))
+                            session.configure(
+                                Config(handTracking = Config.HandTrackingMode.Enabled)
+                            )
                             setContent { MainPanel(session) }
 
                             val xyzModel = GltfModel.create(session, "models/xyzArrows.glb").await()

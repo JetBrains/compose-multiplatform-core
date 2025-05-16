@@ -8,8 +8,8 @@ package androidx.compose.material3.adaptive {
   public final class AndroidWindowAdaptiveInfo_androidKt {
     method @androidx.compose.runtime.Composable public static androidx.compose.runtime.State<java.util.List<androidx.window.layout.FoldingFeature>> collectFoldingFeaturesAsState();
     method @androidx.compose.runtime.Composable public static androidx.compose.material3.adaptive.WindowAdaptiveInfo currentWindowAdaptiveInfo();
-    method @SuppressCompatibility @androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi @androidx.compose.runtime.Composable public static long currentWindowDpSize();
-    method @androidx.compose.runtime.Composable public static long currentWindowSize();
+    method @Deprecated @SuppressCompatibility @androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi @androidx.compose.runtime.Composable public static long currentWindowDpSize();
+    method @Deprecated @androidx.compose.runtime.Composable public static long currentWindowSize();
   }
 
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This material3 adaptive API is experimental and is likely to change or to beremoved in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalMaterial3AdaptiveApi {
@@ -62,6 +62,11 @@ package androidx.compose.material3.adaptive {
     method public androidx.window.core.layout.WindowSizeClass getWindowSizeClass();
     property public androidx.compose.material3.adaptive.Posture windowPosture;
     property public androidx.window.core.layout.WindowSizeClass windowSizeClass;
+  }
+
+  public final class WindowAdaptiveInfoKt {
+    method @SuppressCompatibility @androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi @androidx.compose.runtime.Composable public static long currentWindowDpSize();
+    method @androidx.compose.runtime.Composable public static long currentWindowSize();
   }
 
 }

@@ -144,6 +144,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.semantics.isSensitiveData
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.pageUp
 import androidx.compose.ui.semantics.paneTitle
@@ -228,6 +229,7 @@ import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.hamcrest.CoreMatchers.instanceOf
+import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -294,6 +296,11 @@ class AndroidAccessibilityTest {
             delegate.accessibilityForceEnabledForTesting = true
             provider = delegate.getAccessibilityNodeProvider(androidComposeView)
         }
+    }
+
+    @After
+    fun teardown() {
+        delegate.requestFromAccessibilityToolForTesting = null
     }
 
     @Test
@@ -880,6 +887,69 @@ class AndroidAccessibilityTest {
                 @Suppress("DEPRECATION") recycle()
             }
         }
+    }
+
+    @Test
+    fun testCreateAccessibilityNodeInfo_visibleToToolIfSensitiveData() {
+        delegate.requestFromAccessibilityToolForTesting = true
+
+        val colTag = "column"
+        val text = "Test"
+        container.setContent {
+            Column(Modifier.testTag(colTag).semantics { isTraversalGroup = false }) {
+                BasicText(text = text, modifier = Modifier.semantics { isSensitiveData = true })
+            }
+        }
+        val columnNode = rule.onNodeWithTag(colTag).fetchSemanticsNode()
+        val columnNodeInfo = provider.createAccessibilityNodeInfo(columnNode.id)
+        val textNode = rule.onNodeWithText(text).fetchSemanticsNode()
+        val textNodeInfo = provider.createAccessibilityNodeInfo(textNode.id)
+
+        assertThat(columnNodeInfo).isNotNull()
+        assertThat(columnNodeInfo?.childCount).isEqualTo(1)
+        assertThat(textNodeInfo).isNotNull()
+    }
+
+    @Test
+    fun testCreateAccessibilityNodeInfo_visibleToNontoolIfNotSensitiveData() {
+        delegate.requestFromAccessibilityToolForTesting = false
+
+        val colTag = "column"
+        val text = "Test"
+        container.setContent {
+            Column(Modifier.testTag(colTag).semantics { isTraversalGroup = false }) {
+                BasicText(text = text, modifier = Modifier.semantics { isSensitiveData = false })
+            }
+        }
+        val columnNode = rule.onNodeWithTag(colTag).fetchSemanticsNode()
+        val columnNodeInfo = provider.createAccessibilityNodeInfo(columnNode.id)
+        val textNode = rule.onNodeWithText(text).fetchSemanticsNode()
+        val textNodeInfo = provider.createAccessibilityNodeInfo(textNode.id)
+
+        assertThat(columnNodeInfo).isNotNull()
+        assertThat(columnNodeInfo?.childCount).isEqualTo(1)
+        assertThat(textNodeInfo).isNotNull()
+    }
+
+    @Test
+    fun testCreateAccessibilityNodeInfo_hiddenFromNontoolIfSensitiveData() {
+        delegate.requestFromAccessibilityToolForTesting = false
+
+        val colTag = "column"
+        val text = "Test"
+        container.setContent {
+            Column(Modifier.testTag(colTag).semantics { isTraversalGroup = false }) {
+                BasicText(text = text, modifier = Modifier.semantics { isSensitiveData = true })
+            }
+        }
+        val columnNode = rule.onNodeWithTag(colTag).fetchSemanticsNode()
+        val columnNodeInfo = provider.createAccessibilityNodeInfo(columnNode.id)
+        val textNode = rule.onNodeWithText(text).fetchSemanticsNode()
+        val textNodeInfo = provider.createAccessibilityNodeInfo(textNode.id)
+
+        assertThat(columnNodeInfo).isNotNull()
+        assertThat(columnNodeInfo?.childCount).isEqualTo(0)
+        assertThat(textNodeInfo).isNull()
     }
 
     @Composable
@@ -2495,6 +2565,42 @@ class AndroidAccessibilityTest {
         // Assert.
         rule.onNodeWithTag(tag).assertIsOn()
         assertThat(actionPerformed).isFalse()
+    }
+
+    @Test
+    fun testPerformAction_succeedFromToolIfSensitiveData() {
+        delegate.requestFromAccessibilityToolForTesting = true
+
+        val tag = "node"
+        container.setContent {
+            Box(Modifier.testTag(tag).semantics { isSensitiveData = true }.focusable()) {
+                BasicText("focusable")
+            }
+        }
+
+        val focusableNode = rule.onNodeWithTag(tag).fetchSemanticsNode()
+        rule.runOnUiThread {
+            assertThat(provider.performAction(focusableNode.id, ACTION_FOCUS, null)).isTrue()
+        }
+        rule.onNodeWithTag(tag).assert(expectValue(SemanticsProperties.Focused, true))
+    }
+
+    @Test
+    fun testPerformAction_failFromNontoolIfSensitiveData() {
+        delegate.requestFromAccessibilityToolForTesting = false
+
+        val tag = "node"
+        container.setContent {
+            Box(Modifier.testTag(tag).semantics { isSensitiveData = true }.focusable()) {
+                BasicText("focusable")
+            }
+        }
+
+        val focusableNode = rule.onNodeWithTag(tag).fetchSemanticsNode()
+        rule.runOnUiThread {
+            assertThat(provider.performAction(focusableNode.id, ACTION_FOCUS, null)).isFalse()
+        }
+        rule.onNodeWithTag(tag).assert(expectValue(SemanticsProperties.Focused, false))
     }
 
     @Test
@@ -4116,6 +4222,29 @@ class AndroidAccessibilityTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = 34)
+    fun testCreateEvent_SensitiveDataFieldMatchesNode() {
+        setContent {
+            BasicTextField(
+                modifier = Modifier.testTag(tag).semantics { isSensitiveData = true },
+                value = "value",
+                onValueChange = {},
+            )
+        }
+
+        rule.onNodeWithTag(tag).performSemanticsAction(SetText) { it(AnnotatedString("new value")) }
+
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+        rule.runOnIdle {
+            verify(container, atLeastOnce())
+                .requestSendAccessibilityEvent(
+                    any(),
+                    argThat(ArgumentMatcher { it.isAccessibilityDataSensitive })
+                )
+        }
+    }
+
+    @Test
     fun testLayerParamChange_setCorrectBounds_syntaxOne() {
         var scale by mutableStateOf(1f)
         setContent {
@@ -5209,6 +5338,143 @@ class AndroidAccessibilityTest {
             assertThat(child1.isVisibleToUser).isTrue()
             assertThat(child2.isVisibleToUser).isTrue()
             assertThat(child3.isVisibleToUser).isTrue()
+        }
+    }
+
+    @Test
+    fun testTransparentNode_withAlphaAndClickableModifiers_notAccessible() {
+        // Arrange.
+        setContent {
+            Column(Modifier.testTag("parent")) {
+                Box(
+                    modifier =
+                        Modifier.alpha(0f).clickable(onClick = {}).semantics {
+                            testTag = "child"
+                            contentDescription = "Test"
+                        }
+                )
+            }
+        }
+        val parentId = rule.onNodeWithTag("parent").semanticsId()
+        val childId = rule.onNodeWithTag("child").semanticsId()
+
+        // Act.
+        rule.waitForIdle()
+        val parent = createAccessibilityNodeInfo(parentId)
+        val child = createAccessibilityNodeInfo(childId)
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(parent.childCount).isEqualTo(1)
+            assertThat(child.isVisibleToUser).isFalse()
+        }
+    }
+
+    @Test
+    fun testTransparentNode_withAlphaAndMultipleClickableModifiers_accessible() {
+        // Arrange.
+        setContent {
+            Column(Modifier.testTag("parent")) {
+                Box(
+                    modifier =
+                        Modifier.clickable(onClick = {})
+                            .alpha(0f)
+                            .clickable(onClick = {})
+                            .semantics {
+                                testTag = "child"
+                                contentDescription = "Test"
+                            }
+                )
+            }
+        }
+        val parentId = rule.onNodeWithTag("parent").semanticsId()
+        val childId = rule.onNodeWithTag("child").semanticsId()
+
+        // Act.
+        rule.waitForIdle()
+        val parent = createAccessibilityNodeInfo(parentId)
+        val child = createAccessibilityNodeInfo(childId)
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(parent.childCount).isEqualTo(1)
+            assertThat(child.isVisibleToUser).isTrue()
+        }
+    }
+
+    @Test
+    fun testTransparentNode_withMultipleAlphaAndNestedClickableNodes_notAccessible() {
+        // Arrange.
+        setContent {
+            Column(Modifier.testTag("parent")) {
+                Box(
+                    Modifier.alpha(1f).alpha(0f).alpha(1f).clickable(onClick = {}).semantics {
+                        testTag = "child1"
+                        contentDescription = "test"
+                    }
+                ) {
+                    Box(
+                        Modifier.clickable(onClick = {}).semantics {
+                            testTag = "child2"
+                            contentDescription = "test"
+                        }
+                    )
+                }
+            }
+        }
+        val parentId = rule.onNodeWithTag("parent").semanticsId()
+        val child1Id = rule.onNodeWithTag("child1").semanticsId()
+        val child2Id = rule.onNodeWithTag("child2").semanticsId()
+
+        // Act.
+        rule.waitForIdle()
+        val parent = createAccessibilityNodeInfo(parentId)
+        val child1 = createAccessibilityNodeInfo(child1Id)
+        val child2 = createAccessibilityNodeInfo(child2Id)
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(parent.childCount).isEqualTo(1)
+            assertThat(child1.isVisibleToUser).isFalse()
+            assertThat(child2.isVisibleToUser).isFalse()
+        }
+    }
+
+    @Test
+    fun testNonTransparentNode_withMultipleAlphaAndNestedClickableNodes_parentAccessible() {
+        // Arrange.
+        setContent {
+            Column(Modifier.testTag("parent")) {
+                Box(
+                    Modifier.alpha(1f).clickable(onClick = {}).alpha(0f).alpha(1f).semantics {
+                        testTag = "child1"
+                        contentDescription = "test"
+                    }
+                ) {
+                    Box(
+                        Modifier.clickable(onClick = {}).semantics {
+                            testTag = "child2"
+                            contentDescription = "test"
+                        }
+                    )
+                }
+            }
+        }
+        val parentId = rule.onNodeWithTag("parent").semanticsId()
+        val child1Id = rule.onNodeWithTag("child1").semanticsId()
+        val child2Id = rule.onNodeWithTag("child2").semanticsId()
+
+        // Act.
+        rule.waitForIdle()
+        val parent = createAccessibilityNodeInfo(parentId)
+        val child1 = createAccessibilityNodeInfo(child1Id)
+        val child2 = createAccessibilityNodeInfo(child2Id)
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(parent.childCount).isEqualTo(1)
+            assertThat(child1.isVisibleToUser).isTrue()
+            assertThat(child2.isVisibleToUser).isFalse()
         }
     }
 

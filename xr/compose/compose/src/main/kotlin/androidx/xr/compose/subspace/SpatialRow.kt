@@ -17,7 +17,6 @@
 package androidx.xr.compose.subspace
 
 import androidx.annotation.FloatRange
-import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
@@ -38,7 +37,6 @@ import androidx.xr.scenecore.ContentlessEntity
  */
 @Composable
 @SubspaceComposable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialRow(
     modifier: SubspaceModifier = SubspaceModifier,
     alignment: SpatialAlignment = SpatialAlignment.Center,
@@ -61,7 +59,6 @@ public fun SpatialRow(
  */
 @Composable
 @SubspaceComposable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialCurvedRow(
     modifier: SubspaceModifier = SubspaceModifier,
     alignment: SpatialAlignment = SpatialAlignment.Center,
@@ -114,7 +111,6 @@ private fun SpatialRow(
 
 /** Scope for customizing the layout of children within a [SpatialRow]. */
 @LayoutScopeMarker
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SpatialRowScope {
     /**
      * Sizes the element's width proportionally to its [weight] relative to other weighted sibling
@@ -156,7 +152,6 @@ public interface SpatialRowScope {
 }
 
 /** Contains the default values used by [SpatialCurvedRow]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public object SpatialCurvedRowDefaults {
     /** Default curve radius used by [SpatialCurvedRow]. */
     public val curveRadius: Dp = 825.dp

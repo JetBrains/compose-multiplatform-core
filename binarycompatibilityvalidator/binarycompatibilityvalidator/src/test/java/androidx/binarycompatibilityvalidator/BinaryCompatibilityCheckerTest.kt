@@ -51,6 +51,51 @@ class BinaryCompatibilityCheckerTest {
     }
 
     @Test
+    fun throwsOnTargetRemoval() {
+        val previousDump = createDumpText("", listOf("linux", "ios"))
+        val currentDump = createDumpText("", listOf("linux"))
+        val e =
+            assertFailsWith<ValidationException> {
+                BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
+                    KlibDumpParser(currentDump).parse(),
+                    KlibDumpParser(previousDump).parse(),
+                    shouldFreeze = false
+                )
+            }
+        assertThat(e.message).contains("[ios]: Target was removed")
+    }
+
+    @Test
+    fun allowsTargetAdditions() {
+        val previousDump = createDumpText("", listOf("linux"))
+        val currentDump = createDumpText("", listOf("linux", "ios"))
+        KlibDumpParser(previousDump).parse()
+        KlibDumpParser(currentDump).parse()
+        BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
+            KlibDumpParser(currentDump).parse(),
+            KlibDumpParser(previousDump).parse(),
+            shouldFreeze = false
+        )
+    }
+
+    @Test
+    fun throwsOnAdditionalTargetsWhenAPIIsFrozen() {
+        val previousDump = createDumpText("", listOf("linux"))
+        val currentDump = createDumpText("", listOf("linux", "ios"))
+        KlibDumpParser(previousDump).parse()
+        KlibDumpParser(currentDump).parse()
+        val e =
+            assertFailsWith<ValidationException> {
+                BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
+                    KlibDumpParser(currentDump).parse(),
+                    KlibDumpParser(previousDump).parse(),
+                    shouldFreeze = true
+                )
+            }
+        assertThat(e.message).contains("[ios]: Target was added")
+    }
+
+    @Test
     fun makePublicPrivate() {
         val beforeText =
             """
@@ -541,6 +586,64 @@ class BinaryCompatibilityCheckerTest {
         }
         """
         testBeforeAndAfterIsCompatible(beforeText, afterText)
+    }
+
+    @Test
+    fun multiplePropertiesWithTheSameNameVarToVal() {
+        // Uses a two properties with the same name, one with a receiver and one without to make
+        // sure we don't collapse them to a single value when doing our checks
+        val beforeText =
+            """
+        final var my.lib/bar // my.lib/bar|@kotlin.Int{}bar[0]
+            final fun (kotlin/Int).<get-bar>(): kotlin/String // my.lib/bar.<get-bar>|<get-bar>@kotlin.Int(){}[0]
+            final fun (kotlin/Int).<set-bar>(kotlin/String) // my.lib/bar.<set-bar>|<set-bar>@kotlin.Int(kotlin.String){}[0]
+        final var my.lib/bar // my.lib/bar|{}bar[0]
+            final fun <get-bar>(): kotlin/String // my.lib/bar.<get-bar>|<get-bar>(){}[0]
+            final fun <set-bar>(kotlin/String) // my.lib/bar.<set-bar>|<set-bar>(kotlin.String){}[0]
+        """
+        val afterText =
+            """
+        // Library unique name: <org.jetbrains.kotlinx.multiplatform-library-template:library>
+        final val my.lib/bar // my.lib/bar|@kotlin.Int{}bar[0]
+            final fun (kotlin/Int).<get-bar>(): kotlin/String // my.lib/bar.<get-bar>|<get-bar>@kotlin.Int(){}[0]
+        final val my.lib/bar // my.lib/bar|{}bar[0]
+            final fun <get-bar>(): kotlin/String // my.lib/bar.<get-bar>|<get-bar>(){}[0]
+
+        """
+        val expectedErrors =
+            listOf(
+                "kind changed from VAR to VAL for (kotlin/Int).my.lib/bar",
+                "kind changed from VAR to VAL for my.lib/bar"
+            )
+        testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrors)
+    }
+
+    @Test
+    fun multiplePropertiesWithTheSameNameButDifferentContextVarToVal() {
+        // Uses a two properties with the same name, one with a receiver and one without to make
+        // sure we don't collapse them to a single value when doing our checks
+        val afterText =
+            """
+            final val my.lib/bar // my.lib/bar|@kotlin.Int{}bar[0]
+                final fun context(kotlin/Int) (kotlin/Int).<get-bar>(): kotlin/String // my.lib/bar.<get-bar>|<get-bar>!kotlin.Int@kotlin.Int(){}[0]
+            final val my.lib/bar // my.lib/bar|{}bar[0]
+                final fun context(kotlin/String) <get-bar>(): kotlin/String // my.lib/bar.<get-bar>|<get-bar>!kotlin.String(){}[0]
+        """
+        val beforeText =
+            """
+        final var my.lib/bar // my.lib/bar|@kotlin.Int{}bar[0]
+            final fun context(kotlin/Int) (kotlin/Int).<get-bar>(): kotlin/String // my.lib/bar.<get-bar>|<get-bar>!kotlin.Int@kotlin.Int(){}[0]
+            final fun context(kotlin/Int) (kotlin/Int).<set-bar>(kotlin/String) // my.lib/bar.<set-bar>|<set-bar>!kotlin.Int@kotlin.Int(kotlin.String){}[0]
+        final var my.lib/bar // my.lib/bar|{}bar[0]
+            final fun context(kotlin/String) <get-bar>(): kotlin/String // my.lib/bar.<get-bar>|<get-bar>!kotlin.String(){}[0]
+            final fun context(kotlin/String) <set-bar>(kotlin/String) // my.lib/bar.<set-bar>|<set-bar>!kotlin.String(kotlin.String){}[50]
+        """
+        val expectedErrors =
+            listOf(
+                "kind changed from VAR to VAL for context(kotlin/Int) (kotlin/Int).my.lib/bar",
+                "kind changed from VAR to VAL for context(kotlin/String) my.lib/bar"
+            )
+        testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrors)
     }
 
     @Test
@@ -1091,6 +1194,27 @@ class BinaryCompatibilityCheckerTest {
     }
 
     @Test
+    fun addNewEntityWhenFrozen() {
+        val beforeText =
+            """
+        final class my.lib/A {
+            constructor <init>()
+        }
+        """
+        val afterText =
+            """
+        final class my.lib/A {
+            constructor <init>()
+        }
+        final class my.lib/B {
+            constructor <init>()
+        }
+        """
+        val expectedErrors = listOf("Added declaration my.lib/B to androidx:library")
+        testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrors, shouldFreeze = true)
+    }
+
+    @Test
     fun addNewAbstractMethodToClass() {
         val beforeText =
             """
@@ -1444,32 +1568,43 @@ class BinaryCompatibilityCheckerTest {
     private fun testBeforeAndAfterIsCompatible(
         before: String,
         after: String,
-        baselines: Set<String> = emptySet()
+        baselines: Set<String> = emptySet(),
+        shouldFreeze: Boolean = false
     ) {
-        runBeforeAndAfter(before, after, baselines)
+        runBeforeAndAfter(before, after, baselines, shouldFreeze)
     }
 
     private fun testBeforeAndAfterIsIncompatible(
         before: String,
         after: String,
         expectedErrors: List<String>,
-        baselines: Set<String> = emptySet()
+        baselines: Set<String> = emptySet(),
+        shouldFreeze: Boolean = false
     ) {
-        val e = assertFailsWith<ValidationException> { runBeforeAndAfter(before, after, baselines) }
+        val e =
+            assertFailsWith<ValidationException> {
+                runBeforeAndAfter(before, after, baselines, shouldFreeze)
+            }
         for (error in expectedErrors) assertThat(e.message).contains(error)
     }
 
     private fun runBeforeAndAfter(
         before: String,
         after: String,
-        baselines: Set<String> = emptySet()
+        baselines: Set<String> = emptySet(),
+        shouldFreeze: Boolean = false
     ) {
         val beforeText = createDumpText(before)
         val afterText = createDumpText(after)
         val beforeLibs = KlibDumpParser(beforeText).parse()
         val afterLibs = KlibDumpParser(afterText).parse()
 
-        BinaryCompatibilityChecker.checkAllBinariesAreCompatible(afterLibs, beforeLibs, baselines)
+        BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
+            afterLibs,
+            beforeLibs,
+            baselines,
+            shouldFreeze = shouldFreeze
+        )
     }
 
     private fun createDumpText(

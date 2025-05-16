@@ -588,7 +588,6 @@ public final class CustomTabsSession {
      *
      * Use {@link CustomTabsClient#attachSession(PendingSession)} to get {@link CustomTabsSession}.
      */
-    @ExperimentalPendingSession
     public static class PendingSession {
         private final @Nullable CustomTabsCallback mCallback;
         private final @Nullable PendingIntent mId;

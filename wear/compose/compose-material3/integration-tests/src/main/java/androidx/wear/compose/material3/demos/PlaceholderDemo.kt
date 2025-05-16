@@ -410,23 +410,21 @@ fun PlaceholderCardList() {
             item { ListHeader { Text("Placeholders on Cards", textAlign = TextAlign.Center) } }
             repeat(4) { itemIndex ->
                 item {
-                    TransformExclusion {
-                        CardWithPlaceholder(
-                            modifier =
-                                Modifier.fillMaxWidth()
-                                    .graphicsLayer {
-                                        with(transformationSpec) {
-                                            applyContainerTransformation(scrollProgress)
-                                        }
+                    CardWithPlaceholder(
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .graphicsLayer {
+                                    with(transformationSpec) {
+                                        applyContainerTransformation(scrollProgress)
                                     }
-                                    .transformedHeight(this, transformationSpec),
-                            placeholderVisible = { !showContent[itemIndex].value },
-                            content = {
-                                Text("Some content $refreshCount")
-                                Text("Some more content")
-                            }
-                        )
-                    }
+                                }
+                                .transformedHeight(this, transformationSpec),
+                        placeholderVisible = { !showContent[itemIndex].value },
+                        content = {
+                            Text("Some content $refreshCount")
+                            Text("Some more content")
+                        }
+                    )
                 }
             }
         }

@@ -16,7 +16,6 @@
 
 package androidx.xr.arcore
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Pose
 
 /**
@@ -28,7 +27,6 @@ import androidx.xr.runtime.math.Pose
  * @property hitPose the [Pose] of the intersection between a ray and the [Trackable].
  * @property trackable the [Trackable] that was hit.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class HitResult
 internal constructor(
     public val distance: Float,

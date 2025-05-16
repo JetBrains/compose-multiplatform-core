@@ -16,7 +16,6 @@
 
 package androidx.xr.compose.testing
 
-import androidx.annotation.RestrictTo
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.xr.compose.subspace.node.SubspaceSemanticsInfo
 
@@ -24,7 +23,6 @@ import androidx.xr.compose.subspace.node.SubspaceSemanticsInfo
  * Wrapper for semantics matcher lambdas that allows to build string explaining to the developer
  * what conditions were being tested.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SubspaceSemanticsMatcher(
     internal val description: String,
     private val matcher: (SubspaceSemanticsInfo) -> Boolean,

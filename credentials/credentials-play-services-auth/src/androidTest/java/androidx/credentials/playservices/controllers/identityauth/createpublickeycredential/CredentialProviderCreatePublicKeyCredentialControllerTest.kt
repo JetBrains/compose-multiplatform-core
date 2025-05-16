@@ -247,7 +247,6 @@ class CredentialProviderCreatePublicKeyCredentialControllerTest {
                         TestUtils.Companion.isSubsetJson(expectedJson, actualJson, requiredKeys)
                     )
                     .isTrue()
-                // TODO("Add remaining tests in detail after discussing ideal form")
             } catch (e: JSONException) {
                 throw java.lang.RuntimeException(e)
             }

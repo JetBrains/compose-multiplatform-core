@@ -40,8 +40,6 @@ dependencies {
     implementation("androidx.annotation:annotation-experimental:1.4.1")
 
     lintChecks(project(":wear:protolayout:protolayout-lint"))
-    lintPublish(project(":wear:protolayout:protolayout-lint"))
-
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testCore)

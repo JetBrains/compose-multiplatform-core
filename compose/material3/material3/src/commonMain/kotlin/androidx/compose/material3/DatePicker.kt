@@ -141,6 +141,11 @@ import kotlinx.coroutines.launch
  *
  * @sample androidx.compose.material3.samples.DateInputSample
  *
+ * A DatePicker can also be initialized with Java Time APIs when running on Android with API 26 and
+ * above:
+ *
+ * @sample androidx.compose.material3.samples.DatePickerApi26Sample
+ *
  * A DatePicker with a provided [SelectableDates] that blocks certain days from being selected looks
  * like:
  *
@@ -474,15 +479,15 @@ fun rememberDatePickerState(
  * For most cases, you are advised to use the [rememberDatePickerState] when in a composition.
  *
  * Note that in case you provide a [locale] that is different than the default platform locale, you
- * may need to ensure that the picker's title and headline localized correctly. The following sample
- * shows one possible way of doing so by applying a local composition of a `LocalContext` and
+ * may need to ensure that the picker's title and headline are localized correctly. The following
+ * sample shows one possible way of doing so by applying a local composition of a `LocalContext` and
  * `LocaleConfiguration`.
  *
  * @sample androidx.compose.material3.samples.DatePickerCustomLocaleSample
  * @param locale the [CalendarLocale] that will be used when formatting dates, determining the input
  *   format, displaying the week-day, determining the first day of the week, and more. Note that in
  *   case the provided [CalendarLocale] differs from the platform's default Locale, you may need to
- *   ensure that the picker's title and headline localized correctly, and in some cases, you may
+ *   ensure that the picker's title and headline are localized correctly, and in some cases, you may
  *   need to apply an RTL layout.
  * @param initialSelectedDateMillis timestamp in _UTC_ milliseconds from the epoch that represents
  *   an initial selection of a date. Provide a `null` to indicate no selection. Note that the

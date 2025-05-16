@@ -27,6 +27,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
+        android:layout_marginRight="12dp"
         android:background="@drawable/shape_textbox"
         android:orientation="horizontal">
 
@@ -35,6 +36,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
+            android:textDirection="locale"
             android:layout_weight="1"
             android:background="@null"
             android:clickable="true"

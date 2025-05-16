@@ -37,7 +37,7 @@ import androidx.wear.compose.material3.samples.LevelIndicatorSample
 import androidx.wear.compose.material3.samples.ListHeaderSample
 import androidx.wear.compose.material3.samples.SimpleSwipeToDismissBox
 import androidx.wear.compose.material3.samples.StatefulSwipeToDismissBox
-import androidx.wear.compose.material3.samples.SwipeToRevealNonAnchoredSample
+import androidx.wear.compose.material3.samples.SwipeToRevealNoPartiallyRevealedStateSample
 import androidx.wear.compose.material3.samples.SwipeToRevealSample
 import androidx.wear.compose.material3.samples.SwipeToRevealSingleActionCardSample
 import androidx.wear.compose.material3.samples.SwipeToRevealWithTransformingLazyColumnSample
@@ -115,7 +115,13 @@ val WearMaterial3Demos =
                         ComposableDemo("ToggleButtons") { ButtonGroupToggleButtonsDemo() },
                     )
                 ),
-                ComposableDemo("List Header") { Centralize { ListHeaderSample() } },
+                Material3DemoCategory(
+                    "List Header",
+                    listOf(
+                        ComposableDemo("List headers") { ListHeaderSample() },
+                        ComposableDemo("Long list headers") { ListHeaderDemo() },
+                    )
+                ),
                 Material3DemoCategory("Time Text", TimeTextDemos),
                 Material3DemoCategory(
                     "Card",
@@ -188,8 +194,10 @@ val WearMaterial3Demos =
                         ComposableDemo("In TransformingLazyColumn") {
                             SwipeToRevealWithTransformingLazyColumnSample()
                         },
-                        ComposableDemo("Non-anchoring") {
-                            ScalingLazyDemo { item { SwipeToRevealNonAnchoredSample() } }
+                        ComposableDemo("No Partial Reveal") {
+                            ScalingLazyDemo {
+                                item { SwipeToRevealNoPartiallyRevealedStateSample() }
+                            }
                         },
                         ComposableDemo("Long labels") { SwipeToRevealWithLongLabels() },
                         ComposableDemo("Custom Icons") { SwipeToRevealWithCustomIcons() },

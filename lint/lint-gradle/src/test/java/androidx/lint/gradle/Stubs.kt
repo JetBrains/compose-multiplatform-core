@@ -112,6 +112,8 @@ internal val STUBS =
                     fun getIsolated(): IsolatedProject
                     fun getRootProject(): Project = Project()
                     fun findProperty(propertyName: String): Object? = null
+                    fun evaluationDependsOn(path: String): Project = Project()
+                    fun evaluationDependsOnChildren() { }
                 }
 
                 interface NamedDomainObjectCollection<T> : Collection<T>, DomainObjectCollection<T>, Iterable<T> {

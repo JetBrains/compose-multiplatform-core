@@ -43,16 +43,19 @@ class FastScrollGestureDetectorTest {
     private val pdfDocument: PdfDocument = FakePdfDocument.newInstance()
     private val thumbDrawable =
         ContextCompat.getDrawable(context, R.drawable.fastscroll_background)!!
-    private val trackDrawable = ContextCompat.getDrawable(context, R.drawable.drag_indicator)!!
     private val pageIndicatorBackgroundDrawable =
         ContextCompat.getDrawable(context, R.drawable.page_indicator_background)!!
+    private val fastScrollVerticalThumbMarginEnd = 0
+    private val fastScrollPageIndicatorMarginEnd =
+        context.getDimensions(R.dimen.page_indicator_right_margin).toInt()
     private val fastScrollDrawer =
         FastScrollDrawer(
             context,
             pdfDocument,
             thumbDrawable,
-            trackDrawable,
-            pageIndicatorBackgroundDrawable
+            pageIndicatorBackgroundDrawable,
+            fastScrollVerticalThumbMarginEnd,
+            fastScrollPageIndicatorMarginEnd
         )
     private val fastScrollCalculator = FastScrollCalculator(context)
     private val fastScroller = FastScroller(fastScrollDrawer, fastScrollCalculator)

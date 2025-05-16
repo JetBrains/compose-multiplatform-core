@@ -415,6 +415,14 @@ public fun <T> Request.getOrDefault(key: CaptureRequest.Key<T>, default: T): T =
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun Request.formatForLogs(): String = "Request($streams)@${Integer.toHexString(hashCode())}"
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun Map<Any, Any>.filterToCaptureRequestParameters(): Map<CaptureRequest.Key<*>, Any> =
+    this.filterKeys { it is CaptureRequest.Key<*> }.mapKeys { it.key as CaptureRequest.Key<*> }
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun Map<Any, Any>.filterToMetadataParameters(): Map<Metadata.Key<*>, Any> =
+    this.filterKeys { it is Metadata.Key<*> }.mapKeys { it.key as Metadata.Key<*> }
+
 /** Utility function to help deal with the unsafe nature of the typed Key/Value pairs. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun CaptureRequest.Builder.writeParameters(parameters: Map<*, Any?>) {

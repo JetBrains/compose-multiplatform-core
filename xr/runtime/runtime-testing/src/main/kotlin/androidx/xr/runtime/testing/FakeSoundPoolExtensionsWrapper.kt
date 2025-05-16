@@ -17,7 +17,6 @@
 package androidx.xr.runtime.testing
 
 import android.media.SoundPool
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.PointSourceParams
 import androidx.xr.runtime.internal.SoundFieldAttributes
 import androidx.xr.runtime.internal.SoundPoolExtensionsWrapper
@@ -25,7 +24,6 @@ import androidx.xr.runtime.internal.SpatializerConstants
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [SoundPoolExtensionsWrapper] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeSoundPoolExtensionsWrapper : SoundPoolExtensionsWrapper {
     override fun play(
         soundPool: SoundPool,

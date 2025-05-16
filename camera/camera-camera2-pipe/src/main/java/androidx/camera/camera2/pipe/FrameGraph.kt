@@ -26,14 +26,18 @@ public interface FrameGraph : BaseGraph {
     public class Config
 
     /** A [FrameBuffer] is a handle to a set of streams that are attached to a [FrameGraph]. */
-    public interface FrameBuffer : AutoCloseable
+    public interface FrameBuffer : AutoCloseable {
+        public val streams: Set<StreamId>
+
+        public val parameters: Map<Any, Any?>
+    }
 
     /**
      * Attach a stream(s) and associated parameters. Closing the return value will detach the
      * stream(s).
      */
-    public fun attach(
-        streamIds: Set<StreamId>,
+    public fun captureWith(
+        streamIds: Set<StreamId> = emptySet(),
         parameters: Map<Any, Any?> = emptyMap()
     ): FrameBuffer
 

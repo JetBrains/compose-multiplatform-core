@@ -33,9 +33,13 @@ dependencies {
     api(libs.jspecify)
     api(libs.guavaListenableFuture)
     api(project(":camera:camera-core"))
+    api("androidx.lifecycle:lifecycle-livedata-core:2.3.1")
     implementation("androidx.core:core:1.0.0")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
     implementation(libs.autoValueAnnotations)
+    implementation("androidx.annotation:annotation-experimental:1.4.1")
+    implementation("androidx.lifecycle:lifecycle-common:2.3.1")
+    implementation(libs.androidx.annotation)
     annotationProcessor(libs.autoValue)
 
     compileOnly(project(":camera:camera-extensions-stub"))
@@ -49,6 +53,9 @@ dependencies {
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
+    testImplementation("org.robolectric:annotations:4.14")
+    testImplementation("org.robolectric:shadowapi:4.14")
+    testImplementation("org.robolectric:shadows-framework:4.14")
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
@@ -72,6 +79,11 @@ dependencies {
     androidTestImplementation(project(":camera:camera-testlib-extensions"))
     androidTestImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
+    androidTestImplementation(libs.espressoIdlingResource)
+    androidTestImplementation(libs.guavaAndroid)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.kotlinCoroutinesCore)
+    androidTestImplementation(libs.testMonitor)
     // To use the testlib to have the implementation of the extensions-stub interface.
 }
 

@@ -99,6 +99,7 @@ import java.io.PrintWriter
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
+import kotlin.and
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -106,7 +107,10 @@ import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.android.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -868,41 +872,50 @@ public abstract class WatchFaceService : WallpaperService() {
     internal fun periodicallyWriteComplicationDataCache(
         context: Context,
         fileName: String,
-        complicationsFlow: MutableStateFlow<Map<Int, ComplicationData>>
+        complicationsFlow: Flow<Map<Int, ComplicationData>>
     ) =
         TraceEvent("WatchFaceService.writeComplicationCache").use {
             val backgroundThreadCoroutineScope =
                 CoroutineScope(getBackgroundThreadHandler().asCoroutineDispatcher().immediate)
             backgroundThreadCoroutineScope.launch {
-                complicationsFlow.collect { complicationDataMap ->
-                    try {
-                        // The combination of 'collect' which conflates the updates and adding a
-                        // delay here ensures that we write updates at least 1 second apart. The
-                        // delay is at the beginning to delay writes during WF init.
-                        delay(1000)
-                        val stream = ByteArrayOutputStream()
-                        val objectOutputStream = ObjectOutputStream(stream)
-                        objectOutputStream.writeInt(complicationDataMap.size)
-                        for (pair in complicationDataMap) {
-                            objectOutputStream.writeInt(pair.key)
-                            objectOutputStream.writeObject(
-                                if (
-                                    (pair.value.persistencePolicy and
-                                        ComplicationPersistencePolicies.DO_NOT_PERSIST) != 0
-                                ) {
-                                    NoDataComplicationData().asWireComplicationData()
-                                } else {
-                                    pair.value.asWireComplicationData()
-                                }
-                            )
+                // Map the complication data to NoDataComplicationData if the
+                // persistence policy is DO_NOT_PERSIST. We do this here to ensure that
+                // we don't frequently write health complications to local storage.
+                // See b/408518619 for more details.
+                complicationsFlow
+                    .map {
+                        it.mapValues { pair ->
+                            if (
+                                (pair.value.persistencePolicy and
+                                    ComplicationPersistencePolicies.DO_NOT_PERSIST) != 0
+                            ) {
+                                NoDataComplicationData()
+                            } else {
+                                pair.value
+                            }
                         }
-                        objectOutputStream.close()
-                        val byteArray = stream.toByteArray()
-                        writeComplicationDataCacheByteArray(context, fileName, byteArray)
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Failed to write to complication cache due to exception", e)
                     }
-                }
+                    .distinctUntilChanged() // Only emit an update if something changed.
+                    .collect { complicationDataMap ->
+                        try {
+                            // The combination of 'collect' which conflates the updates and adding a
+                            // delay here ensures that we write updates at least 1 second apart. The
+                            // delay is at the beginning to delay writes during WF init.
+                            delay(1000)
+                            val stream = ByteArrayOutputStream()
+                            val objectOutputStream = ObjectOutputStream(stream)
+                            objectOutputStream.writeInt(complicationDataMap.size)
+                            for (pair in complicationDataMap) {
+                                objectOutputStream.writeInt(pair.key)
+                                objectOutputStream.writeObject(pair.value.asWireComplicationData())
+                            }
+                            objectOutputStream.close()
+                            val byteArray = stream.toByteArray()
+                            writeComplicationDataCacheByteArray(context, fileName, byteArray)
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed to write to complication cache due to exception", e)
+                        }
+                    }
             }
         }
 

@@ -233,6 +233,9 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                     ),
                 "any" to Replacement(TASK_CONTAINER, null, EAGER_CONFIGURATION_ISSUE),
                 "create" to Replacement(TASK_CONTAINER, "register", EAGER_CONFIGURATION_ISSUE),
+                "evaluationDependsOn" to Replacement(PROJECT, null, PROJECT_ISOLATION_ISSUE),
+                "evaluationDependsOnChildren" to
+                    Replacement(PROJECT, null, PROJECT_ISOLATION_ISSUE),
                 "findAll" to
                     Replacement(NAMED_DOMAIN_OBJECT_COLLECTION, null, EAGER_CONFIGURATION_ISSUE),
                 "findByName" to Replacement(TASK_CONTAINER, null, EAGER_CONFIGURATION_ISSUE),

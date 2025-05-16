@@ -97,8 +97,6 @@ public fun <T> dataStore(
  *   on. The File is obtained from [dataStoreFile]. It is created in the "/datastore" subdirectory,
  *   in the user encrypted storage.
  * @param serializer The serializer for `T`.
- * @param createInDeviceProtectedStorage Unless this flag is set to true, this API always creates
- *   the DataStore in the User Encrypted storage.
  * @param corruptionHandler The corruptionHandler is invoked if DataStore encounters a
  *   [androidx.datastore.core.CorruptionException] when attempting to read data.
  *   CorruptionExceptions are thrown by serializers when data can not be de-serialized.
@@ -111,10 +109,9 @@ public fun <T> dataStore(
  */
 @Suppress("MissingJvmstatic")
 @RequiresApi(Build.VERSION_CODES.N)
-public fun <T> dataStore(
+public fun <T> deviceProtectedDataStore(
     fileName: String,
     serializer: Serializer<T>,
-    createInDeviceProtectedStorage: Boolean,
     corruptionHandler: ReplaceFileCorruptionHandler<T>? = null,
     produceMigrations: (Context) -> List<DataMigration<T>> = { listOf() },
     scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -125,7 +122,7 @@ public fun <T> dataStore(
         corruptionHandler,
         produceMigrations,
         scope,
-        createInDeviceProtectedStorage
+        createInDeviceProtectedStorage = true
     )
 }
 

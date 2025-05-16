@@ -17,7 +17,6 @@
 package androidx.xr.compose.subspace
 
 import androidx.annotation.FloatRange
-import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
@@ -38,7 +37,6 @@ import androidx.xr.scenecore.ContentlessEntity
  */
 @Composable
 @SubspaceComposable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialColumn(
     modifier: SubspaceModifier = SubspaceModifier,
     alignment: SpatialAlignment = SpatialAlignment.Center,
@@ -66,7 +64,6 @@ public fun SpatialColumn(
 
 /** Scope for customizing the layout of children within a [SpatialColumn]. */
 @LayoutScopeMarker
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SpatialColumnScope {
     /**
      * Sizes the element's height proportionally to its [weight] relative to other weighted sibling

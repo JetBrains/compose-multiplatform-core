@@ -42,6 +42,8 @@ internal class XTypeSpecImpl(
         XName(java.name.java, kotlin.name.kotlin)
     }
 
+    override fun toBuilder() = Builder(java.toBuilder(), kotlin.toBuilder())
+
     internal class Builder(
         val java: JavaTypeSpec.Builder,
         val kotlin: KotlinTypeSpec.Builder,

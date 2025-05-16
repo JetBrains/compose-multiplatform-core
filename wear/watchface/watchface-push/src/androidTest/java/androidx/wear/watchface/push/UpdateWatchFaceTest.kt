@@ -30,7 +30,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-public class UpdateWatchFaceTest {
+class UpdateWatchFaceTest {
     private var context: Context = ApplicationProvider.getApplicationContext()
     private var wfp = WatchFacePushManager(context)
     private lateinit var details: WatchFaceDetails
@@ -52,6 +52,7 @@ public class UpdateWatchFaceTest {
     }
 
     @Test
+    @RequiresWatch
     fun updateWatchFace() {
         runBlocking {
             readWatchFace(context, "androidxsample2.apk").use { pipe ->
@@ -69,6 +70,7 @@ public class UpdateWatchFaceTest {
     }
 
     @Test
+    @RequiresWatch
     fun updateWatchFace_withTheSameApk() {
         runBlocking {
             readWatchFace(context, VALID_APK).use { pipe ->
@@ -82,6 +84,7 @@ public class UpdateWatchFaceTest {
     }
 
     @Test
+    @RequiresWatch
     fun updateWatchFace_onInvalidValidationToken() {
         runBlocking {
             val exception =
@@ -100,6 +103,7 @@ public class UpdateWatchFaceTest {
     }
 
     @Test
+    @RequiresWatch
     fun updateWatchFace_onInvalidSlot() {
         runBlocking {
             val exception =
@@ -118,6 +122,7 @@ public class UpdateWatchFaceTest {
     }
 
     @Test
+    @RequiresWatch
     fun updateWatchFace_onMalformedApk() {
 
         val exception =
@@ -135,6 +140,7 @@ public class UpdateWatchFaceTest {
     }
 
     @Test
+    @RequiresWatch
     fun updateWatchFace_onUnexpectedContent() {
         val exception =
             assertThrows(UpdateWatchFaceException::class.java) {
@@ -154,6 +160,7 @@ public class UpdateWatchFaceTest {
     }
 
     @Test
+    @RequiresWatch
     fun updateWatchFace_onInvalidPackageName() {
         val exception =
             assertThrows(UpdateWatchFaceException::class.java) {

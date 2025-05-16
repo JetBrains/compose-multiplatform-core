@@ -129,5 +129,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.lifecycle.testing"
+    namespace = "androidx.lifecycle.testing"
 }

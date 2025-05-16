@@ -188,6 +188,8 @@ public class SessionConfigAdapter(
                         sessionConfig.implementationOptions.retrieveOption(STREAM_USE_HINT_OPTION)!!
                     continue
                 }
+
+                mapping[surface] = getStreamUseHintForContainerClass(surface.containerClass)
             }
         }
         return mapping

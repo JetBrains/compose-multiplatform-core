@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,8 +40,8 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.lerp
 import androidx.wear.compose.foundation.LocalReduceMotion
+import androidx.wear.compose.foundation.LocalScreenIsActive
 import androidx.wear.compose.foundation.ScrollInfoProvider
-import androidx.wear.compose.foundation.hierarchicalFocus
 import androidx.wear.compose.foundation.pager.PagerDefaults
 import androidx.wear.compose.foundation.pager.PagerState
 import androidx.wear.compose.material3.PagerScaffoldDefaults.snapWithSpringFlingBehavior
@@ -269,16 +270,16 @@ private fun PagerScaffoldImpl(
 
     scaffoldState.screenContent.UpdateIdlingDetectorIfNeeded()
 
-    Box(
-        modifier =
-            modifier.fillMaxSize().hierarchicalFocus(true) { focused ->
-                if (focused) {
-                    scaffoldState.screenContent.addScreen(key, timeText = null, scrollInfoProvider)
-                } else {
-                    scaffoldState.screenContent.removeScreen(key)
-                }
-            }
-    ) {
+    val screenIsActive = LocalScreenIsActive.current
+    LaunchedEffect(screenIsActive) {
+        if (screenIsActive) {
+            scaffoldState.screenContent.addScreen(key, timeText = null, scrollInfoProvider)
+        } else {
+            scaffoldState.screenContent.removeScreen(key)
+        }
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
         pager()
 
         AnimatedIndicator(

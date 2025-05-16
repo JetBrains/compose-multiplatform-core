@@ -45,6 +45,9 @@ import androidx.fragment.app.SpecialEffectsController.Operation.State.Companion.
 internal class DefaultSpecialEffectsController(container: ViewGroup) :
     SpecialEffectsController(container) {
     override fun collectEffects(operations: List<Operation>, isPop: Boolean) {
+        if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
+            Log.v(FragmentManager.TAG, "Collecting Effects")
+        }
         // Shared element transitions are done between the first fragment leaving and
         // the last fragment coming in. Finding these operations is the first priority
         val firstOut =
@@ -750,6 +753,7 @@ internal class DefaultSpecialEffectsController(container: ViewGroup) :
         @Suppress("DEPRECATION") val transitionSignal = androidx.core.os.CancellationSignal()
 
         var controller: Any? = null
+        var noControllerReturned: Boolean = false
 
         override val isSeekingSupported: Boolean
             get() =
@@ -823,12 +827,19 @@ internal class DefaultSpecialEffectsController(container: ViewGroup) :
                     }
 
                 runTransition(enteringViews, container) {
+                    if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
+                        Log.v(FragmentManager.TAG, "Attempting to create TransitionSeekController")
+                    }
                     controller =
                         transitionImpl.controlDelayedTransition(container, mergedTransition)
                     // If we fail to create a controller, it must be because of the container or
-                    // the transition so we should throw an error.
-                    check(controller != null) {
-                        "Unable to start transition $mergedTransition for container $container."
+                    // the transition so we will immediately complete.
+                    if (controller == null) {
+                        if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
+                            Log.v(FragmentManager.TAG, "TransitionSeekController was not created.")
+                        }
+                        noControllerReturned = true
+                        return@runTransition
                     }
                     seekCancelLambda = {
                         if (transitionInfos.all { it.operation.isSeeking }) {
@@ -883,18 +894,27 @@ internal class DefaultSpecialEffectsController(container: ViewGroup) :
         override fun onCommit(container: ViewGroup) {
             // If the container has never been laid out, transitions will not start so
             // so lets instantly complete them.
-            if (!container.isLaidOut()) {
+            if (!container.isLaidOut() || noControllerReturned) {
                 transitionInfos.forEach { transitionInfo: TransitionInfo ->
                     val operation: Operation = transitionInfo.operation
                     if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                        Log.v(
-                            FragmentManager.TAG,
-                            "SpecialEffectsController: Container $container has not been " +
-                                "laid out. Completing operation $operation"
-                        )
+                        if (noControllerReturned) {
+                            Log.v(
+                                FragmentManager.TAG,
+                                "SpecialEffectsController: TransitionSeekController was not " +
+                                    "created. Completing operation $operation"
+                            )
+                        } else {
+                            Log.v(
+                                FragmentManager.TAG,
+                                "SpecialEffectsController: Container $container has not been " +
+                                    "laid out. Completing operation $operation"
+                            )
+                        }
                     }
                     transitionInfo.operation.completeEffect(this)
                 }
+                noControllerReturned = false
                 return
             }
             if (controller != null) {
@@ -1143,7 +1163,10 @@ internal class DefaultSpecialEffectsController(container: ViewGroup) :
                 )
 
             if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                Log.v(FragmentManager.TAG, "Final merged transition: $mergedTransition")
+                Log.v(
+                    FragmentManager.TAG,
+                    "Final merged transition: $mergedTransition for container $container"
+                )
             }
 
             return Pair(enteringViews, mergedTransition)

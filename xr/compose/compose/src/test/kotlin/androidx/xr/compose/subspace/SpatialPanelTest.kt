@@ -37,8 +37,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.xr.compose.platform.DialogManager
-import androidx.xr.compose.platform.LocalDialogManager
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
@@ -50,8 +48,6 @@ import androidx.xr.compose.testing.TestSetup
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.scenecore.BasePanelEntity
-import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.scene
 import com.android.extensions.xr.ShadowXrExtensions
 import com.android.extensions.xr.space.ShadowActivityPanel
 import com.google.common.truth.Truth.assertThat
@@ -254,64 +250,6 @@ class SpatialPanelTest {
 
         assertThat(launchIntent?.component?.className)
             .isEqualTo(SpatialPanelActivity::class.java.name)
-    }
-
-    @Test
-    fun activityPanel_scrimAdds() {
-        var dialogManager: DialogManager? = null
-
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(
-                        intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
-                        modifier = SubspaceModifier.width(200.dp).height(300.dp),
-                        shape = SpatialRoundedCornerShape(CornerSize(50)),
-                    )
-                    dialogManager = LocalDialogManager.current
-                }
-            }
-        }
-        val session = composeTestRule.activity.session
-
-        // For activity panels, the added scrim is represented by a PanelEntity, so the total entity
-        // count should increase by 1.
-        assertThat(session.scene.getEntitiesOfType(PanelEntity::class.java).size).isEqualTo(2)
-
-        dialogManager!!.isSpatialDialogActive.value = true
-        composeTestRule.waitForIdle()
-
-        assertThat(session.scene.getEntitiesOfType(PanelEntity::class.java).size).isEqualTo(3)
-    }
-
-    @Test
-    fun activityPanel_scrimRemoves() {
-        var dialogManager: DialogManager? = null
-
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    SpatialPanel(
-                        intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
-                        modifier = SubspaceModifier.width(200.dp).height(300.dp),
-                        shape = SpatialRoundedCornerShape(CornerSize(50)),
-                    )
-                    dialogManager = LocalDialogManager.current
-                }
-            }
-        }
-        val session = composeTestRule.activity.session
-        dialogManager!!.isSpatialDialogActive.value = true
-        composeTestRule.waitForIdle()
-
-        // For activity panels, the added scrim is represented by a PanelEntity, so the total entity
-        // count should decrease by 1.
-        assertThat(session.scene.getEntitiesOfType(PanelEntity::class.java).size).isEqualTo(3)
-
-        dialogManager!!.isSpatialDialogActive.value = false
-        composeTestRule.waitForIdle()
-
-        assertThat(session.scene.getEntitiesOfType(PanelEntity::class.java).size).isEqualTo(2)
     }
 
     private fun getBasePanelEntity(tag: String): BasePanelEntity<*>? {

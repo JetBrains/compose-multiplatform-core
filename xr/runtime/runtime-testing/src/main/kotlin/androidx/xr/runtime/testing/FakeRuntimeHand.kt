@@ -16,13 +16,13 @@
 
 package androidx.xr.runtime.testing
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Hand as RuntimeHand
 import java.nio.ByteBuffer
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeRuntimeHand(
     override var trackingState: TrackingState = TrackingState.Paused,
     override var handJointsBuffer: ByteBuffer = ByteBuffer.allocate(0),
-) : RuntimeHand {}
+) : RuntimeHand {
+    public companion object {}
+}

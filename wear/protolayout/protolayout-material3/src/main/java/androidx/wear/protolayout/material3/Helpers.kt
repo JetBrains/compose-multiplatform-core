@@ -196,26 +196,27 @@ internal fun MaterialScope.componentContainer(
         .setModifiers(protoLayoutModifiers)
         .addContent(
             withStyle(
-                    defaultBackgroundImageStyle =
-                        BackgroundImageStyle(
-                            width = expand(),
-                            height = expand(),
-                            overlayColor =
-                                if (useOverlayOnBackground) {
-                                    colorScheme.background.withOpacity(0.6f)
-                                } else {
-                                    null
-                                },
-                            shape = protoLayoutModifiers.background?.corner ?: shapes.large,
-                            contentScaleMode =
-                                if (useOverlayOnBackground) {
-                                    LayoutElementBuilders.CONTENT_SCALE_MODE_FILL_BOUNDS
-                                } else {
-                                    LayoutElementBuilders.CONTENT_SCALE_MODE_CROP
-                                },
-                        )
-                )
-                .backgroundContent()
+                defaultBackgroundImageStyle =
+                    BackgroundImageStyle(
+                        width = expand(),
+                        height = expand(),
+                        overlayColor =
+                            if (useOverlayOnBackground) {
+                                colorScheme.background.withOpacity(0.6f)
+                            } else {
+                                null
+                            },
+                        shape = protoLayoutModifiers.background?.corner ?: shapes.large,
+                        contentScaleMode =
+                            if (useOverlayOnBackground) {
+                                LayoutElementBuilders.CONTENT_SCALE_MODE_FILL_BOUNDS
+                            } else {
+                                LayoutElementBuilders.CONTENT_SCALE_MODE_CROP
+                            },
+                    )
+            ) {
+                backgroundContent()
+            }
         )
         .setWidth(width)
         .setHeight(height)

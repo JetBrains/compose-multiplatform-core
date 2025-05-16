@@ -76,6 +76,7 @@ internal class TestWatchFaceService(
     var complicationSelected: Int? = null
     var mockZoneId: ZoneId = ZoneId.of("UTC")
     var renderer: Renderer? = null
+    var writeComplicationDataCacheCount = 0
 
     /** A mutable list of the ids of the complicationSlots that have been tapped. */
     private val mutableTappedComplicationIds: MutableList<Int> = ArrayList()
@@ -168,6 +169,7 @@ internal class TestWatchFaceService(
         fileName: String,
         byteArray: ByteArray
     ) {
+        writeComplicationDataCacheCount++
         complicationCache?.set(fileName, byteArray)
     }
 

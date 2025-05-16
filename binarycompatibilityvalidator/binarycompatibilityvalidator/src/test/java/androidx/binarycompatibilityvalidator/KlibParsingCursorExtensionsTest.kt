@@ -361,6 +361,28 @@ class KlibParsingCursorExtensionsTest {
     }
 
     @Test
+    fun parseSimpleContextParams() {
+        val input = "context(kotlin/Int)"
+        val cursor = Cursor(input)
+        val contextParams = cursor.parseContextParams()
+        assertThat(contextParams).hasSize(1)
+        assertThat(contextParams?.single()?.type?.className.toString()).isEqualTo("kotlin/Int")
+    }
+
+    @Test
+    fun parseContextWithMultipleParams() {
+        val input = "context(kotlin/Int, kotlin.collections/List<kotlin/String>)"
+        val cursor = Cursor(input)
+        val contextParams = cursor.parseContextParams()
+        assertThat(contextParams).hasSize(2)
+        assertThat(contextParams?.first()?.type?.className.toString()).isEqualTo("kotlin/Int")
+        assertThat(contextParams?.last()?.type?.className.toString())
+            .isEqualTo("kotlin.collections/List")
+        assertThat(contextParams?.last()?.type?.arguments?.first()?.type?.className.toString())
+            .isEqualTo("kotlin/String")
+    }
+
+    @Test
     fun parseValueParamCrossinlineDefault() {
         val input = "crossinline kotlin/Function2<#A, #B, kotlin/Int> =..."
         val cursor = Cursor(input)

@@ -29,6 +29,7 @@ internal class KotlinParameterSpec(
     override val type: XTypeName,
     override val actual: KParameterSpec
 ) : KotlinSpec<KParameterSpec>(), XParameterSpec {
+    override fun toBuilder() = Builder(name, type, actual.toBuilder())
 
     internal class Builder(
         private val name: String,

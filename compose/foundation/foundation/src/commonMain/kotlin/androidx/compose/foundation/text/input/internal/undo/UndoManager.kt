@@ -38,6 +38,12 @@ internal class UndoManager<T>(
     initialRedoStack: List<T> = emptyList(),
     private val capacity: Int = 100
 ) {
+    init {
+        requirePrecondition(capacity >= 0) { "Capacity must be a positive integer" }
+        requirePrecondition(initialRedoStack.size + initialUndoStack.size <= capacity) {
+            "Initial list of undo and redo operations have a size greater than the given capacity."
+        }
+    }
 
     private var undoStack = SnapshotStateList<T>().apply { addAll(initialUndoStack) }
     private var redoStack = SnapshotStateList<T>().apply { addAll(initialRedoStack) }
@@ -50,13 +56,6 @@ internal class UndoManager<T>(
 
     val size: Int
         get() = undoStack.size + redoStack.size
-
-    init {
-        requirePrecondition(capacity >= 0) { "Capacity must be a positive integer" }
-        requirePrecondition(size <= capacity) {
-            "Initial list of undo and redo operations have a size greater than the given capacity."
-        }
-    }
 
     fun record(undoableAction: T) {
         // First clear the redo stack.

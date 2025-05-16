@@ -235,6 +235,7 @@
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"रेडिओ बटण विभाग"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"टॉगल विभाग"</string>
     <string name="sectioned_item_template_lots_of_rows_section_title" msgid="1501401956386938735">"भरपूर पंक्तींचा विभाग"</string>
+    <string name="sectioned_item_template_grid_item_section_title" msgid="565528119467142741">"ग्रिड आयटम विभाग"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"पेनशी संबंधित टेंप्लेटचा डेमो"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"ठिकाणाच्या सूचीशी संबंधित टेंप्लेटचा डेमो"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"ठिकाणे ब्राउझ करा"</string>

@@ -18,7 +18,6 @@ package androidx.xr.scenecore
 
 import android.util.Log
 import androidx.annotation.IntDef
-import androidx.annotation.RestrictTo
 import androidx.concurrent.futures.ResolvableFuture
 import androidx.xr.runtime.internal.ActivityPose as RtActivityPose
 import androidx.xr.runtime.internal.CameraViewActivityPose as RtCameraViewActivityPose
@@ -35,7 +34,6 @@ import com.google.common.util.concurrent.ListenableFuture
  * A ActivityPose contains a pose in activity space and it's pose can be transformed into a pose
  * relative to another ActivityPose.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface ActivityPose {
 
     /**
@@ -104,7 +102,6 @@ public interface ActivityPose {
  * The BaseActivityPose is an implementation of ActivityPose interface that wraps a platformAdapter
  * ActivityPose.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public abstract class BaseActivityPose<out RtActivityPoseType : RtActivityPose>(
     internal val rtActivityPose: RtActivityPoseType
 ) : ActivityPose {
@@ -162,7 +159,6 @@ public abstract class BaseActivityPose<out RtActivityPoseType : RtActivityPose>(
 }
 
 /** A ActivityPose which tracks a camera's position and view into physical space. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class CameraView
 private constructor(private val rtCameraViewActivityPose: RtCameraViewActivityPose) :
     BaseActivityPose<RtCameraViewActivityPose>(rtCameraViewActivityPose) {
@@ -211,7 +207,6 @@ private constructor(private val rtCameraViewActivityPose: RtCameraViewActivityPo
  * Head is a ActivityPose used to track the position of the user's head. If there is a left and
  * right camera it is calculated as the position between the two.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class Head private constructor(rtActivityPose: RtHeadActivityPose) :
     BaseActivityPose<RtHeadActivityPose>(rtActivityPose) {
 
@@ -228,7 +223,6 @@ public class Head private constructor(rtActivityPose: RtHeadActivityPose) :
  * PerceptionSpace is ActivityPose used to track the origin of the space used by ARCore for XR APIs.
  */
 // TODO: b/360870690 - Remove suppression annotation when API council review is complete.
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class PerceptionSpace private constructor(rtActivityPose: RtPerceptionSpaceActivityPose) :
     BaseActivityPose<RtPerceptionSpaceActivityPose>(rtActivityPose) {
 

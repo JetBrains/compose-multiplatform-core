@@ -90,43 +90,24 @@ dependencies {
         exclude(group:"androidx.test")
     }
 
-    // 3P library
-    debugImplementation(libs.leakcanary)
-    // Testing resource dependency for manifest
-    debugImplementation(project(":camera:camera-testing")) {
-        // Ensure camera-testing does not pull in androidx.test dependencies
-        exclude(group:"androidx.test")
-    }
     debugImplementation(libs.testCore)
     // explicitly add runner here to force consistency with androidTestImplementation
     debugImplementation(libs.testRunner)
 
-    // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.
-    androidTestImplementation("androidx.annotation:annotation-experimental:1.4.1")
-
     // Testing framework
     androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(libs.espressoIdlingResource)
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
-    androidTestImplementation(libs.leakcanary)
     androidTestImplementation(libs.leakcanaryInstrumentation)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(project(":camera:camera-camera2"))
-    androidTestImplementation(project(":camera:camera-testing")) {
-        // Ensure camera-testing does not pull in androidx.test dependencies
-        exclude(group:"androidx.test")
-    }
-    androidTestImplementation(project(":concurrent:concurrent-futures"))
     androidTestImplementation(project(":concurrent:concurrent-futures-ktx"))
     androidTestImplementation(project(":internal-testutils-runtime"))
     androidTestImplementation(project(":internal-testutils-lifecycle"))
     androidTestImplementation(project(":internal-testutils-truth"))
-    androidTestImplementation("androidx.core:core:1.1.0")
     androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.3.1")
     androidTestImplementation("androidx.palette:palette:1.0.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
@@ -138,7 +119,27 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.truth)
-    testImplementation(project(":internal-testutils-ktx"))
+
+    // Transitive dependencies
+    implementation 'androidx.activity:activity:1.2.3'
+    implementation 'androidx.annotation:annotation-experimental:1.4.1'
+    implementation 'androidx.lifecycle:lifecycle-common:2.3.1'
+    implementation 'androidx.lifecycle:lifecycle-livedata-core:2.3.1'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel:2.3.1'
+    implementation libs.androidx.annotation
+    implementation libs.androidx.core
+    androidTestImplementation 'com.google.android.gms:play-services-mlkit-barcode-scanning:18.0.0'
+    androidTestImplementation 'com.google.mlkit:barcode-scanning-common:17.0.0'
+    androidTestImplementation 'com.google.mlkit:vision-interfaces:16.0.0'
+    androidTestImplementation libs.hamcrestCore
+    androidTestImplementation libs.junit
+    androidTestImplementation libs.kotlinCoroutinesCore
+    androidTestImplementation libs.testMonitor
+    testImplementation 'org.robolectric:annotations:4.14'
+    testImplementation 'org.robolectric:shadowapi:4.14'
+    testImplementation 'org.robolectric:shadows-framework:4.14'
+    testImplementation libs.kotlinCoroutinesCore
+    testImplementation libs.testCore
 }
 
 // Publish the APK to dist/apk for testing.

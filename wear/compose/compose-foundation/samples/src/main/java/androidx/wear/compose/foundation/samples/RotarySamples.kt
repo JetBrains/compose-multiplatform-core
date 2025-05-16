@@ -40,7 +40,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastSumBy
-import androidx.wear.compose.foundation.hierarchicalFocusRequester
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.foundation.rotary.RotarySnapLayoutInfoProvider
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
@@ -54,7 +54,7 @@ fun RotaryScrollSample() {
     LazyColumn(
         modifier =
             Modifier.fillMaxSize()
-                .hierarchicalFocusRequester(focusRequester)
+                .requestFocusOnHierarchyActive()
                 .rotaryScrollable(
                     behavior = RotaryScrollableDefaults.behavior(scrollableState),
                     focusRequester = focusRequester
@@ -83,12 +83,12 @@ fun RotaryScrollWithOverscrollSample() {
 
     Column(
         Modifier.fillMaxSize()
+            .requestFocusOnHierarchyActive()
             .rotaryScrollable(
                 behavior = RotaryScrollableDefaults.behavior(scrollableState),
                 focusRequester = focusRequester,
                 overscrollEffect = overscrollEffect
             )
-            .hierarchicalFocusRequester(focusRequester)
             .verticalScroll(scrollableState, overscrollEffect)
             .overscroll(overscrollEffect),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -109,7 +109,7 @@ fun RotarySnapSample() {
     LazyColumn(
         modifier =
             Modifier.fillMaxSize()
-                .hierarchicalFocusRequester(focusRequester)
+                .requestFocusOnHierarchyActive()
                 .rotaryScrollable(
                     behavior =
                         RotaryScrollableDefaults.snapBehavior(

@@ -16,7 +16,6 @@
 
 package androidx.xr.compose.subspace.layout
 
-import androidx.annotation.RestrictTo
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.subspace.node.CompositionLocalConsumerSubspaceModifierNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
@@ -25,7 +24,6 @@ import androidx.xr.runtime.Session
 import androidx.xr.scenecore.SpatialPointerComponent
 import androidx.xr.scenecore.SpatialPointerIcon
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.pointerHoverIcon(icon: SpatialPointerIcon): SubspaceModifier =
     this.then(SpatialPointerHoverIconElement(icon))
 

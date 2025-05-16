@@ -33,7 +33,7 @@ buildscript {
         if (agpOverride != null) {
             classpath("com.android.settings:com.android.settings.gradle.plugin:$agpOverride")
         } else {
-            classpath("com.android.settings:com.android.settings.gradle.plugin:8.11.0-alpha03")
+            classpath("com.android.settings:com.android.settings.gradle.plugin:8.11.0-alpha07")
         }
         // set guava version to be compatible with Depdendency analysis gradle plugin
         classpath("com.google.guava:guava:33.3.1-jre")
@@ -120,9 +120,14 @@ def cacheSetting = System.getenv("USE_ANDROIDX_REMOTE_BUILD_CACHE")
 switch (cacheSetting) {
     case ["true", "gcp"]:
         settings.buildCache {
+            def europe = System.getenv("USE_ANDROIDX_REMOTE_BUILD_CACHE_EUROPE")
             remote(androidx.build.gradle.gcpbuildcache.GcpBuildCache) {
                 projectId = "androidx-ge"
-                bucketName = "androidx-gradle-remote-cache"
+                if (europe == "true") {
+                    bucketName = "androidx-gradle-remote-cache-europe"
+                } else {
+                    bucketName = "androidx-gradle-remote-cache"
+                }
                 messageOnAuthenticationFailure = "Your GCP Credentials have expired.\n" +
                         "Please regenerate credentials following the steps below and try again:\n" +
                         "gcloud auth application-default login --project androidx-ge"
@@ -386,10 +391,9 @@ includeProject(":appcompat:appcompat-lint", [BuildType.MAIN])
 includeProject(":appcompat:appcompat-lint:integration-tests", [BuildType.MAIN])
 includeProject(":appcompat:appcompat-resources", [BuildType.MAIN])
 includeProject(":appcompat:integration-tests:receive-content-testapp", [BuildType.MAIN])
-includeProject(":appfunctions:appfunctions-common", [BuildType.MAIN])
+includeProject(":appfunctions:appfunctions", [BuildType.MAIN])
 includeProject(":appfunctions:appfunctions-compiler", [BuildType.MAIN])
-includeProject(":appfunctions:appfunctions-runtime", [BuildType.MAIN])
-includeProject(":appfunctions:appfunctions-schemas", [BuildType.MAIN])
+includeProject(":appfunctions:appfunctions-service", [BuildType.MAIN])
 includeProject(":appfunctions:appfunctions-stubs", [BuildType.MAIN])
 includeProject(":appfunctions:integration-tests:multi-modules-testapp:app", [BuildType.MAIN])
 includeProject(":appfunctions:integration-tests:multi-modules-testapp:shared-library", [BuildType.MAIN])
@@ -455,8 +459,6 @@ includeProject(":camera:camera-core", [BuildType.CAMERA])
 includeProject(":camera:camera-effects", [BuildType.CAMERA])
 includeProject(":camera:camera-extensions", [BuildType.CAMERA])
 includeProject(":camera:camera-extensions-stub", [BuildType.CAMERA])
-includeProject(":camera:camera-feature-combination-query", [BuildType.CAMERA])
-includeProject(":camera:camera-feature-combination-query-play-services", [BuildType.CAMERA])
 includeProject(":camera:camera-lifecycle", [BuildType.CAMERA])
 includeProject(":camera:camera-lifecycle:camera-lifecycle-samples", "camera/camera-lifecycle/samples", [BuildType.CAMERA])
 includeProject(":camera:camera-mlkit-vision", [BuildType.CAMERA])
@@ -474,6 +476,8 @@ includeProject(":camera:integration-tests:camera-testapp-timing", "camera/integr
 includeProject(":camera:integration-tests:camera-testapp-uiwidgets", "camera/integration-tests/uiwidgetstestapp", [BuildType.CAMERA])
 includeProject(":camera:integration-tests:camera-testapp-viewfinder", "camera/integration-tests/viewfindertestapp", [BuildType.CAMERA])
 includeProject(":camera:integration-tests:camera-testapp-view", "camera/integration-tests/viewtestapp", [BuildType.CAMERA])
+includeProject(":camera:featurecombinationquery:featurecombinationquery", [BuildType.CAMERA])
+includeProject(":camera:featurecombinationquery:featurecombinationquery-play-services", [BuildType.CAMERA])
 includeProject(":camera:media3:media3-effect", [BuildType.MAIN])
 includeProject(":camera:viewfinder:viewfinder-compose", [BuildType.CAMERA])
 includeProject(":camera:viewfinder:viewfinder-core", [BuildType.CAMERA])
@@ -1052,8 +1056,11 @@ includeProject(":test:integration-tests:junit-gtest-test", [BuildType.NATIVE])
 includeProject(":test:screenshot:screenshot")
 includeProject(":test:screenshot:screenshot-proto")
 includeProject(":test:uiautomator:uiautomator", [BuildType.MAIN])
+includeProject(":test:uiautomator:uiautomator-lint", [BuildType.MAIN])
 includeProject(":test:uiautomator:integration-tests:testapp", [BuildType.MAIN])
+includeProject(":test:uiautomator:uiautomator-shell", [BuildType.MAIN])
 includeProject(":text:text-vertical", [BuildType.MAIN])
+includeProject(":text:text-vertical-testapp", "text/text-vertical/testapp", [BuildType.MAIN])
 includeProject(":tracing:tracing")
 includeProject(":tracing:tracing-benchmark", "tracing/benchmark", [BuildType.MAIN, BuildType.COMPOSE])
 includeProject(":tracing:tracing-ktx")
@@ -1225,6 +1232,9 @@ includeProject(":xr:compose:integration-tests:spatialelevation", [BuildType.XR])
 includeProject(":xr:compose:integration-tests:subspacecomposableapp", [BuildType.XR])
 includeProject(":xr:compose:material3:material3", [BuildType.XR])
 includeProject(":xr:compose:material3:integration-tests:testapp", [BuildType.XR])
+includeProject(":xr:glimmer:glimmer", [BuildType.COMPOSE])
+includeProject(":xr:glimmer:glimmer:glimmer-samples", "xr/glimmer/glimmer/samples", [BuildType.COMPOSE])
+includeProject(":xr:glimmer:integration-tests:demos", [BuildType.COMPOSE])
 includeProject(":xr:runtime:runtime", [BuildType.XR])
 includeProject(":xr:runtime:runtime-openxr", [BuildType.XR])
 includeProject(":xr:runtime:runtime-testing", [BuildType.XR])
@@ -1233,15 +1243,22 @@ includeProject(":xr:scenecore:scenecore-testing", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:activitypanel", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:anchortest", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:commontestview", [BuildType.XR])
+includeProject(":xr:scenecore:integration-tests:environmenttest", [BuildType.XR])
+includeProject(":xr:scenecore:integration-tests:fieldofviewvisibility", [BuildType.XR])
+includeProject(":xr:scenecore:integration-tests:fsm-hsm-transition", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:headlocked-ui", [BuildType.XR])
+includeProject(":xr:scenecore:integration-tests:hittest", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:inputmoveresize", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:movable", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:panelroundedcorner", [BuildType.XR])
+includeProject(":xr:scenecore:integration-tests:spatialaudiotest", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:spatialcapabilities", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:spatialuser", [BuildType.XR])
+includeProject(":xr:scenecore:integration-tests:splitenginetest", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:standalone", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:svxr-example", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:transformationtests", [BuildType.XR])
+includeProject(":xr:scenecore:integration-tests:videoplayertest", [BuildType.XR])
 includeProject(":xr:scenecore:integration-tests:visibilitytest", [BuildType.XR])
 
 /////////////////////////////

@@ -173,7 +173,9 @@ internal class FocusableNode(
             )
         )
 
-    private var requestFocus: (() -> Boolean)? = null
+    fun requestFocus(): Boolean {
+        return focusTargetNode.requestFocus()
+    }
 
     private val focusedBoundsObserver: FocusedBoundsObserverNode?
         get() =
@@ -202,6 +204,9 @@ internal class FocusableNode(
         }
     }
 
+    val focusState: FocusState
+        get() = focusTargetNode.focusState
+
     private fun onFocusStateChange(previousState: FocusState, currentState: FocusState) {
         if (!isAttached) return
         val isFocused = currentState.isFocused
@@ -226,10 +231,7 @@ internal class FocusableNode(
 
     override fun SemanticsPropertyReceiver.applySemantics() {
         focused = focusTargetNode.focusState.isFocused
-        if (requestFocus == null) {
-            requestFocus = { focusTargetNode.requestFocus() }
-        }
-        requestFocus(action = requestFocus)
+        requestFocus(action = ::requestFocus)
     }
 
     override fun onReset() {

@@ -276,6 +276,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
         val isSuspend = modifiers.contains("suspend")
         cursor.parseFunctionKind()
         val typeParams = cursor.parseTypeParams() ?: emptyList()
+        val contextParams = cursor.parseContextParams() ?: emptyList()
         val functionReceiver = cursor.parseFunctionReceiver()
         val abiQualifiedName =
             if (isGetterOrSetter) {
@@ -286,19 +287,20 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
         val valueParameters =
             cursor.parseValueParameters() ?: throw parseException("Couldn't parse value params")
         val allValueParameters =
-            if (null != functionReceiver) {
-                val functionReceiverAsValueParam =
-                    AbiValueParameterImpl(
-                        type = functionReceiver,
-                        isVararg = false,
-                        hasDefaultArg = false,
-                        isNoinline = false,
-                        isCrossinline = false
-                    )
-                listOf(functionReceiverAsValueParam) + valueParameters
-            } else {
-                valueParameters
-            }
+            contextParams +
+                if (null != functionReceiver) {
+                    val functionReceiverAsValueParam =
+                        AbiValueParameterImpl(
+                            type = functionReceiver,
+                            isVararg = false,
+                            hasDefaultArg = false,
+                            isNoinline = false,
+                            isCrossinline = false
+                        )
+                    listOf(functionReceiverAsValueParam) + valueParameters
+                } else {
+                    valueParameters
+                }
         val returnType = cursor.parseReturnType()
         cursor.nextLine()
         return AbiFunctionImpl(
@@ -310,7 +312,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
             isSuspend = isSuspend,
             typeParameters = typeParams,
             hasExtensionReceiverParameter = null != functionReceiver,
-            contextReceiverParametersCount = 0, // TODO
+            contextReceiverParametersCount = contextParams.size,
             valueParameters = allValueParameters,
             returnType = returnType
         )

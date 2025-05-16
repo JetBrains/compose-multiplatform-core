@@ -93,6 +93,7 @@ import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsNodeWithAdjustedBounds
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsProperties.IsSensitiveData
 import androidx.compose.ui.semantics.SemanticsPropertiesAndroid
 import androidx.compose.ui.semantics.getAllUncoveredSemanticsNodesToIntObjectMap
 import androidx.compose.ui.semantics.getOrNull
@@ -118,6 +119,7 @@ import androidx.core.view.AccessibilityDelegateCompat
 import androidx.core.view.ViewCompat.ACCESSIBILITY_LIVE_REGION_ASSERTIVE
 import androidx.core.view.ViewCompat.ACCESSIBILITY_LIVE_REGION_POLITE
 import androidx.core.view.accessibility.AccessibilityEventCompat
+import androidx.core.view.accessibility.AccessibilityManagerCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.FOCUS_ACCESSIBILITY
@@ -288,6 +290,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             accessibilityForceEnabledForTesting ||
                 (accessibilityManager.isEnabled && accessibilityManager.isTouchExplorationEnabled)
 
+    internal var requestFromAccessibilityToolForTesting: Boolean? = null
     private val handler = Handler(Looper.getMainLooper())
     private var nodeProvider = ComposeAccessibilityNodeProvider()
 
@@ -467,6 +470,17 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         return foundNode
     }
 
+    private fun isRequestFromAccessibilityTool(): Boolean {
+        when (requestFromAccessibilityToolForTesting) {
+            true -> return true
+            false -> return false
+            else ->
+                return AccessibilityManagerCompat.isRequestFromAccessibilityTool(
+                    accessibilityManager
+                )
+        }
+    }
+
     private fun createNodeInfo(virtualViewId: Int): AccessibilityNodeInfoCompat? {
         if (
             view.viewTreeOwners?.lifecycleOwner?.lifecycle?.currentState ==
@@ -477,7 +491,12 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         val semanticsNodeWithAdjustedBounds =
             currentSemanticsNodes[virtualViewId] ?: return emptyNodeInfoOrNull()
         val semanticsNode: SemanticsNode = semanticsNodeWithAdjustedBounds.semanticsNode
+        val isSensitiveData = semanticsNode.config.getOrNull(IsSensitiveData) == true
+        if (isSensitiveData && !isRequestFromAccessibilityTool()) {
+            return null
+        }
         val info: AccessibilityNodeInfoCompat = AccessibilityNodeInfoCompat.obtain()
+        info.setAccessibilityDataSensitive(isSensitiveData)
         if (virtualViewId == AccessibilityNodeProviderCompat.HOST_VIEW_ID) {
             info.setParent(view.getParentForAccessibility() as? View)
         } else {
@@ -586,6 +605,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         //   and the root of the SemanticsNode tree.
         info.isImportantForAccessibility = semanticsNode.isImportantForAccessibility()
 
+        val isRequestFromAccessibilityTool = isRequestFromAccessibilityTool()
         var childDrawingOrder = 0
         semanticsNode.replacedChildren.fastForEach { child ->
             if (currentSemanticsNodes.contains(child.id)) {
@@ -597,7 +617,16 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 if (holder != null) {
                     info.addChild(holder)
                 } else {
-                    info.addChild(view, child.id)
+                    val childHasSensitiveData =
+                        currentSemanticsNodes[child.id]
+                            ?.semanticsNode
+                            ?.config
+                            ?.getOrNull(IsSensitiveData) == true
+                    // If the child has isSensitiveData=true then the node request must come
+                    // from an accessibility tool in order for the child to be included.
+                    if (isRequestFromAccessibilityTool || !childHasSensitiveData) {
+                        info.addChild(view, child.id)
+                    }
                 }
                 // The children are already ordered by the drawing order at this point.
                 drawingOrder.put(child.id, childDrawingOrder)
@@ -1250,6 +1279,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             currentSemanticsNodes[virtualViewId]?.let {
                 event.isPassword =
                     it.semanticsNode.unmergedConfig.contains(SemanticsProperties.Password)
+                AccessibilityEventCompat.setAccessibilityDataSensitive(
+                    event,
+                    it.semanticsNode.unmergedConfig.getOrNull(IsSensitiveData) == true
+                )
             }
         }
 
@@ -1294,6 +1327,13 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
     private fun performActionHelper(virtualViewId: Int, action: Int, arguments: Bundle?): Boolean {
         val node = currentSemanticsNodes[virtualViewId]?.semanticsNode ?: return false
+
+        if (
+            node.unmergedConfig.getOrNull(IsSensitiveData) == true &&
+                !isRequestFromAccessibilityTool()
+        ) {
+            return false
+        }
 
         // Actions can be performed when disabled.
         when (action) {

@@ -36,34 +36,65 @@ androidXMultiplatform {
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
+        configureEach {
+            languageSettings.optIn("kotlin.contracts.ExperimentalContracts")
+        }
+
         commonMain {
             dependencies {
                 implementation(libs.kotlinStdlib)
+                api("androidx.annotation:annotation:1.9.1")
             }
         }
+
         commonTest {
             dependencies {
                 implementation(libs.kotlinTest)
+                implementation(project(":kruth:kruth"))
             }
         }
-        androidMain {
+
+        jvmCommonMain {
             dependsOn(commonMain)
         }
-        androidInstrumentedTest {
+
+        jvmCommonTest {
             dependsOn(commonTest)
+            dependencies {
+                runtimeOnly(libs.kotlinTestJunit)
+                implementation(libs.junit)
+            }
+        }
+
+        androidMain {
+            dependsOn(jvmCommonMain)
+            dependencies { }
+        }
+
+        androidInstrumentedTest {
+            dependsOn(jvmCommonTest)
+            dependencies {
+                implementation(libs.espressoCore)
+                implementation(libs.hamcrestCore)
+                implementation(libs.testCore)
+                implementation(libs.testExtJunit)
+                implementation(libs.testExtTruth)
+                implementation(libs.testRules)
+                implementation(libs.testRunner)
+            }
         }
     }
 }
 
 android {
-    compileSdk = 35
     namespace = "androidx.navigationevent"
 }
 
 androidx {
-    name = "androidx.navigationevent:navigationevent"
+    name = "Navigation Event"
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2025"
     description = "Provides APIs to easily intercept platform navigation events, including " +
             "swipes and clicks, to provide a consistent API surface for handling these events."
+    metalavaK2UastEnabled = false
 }

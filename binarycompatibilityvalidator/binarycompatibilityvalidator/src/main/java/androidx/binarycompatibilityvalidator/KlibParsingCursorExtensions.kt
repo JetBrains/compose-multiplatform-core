@@ -100,6 +100,8 @@ internal fun Cursor.hasGetterOrSetter() = hasGetter() || hasSetter()
 
 internal fun Cursor.parseGetterName(peek: Boolean = false): String? {
     val cursor = subCursor(peek)
+    cursor.parseContextParams()
+    cursor.parseFunctionReceiver()
     cursor.parseSymbol(getterNameRegex) ?: return null
     val name = cursor.parseValidIdentifier() ?: return null
     cursor.parseSymbol(closeAngleBracketRegex) ?: return null
@@ -108,6 +110,8 @@ internal fun Cursor.parseGetterName(peek: Boolean = false): String? {
 
 internal fun Cursor.parseSetterName(peek: Boolean = false): String? {
     val cursor = subCursor(peek)
+    cursor.parseContextParams()
+    cursor.parseFunctionReceiver()
     cursor.parseSymbol(setterNameRegex) ?: return null
     val name = cursor.parseValidIdentifier() ?: return null
     cursor.parseSymbol(closeAngleBracketRegex) ?: return null
@@ -310,6 +314,11 @@ internal fun Cursor.parseFunctionReceiver(): AbiType? {
     return type
 }
 
+internal fun Cursor.parseContextParams(): List<AbiValueParameter>? {
+    parseSymbol(contextRegex) ?: return null
+    return parseValueParameters()
+}
+
 internal fun Cursor.parseReturnType(): AbiType? {
     parseSymbol(colonRegex)
     return parseAbiType()
@@ -373,6 +382,7 @@ private fun Cursor.hasPropertyAccessor(type: GetterOrSetter): Boolean {
     if (mightHaveTypeParams) {
         subCursor.parseTypeParams()
     }
+    subCursor.parseContextParams()
     subCursor.parseFunctionReceiver()
     return when (type) {
         GetterOrSetter.GETTER -> subCursor.parseGetterName() != null
@@ -437,6 +447,7 @@ private val varargSymbolRegex = Regex("^\\.\\.\\.")
 private val openParenRegex = Regex("^\\(")
 private val closeParenRegex = Regex("^\\)")
 private val reifiedRegex = Regex("reified")
+private val contextRegex = Regex("context")
 private val colonRegex = Regex("^:")
 private val commaRegex = Regex("^,")
 private val notNullSymbolRegex = Regex("^\\!\\!")

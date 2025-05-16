@@ -19,6 +19,7 @@ package androidx.wear.watchface.complications.datasource
 import android.content.ComponentName
 import android.content.Context
 import android.os.OutcomeReceiver
+import android.util.Log
 import androidx.annotation.OpenForTesting
 import androidx.annotation.RequiresApi
 import androidx.wear.watchface.complications.data.ComplicationData as AndroidXComplicationData
@@ -50,7 +51,7 @@ internal interface WearSdkComplicationsApi {
     suspend fun getActiveConfigs(executor: Executor): Set<WearSdkActiveComplicationConfig>
 
     /** Calls [ComplicationsManager.updateComplication]. */
-    suspend fun updateComplication(id: Int, data: WearSdkComplicationData, executor: Executor): Void
+    suspend fun updateComplication(id: Int, data: WearSdkComplicationData, executor: Executor)
 
     fun create(context: Context) = Impl(context)
 
@@ -73,10 +74,15 @@ internal interface WearSdkComplicationsApi {
             id: Int,
             data: WearSdkComplicationData,
             executor: Executor
-        ) =
-            suspendForOutcomeReceiver<Void> { outcomeReceiver ->
-                manager.updateComplication(id, data.data, executor, outcomeReceiver)
+        ) {
+            try {
+                suspendForOutcomeReceiver<Void> { outcomeReceiver ->
+                    manager.updateComplication(id, data.data, executor, outcomeReceiver)
+                }
+            } catch (error: Throwable) {
+                Log.e(TAG, "Failed to update complication= $error")
             }
+        }
 
         suspend fun <T> suspendForOutcomeReceiver(block: (OutcomeReceiver<T, Throwable>) -> Unit) =
             suspendCancellableCoroutine<T> { continuation ->
@@ -95,6 +101,10 @@ internal interface WearSdkComplicationsApi {
                     continuation.resumeWithException(error)
                 }
             }
+
+        internal companion object {
+            internal const val TAG = "WearSdkComplicationsApi"
+        }
     }
 }
 

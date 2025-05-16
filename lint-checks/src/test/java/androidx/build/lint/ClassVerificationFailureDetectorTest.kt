@@ -19,6 +19,7 @@
 package androidx.build.lint
 
 import androidx.build.lint.Stubs.Companion.DoNotInline
+import androidx.build.lint.Stubs.Companion.FlaggedApi
 import androidx.build.lint.Stubs.Companion.IntRange
 import androidx.build.lint.Stubs.Companion.RequiresApi
 import org.junit.Test
@@ -900,5 +901,122 @@ Fix for src/androidx/AutofixOnUnsafeCallWithImplicitVarArgsCast.java line 52: Ex
         """
 
         check(*input).expect(expected).expectFixDiffs(expectedFix)
+    }
+
+    @Test
+    fun `Detection of flagged APIs in Kotlin sources`() {
+        val input =
+            arrayOf(
+                kotlin(
+                    """
+                    package android.test
+
+                    import android.annotation.FlaggedApi
+
+                    object FlaggedApiContainer {
+                        @FlaggedApi("android.test.myFlag")
+                        fun flaggedApi() {
+                        }
+                    }
+                    """
+                        .trimIndent()
+                ),
+                kotlin(
+                    """
+                    package com.example
+
+                    import android.test.FlaggedApiContainer
+
+                    fun callFlaggedApi() {
+                        FlaggedApiContainer.flaggedApi()
+                    }
+                    """
+                        .trimIndent()
+                ),
+                FlaggedApi,
+            )
+
+        val expected =
+            """
+src/com/example/test.kt:6: Error: This call references a method guarded by Trunk Stable flag "android.test.myFlag"; however, the containing class com.example.TestKt is reachable from earlier API levels and will fail run-time class verification. [ClassVerificationFailure]
+    FlaggedApiContainer.flaggedApi()
+                        ~~~~~~~~~~
+1 error
+        """
+                .trimIndent()
+
+        check(*input).expect(expected)
+    }
+
+    @Test
+    fun `Detection of flagged APIs in Java sources`() {
+        val input =
+            arrayOf(
+                java(
+                    """
+                    package android.test;
+
+                    import android.annotation.FlaggedApi;
+
+                    public class FlaggedApiContainer {
+                        @FlaggedApi("test.pkg.myFlag")
+                        public static void flaggedApi() {
+                        }
+                    }
+                    """
+                        .trimIndent()
+                ),
+                java(
+                    """
+                    package com.example;
+
+                    import android.test.FlaggedApiContainer;
+
+                    class MyClass {
+                        void callFlaggedApi() {
+                           FlaggedApiContainer.flaggedApi();
+                        }
+                    }
+                    """
+                        .trimIndent()
+                ),
+                FlaggedApi,
+            )
+
+        val expected =
+            """
+src/com/example/MyClass.java:7: Error: This call references a method guarded by Trunk Stable flag "test.pkg.myFlag"; however, the containing class com.example.MyClass is reachable from earlier API levels and will fail run-time class verification. [ClassVerificationFailure]
+       FlaggedApiContainer.flaggedApi();
+                           ~~~~~~~~~~
+1 error
+        """
+                .trimIndent()
+
+        val expectedFixDiffs =
+            """
+Fix for src/com/example/MyClass.java line 7: Extract to static inner class:
+@@ -4 +4
++ import androidx.annotation.DoNotInline;
++ import androidx.annotation.FlaggedApi;
+@@ -7 +9
+-        FlaggedApiContainer.flaggedApi();
++        FlagMyFlagImpl.flaggedApi();
+@@ -9 +11
++ @FlaggedApi("test.pkg.myFlag")
++ static class FlagMyFlagImpl {
++     private FlagMyFlagImpl() {
++         // This class is not instantiable.
++     }
++
++     @DoNotInline
++     static void flaggedApi() {
++         FlaggedApiContainer.flaggedApi();
++     }
++
++ }
+        """
+                .trimIndent()
+
+        check(*input).expect(expected).expectFixDiffs(expectedFixDiffs)
     }
 }

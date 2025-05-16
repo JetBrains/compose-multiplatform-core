@@ -223,13 +223,13 @@ class SnapshotStateMapTests {
     }
 
     @Test
-    @Ignore // TODO: https://youtrack.jetbrains.com/issue/CMP-7397/Investigate-failing-compose-runtime-tests-when-running-with-LV-K2
+    @Ignore // TODO: https://youtrack.jetbrains.com/issue/CMP-7397
     fun validateEntriesRemoveAll() {
         validateWrite { map -> map.entries.removeAll(map.entries.filter { it.key % 2 == 0 }) }
     }
 
     @Test
-    @Ignore // TODO: https://youtrack.jetbrains.com/issue/CMP-7397/Investigate-failing-compose-runtime-tests-when-running-with-LV-K2
+    @Ignore // TODO: https://youtrack.jetbrains.com/issue/CMP-7397
     fun validateEntriesRetainAll() {
         validateWrite { map -> map.entries.retainAll(map.entries.filter { it.key % 2 == 0 }) }
     }

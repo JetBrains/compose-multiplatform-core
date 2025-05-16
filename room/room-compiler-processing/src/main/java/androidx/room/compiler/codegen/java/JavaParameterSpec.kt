@@ -29,6 +29,7 @@ internal class JavaParameterSpec(
     override val type: XTypeName,
     override val actual: JParameterSpec
 ) : JavaSpec<JParameterSpec>(), XParameterSpec {
+    override fun toBuilder() = Builder(name, type, actual.toBuilder())
 
     internal class Builder(
         private val name: String,

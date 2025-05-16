@@ -353,7 +353,8 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
                     compositionsAwaitingApply.isNotEmpty() ||
                     movableContentAwaitingInsert.isNotEmpty() ||
                     concurrentCompositionsOutstanding > 0 ||
-                    hasBroadcastFrameClockAwaitersLocked -> State.PendingWork
+                    hasBroadcastFrameClockAwaitersLocked ||
+                    movableContentRemoved.isNotEmpty() -> State.PendingWork
                 else -> State.Idle
             }
 
@@ -1474,11 +1475,15 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
                     compositionInvalidations.isNotEmpty() ||
                     concurrentCompositionsOutstanding > 0 ||
                     compositionsAwaitingApply.isNotEmpty() ||
-                    hasBroadcastFrameClockAwaitersLocked
+                    hasBroadcastFrameClockAwaitersLocked ||
+                    movableContentRemoved.isNotEmpty()
             }
 
     private val hasFrameWorkLocked: Boolean
-        get() = compositionInvalidations.isNotEmpty() || hasBroadcastFrameClockAwaitersLocked
+        get() =
+            compositionInvalidations.isNotEmpty() ||
+                hasBroadcastFrameClockAwaitersLocked ||
+                movableContentRemoved.isNotEmpty()
 
     private val hasConcurrentFrameWorkLocked: Boolean
         get() = compositionsAwaitingApply.isNotEmpty() || hasBroadcastFrameClockAwaitersLocked
@@ -1587,21 +1592,23 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
 
     internal override fun deletedMovableContent(reference: MovableContentStateReference) {
         synchronized(stateLock) {
-            movableContentRemoved.add(reference.content, reference)
-            if (reference.nestedReferences != null) {
-                val container = reference
-                fun recordNestedStatesOf(reference: MovableContentStateReference) {
-                    reference.nestedReferences?.fastForEach { nestedReference ->
-                        movableContentNestedStatesAvailable.add(
-                            nestedReference.content,
-                            NestedMovableContent(nestedReference, container)
-                        )
-                        recordNestedStatesOf(nestedReference)
+                movableContentRemoved.add(reference.content, reference)
+                if (reference.nestedReferences != null) {
+                    val container = reference
+                    fun recordNestedStatesOf(reference: MovableContentStateReference) {
+                        reference.nestedReferences?.fastForEach { nestedReference ->
+                            movableContentNestedStatesAvailable.add(
+                                nestedReference.content,
+                                NestedMovableContent(nestedReference, container)
+                            )
+                            recordNestedStatesOf(nestedReference)
+                        }
                     }
+                    recordNestedStatesOf(reference)
                 }
-                recordNestedStatesOf(reference)
+                deriveStateLocked()
             }
-        }
+            ?.resume(Unit)
     }
 
     internal override fun movableContentStateReleased(

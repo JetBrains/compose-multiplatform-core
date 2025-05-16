@@ -49,6 +49,10 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.robolectric)
     testImplementation(libs.truth)
+    androidTestImplementation("androidx.fragment:fragment-testing:1.7.1")
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.espressoIdlingResource)
+    androidTestImplementation(project(":test:screenshot:screenshot"))
 }
 
 android {
@@ -65,4 +69,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "This library can be used in your Android application to embed a fragment that renders a PDF document and provides functionalities to interact with it."
+    addGoldenImageAssets()
 }

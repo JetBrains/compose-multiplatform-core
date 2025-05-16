@@ -16,7 +16,6 @@
 
 package androidx.xr.compose.spatial
 
-import androidx.annotation.RestrictTo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -53,7 +52,6 @@ import androidx.xr.compose.subspace.layout.SpatialShape
 import androidx.xr.scenecore.PixelDimensions
 
 /** Contains default values used by Orbiters. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public object OrbiterDefaults {
 
     /** Default shape for an Orbiter. */
@@ -73,7 +71,6 @@ public object OrbiterDefaults {
  *   rendered as if the orbiter wrapper was not present and removed from the flow otherwise. In
  *   spatial environments, this flag is ignored.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OrbiterSettings(
     @get:Suppress("GetterSetterNames")
     @get:JvmName("shouldRenderInNonSpatial")
@@ -130,7 +127,6 @@ public class OrbiterSettings(
  */
 @Composable
 @ComposableOpenTarget(index = -1)
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun Orbiter(
     position: OrbiterEdge.Horizontal,
     offset: Dp = 0.dp,
@@ -185,7 +181,6 @@ public fun Orbiter(
  */
 @Composable
 @ComposableOpenTarget(index = -1)
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun Orbiter(
     position: OrbiterEdge.Horizontal,
     offset: EdgeOffset,
@@ -237,7 +232,6 @@ public fun Orbiter(
  */
 @Composable
 @ComposableOpenTarget(index = -1)
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun Orbiter(
     position: OrbiterEdge.Vertical,
     offset: Dp = 0.dp,
@@ -292,7 +286,6 @@ public fun Orbiter(
  */
 @Composable
 @ComposableOpenTarget(index = -1)
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun Orbiter(
     position: OrbiterEdge.Vertical,
     offset: EdgeOffset,
@@ -376,7 +369,6 @@ internal fun PositionedOrbiter(data: OrbiterData) {
 }
 
 /** An enum that represents the edges of a view where an orbiter can be placed. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public sealed interface OrbiterEdge {
     @JvmInline
     public value class Horizontal private constructor(private val value: Int) : OrbiterEdge {
@@ -409,7 +401,6 @@ public sealed interface OrbiterEdge {
 
 /** Represents the type of offset used for positioning an orbiter. */
 @JvmInline
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public value class OrbiterOffsetType private constructor(private val value: Int) {
     public companion object {
         /** Indicates that the offset is relative to the outer edge of the orbiter. */
@@ -426,7 +417,6 @@ public value class OrbiterOffsetType private constructor(private val value: Int)
  * @property type the type of offset ([OrbiterOffsetType.OuterEdge] or
  *   [OrbiterOffsetType.InnerEdge]).
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class EdgeOffset
 internal constructor(public val amount: Dp, public val type: OrbiterOffsetType) {
     override fun equals(other: Any?): Boolean {

@@ -26,6 +26,8 @@ import com.squareup.kotlinpoet.javapoet.JAnnotationSpec
 internal class JavaAnnotationSpec(override val actual: JAnnotationSpec) :
     JavaSpec<JAnnotationSpec>(), XAnnotationSpec {
 
+    override fun toBuilder() = Builder(actual.toBuilder())
+
     internal class Builder(internal val actual: JAnnotationSpecBuilder) :
         XSpec.Builder(), XAnnotationSpec.Builder {
         override fun addMember(name: String, code: XCodeBlock) = apply {

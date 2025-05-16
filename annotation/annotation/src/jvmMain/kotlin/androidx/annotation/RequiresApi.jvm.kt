@@ -15,6 +15,7 @@
  */
 package androidx.annotation
 
+import java.lang.annotation.ElementType.ANNOTATION_TYPE
 import java.lang.annotation.ElementType.CONSTRUCTOR
 import java.lang.annotation.ElementType.FIELD
 import java.lang.annotation.ElementType.METHOD
@@ -45,7 +46,7 @@ import java.lang.annotation.ElementType.TYPE
 // Needed due to Kotlin's lack of PACKAGE annotation target
 // https://youtrack.jetbrains.com/issue/KT-45921
 @Suppress("DEPRECATED_JAVA_ANNOTATION", "SupportAnnotationUsage")
-@java.lang.annotation.Target(TYPE, METHOD, CONSTRUCTOR, FIELD, PACKAGE)
+@java.lang.annotation.Target(ANNOTATION_TYPE, TYPE, METHOD, CONSTRUCTOR, FIELD, PACKAGE)
 public actual annotation class RequiresApi(
     /** The API level to require. Alias for [.api] which allows you to leave out the `api=` part. */
     @IntRange(from = 1) actual val value: Int = 1,

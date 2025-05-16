@@ -16,14 +16,12 @@
 
 package androidx.xr.compose.subspace.node
 
-import androidx.annotation.RestrictTo
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.Component
 import androidx.xr.scenecore.Entity
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SubspaceSemanticsInfo {
 
     /** The unique ID of this semantics node. */

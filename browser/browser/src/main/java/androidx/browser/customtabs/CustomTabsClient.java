@@ -39,6 +39,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import androidx.browser.auth.AuthTabCallback;
+import androidx.browser.auth.AuthTabIntent;
 import androidx.browser.auth.AuthTabSession;
 
 import org.jspecify.annotations.NonNull;
@@ -283,7 +284,6 @@ public class CustomTabsClient {
      *
      * {@see PendingSession}
      */
-    @ExperimentalPendingSession
     public static CustomTabsSession.@NonNull PendingSession newPendingSession(
             @NonNull Context context, final @Nullable CustomTabsCallback callback, int id) {
         PendingIntent sessionId = createSessionId(context, id);
@@ -641,7 +641,6 @@ public class CustomTabsClient {
      * and turn it into a {@link CustomTabsSession}.
      *
      */
-    @ExperimentalPendingSession
     @SuppressWarnings("NullAway") // TODO: b/141869399
     public @Nullable CustomTabsSession attachSession(
             CustomTabsSession.@NonNull PendingSession session) {
@@ -660,6 +659,25 @@ public class CustomTabsClient {
      */
     public static boolean isSetNetworkSupported(@NonNull Context context,
             @NonNull String provider) {
+        return packageHasCategory(context, provider, CustomTabsService.CATEGORY_SET_NETWORK);
+    }
+
+    /**
+     * Checks whether the Custom Tabs provider supports Auth Tab. See {@link AuthTabIntent} for more
+     * information on how to launch an Auth Tab.
+     *
+     * @param context The application {@link Context}.
+     * @param provider The package name of the Custom Tabs provider.
+     * @return Whether the Custom Tabs provider supports Auth Tab.
+     * @see CustomTabsService#CATEGORY_AUTH_TAB
+     */
+    public static boolean isAuthTabSupported(@NonNull Context context,
+            @NonNull String provider) {
+        return packageHasCategory(context, provider, CustomTabsService.CATEGORY_AUTH_TAB);
+    }
+
+    private static boolean packageHasCategory(@NonNull Context context, @NonNull String provider,
+            @NonNull String category) {
         PackageManager pm = context.getPackageManager();
         List<ResolveInfo> services = pm.queryIntentServices(
                 new Intent(CustomTabsService.ACTION_CUSTOM_TABS_CONNECTION),
@@ -668,7 +686,7 @@ public class CustomTabsClient {
             ServiceInfo serviceInfo = service.serviceInfo;
             if (serviceInfo != null && provider.equals(serviceInfo.packageName)) {
                 IntentFilter filter = service.filter;
-                if (filter != null && filter.hasCategory(CustomTabsService.CATEGORY_SET_NETWORK)) {
+                if (filter != null && filter.hasCategory(category)) {
                     return true;
                 }
             }

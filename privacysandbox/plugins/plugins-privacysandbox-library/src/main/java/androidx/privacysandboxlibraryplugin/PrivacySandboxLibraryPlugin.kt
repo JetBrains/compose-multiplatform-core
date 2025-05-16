@@ -48,11 +48,7 @@ abstract class PrivacySandboxLibraryPlugin : Plugin<Project> {
                 val frameworkAidlInputs =
                     project.objects.newInstance(FrameworkAidlInputs::class.java)
                 frameworkAidlInputs.frameworkAidl.set(
-                    sdkDirectory.map {
-                        it.dir("platforms")
-                            .dir(libraryExtension.compileSdkVersion!!)
-                            .file("framework.aidl")
-                    }
+                    libraryAndroidComponentsExtension.sdkComponents.aidl.flatMap { it.framework }
                 )
                 frameworkAidlInputs.platformSdk.set(
                     frameworkAidlInputs.frameworkAidl.map { it.asFile.parentFile.absolutePath }

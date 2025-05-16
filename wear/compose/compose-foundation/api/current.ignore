@@ -1,7 +1,3 @@
 // Baseline format: 1.0
 ChangedType: androidx.wear.compose.foundation.CompositionLocalsKt#getLocalReduceMotion():
     Method androidx.wear.compose.foundation.CompositionLocalsKt.getLocalReduceMotion has changed return type from androidx.compose.runtime.ProvidableCompositionLocal<androidx.wear.compose.foundation.ReduceMotion> to androidx.compose.runtime.ProvidableCompositionLocal<java.lang.Boolean>
-
-
-RemovedClass: androidx.wear.compose.foundation.HierarchicalFocusCoordinatorKt:
-    Removed class androidx.wear.compose.foundation.HierarchicalFocusCoordinatorKt

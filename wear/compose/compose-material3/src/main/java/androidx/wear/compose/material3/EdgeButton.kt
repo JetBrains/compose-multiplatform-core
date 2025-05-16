@@ -262,7 +262,7 @@ public fun EdgeButton(
                     TextConfiguration(
                         TextAlign.Center,
                         TextOverflow.Ellipsis,
-                        maxLines = 3, // TODO(): Change according to buttonHeight
+                        maxLines = buttonSize.maxLines()
                     ),
                 content
             )
@@ -284,6 +284,15 @@ public value class EdgeButtonSize internal constructor(internal val maximumHeigh
      * offset a bit, which works better on the asymmetrical shape of the Edge Button
      */
     internal fun verticalContentPadding() = 6.dp to 8.dp
+
+    internal fun maxLines(): Int =
+        when (this) {
+            ExtraSmall -> 1
+            Small -> 2
+            Medium -> 2
+            // Large
+            else -> 3
+        }
 
     public companion object {
         /** The Size to be applied for an extra small [EdgeButton]. */

@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.modifiers
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.text.DefaultMinLines
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.ceilToIntPx
@@ -83,6 +84,7 @@ internal class MultiParagraphLayoutCache(
             if (value == null || lastDensity != newDensity) {
                 field = value
                 lastDensity = newDensity
+                recordHistory(LayoutCacheOperation.MarkDirtyDensity)
                 markDirty()
             }
         }
@@ -129,11 +131,47 @@ internal class MultiParagraphLayoutCache(
     /** The last computed TextLayoutResult, or throws if not initialized. */
     val textLayoutResult: TextLayoutResult
         get() =
-            layoutCache ?: throw IllegalStateException("You must call layoutWithConstraints first")
+            layoutCache
+                ?: throw IllegalStateException(
+                    "Internal Error: MultiParagraphLayoutCache could not provide TextLayoutResult during the draw phase. Please report this bug on the official Issue Tracker with the following diagnostic information: ${toString()}"
+                )
 
     /** The last computed TextLayoutResult, or null if not initialized. */
     val layoutOrNull: TextLayoutResult?
         get() = layoutCache
+
+    /**
+     * A 64-bit flag that records the history of `markDirty`, `markStyleDirty`, and
+     * `layoutWithConstraints` operations. Each 2-bit segment represents a distinct operation.
+     * Consequently, this flag maintains a record of the last 32 operations performed on this cache.
+     *
+     * Bit representation:
+     * ```
+     *   | Operation                | Bits |
+     *   | :----------------------- | :--- |
+     *   | markStyleDirty           | 00   |
+     *   | markDirtyDensity         | 01   |
+     *   | markDirtyNodeUpdate      | 10   |
+     *   | layoutWithConstraints    | 11   |
+     * ```
+     *
+     * With the operations encoded in 2 bit segments and read from right to left. For example:
+     * ```
+     *   01111000 would represent that the last 4 operations performed were
+     *   1. markStyleDirty (00)
+     *   2. markDirtyNodeUpdate (10)
+     *   3. layoutWithConstraints (11)
+     *   4. markDirtyDensity (01)
+     * ```
+     *
+     * This history can be used to debug or print as a log of what operations have been performed on
+     * this [MultiParagraphLayoutCache].
+     */
+    @VisibleForTesting internal var historyFlag: Long = 0L
+
+    private fun recordHistory(op: LayoutCacheOperation) {
+        historyFlag = (historyFlag shl 2) or op.flag
+    }
 
     /**
      * Update layout constraints for this text
@@ -141,6 +179,7 @@ internal class MultiParagraphLayoutCache(
      * @return true if constraints caused a text layout invalidation
      */
     fun layoutWithConstraints(constraints: Constraints, layoutDirection: LayoutDirection): Boolean {
+        recordHistory(LayoutCacheOperation.LayoutWithConstraints)
         val finalConstraints =
             if (minLines > 1) {
                 useMinLinesConstrainer(constraints, layoutDirection)
@@ -281,6 +320,7 @@ internal class MultiParagraphLayoutCache(
         this.minLines = minLines
         this.placeholders = placeholders
         this.autoSize = autoSize
+        recordHistory(LayoutCacheOperation.MarkDirtyNode)
         markDirty()
     }
 
@@ -381,6 +421,7 @@ internal class MultiParagraphLayoutCache(
     }
 
     private fun markStyleAffectedDirty() {
+        recordHistory(LayoutCacheOperation.MarkDirtyStyle)
         paragraphIntrinsics = null
         layoutCache = null
         cachedIntrinsicHeight = -1
@@ -458,6 +499,10 @@ internal class MultiParagraphLayoutCache(
             return toDp().toPx()
         }
     }
+
+    override fun toString(): String =
+        "MultiParagraphLayoutCache(textLayoutResult=${if (layoutCache != null) "<TextLayoutResult>" else "null"}, " +
+            "lastDensity=$lastDensity, history=$historyFlag, constraints=${layoutCache?.layoutInput?.constraints ?: "null"})"
 }
 
 /**

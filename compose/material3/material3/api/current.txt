@@ -35,6 +35,13 @@ package androidx.compose.material3 {
     method @androidx.compose.runtime.Composable public static void DropdownMenuItem(kotlin.jvm.functions.Function0<kotlin.Unit> text, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? leadingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? trailingIcon, optional boolean enabled, optional androidx.compose.material3.MenuItemColors colors, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
   }
 
+  public final class AppBarColumnKt {
+    method @androidx.compose.runtime.Composable public static void AppBarColumn(kotlin.jvm.functions.Function1<? super androidx.compose.material3.AppBarMenuState,kotlin.Unit> overflowIndicator, optional androidx.compose.ui.Modifier modifier, optional int maxItemCount, kotlin.jvm.functions.Function1<? super androidx.compose.material3.AppBarColumnScope,kotlin.Unit> content);
+  }
+
+  public interface AppBarColumnScope extends androidx.compose.material3.AppBarScope {
+  }
+
   public final class AppBarKt {
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static void BottomAppBar(optional androidx.compose.ui.Modifier modifier, optional long containerColor, optional long contentColor, optional float tonalElevation, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional androidx.compose.foundation.layout.WindowInsets windowInsets, optional androidx.compose.material3.BottomAppBarScrollBehavior? scrollBehavior, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.RowScope,kotlin.Unit> content);
     method @androidx.compose.runtime.Composable public static void BottomAppBar(optional androidx.compose.ui.Modifier modifier, optional long containerColor, optional long contentColor, optional float tonalElevation, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional androidx.compose.foundation.layout.WindowInsets windowInsets, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.RowScope,kotlin.Unit> content);
@@ -62,21 +69,24 @@ package androidx.compose.material3 {
     property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.material3.TwoRowsTopAppBarOverride> LocalTwoRowsTopAppBarOverride;
   }
 
-  public final class AppBarRowKt {
-    method @androidx.compose.runtime.Composable public static void AppBarRow(kotlin.jvm.functions.Function1<? super androidx.compose.material3.AppBarRowMenuState,kotlin.Unit> overflowIndicator, optional androidx.compose.ui.Modifier modifier, kotlin.jvm.functions.Function1<? super androidx.compose.material3.AppBarRowScope,kotlin.Unit> content);
-  }
-
-  public final class AppBarRowMenuState {
-    ctor public AppBarRowMenuState();
+  public final class AppBarMenuState {
+    ctor public AppBarMenuState();
     method public void dismiss();
     method public boolean isExpanded();
     method public void show();
     property public boolean isExpanded;
   }
 
-  public interface AppBarRowScope {
+  public final class AppBarRowKt {
+    method @androidx.compose.runtime.Composable public static void AppBarRow(kotlin.jvm.functions.Function1<? super androidx.compose.material3.AppBarMenuState,kotlin.Unit> overflowIndicator, optional androidx.compose.ui.Modifier modifier, optional int maxItemCount, kotlin.jvm.functions.Function1<? super androidx.compose.material3.AppBarRowScope,kotlin.Unit> content);
+  }
+
+  public interface AppBarRowScope extends androidx.compose.material3.AppBarScope {
+  }
+
+  public sealed interface AppBarScope {
     method public void clickableItem(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, kotlin.jvm.functions.Function0<kotlin.Unit> icon, String label, optional boolean enabled);
-    method public void customItem(kotlin.jvm.functions.Function0<kotlin.Unit> appbarContent, kotlin.jvm.functions.Function1<? super androidx.compose.material3.AppBarRowMenuState,kotlin.Unit> menuContent);
+    method public void customItem(kotlin.jvm.functions.Function0<kotlin.Unit> appbarContent, kotlin.jvm.functions.Function1<? super androidx.compose.material3.AppBarMenuState,kotlin.Unit> menuContent);
     method public void toggleableItem(boolean checked, kotlin.jvm.functions.Function1<? super java.lang.Boolean,kotlin.Unit> onCheckedChange, kotlin.jvm.functions.Function0<kotlin.Unit> icon, String label, optional boolean enabled);
   }
 
@@ -756,6 +766,22 @@ package androidx.compose.material3 {
     property public abstract androidx.compose.material3.SelectableDates selectableDates;
     property public abstract Long? selectedDateMillis;
     property public abstract kotlin.ranges.IntRange yearRange;
+  }
+
+  public final class DatePicker_androidKt {
+    method @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.O) @androidx.compose.material3.ExperimentalMaterial3Api public static androidx.compose.material3.DatePickerState DatePickerState(java.util.Locale locale, java.time.LocalDate? initialSelectedDate, optional java.time.YearMonth? initialDisplayedMonth, optional kotlin.ranges.IntRange yearRange, optional int initialDisplayMode, optional androidx.compose.material3.SelectableDates selectableDates);
+    method @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.O) @androidx.compose.material3.ExperimentalMaterial3Api public static androidx.compose.material3.DateRangePickerState DateRangePickerState(java.util.Locale locale, java.time.LocalDate? initialSelectedStartDate, optional java.time.LocalDate? initialSelectedEndDate, optional java.time.YearMonth? initialDisplayedMonth, optional kotlin.ranges.IntRange yearRange, optional int initialDisplayMode, optional androidx.compose.material3.SelectableDates selectableDates);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static java.time.YearMonth? getDisplayedMonth(androidx.compose.material3.DatePickerState);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static java.time.YearMonth? getDisplayedMonth(androidx.compose.material3.DateRangePickerState);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static java.time.LocalDate? getSelectedDate(androidx.compose.material3.DatePickerState);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static java.time.LocalDate? getSelectedEndDate(androidx.compose.material3.DateRangePickerState);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static java.time.LocalDate? getSelectedStartDate(androidx.compose.material3.DateRangePickerState);
+    method @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.O) @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static androidx.compose.material3.DatePickerState rememberDatePickerState(java.time.LocalDate? initialSelectedDate, optional java.time.YearMonth? initialDisplayedMonth, optional kotlin.ranges.IntRange yearRange, optional int initialDisplayMode, optional androidx.compose.material3.SelectableDates selectableDates);
+    method @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.O) @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static androidx.compose.material3.DateRangePickerState rememberDateRangePickerState(java.time.LocalDate? initialSelectedStartDate, optional java.time.LocalDate? initialSelectedEndDate, optional java.time.YearMonth? initialDisplayedMonth, optional kotlin.ranges.IntRange yearRange, optional int initialDisplayMode, optional androidx.compose.material3.SelectableDates selectableDates);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static void setDisplayedMonth(androidx.compose.material3.DatePickerState, java.time.YearMonth yearMonth);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static void setDisplayedMonth(androidx.compose.material3.DateRangePickerState, java.time.YearMonth yearMonth);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static void setSelectedDate(androidx.compose.material3.DatePickerState, java.time.LocalDate? date);
+    method @RequiresApi(android.os.Build.VERSION_CODES.O) public static void setSelection(androidx.compose.material3.DateRangePickerState, java.time.LocalDate? startDate, java.time.LocalDate? endDate);
   }
 
   @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Stable public final class DateRangePickerDefaults {
@@ -2410,6 +2436,7 @@ package androidx.compose.material3 {
   }
 
   @androidx.compose.runtime.Stable public final class SliderDefaults {
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public void CenteredTrack(androidx.compose.material3.SliderState sliderState, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.compose.material3.SliderColors colors, optional kotlin.jvm.functions.Function2<? super androidx.compose.ui.graphics.drawscope.DrawScope,? super androidx.compose.ui.geometry.Offset,kotlin.Unit>? drawStopIndicator, optional kotlin.jvm.functions.Function3<? super androidx.compose.ui.graphics.drawscope.DrawScope,? super androidx.compose.ui.geometry.Offset,? super androidx.compose.ui.graphics.Color,kotlin.Unit> drawTick, optional float thumbTrackGapSize, optional float trackInsideCornerSize, optional float trackCornerSize);
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public void Thumb(androidx.compose.foundation.interaction.MutableInteractionSource interactionSource, androidx.compose.material3.SliderState sliderState, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.material3.SliderColors colors, optional boolean enabled, optional long thumbSize);
     method @androidx.compose.runtime.Composable public void Thumb(androidx.compose.foundation.interaction.MutableInteractionSource interactionSource, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.material3.SliderColors colors, optional boolean enabled, optional long thumbSize);
     method @Deprecated @androidx.compose.runtime.Composable public void Track(androidx.compose.material3.RangeSliderState rangeSliderState, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.material3.SliderColors colors, optional boolean enabled);
@@ -3189,7 +3216,8 @@ package androidx.compose.material3 {
   }
 
   @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public sealed interface TooltipScope {
-    method public androidx.compose.ui.Modifier drawCaret(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function2<? super androidx.compose.ui.draw.CacheDrawScope,? super androidx.compose.ui.layout.LayoutCoordinates?,androidx.compose.ui.draw.DrawResult> draw);
+    method @Deprecated public androidx.compose.ui.Modifier drawCaret(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function2<? super androidx.compose.ui.draw.CacheDrawScope,? super androidx.compose.ui.layout.LayoutCoordinates?,androidx.compose.ui.draw.DrawResult> draw);
+    method public androidx.compose.ui.layout.LayoutCoordinates? obtainAnchorBounds(androidx.compose.ui.layout.MeasureScope);
   }
 
   @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public interface TooltipState {

@@ -263,6 +263,10 @@ public class MediaRouter2Test {
         assertNull(createdController.mLastSetVolume);
         mMr2ProviderServiceAdapter.setRouteVolume(StubMediaRouteProviderService.ROUTE_ID1, 100);
         assertEquals(100, (int) createdController.mLastSetVolume);
+        MediaRouteProvider.RouteControllerOptions routeControllerOptions =
+                createdController.mRouteControllerOptions;
+        assertNotNull(routeControllerOptions);
+        assertEquals(mContext.getPackageName(), routeControllerOptions.getClientPackageName());
     }
 
     @SmallTest

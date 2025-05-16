@@ -109,7 +109,6 @@ public class BiometricManager {
      * This device either doesn't have this feature enabled, or it's not considered in a
      * high-risk environment that requires extra security measures for accessing sensitive data.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public static final int BIOMETRIC_ERROR_IDENTITY_CHECK_NOT_ACTIVE = 20;
 
     /**
@@ -187,12 +186,35 @@ public class BiometricManager {
         int DEVICE_CREDENTIAL = 1 << 15;
 
         /**
-         * The bit is used to request for Identity Check.
-         * TODO(b/375693808): Once framework identity check authenticator constant is public,
-         * update the doc here.
+         * The bit is used to request for Identity Check. Identity Check is a feature added in
+         * API 36, which requires class 3 biometric authentication to access sensitive surfaces when
+         * the device is outside trusted places.
+         *
+         * <p>
+         * The requirements to trigger Identity Check are as follows:
+         * <ol>
+         * <li>User must have enabled the toggle for Identity Check in settings </li>
+         * <li>User must have enrollments for at least one BIOMETRIC_STRONG sensor</li>
+         * <li>The device is determined to be in a high risk environment, for example if it is
+         * outside of the user's trusted locations or fails to meet similar conditions</li>
+         * <li>The Identity Check requirements bit must be true</li>
+         * </ol>
+         * </p>
+         *
+         * <p>
+         * If all the above conditions are satisfied, only BIOMETRIC_STRONG sensors will be
+         * eligible for authentication, and device credential fallback will be dropped.
+         *  <p>
+         * For backward compatibility: If identity check isn't supported on the current
+         * API level:
+         * <ul>
+         * <li>a. if there are other allowed authenticators bits, identity check will be ignored and
+         * use the others for authentication;</li>
+         * <li>b. if IDENTITY_CHECK is the only allowed authenticators bit, identity check will be
+         * ignored and the default authenticator will be used.</li>
+         * </ul>
          */
         @RequiresPermission(SET_BIOMETRIC_DIALOG_ADVANCED)
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
         int IDENTITY_CHECK = 1 << 16;
     }
 

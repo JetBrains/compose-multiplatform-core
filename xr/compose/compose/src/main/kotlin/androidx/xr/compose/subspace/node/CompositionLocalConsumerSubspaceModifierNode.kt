@@ -16,12 +16,10 @@
 
 package androidx.xr.compose.subspace.node
 
-import androidx.annotation.RestrictTo
 import androidx.compose.runtime.CompositionLocal
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 
 /** Interface for nodes that can consume composition local values. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface CompositionLocalConsumerSubspaceModifierNode
 
 /**
@@ -30,7 +28,6 @@ public interface CompositionLocalConsumerSubspaceModifierNode
  * @param local The composition local to get the value of.
  * @return The current value of the given composition local.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun <T : Any?> CompositionLocalConsumerSubspaceModifierNode.currentValueOf(
     local: CompositionLocal<T>
 ): T {

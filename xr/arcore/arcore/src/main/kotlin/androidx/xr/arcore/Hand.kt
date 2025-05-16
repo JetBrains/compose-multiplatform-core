@@ -18,9 +18,8 @@ package androidx.xr.arcore
 
 import android.content.ContentResolver
 import android.provider.Settings.System
-import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Config.HandTrackingMode
 import androidx.xr.runtime.HandJointType
-import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Hand as RuntimeHand
@@ -34,7 +33,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /** Contains the tracking information of one of the user's hands. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : Updatable {
     /** * Companion object holding info to the left and right hands. */
     public companion object {
@@ -80,6 +78,7 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
          * @return the [Handedness] of the user's primary hand. If the setting is not configured,
          *   returns [Handedness.UNKNOWN].
          */
+        @JvmStatic
         public fun getHandedness(resolver: ContentResolver): Handedness =
             Handedness.values()[
                     System.getInt(resolver, PRIMARY_HAND_SETTING_NAME, Handedness.UNKNOWN.ordinal)]

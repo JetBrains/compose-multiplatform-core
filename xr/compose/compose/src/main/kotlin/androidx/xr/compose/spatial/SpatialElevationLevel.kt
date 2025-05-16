@@ -16,7 +16,6 @@
 
 package androidx.xr.compose.spatial
 
-import androidx.annotation.RestrictTo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -31,7 +30,6 @@ import androidx.compose.ui.unit.dp
  * @property level The elevation level in Dp.
  */
 @JvmInline
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public value class SpatialElevationLevel(public val level: Dp) {
     public companion object {
         internal val ActivityDefault = SpatialElevationLevel(0.dp)

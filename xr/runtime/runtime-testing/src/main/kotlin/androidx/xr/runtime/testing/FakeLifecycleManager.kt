@@ -16,8 +16,7 @@
 
 package androidx.xr.runtime.testing
 
-import androidx.annotation.RestrictTo
-import androidx.xr.runtime.internal.Config
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.internal.PermissionNotGrantedException
@@ -27,7 +26,6 @@ import kotlinx.coroutines.sync.Semaphore
 
 /** Test-only implementation of [LifecycleManager] used to validate state transitions. */
 @Suppress("NotCloseable")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeLifecycleManager(
     /** If false, create() will throw an exception during testing. */
     @get:JvmName("hasCreatePermission") public var hasCreatePermission: Boolean = true

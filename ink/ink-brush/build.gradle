@@ -33,11 +33,6 @@ androidXMultiplatform {
   jvm()
   androidLibrary {
     namespace = "androidx.ink.brush"
-    withAndroidTestOnDeviceBuilder {
-      it.compilationName = "instrumentedTest"
-      it.defaultSourceSetName = "androidInstrumentedTest"
-      it.sourceSetTreeName = "test"
-    }
   }
 
   defaultPlatform(PlatformIdentifier.JVM)

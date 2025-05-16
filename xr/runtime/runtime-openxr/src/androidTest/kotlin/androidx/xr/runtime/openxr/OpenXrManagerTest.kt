@@ -21,11 +21,11 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import androidx.xr.runtime.internal.Config
-import androidx.xr.runtime.internal.Config.AnchorPersistenceMode
-import androidx.xr.runtime.internal.Config.DepthEstimationMode
-import androidx.xr.runtime.internal.Config.HandTrackingMode
-import androidx.xr.runtime.internal.Config.PlaneTrackingMode
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.Config.AnchorPersistenceMode
+import androidx.xr.runtime.Config.DepthEstimationMode
+import androidx.xr.runtime.Config.HandTrackingMode
+import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.internal.PermissionNotGrantedException
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest

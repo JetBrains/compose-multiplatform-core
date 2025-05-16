@@ -670,8 +670,8 @@ class PagerTest {
         LazyColumn(
             state = state,
             modifier =
-                Modifier.rotaryScrollable(RotaryScrollableDefaults.behavior(state), focusRequester)
-                    .hierarchicalFocusRequester(focusRequester)
+                Modifier.requestFocusOnHierarchyActive()
+                    .rotaryScrollable(RotaryScrollableDefaults.behavior(state), focusRequester)
         ) {
             for (i in 0..20) {
                 item { BasicText(modifier = Modifier.height(lcItemSizeDp), text = "Page content") }

@@ -186,6 +186,7 @@ abstract class FtlRunner : DefaultTask() {
                     appApkPath,
                     "--test",
                     testApkPath,
+                    "--results-bucket=androidx-dev-prod-test-results",
                     if (hasFilters) "--test-targets" else null,
                     if (hasFilters) filters else null,
                     if (shouldPull) "--directories-to-pull" else null,

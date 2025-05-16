@@ -77,6 +77,7 @@ public class PagerState(
      * indicates the start of the current page
      */
     public val currentPageOffsetFraction: Float
+        // @FrequentlyChangingValue
         get() = pagerState.currentPageOffsetFraction
 
     /** The total number of pages present in this pager. */

@@ -40,7 +40,7 @@ import kotlin.math.max
 internal class PaginationModel(
     val pageSpacingPx: Int,
     val numPages: Int,
-    val topPageMarginPx: Int = 0
+    topPageMarginPx: Int = 0
 ) : Parcelable {
 
     init {
@@ -210,8 +210,7 @@ internal class PaginationModel(
         }
         right = left + page.x
 
-        val ret = Rect(left, top, right, bottom)
-        return ret
+        return Rect(left, top, right, bottom)
     }
 
     private fun computeEstimatedHeight(): Int {

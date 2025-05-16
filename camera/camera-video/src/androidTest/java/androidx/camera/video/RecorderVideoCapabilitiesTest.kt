@@ -31,6 +31,7 @@ import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraXUtil
 import androidx.camera.video.Quality.QUALITY_SOURCE_REGULAR
 import androidx.camera.video.Recorder.VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE
+import androidx.camera.video.Recorder.VIDEO_CAPABILITIES_SOURCE_CODEC_CAPABILITIES
 import androidx.camera.video.internal.encoder.VideoEncoderInfoImpl
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SdkSuppress
@@ -79,6 +80,7 @@ class RecorderVideoCapabilitiesTest(
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
+    private lateinit var cameraInfo: CameraInfoInternal
     private lateinit var videoCapabilities: RecorderVideoCapabilities
 
     @Before
@@ -93,7 +95,7 @@ class RecorderVideoCapabilitiesTest(
 
         CameraXUtil.initialize(context, cameraConfig).get()
 
-        val cameraInfo =
+        cameraInfo =
             CameraUtil.createCameraUseCaseAdapter(context, cameraSelector).cameraInfo
                 as CameraInfoInternal
         videoCapabilities =
@@ -122,6 +124,26 @@ class RecorderVideoCapabilitiesTest(
         assumeFalse(isSpecificSkippedDevice())
         assumeFalse(AndroidUtil.isEmulatorAndAPI21())
         assertThat(videoCapabilities.getSupportedQualities(SDR)).isNotEmpty()
+    }
+
+    @Test
+    fun whenCameraDoesNotSupportHighSpeed_highSpeedVideoCapabilitiesIsEmpty() {
+        assumeFalse(cameraInfo.isHighSpeedSupported)
+
+        for (sourceType in
+            listOf(
+                VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE,
+                VIDEO_CAPABILITIES_SOURCE_CODEC_CAPABILITIES
+            )) {
+            val capabilities =
+                RecorderVideoCapabilities(
+                    sourceType,
+                    cameraInfo,
+                    Recorder.VIDEO_RECORDING_TYPE_HIGH_SPEED,
+                    VideoEncoderInfoImpl.FINDER
+                )
+            assertThat(capabilities.supportedDynamicRanges).isEmpty()
+        }
     }
 
     private fun isSpecificSkippedDevice(): Boolean {

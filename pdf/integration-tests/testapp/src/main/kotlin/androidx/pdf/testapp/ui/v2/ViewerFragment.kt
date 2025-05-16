@@ -52,6 +52,12 @@ class ViewerFragment : Fragment(), OpCancellationHandler {
             uri?.let { setDocumentUri(uri) }
         }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        pdfViewerFragment =
+            childFragmentManager.findFragmentByTag(PDF_VIEWER_FRAGMENT_TAG) as PdfViewerFragment?
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,

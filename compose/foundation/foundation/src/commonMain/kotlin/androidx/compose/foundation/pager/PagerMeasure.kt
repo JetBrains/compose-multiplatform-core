@@ -67,6 +67,8 @@ internal fun LazyLayoutMeasureScope.measurePager(
     requirePrecondition(beforeContentPadding >= 0) { "negative beforeContentPadding" }
     requirePrecondition(afterContentPadding >= 0) { "negative afterContentPadding" }
     val pageSizeWithSpacing = (pageAvailableSize + spaceBetweenPages).coerceAtLeast(0)
+    // Limit beyondViewportPageCount to pageCount to prevent overflow if it's very large
+    val coercedBeyondViewportPageCount = beyondViewportPageCount.coerceAtMost(pageCount)
 
     debugLog {
         "Starting Measure Pass..." +
@@ -88,7 +90,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
             firstVisiblePage = null,
             firstVisiblePageScrollOffset = 0,
             reverseLayout = false,
-            beyondViewportPageCount = beyondViewportPageCount,
+            beyondViewportPageCount = coercedBeyondViewportPageCount,
             canScrollForward = false,
             currentPage = null,
             currentPageOffsetFraction = 0.0f,
@@ -327,7 +329,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
         val extraPagesBefore =
             createPagesBeforeList(
                 currentFirstPage = currentFirstPage,
-                beyondViewportPageCount = beyondViewportPageCount,
+                beyondViewportPageCount = coercedBeyondViewportPageCount,
                 pinnedPages = pinnedPages
             ) {
                 getAndMeasure(
@@ -352,7 +354,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
             createPagesAfterList(
                 currentLastPage = visiblePages.last().index,
                 pagesCount = pageCount,
-                beyondViewportPageCount = beyondViewportPageCount,
+                beyondViewportPageCount = coercedBeyondViewportPageCount,
                 pinnedPages = pinnedPages
             ) {
                 getAndMeasure(
@@ -484,7 +486,7 @@ internal fun LazyLayoutMeasureScope.measurePager(
             pageSize = pageAvailableSize,
             pageSpacing = spaceBetweenPages,
             afterContentPadding = afterContentPadding,
-            beyondViewportPageCount = beyondViewportPageCount,
+            beyondViewportPageCount = coercedBeyondViewportPageCount,
             canScrollForward = index < pageCount || currentMainAxisOffset > maxOffset,
             currentPage = newCurrentPage,
             currentPageOffsetFraction = currentPageOffsetFraction,
@@ -506,7 +508,7 @@ private fun createPagesAfterList(
 ): List<MeasuredPage> {
     var list: MutableList<MeasuredPage>? = null
 
-    val end = minOf(currentLastPage + beyondViewportPageCount, pagesCount - 1)
+    val end = minOf(beyondViewportPageCount, (pagesCount - currentLastPage) - 1) + currentLastPage
 
     for (i in currentLastPage + 1..end) {
         if (list == null) list = mutableListOf()

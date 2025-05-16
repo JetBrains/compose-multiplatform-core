@@ -50,8 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.wear.compose.foundation.hierarchicalFocus
-import androidx.wear.compose.foundation.hierarchicalFocusRequester
+import androidx.wear.compose.foundation.hierarchicalFocusGroup
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -93,7 +93,7 @@ internal class caseFactory(val useHfc: Boolean) : LayeredComposeTestCase() {
                         )
                         .thenIf(
                             useHfc,
-                            Modifier.hierarchicalFocus(focusEnabled = selectedRow == rowIx)
+                            Modifier.hierarchicalFocusGroup(active = selectedRow == rowIx)
                         ),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -117,10 +117,10 @@ internal class caseFactory(val useHfc: Boolean) : LayeredComposeTestCase() {
                             modifier =
                                 Modifier.thenIf(
                                         useHfc,
-                                        Modifier.hierarchicalFocus(
-                                                focusEnabled = selectedColumn[rowIx].value == colIx
+                                        Modifier.hierarchicalFocusGroup(
+                                                active = selectedColumn[rowIx].value == colIx
                                             )
-                                            .hierarchicalFocusRequester(focusRequester)
+                                            .requestFocusOnHierarchyActive()
                                     )
                                     .weight(1f)
                                     .clickable { selectedColumn[rowIx].value = colIx }

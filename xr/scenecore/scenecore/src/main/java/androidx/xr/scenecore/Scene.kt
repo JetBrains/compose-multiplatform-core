@@ -20,7 +20,6 @@ package androidx.xr.scenecore
 
 import android.app.Activity
 import android.os.Bundle
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.SessionConnector
 import androidx.xr.runtime.internal.Entity as RtEntity
 import androidx.xr.runtime.internal.JxrPlatformAdapter
@@ -39,11 +38,8 @@ import java.util.function.Consumer
  * Once created, the application can use the Scene object to create spatialized entities, such as
  * Widget panels and geometric models, set the background environment, and anchor content to the
  * real world.
- *
- * @param session the Session to create the Scene for.
  */
 @Suppress("NotCloseable")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class Scene : SessionConnector {
 
     internal val entityManager = EntityManager()

@@ -17,12 +17,10 @@
 package androidx.xr.scenecore
 
 import android.util.Log
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.SoundFieldAttributes as RtSoundFieldAttributes
 import androidx.xr.runtime.internal.SpatializerConstants as RtSpatializerConstants
 
 /** Configures ambisonics sound sources. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SoundFieldAttributes(@SpatializerConstants.AmbisonicsOrder public val order: Int) {
 
     internal val rtSoundFieldAttributes: RtSoundFieldAttributes

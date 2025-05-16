@@ -30,6 +30,8 @@ internal class KotlinFileSpec(override val actual: KFileSpec) : KotlinSpec<KFile
         generator.write(actual, mode)
     }
 
+    override fun toBuilder() = Builder(actual.toBuilder())
+
     internal class Builder(internal val actual: KFileSpecBuilder) : XFileSpec.Builder {
 
         override fun addFileComment(code: XCodeBlock) = apply {

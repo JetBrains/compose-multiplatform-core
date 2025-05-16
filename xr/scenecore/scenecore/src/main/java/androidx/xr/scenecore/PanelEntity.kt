@@ -18,7 +18,6 @@ package androidx.xr.scenecore
 
 import android.content.Context
 import android.view.View
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
@@ -26,7 +25,6 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 
 /** Provides implementations for common Panel functionality. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public sealed class BasePanelEntity<out RtPanelEntityType : RtPanelEntity>(
     private val rtPanelEntity: RtPanelEntityType,
     entityManager: EntityManager,
@@ -109,7 +107,6 @@ public sealed class BasePanelEntity<out RtPanelEntityType : RtPanelEntity>(
 }
 
 /** PanelEntity creates a spatial panel in Android XR. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public open class PanelEntity
 internal constructor(
     rtEntity: RtPanelEntity,

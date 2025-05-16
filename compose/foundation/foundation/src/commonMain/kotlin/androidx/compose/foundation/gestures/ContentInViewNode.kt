@@ -71,8 +71,8 @@ internal class ContentInViewNode(
 ) :
     Modifier.Node(),
     androidx.compose.foundation.relocation.BringIntoViewResponder,
-    LayoutAwareModifierNode,
-    CompositionLocalConsumerModifierNode {
+    CompositionLocalConsumerModifierNode,
+    LayoutAwareModifierNode {
 
     override val shouldAutoInvalidate: Boolean = false
 

@@ -52,7 +52,7 @@ public class RegistryManagerJavaTest {
 
         mRegistryManager.registerCredentialsAsync(
                 new RegisterCredentialsRequest("type", "id", "cred".getBytes(),
-                        "matcher".getBytes()) {
+                        "matcher".getBytes(), "intentAction") {
                 },
                 null,
                 Runnable::run,

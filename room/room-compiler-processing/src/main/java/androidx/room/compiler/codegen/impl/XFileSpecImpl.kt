@@ -35,6 +35,8 @@ internal class XFileSpecImpl(
         }
     }
 
+    override fun toBuilder() = Builder(java.toBuilder(), kotlin.toBuilder())
+
     internal class Builder(
         val java: JavaFileSpec.Builder,
         val kotlin: KotlinFileSpec.Builder,

@@ -184,7 +184,9 @@ public fun Button(
  * @param shape Defines the button's shape. It is strongly recommended to use the default as this
  *   shape is a key characteristic of the Wear Material3 Theme
  * @param colors [ButtonColors] that will be used to resolve the background and content color for
- *   this button in different states. See [ButtonDefaults.buttonWithContainerPainterColors].
+ *   this button in different states (the containerColor and disabledContainerColor are overridden
+ *   by containerPainter and disabledContainerPainter respectively). See
+ *   [ButtonDefaults.buttonWithContainerPainterColors].
  * @param border Optional [BorderStroke] that will be used to resolve the border for this button in
  *   different states.
  * @param contentPadding The spacing values to apply internally between the container and the
@@ -613,7 +615,7 @@ public fun Button(
     )
 
 /**
- * Wear Material3 [Button] that offers parameters for container image backgrounds, withthree slots
+ * Wear Material3 [Button] that offers parameters for container image backgrounds, with three slots
  * and a specific layout for an icon, label and secondaryLabel. The icon and secondaryLabel are
  * optional. The items are laid out with the icon, if provided, at the start of a row, with a column
  * next containing the two label slots.
@@ -654,12 +656,13 @@ public fun Button(
  * @param enabled Controls the enabled state of the button. When `false`, this button will not be
  *   clickable
  * @param disabledContainerPainter [Painter] to use to draw the container of the [Button] when not
- *   enabled, such as returned by [ButtonDefaults.containerPainter] with alpha =
- *   [ButtonDefaults.DisabledContainerAlpha].
+ *   enabled, such as returned by [ButtonDefaults.disabledContainerPainter].
  * @param shape Defines the button's shape. It is strongly recommended to use the default as this
  *   shape is a key characteristic of the Wear Material3 Theme
  * @param colors [ButtonColors] that will be used to resolve the background and content color for
- *   this button in different states. See [ButtonDefaults.buttonWithContainerPainterColors].
+ *   this button in different states (the containerColor and disabledContainerColor are overridden
+ *   by containerPainter and disabledContainerPainter respectively). See
+ *   [ButtonDefaults.buttonWithContainerPainterColors].
  * @param border Optional [BorderStroke] that will be used to resolve the button border in different
  *   states.
  * @param contentPadding The spacing values to apply internally between the container and the
@@ -1986,7 +1989,7 @@ public object ButtonDefaults {
  * Represents the container and content colors used in buttons in different states.
  *
  * @param containerColor The background color of this [Button] when enabled (overridden by the
- *   containerPainter parameter on Buttons with image backgrounds)
+ *   containerPainter parameter on Buttons with image backgrounds).
  * @param contentColor The content color of this [Button] when enabled.
  * @param secondaryContentColor The content color of this [Button] when enabled.
  * @param iconColor The content color of this [Button] when enabled.

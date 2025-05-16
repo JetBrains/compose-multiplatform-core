@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalWearFoundationApi::class)
+@file:Suppress("DEPRECATION")
+
 package androidx.wear.compose.foundation
 
 import androidx.annotation.FloatRange
@@ -93,6 +96,12 @@ import kotlinx.coroutines.launch
  *
  * @see [RevealDirection]
  */
+@Deprecated(
+    message =
+        "The SwipeToReveal component from the latest material library should be used instead. This will be removed in a future release of this library.",
+    replaceWith = ReplaceWith("RevealValue", "androidx.wear.compose.material3.RevealValue")
+)
+@ExperimentalWearFoundationApi
 @JvmInline
 public value class RevealValue private constructor(public val value: Int) {
     public companion object {
@@ -146,6 +155,12 @@ public value class RevealValue private constructor(public val value: Int) {
  * prevent conflict with the system-wide swipe to dismiss gesture in an activity, so it's strongly
  * advised to respect the default value to avoid conflicting gestures.
  */
+@Deprecated(
+    message =
+        "The SwipeToReveal component from the latest material library should be used instead. This will be removed in a future release of this library.",
+    replaceWith = ReplaceWith("RevealDirection", "androidx.wear.compose.material3.RevealDirection")
+)
+@ExperimentalWearFoundationApi
 @JvmInline
 public value class RevealDirection private constructor(public val value: Int) {
     public companion object {
@@ -172,6 +187,11 @@ public value class RevealDirection private constructor(public val value: Int) {
  * not set by themselves and need to be set appropriately with [RevealState.snapTo] and
  * [RevealState.animateTo].
  */
+@Deprecated(
+    message =
+        "The SwipeToReveal component from the latest material library should be used instead. This will be removed in a future release of this library."
+)
+@ExperimentalWearFoundationApi
 @JvmInline
 public value class RevealActionType private constructor(public val value: Int) {
     public companion object {
@@ -212,6 +232,10 @@ public value class RevealActionType private constructor(public val value: Int) {
  *   keep the default [RevealDirection.RightToLeft] in order to preserve compatibility with the
  *   system wide swipe to dismiss gesture.
  */
+@Deprecated(
+    "The SwipeToReveal component from the latest material library should be used instead. This will be removed in a future release of this library."
+)
+@ExperimentalWearFoundationApi
 @SuppressWarnings("PrimitiveInCollection")
 public fun createRevealAnchors(
     coveredAnchor: Float = 0f,
@@ -241,6 +265,12 @@ public fun createRevealAnchors(
  *
  * @constructor Create a [RevealState].
  */
+@Deprecated(
+    message =
+        "The SwipeToReveal component from the latest material library should be used instead. This will be removed in a future release of this library.",
+    replaceWith = ReplaceWith("RevealState", "androidx.wear.compose.material3.RevealState")
+)
+@ExperimentalWearFoundationApi
 public class RevealState
 internal constructor(
     initialValue: RevealValue,
@@ -410,6 +440,13 @@ internal constructor(
  * @param anchors A map of [RevealValue] to the fraction where the content can be revealed to reach
  *   that value. Each anchor should be between [0..1] which will be adjusted based on total width.
  */
+@Deprecated(
+    message =
+        "The SwipeToReveal component from the latest material library should be used instead. This will be removed in a future release of this library.",
+    replaceWith =
+        ReplaceWith("rememberRevealState", "androidx.wear.compose.material3.rememberRevealState")
+)
+@ExperimentalWearFoundationApi
 @Composable
 public fun rememberRevealState(
     initialValue: RevealValue = RevealValue.Covered,
@@ -477,7 +514,15 @@ public fun rememberRevealState(
  *   not. By default, [gestureInclusion] allows gestures everywhere except a zone on the left edge,
  *   which is used for swipe-to-dismiss (see [SwipeToRevealDefaults.gestureInclusion]).
  * @param content The content that will be initially displayed over the other actions provided.
+ *   Custom accessibility actions should always be added to the content using [Modifier.semantics] -
+ *   examples are shown in the code samples.
  */
+@Deprecated(
+    message =
+        "The SwipeToReveal component from the latest material library should be used instead. This will be removed in a future release of this library.",
+    replaceWith = ReplaceWith("SwipeToReveal", "androidx.wear.compose.material3.SwipeToReveal")
+)
+@ExperimentalWearFoundationApi
 @Composable
 public fun SwipeToReveal(
     primaryAction: @Composable () -> Unit,
@@ -740,6 +785,16 @@ public fun SwipeToReveal(
 }
 
 /** An internal object containing some defaults used across the Swipe to reveal component. */
+@Deprecated(
+    message =
+        "The SwipeToReveal component from the latest material library should be used instead. This will be removed in a future release of this library.",
+    replaceWith =
+        ReplaceWith(
+            "SwipeToRevealDefaults",
+            "androidx.wear.compose.material3.SwipeToRevealDefaults"
+        )
+)
+@ExperimentalWearFoundationApi
 public object SwipeToRevealDefaults {
     /** Default animation spec used when moving between states. */
     internal val AnimationSpec: AnimationSpec<Float> =

@@ -16,13 +16,11 @@
 
 package androidx.xr.runtime.testing
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.SessionConnector
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.LifecycleManager
 
 @Suppress("NotCloseable")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeSessionConnector : SessionConnector {
     /** Whether the [SessionConnector] has been initialized or not. */
     public var isInitialized: Boolean = false

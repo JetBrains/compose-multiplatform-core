@@ -83,6 +83,7 @@ public interface ActivityPose {
      *   and where relative to this [ActivityPose]. Listeners will be called on the main thread if
      *   Runnable::run is supplied.
      */
+    @Suppress("AsyncSuffixFuture")
     public fun hitTest(
         origin: Vector3,
         direction: Vector3,

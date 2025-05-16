@@ -36,6 +36,7 @@ import androidx.camera.core.CameraState;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ExposureState;
 import androidx.camera.core.FocusMeteringAction;
+import androidx.camera.core.Logger;
 import androidx.camera.core.TorchState;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.ZoomState;
@@ -76,6 +77,7 @@ import java.util.concurrent.Executor;
  * <p>This camera info can be constructed with fake values.
  */
 public final class FakeCameraInfoInternal implements CameraInfoInternal {
+    private static final String TAG = "FakeCameraInfoInternal";
     private static final Set<Range<Integer>> FAKE_FPS_RANGES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(
                     new Range<>(12, 30),
@@ -537,16 +539,19 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
     @Override
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
-            int cameraMode, @NonNull CameraConfig cameraConfig) {
+            int cameraMode, boolean allowFeatureCombinationResolutions,
+            @NonNull CameraConfig cameraConfig) {
         try {
             StreamSpecsCalculator.Companion.calculateSuggestedStreamSpecsCompat(
                     mStreamSpecsCalculator,
                     cameraMode,
                     this,
                     useCases,
-                    cameraConfig
+                    cameraConfig,
+                    allowFeatureCombinationResolutions
             );
         } catch (IllegalArgumentException e) {
+            Logger.d(TAG, "isUseCaseCombinationSupported: calculateSuggestedStreamSpecs failed", e);
             return false;
         }
 

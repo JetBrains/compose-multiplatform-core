@@ -98,10 +98,10 @@ class ImplicitCastVerificationFailureDetectorTest :
 
         val expected =
             """
-src/java/androidx/UnsafeImplicitCastAsMethodArgumentJava.java:11: Error: This expression has type android.app.Notification.MessagingStyle (introduced in API level 24) but it used as type android.app.Notification.Style (introduced in API level 16). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
+src/java/androidx/UnsafeImplicitCastAsMethodArgumentJava.java:11: Error: This expression has type android.app.Notification.MessagingStyle (added in API level 24) but it used as type android.app.Notification.Style (added in API level 16). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
         Api16Impl.setBuilder(style, builder);
                              ~~~~~
-src/java/androidx/UnsafeImplicitCastAsMethodArgumentKotlin.kt:11: Error: This expression has type android.app.Notification.MessagingStyle (introduced in API level 24) but it used as type android.app.Notification.Style (introduced in API level 16). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
+src/java/androidx/UnsafeImplicitCastAsMethodArgumentKotlin.kt:11: Error: This expression has type android.app.Notification.MessagingStyle (added in API level 24) but it used as type android.app.Notification.Style (added in API level 16). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
         Api16Impl.setBuilder(style, builder);
                              ~~~~~
 2 errors, 0 warnings
@@ -204,10 +204,10 @@ Fix for src/java/androidx/UnsafeImplicitCastAsMethodArgumentJava.java line 11: E
 
         val expected =
             """
-src/java/androidx/UnsafeImplicitCastInCatchBlockJava.java:15: Error: This expression has type android.view.WindowManager.InvalidDisplayException (introduced in API level 17) but it used as type java.lang.Throwable (introduced in API level 1). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
+src/java/androidx/UnsafeImplicitCastInCatchBlockJava.java:15: Error: This expression has type android.view.WindowManager.InvalidDisplayException (added in API level 17) but it used as type java.lang.Throwable (added in API level 1). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
             Log.w("Error", "Couldn't show presentation!", e);
                                                           ~
-src/java/androidx/UnsafeImplicitCastInCatchBlockKotlin.kt:15: Error: This expression has type android.view.WindowManager.InvalidDisplayException (introduced in API level 17) but it used as type java.lang.Throwable (introduced in API level 1). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
+src/java/androidx/UnsafeImplicitCastInCatchBlockKotlin.kt:15: Error: This expression has type android.view.WindowManager.InvalidDisplayException (added in API level 17) but it used as type java.lang.Throwable (added in API level 1). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
             Log.w("Error", "Couldn't show presentation!", e)
                                                           ~
 2 errors, 0 warnings
@@ -276,10 +276,10 @@ Fix for src/java/androidx/UnsafeImplicitCastInCatchBlockJava.java line 15: Extra
 
         val expected =
             """
-src/java/androidx/UnsafeImplicitCastInAssignmentJava.java:11: Error: This expression has type android.app.Notification.MessagingStyle (introduced in API level 24) but it used as type android.app.Notification.Style (introduced in API level 16). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
+src/java/androidx/UnsafeImplicitCastInAssignmentJava.java:11: Error: This expression has type android.app.Notification.MessagingStyle (added in API level 24) but it used as type android.app.Notification.Style (added in API level 16). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
         style = messagingStyle;
                 ~~~~~~~~~~~~~~
-src/java/androidx/UnsafeImplicitCastInAssignmentKotlin.kt:11: Error: This expression has type android.app.Notification.MessagingStyle (introduced in API level 24) but it used as type android.app.Notification.Style (introduced in API level 16). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
+src/java/androidx/UnsafeImplicitCastInAssignmentKotlin.kt:11: Error: This expression has type android.app.Notification.MessagingStyle (added in API level 24) but it used as type android.app.Notification.Style (added in API level 16). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
         style = messagingStyle
                 ~~~~~~~~~~~~~~
 2 errors, 0 warnings
@@ -350,10 +350,10 @@ Fix for src/java/androidx/UnsafeImplicitCastInAssignmentJava.java line 11: Extra
 
         val expected =
             """
-src/java/androidx/ImplicitCastOnReturnJava.java:9: Error: This expression has type android.app.Notification.MessagingStyle (introduced in API level 24) but it used as type android.app.Notification.Style (introduced in API level 16). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
+src/java/androidx/ImplicitCastOnReturnJava.java:9: Error: This expression has type android.app.Notification.MessagingStyle (added in API level 24) but it used as type android.app.Notification.Style (added in API level 16). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
         return style;
                ~~~~~
-src/java/androidx/ImplicitCastOnReturnKotlin.kt:9: Error: This expression has type android.app.Notification.MessagingStyle (introduced in API level 24) but it used as type android.app.Notification.Style (introduced in API level 16). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
+src/java/androidx/ImplicitCastOnReturnKotlin.kt:9: Error: This expression has type android.app.Notification.MessagingStyle (added in API level 24) but it used as type android.app.Notification.Style (added in API level 16). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
         return style
                ~~~~~
 2 errors, 0 warnings
@@ -447,10 +447,10 @@ Fix for src/java/androidx/ImplicitCastOnReturnJava.java line 9: Extract to stati
 
         val expected =
             """
-src/java/androidx/ImplicitCastOfMethodCallResultJava.java:11: Error: This expression has type android.graphics.drawable.AdaptiveIconDrawable (introduced in API level 26) but it used as type android.graphics.drawable.Drawable (introduced in API level 1). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
+src/java/androidx/ImplicitCastOfMethodCallResultJava.java:11: Error: This expression has type android.graphics.drawable.AdaptiveIconDrawable (added in API level 26) but it used as type android.graphics.drawable.Drawable (added in API level 1). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
         return Api26Impl.createAdaptiveIconDrawable(null, null);
                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-src/java/androidx/ImplicitCastOfMethodCallResultKotlin.kt:11: Error: This expression has type android.graphics.drawable.AdaptiveIconDrawable (introduced in API level 26) but it used as type android.graphics.drawable.Drawable (introduced in API level 1). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
+src/java/androidx/ImplicitCastOfMethodCallResultKotlin.kt:11: Error: This expression has type android.graphics.drawable.AdaptiveIconDrawable (added in API level 26) but it used as type android.graphics.drawable.Drawable (added in API level 1). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
         Api26Impl.createAdaptiveIconDrawable(null, null)
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 2 errors, 0 warnings
@@ -717,7 +717,7 @@ Fix for src/java/androidx/ImplicitCastOfMethodCallResultJava.java line 11: Extra
                     ViewGroup viewGroup;
 
                     public void setViewGroup(FragmentBreadCrumbs breadCrumbs) {
-                        // FragmentBreadCrumbs was introduced in API level 11
+                        // FragmentBreadCrumbs was added in API level 11
                         viewGroup = breadCrumbs;
                     }
                 }
@@ -735,7 +735,7 @@ Fix for src/java/androidx/ImplicitCastOfMethodCallResultJava.java line 11: Extra
                     lateinit var viewGroup: ViewGroup
 
                     fun setViewGroup(breadCrumbs: FragmentBreadCrumbs) {
-                        // FragmentBreadCrumbs was introduced in API level 11
+                        // FragmentBreadCrumbs was added in API level 11
                         viewGroup = breadCrumbs
                     }
                 }
@@ -782,13 +782,13 @@ Fix for src/java/androidx/ImplicitCastOfMethodCallResultJava.java line 11: Extra
 
         val expected =
             """
-src/java/androidx/UnsafeCastToVarargs.java:11: Error: This expression has type android.icu.number.FormattedNumber (introduced in API level 30) but it used as type java.lang.CharSequence (introduced in API level 1). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
+src/java/androidx/UnsafeCastToVarargs.java:11: Error: This expression has type android.icu.number.FormattedNumber (added in API level 30) but it used as type java.lang.CharSequence (added in API level 1). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
         Api27Impl.setAutofillOptions(adapter, vararg1, vararg2, vararg3);
                                               ~~~~~~~
-src/java/androidx/UnsafeCastToVarargs.java:11: Error: This expression has type android.icu.number.FormattedNumber (introduced in API level 30) but it used as type java.lang.CharSequence (introduced in API level 1). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
+src/java/androidx/UnsafeCastToVarargs.java:11: Error: This expression has type android.icu.number.FormattedNumber (added in API level 30) but it used as type java.lang.CharSequence (added in API level 1). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
         Api27Impl.setAutofillOptions(adapter, vararg1, vararg2, vararg3);
                                                        ~~~~~~~
-src/java/androidx/UnsafeCastToVarargs.java:11: Error: This expression has type android.icu.number.FormattedNumber (introduced in API level 30) but it used as type java.lang.CharSequence (introduced in API level 1). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
+src/java/androidx/UnsafeCastToVarargs.java:11: Error: This expression has type android.icu.number.FormattedNumber (added in API level 30) but it used as type java.lang.CharSequence (added in API level 1). Run-time class verification will not be able to validate this implicit cast on devices between these API levels. [ImplicitCastClassVerificationFailure]
         Api27Impl.setAutofillOptions(adapter, vararg1, vararg2, vararg3);
                                                                 ~~~~~~~
 3 errors, 0 warnings

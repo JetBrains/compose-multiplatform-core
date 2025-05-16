@@ -410,15 +410,33 @@ suspend fun AwaitPointerEventScope.awaitVerticalTouchSlopOrCancellation(
         orientation = Orientation.Vertical
     )
 
-internal suspend fun AwaitPointerEventScope.awaitVerticalPointerSlopOrCancellation(
+/**
+ * Waits for vertical drag motion to pass [pointerType]'s touch slop using [pointerId] as the
+ * pointer to examine. If [pointerId] is raised, another pointer from those that are down will be
+ * chosen to lead the gesture, and if none are down, `null` is returned. If [pointerId] is not down
+ * when [awaitVerticalPointerSlopOrCancellation] is called, then `null` is returned.
+ *
+ * [onPointerSlopReached] is called after [ViewConfiguration.touchSlop] motion in the vertical
+ * direction with the change that caused the motion beyond touch slop and the pixels beyond touch
+ * slop. [onPointerSlopReached] should consume the position change if it accepts the motion. If it
+ * does, then the method returns that [PointerInputChange]. If not, touch slop detection will
+ * continue.
+ *
+ * @return The [PointerInputChange] that was consumed in [onPointerSlopReached] or `null` if all
+ *   pointers are raised before touch slop is detected or another gesture consumed the position
+ *   change.
+ * @see awaitHorizontalTouchSlopOrCancellation
+ * @see awaitTouchSlopOrCancellation
+ */
+suspend fun AwaitPointerEventScope.awaitVerticalPointerSlopOrCancellation(
     pointerId: PointerId,
     pointerType: PointerType,
-    onTouchSlopReached: (change: PointerInputChange, overSlop: Float) -> Unit
+    onPointerSlopReached: (change: PointerInputChange, overSlop: Float) -> Unit
 ) =
     awaitPointerSlopOrCancellation(
         pointerId = pointerId,
         pointerType = pointerType,
-        onPointerSlopReached = { change, overSlop -> onTouchSlopReached(change, overSlop.y) },
+        onPointerSlopReached = { change, overSlop -> onPointerSlopReached(change, overSlop.y) },
         orientation = Orientation.Vertical
     )
 
@@ -564,7 +582,25 @@ suspend fun AwaitPointerEventScope.awaitHorizontalTouchSlopOrCancellation(
         orientation = Orientation.Horizontal
     )
 
-internal suspend fun AwaitPointerEventScope.awaitHorizontalPointerSlopOrCancellation(
+/**
+ * Waits for horizontal drag motion to pass [pointerType]'s touch slop, using [pointerId] as the
+ * pointer to examine. If [pointerId] is raised, another pointer from those that are down will be
+ * chosen to lead the gesture, and if none are down, `null` is returned. If [pointerId] is not down
+ * when [awaitHorizontalPointerSlopOrCancellation] is called, then `null` is returned.
+ *
+ * [onPointerSlopReached] is called after [pointerType]'s touch slop motion in the horizontal
+ * direction with the change that caused the motion beyond touch slop and the pixels beyond touch
+ * slop. [onPointerSlopReached] should consume the position change if it accepts the motion. If it
+ * does, then the method returns that [PointerInputChange]. If not, touch slop detection will
+ * continue.
+ *
+ * @return The [PointerInputChange] that was consumed in [onPointerSlopReached] or `null` if all
+ *   pointers are raised before touch slop is detected or another gesture consumed the position
+ *   change.
+ * @see awaitVerticalTouchSlopOrCancellation
+ * @see awaitTouchSlopOrCancellation
+ */
+suspend fun AwaitPointerEventScope.awaitHorizontalPointerSlopOrCancellation(
     pointerId: PointerId,
     pointerType: PointerType,
     onPointerSlopReached: (change: PointerInputChange, overSlop: Float) -> Unit

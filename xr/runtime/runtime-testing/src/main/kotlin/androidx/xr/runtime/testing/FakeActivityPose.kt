@@ -16,7 +16,6 @@
 
 package androidx.xr.runtime.testing
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.ActivityPose
 import androidx.xr.runtime.internal.HitTestResult
 import androidx.xr.runtime.math.Pose
@@ -26,7 +25,6 @@ import com.google.common.util.concurrent.ListenableFuture
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [ActivityPose] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public open class FakeActivityPose : ActivityPose {
     override val activitySpacePose: Pose = Pose()
 
@@ -36,6 +34,7 @@ public open class FakeActivityPose : ActivityPose {
 
     override fun transformPoseTo(pose: Pose, destination: ActivityPose): Pose = pose
 
+    @Suppress("AsyncSuffixFuture")
     override fun hitTest(
         origin: Vector3,
         direction: Vector3,

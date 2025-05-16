@@ -391,4 +391,6 @@ WARN: \$OUT_DIR/androidx/docs\-public/build/unzippedJvmSources/androidx/biometri
 WARN: \$OUT_DIR/androidx/docs\-public/build/unzippedJvmSources/androidx/biometric/auth/Class[0-9]+BiometricAuthExtensions\.kt:[0-9]+ Failed to resolve See Class[0-9]+BiometricAuthPrompt\.authenticate in DFunction authenticate\. Did you mean Class[0-9]+BiometricAuthPrompt\#authenticate\?
 # Remove OPT_IN_MARKER_ON_WRONG_TARGET from this list and from all instances in code when b/174708311 is fixed
 # Remove UNSAFE_CALL when b/409324917 is fixed
-.*This code uses error suppression for '(ABSTRACT_MEMBER_NOT_IMPLEMENTED|CANNOT_OVERRIDE_INVISIBLE_MEMBER|INVISIBLE_REFERENCE|OPT_IN_MARKER_ON_WRONG_TARGET|UNSAFE_CALL|UPPER_BOUND_VIOLATED|WRONG_ANNOTATION_TARGET)'.*
+.*This code uses error suppression for '(ABSTRACT_MEMBER_NOT_IMPLEMENTED|CANNOT_OVERRIDE_INVISIBLE_MEMBER|INVISIBLE_REFERENCE|OPT_IN_MARKER_ON_WRONG_TARGET|UNSAFE_CALL|WRONG_ANNOTATION_TARGET)'.*
+# Remove when https://youtrack.jetbrains.com/issue/KT-70013 is fixed, o/w anytime a new entry is added to this list, this message will be printed.
+Calculating task graph as configuration cache cannot be reused because the set of paths ignored in file-system-check input tracking.*

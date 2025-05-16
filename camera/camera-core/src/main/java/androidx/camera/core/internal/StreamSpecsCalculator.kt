@@ -19,6 +19,7 @@ package androidx.camera.core.internal
 import android.util.Pair
 import android.util.Range
 import android.util.Size
+import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.CameraConfig
@@ -26,7 +27,6 @@ import androidx.camera.core.impl.CameraConfigs
 import androidx.camera.core.impl.CameraDeviceSurfaceManager
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.CameraMode
-import androidx.camera.core.impl.PreviewConfig
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.UseCaseConfig
@@ -59,6 +59,7 @@ public interface StreamSpecsCalculator {
         attachedUseCases: List<UseCase> = emptyList(),
         cameraConfig: CameraConfig = CameraConfigs.defaultConfig(),
         targetHighSpeedFrameRate: Range<Int> = StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED,
+        allowFeatureCombinationResolutions: Boolean = false
     ): Map<UseCase, StreamSpec>
 
     public companion object {
@@ -71,7 +72,8 @@ public interface StreamSpecsCalculator {
                     newUseCases: List<UseCase>,
                     attachedUseCases: List<UseCase>,
                     cameraConfig: CameraConfig,
-                    targetHighSpeedFrameRate: Range<Int>
+                    targetHighSpeedFrameRate: Range<Int>,
+                    allowFeatureCombinationResolutions: Boolean
                 ): Map<UseCase, StreamSpec> {
                     return emptyMap()
                 }
@@ -93,6 +95,7 @@ public interface StreamSpecsCalculator {
             cameraInfoInternal: CameraInfoInternal,
             newUseCases: List<UseCase>,
             cameraConfig: CameraConfig = CameraConfigs.defaultConfig(),
+            allowFeatureCombinationResolutions: Boolean = false,
             attachedUseCases: List<UseCase> = emptyList(),
             targetHighSpeedFrameRate: Range<Int> = StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED,
         ): Map<UseCase, StreamSpec> {
@@ -102,7 +105,8 @@ public interface StreamSpecsCalculator {
                 newUseCases = newUseCases,
                 attachedUseCases = attachedUseCases,
                 cameraConfig = cameraConfig,
-                targetHighSpeedFrameRate = targetHighSpeedFrameRate
+                targetHighSpeedFrameRate = targetHighSpeedFrameRate,
+                allowFeatureCombinationResolutions = allowFeatureCombinationResolutions,
             )
         }
     }
@@ -125,6 +129,7 @@ public class StreamSpecsCalculatorImpl(
         attachedUseCases: List<UseCase>,
         cameraConfig: CameraConfig,
         targetHighSpeedFrameRate: Range<Int>,
+        allowFeatureCombinationResolutions: Boolean
     ): Map<UseCase, StreamSpec> {
         // Calculate stream specs for use cases already attached.
         val result =
@@ -247,10 +252,11 @@ public class StreamSpecsCalculatorImpl(
                     supportedOutputSizesSorter.getSortedSupportedOutputSizes(combinedUseCaseConfig)
                 )
 
-                if (useCase.currentConfig is PreviewConfig) {
+                if (useCase is Preview || useCase is StreamSharing) {
+                    // Let isPreviewStabilizationOn be true only if stabilization mode of Preview
+                    // or StreamSharing (wrapping Preview) is on.
                     isPreviewStabilizationOn =
-                        (useCase.currentConfig as PreviewConfig).previewStabilizationMode ==
-                            StabilizationMode.ON
+                        combinedUseCaseConfig.previewStabilizationMode == StabilizationMode.ON
                 }
             }
 

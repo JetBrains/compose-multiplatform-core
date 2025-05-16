@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.modifiers
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.text.DefaultMinLines
 import androidx.compose.foundation.text.ceilToIntPx
 import androidx.compose.ui.text.AnnotatedString
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.constrain
+import kotlin.jvm.JvmInline
 import kotlin.math.min
 
 /**
@@ -76,6 +78,7 @@ internal class ParagraphLayoutCache(
             if (value == null || lastDensity != newDensity) {
                 field = value
                 lastDensity = newDensity
+                recordHistory(LayoutCacheOperation.MarkDirtyDensity)
                 markDirty()
             }
         }
@@ -114,11 +117,45 @@ internal class ParagraphLayoutCache(
     private var cachedIntrinsicHeight: Int = -1
 
     /**
+     * A 64-bit flag that records the history of `markDirty`, `markStyleDirty`, and
+     * `layoutWithConstraints` operations. Each 2-bit segment represents a distinct operation.
+     * Consequently, this flag maintains a record of the last 32 operations performed on this cache.
+     *
+     * Bit representation:
+     * ```
+     *   | Operation                | Bits |
+     *   | :----------------------- | :--- |
+     *   | markStyleDirty           | 00   |
+     *   | markDirtyDensity         | 01   |
+     *   | markDirtyNodeUpdate      | 10   |
+     *   | layoutWithConstraints    | 11   |
+     * ```
+     *
+     * With the operations encoded in 2 bit segments and read from right to left. For example:
+     * ```
+     *   01111000 would represent that the last 4 operations performed were
+     *   1. markStyleDirty (00)
+     *   2. markDirtyNodeUpdate (10)
+     *   3. layoutWithConstraints (11)
+     *   4. markDirtyDensity (01)
+     * ```
+     *
+     * This history can be used to debug or print as a log of what operations have been performed on
+     * this [MultiParagraphLayoutCache].
+     */
+    @VisibleForTesting internal var historyFlag: Long = 0L
+
+    private fun recordHistory(op: LayoutCacheOperation) {
+        historyFlag = (historyFlag shl 2) or op.flag
+    }
+
+    /**
      * Update layout constraints for this text
      *
      * @return true if constraints caused a text layout invalidation
      */
     fun layoutWithConstraints(constraints: Constraints, layoutDirection: LayoutDirection): Boolean {
+        recordHistory(LayoutCacheOperation.LayoutWithConstraints)
         val finalConstraints =
             if (minLines > 1) {
                 useMinLinesConstrainer(constraints, layoutDirection)
@@ -217,6 +254,7 @@ internal class ParagraphLayoutCache(
         this.softWrap = softWrap
         this.maxLines = maxLines
         this.minLines = minLines
+        recordHistory(LayoutCacheOperation.MarkDirtyNode)
         markDirty()
     }
 
@@ -376,5 +414,15 @@ internal class ParagraphLayoutCache(
 
     override fun toString(): String =
         "ParagraphLayoutCache(paragraph=${if (paragraph != null) "<paragraph>" else "null"}, " +
-            "lastDensity=$lastDensity)"
+            "lastDensity=$lastDensity, history=$historyFlag, constraints=$)"
+}
+
+@JvmInline
+internal value class LayoutCacheOperation private constructor(val flag: Long) {
+    companion object {
+        val MarkDirtyStyle = LayoutCacheOperation(0b00)
+        val MarkDirtyDensity = LayoutCacheOperation(0b01)
+        val MarkDirtyNode = LayoutCacheOperation(0b10)
+        val LayoutWithConstraints = LayoutCacheOperation(0b11)
+    }
 }

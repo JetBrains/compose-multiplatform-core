@@ -32,8 +32,6 @@ import android.graphics.Rect;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.display.DisplayManager;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Rational;
 import android.util.Size;
@@ -44,6 +42,7 @@ import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewConfiguration;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -1074,20 +1073,11 @@ public final class PreviewView extends FrameLayout {
     }
 
     private void startListeningToDisplayChange() {
-        DisplayManager displayManager = getDisplayManager();
-        if (displayManager == null) {
-            return;
-        }
-        displayManager.registerDisplayListener(mDisplayRotationListener,
-                new Handler(Looper.getMainLooper()));
+        getViewTreeObserver().addOnGlobalLayoutListener(mDisplayRotationListener);
     }
 
     private void stopListeningToDisplayChange() {
-        DisplayManager displayManager = getDisplayManager();
-        if (displayManager == null) {
-            return;
-        }
-        displayManager.unregisterDisplayListener(mDisplayRotationListener);
+        getViewTreeObserver().removeOnGlobalLayoutListener(mDisplayRotationListener);
     }
 
     private @Nullable DisplayManager getDisplayManager() {
@@ -1183,21 +1173,26 @@ public final class PreviewView extends FrameLayout {
      */
     // Synthetic access
     @SuppressWarnings("WeakerAccess")
-    class DisplayRotationListener implements DisplayManager.DisplayListener {
-        @Override
-        public void onDisplayAdded(int displayId) {
-        }
+    class DisplayRotationListener implements ViewTreeObserver.OnGlobalLayoutListener {
+        private int mPreviousRotation = -1;
 
+        @SuppressLint("WrongConstant")
         @Override
-        public void onDisplayRemoved(int displayId) {
-        }
-
-        @Override
-        public void onDisplayChanged(int displayId) {
+        public void onGlobalLayout() {
             Display display = getDisplay();
-            if (display != null && display.getDisplayId() == displayId) {
+            int currentRotation;
+
+            if (display != null) {
+                currentRotation = display.getRotation();
+            } else {
+                return;
+            }
+
+            // For the first callback event, only caches the value.
+            if (mPreviousRotation != -1 && mPreviousRotation != currentRotation) {
                 redrawPreview();
             }
+            mPreviousRotation = currentRotation;
         }
     }
 }

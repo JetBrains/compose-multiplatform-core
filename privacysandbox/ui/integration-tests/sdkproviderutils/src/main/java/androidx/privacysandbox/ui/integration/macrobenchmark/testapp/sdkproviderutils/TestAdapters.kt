@@ -47,17 +47,23 @@ import androidx.privacysandbox.ui.client.SandboxedUiAdapterFactory
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import androidx.privacysandbox.ui.core.SessionData
+import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AUTOMATED_TEST_CALLBACK
 import androidx.privacysandbox.ui.provider.AbstractSandboxedUiAdapter
 import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewClientCompat
 import java.util.concurrent.Executor
 
 class TestAdapters(private val sdkContext: Context) {
-    abstract class BannerAd() : AbstractSandboxedUiAdapter() {
+    abstract class BannerAd(automatedTestCallbackBundle: Bundle = Bundle()) :
+        AbstractSandboxedUiAdapter() {
         lateinit var sessionClientExecutor: Executor
         lateinit var sessionClient: SandboxedUiAdapter.SessionClient
         lateinit var adViewWithConsumeScrollOverlay: AdViewWithConsumeScrollOverlay
         val mainLooperHandler = Handler(Looper.getMainLooper())
+        val automatedTestCallbackBinder =
+            automatedTestCallbackBundle.getBinder(AUTOMATED_TEST_CALLBACK)
+        val automatedTestCallback: IAutomatedTestCallback? =
+            automatedTestCallbackBinder?.let { IAutomatedTestCallback.Stub.asInterface(it) }
 
         abstract fun buildAdView(sessionContext: Context, width: Int, height: Int): View?
 
@@ -75,7 +81,7 @@ class TestAdapters(private val sdkContext: Context) {
             mainLooperHandler.post(
                 Runnable lambda@{
                     Log.d(TAG, "Session requested")
-                    var adView: View =
+                    val adView: View =
                         buildAdView(context, initialWidth, initialHeight) ?: return@lambda
                     adViewWithConsumeScrollOverlay =
                         AdViewWithConsumeScrollOverlay(context, initialWidth, initialHeight, adView)
@@ -110,6 +116,7 @@ class TestAdapters(private val sdkContext: Context) {
 
             override fun notifyConfigurationChanged(configuration: Configuration) {
                 Log.i(TAG, "Configuration change")
+                automatedTestCallback?.onConfigurationChanged(configuration)
             }
 
             override fun close() {
@@ -188,10 +195,10 @@ class TestAdapters(private val sdkContext: Context) {
     inner class TestBannerAd(
         private val text: String,
         private val withSlowDraw: Boolean,
-        private val automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
-    ) : BannerAd() {
+        automatedTestCallbackBundle: Bundle = Bundle()
+    ) : BannerAd(automatedTestCallbackBundle) {
         override fun buildAdView(sessionContext: Context, width: Int, height: Int): View? {
-            return TestView(sessionContext, withSlowDraw, text, automatedTestCallbackProxy)
+            return TestView(sessionContext, withSlowDraw, text, automatedTestCallback)
         }
     }
 
@@ -276,7 +283,7 @@ class TestAdapters(private val sdkContext: Context) {
         context: Context,
         private val withSlowDraw: Boolean,
         private val text: String,
-        private val automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
+        private val automatedTestCallback: IAutomatedTestCallback? = null
     ) : View(context) {
 
         init {
@@ -311,7 +318,7 @@ class TestAdapters(private val sdkContext: Context) {
             if (isFirstLayout) {
                 isFirstLayout = false
             } else {
-                automatedTestCallbackProxy?.onResizeOccurred(right - left, bottom - top)
+                automatedTestCallback?.onResizeOccurred(right - left, bottom - top)
             }
         }
     }

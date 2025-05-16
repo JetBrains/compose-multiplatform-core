@@ -27,9 +27,12 @@ dependencies {
     api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
     api(project(":camera:camera-core"))
+    api(libs.guavaListenableFuture)
     implementation("androidx.core:core:1.1.0")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
     implementation(libs.autoValueAnnotations)
+    implementation("androidx.annotation:annotation-experimental:1.4.1")
+    implementation("androidx.arch.core:core-common:2.2.0")
 
     annotationProcessor(libs.autoValue)
 
@@ -47,6 +50,10 @@ dependencies {
     testImplementation(project(":camera:camera-testing"), {
         exclude group: "androidx.camera", module: "camera-core"
     })
+    testImplementation("org.robolectric:annotations:4.14")
+    testImplementation("org.robolectric:shadowapi:4.14")
+    testImplementation("org.robolectric:shadows-framework:4.14")
+    testImplementation(libs.guavaAndroid)
 
     androidTestImplementation(project(":camera:camera-camera2"))
     androidTestImplementation(libs.testExtJunit)
@@ -56,7 +63,6 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
-    androidTestImplementation(libs.autoValueAnnotations)
     androidTestImplementation(project(":camera:camera-lifecycle"))
     androidTestImplementation(project(":camera:camera-testing")) {
         // Ensure camera-testing does not pull in androidx.test dependencies
@@ -64,7 +70,6 @@ dependencies {
     }
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
-    androidTestImplementation(libs.atomicFu)
     androidTestImplementation(project(":concurrent:concurrent-futures-ktx"))
     androidTestImplementation(project(":internal-testutils-truth"))
     androidTestImplementation(project(":camera:camera-camera2-pipe-integration"))
@@ -72,6 +77,11 @@ dependencies {
         exclude group: 'org.mockito' // to keep control on the mockito version
     }
     androidTestAnnotationProcessor(libs.autoValue)
+    androidTestImplementation("androidx.lifecycle:lifecycle-common:2.3.1")
+    androidTestImplementation(libs.guavaAndroid)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.kotlinCoroutinesCore)
+    androidTestImplementation(libs.testMonitor)
 }
 
 android {

@@ -20,10 +20,13 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.wear.protolayout.modifiers.LayoutModifier
 import androidx.wear.protolayout.modifiers.clearSemantics
+import androidx.wear.protolayout.modifiers.clip
 import androidx.wear.protolayout.testing.LayoutElementAssertionsProvider
+import androidx.wear.protolayout.testing.hasAllCorners
 import androidx.wear.protolayout.testing.hasClickable
 import androidx.wear.protolayout.testing.hasContentDescription
 import androidx.wear.protolayout.testing.hasText
+import androidx.wear.protolayout.testing.isSemanticsHeading
 import androidx.wear.protolayout.types.layoutString
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -76,7 +79,9 @@ class PrimaryLayoutTest {
                     deviceConfiguration = DEVICE_PARAMETERS,
                 ) {
                     primaryLayout(
-                        titleSlot = { text(title.layoutString) },
+                        titleSlot = {
+                            text(title.layoutString, modifier = LayoutModifier.clip(5.5f))
+                        },
                         mainSlot = { text(mainSlot.layoutString) },
                         bottomSlot = { text(bottomSlot.layoutString) },
                         onClick = CLICKABLE,
@@ -85,7 +90,11 @@ class PrimaryLayoutTest {
                 }
             )
 
-        provider.onElement(hasText(title)).assert(hasContentDescription(title))
+        provider
+            .onElement(hasText(title))
+            .assert(isSemanticsHeading())
+            .assert(hasContentDescription(title))
+            .assert(hasAllCorners(5.5f))
         provider.onElement(hasText(label)).assert(hasContentDescription(label))
         provider.onElement(hasText(bottomSlot)).assert(hasContentDescription(bottomSlot))
         provider.onElement(hasText(mainSlot)).assert(hasContentDescription(Regex(".*")).not())

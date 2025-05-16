@@ -39,7 +39,6 @@ dependencies {
     implementation(project(":wear:protolayout:protolayout-proto"))
 
     lintChecks(project(":wear:protolayout:protolayout-lint"))
-    lintPublish(project(":wear:protolayout:protolayout-lint"))
 
     testImplementation(libs.kotlinTest)
     testImplementation(libs.testExtJunit)

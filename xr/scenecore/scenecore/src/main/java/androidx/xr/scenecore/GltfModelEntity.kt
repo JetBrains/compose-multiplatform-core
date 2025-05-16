@@ -18,7 +18,6 @@ package androidx.xr.scenecore
 
 import androidx.annotation.IntDef
 import androidx.annotation.MainThread
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.GltfEntity as RtGltfEntity
 import androidx.xr.runtime.internal.JxrPlatformAdapter
@@ -30,7 +29,6 @@ import androidx.xr.runtime.math.Pose
  * Note: The size property of this Entity is always reported as {0, 0, 0}, regardless of the actual
  * size of the model.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class GltfModelEntity
 private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
     BaseEntity<RtGltfEntity>(rtEntity, entityManager) {

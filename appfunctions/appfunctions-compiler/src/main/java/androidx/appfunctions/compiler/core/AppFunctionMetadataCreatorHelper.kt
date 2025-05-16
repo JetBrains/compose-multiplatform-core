@@ -30,14 +30,14 @@ import androidx.appfunctions.compiler.core.AppFunctionTypeReference.Companion.to
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionContextClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSchemaDefinitionAnnotation
-import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionAllOfTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionArrayTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionObjectTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionParameterMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionPrimitiveTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionReferenceTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionSchemaMetadata
 import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -46,7 +46,7 @@ import com.google.devtools.ksp.symbol.KSValueParameter
 
 /**
  * A helper class that provides methods to construct
- * [androidx.appfunctions.metadata.AppFunctionMetadata] related class.
+ * [androidx.appfunctions.compiler.core.metadata.AppFunctionMetadata] related class.
  */
 class AppFunctionMetadataCreatorHelper {
 
@@ -222,7 +222,7 @@ class AppFunctionMetadataCreatorHelper {
                     allowSerializableInterfaceTypes,
                 )
                 AppFunctionReferenceTypeMetadata(
-                    referenceDataType = annotatedAppFunctionSerializable.qualifiedName,
+                    referenceDataType = annotatedAppFunctionSerializable.jvmQualifiedName,
                     isNullable = appFunctionTypeReference.isNullable,
                 )
             }
@@ -247,7 +247,7 @@ class AppFunctionMetadataCreatorHelper {
                 AppFunctionArrayTypeMetadata(
                     itemType =
                         AppFunctionReferenceTypeMetadata(
-                            referenceDataType = annotatedAppFunctionSerializable.qualifiedName,
+                            referenceDataType = annotatedAppFunctionSerializable.jvmQualifiedName,
                             isNullable =
                                 AppFunctionTypeReference(appFunctionTypeReference.itemTypeReference)
                                     .isNullable,
@@ -345,10 +345,9 @@ class AppFunctionMetadataCreatorHelper {
     ) {
         val serializableTypeQualifiedName =
             if (appFunctionSerializableType is AnnotatedAppFunctionSerializableProxy) {
-                checkNotNull(appFunctionSerializableType.targetClassDeclaration.qualifiedName)
-                    .asString()
+                appFunctionSerializableType.targetClassDeclaration.getJvmQualifiedName()
             } else {
-                appFunctionSerializableType.qualifiedName
+                appFunctionSerializableType.jvmQualifiedName
             }
         // This type has already been added to the sharedDataMap.
         if (seenDataTypeQualifiers.contains(serializableTypeQualifiedName)) {

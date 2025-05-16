@@ -16,6 +16,7 @@
 
 package androidx.xr.scenecore.impl;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Binder;
@@ -47,6 +48,7 @@ import java.util.concurrent.ScheduledExecutorService;
  *
  * <p>This entity shows 2D view on spatial panel.
  */
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 final class PanelEntityImpl extends BasePanelEntity implements PanelEntity {
     private static final String TAG = "PanelEntity";
     private final SurfaceControlViewHost mSurfaceControlViewHost;
@@ -61,10 +63,12 @@ final class PanelEntityImpl extends BasePanelEntity implements PanelEntity {
             @NonNull String name,
             ScheduledExecutorService executor) {
         super(node, extensions, entityManager, executor);
+
+        View reparentedView = maybeReparentView(view, name, context);
         mSurfaceControlViewHost =
                 new SurfaceControlViewHost(
                         context, Objects.requireNonNull(context.getDisplay()), new Binder());
-        setupSurfaceControlViewHostAndCornerRadius(view, surfaceDimensionsPx, name);
+        setupSurfaceControlViewHostAndCornerRadius(reparentedView, surfaceDimensionsPx, name);
         setDefaultOnBackInvokedCallback(view);
     }
 

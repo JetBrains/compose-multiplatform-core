@@ -278,11 +278,11 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
     public @NonNull Set<CameraInfo> getPhysicalCameraInfos() {
         return mCameraInfoInternal.getPhysicalCameraInfos();
     }
-
     @Override
     public boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
-            int cameraMode, @NonNull CameraConfig cameraConfig) {
+            int cameraMode, boolean allowFeatureCombinationResolutions,
+            @NonNull CameraConfig cameraConfig) {
         return mCameraInfoInternal.isUseCaseCombinationSupported(useCases, cameraMode,
-                cameraConfig);
+                allowFeatureCombinationResolutions, cameraConfig);
     }
 }

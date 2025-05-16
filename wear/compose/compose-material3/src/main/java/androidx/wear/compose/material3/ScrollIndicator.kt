@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
@@ -76,6 +77,7 @@ import androidx.wear.compose.material3.ScrollIndicatorDefaults.overscrollShrinkS
 import androidx.wear.compose.material3.tokens.ColorSchemeKeyTokens
 import androidx.wear.compose.materialcore.isLargeScreen
 import androidx.wear.compose.materialcore.toRadians
+import kotlin.math.PI
 import kotlin.math.absoluteValue
 import kotlin.math.asin
 import kotlin.math.cos
@@ -481,9 +483,15 @@ internal fun IndicatorImpl(
     positionAnimationSpec: AnimationSpec<Float> = ScrollIndicatorDefaults.PositionAnimationSpec
 ) {
     val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
+    val currentDensity = LocalDensity.current.density
+    val indicatorHeightPx = currentDensity * indicatorHeight.value
+    val diameterPx = currentDensity * screenWidthDp.value
+    val paddingHorizontalPx = currentDensity * paddingHorizontal.value
+    val indicatorWidthPx = currentDensity * indicatorWidth.value
 
     val layoutDirection = LocalLayoutDirection.current
     val gapHeight = ScrollIndicatorDefaults.gapHeight
+    val gapHeightPx = currentDensity * gapHeight.value
 
     val positionFractionAnimatable = remember { Animatable(0f) }
     val sizeFractionAnimatable = remember { Animatable(0f) }
@@ -512,6 +520,16 @@ internal fun IndicatorImpl(
 
     val updatedPositionAnimationSpec by rememberUpdatedState(positionAnimationSpec)
 
+    // Calculate usable radius for drawing arcs (subtract padding from half diameter)
+    val usableRadius = diameterPx / 2f - paddingHorizontalPx
+    val arcRadius = usableRadius - indicatorWidthPx / 2f
+
+    // Convert heights to angles (sweep for indicator, gap padding for spacing)
+    val gapPadding = pixelsHeightToDegrees(indicatorWidthPx + gapHeightPx, usableRadius)
+    val sweepDegrees = pixelsHeightToDegrees(indicatorHeightPx, usableRadius) + gapPadding
+
+    val arcLengthPx = usableRadius * 2f * PI.toFloat() * sweepDegrees / 360f
+
     LaunchedEffect(state) {
         // We don't want to trigger first animation when we receive position or size
         // for the first time, because initial position and size are equal to 0.
@@ -521,7 +539,7 @@ internal fun IndicatorImpl(
         launch {
             // This snapshotFlow listens to changes in position, size and visibility
             // of ScrollIndicatorState and starts necessary animations if needed
-            snapshotFlow { DisplayState(state.positionFraction, state.sizeFraction) }
+            snapshotFlow { DisplayState(state.positionFraction, state.sizeFraction, arcLengthPx) }
                 .collectLatest {
                     // Workaround for b/315149417. When position and height are equal to 0,
                     // we consider that as non-initialized state.
@@ -583,23 +601,25 @@ internal fun IndicatorImpl(
                     background,
                     paddingHorizontalPx,
                     indicatorOnTheRight,
-                    indicatorHeight,
-                    gapHeight,
                     indicatorWidthPx,
                     indicatorStart,
                     sizeFractionAnimatable.value,
+                    gapPadding,
+                    arcRadius,
+                    sweepDegrees
                 )
             }
     )
 }
 
 @Immutable
-internal class DisplayState(
-    val position: Float,
-    val size: Float,
-) {
+internal class DisplayState(val position: Float, val size: Float, arcLengthPx: Float) {
+    // throttled position is used in equals() to reduce amount of redraws while position is
+    // used for the actual draw to get better visual result
+    val throttledPosition = (position * arcLengthPx).toInt() / arcLengthPx
+
     override fun hashCode(): Int {
-        var result = position.hashCode()
+        var result = throttledPosition.hashCode()
         result = 31 * result + size.hashCode()
         return result
     }
@@ -611,7 +631,7 @@ internal class DisplayState(
 
         other as DisplayState
 
-        if (position != other.position) return false
+        if (throttledPosition != other.throttledPosition) return false
         if (size != other.size) return false
 
         return true
@@ -1070,20 +1090,13 @@ private fun ContentDrawScope.drawCurvedIndicator(
     background: Color,
     paddingHorizontalPx: Float,
     indicatorOnTheRight: Boolean,
-    indicatorHeight: Dp,
-    gapHeight: Dp,
     indicatorWidthPx: Float,
     indicatorStart: Float,
     indicatorSize: Float,
+    gapPadding: Float,
+    arcRadius: Float,
+    sweepDegrees: Float
 ) {
-    // Calculate usable radius for drawing arcs (subtract padding from half diameter)
-    val usableRadius = diameter / 2f - paddingHorizontalPx
-    val arcRadius = usableRadius - indicatorWidthPx / 2
-
-    // Convert heights to angles (sweep for indicator, gap padding for spacing)
-    val gapPadding = pixelsHeightToDegrees(indicatorWidthPx + gapHeight.toPx(), usableRadius)
-    val sweepDegrees = pixelsHeightToDegrees(indicatorHeight.toPx(), usableRadius) + gapPadding
-
     // Define size for the arcs and calculate arc's top-left position.
     val arcSize =
         Size(

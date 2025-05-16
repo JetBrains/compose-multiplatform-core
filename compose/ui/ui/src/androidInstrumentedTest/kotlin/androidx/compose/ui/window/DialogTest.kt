@@ -20,6 +20,7 @@ import android.os.Build
 import android.util.DisplayMetrics
 import android.view.Gravity
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.MotionEvent.ACTION_DOWN
 import android.view.MotionEvent.ACTION_UP
 import android.view.View
@@ -105,6 +106,26 @@ class DialogTest {
     fun dialogTest_isShowingContent() {
         setupDialogTest(closeDialogOnDismiss = false)
         rule.onNodeWithTag(testTag).assertIsDisplayed()
+    }
+
+    @Test
+    fun dialogTest_windowTitleCustom() {
+        lateinit var window: Window
+        rule.setContent {
+            Dialog(
+                onDismissRequest = {},
+                properties = DialogProperties(dialogContentTitle = defaultText)
+            ) {
+                var parent = LocalView.current
+                while (parent !is DialogWindowProvider) {
+                    parent = parent.parent as View
+                }
+                window = (parent as DialogWindowProvider).window
+                Box(Modifier.size(10.dp))
+            }
+        }
+
+        rule.runOnIdle { assertThat(window.attributes.title).isEqualTo(defaultText) }
     }
 
     @Test

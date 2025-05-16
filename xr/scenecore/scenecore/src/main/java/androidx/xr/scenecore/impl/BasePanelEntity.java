@@ -23,7 +23,6 @@ import android.content.res.Resources;
 import android.util.TypedValue;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.PanelEntity;
 import androidx.xr.runtime.internal.PixelDimensions;
@@ -36,6 +35,7 @@ import com.android.extensions.xr.node.NodeTransaction;
 import java.util.concurrent.ScheduledExecutorService;
 
 /** BasePanelEntity provides implementations of capabilities common to PanelEntities. */
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
     private static final float DEFAULT_CORNER_RADIUS_DP = 32.0f;
     protected PixelDimensions mPixelDimensions;
@@ -56,7 +56,6 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
     }
 
     @SuppressLint("ObsoleteSdkInt")
-    @RequiresApi(34)
     protected float getDefaultCornerRadiusInMeters() {
         // Get the width and height of the panel in DP.
         float widthDp =

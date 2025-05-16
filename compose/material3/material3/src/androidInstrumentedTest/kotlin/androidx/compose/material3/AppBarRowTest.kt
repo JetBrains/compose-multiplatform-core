@@ -54,6 +54,34 @@ class AppBarRowTest {
     }
 
     @Test
+    fun appbarRow_maxCount_itemsDisplayed() {
+        rule.setContent {
+            AppBarRow(overflowIndicator = {}, maxItemCount = 2) {
+                clickableItem(onClick = {}, icon = { Text("Item 1") }, label = "Item 1")
+                clickableItem(onClick = {}, icon = { Text("Item 2") }, label = "Item 2")
+                clickableItem(onClick = {}, icon = { Text("Item 3") }, label = "Item 3")
+            }
+        }
+
+        rule.onNodeWithText("Item 1").assertIsDisplayed()
+        rule.onNodeWithText("Item 2").assertIsNotDisplayed()
+        rule.onNodeWithText("Item 3").assertIsNotDisplayed()
+    }
+
+    @Test
+    fun appbarRow_maxCount_itemsDisplayed_lastItemShows() {
+        rule.setContent {
+            AppBarRow(overflowIndicator = {}, maxItemCount = 2) {
+                clickableItem(onClick = {}, icon = { Text("Item 1") }, label = "Item 1")
+                clickableItem(onClick = {}, icon = { Text("Item 2") }, label = "Item 2")
+            }
+        }
+
+        rule.onNodeWithText("Item 1").assertIsDisplayed()
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+    }
+
+    @Test
     fun appbarRow_itemsOverflow_overflowIndicatorDisplayed() {
         rule.setContent {
             var menuState by remember { mutableStateOf(false) }

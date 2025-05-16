@@ -56,6 +56,7 @@ import static androidx.camera.video.internal.config.VideoConfigUtil.resolveVideo
 import static androidx.camera.video.internal.utils.DynamicRangeUtil.isHdrSettingsMatched;
 import static androidx.camera.video.internal.utils.DynamicRangeUtil.videoProfileBitDepthToDynamicRangeBitDepth;
 import static androidx.camera.video.internal.utils.DynamicRangeUtil.videoProfileHdrFormatsToDynamicRangeEncoding;
+import static androidx.core.util.Preconditions.checkArgument;
 import static androidx.core.util.Preconditions.checkState;
 
 import static java.util.Collections.emptyMap;
@@ -907,6 +908,15 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         return fetchObservableValue(getOutput().getMediaSpec(), null);
     }
 
+    @NonNull
+    private MediaSpec getMediaSpecOrThrow() throws IllegalArgumentException {
+        MediaSpec mediaSpec = getMediaSpec();
+        if (mediaSpec == null) {
+            throw new IllegalArgumentException("MediaSpec can't be null");
+        }
+        return mediaSpec;
+    }
+
     private @NonNull VideoCapabilities getVideoCapabilities(@NonNull CameraInfo cameraInfo,
             int sessionType) {
         return getOutput().getMediaCapabilities(cameraInfo, sessionType);
@@ -1470,23 +1480,30 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     @SuppressWarnings("unchecked") // Cast to VideoCaptureConfig<T>
     private void updateCustomOrderedResolutionsByQuality(@NonNull CameraInfoInternal cameraInfo,
             UseCaseConfig.@NonNull Builder<?, ?, ?> builder) throws IllegalArgumentException {
-        MediaSpec mediaSpec = getMediaSpec();
-
-        Preconditions.checkArgument(mediaSpec != null,
-                "Unable to update target resolution by null MediaSpec.");
+        MediaSpec mediaSpec = getMediaSpecOrThrow();
+        QualitySelector qualitySelector = mediaSpec.getVideoSpec().getQualitySelector();
+        VideoCaptureConfig<T> config = (VideoCaptureConfig<T>) builder.getUseCaseConfig();
+        if (config.containsOption(OPTION_CUSTOM_ORDERED_RESOLUTIONS)) {
+            checkArgument(qualitySelector == VideoSpec.QUALITY_SELECTOR_AUTO,
+                    "Custom ordered resolutions and QualitySelector can't both be set");
+            // If custom ordered resolutions is set and QualitySelector is not set, the default
+            // QualitySelector is skipped to avoid overwriting the custom ordered resolutions.
+            return;
+        }
 
         DynamicRange requestedDynamicRange = getDynamicRange();
-        Range<Integer> targetHighSpeedFrameRate =
-                builder.getUseCaseConfig().getTargetHighSpeedFrameRate(
-                        FRAME_RATE_RANGE_UNSPECIFIED);
-        int sessionType = !FRAME_RATE_RANGE_UNSPECIFIED.equals(targetHighSpeedFrameRate)
-                ? SESSION_TYPE_HIGH_SPEED : SESSION_TYPE_REGULAR;
+        int sessionType = getSessionType(config);
+        Range<Integer> targetFrameRate = getTargetFrameRateOrThrow(config);
         VideoCapabilities videoCapabilities = getVideoCapabilities(cameraInfo, sessionType);
+        Logger.d(TAG, "Update custom order resolutions: "
+                + "requestedDynamicRange = " + requestedDynamicRange
+                + ", sessionType = " + sessionType
+                + ", targetFrameRate = " + targetFrameRate
+        );
 
-        // Get supported qualities.
-        List<Quality> supportedQualities = videoCapabilities.getSupportedQualities(
-                requestedDynamicRange);
-        Logger.d(TAG, "supportedQualities = " + supportedQualities);
+        // Get supported qualities
+        List<Quality> supportedQualities = getSupportedQualitiesOrThrow(requestedDynamicRange,
+                videoCapabilities, sessionType);
         if (supportedQualities.isEmpty()) {
             // When the device does not have any supported quality, even the most flexible
             // QualitySelector such as QualitySelector.from(Quality.HIGHEST), still cannot
@@ -1497,47 +1514,170 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
             return;
         }
 
-        // Get selected qualities.
-        VideoSpec videoSpec = mediaSpec.getVideoSpec();
-        QualitySelector qualitySelector = videoSpec.getQualitySelector();
+        // Get selected qualities, include:
+        // * Filter by high-speed frame rate
+        List<Quality> selectedQualities = getSelectedQualityOrThrow(supportedQualities,
+                videoCapabilities, qualitySelector,
+                requestedDynamicRange, sessionType, targetFrameRate);
+
+        // Map qualities to resolutions, include:
+        // * Filter by encoder supported size
+        LinkedHashMap<Quality, List<Size>> supportedQualityToSizeMap =
+                createOrderedQualityToSizesMap(cameraInfo, mediaSpec, requestedDynamicRange,
+                        videoCapabilities, sessionType, targetFrameRate,
+                        config.getVideoEncoderInfoFinder(), selectedQualities);
+
+        // set to custom ordered resolutions
+        setCustomOrderedResolutions(builder, supportedQualityToSizeMap);
+    }
+
+    @NonNull
+    private List<Quality> getSupportedQualitiesOrThrow(
+            @NonNull  DynamicRange requestedDynamicRange,
+            @NonNull VideoCapabilities videoCapabilities,
+            int sessionType
+    ) throws IllegalArgumentException {
+        // Get supported qualities.
+        List<Quality> supportedQualities = videoCapabilities.getSupportedQualities(
+                requestedDynamicRange);
+        Logger.d(TAG, "supportedQualities = " + supportedQualities);
+        if (supportedQualities.isEmpty()) {
+            if (sessionType == SESSION_TYPE_HIGH_SPEED) {
+                throw new IllegalArgumentException(
+                        "No supported quality on the device for high-speed capture.");
+            }
+        }
+        return supportedQualities;
+    }
+
+    @NonNull
+    private List<Quality> getSelectedQualityOrThrow(
+            @NonNull List<Quality> supportedQualities,
+            @NonNull VideoCapabilities videoCapabilities,
+            @NonNull QualitySelector qualitySelector,
+            @NonNull DynamicRange requestedDynamicRange,
+            int sessionType,
+            @NonNull Range<Integer> targetFrameRate) throws IllegalArgumentException {
         List<Quality> selectedQualities = qualitySelector.getPrioritizedQualities(
                 supportedQualities);
         Logger.d(TAG, "Found selectedQualities " + selectedQualities + " by " + qualitySelector);
-        if (selectedQualities.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Unable to find supported quality by QualitySelector");
+
+        // Filter out Quality that do not support the target frame rate for high-speed sessions.
+        if (sessionType == SESSION_TYPE_HIGH_SPEED) {
+            selectedQualities = filterOutUnsupportedHighSpeedQualities(selectedQualities,
+                    videoCapabilities, requestedDynamicRange, targetFrameRate);
+            Logger.d(TAG, "selectedQualities " + selectedQualities
+                    + " after filtering by supported high-speed frame rates");
         }
 
+        if (selectedQualities.isEmpty()) {
+            throw new IllegalArgumentException("Unable to find selected quality");
+        }
+
+        return selectedQualities;
+    }
+
+    private @NonNull LinkedHashMap<Quality, List<Size>> createOrderedQualityToSizesMap(
+            @NonNull CameraInfoInternal cameraInfo,
+            @NonNull MediaSpec mediaSpec,
+            @NonNull DynamicRange requestedDynamicRange,
+            @NonNull VideoCapabilities videoCapabilities,
+            int sessionType,
+            @NonNull Range<Integer> targetFrameRate,
+            VideoEncoderInfo.@NonNull Finder videoEncoderInfoFinder,
+            @NonNull List<Quality> selectedQualities
+    ) {
         // Get corresponded resolutions for the target aspect ratio.
-        int aspectRatio = videoSpec.getAspectRatio();
+        int aspectRatio = mediaSpec.getVideoSpec().getAspectRatio();
         Map<Quality, Size> supportedQualityToSizeMap = getQualityToResolutionMap(videoCapabilities,
                 requestedDynamicRange);
+        List<Size> supportedResolutions = sessionType == SESSION_TYPE_HIGH_SPEED
+                ? cameraInfo.getSupportedHighSpeedResolutionsFor(targetFrameRate)
+                : cameraInfo.getSupportedResolutions(getImageFormat());
         QualityRatioToResolutionsTable qualityRatioTable = new QualityRatioToResolutionsTable(
-                cameraInfo.getSupportedResolutions(getImageFormat()), supportedQualityToSizeMap);
+                supportedResolutions, supportedQualityToSizeMap);
         // Use LinkedHashMap to maintain the order.
         LinkedHashMap<Quality, List<Size>> orderedQualityToSizesMap = new LinkedHashMap<>();
         for (Quality selectedQuality : selectedQualities) {
             orderedQualityToSizesMap.put(selectedQuality,
                     qualityRatioTable.getResolutions(selectedQuality, aspectRatio));
         }
-        LinkedHashMap<Quality, List<Size>> filteredOrderedQualityToSizesMap =
-                filterOutEncoderUnsupportedResolutions(
-                        (VideoCaptureConfig<T>) builder.getUseCaseConfig(), mediaSpec,
+
+        // Filter out encoder unsupported resolutions.
+        return filterOutEncoderUnsupportedResolutions(videoEncoderInfoFinder, mediaSpec,
                         requestedDynamicRange, videoCapabilities, orderedQualityToSizesMap,
                         supportedQualityToSizeMap);
+    }
+
+    private void setCustomOrderedResolutions(
+            UseCaseConfig.@NonNull Builder<?, ?, ?> configBuilder,
+            @NonNull LinkedHashMap<Quality, List<Size>> qualityToSizesMap
+    ) {
         List<Size> filteredCustomOrderedResolutions = new ArrayList<>();
-        for (List<Size> resolutions : filteredOrderedQualityToSizesMap.values()) {
+        for (List<Size> resolutions : qualityToSizesMap.values()) {
             filteredCustomOrderedResolutions.addAll(resolutions);
         }
         Logger.d(TAG, "Set custom ordered resolutions = " + filteredCustomOrderedResolutions);
-        builder.getMutableConfig().insertOption(OPTION_CUSTOM_ORDERED_RESOLUTIONS,
+        configBuilder.getMutableConfig().insertOption(OPTION_CUSTOM_ORDERED_RESOLUTIONS,
                 filteredCustomOrderedResolutions);
-        mQualityToCustomSizesMap = filteredOrderedQualityToSizesMap;
+
+        mQualityToCustomSizesMap = qualityToSizesMap;
+    }
+
+    private int getSessionType(@NonNull VideoCaptureConfig<T> useCaseConfig) {
+        return FRAME_RATE_RANGE_UNSPECIFIED.equals(
+                useCaseConfig.getTargetHighSpeedFrameRate(FRAME_RATE_RANGE_UNSPECIFIED))
+                ? SESSION_TYPE_REGULAR : SESSION_TYPE_HIGH_SPEED;
+    }
+
+    @NonNull
+    private Range<Integer> getTargetFrameRateOrThrow(@NonNull VideoCaptureConfig<T> useCaseConfig)
+            throws IllegalArgumentException {
+        Range<Integer> targetFrameRate = requireNonNull(
+                useCaseConfig.getTargetFrameRate(FRAME_RATE_RANGE_UNSPECIFIED));
+        Range<Integer> targetHighSpeedFrameRate = requireNonNull(
+                useCaseConfig.getTargetHighSpeedFrameRate(FRAME_RATE_RANGE_UNSPECIFIED));
+        if (!FRAME_RATE_RANGE_UNSPECIFIED.equals(targetFrameRate)
+                && !FRAME_RATE_RANGE_UNSPECIFIED.equals(targetHighSpeedFrameRate)) {
+            throw new IllegalArgumentException(
+                    "Can't set both targetFrameRate and targetHighSpeedFrameRate");
+        }
+        return FRAME_RATE_RANGE_UNSPECIFIED.equals(targetHighSpeedFrameRate) ? targetFrameRate
+                : targetHighSpeedFrameRate;
+    }
+
+    @NonNull
+    private List<Quality> filterOutUnsupportedHighSpeedQualities(
+            @NonNull List<Quality> selectedQualities,
+            @NonNull VideoCapabilities videoCapabilities,
+            @NonNull DynamicRange targetDynamicRange,
+            @NonNull Range<Integer> targetFrameRate) {
+        checkArgument(!targetFrameRate.equals(FRAME_RATE_RANGE_UNSPECIFIED),
+                "Frame rate is not specified for high-speed recording");
+        List<Quality> filteredQualities = new ArrayList<>();
+        for (Quality quality : selectedQualities) {
+            Set<Range<Integer>> supportedFrameRates =
+                    videoCapabilities.getSupportedFrameRateRanges(quality, targetDynamicRange);
+            boolean isSupported = false;
+            for (Range<Integer> supportedFrameRate : supportedFrameRates) {
+                if (supportedFrameRate.equals(targetFrameRate)) {
+                    isSupported = true;
+                    break;
+                }
+            }
+            if (isSupported) {
+                filteredQualities.add(quality);
+            } else {
+                Logger.d(TAG, "Quality " + quality + " with frame rate: " + targetFrameRate
+                        + " is not supported for high-speed session");
+            }
+        }
+        return filteredQualities;
     }
 
     private static @NonNull LinkedHashMap<Quality, List<Size>>
             filterOutEncoderUnsupportedResolutions(
-            @NonNull VideoCaptureConfig<?> config,
+            VideoEncoderInfo.@NonNull Finder videoEncoderFinder,
             @NonNull MediaSpec mediaSpec,
             @NonNull DynamicRange dynamicRange,
             @NonNull VideoCapabilities videoCapabilities,
@@ -1576,7 +1716,7 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
                 // codec supported size, then rely on surface processing (OpenGL) to resize the
                 // camera stream.
                 VideoEncoderInfo videoEncoderInfo = findLargestSupportedSizeVideoEncoderInfo(
-                        config.getVideoEncoderInfoFinder(), encoderProfiles, dynamicRange,
+                        videoEncoderFinder, encoderProfiles, dynamicRange,
                         mediaSpec);
                 if (videoEncoderInfo != null && !videoEncoderInfo.isSizeSupportedAllowSwapping(
                         resolution.getWidth(), resolution.getHeight())) {

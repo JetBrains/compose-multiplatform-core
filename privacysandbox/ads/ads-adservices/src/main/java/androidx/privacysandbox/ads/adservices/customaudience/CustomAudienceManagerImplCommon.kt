@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ads.adservices.customaudience
 
-import android.adservices.common.AdServicesOutcomeReceiver
 import android.adservices.common.AdServicesPermissions
 import android.annotation.SuppressLint
 import android.os.Build
@@ -27,6 +26,7 @@ import androidx.annotation.RequiresPermission
 import androidx.annotation.RestrictTo
 import androidx.core.os.asOutcomeReceiver
 import androidx.privacysandbox.ads.adservices.common.AdData
+import androidx.privacysandbox.ads.adservices.common.ComponentAdData
 import androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures
 import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo
 import java.util.concurrent.atomic.AtomicBoolean
@@ -34,7 +34,11 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 
-@OptIn(ExperimentalFeatures.Ext10OptIn::class, ExperimentalFeatures.Ext14OptIn::class)
+@OptIn(
+    ExperimentalFeatures.Ext10OptIn::class,
+    ExperimentalFeatures.Ext14OptIn::class,
+    ExperimentalFeatures.Ext16OptIn::class
+)
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SuppressLint("NewApi")
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 4)
@@ -112,6 +116,11 @@ open class CustomAudienceManagerImplCommon(
         request: CustomAudience
     ): android.adservices.customaudience.CustomAudience {
         if (
+            AdServicesInfo.adServicesVersion() >= 16 || AdServicesInfo.extServicesVersionS() >= 16
+        ) {
+            return Ext16Impl.convertCustomAudience(request)
+        }
+        if (
             AdServicesInfo.adServicesVersion() >= 14 || AdServicesInfo.extServicesVersionS() >= 14
         ) {
             return Ext14Impl.convertCustomAudience(request)
@@ -147,8 +156,46 @@ open class CustomAudienceManagerImplCommon(
             .build()
     }
 
+    @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 16)
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 16)
+    private class Ext16Impl private constructor() {
+        companion object {
+            fun convertCustomAudience(
+                request: CustomAudience
+            ): android.adservices.customaudience.CustomAudience {
+                return android.adservices.customaudience.CustomAudience.Builder()
+                    .setActivationTime(request.activationTime)
+                    .setAds(Ext14Impl.convertAds(request.ads))
+                    .setBiddingLogicUri(request.biddingLogicUri)
+                    .setBuyer(request.buyer.convertToAdServices())
+                    .setDailyUpdateUri(request.dailyUpdateUri)
+                    .setExpirationTime(request.expirationTime)
+                    .setName(request.name)
+                    .setTrustedBiddingData(
+                        Ext14Impl.convertTrustedSignals(request.trustedBiddingSignals)
+                    )
+                    .setUserBiddingSignals(request.userBiddingSignals?.convertToAdServices())
+                    .setAuctionServerRequestFlags(request.auctionServerRequestFlags)
+                    .setPriority(request.priority)
+                    .setComponentAds(convertComponentAds(request.getComponentAds()))
+                    .build()
+            }
+
+            private fun convertComponentAds(
+                input: List<ComponentAdData>
+            ): List<android.adservices.common.ComponentAdData> {
+                val result = mutableListOf<android.adservices.common.ComponentAdData>()
+                for (ad in input) {
+                    result.add(ad.convertToAdServices())
+                }
+                return result
+            }
+        }
+    }
+
     @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 14)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 14)
+    @Suppress("deprecation") // suppress warning of deprecated AdServicesOutcomeReceiver in Java
     private class Ext14Impl private constructor() {
         companion object {
             @DoNotInline
@@ -161,7 +208,9 @@ open class CustomAudienceManagerImplCommon(
                     customAudienceManager.scheduleCustomAudienceUpdate(
                         scheduleCustomAudienceUpdateRequest.convertToAdServices(),
                         Runnable::run,
-                        object : AdServicesOutcomeReceiver<Any, Exception>, AtomicBoolean(false) {
+                        object :
+                            android.adservices.common.AdServicesOutcomeReceiver<Any, Exception>,
+                            AtomicBoolean(false) {
                             override fun onResult(result: Any) {
                                 if (compareAndSet(false, true)) {
                                     continuation.resume(result)
@@ -196,7 +245,7 @@ open class CustomAudienceManagerImplCommon(
                     .build()
             }
 
-            private fun convertAds(input: List<AdData>): List<android.adservices.common.AdData> {
+            fun convertAds(input: List<AdData>): List<android.adservices.common.AdData> {
                 val result = mutableListOf<android.adservices.common.AdData>()
                 for (ad in input) {
                     result.add(ad.convertToAdServices())
@@ -204,7 +253,7 @@ open class CustomAudienceManagerImplCommon(
                 return result
             }
 
-            private fun convertTrustedSignals(
+            fun convertTrustedSignals(
                 input: TrustedBiddingData?
             ): android.adservices.customaudience.TrustedBiddingData? {
                 if (input == null) return null

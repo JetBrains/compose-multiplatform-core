@@ -2570,6 +2570,7 @@ class CompositionTests {
     @IgnoreJsTarget
     @IgnoreWasmTarget
     @Test
+    @IgnoreJsTarget // b/409728274
     fun testRememberObserver_Abandon_Recompose() {
         val abandonedObjects = mutableListOf<RememberObserver>()
         val observed =

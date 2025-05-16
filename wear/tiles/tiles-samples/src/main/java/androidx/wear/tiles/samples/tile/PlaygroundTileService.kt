@@ -144,6 +144,7 @@ private fun tileLayout(
         primaryLayout(
             mainSlot = { graphicDataCardSample() },
             margins = MAX_PRIMARY_LAYOUT_MARGIN,
+            titleSlot = { text("Title".layoutString) },
             bottomSlot = {
                 textEdgeButton(
                     onClick =

@@ -16,6 +16,7 @@
 
 package androidx.xr.scenecore.impl;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Rect;
 
@@ -35,6 +36,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * node. The content of this PanelEntity is assumed to have been previously defined and associated
  * with the Window Leash Node.
  */
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 final class MainPanelEntityImpl extends BasePanelEntity implements PanelEntity {
     Activity mRuntimeActivity;
 

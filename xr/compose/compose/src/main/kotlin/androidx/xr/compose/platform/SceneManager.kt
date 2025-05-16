@@ -16,8 +16,8 @@
 
 package androidx.xr.compose.platform
 
+import android.annotation.SuppressLint
 import android.util.CloseGuard
-import androidx.annotation.RestrictTo
 import androidx.xr.compose.subspace.node.SubspaceSemanticsInfo
 
 /**
@@ -28,7 +28,7 @@ import androidx.xr.compose.subspace.node.SubspaceSemanticsInfo
  * intended to be used in individual apps.
  */
 @Suppress("NotCloseable")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 public object SceneManager : AutoCloseable {
     private val registeredScenes: MutableList<SpatialComposeScene> = mutableListOf()
     private var isRunning = false

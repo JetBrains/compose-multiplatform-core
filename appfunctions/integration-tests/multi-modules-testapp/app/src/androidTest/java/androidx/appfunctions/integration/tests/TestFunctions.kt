@@ -19,14 +19,17 @@ package androidx.appfunctions.integration.tests
 import android.app.PendingIntent
 import android.content.Intent
 import android.util.Log
-import androidx.appfunctions.AppFunction
 import androidx.appfunctions.AppFunctionContext
 import androidx.appfunctions.AppFunctionInvalidArgumentException
-import androidx.appfunctions.AppFunctionOpenable
+import androidx.appfunctions.AppFunctionSchemaCapability
 import androidx.appfunctions.AppFunctionSerializable
-import androidx.appfunctions.schema.notes.AppFunctionNote
-import androidx.appfunctions.schema.notes.CreateNoteAppFunction
+import androidx.appfunctions.service.AppFunction
 import java.time.LocalDateTime
+
+@AppFunctionSchemaCapability
+interface AppFunctionOpenable {
+    val intentToOpen: PendingIntent
+}
 
 @AppFunctionSerializable data class SetField<T>(val value: T)
 
@@ -165,17 +168,7 @@ class TestFactory {
     fun isCreatedByFactory(appFunctionContext: AppFunctionContext): Boolean = createdByFactory
 }
 
-// TODO(b/411059572): Serializable factory generation would fail when nested in another class
-@AppFunctionSerializable
-class MyNote(override val id: String, override val title: String) : AppFunctionNote
-
-@AppFunctionSerializable
-class Parameters(override val title: String) : CreateNoteAppFunction.Parameters
-
-@AppFunctionSerializable
-class Response(override val createdNote: MyNote) : CreateNoteAppFunction.Response
-
-class NotesFunctions : CreateNoteAppFunction<Parameters, Response> {
+class NotesFunctions : CreateNoteAppFunction<NotesFunctions.Parameters, NotesFunctions.Response> {
 
     @AppFunction
     override suspend fun createNote(
@@ -184,4 +177,13 @@ class NotesFunctions : CreateNoteAppFunction<Parameters, Response> {
     ): Response {
         return Response(MyNote(id = "testId", title = parameters.title))
     }
+
+    @AppFunctionSerializable
+    class MyNote(override val id: String, override val title: String) : AppFunctionNote
+
+    @AppFunctionSerializable
+    class Parameters(override val title: String) : CreateNoteAppFunction.Parameters
+
+    @AppFunctionSerializable
+    class Response(override val createdNote: MyNote) : CreateNoteAppFunction.Response
 }

@@ -44,8 +44,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.wear.compose.foundation.hierarchicalFocus
-import androidx.wear.compose.foundation.hierarchicalFocusRequester
+import androidx.wear.compose.foundation.hierarchicalFocusGroup
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.Text
 import kotlin.random.Random
@@ -75,7 +75,7 @@ fun HierarchicalFocusDemo() {
                             Modifier
                         }
                     )
-                    .hierarchicalFocus(focusEnabled = selectedRow == rowIx),
+                    .hierarchicalFocusGroup(active = selectedRow == rowIx),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Button(onClick = { selectedRow = rowIx }) { Text("Sel") }
@@ -91,8 +91,8 @@ fun HierarchicalFocusDemo() {
                             Modifier.thenIf(
                                     colIx < numColumns,
                                     // Last column wants nothing to do with focus
-                                    Modifier.hierarchicalFocus(
-                                        focusEnabled = selectedColumn[rowIx].intValue == colIx
+                                    Modifier.hierarchicalFocusGroup(
+                                        active = selectedColumn[rowIx].intValue == colIx
                                     )
                                 )
                                 .weight(1f)
@@ -109,7 +109,7 @@ fun HierarchicalFocusDemo() {
                                     style = style,
                                     modifier =
                                         Modifier.fillMaxWidth()
-                                            .hierarchicalFocusRequester()
+                                            .requestFocusOnHierarchyActive()
                                             .onFocusChanged { focused = it.isFocused }
                                             .focusable()
                                             .thenIf(focused, Modifier.background(Color.Gray))

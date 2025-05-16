@@ -106,7 +106,6 @@ import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.api.tasks.compile.JavaCompile
-import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.api.tasks.testing.AbstractTestTask
 import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
@@ -1045,7 +1044,6 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
         project.setUpBlankProguardFileForJarIfNeeded(javaExtension)
         project.configureJavaCompilationWarnings(androidXExtension)
 
-        project.hideJavadocTask()
         if (
             project.multiplatformExtension == null ||
                 project.multiplatformExtension!!.hasJavaEnabled()
@@ -1207,6 +1205,21 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
                 // Include resources in Robolectric tests as a workaround for b/184641296
                 it.isIncludeAndroidResources = true
             }
+
+        @Suppress("UnstableApiUsage") // usage of withHostTestBuilder
+        withHostTestBuilder {
+            @Suppress("DEPRECATION")
+            defaultSourceSetName = "androidUnitTest"
+        }
+
+        @Suppress("UnstableApiUsage") // usage of withDeviceTestBuilder
+        withDeviceTestBuilder {
+            @Suppress("DEPRECATION")
+            compilationName = "instrumentedTest"
+            @Suppress("DEPRECATION")
+            defaultSourceSetName = "androidInstrumentedTest"
+            sourceSetTreeName = "test"
+        }
 
         // validate that SDK versions haven't been altered during evaluation
         project.afterEvaluate {
@@ -1517,21 +1530,6 @@ private fun Configuration.isTest(): Boolean = name.lowercase().contains("test")
 /** Returns whether the configuration is part of publication. */
 internal fun Configuration.isPublished(): Boolean =
     !isTest() && !name.lowercase().contains("metadata") && !name.endsWith("CInterop")
-
-/**
- * Hides a project's Javadoc tasks from the output of `./gradlew tasks` by setting their group to
- * `null`.
- *
- * AndroidX projects do not use the Javadoc task for docs generation, so we don't want them
- * cluttering up the task overview.
- */
-private fun Project.hideJavadocTask() {
-    tasks.withType(Javadoc::class.java).configureEach {
-        if (it.name == "javadoc") {
-            it.group = null
-        }
-    }
-}
 
 val Project.androidExtension: AndroidComponentsExtension<*, *, *>
     get() =

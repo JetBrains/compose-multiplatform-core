@@ -16,7 +16,6 @@
 
 package androidx.xr.compose.subspace.layout
 
-import androidx.annotation.RestrictTo
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 import androidx.xr.scenecore.PointSourceParams
 
@@ -32,7 +31,6 @@ import androidx.xr.scenecore.PointSourceParams
  *   is recommended to order this modifier before conditional modifiers in a chain to maintain one
  *   time execution, or to handle re-execution appropriately.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.onPointSourceParams(
     onPointSourceParams: (PointSourceParams) -> Unit
 ): SubspaceModifier = this.then(PointSourceElement(onPointSourceParams))

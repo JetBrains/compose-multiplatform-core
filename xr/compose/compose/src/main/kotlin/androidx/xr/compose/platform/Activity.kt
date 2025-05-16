@@ -20,7 +20,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.activity.ComponentActivity
-import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -48,7 +47,6 @@ private val activityToSpatialComposeScene = mutableMapOf<Activity, SpatialCompos
  *
  * @param content A `@Composable` function declaring the spatial UI content.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun ComponentActivity.setSubspaceContent(
     content: @Composable @SubspaceComposable () -> Unit
 ) {
@@ -69,7 +67,6 @@ public fun ComponentActivity.setSubspaceContent(
  * @param content A `@Composable` function declaring the spatial UI content.
  */
 @VisibleForTesting
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun ComponentActivity.setSubspaceContent(
     session: Session,
     content: @Composable @SubspaceComposable () -> Unit,

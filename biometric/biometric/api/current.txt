@@ -160,6 +160,7 @@ package androidx.biometric {
     method public static androidx.biometric.BiometricManager from(android.content.Context);
     method @RequiresPermission(android.Manifest.permission.USE_BIOMETRIC) public androidx.biometric.BiometricManager.Strings? getStrings(int);
     field public static final int BIOMETRIC_ERROR_HW_UNAVAILABLE = 1; // 0x1
+    field public static final int BIOMETRIC_ERROR_IDENTITY_CHECK_NOT_ACTIVE = 20; // 0x14
     field public static final int BIOMETRIC_ERROR_NONE_ENROLLED = 11; // 0xb
     field public static final int BIOMETRIC_ERROR_NO_HARDWARE = 12; // 0xc
     field public static final int BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED = 15; // 0xf
@@ -172,6 +173,7 @@ package androidx.biometric {
     field public static final int BIOMETRIC_STRONG = 15; // 0xf
     field public static final int BIOMETRIC_WEAK = 255; // 0xff
     field public static final int DEVICE_CREDENTIAL = 32768; // 0x8000
+    field @RequiresPermission(android.Manifest.permission.SET_BIOMETRIC_DIALOG_ADVANCED) public static final int IDENTITY_CHECK = 65536; // 0x10000
   }
 
   public static class BiometricManager.Strings {
@@ -195,6 +197,7 @@ package androidx.biometric {
     field public static final int ERROR_CONTENT_VIEW_MORE_OPTIONS_BUTTON = 22; // 0x16
     field public static final int ERROR_HW_NOT_PRESENT = 12; // 0xc
     field public static final int ERROR_HW_UNAVAILABLE = 1; // 0x1
+    field public static final int ERROR_IDENTITY_CHECK_NOT_ACTIVE = 20; // 0x14
     field public static final int ERROR_LOCKOUT = 7; // 0x7
     field public static final int ERROR_LOCKOUT_PERMANENT = 9; // 0x9
     field public static final int ERROR_NEGATIVE_BUTTON = 13; // 0xd

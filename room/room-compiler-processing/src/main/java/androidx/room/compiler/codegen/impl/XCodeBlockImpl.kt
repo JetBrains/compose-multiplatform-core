@@ -27,6 +27,8 @@ internal class XCodeBlockImpl(
     override val kotlin: KotlinCodeBlock,
 ) : ImplSpec<JavaCodeBlock, KotlinCodeBlock>(), XCodeBlock {
 
+    override fun toBuilder() = Builder(java.toBuilder(), kotlin.toBuilder())
+
     internal class Builder(
         val java: JavaCodeBlock.Builder,
         val kotlin: KotlinCodeBlock.Builder,

@@ -36,6 +36,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.material3.tokens.ListHeaderTokens
@@ -84,6 +86,12 @@ public fun ListHeader(
         CompositionLocalProvider(
             LocalContentColor provides contentColor,
             LocalTextStyle provides ListHeaderTokens.ContentTypography.value,
+            LocalTextConfiguration provides
+                TextConfiguration(
+                    textAlign = TextAlign.Center,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 3
+                ),
         ) {
             content()
         }
@@ -134,7 +142,13 @@ public fun ListSubHeader(
     ) {
         CompositionLocalProvider(
             LocalContentColor provides contentColor,
-            LocalTextStyle provides ListSubHeaderTokens.ContentTypography.value
+            LocalTextStyle provides ListSubHeaderTokens.ContentTypography.value,
+            LocalTextConfiguration provides
+                TextConfiguration(
+                    textAlign = TextAlign.Start,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 3
+                ),
         ) {
             if (icon != null) {
                 Box(

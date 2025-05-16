@@ -16,14 +16,12 @@
 
 package androidx.xr.compose.subspace.node
 
-import androidx.annotation.RestrictTo
 import androidx.xr.compose.subspace.layout.SubspaceLayoutCoordinates
 
 /**
  * A [SubspaceModifier.Node] whose [onLayoutCoordinates] callback is invoked when the layout
  * coordinates of the layout node may have changed.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface LayoutCoordinatesAwareModifierNode {
     /**
      * Called with the final [SubspaceLayoutCoordinates] of the layout node after placement. The

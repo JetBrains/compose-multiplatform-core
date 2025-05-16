@@ -20,7 +20,6 @@ import android.app.Activity
 import android.content.Context
 import android.os.Bundle
 import android.view.View
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.ActivityPanelEntity
 import androidx.xr.runtime.internal.ActivitySpace
 import androidx.xr.runtime.internal.Anchor
@@ -68,7 +67,6 @@ import java.util.function.Consumer
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [JxrPlatformAdapter] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
 
     override val spatialEnvironment: SpatialEnvironment = FakeSpatialEnvironment()
@@ -99,24 +97,29 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
         @CameraViewActivityPose.CameraType cameraType: Int
     ): CameraViewActivityPose? = null
 
+    @Suppress("AsyncSuffixFuture")
     override fun loadGltfByAssetName(assetName: String): ListenableFuture<GltfModelResource> =
         immediateFailedFuture<GltfModelResource>(NotImplementedError())
 
+    @Suppress("AsyncSuffixFuture")
     override fun loadGltfByByteArray(
         assetData: ByteArray,
         assetKey: String,
     ): ListenableFuture<GltfModelResource> =
         immediateFailedFuture<GltfModelResource>(NotImplementedError())
 
+    @Suppress("AsyncSuffixFuture")
     override fun loadExrImageByAssetName(assetName: String): ListenableFuture<ExrImageResource> =
         immediateFailedFuture<ExrImageResource>(NotImplementedError())
 
+    @Suppress("AsyncSuffixFuture")
     override fun loadExrImageByByteArray(
         assetData: ByteArray,
         assetKey: String,
     ): ListenableFuture<ExrImageResource> =
         immediateFailedFuture<ExrImageResource>(NotImplementedError())
 
+    @Suppress("AsyncSuffixFuture")
     override fun loadTexture(
         assetName: String,
         sampler: TextureSampler,
@@ -129,6 +132,7 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
 
     override fun getReflectionTextureFromIbl(iblToken: ExrImageResource): TextureResource? = null
 
+    @Suppress("AsyncSuffixFuture")
     override fun createWaterMaterial(
         isAlphaMapVersion: Boolean
     ): ListenableFuture<MaterialResource>? =

@@ -59,25 +59,9 @@ abstract class StableAidlPlugin : Plugin<Project> {
         val extension =
             project.extensions.create(EXTENSION_NAME, StableAidlExtensionImpl::class.java)
 
-        // Tests using `ProjectSetupRule` don't populate `compileSdk`, so we use a CLI property.
-        val compileSdk =
-            project.extensions.getByType(CommonExtension::class.java).compileSdk
-                ?: project.providers.gradleProperty("stableaidl.compilesdk").orNull?.toInt()
-                ?: throw RuntimeException("Failed to obtain compile SDK")
-
         val aidl = androidComponents.sdkComponents.aidl.get()
         val aidlExecutable = aidl.executable
         val aidlVersion = aidl.version
-
-        // The framework supports Stable AIDL definitions starting in SDK 36. Prior to that, we'll
-        // need to use manually-defined stubs.
-        val aidlFramework = project.objects.fileProperty()
-        val shadowFramework = project.objects.directoryProperty()
-        if (compileSdk >= 36) {
-            aidlFramework.set(aidl.framework)
-        } else {
-            shadowFramework.set(extension.shadowFrameworkDir)
-        }
 
         // Extend the android sourceSet.
         androidComponents.registerSourceType(SOURCE_TYPE_STABLE_AIDL)
@@ -105,6 +89,30 @@ abstract class StableAidlPlugin : Plugin<Project> {
             val apiDirName = "$API_DIR/aidl${variant.name.usLocaleCapitalize()}"
             val builtApiDir = project.layout.buildDirectory.dir(apiDirName)
             val frozenApiDir = project.layout.projectDirectory.dir("$apiDirName/$CURRENT_API_DIR")
+
+            // The framework supports Stable AIDL definitions starting in SDK 36. Prior to that,
+            // we'll need to use manually-defined stubs.
+            val compileSdkProvider =
+                project.provider {
+                    project.extensions.getByType(CommonExtension::class.java).compileSdk
+                        ?: throw RuntimeException("Failed to obtain compile SDK")
+                }
+            val aidlFramework =
+                compileSdkProvider.flatMap { compileSdk ->
+                    if (compileSdk >= 36) {
+                        aidl.framework
+                    } else {
+                        project.objects.fileProperty()
+                    }
+                }
+            val shadowFramework =
+                compileSdkProvider.flatMap { compileSdk ->
+                    if (compileSdk < 36) {
+                        extension.shadowFrameworkDir
+                    } else {
+                        project.objects.directoryProperty()
+                    }
+                }
 
             val compileAidlApiTask =
                 registerCompileAidlApi(

@@ -38,6 +38,8 @@ import androidx.room.compiler.codegen.impl.XTypeSpecImpl
 internal class KotlinCodeBlock(override val actual: KCodeBlock) :
     KotlinSpec<KCodeBlock>(), XCodeBlock {
 
+    override fun toBuilder() = Builder(actual.toBuilder())
+
     internal class Builder(internal val actual: KCodeBlockBuilder) :
         XSpec.Builder(), XCodeBlock.Builder {
 

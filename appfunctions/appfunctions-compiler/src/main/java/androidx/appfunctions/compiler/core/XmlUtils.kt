@@ -16,12 +16,12 @@
 
 package androidx.appfunctions.compiler.core
 
-import androidx.appfunctions.metadata.AppFunctionComponentsMetadataDocument
-import androidx.appfunctions.metadata.AppFunctionDataTypeMetadataDocument
-import androidx.appfunctions.metadata.AppFunctionMetadataDocument
-import androidx.appfunctions.metadata.AppFunctionNamedDataTypeMetadataDocument
-import androidx.appfunctions.metadata.AppFunctionParameterMetadataDocument
-import androidx.appfunctions.metadata.AppFunctionResponseMetadataDocument
+import androidx.appfunctions.compiler.core.metadata.AppFunctionComponentsMetadataDocument
+import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadataDocument
+import androidx.appfunctions.compiler.core.metadata.AppFunctionMetadataDocument
+import androidx.appfunctions.compiler.core.metadata.AppFunctionNamedDataTypeMetadataDocument
+import androidx.appfunctions.compiler.core.metadata.AppFunctionParameterMetadataDocument
+import androidx.appfunctions.compiler.core.metadata.AppFunctionResponseMetadataDocument
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 

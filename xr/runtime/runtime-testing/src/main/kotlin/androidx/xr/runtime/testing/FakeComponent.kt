@@ -16,13 +16,11 @@
 
 package androidx.xr.runtime.testing
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Component
 import androidx.xr.runtime.internal.Entity
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [Component] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public open class FakeComponent : Component {
     override fun onAttach(entity: Entity): Boolean = true
 

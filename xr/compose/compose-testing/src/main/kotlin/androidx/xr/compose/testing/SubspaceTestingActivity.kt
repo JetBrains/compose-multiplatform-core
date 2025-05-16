@@ -20,7 +20,6 @@ import android.app.Activity
 import android.view.Display
 import androidx.activity.ComponentActivity
 import androidx.annotation.NonNull
-import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.xr.compose.platform.SceneManager
@@ -42,7 +41,6 @@ import org.robolectric.shadows.ShadowDisplay
 
 /** Custom test class that should be used for testing [SubspaceComposable] content. */
 @Suppress("ForbiddenSuperClass")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SubspaceTestingActivity : ComponentActivity() {
     public val extensions: XrExtensions = XrExtensionsProvider.getXrExtensions()!!
     @Suppress("MutableBareField") public lateinit var session: Session
@@ -62,7 +60,6 @@ public class SubspaceTestingActivity : ComponentActivity() {
 }
 
 /** Analog to [AndroidComposeTestRule.setContent] for testing [SubspaceComposable] content. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.setSubspaceContent(
     content: @Composable @SubspaceComposable () -> Unit
 ) {
@@ -70,7 +67,6 @@ public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.setSubspaceContent
 }
 
 /** Analog to [AndroidComposeTestRule.setContent] for testing [SubspaceComposable] content. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.setSubspaceContent(
     uiContent: @Composable () -> Unit,
     content: @Composable @SubspaceComposable () -> Unit,
@@ -84,27 +80,23 @@ public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.setSubspaceContent
 }
 
 /** Subspace version of onNode in Compose. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.onSubspaceNode(
     matcher: SubspaceSemanticsMatcher
 ): SubspaceSemanticsNodeInteraction =
     SubspaceSemanticsNodeInteraction(SubspaceTestContext(this), matcher)
 
 /** Subspace version of onAllNodes in Compose. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.onAllSubspaceNodes(
     matcher: SubspaceSemanticsMatcher
 ): SubspaceSemanticsNodeInteractionCollection =
     SubspaceSemanticsNodeInteractionCollection(SubspaceTestContext(this), matcher)
 
 /** Subspace version of onNodeWithTag in Compose. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.onSubspaceNodeWithTag(
     testTag: String
 ): SubspaceSemanticsNodeInteraction = onSubspaceNode(hasTestTag(testTag))
 
 /** Subspace version of onAllNodesWithTag in Compose. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.onAllSubspaceNodesWithTag(
     testTag: String
 ): SubspaceSemanticsNodeInteractionCollection = onAllSubspaceNodes(hasTestTag(testTag))
@@ -118,7 +110,6 @@ public fun AndroidComposeTestRule<*, SubspaceTestingActivity>.onAllSubspaceNodes
  * @param activity The [SubspaceTestingActivity] to use for the [Session].
  * @param runtime The [JxrPlatformAdapter] to use for the [Session].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun createFakeSession(
     activity: SubspaceTestingActivity,
     runtime: JxrPlatformAdapter = createFakeRuntime(activity),
@@ -155,7 +146,6 @@ internal fun createFakeSessionWithTestConfigs(
  *
  * @param activity The [Activity] to use for the [JxrPlatformAdapter].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun createFakeRuntime(activity: Activity): JxrPlatformAdapter =
     // FakeJxrPlatformAdapterFactory().createPlatformAdapter(activity)
     JxrPlatformAdapterAxr.create(

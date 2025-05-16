@@ -275,7 +275,7 @@ internal class PausedCompositionImpl(
         synchronized(lock) {
             @Suppress("UNCHECKED_CAST")
             try {
-                pausableApplier.playTo(applier as Applier<Any?>)
+                pausableApplier.playTo(applier as Applier<Any?>, rememberManager)
                 rememberManager.dispatchRememberObservers()
                 rememberManager.dispatchSideEffects()
             } finally {
@@ -340,7 +340,7 @@ internal class RecordingApplier<N>(root: N) : Applier<N> {
         operations.add(REUSE)
     }
 
-    fun playTo(applier: Applier<N>) {
+    fun playTo(applier: Applier<N>, rememberManager: RememberEventDispatcher) {
         var currentOperation = 0
         var currentInstance = 0
         val operations = operations
@@ -391,6 +391,10 @@ internal class RecordingApplier<N>(root: N) : Applier<N> {
                         applier.apply(block, value)
                     }
                     REUSE -> {
+                        val current = applier.current
+                        if (current is ComposeNodeLifecycleCallback) {
+                            rememberManager.dispatchOnDeactivateIfNecessary(current)
+                        }
                         applier.reuse()
                     }
                 }

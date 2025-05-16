@@ -27,6 +27,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.InsetsRulers.CaptionBar
 import androidx.compose.ui.layout.InsetsRulers.DisplayCutout
@@ -64,6 +66,7 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.math.roundToInt
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -71,6 +74,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 
+@OptIn(ExperimentalComposeUiApi::class)
 @SdkSuppress(minSdkVersion = 30)
 @RunWith(Parameterized::class)
 class InsetsRulersTest(val useDelegatableNode: Boolean) {
@@ -227,6 +231,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
 
     @Test
     fun normalRulers() {
+        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         val rulerState = mutableStateOf<RectRulers>(CaptionBar)
         setSimpleRulerContent(rulerState)
         val normalRulersList =
@@ -270,6 +275,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
 
     @Test
     fun ignoringVisibility() {
+        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         val rulerState = mutableStateOf<RectRulers>(CaptionBar)
         setSimpleRulerContent(rulerState)
         val ignoringVisibilityRulersList =
@@ -302,6 +308,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
 
     @Test
     fun displayRulers() {
+        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         val gestureRulerList =
             listOf(
                 DisplayCutout,
@@ -339,6 +346,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
     /** Make sure that when the display cutout is set that it includes the rects for each side. */
     @Test
     fun displayCutoutRulers() {
+        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         setSimpleRulerContent(mutableStateOf(DisplayCutout))
 
         val insets = createInsets(Type.displayCutout() to Insets.of(1, 2, 3, 5))
@@ -358,6 +366,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
 
     @Test
     fun mergedRulers() {
+        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         val mergedRulersMap =
             mapOf(
                 SafeGestures to
@@ -418,6 +427,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
 
     @Test
     fun animatingRulers() {
+        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         val rulerState = mutableStateOf<RectRulers>(Ime)
         setSimpleRulerContent(rulerState)
 
@@ -580,6 +590,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
 
     @Test
     fun animateMergedRulers() {
+        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         // display cutout and waterfall aren't animatable
         val mergedRulersMap =
             mapOf(
@@ -686,6 +697,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
 
     @Test
     fun rulersInCenteredDialog() {
+        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         var boxInsetsRect: IntRect? = null
         var dialogInsetsRect: IntRect? = null
         lateinit var coordinates: LayoutCoordinates
@@ -742,6 +754,7 @@ class InsetsRulersTest(val useDelegatableNode: Boolean) {
 
     @Test
     fun rulersInFullScreenDialog() {
+        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         var boxInsetsRect: IntRect? = null
         var dialogInsetsRect: IntRect? = null
         lateinit var coordinates: LayoutCoordinates

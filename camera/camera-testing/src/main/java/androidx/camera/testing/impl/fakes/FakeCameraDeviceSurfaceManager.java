@@ -26,6 +26,7 @@ import static com.google.common.primitives.Ints.asList;
 import android.util.Pair;
 import android.util.Size;
 
+import androidx.camera.core.Logger;
 import androidx.camera.core.impl.AttachedSurfaceInfo;
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraMode;
@@ -51,6 +52,7 @@ import java.util.Set;
 
 /** A CameraDeviceSurfaceManager which has no supported SurfaceConfigs. */
 public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurfaceManager {
+    private static final String TAG = "FakeCameraDeviceSurfaceManager";
 
     public static final Size MAX_OUTPUT_SIZE = new Size(4032, 3024); // 12.2 MP
 
@@ -173,6 +175,11 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
         for (AttachedSurfaceInfo surfaceInfo : existingSurfaceInfos) {
             currentCombo.add(surfaceInfo.getImageFormat());
         }
+
+        Logger.d(TAG,
+                "checkSurfaceCombo: currentCombo = " + currentCombo + ", mValidSurfaceCombos = "
+                        + mValidSurfaceCombos);
+
         // Loop through valid combinations and return early if the combo is supported.
         for (List<Integer> validCombo : mValidSurfaceCombos) {
             if (isComboSupported(currentCombo, validCombo)) {
@@ -210,5 +217,10 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
 
     public void setValidSurfaceCombos(@NonNull Set<List<Integer>> validSurfaceCombos) {
         mValidSurfaceCombos = validSurfaceCombos;
+    }
+
+    /** Adds a valid surface combo. */
+    public void addValidSurfaceCombo(@NonNull List<Integer> validSurfaceCombo) {
+        mValidSurfaceCombos.add(validSurfaceCombo);
     }
 }

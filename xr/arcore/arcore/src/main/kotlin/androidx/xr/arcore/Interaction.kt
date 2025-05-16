@@ -18,8 +18,7 @@
 
 package androidx.xr.arcore
 
-import androidx.annotation.RestrictTo
-import androidx.xr.runtime.PlaneTrackingMode
+import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Ray
 
@@ -34,7 +33,6 @@ import androidx.xr.runtime.math.Ray
  *   hit is at the beginning of the list.
  * @throws [IllegalStateException] if [PlaneTrackingMode] is set to Disabled.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun hitTest(session: Session, ray: Ray): List<HitResult> {
     val perceptionStateExtender =
         session.stateExtenders.filterIsInstance<PerceptionStateExtender>().first()

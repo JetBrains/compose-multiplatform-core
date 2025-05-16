@@ -24,12 +24,14 @@ import androidx.credentials.CredentialManagerCallback
 import androidx.credentials.exceptions.CreateCredentialCancellationException
 import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.CreateCredentialInterruptedException
+import androidx.credentials.exceptions.CreateCredentialNoCreateOptionException
 import androidx.credentials.exceptions.CreateCredentialUnknownException
-import androidx.credentials.internal.toJetpackCreateException
+import androidx.credentials.exceptions.CreateCredentialUnsupportedException
 import androidx.credentials.playservices.CredentialProviderPlayServicesImpl
 import androidx.credentials.playservices.controllers.CredentialProviderController
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.CommonStatusCodes
+import com.google.android.gms.common.api.UnsupportedApiCallException
 import com.google.android.gms.identitycredentials.CreateCredentialRequest
 import com.google.android.gms.identitycredentials.CreateCredentialResponse
 import com.google.android.gms.identitycredentials.IdentityCredentialManager
@@ -91,24 +93,36 @@ internal class CreatePublicKeyCredentialController(private val context: Context)
             }
     }
 
-    private fun fromGmsException(e: Throwable): CreateCredentialException {
-        return when (e) {
-            is com.google.android.gms.identitycredentials.CreateCredentialException ->
-                toJetpackCreateException(e.type, e.message)
-            is ApiException ->
+    fun fromGmsException(e: Throwable): CreateCredentialException {
+        when (e) {
+            is ApiException -> {
                 when (e.statusCode) {
                     CommonStatusCodes.CANCELED -> {
-                        CreateCredentialCancellationException(e.message)
+                        return CreateCredentialCancellationException(e.message)
+                    }
+                    CommonStatusCodes.API_NOT_CONNECTED -> {
+                        return CreateCredentialUnsupportedException(
+                            "API is not supported: " + e.message
+                        )
+                    }
+                    CommonStatusCodes.INTERNAL_ERROR -> {
+                        return CreateCredentialNoCreateOptionException(e.message)
                     }
                     in retryables -> {
-                        CreateCredentialInterruptedException(e.message)
+                        return CreateCredentialInterruptedException(e.message)
                     }
                     else -> {
-                        CreateCredentialUnknownException("Conditional create failed, failure: $e")
+                        return CreateCredentialUnknownException(
+                            "Conditional create failed, failure: ${e.message}"
+                        )
                     }
                 }
-            else -> CreateCredentialUnknownException("Conditional create failed, failure: $e")
+            }
+            is UnsupportedApiCallException -> {
+                return CreateCredentialUnsupportedException("API is unsupported")
+            }
         }
+        return CreateCredentialUnknownException("Conditional create failed, failure: $e")
     }
 
     public override fun convertRequestToPlayServices(

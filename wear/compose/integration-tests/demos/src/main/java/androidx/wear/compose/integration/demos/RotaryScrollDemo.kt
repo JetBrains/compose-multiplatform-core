@@ -40,10 +40,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.foundation.hierarchicalFocus
-import androidx.wear.compose.foundation.hierarchicalFocusRequester
+import androidx.wear.compose.foundation.hierarchicalFocusGroup
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.material.Text
@@ -60,12 +60,12 @@ public fun NestedScrollPagerDemo() {
         val scrollableState = rememberScrollState()
         Box(
             Modifier.fillMaxSize()
-                .hierarchicalFocus(focusEnabled = (page == state.currentPage))
+                .hierarchicalFocusGroup(active = (page == state.currentPage))
+                .requestFocusOnHierarchyActive()
                 .rotaryScrollable(
                     RotaryScrollableDefaults.behavior(scrollableState),
                     focusRequester = focusRequester
                 )
-                .hierarchicalFocusRequester(focusRequester)
                 .verticalScroll(scrollableState)
                 .background(if (page == 1) Color.Gray else Color.Black)
                 .padding(30.dp),
@@ -107,14 +107,14 @@ public fun NestedScrollLazyColumnDemo(reverseLayout: Boolean) {
 
             LazyColumn(
                 modifier =
-                    Modifier.hierarchicalFocus(true)
+                    Modifier.hierarchicalFocusGroup(true)
+                        .requestFocusOnHierarchyActive()
                         .rotaryScrollable(
                             RotaryScrollableDefaults.behavior(state),
                             overscrollEffect = overscrollEffect,
                             focusRequester = focusRequester,
                             reverseDirection = reverseLayout
                         )
-                        .hierarchicalFocusRequester(focusRequester)
                         .overscroll(overscrollEffect)
                         .size(150.dp)
                         .background(Color.Yellow)
@@ -142,7 +142,7 @@ public fun NestedScrollTLCDemo() {
         item { TopText() }
         item {
             TransformingLazyColumn(
-                Modifier.hierarchicalFocus(true)
+                Modifier.hierarchicalFocusGroup(true)
                     .size(150.dp)
                     .background(Color.Yellow)
                     .padding(PaddingValues(30.dp)),
@@ -167,7 +167,7 @@ public fun NestedScrollSLCDemo() {
         item { TopText() }
         item {
             ScalingLazyColumn(
-                Modifier.hierarchicalFocus(true)
+                Modifier.hierarchicalFocusGroup(true)
                     .size(150.dp)
                     .background(Color.Yellow)
                     .padding(PaddingValues(30.dp))

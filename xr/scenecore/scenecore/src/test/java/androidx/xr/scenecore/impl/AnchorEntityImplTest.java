@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.os.IBinder;
 import android.os.SystemClock;
@@ -77,6 +78,7 @@ import java.time.Duration;
 import java.util.UUID;
 
 @RunWith(RobolectricTestRunner.class)
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
     private static class FakeExportableAnchor implements ExportableAnchor {
         private final long mNativePointer;

@@ -48,12 +48,27 @@ public fun NavBackStackEntry.LocalOwnersProvider(
     saveableStateHolder: SaveableStateHolder,
     content: @Composable () -> Unit
 ) {
+    // This outer `CompositionLocalProvider` explicitly provides the owners from this
+    // `NavBackStackEntry` directly to the `SaveableStateProvider`. This prevents potential issues,
+    // such as in testing scenarios, where these owners might not be set.
     CompositionLocalProvider(
         LocalViewModelStoreOwner provides this,
         LocalLifecycleOwner provides this,
         LocalSavedStateRegistryOwner provides this
     ) {
-        saveableStateHolder.SaveableStateProvider(content)
+        saveableStateHolder.SaveableStateProvider {
+            // This inner `CompositionLocalProvider`, located inside the `SaveableStateProvider`
+            // lambda, ensures that the `content` composable receives the correct owners
+            // from this `NavBackStackEntry`. This layering prevents unintended owner overrides
+            // by `SaveableStateProvider` and ensures the destination content correctly interacts
+            // with its navigation-scoped owners.
+            CompositionLocalProvider(
+                LocalViewModelStoreOwner provides this,
+                LocalLifecycleOwner provides this,
+                LocalSavedStateRegistryOwner provides this,
+                content = content,
+            )
+        }
     }
 }
 

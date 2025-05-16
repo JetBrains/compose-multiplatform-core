@@ -29,6 +29,22 @@ import androidx.compose.ui.Modifier
  * This overload takes a [ThreePaneScaffoldValue] describing the adapted value of each pane within
  * the scaffold.
  *
+ * Here's a basic usage sample, which demonstrates how a layout can change from single pane to dual
+ * pane under different window configurations:
+ *
+ * @sample androidx.compose.material3.adaptive.samples.SupportingPaneScaffoldSample
+ *
+ * By default there isn't a drag handle rendered so users aren't able to drag to change the pane
+ * split. Providing a drag handle like the above sample shows will enable the functionality. We
+ * suggest developers to use the vertical drag handle implementation provided by the Material3
+ * component library here to have default theming/styling support. You can integrate the component
+ * as the following sample shows:
+ *
+ * @sample androidx.compose.material3.adaptive.samples.PaneExpansionDragHandleSample
+ *
+ * Note that if there's no drag handle, you can still modify [paneExpansionState] directly to apply
+ * pane expansion.
+ *
  * @param directive The top-level directives about how the scaffold should arrange its panes.
  * @param value The current adapted value of the scaffold, which indicates how each pane of the
  *   scaffold is adapted.
@@ -90,6 +106,22 @@ fun SupportingPaneScaffold(
  *
  * This overload takes a [ThreePaneScaffoldState] describing the current [ThreePaneScaffoldValue]
  * and any pane transitions or animations in progress.
+ *
+ * Here's a basic usage sample, which demonstrates how a layout can change from single pane to dual
+ * pane under different window configurations:
+ *
+ * @sample androidx.compose.material3.adaptive.samples.SupportingPaneScaffoldSample
+ *
+ * By default there isn't a drag handle rendered so users aren't able to drag to change the pane
+ * split. Providing a drag handle like the above sample shows will enable the functionality. We
+ * suggest developers to use the vertical drag handle implementation provided by the Material3
+ * component library here to have default theming/styling support. You can integrate the component
+ * as the following sample shows:
+ *
+ * @sample androidx.compose.material3.adaptive.samples.PaneExpansionDragHandleSample
+ *
+ * Note that if there's no drag handle, you can still modify [paneExpansionState] directly to apply
+ * pane expansion.
  *
  * @param directive The top-level directives about how the scaffold should arrange its panes.
  * @param scaffoldState The current state of the scaffold, containing information about the adapted

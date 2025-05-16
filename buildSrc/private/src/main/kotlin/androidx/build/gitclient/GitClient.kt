@@ -98,7 +98,7 @@ internal abstract class GitChangedFilesSource :
     ValueSource<List<String>, GitChangedFilesSource.Parameters> {
     interface Parameters : ValueSourceParameters {
         val workingDir: DirectoryProperty
-        val baseCommitOverride: Property<String?>
+        val baseCommitOverride: Property<String>
     }
 
     @get:Inject abstract val execOperations: ExecOperations

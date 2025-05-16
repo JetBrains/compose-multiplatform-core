@@ -979,6 +979,15 @@ class RecorderTest(
     }
 
     @Test
+    fun canSetVideoEncodingFrameRate() {
+        // Arrange.
+        val recorder = createRecorder(videoEncodingFrameRate = 60)
+
+        // Assert.
+        assertThat(recorder.videoEncodingFrameRate).isEqualTo(60)
+    }
+
+    @Test
     fun setNonSupportedVideoCapabilitiesSource_throwException() {
         assertThrows(IllegalArgumentException::class.java) {
             createRecorder(videoCapabilitiesSource = Integer.MAX_VALUE)
@@ -1166,6 +1175,7 @@ class RecorderTest(
         retrySetupVideoDelayMs: Long? = null,
         audioSource: Int? = null,
         requiredFreeStorageBytes: Long? = null,
+        videoEncodingFrameRate: Int? = null
     ): Recorder {
         val recorder =
             Recorder.Builder()
@@ -1182,6 +1192,7 @@ class RecorderTest(
                 }
                 .build()
                 .apply {
+                    videoEncodingFrameRate?.let { setVideoEncodingFrameRate(it) }
                     retrySetupVideoMaxCount?.let { sRetrySetupVideoMaxCount = it }
                     retrySetupVideoDelayMs?.let { sRetrySetupVideoDelayMs = it }
                 }

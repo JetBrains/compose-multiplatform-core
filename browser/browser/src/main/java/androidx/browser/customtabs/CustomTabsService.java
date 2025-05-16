@@ -100,6 +100,11 @@ public abstract class CustomTabsService extends Service {
             "androidx.browser.trusted.category.ImmersiveMode";
 
     /**
+     * An Intent filter category to signify that the Custom Tabs provider supports Auth Tab.
+     */
+    public static final String CATEGORY_AUTH_TAB = "androidx.browser.auth.category.AuthTab";
+
+    /**
      * For {@link CustomTabsService#mayLaunchUrl} calls that wants to specify more than one url,
      * this key can be used with {@link Bundle#putParcelable(String, android.os.Parcelable)}
      * to insert a new url to each bundle inside list of bundles.

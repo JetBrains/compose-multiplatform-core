@@ -33,7 +33,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.ScrollInfoProvider
-import androidx.wear.compose.foundation.hierarchicalFocusRequester
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.integration.demos.common.Centralize
@@ -64,7 +64,7 @@ fun ScrollAwayLazyColumn() {
             state = scrollState,
             modifier =
                 Modifier.fillMaxSize()
-                    .hierarchicalFocusRequester(focusRequester)
+                    .requestFocusOnHierarchyActive()
                     .rotaryScrollable(
                         RotaryScrollableDefaults.behavior(
                             scrollableState = scrollState,
@@ -118,7 +118,7 @@ fun ScrollAwayColumn() {
         Column(
             modifier =
                 Modifier.verticalScroll(scrollState)
-                    .hierarchicalFocusRequester(focusRequester)
+                    .requestFocusOnHierarchyActive()
                     .rotaryScrollable(
                         RotaryScrollableDefaults.behavior(
                             scrollableState = scrollState,

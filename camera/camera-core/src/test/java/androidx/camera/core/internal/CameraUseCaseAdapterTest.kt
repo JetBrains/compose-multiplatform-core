@@ -45,6 +45,11 @@ import androidx.camera.core.TorchState
 import androidx.camera.core.UseCase
 import androidx.camera.core.ViewPort
 import androidx.camera.core.concurrent.CameraCoordinator
+import androidx.camera.core.featurecombination.Feature.Companion.FPS_60
+import androidx.camera.core.featurecombination.Feature.Companion.HDR_HLG10
+import androidx.camera.core.featurecombination.Feature.Companion.IMAGE_ULTRA_HDR
+import androidx.camera.core.featurecombination.Feature.Companion.PREVIEW_STABILIZATION
+import androidx.camera.core.featurecombination.impl.ResolvedFeatureCombination
 import androidx.camera.core.impl.AdapterCameraControl
 import androidx.camera.core.impl.AdapterCameraInfo
 import androidx.camera.core.impl.AdapterCameraInternal
@@ -249,6 +254,149 @@ class CameraUseCaseAdapterTest {
 
         // Assert.
         assertThat(fakeCamera.useCaseUpdateHistory).containsExactly(preview)
+    }
+
+    @Test
+    fun addUseCases_withoutResolvedFeatureCombination_useCaseFeatureCombinationIsNull() {
+        // Arrange & Act.
+        adapter.addUseCases(listOf(preview))
+
+        // Assert: Features not set to Preview.
+        assertThat(preview.featureCombination).isNull()
+    }
+
+    @Test
+    fun addUseCases_withEmptyFeatures_nonNullEmptyFeaturesSet() {
+        // Arrange & Act.
+        adapter.addUseCases(
+            listOf(preview),
+            ResolvedFeatureCombination(
+                useCases = emptySet(), // the use cases from feature combination don't matter
+                features = emptySet()
+            )
+        )
+
+        // Assert: Features set to Preview as empty.
+        assertThat(preview.featureCombination).isEmpty()
+    }
+
+    @org.robolectric.annotation.Config(minSdk = 34) // UltraHDR is supported from API 34 and onwards
+    @Test
+    fun addUseCases_withSupportedResolvedFeatureCombo_featuresSetToAllUseCasesIncludingOlderOnes() {
+        // Arrange.
+        val features = setOf(HDR_HLG10, FPS_60, IMAGE_ULTRA_HDR)
+        addUltraHdrSupport()
+        adapter.addUseCases(listOf(preview))
+
+        // Act.
+        adapter.addUseCases(
+            listOf(image),
+            ResolvedFeatureCombination(
+                useCases = emptySet(), // the use cases from feature combination don't matter
+                features = features
+            )
+        )
+
+        // Assert: Features set to both Preview and ImageCapture, not only Preview.
+        assertThat(preview.featureCombination).containsExactlyElementsIn(features)
+        assertThat(image.featureCombination).containsExactlyElementsIn(features)
+    }
+
+    @Test
+    fun addUseCases_useCasesAddedWithoutFeaturesFirstAndThenWithUnsupportedFeature_noFeaturesSet() {
+        // Arrange.
+        val features = setOf(HDR_HLG10, FPS_60, IMAGE_ULTRA_HDR)
+        adapter.addUseCases(listOf(preview))
+
+        // Act: Exception expected as UltraHDR is not supported in the used fakes by default.
+        assertThrows<CameraException> {
+            adapter.addUseCases(
+                listOf(image),
+                ResolvedFeatureCombination(
+                    useCases = emptySet(), // the use cases from feature combination don't matter
+                    features = features
+                )
+            )
+        }
+
+        // Assert: Features set to both Preview and ImageCapture, not only Preview.
+        assertThat(preview.featureCombination).isNull()
+        assertThat(image.featureCombination).isNull()
+    }
+
+    @Test
+    fun useCasesAddedWithSupportedFeaturesAndThenWithUnsupportedFeature_previousFeaturesStillSet() {
+        // Arrange.
+        val supportedFeatures = setOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION)
+        val unsupportedFeatures = setOf(HDR_HLG10, FPS_60, IMAGE_ULTRA_HDR)
+
+        // Add Preview use case with supported features first
+        adapter.addUseCases(
+            listOf(preview),
+            ResolvedFeatureCombination(
+                useCases = emptySet(), // the use cases from feature combination don't matter
+                features = supportedFeatures
+            )
+        )
+
+        // Act: Add ImageCapture use cases with some unsupported features.
+
+        // Exception expected as UltraHDR is not supported in the used fakes by default.
+        assertThrows<CameraException> {
+            adapter.addUseCases(
+                listOf(image),
+                ResolvedFeatureCombination(
+                    useCases = emptySet(), // the use cases from feature combination don't matter
+                    features = unsupportedFeatures
+                )
+            )
+        }
+
+        // Assert: Binding didn't succeed, so previous features still set to Preview while
+        // ImageCapture still has no feature.
+        assertThat(preview.featureCombination).containsExactlyElementsIn(supportedFeatures)
+        assertThat(image.featureCombination).isNull()
+    }
+
+    @Test
+    fun addUseCases_withoutFeaturesAfterAddingWithFeatures_allUseCasesHaveNullFeatureCombo() {
+        // Arrange.
+        val features = setOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION)
+        adapter.addUseCases(
+            listOf(preview),
+            ResolvedFeatureCombination(
+                useCases = emptySet(), // the use cases from feature combination don't matter
+                features = features
+            )
+        )
+
+        // Act.
+        adapter.addUseCases(listOf(image))
+
+        // Assert: Features set to both Preview and ImageCapture, not only Preview.
+        assertThat(preview.featureCombination).isNull()
+        assertThat(image.featureCombination).isNull()
+    }
+
+    @Test
+    fun removeUseCases_addedBeforeWithFeatureCombination_featuresRemovedFromOnlyRemovedUseCases() {
+        // Arrange.
+        val features = setOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION)
+        adapter.addUseCases(listOf(preview))
+        adapter.addUseCases(
+            listOf(image),
+            ResolvedFeatureCombination(
+                useCases = emptySet(), // the use cases from feature combination don't matter
+                features = features
+            )
+        )
+
+        // Act.
+        adapter.removeUseCases(listOf(image))
+
+        // Assert: Features set to Preview as it's still attached, VideoCapture no longer has them.
+        assertThat(preview.featureCombination).containsExactlyElementsIn(features)
+        assertThat(video.featureCombination).isNull()
     }
 
     @Test
@@ -1397,6 +1545,13 @@ class CameraUseCaseAdapterTest {
             .isEqualTo(frameRate)
         assertThat(fakeUseCase2.currentConfig.retrieveOption(OPTION_TARGET_HIGH_SPEED_FRAME_RATE))
             .isEqualTo(frameRate)
+    }
+
+    private fun addUltraHdrSupport() {
+        fakeCameraInfo.setSupportedResolutions(JPEG_R, listOf(Size(1920, 1080)))
+        fakeCameraDeviceSurfaceManager.addValidSurfaceCombo(
+            listOf(INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE, JPEG_R)
+        )
     }
 
     private fun createFakeVideoCaptureUseCase(): FakeUseCase {

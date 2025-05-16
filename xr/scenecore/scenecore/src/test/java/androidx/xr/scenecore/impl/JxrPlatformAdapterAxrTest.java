@@ -36,6 +36,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
@@ -140,6 +141,7 @@ import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 @RunWith(RobolectricTestRunner.class)
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 public final class JxrPlatformAdapterAxrTest {
     // TODO(b/402408284): Remove once the constants are available in the host version of
     // ReformOptions
@@ -2491,8 +2493,8 @@ public final class JxrPlatformAdapterAxrTest {
                         mFakeImpressApi.getImpressNodes().keySet().stream()
                                 .filter(
                                         node ->
-                                                node.materialOverride != null
-                                                        && node.materialOverride.type
+                                                node.getMaterialOverride() != null
+                                                        && node.getMaterialOverride().getType()
                                                                 == FakeImpressApi.MaterialData.Type
                                                                         .WATER)
                                 .toArray())

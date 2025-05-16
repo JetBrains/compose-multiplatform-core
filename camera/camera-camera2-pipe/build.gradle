@@ -36,6 +36,7 @@ dependencies {
     api("androidx.annotation:annotation:1.8.1")
     api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
+    api(libs.javaxInject)
 
     implementation(libs.atomicFu)
     implementation(libs.dagger)
@@ -53,12 +54,17 @@ dependencies {
     testImplementation(libs.mockitoKotlin4)
     testImplementation(project(":camera:camera-camera2-pipe-testing"))
     testImplementation(project(":internal-testutils-truth"))
+    testImplementation("org.robolectric:annotations:4.14")
+    testImplementation("org.robolectric:sandbox:4.14")
+    testImplementation("org.robolectric:shadowapi:4.14")
+    testImplementation("org.robolectric:shadows-framework:4.14")
+    testImplementation(libs.kotlinCoroutinesCore)
 
     kspTest(libs.daggerCompiler)
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.junit)
 }
 
 android {

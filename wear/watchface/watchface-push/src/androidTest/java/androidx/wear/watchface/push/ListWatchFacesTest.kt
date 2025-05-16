@@ -27,7 +27,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-public class ListWatchFacesTest {
+class ListWatchFacesTest {
     private var context: Context = ApplicationProvider.getApplicationContext()
     private var wfp = WatchFacePushManager(context)
 
@@ -37,6 +37,7 @@ public class ListWatchFacesTest {
     }
 
     @Test
+    @RequiresWatch
     fun listWatchFaces_beforeAddingAnything() {
         val response = runBlocking { wfp.listWatchFaces() }
         assertThat(response).isNotNull()
@@ -46,6 +47,7 @@ public class ListWatchFacesTest {
     }
 
     @Test
+    @RequiresWatch
     fun listWatchFaces_afterAddingWatchFace() {
         runBlocking {
             readWatchFace(context, VALID_APK).use { pipe ->

@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -48,6 +49,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.util.fastForEach
@@ -290,6 +292,16 @@ private class ThreePaneContentMeasurePolicy(
                     tertiaryMeasurable = tertiaryMeasurable,
                 ) {
                     it is PaneAdaptedValue.Reflowed
+                }
+            val levitatedPanes =
+                getPanesMeasurables(
+                    paneOrder = paneOrder,
+                    primaryMeasurable = primaryMeasurable,
+                    scaffoldValue = scaffoldValue,
+                    secondaryMeasurable = secondaryMeasurable,
+                    tertiaryMeasurable = tertiaryMeasurable,
+                ) {
+                    it is PaneAdaptedValue.Levitated
                 }
             val hiddenPanes =
                 getPanesMeasurablesWithValue(
@@ -558,6 +570,8 @@ private class ThreePaneContentMeasurePolicy(
                 paneExpansionState.onExpansionOffsetMeasured(PaneExpansionState.Unspecified)
             }
 
+            placeLevitatedPanes(levitatedPanes, outerBounds, layoutDirection, isLookingAhead)
+
             // Place the hidden panes to ensure a proper motion at the AnimatedVisibility,
             // otherwise the pane will be gone immediately when it's hidden.
             // The placement is done using the outerBounds, as the placementsCache holds
@@ -567,6 +581,7 @@ private class ThreePaneContentMeasurePolicy(
             expandedPanes.fastForEach { with(it) { doMeasureAndPlace() } }
             reflowedPanes.fastForEach { with(it) { doMeasureAndPlace() } }
             dragHandle?.apply { doMeasureAndPlace() }
+            levitatedPanes.fastForEach { with(it) { doMeasureAndPlace() } }
             hiddenPanes.fastForEach { with(it) { doMeasureAndPlace() } }
         }
     }
@@ -743,8 +758,28 @@ private class ThreePaneContentMeasurePolicy(
         paneBounds: IntRect,
         measurable: PaneMeasurable,
         isLookingAhead: Boolean
+    ) =
+        measurable.apply {
+            measuredBounds = paneBounds
+            recordMeasureResult(isLookingAhead)
+        }
+
+    private fun placeLevitatedPanes(
+        measurables: List<PaneMeasurable>,
+        scaffoldBounds: IntRect,
+        layoutDirection: LayoutDirection,
+        isLookingAhead: Boolean
     ) {
-        measurable.measuredBounds = paneBounds.also { it.save(measurable.role, isLookingAhead) }
+        measurables.fastForEach {
+            val paneSize =
+                IntSize(
+                    min(it.measuringWidth, scaffoldBounds.width),
+                    min(it.measuringHeight, scaffoldBounds.height)
+                )
+            val alignment = (it.value as? PaneAdaptedValue.Levitated)?.alignment ?: Alignment.Center
+            val offset = alignment.align(paneSize, scaffoldBounds.size, layoutDirection)
+            measureAndPlacePane(IntRect(offset, paneSize), it, isLookingAhead)
+        }
     }
 
     @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -764,35 +799,42 @@ private class ThreePaneContentMeasurePolicy(
                     measuredData.targetRight,
                     measuredData.targetBottom,
                 )
+            it.zIndex = measuredData.zIndex + ThreePaneScaffoldDefaults.HiddenPaneZIndexOffset
         }
     }
 
-    private fun IntRect.save(role: ThreePaneScaffoldRole, isLookingAhead: Boolean) {
-        if (!isLookingAhead) {
+    private fun PaneMeasurable.recordMeasureResult(isLookingAhead: Boolean) {
+        val paneMotionData = motionDataProvider[role]
+        if (!isLookingAhead && value != PaneAdaptedValue.Hidden) {
+            // Save zIndex for visible panes, so when it's hidden we can keep them at the same
+            // zIndex level.
+            paneMotionData.zIndex = zIndex
             return
         }
-        val paneMotionData = motionDataProvider[role]
-        if (!paneMotionData.isOriginSizeAndPositionSet) {
-            // During animation remeasuring can happen multiple times, with the measuring result
-            // equals to the lookahead measure. We don't want to override the original measurement
-            // so we only use the very first measurement
-            paneMotionData.originSize =
-                if (paneMotionData.isTargetSizeAndPositionSet) {
-                    paneMotionData.targetSize
-                } else {
-                    size
-                }
-            paneMotionData.originPosition =
-                if (paneMotionData.isTargetSizeAndPositionSet) {
-                    paneMotionData.targetPosition
-                } else {
-                    topLeft
-                }
-            paneMotionData.isOriginSizeAndPositionSet = true
+        measuredBounds?.apply {
+            if (!paneMotionData.isOriginSizeAndPositionSet) {
+                // During animation remeasuring can happen multiple times, with the measuring result
+                // equals to the lookahead measure. We don't want to override the original
+                // measurement
+                // so we only use the very first measurement
+                paneMotionData.originSize =
+                    if (paneMotionData.isTargetSizeAndPositionSet) {
+                        paneMotionData.targetSize
+                    } else {
+                        size
+                    }
+                paneMotionData.originPosition =
+                    if (paneMotionData.isTargetSizeAndPositionSet) {
+                        paneMotionData.targetPosition
+                    } else {
+                        topLeft
+                    }
+                paneMotionData.isOriginSizeAndPositionSet = true
+            }
+            paneMotionData.targetSize = size
+            paneMotionData.targetPosition = topLeft
+            paneMotionData.isTargetSizeAndPositionSet = true
         }
-        paneMotionData.targetSize = size
-        paneMotionData.targetPosition = topLeft
-        paneMotionData.isTargetSizeAndPositionSet = true
     }
 
     private fun Placeable.PlacementScope.getLocalBounds(bounds: Rect): IntRect {
@@ -890,8 +932,11 @@ private class PaneMeasurable(
     val placedPositionY
         get() = measuredBounds?.top ?: 0
 
-    val zIndex: Float =
-        if (value == PaneAdaptedValue.Hidden) ThreePaneScaffoldDefaults.HiddenPaneZIndex else 0f
+    var zIndex: Float =
+        when {
+            (value is PaneAdaptedValue.Levitated) -> ThreePaneScaffoldDefaults.LevitatedPaneZIndex
+            else -> 0f
+        }
 
     val measuredAndPlaced
         get() = measuredBounds != null
@@ -961,11 +1006,13 @@ internal object ThreePaneScaffoldDefaults {
             tertiaryPaneAdaptStrategy
         )
 
+    const val LevitatedPaneZIndex = 1f
+
     /**
-     * The negative z-index of hidden panes to make visible panes always show upon hidden panes
-     * during pane animations.
+     * The z-index offset of hidden panes to make visible panes always show upon the hidden panes at
+     * the same z-index level during pane animations.
      */
-    const val HiddenPaneZIndex = -0.1f
+    const val HiddenPaneZIndexOffset = -0.1f
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)

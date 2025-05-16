@@ -35,183 +35,235 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.launch
 
-/**
- * Repository class responsible for managing call-related operations and data. It acts as an
- * intermediary between the UI/business logic and the VoipService.
- *
- * This class provides methods to interact with the VoipService, such as adding calls, setting call
- * states, ending calls, switching endpoints, and toggling global mute.
- *
- * It also exposes a SharedFlow of CallData updates for observing call state changes.
- */
 class CallRepository {
-    // Define a scope for collecting from the service flow
-    // Use SupervisorJob so failure in collection doesn't cancel the whole scope
-    private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private var serviceCollectionJob: Job? = null // Keep track of the collection job
-
-    data class LocalServiceConnection(
-        val isConnected: Boolean,
-        val context: Context? = null,
-        val serviceConnection: ServiceConnection? = null,
-        val connection: LocalIcsBinder? = null
-    )
-
-    private val connectedService: MutableStateFlow<LocalServiceConnection> =
-        MutableStateFlow(LocalServiceConnection(false))
 
     companion object {
-        val LOG_TAG = "CallRepository"
+        const val LOG_TAG = "CallRepository"
     }
 
-    /** Bind to the app's [LocalIcsBinder.Connector] Service implementation */
-    fun connectService(context: Context) {
-        Log.i(LOG_TAG, "connectionService: isConnected=[${connectedService.value.isConnected}]")
-        if (connectedService.value.isConnected) return
-        val intent = Intent(context, TelecomVoipService::class.java)
-        val serviceConnection =
-            object : ServiceConnection {
-                override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-                    Log.i(LOG_TAG, "connectionService: onServiceConnected")
-                    if (service == null) return
-                    val localServiceBinder = service as LocalIcsBinder.Connector
-                    val voipService = localServiceBinder.getService()
-                    connectedService.value =
-                        LocalServiceConnection(true, context, this, voipService)
-                    serviceCollectionJob?.cancel() // Cancel potential previous job
-                    serviceCollectionJob =
-                        repositoryScope.launch {
-                            Log.i(
-                                LOG_TAG,
-                                "connectionService: Starting collection from service flow"
-                            )
-                            voipService.callDataUpdates.collect { dataList ->
-                                Log.v(
-                                    LOG_TAG,
-                                    "connectionService: Received data update from" +
-                                        " service: ${dataList.size} calls"
-                                )
-                                _callDataFlow.value = dataList // Update the repository's StateFlow
-                            }
-                        }
-                }
+    // --- State Management ---
+    private var mIsBound = false
+    private var mBinder: LocalIcsBinder? = null // Store the Binder interface directly
+    private var mBoundContext: Context? = null // Keep track of the context used for unbinding
 
-                override fun onServiceDisconnected(name: ComponentName?) {
-                    // Unlikely since the Service is in the same process.
-                    // Re-evaluate if the service is moved to another process.
-                    Log.w(
+    // --- Coroutine Scope & Job ---
+    // Use SupervisorJob so failure in collection doesn't cancel the whole scope
+    private val mRepositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private var mServiceCollectionJob: Job? = null // Keep track of the collection job
+
+    // --- Service Connection ---
+    // Define ServiceConnection as a stable member variable
+    private val mServiceConnection =
+        object : ServiceConnection {
+            override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+                Log.i(LOG_TAG, "Service connected: $name")
+                if (service == null) {
+                    Log.w(LOG_TAG, "onServiceConnected: IBinder service is null!")
+                    // Handle error? Maybe attempt rebind?
+                    mIsBound = false
+                    return
+                }
+                try {
+                    // Cast to the Binder interface defined in your service
+                    mBinder = (service as LocalIcsBinder.Connector).getService()
+                    mIsBound = true
+                    Log.i(LOG_TAG, "Service bound successfully.")
+
+                    // Start collecting updates from the service's StateFlow
+                    startCollectingFromService()
+                } catch (e: ClassCastException) {
+                    Log.e(
                         LOG_TAG,
-                        "connectionService: onServiceDisconnected: Unexpected disconnect" +
-                            " request"
+                        "onServiceConnected: Error casting IBinder to LocalIcsBinder.Connector",
+                        e
                     )
+                    mIsBound = false // Failed to get binder
+                    // Might need to unbind here if appropriate
                 }
             }
-        Log.i(LOG_TAG, "connectionService: Binding to VoipService locally")
-        context.bindService(intent, serviceConnection, BIND_AUTO_CREATE)
-    }
 
-    /** Disconnect from the app;s [LocalIcsBinder.Connector] Service implementation */
-    fun disconnectService() {
-        val localConnection = connectedService.getAndUpdate { LocalServiceConnection(false) }
-        localConnection.serviceConnection?.let { conn ->
-            Log.i(LOG_TAG, "disconnectService: Unbinding from VoipService locally")
-            localConnection.context?.unbindService(conn)
+            override fun onServiceDisconnected(name: ComponentName?) {
+                // Called when the connection is unexpectedly lost (e.g., service crashed).
+                // NOT usually called on explicit unbindService().
+                Log.w(LOG_TAG, "Service unexpectedly disconnected: $name")
+                mIsBound = false
+                mBinder = null
+                mServiceCollectionJob?.cancel() // Stop collecting if service dies
+                mServiceCollectionJob = null
+                mBoundContext = null
+            }
         }
-    }
 
-    /**
-     * Private backing property for the callDataFlow. Holds the StateFlow of CallData updates from
-     * the VoipService.
-     */
+    /** Private backing property for the callDataFlow. */
     private val _callDataFlow = MutableStateFlow<List<CallData>>(emptyList())
 
-    /**
-     * Public read-only property to access the StateFlow of CallData updates. Allows observing call
-     * state changes from the UI/business logic.
-     */
+    /** Public read-only property to access the StateFlow of CallData updates. */
     val callDataFlow: StateFlow<List<CallData>> = _callDataFlow.asStateFlow()
 
     /**
-     * Adds an outgoing call using the provided CallAttributesCompat. Delegates the call addition to
-     * the VoipService.
-     *
-     * @param callAttributesCompat The attributes of the outgoing call.
+     * Ensures the TelecomVoipService is started and binds to it. This method is idempotent; safe to
+     * call multiple times.
      */
+    fun maybeConnectService(context: Context) {
+        if (mIsBound) {
+            Log.d(LOG_TAG, "connectService: Already bound.")
+            return // Already connected
+        }
+
+        val applicationContext = context.applicationContext
+        val intent = Intent(applicationContext, TelecomVoipService::class.java)
+        Log.i(LOG_TAG, "connectService: Attempting to start and bind to VoipService.")
+
+        try {
+            // 1. Ensure the service is started using startService.
+            // This keeps the service running even if all clients unbind,
+            // until stopSelf() or stopService() is called.
+            applicationContext.startService(intent)
+            Log.d(LOG_TAG, "startService called.")
+
+            // 2. Bind to the service
+            val didBind =
+                applicationContext.bindService(
+                    intent,
+                    mServiceConnection, // Use the stable member variable
+                    BIND_AUTO_CREATE
+                )
+
+            if (didBind) {
+                Log.d(LOG_TAG, "bindService call initiated successfully.")
+                mBoundContext = applicationContext // Store context for unbinding
+                // Note: isBound will be set true in onServiceConnected
+            } else {
+                Log.e(
+                    LOG_TAG,
+                    "bindService call returned false. Service might not be" + " available."
+                )
+                // Failed to initiate binding. Stop service
+                applicationContext.stopService(intent)
+            }
+        } catch (e: SecurityException) {
+            Log.e(
+                LOG_TAG,
+                "connectService: Failed to start/bind service due to" +
+                    " SecurityException. Check permissions.",
+                e
+            )
+            // Handle lack of permissions (rare for same-app service)
+        } catch (e: IllegalStateException) {
+            Log.e(
+                LOG_TAG,
+                "connectService: Failed to start/bind service due to" + " IllegalStateException.",
+                e
+            )
+            // Can happen if trying to startForegroundService from background without permission
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "connectService: Unexpected error starting/binding" + " service.", e)
+        }
+    }
+
+    /**
+     * Unbinds from the TelecomVoipService if currently bound and no active calls exist. Does NOT
+     * stop the service; the service should manage its own shutdown via stopSelf().
+     */
+    fun maybeDisconnectService() {
+        // Prevent disconnecting if there are active calls being tracked
+        if (_callDataFlow.value.isNotEmpty()) {
+            Log.w(LOG_TAG, "disconnectService: Skipping disconnect - active calls" + " detected.")
+            return
+        }
+
+        if (mIsBound && mBoundContext != null) {
+            Log.i(LOG_TAG, "disconnectService: Unbinding from VoipService.")
+            try {
+                mBoundContext?.unbindService(mServiceConnection)
+            } catch (e: IllegalArgumentException) {
+                Log.w(
+                    LOG_TAG,
+                    "disconnectService: ServiceConnection not registered?" + " Already unbound?",
+                    e
+                )
+            }
+            mIsBound = false
+            mBinder = null
+            mServiceCollectionJob?.cancel() // Ensure collection stops
+            mServiceCollectionJob = null
+            mBoundContext = null
+        } else {
+            Log.d(LOG_TAG, "disconnectService: Not currently bound.")
+        }
+    }
+
+    /** Starts collecting updates from the service's StateFlow. */
+    private fun startCollectingFromService() {
+        val serviceBinder = mBinder
+        if (serviceBinder == null) {
+            Log.w(LOG_TAG, "startCollectingFromService: Binder is null, cannot collect.")
+            return
+        }
+
+        // Cancel any previous job before starting a new one
+        mServiceCollectionJob?.cancel()
+
+        mServiceCollectionJob =
+            mRepositoryScope.launch {
+                Log.i(LOG_TAG, "Starting collection from service flow")
+                serviceBinder.callDataUpdates.collect { dataList ->
+                    Log.v(LOG_TAG, "Received data update from service: ${dataList.size} calls")
+                    _callDataFlow.value = dataList // Update the repository's StateFlow
+                }
+            }
+        Log.d(LOG_TAG, "Collection job started: $mServiceCollectionJob")
+    }
+
+    // --- Service Interaction Methods ---
+
     fun addOutgoingCall(callAttributesCompat: CallAttributesCompat) {
-        if (!connectedService.value.isConnected) {
-            Log.w(LOG_TAG, "addOutgoingCall: Service is not connected")
+        if (!mIsBound || mBinder == null) {
+            Log.w(LOG_TAG, "addOutgoingCall: Service is not connected/bound.")
             return
         }
-        connectedService.value.connection!!.addCall(callAttributesCompat)
+        mBinder?.addCall(callAttributesCompat, getNextNotificationId())
     }
 
-    /**
-     * Sets the specified call as active. Delegates the call activation to the VoipService.
-     *
-     * @param callId The ID of the call to set as active.
-     */
     fun setCallActive(callId: String) {
-        if (!connectedService.value.isConnected) {
-            Log.w(LOG_TAG, "setCallActive: Service is not connected")
+        if (!mIsBound || mBinder == null) {
+            Log.w(LOG_TAG, "setCallActive: Service is not connected/bound.")
             return
         }
-        connectedService.value.connection!!.setCallActive(callId)
+        mBinder?.setCallActive(callId)
     }
 
-    /**
-     * Sets the specified call as inactive. Delegates the call deactivation to the VoipService.
-     *
-     * @param callId The ID of the call to set as inactive.
-     */
     fun setCallInactive(callId: String) {
-        if (!connectedService.value.isConnected) {
-            Log.w(LOG_TAG, "Service is not connected")
+        if (!mIsBound || mBinder == null) {
+            Log.w(LOG_TAG, "setCallInactive: Service is not connected/bound.")
             return
         }
-        connectedService.value.connection!!.setCallInactive(callId)
+        mBinder?.setCallInactive(callId)
     }
 
-    /**
-     * Ends the specified call. Delegates the call ending to the VoipService.
-     *
-     * @param callId The ID of the call to end.
-     */
     fun endCall(callId: String) {
-        if (!connectedService.value.isConnected) {
-            Log.w(LOG_TAG, "Service is not connected")
+        if (!mIsBound || mBinder == null) {
+            Log.w(LOG_TAG, "endCall: Service is not connected/bound.")
             return
         }
-        connectedService.value.connection!!.endCall(callId)
+        mBinder?.endCall(callId)
     }
 
-    /**
-     * Switches the endpoint of the specified call. Delegates the endpoint switching to the
-     * VoipService.
-     *
-     * @param callId The ID of the call.
-     * @param endpointCompat The new endpoint for the call.
-     */
     fun switchCallEndpoint(callId: String, endpointCompat: CallEndpointCompat) {
-        if (!connectedService.value.isConnected) {
-            Log.w(LOG_TAG, "Service is not connected")
+        if (!mIsBound || mBinder == null) {
+            Log.w(LOG_TAG, "switchCallEndpoint: Service is not connected/bound.")
             return
         }
-        connectedService.value.connection!!.switchCallEndpoint(callId, endpointCompat)
+        mBinder?.switchCallEndpoint(callId, endpointCompat)
     }
 
-    /**
-     * Toggles the global mute state. Delegates the mute state toggling to the VoipService.
-     *
-     * @param isMuted True to mute, false to unmute.
-     */
     fun toggleGlobalMute(isMuted: Boolean) {
-        if (!connectedService.value.isConnected) {
-            Log.w(LOG_TAG, "Service is not connected")
+        if (!mIsBound || mBinder == null) {
+            Log.w(LOG_TAG, "toggleGlobalMute: Service is not connected/bound.")
             return
         }
-        connectedService.value.connection!!.toggleGlobalMute(isMuted)
+        mBinder?.toggleGlobalMute(isMuted)
     }
 }

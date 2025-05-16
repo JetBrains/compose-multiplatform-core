@@ -552,10 +552,7 @@ class OrderedScatterSetTest {
 
             val elements = Array(i) { -1 }
             var index = 0
-            set.forEach { element ->
-                println(element)
-                elements[index++] = element
-            }
+            set.forEach { element -> elements[index++] = element }
 
             index = 0
             elements.forEach { element ->

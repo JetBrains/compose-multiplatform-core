@@ -34,6 +34,7 @@ import androidx.compose.foundation.pager.PagerDefaults as ComposePagerDefaults
 import androidx.compose.foundation.pager.PagerSnapDistance as ComposePagerSnapDistance
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,8 +56,9 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.CustomTouchSlopProvider
 import androidx.wear.compose.foundation.DefaultTouchExplorationStateProvider
 import androidx.wear.compose.foundation.GestureInclusion
-import androidx.wear.compose.foundation.hierarchicalFocus
-import androidx.wear.compose.foundation.hierarchicalFocusRequester
+import androidx.wear.compose.foundation.LocalScreenIsActive
+import androidx.wear.compose.foundation.hierarchicalFocusGroup
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
@@ -124,12 +126,12 @@ public fun HorizontalPager(
     CustomTouchSlopProvider(newTouchSlop = originalTouchSlop * CustomTouchSlopMultiplier) {
         val rotaryModifier =
             if (rotaryScrollableBehavior != null && userScrollEnabled)
-                Modifier.rotaryScrollable(
+                Modifier.requestFocusOnHierarchyActive()
+                    .rotaryScrollable(
                         behavior = rotaryScrollableBehavior,
                         focusRequester = focusRequester,
                         reverseDirection = reverseLayout
                     )
-                    .hierarchicalFocusRequester(focusRequester)
             else Modifier
 
         HorizontalPager(
@@ -178,14 +180,19 @@ public fun HorizontalPager(
             snapPosition = SnapPosition.Start,
         ) { page ->
             CustomTouchSlopProvider(newTouchSlop = originalTouchSlop) {
-                Box(
-                    if (rotaryScrollableBehavior == null) {
-                        Modifier.hierarchicalFocus(state.currentPage == page)
-                    } else {
-                        Modifier
-                    }
+                val parentScreenActive = LocalScreenIsActive.current
+                CompositionLocalProvider(
+                    LocalScreenIsActive provides (state.currentPage == page && parentScreenActive)
                 ) {
-                    WearPagerScopeImpl.content(page)
+                    Box(
+                        if (rotaryScrollableBehavior == null) {
+                            Modifier.hierarchicalFocusGroup(state.currentPage == page)
+                        } else {
+                            Modifier
+                        }
+                    ) {
+                        WearPagerScopeImpl.content(page)
+                    }
                 }
             }
         }
@@ -247,12 +254,12 @@ public fun VerticalPager(
     val focusRequester = remember { FocusRequester() }
     val rotaryModifier =
         if (rotaryScrollableBehavior != null && userScrollEnabled)
-            Modifier.rotaryScrollable(
+            Modifier.requestFocusOnHierarchyActive()
+                .rotaryScrollable(
                     behavior = rotaryScrollableBehavior,
                     focusRequester = focusRequester,
                     reverseDirection = reverseLayout
                 )
-                .hierarchicalFocusRequester(focusRequester)
         else Modifier
 
     VerticalPager(
@@ -269,14 +276,19 @@ public fun VerticalPager(
         key = key,
         snapPosition = SnapPosition.Start,
     ) { page ->
-        Box(
-            if (rotaryScrollableBehavior == null) {
-                Modifier.hierarchicalFocus(state.currentPage == page)
-            } else {
-                Modifier
-            }
+        val parentScreenActive = LocalScreenIsActive.current
+        CompositionLocalProvider(
+            LocalScreenIsActive provides (state.currentPage == page && parentScreenActive)
         ) {
-            WearPagerScopeImpl.content(page)
+            Box(
+                if (rotaryScrollableBehavior == null) {
+                    Modifier.hierarchicalFocusGroup(state.currentPage == page)
+                } else {
+                    Modifier
+                }
+            ) {
+                WearPagerScopeImpl.content(page)
+            }
         }
     }
 }

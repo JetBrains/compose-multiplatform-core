@@ -109,12 +109,24 @@ fun calculateThreePaneScaffoldValue(
         }
     }
 
+    fun AdaptStrategy.Levitate.canOnlyLevitate() =
+        maxHorizontalPartitions == 1 || strategy == AdaptStrategy.Levitate.Strategy.Always
+
     var checkReflowedPane =
         maxHorizontalPartitions == 1 &&
             maxVerticalPartitions > 1 &&
             (adaptStrategies[ThreePaneScaffoldRole.Primary] is AdaptStrategy.Reflow ||
                 adaptStrategies[ThreePaneScaffoldRole.Secondary] is AdaptStrategy.Reflow ||
                 adaptStrategies[ThreePaneScaffoldRole.Tertiary] is AdaptStrategy.Reflow)
+
+    // Only levitate a pane when it is the current destination and cannot be expanded
+    destinationHistory.lastOrNull()?.apply {
+        (adaptStrategies[pane] as? AdaptStrategy.Levitate)?.apply {
+            if (canOnlyLevitate()) {
+                setAdaptedValue(pane, PaneAdaptedValue.Levitated(alignment))
+            }
+        }
+    }
 
     run {
         forEachPaneByPriority(destinationHistory) { pane ->
@@ -139,7 +151,13 @@ fun calculateThreePaneScaffoldValue(
             }
             when (anchorPaneValue) {
                 null ->
-                    if (hasAvailablePartition) {
+                    if (
+                        (adaptStrategies[anchorPane] as? AdaptStrategy.Levitate)?.canOnlyLevitate()
+                            ?: false
+                    ) {
+                        // The anchor pane can only be levitated, continue;
+                        return@forEachPaneByPriority
+                    } else if (hasAvailablePartition) {
                         // Expand the anchor pane to reflow the pane
                         setAdaptedValue(anchorPane, PaneAdaptedValue.Expanded)
                         expandedCount++

@@ -107,11 +107,12 @@ final class RegisteredMediaRouteProvider extends MediaRouteProvider
     }
 
     @Override
-    public RouteController onCreateRouteController(@NonNull String routeId) {
+    public RouteController onCreateRouteController(
+            @NonNull String routeId, @NonNull RouteControllerOptions routeControllerOptions) {
         if (routeId == null) {
             throw new IllegalArgumentException("routeId cannot be null");
         }
-        return createRouteController(routeId, null);
+        return createRouteController(routeId, /* routeGroupId= */ null, routeControllerOptions);
     }
 
     @Override
@@ -123,7 +124,7 @@ final class RegisteredMediaRouteProvider extends MediaRouteProvider
         if (routeGroupId == null) {
             throw new IllegalArgumentException("routeGroupId cannot be null");
         }
-        return createRouteController(routeId, routeGroupId);
+        return createRouteController(routeId, routeGroupId, RouteControllerOptions.EMPTY);
     }
 
     @Override
@@ -289,7 +290,10 @@ final class RegisteredMediaRouteProvider extends MediaRouteProvider
         }
     }
 
-    private RouteController createRouteController(String routeId, String routeGroupId) {
+    private RouteController createRouteController(
+            String routeId,
+            @Nullable String routeGroupId,
+            @NonNull RouteControllerOptions routeControllerOptions) {
         MediaRouteProviderDescriptor descriptor = getDescriptor();
         if (descriptor != null) {
             List<MediaRouteDescriptor> routes = descriptor.getRoutes();
@@ -298,7 +302,8 @@ final class RegisteredMediaRouteProvider extends MediaRouteProvider
                 final MediaRouteDescriptor route = routes.get(i);
                 if (route.getId().equals(routeId)) {
                     RouteController controller =
-                            new RegisteredRouteController(routeId, routeGroupId);
+                            new RegisteredRouteController(
+                                    routeId, routeGroupId, routeControllerOptions);
                     mControllerConnections.add((ControllerConnection) controller);
                     if (mConnectionReady) {
                         ((ControllerConnection) controller).attachConnection(mActiveConnection);
@@ -397,7 +402,9 @@ final class RegisteredMediaRouteProvider extends MediaRouteProvider
             if (mControllerCallback != null && controller instanceof RouteController) {
                 mControllerCallback.onControllerReleasedByProvider(((RouteController) controller));
             }
-            onControllerReleased(controller);
+            if (controller != null) {
+                onControllerReleased(controller);
+            }
         }
     }
 
@@ -420,7 +427,7 @@ final class RegisteredMediaRouteProvider extends MediaRouteProvider
         }
     }
 
-    void onControllerReleased(ControllerConnection controllerConnection) {
+    void onControllerReleased(@NonNull ControllerConnection controllerConnection) {
         mControllerConnections.remove(controllerConnection);
         controllerConnection.detachConnection();
         updateBinding();
@@ -618,7 +625,8 @@ final class RegisteredMediaRouteProvider extends MediaRouteProvider
     private final class RegisteredRouteController extends RouteController
             implements ControllerConnection {
         private final String mRouteId;
-        private final String mRouteGroupId;
+        @Nullable private final String mRouteGroupId;
+        @NonNull private final RouteControllerOptions mRouteControllerOptions;
 
         private boolean mSelected;
         private int mPendingSetVolume = -1;
@@ -627,9 +635,13 @@ final class RegisteredMediaRouteProvider extends MediaRouteProvider
         private Connection mConnection;
         private int mControllerId;
 
-        RegisteredRouteController(String routeId, String routeGroupId) {
+        RegisteredRouteController(
+                String routeId,
+                @Nullable String routeGroupId,
+                @NonNull RouteControllerOptions routeControllerOptions) {
             mRouteId = routeId;
             mRouteGroupId = routeGroupId;
+            mRouteControllerOptions = routeControllerOptions;
         }
 
         @Override
@@ -640,7 +652,9 @@ final class RegisteredMediaRouteProvider extends MediaRouteProvider
         @Override
         public void attachConnection(Connection connection) {
             mConnection = connection;
-            mControllerId = connection.createRouteController(mRouteId, mRouteGroupId);
+            mControllerId =
+                    connection.createRouteController(
+                            mRouteId, mRouteGroupId, mRouteControllerOptions);
             if (mSelected) {
                 connection.selectRoute(mControllerId);
                 if (mPendingSetVolume >= 0) {
@@ -869,19 +883,25 @@ final class RegisteredMediaRouteProvider extends MediaRouteProvider
 
         @Override
         public void binderDied() {
-            mPrivateHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    onConnectionDied(Connection.this);
-                }
-            });
+            mPrivateHandler.post(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            onConnectionDied(Connection.this);
+                        }
+                    });
         }
 
-        public int createRouteController(String routeId, String routeGroupId) {
+        public int createRouteController(
+                String routeId,
+                @Nullable String routeGroupId,
+                @NonNull RouteControllerOptions routeControllerOptions) {
             int controllerId = mNextControllerId++;
             Bundle data = new Bundle();
             data.putString(CLIENT_DATA_ROUTE_ID, routeId);
             data.putString(CLIENT_DATA_ROUTE_LIBRARY_GROUP, routeGroupId);
+            data.putParcelable(
+                    CLIENT_DATA_ROUTE_CONTROLLER_OPTIONS, routeControllerOptions.asBundle());
             sendRequest(
                     CLIENT_MSG_CREATE_ROUTE_CONTROLLER, mNextRequestId++, controllerId, null, data);
             return controllerId;

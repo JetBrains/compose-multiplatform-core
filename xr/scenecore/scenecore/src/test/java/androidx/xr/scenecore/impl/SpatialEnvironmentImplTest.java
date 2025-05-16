@@ -380,7 +380,7 @@ public final class SpatialEnvironmentImplTest {
         assertThat(mFakeImpressApi.impressNodeHasParent(geometryNodes.get(0))).isTrue();
         assertThat(materials).isNotEmpty();
         assertThat(materials.keySet().toArray()[0]).isEqualTo(WATER_MATERIAL_ID);
-        assertThat(materials.get(WATER_MATERIAL_ID).type).isEqualTo(MaterialData.Type.WATER);
+        assertThat(materials.get(WATER_MATERIAL_ID).getType()).isEqualTo(MaterialData.Type.WATER);
         assertThat(animatingNodes).isEqualTo(0);
         assertThat(loopingAnimatingNodes).isEqualTo(1);
 
@@ -485,15 +485,15 @@ public final class SpatialEnvironmentImplTest {
                         mFakeImpressApi.getImpressNodes().keySet().stream()
                                 .filter(
                                         node ->
-                                                node.materialOverride != null
-                                                        && node.materialOverride.type
+                                                node.getMaterialOverride() != null
+                                                        && node.getMaterialOverride().getType()
                                                                 == MaterialData.Type.WATER)
                                 .toArray())
                 .hasLength(1); // 1 glTF node that should be overridden with the water material.
 
         assertThat(materials).isNotEmpty();
         assertThat(materials.keySet().toArray()[0]).isEqualTo(WATER_MATERIAL_ID);
-        assertThat(materials.get(WATER_MATERIAL_ID).type).isEqualTo(MaterialData.Type.WATER);
+        assertThat(materials.get(WATER_MATERIAL_ID).getType()).isEqualTo(MaterialData.Type.WATER);
         assertThat(loopingAnimatingNodes).isEqualTo(1);
     }
 
@@ -519,7 +519,7 @@ public final class SpatialEnvironmentImplTest {
 
         assertThat(
                         mFakeImpressApi.getImpressNodes().keySet().stream()
-                                .filter(node -> node.materialOverride == null)
+                                .filter(node -> node.getMaterialOverride() == null)
                                 .toArray())
                 .hasLength(2); // 2 nodes are subspace (parent) and glTF (child) used for the
         // environment. Both
@@ -527,7 +527,7 @@ public final class SpatialEnvironmentImplTest {
 
         assertThat(materials).isNotEmpty();
         assertThat(materials.keySet().toArray()[0]).isEqualTo(WATER_MATERIAL_ID);
-        assertThat(materials.get(WATER_MATERIAL_ID).type).isEqualTo(MaterialData.Type.WATER);
+        assertThat(materials.get(WATER_MATERIAL_ID).getType()).isEqualTo(MaterialData.Type.WATER);
     }
 
     @Test
@@ -551,7 +551,7 @@ public final class SpatialEnvironmentImplTest {
 
         assertThat(
                         mFakeImpressApi.getImpressNodes().keySet().stream()
-                                .filter(node -> node.materialOverride == null)
+                                .filter(node -> node.getMaterialOverride() == null)
                                 .toArray())
                 .hasLength(2); // 2 nodes are subspace (parent) and glTF (child) used for the
         // environment. Both
@@ -583,7 +583,7 @@ public final class SpatialEnvironmentImplTest {
 
         assertThat(
                         mFakeImpressApi.getImpressNodes().keySet().stream()
-                                .filter(node -> node.materialOverride == null)
+                                .filter(node -> node.getMaterialOverride() == null)
                                 .toArray())
                 .hasLength(2); // 2 nodes are subspace (parent) and glTF (child) used for the
         // environment. Both

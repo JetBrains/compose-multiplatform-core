@@ -37,6 +37,8 @@ import androidx.room.compiler.codegen.impl.XTypeSpecImpl
 
 internal class JavaCodeBlock(override val actual: JCodeBlock) : JavaSpec<JCodeBlock>(), XCodeBlock {
 
+    override fun toBuilder() = Builder(actual.toBuilder())
+
     internal class Builder(internal val actual: JCodeBlockBuilder) :
         XSpec.Builder(), XCodeBlock.Builder {
 

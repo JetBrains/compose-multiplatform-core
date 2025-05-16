@@ -41,6 +41,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -56,6 +57,7 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.testing.TestNavHostController
 import androidx.test.filters.SdkSuppress
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CompactChip
 import androidx.wear.compose.material.Text
@@ -168,6 +170,8 @@ class SwipeDismissableNavHostTest {
 
         // As the finger is still 'down', the background should be visible.
         rule.onNodeWithText(START).assertExists()
+        // Assert that the foreground screen still holds the focus
+        rule.onNodeWithTag(TEST_TAG_NEXT).assertIsFocused()
     }
 
     @Test
@@ -205,6 +209,8 @@ class SwipeDismissableNavHostTest {
 
         // As the finger is still 'down', the background should be visible.
         rule.onNodeWithText(START).assertExists()
+        // Assert that the foreground screen still holds the focus
+        rule.onNodeWithTag(TEST_TAG_NEXT).assertIsFocused()
     }
 
     @Test
@@ -464,15 +470,25 @@ class SwipeDismissableNavHostTest {
         ) {
             composable(START) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CompactChip(
-                        onClick = { navController.navigate(NEXT) },
-                        label = { Text(text = START) }
-                    )
+                    ScalingLazyColumn(
+                        modifier = Modifier.testTag(TEST_TAG_START),
+                    ) {
+                        item {
+                            CompactChip(
+                                onClick = { navController.navigate(NEXT) },
+                                label = { Text(text = START) }
+                            )
+                        }
+                    }
                 }
             }
-            composable("next") {
+            composable(NEXT) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(NEXT)
+                    ScalingLazyColumn(
+                        modifier = Modifier.testTag(TEST_TAG_NEXT),
+                    ) {
+                        item { Text(NEXT) }
+                    }
                 }
             }
         }
@@ -509,3 +525,5 @@ private const val NEXT = "next"
 private const val START = "start"
 private const val COUNTER = "counter"
 private const val TEST_TAG = "test-item"
+private const val TEST_TAG_NEXT = "test-tag-next"
+private const val TEST_TAG_START = "test-tag-start"

@@ -19,11 +19,13 @@ package androidx.pdf.viewer.fragment
 import android.content.ContentResolver.SCHEME_CONTENT
 import android.content.ContentResolver.SCHEME_FILE
 import android.content.Context
+import android.content.res.Resources.ID_NULL
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -46,6 +48,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.withStarted
 import androidx.pdf.event.PdfTrackingEvent
 import androidx.pdf.event.RequestFailureEvent
 import androidx.pdf.util.AnnotationUtils
@@ -244,6 +247,8 @@ public open class PdfViewerFragment constructor() : Fragment() {
     private var highlightStateCollector: Job? = null
     private var toolboxStateCollector: Job? = null
 
+    private var pdfStylingOptions: PdfStylingOptions? = null
+
     // Provides visible pages in viewport both end inclusive.
     private val PdfView.visiblePages: IntRange
         get() = IntRange(firstVisiblePage, firstVisiblePage + visiblePagesCount - 1)
@@ -281,12 +286,41 @@ public open class PdfViewerFragment constructor() : Fragment() {
                 }
         )
 
+    override fun onInflate(context: Context, attrs: AttributeSet, savedInstanceState: Bundle?) {
+        super.onInflate(context, attrs, savedInstanceState)
+        val typedArray = context.obtainStyledAttributes(attrs, R.styleable.PdfViewerFragment)
+        try {
+            val pdfViewStyleFromAttrs =
+                typedArray.getResourceId(R.styleable.PdfViewerFragment_containerStyle, ID_NULL)
+
+            if (pdfViewStyleFromAttrs != ID_NULL) {
+                /**
+                 * [Fragment.onInflate] will only be called on fragment instantiation; therefore
+                 * save it in [androidx.pdf.viewer.fragment.PdfViewerFragment]'s arguments for
+                 * fragment restoring scenarios.
+                 */
+                arguments?.putInt(KEY_PDF_VIEW_STYLE, pdfViewStyleFromAttrs)
+                    ?: run {
+                        arguments =
+                            Bundle().also { it.putInt(KEY_PDF_VIEW_STYLE, pdfViewStyleFromAttrs) }
+                    }
+            }
+        } finally {
+            typedArray.recycle()
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         super.onCreateView(inflater, container, savedInstanceState)
+        arguments?.let { args ->
+            val containerStyleResId = args.getInt(KEY_PDF_VIEW_STYLE, ID_NULL)
+            if (containerStyleResId != ID_NULL)
+                pdfStylingOptions = PdfStylingOptions(containerStyleResId = containerStyleResId)
+        }
         return inflater.inflate(R.layout.pdf_viewer_fragment, container, false)
     }
 
@@ -324,7 +358,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
                     when (event) {
                         is RequestFailureEvent -> {
                             // TODO(b/409464802): Propagate it through event callback
-                            onLoadDocumentError(event.exception)
+                            // onLoadDocumentError(event.exception)
                         }
                     }
                 }
@@ -342,10 +376,47 @@ public open class PdfViewerFragment constructor() : Fragment() {
         setupPdfViewListeners()
 
         onPdfSearchViewCreated(_pdfSearchView)
-
-        collectFlowOnLifecycleScope { collectFragmentUiScreenState() }
+        lifecycleScope.launch { collectFragmentUiScreenState() }
         toolboxView.hide()
         toolboxView.setOnCurrentPageRequested { _pdfView.visiblePages.getCenter() }
+
+        val stylingOptions = pdfStylingOptions
+        if (stylingOptions != null) {
+            applyPdfViewStyledAttributes(stylingOptions.containerStyleResId)
+        }
+    }
+
+    private fun applyPdfViewStyledAttributes(resId: Int) {
+        val pdfViewStyledAttrs =
+            requireContext()
+                .obtainStyledAttributes(
+                    /* set = */ null,
+                    /* attrs = */ androidx.pdf.R.styleable.PdfView,
+                    /* defStyleAttr = */ NO_DEFAULT_ATTR,
+                    /* defStyleRes = */ resId
+                )
+
+        for (i in 0 until pdfViewStyledAttrs.indexCount) {
+            val attr = pdfViewStyledAttrs.getIndex(i)
+            when (attr) {
+                androidx.pdf.R.styleable.PdfView_fastScrollVerticalThumbDrawable -> {
+                    val thumbDrawable = pdfViewStyledAttrs.getDrawable(attr)
+                    pdfView.fastScrollVerticalThumbDrawable = thumbDrawable
+                }
+                androidx.pdf.R.styleable.PdfView_fastScrollPageIndicatorBackgroundDrawable -> {
+                    val pageIndicatorDrawable = pdfViewStyledAttrs.getDrawable(attr)
+                    pdfView.fastScrollPageIndicatorBackgroundDrawable = pageIndicatorDrawable
+                }
+                androidx.pdf.R.styleable.PdfView_fastScrollVerticalThumbMarginEnd -> {
+                    val verticalThumbEndMargin = pdfViewStyledAttrs.getDimensionPixelSize(attr, 0)
+                    pdfView.fastScrollVerticalThumbMarginEnd = verticalThumbEndMargin
+                }
+                androidx.pdf.R.styleable.PdfView_fastScrollPageIndicatorMarginEnd -> {
+                    val pageIndicatorEndMargin = pdfViewStyledAttrs.getDimensionPixelSize(attr, 0)
+                    pdfView.fastScrollPageIndicatorMarginEnd = pageIndicatorEndMargin
+                }
+            }
+        }
     }
 
     override fun onResume() {
@@ -523,12 +594,18 @@ public open class PdfViewerFragment constructor() : Fragment() {
      * synchronized with any changes in the underlying data or user interactions.
      */
     private suspend fun collectFragmentUiScreenState() {
-        documentViewModel.fragmentUiScreenState.collect { uiState ->
-            when (uiState) {
-                is Loading -> handleLoading()
-                is PasswordRequested -> handlePasswordRequested(uiState)
-                is DocumentLoaded -> handleDocumentLoaded(uiState)
-                is DocumentError -> handleDocumentError(uiState)
+        // Collect fragment UI state using a "one-shot" API after fragment reaches at-least
+        // STARTED state
+        viewLifecycleOwner.lifecycle.withStarted {
+            viewLifecycleOwner.lifecycleScope.launch {
+                documentViewModel.fragmentUiScreenState.collect { uiState ->
+                    when (uiState) {
+                        is Loading -> handleLoading()
+                        is PasswordRequested -> handlePasswordRequested(uiState)
+                        is DocumentLoaded -> handleDocumentLoaded(uiState)
+                        is DocumentError -> handleDocumentError(uiState)
+                    }
+                }
             }
         }
     }
@@ -617,6 +694,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
     public companion object {
         private const val PASSWORD_DIALOG_TAG = "password-dialog"
         private const val KEY_PDF_VIEW_STYLE = "keyPdfViewStyle"
+        private const val NO_DEFAULT_ATTR = 0
 
         /**
          * Creates a new instance of [PdfViewerFragment] with the specified styling options.

@@ -850,7 +850,7 @@ class TextFieldTextToolbarTest : FocusedWindowTest {
 
         rule.runOnIdle { assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Shown) }
 
-        focusRequester.requestFocus()
+        rule.runOnUiThread { focusRequester.requestFocus() }
 
         rule.runOnIdle { assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Hidden) }
     }

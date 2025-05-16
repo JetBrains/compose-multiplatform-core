@@ -16,7 +16,6 @@
 
 package androidx.xr.compose.subspace.layout
 
-import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Applier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposeNode
@@ -46,7 +45,6 @@ import androidx.xr.scenecore.ContentlessEntity
 @Suppress("NOTHING_TO_INLINE")
 @SubspaceComposable
 @Composable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public inline fun SubspaceLayout(
     modifier: SubspaceModifier = SubspaceModifier,
     measurePolicy: MeasurePolicy,
@@ -76,7 +74,6 @@ public inline fun SubspaceLayout(
 @Suppress("ComposableLambdaParameterPosition", "NOTHING_TO_INLINE")
 @SubspaceComposable
 @Composable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public inline fun SubspaceLayout(
     crossinline content: @Composable @SubspaceComposable () -> Unit,
     modifier: SubspaceModifier = SubspaceModifier,

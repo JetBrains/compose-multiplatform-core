@@ -18,8 +18,7 @@ package androidx.xr.runtime.openxr
 
 import android.app.Activity
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.internal.Config
-import androidx.xr.runtime.internal.Config.PlaneTrackingMode
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.internal.PermissionNotGrantedException
 import kotlin.time.ComparableTimeMark
@@ -103,7 +102,7 @@ internal constructor(
         val now = timeSource.markNow()
         val xrTime = timeSource.getXrTime(now)
 
-        if (config.planeTracking != PlaneTrackingMode.Disabled) {
+        if (config.planeTracking != Config.PlaneTrackingMode.Disabled) {
             perceptionManager.updatePlanes(xrTime)
         }
         perceptionManager.update(xrTime)

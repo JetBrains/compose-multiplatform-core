@@ -31,11 +31,6 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.tracing"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
     }
 
     defaultPlatform(PlatformIdentifier.ANDROID)

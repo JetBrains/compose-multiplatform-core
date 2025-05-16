@@ -20,7 +20,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.view.View
-import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -28,7 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.xr.compose.platform.LocalHasXrSpatialFeature
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.HeadTrackingMode
+import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ActivityPose
 import androidx.xr.runtime.internal.ActivitySpace
@@ -63,7 +62,6 @@ import org.mockito.kotlin.stub
  * @param content The content block containing the compose content to be tested.
  */
 @Composable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun TestSetup(
     isXrEnabled: Boolean = true,
     isFullSpace: Boolean = true,
@@ -162,7 +160,6 @@ private tailrec fun Context.getActivity(): Activity =
  * @param worldSpaceScale The scale of the head in WorldSpace.
  * @param activitySpaceScale The scale of the head in ActivitySpace.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class TestHeadActivityPose(
     override var activitySpacePose: Pose = Pose.Identity,
     override var worldSpaceScale: Vector3 = Vector3(1f, 1f, 1f),
@@ -172,6 +169,7 @@ public class TestHeadActivityPose(
         throw NotImplementedError("Intentionally left unimplemented for these test scenarios")
     }
 
+    @Suppress("AsyncSuffixFuture")
     override fun hitTest(
         origin: Vector3,
         direction: Vector3,
@@ -191,7 +189,6 @@ public class TestHeadActivityPose(
  * @param activitySpaceScale The scale of the camera in ActivitySpace.
  * @param worldSpaceScale The scale of the camera in WorldSpace.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class TestCameraViewActivityPose(
     override val cameraType: Int,
     override var fov: CameraViewActivityPose.Fov =
@@ -204,6 +201,7 @@ public class TestCameraViewActivityPose(
         throw NotImplementedError("Intentionally left unimplemented for these test scenarios")
     }
 
+    @Suppress("AsyncSuffixFuture")
     override fun hitTest(
         origin: Vector3,
         direction: Vector3,
@@ -225,7 +223,6 @@ public class TestCameraViewActivityPose(
  * @param activitySpacePose The pose of the ActivitySpace. Defaults to [Pose.Identity].
  * @param activitySpaceScale The scale of the ActivitySpace. Defaults to one.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class TestActivitySpace(
     private val fakeRuntimeActivitySpaceBase: ActivitySpace,
     override var activitySpacePose: Pose = Pose.Identity,
@@ -241,8 +238,9 @@ public class TestActivitySpace(
  * A test implementation of [JxrPlatformAdapter] that allows for setting custom values for the
  * ActivitySpace, HeadActivityPose, and CameraViewActivityPose.
  *
- * @param fakeRuntimeBase The base [JxrPlatformAdapter] to use for the [JxrPlatformAdapter]
- *   implementation.
+ * [fakeRuntimeBase] is the base [JxrPlatformAdapter] to use for the [JxrPlatformAdapter]
+ * implementation.
+ *
  * @param activitySpace The [ActivitySpace] to use for the [JxrPlatformAdapter] implementation.
  * @param headActivityPose The [TestHeadActivityPose] to use for the [JxrPlatformAdapter]
  *   implementation.
@@ -253,7 +251,6 @@ public class TestActivitySpace(
  * @param unknownCameraViewPose The [TestCameraViewActivityPose] to use for the [JxrPlatformAdapter]
  *   implementation for the unknown camera.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class TestJxrPlatformAdapter
 private constructor(
     private val fakeRuntimeBase: JxrPlatformAdapter,

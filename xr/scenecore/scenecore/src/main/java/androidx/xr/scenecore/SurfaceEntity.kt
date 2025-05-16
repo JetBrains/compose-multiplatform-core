@@ -19,7 +19,6 @@ package androidx.xr.scenecore
 import android.view.Surface
 import androidx.annotation.IntDef
 import androidx.annotation.MainThread
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.SurfaceEntity as RtSurfaceEntity
@@ -40,8 +39,8 @@ import androidx.xr.runtime.math.Pose
  *   the user's eyes.
  * @property dimensions The dimensions of the canvas in the local spatial coordinate system of the
  *   entity.
- * @property alphaMaskTexture The texture to be composited into the alpha channel of the surface. If
- *   null, the alpha mask will be disabled.
+ * @property primaryAlphaMaskTexture The texture to be composited into the alpha channel of the
+ *   surface. If null, the alpha mask will be disabled.
  * @property auxiliaryAlphaMaskTexture The texture to be composited into the alpha channel of the
  *   secondary view of the surface. This is only used for interleaved stereo content. If null, the
  *   alpha mask will be disabled.
@@ -50,7 +49,6 @@ import androidx.xr.runtime.math.Pose
  * @property featherRadiusY a [Float] which controls the canvas-relative radius of the edge fadeout
  *   on the top and bottom edges of the SurfaceEntity canvas.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SurfaceEntity
 private constructor(
     rtEntity: RtSurfaceEntity,

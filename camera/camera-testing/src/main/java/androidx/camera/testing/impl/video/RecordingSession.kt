@@ -28,6 +28,12 @@ import kotlinx.coroutines.withTimeoutOrNull
 public class RecordingSession(
     private val defaults: Defaults,
 ) {
+    public companion object {
+        public const val DEFAULT_VERIFY_STATUS_COUNT: Int = 5
+        public const val DEFAULT_VERIFY_TIMEOUT_MS: Long = 5000
+        public const val DEFAULT_VERIFY_STATUS_TIMEOUT_MS: Long = 15000
+    }
+
     public data class Defaults(
         val context: Context,
         val recorder: Recorder? = null,
@@ -38,9 +44,9 @@ public class RecordingSession(
                 recording.stop()
             },
         val callbackExecutor: Executor = mainThreadExecutor(),
-        val verifyStatusCount: Int = 5,
-        val verifyTimeoutMs: Long = 5000L,
-        val verifyStatusTimeoutMs: Long = 15000L,
+        val verifyStatusCount: Int = DEFAULT_VERIFY_STATUS_COUNT,
+        val verifyTimeoutMs: Long = DEFAULT_VERIFY_TIMEOUT_MS,
+        val verifyStatusTimeoutMs: Long = DEFAULT_VERIFY_STATUS_TIMEOUT_MS,
     )
 
     private val recordingsToStop = mutableListOf<Recording>()

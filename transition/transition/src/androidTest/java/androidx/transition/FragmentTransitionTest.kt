@@ -1102,8 +1102,8 @@ class FragmentTransitionTest(private val reorderingAllowed: ReorderingAllowed) {
             verifyNoOtherTransitions(fragment2)
             verifyNoOtherTransitions(fragment3)
         } else {
-            // The pop transition will be executed so we should wait until fragment 1 finishes
-            fragment1.waitForTransition()
+            // fragment1 transition gets merged out by the specialEffects controller
+            verifyNoOtherTransitions(fragment1)
             // fragment3 doesn't get a transition since it conflicts with the pop transition
             verifyNoOtherTransitions(fragment3)
             // Everything else is just doing its best. Ordered transactions can't handle

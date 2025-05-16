@@ -29,7 +29,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-public class AddWatchFaceTest {
+class AddWatchFaceTest {
     private var context: Context = ApplicationProvider.getApplicationContext()
     private var wfp = WatchFacePushManager(context)
 
@@ -41,6 +41,7 @@ public class AddWatchFaceTest {
     }
 
     @Test
+    @RequiresWatch
     fun addWatchFace() {
         runBlocking {
             assertThat(wfp.listWatchFaces().installedWatchFaceDetails).isEmpty()
@@ -52,6 +53,7 @@ public class AddWatchFaceTest {
     }
 
     @Test
+    @RequiresWatch
     fun addWatchface_onInvalidValidationToken() {
         val exception =
             assertThrows(AddWatchFaceException::class.java) {
@@ -68,6 +70,7 @@ public class AddWatchFaceTest {
     }
 
     @Test
+    @RequiresWatch
     fun addWatchface_onTooManySlots() {
         val exception =
             assertThrows(AddWatchFaceException::class.java) {
@@ -90,6 +93,7 @@ public class AddWatchFaceTest {
     }
 
     @Test
+    @RequiresWatch
     fun addWatchface_onMalformedApk() {
         val exception =
             assertThrows(AddWatchFaceException::class.java) {
@@ -106,6 +110,7 @@ public class AddWatchFaceTest {
     }
 
     @Test
+    @RequiresWatch
     fun addWatchface_onUnexpectedContent() {
         val exception =
             assertThrows(AddWatchFaceException::class.java) {
@@ -124,6 +129,7 @@ public class AddWatchFaceTest {
     }
 
     @Test
+    @RequiresWatch
     fun addWatchface_onInvalidPackageName() {
         val exception =
             assertThrows(AddWatchFaceException::class.java) {

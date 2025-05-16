@@ -16,7 +16,6 @@
 
 package androidx.wear.compose.material3.samples
 
-import androidx.annotation.Sampled
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -100,7 +99,6 @@ fun TransformingLazyColumnExpandableCardSample() {
     }
 }
 
-@Sampled
 @Preview
 @Composable
 fun TransformingLazyColumnReducedMotionSample() {

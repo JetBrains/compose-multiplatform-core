@@ -29,16 +29,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.overscroll
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.ProvidableCompositionLocal
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -47,12 +43,12 @@ import androidx.compose.ui.platform.LocalGraphicsContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.LocalReduceMotion
-import androidx.wear.compose.foundation.hierarchicalFocusRequester
 import androidx.wear.compose.foundation.lazy.layout.LazyLayout
 import androidx.wear.compose.foundation.lazy.layout.LazyLayoutIntervalContent
 import androidx.wear.compose.foundation.lazy.layout.LazyLayoutItemProvider
 import androidx.wear.compose.foundation.lazy.layout.LazyLayoutKeyIndexMap
 import androidx.wear.compose.foundation.lazy.layout.getDefaultLazyLayoutKey
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
@@ -163,12 +159,12 @@ public fun TransformingLazyColumn(
                 .then(state.animator.modifier)
                 .then(
                     if (rotaryScrollableBehavior != null && userScrollEnabled)
-                        Modifier.rotaryScrollable(
+                        Modifier.requestFocusOnHierarchyActive()
+                            .rotaryScrollable(
                                 behavior = rotaryScrollableBehavior,
                                 focusRequester = focusRequester,
                                 overscrollEffect = overscrollEffect
                             )
-                            .hierarchicalFocusRequester(focusRequester)
                     else Modifier
                 )
                 .lazyLayoutSemantics(
@@ -192,14 +188,6 @@ public fun TransformingLazyColumn(
     )
 }
 
-/**
- * Composition local for components that need to be able to react to being inside a
- * [TransformingLazyColumn]'s item.
- */
-public val LocalTransformingLazyColumnItemScope:
-    ProvidableCompositionLocal<TransformingLazyColumnItemScope?> =
-    compositionLocalOf(structuralEqualityPolicy()) { null }
-
 internal class TransformingLazyColumnItemProvider(
     val intervalContent: LazyLayoutIntervalContent<TransformingLazyColumnInterval>,
     val state: TransformingLazyColumnState,
@@ -219,10 +207,8 @@ internal class TransformingLazyColumnItemProvider(
                     reduceMotionEnabled = reduceMotionEnabled
                 )
             }
-        CompositionLocalProvider(LocalTransformingLazyColumnItemScope provides itemScope) {
-            intervalContent.withInterval(index) { localIndex, content ->
-                content.item(itemScope, localIndex)
-            }
+        intervalContent.withInterval(index) { localIndex, content ->
+            content.item(itemScope, localIndex)
         }
     }
 

@@ -27,15 +27,12 @@ import androidx.pdf.PdfDocument
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
 import androidx.pdf.util.PAGE_INFO_REQUEST_NAME
-import kotlin.math.ceil
-import kotlin.math.floor
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -68,25 +65,36 @@ internal class PageLayoutManager(
     val dimensions: SharedFlow<Pair<Int, Point>>
         get() = _dimensions
 
-    private val _visiblePages = MutableStateFlow<PagesInViewport>(PagesInViewport(Range(0, 0)))
-
     /**
-     * A [StateFlow] representing the [Range] of pages that are currently visible in the window.
+     * The [Range] of pages that are currently visible in the window.
      *
      * Values in the range are 0-indexed.
      */
-    val visiblePages: StateFlow<PagesInViewport>
-        get() = _visiblePages
-
-    private val _fullyVisiblePages = MutableStateFlow<Range<Int>>(Range(0, 0))
+    var visiblePages = Range<Int>(0, 0)
+        private set
 
     /**
-     * A [StateFlow] emitting the range of pages considered to be in the viewport.
+     * True if this manager is actively laying out pages to reach the current view position, and
+     * [visiblePages] and other values represent best guesses while page dimensions are loading
+     */
+    var layingOutPages: Boolean = false
+        private set
+
+    /**
+     * The range of pages that are current visible in the window
      *
      * Values in the range are 0-indexed.
      */
-    val fullyVisiblePages: StateFlow<Range<Int>>
-        get() = _fullyVisiblePages
+    var fullyVisiblePages = Range<Int>(0, 0)
+        private set
+
+    /** The portions of each visible page that are visible, in page coordinate space */
+    var visiblePageAreas = SparseArray<Rect>(1)
+        private set
+
+    /** The locations of each visible page, in content coordinate space */
+    var pageLocations = SparseArray<Rect>(1)
+        private set
 
     /** The 0-indexed maximum page whose dimensions have been requested */
     private var requestedReach: Int = paginationModel.reach
@@ -111,35 +119,9 @@ internal class PageLayoutManager(
         increaseReach(DEFAULT_PREFETCH_RADIUS)
     }
 
-    /**
-     * Returns a [SparseArray] containing [Rect]s indicating the visible region of each visible
-     * page, in page coordinates.
-     */
-    fun getVisiblePageAreas(pages: Range<Int>, viewport: Rect): SparseArray<Rect> {
-        val ret = SparseArray<Rect>(pages.upper - pages.lower + 1)
-        for (i in pages.lower..pages.upper) {
-            ret.put(i, getPageVisibleArea(i, viewport))
-        }
-        return ret
-    }
-
-    private fun getPageVisibleArea(pageNum: Int, viewport: Rect): Rect {
-        val pageLocation = getPageLocation(pageNum, viewport)
-        val pageWidth = pageLocation.right - pageLocation.left
-        val pageHeight = pageLocation.bottom - pageLocation.top
-        return Rect(
-            maxOf(viewport.left - pageLocation.left, 0),
-            maxOf(viewport.top - pageLocation.top, 0),
-            minOf(viewport.right - pageLocation.left, pageWidth),
-            minOf(viewport.bottom - pageLocation.top, pageHeight),
-        )
-    }
-
-    /**
-     * Returns the current View-coordinate location of a 0-indexed [pageNum] given the [viewport]
-     */
+    /** Returns the current content coordinate location of a 0-indexed [pageNum] */
     fun getPageLocation(pageNum: Int, viewport: Rect): Rect {
-        return paginationModel.getPageLocation(pageNum, viewport)
+        return pageLocations.get(pageNum) ?: paginationModel.getPageLocation(pageNum, viewport)
     }
 
     /** Returns the size of the page at [pageNum], or null if we don't know that page's size yet */
@@ -156,20 +138,48 @@ internal class PageLayoutManager(
      * @param contentCoordinates the content coordinates to check (View coordinates that are scaled
      *   up or down by the current zoom level)
      * @param viewport the current viewport in content coordinates
+     * @param scanAllPages true to scan pages outside the viewport for the [PdfPoint] at
+     *   [contentCoordinates]
      */
-    fun getPdfPointAt(contentCoordinates: PointF, viewport: Rect): PdfPoint? {
-        val visiblePages = visiblePages.value
-        for (pageIndex in visiblePages.pages.lower..visiblePages.pages.upper) {
-            val pageBounds = paginationModel.getPageLocation(pageIndex, viewport)
-            if (RectF(pageBounds).contains(contentCoordinates.x, contentCoordinates.y)) {
-                return PdfPoint(
-                    pageIndex,
-                    PointF(
-                        contentCoordinates.x - pageBounds.left,
-                        contentCoordinates.y - pageBounds.top,
-                    )
-                )
+    fun getPdfPointAt(
+        contentCoordinates: PointF,
+        viewport: Rect,
+        scanAllPages: Boolean = false
+    ): PdfPoint? {
+        for (pageIndex in visiblePages.lower..visiblePages.upper) {
+            findPointOnPage(pageIndex, viewport, contentCoordinates)?.let {
+                return it
             }
+        }
+        if (!scanAllPages) return null
+        for (pageIndex in 0..paginationModel.reach) {
+            if (pageIndex in visiblePages.lower..visiblePages.upper) continue
+            findPointOnPage(pageIndex, viewport, contentCoordinates)?.let {
+                return it
+            }
+        }
+        return null
+    }
+
+    private fun findPointOnPage(
+        pageNum: Int,
+        viewport: Rect,
+        contentCoordinates: PointF
+    ): PdfPoint? {
+        val pageBounds = getPageLocation(pageNum, viewport)
+        if (
+            pageBounds.contains(
+                contentCoordinates.x.roundToInt(),
+                contentCoordinates.y.roundToInt()
+            )
+        ) {
+            return PdfPoint(
+                pageNum,
+                PointF(
+                    contentCoordinates.x - pageBounds.left,
+                    contentCoordinates.y - pageBounds.top,
+                )
+            )
         }
         return null
     }
@@ -180,53 +190,103 @@ internal class PageLayoutManager(
      */
     fun getViewRect(pdfRect: PdfRect, viewport: Rect): RectF? {
         if (pdfRect.pageNum > paginationModel.reach) return null
-        val pageBounds = paginationModel.getPageLocation(pdfRect.pageNum, viewport)
+        val pageBounds = getPageLocation(pdfRect.pageNum, viewport)
         val out = RectF(pdfRect.pageRect)
         out.offset(pageBounds.left.toFloat(), pageBounds.top.toFloat())
         return out
     }
 
     /**
-     * Emits a new [Range] to [visiblePages] based on the current [scrollY], [height], and [zoom] of
-     * a [PdfView]
+     * Updates properties on viewport changes, namely [visiblePages], [fullyVisiblePages],
+     * [pageLocations], and [visiblePageAreas]
+     *
+     * @param viewport the visible region of [PdfView] in unscaled / content coordinates
      */
-    fun onViewportChanged(scrollY: Int, height: Int, zoom: Float) {
-        val contentTop = floor(scrollY / zoom).toInt()
-        val contentBottom = ceil((height + scrollY) / zoom).toInt()
-        // Try emit will always succeed for MutableStateFlow
-        val prevVisiblePages = _visiblePages.value
-        val newVisiblePages = paginationModel.getPagesInViewport(contentTop, contentBottom)
-
-        val fullyVisiblePageRange =
-            paginationModel.getPagesInViewport(contentTop, contentBottom, includePartial = false)
-        if (fullyVisiblePageRange.pages != _fullyVisiblePages.value) {
-            _fullyVisiblePages.tryEmit(fullyVisiblePageRange.pages)
-        }
-
-        if (prevVisiblePages != newVisiblePages || newVisiblePages.layoutInProgress) {
-            _visiblePages.tryEmit(newVisiblePages)
-            val peekAhead =
-                if (newVisiblePages.layoutInProgress) {
-                    minOf(newVisiblePages.pages.upper + 2, 100)
-                } else {
-                    DEFAULT_PREFETCH_RADIUS
-                }
-            increaseReach(
-                minOf(newVisiblePages.pages.upper + peekAhead, paginationModel.numPages - 1)
-            )
-        }
+    fun onViewportChanged(viewport: Rect): Boolean {
+        // Order of operations is important, each of these computations depends on the previous one
+        val visiblePagesChanged = computeVisiblePages(viewport)
+        val pageLocationsChanged = computePageLocationsInView(viewport)
+        val pageAreasChanged = computeVisiblePageAreas(viewport)
+        return visiblePagesChanged || pageLocationsChanged || pageAreasChanged
     }
 
     /**
      * Sequentially enqueues requests for any pages up to [untilPage] that we haven't requested
      * dimensions for
      */
-    internal fun increaseReach(untilPage: Int) {
+    fun increaseReach(untilPage: Int) {
         if (untilPage < requestedReach) return
 
         for (i in requestedReach + 1..minOf(untilPage, paginationModel.numPages - 1)) {
             loadPageDimensions(i)
         }
+    }
+
+    /**
+     * Updates [visiblePages] and [fullyVisiblePages] on viewport changes, and returns true if the
+     * value of either one did change
+     */
+    private fun computeVisiblePages(viewport: Rect): Boolean {
+        val prevVisible = visiblePages
+        val prevFullyVisible = fullyVisiblePages
+        val newPagesInViewport = paginationModel.getPagesInViewport(viewport.top, viewport.bottom)
+        visiblePages = newPagesInViewport.pages
+        layingOutPages = newPagesInViewport.layoutInProgress
+        fullyVisiblePages =
+            paginationModel
+                .getPagesInViewport(viewport.top, viewport.bottom, includePartial = false)
+                .pages
+        if (prevVisible != visiblePages) {
+            val peekAhead =
+                if (layingOutPages) {
+                    minOf(visiblePages.upper + 2, 100)
+                } else {
+                    DEFAULT_PREFETCH_RADIUS
+                }
+            // If new pages are visible, start laying out more pages
+            increaseReach(minOf(visiblePages.upper + peekAhead, paginationModel.numPages - 1))
+        }
+        return prevVisible != visiblePages || prevFullyVisible != fullyVisiblePages
+    }
+
+    /**
+     * Updates [pageLocations] on viewport changes, and returns true if the value did change
+     *
+     * [visiblePages] must be updated first
+     */
+    private fun computePageLocationsInView(viewport: Rect): Boolean {
+        val prevLocations = pageLocations
+        val pageLocations = SparseArray<Rect>(visiblePages.upper - visiblePages.lower + 1)
+        for (i in visiblePages.lower..visiblePages.upper) {
+            pageLocations.put(i, paginationModel.getPageLocation(i, viewport))
+        }
+        this.pageLocations = pageLocations
+        return !prevLocations.contentEquals(this@PageLayoutManager.pageLocations)
+    }
+
+    /**
+     * Updates [visiblePageAreas] on viewport changes, and returns true if the value did change
+     *
+     * [visiblePages] and [pageLocations] must be updated first
+     */
+    private fun computeVisiblePageAreas(viewport: Rect): Boolean {
+        val prevAreas = visiblePageAreas
+        val visibleAreas = SparseArray<Rect>(visiblePages.upper - visiblePages.lower + 1)
+        for (i in visiblePages.lower..visiblePages.upper) {
+            val pageLocation = pageLocations.get(i)
+            val pageWidth = pageLocation.right - pageLocation.left
+            val pageHeight = pageLocation.bottom - pageLocation.top
+            val area =
+                Rect(
+                    maxOf(viewport.left - pageLocation.left, 0),
+                    maxOf(viewport.top - pageLocation.top, 0),
+                    minOf(viewport.right - pageLocation.left, pageWidth),
+                    minOf(viewport.bottom - pageLocation.top, pageHeight),
+                )
+            visibleAreas.put(i, area)
+        }
+        visiblePageAreas = visibleAreas
+        return !prevAreas.contentEquals(visiblePageAreas)
     }
 
     /** Waits for any outstanding dimensions to be loaded, then loads dimensions for [pageNum] */

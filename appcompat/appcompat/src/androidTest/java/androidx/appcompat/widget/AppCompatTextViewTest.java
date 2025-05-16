@@ -24,9 +24,8 @@ import static androidx.test.espresso.action.ViewActions.scrollTo;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 
-import static junit.framework.Assert.assertFalse;
-
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -1335,7 +1334,7 @@ public class AppCompatTextViewTest
         textView.setFontVariationSettings("'wght' 400.0");
         Bitmap before = drawToBitmap(textView, Bitmap.Config.ARGB_8888);
 
-        textView.setFontWeightAdjustmentForTesting(300);
+        textView.getFontVariationSettingsManager().setFontWeightAdjustmentForTesting(300);
         textView.setFontVariationSettings("'wght' 400.0");
         Bitmap after = drawToBitmap(textView, Bitmap.Config.ARGB_8888);
 

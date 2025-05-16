@@ -41,6 +41,8 @@ import androidx.room.compiler.codegen.kotlin.KotlinCodeBlock
  */
 interface XCodeBlock {
 
+    fun toBuilder(): Builder
+
     interface Builder {
 
         fun add(code: XCodeBlock): Builder

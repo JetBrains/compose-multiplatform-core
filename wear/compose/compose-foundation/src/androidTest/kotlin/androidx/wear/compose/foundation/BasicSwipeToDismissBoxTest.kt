@@ -449,14 +449,14 @@ class BasicSwipeToDismissBoxTest {
                     BasicText(
                         BACKGROUND_MESSAGE,
                         Modifier.onFocusChanged { focusedBackground = it.isFocused }
-                            .hierarchicalFocusRequester()
+                            .requestFocusOnHierarchyActive()
                             .focusable()
                     )
                 } else {
                     BasicText(
                         CONTENT_MESSAGE,
                         Modifier.onFocusChanged { focusedContent = it.isFocused }
-                            .hierarchicalFocusRequester()
+                            .requestFocusOnHierarchyActive()
                             .focusable()
                     )
                 }

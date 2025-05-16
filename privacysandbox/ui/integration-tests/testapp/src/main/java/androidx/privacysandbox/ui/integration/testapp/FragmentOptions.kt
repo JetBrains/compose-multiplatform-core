@@ -145,8 +145,8 @@ data class FragmentOptions(
                 when (cujType) {
                     FragmentOption.SCROLL -> ScrollFragment()
                     FragmentOption.RESIZE -> ResizeFragment()
+                    FragmentOption.RESIZE_HIDDEN -> ResizeViewHiddenFragment()
                     FragmentOption.POOLING_CONTAINER -> PoolingContainerFragment()
-                    FragmentOption.RESIZE_HIDDEN -> ResizeHiddenFragment()
                     FragmentOption.OCCLUSIONS_HIDDEN -> OcclusionFragment()
                     else -> ResizeFragment()
                 }
@@ -154,6 +154,7 @@ data class FragmentOptions(
                 when (cujType) {
                     FragmentOption.SCROLL -> ScrollComposeFragment()
                     FragmentOption.RESIZE -> ResizeComposeFragment()
+                    FragmentOption.RESIZE_HIDDEN -> ResizeComposeHiddenFragment()
                     FragmentOption.POOLING_CONTAINER -> LazyListFragment()
                     else -> ResizeComposeFragment()
                 }

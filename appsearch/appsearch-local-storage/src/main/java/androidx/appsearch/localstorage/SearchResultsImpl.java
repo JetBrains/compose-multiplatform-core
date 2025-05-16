@@ -21,7 +21,7 @@ import androidx.appsearch.app.SearchResult;
 import androidx.appsearch.app.SearchResultPage;
 import androidx.appsearch.app.SearchResults;
 import androidx.appsearch.app.SearchSpec;
-import androidx.appsearch.localstorage.stats.SearchStats;
+import androidx.appsearch.localstorage.stats.QueryStats;
 import androidx.appsearch.localstorage.util.FutureUtil;
 import androidx.appsearch.localstorage.visibilitystore.CallerAccess;
 import androidx.core.util.Preconditions;
@@ -63,8 +63,8 @@ class SearchResultsImpl implements SearchResults {
 
     // Visibility Scope(local vs global) for 1st query, so it can be used for the visibility
     // scope for getNextPage().
-    @SearchStats.VisibilityScope
-    private int mVisibilityScope = SearchStats.VISIBILITY_SCOPE_UNKNOWN;
+    @QueryStats.VisibilityScope
+    private int mVisibilityScope = QueryStats.VISIBILITY_SCOPE_UNKNOWN;
 
     SearchResultsImpl(
             @NonNull AppSearchImpl appSearchImpl,
@@ -92,27 +92,27 @@ class SearchResultsImpl implements SearchResults {
             if (mIsFirstLoad) {
                 mIsFirstLoad = false;
                 if (mDatabaseName == null) {
-                    mVisibilityScope = SearchStats.VISIBILITY_SCOPE_GLOBAL;
+                    mVisibilityScope = QueryStats.VISIBILITY_SCOPE_GLOBAL;
                     // Global queries aren't restricted to a single database
                     searchResultPage = mAppSearchImpl.globalQuery(
                             mQueryExpression, mSearchSpec, mSelfCallerAccess, mLogger);
                 } else {
-                    mVisibilityScope = SearchStats.VISIBILITY_SCOPE_LOCAL;
+                    mVisibilityScope = QueryStats.VISIBILITY_SCOPE_LOCAL;
                     // Normal local query, pass in specified database.
                     searchResultPage = mAppSearchImpl.query(
                             mPackageName, mDatabaseName, mQueryExpression, mSearchSpec, mLogger);
                 }
             } else {
-                if (mNextPageToken == AppSearchImpl.EMPTY_PAGE_TOKEN) {
+                if (mNextPageToken == SearchResultPage.EMPTY_PAGE_TOKEN) {
                     // Return an empty list directly if the next page token is empty token. This
                     // will save a binder call.
                     return Collections.emptyList();
                 }
 
-                SearchStats.Builder sStatsBuilder = null;
+                QueryStats.Builder sStatsBuilder = null;
                 if (mLogger != null) {
                     sStatsBuilder =
-                            new SearchStats.Builder(mVisibilityScope, mPackageName);
+                            new QueryStats.Builder(mVisibilityScope, mPackageName);
                     if (mDatabaseName != null) {
                         sStatsBuilder.setDatabase(mDatabaseName);
                     }
@@ -139,7 +139,7 @@ class SearchResultsImpl implements SearchResults {
         // Checking the future result is not needed here since this is a cleanup step which is not
         // critical to the correct functioning of the system; also, the return value is void.
         if (!mIsClosed) {
-            if (mNextPageToken == AppSearchImpl.EMPTY_PAGE_TOKEN) {
+            if (mNextPageToken == SearchResultPage.EMPTY_PAGE_TOKEN) {
                 // Save a binder call for invalidateNextPageToken if the next page token is empty
                 // token.
                 mIsClosed = true;

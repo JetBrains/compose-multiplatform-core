@@ -25,6 +25,7 @@ import androidx.build.gradle.isRoot
 import androidx.build.license.ValidateLicensesExistTask
 import androidx.build.logging.TERMINAL_RED
 import androidx.build.logging.TERMINAL_RESET
+import androidx.build.playground.ValidateIntegrationPatches
 import androidx.build.playground.VerifyPlaygroundGradleConfigurationTask
 import androidx.build.studio.StudioTask.Companion.registerStudioTask
 import androidx.build.testConfiguration.registerOwnersServiceTasks
@@ -166,6 +167,8 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
             it.baseline.set(layout.projectDirectory.file("license-baseline.txt"))
             it.cacheEvenIfNoOutputs()
         }
+
+        ValidateIntegrationPatches.createTask(project)
     }
 
     private fun Project.configureTasksForKotlinWeb() {

@@ -38,7 +38,6 @@ import org.jetbrains.kotlin.gradle.utils.NativeCompilerDownloader
 import org.jetbrains.kotlin.konan.TempFiles
 import org.jetbrains.kotlin.konan.target.Family
 import org.jetbrains.kotlin.konan.target.LinkerArguments
-import org.jetbrains.kotlin.konan.target.LinkerOutputKind
 import org.jetbrains.kotlin.konan.target.Platform
 import org.jetbrains.kotlin.konan.target.PlatformManager
 
@@ -50,7 +49,7 @@ import org.jetbrains.kotlin.konan.target.PlatformManager
  *
  * @see ClangArchiveTask
  * @see ClangCompileTask
- * @see ClangSharedLibraryTask
+ * @see ClangLinkerTask
  */
 abstract class KonanBuildService @Inject constructor(private val execOperations: ExecOperations) :
     BuildService<KonanBuildService.Parameters> {
@@ -120,8 +119,8 @@ abstract class KonanBuildService @Inject constructor(private val execOperations:
         }
     }
 
-    /** @see ClangSharedLibraryTask */
-    fun createSharedLibrary(parameters: ClangSharedLibraryParameters) {
+    /** @see ClangLinkerTask */
+    fun runLinker(parameters: ClangLinkerParameters) {
         val outputFile = parameters.outputFile.get().asFile
         outputFile.delete()
         outputFile.parentFile.mkdirs()
@@ -149,7 +148,7 @@ abstract class KonanBuildService @Inject constructor(private val execOperations:
                         linkerArgs = linkerFlags,
                         optimize = true,
                         debug = false,
-                        kind = LinkerOutputKind.DYNAMIC_LIBRARY,
+                        kind = parameters.linkerOutputKind.get(),
                         outputDsymBundle = "unused",
                         mimallocEnabled = false,
                         sanitizer = null

@@ -16,6 +16,7 @@
 
 package androidx.xr.scenecore.impl;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.os.Looper;
 import android.util.Log;
@@ -56,6 +57,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /** Concrete implementation of SpatialEnvironment / XR Wallpaper for Android XR. */
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 // TODO(b/373435470): Remove "deprecation"
 @SuppressWarnings({"deprecation", "BanSynchronizedMethods"})
 final class SpatialEnvironmentImpl implements SpatialEnvironment {

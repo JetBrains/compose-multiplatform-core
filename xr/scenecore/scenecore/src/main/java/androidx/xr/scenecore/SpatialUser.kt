@@ -16,8 +16,7 @@
 
 package androidx.xr.scenecore
 
-import androidx.annotation.RestrictTo
-import androidx.xr.runtime.HeadTrackingMode
+import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.LifecycleManager
 
@@ -28,7 +27,6 @@ import androidx.xr.runtime.internal.LifecycleManager
  * @param lifecycleManager The [LifecycleManager] for the Session.
  * @param runtime The JxrPlatformAdapter for the Session.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SpatialUser(
     private val lifecycleManager: LifecycleManager,
     private val runtime: JxrPlatformAdapter,

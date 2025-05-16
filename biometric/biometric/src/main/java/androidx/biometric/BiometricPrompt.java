@@ -188,7 +188,6 @@ public class BiometricPrompt {
      * This device either doesn't have this feature enabled, or it's not considered in a
      * high-risk environment that requires extra security measures for accessing sensitive data.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public static final int ERROR_IDENTITY_CHECK_NOT_ACTIVE = 20;
 
     /**

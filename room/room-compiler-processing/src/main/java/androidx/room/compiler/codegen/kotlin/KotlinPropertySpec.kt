@@ -31,6 +31,7 @@ internal class KotlinPropertySpec(
     override val type: XTypeName,
     override val actual: KPropertySpec
 ) : KotlinSpec<KPropertySpec>(), XPropertySpec {
+    override fun toBuilder() = Builder(name, type, actual.toBuilder())
 
     internal class Builder(
         private val name: String,

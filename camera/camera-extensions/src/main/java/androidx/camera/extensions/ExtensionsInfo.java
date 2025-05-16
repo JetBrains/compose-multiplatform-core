@@ -43,6 +43,7 @@ import androidx.camera.extensions.internal.ExtensionVersion;
 import androidx.camera.extensions.internal.ExtensionsUseCaseConfigFactory;
 import androidx.camera.extensions.internal.VendorExtender;
 import androidx.camera.extensions.internal.Version;
+import androidx.camera.extensions.internal.compat.workaround.PostviewFormatValidator;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -260,6 +261,11 @@ final class ExtensionsInfo {
                                 vendorExtender.isCaptureProcessProgressAvailable())
                         .setUseCaseCombinationRequiredRule(
                                 REQUIRED_RULE_COEXISTING_PREVIEW_AND_IMAGE_CAPTURE);
+
+                if (mShouldUseCamera2Extensions) {
+                    builder.setPostviewFormatSelector(
+                            new PostviewFormatValidator().getPostviewFormatSelector());
+                }
 
                 SessionProcessor sessionProcessor = vendorExtender.createSessionProcessor(context);
                 if (sessionProcessor != null) {

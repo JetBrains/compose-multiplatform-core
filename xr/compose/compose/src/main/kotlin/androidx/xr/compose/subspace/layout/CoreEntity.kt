@@ -17,6 +17,7 @@
 package androidx.xr.compose.subspace.layout
 
 import android.util.Log
+import android.view.View
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.unit.Density
 import androidx.xr.compose.subspace.SpatialPanelDefaults
@@ -213,6 +214,17 @@ internal class CorePanelEntity(entity: PanelEntity, density: Density) :
 internal class CoreMainPanelEntity(session: Session, density: Density) :
     CoreBasePanelEntity(session.scene.mainPanelEntity, density) {
     private val mainView = session.activity.window.decorView
+    private val listener =
+        View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            mutableSize.value =
+                session.scene.mainPanelEntity.getSizeInPixels().run {
+                    IntVolumeSize(width, height, 0)
+                }
+        }
+
+    init {
+        mainView.addOnLayoutChangeListener(listener)
+    }
 
     /**
      * Whether this entity or any of its ancestors is marked as hidden.
@@ -251,6 +263,7 @@ internal class CoreMainPanelEntity(session: Session, density: Density) :
 
     override fun dispose() {
         // Do not call super.dispose() because we don't want to dispose the main panel entity.
+        mainView.removeOnLayoutChangeListener(listener)
     }
 }
 

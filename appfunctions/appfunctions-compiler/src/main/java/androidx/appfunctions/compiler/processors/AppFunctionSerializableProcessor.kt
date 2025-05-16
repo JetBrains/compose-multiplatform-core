@@ -17,12 +17,12 @@
 package androidx.appfunctions.compiler.processors
 
 import androidx.annotation.VisibleForTesting
-import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.compiler.AppFunctionCompiler
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializable
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
+import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionDataClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableFactoryClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableFactoryClass.FromAppFunctionDataMethod.APP_FUNCTION_DATA_PARAM_NAME
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableFactoryClass.ToAppFunctionDataMethod.APP_FUNCTION_SERIALIZABLE_PARAM_NAME
@@ -49,13 +49,12 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
-import com.squareup.kotlinpoet.asTypeName
 
 /**
  * Generates a factory class with methods to convert classes annotated with
- * [androidx.appfunctions.AppFunctionSerializable] or
- * [androidx.appfunctions.AppFunctionSerializableProxy] to [androidx.appfunctions.AppFunctionData],
- * and vice-versa.
+ * androidx.appfunctions.AppFunctionSerializable or
+ * androidx.appfunctions.AppFunctionSerializableProxy to androidx.appfunctions.AppFunctionData, and
+ * vice-versa.
  *
  * **Example:**
  *
@@ -282,7 +281,8 @@ class AppFunctionSerializableProcessor(
             )
             .addModifiers(KModifier.OVERRIDE)
             .addParameter(
-                ParameterSpec.builder(APP_FUNCTION_DATA_PARAM_NAME, AppFunctionData::class).build()
+                ParameterSpec.builder(APP_FUNCTION_DATA_PARAM_NAME, AppFunctionDataClass.CLASS_NAME)
+                    .build()
             )
             .addCode(factoryCodeBuilder.appendFromAppFunctionDataMethodBody())
             .returns(annotatedClass.typeName)
@@ -298,7 +298,8 @@ class AppFunctionSerializableProcessor(
             )
             .addModifiers(KModifier.OVERRIDE)
             .addParameter(
-                ParameterSpec.builder(APP_FUNCTION_DATA_PARAM_NAME, AppFunctionData::class).build()
+                ParameterSpec.builder(APP_FUNCTION_DATA_PARAM_NAME, AppFunctionDataClass.CLASS_NAME)
+                    .build()
             )
             .addCode(factoryCodeBuilder.appendFromAppFunctionDataMethodBodyForProxy())
             .returns(annotatedProxyClass.targetClassDeclaration.toClassName())
@@ -318,7 +319,7 @@ class AppFunctionSerializableProcessor(
                     .build()
             )
             .addCode(factoryCodeBuilder.appendToAppFunctionDataMethodBody())
-            .returns(AppFunctionData::class.asTypeName())
+            .returns(AppFunctionDataClass.CLASS_NAME)
             .build()
     }
 
@@ -338,7 +339,7 @@ class AppFunctionSerializableProcessor(
                     .build()
             )
             .addCode(factoryCodeBuilder.appendToAppFunctionDataMethodBodyForProxy())
-            .returns(AppFunctionData::class.asTypeName())
+            .returns(AppFunctionDataClass.CLASS_NAME)
             .build()
     }
 

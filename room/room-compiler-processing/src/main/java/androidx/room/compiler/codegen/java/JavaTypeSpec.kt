@@ -39,6 +39,8 @@ internal class JavaTypeSpec(override val actual: JTypeSpec) : JavaSpec<JTypeSpec
 
     override val name = actual.name?.let { XName.of(it) }
 
+    override fun toBuilder() = Builder(actual.toBuilder())
+
     internal class Builder(internal val actual: JTypeSpecBuilder) :
         XSpec.Builder(), XTypeSpec.Builder {
         override fun superclass(typeName: XTypeName) = apply { actual.superclass(typeName.java) }

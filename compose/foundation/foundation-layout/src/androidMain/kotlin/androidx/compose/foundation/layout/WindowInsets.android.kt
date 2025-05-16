@@ -104,13 +104,17 @@ internal class AndroidWindowInsets(internal val type: Int, private val name: Str
 
 /**
  * Indicates whether access to [WindowInsets] within the [content][ComposeView.setContent] should
- * consume the Android [android.view.WindowInsets]. The default value is `true`, meaning that access
- * to [WindowInsets.Companion] will consume the Android WindowInsets.
+ * consume the Android [android.view.WindowInsets]. The default value is `false`, meaning that
+ * access to [WindowInsets.Companion] will not consume all the Android WindowInsets and instead
+ * adjust the insets based on the position of child Views.
  *
  * This property should be set prior to first composition.
  */
+@OptIn(ExperimentalLayoutApi::class)
 var AbstractComposeView.consumeWindowInsets: Boolean
-    get() = getTag(R.id.consume_window_insets_tag) as? Boolean ?: true
+    get() =
+        getTag(R.id.consume_window_insets_tag) as? Boolean
+            ?: !ComposeFoundationLayoutFlags.isWindowInsetsDefaultPassThroughEnabled
     set(value) {
         setTag(R.id.consume_window_insets_tag, value)
     }
@@ -126,8 +130,11 @@ var AbstractComposeView.consumeWindowInsets: Boolean
     level = DeprecationLevel.HIDDEN,
     message = "Please use AbstractComposeView.consumeWindowInsets"
 )
+@OptIn(ExperimentalLayoutApi::class)
 var ComposeView.consumeWindowInsets: Boolean
-    get() = getTag(R.id.consume_window_insets_tag) as? Boolean ?: true
+    get() =
+        getTag(R.id.consume_window_insets_tag) as? Boolean
+            ?: !ComposeFoundationLayoutFlags.isWindowInsetsDefaultPassThroughEnabled
     set(value) {
         setTag(R.id.consume_window_insets_tag, value)
     }
@@ -441,8 +448,10 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
      * `true` unless the `AbstractComposeView` [AbstractComposeView.consumeWindowInsets] is set to
      * `false`.
      */
+    @OptIn(ExperimentalLayoutApi::class)
     val consumes =
-        (view.parent as? View)?.getTag(R.id.consume_window_insets_tag) as? Boolean ?: true
+        (view.parent as? View)?.getTag(R.id.consume_window_insets_tag) as? Boolean
+            ?: !ComposeFoundationLayoutFlags.isWindowInsetsDefaultPassThroughEnabled
 
     /**
      * The number of accesses to [WindowInsetsHolder]. When this reaches zero, the listeners are

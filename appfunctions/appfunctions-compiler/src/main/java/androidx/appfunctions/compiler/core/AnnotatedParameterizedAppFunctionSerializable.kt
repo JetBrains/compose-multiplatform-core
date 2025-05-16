@@ -47,11 +47,11 @@ class AnnotatedParameterizedAppFunctionSerializable(
     }
 
     /**
-     * The qualified name of the class being annotated with AppFunctionSerializable with the
+     * The JVM qualified name of the class being annotated with AppFunctionSerializable with the
      * parameterized type information included as a suffix.
      */
-    override val qualifiedName: String by lazy {
-        val originalQualifiedName = super.qualifiedName
+    override val jvmQualifiedName: String by lazy {
+        val originalQualifiedName = super.jvmQualifiedName
         buildString {
             append(originalQualifiedName)
 

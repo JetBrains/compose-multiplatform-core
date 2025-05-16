@@ -24,7 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
 interface VoipService {
     val callDataUpdates: StateFlow<List<CallData>>
 
-    fun addCall(callAttributes: CallAttributesCompat)
+    fun addCall(callAttributes: CallAttributesCompat, notificationId: Int)
 
     fun setCallActive(callId: String)
 

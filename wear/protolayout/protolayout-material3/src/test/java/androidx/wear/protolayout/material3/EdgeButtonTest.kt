@@ -129,17 +129,30 @@ class EdgeButtonTest {
         val label = "static text"
         val textEdgeButton =
             materialScope(CONTEXT, DEVICE_CONFIGURATION, allowDynamicTheme = false) {
+                textEdgeButton(onClick = CLICKABLE) { text(label.layoutString) }
+            }
+
+        val queryProvider = LayoutElementAssertionsProvider(textEdgeButton)
+        queryProvider.onElement(hasText(label)).assert(hasColor(COLOR_SCHEME.onPrimary.staticArgb))
+
+        queryProvider.onElement(isClickable()).assert(hasContentDescription(label))
+    }
+
+    @Test
+    fun staticText_withCustomContentDescription() {
+        val label = "static text"
+        val textEdgeButton =
+            materialScope(CONTEXT, DEVICE_CONFIGURATION, allowDynamicTheme = false) {
                 textEdgeButton(
                     onClick = CLICKABLE,
-                    modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION)
+                    modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                 ) {
-                    text(label.layoutString)
+                    text(text = label.layoutString)
                 }
             }
 
-        LayoutElementAssertionsProvider(textEdgeButton)
-            .onElement(hasText(label))
-            .assert(hasColor(COLOR_SCHEME.onPrimary.staticArgb))
+        val queryProvider = LayoutElementAssertionsProvider(textEdgeButton)
+        queryProvider.onElement(isClickable()).assert(hasContentDescription(CONTENT_DESCRIPTION))
     }
 
     @Test
@@ -152,25 +165,23 @@ class EdgeButtonTest {
             LayoutString(
                 label,
                 DynamicInt32.from(stateKey).times(testTimes).format(),
-                label.asLayoutConstraint()
+                label.asLayoutConstraint(),
             )
 
         val queryProvider =
             LayoutElementAssertionsProvider(
                     materialScope(CONTEXT, DEVICE_CONFIGURATION, allowDynamicTheme = false) {
-                        textEdgeButton(
-                            onClick = CLICKABLE,
-                            modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION)
-                        ) {
-                            this.text(dynamicLabel)
-                        }
+                        textEdgeButton(onClick = CLICKABLE) { this.text(dynamicLabel) }
                     }
                 )
                 .withDynamicData(stateKey mapTo testValue)
 
+        val expectedText = (testValue * testTimes).toString()
         queryProvider
-            .onElement(hasText((testValue * testTimes).toString()))
+            .onElement(hasText(expectedText))
             .assert(hasColor(COLOR_SCHEME.onPrimary.staticArgb))
+
+        queryProvider.onElement(isClickable()).assert(hasContentDescription(expectedText))
     }
 
     @Test

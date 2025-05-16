@@ -18,12 +18,11 @@ package androidx.camera.lifecycle
 
 import android.content.Context
 import android.content.pm.PackageManager.FEATURE_CAMERA_CONCURRENT
-import android.util.Range
 import androidx.annotation.GuardedBy
 import androidx.annotation.MainThread
+import androidx.annotation.OptIn as JavaOptIn
 import androidx.annotation.VisibleForTesting
 import androidx.camera.core.Camera
-import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraFilter
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraInfoUnavailableException
@@ -33,9 +32,12 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.ConcurrentCamera
 import androidx.camera.core.ConcurrentCamera.SingleCameraConfig
+import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.LegacySessionConfig
 import androidx.camera.core.Preview
+import androidx.camera.core.SessionConfig
 import androidx.camera.core.UseCase
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
@@ -48,7 +50,6 @@ import androidx.camera.core.impl.CameraConfig
 import androidx.camera.core.impl.CameraConfigs
 import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.ExtendedCameraConfigProviderStore
-import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
 import androidx.camera.core.impl.utils.ContextUtil
@@ -67,6 +68,8 @@ import java.util.Objects
 import java.util.Objects.requireNonNull
 
 /** Implementation of the [LifecycleCameraProvider] interface. */
+@OptIn(ExperimentalSessionConfig::class)
+@JavaOptIn(ExperimentalCameraProviderConfiguration::class)
 internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
     private val lock = Any()
     @VisibleForTesting
@@ -179,6 +182,16 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
         return false
     }
 
+    override fun isBound(sessionConfig: SessionConfig): Boolean {
+        for (lifecycleCamera: LifecycleCamera in lifecycleCameraRepository.lifecycleCameras) {
+            if (lifecycleCamera.isBound(sessionConfig)) {
+                return true
+            }
+        }
+
+        return false
+    }
+
     @MainThread
     override fun unbind(vararg useCases: UseCase?): Unit =
         trace("CX:unbind") {
@@ -190,7 +203,24 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
                 )
             }
 
-            lifecycleCameraRepository.unbind(listOf(*useCases), lifecycleCameraKeys)
+            lifecycleCameraRepository.unbind(
+                LegacySessionConfig(useCases = useCases.filterNotNull()),
+                lifecycleCameraKeys
+            )
+        }
+
+    @MainThread
+    override fun unbind(sessionConfig: SessionConfig): Unit =
+        trace("CX:unbind-sessionConfig") {
+            Threads.checkMainThread()
+            if (cameraOperatingMode == CAMERA_OPERATING_MODE_CONCURRENT) {
+                throw UnsupportedOperationException(
+                    "Unbind SessionConfig is not supported in concurrent camera mode" +
+                        " call unbindAll() first."
+                )
+            }
+
+            lifecycleCameraRepository.unbind(sessionConfig, lifecycleCameraKeys)
         }
 
     @MainThread
@@ -228,7 +258,11 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
             }
             cameraOperatingMode = CAMERA_OPERATING_MODE_SINGLE
             val camera =
-                bindToLifecycle(lifecycleOwner, cameraSelector, useCases = useCases.filterNotNull())
+                bindToLifecycleInternal(
+                    lifecycleOwner = lifecycleOwner,
+                    primaryCameraSelector = cameraSelector,
+                    sessionConfig = LegacySessionConfig(useCases = useCases.filterNotNull())
+                )
             return@trace camera
         }
 
@@ -247,13 +281,34 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
             }
             cameraOperatingMode = CAMERA_OPERATING_MODE_SINGLE
             val camera =
-                bindToLifecycle(
+                bindToLifecycleInternal(
                     lifecycleOwner,
                     cameraSelector,
-                    viewPort = useCaseGroup.viewPort,
-                    effects = useCaseGroup.effects,
-                    targetHighSpeedFrameRate = useCaseGroup.targetHighSpeedFrameRate,
-                    useCases = useCaseGroup.useCases
+                    sessionConfig = LegacySessionConfig(useCaseGroup),
+                )
+            return@trace camera
+        }
+
+    @MainThread
+    override fun bindToLifecycle(
+        lifecycleOwner: LifecycleOwner,
+        cameraSelector: CameraSelector,
+        sessionConfig: SessionConfig
+    ): Camera =
+        trace("CX:bindToLifecycle-SessionConfig") {
+            if (cameraOperatingMode == CAMERA_OPERATING_MODE_CONCURRENT) {
+                throw UnsupportedOperationException(
+                    "bindToLifecycle for single camera is not supported in concurrent camera mode, " +
+                        "call unbindAll() first."
+                )
+            }
+            cameraOperatingMode = CAMERA_OPERATING_MODE_SINGLE
+
+            val camera =
+                bindToLifecycleInternal(
+                    lifecycleOwner,
+                    cameraSelector,
+                    sessionConfig = sessionConfig,
                 )
             return@trace camera
         }
@@ -315,13 +370,16 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
 
                 cameraOperatingMode = CAMERA_OPERATING_MODE_SINGLE
                 val camera =
-                    bindToLifecycle(
-                        lifecycleOwner,
-                        cameraSelector,
-                        viewPort = viewPort,
-                        effects = effects,
-                        targetHighSpeedFrameRate = targetHighSpeedFrameRate,
-                        useCases = useCases
+                    bindToLifecycleInternal(
+                        lifecycleOwner = lifecycleOwner,
+                        primaryCameraSelector = cameraSelector,
+                        sessionConfig =
+                            LegacySessionConfig(
+                                useCases = useCases,
+                                viewPort = viewPort,
+                                effects = effects,
+                                targetHighSpeedFrameRate = targetHighSpeedFrameRate,
+                            )
                     )
                 cameras.add(camera)
             } else {
@@ -378,29 +436,23 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
 
                 if (isDualCameraVideoCapture) {
                     cameras.add(
-                        bindToLifecycle(
+                        bindToLifecycleInternal(
                             firstCameraConfig.lifecycleOwner,
                             firstCameraConfig.cameraSelector,
                             secondCameraConfig.cameraSelector,
                             firstCameraConfig.compositionSettings,
                             secondCameraConfig.compositionSettings,
-                            firstCameraConfig.useCaseGroup.viewPort,
-                            firstCameraConfig.useCaseGroup.effects,
-                            firstCameraConfig.useCaseGroup.targetHighSpeedFrameRate,
-                            useCases = firstCameraConfig.useCaseGroup.useCases,
+                            LegacySessionConfig(useCaseGroup = firstCameraConfig.useCaseGroup)
                         )
                     )
                 } else {
                     for (config: SingleCameraConfig? in singleCameraConfigs) {
                         val camera =
-                            bindToLifecycle(
-                                config!!.lifecycleOwner,
-                                config.cameraSelector,
-                                viewPort = config.useCaseGroup.viewPort,
-                                effects = config.useCaseGroup.effects,
-                                targetHighSpeedFrameRate =
-                                    config.useCaseGroup.targetHighSpeedFrameRate,
-                                useCases = config.useCaseGroup.useCases
+                            bindToLifecycleInternal(
+                                lifecycleOwner = config!!.lifecycleOwner,
+                                primaryCameraSelector = config.cameraSelector,
+                                sessionConfig =
+                                    LegacySessionConfig(useCaseGroup = config.useCaseGroup)
                             )
                         cameras.add(camera)
                     }
@@ -503,10 +555,9 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
      * @param secondaryCameraSelector The secondary camera selector in dual camera case.
      * @param primaryCompositionSettings The composition settings for the primary camera.
      * @param secondaryCompositionSettings The composition settings for the secondary camera.
-     * @param viewPort The viewPort which represents the visible camera sensor rect.
-     * @param effects The effects applied to the camera outputs.
-     * @param targetHighSpeedFrameRate The high speed frame rate applied to the camera output.
-     * @param useCases The use cases to bind to a lifecycle.
+     * @param sessionConfig The [SessionConfig] that contains the [UseCase]s to be bound to the
+     *   [LifecycleOwner] along with common parameters such as session parameters, [ViewPort] and
+     *   [androidx.camera.core.CameraEffect].
      * @return The [Camera] instance which is determined by the camera selector and internal
      *   requirements.
      * @throws IllegalStateException If the use case has already been bound to another lifecycle or
@@ -515,16 +566,13 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
      *   camera to be used for the given use cases.
      */
     @Suppress("unused")
-    private fun bindToLifecycle(
+    private fun bindToLifecycleInternal(
         lifecycleOwner: LifecycleOwner,
         primaryCameraSelector: CameraSelector,
         secondaryCameraSelector: CameraSelector? = null,
         primaryCompositionSettings: CompositionSettings = CompositionSettings.DEFAULT,
         secondaryCompositionSettings: CompositionSettings = CompositionSettings.DEFAULT,
-        viewPort: ViewPort? = null,
-        effects: List<CameraEffect?> = emptyList(),
-        targetHighSpeedFrameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
-        useCases: List<UseCase> = emptyList()
+        sessionConfig: SessionConfig,
     ): Camera =
         trace("CX:bindToLifecycle-internal") {
             Threads.checkMainThread()
@@ -556,7 +604,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
 
             // Check if there's another camera that has already been bound.
             val lifecycleCameras = lifecycleCameraRepository.lifecycleCameras
-            useCases.forEach { useCase ->
+            sessionConfig.useCases.forEach { useCase ->
                 for (lifecycleCamera: LifecycleCamera in lifecycleCameras) {
                     if (
                         lifecycleCamera.isBound(useCase) && lifecycleCamera != lifecycleCameraToBind
@@ -590,16 +638,13 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
                     )
             }
 
-            if (useCases.isEmpty()) {
+            if (sessionConfig.useCases.isEmpty()) {
                 return@trace lifecycleCameraToBind!!
             }
 
             lifecycleCameraRepository.bindToLifecycleCamera(
                 lifecycleCameraToBind!!,
-                viewPort,
-                effects,
-                targetHighSpeedFrameRate,
-                useCases,
+                sessionConfig,
                 cameraX!!.cameraFactory.cameraCoordinator
             )
 

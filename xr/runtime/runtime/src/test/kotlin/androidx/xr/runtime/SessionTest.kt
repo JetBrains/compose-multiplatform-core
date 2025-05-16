@@ -108,19 +108,19 @@ class SessionTest {
         check(
             underTest.config.equals(
                 Config(
-                    PlaneTrackingMode.HorizontalAndVertical,
-                    HandTrackingMode.Enabled,
-                    DepthEstimationMode.Enabled,
-                    AnchorPersistenceMode.Enabled,
+                    Config.PlaneTrackingMode.HorizontalAndVertical,
+                    Config.HandTrackingMode.Enabled,
+                    Config.DepthEstimationMode.Enabled,
+                    Config.AnchorPersistenceMode.Enabled,
                 )
             )
         )
         val config =
             Config(
-                PlaneTrackingMode.Disabled,
-                HandTrackingMode.Disabled,
-                DepthEstimationMode.Disabled,
-                AnchorPersistenceMode.Disabled,
+                Config.PlaneTrackingMode.Disabled,
+                Config.HandTrackingMode.Disabled,
+                Config.DepthEstimationMode.Disabled,
+                Config.AnchorPersistenceMode.Disabled,
             )
 
         val result = underTest.configure(config)
@@ -134,12 +134,12 @@ class SessionTest {
         val underTest = (Session.create(activity) as SessionCreateSuccess).session
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
         val currentConfig = underTest.config
-        check(currentConfig.depthEstimation == DepthEstimationMode.Enabled)
+        check(currentConfig.depthEstimation == Config.DepthEstimationMode.Enabled)
         lifecycleManager.hasMissingPermission = true
 
         val result =
             underTest.configure(
-                underTest.config.copy(depthEstimation = DepthEstimationMode.Disabled)
+                underTest.config.copy(depthEstimation = Config.DepthEstimationMode.Disabled)
             )
 
         assertThat(result).isInstanceOf(SessionConfigurePermissionsNotGranted::class.java)
@@ -154,7 +154,9 @@ class SessionTest {
 
         lifecycleManager.shouldSupportPlaneTracking = false
         val result =
-            underTest.configure(Config(planeTracking = PlaneTrackingMode.HorizontalAndVertical))
+            underTest.configure(
+                Config(planeTracking = Config.PlaneTrackingMode.HorizontalAndVertical)
+            )
 
         assertThat(result).isInstanceOf(SessionConfigureConfigurationNotSupported::class.java)
         assertThat(underTest.config).isEqualTo(currentConfig)

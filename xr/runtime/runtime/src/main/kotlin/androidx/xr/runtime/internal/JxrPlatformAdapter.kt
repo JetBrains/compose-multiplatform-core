@@ -85,12 +85,14 @@ public interface JxrPlatformAdapter {
      * route. The future returned by this method will fire listeners on the UI thread if
      * Runnable::run is supplied.
      */
+    @Suppress("AsyncSuffixFuture")
     public fun loadGltfByAssetName(assetName: String): ListenableFuture<GltfModelResource>
 
     /**
      * Loads glTF Asset from a provided byte array. The future returned by this method will fire
      * listeners on the UI thread if Runnable::run is supplied.
      */
+    @Suppress("AsyncSuffixFuture")
     // TODO(b/397746548): Add InputStream support for loading glTFs.
     // Suppressed to allow CompletableFuture.
     public fun loadGltfByByteArray(
@@ -106,6 +108,7 @@ public interface JxrPlatformAdapter {
     public fun loadExrImageByAssetName(assetName: String): ListenableFuture<ExrImageResource>
 
     /** Loads an ExrImage from a provided byte array using the Split Engine route. */
+    @Suppress("AsyncSuffixFuture")
     // Suppressed to allow CompletableFuture.
     public fun loadExrImageByByteArray(
         assetData: ByteArray,
@@ -116,6 +119,7 @@ public interface JxrPlatformAdapter {
      * Loads a texture resource for the given asset name or URL. The future returned by this method
      * will fire listeners on the UI thread if Runnable::run is supplied.
      */
+    @Suppress("AsyncSuffixFuture")
     public fun loadTexture(
         assetName: String,
         sampler: TextureSampler,
@@ -134,6 +138,7 @@ public interface JxrPlatformAdapter {
      * Creates a water material by querying it from the system's built-in materials. The future
      * returned by this method will fire listeners on the UI thread if Runnable::run is supplied.
      */
+    @Suppress("AsyncSuffixFuture")
     public fun createWaterMaterial(isAlphaMapVersion: Boolean): ListenableFuture<MaterialResource>?
 
     /** Destroys the given water material resource. */
@@ -341,6 +346,7 @@ public interface JxrPlatformAdapter {
      * A factory function to create a SubspaceNodeEntity.
      *
      * @param subspaceNode The SubspaceNode to create the SubspaceNodeEntity from.
+     * @param size The size to make the SubspaceNodeEntity.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun createSubspaceNodeEntity(

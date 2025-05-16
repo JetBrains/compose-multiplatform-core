@@ -26,11 +26,11 @@ import android.view.ViewParent
  * scroll scrubber. It determines if a touch event is within the bounds of the scrubber and notifies
  * a [FastScrollGestureHandler] when a fast scroll gesture (dragging the scrubber) is detected.
  *
- * @param fastScoller The [FastScroller] instance associated with this handler.
+ * @param fastScroller The [FastScroller] instance associated with this handler.
  * @param gestureHandler The [FastScrollGestureHandler] that will be notified of fast scroll events.
  */
 internal class FastScrollGestureDetector(
-    private val fastScoller: FastScroller,
+    private val fastScroller: FastScroller,
     private val gestureHandler: FastScrollGestureHandler
 ) {
     internal var trackingFastScrollGesture: Boolean = false
@@ -48,7 +48,7 @@ internal class FastScrollGestureDetector(
      */
     fun handleEvent(event: MotionEvent, parent: ViewParent?, viewWidth: Int): Boolean {
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-            if (isPointWithinVisibleBounds(event, viewWidth)) {
+            if (fastScroller.isPointOnThumb(event.x, event.y, viewWidth)) {
                 trackingFastScrollGesture = true
                 return true
             }
@@ -65,22 +65,6 @@ internal class FastScrollGestureDetector(
         }
 
         return false
-    }
-
-    /**
-     * Checks if a touch event is within the visible bounds of the fast scroll scrubber.
-     *
-     * @param event The [MotionEvent] to check.
-     * @param viewWidth Width of the view in pixels
-     * @return True if the touch event is within the bounds of the scrubber, false otherwise.
-     */
-    private fun isPointWithinVisibleBounds(event: MotionEvent, viewWidth: Int): Boolean {
-        return event.x > (viewWidth - fastScoller.fastScrollDrawer.thumbWidthPx)
-        // Deliberately ignore (x < getWidth() - scrollbarMarginRight) to make it easier
-        // to grab it.
-        &&
-            event.y >= fastScoller.fastScrollY &&
-            event.y <= fastScoller.fastScrollY + fastScoller.fastScrollDrawer.thumbHeightPx
     }
 
     /** An interface for receiving notifications about fast scroll gestures. */

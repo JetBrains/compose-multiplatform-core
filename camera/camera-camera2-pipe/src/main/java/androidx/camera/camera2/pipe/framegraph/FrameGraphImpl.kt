@@ -18,13 +18,13 @@ package androidx.camera.camera2.pipe.framegraph
 
 import android.view.Surface
 import androidx.camera.camera2.pipe.AudioRestrictionMode
+import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.FrameGraph
 import androidx.camera.camera2.pipe.GraphState
+import androidx.camera.camera2.pipe.Parameters
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.config.CameraGraphScope
-import androidx.camera.camera2.pipe.graph.CameraGraphImpl
-import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -34,9 +34,10 @@ import kotlinx.coroutines.flow.StateFlow
 internal class FrameGraphImpl
 @Inject
 constructor(
-    override val parameters: CameraGraphParametersImpl,
-    private val cameraGraph: CameraGraphImpl,
+    override val parameters: Parameters,
+    private val cameraGraph: CameraGraph,
     override val id: CameraGraphId,
+    private val frameBuffers: FrameBuffers
 ) : FrameGraph {
     override val streams = cameraGraph.streams
 
@@ -56,11 +57,13 @@ constructor(
         cameraGraph.setSurface(stream, surface)
     }
 
-    override fun attach(
+    override fun captureWith(
         streamIds: Set<StreamId>,
         parameters: Map<Any, Any?>
     ): FrameGraph.FrameBuffer {
-        TODO("Not yet implemented")
+        val frameBuffer = FrameBufferImpl(streamIds, parameters, frameBuffers)
+        frameBuffers.attach(frameBuffer)
+        return frameBuffer
     }
 
     override fun updateAudioRestrictionMode(mode: AudioRestrictionMode) {

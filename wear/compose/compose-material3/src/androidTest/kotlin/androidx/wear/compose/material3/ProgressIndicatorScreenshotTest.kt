@@ -374,31 +374,56 @@ class ProgressIndicatorScreenshotTest {
     }
 
     @Test
-    fun progress_indicator_indeterminate(@TestParameter screenSize: ScreenSize) =
-        verifyProgressIndicatorScreenshot(screenSize = screenSize) {
-            CircularProgressIndicator(
-                modifier =
-                    Modifier.size(
-                            CircularProgressIndicatorDefaults.IndeterminateCircularIndicatorDiameter
-                        )
-                        .testTag(TEST_TAG),
-            )
+    fun progress_indicator_indeterminate(@TestParameter screenSize: ScreenSize) {
+        rule.mainClock.autoAdvance = false
+
+        rule.setContentWithTheme {
+            ScreenConfiguration(screenSize.size) {
+                CircularProgressIndicator(
+                    modifier =
+                        Modifier.size(
+                                CircularProgressIndicatorDefaults
+                                    .IndeterminateCircularIndicatorDiameter
+                            )
+                            .testTag(TEST_TAG),
+                )
+            }
         }
 
+        rule.mainClock.advanceTimeBy(200)
+
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
+    }
+
     @Test
-    fun progress_indicator_indeterminate_different_height(@TestParameter screenSize: ScreenSize) =
-        verifyProgressIndicatorScreenshot(screenSize = screenSize) {
-            CircularProgressIndicator(
-                modifier =
-                    Modifier.size(
-                            CircularProgressIndicatorDefaults
-                                .IndeterminateCircularIndicatorDiameter + 6.dp,
-                            CircularProgressIndicatorDefaults
-                                .IndeterminateCircularIndicatorDiameter,
-                        )
-                        .testTag(TEST_TAG),
-            )
+    fun progress_indicator_indeterminate_different_height(@TestParameter screenSize: ScreenSize) {
+        rule.mainClock.autoAdvance = false
+
+        rule.setContentWithTheme {
+            ScreenConfiguration(screenSize.size) {
+                CircularProgressIndicator(
+                    modifier =
+                        Modifier.size(
+                                CircularProgressIndicatorDefaults
+                                    .IndeterminateCircularIndicatorDiameter + 6.dp,
+                                CircularProgressIndicatorDefaults
+                                    .IndeterminateCircularIndicatorDiameter,
+                            )
+                            .testTag(TEST_TAG),
+                )
+            }
         }
+
+        rule.mainClock.advanceTimeBy(200)
+
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
+    }
 
     private fun verifyProgressIndicatorScreenshot(
         screenSize: ScreenSize,

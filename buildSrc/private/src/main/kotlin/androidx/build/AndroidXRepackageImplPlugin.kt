@@ -149,5 +149,5 @@ abstract class RelocationExtension(val project: Project) {
     }
 
     /* Optional artifact id if the user wants to publish the dependency in the shadowed config. */
-    abstract val artifactId: Property<String?>
+    abstract val artifactId: Property<String>
 }

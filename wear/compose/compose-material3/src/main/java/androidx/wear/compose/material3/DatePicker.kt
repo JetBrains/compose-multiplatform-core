@@ -193,45 +193,27 @@ public fun DatePicker(
 
     val shortMonthNames = remember { getMonthNames("MMM") }
     val fullMonthNames = remember { getMonthNames("MMMM") }
-    val yearContentDescription =
-        remember(
+    val yearContentDescription = {
+        createDescriptionDatePicker(
             selectedIndex,
             datePickerState.selectedYear,
-        ) {
-            {
-                createDescriptionDatePicker(
-                    selectedIndex,
-                    datePickerState.selectedYear,
-                    yearString,
-                )
-            }
+            yearString,
+        )
+    }
+    val monthContentDescription = {
+        if (selectedIndex == null) {
+            monthString
+        } else {
+            fullMonthNames[(datePickerState.selectedMonth - 1) % 12]
         }
-    val monthContentDescription =
-        remember(
-            selectedIndex,
-            datePickerState.selectedMonth,
-        ) {
-            {
-                if (selectedIndex == null) {
-                    monthString
-                } else {
-                    fullMonthNames[(datePickerState.selectedMonth - 1) % 12]
-                }
-            }
-        }
-    val dayContentDescription =
-        remember(
+    }
+    val dayContentDescription = {
+        createDescriptionDatePicker(
             selectedIndex,
             datePickerState.selectedDay,
-        ) {
-            {
-                createDescriptionDatePicker(
-                    selectedIndex,
-                    datePickerState.selectedDay,
-                    dayString,
-                )
-            }
-        }
+            dayString,
+        )
+    }
 
     val datePickerOptions = datePickerType.toDatePickerOptions()
     val confirmButtonIndex = datePickerOptions.size
@@ -290,6 +272,7 @@ public fun DatePicker(
                     remember(
                         density.density,
                         LocalConfiguration.current.screenWidthDp,
+                        optionTextStyle
                     ) {
                         val mm =
                             measurer.measure(

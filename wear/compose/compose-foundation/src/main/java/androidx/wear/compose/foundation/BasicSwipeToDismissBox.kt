@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
@@ -171,65 +172,68 @@ public fun BasicSwipeToDismissBox(
 
             key(if (isBackground) backgroundKey else contentKey) {
                 if (!isBackground || (userSwipeEnabled && isSwiping)) {
-                    Box(
-                        Modifier.fillMaxSize()
-                            .hierarchicalFocus(!isBackground)
-                            .then(
-                                if (!isBackground) {
-                                    Modifier.graphicsLayer {
-                                            val scale =
-                                                lerp(SCALE_MAX, SCALE_MIN, progress)
-                                                    .coerceIn(SCALE_MIN, SCALE_MAX)
-                                            val squeezeOffset =
-                                                max(0f, (1f - scale) * maxWidthPx / 2f)
-
-                                            val translationX =
-                                                if (squeezeMode) {
-                                                    // Squeeze
-                                                    squeezeOffset
-                                                } else {
-                                                    // slide
-                                                    lerp(
-                                                        squeezeOffset,
-                                                        maxWidthPx,
-                                                        max(0f, progress - 0.7f) / 0.3f
-                                                    )
-                                                }
-
-                                            this.translationX = translationX
-                                            scaleX = scale
-                                            scaleY = scale
-                                            clip = isRound && translationX > 0
-                                            shape = if (isRound) CircleShape else RectangleShape
-                                        }
-                                        .background(backgroundScrimColor)
-                                } else Modifier
-                            )
+                    val parentScreenActive = LocalScreenIsActive.current
+                    CompositionLocalProvider(
+                        LocalScreenIsActive provides (!isBackground && parentScreenActive)
                     ) {
-                        // We use the repeat loop above and call content at this location
-                        // for both background and foreground so that any persistence
-                        // within the content composable has the same call stack which is used
-                        // as part of the hash identity for saveable state.
-                        content(isBackground)
+                        Box(
+                            Modifier.fillMaxSize()
+                                .hierarchicalFocusGroup(!isBackground)
+                                .then(
+                                    if (!isBackground) {
+                                        Modifier.graphicsLayer {
+                                                val scale =
+                                                    lerp(SCALE_MAX, SCALE_MIN, progress)
+                                                        .coerceIn(SCALE_MIN, SCALE_MAX)
+                                                val squeezeOffset =
+                                                    max(0f, (1f - scale) * maxWidthPx / 2f)
 
-                        Canvas(Modifier.fillMaxSize()) {
-                            val color =
-                                if (isBackground) {
-                                    backgroundScrimColor.copy(
-                                        alpha =
-                                            (MAX_BACKGROUND_SCRIM_ALPHA * (1 - progress)).coerceIn(
-                                                0f,
-                                                1f
-                                            )
-                                    )
-                                } else {
-                                    contentScrimColor.copy(
-                                        alpha =
-                                            min(MAX_CONTENT_SCRIM_ALPHA, progress / 2f)
-                                                .coerceIn(0f, 1f)
-                                    )
-                                }
-                            drawRect(color = color)
+                                                val translationX =
+                                                    if (squeezeMode) {
+                                                        // Squeeze
+                                                        squeezeOffset
+                                                    } else {
+                                                        // slide
+                                                        lerp(
+                                                            squeezeOffset,
+                                                            maxWidthPx,
+                                                            max(0f, progress - 0.7f) / 0.3f
+                                                        )
+                                                    }
+
+                                                this.translationX = translationX
+                                                scaleX = scale
+                                                scaleY = scale
+                                                clip = isRound && translationX > 0
+                                                shape = if (isRound) CircleShape else RectangleShape
+                                            }
+                                            .background(backgroundScrimColor)
+                                    } else Modifier
+                                )
+                        ) {
+                            // We use the repeat loop above and call content at this location
+                            // for both background and foreground so that any persistence
+                            // within the content composable has the same call stack which is used
+                            // as part of the hash identity for saveable state.
+                            content(isBackground)
+
+                            Canvas(Modifier.fillMaxSize()) {
+                                val color =
+                                    if (isBackground) {
+                                        backgroundScrimColor.copy(
+                                            alpha =
+                                                (MAX_BACKGROUND_SCRIM_ALPHA * (1 - progress))
+                                                    .coerceIn(0f, 1f)
+                                        )
+                                    } else {
+                                        contentScrimColor.copy(
+                                            alpha =
+                                                min(MAX_CONTENT_SCRIM_ALPHA, progress / 2f)
+                                                    .coerceIn(0f, 1f)
+                                        )
+                                    }
+                                drawRect(color = color)
+                            }
                         }
                     }
                 }

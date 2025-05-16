@@ -34,6 +34,7 @@ import androidx.compose.material3.samples.AnimatedFloatingActionButtonSample
 import androidx.compose.material3.samples.AssistChipSample
 import androidx.compose.material3.samples.BasicAlertDialogSample
 import androidx.compose.material3.samples.BottomAppBarWithFAB
+import androidx.compose.material3.samples.BottomAppBarWithOverflow
 import androidx.compose.material3.samples.BottomSheetScaffoldNestedScrollSample
 import androidx.compose.material3.samples.ButtonGroupSample
 import androidx.compose.material3.samples.ButtonSample
@@ -41,6 +42,7 @@ import androidx.compose.material3.samples.ButtonWithAnimatedShapeSample
 import androidx.compose.material3.samples.ButtonWithIconSample
 import androidx.compose.material3.samples.CardSample
 import androidx.compose.material3.samples.CenteredHorizontalFloatingToolbarWithFabSample
+import androidx.compose.material3.samples.CenteredSliderSample
 import androidx.compose.material3.samples.CenteredVerticalFloatingToolbarWithFabSample
 import androidx.compose.material3.samples.CheckboxRoundedStrokesSample
 import androidx.compose.material3.samples.CheckboxSample
@@ -160,6 +162,8 @@ import androidx.compose.material3.samples.OutlinedIconToggleButtonSample
 import androidx.compose.material3.samples.OutlinedSplitButtonSample
 import androidx.compose.material3.samples.OutlinedTextFieldWithInitialValueAndSelection
 import androidx.compose.material3.samples.OutlinedToggleButtonSample
+import androidx.compose.material3.samples.OverflowingHorizontalFloatingToolbarSample
+import androidx.compose.material3.samples.OverflowingVerticalFloatingToolbarSample
 import androidx.compose.material3.samples.PasswordTextField
 import androidx.compose.material3.samples.PermanentNavigationDrawerSample
 import androidx.compose.material3.samples.PinnedTopAppBar
@@ -207,6 +211,7 @@ import androidx.compose.material3.samples.SimpleOutlinedTextFieldSample
 import androidx.compose.material3.samples.SimpleSearchBarSample
 import androidx.compose.material3.samples.SimpleTextFieldSample
 import androidx.compose.material3.samples.SimpleTopAppBar
+import androidx.compose.material3.samples.SimpleTopAppBarWithAdaptiveActions
 import androidx.compose.material3.samples.SimpleTopAppBarWithSubtitle
 import androidx.compose.material3.samples.SingleSelectConnectedButtonGroupSample
 import androidx.compose.material3.samples.SliderSample
@@ -254,6 +259,7 @@ import androidx.compose.material3.samples.TonalToggleButtonSample
 import androidx.compose.material3.samples.TriStateCheckboxRoundedStrokesSample
 import androidx.compose.material3.samples.TriStateCheckboxSample
 import androidx.compose.material3.samples.TwoLineListItem
+import androidx.compose.material3.samples.VerticalCenteredSliderSample
 import androidx.compose.material3.samples.VerticalFloatingToolbarWithFabSample
 import androidx.compose.material3.samples.VerticalSliderSample
 import androidx.compose.material3.samples.WideNavigationRailArrangementsSample
@@ -780,6 +786,13 @@ val BottomAppBarsExamples =
             BottomAppBarWithFAB()
         },
         Example(
+            name = "BottomAppBarWithOverflow",
+            description = BottomAppBarsExampleDescription,
+            sourceUrl = BottomAppBarsExampleSourceUrl,
+        ) {
+            BottomAppBarWithOverflow()
+        },
+        Example(
             name = "ExitAlwaysBottomAppBar",
             description = BottomAppBarsExampleDescription,
             sourceUrl = BottomAppBarsExampleSourceUrl,
@@ -833,6 +846,13 @@ val TopAppBarExamples =
             sourceUrl = TopAppBarExampleSourceUrl,
         ) {
             SimpleTopAppBar()
+        },
+        Example(
+            name = "SimpleTopAppBarWithAdaptiveActions",
+            description = TopAppBarExampleDescription,
+            sourceUrl = TopAppBarExampleDescription,
+        ) {
+            SimpleTopAppBarWithAdaptiveActions()
         },
         Example(
             name = "SimpleTopAppBarWithSubtitle",
@@ -919,6 +939,13 @@ val FloatingToolbarsExamples =
             ExpandableHorizontalFloatingToolbarSample()
         },
         Example(
+            name = "OverflowingHorizontalFloatingToolbarSample",
+            description = FloatingToolbarsExampleDescription,
+            sourceUrl = FloatingToolbarsExampleSourceUrl,
+        ) {
+            OverflowingHorizontalFloatingToolbarSample()
+        },
+        Example(
             name = "ScrollableHorizontalFloatingToolbarSample",
             description = FloatingToolbarsExampleDescription,
             sourceUrl = FloatingToolbarsExampleSourceUrl,
@@ -931,6 +958,13 @@ val FloatingToolbarsExamples =
             sourceUrl = FloatingToolbarsExampleSourceUrl,
         ) {
             ExpandableVerticalFloatingToolbarSample()
+        },
+        Example(
+            name = "OverflowingVerticalFloatingToolbarSample",
+            description = FloatingToolbarsExampleDescription,
+            sourceUrl = FloatingToolbarsExampleSourceUrl,
+        ) {
+            OverflowingVerticalFloatingToolbarSample()
         },
         Example(
             name = "ScrollableVerticalFloatingToolbarSample",
@@ -1774,11 +1808,25 @@ val SlidersExamples =
             SliderWithTrackIconsSample()
         },
         Example(
+            name = "CenteredSliderSample",
+            description = SlidersExampleDescription,
+            sourceUrl = SlidersExampleSourceUrl
+        ) {
+            CenteredSliderSample()
+        },
+        Example(
             name = "VerticalSliderSample",
             description = SlidersExampleDescription,
             sourceUrl = SlidersExampleSourceUrl
         ) {
             VerticalSliderSample()
+        },
+        Example(
+            name = "VerticalCenteredSliderSample",
+            description = SlidersExampleDescription,
+            sourceUrl = SlidersExampleSourceUrl
+        ) {
+            VerticalCenteredSliderSample()
         },
         Example(
             name = "RangeSliderSample",

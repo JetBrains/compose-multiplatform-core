@@ -42,8 +42,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxOfOrNull
-import androidx.wear.compose.foundation.hierarchicalFocus
-import androidx.wear.compose.foundation.hierarchicalFocusRequester
+import androidx.wear.compose.foundation.hierarchicalFocusGroup
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import kotlin.math.roundToInt
 import kotlinx.coroutines.coroutineScope
 
@@ -127,12 +127,12 @@ public fun PickerGroup(
                             if (pickerSelected && autoCenter) Modifier.autoCenteringTarget()
                             else Modifier
                         )
-                        .hierarchicalFocus(pickerSelected)
+                        .hierarchicalFocusGroup(pickerSelected)
                         .then(
                             // If the user provided a focus requester, we add it here, otherwise,
                             // we take care of focus using the HFC.
                             pickerData.focusRequester?.let { Modifier.focusRequester(it) }
-                                ?: Modifier.hierarchicalFocusRequester()
+                                ?: Modifier.requestFocusOnHierarchyActive()
                         ),
                 // Do not need focusable as it's already set in ScalingLazyColumn
                 readOnlyLabel = pickerData.readOnlyLabel,

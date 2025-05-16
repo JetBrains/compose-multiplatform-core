@@ -19,7 +19,6 @@
 package androidx.xr.scenecore
 
 import android.util.Log
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.SpatialEnvironment as RtSpatialEnvironment
 import androidx.xr.runtime.internal.SpatialEnvironment.SetPassthroughOpacityPreferenceResult as RtSetPassthroughOpacityPreferenceResult
@@ -51,7 +50,6 @@ import java.util.function.Consumer
  * preference that will be applied when the device enters a state where the XR background can be
  * changed.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SpatialEnvironment(private val runtime: JxrPlatformAdapter) {
 
     private val TAG = "SpatialEnvironment"

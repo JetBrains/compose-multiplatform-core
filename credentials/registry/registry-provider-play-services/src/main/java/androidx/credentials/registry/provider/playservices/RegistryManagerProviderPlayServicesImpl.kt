@@ -55,7 +55,7 @@ public class RegistryManagerProviderPlayServicesImpl(private val context: Contex
                 requestType = "",
                 protocolTypes = emptyList(),
                 id = request.id,
-                fulfillmentActionName = "",
+                fulfillmentActionName = request.intentAction,
             )
         client
             .registerCredentials(gmsRequest)

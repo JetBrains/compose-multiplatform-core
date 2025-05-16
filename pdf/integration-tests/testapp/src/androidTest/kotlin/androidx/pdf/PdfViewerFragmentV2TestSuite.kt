@@ -17,6 +17,7 @@
 package androidx.pdf
 
 import android.content.pm.ActivityInfo
+import android.graphics.PointF
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.view.InputDevice
@@ -28,8 +29,10 @@ import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.lifecycle.Lifecycle
 import androidx.pdf.FragmentUtils.scenarioLoadDocument
 import androidx.pdf.TestUtils.waitFor
+import androidx.pdf.actions.clickOnPdfPoint
 import androidx.pdf.matchers.SearchViewAssertions
 import androidx.pdf.util.Preconditions
+import androidx.pdf.view.PdfPoint
 import androidx.pdf.view.PdfView
 import androidx.pdf.view.fastscroll.FastScrollDrawer
 import androidx.pdf.view.fastscroll.FastScroller
@@ -394,7 +397,47 @@ class PdfViewerFragmentV2TestSuite {
         }
     }
 
-    // TODO(b/401229449): Add Select Api in PdfDocument integration test
+    @Test
+    fun testPdfViewerFragment_whenSelectAllClicked_allContentShouldBeSelected() {
+        // Load the document and assert loading view is displayed
+        scenarioLoadDocument(
+            scenario = scenario,
+            filename = TEST_DOCUMENT_SELECT,
+            nextState = Lifecycle.State.STARTED,
+            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+        ) {
+            onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
+        }
+
+        // Assert loading progress bar is gone and document is loaded
+        onView(withId(PdfR.id.pdfLoadingProgressBar))
+            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
+        scenario.onFragment {
+            Preconditions.checkArgument(
+                it.documentLoaded,
+                "Unable to load document due to ${it.documentError?.message}"
+            )
+        }
+
+        // The exact View position of any piece of text will vary by device, scroll position, zoom
+        // level, etc. Act on an absolute PDF coordinate that's known to contain text instead.
+        val pdfPointWithText = PdfPoint(pageNum = 0, pagePoint = PointF(297.22455F, 619.1273F))
+        onView(withId(androidx.pdf.viewer.fragment.R.id.pdfView))
+            .perform(clickOnPdfPoint(pdfPointWithText, Tap.LONG))
+        onView(ViewMatchers.withText(SELECT_ALL))
+            .inRoot(RootMatchers.isPlatformPopup())
+            .perform(click())
+
+        // Get the PdfView instance and assert selection
+        var pdfView: PdfView? = null
+        val expectedSelectionBoundsSize = 34
+        scenario.onFragment { fragment -> pdfView = fragment.getPdfViewInstance() }
+        assertNotNull(pdfView)
+        val selection = pdfView?.currentSelection
+        assertNotNull(selection)
+        assertNotNull(selection?.bounds)
+        assert(selection?.bounds?.size == expectedSelectionBoundsSize)
+    }
 
     private fun withPdfView(
         scenario: FragmentScenario<TestPdfViewerFragment>,
@@ -415,7 +458,9 @@ class PdfViewerFragmentV2TestSuite {
         private const val TEST_DOCUMENT_FILE = "sample.pdf"
         private const val TEST_PROTECTED_DOCUMENT_FILE = "sample-protected.pdf"
         private const val TEST_CORRUPTED_DOCUMENT_FILE = "corrupted.pdf"
+        private const val TEST_DOCUMENT_SELECT = "sample-select.pdf"
 
+        private const val SELECT_ALL = "Select all"
         private const val CANCEL = "Cancel"
         private const val SEARCH_QUERY = "ipsum"
         private const val KEYBOARD_CONTENT_DESC = "keyboard"

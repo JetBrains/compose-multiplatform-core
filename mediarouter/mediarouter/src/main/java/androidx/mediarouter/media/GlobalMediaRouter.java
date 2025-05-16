@@ -647,7 +647,9 @@ import java.util.Set;
                 route.getProviderInstance()
                         .onCreateDynamicGroupRouteController(
                                 route.mDescriptorId,
-                                MediaRouteProvider.RouteControllerOptions.EMPTY);
+                                new MediaRouteProvider.RouteControllerOptions.Builder()
+                                        .setClientPackageName(mApplicationContext.getPackageName())
+                                        .build());
         if (controller == null) {
             Log.w(TAG, "connectRoute: controller == null for : " + route);
             notifyRouteConnectionFailed(
@@ -1281,7 +1283,10 @@ import java.util.Set;
                     route.getProviderInstance()
                             .onCreateDynamicGroupRouteController(
                                     route.mDescriptorId,
-                                    MediaRouteProvider.RouteControllerOptions.EMPTY);
+                                    new MediaRouteProvider.RouteControllerOptions.Builder()
+                                            .setClientPackageName(
+                                                    mApplicationContext.getPackageName())
+                                            .build());
             // Select route asynchronously.
             if (dynamicGroupRouteController != null) {
                 dynamicGroupRouteController.setOnDynamicRoutesChangedListener(
@@ -1300,7 +1305,12 @@ import java.util.Set;
         }
 
         MediaRouteProvider.RouteController routeController =
-                route.getProviderInstance().onCreateRouteController(route.mDescriptorId);
+                route.getProviderInstance()
+                        .onCreateRouteController(
+                                route.mDescriptorId,
+                                new MediaRouteProvider.RouteControllerOptions.Builder()
+                                        .setClientPackageName(mApplicationContext.getPackageName())
+                                        .build());
         if (routeController != null) {
             routeController.onSelect();
         }

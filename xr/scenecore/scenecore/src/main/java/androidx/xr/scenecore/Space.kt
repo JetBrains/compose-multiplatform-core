@@ -17,14 +17,12 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.IntDef
-import androidx.annotation.RestrictTo
 
 @IntDef(Space.PARENT, Space.ACTIVITY, Space.REAL_WORLD)
 @Retention(AnnotationRetention.SOURCE)
 internal annotation class SpaceValue
 
 /** Coordinate spaces in which to apply the transformation values. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public object Space {
     /** The local coordinate space of an [Entity], relative to its parent. */
     public const val PARENT: Int = 0

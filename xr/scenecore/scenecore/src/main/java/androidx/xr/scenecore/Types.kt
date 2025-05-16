@@ -27,7 +27,6 @@ import androidx.annotation.RestrictTo
  * @param depth Depth.
  */
 @Suppress("DataClassDefinition")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public data class Dimensions(
     public val width: Float = 0f,
     public val height: Float = 0f,
@@ -45,7 +44,6 @@ public data class Dimensions(
  * @param height Integer Height.
  */
 @Suppress("DataClassDefinition")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public data class PixelDimensions(public val width: Int = 0, public val height: Int = 0) {
     override fun toString(): String {
         return super.toString() + ": w $width x h $height"
@@ -57,7 +55,6 @@ public data class PixelDimensions(public val width: Int = 0, public val height: 
  * change over the lifetime of the session but in rare cases may change due to updated camera
  * settings.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class Fov(
     public val angleLeft: Float,
     public val angleRight: Float,
@@ -99,7 +96,6 @@ public class Fov(
 }
 
 /** Type of plane based on orientation i.e. Horizontal or Vertical. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public object PlaneType {
     public const val HORIZONTAL: Int = 0
     public const val VERTICAL: Int = 1
@@ -113,7 +109,6 @@ public object PlaneType {
 internal annotation class PlaneTypeValue
 
 /** Semantic plane types. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public object PlaneSemantic {
     public const val WALL: Int = 0
     public const val FLOOR: Int = 1

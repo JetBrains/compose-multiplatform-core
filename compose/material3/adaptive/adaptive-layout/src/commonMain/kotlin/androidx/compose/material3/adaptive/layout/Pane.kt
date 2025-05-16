@@ -29,9 +29,11 @@ import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.dp
 
 /**
  * The root composable of pane contents in a [ThreePaneScaffold] that supports default motions
@@ -99,6 +101,14 @@ private object DefaultAnimatedPaneOverride : AnimatedPaneOverride {
                             enabled = animatingBounds
                         )
                         .semantics { isTraversalGroup = true }
+                        .then(
+                            if (
+                                scaffoldStateTransition.targetState[paneRole]
+                                    is PaneAdaptedValue.Levitated
+                            )
+                                Modifier.shadow(AnimatedPaneDefaults.ShadowElevation)
+                            else Modifier
+                        )
                         .then(if (animatingBounds) Modifier else Modifier.clipToBounds()),
                 enter = enterTransition,
                 exit = exitTransition
@@ -170,3 +180,7 @@ val LocalAnimatedPaneOverride: ProvidableCompositionLocal<AnimatedPaneOverride> 
     compositionLocalOf {
         DefaultAnimatedPaneOverride
     }
+
+internal object AnimatedPaneDefaults {
+    val ShadowElevation = 15.dp
+}

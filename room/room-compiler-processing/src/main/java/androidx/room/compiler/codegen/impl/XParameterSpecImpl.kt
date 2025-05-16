@@ -29,6 +29,7 @@ internal class XParameterSpecImpl(
     override val java: JavaParameterSpec,
     override val kotlin: KotlinParameterSpec,
 ) : ImplSpec<JavaParameterSpec, KotlinParameterSpec>(), XParameterSpec {
+    override fun toBuilder() = Builder(name, type, java.toBuilder(), kotlin.toBuilder())
 
     internal class Builder(
         private val name: String,

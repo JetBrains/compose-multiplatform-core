@@ -164,7 +164,7 @@ class VideoConfigUtilTest {
 
     @Test
     fun resolveFrameRates_expectedCaptureFrameRateUnspecified_videoSpecSpecified() {
-        val videoSpec = VideoSpec.builder().setFrameRate(Range(30, 30)).build()
+        val videoSpec = VideoSpec.builder().setEncodeFrameRate(30).build()
         val expectedCaptureFrameRateRange = FRAME_RATE_RANGE_UNSPECIFIED
 
         val result = VideoConfigUtil.resolveFrameRates(videoSpec, expectedCaptureFrameRateRange)
@@ -175,7 +175,7 @@ class VideoConfigUtilTest {
 
     @Test
     fun resolveFrameRates_expectedCaptureFrameRateSpecified_videoSpecSpecified() {
-        val videoSpec = VideoSpec.builder().setFrameRate(Range(30, 30)).build()
+        val videoSpec = VideoSpec.builder().setEncodeFrameRate(30).build()
         val expectedCaptureFrameRateRange = Range(24, 60)
 
         val result = VideoConfigUtil.resolveFrameRates(videoSpec, expectedCaptureFrameRateRange)

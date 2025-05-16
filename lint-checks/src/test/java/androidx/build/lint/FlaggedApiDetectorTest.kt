@@ -25,9 +25,7 @@ import com.android.tools.lint.detector.api.Issue
 class FlaggedApiDetectorTest : LintDetectorTest() {
     override fun getIssues(): List<Issue> = listOf(FlaggedApiDetector.ISSUE)
 
-    override fun getDetector(): Detector {
-        return FlaggedApiDetector()
-    }
+    override fun getDetector(): Detector = FlaggedApiDetector()
 
     override fun lint(): TestLintTask {
         return super.lint().allowMissingSdk()
@@ -136,6 +134,192 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             )
             .run()
             .expectClean()
+    }
+
+    fun testApiGating_fromFiles() {
+        lint()
+            .files(
+                javaSample("flaggedapi.FlaggedApiContainer"),
+                ktSample("flaggedapi.FlaggedUsageInOutline"),
+                Stubs.FlaggedApi,
+                Stubs.RequiresAconfigFlag,
+                Stubs.Flags,
+            )
+            .run()
+            .expect(
+                """
+                src/flaggedapi/FlaggedUsageInOutline.kt:31: Error: Class FlagFlaggedApiImpl is a flagged API and must be inside a flag check for "flaggedapi.myFlag" [AndroidXFlaggedApi]
+                        FlagFlaggedApiImpl.flaggedApi()
+                        ~~~~~~~~~~~~~~~~~~
+                src/flaggedapi/FlaggedUsageInOutline.kt:31: Error: Method flaggedApi() is a flagged API and must be inside a flag check for "flaggedapi.myFlag" [AndroidXFlaggedApi]
+                        FlagFlaggedApiImpl.flaggedApi()
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                2 errors
+                """
+                    .trimIndent()
+            )
+    }
+
+    fun testApiGating_withOutlining_isClean() {
+        lint()
+            .files(
+                java(
+                    """
+            package android.os;
+
+            import android.annotation.FlaggedApi;
+
+            public class Build {
+                @FlaggedApi("android.os.flaggedApi")
+                public static boolean flaggedApi() { return true; }
+            }
+            """
+                ),
+                java(
+                        """
+            package test.pkg;
+
+            import android.os.Build;
+            import androidx.core.flagging.Flags;
+            import androidx.annotation.RequiresAconfigFlag;
+
+            public class JavaTest {
+                void test() {
+                    if (Flags.getBooleanFlagValue("android.os", "flaggedApi")) {
+                        FlagFlaggedApiImpl.flaggedApi();
+                    }
+                }
+
+                @RequiresAconfigFlag("android.os.flaggedApi")
+                static class FlagFlaggedApiImpl {
+                    static boolean flaggedApi() {
+                        return Build.flaggedApi();
+                    }
+                }
+            }
+            """
+                    )
+                    .indented(),
+                Stubs.FlaggedApi,
+                Stubs.RequiresAconfigFlag,
+                Stubs.Flags,
+            )
+            .run()
+            .expectClean()
+    }
+
+    fun testApiGating_withOutliningNoRequires_raisesError() {
+        lint()
+            .files(
+                java(
+                    """
+            package android.os;
+
+            import android.annotation.FlaggedApi;
+
+            public class Build {
+                @FlaggedApi("android.os.flaggedApi")
+                public static boolean flaggedApi() { return true; }
+            }
+            """
+                ),
+                java(
+                        """
+            package test.pkg;
+
+            import android.os.Build;
+            import androidx.core.flagging.Flags;
+            import androidx.annotation.RequiresAconfigFlag;
+
+            public class JavaTest {
+                void test() {
+                    if (Flags.getBooleanFlagValue("android.os", "flaggedApi")) {
+                        FlagFlaggedApiImpl.flaggedApi();
+                    }
+                }
+
+                static class FlagFlaggedApiImpl {
+                    static boolean flaggedApi() {
+                        return Build.flaggedApi();
+                    }
+                }
+            }
+            """
+                    )
+                    .indented(),
+                Stubs.FlaggedApi,
+                Stubs.RequiresAconfigFlag,
+                Stubs.Flags,
+            )
+            .run()
+            .expect(
+                """
+                src/test/pkg/JavaTest.java:16: Error: Method flaggedApi() is a flagged API and must be inside a flag check for "android.os.flaggedApi" [AndroidXFlaggedApi]
+                            return Build.flaggedApi();
+                                   ~~~~~~~~~~~~~~~~~~
+                1 error
+                """
+                    .trimIndent()
+            )
+    }
+
+    fun testApiGating_withOutliningWrongRequires_raisesError() {
+        lint()
+            .files(
+                java(
+                    """
+            package android.os;
+
+            import android.annotation.FlaggedApi;
+
+            public class Build {
+                @FlaggedApi("android.os.flaggedApi")
+                public static boolean flaggedApi() { return true; }
+            }
+            """
+                ),
+                java(
+                        """
+            package test.pkg;
+
+            import android.os.Build;
+            import androidx.core.flagging.Flags;
+            import androidx.annotation.RequiresAconfigFlag;
+
+            public class JavaTest {
+                void test() {
+                    if (Flags.getBooleanFlagValue("android.os", "flaggedApi")) {
+                        FlagFlaggedApiImpl.flaggedApi();
+                    }
+                }
+
+                @RequiresAconfigFlag("android.os.otherFlaggedApi")
+                static class FlagFlaggedApiImpl {
+                    static boolean flaggedApi() {
+                        return Build.flaggedApi();
+                    }
+                }
+            }
+            """
+                    )
+                    .indented(),
+                Stubs.FlaggedApi,
+                Stubs.RequiresAconfigFlag,
+                Stubs.Flags,
+            )
+            .run()
+            .expect(
+                """
+                src/test/pkg/JavaTest.java:10: Error: Method flaggedApi() is a flagged API and must be inside a flag check for "android.os.otherFlaggedApi" [AndroidXFlaggedApi]
+                            FlagFlaggedApiImpl.flaggedApi();
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                src/test/pkg/JavaTest.java:17: Error: Method flaggedApi() is a flagged API and must be inside a flag check for "android.os.flaggedApi" [AndroidXFlaggedApi]
+                            return Build.flaggedApi();
+                                   ~~~~~~~~~~~~~~~~~~
+                2 errors
+                """
+                    .trimIndent()
+            )
     }
 
     fun testChecksAconfigFlagGating_javaIfCheck_isClean() {
@@ -718,6 +902,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 )
 
         lint()
+            .configureOption("allowlist", "test")
             .projects(project)
             .run()
             .expect(

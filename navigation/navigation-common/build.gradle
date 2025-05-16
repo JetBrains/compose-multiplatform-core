@@ -157,6 +157,7 @@ androidXMultiplatform {
             dependsOn(nativeTest)
         }
 
+        nonJvmCommonTest { dependsOn(nonAndroidTest) }
         webMain {
             dependsOn(nonAndroidMain)
         }
@@ -183,6 +184,8 @@ androidXMultiplatform {
             }
         }
     }
+
+    enableBinaryCompatibilityValidator = false
 }
 
 android {

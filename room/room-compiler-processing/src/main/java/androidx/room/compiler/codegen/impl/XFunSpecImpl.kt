@@ -30,7 +30,10 @@ internal class XFunSpecImpl(
     override val java: JavaFunSpec,
     override val kotlin: KotlinFunSpec,
 ) : ImplSpec<JavaFunSpec, KotlinFunSpec>(), XFunSpec {
+
     override val name = XName(java.name.java, kotlin.name.kotlin)
+
+    override fun toBuilder() = Builder(java.toBuilder(), kotlin.toBuilder())
 
     internal class Builder(
         val java: JavaFunSpec.Builder,

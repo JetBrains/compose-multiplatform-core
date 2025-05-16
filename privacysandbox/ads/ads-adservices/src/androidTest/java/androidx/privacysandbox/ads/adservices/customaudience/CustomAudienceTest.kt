@@ -17,6 +17,7 @@
 package androidx.privacysandbox.ads.adservices.customaudience
 
 import android.net.Uri
+import androidx.privacysandbox.ads.adservices.TestFixtures
 import androidx.privacysandbox.ads.adservices.common.AdData
 import androidx.privacysandbox.ads.adservices.common.AdFilters
 import androidx.privacysandbox.ads.adservices.common.AdSelectionSignals
@@ -34,7 +35,11 @@ import java.time.Instant
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalFeatures.Ext8OptIn::class, ExperimentalFeatures.Ext14OptIn::class)
+@OptIn(
+    ExperimentalFeatures.Ext8OptIn::class,
+    ExperimentalFeatures.Ext14OptIn::class,
+    ExperimentalFeatures.Ext16OptIn::class
+)
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 31)
@@ -73,7 +78,7 @@ class CustomAudienceTest {
                 "keyedFrequencyCapsForViewEvents=" +
                 "[KeyedFrequencyCap: adCounterKey=1, maxCount=3, interval=$interval], " +
                 "keyedFrequencyCapsForClickEvents=[], adRenderId=null], " +
-                "auctionServerRequestFlags=0, priority=0.0"
+                "auctionServerRequestFlags=0, priority=0.0, componentAds=[]"
 
         val customAudience =
             CustomAudience(
@@ -139,7 +144,7 @@ class CustomAudienceTest {
                 "keyedFrequencyCapsForViewEvents=" +
                 "[KeyedFrequencyCap: adCounterKey=1, maxCount=3, interval=$interval], " +
                 "keyedFrequencyCapsForClickEvents=[], adRenderId=null], " +
-                "auctionServerRequestFlags=$FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS, priority=$priority"
+                "auctionServerRequestFlags=$FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS, priority=$priority, componentAds=[]"
 
         val customAudience =
             CustomAudience(
@@ -170,5 +175,56 @@ class CustomAudienceTest {
 
         // Test equality.
         Truth.assertThat(customAudience == customAudienceBuilder2.build()).isTrue()
+    }
+
+    @Test
+    fun testToStringWithComponentAds() {
+        val result =
+            "CustomAudience: buyer=1234, name=abc, activationTime=$activationTime, " +
+                "expirationTime=$expirationTime, dailyUpdateUri=abc.com, " +
+                "userBiddingSignals=AdSelectionSignals: signals, " +
+                "trustedBiddingSignals=TrustedBiddingData: trustedBiddingUri=abc.com " +
+                "trustedBiddingKeys=[key1, key2], biddingLogicUri=abc.com, " +
+                "ads=[AdData: renderUri=abc.com, metadata='metadata', adCounterKeys=[1, 2, 3], " +
+                "adFilters=AdFilters: frequencyCapFilters=FrequencyCapFilters: " +
+                "keyedFrequencyCapsForWinEvents=[], " +
+                "keyedFrequencyCapsForImpressionEvents=[], " +
+                "keyedFrequencyCapsForViewEvents=" +
+                "[KeyedFrequencyCap: adCounterKey=1, maxCount=3, interval=$interval], " +
+                "keyedFrequencyCapsForClickEvents=[], adRenderId=null], " +
+                "auctionServerRequestFlags=$FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS, priority=$priority, componentAds=${TestFixtures.componentAds}"
+
+        val customAudience =
+            CustomAudience(
+                buyer,
+                name,
+                uri,
+                uri,
+                ads,
+                activationTime,
+                expirationTime,
+                userBiddingSignals,
+                trustedBiddingSignals,
+                FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS,
+                priority,
+                TestFixtures.componentAds
+            )
+        Truth.assertThat(customAudience.toString()).isEqualTo(result)
+
+        // Verify Builder.
+        val customAudienceBuilder2 =
+            CustomAudience.Builder(buyer, name, uri, uri, ads)
+                .setActivationTime(activationTime)
+                .setExpirationTime(expirationTime)
+                .setUserBiddingSignals(userBiddingSignals)
+                .setTrustedBiddingData(trustedBiddingSignals)
+                .setPriority(priority)
+                .setAuctionServerRequestFlags(FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS)
+                .setComponentAds(TestFixtures.componentAds)
+                .build()
+        Truth.assertThat(customAudienceBuilder2.toString()).isEqualTo(result)
+
+        // Test equality.
+        Truth.assertThat(customAudience == customAudienceBuilder2).isTrue()
     }
 }

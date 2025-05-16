@@ -180,6 +180,28 @@ class ThreePaneScaffoldScreenshotTest {
     }
 
     @Test
+    fun threePaneScaffold_listDetailPaneOrder_withReflowedPane() {
+        rule.setContent {
+            SampleThreePaneScaffoldStandardMode(
+                overrideScaffoldValue =
+                    ThreePaneScaffoldValue(
+                        primary = PaneAdaptedValue.Expanded,
+                        secondary = PaneAdaptedValue.Reflowed(ThreePaneScaffoldRole.Primary),
+                        tertiary = PaneAdaptedValue.Hidden,
+                    )
+            )
+        }
+
+        rule
+            .onNodeWithTag(ThreePaneScaffoldTestTag)
+            .captureToImage()
+            .assertAgainstGolden(
+                screenshotRule,
+                "threePaneScaffold_listDetailPaneOrder_withReflowedPane"
+            )
+    }
+
+    @Test
     fun threePaneScaffold_paneExpansion_fixedFirstPaneWidth() {
         rule.setContentWithSimulatedSize(simulatedWidth = 1024.dp, simulatedHeight = 800.dp) {
             val mockPaneExpansionState = PaneExpansionState()
@@ -474,14 +496,17 @@ class ThreePaneScaffoldScreenshotTest {
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-private fun SampleThreePaneScaffoldStandardMode() {
+private fun SampleThreePaneScaffoldStandardMode(
+    overrideScaffoldValue: ThreePaneScaffoldValue? = null
+) {
     val scaffoldDirective = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo())
     val scaffoldValue =
-        calculateThreePaneScaffoldValue(
-            scaffoldDirective.maxHorizontalPartitions,
-            ThreePaneScaffoldDefaults.adaptStrategies(),
-            null
-        )
+        overrideScaffoldValue
+            ?: calculateThreePaneScaffoldValue(
+                scaffoldDirective.maxHorizontalPartitions,
+                ThreePaneScaffoldDefaults.adaptStrategies(),
+                null
+            )
     SampleThreePaneScaffold(
         scaffoldDirective,
         scaffoldValue,

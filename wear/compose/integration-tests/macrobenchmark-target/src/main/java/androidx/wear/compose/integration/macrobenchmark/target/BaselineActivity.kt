@@ -64,12 +64,12 @@ import androidx.wear.compose.foundation.basicCurvedText
 import androidx.wear.compose.foundation.expandableButton
 import androidx.wear.compose.foundation.expandableItem
 import androidx.wear.compose.foundation.expandableItems
-import androidx.wear.compose.foundation.hierarchicalFocus
-import androidx.wear.compose.foundation.hierarchicalFocusRequester
+import androidx.wear.compose.foundation.hierarchicalFocusGroup
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.padding
 import androidx.wear.compose.foundation.rememberExpandableState
 import androidx.wear.compose.foundation.rememberRevealState
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.material.AppCard
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.Card
@@ -483,8 +483,8 @@ fun FocusCoordinator() {
                         Modifier.weight(1f)
                             .clickable { selected = ix }
                             .onFocusChanged { focused = it.isFocused }
-                            .hierarchicalFocus(selected == ix)
-                            .hierarchicalFocusRequester()
+                            .hierarchicalFocusGroup(selected == ix)
+                            .requestFocusOnHierarchyActive()
                             .focusable()
                             .then(
                                 if (focused) {
@@ -631,6 +631,7 @@ fun Stepper() {
     }
 }
 
+@Suppress("DEPRECATION")
 @OptIn(ExperimentalWearFoundationApi::class)
 @Composable
 fun SwipeToReveal() {

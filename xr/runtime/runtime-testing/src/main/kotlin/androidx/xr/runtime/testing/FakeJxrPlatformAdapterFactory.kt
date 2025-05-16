@@ -17,12 +17,10 @@
 package androidx.xr.runtime.testing
 
 import android.app.Activity
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.JxrPlatformAdapterFactory
 
 /** Factory for creating test-only instances of [JxrPlatformAdapter]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeJxrPlatformAdapterFactory() : JxrPlatformAdapterFactory {
     override val requirements: Set<Feature> = emptySet()
 

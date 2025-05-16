@@ -116,6 +116,12 @@ package androidx.compose.foundation.layout {
     method @androidx.compose.runtime.Stable public androidx.compose.ui.Modifier weight(androidx.compose.ui.Modifier, @FloatRange(from=0.0, fromInclusive=false) float weight, optional boolean fill);
   }
 
+  @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public final class ComposeFoundationLayoutFlags {
+    property public boolean isWindowInsetsDefaultPassThroughEnabled;
+    field public static final androidx.compose.foundation.layout.ComposeFoundationLayoutFlags INSTANCE;
+    field public static boolean isWindowInsetsDefaultPassThroughEnabled;
+  }
+
   @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public final class ContextualFlowColumnOverflow extends androidx.compose.foundation.layout.FlowLayoutOverflow {
     field @Deprecated public static final androidx.compose.foundation.layout.ContextualFlowColumnOverflow.Companion Companion;
   }

@@ -60,13 +60,13 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastSumBy
 import androidx.compose.ui.util.lerp
-import androidx.wear.compose.foundation.hierarchicalFocusRequester
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.foundation.lazy.inverseLerp
 import androidx.wear.compose.foundation.pager.HorizontalPager
 import androidx.wear.compose.foundation.pager.PagerState
 import androidx.wear.compose.foundation.pager.VerticalPager
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.math.sign
@@ -127,8 +127,8 @@ import kotlinx.coroutines.launch
  * @param behavior Specified [RotaryScrollableBehavior] for rotary handling with snap or fling.
  * @param focusRequester Used to request the focus for rotary input. Each composable with this
  *   modifier should have a separate focusRequester, and only one of them at a time can be active.
- *   We recommend using [hierarchicalFocusRequester] and passing this focusRequester to it to handle
- *   requesting focus, as this will guarantee the proper behavior.
+ *   We recommend using [requestFocusOnHierarchyActive] and passing this focusRequester to it to
+ *   handle requesting focus, as this will guarantee the proper behavior.
  * @param reverseDirection Reverses the direction of the rotary scroll. This direction should be
  *   aligned with the general touch scroll direction - and should be reversed if, for example, it
  *   was reversed in `.verticalScroll` or `.horizontalScroll` modifiers. If used with a
@@ -182,8 +182,8 @@ public fun Modifier.rotaryScrollable(
  * @param behavior Specified [RotaryScrollableBehavior] for rotary handling with snap or fling.
  * @param focusRequester Used to request the focus for rotary input. Each composable with this
  *   modifier should have a separate focusRequester, and only one of them at a time can be active.
- *   We recommend using [hierarchicalFocusRequester] and passing this focusRequester to it to handle
- *   requesting focus, as this will guarantee the proper behavior.
+ *   We recommend using [requestFocusOnHierarchyActive] and passing this focusRequester to it to
+ *   handle requesting focus, as this will guarantee the proper behavior.
  * @param reverseDirection Reverse the direction of scrolling if required for consistency with the
  *   scrollable state passed via [behavior].
  */

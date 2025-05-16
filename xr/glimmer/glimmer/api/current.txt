@@ -1,0 +1,77 @@
+// Signature format: 4.0
+package androidx.xr.glimmer {
+
+  @androidx.compose.runtime.Immutable public final class Colors {
+    ctor public Colors();
+    ctor public Colors(optional long primary, optional long onPrimary, optional long secondary, optional long onSecondary, optional long positive, optional long onPositive, optional long negative, optional long onNegative, optional long surface, optional long onSurface, optional long surfaceLow, optional long outline, optional long outlineVariant);
+    method public androidx.xr.glimmer.Colors copy(optional long primary, optional long onPrimary, optional long secondary, optional long onSecondary, optional long positive, optional long onPositive, optional long negative, optional long onNegative, optional long surface, optional long onSurface, optional long surfaceLow, optional long outline, optional long outlineVariant);
+    method public long getNegative();
+    method public long getOnNegative();
+    method public long getOnPositive();
+    method public long getOnPrimary();
+    method public long getOnSecondary();
+    method public long getOnSurface();
+    method public long getOutline();
+    method public long getOutlineVariant();
+    method public long getPositive();
+    method public long getPrimary();
+    method public long getSecondary();
+    method public long getSurface();
+    method public long getSurfaceLow();
+    property public long negative;
+    property public long onNegative;
+    property public long onPositive;
+    property public long onPrimary;
+    property public long onSecondary;
+    property public long onSurface;
+    property public long outline;
+    property public long outlineVariant;
+    property public long positive;
+    property public long primary;
+    property public long secondary;
+    property public long surface;
+    property public long surfaceLow;
+  }
+
+  @androidx.compose.runtime.Immutable public final class GlimmerTheme {
+    ctor public GlimmerTheme();
+    ctor public GlimmerTheme(optional androidx.xr.glimmer.Colors colors, optional androidx.xr.glimmer.Typography typography);
+    method public androidx.xr.glimmer.Colors getColors();
+    method public androidx.xr.glimmer.Typography getTypography();
+    property public androidx.xr.glimmer.Colors colors;
+    property public androidx.xr.glimmer.Typography typography;
+    field public static final androidx.xr.glimmer.GlimmerTheme.Companion Companion;
+  }
+
+  public static final class GlimmerTheme.Companion {
+    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.xr.glimmer.Colors getColors();
+    method public androidx.compose.runtime.CompositionLocal<androidx.xr.glimmer.GlimmerTheme> getLocalGlimmerTheme();
+    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.xr.glimmer.Typography getTypography();
+    property public androidx.compose.runtime.CompositionLocal<androidx.xr.glimmer.GlimmerTheme> LocalGlimmerTheme;
+    property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.xr.glimmer.Colors colors;
+    property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.xr.glimmer.Typography typography;
+  }
+
+  public final class GlimmerThemeKt {
+    method @androidx.compose.runtime.Composable public static void GlimmerTheme(optional androidx.xr.glimmer.Colors colors, optional androidx.xr.glimmer.Typography typography, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+  }
+
+  @androidx.compose.runtime.Immutable public final class Typography {
+    ctor public Typography(optional androidx.compose.ui.text.font.FontFamily? defaultFontFamily, optional androidx.compose.ui.text.TextStyle titleLarge, optional androidx.compose.ui.text.TextStyle titleMedium, optional androidx.compose.ui.text.TextStyle titleSmall, optional androidx.compose.ui.text.TextStyle bodyLarge, optional androidx.compose.ui.text.TextStyle bodyMedium, optional androidx.compose.ui.text.TextStyle bodySmall);
+    method public androidx.xr.glimmer.Typography copy(optional androidx.compose.ui.text.TextStyle titleLarge, optional androidx.compose.ui.text.TextStyle titleMedium, optional androidx.compose.ui.text.TextStyle titleSmall, optional androidx.compose.ui.text.TextStyle bodyLarge, optional androidx.compose.ui.text.TextStyle bodyMedium, optional androidx.compose.ui.text.TextStyle bodySmall);
+    method public androidx.compose.ui.text.TextStyle getBodyLarge();
+    method public androidx.compose.ui.text.TextStyle getBodyMedium();
+    method public androidx.compose.ui.text.TextStyle getBodySmall();
+    method public androidx.compose.ui.text.TextStyle getTitleLarge();
+    method public androidx.compose.ui.text.TextStyle getTitleMedium();
+    method public androidx.compose.ui.text.TextStyle getTitleSmall();
+    property public androidx.compose.ui.text.TextStyle bodyLarge;
+    property public androidx.compose.ui.text.TextStyle bodyMedium;
+    property public androidx.compose.ui.text.TextStyle bodySmall;
+    property public androidx.compose.ui.text.TextStyle titleLarge;
+    property public androidx.compose.ui.text.TextStyle titleMedium;
+    property public androidx.compose.ui.text.TextStyle titleSmall;
+  }
+
+}
+

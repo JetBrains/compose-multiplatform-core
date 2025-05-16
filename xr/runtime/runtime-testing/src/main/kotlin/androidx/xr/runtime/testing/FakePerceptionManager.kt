@@ -16,7 +16,6 @@
 
 package androidx.xr.runtime.testing
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Anchor
 import androidx.xr.runtime.internal.AnchorInvalidUuidException
 import androidx.xr.runtime.internal.Hand
@@ -28,7 +27,6 @@ import androidx.xr.runtime.math.Ray
 import java.util.UUID
 
 /** Test-only implementation of [PerceptionManager] used to validate state transitions. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakePerceptionManager : PerceptionManager, AnchorHolder {
 
     public val anchors: MutableList<Anchor> = mutableListOf<Anchor>()

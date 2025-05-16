@@ -17,6 +17,7 @@
 package androidx.biometric.utils;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Build;
 
 import androidx.annotation.RestrictTo;
@@ -33,6 +34,16 @@ import org.jspecify.annotations.NonNull;
 public class DeviceUtils {
     // Prevent instantiation.
     private DeviceUtils() {
+    }
+
+
+    /**
+     * Returns whether the device is a Wearable.
+     * @param context The application or activity context.
+     */
+    public static boolean isWearOS(@NonNull Context context) {
+        PackageManager pm = context.getPackageManager();
+        return pm.hasSystemFeature(PackageManager.FEATURE_WATCH);
     }
 
     /**

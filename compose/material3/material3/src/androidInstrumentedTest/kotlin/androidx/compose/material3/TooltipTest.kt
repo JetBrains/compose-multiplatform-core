@@ -29,6 +29,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsMatcher
@@ -524,9 +525,10 @@ class TooltipTest {
                 tooltip = {
                     PlainTooltip(
                         modifier =
-                            Modifier.drawCaret {
-                                it?.let { anchorBounds = it.boundsInWindow() }
-                                onDrawBehind {}
+                            Modifier.layout { measureables, constraints ->
+                                obtainAnchorBounds()?.let { anchorBounds = it.boundsInWindow() }
+                                val placeable = measureables.measure(constraints)
+                                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
                             }
                     ) {}
                 }
@@ -566,11 +568,12 @@ class TooltipTest {
                 positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
                 state = rememberTooltipState(initialIsVisible = true, isPersistent = true),
                 tooltip = {
-                    RichTooltip(
+                    PlainTooltip(
                         modifier =
-                            Modifier.drawCaret {
-                                it?.let { anchorBounds = it.boundsInWindow() }
-                                onDrawBehind {}
+                            Modifier.layout { measureables, constraints ->
+                                obtainAnchorBounds()?.let { anchorBounds = it.boundsInWindow() }
+                                val placeable = measureables.measure(constraints)
+                                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
                             }
                     ) {}
                 }

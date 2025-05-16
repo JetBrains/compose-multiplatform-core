@@ -21,7 +21,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -63,18 +62,6 @@ public sealed interface TransformingLazyColumnItemScope {
         heightProvider:
             (measuredHeight: Int, scrollProgress: TransformingLazyColumnItemScrollProgress) -> Int
     ): Modifier
-
-    /**
-     * Preserves the appearance of some content within an item, by preventing implicit access to the
-     * [TransformingLazyColumnItemScope]. Explicit use of [LocalTransformingLazyColumnItemScope] can
-     * still apply transformations to the item.
-     *
-     * @sample androidx.wear.compose.foundation.samples.TransformingLazyColumnImplicitSample
-     */
-    @Composable
-    public fun TransformExclusion(content: @Composable TransformingLazyColumnItemScope.() -> Unit) {
-        CompositionLocalProvider(LocalTransformingLazyColumnItemScope provides null) { content() }
-    }
 
     /**
      * This modifier animates item appearance (fade in), disappearance (fade out) and placement

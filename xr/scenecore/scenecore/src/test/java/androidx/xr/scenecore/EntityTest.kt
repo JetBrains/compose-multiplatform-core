@@ -23,7 +23,7 @@ import android.graphics.Rect
 import android.view.View
 import android.widget.TextView
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.PlaneTrackingMode
+import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ActivityPanelEntity as RtActivityPanelEntity
 import androidx.xr.runtime.internal.ActivityPose as RtActivityPose

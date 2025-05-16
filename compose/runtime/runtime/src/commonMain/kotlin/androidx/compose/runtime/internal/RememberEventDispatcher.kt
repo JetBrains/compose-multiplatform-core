@@ -232,6 +232,13 @@ internal class RememberEventDispatcher() : RememberManager {
         }
     }
 
+    fun dispatchOnDeactivateIfNecessary(instance: ComposeNodeLifecycleCallback) {
+        val removed = leaving.remove(instance)
+        if (removed) {
+            instance.onDeactivate()
+        }
+    }
+
     private fun dispatchRememberList(list: MutableVector<RememberObserverHolder>) {
         val abandoning = abandoning ?: return
         list.forEach { instance ->

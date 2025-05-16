@@ -36,8 +36,14 @@ import com.squareup.kotlinpoet.javapoet.JTypeName
 import com.squareup.kotlinpoet.javapoet.JTypeVariableName
 import javax.lang.model.element.Modifier
 
-internal class JavaFunSpec(override val actual: JFunSpec) : JavaSpec<JFunSpec>(), XFunSpec {
+internal class JavaFunSpec(
+    private val addJavaNullabilityAnnotation: Boolean,
+    override val actual: JFunSpec
+) : JavaSpec<JFunSpec>(), XFunSpec {
+
     override val name = XName.of(actual.name)
+
+    override fun toBuilder() = Builder(addJavaNullabilityAnnotation, actual.toBuilder())
 
     override fun toString() = actual.toString()
 
@@ -103,7 +109,7 @@ internal class JavaFunSpec(override val actual: JFunSpec) : JavaSpec<JFunSpec>()
             actual.returns(typeName.java)
         }
 
-        override fun build() = JavaFunSpec(actual.build())
+        override fun build() = JavaFunSpec(addJavaNullabilityAnnotation, actual.build())
     }
 }
 

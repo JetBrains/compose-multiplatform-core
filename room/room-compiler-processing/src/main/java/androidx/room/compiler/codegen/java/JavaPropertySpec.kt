@@ -31,6 +31,7 @@ internal class JavaPropertySpec(
     override val type: XTypeName,
     override val actual: JPropertySpec
 ) : JavaSpec<JPropertySpec>(), XPropertySpec {
+    override fun toBuilder() = Builder(name, type, actual.toBuilder())
 
     internal class Builder(
         private val name: String,

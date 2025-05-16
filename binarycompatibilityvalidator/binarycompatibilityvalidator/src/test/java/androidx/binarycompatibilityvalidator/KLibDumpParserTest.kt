@@ -187,6 +187,36 @@ class KlibDumpParserTest {
     }
 
     @Test
+    fun parseAFunctionWithSingleContextValue() {
+        val input = "final fun context(kotlin/Int) my.lib/bar()"
+        val parsed = KlibDumpParser(input).parseFunction()
+        assertThat(parsed).isNotNull()
+
+        assertThat(parsed.contextReceiverParametersCount).isEqualTo(1)
+        assertThat(parsed.valueParameters.first().type.className.toString()).isEqualTo("kotlin/Int")
+    }
+
+    @Test
+    fun parseAFunctionWithMultipleContextValuesAndAReceiver() {
+        val input =
+            "final fun context(kotlin/Int, kotlin/String) (kotlin/Int).my.lib/bar(kotlin/Double)"
+        val parsed = KlibDumpParser(input).parseFunction()
+        assertThat(parsed).isNotNull()
+
+        assertThat(parsed.contextReceiverParametersCount).isEqualTo(2)
+        assertThat(parsed.hasExtensionReceiverParameter).isTrue()
+        assertThat(parsed.valueParameters.map { it.type.className.toString() })
+            .isEqualTo(
+                listOf(
+                    "kotlin/Int",
+                    "kotlin/String",
+                    "kotlin/Int",
+                    "kotlin/Double",
+                )
+            )
+    }
+
+    @Test
     fun parseAGetterFunction() {
         val input = "final inline fun <get-indices>(): kotlin.ranges/IntRange"
         val parentQName =

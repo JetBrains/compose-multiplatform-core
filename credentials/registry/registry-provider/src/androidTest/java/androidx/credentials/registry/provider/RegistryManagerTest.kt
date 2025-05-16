@@ -43,7 +43,14 @@ class RegistryManagerTest {
         runBlocking<Unit> {
             assertThrows<RegisterCredentialsConfigurationException> {
                 registryManager.registerCredentials(
-                    object : RegisterCredentialsRequest("type", "id", ByteArray(4), ByteArray(8)) {}
+                    object :
+                        RegisterCredentialsRequest(
+                            "type",
+                            "id",
+                            ByteArray(4),
+                            ByteArray(8),
+                            "intentAction"
+                        ) {}
                 )
             }
         }

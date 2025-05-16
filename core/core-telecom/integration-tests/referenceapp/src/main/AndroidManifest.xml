@@ -27,14 +27,27 @@
     <!-- required permissions in order to post call-style notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- need this permission to run any foreground service on Android 9 (API 28) and above -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+
     <application
         android:name="androidx.core.telecom.reference.VoipApplication"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         tools:targetApi="34">
+        <receiver
+            android:name="androidx.core.telecom.reference.IncomingCallReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="androidx.core.telecom.reference.NEW_INCOMING_CALL" />
+            </intent-filter>
+        </receiver>
 
         <service
-            android:name=".service.TelecomVoipService"
+            android:name="androidx.core.telecom.reference.service.TelecomVoipService"
             android:enabled="true"
             android:exported="true"
             android:foregroundServiceType="microphone|phoneCall" >

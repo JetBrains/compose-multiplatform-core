@@ -16,9 +16,13 @@
 
 package androidx.wear.watchface.push.tests
 
+import android.app.Instrumentation
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.pm.PackageManager.GET_META_DATA
 import android.os.ParcelFileDescriptor
+import androidx.test.filters.AbstractFilter
+import androidx.test.filters.CustomFilter
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.wear.watchface.push.*
 import java.io.FileOutputStream
@@ -27,6 +31,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.junit.runner.Description
 
 internal const val SAMPLE_WATCHFACE =
     "androidx.wear.watchface.push.test.watchfacepush.androidxsample"
@@ -116,5 +121,22 @@ internal fun setup(context: Context, sampleWatchFaces: List<String>) {
                 }
             }
         }
+    }
+}
+
+@Retention(AnnotationRetention.RUNTIME)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
+@CustomFilter(filterClass = RequiresWatchFilter::class)
+internal annotation class RequiresWatch
+
+internal class RequiresWatchFilter(
+    private val instrumentation: Instrumentation = InstrumentationRegistry.getInstrumentation()
+) : AbstractFilter() {
+    override fun evaluateTest(description: Description?): Boolean {
+        return instrumentation.context.packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH)
+    }
+
+    override fun describe(): String? {
+        return "Skips watch-only tests on non-watch devices."
     }
 }

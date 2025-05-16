@@ -364,8 +364,7 @@ internal class BasicTextFieldTest {
                 modifier = Modifier.fillMaxSize().testTag(Tag).focusRequester(focusRequester)
             )
         }
-        rule.runOnUiThread { focusRequester.requestFocus() }
-        rule.waitForIdle()
+        rule.runOnIdle { focusRequester.requestFocus() }
         rule.onNodeWithTag(Tag).assertIsFocused()
 
         inputMethodInterceptor.assertNoSessionActive()
@@ -382,8 +381,7 @@ internal class BasicTextFieldTest {
                 modifier = Modifier.fillMaxSize().testTag(Tag).focusRequester(focusRequester)
             )
         }
-        rule.runOnUiThread { focusRequester.requestFocus() }
-        rule.waitForIdle()
+        rule.runOnIdle { focusRequester.requestFocus() }
         rule.onNodeWithTag(Tag).assertIsFocused()
         rule.onNodeWithTag(Tag).performClick()
 
@@ -1536,7 +1534,7 @@ internal class BasicTextFieldTest {
         }
 
         // setTextFieldTestContent puts a focusable box before the content that's set here
-        focusManager.moveFocus(FocusDirection.Previous)
+        rule.runOnUiThread { focusManager.moveFocus(FocusDirection.Previous) }
 
         rule.runOnIdle {
             assertThat(state.text.toString()).isEqualTo("Hello")

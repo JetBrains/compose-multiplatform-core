@@ -1088,7 +1088,16 @@ public class BiometricFragment extends Fragment {
         // Devices from some vendors should use KeyguardManager for authentication if both biometric
         // and credential authenticator types are allowed (on API 29).
         final Context context = getContext();
-        if (context != null && Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+        if (context == null) {
+            return false;
+        }
+
+        if (DeviceUtils.isWearOS(context)) {
+            // Always use KeyguardManager API for wear OS.
+            return true;
+        }
+
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
 
             @BiometricManager.AuthenticatorTypes int allowedAuthenticators =
                     mViewModel.getAllowedAuthenticators();

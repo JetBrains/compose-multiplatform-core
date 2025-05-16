@@ -91,6 +91,9 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
+import androidx.camera.core.featurecombination.ExperimentalFeatureCombination;
+import androidx.camera.core.featurecombination.Feature;
+import androidx.camera.core.featurecombination.impl.feature.ImageFormatFeature;
 import androidx.camera.core.imagecapture.ImageCaptureControl;
 import androidx.camera.core.imagecapture.ImagePipeline;
 import androidx.camera.core.imagecapture.PostviewSettings;
@@ -144,6 +147,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -507,7 +511,52 @@ public final class ImageCapture extends UseCase {
                 }
             }
         }
+
+        applyFeatureCombinationToConfig(builder);
+
         return builder.getUseCaseConfig();
+    }
+
+    /**
+     * Applies {@link #mFeatureCombination} to the config for ImageCapture specific changes.
+     *
+     * <p> When the feature combination mode is enabled (i.e. not null), the default for all config
+     * options should use the same default as of Feature Combination API.
+     *
+     * <p> Note that feature combination mode may be enabled with zero or single feature (e.g.
+     * when the preferred features user set are not supported). In such case, it is still better to
+     * configure the camera with feature combination mode and its defaults since
+     * <ul>
+     *   <li>this is more consistent with other feature combination results</li>
+     *   <li>may give more accurate query result</li>
+     *   <li>may also support additional resolution combinations</li>
+     * </ul>
+     *
+     * @see #setFeatureCombination
+     */
+    @OptIn(markerClass = ExperimentalFeatureCombination.class)
+    private void applyFeatureCombinationToConfig(UseCaseConfig.@NonNull Builder<?, ?, ?> builder) {
+        Set<@NonNull Feature> featureCombination = getFeatureCombination();
+
+        if (featureCombination != null) {
+            @OutputFormat int imageCaptureOutputFormat =
+                    ImageFormatFeature.DEFAULT_IMAGE_CAPTURE_OUTPUT_FORMAT;
+
+            for (Feature feature : featureCombination) {
+                if (feature instanceof ImageFormatFeature) {
+                    imageCaptureOutputFormat =
+                            ((ImageFormatFeature) feature).getImageCaptureOutputFormat();
+                }
+            }
+
+            int inputFormat = ImageFormat.JPEG;
+            if (imageCaptureOutputFormat == ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR) {
+                inputFormat = ImageFormat.JPEG_R;
+            }
+
+            builder.getMutableConfig().insertOption(OPTION_INPUT_FORMAT, inputFormat);
+            builder.getMutableConfig().insertOption(OPTION_OUTPUT_FORMAT, imageCaptureOutputFormat);
+        }
     }
 
     private static boolean isImageFormatSupported(List<Pair<Integer, Size[]>> supportedSizes,
@@ -1377,7 +1426,7 @@ public final class ImageCapture extends UseCase {
                         + supportedOutputFormats);
 
         PostviewSettings postviewSettings = isPostviewEnabled() ? calculatePostviewSettings(
-                resolution) : null;
+                config.getInputFormat(), resolution) : null;
 
         CameraCharacteristics cameraCharacteristics = null;
         if (getCamera() != null) {
@@ -1444,7 +1493,8 @@ public final class ImageCapture extends UseCase {
      * @return the settings for the postview, or <code>null</code> if no supported format or
      * output size can be found.
      */
-    private @Nullable PostviewSettings calculatePostviewSettings(@NonNull Size targetResolution) {
+    private @Nullable PostviewSettings calculatePostviewSettings(int stillImageFormat,
+            @NonNull Size targetResolution) {
         SessionProcessor sessionProcessor = getSessionProcessor();
 
         // No session processor can be found which is necessary for supporting postview
@@ -1456,13 +1506,23 @@ public final class ImageCapture extends UseCase {
                 targetResolution);
 
         int format = ImageFormat.UNKNOWN;
+
+        List<Integer> supportedPostviewFormats = new ArrayList<>();
+
         // Prefer YUV because it takes less time to decode to bitmap.
         if (isPostviewImageFormatSupported(formatSizesMap, ImageFormat.YUV_420_888)) {
-            format = ImageFormat.YUV_420_888;
-        } else if (isPostviewImageFormatSupported(formatSizesMap, ImageFormat.JPEG)) {
-            format = ImageFormat.JPEG;
-        } else if (isPostviewImageFormatSupported(formatSizesMap, ImageFormat.JPEG_R)) {
-            format = ImageFormat.JPEG_R;
+            supportedPostviewFormats.add(ImageFormat.YUV_420_888);
+        }
+        if (isPostviewImageFormatSupported(formatSizesMap, ImageFormat.JPEG)) {
+            supportedPostviewFormats.add(ImageFormat.JPEG);
+        }
+        if (isPostviewImageFormatSupported(formatSizesMap, ImageFormat.JPEG_R)) {
+            supportedPostviewFormats.add(ImageFormat.JPEG_R);
+        }
+
+        if (!supportedPostviewFormats.isEmpty()) {
+            format = getCamera().getExtendedConfig().getPostviewFormatSelector().select(
+                    stillImageFormat, supportedPostviewFormats);
         }
 
         // No supported postview image format can be found

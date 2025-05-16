@@ -16,11 +16,10 @@
 
 package androidx.compose.material3.adaptive
 
-import android.content.res.Configuration
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
@@ -58,13 +57,9 @@ class CurrentWindowAdaptiveInfoTest {
         val mockWindowSize = mutableStateOf(MockWindowSize1)
 
         composeRule.setContent {
-            val testConfiguration = Configuration(LocalConfiguration.current)
-            testConfiguration.screenWidthDp = mockWindowSize.value.width
-            testConfiguration.screenHeightDp = mockWindowSize.value.height
-            windowMetricsCalculatorRule.overrideWindowSize(mockWindowSize)
             CompositionLocalProvider(
                 LocalDensity provides MockDensity,
-                LocalConfiguration provides testConfiguration
+                LocalWindowInfo provides MockWindowInfo(mockWindowSize)
             ) {
                 actualAdaptiveInfo = currentWindowAdaptiveInfo()
             }

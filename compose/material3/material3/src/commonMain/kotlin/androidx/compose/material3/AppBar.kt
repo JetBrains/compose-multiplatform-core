@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.BottomAppBarState.Companion.Saver
+import androidx.compose.material3.DefaultSingleRowTopAppBarOverride.SingleRowTopAppBar
 import androidx.compose.material3.DefaultTwoRowsTopAppBarOverride.TwoRowsTopAppBar
 import androidx.compose.material3.TopAppBarState.Companion.Saver
 import androidx.compose.material3.internal.FloatProducer
@@ -129,8 +130,14 @@ import kotlin.math.roundToInt
  * A simple top app bar looks like:
  *
  * @sample androidx.compose.material3.samples.SimpleTopAppBar A top app bar that uses a
+ *
+ * A simple sample with an [AppBarRow], that varies the number of actions shown.
+ *
+ * @sample androidx.compose.material3.samples.SimpleTopAppBarWithAdaptiveActions
+ *
  *   [scrollBehavior] to customize its nested scrolling behavior when working in conjunction with a
  *   scrolling content looks like:
+ *
  * @sample androidx.compose.material3.samples.PinnedTopAppBar
  * @sample androidx.compose.material3.samples.EnterAlwaysTopAppBar
  * @param title the title to be displayed in the top app bar
@@ -1308,6 +1315,7 @@ fun BottomAppBar(
  * customize its nested scrolling behavior when working in conjunction with a scrolling content
  * looks like:
  *
+ * @sample androidx.compose.material3.samples.BottomAppBarWithOverflow
  * @sample androidx.compose.material3.samples.ExitAlwaysBottomAppBarSpacedAround
  * @sample androidx.compose.material3.samples.ExitAlwaysBottomAppBarSpacedBetween
  * @sample androidx.compose.material3.samples.ExitAlwaysBottomAppBarSpacedEvenly

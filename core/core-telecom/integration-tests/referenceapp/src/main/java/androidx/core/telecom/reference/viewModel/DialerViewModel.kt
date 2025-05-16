@@ -94,8 +94,6 @@ class DialerViewModel(
         callRepository.addOutgoingCall(
             CallAttributesCompat(
                 _uiState.value.displayName,
-                // Assumes loadPhoneNumberPrefix function exists elsewhere to get the appropriate
-                // prefix.
                 Uri.parse(loadPhoneNumberPrefix(context) + _uiState.value.phoneNumber),
                 CallAttributesCompat.DIRECTION_OUTGOING,
                 callType = getCallType(),

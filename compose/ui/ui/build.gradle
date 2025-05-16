@@ -73,7 +73,10 @@ androidXMultiplatform {
                 api(project(":compose:ui:ui-text"))
                 api(project(":compose:ui:ui-unit"))
                 api(project(":compose:ui:ui-util"))
+
                 api(project(":lifecycle:lifecycle-runtime-compose"))
+                api(project(":savedstate:savedstate-compose"))
+
                 implementation(project(":lifecycle:lifecycle-viewmodel"))
             }
         }

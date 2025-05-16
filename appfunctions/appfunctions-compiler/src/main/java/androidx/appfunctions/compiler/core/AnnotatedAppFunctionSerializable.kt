@@ -17,6 +17,7 @@
 package androidx.appfunctions.compiler.core
 
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_LIST
+import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_SINGULAR
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_SINGULAR
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableAnnotation
@@ -38,8 +39,8 @@ import com.squareup.kotlinpoet.TypeName
 open class AnnotatedAppFunctionSerializable(
     private val appFunctionSerializableClass: KSClassDeclaration,
 ) {
-    /** The qualified name of the class being annotated with AppFunctionSerializable. */
-    open val qualifiedName: String by lazy { appFunctionSerializableClass.ensureQualifiedName() }
+    /** The JVM qualified name of the class being annotated with AppFunctionSerializable. */
+    open val jvmQualifiedName: String by lazy { appFunctionSerializableClass.getJvmQualifiedName() }
 
     /** The super type of the class being annotated with AppFunctionSerializable */
     val superTypes: Sequence<KSTypeReference> by lazy { appFunctionSerializableClass.superTypes }
@@ -61,12 +62,7 @@ open class AnnotatedAppFunctionSerializable(
     }
 
     /** The original [ClassName] of the AppFunctionSerializable. */
-    val originalClassName: ClassName by lazy {
-        ClassName(
-            appFunctionSerializableClass.packageName.asString(),
-            appFunctionSerializableClass.simpleName.asString()
-        )
-    }
+    val originalClassName: ClassName by lazy { appFunctionSerializableClass.toClassName() }
 
     /** The [TypeName] of the AppFunctionSerializable. */
     val typeName: TypeName by lazy {
@@ -239,7 +235,10 @@ open class AnnotatedAppFunctionSerializable(
         return getProperties()
             .filterNot { it.isGenericType }
             .map { it -> AppFunctionTypeReference(it.type) }
-            .filter { afType -> afType.isOfTypeCategory(SERIALIZABLE_PROXY_SINGULAR) }
+            .filter { afType ->
+                afType.isOfTypeCategory(SERIALIZABLE_PROXY_SINGULAR) ||
+                    afType.isOfTypeCategory(SERIALIZABLE_PROXY_LIST)
+            }
             .toSet()
     }
 

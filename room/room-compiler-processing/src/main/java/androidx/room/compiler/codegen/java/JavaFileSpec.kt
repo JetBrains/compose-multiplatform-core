@@ -30,6 +30,8 @@ internal class JavaFileSpec(override val actual: JFileSpec) : JavaSpec<JFileSpec
         generator.write(actual, mode)
     }
 
+    override fun toBuilder() = Builder(actual.toBuilder())
+
     internal class Builder(internal val actual: JFileSpecBuilder) : XFileSpec.Builder {
 
         override fun addFileComment(code: XCodeBlock) = apply {

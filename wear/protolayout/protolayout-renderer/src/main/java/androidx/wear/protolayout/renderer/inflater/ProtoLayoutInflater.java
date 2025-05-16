@@ -922,10 +922,16 @@ public final class ProtoLayoutInflater {
         return round(dp * mUiContext.getResources().getDisplayMetrics().density);
     }
 
+    private int dpToPx(DpProp dpProp) {
+        return dpToPx(dpProp.getValue());
+    }
+
+    /** Returns the given dp value, but clamped to [0, +inf]. */
     private int safeDpToPx(float dp) {
         return max(0, dpToPx(dp));
     }
 
+    /** Returns the given dp value, but clamped to [0, +inf]. */
     private int safeDpToPx(DpProp dpProp) {
         return safeDpToPx(dpProp.getValue());
     }
@@ -1609,16 +1615,16 @@ public final class ProtoLayoutInflater {
     private void applyPadding(View view, Padding padding) {
         if (padding.getRtlAware().getValue()) {
             view.setPaddingRelative(
-                    safeDpToPx(padding.getStart()),
-                    safeDpToPx(padding.getTop()),
-                    safeDpToPx(padding.getEnd()),
-                    safeDpToPx(padding.getBottom()));
+                    dpToPx(padding.getStart()),
+                    dpToPx(padding.getTop()),
+                    dpToPx(padding.getEnd()),
+                    dpToPx(padding.getBottom()));
         } else {
             view.setPadding(
-                    safeDpToPx(padding.getStart()),
-                    safeDpToPx(padding.getTop()),
-                    safeDpToPx(padding.getEnd()),
-                    safeDpToPx(padding.getBottom()));
+                    dpToPx(padding.getStart()),
+                    dpToPx(padding.getTop()),
+                    dpToPx(padding.getEnd()),
+                    dpToPx(padding.getBottom()));
         }
     }
 
@@ -4867,6 +4873,9 @@ public final class ProtoLayoutInflater {
             String posId,
             Optional<ProtoLayoutDynamicDataPipeline.PipelineMaker> pipelineMaker) {
         view.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        if (semantics.getHeading()) {
+            ViewCompat.setAccessibilityHeading(view, semantics.getHeading());
+        }
         ViewCompat.setAccessibilityDelegate(
                 view,
                 new AccessibilityDelegateCompat() {

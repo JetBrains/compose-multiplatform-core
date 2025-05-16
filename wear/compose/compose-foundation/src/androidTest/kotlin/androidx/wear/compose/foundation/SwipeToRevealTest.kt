@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalWearFoundationApi::class)
+@file:Suppress("DEPRECATION")
+
 package androidx.wear.compose.foundation
 
 import androidx.compose.foundation.background

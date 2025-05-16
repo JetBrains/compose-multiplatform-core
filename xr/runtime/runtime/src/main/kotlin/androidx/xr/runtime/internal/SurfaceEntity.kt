@@ -26,8 +26,6 @@ public interface SurfaceEntity : Entity {
      * Specifies how the surface content will be routed for stereo viewing. Applications must render
      * into the surface in accordance with what is specified here in order for the compositor to
      * correctly produce a stereoscopic view to the user.
-     *
-     * @param mode An int StereoMode
      */
     public var stereoMode: Int
 

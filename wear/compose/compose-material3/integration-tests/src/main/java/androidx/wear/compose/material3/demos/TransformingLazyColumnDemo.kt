@@ -149,40 +149,32 @@ fun TransformingLazyColumnButtons() {
                     with(transformationSpec) { applyContainerTransformation(scrollProgress) }
                 }
             ) {
-                TransformExclusion {
-                    SimpleButtonSample(Modifier.weight(1f))
-                    Spacer(Modifier.width(4.dp))
-                    SimpleButtonSample(Modifier.weight(1f))
-                }
+                SimpleButtonSample(Modifier.weight(1f))
+                Spacer(Modifier.width(4.dp))
+                SimpleButtonSample(Modifier.weight(1f))
             }
         }
         item {
-            TransformExclusion {
-                val interactionSource1 = remember { MutableInteractionSource() }
-                val interactionSource2 = remember { MutableInteractionSource() }
-                ButtonGroup(
-                    Modifier.transformedHeight(this, transformationSpec).graphicsLayer {
-                        with(transformationSpec) { applyContainerTransformation(scrollProgress) }
-                    }
+            val interactionSource1 = remember { MutableInteractionSource() }
+            val interactionSource2 = remember { MutableInteractionSource() }
+            ButtonGroup(
+                Modifier.transformedHeight(this, transformationSpec).graphicsLayer {
+                    with(transformationSpec) { applyContainerTransformation(scrollProgress) }
+                }
+            ) {
+                Button(
+                    onClick = {},
+                    Modifier.animateWidth(interactionSource1),
+                    interactionSource = interactionSource1
                 ) {
-                    Button(
-                        onClick = {},
-                        Modifier.animateWidth(interactionSource1),
-                        interactionSource = interactionSource1
-                    ) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("L")
-                        }
-                    }
-                    Button(
-                        onClick = {},
-                        Modifier.animateWidth(interactionSource2),
-                        interactionSource = interactionSource2
-                    ) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("R")
-                        }
-                    }
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("L") }
+                }
+                Button(
+                    onClick = {},
+                    Modifier.animateWidth(interactionSource2),
+                    interactionSource = interactionSource2
+                ) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("R") }
                 }
             }
         }

@@ -19,7 +19,7 @@ package androidx.appfunctions.compiler.processors
 import androidx.appfunctions.compiler.AppFunctionCompiler
 import androidx.appfunctions.compiler.AppFunctionCompilerOptions
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
-import androidx.appfunctions.compiler.core.IntrospectionHelper.APP_FUNCTIONS_INTERNAL_PACKAGE_NAME
+import androidx.appfunctions.compiler.core.IntrospectionHelper.APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME
 import androidx.appfunctions.compiler.core.IntrospectionHelper.APP_FUNCTION_INVENTORY_CLASS
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AggregatedAppFunctionInventoryClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AggregatedAppFunctionInvokerClass
@@ -88,7 +88,10 @@ class AppFunctionAggregateProcessor(
         aggregatedInventoryClassBuilder.addProperty(buildInventoriesProperty(generatedInventories))
 
         val fileSpec =
-            FileSpec.builder(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, aggregatedInventoryClassName)
+            FileSpec.builder(
+                    APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME,
+                    aggregatedInventoryClassName
+                )
                 .addType(aggregatedInventoryClassBuilder.build())
                 .addGeneratedTimeStamp()
                 .build()
@@ -97,7 +100,7 @@ class AppFunctionAggregateProcessor(
             .createNewFile(
                 // TODO: Collect all AppFunction files as source files set
                 Dependencies.ALL_FILES,
-                APP_FUNCTIONS_INTERNAL_PACKAGE_NAME,
+                APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME,
                 aggregatedInventoryClassName
             )
             .bufferedWriter()
@@ -138,7 +141,10 @@ class AppFunctionAggregateProcessor(
         aggregatedInvokerClassBuilder.addProperty(buildInvokersProperty(generatedInvokers))
 
         val fileSpec =
-            FileSpec.builder(APP_FUNCTIONS_INTERNAL_PACKAGE_NAME, aggregatedInvokerClassName)
+            FileSpec.builder(
+                    APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME,
+                    aggregatedInvokerClassName
+                )
                 .addType(aggregatedInvokerClassBuilder.build())
                 .build()
 
@@ -146,7 +152,7 @@ class AppFunctionAggregateProcessor(
             .createNewFile(
                 // TODO: Collect all AppFunction files as source files set
                 Dependencies.ALL_FILES,
-                APP_FUNCTIONS_INTERNAL_PACKAGE_NAME,
+                APP_FUNCTIONS_SERVICE_INTERNAL_PACKAGE_NAME,
                 aggregatedInvokerClassName
             )
             .bufferedWriter()

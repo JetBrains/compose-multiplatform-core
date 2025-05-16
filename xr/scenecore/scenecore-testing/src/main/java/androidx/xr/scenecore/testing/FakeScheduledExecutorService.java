@@ -21,9 +21,10 @@ import static com.google.common.base.Preconditions.checkState;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import android.annotation.SuppressLint;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RestrictTo;
 
 import com.google.common.collect.Lists;
 import com.google.errorprone.annotations.CheckReturnValue;
@@ -51,8 +52,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * Fake implementation of {@link ScheduledExecutorService} that lets tests control when tasks are
  * executed.
  */
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 @SuppressWarnings("NotCloseable")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeScheduledExecutorService extends AbstractExecutorService
         implements ScheduledExecutorService, AutoCloseable {
 

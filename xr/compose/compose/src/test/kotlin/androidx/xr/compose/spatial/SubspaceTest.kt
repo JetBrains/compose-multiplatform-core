@@ -50,7 +50,7 @@ import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.testing.toDp
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.HeadTrackingMode
+import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.internal.CameraViewActivityPose
 import androidx.xr.runtime.internal.CameraViewActivityPose.Fov
 import androidx.xr.runtime.math.Pose

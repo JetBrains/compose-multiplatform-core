@@ -18,12 +18,9 @@ package androidx.privacysandbox.ui.integration.inappmediateesdk
 
 import android.content.Context
 import android.os.Bundle
-import androidx.privacysandbox.ui.integration.sdkproviderutils.IAutomatedTestCallbackProxy
-import androidx.privacysandbox.ui.integration.sdkproviderutils.IMediationTestCallbackProxy
 import androidx.privacysandbox.ui.integration.sdkproviderutils.MediateeSdkApiImpl
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdFormat
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdType
-import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.MEDIATION_TEST_CALLBACK
 
 class InAppMediateeSdkApi(private val context: Context) {
     fun loadAd(
@@ -31,7 +28,7 @@ class InAppMediateeSdkApi(private val context: Context) {
         @AdType adType: Int,
         withSlowDraw: Boolean,
         drawViewability: Boolean,
-        mediationTestCallbackProxy: Bundle
+        automatedTestCallbackBundle: Bundle
     ): Bundle {
         return MediateeSdkApiImpl.loadAdUtil(
             adFormat,
@@ -39,21 +36,7 @@ class InAppMediateeSdkApi(private val context: Context) {
             withSlowDraw,
             drawViewability,
             context,
-            AutomatedTestCallbackProxy(mediationTestCallbackProxy)
+            automatedTestCallbackBundle
         )
-    }
-
-    private class AutomatedTestCallbackProxy(mediationTestCallbackBundle: Bundle) :
-        IAutomatedTestCallbackProxy {
-        val mediationCallbackBinder = mediationTestCallbackBundle.getBinder(MEDIATION_TEST_CALLBACK)
-        val mediationTestCallback: IMediationTestCallbackProxy? =
-            mediationCallbackBinder?.let { IMediationTestCallbackProxy.Stub.asInterface(it) }
-                ?: throw IllegalStateException(
-                    "Received Binder for callback is not of expected type"
-                )
-
-        override fun onResizeOccurred(width: Int, height: Int) {
-            mediationTestCallback?.onResizeOccurred(width, height)
-        }
     }
 }

@@ -329,6 +329,11 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
             fatal.add("ExperimentalPropertyAnnotation")
         }
 
+        if (!isLibrary) {
+            // This lint check is specifically for libraries.
+            disable.add("MissingServiceExportedEqualsTrue")
+        }
+
         val lintXmlPath =
             if (extension.type == SoftwareType.SAMPLES) {
                 "buildSrc/lint/lint_samples.xml"

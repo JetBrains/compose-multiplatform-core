@@ -40,6 +40,8 @@ internal class KotlinTypeSpec(override val actual: KTypeSpec) : KotlinSpec<KType
 
     override val name = actual.name?.let { XName.of(it) }
 
+    override fun toBuilder() = Builder(actual.toBuilder())
+
     internal class Builder(internal val actual: KTypeSpecBuilder) :
         XSpec.Builder(), XTypeSpec.Builder {
 

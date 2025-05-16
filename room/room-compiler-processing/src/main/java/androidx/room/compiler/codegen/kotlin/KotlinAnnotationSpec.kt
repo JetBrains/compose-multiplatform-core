@@ -27,6 +27,8 @@ import com.squareup.kotlinpoet.javapoet.KAnnotationSpec
 internal class KotlinAnnotationSpec(override val actual: KAnnotationSpec) :
     KotlinSpec<KAnnotationSpec>(), XAnnotationSpec {
 
+    override fun toBuilder() = Builder(actual.toBuilder())
+
     internal class Builder(internal val actual: KAnnotationSpecBuilder) :
         XSpec.Builder(), XAnnotationSpec.Builder {
         override fun addMember(name: String, code: XCodeBlock) = apply {

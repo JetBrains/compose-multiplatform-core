@@ -1,1 +1,70 @@
 // Signature format: 4.0
+package androidx.navigationevent {
+
+  public final class NavigationEvent {
+    ctor public NavigationEvent(float touchX, float touchY, float progress, int swipeEdge, optional long frameTimeMillis);
+    method public long getFrameTimeMillis();
+    method public float getProgress();
+    method public int getSwipeEdge();
+    method public float getTouchX();
+    method public float getTouchY();
+    property public long frameTimeMillis;
+    property public float progress;
+    property public int swipeEdge;
+    property public float touchX;
+    property public float touchY;
+    field public static final androidx.navigationevent.NavigationEvent.Companion Companion;
+    field public static final int EDGE_LEFT = 0; // 0x0
+    field public static final int EDGE_NONE = 2; // 0x2
+    field public static final int EDGE_RIGHT = 1; // 0x1
+  }
+
+  public static final class NavigationEvent.Companion {
+    property public static int EDGE_LEFT;
+    property public static int EDGE_NONE;
+    property public static int EDGE_RIGHT;
+  }
+
+  public abstract class NavigationEventCallback {
+    ctor public NavigationEventCallback(boolean isEnabled, androidx.navigationevent.NavigationEventDispatcher dispatcher, optional int priority);
+    method public final int getPriority();
+    method public final boolean isPassThrough();
+    method public void onEventCancelled();
+    method public void onEventCompleted();
+    method public void onEventProgressed(androidx.navigationevent.NavigationEvent event);
+    method public void onEventStarted(androidx.navigationevent.NavigationEvent event);
+    method public final void remove();
+    method public final void setPassThrough(boolean);
+    property public final boolean isPassThrough;
+    property public final int priority;
+  }
+
+  public final class NavigationEventDispatcher {
+    ctor public NavigationEventDispatcher(Runnable? fallbackOnBackPressed);
+    ctor public NavigationEventDispatcher(Runnable? fallbackOnBackPressed, java.util.function.Consumer<java.lang.Boolean>? onHasEnabledCallbacksChanged);
+    method @MainThread public void addCallback(androidx.navigationevent.NavigationEventCallback callback, optional int priority);
+    method @MainThread public void dispatchOnCancelled();
+    method @MainThread public void dispatchOnCompleted();
+    method @MainThread public void dispatchOnProgressed(androidx.navigationevent.NavigationEvent event);
+    method @MainThread public void dispatchOnStarted(androidx.navigationevent.NavigationEvent event);
+    method @MainThread public void removeCallback(androidx.navigationevent.NavigationEventCallback callback);
+  }
+
+  @kotlin.jvm.JvmInline public final value class NavigationEventPriority {
+    field public static final androidx.navigationevent.NavigationEventPriority.Companion Companion;
+  }
+
+  public static final class NavigationEventPriority.Companion {
+    method public int getDefault();
+    method public int getOverlay();
+    property public int Default;
+    property public int Overlay;
+  }
+
+  public final class NavigationInputHandler {
+    ctor public NavigationInputHandler(androidx.navigationevent.NavigationEventDispatcher dispatcher);
+    method @RequiresApi(android.os.Build.VERSION_CODES.TIRAMISU) public void setOnBackInvokedDispatcher(android.window.OnBackInvokedDispatcher invoker);
+  }
+
+}
+
