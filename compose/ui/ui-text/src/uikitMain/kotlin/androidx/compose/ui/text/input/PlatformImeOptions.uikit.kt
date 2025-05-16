@@ -163,25 +163,12 @@ class PlatformImeOptionsConfiguration internal constructor() {
  * explicitly specified here will override the corresponding settings from the enclosing [ImeOptions].
  */
 @ExperimentalComposeUiApi
-fun PlatformImeOptions(configure: PlatformImeOptionsConfiguration.() -> Unit): PlatformImeOptions {
-    return PlatformImeOptionsConfiguration().apply(configure).build()
-}
-
-/**
- * Instance that mirrors UIKit's default settings.
- *
- * This instance sets all properties to their UIKit default values.
- */
-@ExperimentalComposeUiApi
-val DefaultPlatformImeOptions: PlatformImeOptions = PlatformImeOptions {
-    keyboardType(UIKeyboardTypeDefault)
-    keyboardAppearance(UIKeyboardAppearanceDefault)
-    returnKeyType(UIReturnKeyType.UIReturnKeyDefault)
-    textContentType(null)
-    isSecureTextEntry(false)
-    enablesReturnKeyAutomatically(false)
-    autocapitalizationType(UITextAutocapitalizationType.UITextAutocapitalizationTypeNone)
-    autocorrectionType(UITextAutocorrectionType.UITextAutocorrectionTypeDefault)
+fun PlatformImeOptions(configure: (PlatformImeOptionsConfiguration.() -> Unit)? = null): PlatformImeOptions {
+    val configuration = PlatformImeOptionsConfiguration()
+    if (configure != null) {
+        configuration.apply(configure)
+    }
+    return configuration.build()
 }
 
 @ExperimentalComposeUiApi

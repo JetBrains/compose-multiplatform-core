@@ -98,7 +98,7 @@ internal fun getUITextInputTraits(currentImeOptions: ImeOptions?) =
         }
 
         override fun keyboardAppearance(): UIKeyboardAppearance {
-            return currentImeOptions?.platformImeOptions?.keyboardAppearance ?: DefaultPlatformImeOptions.keyboardAppearance
+            return currentImeOptions?.platformImeOptions?.keyboardAppearance ?: UIKeyboardAppearanceDefault
         }
 
         override fun returnKeyType(): UIReturnKeyType {
@@ -146,7 +146,7 @@ internal fun getUITextInputTraits(currentImeOptions: ImeOptions?) =
         }
 
         override fun enablesReturnKeyAutomatically(): Boolean {
-            return currentImeOptions?.platformImeOptions?.enablesReturnKeyAutomatically ?: DefaultPlatformImeOptions.enablesReturnKeyAutomatically
+            return currentImeOptions?.platformImeOptions?.enablesReturnKeyAutomatically ?: false
         }
 
         override fun autocapitalizationType(): UITextAutocapitalizationType {
