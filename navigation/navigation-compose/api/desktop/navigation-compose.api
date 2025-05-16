@@ -1,13 +1,13 @@
 public final class androidx/navigation/compose/ComposableSingletons$ComposeNavigatorKt {
 	public static final field INSTANCE Landroidx/navigation/compose/ComposableSingletons$ComposeNavigatorKt;
 	public fun <init> ()V
-	public final fun getLambda-1$navigation_compose ()Lkotlin/jvm/functions/Function4;
+	public final fun getLambda$127448943$navigation_compose ()Lkotlin/jvm/functions/Function4;
 }
 
 public final class androidx/navigation/compose/ComposableSingletons$DialogNavigatorKt {
 	public static final field INSTANCE Landroidx/navigation/compose/ComposableSingletons$DialogNavigatorKt;
 	public fun <init> ()V
-	public final fun getLambda-1$navigation_compose ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-1092249270$navigation_compose ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class androidx/navigation/compose/ComposeNavigator : androidx/navigation/Navigator {

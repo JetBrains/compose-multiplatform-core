@@ -73,14 +73,14 @@ public abstract interface annotation class androidx/compose/runtime/ComposableOp
 public final class androidx/compose/runtime/ComposableSingletons$CompositionKt {
 	public static final field INSTANCE Landroidx/compose/runtime/ComposableSingletons$CompositionKt;
 	public fun <init> ()V
-	public final fun getLambda-1$runtime ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda-2$runtime ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$1918065384$runtime ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$954879418$runtime ()Lkotlin/jvm/functions/Function2;
 }
 
 public final class androidx/compose/runtime/ComposableSingletons$RecomposerKt {
 	public static final field INSTANCE Landroidx/compose/runtime/ComposableSingletons$RecomposerKt;
 	public fun <init> ()V
-	public final fun getLambda-1$runtime ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1091980426$runtime ()Lkotlin/jvm/functions/Function2;
 }
 
 public abstract interface annotation class androidx/compose/runtime/ComposableTarget : java/lang/annotation/Annotation {
