@@ -193,13 +193,13 @@ tasks.register("publishComposeJbExtendedIconsToMavenLocal", ComposePublishingTas
 
 // TODO deprecated, kept for CI compatibility, remove after Compose Multiplatform 1.8.0 is released
 tasks.register("checkDesktop") {
-    dependsOn(allTasksWith(name = "desktopTest"))
+    dependsOn(allTaskPathWith(name = "desktopTest"))
     dependsOn(":collection:collection:jvmTest")
-    dependsOn(allTasksWith(name = "desktopApiCheck"))
+    dependsOn(allTaskPathWith(name = "desktopApiCheck"))
 }
 
 tasks.register("testDesktop") {
-    dependsOn(allTasksWith(name = "desktopTest"))
+    dependsOn(allTaskPathWith(name = "desktopTest"))
     dependsOn(":collection:collection:jvmTest")
 }
 
@@ -315,6 +315,17 @@ fun apiValidationTasks(suffix: String) = buildSet<Task> {
 
 fun allTasksWith(name: String) =
     rootProject.subprojects.flatMap { it.tasks.filter { it.name == name } }
+
+fun allTaskPathWith(name: String): List<String> =
+    rootProject.subprojects.map {
+        "${it.path}:$name"
+    }.filter {
+        project.providers.provider {
+            // double-check it really exists
+            rootProject.subprojects.find { p -> p.path == it.substringBeforeLast(":") }!!
+                .tasks.findByName(name) != null
+        }.get()
+    }
 
 // ./gradlew printAllArtifactRedirectionVersions -PfilterProjectPath=lifecycle
 // or just ./gradlew printAllArtifactRedirectionVersions
