@@ -23,6 +23,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SessionMutex
+import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.draganddrop.WebDragAndDropManager
 import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
@@ -486,6 +487,8 @@ internal class ComposeWindow(
         )
     }
 
+    private var lastConsumedWheelEventTime = 0L
+
     private fun onWheelEvent(
         event: WheelEvent,
     ) {
@@ -517,9 +520,18 @@ internal class ComposeWindow(
             button = event.composeButton,
         )
 
-         if (result.anyMovementConsumed) {
-             event.preventDefault()
-         }
+        val timeMillis = currentTimeMillis()
+        if (result.anyMovementConsumed) {
+            event.preventDefault()
+            lastConsumedWheelEventTime = timeMillis
+        } else if (timeMillis - lastConsumedWheelEventTime < 50) {
+            // A browser keeps sending the events for fling-like gestures.
+            // Compose doesn't consume those scrollDeltas anymore.
+            // TODO (o.karpovich): Figure out how to fix it properly. Should it be a responsibility of overscroll or fling logic in Compose?
+            // See Scrollable.kt in foundation, and Overscroll.jsWasm.kt
+            event.preventDefault()
+            lastConsumedWheelEventTime = timeMillis
+        }
     }
 
     private val MouseEvent.offset get() = Offset(
